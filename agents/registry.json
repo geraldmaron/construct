@@ -840,8 +840,7 @@
       "skills": [
         "devops/data-engineering",
         "devops/database",
-        "devops/observability",
-        "ai/ml-ops"
+        "devops/observability"
       ],
       "perspective": {
         "bias": "Non-idempotent pipelines, unwritten data contracts, quality gates added after the first corruption incident",

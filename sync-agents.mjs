@@ -305,7 +305,7 @@ function buildPrompt(entry, allEntries, platform) {
     fallback: entry.prompt || '',
   }).prompt;
 
-  prompt = inlineRoleAntiPatterns(prompt, root, entry.name);
+  prompt = inlineRoleAntiPatterns(prompt, root, entry.name, console.warn, { preload: entry.preloadRoleGuidance === true });
 
   if (entry.injectAgentRoster && allEntries) {
     const roster = buildAgentRoster(allEntries);
