@@ -7,6 +7,118 @@ reading the project for the first time.
 -->
 # Changelog
 
+## Harden Construct — agent contracts, context hygiene, project scoping
+
+### Agent-to-agent service contracts
+
+- `agents/contracts.json` — 15 explicit producer→consumer contracts covering
+  the full R&D flow (intake, research→architecture, PRD→ADR, architect→
+  engineer, engineer→reviewer/QA, reviewer→security, QA→release, SRE→release,
+  docs-keeper fanout, incident response). Each contract declares
+  `input.mustContain`, `preconditions`, `output` shape/schema, and
+  `postconditions`.
+- `lib/agent-contracts.mjs` — loader, query, validator. `getContract(producer,
+  consumer)`, `resolveContractChain(routingCtx)`, `validatePacket(contractId,
+  packet, direction)`.
+- `routeRequest` now returns `contractChain` alongside specialists and gates.
+- New MCP tool `agent_contract` — specialists introspect their own contracts
+  at handoff time.
+
+### Principal-team gates
+
+- `rules/common/framing.md` — tickets/transcripts/prior docs are execution
+  artifacts, not sources of truth. Problem must be stated independent of how
+  it was reported.
+- `rules/common/doc-ownership.md` — PRDs → cx-product-manager, ADRs/RFCs →
+  cx-architect, research briefs → cx-researcher, runbooks → cx-sre, threat
+  models → cx-security. The orchestrator routes, never drafts.
+- `rules/common/skill-composition.md` — on-demand vs preload guidance for
+  role skills.
+- `routeRequest` auto-prepends cx-devil-advocate, cx-researcher, and the
+  owning specialist when framing/research/doc-ownership gates fire.
+- `templates/docs/adr.md` — Problem section must not reference tickets;
+  Rejected alternatives with ≥2 alternatives required.
+- `templates/docs/prd.md` — Problem traces to user evidence, not roadmap
+  items.
+
+### Context hygiene (enforce, don't advise)
+
+- `lib/hooks/bash-output-logger.mjs` (PostToolUse:Bash) — writes outputs
+  >4KB to `~/.cx/bash-logs/`, nudges model to grep the log rather than
+  re-run.
+- `lib/hooks/repeated-read-guard.mjs` (PreToolUse:Read) — blocks broad
+  re-reads of files already read twice this session; narrow follow-ups
+  still allowed.
+- `lib/hooks/context-watch.mjs` (UserPromptSubmit) — injects compaction
+  guidance at 120k / 160k token thresholds; env-overridable via
+  `CONSTRUCT_CONTEXT_WARN` / `CONSTRUCT_CONTEXT_URGENT`.
+- `sharedGuidance` slimmed from 30 items → 10 essentials; 22 moved to
+  `skills/operating/orchestration-reference.md` for on-demand loading.
+- On-demand role guidance is now the default (was preloaded). Specialists
+  keep the `get_skill("roles/NAME")` directive in the prompt and call it
+  at runtime. All 28 specialists sync under the 3600-word cap.
+
+### Audit trail
+
+- `lib/hooks/audit-trail.mjs` (PostToolUse) — every Edit/Write/MultiEdit/
+  NotebookEdit and mutating Bash appended to `~/.cx/audit-trail.jsonl`
+  with timestamp, session id, agent, task key, target, content hash,
+  and a `prev_line_hash` chain for tamper-evidence.
+- `lib/audit-trail.mjs` + `construct audit trail` CLI — reader/filter/
+  verifier with `--verify`, `--agent`, `--tool`, `--since`, `--json`,
+  `--limit`.
+
+### Project profile + per-host skill scoping (agnostic)
+
+- `lib/project-profile.mjs` — host-agnostic tech-stack detection from
+  filesystem signals (package.json deps, pyproject.toml, go.mod,
+  Cargo.toml, pom.xml, build.gradle, Gemfile, composer.json, Package.swift,
+  Docker, CI, etc.). Subdir docker scan for monorepos.
+- `NEVER_FILTER_PREFIXES` safeguards: construct personas, cx-* specialists,
+  cross-cutting skills, role-domain namespaces (engineering:, product-
+  management:, operations:, legal:, data:), Claude dev infrastructure,
+  and Anthropic-native skills are always protected.
+- `construct skills scope` — classifies installed skills as relevant /
+  irrelevant / unmapped / protected. Writes `.cx/project-profile.json`.
+- `construct skills apply --host <claude|opencode|codex|all>` — writes
+  per-host scoping configs. Always writes the construct-native manifest
+  `.cx/skills-profile.json` as the source of truth.
+
+### Auto-regenerated docs + doctor enforcement
+
+- `construct sync` now calls `regenerateDocs` to refresh AUTO-managed
+  regions in `README.md`, `docs/architecture.md`, `docs/README.md`.
+- `construct doctor` gained an "AUTO docs up to date" check (24 total
+  checks).
+- `construct setup` profiles the project at the end and writes
+  `.cx/project-profile.json` automatically.
+
+### Session-start + CASS integration
+
+- `lib/hooks/session-start.mjs` queries CASS at session start (cm_context
+  and memory_search in parallel, 3s timeout each) and embeds results as
+  `## Memory (CASS)` in the injected context. Replaces the passive
+  memory-search directive.
+- `construct setup` installs the `cass` binary (session search) in addition
+  to `cm` (memory MCP) via Homebrew or cargo.
+
+### MCP server fixes
+
+- Resolved two silent-fail bugs that prevented `construct-mcp` from
+  starting on fresh installs: `__CX_TOOLKIT_DIR__` placeholder unresolved
+  at sync time; `import.meta.url` vs `process.argv[1]` mismatch on
+  symlinked installs.
+- Committed previously untracked files that the MCP server imported
+  (`lib/observation-store.mjs`, `lib/entity-store.mjs`,
+  `lib/artifact-capture.mjs`) plus their tests.
+
+### License
+
+- Switched from MIT to Elastic License 2.0. Free to use, self-host, and
+  modify. Prohibits offering Construct as a hosted or managed service to
+  third parties. Protects the option to build a commercial hosted tier
+  later.
+
 ## Learning loop — observation store, entity tracking, artifact capture
 
 ### Observation store
