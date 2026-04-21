@@ -134,17 +134,25 @@ test("orchestrator role preload stays compact", () => {
   assert.ok(count <= 450, `orchestrator role preload too large: ${count} words`);
 });
 
-test("inlineRoleAntiPatterns expands the directive with core and flavor bodies", () => {
+test("inlineRoleAntiPatterns expands the directive when preload: true", () => {
+  // On-demand is the default (see rules/common/skill-composition.md). Preload
+  // is opt-in for hosts without reliable runtime get_skill.
   const src = '**Role guidance**: call `get_skill("roles/engineer.ai")` before drafting.';
-  const out = inlineRoleAntiPatterns(src, root, "cx-ai-engineer", () => {});
+  const out = inlineRoleAntiPatterns(src, root, "cx-ai-engineer", () => {}, { preload: true });
   assert.ok(!/get_skill\("roles\//.test(out), "raw directive should be expanded");
   assert.match(out, /## Role guidance/);
   assert.match(out, /ai overlay/i);
 });
 
+test("inlineRoleAntiPatterns defaults to on-demand (leaves directive in place)", () => {
+  const src = '**Role guidance**: call `get_skill("roles/engineer.ai")` before drafting.';
+  const out = inlineRoleAntiPatterns(src, root, "cx-ai-engineer", () => {});
+  assert.strictEqual(out, src, "default should leave the directive untouched for runtime get_skill");
+});
+
 test("inlineRoleAntiPatterns is a no-op when no directive present", () => {
   const src = "nothing to inline here";
-  assert.strictEqual(inlineRoleAntiPatterns(src, root, "x", () => {}), src);
+  assert.strictEqual(inlineRoleAntiPatterns(src, root, "x", () => {}, { preload: true }), src);
 });
 
 test("get_template shipped defaults all exist for template names referenced in prompts", () => {
