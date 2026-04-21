@@ -1,7 +1,8 @@
 <!--
-rules/common/coding-style.md — <one-line purpose>
+rules/common/coding-style.md — language-agnostic coding standards.
 
-<2–6 line summary.>
+Covers immutability, core principles (KISS/DRY/YAGNI), file organization,
+error handling, input validation, naming conventions, and quality checklist.
 -->
 # Coding Style
 
@@ -67,7 +68,8 @@ ALWAYS validate at system boundaries:
 - Booleans: prefer `is`, `has`, `should`, or `can` prefixes
 - Interfaces, types, and components: `PascalCase`
 - Constants: `UPPER_SNAKE_CASE`
-- Custom hooks: `camelCase` with a `use` prefix
+
+> **Language note**: Naming conventions may be overridden by language-specific rules (e.g. snake_case in Python/Go).
 
 ## Code Smells to Avoid
 

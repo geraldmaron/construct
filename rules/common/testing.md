@@ -1,7 +1,8 @@
 <!--
-rules/common/testing.md — <one-line purpose>
+rules/common/testing.md — test coverage requirements and TDD workflow.
 
-<2–6 line summary.>
+Defines minimum 80% coverage, TDD red-green-refactor cycle,
+AAA test structure, and descriptive naming conventions.
 -->
 # Testing Requirements
 
@@ -24,39 +25,26 @@ MANDATORY workflow:
 
 ## Troubleshooting Test Failures
 
-1. Use **tdd-guide** agent
-2. Check test isolation
-3. Verify mocks are correct
-4. Fix implementation, not tests (unless tests are wrong)
-
-## Agent Support
-
-- **tdd-guide** - Use PROACTIVELY for new features, enforces write-tests-first
+1. Check test isolation
+2. Verify mocks are correct
+3. Fix implementation, not tests (unless tests are wrong)
 
 ## Test Structure (AAA Pattern)
 
-Prefer Arrange-Act-Assert structure for tests:
+Prefer Arrange-Act-Assert:
 
-```typescript
-test('calculates similarity correctly', () => {
-  // Arrange
-  const vector1 = [1, 0, 0]
-  const vector2 = [0, 1, 0]
-
-  // Act
-  const similarity = calculateCosineSimilarity(vector1, vector2)
-
-  // Assert
-  expect(similarity).toBe(0)
-})
+```
+// Arrange - set up test data
+// Act - call the function under test
+// Assert - verify the result
 ```
 
 ### Test Naming
 
 Use descriptive names that explain the behavior under test:
 
-```typescript
-test('returns empty array when no markets match query', () => {})
-test('throws error when API key is missing', () => {})
-test('falls back to substring search when Redis is unavailable', () => {})
+```
+returns empty array when no items match query
+throws error when required config is missing
+falls back to default when service is unavailable
 ```

@@ -27,9 +27,22 @@ This repo IS Construct. Changes here affect every session, every platform, every
 - `rules/**` — coding standards
 - `lib/server/**` — dashboard only
 
+## Documentation is mandatory
+
+**Always update docs before committing, unless explicitly instructed otherwise.** This is non-negotiable.
+
+Before any commit, ensure the following are current:
+- `CHANGELOG.md` — new entry describing what changed and why
+- `docs/architecture.md` — if runtime shape, contracts, or boundaries changed
+- `docs/README.md` — if core docs set or maintenance expectations changed
+- `.cx/context.md` / `.cx/context.json` — if active work, decisions, or architecture assumptions changed
+
+Skipping documentation requires an explicit user instruction to skip. "Just commit" or "push it" does NOT waive this requirement — docs still get updated.
+
 ## After making changes
 
 1. Test the specific hook or script in isolation
 2. Run `construct doctor`
 3. Run `construct sync` to regenerate platform files
 4. Verify with `construct list`
+5. Update documentation (see above)

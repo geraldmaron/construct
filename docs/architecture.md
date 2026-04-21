@@ -16,6 +16,7 @@ Construct is a production-oriented orchestration CLI that keeps a stable public 
 - **Runtime health** — `lib/status.mjs`, dashboard API/UI in `lib/server/`
 - **MCP integrations** — `lib/mcp-manager.mjs`, `lib/mcp/server.mjs`, `lib/mcp-catalog.json`
 - **Hooks / enforcement** — `lib/hooks/`
+- **Session persistence** — `lib/session-store.mjs`, `.cx/sessions/`
 
 ## Key invariants
 
@@ -86,6 +87,43 @@ The intent is parity, not duplication: status and MCP project/workflow tools sho
 3. Overlay can be promoted into a review request
 4. Promotion requires architecture + devil's advocate + docs/ownership review
 5. Expired temporary overlays can be cleaned up safely
+
+## Session persistence
+
+Sessions are the durable record of what happened during each interaction. They survive `construct down` and enable effective resumption without re-reading full transcripts.
+
+### Design: distilled, not raw
+
+Sessions store only what matters for resumption:
+
+| Field | Purpose | Cap |
+|---|---|---|
+| `summary` | 2-3 sentence description of what happened | 500 chars |
+| `decisions` | Key architectural/design choices made | 20 items |
+| `filesChanged` | Paths + one-line reason | 50 items |
+| `openQuestions` | Unresolved issues or blockers | 10 items |
+| `taskSnapshot` | Task IDs + status (not full descriptions) | unlimited |
+
+Full conversation transcripts, raw tool outputs, and file contents are NOT stored — they are ephemeral or already on disk.
+
+### Storage layout
+
+- `.cx/sessions/index.json` — lightweight array for fast listing (id, project, status, summary)
+- `.cx/sessions/<id>.json` — distilled session record
+
+### Lifecycle
+
+1. **Session start** — `session-start.mjs` hook creates a new session and loads the last completed session for resume context
+2. **Mid-session** — agents can call `session_save` MCP tool to persist distilled state
+3. **Session end** — `stop-notify.mjs` hook marks the active session as completed with a summary
+4. **Construct down** — `closeAllSessions()` marks all active sessions as closed
+
+### MCP tools
+
+- `session_list` — list sessions with optional status/project filter
+- `session_load` — load full distilled record + generated resume context
+- `session_search` — keyword search across session summaries
+- `session_save` — update active session with distilled context
 
 ## Validation and release expectations
 

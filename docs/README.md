@@ -12,6 +12,7 @@
 | `.cx/workflow.json` | Canonical workflow/task state | Non-trivial work starts, changes phase, or completes |
 | `docs/README.md` | Docs index and maintenance contract | Core docs set or maintenance expectations change |
 | `docs/architecture.md` | Canonical architecture and invariants | Runtime shape, contracts, boundaries, or major dependencies change |
+| `.cx/sessions/` | Distilled session persistence | Automatically maintained by hooks — stores resumable session snapshots |
 
 All LLMs working in the repo, including Construct, must read these as project state and keep them current when work changes project reality.
 <!-- /AUTO:core-docs -->
@@ -22,8 +23,9 @@ All LLMs working in the repo, including Construct, must read these as project st
 - [Runbooks](./runbooks/)
 - [ADRs](../.cx/decisions/) — session-context decisions (longer ADRs live in `docs/adr/`)
 - [Plans](../.cx/plans/) — canonical Construct plans that feed `workflow_import_plan` into `.cx/workflow.json` task packets (beads)
+- [Skills](../skills/) — domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
 
 ## Ownership
 
 Maintained by: Construct contributors
-Last updated: 2026-04-19
+Last updated: 2026-04-21

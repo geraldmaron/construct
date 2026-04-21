@@ -1,7 +1,7 @@
 <!--
-rules/common/git-workflow.md — <one-line purpose>
+rules/common/git-workflow.md — commit message format and PR workflow.
 
-<2–6 line summary.>
+Defines conventional commit types and pull request creation steps.
 -->
 # Git Workflow
 
@@ -13,8 +13,6 @@ rules/common/git-workflow.md — <one-line purpose>
 ```
 
 Types: feat, fix, refactor, docs, test, chore, perf, ci
-
-Note: Attribution disabled globally via ~/.claude/settings.json.
 
 ## Pull Request Workflow
 

@@ -10,11 +10,7 @@ paths:
 ---
 # Swift Hooks
 
-> This file extends [common/hooks.md](../common/hooks.md) with Swift specific content.
-
 ## PostToolUse Hooks
-
-Configure in `~/.claude/settings.json`:
 
 - **SwiftFormat**: Auto-format `.swift` files after edit
 - **SwiftLint**: Run lint checks after editing `.swift` files

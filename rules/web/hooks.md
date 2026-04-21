@@ -3,8 +3,6 @@ rules/web/hooks.md — <one-line purpose>
 
 <2–6 line summary.>
 -->
-> This file extends [common/hooks.md](../common/hooks.md) with web-specific hook recommendations.
-
 # Web Hooks
 
 ## Recommended PostToolUse Hooks

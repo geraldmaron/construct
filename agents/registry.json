@@ -681,7 +681,12 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,workflow_status,workflow_update_task,workflow_needs_main_input,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-legal-compliance.md",
-      "skills": [],
+      "skills": [
+        "compliance/license-audit",
+        "compliance/data-privacy",
+        "compliance/ai-disclosure",
+        "compliance/regulatory-review"
+      ],
       "perspective": {
         "bias": "'Just logging' as a data review bypass, first-layer-only license checks, AI features without disclosure strategy",
         "tension": "cx-product-manager",

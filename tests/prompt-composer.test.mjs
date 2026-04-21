@@ -86,6 +86,31 @@ test('resolvePromptContract returns prompt text and runtime-aligned prompt metad
   assert.equal(result.metadata.promptVersion, result.metadata.promptHash.slice(0, 12));
 });
 
+test('composePrompt injects dynamic role-flavor overlay when roleFlavors are provided', () => {
+  const result = composePrompt('cx-architect', {
+    rootDir: root,
+    intent: 'implementation',
+    workCategory: 'deep',
+    roleFlavors: { architect: 'ai-systems' },
+  });
+
+  const flavorFragment = result.fragments.find((f) => f.type === 'role-flavor');
+  assert.ok(flavorFragment, 'should include a role-flavor fragment');
+  assert.match(flavorFragment.label, /architect\.ai-systems/);
+  assert.match(flavorFragment.content, /ai-systems domain guidance/);
+});
+
+test('composePrompt skips flavor overlay when no roleFlavors match agent', () => {
+  const result = composePrompt('cx-engineer', {
+    rootDir: root,
+    intent: 'implementation',
+    roleFlavors: { architect: 'ai-systems' },
+  });
+
+  const flavorFragment = result.fragments.find((f) => f.type === 'role-flavor');
+  assert.equal(flavorFragment, undefined, 'engineer should not get architect flavor');
+});
+
 test('resolveRuntimePromptMetadata includes active task and routing summary', () => {
   const metadata = resolveRuntimePromptMetadata('cx-engineer', {
     rootDir: root,

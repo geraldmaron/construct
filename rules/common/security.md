@@ -1,7 +1,8 @@
 <!--
-rules/common/security.md — <one-line purpose>
+rules/common/security.md — mandatory security checks and secret management.
 
-<2–6 line summary.>
+Defines pre-commit security checklist, secret management rules,
+and response protocol for discovered vulnerabilities.
 -->
 # Security Guidelines
 
@@ -28,7 +29,6 @@ Before ANY commit:
 
 If security issue found:
 1. STOP immediately
-2. Use **security-reviewer** agent
-3. Fix CRITICAL issues before continuing
-4. Rotate any exposed secrets
-5. Review entire codebase for similar issues
+2. Fix CRITICAL issues before continuing
+3. Rotate any exposed secrets
+4. Review entire codebase for similar issues
