@@ -656,7 +656,11 @@ const handlers = new Map([
       const { runSkillsScopeCli } = await import('../lib/skills-scope.mjs');
       return runSkillsScopeCli(args.slice(sub === 'scope' ? 1 : 0));
     }
-    errorln(`Unknown skills subcommand: ${sub}. Available: scope`);
+    if (sub === 'apply') {
+      const { runSkillsApplyCli } = await import('../lib/skills-apply.mjs');
+      return runSkillsApplyCli(args.slice(1));
+    }
+    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply`);
     process.exit(1);
   }],
 ]);
