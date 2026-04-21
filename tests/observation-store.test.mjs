@@ -1,3 +1,10 @@
+/**
+ * tests/observation-store.test.mjs — tests for lib/observation-store.mjs.
+ *
+ * Verifies role-scoped CRUD, vector indexing, hashing-bow-v1 semantic
+ * search, and the 1000-entry cap on observations. Isolated in a temp dir
+ * so real ~/.cx state is untouched. Run via `npm test`.
+ */
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

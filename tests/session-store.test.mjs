@@ -1,3 +1,10 @@
+/**
+ * tests/session-store.test.mjs — tests for lib/session-store.mjs.
+ *
+ * Exercises createSession, lastSession, updateSession, and
+ * buildResumeContext end-to-end against a temp-dir fixture so real
+ * ~/.cx/sessions state stays untouched. Run via `npm test`.
+ */
 import { describe, test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

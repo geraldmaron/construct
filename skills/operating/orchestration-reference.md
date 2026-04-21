@@ -1,3 +1,13 @@
+<!--
+skills/operating/orchestration-reference.md — detailed orchestration reference loaded on demand.
+
+Holds the execution contract, handoff template, intent and work-category
+classification, parallel dispatch, horizontal routing, and efficiency
+discipline. Called via get_skill("operating/orchestration-reference") by
+specialists and personas when they need the full context; short essentials
+stay in sharedGuidance so they load every turn.
+-->
+
 # Orchestration Reference
 
 Loaded on demand via `get_skill("operating/orchestration-reference")`.
