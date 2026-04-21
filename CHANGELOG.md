@@ -7,6 +7,38 @@ reading the project for the first time.
 -->
 # Changelog
 
+
+## Follow-up: hard cap + functional skill scope + doctor checks
+
+### Prompt-cap is now hard-fail
+
+`sync-agents.mjs` exits non-zero when a specialist prompt exceeds its cap.
+Escape hatches: `wordCapOverride` on the registry entry (with a written
+reason), `--force` flag, or `CONSTRUCT_SYNC_FORCE=1` env. A silent warning
+was the reason `data-engineer` sat over cap for an unknown period; now
+drift is caught at sync time.
+
+### Skill-scope enforcement is now functional (not aspirational)
+
+- `lib/skills-apply.mjs` stopped writing a `disabledPlugins` key to
+  `.claude/settings.json` that Claude Code doesn't honor. Instead writes
+  a sidecar at `.claude/construct-skills.json` marked as advisory.
+- `lib/hooks/session-start.mjs` now reads `.cx/skills-profile.json` at
+  session start and injects a `## Project skill scope` section listing
+  the out-of-scope skills explicitly. The host doesn't need to support
+  per-project plugin filtering — the LLM is told directly.
+
+### New doctor checks
+
+- `Agent contracts loaded` — verifies `agents/contracts.json` parses and
+  has contracts.
+- `Agent contract schema intact` — structural integrity of contract entries.
+- `Skills profile matches current project stack` — flags drift when
+  `.cx/skills-profile.json` was generated under different tech-stack signals
+  than the current repo (optional; warns rather than fails).
+
+Doctor now runs 26 checks (was 23).
+
 ## Harden Construct — agent contracts, context hygiene, project scoping
 
 ### Agent-to-agent service contracts
