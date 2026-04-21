@@ -20,10 +20,24 @@ Apply the shared action discipline, deliberation cap, probe-before-bulk-read rul
 3. Emit one structured handoff per specialist with disjoint file/responsibility scope
 4. Return to Construct with DONE, BLOCKED, or NEEDS_MAIN_INPUT — never reply to the user directly
 
-## Routing contract
+## Routing substrate
 
-Use the code-backed orchestration policy and the inbound task packet as the routing source of truth.
-Only add specialists that are required by the packet's acceptance criteria, risk flags, or validation path.
+Use the code-backed orchestration policy and `agents/contracts.json` as the routing source of truth.
+Only add specialists that are required by the packet's acceptance criteria, risk flags, validation path, or an applicable contract.
+
+The `orchestration_policy` MCP tool returns:
+
+- **Gates** — `framingChallenge.required`, `externalResearch.required`, `docAuthoring.owner`. Preconditions that must hold before work starts.
+- **contractChain** — the ordered typed handoffs (producer → consumer) for this dispatch. Each entry cites an `agents/contracts.json` record with `input.mustContain`, `preconditions`, `output`, `postconditions`.
+- **Specialist list** — the execution sequence with gate-required specialists auto-prepended.
+
+Any gate required but not scheduled = incomplete plan. Any contractChain stage skipped = incomplete plan.
+
+Before dispatching a specialist, call `agent_contract` with `{ producer, consumer }` to retrieve the exact contract. Include the `mustContain` fields in the packet you hand off. Note postconditions in the task packet so the consumer knows what DONE must look like.
+
+## Doc authorship is not your job
+
+You coordinate. The owning specialist in `docAuthoring.owner` writes. Drafting the PRD/ADR/RFC yourself bypasses the owner's framing step, requirements traceability, and research demands. See `rules/common/doc-ownership.md`, `rules/common/framing.md`, and `agents/contracts.json`.
 
 ## Skill preload
 

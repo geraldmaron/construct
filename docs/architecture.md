@@ -10,13 +10,38 @@ Construct is a production-oriented orchestration CLI that keeps a stable public 
 
 - **CLI surface** — `bin/construct` and `lib/cli-commands.mjs`
 - **Workflow state** — `.cx/workflow.json` and `lib/workflow-state.mjs`
+- **Orchestration policy** — `lib/orchestration-policy.mjs` (intent classification, work-category tagging, execution track selection, gate evaluation, contract-chain resolution)
+- **Agent contracts** — `agents/contracts.json` and `lib/agent-contracts.mjs` (explicit producer→consumer service contracts with preconditions, postconditions, input/output schemas)
+- **Doc ownership, framing, and skill-composition rules** — `rules/common/{doc-ownership,framing,skill-composition}.md`
+- **Project profile and skill scoping** — `lib/project-profile.mjs`, `lib/skills-scope.mjs`, `lib/skills-apply.mjs`
 - **Domain overlays** — `.cx/domain-overlays/` and `.cx/promotion-requests/` managed by `lib/headhunt.mjs`
 - **Retrieval / distillation** — `lib/distill.mjs`
 - **Hybrid search layer** — `lib/storage/` (file-state source, SQL-ready store, vector-ready index, hybrid query facade)
 - **Runtime health** — `lib/status.mjs`, dashboard API/UI in `lib/server/`
 - **MCP integrations** — `lib/mcp-manager.mjs`, `lib/mcp/server.mjs`, `lib/mcp-catalog.json`
-- **Hooks / enforcement** — `lib/hooks/`
+- **Hooks / enforcement** — `lib/hooks/` (session-start, bash-output-logger, repeated-read-guard, context-watch, audit-trail, and more)
+- **Audit trail** — `lib/hooks/audit-trail.mjs`, `lib/audit-trail.mjs`, `~/.cx/audit-trail.jsonl` with `prev_line_hash` tamper-evidence chain
 - **Session persistence** — `lib/session-store.mjs`, `.cx/sessions/`
+
+## Operating model: gates + contracts + specialists
+
+Every request flows through three structural layers:
+
+1. **Gates** (`routeRequest` returns `framingChallenge`, `externalResearch`, `docAuthoring`): preconditions that must hold before scaffolding begins. Frame the problem independent of tickets; route authorship to the owning specialist; cx-researcher returns primary sources before the drafting specialist proceeds.
+2. **Contract chain** (`routeRequest.contractChain`): ordered typed handoffs from `agents/contracts.json`. Each contract names a producer→consumer pair, required input fields, preconditions, expected output shape/schema, and postconditions. Specialists call the `agent_contract` MCP tool at handoff time to introspect what they must receive and what they must return.
+3. **Specialist sequence**: dispatch plan with explicit ordering and parallel markers. Gate-required specialists (cx-devil-advocate, cx-researcher, doc owner) are auto-prepended.
+
+Post-DONE, the `any-to-docs-keeper` contract fires as a followup stage when core docs changed.
+
+## Context hygiene
+
+Construct measures context pressure and enforces it via hooks rather than advisory prompt text:
+
+- `bash-output-logger` persists Bash outputs >4KB to `~/.cx/bash-logs/` and nudges the model to grep the log instead of re-running.
+- `repeated-read-guard` blocks broad re-reads of files already read twice in the session; narrow-range follow-ups are allowed.
+- `context-watch` injects compaction guidance at 120k / 160k token thresholds (overridable via `CONSTRUCT_CONTEXT_WARN` / `CONSTRUCT_CONTEXT_URGENT`).
+- Role skills are loaded on demand via `get_skill` rather than preloaded at sync time.
+- `sharedGuidance` keeps only 10 essentials per specialist; the 22 reference items live in `skills/operating/orchestration-reference.md` and load on demand.
 
 ## Key invariants
 
@@ -25,6 +50,8 @@ Construct is a production-oriented orchestration CLI that keeps a stable public 
 - Temporary domain overlays must not auto-promote into permanent capabilities.
 - Persistent capability changes require challenge by `cx-devil-advocate`.
 - Runtime health, workflow state, overlays, and promotion requests should remain visible in status/dashboard surfaces.
+- Agent contracts are the source of truth for producer→consumer expectations. The orchestrator routes; owning specialists author.
+- Mutations are traceable: every Edit/Write/MultiEdit/NotebookEdit/mutating-Bash appends to the audit trail with agent + task attribution and a tamper-evident chain.
 
 ## Public health contract
 

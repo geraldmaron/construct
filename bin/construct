@@ -108,6 +108,9 @@ async function cmdShow() {
 async function cmdSync(args) {
   generateCompletions();
   runNodeScript(path.join(ROOT_DIR, 'sync-agents.mjs'), args);
+  const { regenerateDocs } = await import('../lib/auto-docs.mjs');
+  const { changed } = await regenerateDocs({ rootDir: ROOT_DIR });
+  for (const f of changed) ok(`Updated ${path.relative(ROOT_DIR, f)}`);
 }
 
 async function cmdList() {
@@ -184,6 +187,10 @@ async function cmdDoctor() {
 
     const vectorConfig = describeVectorStore(process.env);
     add('Vector backend configured', Boolean(vectorConfig.endpoint || vectorConfig.indexPath || vectorConfig.mode === 'file'));
+
+    const { regenerateDocs } = await import('../lib/auto-docs.mjs');
+    const { changed: stale } = await regenerateDocs({ rootDir: ROOT_DIR, check: true });
+    add('AUTO docs up to date', stale.length === 0, true);
   } catch {
     add('Registry integrity check', false);
   }
@@ -629,7 +636,11 @@ const handlers = new Map([
   ['audit', async (args) => {
     const sub = args[0];
     if (sub === 'skills') return runAuditSkillsCli(args.slice(1));
-    errorln(`Unknown audit subcommand: ${sub}. Available: skills`);
+    if (sub === 'trail' || !sub) {
+      const { runAuditTrailCli } = await import('../lib/audit-trail.mjs');
+      return runAuditTrailCli(args.slice(sub === 'trail' ? 1 : 0));
+    }
+    errorln(`Unknown audit subcommand: ${sub}. Available: skills, trail`);
     process.exit(1);
   }],
   ['team', async (args) => {
@@ -637,6 +648,19 @@ const handlers = new Map([
     if (sub === 'review') return runTeamReviewCli(args.slice(1));
     if (sub === 'templates') { listTeamTemplates(); return; }
     errorln(`Unknown team subcommand: ${sub}. Available: review, templates`);
+    process.exit(1);
+  }],
+  ['skills', async (args) => {
+    const sub = args[0];
+    if (sub === 'scope' || !sub) {
+      const { runSkillsScopeCli } = await import('../lib/skills-scope.mjs');
+      return runSkillsScopeCli(args.slice(sub === 'scope' ? 1 : 0));
+    }
+    if (sub === 'apply') {
+      const { runSkillsApplyCli } = await import('../lib/skills-apply.mjs');
+      return runSkillsApplyCli(args.slice(1));
+    }
+    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply`);
     process.exit(1);
   }],
 ]);
