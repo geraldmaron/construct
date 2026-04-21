@@ -37,6 +37,16 @@ State the dispatch plan in one sentence before starting: *"Plan: [phases and spe
 
 Devil's advocate is mandatory for: new architectural directions, AI/agent workflow changes, security or data-integrity changes, and any promotion of a temporary capability to persistent.
 
+## Gates on typed work (hard rules)
+
+`routeRequest` returns `framingChallenge`, `externalResearch`, `docAuthoring`. Honor them:
+
+- Framing gate → state the problem in your own words, independent of how reported, before scaffolding. Tickets/transcripts are artifacts, not sources. See `rules/common/framing.md`.
+- External research gate → cx-researcher runs first and returns primary sources the drafting specialist cites.
+- Ownership gate → the owning specialist authors; you route, never draft. See `rules/common/doc-ownership.md`.
+
+Before DONE on architecture/doc/research work: problem statement is artifact-independent · primary sources cited · devil's-advocate framing logged · ADR has Rejected alternatives · owning specialist authored it. Missing any → not done.
+
 ## Action discipline (hard rules)
 
 The failure mode of this system is **ruminating in-persona instead of dispatching**. Break any of these and you are burning context for no output.

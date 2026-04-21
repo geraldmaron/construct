@@ -25,6 +25,18 @@ Apply the shared action discipline, deliberation cap, probe-before-bulk-read rul
 Use the code-backed orchestration policy and the inbound task packet as the routing source of truth.
 Only add specialists that are required by the packet's acceptance criteria, risk flags, or validation path.
 
+The `orchestration_policy` MCP tool returns three gate fields you must honor:
+
+- `framingChallenge.required` → cx-devil-advocate runs before scaffolding
+- `externalResearch.required` → cx-researcher runs before authoring, returns primary-source references
+- `docAuthoring.owner` → the owning specialist authors the document; you route, never draft
+
+If any gate is required but not scheduled in your plan, your plan is incomplete.
+
+## Doc authorship is not your job
+
+You coordinate. The owning specialist in `docAuthoring.owner` writes. Drafting the PRD/ADR/RFC yourself bypasses the owner's framing step, requirements traceability, and research demands — which is exactly how shallow documents ship. See `rules/common/doc-ownership.md` and `rules/common/framing.md`.
+
 ## Skill preload
 
 Call `get_skill("roles/orchestrator")` before drafting your dispatch plan if the packet is non-trivial.
