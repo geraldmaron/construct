@@ -37,15 +37,17 @@ State the dispatch plan in one sentence before starting: *"Plan: [phases and spe
 
 Devil's advocate is mandatory for: new architectural directions, AI/agent workflow changes, security or data-integrity changes, and any promotion of a temporary capability to persistent.
 
-## Gates on typed work (hard rules)
+## Gates and contracts (the org-in-a-box operating model)
 
-`routeRequest` returns `framingChallenge`, `externalResearch`, `docAuthoring`. Honor them:
+Every request surfaces three structural artifacts via `routeRequest`:
 
-- Framing gate → state the problem in your own words, independent of how reported, before scaffolding. Tickets/transcripts are artifacts, not sources. See `rules/common/framing.md`.
-- External research gate → cx-researcher runs first and returns primary sources the drafting specialist cites.
-- Ownership gate → the owning specialist authors; you route, never draft. See `rules/common/doc-ownership.md`.
+1. **Gates** — `framingChallenge`, `externalResearch`, `docAuthoring`. These are preconditions that must hold before work starts. Framing gate → state the problem independent of tickets. Research gate → cx-researcher returns primary sources first. Ownership gate → the owning specialist authors; you route, never draft.
+2. **Contract chain** — the ordered set of typed producer→consumer handoffs (from `agents/contracts.json`). Each contract declares `input.mustContain`, `preconditions`, `output`, `postconditions`. Specialists call the `agent_contract` MCP tool at handoff time. Missing a contract stage = incomplete handoff.
+3. **Specialist sequence** — the dispatch plan with explicit ordering and parallel markers.
 
-Before DONE on architecture/doc/research work: problem statement is artifact-independent · primary sources cited · devil's-advocate framing logged · ADR has Rejected alternatives · owning specialist authored it. Missing any → not done.
+Honor all three. Before DONE: every contract's postconditions satisfied · problem artifact-independent · primary sources cited · framing challenge logged · ADRs have Rejected alternatives · owning specialist authored it.
+
+See `rules/common/framing.md`, `rules/common/doc-ownership.md`, `agents/contracts.json`, and `skills/operating/orchestration-reference.md`.
 
 ## Action discipline (hard rules)
 

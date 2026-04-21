@@ -48,9 +48,32 @@ If a native skill or project instruction conflicts with this registry, obey the 
 
 Do not duplicate skill internals inside agent prompts. Reference the relevant skill or workflow, then apply it to the current context.
 
-## Handoff contract
+## Agent-to-agent service contracts
 
-For every non-trivial handoff:
+Every producer→consumer pair has an explicit contract in `agents/contracts.json`, loaded via `lib/agent-contracts.mjs`. Specialists call the MCP tool `agent_contract` at the start of a handoff to see:
+
+- `input.mustContain` — fields the packet must carry
+- `input.schema` — JSON schema (when applicable) from `lib/schemas/`
+- `preconditions` — what must be true before work starts
+- `output.schema` / `output.shape` — expected return shape
+- `postconditions` — what must be true before marking DONE
+
+Examples of contracts (full list in `agents/contracts.json`):
+
+- `researcher-to-architect` — research brief with ≥2 primary sources → decision
+- `product-manager-to-architect` — PRD handoff → decision with Rejected alternatives
+- `architect-to-devil-advocate` — framing proposal → challenge report (blocks if framing is weak)
+- `architect-to-engineer` — decision → implementation
+- `engineer-to-reviewer` — implementation → review verdict
+- `engineer-to-qa` — implementation → test report
+- `reviewer-to-security` — review with auth/secrets scope → specialized security review
+- `any-to-docs-keeper` — any DONE mutation that changed core docs → doc sync
+
+`routeRequest` returns a `contractChain` that enumerates which of these fire for a given request. Honor the chain — missing a contract stage is the signal a handoff is incomplete.
+
+## Legacy handoff contract (fallback)
+
+When a contract isn't registered for a specific pair, fall back to this minimum:
 
 - **TASK** (one atomic goal)
 - **EXPECTED OUTCOME** (deliverable + acceptance signal)
@@ -75,27 +98,28 @@ When two or more specialists can work independently, write `[parallel: cx-agent-
 
 When your output directly feeds another specialist (e.g. security findings → cx-reviewer, architecture decisions → cx-engineer), write a handoff entity to the memory MCP using `create_entities` with name `handoff:{target-agent}` and `add_observations` with the payload: `{ from, goal, key_findings, files, constraints }`. The target specialist calls `search_nodes 'handoff:{my-agent-name}'` before starting work.
 
-## Efficiency discipline
+## Context & efficiency (enforced)
 
-Before broad exploration, identify the smallest file set that can answer the question. Use workflow/context artifacts as cached state. Treat repeated large reads as a smell that should trigger compaction, summarization, or a narrower search strategy.
+These are enforced by hooks, not advisory:
 
-The `context-watch` hook fires at ~60% and ~80% context usage with compaction guidance; the `repeated-read-guard` hook blocks broad re-reads of files already in context.
+- `context-watch` hook (UserPromptSubmit) injects compaction guidance at ~60% / ~80% of the context window.
+- `repeated-read-guard` hook (PreToolUse on Read) blocks broad re-reads of files already read twice in this session — steers to Grep or offset+limit.
+- `bash-output-logger` hook (PostToolUse on Bash) persists outputs >4KB to `~/.cx/bash-logs/` and tells the model to grep the log rather than re-run.
 
-## Token efficiency
+Advisory companions:
 
-Be surgical. Use `Grep` and `Glob` to narrow scope before `Read`. Prefer targeted reads under 400 lines; never exceed 1000 lines in one read. Avoid re-reading the same file unless something changed or a larger slice is necessary. Prefer parallel reads over sequential turns. In your responses, keep summaries under 100 words unless the user asks for more detail.
+- Use `Grep` and `Glob` to narrow scope before `Read`.
+- Prefer targeted reads under 400 lines.
+- Probe file size before bulk reads: `Glob`, `wc -l`, or a `limit=50` probe.
+- Keep response summaries under 100 words unless the user asks for more detail.
 
 ## Deliberation cap
 
-If you reason about the same decision across two consecutive turns without a new file read, tool call, or user answer, stop. This is the signal you skipped a dispatch or a lookup. Either (a) call a doc/search tool, (b) return a `NEEDS_MAIN_INPUT` packet, or (c) commit to a default and note the assumption. Never a third round of internal debate.
+If you reason about the same decision across two consecutive turns without a new file read, tool call, or user answer, stop. Either (a) call a doc/search tool, (b) return a `NEEDS_MAIN_INPUT` packet, or (c) commit to a default and note the assumption. Never a third round of internal debate.
 
 ## Speculation rule
 
-When choosing between named options (SDK vs SDK, library vs library, pattern vs pattern), the answer comes from `context7_query-docs`, WebFetch, the user, or an explicit default — NOT from internal reasoning rounds. If you catch yourself weighing options in thinking without having read docs or asked, stop and do one of those three.
-
-## Probe before bulk read
-
-Before Reading any file with `limit > 200` or no limit, verify size first via Glob, `wc -l`, or a `limit=50` probe. A 220-line read on a 74-line file is the tell that this rule was skipped.
+When choosing between named options (SDK vs SDK, library vs library, pattern vs pattern), the answer comes from `context7_query-docs`, `WebFetch`, the user, or an explicit default — never from internal reasoning rounds alone.
 
 ## Dispatch-first test
 
