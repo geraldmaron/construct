@@ -636,7 +636,11 @@ const handlers = new Map([
   ['audit', async (args) => {
     const sub = args[0];
     if (sub === 'skills') return runAuditSkillsCli(args.slice(1));
-    errorln(`Unknown audit subcommand: ${sub}. Available: skills`);
+    if (sub === 'trail' || !sub) {
+      const { runAuditTrailCli } = await import('../lib/audit-trail.mjs');
+      return runAuditTrailCli(args.slice(sub === 'trail' ? 1 : 0));
+    }
+    errorln(`Unknown audit subcommand: ${sub}. Available: skills, trail`);
     process.exit(1);
   }],
   ['team', async (args) => {

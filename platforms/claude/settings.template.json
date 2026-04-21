@@ -125,6 +125,18 @@
         ],
         "id": "pre:mcp-task-scope",
         "description": "Warn when calling an MCP not declared in the active task mcpScope"
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/repeated-read-guard.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "pre:read:repeat-guard",
+        "description": "Block broad re-reads of files already read this session — steer to Grep or narrower range"
       }
     ],
     "PostToolUse": [
@@ -278,6 +290,30 @@
         ],
         "id": "post:agent-tracker",
         "description": "Record dispatched cx-* agent name for per-agent cost attribution"
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/bash-output-logger.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "post:bash:output-logger",
+        "description": "Persist long Bash outputs to ~/.cx/bash-logs/ and nudge toward referencing the log"
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/audit-trail.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "post:audit-trail",
+        "description": "Append-only audit log of every mutation — attribution (agent/task) and tamper-evidence chain"
       }
     ],
     "PostToolUseFailure": [
@@ -436,6 +472,20 @@
         ],
         "id": "team:task-completed-guard",
         "description": "Block task completion when Construct workflow validation fails"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/context-watch.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "prompt:context-watch",
+        "description": "Inject compaction guidance when session token usage crosses 60% / 80% thresholds"
       }
     ]
   },
