@@ -39,6 +39,7 @@ const mergedEnv = loadConstructEnv({ rootDir: root, homeDir: home, env: process.
 for (const [key, value] of Object.entries(mergedEnv)) {
   if (!(key in process.env)) process.env[key] = value;
 }
+if (!process.env.CX_TOOLKIT_DIR) process.env.CX_TOOLKIT_DIR = root;
 const registryPath = path.join(root, "agents", "registry.json");
 const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
 
