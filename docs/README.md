@@ -12,7 +12,6 @@
 | `.cx/workflow.json` | Canonical workflow/task state | Non-trivial work starts, changes phase, or completes |
 | `docs/README.md` | Docs index and maintenance contract | Core docs set or maintenance expectations change |
 | `docs/architecture.md` | Canonical architecture and invariants | Runtime shape, contracts, boundaries, or major dependencies change |
-| `.cx/sessions/` | Distilled session persistence | Automatically maintained by hooks — stores resumable session snapshots |
 
 All LLMs working in the repo, including Construct, must read these as project state and keep them current when work changes project reality.
 <!-- /AUTO:core-docs -->
