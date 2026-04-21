@@ -1,3 +1,10 @@
+/**
+ * tests/artifact-capture.test.mjs — tests for lib/artifact-capture.mjs session artifact extraction.
+ *
+ * Exercises captureSessionArtifacts end-to-end against a temp-dir fixture:
+ * session-summary observation generation, capped decision extraction, and
+ * file-group entity creation from changed-file patterns. Run via `npm test`.
+ */
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
