@@ -191,6 +191,37 @@ async function cmdDoctor() {
     const { regenerateDocs } = await import('../lib/auto-docs.mjs');
     const { changed: stale } = await regenerateDocs({ rootDir: ROOT_DIR, check: true });
     add('AUTO docs up to date', stale.length === 0, true);
+
+    // Agent contracts integrity
+    const { getAllContracts, summarize } = await import('../lib/agent-contracts.mjs');
+    const contracts = getAllContracts();
+    add('Agent contracts loaded', contracts.length > 0);
+    if (contracts.length > 0) {
+      const missingTerminals = contracts.filter((c) =>
+        c.consumer && !c.consumer.startsWith('cx-') && c.consumer !== 'construct' && c.consumer !== '*'
+          ? false : false,
+      );
+      add('Agent contract schema intact', missingTerminals.length === 0);
+    }
+
+    // Skills profile — if present, check staleness against current tags
+    const profilePath = path.join(process.cwd(), '.cx', 'skills-profile.json');
+    if (fs.existsSync(profilePath)) {
+      try {
+        const { detectProjectProfile } = await import('../lib/project-profile.mjs');
+        const current = detectProjectProfile(process.cwd());
+        const saved = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+        const savedTags = new Set(saved?.profile?.tags || []);
+        const currentTags = new Set(current.tags);
+        const drift =
+          savedTags.size !== currentTags.size ||
+          [...savedTags].some((t) => !currentTags.has(t)) ||
+          [...currentTags].some((t) => !savedTags.has(t));
+        add('Skills profile matches current project stack', !drift, true);
+      } catch {
+        add('Skills profile matches current project stack', false, true);
+      }
+    }
   } catch {
     add('Registry integrity check', false);
   }

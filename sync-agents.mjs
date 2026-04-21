@@ -326,7 +326,20 @@ function buildPrompt(entry, allEntries, platform) {
   const wordCount = prompt.split(/\s+/).filter(Boolean).length;
   const effectiveCap = Number(entry.wordCapOverride) > 0 ? entry.wordCapOverride : PROMPT_WORD_CAP;
   if (wordCount > effectiveCap) {
-    console.warn(`[sync] ${entry.name}: prompt is ${wordCount} words (cap ${effectiveCap})`);
+    const msg = `[sync] ${entry.name}: prompt is ${wordCount} words (cap ${effectiveCap})`;
+    if (process.env.CONSTRUCT_SYNC_FORCE === '1' || process.argv.includes('--force')) {
+      console.warn(`${msg} — proceeding due to --force / CONSTRUCT_SYNC_FORCE=1.`);
+    } else {
+      console.error(`${msg}`);
+      console.error(
+        `[sync] Hard cap exceeded. Options:\n` +
+        `   - trim the prompt body or move detail to a skill (preferred)\n` +
+        `   - set "wordCapOverride": <N> on this entry in agents/registry.json with a written reason\n` +
+        `   - re-run with --force or CONSTRUCT_SYNC_FORCE=1 as a temporary escape hatch\n` +
+        `Prompt budget is a hard contract because every over-cap agent degrades every session that dispatches it.`,
+      );
+      process.exit(1);
+    }
   }
 
   return prompt;
