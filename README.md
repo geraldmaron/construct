@@ -154,7 +154,8 @@ The team challenges itself along the way — reviewers push back on incomplete w
 
 | Command | What it does |
 |---|---|
-| `construct audit` | Audit Construct internals for gaps or drift |
+| `construct audit` | Audit Construct internals and review the mutation trail |
+| `construct skills` | Detect project tech stack and scope installed skills to relevance |
 | `construct doctor` | Run installation health checks |
 | `construct validate` | Validate registry.json structure and field constraints |
 | `construct diff` | Show which agents changed prompts or settings since HEAD |

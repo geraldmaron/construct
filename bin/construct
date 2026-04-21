@@ -650,6 +650,15 @@ const handlers = new Map([
     errorln(`Unknown team subcommand: ${sub}. Available: review, templates`);
     process.exit(1);
   }],
+  ['skills', async (args) => {
+    const sub = args[0];
+    if (sub === 'scope' || !sub) {
+      const { runSkillsScopeCli } = await import('../lib/skills-scope.mjs');
+      return runSkillsScopeCli(args.slice(sub === 'scope' ? 1 : 0));
+    }
+    errorln(`Unknown skills subcommand: ${sub}. Available: scope`);
+    process.exit(1);
+  }],
 ]);
 
 if (!command || command === '--help' || command === '-h' || command === 'help') {
