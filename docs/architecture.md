@@ -125,6 +125,57 @@ Full conversation transcripts, raw tool outputs, and file contents are NOT store
 - `session_search` — keyword search across session summaries
 - `session_save` — update active session with distilled context
 
+## Learning loop (observation store + entity tracking)
+
+The learning loop enables specialists to accumulate and retrieve knowledge across sessions. Each specialist can record observations (patterns, decisions, anti-patterns) and query them semantically on future runs.
+
+### Design: role-scoped, vectorized, capped
+
+Observations are distilled insights — not raw transcripts. Each observation is scoped to a role and category, vectorized for semantic search, and capped to keep storage bounded.
+
+| Field | Purpose | Cap |
+|---|---|---|
+| `summary` | One-line description of the insight | 500 chars |
+| `content` | Detailed explanation or evidence | 2000 chars |
+| `role` | Which specialist recorded this | — |
+| `category` | pattern, anti-pattern, dependency, decision, insight, session-summary | — |
+| `tags` | Searchable labels | 10 items |
+| `confidence` | How certain the observation is | 0.0–1.0 |
+| `source` | Session or file that produced it | — |
+
+### Storage layout
+
+- `.cx/observations/index.json` — lightweight listing for fast filtering (id, role, category, summary, createdAt)
+- `.cx/observations/<id>.json` — full observation record
+- `.cx/observations/vectors.json` — local vector index (256-dim `hashing-bow-v1` embeddings) for semantic search
+- `.cx/observations/entities.json` — tracked entities (components, services, dependencies, concepts)
+
+### Entity tracking
+
+Entities represent recurring things specialists encounter — components, services, APIs, dependencies, file groups. Each entity links to observation IDs and related entities, enabling "what do we know about X?" queries.
+
+Caps: 1000 observations, 500 entities, 50 observations per entity, 20 related entities.
+
+### Artifact capture
+
+At session end, `stop-notify.mjs` automatically captures:
+1. A `session-summary` observation from the completed session's summary and decisions
+2. Individual `decision` observations (capped at 5 per session)
+3. `file-group` entities from changed file directory patterns
+
+### MCP tools
+
+- `memory_search` — semantic search over observations with optional role/category/project filters
+- `memory_add_observations` — batch-add up to 10 observations per call, auto-sets project from cwd
+- `memory_create_entities` — batch-create/update up to 10 entities with observation linking
+
+### Lifecycle
+
+1. **Session start** — `session-start.mjs` surfaces the 5 most recent observations for the project
+2. **Mid-session** — specialists call `memory_add_observations` and `memory_create_entities` as they discover patterns
+3. **Session end** — `stop-notify.mjs` runs `captureSessionArtifacts()` to auto-record session insights
+4. **Next session** — `memory_search` retrieves relevant prior observations for context
+
 ## Validation and release expectations
 
 - tests must pass

@@ -7,6 +7,40 @@ reading the project for the first time.
 -->
 # Changelog
 
+## Learning loop — observation store, entity tracking, artifact capture
+
+### Observation store
+
+- Role-scoped observation store (`lib/observation-store.mjs`) with CRUD, vector indexing, and semantic search.
+- Observations are distilled insights (patterns, decisions, anti-patterns) recorded by specialists, capped at 1000 entries.
+- 256-dim `hashing-bow-v1` embeddings for local semantic search with no API dependency.
+
+### Entity tracking
+
+- Entity store (`lib/entity-store.mjs`) for tracking components, services, dependencies, and concepts across sessions.
+- Bidirectional entity relationships and observation linking, capped at 500 entities.
+
+### Artifact capture
+
+- Automatic artifact capture (`lib/artifact-capture.mjs`) at session end via `stop-notify.mjs`.
+- Extracts session-summary observations, decision observations (capped at 5), and file-group entities from changed file patterns.
+
+### MCP tools
+
+- Three new tools that all 28 specialists already reference: `memory_search`, `memory_add_observations`, `memory_create_entities`.
+- `memory_search` provides semantic search with role/category/project filters.
+- `memory_add_observations` supports batch-add up to 10 observations per call.
+- `memory_create_entities` supports batch-create/update up to 10 entities.
+
+### Hook integration
+
+- `session-start.mjs` now surfaces the 5 most recent project observations in resume context.
+- `stop-notify.mjs` now runs `captureSessionArtifacts()` after session close.
+
+### Verification
+
+- 278/278 tests pass (51 new: 22 observation-store, 21 entity-store, 8 artifact-capture).
+
 ## Session persistence, prompt composition, and compliance skills
 
 ### Session persistence
