@@ -343,4 +343,4 @@ rm -rf ~/.construct ~/.cx/performance-reviews
 
 ## License
 
-MIT
+[Elastic License 2.0](LICENSE) — free to use, self-host, and modify. You may not offer Construct as a hosted or managed service to third parties.
