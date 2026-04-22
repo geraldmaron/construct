@@ -104,6 +104,7 @@
     {
       "id": "github",
       "name": "GitHub",
+      "aliases": ["github-mcp", "github-mcp-server"],
       "category": "optional",
       "description": "GitHub API: issues, PRs, code search, repository operations.",
       "type": "url",
@@ -137,6 +138,7 @@
     {
       "id": "atlassian",
       "name": "Atlassian (Jira + Confluence)",
+      "aliases": ["atlassian-mcp-server", "atlassian-mcp"],
       "category": "integration",
       "description": "Jira issue tracking and Confluence wiki access via Atlassian's official remote MCP server. OAuth is handled by each MCP client.",
       "type": "url",
@@ -163,6 +165,7 @@
     {
       "id": "linear",
       "name": "Linear",
+      "aliases": ["linear-mcp", "linear-mcp-server"],
       "category": "integration",
       "description": "Linear issue tracking — create issues, update status, search projects.",
       "package": "@linear/mcp-server",
@@ -197,6 +200,7 @@
     {
       "id": "slack",
       "name": "Slack",
+      "aliases": ["slack-mcp", "slack-mcp-server"],
       "category": "integration",
       "description": "Slack messaging — send messages, read channels, search conversations.",
       "package": "@modelcontextprotocol/server-slack",
@@ -233,6 +237,7 @@
     {
       "id": "notion",
       "name": "Notion",
+      "aliases": ["notion-mcp", "claude_ai_Notion"],
       "category": "integration",
       "description": "Notion workspace access — read/write pages, databases, and comments.",
       "package": "@anthropic-ai/notion-mcp",

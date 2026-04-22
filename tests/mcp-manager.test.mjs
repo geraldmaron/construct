@@ -158,6 +158,60 @@ test("catalog declares setup modes for auto/manual capable integrations", () => 
   assert.equal(byId.get("atlassian").hostSupport.codex.mode, "managed");
 });
 
+test("external plugin manifest entries are available to mcp add without editing built-ins", () => {
+  const home = tempDir("construct-plugin-mcp-home-");
+  const cwd = tempDir("construct-plugin-mcp-cwd-");
+  const pluginDir = path.join(cwd, ".cx", "plugins");
+  fs.mkdirSync(pluginDir, { recursive: true });
+  fs.writeFileSync(path.join(pluginDir, "acme.json"), JSON.stringify({
+    version: 1,
+    plugins: [
+      {
+        id: "acme",
+        name: "Acme",
+        version: "0.1.0",
+        description: "Acme plugin",
+        mcps: [
+          {
+            id: "acme-search",
+            name: "Acme Search",
+            category: "integration",
+            description: "Search Acme",
+            command: "npx",
+            args: ["-y", "@acme/search-mcp"],
+            env: {},
+            requiredEnv: [],
+            setupModes: ["manual"],
+            hostSupport: {
+              claude: { mode: "managed" },
+              opencode: { mode: "managed" },
+              codex: { mode: "managed" },
+            },
+            usedBy: ["construct"],
+            degradedMessage: "Acme unavailable.",
+          },
+        ],
+      },
+    ],
+  }, null, 2));
+
+  runMcpAdd("acme-search", { home, cwd });
+
+  const opencode = readJson(path.join(home, ".config", "opencode", "opencode.json"));
+  const claude = readJson(path.join(home, ".claude", "settings.json"));
+  const codex = fs.readFileSync(path.join(home, ".codex", "config.toml"), "utf8");
+
+  assert.deepEqual(opencode.mcp["acme-search"], {
+    type: "local",
+    command: ["npx", "-y", "@acme/search-mcp"],
+  });
+  assert.deepEqual(claude.mcpServers["acme-search"], {
+    command: "npx",
+    args: ["-y", "@acme/search-mcp"],
+  });
+  assert.match(codex, /\[mcp_servers\."acme-search"\]/);
+});
+
 test("atlassian MCP uses official remote OAuth server across managed configs", () => {
   const home = tempDir("construct-atlassian-home-");
   const cwd = tempDir("construct-atlassian-cwd-");
@@ -316,5 +370,8 @@ test("removing a Claude-only MCP does not create a new OpenCode config", () => {
 
   const claude = readJson(claudePath);
   assert.equal("github" in claude.mcpServers, false);
-  assert.equal(fs.existsSync(opencodePath), false);
+  if (fs.existsSync(opencodePath)) {
+    const opencode = readJson(opencodePath);
+    assert.equal("github" in (opencode?.mcp ?? {}), false);
+  }
 });

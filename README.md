@@ -139,6 +139,7 @@ The team challenges itself along the way — reviewers push back on incomplete w
 |---|---|
 | `construct models` | Show or update model tier assignments |
 | `construct mcp` | Manage MCP integrations |
+| `construct plugin` | Manage external Construct plugin manifests |
 | `construct hosts` | Show host support for Construct orchestration |
 
 ### Observability
