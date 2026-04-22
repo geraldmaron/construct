@@ -1,0 +1,47 @@
+site_name: Construct
+site_description: AI orchestration CLI — plan, build, review, and ship with one surface.
+site_url: https://geraldmaron.github.io/construct/
+repo_url: https://github.com/geraldmaron/construct
+repo_name: geraldmaron/construct
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Commands: commands.md
+  - Architecture: architecture.md
+  - Hooks: hooks.md
+  - Agents: agents.md
+  - Templates: templates/README.md
+  - Contributing: contributing.md
+  - CLAUDE: claude.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - tables
+  - toc:
+      permalink: true

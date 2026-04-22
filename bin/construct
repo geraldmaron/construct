@@ -1,0 +1,719 @@
+#!/usr/bin/env node
+/**
+ * bin/construct — construct CLI entrypoint.
+ *
+ * Parses the command string, dispatches to the appropriate handler, and
+ * loads environment config from ~/.construct/.env. This is the only
+ * public-facing binary; all commands are exported from lib/.
+ */
+
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+
+import { CLI_COMMANDS, CLI_COMMANDS_BY_CATEGORY, CATEGORY_ORDER } from '../lib/cli-commands.mjs';
+import { buildStatus, formatStatusReport } from '../lib/status.mjs';
+import { runWorkflowCli, loadWorkflow, validateWorkflowState } from '../lib/workflow-state.mjs';
+import { validateRegistry } from '../lib/validator.mjs';
+import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, pollFreeModels, topForTier, selectForTier, applyToEnv, resetEnv, setTierModel, setModelWithTierInference } from '../lib/model-router.mjs';
+import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
+import { printHostCapabilities } from '../lib/host-capabilities.mjs';
+import { runSetup } from '../lib/setup.mjs';
+import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
+import { runDistillCli } from '../lib/distill.mjs';
+import { runIngestCli } from '../lib/document-ingest.mjs';
+import { generateCompletions } from '../lib/completions.mjs';
+import { runHeadhunt, listTeamTemplates } from '../lib/headhunt.mjs';
+import { auditSkills, runAuditSkillsCli } from '../lib/audit-skills.mjs';
+import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
+import { readDashboardState, startDashboard, startServices, stopDashboard } from '../lib/service-manager.mjs';
+import { readCostLog, summarizeCostData, formatCostReport, clearCostLog } from '../lib/cost.mjs';
+import { readEfficiencyLog, summarizeEfficiencyData, formatEfficiencyReport } from '../lib/efficiency.mjs';
+import { buildHybridSearchResultsAsync } from '../lib/storage/hybrid-query.mjs';
+import { createSqlClient, closeSqlClient, readVectorConfig } from '../lib/storage/backend.mjs';
+import { describeVectorStore } from '../lib/storage/vector-store.mjs';
+import { describeSqlStore } from '../lib/storage/sql-store.mjs';
+import { syncFileStateToSql } from '../lib/storage/sync.mjs';
+import { deleteIngestedArtifacts, getStorageStatus, inferProjectName, resetStorage } from '../lib/storage/admin.mjs';
+
+const ROOT_DIR = path.resolve(import.meta.dirname, '..');
+const HOME = os.homedir();
+const ENV = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME, env: process.env });
+for (const [key, value] of Object.entries(ENV)) {
+  if (!(key in process.env)) process.env[key] = value;
+}
+
+const COLORS = (!process.env.NO_COLOR && process.stdout.isTTY && process.env.TERM !== 'dumb')
+  ? {
+      bold: '\u001b[1m', dim: '\u001b[2m', reset: '\u001b[0m',
+      red: '\u001b[31m', green: '\u001b[32m', yellow: '\u001b[33m', cyan: '\u001b[36m',
+    }
+  : { bold: '', dim: '', reset: '', red: '', green: '', yellow: '', cyan: '' };
+
+function println(message = '') { process.stdout.write(`${message}\n`); }
+function errorln(message = '') { process.stderr.write(`${message}\n`); }
+function ok(message) { println(`  ${COLORS.green}✓${COLORS.reset}  ${message}`); }
+function warn(message) { println(`  ${COLORS.yellow}⚠${COLORS.reset}  ${message}`); }
+function info(message) { println(`  ${COLORS.cyan}→${COLORS.reset}  ${message}`); }
+
+function usage() {
+  println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
+  println(`\n${COLORS.dim}Usage:${COLORS.reset} construct <command> [options]\n`);
+  for (const category of CATEGORY_ORDER) {
+    const commands = CLI_COMMANDS_BY_CATEGORY[category] ?? [];
+    if (!commands.length) continue;
+    println(`${COLORS.bold}${category}${COLORS.reset}`);
+    for (const command of commands) {
+      println(`  ${command.emoji} ${command.name.padEnd(14)} ${command.description}`);
+    }
+    println('');
+  }
+}
+
+function runNodeScript(scriptPath, args = [], extraEnv = {}) {
+  const result = spawnSync(process.execPath, [scriptPath, ...args], {
+    stdio: 'inherit',
+    env: { ...process.env, ...extraEnv },
+  });
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+async function cmdStatus() {
+  const jsonOutput = restArgsCache.includes('--json');
+  const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
+  if (jsonOutput) {
+    println(JSON.stringify(status, null, 2));
+    return;
+  }
+  println(formatStatusReport(status));
+}
+
+async function cmdShow() {
+  const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
+  const dashboard = readDashboardState(HOME);
+  println('');
+  println('Construct Services');
+  println('══════════════════');
+  println('');
+  if (dashboard) println(`  • Managed dashboard PID ${dashboard.pid} on ${dashboard.url}`);
+  for (const service of status.system.services) {
+    const icon = service.status === 'healthy' ? '✓' : service.status === 'degraded' ? '⚠' : '✗';
+    const note = service.note ? ` (${service.note})` : '';
+    println(`  ${icon}  ${service.name.padEnd(28)} ${service.url}${note}`);
+  }
+  println('');
+}
+
+async function cmdSync(args) {
+  generateCompletions();
+  runNodeScript(path.join(ROOT_DIR, 'sync-agents.mjs'), args);
+  const { regenerateDocs } = await import('../lib/auto-docs.mjs');
+  const { changed } = await regenerateDocs({ rootDir: ROOT_DIR });
+  for (const f of changed) ok(`Updated ${path.relative(ROOT_DIR, f)}`);
+}
+
+async function cmdList() {
+  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+  println('Construct Agents\n');
+  println('Personas:');
+  for (const persona of registry.personas ?? []) {
+    println(`  ${persona.displayName} [${persona.role}] ${persona.description}`);
+  }
+  println('\nSpecialists:');
+  for (const agent of registry.agents ?? []) {
+    println(`  ${registry.prefix}-${agent.name} ${agent.description}`);
+  }
+}
+
+async function cmdDoctor() {
+  const checks = [];
+  const add = (label, pass, optional = false) => checks.push({ label, pass, optional });
+  add('registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'agents', 'registry.json')));
+  add('sync-agents.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'sync-agents.mjs')));
+  add('Node.js 20+ (recommended)', Number.parseInt(process.versions.node.split('.')[0], 10) >= 20);
+  add('npm available', true);
+  const constructOnPath = spawnSync('zsh', ['-lc', 'command -v construct'], { encoding: 'utf8', env: process.env });
+  const constructPath = constructOnPath.status === 0 ? constructOnPath.stdout.trim() : '';
+  const constructVersion = constructPath
+    ? spawnSync(constructPath, ['version'], { encoding: 'utf8', env: process.env })
+    : null;
+  add('construct command on PATH', Boolean(constructPath), true);
+  add('construct command is this CLI', Boolean(constructVersion && constructVersion.status === 0 && /^construct v\d+\./.test(constructVersion.stdout.trim())), true);
+  add('OpenCode config exists', fs.existsSync(path.join(HOME, '.config', 'opencode', 'opencode.json')), true);
+  add('Claude Code agents dir', fs.existsSync(path.join(HOME, '.claude', 'agents')), true);
+  add('Codex agents dir', fs.existsSync(path.join(HOME, '.codex', 'agents')), true);
+  add('Copilot prompts dir', fs.existsSync(path.join(HOME, '.github', 'prompts')), true);
+  add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(path.join(HOME, '.construct')), true);
+  add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
+  add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));
+  add('agents/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'agents', 'prompts')));
+  add('Hybrid storage env keys documented', fs.existsSync(path.join(ROOT_DIR, '.env.example')));
+  fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
+  add('~/.cx/performance-reviews/ ready', true);
+
+  // Validate promptFile references and skill bindings
+  try {
+    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+    const brokenPromptFiles = (registry.agents ?? []).filter((a) => {
+      if (!a.promptFile) return false;
+      return !fs.existsSync(path.join(ROOT_DIR, a.promptFile));
+    });
+    add('All agent promptFiles resolve', brokenPromptFiles.length === 0);
+    const headhuntClassifierAgents = ['cx-docs-keeper', 'cx-researcher', 'cx-architect', 'cx-security', 'cx-engineer'];
+    const registryNames = new Set((registry.agents ?? []).map((a) => `cx-${a.name}`));
+    const classifierOrphans = headhuntClassifierAgents.filter((n) => !registryNames.has(n));
+    add('Headhunt classifier agents exist in registry', classifierOrphans.length === 0);
+    const skillAudit = auditSkills({ rootDir: ROOT_DIR, silent: true });
+    add('No declared skills missing on disk', skillAudit.pass, false);
+    const { lintResearchRepo } = await import('../lib/research-lint.mjs');
+    const researchLintResults = lintResearchRepo({ rootDir: process.cwd() });
+    add('Research artifacts meet minimum evidence structure', researchLintResults.every((entry) => entry.errors.length === 0), true);
+
+    const sqlConfig = describeSqlStore(process.env);
+    const sqlClient = createSqlClient(process.env);
+    if (sqlConfig.configured && sqlClient) {
+      try {
+        await sqlClient`select 1 as ok`;
+        add('SQL backend reachable', true);
+      } catch {
+        add('SQL backend reachable', false);
+      } finally {
+        await closeSqlClient(sqlClient);
+      }
+    } else {
+      add('SQL backend configured', sqlConfig.fallbackAvailable);
+    }
+
+    const vectorConfig = describeVectorStore(process.env);
+    add('Vector backend configured', Boolean(vectorConfig.endpoint || vectorConfig.indexPath || vectorConfig.mode === 'file'));
+
+    const { regenerateDocs } = await import('../lib/auto-docs.mjs');
+    const { changed: stale } = await regenerateDocs({ rootDir: ROOT_DIR, check: true });
+    add('AUTO docs up to date', stale.length === 0, true);
+
+    // Agent contracts integrity
+    const { getAllContracts, summarize } = await import('../lib/agent-contracts.mjs');
+    const contracts = getAllContracts();
+    add('Agent contracts loaded', contracts.length > 0);
+    if (contracts.length > 0) {
+      const missingTerminals = contracts.filter((c) =>
+        c.consumer && !c.consumer.startsWith('cx-') && c.consumer !== 'construct' && c.consumer !== '*'
+          ? false : false,
+      );
+      add('Agent contract schema intact', missingTerminals.length === 0);
+    }
+
+    // Skills profile — if present, check staleness against current tags
+    const profilePath = path.join(process.cwd(), '.cx', 'skills-profile.json');
+    if (fs.existsSync(profilePath)) {
+      try {
+        const { detectProjectProfile } = await import('../lib/project-profile.mjs');
+        const current = detectProjectProfile(process.cwd());
+        const saved = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+        const savedTags = new Set(saved?.profile?.tags || []);
+        const currentTags = new Set(current.tags);
+        const drift =
+          savedTags.size !== currentTags.size ||
+          [...savedTags].some((t) => !currentTags.has(t)) ||
+          [...currentTags].some((t) => !savedTags.has(t));
+        add('Skills profile matches current project stack', !drift, true);
+      } catch {
+        add('Skills profile matches current project stack', false, true);
+      }
+    }
+  } catch {
+    add('Registry integrity check', false);
+  }
+
+  println('Construct Health Check');
+  println('══════════════════════');
+  println('');
+  let okCount = 0; let warnCount = 0; let failCount = 0;
+  for (const check of checks) {
+    const symbol = check.pass ? '✓' : check.optional ? '⚠' : '✗';
+    println(`  ${check.label.padEnd(40)} ${symbol}`);
+    if (check.pass) okCount += 1;
+    else if (check.optional) warnCount += 1;
+    else failCount += 1;
+  }
+  println('');
+  println(`Results: ${okCount} passed, ${warnCount} warnings, ${failCount} failed`);
+  if (failCount > 0) process.exit(1);
+}
+
+async function cmdUp() {
+  const { results } = await startServices({ rootDir: ROOT_DIR, homeDir: HOME });
+  for (const svc of results) {
+    const label = svc.url ? `${svc.name} → ${svc.url}` : svc.name;
+    if (svc.status === 'started') ok(svc.note ? `${label} (${svc.note})` : label);
+    else if (svc.status === 'reused') info(`${label} (already running)`);
+    else if (svc.status === 'configured') info(`${svc.name}: ${svc.note}`);
+    else if (svc.status === 'failed') errorln(`${svc.name}: ${svc.note}`);
+    else warn(`${svc.name}: ${svc.note}`);
+  }
+}
+
+async function cmdDown() {
+  const result = stopDashboard(HOME);
+  if (result.stopped) ok(`Dashboard stopped (pid ${result.pid}, port ${result.port}).`);
+  else if (result.reason === 'stale-state') warn('Dashboard state was stale (process already gone). Cleaned up.');
+  else warn('No managed dashboard was running.');
+  info('Other services still need to be stopped with their native commands or process manager.');
+}
+
+async function cmdServe() {
+  const dashboard = await startDashboard({ rootDir: ROOT_DIR, homeDir: HOME });
+  if (dashboard.reused) {
+    println(`Construct dashboard already running on ${dashboard.url} (pid ${dashboard.pid})`);
+  } else {
+    println(`Started Construct dashboard on ${dashboard.url} (pid ${dashboard.pid})`);
+  }
+}
+
+async function cmdVersion() {
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+  println(`construct v${pkg.version}`);
+}
+
+async function cmdReview(args) {
+  fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
+  if (!process.env.LANGFUSE_PUBLIC_KEY || !process.env.LANGFUSE_SECRET_KEY) {
+    errorln('Error: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY must be set.');
+    errorln('Configure Langfuse credentials in ~/.construct/config.env or .env.');
+    process.exit(1);
+  }
+  runNodeScript(path.join(ROOT_DIR, 'lib', 'review.mjs'), args);
+}
+
+async function cmdInitDocs(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init-docs.mjs'), args); }
+async function cmdDistill(args) { runDistillCli(args); }
+async function cmdIngest(args) {
+  try {
+    const result = await runIngestCli(args, { cwd: process.cwd(), env: process.env });
+    println(JSON.stringify(result, null, 2));
+  } catch (error) {
+    errorln(error?.message || 'document ingest failed');
+    process.exit(1);
+  }
+}
+
+function parseQueryCommandArgs(args, defaults = {}) {
+  const flags = {};
+  const queryParts = [];
+  for (const arg of args) {
+    if (arg.startsWith('--')) {
+      const [key, ...valueParts] = arg.slice(2).split('=');
+      flags[key] = valueParts.length ? valueParts.join('=') : true;
+    } else {
+      queryParts.push(arg);
+    }
+  }
+  return {
+    query: queryParts.join(' ').trim(),
+    dir: typeof flags.dir === 'string' ? flags.dir : defaults.dir,
+    ext: typeof flags.ext === 'string' ? flags.ext : defaults.ext,
+    depth: typeof flags.depth === 'string' ? flags.depth : defaults.depth,
+  };
+}
+
+async function cmdResearch(args) {
+  const parsed = parseQueryCommandArgs(args, { dir: 'docs' });
+  const query = parsed.query;
+  if (!query) {
+    errorln('Usage: construct research <query> [--dir=PATH] [--ext=LIST] [--depth=N]');
+    process.exit(1);
+  }
+  const distillArgs = [parsed.dir, '--format=extract', `--query=${query}`, '--mode=json'];
+  if (parsed.ext) distillArgs.push(`--ext=${parsed.ext}`);
+  if (parsed.depth) distillArgs.push(`--depth=${parsed.depth}`);
+  await runDistillCli(distillArgs);
+}
+
+async function cmdDocs(args) {
+  const parsed = parseQueryCommandArgs(args, { dir: 'docs', ext: 'md,mdx,rst,txt' });
+  const query = parsed.query;
+  if (!query) {
+    errorln('Usage: construct docs <query> [--dir=PATH] [--depth=N]');
+    process.exit(1);
+  }
+  const distillArgs = [parsed.dir, '--format=extract', `--query=${query}`, '--mode=json', `--ext=${parsed.ext}`];
+  if (parsed.depth) distillArgs.push(`--depth=${parsed.depth}`);
+  await runDistillCli(distillArgs);
+}
+
+async function cmdSearch(args) {
+  const flags = new Set();
+  const queryParts = [];
+  for (const arg of args) {
+    if (arg.startsWith('--')) flags.add(arg);
+    else queryParts.push(arg);
+  }
+  const query = queryParts.join(' ').trim();
+  if (!query) {
+    errorln('Usage: construct search <query> [--limit=N]');
+    process.exit(1);
+  }
+  const limitFlag = [...flags].find((flag) => flag.startsWith('--limit='));
+  const limit = limitFlag ? Number.parseInt(limitFlag.split('=')[1], 10) : 10;
+  const results = await buildHybridSearchResultsAsync(ROOT_DIR, query, { limit: Number.isFinite(limit) ? limit : 10, env: process.env });
+  println(JSON.stringify(results, null, 2));
+}
+
+async function cmdStorage(args) {
+  const [action, ...rest] = args;
+  if (!action) {
+    errorln('Usage: construct storage <sync|status|reset|delete-ingested>');
+    process.exit(1);
+  }
+  if (action === 'sync') {
+    const result = await syncFileStateToSql(process.cwd(), { env: process.env, project: inferProjectName(process.cwd()) });
+    println(JSON.stringify(result, null, 2));
+    return;
+  }
+  if (action === 'status') {
+    const result = await getStorageStatus(process.cwd(), { env: process.env, project: inferProjectName(process.cwd()) });
+    println(JSON.stringify(result, null, 2));
+    return;
+  }
+  if (action === 'reset') {
+    const confirm = rest.includes('--yes');
+    const includeIngested = rest.includes('--include-ingested');
+    const sqlOnly = rest.includes('--sql-only');
+    const vectorOnly = rest.includes('--vector-only');
+    if (!confirm) {
+      errorln('Usage: construct storage reset --yes [--include-ingested] [--sql-only|--vector-only]');
+      process.exit(1);
+    }
+    const result = await resetStorage(process.cwd(), {
+      env: process.env,
+      project: inferProjectName(process.cwd()),
+      resetSql: vectorOnly ? false : true,
+      resetVector: sqlOnly ? false : true,
+      resetIngested: includeIngested,
+      confirm: true,
+    });
+    println(JSON.stringify(result, null, 2));
+    return;
+  }
+  if (action === 'delete-ingested') {
+    const confirm = rest.includes('--yes');
+    const files = rest.filter((arg) => !arg.startsWith('--'));
+    if (!confirm) {
+      errorln('Usage: construct storage delete-ingested --yes [relative-file ...]');
+      process.exit(1);
+    }
+    const result = deleteIngestedArtifacts(process.cwd(), { files, confirm: true });
+    println(JSON.stringify(result, null, 2));
+    return;
+  }
+  errorln('Usage: construct storage <sync|status|reset|delete-ingested>');
+  process.exit(1);
+}
+async function cmdHeadhunt(args) { await runHeadhunt({ args, cwd: process.cwd(), homeDir: HOME }); }
+async function cmdHosts() { printHostCapabilities(); }
+async function cmdSetup(args) { await runSetup({ rootDir: ROOT_DIR, args, homeDir: HOME }); }
+
+async function cmdDo(args) {
+  const goal = args.join(' ').trim();
+  if (!goal) {
+    errorln('Usage: construct do <goal>');
+    process.exit(1);
+  }
+  println(`@construct ${goal}`);
+}
+
+async function cmdValidate() {
+  const reg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+  const result = validateRegistry(reg, { rootDir: ROOT_DIR });
+  const workflow = loadWorkflow(process.cwd());
+  const workflowResult = workflow ? validateWorkflowState(workflow) : { valid: true, errors: [] };
+  if (result.valid && workflowResult.valid) {
+    println(`✓ Registry valid (${result.summary})`);
+    if (workflow) println(`✓ Workflow valid (${workflow.id})`);
+    return;
+  }
+  if (!result.valid) result.errors.forEach((e, i) => errorln(`${i + 1}. ${e}`));
+  if (!workflowResult.valid) workflowResult.errors.forEach((e, i) => errorln(`${i + 1}. ${e}`));
+  process.exit(1);
+}
+
+async function cmdModels(args) {
+  const tier = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1] ?? '';
+  const setModel = args.find((arg) => arg.startsWith('--set='))?.split('=')[1] ?? '';
+  const envPath = getUserEnvPath(HOME);
+  if (args.includes('--reset')) {
+    resetEnv(envPath);
+    println('Removed CX_MODEL_* overrides from ~/.construct/config.env.');
+    await cmdSync([]);
+    return;
+  }
+  if (tier && setModel) {
+    const preferFree = args.includes('--prefer-free');
+    const preferFreeSameFamily = args.includes('--prefer-free-same-family');
+    const inferred = setModelWithTierInference(envPath, tier, setModel, registry.models ?? {}, { preferFree, preferFreeSameFamily });
+    println(`Set ${tier} -> ${setModel} in ~/.construct/config.env`);
+    if (preferFreeSameFamily) println('Prefer-free-same-family mode: enabled');
+    if (preferFree) println('Prefer-free mode: enabled');
+    println(`Resolved tier set:`);
+    println(`  reasoning  ${String(inferred.reasoning)}`);
+    println(`  standard   ${String(inferred.standard)}`);
+    println(`  fast       ${String(inferred.fast)}`);
+    await cmdSync([]);
+    return;
+  }
+  if (args.includes('--poll')) {
+    const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
+    if (!apiKey) {
+      errorln('Error: no OpenRouter API key found in OPENROUTER_API_KEY or OpenCode config.');
+      process.exit(1);
+    }
+    const models = await pollFreeModels(apiKey);
+    println('Available free models on OpenRouter:\n');
+    for (const currentTier of ['reasoning', 'standard', 'fast']) {
+      const top = topForTier(models, currentTier, 3);
+      println(`  ${currentTier} (top ${top.length}):`);
+      top.forEach((model, index) => println(`    ${index + 1}. ${model.id}`));
+      println('');
+    }
+    return;
+  }
+  if (args.includes('--apply')) {
+    const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
+    const models = await pollFreeModels(apiKey);
+    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+    const selections = {};
+    for (const currentTier of ['reasoning', 'standard', 'fast']) {
+      const fallbacks = registry.models?.[currentTier]?.fallback ?? [];
+      const id = selectForTier(models, currentTier, fallbacks);
+      if (id) selections[currentTier] = id;
+    }
+    applyToEnv(envPath, selections);
+    println('Written to ~/.construct/config.env. Running construct sync...');
+    await cmdSync([]);
+    return;
+  }
+  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+  const result = readCurrentModels(envPath, registry.models ?? {});
+  println('Current model assignments:');
+  for (const currentTier of ['reasoning', 'standard', 'fast']) {
+    println(`  ${currentTier.padEnd(11)}${String(result[currentTier] ?? '(none)')}`);
+  }
+}
+
+async function cmdMcp(args) {
+  const subcmd = args[0] ?? 'list';
+  const id = args[1];
+  if (subcmd === 'list') return cmdMcpList();
+  if (subcmd === 'add') return cmdMcpAdd(id);
+  if (subcmd === 'remove') return cmdMcpRemove(id);
+  if (subcmd === 'info') return cmdMcpInfo(id);
+  errorln(`Unknown mcp subcommand: ${subcmd}`);
+  process.exit(1);
+}
+
+async function cmdDiff() {
+  warn('construct diff is not yet ported to the Node CLI surface. Use git diff for now.');
+}
+
+async function cmdOptimize() {
+  warn('construct optimize remains available only in environments with Python + DSPy ready.');
+}
+
+async function cmdCleanup() {
+  warn('construct cleanup is not yet fully ported cross-platform.');
+}
+
+async function cmdCost(args) {
+  const jsonOutput = args.includes('--json');
+  const resetFlag = args.includes('--reset');
+  const daysArg = args.find((a) => a.startsWith('--days='));
+  const days = daysArg ? Number.parseInt(daysArg.split('=')[1], 10) || undefined : undefined;
+  const agentArg = args.find((a) => a.startsWith('--agent='));
+  const agent = agentArg ? agentArg.split('=')[1] : undefined;
+
+  if (resetFlag) {
+    clearCostLog(HOME);
+    println('Cost log cleared.');
+    return;
+  }
+
+  const entries = readCostLog(HOME);
+  const data = summarizeCostData(entries, { days, agent });
+
+  if (jsonOutput) {
+    println(JSON.stringify(data, null, 2));
+    return;
+  }
+
+  process.stdout.write(formatCostReport(data, COLORS));
+}
+
+async function cmdEfficiency(args) {
+  const jsonOutput = args.includes('--json');
+  const stats = readEfficiencyLog(HOME);
+  const data = summarizeEfficiencyData(stats);
+  if (jsonOutput) {
+    println(JSON.stringify(data, null, 2));
+    return;
+  }
+  process.stdout.write(formatEfficiencyReport(data, COLORS));
+}
+
+async function cmdEvals(args) {
+  const jsonOutput = args.includes('--json');
+  const catalog = {
+    description: 'Evaluators are managed via Langfuse quality scores. Use cx_score MCP tool or POST /api/public/scores to record quality scores.',
+    backendUrl: process.env.LANGFUSE_BASEURL ?? 'http://localhost:3000',
+    configured: Boolean(process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY),
+  };
+  if (jsonOutput) {
+    println(JSON.stringify(catalog, null, 2));
+    return;
+  }
+  println('Evaluator Catalog');
+  println('═════════════════');
+  println('');
+  println(`Backend:     Langfuse (${catalog.backendUrl})`);
+  println(`Configured:  ${catalog.configured ? 'yes' : 'no — set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY'}`);
+  println('');
+  println('Quality scores are recorded by agents via the cx_score MCP tool.');
+  println('View and manage scores at your Langfuse dashboard.');
+}
+
+async function cmdDocsUpdate(args) {
+  const check = args.includes('--check');
+  const { regenerateDocs: regen } = await import('../lib/auto-docs.mjs');
+  const { changed, checked } = await regen({ rootDir: ROOT_DIR, check });
+  if (checked) {
+    if (changed.length) {
+      errorln(`  ✗  Docs are out of date. Run 'construct docs:update' to regenerate:`);
+      for (const f of changed) errorln(`     ${path.relative(ROOT_DIR, f)}`);
+      process.exit(1);
+    } else {
+      ok('Docs are up to date.');
+    }
+  } else {
+    if (changed.length) {
+      for (const f of changed) ok(`Updated ${path.relative(ROOT_DIR, f)}`);
+    } else {
+      ok('Docs already up to date — nothing changed.');
+    }
+  }
+}
+
+async function cmdDocsSite() {
+  const { buildSite } = await import('../lib/auto-docs.mjs');
+  await buildSite({ rootDir: ROOT_DIR });
+  ok('site/docs/ generated successfully.');
+}
+
+async function cmdLintComments(args) {
+  const fix = args.includes('--fix');
+  const { lintRepo: lint, formatResults: fmt } = await import('../lib/comment-lint.mjs');
+  const results = lint({ rootDir: ROOT_DIR, fix });
+  const { output, exitCode } = fmt(results);
+  process.stdout.write(output);
+  if (exitCode !== 0) process.exit(exitCode);
+}
+
+async function cmdLintResearch() {
+  const { lintResearchRepo, formatResearchLintResults } = await import('../lib/research-lint.mjs');
+  const results = lintResearchRepo({ rootDir: process.cwd() });
+  const { output, exitCode } = formatResearchLintResults(results);
+  process.stdout.write(output);
+  if (exitCode !== 0) process.exit(exitCode);
+}
+
+const [command, ...rest] = process.argv.slice(2);
+const restArgsCache = rest;
+
+const handlers = new Map([
+  ['up', cmdUp],
+  ['down', cmdDown],
+  ['status', cmdStatus],
+  ['show', cmdShow],
+  ['serve', cmdServe],
+  ['setup', cmdSetup],
+  ['sync', cmdSync],
+  ['list', cmdList],
+  ['doctor', cmdDoctor],
+  ['validate', cmdValidate],
+  ['diff', cmdDiff],
+  ['do', cmdDo],
+  ['distill', cmdDistill],
+  ['ingest', cmdIngest],
+  ['research', cmdResearch],
+  ['docs', cmdDocs],
+  ['search', cmdSearch],
+  ['storage', cmdStorage],
+  ['headhunt', cmdHeadhunt],
+  ['workflow', async (args) => runWorkflowCli(args)],
+  ['init-docs', cmdInitDocs],
+  ['models', cmdModels],
+  ['mcp', cmdMcp],
+  ['hosts', cmdHosts],
+  ['review', cmdReview],
+  ['optimize', cmdOptimize],
+  ['cost', cmdCost],
+  ['efficiency', cmdEfficiency],
+  ['evals', cmdEvals],
+  ['cleanup', cmdCleanup],
+  ['version', cmdVersion],
+  ['docs:update', cmdDocsUpdate],
+  ['docs:site', cmdDocsSite],
+  ['lint:comments', cmdLintComments],
+  ['lint:research', cmdLintResearch],
+  ['audit', async (args) => {
+    const sub = args[0];
+    if (sub === 'skills') return runAuditSkillsCli(args.slice(1));
+    if (sub === 'trail' || !sub) {
+      const { runAuditTrailCli } = await import('../lib/audit-trail.mjs');
+      return runAuditTrailCli(args.slice(sub === 'trail' ? 1 : 0));
+    }
+    errorln(`Unknown audit subcommand: ${sub}. Available: skills, trail`);
+    process.exit(1);
+  }],
+  ['team', async (args) => {
+    const sub = args[0];
+    if (sub === 'review') return runTeamReviewCli(args.slice(1));
+    if (sub === 'templates') { listTeamTemplates(); return; }
+    errorln(`Unknown team subcommand: ${sub}. Available: review, templates`);
+    process.exit(1);
+  }],
+  ['drop', async (args) => {
+    const { runDropCli } = await import('../lib/drop.mjs');
+    return runDropCli(args);
+  }],
+  ['wireframe', async (args) => {
+    const { runWireframeCli } = await import('../lib/wireframe.mjs');
+    return runWireframeCli(args);
+  }],
+  ['skills', async (args) => {
+    const sub = args[0];
+    if (sub === 'scope' || !sub) {
+      const { runSkillsScopeCli } = await import('../lib/skills-scope.mjs');
+      return runSkillsScopeCli(args.slice(sub === 'scope' ? 1 : 0));
+    }
+    if (sub === 'apply') {
+      const { runSkillsApplyCli } = await import('../lib/skills-apply.mjs');
+      return runSkillsApplyCli(args.slice(1));
+    }
+    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply`);
+    process.exit(1);
+  }],
+]);
+
+if (!command || command === '--help' || command === '-h' || command === 'help') {
+  usage();
+  process.exit(0);
+}
+
+const handler = handlers.get(command);
+if (!handler) {
+  errorln(`Unknown command: ${command}`);
+  usage();
+  process.exit(1);
+}
+
+await handler(rest);

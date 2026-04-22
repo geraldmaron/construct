@@ -1,0 +1,522 @@
+{
+  "permissions": {
+    "allow": []
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/session-start.mjs\"",
+            "timeout": 10
+          }
+        ],
+        "id": "session:start",
+        "description": "Load prior project context and git status at session start"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/env-check.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "session:env-check",
+        "description": "Warn about missing required env vars at session open"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/bootstrap-guard.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "pre:bootstrap-guard",
+        "description": "Block mutations until session bootstrap (workflow_status + project_context + memory_search) has run"
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx block-no-verify@1.1.2",
+            "timeout": 5
+          }
+        ],
+        "id": "pre:bash:block-no-verify",
+        "description": "Block git --no-verify to prevent pre-commit hook bypass"
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/pre-push-gate.mjs\"",
+            "timeout": 180
+          }
+        ],
+        "id": "pre:bash:push-gate",
+        "description": "Run tests and build before git push — blocks on failure"
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/guard-bash.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "pre:bash:guard-dangerous",
+        "description": "Block root deletion, force-push to main, fork bombs, DDL"
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/config-protection.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "pre:edit:config-protection",
+        "description": "Prevent weakening eslint/tsconfig/prettier/biome configs"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/mcp-health-check.mjs\"",
+            "timeout": 3
+          }
+        ],
+        "id": "pre:mcp-health-check",
+        "description": "Skip calls to recently-failed MCP servers"
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/edit-guard.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "pre:edit-guard",
+        "description": "Hash-anchored edit verification — blocks Edit when old_string not found verbatim"
+      },
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/mcp-task-scope.mjs\"",
+            "timeout": 3
+          }
+        ],
+        "id": "pre:mcp-task-scope",
+        "description": "Warn when calling an MCP not declared in the active task mcpScope"
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/repeated-read-guard.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "pre:read:repeat-guard",
+        "description": "Block broad re-reads of files already read this session — steer to Grep or narrower range"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const p=process.env.TOOL_INPUT_FILE_PATH||'';if(p.endsWith('.json')){try{JSON.parse(require('fs').readFileSync(p,'utf8'));process.exit(0)}catch(e){console.error('Invalid JSON in '+p+': '+e.message);process.exit(2)}}\"",
+            "timeout": 5
+          }
+        ],
+        "id": "post:edit:json-validate",
+        "description": "Validate JSON syntax after editing .json files"
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/scan-secrets.mjs\"",
+            "timeout": 10
+          }
+        ],
+        "id": "post:edit:scan-secrets",
+        "description": "Block real API keys and tokens from being written to files"
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/adaptive-lint.mjs\"",
+            "timeout": 30,
+            "async": true
+          }
+        ],
+        "id": "post:edit:adaptive-lint",
+        "description": "Auto-run project linter/formatter after every file edit"
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/console-warn.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "post:edit:console-warn",
+        "description": "Flag console.log/debugger left in edited source files"
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/comment-lint.mjs\"",
+            "timeout": 10,
+            "async": true
+          }
+        ],
+        "id": "post:edit:comment-lint",
+        "description": "Warn on missing file headers or banned comment patterns after edits"
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/edit-accumulator.mjs\"",
+            "timeout": 3
+          }
+        ],
+        "id": "post:edit:accumulate",
+        "description": "Track edited files for batch typecheck and notification"
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/registry-sync.mjs\"",
+            "timeout": 15,
+            "async": true
+          }
+        ],
+        "id": "post:edit:registry-sync",
+        "description": "Re-sync agents when registry.json changes"
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/dep-audit.mjs\"",
+            "timeout": 35,
+            "async": true
+          }
+        ],
+        "id": "post:edit:dep-audit",
+        "description": "Audit dependencies for vulnerabilities after manifest changes"
+      },
+      {
+        "matcher": "TodoWrite",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/continuation-enforcer.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "post:continuation-enforcer",
+        "description": "After TodoWrite, remind agent of remaining tasks to prevent premature stopping"
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/read-tracker.mjs\"",
+            "timeout": 3,
+            "async": true
+          }
+        ],
+        "id": "post:read-tracker",
+        "description": "Record file content hash after Read for staleness detection in edit-guard"
+      },
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/mcp-audit.mjs\"",
+            "timeout": 3,
+            "async": true
+          }
+        ],
+        "id": "post:mcp-audit",
+        "description": "Audit every MCP tool call with task attribution to .cx/mcp-audit.json"
+      },
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/agent-tracker.mjs\"",
+            "timeout": 3,
+            "async": true
+          }
+        ],
+        "id": "post:agent-tracker",
+        "description": "Record dispatched cx-* agent name for per-agent cost attribution"
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/bash-output-logger.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "post:bash:output-logger",
+        "description": "Persist long Bash outputs to ~/.cx/bash-logs/ and nudge toward referencing the log"
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/audit-trail.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "post:audit-trail",
+        "description": "Append-only audit log of every mutation — attribution (agent/task) and tamper-evidence chain"
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/model-fallback.mjs\"",
+            "timeout": 130,
+            "async": true
+          }
+        ],
+        "id": "post:model-fallback",
+        "description": "On rate-limit, model-unavailable, or timeout failures, poll and apply fallback model tiers"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/mcp-health-check.mjs\" --mark-failure",
+            "timeout": 3
+          }
+        ],
+        "id": "post:mcp-health-check-failure",
+        "description": "Record MCP failures so health check can skip them temporarily"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/context-window-recovery.mjs\"",
+            "timeout": 60,
+            "async": true
+          }
+        ],
+        "id": "post:context-window-recovery",
+        "description": "On context-limit errors, save workflow state and emit recovery guidance"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/edit-error-recovery.mjs\"",
+            "timeout": 15,
+            "async": true
+          }
+        ],
+        "id": "post:edit-error-recovery",
+        "description": "On Edit/Write failures, emit structured retry guidance"
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/pre-compact.mjs\"",
+            "timeout": 15
+          }
+        ],
+        "id": "pre:compact",
+        "description": "Save session state to .cx/context.md before context compaction"
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/workflow-guard.mjs\"",
+            "timeout": 10
+          }
+        ],
+        "id": "stop:workflow-guard",
+        "description": "Prevent accidental session stop while Construct workflow tasks or alignment blockers remain"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/stop-typecheck.mjs\"",
+            "timeout": 120
+          }
+        ],
+        "id": "stop:typecheck",
+        "description": "Batch TypeScript typecheck of edited files at end of response"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/stop-notify.mjs\"",
+            "timeout": 10,
+            "async": true
+          }
+        ],
+        "id": "stop:notify",
+        "description": "Desktop notification: files changed, TS status, session cost"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/drive-guard.mjs\"",
+            "timeout": 10
+          }
+        ],
+        "id": "stop:drive-guard",
+        "description": "Block stop when drive mode active and acceptance criteria lack evidence"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/pre-compact.mjs\"",
+            "timeout": 15
+          }
+        ],
+        "id": "stop:snapshot",
+        "description": "Snapshot .cx/context.md at session end so resume has real progress"
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/teammate-idle-guard.mjs\"",
+            "timeout": 10
+          }
+        ],
+        "id": "team:teammate-idle-guard",
+        "description": "Keep worker sessions aligned with .cx/workflow.json before they go idle"
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/task-completed-guard.mjs\"",
+            "timeout": 10
+          }
+        ],
+        "id": "team:task-completed-guard",
+        "description": "Block task completion when Construct workflow validation fails"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/context-watch.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "prompt:context-watch",
+        "description": "Inject compaction guidance when session token usage crosses 60% / 80% thresholds"
+      }
+    ]
+  },
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    }
+  }
+}

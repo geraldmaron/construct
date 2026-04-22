@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.local
+*.log
+.DS_Store
+.claude/
+.codex/
+.cx/*
+config.env
+runtime/
+
+# MkDocs build output
+site/site/
+
+# Local-only archived release notes and pre-release docs
+.archive/

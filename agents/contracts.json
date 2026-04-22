@@ -1,0 +1,335 @@
+{
+  "$schema": "./contracts.schema.json",
+  "version": 1,
+  "description": "Explicit service contracts between Construct agents. Each contract binds a producer→consumer pair to a typed handoff: what artifact, what preconditions, what postconditions, what the terminal state looks like. Consolidates doc ownership, routing map, output schemas, and framing/research/quality gates into one machine-readable source of truth.",
+  "terminalStates": ["DONE", "BLOCKED", "NEEDS_MAIN_INPUT"],
+  "severities": {
+    "blocking": ["BLOCKED_CONTRACT", "CRITICAL"],
+    "warning": ["HIGH", "APPROVED_WITH_WARNINGS"],
+    "info": ["MEDIUM", "LOW"]
+  },
+  "contracts": [
+    {
+      "id": "user-to-construct",
+      "producer": "user",
+      "consumer": "construct",
+      "trigger": { "always": true },
+      "input": {
+        "shape": "natural-language-request",
+        "mustContain": ["goal"]
+      },
+      "output": {
+        "shape": "routed-plan",
+        "mustContain": ["track", "specialists", "dispatchPlan"]
+      },
+      "preconditions": [
+        "Session bootstrap completed: workflow_status, project_context, memory_search called"
+      ],
+      "postconditions": [
+        "Intent classified; work category tagged",
+        "Route decision surfaced as a single-sentence plan"
+      ]
+    },
+    {
+      "id": "construct-to-orchestrator",
+      "producer": "construct",
+      "consumer": "cx-orchestrator",
+      "trigger": { "track": "orchestrated" },
+      "input": {
+        "shape": "task-packet",
+        "mustContain": ["goal", "intent", "workCategory", "riskFlags", "acceptanceCriteria"]
+      },
+      "output": {
+        "schema": "lib/schemas/decision.json",
+        "type": "decision"
+      },
+      "preconditions": [
+        "framingChallenge gate honored if required",
+        "externalResearch gate honored if required",
+        "docAuthoring.owner present if authoring a typed document"
+      ],
+      "postconditions": [
+        "Dispatch plan emitted with specialists in sequence",
+        "Parallel work marked with [parallel: ...] tags"
+      ]
+    },
+    {
+      "id": "researcher-to-architect",
+      "producer": "cx-researcher",
+      "consumer": "cx-architect",
+      "trigger": { "externalResearch.required": true, "riskFlags": ["architecture"] },
+      "input": {
+        "shape": "research-brief",
+        "mustContain": ["question", "method", "sources", "findings", "confidence"]
+      },
+      "output": {
+        "schema": "lib/schemas/decision.json",
+        "type": "decision"
+      },
+      "preconditions": [
+        "≥2 independent primary sources cited per load-bearing claim",
+        "Source classes tagged (internal/primary/secondary/tertiary)"
+      ],
+      "postconditions": [
+        "Architect's ADR cites the primary sources provided",
+        "Any conflicting evidence surfaced, not suppressed"
+      ]
+    },
+    {
+      "id": "researcher-to-product-manager",
+      "producer": "cx-researcher",
+      "consumer": "cx-product-manager",
+      "trigger": { "docAuthoring.docType": ["prd", "meta-prd", "prfaq", "one-pager"] },
+      "input": {
+        "shape": "evidence-brief",
+        "mustContain": ["question", "findings", "sources", "confidence", "openQuestions"]
+      },
+      "output": {
+        "shape": "prd-handoff",
+        "mustContain": ["problem", "users", "functionalRequirements", "acceptanceCriteria"]
+      },
+      "preconditions": [
+        "Evidence threshold stated and met for each requirement"
+      ],
+      "postconditions": [
+        "PRD Problem section does not reference ticket IDs, roadmap items, or artifact filenames",
+        "Every functional requirement traces to observed user evidence"
+      ]
+    },
+    {
+      "id": "product-manager-to-architect",
+      "producer": "cx-product-manager",
+      "consumer": "cx-architect",
+      "trigger": { "docAuthoring.docType": ["prd", "meta-prd", "adr", "rfc"] },
+      "input": {
+        "shape": "prd-handoff",
+        "mustContain": ["problem", "functionalRequirements", "nonFunctionalRequirements", "acceptanceCriteria", "constraints"]
+      },
+      "output": {
+        "schema": "lib/schemas/decision.json",
+        "type": "decision"
+      },
+      "preconditions": [
+        "cx-devil-advocate framing challenge logged if riskFlags.architecture"
+      ],
+      "postconditions": [
+        "ADR Problem section traces to PRD Problem, not to tickets",
+        "ADR Rejected alternatives section present with ≥2 alternatives and specific rejection reasons",
+        "Reversibility section states whether one-way or two-way door"
+      ]
+    },
+    {
+      "id": "architect-to-devil-advocate",
+      "producer": "cx-architect",
+      "consumer": "cx-devil-advocate",
+      "trigger": { "framingChallenge.required": true },
+      "input": {
+        "shape": "framing-proposal",
+        "mustContain": ["problemStatement", "proposedApproach", "assumptions"]
+      },
+      "output": {
+        "shape": "challenge-report",
+        "mustContain": ["verdict", "counterevidence", "reframingProposals"]
+      },
+      "preconditions": [
+        "Problem statement stated independent of tickets/transcripts"
+      ],
+      "postconditions": [
+        "If verdict is BLOCKED, architect revises framing before proceeding",
+        "Challenge checkpoint logged to audit trail"
+      ]
+    },
+    {
+      "id": "architect-to-engineer",
+      "producer": "cx-architect",
+      "consumer": "cx-engineer",
+      "trigger": { "intent": ["implementation", "fix"] },
+      "input": {
+        "schema": "lib/schemas/decision.json",
+        "mustContain": ["goal", "approach", "tasks", "acceptanceCriteria"]
+      },
+      "output": {
+        "schema": "lib/schemas/implementation.json",
+        "type": "implementation"
+      },
+      "preconditions": [
+        "ADR approved (or fast-track noted); no pending CRITICAL review findings",
+        "Task packet contains readFirst and doNotChange lists"
+      ],
+      "postconditions": [
+        "Implementation cites the ADR tasks it completed",
+        "filesChanged matches tasks in the ADR",
+        "verificationChecklist evaluated before DONE"
+      ]
+    },
+    {
+      "id": "architect-to-ai-engineer",
+      "producer": "cx-architect",
+      "consumer": "cx-ai-engineer",
+      "trigger": { "riskFlags": ["ai"], "intent": ["implementation"] },
+      "input": {
+        "schema": "lib/schemas/decision.json",
+        "mustContain": ["goal", "approach", "evalCriteria"]
+      },
+      "output": {
+        "schema": "lib/schemas/implementation.json",
+        "type": "implementation"
+      },
+      "preconditions": [
+        "Eval set defined with failure cases before prompt/model changes ship"
+      ],
+      "postconditions": [
+        "Eval verdict from cx-evaluator before DONE"
+      ]
+    },
+    {
+      "id": "engineer-to-reviewer",
+      "producer": "cx-engineer",
+      "consumer": "cx-reviewer",
+      "trigger": { "always": true },
+      "input": {
+        "schema": "lib/schemas/implementation.json",
+        "mustContain": ["filesChanged", "verificationChecklist"]
+      },
+      "output": {
+        "schema": "lib/schemas/review-report.json",
+        "type": "review-report"
+      },
+      "preconditions": [
+        "Engineer status is not BLOCKED",
+        "Tests compiled; static analysis run"
+      ],
+      "postconditions": [
+        "Verdict in {APPROVED, APPROVED_WITH_WARNINGS, BLOCKED}",
+        "BLOCKED verdict stops downstream work until addressed",
+        "CRITICAL findings prevent release"
+      ]
+    },
+    {
+      "id": "engineer-to-qa",
+      "producer": "cx-engineer",
+      "consumer": "cx-qa",
+      "trigger": { "always": true },
+      "input": {
+        "schema": "lib/schemas/implementation.json",
+        "mustContain": ["filesChanged", "tests"]
+      },
+      "output": {
+        "schema": "lib/schemas/test-report.json",
+        "type": "test-report"
+      },
+      "preconditions": [
+        "Test plan exists or is derivable from acceptance criteria"
+      ],
+      "postconditions": [
+        "Verdict in {PASS, FAIL}",
+        "Coverage meets project threshold",
+        "FAIL blocks DONE in workflow"
+      ]
+    },
+    {
+      "id": "reviewer-to-security",
+      "producer": "cx-reviewer",
+      "consumer": "cx-security",
+      "trigger": { "riskFlags": ["security"] },
+      "input": {
+        "schema": "lib/schemas/review-report.json",
+        "mustContain": ["target", "findings"]
+      },
+      "output": {
+        "schema": "lib/schemas/review-report.json",
+        "type": "review-report",
+        "specialization": "security"
+      },
+      "preconditions": [
+        "Scope tagged as auth/secrets/payments/user-data"
+      ],
+      "postconditions": [
+        "Attacker-perspective findings logged",
+        "Threat model updated if architecture surface changed"
+      ]
+    },
+    {
+      "id": "qa-to-release-manager",
+      "producer": "cx-qa",
+      "consumer": "cx-release-manager",
+      "trigger": { "intent": ["implementation"], "workCategory": "deep" },
+      "input": {
+        "schema": "lib/schemas/test-report.json",
+        "mustContain": ["verdict", "passed", "failed", "coverage"]
+      },
+      "output": {
+        "shape": "release-decision",
+        "mustContain": ["decision", "rolloutPlan", "rollbackPlan"]
+      },
+      "preconditions": [
+        "All upstream verdicts APPROVED; QA verdict PASS"
+      ],
+      "postconditions": [
+        "Rollback plan tested, not just described",
+        "Rollout plan has concrete checkpoint signals"
+      ]
+    },
+    {
+      "id": "sre-to-release-manager",
+      "producer": "cx-sre",
+      "consumer": "cx-release-manager",
+      "trigger": { "riskFlags": ["dataIntegrity"], "intent": ["implementation"] },
+      "input": {
+        "shape": "sre-readiness",
+        "mustContain": ["slos", "runbooks", "alerts", "dashboards"]
+      },
+      "output": {
+        "shape": "release-decision",
+        "mustContain": ["decision", "rollbackPlan"]
+      },
+      "preconditions": [
+        "Runbook exists for the new code path; rollback procedure verified"
+      ],
+      "postconditions": [
+        "On-call briefed; alert thresholds set"
+      ]
+    },
+    {
+      "id": "any-to-docs-keeper",
+      "producer": "*",
+      "consumer": "cx-docs-keeper",
+      "trigger": { "postConsumer": true, "changedCoreDocs": true },
+      "input": {
+        "shape": "doc-delta",
+        "mustContain": ["filesChanged", "decision"]
+      },
+      "output": {
+        "shape": "doc-sync",
+        "mustContain": ["updatedDocs", "crossReferencesAdded"]
+      },
+      "preconditions": [
+        "Implementation or decision is marked DONE"
+      ],
+      "postconditions": [
+        "Cross-doc coherence preserved (PRD ↔ ADR ↔ code)",
+        "AUTO-managed regions regenerated via construct sync"
+      ]
+    },
+    {
+      "id": "any-to-sre-incident",
+      "producer": "*",
+      "consumer": "cx-sre",
+      "trigger": { "intent": "investigation", "category": "incident" },
+      "input": {
+        "shape": "incident-signal",
+        "mustContain": ["symptoms", "scope", "firstObserved"]
+      },
+      "output": {
+        "shape": "incident-report",
+        "mustContain": ["rootCause", "timeline", "remediation", "preventions"]
+      },
+      "preconditions": [
+        "Blast radius assessed before remediation"
+      ],
+      "postconditions": [
+        "Blameless postmortem; no tickets in Problem statement"
+      ]
+    }
+  ]
+}

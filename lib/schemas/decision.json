@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Decision",
+  "description": "Output from cx-architect: a documented architectural or design decision",
+  "type": "object",
+  "required": ["type", "goal", "approach", "tasks", "risks", "acceptanceCriteria"],
+  "properties": {
+    "type": { "type": "string", "enum": ["decision"] },
+    "goal": { "type": "string", "description": "Objective restated in one sentence" },
+    "approach": { "type": "string", "description": "Chosen strategy and rationale" },
+    "alternativesConsidered": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["description", "owner", "complexity"],
+        "properties": {
+          "description": { "type": "string" },
+          "owner": { "type": "string" },
+          "complexity": { "type": "string", "enum": ["S", "M", "L"] }
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["description", "mitigation"],
+        "properties": {
+          "description": { "type": "string" },
+          "mitigation": { "type": "string" }
+        }
+      }
+    },
+    "acceptanceCriteria": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "doNotTouch": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Files or systems that must stay unchanged"
+    }
+  },
+  "additionalProperties": false
+}
