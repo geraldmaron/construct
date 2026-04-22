@@ -130,7 +130,6 @@ The team challenges itself along the way — reviewers push back on incomplete w
 | `construct workflow` | Manage .cx/workflow.json orchestration state |
 | `construct init-docs` | Generate AI-tailored doc structure for the current project |
 | `construct team` | Team review and template listing |
-| `construct approve` | Explicitly approve a mutating git operation (commit, push, or PR merge) before Construct runs it |
 | `construct drop` | Ingest the most recent file dropped into ~/Downloads, Desktop, Documents, or iCloud Drive |
 | `construct wireframe` | Generate a low-fi wireframe (Mermaid diagram or sketch-style HTML) from a description |
 

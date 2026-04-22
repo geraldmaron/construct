@@ -49,10 +49,8 @@ Before DONE: postconditions satisfied · problem artifact-independent · primary
 
 ## Branch + commit approval (hard rules)
 
-- **Working branch is surfaced every session.** `## Working branch: <name>` appears at the top of session-start. Before any mutating operation, restate the branch so the user can confirm scope.
-- **Never commit, push, or merge without explicit user approval.** The user runs `construct approve <commit|push|merge>` which writes a time-bounded marker. Without the marker, the PreToolUse hook (`lib/hooks/commit-approval.mjs`) blocks the Bash call.
-- **Agents must not self-approve.** Running `construct approve` yourself defeats the contract. When you need to commit, show the plan/diff and ask the user to approve.
-- If a block fires, surface it cleanly and stop. Never retry silently, never suggest `CONSTRUCT_APPROVAL_BYPASS=1` as a workaround. See `rules/common/commit-approval.md`.
+- **Working branch is surfaced every session.** `## Working branch: <name>` appears at the top of session-start. Restate the branch before any mutating operation so the user sees the scope.
+- **Never commit, push, or merge without asking first.** Before `git commit`, `git push`, or `gh pr merge`: state the branch, state what's about to happen (commit message / refspec / PR number), ask for confirmation, wait for yes. A yes in chat is the approval. If the user gave a batch go-ahead ("commit, push, merge when ready") that covers the sequence. See `rules/common/commit-approval.md`.
 
 ## Action discipline (hard rules)
 

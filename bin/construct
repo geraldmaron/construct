@@ -693,10 +693,6 @@ const handlers = new Map([
     errorln(`Unknown team subcommand: ${sub}. Available: review, templates`);
     process.exit(1);
   }],
-  ['approve', async (args) => {
-    const { runApproveCli } = await import('../lib/approve.mjs');
-    return runApproveCli(args);
-  }],
   ['drop', async (args) => {
     const { runDropCli } = await import('../lib/drop.mjs');
     return runDropCli(args);

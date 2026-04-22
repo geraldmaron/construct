@@ -137,18 +137,6 @@
         ],
         "id": "pre:read:repeat-guard",
         "description": "Block broad re-reads of files already read this session — steer to Grep or narrower range"
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/commit-approval.mjs\"",
-            "timeout": 5
-          }
-        ],
-        "id": "pre:bash:commit-approval",
-        "description": "Block git commit, git push, and gh pr merge without an active construct approve <action> marker. Hard rule."
       }
     ],
     "PostToolUse": [
