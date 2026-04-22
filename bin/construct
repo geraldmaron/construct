@@ -681,6 +681,14 @@ const handlers = new Map([
     errorln(`Unknown team subcommand: ${sub}. Available: review, templates`);
     process.exit(1);
   }],
+  ['drop', async (args) => {
+    const { runDropCli } = await import('../lib/drop.mjs');
+    return runDropCli(args);
+  }],
+  ['wireframe', async (args) => {
+    const { runWireframeCli } = await import('../lib/wireframe.mjs');
+    return runWireframeCli(args);
+  }],
   ['skills', async (args) => {
     const sub = args[0];
     if (sub === 'scope' || !sub) {
