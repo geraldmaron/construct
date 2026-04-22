@@ -14,6 +14,11 @@
       ],
       "env": {},
       "requiredEnv": [],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
       "usedBy": [
         "cx-docs-researcher",
         "cx-engineer",
@@ -34,6 +39,11 @@
       ],
       "env": {},
       "requiredEnv": [],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
       "usedBy": [
         "construct",
         "cx-architect",
@@ -54,6 +64,11 @@
         "auto",
         "manual"
       ],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
       "usedBy": [
         "construct",
         "cx-docs-keeper",
@@ -74,6 +89,11 @@
       ],
       "env": {},
       "requiredEnv": [],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
       "usedBy": [
         "construct",
         "cx-qa",
@@ -99,8 +119,13 @@
         "auto",
         "manual"
       ],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "plugin", "plugin": "github@openai-curated", "label": "Codex Plugin" }
+      },
       "setupUrl": null,
-      "setupNote": "Run 'gh auth login' to authenticate via browser, then re-run 'construct mcp add github'. The token is sourced from the gh CLI automatically.",
+      "setupNote": "Run 'gh auth login' to authenticate via browser, then re-run 'construct mcp add github'. Construct wires Claude Code and OpenCode directly. In Codex, use the built-in GitHub plugin/app path instead of a standalone GitHub MCP server.",
       "usedBy": [
         "construct",
         "cx-engineer",
@@ -121,6 +146,11 @@
       "setupModes": [
         "auto"
       ],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
       "setupNote": "Uses Atlassian's official remote MCP server with OAuth 2.1. Browser auth prompt appears on first use. Requires a Rovo license on your Atlassian account.",
       "usedBy": [
         "cx-product-manager",
@@ -150,6 +180,11 @@
       "setupModes": [
         "manual"
       ],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
       "setupUrl": "https://linear.app/settings/api",
       "setupNote": "Generate a personal API key at linear.app/settings/api.",
       "usedBy": [
@@ -181,6 +216,11 @@
       "setupModes": [
         "manual"
       ],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
       "setupUrl": "https://api.slack.com/apps",
       "setupNote": "Create a Slack app at api.slack.com/apps. Add Bot Token Scopes: channels:read, chat:write, channels:history.",
       "usedBy": [
@@ -210,6 +250,11 @@
       "setupModes": [
         "manual"
       ],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
       "setupUrl": "https://www.notion.so/profile/integrations",
       "setupNote": "Create an integration at notion.so/profile/integrations. Share target pages/databases with the integration.",
       "usedBy": [

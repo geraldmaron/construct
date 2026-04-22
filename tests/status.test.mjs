@@ -66,6 +66,11 @@ async function createFixture() {
     mcpServers: { github: { type: 'http', url: 'https://api.githubcopilot.com/mcp/' } },
     hooks: { Stop: [{ description: 'workflow-guard', background: false }] },
   });
+  writeText(path.join(homeDir, '.codex', 'config.toml'), [
+    '[plugins."github@openai-curated"]',
+    'enabled = true',
+    '',
+  ].join('\n'));
   writeJson(path.join(homeDir, '.cursor', 'mcp.json'), { mcpServers: {} });
   writeJson(path.join(homeDir, '.config', 'opencode', 'opencode.json'), {
     mcp: { cass: { type: 'local', command: ['npx', '-y', '@modelcontextprotocol/server-memory@latest'] } },
@@ -184,6 +189,26 @@ test('optional runtime surfaces do not degrade overall status', async () => {
   assert.equal(status.system.overall.status, 'healthy');
   assert.match(status.system.overall.summary, /optional unavailable/);
   assert.equal(status.system.services.find((service) => service.id === 'opencode').status, 'unavailable');
+});
+
+test('github feature counts the Codex GitHub plugin as configured', async () => {
+  const { rootDir, homeDir } = await createFixture();
+  writeJson(path.join(homeDir, '.claude', 'settings.json'), {
+    mcpServers: {},
+    hooks: { Stop: [{ description: 'workflow-guard', background: false }] },
+  });
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async (service) => ({ status: service.id === 'langfuse' ? 'unavailable' : 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  const github = status.features.find((feature) => feature.id === 'github');
+  assert.equal(github.status, 'configured');
+  assert.match(github.message, /Codex Plugin/);
 });
 
 test('formatStatusReport prints canonical overall summary and integrations', async () => {

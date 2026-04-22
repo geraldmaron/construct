@@ -101,7 +101,7 @@ test("memory MCP uses the configured port for Claude and cass for OpenCode", () 
   assert.equal("memory" in config.mcp, false);
 });
 
-test("github MCP uses official remote GitHub server in OpenCode config", () => {
+test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP entry", () => {
   const home = tempDir("construct-github-home-");
   const cwd = tempDir("construct-github-cwd-");
   const token = process.env.GITHUB_TOKEN || "github-token-placeholder";
@@ -136,13 +136,12 @@ test("github MCP uses official remote GitHub server in OpenCode config", () => {
     },
   });
 
-  const codex = fs.readFileSync(codexPath, "utf8");
-  assert.match(codex, /\[mcp_servers\."github"\]/);
-  assert.match(codex, /url = "https:\/\/api\.githubcopilot\.com\/mcp\/"/);
-  assert.match(codex, /bearer_token_env_var = "GITHUB_TOKEN"/);
-  assert.doesNotMatch(codex, /github-mcp-server/);
-  assert.doesNotMatch(codex, /Authorization/);
-  assert.doesNotMatch(codex, /CODEX_GITHUB_PERSONAL_ACCESS_TOKEN/);
+  if (fs.existsSync(codexPath)) {
+    const codex = fs.readFileSync(codexPath, "utf8");
+    assert.doesNotMatch(codex, /\[mcp_servers\."github"\]/);
+    assert.doesNotMatch(codex, /api\.githubcopilot\.com\/mcp\//);
+    assert.doesNotMatch(codex, /bearer_token_env_var = "GITHUB_TOKEN"/);
+  }
 });
 
 test("catalog declares setup modes for auto/manual capable integrations", () => {
@@ -153,6 +152,10 @@ test("catalog declares setup modes for auto/manual capable integrations", () => 
   assert.deepEqual(byId.get("memory").setupModes, ["auto", "manual"]);
   assert.deepEqual(byId.get("github").setupModes, ["auto", "manual"]);
   assert.deepEqual(byId.get("atlassian").setupModes, ["auto"]);
+  assert.equal(byId.get("github").hostSupport.codex.mode, "plugin");
+  assert.equal(byId.get("github").hostSupport.codex.plugin, "github@openai-curated");
+  assert.equal(byId.get("context7").hostSupport.codex.mode, "managed");
+  assert.equal(byId.get("atlassian").hostSupport.codex.mode, "managed");
 });
 
 test("atlassian MCP uses official remote OAuth server across managed configs", () => {
