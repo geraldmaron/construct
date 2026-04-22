@@ -1,3 +1,9 @@
+/**
+ * tests/plugin-registry.test.mjs — validates plugin manifest loading and starter creation.
+ *
+ * Covers manifest schema checks, merging external plugin manifests with built-ins,
+ * duplicate MCP detection, and scaffolded plugin initialization.
+ */
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";

@@ -119,11 +119,8 @@ The team challenges itself along the way — reviewers push back on incomplete w
 
 | Command | What it does |
 |---|---|
-| `construct do` | Execute a natural language goal via the orchestrator |
 | `construct distill` | Distill documents with query-focused, citation-ready chunk selection |
 | `construct ingest` | Convert PDFs, office docs, spreadsheets, and text files into indexed markdown artifacts |
-| `construct research` | Run query-focused bounded retrieval over project documents |
-| `construct docs` | Run documentation-focused bounded retrieval over markdown-like files |
 | `construct search` | Run hybrid file, SQL, and semantic retrieval over core project state |
 | `construct storage` | Sync and inspect the hybrid storage backend |
 | `construct headhunt` | Create a temporary domain expertise overlay or promotion request |

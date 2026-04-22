@@ -85,8 +85,8 @@ async function createFixture() {
     lastUpdatedAt: new Date().toISOString(),
   });
   writeText(path.join(homeDir, '.cx', 'session-cost.jsonl'), [
-    JSON.stringify({ ts: '2026-04-18T00:00:00.000Z', input_tokens: 120, output_tokens: 30, cost_usd: 0.00081 }),
-    JSON.stringify({ ts: '2026-04-18T00:05:00.000Z', input_tokens: 80, output_tokens: 20, cost_usd: 0.00054 }),
+    JSON.stringify({ ts: '2026-04-18T00:00:00.000Z', input_tokens: 120, output_tokens: 30, reasoning_tokens: 10, total_tokens: 160, cost_usd: 0.00081 }),
+    JSON.stringify({ ts: '2026-04-18T00:05:00.000Z', input_tokens: 80, output_tokens: 20, reasoning_tokens: 5, total_tokens: 105, cost_usd: 0.00054 }),
     '',
   ].join('\n'));
   writeJson(path.join(rootDir, '.cx', 'domain-overlays', 'terraform.json'), {
@@ -169,7 +169,8 @@ test('buildStatus separates runtime health from configured integrations', async 
   assert.equal(status.executionContractModel.tiers.fast.model, 'openrouter/meta-llama/llama-3.3-70b-instruct:free');
   assert.equal(status.sessionEfficiency.score, 0.87);
   assert.equal(status.sessionUsage.status, 'available');
-  assert.equal(status.sessionUsage.totalTokens, 250);
+  assert.equal(status.sessionUsage.providerTotalTokens, 265);
+  assert.equal(status.sessionUsage.billedTotalTokens, 265);
   assert.equal(status.sessionUsage.interactions, 2);
   assert.equal(status.telemetryRichness.status, 'unavailable');
 });
@@ -233,8 +234,8 @@ test('formatStatusReport prints canonical overall summary and integrations', asy
   assert.match(report, /Overall: degraded/);
   assert.match(report, /Workflow: pass/);
   assert.match(report, /Efficiency: healthy/);
-  assert.match(report, /Usage: available · 2 interactions · 250 tokens · \$0\.00/);
-  assert.match(report, /Last interaction: 100 tokens \(80 in \/ 20 out\)/);
+  assert.match(report, /Usage: available · 2 interactions · 265 provider total · 265 billed total · \$0\.00/);
+  assert.match(report, /Last interaction: 105 provider total · 105 billed total \(80 uncached in \/ 20 out \/ 5 reasoning\)/);
   assert.match(report, /Telemetry:/);
   assert.match(report, /Overlays: 1 active/);
   assert.match(report, /Promotion requests: 1/);
@@ -460,6 +461,8 @@ test('buildStatus reports canonical cache fields with bounded read rate', async 
       ts: '2026-04-18T00:00:00.000Z',
       input_tokens: 100,
       output_tokens: 25,
+      reasoning_tokens: 9,
+      total_tokens: 134,
       cache_read_input_tokens: 300,
       cache_creation_input_tokens: 50,
       cost_usd: 0.002,
@@ -476,9 +479,12 @@ test('buildStatus reports canonical cache fields with bounded read rate', async 
   });
 
   assert.equal(status.sessionUsage.inputTokens, 100);
+  assert.equal(status.sessionUsage.reasoningTokens, 9);
   assert.equal(status.sessionUsage.cacheReadInputTokens, 300);
   assert.equal(status.sessionUsage.cacheCreationInputTokens, 50);
   assert.equal(status.sessionUsage.processedInputTokens, 450);
+  assert.equal(status.sessionUsage.providerTotalTokens, 134);
+  assert.equal(status.sessionUsage.billedTotalTokens, 484);
   assert.equal(status.sessionUsage.cacheReadRate, 0.667);
   assert.ok(status.sessionUsage.cacheReadRate <= 1);
 });

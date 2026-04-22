@@ -13,6 +13,8 @@ test('modern cache fields compute a bounded cache read rate', () => {
   const entry = normalizeCostEntry({
     input_tokens: 100,
     output_tokens: 20,
+    reasoning_tokens: 7,
+    total_tokens: 127,
     cache_read_input_tokens: 300,
     cache_creation_input_tokens: 50,
     cache_creation_5m_input_tokens: 30,
@@ -22,9 +24,13 @@ test('modern cache fields compute a bounded cache read rate', () => {
 
   assert.equal(entry.inputTokens, 100);
   assert.equal(entry.outputTokens, 20);
+  assert.equal(entry.reasoningTokens, 7);
+  assert.equal(entry.providerTotalTokens, 127);
   assert.equal(entry.cacheReadInputTokens, 300);
   assert.equal(entry.cacheCreationInputTokens, 50);
   assert.equal(entry.processedInputTokens, 450);
+  assert.equal(entry.billedOutputTokens, 27);
+  assert.equal(entry.billedTotalTokens, 477);
 
   const stats = computeCacheStats([entry]);
   assert.equal(stats.totalProcessedInputTokens, 450);
@@ -39,6 +45,7 @@ test('non-canonical cached_tokens fields are ignored', () => {
       ts: '2026-04-18T00:00:00.000Z',
       input_tokens: 1,
       output_tokens: 10,
+      reasoning_tokens: 2,
       cached_tokens: 100_000,
       cost_usd: 0.001,
       agent: 'construct',
@@ -46,6 +53,9 @@ test('non-canonical cached_tokens fields are ignored', () => {
   ]);
 
   assert.equal(data.totalInputTokens, 1);
+  assert.equal(data.totalReasoningTokens, 2);
+  assert.equal(data.providerTotalTokens, 13);
+  assert.equal(data.billedTotalTokens, 13);
   assert.equal(data.cacheReadRate, 0);
   assert.equal(data.cachedTokens, 0);
   assert.ok(data.cacheReadRate <= 1);
@@ -53,14 +63,17 @@ test('non-canonical cached_tokens fields are ignored', () => {
 
 test('per-agent aggregation uses normalized token values', () => {
   const byAgent = aggregateCostByAgent([
-    { agent: 'cx-engineer', inputTokens: 100, outputTokens: 20, cacheReadInputTokens: 300, cacheCreationInputTokens: 50, costUsd: 0.02 },
-    { agent: 'cx-engineer', input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 40, cost_usd: 0.01 },
+    { agent: 'cx-engineer', inputTokens: 100, outputTokens: 20, reasoningTokens: 8, cacheReadInputTokens: 300, cacheCreationInputTokens: 50, costUsd: 0.02 },
+    { agent: 'cx-engineer', input_tokens: 10, output_tokens: 5, reasoning_tokens: 1, cache_read_input_tokens: 40, cost_usd: 0.01 },
   ]);
 
   assert.equal(byAgent.length, 1);
   assert.equal(byAgent[0].inputTokens, 110);
   assert.equal(byAgent[0].outputTokens, 25);
+  assert.equal(byAgent[0].reasoningTokens, 9);
   assert.equal(byAgent[0].cacheReadInputTokens, 340);
   assert.equal(byAgent[0].processedInputTokens, 500);
+  assert.equal(byAgent[0].providerTotalTokens, 144);
+  assert.equal(byAgent[0].billedTotalTokens, 534);
   assert.equal(byAgent[0].cacheReadRate, 0.68);
 });
