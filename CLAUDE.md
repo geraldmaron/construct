@@ -4,6 +4,8 @@ This repo IS Construct. Changes here affect every session, every platform, every
 
 ## Critical rules
 
+- **Confirm the working branch every session.** Session-start surfaces `## Working branch: <name>` at the top of the injected context. Restate it before any mutating operation.
+- **Never commit, push, or merge without asking first.** Before `git commit`, `git push`, or `gh pr merge`: state the branch, state what's about to happen, ask for confirmation, wait for yes. A yes in chat is the approval — no separate command or marker. See `rules/common/commit-approval.md`.
 - **Never run `construct sync` or `bash install.sh` mid-edit.** These regenerate all agent files and push to live configs. Only run after all edits are complete and reviewed.
 - **Never edit `registry.json` without understanding the cascade.** Every change regenerates agents for OpenCode, Claude Code, Codex, and Copilot. Read sync-agents.mjs before touching it.
 - **Never edit running hook files** (`lib/hooks/*.mjs`) without testing them in isolation first. A broken hook blocks all tool use.
