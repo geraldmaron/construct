@@ -19,6 +19,7 @@ import { validateRegistry } from '../lib/validator.mjs';
 import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, pollFreeModels, topForTier, selectForTier, applyToEnv, resetEnv, setTierModel, setModelWithTierInference } from '../lib/model-router.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
 import { printHostCapabilities } from '../lib/host-capabilities.mjs';
+import { getPluginById, initPluginManifest, loadPluginRegistry } from '../lib/plugin-registry.mjs';
 import { runSetup } from '../lib/setup.mjs';
 import { runUpdate } from '../lib/update.mjs';
 import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
@@ -193,6 +194,9 @@ async function cmdDoctor() {
     const { regenerateDocs } = await import('../lib/auto-docs.mjs');
     const { changed: stale } = await regenerateDocs({ rootDir: ROOT_DIR, check: true });
     add('AUTO docs up to date', stale.length === 0, true);
+
+    const pluginRegistry = loadPluginRegistry({ cwd: process.cwd(), homeDir: HOME, rootDir: ROOT_DIR, env: process.env });
+    add('Plugin manifests valid', pluginRegistry.valid);
 
     // Agent contracts integrity
     const { getAllContracts, summarize } = await import('../lib/agent-contracts.mjs');
@@ -523,6 +527,73 @@ async function cmdMcp(args) {
   process.exit(1);
 }
 
+async function cmdPlugin(args) {
+  const [subcmd = 'list', id, ...rest] = args;
+  const registry = loadPluginRegistry({ cwd: process.cwd(), homeDir: HOME, rootDir: ROOT_DIR, env: process.env });
+
+  if (subcmd === 'list') {
+    println('Construct Plugins');
+    println('═════════════════');
+    println('');
+    for (const plugin of registry.plugins) {
+      const source = plugin.builtIn ? 'built-in' : path.relative(process.cwd(), plugin.manifestPath);
+      println(`  ${plugin.id.padEnd(22)} ${plugin.version.padEnd(8)} ${plugin.name}`);
+      println(`    ${source}`);
+      if ((plugin.mcps ?? []).length) println(`    mcps: ${(plugin.mcps ?? []).map((mcp) => mcp.id).join(', ')}`);
+    }
+    if (registry.errors.length) {
+      println('');
+      errorln('Registry errors:');
+      for (const error of registry.errors) errorln(`  ✗ ${error}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (subcmd === 'validate') {
+    if (registry.valid) {
+      println(`✓ Plugin registry valid (${registry.plugins.length} plugins, ${registry.mcps.length} MCP entries)`);
+      return;
+    }
+    for (const error of registry.errors) errorln(`✗ ${error}`);
+    process.exit(1);
+  }
+
+  if (subcmd === 'info') {
+    const plugin = getPluginById(id, { cwd: process.cwd(), homeDir: HOME, rootDir: ROOT_DIR, env: process.env });
+    if (!plugin) {
+      errorln(`Unknown plugin: ${id}`);
+      process.exit(1);
+    }
+    println(`${plugin.name} (${plugin.id})`);
+    println('─'.repeat(48));
+    println(`Version:      ${plugin.version}`);
+    println(`Capabilities: ${(plugin.capabilities ?? []).join(', ') || '(none)'}`);
+    println(`Source:       ${plugin.builtIn ? 'built-in' : plugin.manifestPath}`);
+    println(`MCPs:         ${(plugin.mcps ?? []).map((mcp) => mcp.id).join(', ') || '(none)'}`);
+    println(`\n${plugin.description}`);
+    return;
+  }
+
+  if (subcmd === 'init') {
+    if (!id) {
+      errorln('Usage: construct plugin init <plugin-id> [--force]');
+      process.exit(1);
+    }
+    try {
+      const filePath = initPluginManifest(id, { cwd: process.cwd(), force: rest.includes('--force') });
+      println(`✓ Created plugin manifest at ${path.relative(process.cwd(), filePath)}`);
+      return;
+    } catch (error) {
+      errorln(error?.message || 'plugin init failed');
+      process.exit(1);
+    }
+  }
+
+  errorln(`Unknown plugin subcommand: ${subcmd}`);
+  process.exit(1);
+}
+
 async function cmdDiff() {
   warn('construct diff is not yet ported to the Node CLI surface. Use git diff for now.');
 }
@@ -664,6 +735,7 @@ const handlers = new Map([
   ['init-docs', cmdInitDocs],
   ['models', cmdModels],
   ['mcp', cmdMcp],
+  ['plugin', cmdPlugin],
   ['hosts', cmdHosts],
   ['review', cmdReview],
   ['optimize', cmdOptimize],
