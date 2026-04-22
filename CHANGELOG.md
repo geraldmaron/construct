@@ -8,6 +8,14 @@ reading the project for the first time.
 # Changelog
 
 
+## Follow-up: source-checkout update command
+
+### `construct update` for post-pull maintenance
+
+- Added `construct update` as the one-shot maintenance command to run after pulling the Construct repo itself.
+- The command validates that you are inside a real Construct source checkout, reinstalls that checkout globally with `npm install -g .`, then runs host-only sync and `construct doctor` from the checkout code.
+- This closes the gap between updating the repo and remembering the separate device-level refresh steps needed for Claude Code, Copilot, Codex, and other synced host surfaces.
+
 ## Follow-up: hard cap + functional skill scope + doctor checks
 
 ### Prompt-cap is now hard-fail

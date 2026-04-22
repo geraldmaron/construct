@@ -38,6 +38,12 @@ npm install -g @geraldmaron/construct
 construct setup
 ```
 
+If you pulled a newer Construct checkout from Git and want the device-level CLI and synced host adapters to match that checkout, run:
+
+```bash
+construct update
+```
+
 ## 🚀 Quick start
 
 `construct setup` bootstraps everything — config, local services, and storage. Once it's done:
@@ -46,6 +52,8 @@ construct setup
 construct status   # runtime health
 construct doctor   # installation checks
 ```
+
+After updating this repo from remote, `construct update` is the maintenance path: it reinstalls the current checkout globally, refreshes host adapters without rewriting repo docs, and finishes with `construct doctor`.
 
 To initialize a repo for ongoing LLM-assisted work:
 
@@ -98,6 +106,7 @@ The team challenges itself along the way — reviewers push back on incomplete w
 | `construct show` | Show runtime service URLs and live status (compat view) |
 | `construct serve` | Start the Construct dashboard (auto-selects port) |
 | `construct setup` | Bootstrap user config after npm or manual install |
+| `construct update` | Reinstall this checkout globally, then sync and verify hosts |
 
 ### Agents & Sync
 
@@ -284,6 +293,7 @@ Useful contributor commands:
 
 ```bash
 npm test
+node ./bin/construct update
 node ./bin/construct doctor
 node ./bin/construct status
 node ./bin/construct sync

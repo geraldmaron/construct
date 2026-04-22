@@ -222,6 +222,7 @@ The first implementation slice exposes read-first search and health reporting; w
 ### Storage operations
 
 - `construct setup --yes` writes managed vector defaults, starts a localhost-only Postgres container when Docker is available, initializes the shared Postgres schema, and performs an initial sync. Existing `DATABASE_URL` values take precedence.
+- `construct update` is the post-pull maintenance path for the Construct repo itself: it reinstalls the current checkout globally, then runs host-only sync and `construct doctor` from that checkout without dirtying tracked docs.
 - `construct storage sync` syncs file-state artifacts into the shared SQL store.
 - `construct storage status` reports backend config and reachability.
 - `construct search` merges file-state retrieval with any SQL-backed hits available at runtime.

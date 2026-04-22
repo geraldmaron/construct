@@ -24,7 +24,11 @@ All LLMs working in the repo, including Construct, must read these as project st
 - [Plans](../.cx/plans/) — canonical Construct plans that feed `workflow_import_plan` into `.cx/workflow.json` task packets (beads)
 - [Skills](../skills/) — domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
 
+## Maintenance
+
+After updating the Construct repo checkout itself, run `construct update` from inside that checkout to reinstall the current source globally and refresh synced host adapters before continuing work.
+
 ## Ownership
 
 Maintained by: Construct contributors
-Last updated: 2026-04-21
+Last updated: 2026-04-22

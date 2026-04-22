@@ -60,3 +60,12 @@ test('construct evals exposes Langfuse evaluator catalog', () => {
   assert.ok(typeof json.backendUrl === 'string');
   assert.ok(typeof json.configured === 'boolean');
 });
+
+test('construct help includes the update command', () => {
+  const out = execFileSync(process.execPath, [BIN, '--help'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+
+  assert.match(out, /update\s+Reinstall this checkout globally, then sync and verify hosts/);
+});

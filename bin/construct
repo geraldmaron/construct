@@ -20,6 +20,7 @@ import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, pollFreeMode
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
 import { printHostCapabilities } from '../lib/host-capabilities.mjs';
 import { runSetup } from '../lib/setup.mjs';
+import { runUpdate } from '../lib/update.mjs';
 import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
 import { runDistillCli } from '../lib/distill.mjs';
 import { runIngestCli } from '../lib/document-ingest.mjs';
@@ -108,6 +109,7 @@ async function cmdShow() {
 async function cmdSync(args) {
   generateCompletions();
   runNodeScript(path.join(ROOT_DIR, 'sync-agents.mjs'), args);
+  if (args.includes('--no-docs')) return;
   const { regenerateDocs } = await import('../lib/auto-docs.mjs');
   const { changed } = await regenerateDocs({ rootDir: ROOT_DIR });
   for (const f of changed) ok(`Updated ${path.relative(ROOT_DIR, f)}`);
@@ -414,6 +416,15 @@ async function cmdHeadhunt(args) { await runHeadhunt({ args, cwd: process.cwd(),
 async function cmdHosts() { printHostCapabilities(); }
 async function cmdSetup(args) { await runSetup({ rootDir: ROOT_DIR, args, homeDir: HOME }); }
 
+async function cmdUpdate() {
+  try {
+    runUpdate({ cwd: process.cwd(), env: process.env, stdout: process.stdout });
+  } catch (error) {
+    errorln(error?.message || 'construct update failed');
+    process.exit(1);
+  }
+}
+
 async function cmdDo(args) {
   const goal = args.join(' ').trim();
   if (!goal) {
@@ -635,6 +646,7 @@ const handlers = new Map([
   ['show', cmdShow],
   ['serve', cmdServe],
   ['setup', cmdSetup],
+  ['update', cmdUpdate],
   ['sync', cmdSync],
   ['list', cmdList],
   ['doctor', cmdDoctor],
