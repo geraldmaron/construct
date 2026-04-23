@@ -7,6 +7,56 @@ reading the project for the first time.
 -->
 # Changelog
 
+## Tiered session-start injection
+
+### Session-start payload reshaped into Tier 1/2/3
+
+- `lib/hooks/session-start.mjs` now follows a tiered injection model: Tier 1 always injects (header, branch, status, current task one-liner), Tier 2 conditionally injects (`.cx/context.md` body gated by 7-day freshness), Tier 3 surfaces one-line hints pointing at MCP tools rather than embedding payloads.
+- Workflow note collapsed from full multi-task summary to a single current-task line; full summary fetched on demand via the existing `workflow_status` MCP tool.
+- Prior observations no longer embedded; replaced with a one-line hint referencing the new `memory_recent` MCP tool.
+- Efficiency snapshot now suppressed when status is `healthy`; surfaced only when the digest signals a real issue, with a hint pointing at the new `efficiency_snapshot` MCP tool.
+- Stale `.cx/context.md` (>7 days old) no longer floods the session; degrades to a one-line hint suggesting `construct context refresh` or `memory_recent`.
+
+### New MCP tools backing Tier 3 hints
+
+- Added `memory_recent` MCP tool (`lib/mcp/server.mjs`) — returns recent observations for the project, deduplicated by `(role, summary)`, configurable limit (1–50, default 10).
+- Added `efficiency_snapshot` MCP tool (`lib/mcp/server.mjs`) — returns the read-efficiency snapshot via the existing `buildCompactEfficiencyDigest` helper.
+- Both tools are project-scoped and respect the same `cwd` / `home_dir` overrides as the rest of the MCP surface.
+
+### Verification checklist deduplication
+
+- `commands/build/feature.md` no longer ships its own verification checklist; defers to the canonical checklist owned by `cx-engineer` to prevent drift.
+
+### Measurement
+
+- Session-start payload on the `construct` repo: 2,569 B → 2,275 B (~74 tok / 11.5% reduction). Larger savings expected on repos with noisy observations or active workflows with many in-flight tasks.
+
+## Follow-up: prompt examples and eval fixtures
+
+### Persona and role example corpus
+
+- Added shipped prompt example fixtures under `examples/` for personas and roles.
+- Seeded the corpus with `construct`, `engineer`, `reviewer`, and `orchestrator` cases across `golden`, `bad`, `boundary`, and `adversarial` categories.
+- Added `tests/prompt-examples.test.mjs` to enforce fixture structure, category/path alignment, and references back to real prompt surfaces.
+
+### Public vs internal prompt taxonomy clarified
+
+- Added `docs/prompt-surfaces.md` as the canonical reference for prompt architecture.
+- Clarified that `personas/construct.md` is the sole public persona and that `agents/prompts/cx-*.md` plus `skills/roles/*.md` are internal routed layers.
+- Moved internal fixtures under `examples/internal/roles/**` to make the public-vs-internal split explicit.
+- Expanded required internal fixture coverage to include `architect` and `qa` alongside `engineer`, `reviewer`, and `orchestrator`.
+
+### Visual deliverables are now first-class routed work
+
+- Routing now treats wireframes, diagrams, slide decks, presentations, and demo videos as `visual` work instead of falling through to immediate prose answers.
+- `cx-designer` now explicitly owns visual deliverables and documents how to use existing tools and host skills for wireframes, diagrams, decks, and walkthroughs.
+- `docs/prompt-surfaces.md` and `README.md` now document the expected tools and artifact forms for visual work.
+
+### Prompt maintenance contract is now explicit
+
+- `docs/README.md`, `docs/architecture.md`, and `README.md` now document the split between lean prompt surfaces, role anti-pattern guidance, and example fixtures used for regression.
+- `package.json` now ships `examples/**` in the published package so the corpus remains available across hosts and future eval tooling.
+
 
 ## Follow-up: source-checkout update command
 

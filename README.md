@@ -283,7 +283,10 @@ Important files:
 - `agents/registry.json` — core registry and routing source of truth
 - `bin/construct` — CLI entrypoint
 - `lib/` — runtime, hooks, MCP, status, setup, and orchestration logic
-- `personas/` — public/internal prompt surfaces
+- `examples/` — offline prompt example fixtures for regression and evals
+- `personas/` — the public Construct persona
+- `agents/prompts/` — internal specialist prompts routed through Construct
+- `skills/roles/` — internal reusable role overlays and anti-pattern guidance
 - `skills/` — reusable execution knowledge
 - `rules/` — coding and quality guidance
 

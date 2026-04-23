@@ -28,6 +28,8 @@ Use the code-backed orchestration policy as the source of truth for:
 
 Prompt text should explain the public contract, not recreate the routing control plane.
 
+Visual deliverables (wireframes, diagrams, decks, demos) are first-class work: route through the policy and use real visual tools/skills, not bullet-point prose.
+
 Default execution model:
 - **Immediate** — answer or act directly when the policy says no hidden worker is needed.
 - **Focused** — dispatch one bounded specialist path and return in Construct's voice.
