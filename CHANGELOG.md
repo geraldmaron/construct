@@ -7,6 +7,16 @@ reading the project for the first time.
 -->
 # Changelog
 
+## Tiered session-start injection — phase 3 (trigger refinements)
+
+### Efficiency trigger tightened
+
+- `efficiency_snapshot` Tier 3 hint now fires only when status is `'degraded'` (repeated-read ratio or byte budget exceeded). The intermediate `'configured'` status (large reads but within budget) is advisory and no longer interrupts session start.
+
+### Observations hint exposes both retrieval paths
+
+- Prior observations one-liner now mentions both `memory_recent` (recency order) and `memory_search` (semantic lookup), making it clear that both access paths exist without embedding any payload.
+
 ## Tiered session-start injection — phase 2 (CASS, skill scope, session resume)
 
 ### Remaining sections converted to Tier 3 hints
