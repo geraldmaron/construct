@@ -140,7 +140,7 @@ Full conversation transcripts, raw tool outputs, and file contents are NOT store
 
 ### Lifecycle
 
-1. **Session start** — `session-start.mjs` hook creates a new session and loads the last completed session for resume context
+1. **Session start** — `session-start.mjs` hook creates a new session, loads the last completed session for resume context, and follows the tiered injection model below to keep payload size bounded
 2. **Mid-session** — agents can call `session_save` MCP tool to persist distilled state
 3. **Session end** — `stop-notify.mjs` hook marks the active session as completed with a summary
 4. **Construct down** — `closeAllSessions()` marks all active sessions as closed
@@ -151,6 +151,18 @@ Full conversation transcripts, raw tool outputs, and file contents are NOT store
 - `session_load` — load full distilled record + generated resume context
 - `session_search` — keyword search across session summaries
 - `session_save` — update active session with distilled context
+
+### Tiered injection model
+
+`session-start.mjs` follows a tiered injection model so the always-injected payload stays small and predictable across projects of varying activity:
+
+| Tier | Behavior | Examples |
+|---|---|---|
+| **Tier 1** | Always injected | header, working branch, approval reminder, git status, current workflow task one-liner, pending typecheck warning |
+| **Tier 2** | Injected only when fresh and meaningful | `.cx/context.md` body (gated by 7-day mtime freshness), skill-scope warnings, recent drop-zone files, last-session resume context |
+| **Tier 3** | Surfaced as a one-line hint pointing at an MCP tool | prior observations (→ `memory_recent`), efficiency snapshot when not healthy (→ `efficiency_snapshot`), full workflow summary (→ `workflow_status`) |
+
+Stale `.cx/context.md` (>7 days) degrades to a Tier 1 hint suggesting `construct context refresh` or `memory_recent` rather than flooding the session with stale state. The tiered model trades one line of context per absent payload for on-demand retrieval, keeping every session lean while preserving full access via tools.
 
 ## Learning loop (observation store + entity tracking)
 
@@ -198,7 +210,7 @@ At session end, `stop-notify.mjs` automatically captures:
 
 ### Lifecycle
 
-1. **Session start** — `session-start.mjs` surfaces the 5 most recent observations for the project
+1. **Session start** — `session-start.mjs` surfaces a one-line hint pointing at `memory_recent` when ≥2 distinct prior observations exist for the project; full payload fetched on demand
 2. **Mid-session** — specialists call `memory_add_observations` and `memory_create_entities` as they discover patterns
 3. **Session end** — `stop-notify.mjs` runs `captureSessionArtifacts()` to auto-record session insights
 4. **Next session** — `memory_search` retrieves relevant prior observations for context

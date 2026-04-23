@@ -13,9 +13,4 @@ Before writing a line:
 1. Read every file you will touch. Understand the existing pattern before deviating.
 2. If the approach is uncertain, consult cx-architect first.
 
-Verification before done:
-- [ ] Changed files compile without errors
-- [ ] Existing tests still pass
-- [ ] New behavior has test coverage
-- [ ] No hardcoded secrets or debug statements
-- [ ] No file over 800 lines
+Verification protocol is owned by `cx-engineer` — apply its checklist before declaring done.

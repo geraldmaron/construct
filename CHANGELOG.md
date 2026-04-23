@@ -7,6 +7,30 @@ reading the project for the first time.
 -->
 # Changelog
 
+## Tiered session-start injection
+
+### Session-start payload reshaped into Tier 1/2/3
+
+- `lib/hooks/session-start.mjs` now follows a tiered injection model: Tier 1 always injects (header, branch, status, current task one-liner), Tier 2 conditionally injects (`.cx/context.md` body gated by 7-day freshness), Tier 3 surfaces one-line hints pointing at MCP tools rather than embedding payloads.
+- Workflow note collapsed from full multi-task summary to a single current-task line; full summary fetched on demand via the existing `workflow_status` MCP tool.
+- Prior observations no longer embedded; replaced with a one-line hint referencing the new `memory_recent` MCP tool.
+- Efficiency snapshot now suppressed when status is `healthy`; surfaced only when the digest signals a real issue, with a hint pointing at the new `efficiency_snapshot` MCP tool.
+- Stale `.cx/context.md` (>7 days old) no longer floods the session; degrades to a one-line hint suggesting `construct context refresh` or `memory_recent`.
+
+### New MCP tools backing Tier 3 hints
+
+- Added `memory_recent` MCP tool (`lib/mcp/server.mjs`) — returns recent observations for the project, deduplicated by `(role, summary)`, configurable limit (1–50, default 10).
+- Added `efficiency_snapshot` MCP tool (`lib/mcp/server.mjs`) — returns the read-efficiency snapshot via the existing `buildCompactEfficiencyDigest` helper.
+- Both tools are project-scoped and respect the same `cwd` / `home_dir` overrides as the rest of the MCP surface.
+
+### Verification checklist deduplication
+
+- `commands/build/feature.md` no longer ships its own verification checklist; defers to the canonical checklist owned by `cx-engineer` to prevent drift.
+
+### Measurement
+
+- Session-start payload on the `construct` repo: 2,569 B → 2,275 B (~74 tok / 11.5% reduction). Larger savings expected on repos with noisy observations or active workflows with many in-flight tasks.
+
 ## Follow-up: prompt examples and eval fixtures
 
 ### Persona and role example corpus
