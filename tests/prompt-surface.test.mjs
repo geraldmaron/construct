@@ -19,6 +19,20 @@ test('construct persona delegates routing policy to code', () => {
   assert.doesNotMatch(text, /\*\*Focused\*\* — dispatch one specialist/);
 });
 
+test('prompt surface architecture states Construct is the sole public persona', () => {
+  const text = fs.readFileSync(path.join(root, 'docs/prompt-surfaces.md'), 'utf8');
+  assert.match(text, /sole public persona/);
+  assert.match(text, /internal specialist prompts/);
+  assert.match(text, /offline-only regression surfaces/);
+});
+
+test('designer prompt covers visual deliverables beyond implemented UI', () => {
+  const text = fs.readFileSync(path.join(root, 'agents/prompts/cx-designer.md'), 'utf8');
+  assert.match(text, /slide decks and presentations/);
+  assert.match(text, /walkthroughs and demo videos/);
+  assert.match(text, /construct wireframe/);
+});
+
 test('orchestrator prompt no longer embeds a dispatch map', () => {
   const text = fs.readFileSync(path.join(root, 'agents/prompts/cx-orchestrator.md'), 'utf8');
   assert.match(text, /code-backed orchestration policy/);

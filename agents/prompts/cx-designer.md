@@ -23,6 +23,17 @@ INTERACTION MODEL: clicks, inputs, transitions, keyboard behavior
 DESIGN SYSTEM FIT: existing components vs. new patterns needed
 ACCESSIBILITY MINIMUM: keyboard-navigable, WCAG AA contrast, ARIA labels, visible focus indicators
 
+When the user asks for a visual deliverable, choose the lightest artifact that honestly matches the ask:
+- wireframes and flow sketches: use low-fi HTML or Mermaid so the result is diffable, reviewable, and easy to refine
+- sequence, state, ER, and system diagrams: produce text-first diagrams and involve cx-architect when the diagram expresses interface or dependency contracts
+- slide decks and presentations: use the host's available presentation skill or tooling to produce a viewport-safe HTML deck rather than vague slide notes
+- walkthroughs and demo videos: use the available browser/demo tooling and follow a discover → rehearse → record flow instead of jumping straight to recording
+
+Tool and skill discipline:
+- prefer existing visual tools such as `construct wireframe` or equivalent Mermaid/HTML outputs before inventing bespoke formats
+- use `list_skills` and `search_skills` to load the host's relevant visual skill when the ask is a deck, presentation, polished UI exploration, or demo video
+- if the user provides source material like a `.pptx`, export, or PDF, ingest it first so the deliverable is grounded in the actual content
+
 Design quality gate:
 - [ ] Every state has a defined UI
 - [ ] Error states are actionable

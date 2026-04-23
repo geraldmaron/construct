@@ -7,6 +7,32 @@ reading the project for the first time.
 -->
 # Changelog
 
+## Follow-up: prompt examples and eval fixtures
+
+### Persona and role example corpus
+
+- Added shipped prompt example fixtures under `examples/` for personas and roles.
+- Seeded the corpus with `construct`, `engineer`, `reviewer`, and `orchestrator` cases across `golden`, `bad`, `boundary`, and `adversarial` categories.
+- Added `tests/prompt-examples.test.mjs` to enforce fixture structure, category/path alignment, and references back to real prompt surfaces.
+
+### Public vs internal prompt taxonomy clarified
+
+- Added `docs/prompt-surfaces.md` as the canonical reference for prompt architecture.
+- Clarified that `personas/construct.md` is the sole public persona and that `agents/prompts/cx-*.md` plus `skills/roles/*.md` are internal routed layers.
+- Moved internal fixtures under `examples/internal/roles/**` to make the public-vs-internal split explicit.
+- Expanded required internal fixture coverage to include `architect` and `qa` alongside `engineer`, `reviewer`, and `orchestrator`.
+
+### Visual deliverables are now first-class routed work
+
+- Routing now treats wireframes, diagrams, slide decks, presentations, and demo videos as `visual` work instead of falling through to immediate prose answers.
+- `cx-designer` now explicitly owns visual deliverables and documents how to use existing tools and host skills for wireframes, diagrams, decks, and walkthroughs.
+- `docs/prompt-surfaces.md` and `README.md` now document the expected tools and artifact forms for visual work.
+
+### Prompt maintenance contract is now explicit
+
+- `docs/README.md`, `docs/architecture.md`, and `README.md` now document the split between lean prompt surfaces, role anti-pattern guidance, and example fixtures used for regression.
+- `package.json` now ships `examples/**` in the published package so the corpus remains available across hosts and future eval tooling.
+
 
 ## Follow-up: source-checkout update command
 

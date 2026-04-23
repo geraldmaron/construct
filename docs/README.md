@@ -19,10 +19,33 @@ All LLMs working in the repo, including Construct, must read these as project st
 ## Contents
 
 - [Architecture](./architecture.md)
+- [Prompt surface architecture](./prompt-surfaces.md)
+- [Templates and role anti-patterns](./templates/README.md)
 - [Runbooks](./runbooks/)
 - [ADRs](../.cx/decisions/) — session-context decisions (longer ADRs live in `docs/adr/`)
 - [Plans](../.cx/plans/) — canonical Construct plans that feed `workflow_import_plan` into `.cx/workflow.json` task packets (beads)
 - [Skills](../skills/) — domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
+
+## Prompt surfaces
+
+`docs/prompt-surfaces.md` is the canonical reference for the prompt architecture.
+
+It defines:
+
+- the sole public persona surface
+- internal specialist prompts and role overlays
+- offline-only example fixtures
+- the required fixture coverage policy
+
+## Prompt examples
+
+Shipped prompt example fixtures live under `examples/`.
+
+They are the canonical place for:
+
+- Construct public persona fixtures under `examples/personas/construct/**`
+- internal role fixtures under `examples/internal/roles/**`
+- labeled bad, boundary, and adversarial cases without bloating runtime prompts
 
 ## Maintenance
 
@@ -31,4 +54,4 @@ After updating the Construct repo checkout itself, run `construct update` from i
 ## Ownership
 
 Maintained by: Construct contributors
-Last updated: 2026-04-22
+Last updated: 2026-04-23

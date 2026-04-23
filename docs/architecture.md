@@ -207,6 +207,19 @@ At session end, `stop-notify.mjs` automatically captures:
 
 - tests must pass
 - docs should reflect shipped behavior
+
+## Prompt surfaces and examples
+
+Construct separates runtime prompt policy from offline regression fixtures.
+
+- `personas/construct.md` is the sole public persona
+- `agents/prompts/cx-*.md` are internal specialist prompts routed through Construct
+- `skills/roles/*.md` are internal reusable role overlays
+- `examples/` holds offline example fixtures for regression and future eval harnesses
+
+See `docs/prompt-surfaces.md` for the canonical prompt-surface taxonomy and fixture coverage policy.
+
+Bad examples are stored as critique and evaluation fixtures, not as free-floating few-shot content in the prompt. When in-prompt examples are used, they should be sparse and reserved for behavior that is hard to specify precisely in rules alone.
 - release/version metadata should be updated intentionally
 
 ## Hybrid retrieval model

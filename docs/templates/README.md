@@ -1,5 +1,7 @@
 # Doc Templates & Role Anti-Patterns
 
+See `../prompt-surfaces.md` for the canonical public-vs-internal prompt surface model. This document covers only templates and internal role overlays.
+
 Construct specialists produce standard documents (PRDs, ADRs, runbooks, memos, etc.) from shared templates, and they self-check against shared role anti-patterns. Both can be overridden per-project.
 
 ## Templates

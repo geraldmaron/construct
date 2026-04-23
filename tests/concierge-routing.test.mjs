@@ -197,6 +197,8 @@ describe("routing contract: expected dispatch per request type", () => {
     { request: "what does this function do", fileCount: 1, moduleCount: 1, track: "immediate", specialists: [] },
     { request: "explore the auth module", fileCount: 1, moduleCount: 1, track: "immediate", specialists: [] },
     { request: "design the onboarding UI", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["cx-designer"] },
+    { request: "create a sequence diagram for the oauth handshake", fileCount: 1, moduleCount: 1, track: "focused", specialists: ["cx-designer"] },
+    { request: "make a slide deck for the onboarding walkthrough", fileCount: 1, moduleCount: 1, track: "focused", specialists: ["cx-designer"] },
     { request: "write requirements for checkout", fileCount: 2, moduleCount: 1, track: "focused", specialists: ["cx-product-manager"] },
     { request: "write a platform PRD for API migration controls", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["cx-product-manager"], productFlavor: "platform" },
     { request: "write a Meta PRD for the agent evaluation loop", fileCount: 2, moduleCount: 1, track: "orchestrated", specialists: ["cx-product-manager"], productFlavor: "ai-product" },
