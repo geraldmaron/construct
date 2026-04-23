@@ -336,6 +336,7 @@ construct/
 ├── personas         Persona prompt definitions
 ├── platforms
 ├── rules            Coding and quality standards
+├── schemas
 ├── site             MkDocs source for the GitHub Pages documentation site
 ├── skills           Reusable domain knowledge files
 ├── templates
