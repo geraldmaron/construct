@@ -329,6 +329,7 @@ construct/
 ├── commands         Command prompt assets
 ├── db
 ├── docs             Architecture notes, runbooks, and documentation contract
+├── examples
 ├── langfuse         Langfuse trace backend for agent observability
 ├── lib              Core runtime: CLI, hooks, MCP, status, sync, workflow
 ├── personas         Persona prompt definitions
