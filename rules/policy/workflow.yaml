@@ -1,0 +1,9 @@
+# workflow policy
+# Controls UserPromptSubmit routing — ensures significant work flows through workflow state.
+
+rule: workflow
+hook_event: UserPromptSubmit
+condition: workflow.status == "in-progress" AND (open_tasks.length > 0 OR high_severity_findings.length > 0)
+bypass_patterns: ["\\b(stop|pause|halt|enough|abort|cancel)\\b"]
+action: block
+message: "Workflow is active. Continue the current task, update .cx/workflow.json, or say stop/pause to end."

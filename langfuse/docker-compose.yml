@@ -1,0 +1,82 @@
+# Construct — Langfuse Self-Hosted
+# Auto-provisioned: keys are seeded at container startup via LANGFUSE_INIT_* vars.
+# No browser setup required. 'construct setup' writes keys to .env automatically.
+#
+# Manual usage:
+#   docker-compose -f langfuse/docker-compose.yml -p construct-langfuse up -d
+#   # Keys are ready immediately — see LANGFUSE_INIT_PROJECT_* below
+
+name: construct-langfuse
+
+services:
+  langfuse-server:
+    image: langfuse/langfuse:2
+    container_name: construct-langfuse
+    restart: unless-stopped
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-construct-nextauth-secret}
+      SALT: ${LANGFUSE_SALT:-construct-salt-value}
+      NEXTAUTH_URL: http://localhost:3000
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "true"
+      AUTH_DISABLE_SIGNUP: "false"
+      # ── Auto-provisioning (no browser setup needed) ──────────────────
+      LANGFUSE_INIT_ORG_ID: "construct-org"
+      LANGFUSE_INIT_ORG_NAME: "Construct"
+      LANGFUSE_INIT_PROJECT_ID: "construct-project"
+      LANGFUSE_INIT_PROJECT_NAME: "Construct"
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: "pk-lf-construct-local"
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: "sk-lf-construct-local"
+      LANGFUSE_INIT_USER_EMAIL: "admin@construct.local"
+      LANGFUSE_INIT_USER_NAME: "Admin"
+      LANGFUSE_INIT_USER_PASSWORD: "construct-admin"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/public/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  langfuse-db:
+    image: postgres:15-alpine
+    container_name: construct-langfuse-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+      POSTGRES_DB: langfuse
+    volumes:
+      - langfuse_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse -d langfuse"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  dspy-optimizer:
+    build:
+      context: ./dspy-optimizer
+      dockerfile: Dockerfile
+    container_name: construct-dspy-optimizer
+    restart: "no"
+    profiles:
+      - optimize
+    env_file:
+      - ../.env
+    environment:
+      LANGFUSE_BASEURL: http://langfuse-server:3000
+    depends_on:
+      langfuse-server:
+        condition: service_healthy
+    volumes:
+      - ../.cx:/app/.cx
+
+volumes:
+  langfuse_db_data:
+    driver: local

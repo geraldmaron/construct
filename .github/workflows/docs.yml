@@ -1,0 +1,33 @@
+name: docs auto-update
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'lib/cli-commands.mjs'
+      - 'lib/hooks/**'
+      - 'agents/registry.json'
+      - 'README.md'
+      - 'docs/**'
+
+jobs:
+  update-docs:
+    name: regenerate managed regions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - name: Regenerate AUTO regions
+        run: node ./bin/construct docs:update
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md docs/README.md docs/architecture.md
+          git diff --cached --quiet || git commit -m "docs: regenerate managed regions [skip ci]"
+          git push origin HEAD:main || true

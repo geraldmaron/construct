@@ -1,0 +1,11 @@
+# type(scope): subject — imperative, ≤72 chars, no period
+#
+# Types: feat fix refactor docs test chore perf ci
+# Scope: optional context (e.g. hooks, cli, sync, docs, site)
+#
+# Body — explain the WHY, not the WHAT. Wrap at 72 chars.
+
+
+# Footer — BREAKING CHANGE or issue refs go here
+# BREAKING CHANGE: <description>
+# Refs: #123

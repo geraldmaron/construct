@@ -1,0 +1,9 @@
+# task-complete policy
+# Blocks marking a workflow task as done without verification evidence.
+
+rule: task-complete
+hook_event: PreToolUse
+trigger_tools: [mcp__construct-mcp__workflow_update_task]
+condition: task.verification is empty OR task.acceptanceCriteria is empty
+action: block
+message: "Task completion requires owner, acceptance criteria, and verification evidence in .cx/workflow.json."

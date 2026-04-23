@@ -1,0 +1,9 @@
+# Default owner for all files
+* @geraldmaron
+
+# Protected: changes cascade to all downstream platforms
+agents/registry.json @geraldmaron
+sync-agents.mjs @geraldmaron
+install.sh @geraldmaron
+lib/hooks/ @geraldmaron
+claude/settings.template.json @geraldmaron

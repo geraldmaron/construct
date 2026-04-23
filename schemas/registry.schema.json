@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/geraldmaron/construct/schemas/registry.schema.json",
+  "title": "Construct Agent Registry",
+  "description": "Schema for agents/registry.json — the source of truth for all Construct agent adapters.",
+  "type": "object",
+  "required": ["version", "system", "prefix", "models", "agents", "personas"],
+  "additionalProperties": true,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Registry schema version. Increment on breaking changes."
+    },
+    "system": {
+      "type": "string",
+      "minLength": 1,
+      "description": "System identifier used in generated file headers."
+    },
+    "prefix": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Agent name prefix (e.g. 'cx'). All agent names are prefixed with '<prefix>-'."
+    },
+    "models": {
+      "type": "object",
+      "required": ["reasoning", "standard", "fast"],
+      "additionalProperties": false,
+      "properties": {
+        "reasoning": { "$ref": "#/$defs/modelTier" },
+        "standard": { "$ref": "#/$defs/modelTier" },
+        "fast": { "$ref": "#/$defs/modelTier" }
+      }
+    },
+    "providers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "npm": { "type": "string" },
+          "name": { "type": "string" },
+          "options": { "type": "object" },
+          "models": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "mcpServers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["command"],
+        "properties": {
+          "command": { "type": "string" },
+          "args": { "type": "array", "items": { "type": "string" } },
+          "description": { "type": "string" },
+          "env": { "type": "object", "additionalProperties": { "type": "string" } }
+        }
+      }
+    },
+    "sharedGuidance": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "platformGuidance": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "modelGuidance": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Per-model-family guidance injected into all agent prompts."
+    },
+    "agents": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/agentEntry" },
+      "description": "Specialist agents (dispatched via Task tool)."
+    },
+    "personas": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/personaEntry" },
+      "description": "Primary personas (loaded as the main Claude Code / OpenCode identity)."
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "sourceDir"],
+        "properties": {
+          "name": { "type": "string" },
+          "sourceDir": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "modelTier": {
+      "type": "object",
+      "required": ["primary"],
+      "properties": {
+        "primary": { "type": "string", "minLength": 1 },
+        "fallback": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "agentEntry": {
+      "type": "object",
+      "required": ["name", "description"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "Agent name without prefix. Full name = '<prefix>-<name>'."
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "prompt": { "type": "string" },
+        "promptFile": { "type": "string" },
+        "model": { "type": "string" },
+        "modelTier": {
+          "type": "string",
+          "enum": ["reasoning", "standard", "fast"]
+        },
+        "claudeTools": { "type": "string" },
+        "skills": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "collaborators": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "internal": { "type": "boolean" },
+        "canEdit": { "type": "boolean" },
+        "codexSandbox": {
+          "type": "string",
+          "enum": ["read-only", "full"]
+        },
+        "perspective": {
+          "type": "object",
+          "properties": {
+            "bias": { "type": "string" },
+            "tension": { "type": "string" },
+            "openingQuestion": { "type": "string" },
+            "failureMode": { "type": "string" }
+          }
+        },
+        "modelGuidance": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "wordCapOverride": { "type": "integer", "minimum": 1 },
+        "returnsStructured": { "type": "boolean" },
+        "injectAgentRoster": { "type": "boolean" },
+        "preloadRoleGuidance": { "type": "boolean" }
+      },
+      "anyOf": [
+        { "required": ["prompt"] },
+        { "required": ["promptFile"] }
+      ]
+    },
+    "personaEntry": {
+      "type": "object",
+      "required": ["name", "description", "displayName", "promptFile"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "displayName": { "type": "string", "minLength": 1 },
+        "promptFile": { "type": "string" },
+        "model": { "type": "string" },
+        "modelTier": {
+          "type": "string",
+          "enum": ["reasoning", "standard", "fast"]
+        },
+        "claudeTools": { "type": "string" },
+        "skills": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "injectAgentRoster": { "type": "boolean" },
+        "preloadRoleGuidance": { "type": "boolean" },
+        "wordCapOverride": { "type": "integer", "minimum": 1 },
+        "modelGuidance": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    }
+  }
+}

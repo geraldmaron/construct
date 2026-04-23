@@ -1,0 +1,65 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "openrouter/openrouter/free",
+  "enabled_providers": [
+    "anthropic",
+    "openai",
+    "openrouter",
+    "ollama"
+  ],
+  "provider": {
+    "anthropic": {
+      "models": {}
+    },
+    "openai": {
+      "models": {}
+    },
+    "openrouter": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OpenRouter",
+      "options": {
+        "baseURL": "https://openrouter.ai/api/v1",
+        "headers": {
+          "HTTP-Referer": "__OPENROUTER_REFERER__",
+          "X-Title": "__OPENROUTER_TITLE__",
+          "Authorization": "Bearer __OPENROUTER_API_KEY__"
+        }
+      },
+      "models": {}
+    },
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (local)",
+      "options": {
+        "baseURL": "http://localhost:11434/v1",
+        "headers": {
+          "Authorization": "Bearer ollama"
+        }
+      },
+      "models": {}
+    }
+  },
+  "mcp": {
+    "cass": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-memory@latest"]
+    },
+    "context7": {
+      "type": "local",
+      "command": ["npx", "-y", "@upstash/context7-mcp@latest"]
+    },
+    "construct-mcp": {
+      "type": "local",
+      "command": ["node", "__CX_TOOLKIT_DIR__/lib/mcp/server.mjs"],
+      "environment": {
+        "CONSTRUCT_TRACE_BACKEND": "__CONSTRUCT_TRACE_BACKEND__",
+        "LANGFUSE_BASEURL": "__LANGFUSE_BASEURL__",
+        "LANGFUSE_PUBLIC_KEY": "__LANGFUSE_PUBLIC_KEY__",
+        "LANGFUSE_SECRET_KEY": "__LANGFUSE_SECRET_KEY__"
+      }
+    }
+  },
+  "agent": {
+    "__AGENTS_GENERATED_BY_CONSTRUCT_SYNC__": {}
+  }
+}

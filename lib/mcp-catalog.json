@@ -1,0 +1,293 @@
+{
+  "version": 1,
+  "mcps": [
+    {
+      "id": "context7",
+      "name": "Context7",
+      "category": "core",
+      "description": "Library and framework documentation lookup. Agents use this before writing code against any dependency.",
+      "package": "@upstash/context7-mcp@latest",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ],
+      "env": {},
+      "requiredEnv": [],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
+      "usedBy": [
+        "cx-docs-researcher",
+        "cx-engineer",
+        "cx-architect"
+      ],
+      "degradedMessage": "No live docs lookup. Agents rely on training data which may be outdated."
+    },
+    {
+      "id": "sequential-thinking",
+      "name": "Sequential Thinking",
+      "category": "core",
+      "description": "Structured multi-step reasoning chains. Helps with complex planning and analysis.",
+      "package": "@modelcontextprotocol/server-sequential-thinking",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "env": {},
+      "requiredEnv": [],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
+      "usedBy": [
+        "construct",
+        "cx-architect",
+        "cx-researcher"
+      ],
+      "degradedMessage": "Complex reasoning chains unavailable. Agents still work but may skip structured thinking steps."
+    },
+    {
+      "id": "memory",
+      "name": "Memory",
+      "category": "optional",
+      "description": "Persistent cross-session knowledge graph. Agents remember decisions and findings across sessions.",
+      "type": "url",
+      "url": "http://127.0.0.1:8765/",
+      "env": {},
+      "requiredEnv": [],
+      "setupModes": [
+        "auto",
+        "manual"
+      ],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
+      "usedBy": [
+        "construct",
+        "cx-docs-keeper",
+        "cx-researcher"
+      ],
+      "degradedMessage": "No cross-session memory. Each session starts fresh with no prior context."
+    },
+    {
+      "id": "playwright",
+      "name": "Playwright",
+      "category": "optional",
+      "description": "Browser automation for E2E testing and web research.",
+      "package": "@playwright/mcp@latest",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ],
+      "env": {},
+      "requiredEnv": [],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
+      "usedBy": [
+        "construct",
+        "cx-qa",
+        "cx-researcher"
+      ],
+      "degradedMessage": "No browser automation. E2E tests and live web research unavailable."
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "aliases": ["github-mcp", "github-mcp-server"],
+      "category": "optional",
+      "description": "GitHub API: issues, PRs, code search, repository operations.",
+      "type": "url",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer __GITHUB_TOKEN__"
+      },
+      "env": {
+        "GITHUB_TOKEN": "__GITHUB_TOKEN__"
+      },
+      "requiredEnv": [],
+      "setupModes": [
+        "auto",
+        "manual"
+      ],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "plugin", "plugin": "github@openai-curated", "label": "Codex Plugin" }
+      },
+      "setupUrl": null,
+      "setupNote": "Run 'gh auth login' to authenticate via browser, then re-run 'construct mcp add github'. Construct wires Claude Code and OpenCode directly. In Codex, use the built-in GitHub plugin/app path instead of a standalone GitHub MCP server.",
+      "usedBy": [
+        "construct",
+        "cx-engineer",
+        "cx-reviewer",
+        "cx-release-manager"
+      ],
+      "degradedMessage": "No GitHub API. Agents use gh CLI only — PR creation, issue tracking, code search limited."
+    },
+    {
+      "id": "atlassian",
+      "name": "Atlassian (Jira + Confluence)",
+      "aliases": ["atlassian-mcp-server", "atlassian-mcp"],
+      "category": "integration",
+      "description": "Jira issue tracking and Confluence wiki access via Atlassian's official remote MCP server. OAuth is handled by each MCP client.",
+      "type": "url",
+      "url": "https://mcp.atlassian.com/v1/mcp",
+      "env": {},
+      "requiredEnv": [],
+      "setupModes": [
+        "auto"
+      ],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
+      "setupNote": "Uses Atlassian's official remote MCP server with OAuth 2.1. Browser auth prompt appears on first use. Requires a Rovo license on your Atlassian account.",
+      "usedBy": [
+        "cx-product-manager",
+        "cx-program-manager",
+        "cx-docs-keeper",
+        "cx-release-manager"
+      ],
+      "degradedMessage": "No Jira/Confluence access. Issue tracking and wiki lookup must be done manually."
+    },
+    {
+      "id": "linear",
+      "name": "Linear",
+      "aliases": ["linear-mcp", "linear-mcp-server"],
+      "category": "integration",
+      "description": "Linear issue tracking — create issues, update status, search projects.",
+      "package": "@linear/mcp-server",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@linear/mcp-server"
+      ],
+      "env": {
+        "LINEAR_API_KEY": "__LINEAR_API_KEY__"
+      },
+      "requiredEnv": [
+        "LINEAR_API_KEY"
+      ],
+      "setupModes": [
+        "manual"
+      ],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
+      "setupUrl": "https://linear.app/settings/api",
+      "setupNote": "Generate a personal API key at linear.app/settings/api.",
+      "usedBy": [
+        "cx-product-manager",
+        "cx-program-manager",
+        "cx-operations"
+      ],
+      "degradedMessage": "No Linear access. Issue creation and sprint tracking must be done manually."
+    },
+    {
+      "id": "slack",
+      "name": "Slack",
+      "aliases": ["slack-mcp", "slack-mcp-server"],
+      "category": "integration",
+      "description": "Slack messaging — send messages, read channels, search conversations.",
+      "package": "@modelcontextprotocol/server-slack",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-slack"
+      ],
+      "env": {
+        "SLACK_BOT_TOKEN": "__SLACK_BOT_TOKEN__",
+        "SLACK_TEAM_ID": "__SLACK_TEAM_ID__"
+      },
+      "requiredEnv": [
+        "SLACK_BOT_TOKEN",
+        "SLACK_TEAM_ID"
+      ],
+      "setupModes": [
+        "manual"
+      ],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
+      "setupUrl": "https://api.slack.com/apps",
+      "setupNote": "Create a Slack app at api.slack.com/apps. Add Bot Token Scopes: channels:read, chat:write, channels:history.",
+      "usedBy": [
+        "construct",
+        "cx-release-manager",
+        "cx-sre"
+      ],
+      "degradedMessage": "No Slack integration. Deployment notifications and team alerts must be sent manually."
+    },
+    {
+      "id": "notion",
+      "name": "Notion",
+      "aliases": ["notion-mcp", "claude_ai_Notion"],
+      "category": "integration",
+      "description": "Notion workspace access — read/write pages, databases, and comments.",
+      "package": "@anthropic-ai/notion-mcp",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropic-ai/notion-mcp"
+      ],
+      "env": {
+        "NOTION_API_TOKEN": "__NOTION_API_TOKEN__"
+      },
+      "requiredEnv": [
+        "NOTION_API_TOKEN"
+      ],
+      "setupModes": [
+        "manual"
+      ],
+      "hostSupport": {
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
+      },
+      "setupUrl": "https://www.notion.so/profile/integrations",
+      "setupNote": "Create an integration at notion.so/profile/integrations. Share target pages/databases with the integration.",
+      "usedBy": [
+        "cx-docs-keeper",
+        "cx-product-manager",
+        "cx-program-manager"
+      ],
+      "degradedMessage": "No Notion access. Documentation must be managed manually."
+    },
+    {
+      "id": "filesystem",
+      "name": "Filesystem",
+      "category": "optional",
+      "description": "Extended file operations beyond built-in Read/Write/Edit tools.",
+      "package": "@modelcontextprotocol/server-filesystem",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/"
+      ],
+      "env": {},
+      "requiredEnv": [],
+      "usedBy": [
+        "cx-engineer",
+        "cx-explorer"
+      ],
+      "degradedMessage": "Using built-in file tools only. Some advanced file operations unavailable."
+    }
+  ]
+}
