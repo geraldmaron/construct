@@ -7,7 +7,20 @@ reading the project for the first time.
 -->
 # Changelog
 
-## Tiered session-start injection
+## Tiered session-start injection — phase 2 (CASS, skill scope, session resume)
+
+### Remaining sections converted to Tier 3 hints
+
+- **CASS memory**: replaced dual live-query embed (up to ~1 KB + 3 s network round-trip) with a liveness probe; emits a one-line hint pointing at `memory_search` only when CASS is running, omits entirely when not.
+- **Skill scope**: replaced full out-of-scope skill list (20+ entries) with a one-line count + `construct skills scope` pointer.
+- **Session resume**: capped `buildResumeContext` output at 600 chars in the hook; truncated suffix points at `session_load` for the full record.
+- Removed now-unused `queryCass` helper function from session-start.
+
+### Cumulative payload impact
+
+On the `construct` repo (with CASS running): structural savings from CASS and skill-scope conversion are offset by a larger `context.md` body updated this session. On repos with CASS returning results and a populated `skills-profile.json`, savings are 400–1,200 B per session start.
+
+
 
 ### Session-start payload reshaped into Tier 1/2/3
 
