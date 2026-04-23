@@ -701,6 +701,19 @@ const handlers = new Map([
     errorln(`Unknown audit subcommand: ${sub}. Available: skills, trail`);
     process.exit(1);
   }],
+  ['doc', async (args) => {
+    const sub = args[0];
+    if (sub === 'verify' || !sub) {
+      const { runDocVerifyCli } = await import('../lib/doc-verify.mjs');
+      return runDocVerifyCli(args.slice(sub === 'verify' ? 1 : 0));
+    }
+    if (sub === 'install-hooks') {
+      const { runDocInstallHooksCli } = await import('../lib/doc-verify.mjs');
+      return runDocInstallHooksCli(args.slice(1));
+    }
+    errorln(`Unknown doc subcommand: ${sub}. Available: verify, install-hooks`);
+    process.exit(1);
+  }],
   ['team', async (args) => {
     const sub = args[0];
     if (sub === 'review') return runTeamReviewCli(args.slice(1));

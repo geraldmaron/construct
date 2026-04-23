@@ -164,6 +164,7 @@ The team challenges itself along the way — reviewers push back on incomplete w
 | Command | What it does |
 |---|---|
 | `construct audit` | Audit Construct internals and review the mutation trail |
+| `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct skills` | Detect project tech stack and scope installed skills to relevance |
 | `construct doctor` | Run installation health checks |
 | `construct validate` | Validate registry.json structure and field constraints |

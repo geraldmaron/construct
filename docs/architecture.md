@@ -215,6 +215,48 @@ At session end, `stop-notify.mjs` automatically captures:
 3. **Session end** — `stop-notify.mjs` runs `captureSessionArtifacts()` to auto-record session insights
 4. **Next session** — `memory_search` retrieves relevant prior observations for context
 
+## Doc auditability stamps
+
+Every `.md` file Construct generates carries a YAML front-matter stamp for identity, provenance, and tamper detection.
+
+### Stamp schema
+
+```yaml
+---
+cx_doc_id:   019dbb90-...          # UUIDv7 — time-ordered, preserved across re-stamps
+created_at:  2026-04-23T18:18:12Z  # ISO 8601, set at creation, never mutated
+updated_at:  2026-04-23T19:00:00Z  # Updated on every re-stamp
+generator:   construct/sync-agents # Which surface produced the file
+model:       claude-sonnet-4-6     # Optional — model that generated the content
+session_id:  019dbb90-...          # Optional — Construct session UUIDv7
+body_hash:   sha256:<hex>          # SHA-256 of trimmed body (everything after closing ---)
+---
+```
+
+### Design decisions
+
+- **UUIDv7 not v4** — time-ordered (RFC 9562 §5.7) so ids sort chronologically without a separate `created_at` index; implemented inline with zero npm dependencies.
+- **Body hash covers only the body** — the stamp block itself is excluded from the hash so re-stamps don't invalidate the hash when only metadata changes.
+- **id preserved on re-stamp** — `cx_doc_id` is stable across re-syncs; a new id is only generated on `{ preserve_id: false }`.
+- **Whitespace-trimmed** — trailing newlines and spaces don't break verification.
+
+### Generation surfaces
+
+| Surface | Generator label |
+|---|---|
+| `sync-agents.mjs` `writeFile()` | `construct/sync-agents` |
+| `lib/init-docs.mjs` `writeIfMissing()` | `construct/init-docs` |
+| `lib/document-ingest.mjs` `ingestDocuments()` | `construct/ingest` |
+
+### Verification
+
+```bash
+construct doc verify [path] [--json]   # check body_hash on all stamped .md files
+construct doc install-hooks            # install prepare-commit-msg git hook for AI trailers
+```
+
+The git hook appends `AI-Generator:`, `AI-Model:`, and `AI-Session:` trailers to commit messages when `CONSTRUCT_MODEL` / `CONSTRUCT_SESSION_ID` env vars are present.
+
 ## Validation and release expectations
 
 - tests must pass

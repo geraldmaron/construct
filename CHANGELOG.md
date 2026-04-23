@@ -7,6 +7,37 @@ reading the project for the first time.
 -->
 # Changelog
 
+## Doc auditability stamps (UUIDv7 + SHA-256 body hash)
+
+### New: `lib/doc-stamp.mjs`
+
+Shared helper for injecting and verifying auditability stamps on Construct-generated markdown files. Provides:
+
+- `uuidv7()` — RFC 9562 §5.7 time-ordered UUIDs for document identity (zero npm dependencies, inline implementation)
+- `bodyHash(text)` — `sha256:<hex>` of trimmed body for tamper detection
+- `stampFrontmatter(content, opts)` — injects/updates YAML front-matter block (`cx_doc_id`, `created_at`, `updated_at`, `generator`, `model?`, `session_id?`, `body_hash`)
+- `verifyStamp(content)` — verifies stored hash against current body; returns `{ valid, id, created_at }` or `{ valid: false, reason, stored, computed }`
+- `parseStamp(content)` — extracts stamp fields as a plain object
+
+### Wired into all doc-generation surfaces
+
+- **`sync-agents.mjs`** — `writeFile` helper now stamps every `.md` agent file written during `construct sync`
+- **`lib/init-docs.mjs`** — `writeIfMissing` stamps every `.md` file scaffolded by `construct init-docs`
+- **`lib/document-ingest.mjs`** — output markdown stamped after ingestion
+
+### New: `construct doc verify [path] [--json]`
+
+CLI command that walks one file or a directory tree, checks every stamped `.md` file's `body_hash`, and reports pass/fail/unstamped counts. Exits non-zero if any stamped files fail.
+
+### New: `construct doc install-hooks`
+
+Installs `lib/git-hooks/prepare-commit-msg` into `.git/hooks/` of the current repo. The hook appends `AI-Generator:`, `AI-Model:`, and `AI-Session:` git trailers to every commit message when Construct env vars are set.
+
+### Tests
+
+26 new tests in `tests/doc-stamp.test.mjs` covering UUID format/uniqueness/ordering, hash determinism, stamp injection, id preservation, tamper detection, and re-stamp idempotency.
+
+
 ## Tiered session-start injection — phase 3 (trigger refinements)
 
 ### Efficiency trigger tightened

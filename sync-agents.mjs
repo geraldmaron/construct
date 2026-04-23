@@ -31,6 +31,7 @@ import {
 import { loadConstructEnv } from "./lib/env-config.mjs";
 import { inlineRoleAntiPatterns, PROMPT_WORD_CAP } from "./lib/role-preload.mjs";
 import { resolveTiersForPrimary } from "./lib/model-router.mjs";
+import { stampFrontmatter } from "./lib/doc-stamp.mjs";
 
 const home = os.homedir();
 const root = path.resolve(import.meta.dirname);
@@ -249,7 +250,13 @@ function resolveModelChain(entry) {
 }
 
 function mkdirp(dir) { fs.mkdirSync(dir, { recursive: true }); }
-function writeFile(file, content) { mkdirp(path.dirname(file)); fs.writeFileSync(file, content); }
+function writeFile(file, content) {
+  mkdirp(path.dirname(file));
+  // Stamp markdown files with a UUIDv7 identity + body hash for auditability.
+  // Non-markdown files (TOML, JSON) are written as-is.
+  const stamped = file.endsWith('.md') ? stampFrontmatter(content, { generator: 'construct/sync-agents' }) : content;
+  fs.writeFileSync(file, stamped);
+}
 
 function adapterName(entry) {
   return entry.isPersona ? entry.name : `${agentPrefix}${entry.name}`;
