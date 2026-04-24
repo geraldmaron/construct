@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { applyFreePreferenceToTierSet, applyFreeSameFamilyPreferenceToTierSet, classifyProviderFailure, inferTierModelsFromSelection, readCurrentModels, resolveExecutionContractModelMetadata, resolveFallbackAction, selectModelTierForWorkCategory, setModelWithTierInference } from '../lib/model-router.mjs';
+import { applyFreePreferenceToTierSet, applyFreeSameFamilyPreferenceToTierSet, classifyProviderFailure, inferTierModelsFromSelection, isProviderOnCooldown, readCurrentModels, readProviderCooldowns, resolveExecutionContractModelMetadata, resolveFallbackAction, selectFallbackModel, selectModelTierForWorkCategory, setModelWithTierInference, writeProviderCooldown } from '../lib/model-router.mjs';
 
 function tempFile(prefix) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -209,4 +209,72 @@ test('classifyProviderFailure handles transient network and auth errors', () => 
 
   assert.deepEqual(network, { kind: 'transient_network', provider: null, retryable: true });
   assert.deepEqual(auth, { kind: 'auth_error', provider: null, retryable: false });
+});
+
+test('readProviderCooldowns returns empty object for missing file', () => {
+  const result = readProviderCooldowns('/nonexistent/path/cooldowns.json');
+  assert.deepEqual(result, {});
+});
+
+test('writeProviderCooldown persists expiry; isProviderOnCooldown reflects it', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-cooldown-'));
+  const cooldownPath = path.join(dir, 'provider-cooldowns.json');
+  const now = Date.now();
+
+  writeProviderCooldown(cooldownPath, 'anthropic', now);
+
+  assert.ok(isProviderOnCooldown(cooldownPath, 'anthropic', now + 1000), 'should be on cooldown 1s later');
+  assert.ok(!isProviderOnCooldown(cooldownPath, 'anthropic', now + 6 * 60 * 1000), 'should be clear after 6 min');
+  assert.ok(!isProviderOnCooldown(cooldownPath, 'openrouter', now + 1000), 'unrelated provider not on cooldown');
+});
+
+test('isProviderOnCooldown returns false for missing file', () => {
+  assert.ok(!isProviderOnCooldown('/nonexistent/path/cooldowns.json', 'anthropic'));
+});
+
+test('selectFallbackModel resolves candidate and skips cooldown-blocked providers', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-fallback-'));
+  const envPath = path.join(dir, '.env');
+  const cooldownPath = path.join(dir, 'provider-cooldowns.json');
+  const now = Date.now();
+
+  fs.writeFileSync(envPath, 'CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n');
+
+  const registryModels = {
+    standard: { primary: 'anthropic/claude-sonnet-4-6', fallback: ['openrouter/qwen/qwen3-coder:free'] },
+  };
+
+  const hookInput = { error: { message: '429 rate limit', provider: 'anthropic' } };
+
+  const result = selectFallbackModel({ hookInput, envPath, cooldownPath, registryModels, now });
+  assert.ok(result, 'should resolve a candidate');
+  assert.equal(result.tier, 'standard');
+  assert.equal(result.targetModel, 'openrouter/qwen/qwen3-coder:free');
+  assert.equal(result.reason, 'rate_limit');
+});
+
+test('selectFallbackModel returns null when failing provider is on cooldown', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-fallback-cd-'));
+  const envPath = path.join(dir, '.env');
+  const cooldownPath = path.join(dir, 'provider-cooldowns.json');
+  const now = Date.now();
+
+  fs.writeFileSync(envPath, 'CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n');
+  writeProviderCooldown(cooldownPath, 'anthropic', now);
+
+  const hookInput = { error: { message: '429 rate limit', provider: 'anthropic' } };
+  const result = selectFallbackModel({ hookInput, envPath, cooldownPath, now: now + 1000 });
+  assert.equal(result, null);
+});
+
+test('selectFallbackModel returns null for non-retryable failures', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-fallback-auth-'));
+  const envPath = path.join(dir, '.env');
+  const cooldownPath = path.join(dir, 'provider-cooldowns.json');
+
+  fs.writeFileSync(envPath, 'CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n');
+
+  const hookInput = { error: { message: 'invalid api key' } };
+  const result = selectFallbackModel({ hookInput, envPath, cooldownPath });
+  assert.equal(result, null);
 });

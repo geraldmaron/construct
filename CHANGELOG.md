@@ -5,7 +5,30 @@ All notable changes to this project will be documented here.
 ## Unreleased
 
 ### Added
-- `memory_search` MCP handler now uses `buildHybridSearchResultsAsync` — queries Postgres `construct_embeddings` via cosine similarity instead of the sync file-only path
+- `lib/mcp/tools/project.mjs` — `agentHealth`, `summarizeDiff`, `scanFile`, `projectContext`, `workflowStatus` extracted from `lib/mcp/server.mjs`
+- `lib/mcp/tools/document.mjs` — `extractDocumentText`, `ingestDocument`, `inferDocumentSchemaTool`, `listSchemaArtifactsTool`
+- `lib/mcp/tools/storage.mjs` — `storageStatus`, `storageSync`, `storageReset`, `deleteIngestedArtifactsTool`
+- `lib/mcp/tools/skills.mjs` — `listSkills`, `getSkill`, `searchSkills`, `getTemplate`, `listTemplates`, `agentContract`, `orchestrationPolicy`, `listTeams`, `getTeam`; `orchestrationPolicy` now includes `draftTask` for non-immediate requests (auto-workflow-intake)
+- `lib/mcp/tools/workflow.mjs` — `workflowInit`, `workflowAddTask`, `workflowUpdateTask`, `workflowNeedsMainInput`, `workflowValidate`, `workflowImportPlan`
+- `lib/mcp/tools/telemetry.mjs` — `cxTrace`, `cxScore`, `sessionUsage`, `efficiencySnapshot`
+- `lib/mcp/tools/memory.mjs` — `memorySearch`, `memoryAddObservations`, `memoryCreateEntities`, `memoryRecent`, `sessionList`, `sessionLoad`, `sessionSearch`, `sessionSave`
+- `readProviderCooldowns`, `writeProviderCooldown`, `isProviderOnCooldown` in `lib/model-router.mjs` — per-provider cooldown persistence at `~/.cx/provider-cooldowns.json` with a 5-minute window
+- `selectFallbackModel` in `lib/model-router.mjs` — high-level failover entrypoint: classifies hook input, skips cooldown-blocked providers, resolves a tier candidate from the registry fallback list
+- `lib/telemetry/backfill.mjs` — `backfillSparseTraces`, `triggerAutoBackfillIfSparse`, `runTelemetryBackfillCli`; `buildStatus` calls `triggerAutoBackfillIfSparse` fire-and-forget when coverage < 35%; observation IDs are stable (SHA-256 of `backfill:<traceId>`)
+- `construct telemetry backfill` CLI command
+- `lib/schema-infer.mjs` — `inferDocumentSchema`, `inferUnifiedSchema`, `runInferCli`
+- `lib/schema-artifact.mjs` — `writeSchemaArtifact`, `readSchemaArtifact`, `listSchemaArtifacts`
+- `construct infer` CLI command
+- `memory_search` MCP handler now uses `buildHybridSearchResultsAsync`
+- `lib/bootstrap.mjs` idempotency fix; `lib/memory-stats.mjs` memory usage reporting
+- Tests: `tests/bootstrap.test.mjs` (5), `tests/memory-stats.test.mjs` (11), `tests/model-router.test.mjs` (+6 cooldown/failover), `tests/opencode-runtime-plugin.test.mjs` (+3 structured output), `tests/orchestration-policy.test.mjs` (+3 auto-workflow-intake), `tests/telemetry-backfill.test.mjs` (6); total suite 417/417
+
+### Changed
+- `lib/mcp/server.mjs` reduced from 1,823 to 776 lines — pure dispatcher importing from `lib/mcp/tools/*`
+- `lib/hooks/model-fallback.mjs` rewritten — provider-aware, direct `.env` write via `selectFallbackModel`; `construct models --apply` is last-resort only
+- `buildTaskPacketFromIntent` in `lib/workflow-state.mjs` now forwards `fileCount`, `moduleCount`, `introducesContract`, `explicitDrive` from options to `routeRequest` so track classification is consistent with the caller's context
+
+
 - `lib/storage/postgres-backup.mjs` — `stashConstructDb`, `restoreConstructDb`, `purgeConstructDbStashes` for durable pg_dump/restore of the managed `construct-postgres` container (mirrors Langfuse pattern)
 - `stopServices` in `service-manager.mjs` stashes the Postgres DB before stopping containers so data survives Docker restarts
 - `runSetup` in `setup.mjs` restores the most recent Postgres stash after schema migration so embeddings are available immediately on first sync
