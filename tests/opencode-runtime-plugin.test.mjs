@@ -619,3 +619,64 @@ test("trackReadEfficiencyFromMessage deduplicates by tool call id across message
   const stats = JSON.parse(fs.readFileSync(path.join(home, ".cx", "session-efficiency.json"), "utf8"));
   assert.equal(stats.readCount, 1);
 });
+
+test("buildRuntimeTracePayload produces session_error kind with error metadata and hasError flag", () => {
+  const payload = buildRuntimeTracePayload(
+    {
+      type: "session.error",
+      timestamp: "2026-04-18T10:00:00.000Z",
+      session: { id: "sess-err", agent: "construct" },
+      error: {
+        message: "429 rate limit exceeded",
+        provider: "anthropic",
+        status: 429,
+        name: "RateLimitError",
+      },
+    },
+    { env: { USER: "gerald" } },
+  );
+
+  assert.ok(payload, "payload should not be null");
+  assert.equal(payload.output.kind, "session_error");
+  assert.equal(payload.output.traceQualityFlags.hasError, true);
+  assert.equal(payload.output.traceQualityFlags.hasText, false);
+  assert.ok(payload.output.error, "error field should be present");
+  assert.equal(payload.output.error.errorCategory, "rate_limit_or_timeout");
+  assert.equal(payload.output.error.provider, "anthropic");
+  assert.equal(payload.output.provider, "anthropic");
+});
+
+test("buildRuntimeTracePayload produces runtime_event kind with status for session.idle", () => {
+  const payload = buildRuntimeTracePayload(
+    {
+      type: "session.idle",
+      timestamp: "2026-04-18T10:05:00.000Z",
+      session: { id: "sess-idle", agent: "construct", status: "idle" },
+    },
+    { env: { USER: "gerald" } },
+  );
+
+  assert.ok(payload, "payload should not be null");
+  assert.equal(payload.output.kind, "runtime_event");
+  assert.equal(payload.output.eventType, "session.idle");
+  assert.equal(payload.output.traceQualityFlags.hasText, false);
+  assert.equal(payload.output.traceQualityFlags.hasError, false);
+  assert.equal(payload.output.status, "idle");
+});
+
+test("buildRuntimeTracePayload produces runtime_event kind for session.created", () => {
+  const payload = buildRuntimeTracePayload(
+    {
+      type: "session.created",
+      timestamp: "2026-04-18T10:00:00.000Z",
+      session: { id: "sess-new", agent: "construct", status: "created" },
+    },
+    { env: { USER: "gerald" } },
+  );
+
+  assert.ok(payload, "payload should not be null");
+  assert.equal(payload.output.kind, "runtime_event");
+  assert.equal(payload.output.eventType, "session.created");
+  assert.equal(payload.output.status, "created");
+  assert.equal(payload.output.traceQualityFlags.hasError, false);
+});

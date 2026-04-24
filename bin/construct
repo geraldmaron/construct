@@ -25,6 +25,7 @@ import { runUpdate } from '../lib/update.mjs';
 import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
 import { runDistillCli } from '../lib/distill.mjs';
 import { runIngestCli } from '../lib/document-ingest.mjs';
+import { runInferCli } from '../lib/schema-infer.mjs';
 import { generateCompletions } from '../lib/completions.mjs';
 import { runHeadhunt, listTeamTemplates } from '../lib/headhunt.mjs';
 import { auditSkills, runAuditSkillsCli } from '../lib/audit-skills.mjs';
@@ -300,6 +301,16 @@ async function cmdIngest(args) {
     println(JSON.stringify(result, null, 2));
   } catch (error) {
     errorln(error?.message || 'document ingest failed');
+    process.exit(1);
+  }
+}
+
+async function cmdInfer(args) {
+  try {
+    const result = await runInferCli(args, { cwd: process.cwd() });
+    println(JSON.stringify(result, null, 2));
+  } catch (error) {
+    errorln(error?.message || 'schema inference failed');
     process.exit(1);
   }
 }
@@ -695,6 +706,7 @@ const handlers = new Map([
   ['diff', cmdDiff],
   ['distill', cmdDistill],
   ['ingest', cmdIngest],
+  ['infer', cmdInfer],
   ['search', cmdSearch],
   ['storage', cmdStorage],
   ['headhunt', cmdHeadhunt],
@@ -746,6 +758,10 @@ const handlers = new Map([
     if (sub === 'templates') { listTeamTemplates(); return; }
     errorln(`Unknown team subcommand: ${sub}. Available: review, templates`);
     process.exit(1);
+  }],
+  ['telemetry-backfill', async (args) => {
+    const { runTelemetryBackfillCli } = await import('../lib/telemetry/backfill.mjs');
+    return runTelemetryBackfillCli(args);
   }],
   ['drop', async (args) => {
     const { runDropCli } = await import('../lib/drop.mjs');
