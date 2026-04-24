@@ -121,12 +121,15 @@ The team challenges itself along the way — reviewers push back on incomplete w
 |---|---|
 | `construct distill` | Distill documents with query-focused, citation-ready chunk selection |
 | `construct ingest` | Convert PDFs, office docs, spreadsheets, and text files into indexed markdown artifacts |
+| `construct infer` | Infer a structured field schema from one or more documents using AI |
 | `construct search` | Run hybrid file, SQL, and semantic retrieval over core project state |
 | `construct storage` | Sync and inspect the hybrid storage backend |
 | `construct headhunt` | Create a temporary domain expertise overlay or promotion request |
 | `construct workflow` | Manage .cx/workflow.json orchestration state |
 | `construct init-docs` | Generate AI-tailored doc structure for the current project |
 | `construct team` | Team review and template listing |
+| `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
+| `construct memory` | Inspect memory layer usage statistics |
 | `construct drop` | Ingest the most recent file dropped into ~/Downloads, Desktop, Documents, or iCloud Drive |
 | `construct wireframe` | Generate a low-fi wireframe (Mermaid diagram or sketch-style HTML) from a description |
 
