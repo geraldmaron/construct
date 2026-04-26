@@ -16,7 +16,24 @@ const root = path.join(__dirname, "..");
 const mcpManagerPath = path.join(root, "lib", "mcp-manager.mjs");
 
 function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  return fs.mkdtempSync(path.join('/tmp', prefix));
+}
+
+function makeRepoCopy() {
+  const dest = tempDir("construct-sync-repo-");
+  fs.cpSync(root, dest, {
+    recursive: true,
+    filter: (source) => {
+      const rel = path.relative(root, source);
+      if (!rel) return true;
+      if (rel === "node_modules") return false;
+      if (rel.startsWith(`node_modules${path.sep}`)) return false;
+      if (rel === ".git") return false;
+      if (rel.startsWith(`.git${path.sep}`)) return false;
+      return true;
+    },
+  });
+  return dest;
 }
 
 function runMcpAdd(id, { home, cwd, env = {}, auto = true }) {
@@ -56,8 +73,9 @@ function runMcpRemove(id, { home, cwd, env = {} }) {
 }
 
 function runSync({ home, cwd, env = {} }) {
+  const repoRoot = makeRepoCopy();
   execFileSync(process.execPath, ["sync-agents.mjs"], {
-    cwd,
+    cwd: repoRoot,
     env: {
       ...process.env,
       HOME: home,
@@ -71,7 +89,7 @@ function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
 }
 
-test("memory MCP uses the configured port for Claude and cass for OpenCode", () => {
+test("memory MCP uses the configured port for Claude and memory for OpenCode", () => {
   const home = tempDir("construct-mcp-home-");
   const cwd = tempDir("construct-mcp-cwd-");
   const claudePath = path.join(home, ".claude", "settings.json");
@@ -94,11 +112,10 @@ test("memory MCP uses the configured port for Claude and cass for OpenCode", () 
     type: "http",
     url: "http://127.0.0.1:9901/",
   });
-  assert.deepEqual(config.mcp.cass, {
-    type: "local",
-    command: ["npx", "-y", "@modelcontextprotocol/server-memory@latest"],
+  assert.deepEqual(config.mcp.memory, {
+    type: "remote",
+    url: "http://127.0.0.1:9901/",
   });
-  assert.equal("memory" in config.mcp, false);
 });
 
 test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP entry", () => {
@@ -296,7 +313,7 @@ test("sync wires managed OpenCode runtime plugin and construct-mcp Langfuse env"
   assert.equal(fs.existsSync(path.join(home, ".config", "opencode", "plugins", "construct-fallback.js")), true);
 });
 
-test("sync keeps OpenCode memory configured through cass", () => {
+test("sync keeps OpenCode memory configured through memory", () => {
   const home = tempDir("construct-sync-home-");
   const cwd = root;
   const opencodeDir = path.join(home, ".config", "opencode");
@@ -307,9 +324,9 @@ test("sync keeps OpenCode memory configured through cass", () => {
     `${JSON.stringify({
       "$schema": "https://opencode.ai/config.json",
       mcp: {
-        cass: {
-          type: "local",
-          command: ["npx", "-y", "@modelcontextprotocol/server-memory@latest"],
+        memory: {
+          type: "remote",
+          url: "http://127.0.0.1:8765/",
         },
       },
     }, null, 2)}\n`,
@@ -318,9 +335,9 @@ test("sync keeps OpenCode memory configured through cass", () => {
   runSync({ home, cwd });
 
   const config = readJson(opencodePath);
-  assert.deepEqual(config.mcp.cass, {
-    type: "local",
-    command: ["npx", "-y", "@modelcontextprotocol/server-memory@latest"],
+  assert.deepEqual(config.mcp.memory, {
+    type: "remote",
+    url: "http://127.0.0.1:8765/",
   });
 });
 
@@ -341,9 +358,9 @@ test("memory MCP recovers from malformed OpenCode config", () => {
   });
 
   const config = readJson(opencodePath);
-  assert.deepEqual(config.mcp.cass, {
-    type: "local",
-    command: ["npx", "-y", "@modelcontextprotocol/server-memory@latest"],
+  assert.deepEqual(config.mcp.memory, {
+    type: "remote",
+    url: "http://127.0.0.1:9902/",
   });
 });
 

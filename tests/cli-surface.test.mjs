@@ -27,12 +27,7 @@ test('construct search uses the current working directory as project scope', () 
     contextSummary: 'Project-local context',
     savedAt: '2026-04-19T00:00:00Z',
   }));
-  fs.writeFileSync(path.join(projectDir, '.cx', 'workflow.json'), JSON.stringify({
-    title: 'Project-local workflow',
-    phase: 'implement',
-    status: 'done',
-    currentTaskKey: 'todo:1',
-  }));
+  fs.writeFileSync(path.join(projectDir, 'plan.md'), '# Plan\n\n- Search should stay project-local.\n');
 
   const out = execFileSync(process.execPath, [BIN, 'search', 'authoritative search', '--limit=5'], {
     cwd: projectDir,
@@ -41,7 +36,7 @@ test('construct search uses the current working directory as project scope', () 
   });
 
   const json = JSON.parse(out);
-  assert.equal(json.summary.workflowTitle, 'Project-local workflow');
+  assert.equal(json.summary.hasPlan, true);
   assert.ok(json.results.some((entry) => entry.id === 'docs/architecture.md'));
 });
 

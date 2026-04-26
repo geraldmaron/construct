@@ -23,7 +23,7 @@
         "mustContain": ["track", "specialists", "dispatchPlan"]
       },
       "preconditions": [
-        "Session bootstrap completed: workflow_status, project_context, memory_search called"
+        "Session bootstrap completed: project_context and memory_search called, plus relevant repo docs read as needed"
       ],
       "postconditions": [
         "Intent classified; work category tagged",

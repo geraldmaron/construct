@@ -7,13 +7,17 @@
 
 | File | Purpose | Update when |
 |---|---|---|
+| `AGENTS.md` | Canonical agent operating contract | Workflow rules, tracker hierarchy, or repo-wide guardrails change |
+| `plan.md` | Human-readable implementation plan linked to tracker work | The active plan changes, is superseded, or should be pruned |
 | `.cx/context.md` | Human-readable resumable project context | Active work, decisions, architecture assumptions, or open questions change |
 | `.cx/context.json` | Machine-readable resumable context | Context state needs to stay in sync with `.cx/context.md` |
-| `.cx/workflow.json` | Canonical workflow/task state | Non-trivial work starts, changes phase, or completes |
 | `docs/README.md` | Docs index and maintenance contract | Core docs set or maintenance expectations change |
 | `docs/architecture.md` | Canonical architecture and invariants | Runtime shape, contracts, boundaries, or major dependencies change |
 
-All LLMs working in the repo, including Construct, must read these as project state and keep them current when work changes project reality.
+Tracker hierarchy: external tracker (prefer Beads) for durable work, `plan.md` for the current plan, and cass-memory via MCP `memory` for cross-session recall.
+
+`AGENTS.md` is the canonical agent instruction file. On case-sensitive filesystems you may also add a lowercase `agents.md` shim for tools that require it.
+All LLMs working in the repo, including Construct, must read these as project state, keep them current when work changes project reality, and prune stale sections instead of letting managed docs drift.
 <!-- /AUTO:core-docs -->
 
 ## Contents
@@ -23,7 +27,7 @@ All LLMs working in the repo, including Construct, must read these as project st
 - [Templates and role anti-patterns](./templates/README.md)
 - [Runbooks](./runbooks/)
 - [ADRs](../.cx/decisions/) — session-context decisions (longer ADRs live in `docs/adr/`)
-- [Plans](../.cx/plans/) — canonical Construct plans that feed `workflow_import_plan` into `.cx/workflow.json` task packets (beads)
+- [Plans](../.cx/plans/) — plan artifacts and supporting specs for tracker-linked work
 - [Skills](../skills/) — domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
 
 ## Prompt surfaces
@@ -50,6 +54,10 @@ They are the canonical place for:
 ## Maintenance
 
 After updating the Construct repo checkout itself, run `construct update` from inside that checkout to reinstall the current source globally and refresh synced host adapters before continuing work.
+
+When a managed file stops reflecting repo reality, update it or prune the stale section. Managed docs are not archives.
+
+Parallel work rule: one writer per file. If multiple agent or harness sessions are active, coordinate ownership through the tracker and `plan.md` instead of editing the same file concurrently.
 
 ## Ownership
 

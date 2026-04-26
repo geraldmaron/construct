@@ -163,27 +163,7 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
     contextSummary: "Prompt routing is being moved into code.",
     activeWork: ["runtime prompt composition"],
   }, null, 2));
-  fs.writeFileSync(path.join(rootDir, ".cx", "workflow.json"), JSON.stringify({
-    version: 1,
-    project: "construct",
-    id: "wf-1",
-    title: "Runtime wiring",
-    status: "in-progress",
-    phase: "implement",
-    currentTaskKey: "runtime-policy-contract",
-    tasks: [
-      {
-        key: "runtime-policy-contract",
-        title: "Implement code-backed orchestration policy and routing contract",
-        owner: "cx-architect",
-        phase: "implement",
-        status: "in-progress",
-        acceptanceCriteria: ["policy is code-backed"],
-        readFirst: ["lib/orchestration-policy.mjs"],
-        doNotChange: ["agents/registry.json"],
-      },
-    ],
-  }, null, 2));
+  fs.writeFileSync(path.join(rootDir, "plan.md"), "# Plan\n\n- Keep runtime routing policy code-backed.\n- Coordinate through tracker plus plan.\n");
 
   const payload = buildRuntimeTracePayload(
     {
@@ -209,7 +189,7 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
     { env: { USER: "gerald", HOME: home, CX_TOOLKIT_DIR: rootDir } },
   );
 
-  assert.equal(payload.metadata.workflowTaskKey, "runtime-policy-contract");
+  assert.equal(payload.metadata.taskPacketKey, undefined);
   assert.equal(payload.metadata.routeIntent, "fix");
   assert.equal(payload.metadata.routeTrack, "immediate");
   assert.deepEqual(payload.metadata.routeSpecialists, []);
@@ -218,7 +198,7 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
   assert.equal(payload.metadata.executionContractModel.selectedTier, "fast");
   assert.equal(payload.metadata.executionContractModel.selectedModel, "openrouter/meta-llama/llama-3.3-70b-instruct:free");
   assert.equal(payload.metadata.executionContractModel.selectedModelSource, "registry default");
-  assert.ok(payload.metadata.promptHasTaskPacket);
+  assert.equal(payload.metadata.promptHasTaskPacket, false);
   assert.ok(payload.metadata.promptHasContextDigest);
   assert.ok(payload.metadata.promptHasHostConstraints);
   assert.equal(payload.metadata.composedPromptVersion.length, 12);

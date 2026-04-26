@@ -55,7 +55,7 @@
       "id": "memory",
       "name": "Memory",
       "category": "optional",
-      "description": "Persistent cross-session knowledge graph. Agents remember decisions and findings across sessions.",
+      "description": "cass-memory over HTTP. Persistent cross-session and cross-agent memory for decisions, findings, and handoffs.",
       "type": "url",
       "url": "http://127.0.0.1:8765/",
       "env": {},
@@ -74,7 +74,7 @@
         "cx-docs-keeper",
         "cx-researcher"
       ],
-      "degradedMessage": "No cross-session memory. Each session starts fresh with no prior context."
+      "degradedMessage": "No cass-memory service. Each session starts fresh with no prior context or shared cross-agent memory."
     },
     {
       "id": "playwright",

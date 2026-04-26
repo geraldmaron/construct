@@ -26,7 +26,7 @@ Open a project and start your AI coding session. Construct injects context at se
 
 ## Memory Layer
 
-Construct's memory layer records observations, patterns, and decisions across sessions. Retrieval uses a BM25 + cosine hybrid search.
+Construct's memory layer uses cass-memory behind the standard MCP `memory` surface. It records observations, patterns, and decisions across sessions without becoming a second task tracker. Retrieval uses a BM25 + cosine hybrid search.
 
 ### Payoff Timeline
 
@@ -78,9 +78,10 @@ CONSTRUCT_MEMORY=off claude  # or opencode, etc.
 | `construct search <query>` | Search observations and documents |
 | `construct sync` | Regenerate all platform agent files from registry |
 | `construct doctor` | Verify system health |
+| `construct init` | Bootstrap non-destructive repo state for Construct-aware work |
+| `construct init-docs` | Stand up documentation lanes and starter templates |
 | `construct lint:comments` | Check comment policy violations |
 | `construct lint:comments --fix` | Insert stub headers for files missing one |
-| `construct workflow status` | Show active workflow state |
 
 ## Comment Policy
 
@@ -88,4 +89,15 @@ All files under `lib/`, `bin/`, and test files follow the comment policy in `rul
 
 ## Workflow
 
-Construct tracks work through `.cx/workflow.json`. Use `construct workflow` to manage tasks, mark completions, and record verification evidence. The session-start hook surfaces the active task key so every session starts with clear context about what's in progress.
+Construct does not need to own your durable backlog. The intended hierarchy is:
+
+- external tracker, preferably Beads (`bd`), for durable tasks and issue ids
+- `plan.md` for the current human-readable implementation plan
+- cass-memory via MCP `memory` for cross-session recall
+
+Keep `plan.md`, `.cx/context.*`, and docs current, and prune stale sections when work changes direction.
+
+When multiple agent or harness sessions run at the same time, use the single-writer rule:
+- one session owns a file edit
+- other sessions review, research, test, or wait for handoff
+- do not normalize concurrent same-file editing

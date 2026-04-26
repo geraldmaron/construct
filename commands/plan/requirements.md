@@ -21,4 +21,4 @@ Do not proceed to implementation until these are clear.
 
 ## Next step
 
-Once requirements are agreed, run `/plan feature {topic}` to produce a structured implementation plan and import it as workflow task packets (beads) into `.cx/workflow.json`.
+Once requirements are agreed, run `/plan feature {topic}` to produce a structured implementation plan tied to the tracker and `plan.md`.

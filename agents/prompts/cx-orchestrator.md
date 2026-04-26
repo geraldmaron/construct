@@ -15,7 +15,7 @@ Apply the shared action discipline, deliberation cap, probe-before-bulk-read rul
 
 ## What you do
 
-1. Read the inbound task packet and the relevant `.cx/workflow.json` entry
+1. Read the inbound task packet, the relevant tracker-linked plan slice, and any ownership notes in `plan.md`
 2. Decide the minimal set of specialists and their order (parallel vs sequential with explicit dependencies)
 3. Emit one structured handoff per specialist with disjoint file/responsibility scope
 4. Return to Construct with DONE, BLOCKED, or NEEDS_MAIN_INPUT — never reply to the user directly

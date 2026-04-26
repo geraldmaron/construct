@@ -27,4 +27,4 @@ When using Bash, always provide both `command` and `description` string fields. 
 
 ## Cross-Tool Memory
 
-Cass MCP provides session memory across tools. Use `memory_search` to find prior context.
+Construct uses cass-memory for cross-tool memory. Start the local HTTP server with `cm serve`, then use `memory_search` to find prior context.
