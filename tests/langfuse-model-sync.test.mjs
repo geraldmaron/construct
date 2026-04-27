@@ -11,6 +11,7 @@ import {
   buildPricingCatalog,
   estimateUsageCost,
   resolveModelPricing,
+  resolveContextWindow,
   resetPricingCatalog,
 } from '../lib/telemetry/langfuse-model-sync.mjs';
 
@@ -129,5 +130,48 @@ test('LiteLLM pricing is overridden by static table for known models', () => {
   // Static must win.
   assert.equal(pricing.source, 'static');
   assert.equal(pricing.inputPrice, 1 / 1_000_000);
+  resetPricingCatalog();
+});
+
+test('resolveContextWindow returns catalog window for known models', () => {
+  const catalog = buildPricingCatalog();
+  assert.equal(resolveContextWindow('claude-opus-4-7', 0, catalog), 200_000);
+  assert.equal(resolveContextWindow('claude-haiku-4-5', 0, catalog), 200_000);
+  assert.equal(resolveContextWindow('claude-sonnet-4-6', 0, catalog), 200_000);
+});
+
+test('resolveContextWindow falls back to 200k for unknown models', () => {
+  const catalog = buildPricingCatalog();
+  assert.equal(resolveContextWindow('some-future-model', 0, catalog), 200_000);
+  assert.equal(resolveContextWindow(null, 0, catalog), 200_000);
+});
+
+test('resolveContextWindow steps up to 1M tier when observed exceeds baseline', () => {
+  const catalog = buildPricingCatalog();
+  // Observed 600k on a 200k baseline model → 1M tier.
+  assert.equal(resolveContextWindow('claude-opus-4-7', 600_000, catalog), 1_000_000);
+  // Observed 250k → also 1M tier (next published step above baseline).
+  assert.equal(resolveContextWindow('claude-opus-4-7', 250_000, catalog), 1_000_000);
+});
+
+test('resolveContextWindow returns observed when it exceeds all known tiers', () => {
+  const catalog = buildPricingCatalog();
+  // If a future tier exists above 1M and we somehow see it, return the observation
+  // rather than misreporting.
+  assert.equal(resolveContextWindow('claude-opus-4-7', 1_500_000, catalog), 1_500_000);
+});
+
+test('resolveContextWindow respects LiteLLM-provided window for unknown-to-static models', () => {
+  const litellmModels = [
+    {
+      modelName: 'claude-future-model',
+      matchPattern: '(?i)^claude-future-model$',
+      inputPrice: 1 / 1_000_000,
+      outputPrice: 5 / 1_000_000,
+      maxInputTokens: 500_000,
+    },
+  ];
+  const catalog = buildPricingCatalog([], litellmModels);
+  assert.equal(resolveContextWindow('claude-future-model', 0, catalog), 500_000);
   resetPricingCatalog();
 });
