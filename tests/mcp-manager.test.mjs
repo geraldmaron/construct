@@ -79,10 +79,12 @@ function runSync({ home, cwd, env = {} }) {
     env: {
       ...process.env,
       HOME: home,
+      CX_TOOLKIT_DIR: repoRoot,
       ...env,
     },
     stdio: "pipe",
   });
+  return repoRoot;
 }
 
 function readJson(file) {
@@ -297,7 +299,7 @@ test("sync wires managed OpenCode runtime plugin and construct-mcp Langfuse env"
     }, null, 2)}\n`,
   );
 
-  runSync({
+  const repoCopy = runSync({
     home,
     cwd,
     env: {
@@ -309,7 +311,7 @@ test("sync wires managed OpenCode runtime plugin and construct-mcp Langfuse env"
   const config = readJson(opencodePath);
   assert.ok(config.plugin.includes(path.join(home, ".config", "opencode", "plugins", "construct-fallback.js")));
   assert.ok(config.mcp["construct-mcp"] !== undefined);
-  assert.deepEqual(config.mcp["construct-mcp"].command, ["node", path.join(root, "lib", "mcp", "server.mjs")]);
+  assert.deepEqual(config.mcp["construct-mcp"].command, ["node", path.join(repoCopy, "lib", "mcp", "server.mjs")]);
   assert.equal(fs.existsSync(path.join(home, ".config", "opencode", "plugins", "construct-fallback.js")), true);
 });
 
