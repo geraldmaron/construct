@@ -343,6 +343,35 @@ test("sync keeps OpenCode memory configured through memory", () => {
   });
 });
 
+test("sync migrates legacy OpenCode cass memory config to memory", () => {
+  const home = tempDir("construct-sync-home-");
+  const cwd = root;
+  const opencodeDir = path.join(home, ".config", "opencode");
+  const opencodePath = path.join(opencodeDir, "opencode.json");
+  fs.mkdirSync(opencodeDir, { recursive: true });
+  fs.writeFileSync(
+    opencodePath,
+    `${JSON.stringify({
+      "$schema": "https://opencode.ai/config.json",
+      mcp: {
+        cass: {
+          type: "remote",
+          url: "http://127.0.0.1:8765/",
+        },
+      },
+    }, null, 2)}\n`,
+  );
+
+  runSync({ home, cwd });
+
+  const config = readJson(opencodePath);
+  assert.equal(config.mcp.cass, undefined);
+  assert.deepEqual(config.mcp.memory, {
+    type: "remote",
+    url: "http://127.0.0.1:8765/",
+  });
+});
+
 test("memory MCP recovers from malformed OpenCode config", () => {
   const home = tempDir("construct-bad-opencode-home-");
   const cwd = tempDir("construct-bad-opencode-cwd-");
