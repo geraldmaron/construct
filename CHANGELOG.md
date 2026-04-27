@@ -7,6 +7,7 @@ All notable changes to this project will be documented here.
 ### Changed
 - `lib/hooks/context-watch.mjs` — thresholds are now 60%/80% of the resolved context window instead of hardcoded 120k/160k. Removes `CONSTRUCT_CONTEXT_WARN`/`CONSTRUCT_CONTEXT_URGENT` env overrides; 1M-tier sessions self-promote on first observed >200k turn
 - `~/.cx/context-watch-state.json` schema gained `observedMaxTokens` (used for tier inference)
+- `npm test` now runs with `--test-concurrency=1` to eliminate a pre-existing race between `tests/sync-contract.test.mjs` and `tests/mcp-manager.test.mjs` over the shared `.cx/sync.lock` path
 
 ### Added
 - `resolveContextWindow(modelName, observedMaxTokens)` in `lib/telemetry/langfuse-model-sync.mjs` — derives the active context window from catalog `maxInputTokens` (LiteLLM live + static fallback) and observed session usage, stepping up to Anthropic's 1M tier when a turn exceeds the catalog baseline

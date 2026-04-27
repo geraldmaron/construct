@@ -40,7 +40,7 @@
   },
   "scripts": {
     "mcp": "node lib/mcp/server.mjs",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
     "docs:init": "node lib/init-docs.mjs --yes",
     "docs:update": "node ./bin/construct docs:update",
     "docs:site": "node ./bin/construct docs:site",
