@@ -856,6 +856,7 @@ function syncOpencode(entries) {
     for (const [id, mcpDef] of Object.entries(registryMcp)) {
       const openCodeId = getOpenCodeMcpId(id);
       if (openCodeId !== id) delete config.mcp[id];
+      if (id === 'memory') delete config.mcp.cass;
       const existing = JSON.stringify(config.mcp[openCodeId] ?? "");
       const hasPlaceholder = existing.includes("__") && existing.includes("__");
       const argsHaveTemplates = (mcpDef.args ?? []).some((a) => typeof a === 'string' && a.includes('__'));

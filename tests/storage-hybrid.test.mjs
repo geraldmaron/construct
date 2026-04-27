@@ -36,7 +36,7 @@ function writeText(filePath, value) {
 test('state snapshot loads file-state artifacts', () => {
   const root = tempDir('construct-hybrid-state-');
   writeJson(path.join(root, '.cx', 'context.json'), { contextSummary: 'shared memory', savedAt: '2026-04-19T00:00:00Z' });
-  writeJson(path.join(root, '.cx', 'workflow.json'), { title: 'Hybrid', phase: 'implement', status: 'done' });
+  writeText(path.join(root, 'plan.md'), '# Plan\n\n- Keep hybrid search grounded in docs.\n');
   writeText(path.join(root, 'docs', 'architecture.md'), '# Hybrid\n');
   writeText(path.join(root, 'docs', 'README.md'), '# Docs\n');
   writeText(path.join(root, '.cx', 'product-intel', 'evidence-briefs', 'api-evidence.md'), '# Evidence Brief\nPlatform customers need API migration controls.\n');
@@ -47,8 +47,7 @@ test('state snapshot loads file-state artifacts', () => {
   const summary = summarizeStateSnapshot(snapshot);
 
   assert.equal(summary.contextSummary, 'shared memory');
-  assert.equal(summary.workflowTitle, 'Hybrid');
-  assert.equal(summary.workflowPhase, 'implement');
+  assert.equal(summary.hasPlan, true);
   assert.equal(summary.hasArchitectureDoc, true);
   assert.equal(summary.hasDocsReadme, true);
   assert.equal(summary.productIntelDocCount, 3);
@@ -80,7 +79,7 @@ test('vector search ranks semantic matches from local records', () => {
 test('hybrid search returns file-backed results and store modes', () => {
   const root = tempDir('construct-hybrid-query-');
   writeJson(path.join(root, '.cx', 'context.json'), { contextSummary: 'Searchable context for traces', savedAt: '2026-04-19T00:00:00Z' });
-  writeJson(path.join(root, '.cx', 'workflow.json'), { title: 'Hybrid search', phase: 'implement', status: 'done', currentTaskKey: 'todo:1' });
+  writeText(path.join(root, 'plan.md'), '# Plan\n\n- Search should stay file-state authoritative.\n');
   writeText(path.join(root, 'docs', 'architecture.md'), '# Searchable architecture\nThe hybrid model keeps file-state authoritative.\n');
   writeText(path.join(root, 'docs', 'README.md'), '# Docs\n');
   writeText(path.join(root, '.cx', 'product-intel', 'evidence-briefs', 'api-evidence.md'), '# Evidence Brief\nPlatform customers need API migration controls.\n');
@@ -93,7 +92,7 @@ test('hybrid search returns file-backed results and store modes', () => {
     },
   });
 
-  assert.equal(result.summary.workflowTitle, 'Hybrid search');
+  assert.equal(result.summary.hasPlan, true);
   assert.equal(result.stores.sql.mode, 'postgres');
   assert.equal(result.stores.vector.mode, 'remote');
   assert.ok(result.results.length > 0);
@@ -117,7 +116,7 @@ test('hybrid search indexes product intelligence artifacts', () => {
 test('async hybrid search merges sql-backed results when configured', async () => {
   const root = tempDir('construct-hybrid-query-sql-');
   writeJson(path.join(root, '.cx', 'context.json'), { contextSummary: 'Searchable context for traces', savedAt: '2026-04-19T00:00:00Z' });
-  writeJson(path.join(root, '.cx', 'workflow.json'), { title: 'Hybrid search', phase: 'implement', status: 'done', currentTaskKey: 'todo:1' });
+  writeText(path.join(root, 'plan.md'), '# Plan\n\n- Async hybrid search should honor the same state summary.\n');
   writeText(path.join(root, 'docs', 'architecture.md'), '# Searchable architecture\nThe hybrid model keeps file-state authoritative.\n');
   writeText(path.join(root, 'docs', 'README.md'), '# Docs\n');
 

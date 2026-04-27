@@ -9,7 +9,8 @@ Construct is a production-oriented orchestration CLI that keeps a stable public 
 ## Core layers
 
 - **CLI surface** — `bin/construct` and `lib/cli-commands.mjs`
-- **Workflow state** — `.cx/workflow.json` and `lib/workflow-state.mjs`
+- **Durable work tracking** — external tracker integration, with Beads as the preferred canonical backlog when a project uses it
+- **Planning artifact** — `plan.md` for the human-readable current implementation plan
 - **Orchestration policy** — `lib/orchestration-policy.mjs` (intent classification, work-category tagging, execution track selection, gate evaluation, contract-chain resolution)
 - **Agent contracts** — `agents/contracts.json` and `lib/agent-contracts.mjs` (explicit producer→consumer service contracts with preconditions, postconditions, input/output schemas)
 - **Doc ownership, framing, and skill-composition rules** — `rules/common/{doc-ownership,framing,skill-composition}.md`
@@ -19,6 +20,7 @@ Construct is a production-oriented orchestration CLI that keeps a stable public 
 - **Hybrid search layer** — `lib/storage/` (file-state source, SQL-ready store, vector-ready index, hybrid query facade)
 - **Runtime health** — `lib/status.mjs`, dashboard API/UI in `lib/server/`
 - **MCP integrations** — `lib/mcp-manager.mjs`, `lib/mcp/server.mjs`, `lib/mcp-catalog.json`
+- **Shared memory layer** — cass-memory surfaced through MCP `memory` for cross-tool/session recall
 - **Hooks / enforcement** — `lib/hooks/` (session-start, bash-output-logger, repeated-read-guard, context-watch, audit-trail, and more)
 - **Audit trail** — `lib/hooks/audit-trail.mjs`, `lib/audit-trail.mjs`, `~/.cx/audit-trail.jsonl` with `prev_line_hash` tamper-evidence chain
 - **Session persistence** — `lib/session-store.mjs`, `.cx/sessions/`
@@ -32,6 +34,17 @@ Every request flows through three structural layers:
 3. **Specialist sequence**: dispatch plan with explicit ordering and parallel markers. Gate-required specialists (cx-devil-advocate, cx-researcher, doc owner) are auto-prepended.
 
 Post-DONE, the `any-to-docs-keeper` contract fires as a followup stage when core docs changed.
+
+## Project-state hierarchy
+
+Construct should preserve one source of truth per concern rather than creating parallel trackers:
+
+1. External tracker, preferably Beads, owns the durable backlog and issue lifecycle.
+2. `plan.md` owns the current human-readable plan and should link back to tracker ids.
+3. cass-memory through MCP `memory` stores cross-session observations and preferences, not task state.
+4. The single-writer rule governs parallel editing: one active writer per file, with all other sessions working on disjoint files or review/research.
+
+When these surfaces drift, the external tracker wins for status, `plan.md` wins for planning intent, and stale managed docs should be pruned rather than preserved indefinitely.
 
 ## Context hygiene
 
@@ -47,6 +60,9 @@ Construct measures context pressure and enforces it via hooks rather than adviso
 
 - Construct is the only public surface.
 - Internal specialists remain implementation details.
+- External tracker state remains the durable source of truth for work when present.
+- `plan.md` remains the planning artifact; it should be updated or pruned when it no longer reflects the active tracker-linked plan.
+- Parallel same-file editing is disallowed under the default single-writer rule.
 - Temporary domain overlays must not auto-promote into permanent capabilities.
 - Persistent capability changes require challenge by `cx-devil-advocate`.
 - Runtime health, workflow state, overlays, and promotion requests should remain visible in status/dashboard surfaces.
@@ -59,48 +75,32 @@ Construct exposes one canonical machine-readable health slice for current projec
 
 - `construct status --json`
 - MCP `project_context`
-- MCP `workflow_status`
 
-These surfaces share the same runtime-defined `publicHealth` contract for active task, workflow/alignment state, and metadata-presence signals. `project_context` is the richer MCP surface for actual context-source details.
+These surfaces share the same runtime-defined `publicHealth` contract for active task context, project-state health, and metadata-presence signals. `project_context` is the richer MCP surface for actual context-source details.
 
 ### `publicHealth` fields
 
-- `activeTask`
-  - `key`
-  - `title`
-  - `phase`
-  - `owner`
-  - `status`
 - `context`
   - `hasFile`
   - `source` (`json`, `markdown`, `missing`, `invalid`)
   - `savedAt`
   - `summary`
-- `workflow`
-  - `exists`
-  - `phase`
-  - `lifecycleStatus`
-  - `currentTaskKey`
-  - `summary`
-- `alignment`
-  - `status`
-  - `findings`
-  - `findingCount`
-  - `highSeverityCount`
+- `coordination`
+  - `authority` (`external-tracker-plus-plan`)
+  - `fileOwnershipRule` (`single-writer`)
+  - `memoryRole` (`cross-session-recall`)
 - `metadataPresence`
   - `executionContractModel`
   - `contextState`
 
 ### Semantics
 
-- `activeTask` comes from `.cx/workflow.json` `currentTaskKey` resolution.
 - `project_context.publicHealth.context.source` reflects the actual source Construct loaded from `.cx/context.json` or `.cx/context.md`.
-- `workflow_status.publicHealth.context` is currently a workflow-scoped view and should not be treated as the canonical source-of-truth for resolved project context details.
 - `alignment` is derived from workflow-alignment checks, not inferred from docs or prompt state.
 - `metadataPresence.executionContractModel` means the canonical execution-contract metadata object is available on the surface.
 - `metadataPresence.contextState` is true when the active context source is `.cx/context.json`.
 
-The intent is parity, not duplication: status and MCP project/workflow tools should expose the same public truth for active task, workflow alignment, and metadata presence, while `project_context` remains the canonical MCP surface for resolved context-source details.
+The intent is parity, not duplication: status and MCP project tools should expose the same public truth for project context, alignment, and metadata presence, while `project_context` remains the canonical MCP surface for resolved context-source details.
 
 ## Release-facing observability boundary
 
@@ -160,7 +160,7 @@ Full conversation transcripts, raw tool outputs, and file contents are NOT store
 |---|---|---|
 | **Tier 1** | Always injected | header, working branch, approval reminder, git status, current workflow task one-liner, pending typecheck warning |
 | **Tier 2** | Injected only when fresh and meaningful | `.cx/context.md` body (gated by 7-day mtime freshness), skill-scope warnings, recent drop-zone files, last-session resume context |
-| **Tier 3** | Surfaced as a one-line hint pointing at an MCP tool | prior observations (→ `memory_recent`), efficiency snapshot when not healthy (→ `efficiency_snapshot`), full workflow summary (→ `workflow_status`) |
+| **Tier 3** | Surfaced as a one-line hint pointing at an MCP tool | prior observations (→ `memory_recent`), efficiency snapshot when not healthy (→ `efficiency_snapshot`) |
 
 Stale `.cx/context.md` (>7 days) degrades to a Tier 1 hint suggesting `construct context refresh` or `memory_recent` rather than flooding the session with stale state. The tiered model trades one line of context per absent payload for on-demand retrieval, keeping every session lean while preserving full access via tools.
 
@@ -278,9 +278,10 @@ Bad examples are stored as critique and evaluation fixtures, not as free-floatin
 
 ## Hybrid retrieval model
 
-Construct uses file-state as the canonical source of truth.
+Construct uses file-state as the canonical source of truth for local project context, while respecting an external tracker as the canonical durable backlog when one exists.
 
-- `.cx/context.json`, `.cx/context.md`, `.cx/workflow.json`, and docs are authoritative
+- `AGENTS.md`, `plan.md`, `.cx/context.json`, `.cx/context.md`, and docs define local operating state
+- external tracker state remains canonical for durable tasks and status
 - SQL is the shared/team-ready structured store for indexed records and lifecycle data
 - vector search is a derived retrieval layer for semantic discovery over selected artifacts
 

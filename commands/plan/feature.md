@@ -1,11 +1,11 @@
 <!--
-commands/plan/feature.md — Plan a feature and import it as workflow task packets
+commands/plan/feature.md — Plan a feature and turn it into a tracker-linked implementation plan
 
 Produces a structured spec using the canonical Construct plan format, saves it
-to .cx/plans/, and calls workflow_import_plan to create full bead packets.
+to .cx/plans/ as a durable planning artifact linked to the active tracker slice.
 -->
 ---
-description: Plan a feature — produce a structured spec and import it as workflow task packets
+description: Plan a feature — produce a structured spec and link it to the active tracker-backed plan
 ---
 
 You are Construct. Plan the following: $ARGUMENTS
@@ -45,5 +45,6 @@ Rules:
 
 ## Step 3 — Save and import
 1. Save this full plan to `.cx/plans/{slug}-plan.md`
-2. Call `workflow_import_plan` with the Tasks section markdown and `spec_ref` = the saved plan path
-3. Report: tasks created, plan path, workflow summary
+2. If the project uses Beads or another external tracker, include the issue id in the plan and keep the current `plan.md` aligned with it
+3. Declare file ownership explicitly so parallel work still follows the single-writer rule
+4. Report: tracker links, plan path, and ownership boundaries

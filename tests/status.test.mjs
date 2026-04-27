@@ -37,24 +37,7 @@ async function createFixture() {
     agents: [{ name: 'engineer', description: 'Implements changes' }],
   });
   writeText(path.join(rootDir, '.env'), 'DASHBOARD_PORT=4242\nMEMORY_PORT=8765\nBRIDGE_PORT=5173\nLANGFUSE_BASEURL=https://cloud.langfuse.com\n');
-  writeJson(path.join(rootDir, '.cx', 'workflow.json'), {
-    id: 'wf-1',
-    title: 'Status work',
-    phase: 'implement',
-    status: 'in_progress',
-    currentTaskKey: 'todo:1',
-    tasks: [{
-      key: 'todo:1',
-      title: 'Implement status',
-      phase: 'implement',
-      owner: 'cx-engineer',
-      status: 'in-progress',
-      readFirst: ['bin/construct'],
-      doNotChange: ['.env'],
-      acceptanceCriteria: ['status exists'],
-      verification: ['npm test'],
-    }],
-  });
+  writeText(path.join(rootDir, 'plan.md'), '# Plan\n\n## Current slice\n\n- Keep coordination tracker-backed.\n- Assign one writer per file.\n');
   writeJson(path.join(rootDir, '.cx', 'context.json'), {
     format: 'json',
     savedAt: '2026-04-19T05:15:00.000Z',
@@ -73,7 +56,7 @@ async function createFixture() {
   ].join('\n'));
   writeJson(path.join(homeDir, '.cursor', 'mcp.json'), { mcpServers: {} });
   writeJson(path.join(homeDir, '.config', 'opencode', 'opencode.json'), {
-    mcp: { cass: { type: 'local', command: ['npx', '-y', '@modelcontextprotocol/server-memory@latest'] } },
+    mcp: { memory: { type: 'remote', url: 'http://127.0.0.1:8765/' } },
   });
   writeJson(path.join(homeDir, '.construct', 'features.json'), { enabled: ['github', 'memory'] });
   writeJson(path.join(homeDir, '.cx', 'session-efficiency.json'), {
@@ -147,18 +130,11 @@ test('buildStatus separates runtime health from configured integrations', async 
   assert.equal(status.plugins.entries.length, 1);
   assert.equal(status.plugins.entries[0].id, 'construct-builtins');
   assert.equal(status.plugins.errors.length, 0);
-  assert.equal(status.workflow.status, 'pass');
-  assert.deepEqual(status.publicHealth.activeTask, {
-    key: 'todo:1',
-    title: 'Implement status',
-    phase: 'implement',
-    owner: 'cx-engineer',
-    status: 'in-progress',
-  });
   assert.equal(status.publicHealth.context.source, 'json');
   assert.equal(status.publicHealth.context.summary, 'Phase 3 complete, Phase 4 next.');
-  assert.equal(status.publicHealth.workflow.currentTaskKey, 'todo:1');
-  assert.equal(status.publicHealth.alignment.status, 'pass');
+  assert.equal(status.publicHealth.coordination.authority, 'external-tracker-plus-plan');
+  assert.equal(status.publicHealth.coordination.fileOwnershipRule, 'single-writer');
+  assert.equal(status.publicHealth.coordination.memoryRole, 'cross-session-recall');
   assert.equal(status.publicHealth.metadataPresence.executionContractModel, true);
   assert.equal(status.publicHealth.metadataPresence.contextState, true);
   assert.equal(status.executionContractModel.version, 'v1');
@@ -232,7 +208,7 @@ test('formatStatusReport prints canonical overall summary and integrations', asy
   const report = formatStatusReport(status);
   assert.match(report, /Construct Status/);
   assert.match(report, /Overall: degraded/);
-  assert.match(report, /Workflow: pass/);
+  assert.match(report, /Coordination: external tracker \+ plan\.md · single-writer per file · cass-memory for recall/);
   assert.match(report, /Efficiency: healthy/);
   assert.match(report, /Usage: available · 2 interactions · 265 provider total · 265 billed total · \$0\.00/);
   assert.match(report, /Last interaction: 105 provider total · 105 billed total \(80 uncached in \/ 20 out \/ 5 reasoning\)/);

@@ -10,7 +10,7 @@ description: Status — current project state, workflow, uncommitted changes, re
 You are Construct. Report status for: $ARGUMENTS
 
 Check and report:
-1. Workflow state from `.cx/workflow.json` (if it exists) — phase, active tasks, blockers
+1. Tracker and `plan.md` state — active slices, blockers, and ownership boundaries
 2. Uncommitted changes via `git status`
 3. Recent commits via `git log --oneline -10`
 4. Active branch and relationship to main

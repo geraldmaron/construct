@@ -11,11 +11,6 @@ import test from 'node:test';
 
 import { runHeadhunt, getActiveOverlays, promoteHeadhunt, cleanupHeadhunt, updatePromotionChallenge } from '../lib/headhunt.mjs';
 
-function writeWorkflow(cwd, workflow) {
-  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
-  fs.writeFileSync(path.join(cwd, '.cx', 'workflow.json'), `${JSON.stringify(workflow, null, 2)}\n`);
-}
-
 function tempDir(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
@@ -121,42 +116,9 @@ test('headhunt challenge updates promotion request state', async () => {
   assert.equal(updated.challenge.note, 'Challenge passed after adversarial review.');
 });
 
-test('headhunt attaches overlays and promotion challenge state to the active workflow task', async () => {
-  const cwd = tempDir('construct-headhunt-workflow-');
-  writeWorkflow(cwd, {
-    version: 1,
-    project: 'construct',
-    id: 'test-workflow',
-    title: 'Test workflow',
-    status: 'in-progress',
-    phase: 'implement',
-    currentTaskKey: 'todo:1',
-    updatedAt: new Date().toISOString(),
-    phases: {
-      research: { owner: 'research', status: 'done' },
-      plan: { owner: 'plan', status: 'done' },
-      implement: { owner: 'implement', status: 'in-progress' },
-      validate: { owner: 'validate', status: 'todo' },
-      operate: { owner: 'operate', status: 'todo' },
-    },
-    tasks: [{
-      key: 'todo:1',
-      title: 'Active task',
-      phase: 'implement',
-      owner: 'cx-engineer',
-      status: 'in-progress',
-      dependsOn: [],
-      files: [],
-      readFirst: ['README.md'],
-      doNotChange: ['.env'],
-      acceptanceCriteria: ['done'],
-      verification: [],
-      overlays: [],
-    }],
-    decisions: [],
-    handoffs: [],
-    alignment: {},
-  });
+test('headhunt persists overlays and promotion challenge state without workflow mutation', async () => {
+  const cwd = tempDir('construct-headhunt-overlay-');
+  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
 
   const created = await runHeadhunt({
     args: ['terraform', '--for=design account structure', '--save'],
@@ -164,12 +126,13 @@ test('headhunt attaches overlays and promotion challenge state to the active wor
     homeDir: tempDir('construct-headhunt-home-'),
   });
 
-  const workflow = JSON.parse(fs.readFileSync(path.join(cwd, '.cx', 'workflow.json'), 'utf8'));
-  assert.deepEqual(workflow.tasks[0].overlays, [created.overlay.id]);
-  assert.equal(workflow.tasks[0].challengeRequired, true);
-  assert.equal(workflow.tasks[0].challengeStatus, 'pending');
+  const overlay = JSON.parse(fs.readFileSync(created.overlayJsonPath, 'utf8'));
+  const promotion = JSON.parse(fs.readFileSync(created.promotionPath, 'utf8'));
+  assert.equal(overlay.taskKey, null);
+  assert.equal(overlay.workflowId, null);
+  assert.equal(promotion.challenge.status, 'pending');
 
   updatePromotionChallenge(created.overlay.id, { cwd, status: 'approved' });
-  const updatedWorkflow = JSON.parse(fs.readFileSync(path.join(cwd, '.cx', 'workflow.json'), 'utf8'));
-  assert.equal(updatedWorkflow.tasks[0].challengeStatus, 'approved');
+  const updatedPromotion = JSON.parse(fs.readFileSync(created.promotionPath, 'utf8'));
+  assert.equal(updatedPromotion.challenge.status, 'approved');
 });

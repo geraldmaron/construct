@@ -14,7 +14,6 @@ import { spawnSync } from 'node:child_process';
 
 import { CLI_COMMANDS, CLI_COMMANDS_BY_CATEGORY, CATEGORY_ORDER } from '../lib/cli-commands.mjs';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
-import { runWorkflowCli, loadWorkflow, validateWorkflowState } from '../lib/workflow-state.mjs';
 import { validateRegistry } from '../lib/validator.mjs';
 import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, pollFreeModels, topForTier, selectForTier, applyToEnv, resetEnv, setTierModel, setModelWithTierInference } from '../lib/model-router.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
@@ -293,6 +292,7 @@ async function cmdReview(args) {
   runNodeScript(path.join(ROOT_DIR, 'lib', 'review.mjs'), args);
 }
 
+async function cmdInit(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init.mjs'), args); }
 async function cmdInitDocs(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init-docs.mjs'), args); }
 async function cmdDistill(args) { runDistillCli(args); }
 async function cmdIngest(args) {
@@ -398,15 +398,11 @@ async function cmdUpdate() {
 async function cmdValidate() {
   const reg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
   const result = validateRegistry(reg, { rootDir: ROOT_DIR });
-  const workflow = loadWorkflow(process.cwd());
-  const workflowResult = workflow ? validateWorkflowState(workflow) : { valid: true, errors: [] };
-  if (result.valid && workflowResult.valid) {
+  if (result.valid) {
     println(`✓ Registry valid (${result.summary})`);
-    if (workflow) println(`✓ Workflow valid (${workflow.id})`);
     return;
   }
   if (!result.valid) result.errors.forEach((e, i) => errorln(`${i + 1}. ${e}`));
-  if (!workflowResult.valid) workflowResult.errors.forEach((e, i) => errorln(`${i + 1}. ${e}`));
   process.exit(1);
 }
 
@@ -710,7 +706,7 @@ const handlers = new Map([
   ['search', cmdSearch],
   ['storage', cmdStorage],
   ['headhunt', cmdHeadhunt],
-  ['workflow', async (args) => runWorkflowCli(args)],
+  ['init', cmdInit],
   ['init-docs', cmdInitDocs],
   ['models', cmdModels],
   ['mcp', cmdMcp],

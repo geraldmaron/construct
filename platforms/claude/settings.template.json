@@ -40,7 +40,7 @@
           }
         ],
         "id": "pre:bootstrap-guard",
-        "description": "Block mutations until session bootstrap (workflow_status + project_context + memory_search) has run"
+        "description": "Block mutations until session bootstrap (project_context + memory_search, or equivalent exploratory reads) has run"
       },
       {
         "matcher": "Bash",
@@ -457,7 +457,7 @@
           }
         ],
         "id": "team:teammate-idle-guard",
-        "description": "Keep worker sessions aligned with .cx/workflow.json before they go idle"
+        "description": "Keep worker sessions aligned with the tracker, plan.md, and single-writer coordination rules before they go idle"
       }
     ],
     "TaskCompleted": [
@@ -505,11 +505,8 @@
       ]
     },
     "memory": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-memory"
-      ]
+      "type": "http",
+      "url": "http://127.0.0.1:8765/"
     },
     "playwright": {
       "command": "npx",

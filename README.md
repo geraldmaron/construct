@@ -22,10 +22,10 @@ You don’t configure any of this. You give Construct a goal and it routes, coor
 
 - **Outcome-driven work** — tell it what you want, not which agent to call
 - **A team that challenges itself** — reviewers, security, and QA are peers, not rubber stamps
-- **Workflow state** that persists across sessions and surfaces
+- **Project state** that stays grounded in tracker truth, durable docs, and memory
 - **Health and visibility** instead of guesswork about what’s running
 - **Telemetry and performance reviews** when you want observability
-- **Cross-tool memory** so work carries across Claude Code, OpenCode, and other surfaces
+- **Cross-tool memory** so work carries across different agent surfaces and sessions
 - **Hybrid retrieval** over file-state, SQL-ready records, and semantic search
 - **Shared storage setup** that can initialize Postgres and sync core state during `construct setup`
 
@@ -58,16 +58,24 @@ After updating this repo from remote, `construct update` is the maintenance path
 To initialize a repo for ongoing LLM-assisted work:
 
 ```bash
+construct init
 construct init-docs
 ```
 
-That creates the core document set Construct expects all LLMs to keep current:
+`construct init` bootstraps the shared repo operating files without overwriting existing ones:
 
+- `AGENTS.md`
+- `plan.md`
 - `.cx/context.md`
 - `.cx/context.json`
-- `.cx/workflow.json`
+
+`construct init-docs` then stands up the durable docs system and starter templates:
+
 - `docs/README.md`
 - `docs/architecture.md`
+- `docs/prds/`, `docs/rfcs/`, `docs/adr/`, `docs/memos/`, `docs/runbooks/` by default
+
+Both commands are additive-only: existing files are preserved and reported as skipped instead of overwritten.
 
 For raw source material such as PDFs, spreadsheets, slide decks, and exports, ingest them into retrieval-ready markdown:
 
@@ -119,14 +127,14 @@ The team challenges itself along the way — reviewers push back on incomplete w
 
 | Command | What it does |
 |---|---|
+| `construct init` | Bootstrap Construct project state without overwriting existing repo rules |
 | `construct distill` | Distill documents with query-focused, citation-ready chunk selection |
 | `construct ingest` | Convert PDFs, office docs, spreadsheets, and text files into indexed markdown artifacts |
 | `construct infer` | Infer a structured field schema from one or more documents using AI |
 | `construct search` | Run hybrid file, SQL, and semantic retrieval over core project state |
 | `construct storage` | Sync and inspect the hybrid storage backend |
 | `construct headhunt` | Create a temporary domain expertise overlay or promotion request |
-| `construct workflow` | Manage .cx/workflow.json orchestration state |
-| `construct init-docs` | Generate AI-tailored doc structure for the current project |
+| `construct init-docs` | Stand up docs lanes and starter templates without overwriting existing docs |
 | `construct team` | Team review and template listing |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct memory` | Inspect memory layer usage statistics |
@@ -188,8 +196,8 @@ It reports what matters now:
 - managed dashboard status
 - recent telemetry richness
 - session usage signals when available
-- current workflow/task visibility
-- context/workflow public health in machine-readable form
+- project context visibility
+- context/alignment public health in machine-readable form
 - storage mode visibility for file-state, SQL-ready, and vector-ready layers
 
 If you want the raw machine-readable payload:
@@ -200,10 +208,8 @@ construct status --json
 
 The JSON output includes a shared `publicHealth` block. Today that block exposes:
 
-- `activeTask`
 - `context` (`hasFile`, `source`, `savedAt`, `summary`)
-- `workflow` (`exists`, `phase`, `lifecycleStatus`, `currentTaskKey`, `summary`)
-- `alignment` (`status`, `findings`, counts)
+- `coordination` (`authority`, `fileOwnershipRule`, `memoryRole`)
 - `metadataPresence` (`executionContractModel`, `contextState`)
 
 Hybrid storage readiness is also reported via `storage`:
@@ -219,9 +225,8 @@ The status JSON also reports hybrid storage readiness so team-ready deployments 
 The same public-health contract is exposed through the Construct MCP server on:
 
 - `project_context`
-- `workflow_status`
 
-The shared contract is strongest around active task, workflow/alignment state, and metadata presence. `project_context` is the MCP surface that also carries the resolved project context payload itself.
+The shared contract is strongest around project context, alignment state, and metadata presence. `project_context` is the MCP surface that also carries the resolved project context payload itself.
 
 ## 🤖 Bring your own models
 
@@ -302,13 +307,14 @@ node ./bin/construct update
 node ./bin/construct doctor
 node ./bin/construct status
 node ./bin/construct sync
+node ./bin/construct init
 node ./bin/construct init-docs
 node ./bin/construct docs:update
 ```
 
 Core repo rule:
 
-- treat `.cx/context.*`, `.cx/workflow.json`, `docs/README.md`, and `docs/architecture.md` as shared project state
+- treat `AGENTS.md`, `plan.md`, `.cx/context.*`, `docs/README.md`, and `docs/architecture.md` as shared project state
 - all LLMs working here, including Construct, should read them at session start
 - if work changes project reality, update the affected core document before calling the work done
 

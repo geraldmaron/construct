@@ -1,9 +1,9 @@
 /**
  * tests/mcp-server.test.mjs — MCP server tool contract and trace metadata tests
  *
- * Tests the MCP server tool implementations: cxTrace, project_context, workflow_status,
+ * Tests the MCP server tool implementations: cxTrace, project_context,
  * and related tools. Verifies execution-contract model metadata, tool schema parity,
- * and that workflow/context tools return the expected public health contract shape.
+ * and that project-context tools return the expected public health contract shape.
  * Run via npm test.
  */
 import assert from 'node:assert/strict';
@@ -83,7 +83,7 @@ test('cxTrace includes execution-contract model metadata parity', async () => {
   }
 });
 
-test('projectContext and workflowStatus expose shared public-health parity fields', async () => {
+test('projectContext exposes tracker-plus-plan public-health fields', async () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-health-root-'));
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-health-home-'));
 
@@ -104,25 +104,7 @@ test('projectContext and workflowStatus expose shared public-health parity field
     contextSummary: 'Phase 4 active.',
     markdown: '# Context\n\nPhase 4 active.\n',
   }, null, 2));
-  fs.writeFileSync(path.join(rootDir, '.cx', 'workflow.json'), JSON.stringify({
-    version: 1,
-    id: 'wf-1',
-    title: 'Health parity',
-    phase: 'implement',
-    status: 'in-progress',
-    currentTaskKey: 'todo:1',
-    tasks: [{
-      key: 'todo:1',
-      title: 'Ship parity',
-      phase: 'implement',
-      owner: 'cx-engineer',
-      status: 'in-progress',
-      readFirst: ['lib/status.mjs'],
-      doNotChange: ['agents/registry.json'],
-      acceptanceCriteria: ['parity fields match'],
-      verification: ['node --test'],
-    }],
-  }, null, 2));
+  fs.writeFileSync(path.join(rootDir, 'plan.md'), '# Plan\n\n- Keep public health tracker-backed.\n- One writer per file.\n');
 
   const originalToolkit = process.env.CX_TOOLKIT_DIR;
   const originalHome = process.env.HOME;
@@ -131,60 +113,15 @@ test('projectContext and workflowStatus expose shared public-health parity field
   process.env.HOME = homeDir;
 
   try {
-    const { projectContext, workflowStatus } = await import(`../lib/mcp/server.mjs?health=${Date.now()}`);
+    const { projectContext } = await import(`../lib/mcp/server.mjs?health=${Date.now()}`);
     const project = projectContext({ cwd: rootDir });
-    const workflow = workflowStatus({ cwd: rootDir });
 
     assert.equal(project.publicHealth.context.source, 'json');
-    assert.deepEqual(project.publicHealth.activeTask, workflow.publicHealth.activeTask);
-    assert.deepEqual(project.publicHealth.alignment, workflow.publicHealth.alignment);
-    assert.deepEqual(project.publicHealth.workflow, workflow.publicHealth.workflow);
+    assert.equal(project.publicHealth.coordination.authority, 'external-tracker-plus-plan');
+    assert.equal(project.publicHealth.coordination.fileOwnershipRule, 'single-writer');
+    assert.equal(project.publicHealth.coordination.memoryRole, 'cross-session-recall');
     assert.equal(project.publicHealth.metadataPresence.executionContractModel, true);
-    assert.equal(workflow.publicHealth.metadataPresence.executionContractModel, true);
     assert.equal(project.publicHealth.metadataPresence.contextState, true);
-  } finally {
-    if (originalToolkit === undefined) delete process.env.CX_TOOLKIT_DIR; else process.env.CX_TOOLKIT_DIR = originalToolkit;
-    if (originalHome === undefined) delete process.env.HOME; else process.env.HOME = originalHome;
-  }
-});
-
-test('workflowStatus public-health alignment fails on high-severity workflow issue', async () => {
-  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-align-root-'));
-  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-align-home-'));
-
-  fs.mkdirSync(path.join(rootDir, '.cx'), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, 'agents'), { recursive: true });
-  fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({ personas: [], agents: [] }, null, 2));
-  fs.writeFileSync(path.join(rootDir, '.cx', 'workflow.json'), JSON.stringify({
-    version: 1,
-    id: 'wf-2',
-    title: 'Broken health parity',
-    phase: 'plan',
-    status: 'in-progress',
-    currentTaskKey: 'todo:1',
-    tasks: [{
-      key: 'todo:1',
-      title: 'Out of phase task',
-      phase: 'implement',
-      owner: 'cx-engineer',
-      status: 'in-progress',
-      readFirst: ['lib/status.mjs'],
-      doNotChange: ['agents/registry.json'],
-      acceptanceCriteria: ['fix phase mismatch'],
-      verification: ['node --test'],
-    }],
-  }, null, 2));
-
-  const originalToolkit = process.env.CX_TOOLKIT_DIR;
-  const originalHome = process.env.HOME;
-  process.env.CX_TOOLKIT_DIR = rootDir;
-  process.env.HOME = homeDir;
-
-  try {
-    const { workflowStatus } = await import(`../lib/mcp/server.mjs?align=${Date.now()}`);
-    const result = workflowStatus({ cwd: rootDir });
-    assert.equal(result.publicHealth.alignment.status, 'fail');
-    assert.equal(result.publicHealth.alignment.highSeverityCount, 1);
   } finally {
     if (originalToolkit === undefined) delete process.env.CX_TOOLKIT_DIR; else process.env.CX_TOOLKIT_DIR = originalToolkit;
     if (originalHome === undefined) delete process.env.HOME; else process.env.HOME = originalHome;
@@ -199,15 +136,7 @@ test('status and MCP surfaces agree on public-health metadata presence semantics
   fs.mkdirSync(path.join(rootDir, 'agents'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'package.json'), JSON.stringify({ name: 'construct', version: '1.0.0' }, null, 2));
   fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({ personas: [], agents: [] }, null, 2));
-  fs.writeFileSync(path.join(rootDir, '.cx', 'workflow.json'), JSON.stringify({
-    version: 1,
-    id: 'wf-3',
-    title: 'Parity check',
-    phase: 'implement',
-    status: 'in-progress',
-    currentTaskKey: null,
-    tasks: [],
-  }, null, 2));
+  fs.writeFileSync(path.join(rootDir, 'plan.md'), '# Plan\n\n- Keep metadata parity between status and MCP.\n');
 
   const originalToolkit = process.env.CX_TOOLKIT_DIR;
   const originalHome = process.env.HOME;
@@ -216,7 +145,7 @@ test('status and MCP surfaces agree on public-health metadata presence semantics
 
   try {
     const { buildStatus } = await import('../lib/status.mjs');
-    const { projectContext, workflowStatus } = await import(`../lib/mcp/server.mjs?parity=${Date.now()}`);
+    const { projectContext } = await import(`../lib/mcp/server.mjs?parity=${Date.now()}`);
 
     const status = await buildStatus({
       rootDir,
@@ -226,10 +155,9 @@ test('status and MCP surfaces agree on public-health metadata presence semantics
       env: {},
     });
     const project = projectContext({ cwd: rootDir });
-    const workflow = workflowStatus({ cwd: rootDir });
 
     assert.equal(project.publicHealth.metadataPresence.executionContractModel, status.publicHealth.metadataPresence.executionContractModel);
-    assert.equal(workflow.publicHealth.metadataPresence.executionContractModel, status.publicHealth.metadataPresence.executionContractModel);
+    assert.deepEqual(project.publicHealth.coordination, status.publicHealth.coordination);
     assert.equal(project.publicHealth.context.source, 'missing');
     assert.equal(project.publicHealth.metadataPresence.contextState, false);
   } finally {

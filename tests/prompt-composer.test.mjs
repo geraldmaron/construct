@@ -111,23 +111,18 @@ test('composePrompt skips flavor overlay when no roleFlavors match agent', () =>
   assert.equal(flavorFragment, undefined, 'engineer should not get architect flavor');
 });
 
-test('resolveRuntimePromptMetadata includes active task and routing summary', () => {
+test('resolveRuntimePromptMetadata includes explicit task packet and routing summary', () => {
   const metadata = resolveRuntimePromptMetadata('cx-engineer', {
     rootDir: root,
-    workflow: {
-      currentTaskKey: 'runtime-policy-contract',
-      tasks: [
-        {
-          key: 'runtime-policy-contract',
-          title: 'Implement code-backed orchestration policy and routing contract',
-          owner: 'cx-architect',
-          phase: 'implement',
-          status: 'in-progress',
-          acceptanceCriteria: ['Critical orchestration rules exist in code'],
-          readFirst: ['lib/orchestration-policy.mjs'],
-          doNotChange: ['agents/registry.json'],
-        },
-      ],
+    task: {
+      key: 'runtime-policy-contract',
+      title: 'Implement code-backed orchestration policy and routing contract',
+      owner: 'cx-architect',
+      phase: 'implement',
+      status: 'in-progress',
+      acceptanceCriteria: ['Critical orchestration rules exist in code'],
+      readFirst: ['lib/orchestration-policy.mjs'],
+      doNotChange: ['agents/registry.json'],
     },
     contextState: {
       source: 'test',
@@ -145,9 +140,9 @@ test('resolveRuntimePromptMetadata includes active task and routing summary', ()
     hostConstraints: { runtime: 'mcp' },
   });
 
-  assert.equal(metadata.workflowTaskKey, 'runtime-policy-contract');
-  assert.equal(metadata.workflowTaskOwner, 'cx-architect');
-  assert.equal(metadata.workflowTaskPhase, 'implement');
+  assert.equal(metadata.taskPacketKey, 'runtime-policy-contract');
+  assert.equal(metadata.taskPacketOwner, 'cx-architect');
+  assert.equal(metadata.taskPacketPhase, 'implement');
   assert.equal(metadata.routeIntent, 'fix');
   assert.equal(metadata.routeTrack, 'orchestrated');
   assert.ok(Array.isArray(metadata.routeSpecialists));
