@@ -1,7 +1,8 @@
 /**
- * tests/mcp-catalog.test.mjs — <one-line purpose>
+ * mcp-catalog.test.mjs — Contract tests for the built-in MCP server catalog.
  *
- * <2–6 line summary: what it does, who calls it, key side effects.>
+ * Verifies that all catalog entries declare required fields, setup modes,
+ * and env vars, and that external plugin manifests are loadable.
  */
 import { test } from "node:test";
 import assert from "node:assert";

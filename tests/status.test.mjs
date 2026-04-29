@@ -1,7 +1,8 @@
 /**
- * tests/status.test.mjs — <one-line purpose>
+ * status.test.mjs — Unit tests for lib/status.mjs project health summary.
  *
- * <2–6 line summary: what it does, who calls it, key side effects.>
+ * Covers: tracker config detection, blocked-task surfacing, MCP surface
+ * checks, and public-health metadata parity with the MCP status tool.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

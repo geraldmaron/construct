@@ -1,7 +1,8 @@
 /**
- * tests/model-router.test.mjs — <one-line purpose>
+ * model-router.test.mjs — Unit tests for lib/model-router.mjs tier resolution and failover logic.
  *
- * <2–6 line summary: what it does, who calls it, key side effects.>
+ * Covers: tier inference, free-model preference modes, cooldown tracking,
+ * fallback candidate selection, and .env persistence.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

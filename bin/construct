@@ -303,7 +303,7 @@ async function cmdReview(args) {
     errorln('Configure Langfuse credentials in ~/.construct/config.env or .env.');
     process.exit(1);
   }
-  runNodeScript(path.join(ROOT_DIR, 'lib', 'review.mjs'), args);
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'review.mjs'), args);
 }
 
 async function cmdInit(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init.mjs'), args); }

@@ -1,7 +1,8 @@
 /**
- * tests/workflow-runtime.test.mjs — <one-line purpose>
+ * workflow-runtime.test.mjs — Integration tests for workflow state read/write and phase transitions.
  *
- * <2–6 line summary: what it does, who calls it, key side effects.>
+ * Covers: load, task status updates, phase advancement, executive-gate
+ * enforcement, validation errors, and plan.md synchronisation.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";

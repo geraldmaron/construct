@@ -1,7 +1,8 @@
 /**
- * tests/service-manager.test.mjs — <one-line purpose>
+ * service-manager.test.mjs — Unit tests for lib/service-manager.mjs process lifecycle and health checks.
  *
- * <2–6 line summary: what it does, who calls it, key side effects.>
+ * Covers: start/stop/restart, port allocation, health polling, and stash
+ * and restore operations for the Postgres sidecar.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

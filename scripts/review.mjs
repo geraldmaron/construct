@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * lib/review.mjs — Langfuse performance data pipeline
+ * scripts/review.mjs — Langfuse performance data pipeline
  *
  * Fetches traces and quality scores from Langfuse, aggregates per-agent
  * metrics, and writes two files:
@@ -9,7 +9,7 @@
  *   {outDir}/{date}.md           — standalone markdown report (no AI needed)
  *
  * Usage (via construct review):
- *   node lib/review.mjs [--days=N] [--agent=cx-NAME] [--out=PATH] [--json-only]
+ *   node scripts/review.mjs [--days=N] [--agent=cx-NAME] [--out=PATH] [--json-only]
  *
  * Requires env: LANGFUSE_BASEURL (default: https://cloud.langfuse.com), LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY
  */

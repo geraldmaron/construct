@@ -1,7 +1,8 @@
 /**
- * tests/mcp-manager.test.mjs — <one-line purpose>
+ * mcp-manager.test.mjs — Integration tests for MCP server registration and config management.
  *
- * <2–6 line summary: what it does, who calls it, key side effects.>
+ * Covers: add/remove/list for Claude and OpenCode configs, path resolution,
+ * catalog validation, and migration of legacy memory config entries.
  */
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
