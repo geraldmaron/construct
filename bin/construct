@@ -30,7 +30,7 @@ import { generateCompletions } from '../lib/completions.mjs';
 import { runHeadhunt, listTeamTemplates } from '../lib/headhunt.mjs';
 import { auditSkills, runAuditSkillsCli } from '../lib/audit-skills.mjs';
 import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
-import { readDashboardState, startDashboard, startServices, stopDashboard } from '../lib/service-manager.mjs';
+import { readDashboardState, startDashboard, startServices } from '../lib/service-manager.mjs';
 import { readCostLog, summarizeCostData, formatCostReport, clearCostLog } from '../lib/cost.mjs';
 import { readEfficiencyLog, summarizeEfficiencyData, formatEfficiencyReport } from '../lib/efficiency.mjs';
 import { buildHybridSearchResultsAsync } from '../lib/storage/hybrid-query.mjs';
@@ -262,11 +262,15 @@ async function cmdUp() {
 }
 
 async function cmdDown() {
-  const result = stopDashboard(HOME);
-  if (result.stopped) ok(`Dashboard stopped (pid ${result.pid}, port ${result.port}).`);
-  else if (result.reason === 'stale-state') warn('Dashboard state was stale (process already gone). Cleaned up.');
-  else warn('No managed dashboard was running.');
-  info('Other services still need to be stopped with their native commands or process manager.');
+  const { stopServices } = await import('../lib/service-manager.mjs');
+  const result = await stopServices({ homeDir: HOME, rootDir: ROOT_DIR });
+  for (const svc of result.results) {
+    if (svc.status === 'stopped') ok(`${svc.name} stopped${svc.note ? ` (${svc.note})` : ''}.`);
+    else if (svc.status === 'cleaned') warn(`${svc.name}: ${svc.note}.`);
+    else if (svc.status === 'error') errorln(`${svc.name}: ${svc.note}.`);
+    else if (svc.status === 'skipped') info(`${svc.name}: skipped — ${svc.note}.`);
+    else info(`${svc.name}: not running.`);
+  }
 }
 
 async function cmdServe() {

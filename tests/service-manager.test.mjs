@@ -10,7 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { clearDashboardState, readDashboardState, startServices, stopDashboard, getRuntimePorts, _verifyLangfuseKeys, _pruneStashDir } from '../lib/service-manager.mjs';
+import { clearDashboardState, readDashboardState, startServices, stopDashboard, stopServices, getRuntimePorts, _verifyLangfuseKeys, _pruneStashDir } from '../lib/service-manager.mjs';
 import { writeEnvValues } from '../lib/env-config.mjs';
 
 function tempDir(prefix) {
@@ -444,4 +444,63 @@ test('verifyLangfuseKeys prunes old stashes during reseed', async () => {
   // The 3rd is the newly created one (timestamp-based)
   assert.ok(!dumps[2].startsWith('traces-2025-01-01'));
   assert.ok(!dumps[2].startsWith('traces-2025-01-02'));
+});
+
+test('stopServices returns per-service results with no guidance message', async () => {
+  const homeDir = tempDir('cx-stop-');
+  const rootDir = tempDir('cx-root-');
+  const noopSpawn = () => ({ status: 0, stdout: '', stderr: '' });
+  const noDocker = () => null;
+
+  const result = await stopServices({ homeDir, rootDir, spawnSyncFn: noopSpawn, detectDockerComposeFn: noDocker });
+
+  assert.ok(Array.isArray(result.results), 'results is an array');
+  assert.ok(!('guidance' in result), 'no guidance field on result');
+
+  const names = result.results.map((r) => r.name);
+  assert.ok(names.includes('Dashboard'), 'Dashboard entry present');
+  assert.ok(names.includes('Langfuse'), 'Langfuse entry present');
+  assert.ok(names.includes('Memory (cm)'), 'Memory (cm) entry present');
+  assert.ok(names.includes('OpenCode'), 'OpenCode entry present');
+
+  const langfuse = result.results.find((r) => r.name === 'Langfuse');
+  assert.equal(langfuse.status, 'skipped', 'Langfuse skipped when Docker not available');
+});
+
+test('stopServices reports stopped Dashboard when pid is live', async () => {
+  const homeDir = tempDir('cx-stop2-');
+  const rootDir = tempDir('cx-root2-');
+  const stateDir = path.join(homeDir, '.construct', 'state');
+  fs.mkdirSync(stateDir, { recursive: true });
+  const state = { pid: process.pid, port: 4242, url: 'http://127.0.0.1:4242', startedAt: new Date().toISOString() };
+  fs.writeFileSync(path.join(stateDir, 'dashboard.json'), JSON.stringify(state));
+
+  const noopSpawn = () => ({ status: 0, stdout: '', stderr: '' });
+  const noDocker = () => null;
+  const result = await stopServices({ homeDir, rootDir, spawnSyncFn: noopSpawn, detectDockerComposeFn: noDocker });
+
+  const dash = result.results.find((r) => r.name === 'Dashboard');
+  assert.ok(dash.status === 'stopped' || dash.status === 'not-running', `unexpected status: ${dash.status}`);
+});
+
+test('stopServices runs docker compose down when compose file exists', async () => {
+  const homeDir = tempDir('cx-stop3-');
+  const rootDir = tempDir('cx-root3-');
+  // Create the compose file so the branch is taken
+  const composeDir = path.join(rootDir, 'langfuse');
+  fs.mkdirSync(composeDir, { recursive: true });
+  fs.writeFileSync(path.join(composeDir, 'docker-compose.yml'), 'version: "3"');
+
+  const calls = [];
+  const trackingSpawn = (cmd, args, opts) => {
+    calls.push({ cmd, args });
+    return { status: 0, stdout: '', stderr: '' };
+  };
+  const fakeCompose = () => ({ command: 'docker', argsPrefix: ['compose'] });
+
+  await stopServices({ homeDir, rootDir, spawnSyncFn: trackingSpawn, detectDockerComposeFn: fakeCompose });
+
+  const composeDown = calls.find((c) => c.args.includes('down'));
+  assert.ok(composeDown, 'docker compose down was called');
+  assert.ok(composeDown.args.includes('construct-langfuse'), 'project name passed');
 });
