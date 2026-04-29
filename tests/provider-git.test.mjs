@@ -72,7 +72,7 @@ describe('git provider — functional', () => {
   });
 
   it('returns empty array when search has no matches', async () => {
-    const matches = await provider.search('zzz_unlikely_string_xyz_construct_test');
+    const matches = await provider.search('xQ9zW2mP_construct_no_match_k7vR', { paths: ['lib/'] });
     assert.deepEqual(matches, []);
   });
 });
