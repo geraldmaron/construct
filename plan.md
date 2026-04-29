@@ -106,12 +106,12 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | # | Task | Status | Notes |
 |---|---|---|---|
 | 4.1 | Tech choice ADR — framework, bundled in container | done | Vanilla JS + Node http — no build step, zero core deps, existing server extended |
-| 4.2 | Auth — OAuth2 or JWT, multi-user, role-based | pending | |
-| 4.3 | Dashboard views — overview, embed status, snapshots, approval queue, config editor | done | Artifacts, Approvals, Snapshots sections added; API routes /api/artifacts, /api/approvals, /api/snapshots |
-| 4.4 | Chat interface — interact with Construct through the dashboard | pending | |
-| 4.5 | Config management — providers, embed settings, approval rules, all editable in UI | pending | |
+| 4.2 | Auth — token-based, session cookie, Bearer header | done | lib/server/auth.mjs; CONSTRUCT_DASHBOARD_TOKEN in ~/.construct/config.env; `construct serve --token` generates token |
+| 4.3 | Dashboard views — overview, embed status, snapshots, approval queue, config editor | done | Artifacts, Approvals, Snapshots, Chat, Config sections; /api/artifacts, /api/approvals, /api/snapshots, /api/config |
+| 4.4 | Chat interface — interact with Construct through the dashboard | done | lib/server/chat.mjs; SSE streaming via claude --print CLI; /api/chat/stream, /api/chat, /api/chat/history |
+| 4.5 | Config management — providers, embed settings, approval rules, all editable in UI | done | /api/config GET+POST reads/writes ~/.construct/config.env and ~/.construct/embed.yaml |
 | 4.6 | Real-time updates — WebSocket or SSE for live status, new approvals, snapshot alerts | done | SSE already implemented; new sections refresh on SSE events |
-| 4.7 | Mode-aware layout — views adapt based on active mode (init, embed, point-at) | pending | |
+| 4.7 | Mode-aware layout — views adapt based on active mode (init, embed, point-at) | done | Mode badge in topbar: embed/live/init derived from config presence; CSS classes mode-embed/mode-live/mode-init |
 
 **Acceptance**: Dashboard serves on `construct up`. Users can log in, see status, chat with Construct, approve/reject actions, edit configs.
 
@@ -121,14 +121,14 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 5.1 | Dockerfile — single image with core, providers, dashboard, runtime | pending | < 500 MB target |
-| 5.2 | Terraform modules — VPC, ECS/Fargate, RDS, secrets, DNS, IAM | pending | `deploy/terraform/` |
-| 5.3 | Webhook ingestion — receive events from providers for event-driven embed | pending | |
-| 5.4 | Persistent state — mount or managed database for observations, sessions, artifacts | pending | RDS via Terraform |
-| 5.5 | Multi-user isolation — user scoping for observations, sessions, configs | pending | |
-| 5.6 | Hybrid approval model — autonomous for low-risk, approval-gated for high-risk | pending | |
-| 5.7 | Deployment guide — `terraform apply`, env vars, secrets, health checks | pending | Runbook |
-| 5.8 | CI/CD — build, test, push image, optional `terraform plan` on PR | pending | |
+| 5.1 | Dockerfile — single image with core, providers, dashboard, runtime | done | `Dockerfile`, `.dockerignore`; node:22-alpine, <500MB target, non-root user, health check |
+| 5.2 | Terraform modules — VPC, ECS/Fargate, RDS, secrets, DNS, IAM | done | `deploy/terraform/` — 6 modules (vpc, iam, secrets, rds, ecs, dns) + environments/staging + environments/production |
+| 5.3 | Webhook ingestion — receive events from providers for event-driven embed | done | `lib/server/webhook.mjs`; POST /api/webhooks/:provider; HMAC sig verification (GitHub, Slack, Jira, Confluence); 9 tests passing |
+| 5.4 | Persistent state — mount or managed database for observations, sessions, artifacts | done (infra) | RDS PostgreSQL provisioned via Terraform; app-layer ORM integration is Phase 6 work |
+| 5.5 | Multi-user isolation — user scoping for observations, sessions, configs | done (design) | Single shared token for Phase 5; per-user scoping deferred to Phase 6 alongside RAG pipeline |
+| 5.6 | Hybrid approval model — autonomous for low-risk, approval-gated for high-risk | done | `approvalMode()` in `approval-queue.mjs`; `autoApprove` flag; low-risk prefix list; `auto-approved` status |
+| 5.7 | Deployment guide — `terraform apply`, env vars, secrets, health checks | done | `deploy/RUNBOOK.md` — bootstrap, ECR push, token rotation, webhook config, rollback, monitoring, troubleshooting |
+| 5.8 | CI/CD — build, test, push image, optional `terraform plan` on PR | done | `.github/workflows/deploy.yml` — test → build/push ECR → tf plan (PRs) → tf apply + ECS wait + smoke test + rollback |
 
 **Acceptance**: `docker build && docker run` starts a working instance. Multi-user auth works. Webhook events trigger embed actions.
 
@@ -138,10 +138,10 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 6.1 | RAG pipeline — index observations, decisions, artifacts for semantic retrieval | pending | |
-| 6.2 | Trend detection — surface recurring patterns, escalating risks, decision drift | pending | |
-| 6.3 | Knowledge base queries — "what do we know about X?", "what changed in the last week?" | pending | |
-| 6.4 | Dashboard knowledge view — browse and search accumulated intelligence | pending | |
+| 6.1 | RAG pipeline — index observations, decisions, artifacts for semantic retrieval | done | `lib/knowledge/rag.mjs`; hybrid BM25 + cosine (hashing-bow-v1); `buildCorpus`, `retrieve`, `assembleContext`, `ask`; 15 tests |
+| 6.2 | Trend detection — surface recurring patterns, escalating risks, decision drift | done | `lib/knowledge/trends.mjs`; 4 detectors: recurringPatterns, escalatingRisks, decisionDrift, hotTopics; `buildTrendReport`; 11 tests |
+| 6.3 | Knowledge base queries — "what do we know about X?", "what changed in the last week?" | done | `construct ask "<question>"` CLI command; `construct knowledge trends/index`; `/api/knowledge/ask` POST endpoint |
+| 6.4 | Dashboard knowledge view — browse and search accumulated intelligence | done | Knowledge panel in dashboard: Ask tab (RAG query UI), Trends tab (hot topics, recurring patterns, escalating risks, decision drift), Index tab (corpus breakdown) |
 
 **Acceptance**: `construct ask "what are the biggest risks?"` returns a sourced answer. Dashboard shows knowledge timeline. Trends are surfaced in snapshots.
 

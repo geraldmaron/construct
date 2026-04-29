@@ -1,7 +1,7 @@
 # PRD: Construct — Org-in-a-Box
 
 - **Date**: 2026-04-28
-- **Owner**: Gerald Maron
+- **Owner**: Construct·Product
 - **Status**: draft
 
 ## Problem

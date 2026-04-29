@@ -104,6 +104,19 @@ for data fetching and rendering. Inline styles only — no build step required.
     #topbar .health-dot.bad      { background: var(--danger); }
 
     #topbar .spacer { flex: 1; }
+    #topbar .mode-badge {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+    }
+    #topbar .mode-badge.mode-embed  { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.08); }
+    #topbar .mode-badge.mode-live   { border-color: var(--healthy); color: var(--healthy); }
+    #topbar .mode-badge.mode-init   { border-color: var(--warn); color: var(--warn); }
 
     /* ── Nav ────────────────────────────────────────────────── */
     #nav {
@@ -310,7 +323,122 @@ for data fetching and rendering. Inline styles only — no build step required.
     .snapshot-card .snapshot-summary { font-size: 13px; color: var(--text); white-space: pre-wrap; }
     .snapshot-card .snapshot-expand { font-size: 11px; color: var(--accent); cursor: pointer; margin-top: 6px; }
 
-    /* ── Cards ──────────────────────────────────────────────── */
+    /* ── Chat ────────────────────────────────────────────────── */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 300px;
+      max-height: 55vh;
+      padding: 12px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chat-bubble {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .chat-bubble.user {
+      background: var(--accent);
+      color: #000;
+      align-self: flex-end;
+      border-bottom-right-radius: 3px;
+    }
+    .chat-bubble.assistant {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      align-self: flex-start;
+      border-bottom-left-radius: 3px;
+    }
+    .chat-bubble.assistant.streaming { opacity: 0.85; }
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      margin-top: 12px;
+    }
+    .chat-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font-ui);
+      padding: 8px 12px;
+      resize: vertical;
+      min-height: 40px;
+    }
+    .chat-input:focus { outline: none; border-color: var(--accent); }
+    .chat-send-btn { height: 38px; padding: 0 18px; flex-shrink: 0; }
+    .chat-status { font-size: 11px; color: var(--text-dim); margin-top: 6px; min-height: 16px; }
+
+    /* ── Config editor ───────────────────────────────────────── */
+    .config-editor {
+      width: 100%;
+      min-height: 320px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 12px;
+      resize: vertical;
+    }
+    .config-editor:focus { outline: none; border-color: var(--accent); }
+
+    /* ── Login overlay ───────────────────────────────────────── */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 12, 16, 0.92);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .login-overlay.hidden { display: none; }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 40px;
+      min-width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: center;
+    }
+    .login-logo {
+      font-family: var(--font);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+    .login-subtitle { font-size: 12px; color: var(--text-dim); }
+    .login-input {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      padding: 8px 12px;
+      text-align: center;
+      letter-spacing: 0.1em;
+    }
+    .login-input:focus { outline: none; border-color: var(--accent); }
+    .login-btn { width: 100%; justify-content: center; padding: 8px 0; font-size: 14px; }
+    .login-error { font-size: 12px; color: var(--danger); }
+    .login-error.hidden { display: none; }
     .cards {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -869,6 +997,8 @@ for data fetching and rendering. Inline styles only — no build step required.
     <span class="meta" id="version">v—</span>
     <span class="sep">/</span>
     <span class="meta" id="lastsync">synced —</span>
+    <span class="sep">/</span>
+    <span class="meta mode-badge" id="mode-badge">—</span>
     <span class="spacer"></span>
     <span class="status-summary" id="system-status">status —</span>
     <span class="health-dot" id="healthdot" title="Overall system health"></span>
@@ -910,6 +1040,15 @@ for data fetching and rendering. Inline styles only — no build step required.
     </a>
     <a href="#" data-section="snapshots">
       <span class="nav-icon">◉</span> Snapshots
+    </a>
+    <a href="#" data-section="chat">
+      <span class="nav-icon">💬</span> Chat
+    </a>
+    <a href="#" data-section="knowledge">
+      <span class="nav-icon">🧠</span> Knowledge
+    </a>
+    <a href="#" data-section="config">
+      <span class="nav-icon">⚙</span> Config
     </a>
   </nav>
 
@@ -1024,7 +1163,85 @@ for data fetching and rendering. Inline styles only — no build step required.
       <div class="section-title">Snapshots</div>
       <div id="snapshots-content"><div class="loading">Loading...</div></div>
     </section>
+
+    <section id="section-chat" class="section">
+      <div class="section-title">Chat</div>
+      <div id="chat-messages" class="chat-messages"></div>
+      <div class="chat-input-row">
+        <textarea id="chat-input" class="chat-input" placeholder="Ask Construct anything…" rows="2"></textarea>
+        <button id="chat-send" class="btn-primary chat-send-btn">Send</button>
+      </div>
+      <div id="chat-status" class="chat-status"></div>
+     </section>
+
+    <section id="section-knowledge" class="section">
+      <div class="section-title">Knowledge</div>
+      <div class="tabs" id="knowledge-tabs">
+        <button class="tab-btn active" data-ktab="ask">Ask</button>
+        <button class="tab-btn" data-ktab="trends">Trends</button>
+        <button class="tab-btn" data-ktab="index">Index</button>
+      </div>
+
+      <!-- Ask tab -->
+      <div id="knowledge-tab-ask" class="tab-panel active">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="knowledge-question" type="text" class="chat-input"
+            placeholder='e.g. "what are the biggest risks?"'
+            style="flex:1">
+          <button class="btn-primary" id="knowledge-ask-btn">Ask</button>
+        </div>
+        <div id="knowledge-ask-loading" class="loading" style="display:none">Thinking…</div>
+        <div id="knowledge-answer" style="display:none">
+          <div id="knowledge-answer-text" class="snapshot-content" style="white-space:pre-wrap;margin-bottom:8px"></div>
+          <div id="knowledge-sources" style="font-size:12px;color:var(--text-muted)"></div>
+        </div>
+      </div>
+
+      <!-- Trends tab -->
+      <div id="knowledge-tab-trends" class="tab-panel">
+        <button class="btn-secondary" id="knowledge-trends-refresh" style="margin-bottom:12px">Refresh</button>
+        <div id="knowledge-trends-content"><div class="loading">Loading…</div></div>
+      </div>
+
+      <!-- Index tab -->
+      <div id="knowledge-tab-index" class="tab-panel">
+        <button class="btn-secondary" id="knowledge-index-refresh" style="margin-bottom:12px">Refresh</button>
+        <div id="knowledge-index-content"><div class="loading">Loading…</div></div>
+      </div>
+    </section>
+
+    <section id="section-config" class="section">
+      <div class="tabs" id="config-tabs">
+        <button class="tab-btn active" data-ctab="env">config.env</button>
+        <button class="tab-btn" data-ctab="embed">embed.yaml</button>
+      </div>
+      <div id="config-tab-env" class="tab-panel active">
+        <div id="config-env-content"><div class="loading">Loading...</div></div>
+        <div class="form-actions" style="margin-top:12px">
+          <button class="btn-primary" id="config-env-save">Save</button>
+          <span id="config-env-feedback" class="feedback"></span>
+        </div>
+      </div>
+      <div id="config-tab-embed" class="tab-panel">
+        <div id="config-embed-content"><div class="loading">Loading...</div></div>
+        <div class="form-actions" style="margin-top:12px">
+          <button class="btn-primary" id="config-embed-save">Save</button>
+          <span id="config-embed-feedback" class="feedback"></span>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <!-- Login overlay -->
+  <div id="login-overlay" class="login-overlay hidden">
+    <div class="login-card">
+      <div class="login-logo">construct</div>
+      <div class="login-subtitle">Dashboard access is protected</div>
+      <input id="login-token" type="password" class="login-input" placeholder="Enter dashboard token…" autocomplete="current-password">
+      <button id="login-submit" class="btn-primary login-btn">Unlock</button>
+      <div id="login-error" class="login-error hidden">Invalid token</div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

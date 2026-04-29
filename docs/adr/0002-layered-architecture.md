@@ -2,7 +2,7 @@
 
 - **Date**: 2026-04-28
 - **Status**: proposed
-- **Deciders**: Gerald Maron
+- **Deciders**: Construct·Architect
 - **Supersedes**: none
 
 ## Problem
