@@ -17,6 +17,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+import { loadConstructEnv } from "../lib/env-config.mjs";
+
+// Apply config.env so its credentials win over stale shell env values
+const _confEnv = loadConstructEnv({ warn: false });
+for (const [k, v] of Object.entries(_confEnv)) process.env[k] = v;
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 

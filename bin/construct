@@ -299,12 +299,12 @@ async function cmdVersion() {
 
 async function cmdReview(args) {
   fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
-  if (!process.env.LANGFUSE_PUBLIC_KEY || !process.env.LANGFUSE_SECRET_KEY) {
+  if (!ENV.LANGFUSE_PUBLIC_KEY || !ENV.LANGFUSE_SECRET_KEY) {
     errorln('Error: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY must be set.');
     errorln('Configure Langfuse credentials in ~/.construct/config.env or .env.');
     process.exit(1);
   }
-  runNodeScript(path.join(ROOT_DIR, 'scripts', 'review.mjs'), args);
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'review.mjs'), args, ENV);
 }
 
 async function cmdInit(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init.mjs'), args); }
@@ -566,8 +566,12 @@ async function cmdDiff() {
   warn('construct diff is not yet ported to the Node CLI surface. Use git diff for now.');
 }
 
-async function cmdOptimize() {
-  warn('construct optimize remains available only in environments with Python + DSPy ready.');
+async function cmdOptimize(args) {
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'optimize.mjs'), args, ENV);
+}
+
+async function cmdSeedTraces(args) {
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'seed-traces.mjs'), args, ENV);
 }
 
 async function cmdCleanup() {
@@ -729,6 +733,7 @@ const handlers = new Map([
   ['hosts', cmdHosts],
   ['review', cmdReview],
   ['optimize', cmdOptimize],
+  ['seed-traces', cmdSeedTraces],
   ['cost', cmdCost],
   ['efficiency', cmdEfficiency],
   ['evals', cmdEvals],
