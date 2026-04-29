@@ -54,7 +54,7 @@
   },
   "mcpServers": {
     "memory": {
-      "type": "http",
+      "type": "url",
       "url": "http://127.0.0.1:8765/",
       "description": "Persistent cross-session knowledge graph for agent memory and handoffs"
     },

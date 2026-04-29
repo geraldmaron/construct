@@ -110,10 +110,11 @@ test("memory MCP uses the configured port for Claude and memory for OpenCode", (
 
   const claude = readJson(claudePath);
   const config = readJson(opencodePath);
-  assert.deepEqual(claude.mcpServers.memory, {
-    type: "http",
-    url: "http://127.0.0.1:9901/",
-  });
+  assert.equal(
+    claude.mcpServers?.memory,
+    undefined,
+    "Claude does not get the cass-memory HTTP entry: cm serve omits the MCP `initialize` handshake, so Claude's MCP client cannot connect. Memory tools are surfaced through construct-mcp (project .mcp.json) instead.",
+  );
   assert.deepEqual(config.mcp.memory, {
     type: "remote",
     url: "http://127.0.0.1:9901/",

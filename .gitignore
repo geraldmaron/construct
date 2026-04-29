@@ -6,6 +6,7 @@ node_modules/
 .claude/
 .codex/
 .cx/*
+.mcp.json
 config.env
 runtime/
 
