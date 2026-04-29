@@ -76,9 +76,9 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 2.2 | Provider registry and config schema — `construct.yaml` or `.cx/providers.yaml` | done | providers/lib/registry.mjs |
 | 2.3 | Git repo provider — local + remote repos, read commits/branches/files, write via branch+PR | done | providers/git/index.mjs, transport: git CLI |
 | 2.4 | Project tracker provider — work items, transitions, search (Jira as first impl) | done | providers/jira/index.mjs, transport: REST API v3 |
-| 2.5 | Messaging provider — read channels/threads, post messages (Slack as first impl) | pending | Transport: REST/SDK |
+| 2.5 | Messaging provider — read channels/threads, post messages (Slack as first impl) | done | providers/slack/index.mjs, transport: Slack Web API |
 | 2.6 | Code host provider — PRs, issues, reviews, repo metadata (GitHub as first impl) | done | providers/github/index.mjs, transport: gh CLI |
-| 2.7 | Knowledge base provider — pages, search, create/update (Confluence/Notion as first impl) | pending | Transport: MCP or REST |
+| 2.7 | Knowledge base provider — pages, search, create/update (Confluence/Notion as first impl) | done | providers/confluence/index.mjs, transport: REST API v2 |
 | 2.8 | Provider test harness — contract tests any provider must pass | done | providers/lib/contract-tests.mjs, 35 tests passing |
 
 **Acceptance**: `construct providers list` shows registered providers. `construct providers test <name>` validates the capability contract. At least 3 providers using different transports work end-to-end.
