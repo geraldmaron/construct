@@ -514,7 +514,7 @@ test('formatStatusReport shows explicit byte-budget warning when session bytes a
   assert.ok(status.sessionEfficiency.warnings.length >= 1);
 });
 
-test('buildStatus marks telemetry richness degraded when Langfuse auth fails', async () => {
+test('buildStatus marks telemetry richness credentials-invalid when Langfuse auth fails', async () => {
   const { rootDir, homeDir } = await createFixture();
   writeEnvValues(path.join(homeDir, '.construct', 'config.env'), {
     LANGFUSE_BASEURL: 'http://localhost:3000',
@@ -542,8 +542,9 @@ test('buildStatus marks telemetry richness degraded when Langfuse auth fails', a
       env: {},
     });
 
-    assert.equal(status.telemetryRichness.status, 'degraded');
-    assert.equal(status.telemetryRichness.summary, 'Langfuse HTTP 401');
+    assert.equal(status.telemetryRichness.status, 'credentials-invalid');
+    assert.match(status.telemetryRichness.summary, /credentials rejected/);
+    assert.match(status.telemetryRichness.summary, /construct setup/);
   } finally {
     global.fetch = originalFetch;
   }

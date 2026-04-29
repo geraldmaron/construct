@@ -819,6 +819,10 @@ const handlers = new Map([
       }
     }
   }],
+  ['embed', async (args) => {
+    const { runEmbedCli } = await import('../lib/embed/cli.mjs');
+    return runEmbedCli(args, { rootDir: new URL('..', import.meta.url).pathname });
+  }],
   ['knowledge', async (args) => {
     const sub = args[0] || 'trends';
     if (sub === 'trends') {
