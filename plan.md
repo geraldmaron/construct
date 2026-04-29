@@ -89,12 +89,12 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 3.1 | Embed config schema — sources (provider refs), intervals, output targets, approval rules | pending | |
-| 3.2 | Scheduler — cron-style or interval-based execution loop | pending | Local: schedule. Cloud: cron + webhook |
-| 3.3 | Snapshot engine — aggregate data from providers, produce health/risk/gap report | pending | |
-| 3.4 | Snapshot output targets — markdown file, messaging provider, dashboard, all configurable | pending | |
-| 3.5 | Approval queue — high-risk actions (work item creation, merge, doc publish) go to queue | pending | |
-| 3.6 | `construct embed start/stop/status` CLI commands | pending | |
+| 3.1 | Embed config schema — sources (provider refs), intervals, output targets, approval rules | done | lib/embed/config.mjs — schema + zero-dep YAML parser |
+| 3.2 | Scheduler — cron-style or interval-based execution loop | done | lib/embed/scheduler.mjs |
+| 3.3 | Snapshot engine — aggregate data from providers, produce health/risk/gap report | done | lib/embed/snapshot.mjs |
+| 3.4 | Snapshot output targets — markdown file, messaging provider, dashboard, all configurable | done | lib/embed/output.mjs |
+| 3.5 | Approval queue — high-risk actions (work item creation, merge, doc publish) go to queue | done | lib/embed/approval-queue.mjs |
+| 3.6 | `construct embed start/stop/status` CLI commands | done | lib/cli-commands.mjs — embed + providers commands registered |
 | 3.7 | Artifact generation — PRDs, RFCs, ADRs on demand or triggered by embed analysis | pending | |
 
 **Acceptance**: `construct embed --config embed.yaml` produces a snapshot within configured interval. High-risk actions queue for approval. Snapshots appear in configured targets.
