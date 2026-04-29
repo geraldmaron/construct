@@ -4,8 +4,12 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { SnapshotEngine, renderMarkdown } from '../lib/embed/snapshot.mjs';
 import { ProviderRegistry } from '../providers/lib/registry.mjs';
+import { normalize, DEFAULT_OPERATING_PROFILE } from '../lib/embed/config.mjs';
 
 function makeRegistry(providers = []) {
   const reg = new ProviderRegistry();
@@ -20,6 +24,25 @@ describe('SnapshotEngine', () => {
     assert.equal(snap.sections.length, 0);
     assert.equal(snap.errors.length, 0);
     assert.equal(snap.summary.totalItems, 0);
+    assert.equal(snap.operatingProfile.mode, 'embed');
+    assert.ok(snap.operatingGaps.some((gap) => gap.kind === 'missing-sources'));
+  });
+
+  it('includes operating profile and detects missing focal resources', async () => {
+    const rootDir = mkdtempSync(join(tmpdir(), 'construct-snapshot-profile-'));
+    mkdirSync(join(rootDir, '.cx', 'knowledge'), { recursive: true });
+    writeFileSync(join(rootDir, 'plan.md'), '# Plan\n');
+    const engine = new SnapshotEngine(makeRegistry(), {
+      sources: [],
+      outputs: [{ type: 'markdown', path: '.cx/snapshot.md' }],
+      snapshot: { maxItems: 10 },
+      operatingProfile: DEFAULT_OPERATING_PROFILE,
+    }, { rootDir });
+
+    const snap = await engine.generate();
+
+    assert.equal(snap.operatingProfile.schemaVersion, 'embed-operating-profile/v1');
+    assert.ok(snap.operatingGaps.some((gap) => gap.summary.includes('docs/architecture.md')));
   });
 
   it('collects items from a source', async () => {
@@ -111,6 +134,7 @@ describe('renderMarkdown', () => {
     const snap = await engine.generate();
     const md = renderMarkdown(snap);
     assert.ok(md.includes('# Construct Snapshot'));
+    assert.ok(md.includes('## Operating Profile'));
     assert.ok(md.includes('fix bug'));
     assert.ok(md.includes('alice'));
   });
@@ -126,5 +150,21 @@ describe('renderMarkdown', () => {
     const md = renderMarkdown(snap);
     assert.ok(md.includes('⚠️ Errors'));
     assert.ok(md.includes('timeout'));
+  });
+});
+
+describe('embed operating profile config', () => {
+  it('normalizes operating profile overrides while preserving defaults', () => {
+    const config = normalize({
+      operatingProfile: {
+        mission: 'Watch release readiness.',
+        strategy: { autonomy: 'recommend-only' },
+      },
+    });
+
+    assert.equal(config.operatingProfile.mission, 'Watch release readiness.');
+    assert.equal(config.operatingProfile.strategy.autonomy, 'recommend-only');
+    assert.equal(config.operatingProfile.strategy.writePolicy, 'approval-required-for-high-risk');
+    assert.equal(config.operatingProfile.responsibilities.artifacts.wireframes, 'draft');
   });
 });

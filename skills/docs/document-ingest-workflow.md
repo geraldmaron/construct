@@ -13,11 +13,11 @@ Use when: the user points at a PDF, Word doc, spreadsheet, slide deck, export, o
 
 ## Default destination
 
-Write outputs to `.cx/product-intel/sources/ingested/` unless the user explicitly wants a sibling markdown file or another output path.
+Write outputs to `.cx/knowledge/internal/` unless the user explicitly wants a typed `knowledge/<subdir>`, sibling markdown file, or another output path.
 
 Why:
 
-- files under `.cx/product-intel/` are already part of Construct's file-state retrieval path
+- files under `.cx/knowledge/` are part of Construct's file-state retrieval path
 - they can be picked up by hybrid search immediately
 - `construct ingest --sync` can then push them into shared SQL/vector storage when configured
 
@@ -50,4 +50,3 @@ construct ingest ./data/export.xlsx --out=./notes/export.md
 ## Rules
 
 Do not overwrite an existing markdown artifact unless the user explicitly asks for replacement. Prefer creating a suffixed filename instead. Keep original source files untouched.
-

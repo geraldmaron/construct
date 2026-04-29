@@ -107,6 +107,19 @@ Every request flows through three structural layers:
 | **Embed** | Continuous monitoring, snapshot production, work item management | `construct embed start` |
 | **Self-host** | Construct manages its own development (this repo) | Always active in the construct repo |
 
+### Embedded operating profile
+
+Embed mode is governed by a config-backed operating profile, not just a list of watched sources. The profile is the daemon's bearing: mission, strategy, focal resources, authority boundaries, artifact responsibilities, and risk model.
+
+Precedence is explicit: approval rules and tracker/doc ownership override profile preferences. The default profile is assistive and read-first:
+
+- autonomous: read sources, summarize, identify gaps, generate snapshots, draft roadmaps/status/summaries/artifacts
+- approval-queued: create or update issues, publish durable docs, post externally, write broadly to the repo
+- focal resources: `plan.md`, `docs/architecture.md`, `.cx/knowledge/`, `.cx/roadmap.md`
+- artifact obligations: roadmaps, PRDs, RFCs, ADRs, memos, status updates, summaries, wireframes, and risks
+
+Every snapshot discloses the active operating profile and any operating gaps, such as missing focal resources, missing sources, source read failures, or missing outputs. Roadmaps include the same profile obligations so operators can tell whether Construct is only observing or also missing responsibilities.
+
 ## Project-state hierarchy
 
 One source of truth per concern:

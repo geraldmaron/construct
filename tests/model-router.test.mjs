@@ -279,3 +279,29 @@ test('selectFallbackModel returns null for non-retryable failures', () => {
   const result = selectFallbackModel({ hookInput, envPath, cooldownPath });
   assert.equal(result, null);
 });
+
+// ── PROVIDER_FAMILY_TIERS export ─────────────────────────────────────────────
+test('PROVIDER_FAMILY_TIERS is exported and has id/label/resolve on every entry', async () => {
+  const { PROVIDER_FAMILY_TIERS } = await import('../lib/model-router.mjs');
+  assert.ok(Array.isArray(PROVIDER_FAMILY_TIERS), 'should be an array');
+  assert.ok(PROVIDER_FAMILY_TIERS.length > 0, 'should have entries');
+  for (const fam of PROVIDER_FAMILY_TIERS) {
+    assert.ok(typeof fam.id === 'string', `entry missing id: ${JSON.stringify(fam)}`);
+    assert.ok(typeof fam.label === 'string', `entry missing label: ${fam.id}`);
+    assert.ok(typeof fam.resolve === 'function', `entry missing resolve: ${fam.id}`);
+    const tiers = fam.resolve({});
+    assert.ok(tiers.reasoning, `${fam.id} missing reasoning tier`);
+    assert.ok(tiers.standard, `${fam.id} missing standard tier`);
+    assert.ok(tiers.fast, `${fam.id} missing fast tier`);
+  }
+});
+
+test('PROVIDER_FAMILY_TIERS includes github-copilot family', async () => {
+  const { PROVIDER_FAMILY_TIERS } = await import('../lib/model-router.mjs');
+  const copilot = PROVIDER_FAMILY_TIERS.find(f => f.id === 'github-copilot');
+  assert.ok(copilot, 'github-copilot family should exist');
+  assert.ok(copilot.test('github-copilot/gpt-5.1'), 'should match github-copilot/ prefix');
+  assert.ok(!copilot.test('openai/gpt-5.1'), 'should not match openai/');
+  const tiers = copilot.resolve({});
+  assert.ok(tiers.reasoning.startsWith('github-copilot/'));
+});

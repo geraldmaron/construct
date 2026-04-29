@@ -13,7 +13,7 @@ function tempDir(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
-test('ingestDocuments writes markdown into product-intel by default', async () => {
+test('ingestDocuments writes markdown into knowledge/internal by default', async () => {
   const root = tempDir('construct-ingest-root-');
   const source = path.join(root, 'imports', 'brief.csv');
   fs.mkdirSync(path.dirname(source), { recursive: true });
@@ -24,7 +24,7 @@ test('ingestDocuments writes markdown into product-intel by default', async () =
   assert.equal(result.status, 'ok');
   assert.equal(result.indexedLocally, true);
   assert.equal(result.files.length, 1);
-  assert.match(result.files[0].outputPath, /\.cx\/product-intel\/sources\/ingested\/brief\.csv\.md$/);
+  assert.match(result.files[0].outputPath, /\.cx\/knowledge\/internal\/brief\.csv\.md$/);
 
   const markdown = fs.readFileSync(result.files[0].outputPath, 'utf8');
   assert.match(markdown, /source_extension: ".csv"/);

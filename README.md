@@ -84,7 +84,7 @@ construct ingest ./vendor-drop --sync
 construct ingest ./briefing.pdf --target=sibling
 ```
 
-By default, ingested markdown lands under `.cx/product-intel/sources/ingested/`, which keeps it in Construct's file-state retrieval path and ready for later hybrid search.
+By default, ingested markdown lands under `.cx/knowledge/internal/`, which keeps it in Construct's file-state retrieval path and ready for later hybrid search.
 
 ## ⚙️ How it works
 

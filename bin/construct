@@ -774,6 +774,10 @@ const handlers = new Map([
     const { runTelemetryBackfillCli } = await import('../lib/telemetry/backfill.mjs');
     return runTelemetryBackfillCli(args);
   }],
+  ['eval-datasets', async (args) => {
+    const { runEvalDatasetsCli } = await import('../lib/telemetry/eval-datasets.mjs');
+    return runEvalDatasetsCli(args);
+  }],
   ['drop', async (args) => {
     const { runDropCli } = await import('../lib/drop.mjs');
     return runDropCli(args);
@@ -819,10 +823,14 @@ const handlers = new Map([
       }
     }
   }],
-  ['embed', async (args) => {
-    const { runEmbedCli } = await import('../lib/embed/cli.mjs');
-    return runEmbedCli(args, { rootDir: new URL('..', import.meta.url).pathname });
-  }],
+   ['embed', async (args) => {
+     const { runEmbedCli } = await import('../lib/embed/cli.mjs');
+     return runEmbedCli(args, { rootDir: new URL('..', import.meta.url).pathname });
+   }],
+   ['reflect', async (args) => {
+     const { runReflectCli } = await import('../lib/reflect.mjs');
+     return runReflectCli(args);
+   }],
   ['knowledge', async (args) => {
     const sub = args[0] || 'trends';
     if (sub === 'trends') {

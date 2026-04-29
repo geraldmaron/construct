@@ -205,14 +205,14 @@ test('ingestDocument writes a markdown artifact through the MCP helper', async (
 
   assert.equal(result.status, 'ok');
   assert.equal(result.files.length, 1);
-  assert.match(result.files[0].outputPath, /\.cx\/product-intel\/sources\/ingested\/deck\.csv\.md$/);
+  assert.match(result.files[0].outputPath, /\.cx\/knowledge\/internal\/deck\.csv\.md$/);
   assert.equal(fs.existsSync(result.files[0].outputPath), true);
 });
 
 test('storage MCP helpers require explicit confirmation for destructive actions', async () => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-storage-root-'));
-  fs.mkdirSync(path.join(rootDir, '.cx', 'product-intel', 'sources', 'ingested'), { recursive: true });
-  fs.writeFileSync(path.join(rootDir, '.cx', 'product-intel', 'sources', 'ingested', 'brief.md'), '# Brief\n');
+  fs.mkdirSync(path.join(rootDir, '.cx', 'knowledge', 'internal'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, '.cx', 'knowledge', 'internal', 'brief.md'), '# Brief\n');
 
   const {
     storageStatus,

@@ -16,9 +16,9 @@ Start with the narrowest authoritative source that can answer the question:
 
 1. **Local project evidence first**
    - `.cx/research/`
-   - `.cx/product-intel/`
+   - `.cx/knowledge/`
    - `docs/prd/`, `docs/meta-prd/`, `docs/adr/`, `docs/runbooks/`
-   - ingested markdown artifacts under `.cx/product-intel/sources/ingested/`
+   - ingested markdown artifacts under `.cx/knowledge/`
    - repo code, tests, configs, and existing decisions
 2. **Primary external sources second**
    - official docs for the exact version in use
@@ -105,4 +105,3 @@ Do not:
 - ignore conflicting evidence
 - use stale undated material for fast-moving topics without saying so
 - promote weak product evidence into committed requirements
-

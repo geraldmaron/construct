@@ -1,7 +1,7 @@
 ---
 cx_doc_id: 019dc30f-7305-7e13-a0b1-f633ab2a2792
 created_at: 2026-04-25T05:14:22.853Z
-updated_at: 2026-04-28T00:00:00.000Z
+updated_at: 2026-04-29T00:00:00.000Z
 generator: construct/init
 body_hash: sha256:placeholder
 ---
@@ -96,8 +96,11 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 3.5 | Approval queue — high-risk actions (work item creation, merge, doc publish) go to queue | done | lib/embed/approval-queue.mjs |
 | 3.6 | `construct embed start/stop/status` CLI commands | done | lib/cli-commands.mjs — embed + providers commands registered |
 | 3.7 | Artifact generation — PRDs, RFCs, ADRs on demand or triggered by embed analysis | done | lib/embed/artifact.mjs — generateArtifact, listArtifacts, recommendArtifacts; `construct artifact` CLI command; 18 tests |
+| 3.8 | Embedded operating profile — mission, strategy, focal resources, authority boundaries, artifact obligations, risk/gap model | in progress | `lib/embed/config.mjs`, `lib/embed/snapshot.mjs`, `lib/embed/roadmap.mjs`; snapshots/roadmaps disclose profile and gaps |
 
-**Acceptance**: `construct embed --config embed.yaml` produces a snapshot within configured interval. High-risk actions queue for approval. Snapshots appear in configured targets.
+**Acceptance**: `construct embed --config ~/.construct/embed.yaml` produces a snapshot within configured interval. High-risk actions queue for approval. Snapshots appear in configured targets.
+
+**Embed profile acceptance**: When embedded, Construct can state what it is watching, why those resources matter, which strategy and authority posture apply, what artifacts it is responsible for drafting or generating, and which gaps/risks block confident operation.
 
 ## Phase 4: Dashboard
 
@@ -145,9 +148,45 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 
 **Acceptance**: `construct ask "what are the biggest risks?"` returns a sourced answer. Dashboard shows knowledge timeline. Trends are surfaced in snapshots.
 
----
+## Phase 7: Continuous Self-Improvement Loop
 
-## Decisions
+**Goal**: Construct learns from every session and every piece of information it encounters — provider items, local documents, scores, and team conversations all feed the observation store. The daemon heals itself and surfaces a living roadmap.
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 7.1 | Snapshot items → observation store | done | `distillSnapshotItems()` in `daemon.mjs`; Jira issues, GitHub PRs, Slack messages all written as `insight` observations after each snapshot; dedup by item key+tag |
+| 7.2 | `CX_DATA_DIR` env override for rootDir | done | `resolveRootDir(env)` in `daemon.mjs`; `LOCK_PATH`/`DAEMON_STATE_PATH` also resolved per-env; Docker volumes can now point `.cx/` to a named mount without code changes |
+| 7.3 | Inbox watcher — ingest local filesystem documents into observations | done | `lib/embed/inbox.mjs` — `InboxWatcher` + `resolveInboxDirs`; watches `.cx/inbox/` always + `CX_INBOX_DIRS` colon-separated extra paths; agnostic (specs, ADRs, meeting notes, PDFs, Office, code, anything extractable); state-tracked to avoid re-processing; Job 8 in daemon, 2-min interval; 8 tests |
+| 7.4 | Roadmap generator — cross-source prioritisation → `.cx/roadmap.md` | done | `lib/embed/roadmap.mjs` — `generateRoadmap`, `roadmapSlackSummary`; heuristic scoring: priority field + status weight + observation signal + risk overlap; excludes closed/done items; Job 9 in daemon, hourly; posts Slack summary if `SLACK_CHANNELS` set; 8 tests |
+| 7.5 | Learned patterns injected into prompts | done | `lib/prompt-composer.mjs` — `buildLearnedPatternsBlock()`; injected before task-packet; capped 800 chars, min-confidence 0.7 |
+| 7.6 | Score → observation feedback loop | done | `cx_score` in `lib/mcp/tools/telemetry.mjs`; score < 0.5 → `anti-pattern`; score ≥ 0.85 → `pattern` |
+| 7.7 | Eval dataset sync | done | `lib/telemetry/eval-datasets.mjs`; `syncEvalDatasets()`; scored traces → Langfuse Datasets grouped by agent+workCategory; `construct eval-datasets` CLI |
+| 7.8 | Self-healing daemon — 9 scheduled jobs | done | snapshot, provider-health, session-distill, self-repair, approval-expiry, eval-dataset-sync, prompt-regression-check, inbox-watcher, roadmap |
+| 7.9 | Authority guard — runtime enforcement of operating profile authority boundaries | done | `lib/embed/authority-guard.mjs`; `AuthorityGuard` maps action types to authority keys; autonomous/approval-queued/denied levels; threaded through `daemon.mjs` + `output.mjs`; Slack posts and roadmap Slack summaries now gated; 22 tests |
+
+**Acceptance**: `construct embed start` runs daemon. After first snapshot, open Jira/GitHub/Linear items appear in observation store. Dropping a file into `.cx/inbox/` (or any `CX_INBOX_DIRS` path) causes it to be ingested and observed within 2 min. `.cx/roadmap.md` updates hourly. Slack bot posts roadmap summary when `SLACK_BOT_TOKEN` + `SLACK_CHANNELS` set. Authority boundaries are enforced at runtime — approval-queued actions are held for approval, not silently executed.
+
+## How-to documentation
+
+Written under `docs/how-to/`:
+
+- `how-to-embed-start.md` — start, check, and stop the daemon; 9-job table
+- `how-to-inbox.md` — inbox watcher, `CX_INBOX_DIRS`, routing table, re-processing behavior
+- `how-to-slack-setup.md` — full Slack app setup, scopes, signing secret, channel intent format, authority config
+- `how-to-cx-data-dir.md` — override storage root, Docker volume example, path table
+- `how-to-reflect.md` — `construct reflect` usage, targets, what gets written
+
+## Pending Config
+
+| Var | Purpose | Status |
+|---|---|---|
+| `SLACK_BOT_TOKEN` | `xoxb-...` from OAuth & Permissions → Install to Workspace | missing |
+| `SLACK_SIGNING_SECRET` | From Slack app Basic Information page | missing |
+| `SLACK_CHANNELS` | Comma-separated channel names for snapshots + roadmap posts | missing |
+| `CX_DATA_DIR` | Override `.cx/` storage root (required for Docker persistence) | optional |
+| `CX_INBOX_DIRS` | Colon-separated extra dirs for inbox watcher beyond `.cx/inbox/` | optional |
+
+Slack bot scopes required: `channels:history`, `channels:read`, `chat:write`, `commands`.
 
 - Layered architecture, not rewrite (ADR-0002).
 - Provider interface is transport-agnostic — MCP, REST, GraphQL, SDK, CLI, webhooks are all valid transports. Core never knows the transport.

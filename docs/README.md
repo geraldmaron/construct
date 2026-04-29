@@ -24,11 +24,22 @@ All LLMs working in the repo, including Construct, must read these as project st
 
 - [Architecture](./architecture.md)
 - [Prompt surface architecture](./prompt-surfaces.md)
+- [Knowledge layout](./knowledge-layout.md) — `.cx/` directory structure, inbox routing, Slack intent → category
 - [Templates and role anti-patterns](./templates/README.md)
 - [Runbooks](./runbooks/)
 - [ADRs](../.cx/decisions/) — session-context decisions (longer ADRs live in `docs/adr/`)
 - [Plans](../.cx/plans/) — plan artifacts and supporting specs for tracker-linked work
 - [Skills](../skills/) — domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
+
+## How-to guides
+
+Step-by-step operator guides for common tasks:
+
+- [Start embed mode](./how-to/how-to-embed-start.md)
+- [Configure the inbox watcher](./how-to/how-to-inbox.md)
+- [Configure Slack](./how-to/how-to-slack-setup.md)
+- [Override the storage root (CX_DATA_DIR)](./how-to/how-to-cx-data-dir.md)
+- [Use construct reflect](./how-to/how-to-reflect.md)
 
 ## Prompt surfaces
 

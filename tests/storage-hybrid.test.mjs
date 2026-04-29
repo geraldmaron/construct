@@ -39,7 +39,7 @@ test('state snapshot loads file-state artifacts', () => {
   writeText(path.join(root, 'plan.md'), '# Plan\n\n- Keep hybrid search grounded in docs.\n');
   writeText(path.join(root, 'docs', 'architecture.md'), '# Hybrid\n');
   writeText(path.join(root, 'docs', 'README.md'), '# Docs\n');
-  writeText(path.join(root, '.cx', 'product-intel', 'evidence-briefs', 'api-evidence.md'), '# Evidence Brief\nPlatform customers need API migration controls.\n');
+  writeText(path.join(root, '.cx', 'knowledge', 'reference', 'evidence-briefs', 'api-evidence.md'), '# Evidence Brief\nPlatform customers need API migration controls.\n');
   writeText(path.join(root, 'docs', 'prd', 'api-migration.md'), '# PRD\nAPI migration controls for platform admins.\n');
   writeText(path.join(root, 'docs', 'meta-prd', 'eval-loop.md'), '# Meta PRD\nAgent evaluation loop requirements.\n');
 
@@ -82,7 +82,7 @@ test('hybrid search returns file-backed results and store modes', () => {
   writeText(path.join(root, 'plan.md'), '# Plan\n\n- Search should stay file-state authoritative.\n');
   writeText(path.join(root, 'docs', 'architecture.md'), '# Searchable architecture\nThe hybrid model keeps file-state authoritative.\n');
   writeText(path.join(root, 'docs', 'README.md'), '# Docs\n');
-  writeText(path.join(root, '.cx', 'product-intel', 'evidence-briefs', 'api-evidence.md'), '# Evidence Brief\nPlatform customers need API migration controls.\n');
+  writeText(path.join(root, '.cx', 'knowledge', 'reference', 'evidence-briefs', 'api-evidence.md'), '# Evidence Brief\nPlatform customers need API migration controls.\n');
 
   const result = buildHybridSearchResults(root, 'authoritative file-state', {
     limit: 5,
@@ -99,17 +99,17 @@ test('hybrid search returns file-backed results and store modes', () => {
   assert.equal(result.results[0].id, 'docs/architecture.md');
 });
 
-test('hybrid search indexes product intelligence artifacts', () => {
-  const root = tempDir('construct-product-intel-query-');
+test('hybrid search indexes knowledge artifacts', () => {
+  const root = tempDir('construct-knowledge-query-');
   writeJson(path.join(root, '.cx', 'context.json'), { contextSummary: 'Product intelligence context', savedAt: '2026-04-20T00:00:00Z' });
-  writeText(path.join(root, '.cx', 'product-intel', 'evidence-briefs', 'api-evidence.md'), '# Evidence Brief\nPlatform customers need migration controls for API compatibility.\n');
+  writeText(path.join(root, '.cx', 'knowledge', 'reference', 'evidence-briefs', 'api-evidence.md'), '# Evidence Brief\nPlatform customers need migration controls for API compatibility.\n');
   writeText(path.join(root, 'docs', 'prd', 'api-migration.md'), '# PRD\nAPI migration controls for platform administrators.\n');
   writeText(path.join(root, 'docs', 'meta-prd', 'agent-evals.md'), '# Meta PRD\nAgent evaluation loop and promotion gates.\n');
 
   const result = buildHybridSearchResults(root, 'platform API migration', { limit: 10 });
   const ids = result.results.map((entry) => entry.id);
 
-  assert.ok(ids.includes('.cx/product-intel/evidence-briefs/api-evidence.md'));
+  assert.ok(ids.includes('.cx/knowledge/reference/evidence-briefs/api-evidence.md'));
   assert.ok(ids.includes('docs/prd/api-migration.md'));
 });
 
@@ -186,7 +186,7 @@ test('hybrid search consumes local vector index records when configured', async 
 test('storage status reports ingested artifact count and local vector records', async () => {
   const root = tempDir('construct-storage-status-');
   const indexPath = path.join(root, '.construct', 'vector', 'index.json');
-  writeText(path.join(root, '.cx', 'product-intel', 'sources', 'ingested', 'brief.md'), '# Brief\n\nConverted.\n');
+  writeText(path.join(root, '.cx', 'knowledge', 'internal', 'brief.md'), '# Brief\n\nConverted.\n');
   await syncFileStateToSql(root, {
     env: {
       CONSTRUCT_VECTOR_INDEX_PATH: indexPath,
@@ -210,7 +210,7 @@ test('storage status reports ingested artifact count and local vector records', 
 test('storage reset requires explicit confirmation and clears local vector and ingested artifacts', async () => {
   const root = tempDir('construct-storage-reset-');
   const indexPath = path.join(root, '.construct', 'vector', 'index.json');
-  writeText(path.join(root, '.cx', 'product-intel', 'sources', 'ingested', 'brief.md'), '# Brief\n\nConverted.\n');
+  writeText(path.join(root, '.cx', 'knowledge', 'internal', 'brief.md'), '# Brief\n\nConverted.\n');
   await syncFileStateToSql(root, {
     env: {
       CONSTRUCT_VECTOR_INDEX_PATH: indexPath,
@@ -252,7 +252,7 @@ test('storage reset requires explicit confirmation and clears local vector and i
 
 test('deleteIngestedArtifacts requires confirmation and rejects out-of-scope paths', () => {
   const root = tempDir('construct-delete-ingested-');
-  writeText(path.join(root, '.cx', 'product-intel', 'sources', 'ingested', 'brief.md'), '# Brief\n\nConverted.\n');
+  writeText(path.join(root, '.cx', 'knowledge', 'internal', 'brief.md'), '# Brief\n\nConverted.\n');
 
   assert.throws(
     () => deleteIngestedArtifacts(root, {}),
