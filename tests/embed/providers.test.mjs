@@ -149,6 +149,119 @@ test('GitHubProvider per-repo errors surface as error items', async () => {
   assert.equal(items.length, 2);
 });
 
+test('GitHubProvider.read(meta) returns repo metadata item', async () => {
+  const fetch = mockFetch([
+    [
+      '/repos/owner/repo',
+      okJson({
+        name: 'repo', full_name: 'owner/repo',
+        description: 'A test repo',
+        topics: ['go', 'infra'],
+        language: 'Go',
+        visibility: 'private',
+        private: true,
+        default_branch: 'main',
+        html_url: 'https://github.com/owner/repo',
+        pushed_at: '2026-04-01T00:00:00Z',
+      }),
+    ],
+  ]);
+
+  const p = new GitHubProvider({ token: 't', fetchFn: fetch });
+  const items = await p.read('meta', { repo: 'owner/repo' });
+  assert.equal(items.length, 1);
+  assert.equal(items[0].type, 'meta');
+  assert.equal(items[0].name, 'repo');
+  assert.equal(items[0].description, 'A test repo');
+  assert.equal(items[0].language, 'Go');
+  assert.equal(items[0].visibility, 'private');
+  assert.deepEqual(items[0].topics, ['go', 'infra']);
+  assert.equal(items[0].defaultBranch, 'main');
+});
+
+test('GitHubProvider.read(readme) returns decoded README content', async () => {
+  const content = '# My Repo\n\nThis is the README.';
+  const encoded = Buffer.from(content).toString('base64');
+  const fetch = mockFetch([
+    [
+      '/readme',
+      okJson({
+        path: 'README.md',
+        encoding: 'base64',
+        content: encoded + '\n',
+        html_url: 'https://github.com/owner/repo/blob/HEAD/README.md',
+      }),
+    ],
+  ]);
+
+  const p = new GitHubProvider({ token: 't', fetchFn: fetch });
+  const items = await p.read('readme', { repo: 'owner/repo' });
+  assert.equal(items.length, 1);
+  assert.equal(items[0].type, 'doc');
+  assert.equal(items[0].path, 'README.md');
+  assert.ok(items[0].content.includes('My Repo'));
+});
+
+test('GitHubProvider.read(readme) returns empty array when no README (404)', async () => {
+  const fetch = mockFetch([
+    ['/readme', async () => ({ ok: false, status: 404, text: async () => 'Not Found' })],
+  ]);
+
+  const p = new GitHubProvider({ token: 't', fetchFn: fetch });
+  const items = await p.read('readme', { repo: 'owner/repo' });
+  assert.deepEqual(items, []);
+});
+
+test('GitHubProvider.read(docs) returns markdown doc items from root and /docs', async () => {
+  const docContent = '# Design\n\nArchitecture notes.';
+  const encoded = Buffer.from(docContent).toString('base64');
+
+  const fetch = mockFetch([
+    // Root contents listing
+    [
+      /\/repos\/owner\/repo\/contents$/,
+      okJson([
+        { type: 'file', path: 'DESIGN.md', sha: 'aaa' },
+        { type: 'file', path: 'main.go', sha: 'bbb' },   // non-md, should be skipped
+        { type: 'dir',  path: 'docs', sha: 'ccc' },       // dir, should be skipped
+      ]),
+    ],
+    // docs/ listing
+    [
+      /\/repos\/owner\/repo\/contents\/docs/,
+      okJson([
+        { type: 'file', path: 'docs/architecture.md', sha: 'ddd' },
+      ]),
+    ],
+    // File contents (for any /contents/ path that isn't root or docs dir)
+    [
+      /\/contents\//,
+      okJson({ encoding: 'base64', content: encoded + '\n', html_url: 'https://github.com/owner/repo/blob/HEAD/DESIGN.md' }),
+    ],
+  ]);
+
+  const p = new GitHubProvider({ token: 't', fetchFn: fetch });
+  const items = await p.read('docs', { repo: 'owner/repo' });
+  assert.ok(items.length >= 1);
+  assert.ok(items.every((i) => i.type === 'doc'));
+  assert.ok(items.every((i) => i.content.includes('Design')));
+});
+
+test('GitHubProvider.defaultSources returns activity + context source groups', () => {
+  const p = new GitHubProvider({ token: 't' });
+  const sources = p.defaultSources({ GITHUB_REPOS: 'o/a,o/b' });
+  assert.equal(sources.length, 2);
+
+  const activity = sources.find((s) => s.refs.includes('prs'));
+  const context = sources.find((s) => s.refs.includes('meta'));
+  assert.ok(activity, 'should have activity source with prs/issues/commits');
+  assert.ok(context, 'should have context source with meta/readme/docs');
+  assert.deepEqual(activity.refs.sort(), ['commits', 'issues', 'prs']);
+  assert.deepEqual(context.refs.sort(), ['docs', 'meta', 'readme']);
+  assert.deepEqual(activity.repos, ['o/a', 'o/b']);
+  assert.deepEqual(context.repos, ['o/a', 'o/b']);
+});
+
 // ---------------------------------------------------------------------------
 // SlackProvider
 // ---------------------------------------------------------------------------
