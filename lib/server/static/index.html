@@ -10,140 +10,207 @@ for data fetching and rendering. Inline styles only — no build step required.
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Construct Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0a0c10;
-      --surface: #111318;
-      --surface-2: #181c24;
-      --surface-3: #1e2330;
-      --border: #252c3a;
-      --border-hover: #3a4460;
-      --text: #c8d0e0;
-      --text-muted: #5a6480;
-      --text-dim: #8896b0;
-      --accent: #00e5a0;
-      --accent-dim: #00b87a;
-      --accent-glow: rgba(0, 229, 160, 0.12);
-      --warn: #f5a623;
-      --danger: #e05252;
-      --info: #5b9cf6;
-      --healthy: #00e5a0;
-      --degraded: #f5a623;
-      --unavailable: #e05252;
-      --disabled: #3a4460;
-      --font: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-      --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      --radius: 8px;
-      --radius-sm: 4px;
+      --bg:           #0f0f11;
+      --surface:      #161618;
+      --surface-2:    #1c1c1f;
+      --surface-3:    #222226;
+      --border:       #2a2a2e;
+      --border-hover: #3d3d44;
+      --text:         #e8e8ec;
+      --text-muted:   #6b6b75;
+      --text-dim:     #9898a6;
+      --accent:       #7c6af7;
+      --accent-2:     #9d8fff;
+      --accent-dim:   #5a4fd4;
+      --accent-glow:  rgba(124,106,247,0.08);
+      --warn:         #e8a44a;
+      --danger:       #e05c5c;
+      --info:         #5b9cf6;
+      --healthy:      #4eca8b;
+      --degraded:     #e8a44a;
+      --unavailable:  #e05c5c;
+      --disabled:     #3d3d44;
+      --font:         'JetBrains Mono', 'Fira Code', monospace;
+      --font-ui:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --radius:       6px;
+      --radius-sm:    4px;
+      --radius-lg:    10px;
+      --nav-w:        220px;
+      --topbar-h:     52px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { color-scheme: dark; }
 
     body {
       background: var(--bg);
       color: var(--text);
       font-family: var(--font-ui);
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.5;
       min-height: 100vh;
       display: grid;
-      grid-template-rows: 56px 1fr;
-      grid-template-columns: 200px 1fr;
+      grid-template-rows: var(--topbar-h) 1fr;
+      grid-template-columns: var(--nav-w) 1fr;
       grid-template-areas:
         "topbar topbar"
         "nav    main";
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    /* ── Topbar ─────────────────────────────────────────────── */
+    /* ── Topbar ──────────────────────────────────────────────────────── */
     #topbar {
       grid-area: topbar;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      padding: 0 20px;
-      gap: 16px;
+      padding: 0 18px;
+      gap: 14px;
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 100;
     }
 
     #topbar .brand {
       font-family: var(--font);
-      font-size: 16px;
+      font-size: 13px;
       font-weight: 700;
-      color: var(--accent);
-      letter-spacing: 0.04em;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    #topbar .sep { color: var(--border); }
+    #topbar .brand::before {
+      content: '';
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      background: var(--accent);
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    #topbar .sep {
+      color: var(--border-hover);
+      font-size: 11px;
+      user-select: none;
+    }
 
     #topbar .meta {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-muted);
       font-family: var(--font);
     }
 
     #topbar .status-summary {
-      font-size: 12px;
-      color: var(--text-dim);
-      min-width: 220px;
+      font-size: 11px;
+      color: var(--text-muted);
+      min-width: 200px;
       text-align: right;
     }
 
     #topbar .health-dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: var(--text-muted);
       transition: background 0.3s;
       flex-shrink: 0;
     }
-    #topbar .health-dot.healthy  { background: var(--healthy); box-shadow: 0 0 6px var(--accent); }
+    #topbar .health-dot.healthy  { background: var(--healthy); }
     #topbar .health-dot.degraded { background: var(--degraded); }
     #topbar .health-dot.bad      { background: var(--danger); }
 
     #topbar .spacer { flex: 1; }
 
-    /* ── Nav ────────────────────────────────────────────────── */
+    #topbar .mode-badge {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--text-muted);
+    }
+    #topbar .mode-badge.mode-embed  { border-color: var(--accent-dim); color: var(--accent-2); background: var(--accent-glow); }
+    #topbar .mode-badge.mode-live   { border-color: #3d5a40; color: var(--healthy); background: rgba(78,202,139,0.06); }
+    #topbar .mode-badge.mode-init   { border-color: #5a4830; color: var(--warn); background: rgba(232,164,74,0.06); }
+
+    /* ── Nav ─────────────────────────────────────────────────────────── */
     #nav {
       grid-area: nav;
       background: var(--surface);
       border-right: 1px solid var(--border);
-      padding: 16px 0;
+      padding: 12px 0 20px;
       position: sticky;
-      top: 56px;
-      height: calc(100vh - 56px);
+      top: var(--topbar-h);
+      height: calc(100vh - var(--topbar-h));
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
     }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 12px 16px 4px;
+      opacity: 0.5;
+      user-select: none;
+    }
+
+    .nav-section-label:first-child { padding-top: 4px; }
 
     #nav a {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 9px 20px;
+      gap: 9px;
+      padding: 7px 16px;
       color: var(--text-dim);
       text-decoration: none;
       font-size: 13px;
       font-weight: 500;
       border-left: 2px solid transparent;
-      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      transition: color 0.12s, background 0.12s;
+      user-select: none;
     }
 
     #nav a:hover {
       color: var(--text);
-      background: var(--accent-glow);
+      background: rgba(255,255,255,0.03);
     }
 
     #nav a.active {
-      color: var(--accent);
+      color: var(--accent-2);
       border-left-color: var(--accent);
       background: var(--accent-glow);
     }
 
-    #nav .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    #nav a .nav-icon {
+      font-size: 13px;
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
 
-    /* ── Main ───────────────────────────────────────────────── */
+    #nav a.active .nav-icon { opacity: 1; }
+
+    /* ── Main ────────────────────────────────────────────────────────── */
     #main {
       grid-area: main;
       padding: 28px 32px;
@@ -155,28 +222,93 @@ for data fetching and rendering. Inline styles only — no build step required.
     .section.active { display: block; }
 
     .section-title {
-      font-size: 11px;
+      font-size: 18px;
       font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 20px;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
     }
 
-    /* ── Cards ──────────────────────────────────────────────── */
+    .section-actions { margin-left: auto; }
+
+    /* ── Buttons ─────────────────────────────────────────────────────── */
+    .btn-sm {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-hover);
+      background: var(--surface-2);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: color 0.12s, border-color 0.12s;
+      font-family: var(--font-ui);
+    }
+    .btn-sm:hover { border-color: var(--accent-dim); color: var(--accent-2); }
+
+    .btn-primary {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.12s;
+      font-family: var(--font-ui);
+    }
+    .btn-primary:hover { background: var(--accent-dim); }
+    .btn-primary:disabled { opacity: 0.4; cursor: default; }
+
+    .btn-ghost {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: border-color 0.12s, color 0.12s;
+      font-family: var(--font-ui);
+    }
+    .btn-ghost:hover { border-color: var(--border-hover); color: var(--text); }
+
+    .btn {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-family: var(--font-ui);
+      transition: opacity 0.12s;
+    }
+    .btn:hover { opacity: 0.82; }
+    .btn:disabled { opacity: 0.35; cursor: default; }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+    .btn-ghost { background: transparent; color: var(--text-dim); border-color: var(--border); }
+
+    /* ── Cards ───────────────────────────────────────────────────────── */
     .cards {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
+      gap: 12px;
       margin-bottom: 32px;
     }
 
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-lg);
       padding: 18px 20px;
-      transition: border-color 0.2s;
+      transition: border-color 0.15s;
     }
 
     .card:hover { border-color: var(--border-hover); }
@@ -185,14 +317,15 @@ for data fetching and rendering. Inline styles only — no build step required.
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       margin-bottom: 8px;
     }
 
     .card-name {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       color: var(--text);
+      line-height: 1.4;
     }
 
     .card-desc {
@@ -206,73 +339,465 @@ for data fetching and rendering. Inline styles only — no build step required.
       font-size: 11px;
       color: var(--text-muted);
       font-family: var(--font);
-      margin-top: 8px;
-      padding-top: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
       border-top: 1px solid var(--border);
     }
 
-    /* ── Badges ─────────────────────────────────────────────── */
+    /* ── Badges ──────────────────────────────────────────────────────── */
     .badge {
       font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      padding: 2px 7px;
-      border-radius: var(--radius-sm);
+      padding: 2px 6px;
+      border-radius: 3px;
       white-space: nowrap;
       flex-shrink: 0;
     }
 
-    .badge-healthy   { background: rgba(0,229,160,0.15); color: var(--healthy); }
-    .badge-configured { background: rgba(91,156,246,0.15); color: var(--info); }
-    .badge-degraded  { background: rgba(245,166,35,0.15); color: var(--degraded); }
-    .badge-unavailable { background: rgba(224,82,82,0.15); color: var(--unavailable); }
-    .badge-disabled  { background: rgba(58,68,96,0.4); color: var(--disabled); }
-    .badge-standard  { background: rgba(91,156,246,0.15); color: var(--info); }
-    .badge-reasoning { background: rgba(91,156,246,0.25); color: #a0c0ff; }
-    .badge-fast      { background: rgba(0,229,160,0.1); color: var(--accent-dim); }
+    .badge-healthy    { background: rgba(78,202,139,0.12); color: var(--healthy); }
+    .badge-configured { background: rgba(91,156,246,0.12); color: var(--info); }
+    .badge-degraded   { background: rgba(232,164,74,0.12); color: var(--degraded); }
+    .badge-unavailable{ background: rgba(224,92,92,0.12); color: var(--unavailable); }
+    .badge-disabled   { background: rgba(61,61,68,0.4); color: var(--disabled); }
+    .badge-standard   { background: rgba(91,156,246,0.12); color: var(--info); }
+    .badge-reasoning  { background: rgba(124,106,247,0.15); color: var(--accent-2); }
+    .badge-fast       { background: rgba(78,202,139,0.08); color: #3ca870; }
 
-    /* ── Agents section ─────────────────────────────────────── */
+    /* ── Artifact table ──────────────────────────────────────────────── */
+    .artifact-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .artifact-table th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 10px;
+    }
+    .artifact-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    .artifact-table tr:last-child td { border-bottom: none; }
+    .artifact-table tr:hover td { background: var(--surface-2); }
+    .artifact-table .num { color: var(--text-muted); font-family: var(--font); font-size: 11px; }
+    .artifact-table .type-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .type-badge.prd { background: rgba(91,156,246,0.12); color: var(--info); }
+    .type-badge.adr { background: rgba(124,106,247,0.12); color: var(--accent-2); }
+    .type-badge.rfc { background: rgba(232,164,74,0.12); color: var(--warn); }
+
+    /* ── Artifact form ───────────────────────────────────────────────── */
+    .artifact-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .artifact-form.hidden { display: none; }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .form-row label {
+      display: flex;
+      flex-direction: column;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      gap: 5px;
+    }
+    .form-row .flex-grow { flex: 1; min-width: 200px; }
+    .form-row input, .form-row select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 12px;
+      font-family: var(--font-ui);
+      padding: 6px 9px;
+    }
+    .form-row input:focus, .form-row select:focus {
+      outline: none;
+      border-color: var(--accent-dim);
+    }
+    .form-actions { display: flex; align-items: center; gap: 10px; }
+    .feedback { font-size: 11px; color: var(--accent-2); }
+    .feedback.error { color: var(--danger); }
+
+    /* ── Approval queue ──────────────────────────────────────────────── */
+    .approval-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      margin-bottom: 8px;
+      transition: border-color 0.15s;
+    }
+    .approval-item:hover { border-color: var(--border-hover); }
+    .approval-item .approval-meta {
+      font-size: 10px;
+      font-family: var(--font);
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .approval-item .approval-action { font-size: 13px; color: var(--text); margin-bottom: 12px; line-height: 1.5; }
+    .approval-item .approval-btns { display: flex; gap: 8px; }
+
+    /* ── Snapshots ───────────────────────────────────────────────────── */
+    .snapshot-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      margin-bottom: 8px;
+    }
+    .snapshot-card .snapshot-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .snapshot-card .snapshot-ts { font-size: 11px; color: var(--text-muted); font-family: var(--font); }
+    .snapshot-card .snapshot-providers { font-size: 11px; color: var(--text-muted); }
+    .snapshot-card .snapshot-summary { font-size: 12px; color: var(--text-dim); white-space: pre-wrap; line-height: 1.6; }
+
+    /* ── Chat ────────────────────────────────────────────────────────── */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 300px;
+      max-height: 55vh;
+      padding: 4px 0 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chat-bubble {
+      max-width: 82%;
+      padding: 10px 14px;
+      border-radius: var(--radius-lg);
+      font-size: 13px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .chat-bubble.user {
+      background: var(--accent);
+      color: #fff;
+      align-self: flex-end;
+      border-bottom-right-radius: 3px;
+    }
+    .chat-bubble.assistant {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      align-self: flex-start;
+      border-bottom-left-radius: 3px;
+    }
+    .chat-bubble.assistant.streaming { opacity: 0.8; }
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      margin-top: 14px;
+    }
+    .chat-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font-ui);
+      padding: 9px 13px;
+      resize: vertical;
+      min-height: 40px;
+      transition: border-color 0.12s;
+    }
+    .chat-input:focus { outline: none; border-color: var(--accent-dim); }
+    .chat-send-btn { height: 38px; padding: 0 18px; flex-shrink: 0; }
+    .chat-status { font-size: 11px; color: var(--text-muted); margin-top: 6px; min-height: 16px; }
+
+    /* ── Infrastructure / Terraform editor ───────────────────────────── */
+    .tf-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 0;
+      height: calc(100vh - 120px);
+      min-height: 400px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .tf-sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .tf-sidebar-header {
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .tf-env-select-wrap { width: 100%; }
+    .tf-env-select {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 12px;
+      padding: 4px 8px;
+    }
+    #tf-file-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 0;
+    }
+    .tf-file-item {
+      display: block;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-family: var(--mono);
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-left: 2px solid transparent;
+      transition: background .1s, color .1s;
+    }
+    .tf-file-item:hover { background: var(--surface-2); color: var(--text); }
+    .tf-file-item.active {
+      background: rgba(124,106,247,0.08);
+      color: var(--accent-2);
+      border-left-color: var(--accent);
+    }
+    .tf-file-dir {
+      padding: 8px 12px 2px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      opacity: .7;
+    }
+    .tf-editor-pane {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      overflow: hidden;
+    }
+    .tf-editor-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .tf-current-file {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .tf-toolbar-actions { display: flex; align-items: center; gap: 10px; }
+    .tf-editor {
+      flex: 1;
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: none;
+      outline: none;
+      resize: none;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 14px 18px;
+      tab-size: 2;
+    }
+    .tf-run-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .tf-apply-btn { color: #e0a060 !important; }
+    .tf-apply-btn:hover { color: var(--text) !important; }
+    .tf-run-hint { margin-left: auto; font-size: 11px; color: var(--text-muted); }
+    .tf-output-wrap {
+      border-top: 1px solid var(--border);
+      background: #0a0a0c;
+      max-height: 280px;
+      display: flex;
+      flex-direction: column;
+    }
+    .tf-output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .tf-output {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      margin: 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      color: #d0d0d0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* ── Config editor ───────────────────────────────────────────────── */
+    .config-editor {
+      width: 100%;
+      min-height: 320px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 12px;
+      line-height: 1.7;
+      padding: 14px;
+      resize: vertical;
+      transition: border-color 0.12s;
+    }
+    .config-editor:focus { outline: none; border-color: var(--accent-dim); }
+
+    /* ── Login overlay ───────────────────────────────────────────────── */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,15,17,0.88);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .login-overlay.hidden { display: none; }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 40px;
+      min-width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: center;
+    }
+    .login-logo {
+      font-family: var(--font);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-logo::before {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 5px;
+    }
+    .login-subtitle { font-size: 12px; color: var(--text-muted); }
+    .login-input {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font-ui);
+      padding: 9px 12px;
+      text-align: center;
+      letter-spacing: 0.1em;
+    }
+    .login-input:focus { outline: none; border-color: var(--accent-dim); }
+    .login-btn { width: 100%; justify-content: center; padding: 8px 0; font-size: 13px; }
+    .login-error { font-size: 12px; color: var(--danger); }
+    .login-error.hidden { display: none; }
+
+    /* ── Agent section ───────────────────────────────────────────────── */
     .agent-group { margin-bottom: 32px; }
 
     .agent-group-title {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--text-muted);
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .persona-cards {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 14px;
+      gap: 12px;
     }
 
     .persona-card {
       background: var(--surface-2);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-lg);
       padding: 18px 20px;
-      transition: border-color 0.2s, background 0.2s;
+      transition: border-color 0.15s;
     }
 
-    .persona-card:hover {
-      border-color: var(--accent-dim);
-      background: var(--surface-3);
-    }
+    .persona-card:hover { border-color: var(--border-hover); }
 
     .persona-name {
       font-family: var(--font);
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
-      color: var(--accent);
+      color: var(--accent-2);
       margin-bottom: 3px;
     }
 
     .persona-role {
-      font-size: 11px;
+      font-size: 10px;
+      font-weight: 700;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -285,37 +810,37 @@ for data fetching and rendering. Inline styles only — no build step required.
       line-height: 1.6;
     }
 
-    /* Specialist list */
     .specialist-list {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
     .specialist-row {
       display: flex;
       align-items: baseline;
       gap: 12px;
-      padding: 8px 14px;
+      padding: 8px 12px;
       border-radius: var(--radius-sm);
       background: var(--surface);
       border: 1px solid var(--border);
-      transition: border-color 0.15s;
+      transition: border-color 0.12s;
     }
 
     .specialist-row:hover { border-color: var(--border-hover); }
 
     .specialist-name {
       font-family: var(--font);
-      font-size: 12px;
+      font-size: 11px;
+      font-weight: 500;
       color: var(--text);
       min-width: 200px;
       flex-shrink: 0;
     }
 
     .specialist-desc {
-      font-size: 12px;
-      color: var(--text-dim);
+      font-size: 11px;
+      color: var(--text-muted);
       flex: 1;
       min-width: 0;
       overflow: hidden;
@@ -323,9 +848,9 @@ for data fetching and rendering. Inline styles only — no build step required.
       white-space: nowrap;
     }
 
-    /* ── Skills section ─────────────────────────────────────── */
+    /* ── Skills section ──────────────────────────────────────────────── */
     .skill-category {
-      margin-bottom: 18px;
+      margin-bottom: 8px;
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
@@ -335,17 +860,17 @@ for data fetching and rendering. Inline styles only — no build step required.
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px;
+      padding: 10px 14px;
       background: var(--surface);
       cursor: pointer;
       user-select: none;
-      transition: background 0.15s;
+      transition: background 0.12s;
     }
 
     .skill-category-header:hover { background: var(--surface-2); }
 
     .skill-category-name {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--text);
       text-transform: capitalize;
@@ -359,58 +884,57 @@ for data fetching and rendering. Inline styles only — no build step required.
 
     .skill-toggle {
       color: var(--text-muted);
-      font-size: 12px;
-      transition: transform 0.2s;
+      font-size: 11px;
+      transition: transform 0.18s;
     }
 
     .skill-category.open .skill-toggle { transform: rotate(180deg); }
 
     .skill-files {
       display: none;
-      padding: 10px 16px;
+      padding: 10px 14px;
       background: var(--bg);
-      display: none;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 5px;
     }
 
     .skill-category.open .skill-files { display: flex; }
 
     .skill-tag {
       font-size: 11px;
-      padding: 3px 9px;
+      padding: 2px 8px;
       border-radius: 20px;
       background: var(--surface-2);
       border: 1px solid var(--border);
       color: var(--text-dim);
     }
 
-    /* ── Hooks section ──────────────────────────────────────── */
+    /* ── Hooks section ───────────────────────────────────────────────── */
     .hook-phase { margin-bottom: 28px; }
 
     .hook-phase-title {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--text-muted);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .hook-row {
       display: flex;
       align-items: flex-start;
       gap: 12px;
-      padding: 10px 14px;
+      padding: 10px 12px;
       border-radius: var(--radius-sm);
       background: var(--surface);
       border: 1px solid var(--border);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .hook-bullet {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
       border-radius: 50%;
       background: var(--border-hover);
       margin-top: 6px;
@@ -423,6 +947,7 @@ for data fetching and rendering. Inline styles only — no build step required.
       font-size: 12px;
       color: var(--text-dim);
       flex: 1;
+      line-height: 1.5;
     }
 
     .hook-phase-badge {
@@ -432,28 +957,27 @@ for data fetching and rendering. Inline styles only — no build step required.
       white-space: nowrap;
     }
 
-    /* ── Loading / empty states ─────────────────────────────── */
+    /* ── Loading / empty states ──────────────────────────────────────── */
     .loading {
       color: var(--text-muted);
-      font-size: 13px;
-      padding: 40px 0;
+      font-size: 12px;
+      padding: 48px 0;
       text-align: center;
     }
 
     .empty {
       color: var(--text-muted);
       font-size: 12px;
-      padding: 16px;
+      padding: 20px;
       text-align: center;
     }
 
-    /* ── Tabs ───────────────────────────────────────────────── */
+    /* ── Tabs ────────────────────────────────────────────────────────── */
     .tabs {
       display: flex;
-      gap: 4px;
+      gap: 0;
       margin-bottom: 20px;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 0;
     }
 
     .tab-btn {
@@ -466,18 +990,18 @@ for data fetching and rendering. Inline styles only — no build step required.
       padding: 8px 14px;
       cursor: pointer;
       margin-bottom: -1px;
-      transition: color 0.15s, border-color 0.15s;
+      transition: color 0.12s, border-color 0.12s;
       font-family: var(--font-ui);
     }
 
     .tab-btn:hover { color: var(--text); }
-    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-btn.active { color: var(--accent-2); border-bottom-color: var(--accent); }
 
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
-    /* ── CLI Commands ───────────────────────────────────────── */
-    .cli-cmd-group { margin-bottom: 28px; }
+    /* ── CLI Commands ────────────────────────────────────────────────── */
+    .cli-cmd-group { margin-bottom: 24px; }
 
     .cli-cmd-group-title {
       font-size: 10px;
@@ -485,104 +1009,97 @@ for data fetching and rendering. Inline styles only — no build step required.
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--text-muted);
-      padding: 0 4px 8px;
+      padding: 0 4px 7px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .cli-commands-list {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
     .cli-cmd-row {
       display: grid;
-      grid-template-columns: 36px 160px 1fr;
+      grid-template-columns: 32px 160px 1fr;
       align-items: baseline;
       gap: 12px;
-      padding: 10px 14px;
+      padding: 9px 12px;
       border-radius: var(--radius-sm);
       background: var(--surface);
       border: 1px solid var(--border);
-      transition: border-color 0.15s, background 0.15s;
+      transition: border-color 0.12s, background 0.12s;
     }
 
     .cli-cmd-row:hover { border-color: var(--border-hover); background: var(--surface-2); }
 
-    .cli-cmd-emoji { font-size: 15px; text-align: center; }
+    .cli-cmd-emoji { font-size: 13px; text-align: center; }
 
     .cli-cmd-name {
       font-family: var(--font);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      color: var(--accent);
+      color: var(--accent-2);
     }
 
-    .cli-cmd-desc {
-      font-size: 12px;
-      color: var(--text-dim);
-    }
+    .cli-cmd-desc { font-size: 11px; color: var(--text-dim); }
 
-    /* ── Commands section ───────────────────────────────────────── */
+    /* ── Commands section ────────────────────────────────────────────── */
     .commands-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 16px;
+      gap: 12px;
       margin-bottom: 32px;
     }
 
     .command-domain {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-lg);
       overflow: hidden;
     }
 
     .command-domain-header {
-      padding: 10px 16px;
+      padding: 10px 14px;
       background: var(--surface-2);
       border-bottom: 1px solid var(--border);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--accent-dim);
+      color: var(--accent-2);
       font-family: var(--font);
     }
 
-    .command-list { padding: 6px 0; }
+    .command-list { padding: 4px 0; }
 
     .command-item {
       display: flex;
       flex-direction: column;
-      padding: 8px 16px;
+      padding: 7px 14px;
       gap: 2px;
-      transition: background 0.15s;
+      transition: background 0.12s;
     }
 
     .command-item:hover { background: var(--accent-glow); }
 
     .command-slash {
       font-family: var(--font);
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text);
       font-weight: 600;
     }
 
-    .command-desc {
-      font-size: 11px;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
+    .command-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
 
-    /* ── Edit forms ─────────────────────────────────────────── */
+    /* ── Edit forms ──────────────────────────────────────────────────── */
     .edit-row {
       background: var(--surface-2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 16px 18px;
-      margin-bottom: 8px;
+      padding: 14px 16px;
+      margin-bottom: 6px;
     }
     .edit-row.expanded { border-color: var(--accent-dim); }
     .edit-row-header {
@@ -592,16 +1109,16 @@ for data fetching and rendering. Inline styles only — no build step required.
       cursor: pointer;
       user-select: none;
     }
-    .edit-row-header:hover .edit-row-name { color: var(--accent); }
+    .edit-row-header:hover .edit-row-name { color: var(--accent-2); }
     .edit-row-name {
       font-family: var(--font);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--text);
       flex: 1;
     }
     .edit-row-desc {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-dim);
       flex: 2;
       overflow: hidden;
@@ -621,7 +1138,7 @@ for data fetching and rendering. Inline styles only — no build step required.
     .field-label {
       font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.07em;
       text-transform: uppercase;
       color: var(--text-muted);
     }
@@ -635,39 +1152,25 @@ for data fetching and rendering. Inline styles only — no build step required.
       padding: 7px 10px;
       width: 100%;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.12s;
     }
     .field-input:focus { border-color: var(--accent-dim); }
     .form-actions { display: flex; gap: 8px; margin-top: 4px; }
-    .btn {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      padding: 6px 14px;
-      border-radius: var(--radius-sm);
-      border: 1px solid transparent;
-      cursor: pointer;
-      font-family: var(--font-ui);
-      transition: opacity 0.15s;
-    }
-    .btn:hover { opacity: 0.85; }
-    .btn:disabled { opacity: 0.4; cursor: default; }
-    .btn-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-    .btn-danger { background: transparent; color: var(--danger); border-color: var(--danger); }
-    .btn-ghost { background: transparent; color: var(--text-dim); border-color: var(--border); }
-    .add-server-row { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .add-server-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
     .status-msg { font-size: 11px; font-family: var(--font); padding: 4px 0; }
-    .status-msg.ok { color: var(--accent); }
+    .status-msg.ok { color: var(--healthy); }
     .status-msg.err { color: var(--danger); }
+
+    /* ── Model tier cards ────────────────────────────────────────────── */
     .model-tier-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-lg);
       padding: 20px 22px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
     .model-tier-title {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -675,21 +1178,21 @@ for data fetching and rendering. Inline styles only — no build step required.
       margin-bottom: 14px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
-    /* ── Dispatch pipeline timeline ────────────────────────── */
+    /* ── Dispatch pipeline ───────────────────────────────────────────── */
     .dispatch-pipeline {
       display: flex;
       align-items: center;
-      gap: 0;
       flex-wrap: wrap;
       gap: 4px;
     }
 
     .pipeline-phase {
       font-family: var(--font);
-      font-size: 11px;
+      font-size: 10px;
+      font-weight: 600;
       padding: 3px 10px;
       border-radius: 20px;
       border: 1px solid var(--border);
@@ -697,18 +1200,18 @@ for data fetching and rendering. Inline styles only — no build step required.
     }
 
     .pipeline-phase--todo     { color: var(--text-muted); background: transparent; }
-    .pipeline-phase--active   { color: var(--accent); background: var(--accent-glow); border-color: var(--accent-dim); }
-    .pipeline-phase--done     { color: var(--accent-dim); background: rgba(0,229,160,0.07); }
-    .pipeline-phase--blocked  { color: var(--danger); background: rgba(224,82,82,0.1); border-color: var(--danger); }
+    .pipeline-phase--active   { color: var(--accent-2); background: var(--accent-glow); border-color: var(--accent-dim); }
+    .pipeline-phase--done     { color: #3ca870; background: rgba(78,202,139,0.07); border-color: rgba(78,202,139,0.2); }
+    .pipeline-phase--blocked  { color: var(--danger); background: rgba(224,92,92,0.08); border-color: rgba(224,92,92,0.3); }
 
     .pipeline-connector {
       color: var(--border-hover);
-      font-size: 11px;
-      padding: 0 2px;
+      font-size: 10px;
+      padding: 0 1px;
     }
 
-    /* ── Scrollbars ─────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 6px; }
+    /* ── Scrollbars ──────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
@@ -722,20 +1225,45 @@ for data fetching and rendering. Inline styles only — no build step required.
     <span class="meta" id="version">v—</span>
     <span class="sep">/</span>
     <span class="meta" id="lastsync">synced —</span>
+    <span class="sep">/</span>
+    <span class="meta mode-badge" id="mode-badge">—</span>
     <span class="spacer"></span>
     <span class="status-summary" id="system-status">status —</span>
     <span class="health-dot" id="healthdot" title="Overall system health"></span>
   </header>
 
   <nav id="nav">
+    <div class="nav-section-label">Monitor</div>
+    <a href="#" class="active" data-section="resources">
+      <span class="nav-icon">⬡</span> Resources
+    </a>
+    <a href="#" data-section="workflow">
+      <span class="nav-icon">▣</span> Workflow
+    </a>
+    <a href="#" data-section="approvals">
+      <span class="nav-icon">✔</span> Approvals
+    </a>
+    <a href="#" data-section="snapshots">
+      <span class="nav-icon">◉</span> Snapshots
+    </a>
+
+    <div class="nav-section-label">Agents</div>
     <a href="#" data-section="agents">
       <span class="nav-icon">◈</span> Agents
+    </a>
+    <a href="#" data-section="skills">
+      <span class="nav-icon">◇</span> Skills
     </a>
     <a href="#" data-section="commands">
       <span class="nav-icon">⌘</span> Commands
     </a>
     <a href="#" data-section="hooks">
       <span class="nav-icon">◎</span> Hooks
+    </a>
+
+    <div class="nav-section-label">Config</div>
+    <a href="#" data-section="infrastructure">
+      <span class="nav-icon">⬡</span> Infrastructure
     </a>
     <a href="#" data-section="mcp">
       <span class="nav-icon">⚙</span> MCP
@@ -746,14 +1274,19 @@ for data fetching and rendering. Inline styles only — no build step required.
     <a href="#" data-section="models">
       <span class="nav-icon">⊞</span> Models
     </a>
-    <a href="#" class="active" data-section="resources">
-      <span class="nav-icon">⬡</span> Resources
+    <a href="#" data-section="config">
+      <span class="nav-icon">⚙</span> Config
     </a>
-    <a href="#" data-section="skills">
-      <span class="nav-icon">◇</span> Skills
+
+    <div class="nav-section-label">Interact</div>
+    <a href="#" data-section="artifacts">
+      <span class="nav-icon">📄</span> Artifacts
     </a>
-    <a href="#" data-section="workflow">
-      <span class="nav-icon">▣</span> Workflow
+    <a href="#" data-section="knowledge">
+      <span class="nav-icon">🧠</span> Knowledge
+    </a>
+    <a href="#" data-section="chat">
+      <span class="nav-icon">💬</span> Chat
     </a>
   </nav>
 
@@ -819,9 +1352,176 @@ for data fetching and rendering. Inline styles only — no build step required.
 
     <section id="section-models" class="section">
       <div class="section-title">Model Tiers</div>
+      <div id="models-provider-selector" style="margin-bottom:16px;display:none">
+        <label class="field-label" style="display:block;margin-bottom:6px">Switch provider family</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="provider-family-select" class="field-input" style="width:auto;min-width:220px">
+            <option value="">— select provider —</option>
+          </select>
+          <button class="btn btn-primary" id="js-apply-provider">Apply defaults</button>
+          <span id="provider-apply-msg" class="status-msg" style="margin-left:4px"></span>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:6px">
+          Fills all three tier fields with the provider's default models. Save each tier individually after reviewing.
+        </p>
+      </div>
       <div id="models-content"><div class="loading">Loading...</div></div>
     </section>
+
+    <section id="section-artifacts" class="section">
+      <div class="section-title">Artifacts
+        <span class="section-actions">
+          <button class="btn-sm" id="artifact-new-btn">+ New</button>
+        </span>
+      </div>
+      <div class="tabs" id="artifacts-tabs">
+        <button class="tab-btn active" data-atab="all">All</button>
+        <button class="tab-btn" data-atab="prd">PRDs</button>
+        <button class="tab-btn" data-atab="adr">ADRs</button>
+        <button class="tab-btn" data-atab="rfc">RFCs</button>
+      </div>
+      <div id="artifacts-content"><div class="loading">Loading...</div></div>
+      <div id="artifact-form" class="artifact-form hidden">
+        <div class="form-row">
+          <label>Type
+            <select id="artifact-type">
+              <option value="prd">PRD</option>
+              <option value="adr">ADR</option>
+              <option value="rfc">RFC</option>
+            </select>
+          </label>
+          <label class="flex-grow">Title
+            <input id="artifact-title" type="text" placeholder="Enter artifact title…">
+          </label>
+          <label>Owner / Author
+            <input id="artifact-owner" type="text" placeholder="optional">
+          </label>
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" id="artifact-submit-btn">Generate</button>
+          <button class="btn-ghost" id="artifact-cancel-btn">Cancel</button>
+          <span id="artifact-feedback" class="feedback"></span>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-approvals" class="section">
+      <div class="section-title">Approval Queue</div>
+      <div id="approvals-content"><div class="loading">Loading...</div></div>
+    </section>
+
+    <section id="section-snapshots" class="section">
+      <div class="section-title">Snapshots</div>
+      <div id="snapshots-content"><div class="loading">Loading...</div></div>
+    </section>
+
+    <section id="section-chat" class="section">
+      <div class="section-title">Chat</div>
+      <div id="chat-messages" class="chat-messages"></div>
+      <div class="chat-input-row">
+        <textarea id="chat-input" class="chat-input" placeholder="Ask Construct anything…" rows="2"></textarea>
+        <button id="chat-send" class="btn-primary chat-send-btn">Send</button>
+      </div>
+      <div id="chat-status" class="chat-status"></div>
+    </section>
+
+    <section id="section-knowledge" class="section">
+      <div class="section-title">Knowledge</div>
+      <div class="tabs" id="knowledge-tabs">
+        <button class="tab-btn active" data-ktab="ask">Ask</button>
+        <button class="tab-btn" data-ktab="trends">Trends</button>
+        <button class="tab-btn" data-ktab="index">Index</button>
+      </div>
+
+      <div id="knowledge-tab-ask" class="tab-panel active">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="knowledge-question" type="text" class="chat-input"
+            placeholder='e.g. "what are the biggest risks?"'
+            style="flex:1">
+          <button class="btn-primary" id="knowledge-ask-btn">Ask</button>
+        </div>
+        <div id="knowledge-ask-loading" class="loading" style="display:none">Thinking…</div>
+        <div id="knowledge-answer" style="display:none">
+          <div id="knowledge-answer-text" class="snapshot-content" style="white-space:pre-wrap;margin-bottom:8px"></div>
+          <div id="knowledge-sources" style="font-size:11px;color:var(--text-muted)"></div>
+        </div>
+      </div>
+
+      <div id="knowledge-tab-trends" class="tab-panel">
+        <button class="btn-ghost" id="knowledge-trends-refresh" style="margin-bottom:14px">Refresh</button>
+        <div id="knowledge-trends-content"><div class="loading">Loading…</div></div>
+      </div>
+
+      <div id="knowledge-tab-index" class="tab-panel">
+        <button class="btn-ghost" id="knowledge-index-refresh" style="margin-bottom:14px">Refresh</button>
+        <div id="knowledge-index-content"><div class="loading">Loading…</div></div>
+      </div>
+    </section>
+
+    <section id="section-infrastructure" class="section">
+      <div class="section-title">Infrastructure</div>
+      <div class="tf-layout">
+        <div class="tf-sidebar">
+          <div class="tf-sidebar-header">
+            <span>Terraform Files</span>
+            <div class="tf-env-select-wrap">
+              <select id="tf-env-select" class="tf-env-select">
+                <option value="staging">staging</option>
+                <option value="production">production</option>
+              </select>
+            </div>
+          </div>
+          <div id="tf-file-tree"><div class="loading">Loading…</div></div>
+        </div>
+        <div class="tf-editor-pane">
+          <div class="tf-editor-toolbar">
+            <span id="tf-current-file" class="tf-current-file">Select a file</span>
+            <div class="tf-toolbar-actions">
+              <button class="btn-ghost" id="tf-save-btn" disabled>Save</button>
+              <span id="tf-save-feedback" class="feedback"></span>
+            </div>
+          </div>
+          <textarea id="tf-editor" class="tf-editor" spellcheck="false" placeholder="Select a file from the tree to edit…"></textarea>
+          <div class="tf-run-bar">
+            <button class="btn-ghost" id="tf-validate-btn">✓ Validate</button>
+            <button class="btn-ghost" id="tf-plan-btn">▶ Plan</button>
+            <button class="btn-ghost tf-apply-btn" id="tf-apply-btn">⚡ Apply</button>
+            <button class="btn-ghost" id="tf-output-btn">⊞ Outputs</button>
+            <span class="tf-run-hint">Environment: <span id="tf-run-env">staging</span></span>
+          </div>
+          <div id="tf-output-wrap" class="tf-output-wrap" style="display:none">
+            <div class="tf-output-header">
+              <span id="tf-output-title">Output</span>
+              <button class="btn-ghost" id="tf-output-close" style="font-size:11px">✕ Close</button>
+            </div>
+            <pre id="tf-output" class="tf-output"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-config" class="section">
+      <div class="section-title">Config</div>
+      <div id="config-tab-env" class="tab-panel active">
+        <div id="config-env-content"><div class="loading">Loading...</div></div>
+        <div class="form-actions" style="margin-top:12px">
+          <button class="btn-primary" id="config-env-save">Save</button>
+          <span id="config-env-feedback" class="feedback"></span>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <!-- Login overlay -->
+  <div id="login-overlay" class="login-overlay hidden">
+    <div class="login-card">
+      <div class="login-logo">construct</div>
+      <div class="login-subtitle">Dashboard access is protected</div>
+      <input id="login-token" type="password" class="login-input" placeholder="Enter dashboard token…" autocomplete="current-password">
+      <button id="login-submit" class="btn-primary login-btn">Unlock</button>
+      <div id="login-error" class="login-error hidden">Invalid token</div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

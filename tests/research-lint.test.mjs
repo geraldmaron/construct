@@ -70,9 +70,9 @@ test('lintResearchFile passes a minimally structured research brief', () => {
 
 test('lintResearchRepo scans evidence and signal briefs', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-rlint-repo-'));
-  fs.mkdirSync(path.join(dir, '.cx', 'product-intel', 'evidence-briefs'), { recursive: true });
-  fs.mkdirSync(path.join(dir, '.cx', 'product-intel', 'signals'), { recursive: true });
-  fs.writeFileSync(path.join(dir, '.cx', 'product-intel', 'evidence-briefs', 'brief.md'), [
+  fs.mkdirSync(path.join(dir, '.cx', 'knowledge', 'reference', 'evidence-briefs'), { recursive: true });
+  fs.mkdirSync(path.join(dir, '.cx', 'knowledge', 'external', 'signals'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.cx', 'knowledge', 'reference', 'evidence-briefs', 'brief.md'), [
     '# Evidence Brief: Example',
     '',
     '- **Date**: 2026-04-21',
@@ -98,11 +98,11 @@ test('lintResearchRepo scans evidence and signal briefs', () => {
     '## Recommendation',
     'Proceed.',
   ].join('\n'));
-  fs.writeFileSync(path.join(dir, '.cx', 'product-intel', 'signals', 'signal.md'), '# Signal Brief: weak\n');
+  fs.writeFileSync(path.join(dir, '.cx', 'knowledge', 'external', 'signals', 'signal.md'), '# Signal Brief: weak\n');
 
   const results = lintResearchRepo({ rootDir: dir });
   assert.equal(results.length, 1);
-  assert.match(results[0].path, /\.cx\/product-intel\/signals\/signal\.md$/);
+  assert.match(results[0].path, /\.cx\/knowledge\/external\/signals\/signal\.md$/);
 });
 
 test('formatResearchLintResults returns non-zero exit for errors', () => {
@@ -111,4 +111,3 @@ test('formatResearchLintResults returns non-zero exit for errors', () => {
   ]);
   assert.equal(exitCode, 1);
 });
-

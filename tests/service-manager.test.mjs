@@ -1,7 +1,8 @@
 /**
- * tests/service-manager.test.mjs — <one-line purpose>
+ * service-manager.test.mjs — Unit tests for lib/service-manager.mjs process lifecycle and health checks.
  *
- * <2–6 line summary: what it does, who calls it, key side effects.>
+ * Covers: start/stop/restart, port allocation, health polling, and stash
+ * and restore operations for the Postgres sidecar.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -9,7 +10,8 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { clearDashboardState, readDashboardState, startServices, stopDashboard, _verifyLangfuseKeys, _pruneStashDir } from '../lib/service-manager.mjs';
+import { clearDashboardState, readDashboardState, startServices, stopDashboard, getRuntimePorts, _verifyLangfuseKeys, _pruneStashDir } from '../lib/service-manager.mjs';
+import { writeEnvValues } from '../lib/env-config.mjs';
 
 function tempDir(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -66,6 +68,7 @@ test('startServices starts Langfuse in the background and records the log path',
     rootDir,
     homeDir,
     describeRuntimeSupportFn: async () => ({ docker: true, cm: false, opencode: false, tmux: false }),
+    getRuntimePortsFn: async () => ({ dashboard: 4242, memory: 8765, bridge: 5173 }),
     startDashboardFn: async () => ({ url: 'http://127.0.0.1:4242', reused: true }),
     detectDockerComposeFn: () => ({ command: 'docker', argsPrefix: ['compose'] }),
     loadConstructEnvFn: () => ({}),
@@ -82,6 +85,52 @@ test('startServices starts Langfuse in the background and records the log path',
   assert.ok(dockerCall);
   assert.deepEqual(dockerCall.args, ['compose', '-p', 'construct-langfuse', '-f', path.join(rootDir, 'langfuse', 'docker-compose.yml'), 'up', '-d']);
   assert.equal(dockerCall.options, undefined);
+});
+
+test('getRuntimePorts reuses configured memory port when MCP endpoint is already live', async () => {
+  const homeDir = tempDir('construct-service-ports-');
+  const memoryPort = 9123;
+  writeEnvValues(path.join(homeDir, '.construct', 'config.env'), { MEMORY_PORT: String(memoryPort) });
+
+  const ports = await getRuntimePorts(homeDir, {
+    dashboardProbeFn: async () => false,
+    memoryProbeFn: async (port) => port === memoryPort,
+    openCodeProbeFn: async () => false,
+    findAvailablePortFn: async (startPort) => startPort + 1,
+  });
+  assert.equal(ports.memory, memoryPort);
+});
+
+test('startServices reuses an already-running memory service', async () => {
+  const homeDir = tempDir('construct-service-memory-reuse-');
+  const rootDir = tempDir('construct-service-memory-root-');
+  const memoryPort = 8765;
+  writeEnvValues(path.join(homeDir, '.construct', 'config.env'), { MEMORY_PORT: String(memoryPort) });
+
+  const spawnCalls = [];
+  const { results } = await startServices({
+    rootDir,
+    homeDir,
+    describeRuntimeSupportFn: async () => ({ docker: false, cm: true, opencode: false, tmux: false }),
+    getRuntimePortsFn: async () => ({ dashboard: 4242, memory: memoryPort, bridge: 5173 }),
+    startDashboardFn: async () => ({ url: 'http://127.0.0.1:4242', reused: true }),
+    detectDockerComposeFn: () => null,
+    loadConstructEnvFn: () => ({}),
+    spawnDetachedFn: (command, args) => {
+      spawnCalls.push({ command, args });
+      return {
+        child: { pid: 12345, unref() {} },
+        logPath: path.join(homeDir, '.construct', 'runtime', 'fake.log'),
+      };
+    },
+    verifyLangfuseKeysFn: async () => ({ status: 'verified' }),
+    memoryProbeFn: async (port) => port === memoryPort,
+  });
+
+  const memory = results.find((entry) => entry.name === 'Memory (cm)');
+  assert.ok(memory);
+  assert.equal(memory.status, 'reused');
+  assert.equal(spawnCalls.some((entry) => entry.command === 'cm'), false);
 });
 
 // ── pruneStashDir ─────────────────────────────────────────────────────────

@@ -1,0 +1,217 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Prevent concurrent deploys to the same environment
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: construct
+  ECS_CLUSTER: construct-production
+  ECS_SERVICE: construct-production
+  TF_WORKING_DIR: deploy/terraform/environments/production
+
+jobs:
+  # ── Test ────────────────────────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run tests
+        run: |
+          node --test tests/embed-config.test.mjs
+          node --test tests/embed-scheduler.test.mjs
+          node --test tests/embed-snapshot.test.mjs
+          node --test tests/embed-approval-queue.test.mjs
+          node --test tests/embed-artifact.test.mjs
+          node --test tests/provider-git.test.mjs
+          node --test tests/provider-github.test.mjs
+          node --test tests/provider-jira.test.mjs
+          node --test tests/provider-slack.test.mjs
+          node --test tests/provider-confluence.test.mjs
+          node --test tests/server-auth.test.mjs
+          node --test tests/server-chat.test.mjs
+          node --test tests/server-webhook.test.mjs
+
+  # ── Build & Push ────────────────────────────────────────────────────────
+  build:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    needs: test
+    # Only build on pushes to main (not PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      id-token: write   # OIDC auth for AWS
+      contents: read
+    outputs:
+      image_uri: ${{ steps.push.outputs.image_uri }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image
+        id: push
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker build -t "$IMAGE_URI" .
+          docker push "$IMAGE_URI"
+          # Also tag as latest for convenience
+          docker tag "$IMAGE_URI" "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+  # ── Terraform Plan (PRs only) ───────────────────────────────────────────
+  tf-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'pull_request'
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.7'
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        env:
+          TF_VAR_dashboard_token: ${{ secrets.DASHBOARD_TOKEN }}
+          TF_VAR_anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          terraform plan -no-color -out=tfplan 2>&1 | tee plan.txt
+          echo "exitcode=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Post plan to PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('${{ env.TF_WORKING_DIR }}/plan.txt', 'utf8');
+            const truncated = plan.length > 60000 ? plan.slice(0, 60000) + '\n... (truncated)' : plan;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Terraform Plan\n\`\`\`\n${truncated}\n\`\`\``
+            });
+
+  # ── Deploy ──────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production   # requires manual approval in GitHub Environments
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.7'
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        env:
+          TF_VAR_dashboard_token: ${{ secrets.DASHBOARD_TOKEN }}
+          TF_VAR_anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          TF_VAR_image_uri: ${{ needs.build.outputs.image_uri }}
+        run: terraform apply -auto-approve
+
+      - name: Wait for ECS stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --region "$AWS_REGION"
+
+      - name: Smoke test
+        run: |
+          # Give ALB a moment after ECS stabilises
+          sleep 10
+          STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+            "https://${{ secrets.CONSTRUCT_HOSTNAME }}/api/auth/status" || echo "000")
+          if [ "$STATUS" != "200" ]; then
+            echo "Smoke test failed — /api/auth/status returned $STATUS"
+            exit 1
+          fi
+          echo "Smoke test passed ($STATUS)"
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed — rolling back to previous task definition revision"
+          PREV=$(aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --region "$AWS_REGION" \
+            --query 'services[0].deployments[1].taskDefinition' \
+            --output text)
+          if [ -n "$PREV" ] && [ "$PREV" != "None" ]; then
+            aws ecs update-service \
+              --cluster "$ECS_CLUSTER" \
+              --service "$ECS_SERVICE" \
+              --task-definition "$PREV" \
+              --region "$AWS_REGION"
+            echo "Rolled back to $PREV"
+          else
+            echo "No previous deployment found to roll back to"
+          fi

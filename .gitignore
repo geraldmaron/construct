@@ -6,7 +6,9 @@ node_modules/
 .claude/
 .codex/
 .cx/*
+.mcp.json
 config.env
+embed.yaml
 runtime/
 
 # MkDocs build output
@@ -14,3 +16,8 @@ site/site/
 
 # Local-only archived release notes and pre-release docs
 .archive/
+
+# Playwright MCP snapshots and local screenshots
+.playwright-mcp/
+dashboard-*.png
+*.screenshot.png

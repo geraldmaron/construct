@@ -4,296 +4,195 @@
 
 ## System overview
 
-Construct is a production-oriented orchestration CLI that keeps a stable public surface while routing work through internal specialists, workflows, hooks, MCP integrations, and optional observability/runtime services.
+Construct is an org-in-a-box: an AI orchestration system that can be pointed at external systems (repos, project trackers, messaging, knowledge bases), embedded as a continuous monitor, and deployed locally or to the cloud. It produces organizational intelligence — PRDs, RFCs, ADRs, health snapshots, recommendations — and manages work across connected systems through a transport-agnostic provider abstraction.
 
-## Core layers
+## Architecture layers
+
+```
+core/         — CLI, MCP server, orchestration, memory, sessions
+providers/    — abstract provider interface + per-system implementations
+runtime/      — Docker management, embed daemon, scheduler
+dashboard/    — full web app: auth, chat, approvals, config
+deploy/       — Dockerfile, Terraform modules, cloud configs
+```
+
+### Core
+
+The foundation. Handles orchestration, specialist dispatch, memory, sessions, and the MCP server. Zero external npm dependencies.
 
 - **CLI surface** — `bin/construct` and `lib/cli-commands.mjs`
-- **Durable work tracking** — external tracker integration, with Beads as the preferred canonical backlog when a project uses it
-- **Planning artifact** — `plan.md` for the human-readable current implementation plan
-- **Orchestration policy** — `lib/orchestration-policy.mjs` (intent classification, work-category tagging, execution track selection, gate evaluation, contract-chain resolution)
-- **Agent contracts** — `agents/contracts.json` and `lib/agent-contracts.mjs` (explicit producer→consumer service contracts with preconditions, postconditions, input/output schemas)
-- **Doc ownership, framing, and skill-composition rules** — `rules/common/{doc-ownership,framing,skill-composition}.md`
-- **Project profile and skill scoping** — `lib/project-profile.mjs`, `lib/skills-scope.mjs`, `lib/skills-apply.mjs`
-- **Domain overlays** — `.cx/domain-overlays/` and `.cx/promotion-requests/` managed by `lib/headhunt.mjs`
-- **Retrieval / distillation** — `lib/distill.mjs`
-- **Hybrid search layer** — `lib/storage/` (file-state source, SQL-ready store, vector-ready index, hybrid query facade)
-- **Runtime health** — `lib/status.mjs`, dashboard API/UI in `lib/server/`
-- **MCP integrations** — `lib/mcp-manager.mjs`, `lib/mcp/server.mjs`, `lib/mcp-catalog.json`
-- **Shared memory layer** — cass-memory surfaced through MCP `memory` for cross-tool/session recall
-- **Hooks / enforcement** — `lib/hooks/` (session-start, bash-output-logger, repeated-read-guard, context-watch, audit-trail, and more)
-- **Audit trail** — `lib/hooks/audit-trail.mjs`, `lib/audit-trail.mjs`, `~/.cx/audit-trail.jsonl` with `prev_line_hash` tamper-evidence chain
-- **Session persistence** — `lib/session-store.mjs`, `.cx/sessions/`
+- **MCP server** — `lib/mcp/server.mjs`, tools split across `lib/mcp/tools/`
+- **Orchestration policy** — `lib/orchestration-policy.mjs` (intent classification, execution track selection, gate evaluation, contract-chain resolution)
+- **Agent contracts** — `agents/contracts.json` and `lib/agent-contracts.mjs` (producer→consumer service contracts with preconditions, postconditions, input/output schemas)
+- **Observation store** — `.cx/observations/` (role-scoped, vectorized, capped insights for continuous learning)
+- **Session persistence** — `lib/session-store.mjs`, `.cx/sessions/` (distilled session records for resumption)
+- **Hybrid search** — `lib/storage/` (file-state source, SQL store, vector index, hybrid query facade)
+- **Hooks / enforcement** — `lib/hooks/` (session-start, bash-output-logger, repeated-read-guard, context-watch, audit-trail)
+- **Audit trail** — `lib/audit-trail.mjs`, `~/.cx/audit-trail.jsonl` with tamper-evidence chain
+- **Doc stamps** — UUIDv7 front-matter on all generated `.md` files for identity, provenance, and tamper detection
+
+### Providers
+
+Transport-agnostic interface to external systems. Each provider implements a capability matrix and chooses its own transport (MCP, REST, GraphQL, SDK, CLI, webhooks). Core dispatches through the interface — it never knows the transport.
+
+**Capability matrix:**
+
+| Capability | Description |
+|---|---|
+| `read` | Fetch items, pages, messages, files from the external system |
+| `write` | Create or update items (work items, messages, pages, PRs) |
+| `search` | Query the external system's index |
+| `watch` | Poll or subscribe for changes |
+| `webhook` | Receive inbound events from the external system |
+
+**Provider contract:**
+- Providers are stateless adapters. Durable state lives in core stores.
+- Auth is per-provider, configured in `.cx/providers.yaml` or environment.
+- A provider may support any subset of capabilities; unsupported capabilities return a typed error.
+- Provider implementations live in `providers/` with one directory per system.
+
+**Planned initial providers:**
+
+| Provider | Transport | Capabilities |
+|---|---|---|
+| Git repo | git CLI | read, write, watch |
+| Project tracker (Jira, Linear) | MCP / REST | read, write, search, webhook |
+| Messaging (Slack, Discord) | REST / SDK | read, write, watch, webhook |
+| Code host (GitHub, GitLab) | CLI / REST | read, write, search, webhook |
+| Knowledge base (Confluence, Notion) | MCP / REST | read, write, search |
+
+### Runtime
+
+Docker service management, embed daemon, and scheduler.
+
+- **Service manager** — `lib/service-manager.mjs` (container lifecycle for Postgres, Langfuse, memory)
+- **Embed daemon** — scheduled or long-running process that monitors sources through providers, produces snapshots, manages approval queue
+- **Scheduler** — cron-style or interval-based execution (local: in-process schedule; cloud: cron + webhook triggers)
+
+### Dashboard
+
+Full web application replacing the minimal status page.
+
+- Auth (OAuth2 / JWT, multi-user, role-based)
+- Chat interface (interact with Construct)
+- Approval queue (approve/reject high-risk actions)
+- Config management (providers, embed settings, approval rules)
+- Snapshot viewer (health reports, risk analysis, recommendations)
+- Real-time updates (WebSocket/SSE)
+- Mode-aware layout (init, embed, point-at)
+
+### Deploy
+
+Infrastructure as code and container packaging.
+
+- **Dockerfile** — single image with core, providers, dashboard, runtime (< 500 MB target)
+- **Terraform modules** — `deploy/terraform/` (VPC, ECS/Fargate, RDS, secrets, DNS, IAM)
+- Multi-user auth layer
+- Webhook ingestion endpoint for provider events
 
 ## Operating model: gates + contracts + specialists
 
 Every request flows through three structural layers:
 
-1. **Gates** (`routeRequest` returns `framingChallenge`, `externalResearch`, `docAuthoring`): preconditions that must hold before scaffolding begins. Frame the problem independent of tickets; route authorship to the owning specialist; cx-researcher returns primary sources before the drafting specialist proceeds.
-2. **Contract chain** (`routeRequest.contractChain`): ordered typed handoffs from `agents/contracts.json`. Each contract names a producer→consumer pair, required input fields, preconditions, expected output shape/schema, and postconditions. Specialists call the `agent_contract` MCP tool at handoff time to introspect what they must receive and what they must return.
-3. **Specialist sequence**: dispatch plan with explicit ordering and parallel markers. Gate-required specialists (cx-devil-advocate, cx-researcher, doc owner) are auto-prepended.
+1. **Gates** (`routeRequest` returns `framingChallenge`, `externalResearch`, `docAuthoring`): preconditions that must hold before work begins. Frame the problem independent of tickets; route authorship to the owning specialist; cx-researcher returns primary sources first.
+2. **Contract chain** (`routeRequest.contractChain`): ordered typed handoffs from `agents/contracts.json`. Each contract names a producer→consumer pair, required input fields, preconditions, expected output shape, and postconditions.
+3. **Specialist sequence**: dispatch plan with ordering and parallel markers. Gate-required specialists (cx-devil-advocate, cx-researcher, doc owner) are auto-prepended.
 
-Post-DONE, the `any-to-docs-keeper` contract fires as a followup stage when core docs changed.
+## Modes of operation
+
+| Mode | Description | Trigger |
+|---|---|---|
+| **Point-at** | Accept a target URI, produce analysis or artifact (PRD, RFC, ADR) | `construct analyze <uri>` |
+| **Init** | Bootstrap a project with .cx/, shared memory, cross-agent configs | `construct init` |
+| **Embed** | Continuous monitoring, snapshot production, work item management | `construct embed start` |
+| **Self-host** | Construct manages its own development (this repo) | Always active in the construct repo |
+
+### Embedded operating profile
+
+Embed mode is governed by a config-backed operating profile, not just a list of watched sources. The profile is the daemon's bearing: mission, strategy, focal resources, authority boundaries, artifact responsibilities, and risk model.
+
+Precedence is explicit: approval rules and tracker/doc ownership override profile preferences. The default profile is assistive and read-first:
+
+- autonomous: read sources, summarize, identify gaps, generate snapshots, draft roadmaps/status/summaries/artifacts
+- approval-queued: create or update issues, publish durable docs, post externally, write broadly to the repo
+- focal resources: `plan.md`, `docs/architecture.md`, `.cx/knowledge/`, `.cx/roadmap.md`
+- artifact obligations: roadmaps, PRDs, RFCs, ADRs, memos, status updates, summaries, wireframes, and risks
+
+Every snapshot discloses the active operating profile and any operating gaps, such as missing focal resources, missing sources, source read failures, or missing outputs. Roadmaps include the same profile obligations so operators can tell whether Construct is only observing or also missing responsibilities.
 
 ## Project-state hierarchy
 
-Construct should preserve one source of truth per concern rather than creating parallel trackers:
+One source of truth per concern:
 
-1. External tracker, preferably Beads, owns the durable backlog and issue lifecycle.
-2. `plan.md` owns the current human-readable plan and should link back to tracker ids.
-3. cass-memory through MCP `memory` stores cross-session observations and preferences, not task state.
-4. The single-writer rule governs parallel editing: one active writer per file, with all other sessions working on disjoint files or review/research.
+1. External tracker owns the durable backlog and issue lifecycle.
+2. `plan.md` owns the current human-readable plan, linked to tracker ids.
+3. Memory (observation store via MCP) stores cross-session knowledge, not task state.
+4. Single-writer rule: one active writer per file; others review, research, or wait.
 
-When these surfaces drift, the external tracker wins for status, `plan.md` wins for planning intent, and stale managed docs should be pruned rather than preserved indefinitely.
+## Approval model
+
+Hybrid: autonomous for low-risk, human-gated for high-risk.
+
+| Risk | Examples | Behavior |
+|---|---|---|
+| Low | Reading, analysis, draft generation, search | Autonomous |
+| High | Work item creation, merge, doc publish, config changes | Queued for approval (dashboard or messaging provider) |
 
 ## Context hygiene
 
-Construct measures context pressure and enforces it via hooks rather than advisory prompt text:
+Enforced via hooks, not advisory text:
 
-- `bash-output-logger` persists Bash outputs >4KB to `~/.cx/bash-logs/` and nudges the model to grep the log instead of re-running.
-- `repeated-read-guard` blocks broad re-reads of files already read twice in the session; narrow-range follow-ups are allowed.
-- `context-watch` injects compaction guidance at 120k / 160k token thresholds (overridable via `CONSTRUCT_CONTEXT_WARN` / `CONSTRUCT_CONTEXT_URGENT`).
-- Role skills are loaded on demand via `get_skill` rather than preloaded at sync time.
-- `sharedGuidance` keeps only 10 essentials per specialist; the 22 reference items live in `skills/operating/orchestration-reference.md` and load on demand.
-
-## Key invariants
-
-- Construct is the only public surface.
-- Internal specialists remain implementation details.
-- External tracker state remains the durable source of truth for work when present.
-- `plan.md` remains the planning artifact; it should be updated or pruned when it no longer reflects the active tracker-linked plan.
-- Parallel same-file editing is disallowed under the default single-writer rule.
-- Temporary domain overlays must not auto-promote into permanent capabilities.
-- Persistent capability changes require challenge by `cx-devil-advocate`.
-- Runtime health, workflow state, overlays, and promotion requests should remain visible in status/dashboard surfaces.
-- Agent contracts are the source of truth for producer→consumer expectations. The orchestrator routes; owning specialists author.
-- Mutations are traceable: every Edit/Write/MultiEdit/NotebookEdit/mutating-Bash appends to the audit trail with agent + task attribution and a tamper-evident chain.
-
-## Public health contract
-
-Construct exposes one canonical machine-readable health slice for current project state:
-
-- `construct status --json`
-- MCP `project_context`
-
-These surfaces share the same runtime-defined `publicHealth` contract for active task context, project-state health, and metadata-presence signals. `project_context` is the richer MCP surface for actual context-source details.
-
-### `publicHealth` fields
-
-- `context`
-  - `hasFile`
-  - `source` (`json`, `markdown`, `missing`, `invalid`)
-  - `savedAt`
-  - `summary`
-- `coordination`
-  - `authority` (`external-tracker-plus-plan`)
-  - `fileOwnershipRule` (`single-writer`)
-  - `memoryRole` (`cross-session-recall`)
-- `metadataPresence`
-  - `executionContractModel`
-  - `contextState`
-
-### Semantics
-
-- `project_context.publicHealth.context.source` reflects the actual source Construct loaded from `.cx/context.json` or `.cx/context.md`.
-- `alignment` is derived from workflow-alignment checks, not inferred from docs or prompt state.
-- `metadataPresence.executionContractModel` means the canonical execution-contract metadata object is available on the surface.
-- `metadataPresence.contextState` is true when the active context source is `.cx/context.json`.
-
-The intent is parity, not duplication: status and MCP project tools should expose the same public truth for project context, alignment, and metadata presence, while `project_context` remains the canonical MCP surface for resolved context-source details.
-
-## Release-facing observability boundary
-
-- `construct status --json` is the canonical public health surface for runtime, workflow, context, and active trace-backend state.
-- Construct uses Langfuse as the trace backend for all observability: status health reporting, `construct review`, `construct optimize`, and telemetry backfill.
-
-## Domain overlay lifecycle
-
-1. `construct headhunt <domain>` creates a temporary overlay
-2. Overlay is attached to existing specialists as bounded scope guidance
-3. Overlay can be promoted into a review request
-4. Promotion requires architecture + devil's advocate + docs/ownership review
-5. Expired temporary overlays can be cleaned up safely
+- `bash-output-logger` — persists large outputs to disk, nudges grep over re-run
+- `repeated-read-guard` — blocks redundant broad re-reads
+- `context-watch` — compaction guidance at 60%/80% of resolved context window
+- Role skills loaded on demand via `get_skill`
 
 ## Session persistence
 
-Sessions are the durable record of what happened during each interaction. They survive `construct down` and enable effective resumption without re-reading full transcripts.
+Distilled, not raw. Sessions store summary, decisions, files changed, open questions, and task snapshot. Full transcripts are ephemeral.
 
-### Design: distilled, not raw
-
-Sessions store only what matters for resumption:
-
-| Field | Purpose | Cap |
-|---|---|---|
-| `summary` | 2-3 sentence description of what happened | 500 chars |
-| `decisions` | Key architectural/design choices made | 20 items |
-| `filesChanged` | Paths + one-line reason | 50 items |
-| `openQuestions` | Unresolved issues or blockers | 10 items |
-| `taskSnapshot` | Task IDs + status (not full descriptions) | unlimited |
-
-Full conversation transcripts, raw tool outputs, and file contents are NOT stored — they are ephemeral or already on disk.
-
-### Storage layout
-
-- `.cx/sessions/index.json` — lightweight array for fast listing (id, project, status, summary)
-- `.cx/sessions/<id>.json` — distilled session record
-
-### Lifecycle
-
-1. **Session start** — `session-start.mjs` hook creates a new session, loads the last completed session for resume context, and follows the tiered injection model below to keep payload size bounded
-2. **Mid-session** — agents can call `session_save` MCP tool to persist distilled state
-3. **Session end** — `stop-notify.mjs` hook marks the active session as completed with a summary
-4. **Construct down** — `closeAllSessions()` marks all active sessions as closed
-
-### MCP tools
-
-- `session_list` — list sessions with optional status/project filter
-- `session_load` — load full distilled record + generated resume context
-- `session_search` — keyword search across session summaries
-- `session_save` — update active session with distilled context
-
-### Tiered injection model
-
-`session-start.mjs` follows a tiered injection model so the always-injected payload stays small and predictable across projects of varying activity:
+**Tiered injection at session start:**
 
 | Tier | Behavior | Examples |
 |---|---|---|
-| **Tier 1** | Always injected | header, working branch, approval reminder, git status, current workflow task one-liner, pending typecheck warning |
-| **Tier 2** | Injected only when fresh and meaningful | `.cx/context.md` body (gated by 7-day mtime freshness), skill-scope warnings, recent drop-zone files, last-session resume context |
-| **Tier 3** | Surfaced as a one-line hint pointing at an MCP tool | prior observations (→ `memory_recent`), efficiency snapshot when not healthy (→ `efficiency_snapshot`) |
+| 1 | Always injected | header, branch, status, approval reminder |
+| 2 | When fresh and meaningful | context.md, skill-scope warnings, last-session resume |
+| 3 | Hint pointing at MCP tool | prior observations → `memory_recent` |
 
-Stale `.cx/context.md` (>7 days) degrades to a Tier 1 hint suggesting `construct context refresh` or `memory_recent` rather than flooding the session with stale state. The tiered model trades one line of context per absent payload for on-demand retrieval, keeping every session lean while preserving full access via tools.
+## Learning loop
 
-## Learning loop (observation store + entity tracking)
-
-The learning loop enables specialists to accumulate and retrieve knowledge across sessions. Each specialist can record observations (patterns, decisions, anti-patterns) and query them semantically on future runs.
-
-### Design: role-scoped, vectorized, capped
-
-Observations are distilled insights — not raw transcripts. Each observation is scoped to a role and category, vectorized for semantic search, and capped to keep storage bounded.
-
-| Field | Purpose | Cap |
-|---|---|---|
-| `summary` | One-line description of the insight | 500 chars |
-| `content` | Detailed explanation or evidence | 2000 chars |
-| `role` | Which specialist recorded this | — |
-| `category` | pattern, anti-pattern, dependency, decision, insight, session-summary | — |
-| `tags` | Searchable labels | 10 items |
-| `confidence` | How certain the observation is | 0.0–1.0 |
-| `source` | Session or file that produced it | — |
-
-### Storage layout
-
-- `.cx/observations/index.json` — lightweight listing for fast filtering (id, role, category, summary, createdAt)
-- `.cx/observations/<id>.json` — full observation record
-- `.cx/observations/vectors.json` — local vector index (256-dim `hashing-bow-v1` embeddings) for semantic search
-- `.cx/observations/entities.json` — tracked entities (components, services, dependencies, concepts)
-
-### Entity tracking
-
-Entities represent recurring things specialists encounter — components, services, APIs, dependencies, file groups. Each entity links to observation IDs and related entities, enabling "what do we know about X?" queries.
-
-Caps: 1000 observations, 500 entities, 50 observations per entity, 20 related entities.
-
-### Artifact capture
-
-At session end, `stop-notify.mjs` automatically captures:
-1. A `session-summary` observation from the completed session's summary and decisions
-2. Individual `decision` observations (capped at 5 per session)
-3. `file-group` entities from changed file directory patterns
-
-### MCP tools
-
-- `memory_search` — semantic search over observations with optional role/category/project filters
-- `memory_add_observations` — batch-add up to 10 observations per call, auto-sets project from cwd
-- `memory_create_entities` — batch-create/update up to 10 entities with observation linking
-
-### Lifecycle
-
-1. **Session start** — `session-start.mjs` surfaces a one-line hint pointing at `memory_recent` when ≥2 distinct prior observations exist for the project; full payload fetched on demand
-2. **Mid-session** — specialists call `memory_add_observations` and `memory_create_entities` as they discover patterns
-3. **Session end** — `stop-notify.mjs` runs `captureSessionArtifacts()` to auto-record session insights
-4. **Next session** — `memory_search` retrieves relevant prior observations for context
+Observations (patterns, decisions, anti-patterns) are recorded per-role, vectorized for semantic search, and capped for bounded storage. Entities track recurring components, services, and dependencies. Session artifacts are captured automatically at session end.
 
 ## Doc auditability stamps
 
-Every `.md` file Construct generates carries a YAML front-matter stamp for identity, provenance, and tamper detection.
-
-### Stamp schema
+Every generated `.md` file carries UUIDv7 front-matter:
 
 ```yaml
 ---
-cx_doc_id:   019dbb90-...          # UUIDv7 — time-ordered, preserved across re-stamps
-created_at:  2026-04-23T18:18:12Z  # ISO 8601, set at creation, never mutated
+cx_doc_id:   019dbb90-...          # UUIDv7, preserved across re-stamps
+created_at:  2026-04-23T18:18:12Z  # Set at creation, never mutated
 updated_at:  2026-04-23T19:00:00Z  # Updated on every re-stamp
 generator:   construct/sync-agents # Which surface produced the file
-model:       claude-sonnet-4-6     # Optional — model that generated the content
-session_id:  019dbb90-...          # Optional — Construct session UUIDv7
-body_hash:   sha256:<hex>          # SHA-256 of trimmed body (everything after closing ---)
+body_hash:   sha256:<hex>          # SHA-256 of trimmed body
 ---
 ```
 
-### Design decisions
+## Managed artifact directories
 
-- **UUIDv7 not v4** — time-ordered (RFC 9562 §5.7) so ids sort chronologically without a separate `created_at` index; implemented inline with zero npm dependencies.
-- **Body hash covers only the body** — the stamp block itself is excluded from the hash so re-stamps don't invalidate the hash when only metadata changes.
-- **id preserved on re-stamp** — `cx_doc_id` is stable across re-syncs; a new id is only generated on `{ preserve_id: false }`.
-- **Whitespace-trimmed** — trailing newlines and spaces don't break verification.
+| Directory | Contents | Owner |
+|---|---|---|
+| `docs/prd/` | Product requirements documents | cx-product-manager |
+| `docs/adr/` | Architecture decision records | cx-architect |
+| `docs/rfc/` | Requests for comment | Varies by topic |
 
-### Generation surfaces
+## Key invariants
 
-| Surface | Generator label |
-|---|---|
-| `sync-agents.mjs` `writeFile()` | `construct/sync-agents` |
-| `lib/init-docs.mjs` `writeIfMissing()` | `construct/init-docs` |
-| `lib/document-ingest.mjs` `ingestDocuments()` | `construct/ingest` |
-
-### Verification
-
-```bash
-construct doc verify [path] [--json]   # check body_hash on all stamped .md files
-construct doc install-hooks            # install prepare-commit-msg git hook for AI trailers
-```
-
-The git hook appends `AI-Generator:`, `AI-Model:`, and `AI-Session:` trailers to commit messages when `CONSTRUCT_MODEL` / `CONSTRUCT_SESSION_ID` env vars are present.
-
-## Validation and release expectations
-
-- tests must pass
-- docs should reflect shipped behavior
-
-## Prompt surfaces and examples
-
-Construct separates runtime prompt policy from offline regression fixtures.
-
-- `personas/construct.md` is the sole public persona
-- `agents/prompts/cx-*.md` are internal specialist prompts routed through Construct
-- `skills/roles/*.md` are internal reusable role overlays
-- `examples/` holds offline example fixtures for regression and future eval harnesses
-
-See `docs/prompt-surfaces.md` for the canonical prompt-surface taxonomy and fixture coverage policy.
-
-Bad examples are stored as critique and evaluation fixtures, not as free-floating few-shot content in the prompt. When in-prompt examples are used, they should be sparse and reserved for behavior that is hard to specify precisely in rules alone.
-- release/version metadata should be updated intentionally
-
-## Hybrid retrieval model
-
-Construct uses file-state as the canonical source of truth for local project context, while respecting an external tracker as the canonical durable backlog when one exists.
-
-- `AGENTS.md`, `plan.md`, `.cx/context.json`, `.cx/context.md`, and docs define local operating state
-- external tracker state remains canonical for durable tasks and status
-- SQL is the shared/team-ready structured store for indexed records and lifecycle data
-- vector search is a derived retrieval layer for semantic discovery over selected artifacts
-
-The first implementation slice exposes read-first search and health reporting; write synchronization into shared stores should remain append-only and idempotent when introduced.
-
-### Storage operations
-
-- `construct setup --yes` writes managed vector defaults, starts a localhost-only Postgres container when Docker is available, initializes the shared Postgres schema, and performs an initial sync. Existing `DATABASE_URL` values take precedence.
-- `construct update` is the post-pull maintenance path for the Construct repo itself: it reinstalls the current checkout globally, then runs host-only sync and `construct doctor` from that checkout without dirtying tracked docs.
-- `construct storage sync` syncs file-state artifacts into the shared SQL store.
-- `construct storage status` reports backend config and reachability.
-- `construct search` merges file-state retrieval with any SQL-backed hits available at runtime.
+- Construct is the only public surface. Specialists are implementation details.
+- Provider implementations never leak transport details into core.
+- External tracker state is canonical for durable work when present.
+- Single-writer rule governs parallel editing.
+- Mutations are traceable via audit trail with tamper-evidence chain.
+- Domain overlays must not auto-promote into permanent capabilities.
 
 ## Agent registry
 

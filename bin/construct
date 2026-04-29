@@ -15,7 +15,8 @@ import { spawnSync } from 'node:child_process';
 import { CLI_COMMANDS, CLI_COMMANDS_BY_CATEGORY, CATEGORY_ORDER } from '../lib/cli-commands.mjs';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { validateRegistry } from '../lib/validator.mjs';
-import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, pollFreeModels, topForTier, selectForTier, applyToEnv, resetEnv, setTierModel, setModelWithTierInference } from '../lib/model-router.mjs';
+import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setTierModel, setModelWithTierInference } from '../lib/model-router.mjs';
+import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
 import { printHostCapabilities } from '../lib/host-capabilities.mjs';
 import { getPluginById, initPluginManifest, loadPluginRegistry } from '../lib/plugin-registry.mjs';
@@ -269,6 +270,20 @@ async function cmdDown() {
 }
 
 async function cmdServe() {
+  if (restArgsCache.includes('--token')) {
+    const { generateToken, setDashboardToken, getDashboardToken } = await import('../lib/server/auth.mjs');
+    const existing = getDashboardToken();
+    if (existing) {
+      println(`Dashboard token already set. To rotate it, remove CONSTRUCT_DASHBOARD_TOKEN from ~/.construct/config.env and re-run.`);
+      return;
+    }
+    const token = generateToken();
+    setDashboardToken(token);
+    println(`Dashboard token generated and saved to ~/.construct/config.env`);
+    println(`CONSTRUCT_DASHBOARD_TOKEN=${token}`);
+    println(`Pass this token in the dashboard login prompt or as: Authorization: Bearer <token>`);
+    return;
+  }
   const dashboard = await startDashboard({ rootDir: ROOT_DIR, homeDir: HOME });
   if (dashboard.reused) {
     println(`Construct dashboard already running on ${dashboard.url} (pid ${dashboard.pid})`);
@@ -284,12 +299,12 @@ async function cmdVersion() {
 
 async function cmdReview(args) {
   fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
-  if (!process.env.LANGFUSE_PUBLIC_KEY || !process.env.LANGFUSE_SECRET_KEY) {
+  if (!ENV.LANGFUSE_PUBLIC_KEY || !ENV.LANGFUSE_SECRET_KEY) {
     errorln('Error: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY must be set.');
     errorln('Configure Langfuse credentials in ~/.construct/config.env or .env.');
     process.exit(1);
   }
-  runNodeScript(path.join(ROOT_DIR, 'lib', 'review.mjs'), args);
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'review.mjs'), args, ENV);
 }
 
 async function cmdInit(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init.mjs'), args); }
@@ -551,8 +566,12 @@ async function cmdDiff() {
   warn('construct diff is not yet ported to the Node CLI surface. Use git diff for now.');
 }
 
-async function cmdOptimize() {
-  warn('construct optimize remains available only in environments with Python + DSPy ready.');
+async function cmdOptimize(args) {
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'optimize.mjs'), args, ENV);
+}
+
+async function cmdSeedTraces(args) {
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'seed-traces.mjs'), args, ENV);
 }
 
 async function cmdCleanup() {
@@ -714,6 +733,7 @@ const handlers = new Map([
   ['hosts', cmdHosts],
   ['review', cmdReview],
   ['optimize', cmdOptimize],
+  ['seed-traces', cmdSeedTraces],
   ['cost', cmdCost],
   ['efficiency', cmdEfficiency],
   ['evals', cmdEvals],
@@ -759,6 +779,10 @@ const handlers = new Map([
     const { runTelemetryBackfillCli } = await import('../lib/telemetry/backfill.mjs');
     return runTelemetryBackfillCli(args);
   }],
+  ['eval-datasets', async (args) => {
+    const { runEvalDatasetsCli } = await import('../lib/telemetry/eval-datasets.mjs');
+    return runEvalDatasetsCli(args);
+  }],
   ['drop', async (args) => {
     const { runDropCli } = await import('../lib/drop.mjs');
     return runDropCli(args);
@@ -778,6 +802,60 @@ const handlers = new Map([
       return runSkillsApplyCli(args.slice(1));
     }
     errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply`);
+    process.exit(1);
+  }],
+  ['ask', async (args) => {
+    const question = args.join(' ').trim();
+    if (!question) {
+      errorln('Usage: construct ask "<question>"');
+      errorln('Example: construct ask "what are the biggest risks?"');
+      process.exit(1);
+    }
+    const { ask, buildCorpus } = await import('../lib/knowledge/rag.mjs');
+    const rootDir = process.cwd();
+    process.stdout.write('Building knowledge index…\n');
+    const corpus = buildCorpus(rootDir);
+    process.stdout.write(`Indexed ${corpus.length} chunks. Retrieving…\n\n`);
+    const result = await ask(question, { rootDir, corpus });
+    if (result.cliMissing) {
+      process.stdout.write('[claude CLI not available — showing retrieved context]\n\n');
+    }
+    process.stdout.write(`${result.answer}\n`);
+    if (result.sources?.length) {
+      process.stdout.write('\n--- Sources ---\n');
+      for (const s of result.sources.slice(0, 5)) {
+        process.stdout.write(`  • [${s.source}] ${s.title} (score: ${s.score?.toFixed(3)})\n`);
+      }
+    }
+  }],
+   ['embed', async (args) => {
+     const { runEmbedCli } = await import('../lib/embed/cli.mjs');
+     return runEmbedCli(args, { rootDir: new URL('..', import.meta.url).pathname });
+   }],
+   ['reflect', async (args) => {
+     const { runReflectCli } = await import('../lib/reflect.mjs');
+     return runReflectCli(args);
+   }],
+  ['knowledge', async (args) => {
+    const sub = args[0] || 'trends';
+    if (sub === 'trends') {
+      const { buildTrendReport } = await import('../lib/knowledge/trends.mjs');
+      const report = buildTrendReport(process.cwd());
+      process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+      return;
+    }
+    if (sub === 'index') {
+      const { buildCorpus } = await import('../lib/knowledge/rag.mjs');
+      const corpus = buildCorpus(process.cwd());
+      process.stdout.write(`Indexed ${corpus.length} chunks from: observations, artifacts, snapshots\n`);
+      const sources = {};
+      for (const c of corpus) sources[c.source] = (sources[c.source] || 0) + 1;
+      for (const [src, count] of Object.entries(sources)) {
+        process.stdout.write(`  ${src}: ${count}\n`);
+      }
+      return;
+    }
+    errorln(`Unknown knowledge subcommand: ${sub}. Available: trends, index`);
     process.exit(1);
   }],
 ]);

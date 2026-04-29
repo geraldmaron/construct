@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * lib/review.mjs — Langfuse performance data pipeline
+ * scripts/review.mjs — Langfuse performance data pipeline
  *
  * Fetches traces and quality scores from Langfuse, aggregates per-agent
  * metrics, and writes two files:
@@ -9,7 +9,7 @@
  *   {outDir}/{date}.md           — standalone markdown report (no AI needed)
  *
  * Usage (via construct review):
- *   node lib/review.mjs [--days=N] [--agent=cx-NAME] [--out=PATH] [--json-only]
+ *   node scripts/review.mjs [--days=N] [--agent=cx-NAME] [--out=PATH] [--json-only]
  *
  * Requires env: LANGFUSE_BASEURL (default: https://cloud.langfuse.com), LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY
  */
@@ -17,6 +17,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+import { loadConstructEnv } from "../lib/env-config.mjs";
+
+// Apply config.env so its credentials win over stale shell env values
+const _confEnv = loadConstructEnv({ warn: false });
+for (const [k, v] of Object.entries(_confEnv)) process.env[k] = v;
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 

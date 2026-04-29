@@ -1,7 +1,8 @@
 /**
- * tests/headhunt.test.mjs — <one-line purpose>
+ * headhunt.test.mjs — Unit tests for lib/headhunt.mjs domain overlay lifecycle.
  *
- * <2–6 line summary: what it does, who calls it, key side effects.>
+ * Covers: overlay creation, save/promote modes, expiry cleanup, challenge
+ * state transitions, and persistence invariants.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

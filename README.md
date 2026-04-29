@@ -84,7 +84,7 @@ construct ingest ./vendor-drop --sync
 construct ingest ./briefing.pdf --target=sibling
 ```
 
-By default, ingested markdown lands under `.cx/product-intel/sources/ingested/`, which keeps it in Construct's file-state retrieval path and ready for later hybrid search.
+By default, ingested markdown lands under `.cx/knowledge/internal/`, which keeps it in Construct's file-state retrieval path and ready for later hybrid search.
 
 ## ⚙️ How it works
 
@@ -129,7 +129,7 @@ The team challenges itself along the way — reviewers push back on incomplete w
 |---|---|
 | `construct init` | Bootstrap Construct project state without overwriting existing repo rules |
 | `construct distill` | Distill documents with query-focused, citation-ready chunk selection |
-| `construct ingest` | Convert PDFs, office docs, spreadsheets, and text files into indexed markdown artifacts |
+| `construct ingest` | Convert PDFs, office docs, spreadsheets, and text files into indexed markdown artifacts in the knowledge base |
 | `construct infer` | Infer a structured field schema from one or more documents using AI |
 | `construct search` | Run hybrid file, SQL, and semantic retrieval over core project state |
 | `construct storage` | Sync and inspect the hybrid storage backend |
@@ -137,6 +137,7 @@ The team challenges itself along the way — reviewers push back on incomplete w
 | `construct init-docs` | Stand up docs lanes and starter templates without overwriting existing docs |
 | `construct team` | Team review and template listing |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
+| `construct reflect` | Capture improvement feedback from chat session and update Construct core |
 | `construct memory` | Inspect memory layer usage statistics |
 | `construct drop` | Ingest the most recent file dropped into ~/Downloads, Desktop, Documents, or iCloud Drive |
 | `construct wireframe` | Generate a low-fi wireframe (Mermaid diagram or sketch-style HTML) from a description |
@@ -157,6 +158,7 @@ The team challenges itself along the way — reviewers push back on incomplete w
 | `construct review` | Generate agent performance review from Langfuse trace backend |
 | `construct optimize` | Prompt optimization using Langfuse trace quality scores |
 | `construct telemetry-backfill` | Backfill sparse traces with observations (trace backend) |
+| `construct eval-datasets` | Sync scored Langfuse traces into eval datasets for prompt regression testing |
 | `construct cost` | Show token usage, cost, cache read rate, and per-agent breakdown |
 | `construct efficiency` | Show read efficiency, repeated files, and context-budget guidance |
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
@@ -338,14 +340,17 @@ construct/
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
 ├── db
+├── deploy
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples
 ├── langfuse         Langfuse trace backend for agent observability
 ├── lib              Core runtime: CLI, hooks, MCP, status, sync, workflow
 ├── personas         Persona prompt definitions
 ├── platforms
+├── providers
 ├── rules            Coding and quality standards
 ├── schemas
+├── scripts
 ├── site             MkDocs source for the GitHub Pages documentation site
 ├── skills           Reusable domain knowledge files
 ├── templates

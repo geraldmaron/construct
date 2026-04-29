@@ -1,7 +1,8 @@
 /**
- * tests/host-capabilities.test.mjs — <one-line purpose>
+ * host-capabilities.test.mjs — Unit tests for lib/host-capabilities.mjs harness detection.
  *
- * <2–6 line summary: what it does, who calls it, key side effects.>
+ * Covers: Claude Code vs OpenCode vs terminal classification, subagent
+ * context detection, and multi-agent support flags.
  */
 import assert from "node:assert/strict";
 import net from "node:net";

@@ -122,7 +122,7 @@ const DRY_RUN = process.argv.includes("--dry-run");
 const lockPath = path.join(root, ".cx", "sync.lock");
 const stagingDir = path.join(root, ".cx", "sync-staging");
 
-/** Acquire an exclusive lockfile. Aborts if already held. */
+/** Acquire an exclusive lockfile. Aborts if already held by a live process. */
 function acquireLock() {
   if (DRY_RUN) return;
   try {
@@ -131,9 +131,17 @@ function acquireLock() {
   } catch (err) {
     if (err.code === "EEXIST") {
       const holder = fs.readFileSync(lockPath, "utf8").trim();
-      console.error(`[sync] Another sync is already running (pid ${holder}). Aborting.`);
-      console.error(`[sync] If this is stale, remove .cx/sync.lock and retry.`);
-      process.exit(1);
+      // Check whether the holding process is still alive
+      let holderAlive = false;
+      try { process.kill(Number(holder), 0); holderAlive = true; } catch { /* dead */ }
+      if (holderAlive) {
+        console.error(`[sync] Another sync is already running (pid ${holder}). Aborting.`);
+        console.error(`[sync] If this is stale, remove .cx/sync.lock and retry.`);
+        process.exit(1);
+      }
+      // Stale lock — steal it
+      fs.writeFileSync(lockPath, String(process.pid), { flag: "w" });
+      return;
     }
     throw err;
   }

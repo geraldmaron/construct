@@ -1,7 +1,8 @@
 /**
- * tests/distill.test.mjs — <one-line purpose>
+ * distill.test.mjs — Unit tests for lib/distill.mjs query-focused document distillation.
  *
- * <2–6 line summary: what it does, who calls it, key side effects.>
+ * Covers: chunk scoring, top-k selection, citation formatting, context
+ * assembly, truncation metadata, and domain overlay injection.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

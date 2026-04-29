@@ -1,7 +1,8 @@
 /**
- * tests/agent-prompts.test.mjs — <one-line purpose>
+ * agent-prompts.test.mjs — Contract tests for the Construct agent registry and prompt corpus.
  *
- * <2–6 line summary: what it does, who calls it, key side effects.>
+ * Verifies registry integrity: required fields, unique names, valid
+ * persona references, and that prompt files resolve on disk.
  */
 import { test } from "node:test";
 import assert from "node:assert";

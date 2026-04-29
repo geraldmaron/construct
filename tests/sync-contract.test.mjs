@@ -72,13 +72,14 @@ describe('sync-agents contract tests', () => {
       assert.ok(!fs.existsSync(lockPath), 'lock file must be removed after successful sync');
     });
 
-    it('aborts with exit 1 when lock is already held', () => {
+    it('aborts with exit 1 when lock is already held by a live process', () => {
       const lockPath = path.join(ROOT_DIR, '.cx', 'sync.lock');
       fs.mkdirSync(path.dirname(lockPath), { recursive: true });
-      fs.writeFileSync(lockPath, '99999'); // fake PID
+      // Write the current process PID — guaranteed to be alive
+      fs.writeFileSync(lockPath, String(process.pid));
       try {
         const result = runSync([], { HOME: tmpHome });
-        assert.equal(result.status, 1, 'should exit 1 when lock held');
+        assert.equal(result.status, 1, 'should exit 1 when lock held by live process');
         assert.ok(
           result.stderr.includes('already running') || result.stderr.includes('sync.lock'),
           `stderr must mention lock contention. Got:\n${result.stderr}`
