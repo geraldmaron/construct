@@ -1483,8 +1483,10 @@ for data fetching and rendering. Inline styles only — no build step required.
           </div>
           <textarea id="tf-editor" class="tf-editor" spellcheck="false" placeholder="Select a file from the tree to edit…"></textarea>
           <div class="tf-run-bar">
+            <button class="btn-ghost" id="tf-validate-btn">✓ Validate</button>
             <button class="btn-ghost" id="tf-plan-btn">▶ Plan</button>
             <button class="btn-ghost tf-apply-btn" id="tf-apply-btn">⚡ Apply</button>
+            <button class="btn-ghost" id="tf-output-btn">⊞ Outputs</button>
             <span class="tf-run-hint">Environment: <span id="tf-run-env">staging</span></span>
           </div>
           <div id="tf-output-wrap" class="tf-output-wrap" style="display:none">
