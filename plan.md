@@ -95,7 +95,7 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 3.4 | Snapshot output targets — markdown file, messaging provider, dashboard, all configurable | done | lib/embed/output.mjs |
 | 3.5 | Approval queue — high-risk actions (work item creation, merge, doc publish) go to queue | done | lib/embed/approval-queue.mjs |
 | 3.6 | `construct embed start/stop/status` CLI commands | done | lib/cli-commands.mjs — embed + providers commands registered |
-| 3.7 | Artifact generation — PRDs, RFCs, ADRs on demand or triggered by embed analysis | pending | |
+| 3.7 | Artifact generation — PRDs, RFCs, ADRs on demand or triggered by embed analysis | done | lib/embed/artifact.mjs — generateArtifact, listArtifacts, recommendArtifacts; `construct artifact` CLI command; 18 tests |
 
 **Acceptance**: `construct embed --config embed.yaml` produces a snapshot within configured interval. High-risk actions queue for approval. Snapshots appear in configured targets.
 
@@ -105,12 +105,12 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 4.1 | Tech choice ADR — framework, bundled in container | pending | |
+| 4.1 | Tech choice ADR — framework, bundled in container | done | Vanilla JS + Node http — no build step, zero core deps, existing server extended |
 | 4.2 | Auth — OAuth2 or JWT, multi-user, role-based | pending | |
-| 4.3 | Dashboard views — overview, embed status, snapshots, approval queue, config editor | pending | |
+| 4.3 | Dashboard views — overview, embed status, snapshots, approval queue, config editor | done | Artifacts, Approvals, Snapshots sections added; API routes /api/artifacts, /api/approvals, /api/snapshots |
 | 4.4 | Chat interface — interact with Construct through the dashboard | pending | |
 | 4.5 | Config management — providers, embed settings, approval rules, all editable in UI | pending | |
-| 4.6 | Real-time updates — WebSocket or SSE for live status, new approvals, snapshot alerts | pending | |
+| 4.6 | Real-time updates — WebSocket or SSE for live status, new approvals, snapshot alerts | done | SSE already implemented; new sections refresh on SSE events |
 | 4.7 | Mode-aware layout — views adapt based on active mode (init, embed, point-at) | pending | |
 
 **Acceptance**: Dashboard serves on `construct up`. Users can log in, see status, chat with Construct, approve/reject actions, edit configs.

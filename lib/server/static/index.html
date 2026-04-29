@@ -161,7 +161,154 @@ for data fetching and rendering. Inline styles only — no build step required.
       text-transform: uppercase;
       color: var(--text-muted);
       margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
+
+    .section-actions { margin-left: auto; }
+
+    .btn-sm {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-hover);
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-primary {
+      font-size: 12px;
+      padding: 5px 14px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: var(--accent);
+      color: #000;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-primary:hover { background: var(--accent-dim); }
+
+    .btn-ghost {
+      font-size: 12px;
+      padding: 5px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+    }
+    .btn-ghost:hover { border-color: var(--border-hover); color: var(--text); }
+
+    .artifact-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .artifact-form.hidden { display: none; }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .form-row label {
+      display: flex;
+      flex-direction: column;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      gap: 4px;
+    }
+    .form-row .flex-grow { flex: 1; min-width: 200px; }
+    .form-row input, .form-row select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 13px;
+      padding: 5px 8px;
+    }
+    .form-row input:focus, .form-row select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .form-actions { display: flex; align-items: center; gap: 10px; }
+    .feedback { font-size: 12px; color: var(--accent); }
+    .feedback.error { color: var(--danger); }
+
+    /* ── Artifact table ──────────────────────────────────────── */
+    .artifact-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .artifact-table th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 10px;
+    }
+    .artifact-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    .artifact-table tr:hover td { background: var(--surface-2); }
+    .artifact-table .num { color: var(--text-dim); font-family: var(--font); font-size: 11px; }
+    .artifact-table .type-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+    }
+    .type-badge.prd { background: rgba(91,156,246,0.15); color: var(--info); }
+    .type-badge.adr { background: rgba(0,229,160,0.12); color: var(--accent); }
+    .type-badge.rfc { background: rgba(245,166,35,0.12); color: var(--warn); }
+
+    /* ── Approval queue ──────────────────────────────────────── */
+    .approval-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .approval-item .approval-meta {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+    .approval-item .approval-action { font-size: 13px; color: var(--text); margin-bottom: 10px; }
+    .approval-item .approval-btns { display: flex; gap: 8px; }
+
+    /* ── Snapshots ───────────────────────────────────────────── */
+    .snapshot-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .snapshot-card .snapshot-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .snapshot-card .snapshot-ts { font-size: 11px; color: var(--text-dim); font-family: var(--font); }
+    .snapshot-card .snapshot-providers { font-size: 12px; color: var(--text-dim); }
+    .snapshot-card .snapshot-summary { font-size: 13px; color: var(--text); white-space: pre-wrap; }
+    .snapshot-card .snapshot-expand { font-size: 11px; color: var(--accent); cursor: pointer; margin-top: 6px; }
 
     /* ── Cards ──────────────────────────────────────────────── */
     .cards {
@@ -755,6 +902,15 @@ for data fetching and rendering. Inline styles only — no build step required.
     <a href="#" data-section="workflow">
       <span class="nav-icon">▣</span> Workflow
     </a>
+    <a href="#" data-section="artifacts">
+      <span class="nav-icon">📄</span> Artifacts
+    </a>
+    <a href="#" data-section="approvals">
+      <span class="nav-icon">✔</span> Approvals
+    </a>
+    <a href="#" data-section="snapshots">
+      <span class="nav-icon">◉</span> Snapshots
+    </a>
   </nav>
 
   <main id="main">
@@ -820,6 +976,53 @@ for data fetching and rendering. Inline styles only — no build step required.
     <section id="section-models" class="section">
       <div class="section-title">Model Tiers</div>
       <div id="models-content"><div class="loading">Loading...</div></div>
+    </section>
+
+    <section id="section-artifacts" class="section">
+      <div class="section-title">Artifacts
+        <span class="section-actions">
+          <button class="btn-sm" id="artifact-new-btn">+ New</button>
+        </span>
+      </div>
+      <div class="tabs" id="artifacts-tabs">
+        <button class="tab-btn active" data-atab="all">All</button>
+        <button class="tab-btn" data-atab="prd">PRDs</button>
+        <button class="tab-btn" data-atab="adr">ADRs</button>
+        <button class="tab-btn" data-atab="rfc">RFCs</button>
+      </div>
+      <div id="artifacts-content"><div class="loading">Loading...</div></div>
+      <div id="artifact-form" class="artifact-form hidden">
+        <div class="form-row">
+          <label>Type
+            <select id="artifact-type">
+              <option value="prd">PRD</option>
+              <option value="adr">ADR</option>
+              <option value="rfc">RFC</option>
+            </select>
+          </label>
+          <label class="flex-grow">Title
+            <input id="artifact-title" type="text" placeholder="Enter artifact title…">
+          </label>
+          <label>Owner / Author
+            <input id="artifact-owner" type="text" placeholder="optional">
+          </label>
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" id="artifact-submit-btn">Generate</button>
+          <button class="btn-ghost" id="artifact-cancel-btn">Cancel</button>
+          <span id="artifact-feedback" class="feedback"></span>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-approvals" class="section">
+      <div class="section-title">Approval Queue</div>
+      <div id="approvals-content"><div class="loading">Loading...</div></div>
+    </section>
+
+    <section id="section-snapshots" class="section">
+      <div class="section-title">Snapshots</div>
+      <div id="snapshots-content"><div class="loading">Loading...</div></div>
     </section>
   </main>
 
