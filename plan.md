@@ -47,10 +47,10 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 0.1 | Write PRD | done | `docs/prd/0001-construct-org-in-a-box.md` |
 | 0.2 | Write ADR-0002 (layered architecture) | done | `docs/adr/0002-layered-architecture.md` |
 | 0.3 | Write this plan | done | `plan.md` |
-| 0.4 | Clean working tree, remove stale artifacts (changelog, etc.) | pending | |
-| 0.5 | Establish `docs/prd/`, `docs/adr/`, `docs/rfc/` as managed artifact dirs | pending | |
-| 0.6 | Verify existing tests pass | pending | `npm test` |
-| 0.7 | Update `docs/architecture.md` with layer model | pending | |
+| 0.4 | Clean working tree, remove stale artifacts (changelog, etc.) | done | CHANGELOG nuked, .mcp.json gitignored |
+| 0.5 | Establish `docs/prd/`, `docs/adr/`, `docs/rfc/` as managed artifact dirs | done | All three dirs exist |
+| 0.6 | Verify existing tests pass | done | 87 tests passing |
+| 0.7 | Update `docs/architecture.md` with layer model | done | 5-layer model, provider matrix, operating model |
 
 ## Phase 1: Core Hardening & Dependency Bootstrap
 
@@ -58,11 +58,11 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 1.1 | `construct doctor` — check Node, Docker, git, required env; offer install guidance | pending | |
-| 1.2 | `construct init` — detect existing agent configs (Claude, Codex, Copilot), set up .cx/, shared memory, cross-agent configs | pending | |
-| 1.3 | Docker service manager — reliable `up`/`down`/`status` for required containers | pending | |
-| 1.4 | Port probe — verify actual service health before reuse | pending | |
-| 1.5 | Test coverage for service lifecycle | pending | |
+| 1.1 | `construct doctor` — check Node, Docker, git, required env; offer install guidance | done | bin/construct cmdDoctor, checks 20+ items |
+| 1.2 | `construct init` — detect existing agent configs (Claude, Codex, Copilot), set up .cx/, shared memory, cross-agent configs | done | lib/init.mjs + lib/setup.mjs (full bootstrap) |
+| 1.3 | Docker service manager — reliable `up`/`down`/`status` for required containers | done | lib/service-manager.mjs, 497 lines |
+| 1.4 | Port probe — verify actual service health before reuse | done | findAvailablePort in host-capabilities.mjs |
+| 1.5 | Test coverage for service lifecycle | done | 17 tests passing (doctor + service-manager) |
 
 **Acceptance**: `construct init` in a fresh repo → working setup. `construct up` → services healthy. `construct doctor` → clear report.
 
@@ -72,14 +72,14 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 2.1 | Provider interface spec — capability matrix (read, write, search, watch, webhook), auth contract, error model | pending | ADR needed |
-| 2.2 | Provider registry and config schema — `construct.yaml` or `.cx/providers.yaml` | pending | |
-| 2.3 | Git repo provider — local + remote repos, read commits/branches/files, write via branch+PR | pending | Transport: git CLI |
-| 2.4 | Project tracker provider — work items, transitions, search (Jira as first impl) | pending | Transport: MCP or REST |
+| 2.1 | Provider interface spec — capability matrix (read, write, search, watch, webhook), auth contract, error model | done | ADR-0003, providers/lib/interface.mjs, errors.mjs |
+| 2.2 | Provider registry and config schema — `construct.yaml` or `.cx/providers.yaml` | done | providers/lib/registry.mjs |
+| 2.3 | Git repo provider — local + remote repos, read commits/branches/files, write via branch+PR | done | providers/git/index.mjs, transport: git CLI |
+| 2.4 | Project tracker provider — work items, transitions, search (Jira as first impl) | done | providers/jira/index.mjs, transport: REST API v3 |
 | 2.5 | Messaging provider — read channels/threads, post messages (Slack as first impl) | pending | Transport: REST/SDK |
-| 2.6 | Code host provider — PRs, issues, reviews, repo metadata (GitHub as first impl) | pending | Transport: gh CLI or REST |
+| 2.6 | Code host provider — PRs, issues, reviews, repo metadata (GitHub as first impl) | done | providers/github/index.mjs, transport: gh CLI |
 | 2.7 | Knowledge base provider — pages, search, create/update (Confluence/Notion as first impl) | pending | Transport: MCP or REST |
-| 2.8 | Provider test harness — contract tests any provider must pass | pending | |
+| 2.8 | Provider test harness — contract tests any provider must pass | done | providers/lib/contract-tests.mjs, 35 tests passing |
 
 **Acceptance**: `construct providers list` shows registered providers. `construct providers test <name>` validates the capability contract. At least 3 providers using different transports work end-to-end.
 
