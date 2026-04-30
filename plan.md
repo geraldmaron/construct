@@ -169,6 +169,25 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 
 **Acceptance**: `construct embed start` runs daemon. After first snapshot, open Jira/GitHub/Linear items appear in observation store. Dropping a file into `.cx/inbox/` (or any `CX_INBOX_DIRS` path) causes it to be ingested and observed within 2 min. `.cx/roadmap.md` updates hourly. Slack bot posts roadmap summary when `SLACK_BOT_TOKEN` + `SLACK_CHANNELS` set. Authority boundaries are enforced at runtime — approval-queued actions are held for approval, not silently executed.
 
+## Phase 8: Production Memory & Vector Infrastructure
+
+**Goal**: Replace hashing-based BM25 RAG with neural embeddings backed by pgvector. Observations gain semantic retrieval. Local ONNX default; OpenAI/Ollama override via env.
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 8.1 | Embedding engine — model-agnostic, local ONNX default (`all-MiniLM-L6-v2`, 384d) | done | `lib/storage/embeddings-engine.mjs`; adapters: `local-onnx`, `openai`, `ollama`, `legacy` |
+| 8.2 | Local ONNX adapter | done | `lib/storage/embeddings-local.mjs`; `@xenova/transformers`; model cached at `~/.construct/cache/embeddings/` |
+| 8.3 | OpenAI + Ollama adapters | done | `lib/storage/embeddings-openai.mjs`, `embeddings-ollama.mjs`; `CONSTRUCT_EMBEDDING_MODEL` env switch |
+| 8.4 | pgvector migration — `vector(384)`, HNSW indexes, search functions | done | `db/migrations/002_pgvector.sql`; auto-run on `construct up` |
+| 8.5 | Vector client — lazy-loaded pgvector; no-sql fallback for tests | done | `lib/storage/vector-client.mjs`; upsert, search, delete; null-sql path preserved |
+| 8.6 | Observation store upgraded — neural search path alongside file fallback | done | `lib/observation-store.mjs`; SQL+vector path active when `DATABASE_URL` set |
+| 8.7 | `construct up` starts pgvector Postgres | done | `lib/setup.mjs` `writeLocalPostgresCompose()` always runs with `--yes` + Docker; `pgvector/pgvector:pg16` image |
+| 8.8 | `memory_search` MCP tool upgraded | done | `lib/knowledge/search.mjs`; `rootDir` positional arg; semantic path when vector client available |
+| 8.9 | Test coverage — embedding engine, vector client, knowledge search | done | `tests/embedding-engine.test.mjs` (7), `tests/vector-client.test.mjs` (11), `tests/knowledge-search.test.mjs` (11); 29/29 pass |
+| 8.10 | End-of-session hygiene rules in `AGENTS.md` + `buildAgentsGuide` template | done | Both `AGENTS.md` and `lib/project-init-shared.mjs` updated; CI green gate enforced |
+
+**Acceptance**: `construct up` starts pgvector. `memory_search` returns semantically matched results. All 729 tests pass. CI green.
+
 ## How-to documentation
 
 Written under `docs/how-to/`:
