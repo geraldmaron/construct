@@ -43,13 +43,19 @@ docs/
 └── workflow.json              # Canonical workflow/task state
 ```
 
-### Presets
+## Interactive UX (TTY)
 
-| Preset  | Lanes included |
-|---------|----------------|
-| lean    | adrs, intake, memos, notes, prds |
-| product | adrs, intake, memos, notes, prds, rfcs |
-| full    | adrs, briefs, changelogs, intake, memos, notes, onboarding, postmortems, prds, rfcs, runbooks |
+When run interactively, `construct init-docs` renders a keyboard-driven **checkbox picker** — all available lanes listed with the default set pre-checked and context-suggested lanes marked `← suggested`. No typing required.
+
+- **↑ / ↓** — move cursor (description shown inline for focused lane)
+- **Space** — toggle lane on/off
+- **a** — toggle all on/off
+- **Enter** — confirm and scaffold
+- Single-keypress Y/N follow-up for `docs/architecture.md`
+
+When run non-interactively (`--yes` or piped stdin), the lean default set is used unless `--docs=` is supplied. `--docs=lean|product|full` or `--docs=adrs,prds,rfcs` both work.
+
+---
 
 ### Available lanes
 
