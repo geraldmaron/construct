@@ -45,13 +45,15 @@ docs/
 
 ## Interactive UX (TTY)
 
-When run interactively, `construct init-docs` renders a keyboard-driven **checkbox picker** — all available lanes listed with the default set pre-checked and context-suggested lanes marked `← suggested`. No typing required.
+When run interactively, `construct init-docs` renders a keyboard-driven **full-screen checkbox picker** — all available lanes listed with the default set pre-checked and context-suggested lanes highlighted in the UI. No typing required.
 
-- **↑ / ↓** — move cursor (description shown inline for focused lane)
+- **↑ / ↓** — move cursor (details shown in a dedicated panel)
 - **Space** — toggle lane on/off
 - **a** — toggle all on/off
 - **Enter** — confirm and scaffold
-- Single-keypress Y/N follow-up for `docs/architecture.md`
+- Follow-up choices use the same menu pattern instead of free-text answers
+
+If the user selects the `intake` lane, `construct init-docs` should also create `.cx/inbox/`. Both `.cx/inbox/` and `docs/intake/` act as drop zones for ingestable files, while `docs/intake/` also serves as the durable paper trail lane.
 
 When run non-interactively (`--yes` or piped stdin), the lean default set is used unless `--docs=` is supplied. `--docs=lean|product|full` or `--docs=adrs,prds,rfcs` both work.
 
@@ -64,9 +66,10 @@ When run non-interactively (`--yes` or piped stdin), the lean default set is use
 | adrs         | `docs/adr/`         | Architecture decisions that have already been made |
 | briefs       | `docs/briefs/`      | Research, evidence, signals, one-pagers, customer profiles |
 | changelogs   | `docs/changelogs/`  | User-facing release notes and version history entries |
-| intake       | `docs/intake/`      | Raw source material staged for Construct ingestion |
+| intake       | `docs/intake/`      | Intake batch records that explain what arrived, why it matters, and how it should be ingested |
 | memos        | `docs/memos/`       | Decision memos and internal arguments for alignment |
-| notes        | `docs/notes/`       | Working notes, meeting notes, lightweight durable context |
+| meetings     | `docs/meetings/`    | Meeting notes, minutes, standups, retros, agendas, and session summaries |
+| notes        | `docs/notes/`       | Working notes and lightweight durable context outside formal docs or meetings |
 | onboarding   | `docs/onboarding/`  | Runnable setup guides and first-day workflows |
 | postmortems  | `docs/postmortems/` | Blameless incident reports with root cause and corrective actions |
 | prds         | `docs/prds/`        | Product and capability requirement documents |
@@ -80,6 +83,7 @@ When run non-interactively (`--yes` or piped stdin), the lean default set is use
 | Has `Dockerfile`, `.github/`, `deploy/`, or `infra/` | runbooks, postmortems |
 | Has `CHANGELOG.md` or release tagging | changelogs |
 | Has `onboarding/`, `setup/`, or `getting-started/` | onboarding |
+| Has meeting minutes, agendas, retros, or standups | meetings |
 | Has `src/`, `lib/`, `api/`, or `services/` | rfcs |
 | Has research, customer, or market files | briefs |
 | Any project with decisions and requirements | adrs, prds (always lean default) |

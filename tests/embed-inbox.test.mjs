@@ -48,6 +48,17 @@ describe('resolveInboxDirs', () => {
     }
   });
 
+  it('includes docs/intake when it exists', () => {
+    const root = makeTmpDir();
+    try {
+      mkdirSync(join(root, 'docs', 'intake'), { recursive: true });
+      const dirs = resolveInboxDirs(root, {});
+      assert.ok(dirs.some((d) => d.endsWith('docs/intake') || d.endsWith('docs\\intake')));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('ignores non-existent paths in CX_INBOX_DIRS', () => {
     const root = makeTmpDir();
     try {
@@ -123,6 +134,44 @@ describe('InboxWatcher', () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
       rmSync(extra, { recursive: true, force: true });
+    }
+  });
+
+  it('ingests files recursively from docs/intake subdirectories', async () => {
+    const root = makeTmpDir();
+    try {
+      const meetingDir = join(root, 'docs', 'intake', 'meeting-notes');
+      mkdirSync(meetingDir, { recursive: true });
+      writeFileSync(join(meetingDir, 'retro.md'), '# Retro\n\nWe agreed to simplify intake UX.');
+
+      const watcher = new InboxWatcher({ rootDir: root, env: {}, cwd: root });
+      const result = await watcher.poll();
+
+      assert.equal(result.processed.length, 1);
+      assert.ok(result.processed[0].path.endsWith('retro.md'));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('promotes intake docs into matching docs lanes when the lane exists', async () => {
+    const root = makeTmpDir();
+    try {
+      const intakeDir = join(root, 'docs', 'intake');
+      const meetingsDir = join(root, 'docs', 'meetings');
+      mkdirSync(intakeDir, { recursive: true });
+      mkdirSync(meetingsDir, { recursive: true });
+      writeFileSync(join(intakeDir, 'weekly-sync.md'), '# Weekly sync\n\nMeeting notes\n\nAttendees: team\n\nAction items: simplify UX.');
+
+      const watcher = new InboxWatcher({ rootDir: root, env: {}, cwd: root });
+      const result = await watcher.poll();
+
+      assert.equal(result.processed.length, 1);
+      assert.ok(result.processed[0].docsPath);
+      assert.ok(result.processed[0].docsPath.endsWith('.md'));
+      assert.ok(result.processed[0].docsPath.includes(join('docs', 'meetings')));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
     }
   });
 

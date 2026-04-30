@@ -57,7 +57,7 @@ test('init-docs scaffolds selected doc lanes and preserves existing docs files',
     path.join(repoRoot, 'lib', 'init-docs.mjs'),
     cwd,
     '--yes',
-    '--docs=adrs,intake,memos,notes,prds,rfcs,runbooks',
+    '--docs=adrs,intake,memos,meetings,notes,prds,rfcs,runbooks',
     '--with-architecture',
     '--extras=decision-notes',
   ], {
@@ -68,6 +68,8 @@ test('init-docs scaffolds selected doc lanes and preserves existing docs files',
   assert.equal(fs.readFileSync(path.join(cwd, 'docs', 'README.md'), 'utf8'), existingDocsReadme);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'architecture.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'intake', 'templates', '_template.md')), true);
+  assert.equal(fs.existsSync(path.join(cwd, '.cx', 'inbox', '.gitkeep')), true);
+  assert.equal(fs.existsSync(path.join(cwd, 'docs', 'meetings', 'templates', '_template.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'notes', 'templates', '_template.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'prds', 'templates', '_template.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'rfcs', 'templates', '_template.md')), true);
@@ -80,12 +82,14 @@ test('init-docs scaffolds selected doc lanes and preserves existing docs files',
   const customLane = fs.readFileSync(path.join(cwd, 'docs', 'decision-notes', 'README.md'), 'utf8');
   const intakeReadme = fs.readFileSync(path.join(cwd, 'docs', 'intake', 'README.md'), 'utf8');
   const notesTemplate = fs.readFileSync(path.join(cwd, 'docs', 'notes', 'templates', '_template.md'), 'utf8');
+  const meetingsTemplate = fs.readFileSync(path.join(cwd, 'docs', 'meetings', 'templates', '_template.md'), 'utf8');
 
   assert.match(architectureDoc, /single writer per file/i);
   assert.match(architectureDoc, /Beads/i);
   assert.match(intakeReadme, /construct ingest \.\/\.cx\/inbox --sync/i);
   assert.match(intakeReadme, /\.cx\/inbox\//i);
   assert.match(notesTemplate, /starter template for durable project notes/i);
+  assert.match(meetingsTemplate, /starter template for meeting notes/i);
   assert.match(customLane, /custom documentation lane/i);
 });
 
@@ -108,6 +112,8 @@ test('init-docs treats "all of them" as defaults and "nope" as no custom lanes',
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'prds', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'adr', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'intake', 'README.md')), true);
+  assert.equal(fs.existsSync(path.join(cwd, '.cx', 'inbox', '.gitkeep')), true);
+  assert.equal(fs.existsSync(path.join(cwd, 'docs', 'meetings', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'memos', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'notes', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'rfcs', 'README.md')), false);
@@ -138,6 +144,7 @@ test('init-docs lists lanes alphabetically in docs README', () => {
   const changelogsIndex = readme.indexOf('[Changelogs]');
   const intakeIndex = readme.indexOf('[Intake]');
   const memosIndex = readme.indexOf('[Memos]');
+  const meetingsIndex = readme.indexOf('[Meetings]');
   const notesIndex = readme.indexOf('[Notes]');
   const onboardingIndex = readme.indexOf('[Onboarding]');
   const postmortemsIndex = readme.indexOf('[Postmortems]');
@@ -148,7 +155,8 @@ test('init-docs lists lanes alphabetically in docs README', () => {
   assert.ok(adrIndex < briefsIndex);
   assert.ok(briefsIndex < changelogsIndex);
   assert.ok(changelogsIndex < intakeIndex);
-  assert.ok(intakeIndex < memosIndex);
+  assert.ok(intakeIndex < meetingsIndex);
+  assert.ok(meetingsIndex < memosIndex);
   assert.ok(memosIndex < notesIndex);
   assert.ok(notesIndex < onboardingIndex);
   assert.ok(onboardingIndex < postmortemsIndex);

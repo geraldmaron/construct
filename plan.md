@@ -228,12 +228,16 @@ Workflows that require external infrastructure are gated on repo variables so th
 | M.3 | Make custom-lane prompt reject negative answers like `nope` | done | `no`, `none`, `nope`, blank, and similar answers no longer create junk directories |
 | M.4 | Expose shell completion as a first-class CLI command | done | `construct completions [bash|zsh|install]` added; completion generator now handles string and object subcommand metadata |
 | M.5 | Expand `construct init-docs` with 3 new lanes + improved prompts | done | Added `postmortems`, `changelogs`, `onboarding` lanes; wired orphaned `incident-report.md` template; new `changelog-entry.md` + `onboarding.md` templates; preset descriptions + padded lane picker in interactive prompt; `suggestContextualLanes` extended; 731 tests pass |
+| M.6 | Replace ad hoc CLI menus with shared TTY prompts and fix intake/docs routing | done | Added shared `tty-prompts` module; aligned `init-docs`, `mcp-manager`, and `headhunt` discrete choice menus; made `docs/intake/` a watched recursive drop zone; added `meetings` as its own docs lane; intake now promotes matching docs into existing lanes; updated Pages workflow to Node 22 + `upload-pages-artifact@v4` |
 
 ## Recent Verification
 
 - `node --test tests/init-docs.test.mjs`
 - `node --check lib/completions.mjs`
 - `node --test tests/cli-surface.test.mjs`
+- `node --test tests/init-docs.test.mjs tests/embed-inbox.test.mjs`
+- `npm test`
+- `node ./bin/construct docs:update --check`
 
 Until those variables are set, the jobs are skipped — not failed — on every push.
 

@@ -12,6 +12,8 @@ The watcher always monitors:
 
 Drop any file there and it will be processed within two minutes.
 
+If the project has a `docs/intake/` directory, that path is also treated as an inbox drop zone and scanned recursively.
+
 ## Add extra directories
 
 Set `CX_INBOX_DIRS` to a colon-separated list of additional paths:
@@ -32,6 +34,8 @@ The inbox watcher accepts any file that can produce extractable text:
 - PDF (`.pdf`)
 - Word documents (`.docx`)
 - Source code files
+
+This includes things like meeting notes, exports, specs, ADR drafts, research notes, and uploaded documents, as long as the file type is extractable.
 
 Binary files that cannot be read as text are skipped with a warning observation.
 
@@ -58,3 +62,7 @@ construct knowledge index
 ```
 
 Or use the dashboard Knowledge → Index tab.
+
+## Docs lane promotion
+
+When a file lands in `docs/intake/`, Construct ingests it into `.cx/knowledge/` and observations as usual. If the repo already has a matching docs lane such as `docs/meetings/`, `docs/prds/`, or `docs/rfcs/`, the watcher also writes a promoted markdown copy into that lane for review and incorporation.
