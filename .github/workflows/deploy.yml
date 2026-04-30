@@ -55,8 +55,8 @@ jobs:
     name: Build & Push
     runs-on: ubuntu-latest
     needs: test
-    # Only build on pushes to main (not PRs)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Only build on pushes to main (not PRs) AND only when AWS credentials are configured
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_DEPLOY_ENABLED == 'true'
     permissions:
       id-token: write   # OIDC auth for AWS
       contents: read
@@ -94,7 +94,7 @@ jobs:
     name: Terraform Plan
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && vars.AWS_DEPLOY_ENABLED == 'true'
     permissions:
       id-token: write
       contents: read
@@ -146,7 +146,7 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_DEPLOY_ENABLED == 'true'
     environment: production   # requires manual approval in GitHub Environments
     permissions:
       id-token: write

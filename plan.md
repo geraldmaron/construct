@@ -210,6 +210,17 @@ Written under `docs/how-to/`:
 
 Slack bot scopes required: `channels:history`, `channels:read`, `chat:write`, `commands`.
 
+## CI / GitHub Actions — activation gates
+
+Workflows that require external infrastructure are gated on repo variables so they skip (not fail) when not configured:
+
+| Workflow | Gate variable | How to activate |
+|---|---|---|
+| `deploy.yml` (Build/Push/Terraform) | `AWS_DEPLOY_ENABLED = true` | Set in repo Settings → Variables after configuring `AWS_DEPLOY_ROLE_ARN` secret + ECR/ECS |
+| `pages.yml` (GitHub Pages) | `PAGES_ENABLED = true` | Enable Pages in repo Settings → Pages (source: GitHub Actions), then set variable |
+
+Until those variables are set, the jobs are skipped — not failed — on every push.
+
 - Layered architecture, not rewrite (ADR-0002).
 - Provider interface is transport-agnostic — MCP, REST, GraphQL, SDK, CLI, webhooks are all valid transports. Core never knows the transport.
 - Core remains zero-npm-dependency. Providers and dashboard bring their own deps.
