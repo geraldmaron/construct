@@ -58,7 +58,7 @@ test("local Postgres compose file is deterministic and scoped to localhost", () 
   const content = fs.readFileSync(composePath, "utf8");
 
   assert.equal(composePath, path.join(home, ".construct", "services", "postgres", "docker-compose.yml"));
-  assert.match(content, /image: postgres:16-alpine/);
+   assert.match(content, /image: pgvector\/pgvector:pg16/);
   assert.match(content, /container_name: construct-postgres/);
   assert.match(content, /"127\.0\.0\.1:54329:5432"/);
   assert.match(content, /construct-postgres-data/);

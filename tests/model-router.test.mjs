@@ -10,7 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { applyFreePreferenceToTierSet, applyFreeSameFamilyPreferenceToTierSet, classifyProviderFailure, inferTierModelsFromSelection, isProviderOnCooldown, readCurrentModels, readProviderCooldowns, resolveExecutionContractModelMetadata, resolveFallbackAction, selectFallbackModel, selectModelTierForWorkCategory, setModelWithTierInference, writeProviderCooldown } from '../lib/model-router.mjs';
+import { applyFreePreferenceToTierSet, applyFreeSameFamilyPreferenceToTierSet, classifyProviderFailure, getProviderModelCatalog, inferTierModelsFromSelection, isProviderOnCooldown, readCurrentModels, readProviderCooldowns, resolveExecutionContractModelMetadata, resolveFallbackAction, selectFallbackModel, selectModelTierForWorkCategory, setModelWithTierInference, writeProviderCooldown } from '../lib/model-router.mjs';
 
 function tempFile(prefix) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -304,4 +304,19 @@ test('PROVIDER_FAMILY_TIERS includes github-copilot family', async () => {
   assert.ok(!copilot.test('openai/gpt-5.1'), 'should not match openai/');
   const tiers = copilot.resolve({});
   assert.ok(tiers.reasoning.startsWith('github-copilot/'));
+});
+
+test('getProviderModelCatalog exposes provider defaults and tier dropdown options', () => {
+  const catalog = getProviderModelCatalog();
+  assert.ok(Array.isArray(catalog.providers));
+  assert.ok(catalog.providers.length > 0);
+  assert.ok(Array.isArray(catalog.tierOptions.reasoning));
+  assert.ok(catalog.tierOptions.reasoning.includes('github-copilot/gpt-5.4'));
+  assert.ok(catalog.tierOptions.standard.includes('openrouter/qwen/qwen3-coder:free'));
+  assert.ok(catalog.tierOptions.fast.includes('anthropic/claude-haiku-4-5-20251001'));
+
+  const copilot = catalog.providers.find((provider) => provider.id === 'github-copilot');
+  assert.ok(copilot);
+  assert.equal(copilot.tiers.reasoning, 'github-copilot/gpt-5.4');
+  assert.ok(copilot.options.reasoning.includes('github-copilot/gpt-5.4'));
 });

@@ -40,6 +40,12 @@ Step-by-step operator guides for common tasks:
 - [Configure Slack](./how-to/how-to-slack-setup.md)
 - [Override the storage root (CX_DATA_DIR)](./how-to/how-to-cx-data-dir.md)
 - [Use construct reflect](./how-to/how-to-reflect.md)
+- [Manage providers](./how-to/how-to-providers.md)
+- [Generate and list artifacts (PRD, ADR, RFC)](./how-to/how-to-artifact.md)
+- [Query the knowledge base (ask, trends, index)](./how-to/how-to-knowledge.md)
+- [Observability: review, optimize, cost, efficiency](./how-to/how-to-observability.md)
+- [Wireframe and drop commands](./how-to/how-to-wireframe-drop.md)
+- [Distill and infer commands](./how-to/how-to-distill-infer.md)
 
 ## Prompt surfaces
 

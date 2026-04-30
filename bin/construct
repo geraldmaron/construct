@@ -660,6 +660,27 @@ async function cmdDocsUpdate(args) {
   }
 }
 
+async function cmdDocsCheck(args) {
+  const jsonOutput = args.includes('--json');
+  const { checkDocsCoverage } = await import('../lib/auto-docs.mjs');
+  const result = checkDocsCoverage({ rootDir: ROOT_DIR });
+  if (jsonOutput) {
+    println(JSON.stringify(result, null, 2));
+    return;
+  }
+  println(`Doc coverage: ${result.covered.length}/${result.total} commands have a how-to guide`);
+  if (result.uncovered.length === 0) {
+    ok('All user-facing commands are covered by a how-to guide.');
+  } else {
+    println('');
+    println('Commands with no linked how-to in docs/README.md:');
+    for (const name of result.uncovered) println(`  ✗  construct ${name}`);
+    println('');
+    println(`Add how-to guides under docs/how-to/ and link them from docs/README.md.`);
+    process.exitCode = 1;
+  }
+}
+
 async function cmdDocsSite() {
   const { buildSite } = await import('../lib/auto-docs.mjs');
   await buildSite({ rootDir: ROOT_DIR });
@@ -744,6 +765,7 @@ const handlers = new Map([
   ['cleanup', cmdCleanup],
   ['version', cmdVersion],
   ['docs:update', cmdDocsUpdate],
+  ['docs:check', cmdDocsCheck],
   ['docs:site', cmdDocsSite],
   ['lint:comments', cmdLintComments],
   ['bootstrap', cmdBootstrap],

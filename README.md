@@ -168,6 +168,7 @@ The team challenges itself along the way — reviewers push back on incomplete w
 | Command | What it does |
 |---|---|
 | `construct docs:update` | Regenerate AUTO-managed regions in README and docs/ |
+| `construct docs:check` | Report CLI commands that have no linked how-to guide in docs/README.md |
 | `construct docs:site` | Generate site/docs/ content for the MkDocs GitHub Pages site |
 | `construct lint:comments` | Check all files against the comment policy (rules/common/comments.md) |
 | `construct lint:research` | Check research and evidence artifacts for minimum structure and evidence metadata |

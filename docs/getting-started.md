@@ -71,17 +71,84 @@ CONSTRUCT_MEMORY=off claude  # or opencode, etc.
 
 ## Key Commands
 
+### Services
+
 | Command | Description |
 |---|---|
-| `construct bootstrap` | Import seed observation corpus |
+| `construct up` | Start memory and dashboard services |
+| `construct down` | Stop all running services |
+| `construct status` | Canonical health check across runtime and integrations |
+| `construct serve` | Start the dashboard (auto-selects port) |
+| `construct doctor` | Verify installation health |
+
+### Setup and Sync
+
+| Command | Description |
+|---|---|
+| `construct setup` | Bootstrap user config after install |
+| `construct update` | Reinstall globally, sync, and verify hosts |
+| `construct sync` | Regenerate agent adapter files for all platforms |
+| `construct init` | Bootstrap Construct project state without overwriting repo rules |
+| `construct init-docs` | Stand up doc lanes and starter templates |
+
+### Work and Knowledge
+
+| Command | Description |
+|---|---|
+| `construct bootstrap` | Import seed observation corpus for cold-start acceleration |
 | `construct memory stats` | Show memory layer usage stats |
-| `construct search <query>` | Search observations and documents |
-| `construct sync` | Regenerate all platform agent files from registry |
-| `construct doctor` | Verify system health |
-| `construct init` | Bootstrap non-destructive repo state for Construct-aware work |
-| `construct init-docs` | Stand up documentation lanes and starter templates |
+| `construct search <query>` | Hybrid search over observations, docs, and snapshots |
+| `construct ask "<question>"` | RAG query over the knowledge base |
+| `construct knowledge trends` | Recurring patterns in stored observations |
+| `construct knowledge index` | Rebuild the knowledge index |
+| `construct ingest <path>` | Convert documents into indexed knowledge artifacts |
+| `construct drop` | Ingest the most recently dropped file from Downloads/Desktop |
+| `construct distill <dir>` | Query-focused document summarisation |
+| `construct infer <file>` | Infer a structured field schema from documents |
+| `construct wireframe "<desc>"` | Generate a low-fi wireframe (Mermaid or HTML) |
+| `construct storage` | Inspect hybrid storage backend status |
+| `construct headhunt` | Create a domain expertise overlay |
+| `construct reflect` | Capture session feedback and update Construct core |
+
+### Models and Integrations
+
+| Command | Description |
+|---|---|
+| `construct models` | Show current model tier assignments |
+| `construct models --apply` | Apply tier changes to all host configs |
+| `construct mcp` | Manage MCP integrations |
+| `construct plugin` | Manage external plugin manifests |
+| `construct hosts` | Show host support for Construct orchestration |
+
+### Observability (requires Langfuse)
+
+| Command | Description |
+|---|---|
+| `construct review` | Agent performance report from Langfuse traces |
+| `construct optimize <agent>` | Prompt optimisation using quality scores |
+| `construct cost` | Token usage, cost, and cache read rate |
+| `construct efficiency` | Read efficiency and context-budget guidance |
+| `construct eval-datasets` | Sync scored traces into eval datasets |
+
+### Docs
+
+| Command | Description |
+|---|---|
+| `construct docs:update` | Regenerate AUTO-managed regions in README and docs/ |
+| `construct docs:update --check` | CI check — exits non-zero if docs are stale |
+| `construct docs:check` | Report commands with no linked how-to guide |
 | `construct lint:comments` | Check comment policy violations |
 | `construct lint:comments --fix` | Insert stub headers for files missing one |
+
+### Diagnostics
+
+| Command | Description |
+|---|---|
+| `construct audit trail` | Append-only mutation trail |
+| `construct audit skills` | Audit skill files for broken references |
+| `construct doc verify <path>` | Verify auditability stamps on markdown files |
+| `construct diff` | Show which agents changed prompts since HEAD |
+| `construct version` | Show installed version |
 
 ## Comment Policy
 

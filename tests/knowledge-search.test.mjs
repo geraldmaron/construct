@@ -61,7 +61,7 @@ Construct is an org-in-a-box: an AI orchestration system that can be pointed at 
 `,
   });
   try {
-    const result = knowledgeSearch({ query: 'what is construct', repoRoot: root });
+    const result = knowledgeSearch({ query: 'what is construct', repoRoot: root, rootDir: root });
     assert.equal(result.ok, true);
     assert.ok(result.hits.length > 0, 'should have hits');
     assert.ok(result.hits[0].file.includes('architecture'), 'top hit should be architecture.md');
@@ -80,7 +80,7 @@ test('finds content in docs/README.md', () => {
 `,
   });
   try {
-    const result = knowledgeSearch({ query: 'what commands are available', repoRoot: root });
+    const result = knowledgeSearch({ query: 'what commands are available', repoRoot: root, rootDir: root });
     assert.equal(result.ok, true);
     assert.ok(result.hits.length > 0);
     assert.ok(result.hits.some(h => h.file.includes('README')));
@@ -98,7 +98,7 @@ configured GitHub repos and Jira projects on a schedule.
 `,
   });
   try {
-    const result = knowledgeSearch({ query: 'how to start embed daemon', repoRoot: root });
+    const result = knowledgeSearch({ query: 'how to start embed daemon', repoRoot: root, rootDir: root });
     assert.equal(result.ok, true);
     assert.ok(result.hits.length > 0);
     assert.ok(result.hits[0].file.includes('how-to'));
@@ -113,7 +113,7 @@ We use construct with three GitHub repos. Config lives in ~/.construct/config.en
 `,
   });
   try {
-    const result = knowledgeSearch({ query: 'config.env setup', repoRoot: root });
+    const result = knowledgeSearch({ query: 'config.env setup', repoRoot: root, rootDir: root });
     assert.equal(result.ok, true);
     assert.ok(result.hits.length > 0);
   } finally { cleanTmp(root); }
@@ -126,7 +126,7 @@ test('respects topK limit', () => {
     ).join('\n'),
   });
   try {
-    const result = knowledgeSearch({ query: 'construct system feature', topK: 3, repoRoot: root });
+    const result = knowledgeSearch({ query: 'construct system feature', topK: 3, repoRoot: root, rootDir: root });
     assert.ok(result.hits.length <= 3, `expected ≤3 hits, got ${result.hits.length}`);
   } finally { cleanTmp(root); }
 });
@@ -136,7 +136,7 @@ test('hit fields are present and correct shape', () => {
     'docs/architecture.md': `# Construct Architecture\n\n## Overview\n\nConstruct is an orchestration system.\n`,
   });
   try {
-    const result = knowledgeSearch({ query: 'orchestration', repoRoot: root });
+    const result = knowledgeSearch({ query: 'orchestration', repoRoot: root, rootDir: root });
     assert.equal(result.ok, true);
     if (result.hits.length > 0) {
       const hit = result.hits[0];
@@ -155,7 +155,7 @@ test('sources list contains only unique file paths', () => {
     'docs/README.md': `# Docs\n\nconstruct commands and guides.\n`,
   });
   try {
-    const result = knowledgeSearch({ query: 'construct', repoRoot: root, topK: 10 });
+    const result = knowledgeSearch({ query: 'construct', repoRoot: root, topK: 10, rootDir: root });
     const unique = [...new Set(result.sources)];
     assert.deepEqual(result.sources, unique, 'sources should be unique');
   } finally { cleanTmp(root); }
@@ -168,7 +168,7 @@ test('returns message when no hits found', () => {
     '.cx/knowledge/internal/notes.md': `# Notes\n\nsome unrelated content here with no overlap.\n`,
   });
   try {
-    const result = knowledgeSearch({ query: 'xyzzyunmatchabletoken', repoRoot: root });
+    const result = knowledgeSearch({ query: 'xyzzyunmatchabletoken', repoRoot: root, rootDir: root });
     assert.ok(typeof result.message === 'string');
     // Either no hits, or message indicates none found
     if (result.hits.length === 0) {
@@ -183,7 +183,7 @@ test('architecture.md ranks above how-to for overview questions', () => {
     'docs/how-to/how-to-embed-start.md': `# Embed start\n\nConstruct embed mode monitors systems.\n`,
   });
   try {
-    const result = knowledgeSearch({ query: 'what is construct system overview', repoRoot: root });
+    const result = knowledgeSearch({ query: 'what is construct system overview', repoRoot: root, rootDir: root });
     assert.equal(result.ok, true);
     assert.ok(result.hits.length > 0);
     // architecture.md has priority bonus — should appear in results

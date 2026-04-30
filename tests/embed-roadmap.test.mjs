@@ -27,17 +27,17 @@ function makeSnapshot(sections = []) {
 }
 
 describe('generateRoadmap', () => {
-  it('returns skipped=true when no snapshot is provided', () => {
+  it('returns skipped=true when no snapshot is provided', async () => {
     const root = makeTmpDir();
     try {
-      const result = generateRoadmap({ rootDir: root, snapshot: null });
+      const result = await generateRoadmap({ rootDir: root, snapshot: null });
       assert.equal(result.skipped, true);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
   });
 
-  it('writes .cx/roadmap.md when snapshot has open items', () => {
+  it('writes .cx/roadmap.md when snapshot has open items', async () => {
     const root = makeTmpDir();
     try {
       const snapshot = makeSnapshot([{
@@ -48,7 +48,7 @@ describe('generateRoadmap', () => {
         ],
       }]);
 
-      const result = generateRoadmap({ rootDir: root, snapshot });
+      const result = await generateRoadmap({ rootDir: root, snapshot });
       assert.ok(!result.skipped);
       assert.equal(result.itemCount, 2);
       assert.ok(existsSync(join(root, '.cx', 'roadmap.md')));
@@ -62,7 +62,7 @@ describe('generateRoadmap', () => {
     }
   });
 
-  it('excludes done/closed items from roadmap', () => {
+  it('excludes done/closed items from roadmap', async () => {
     const root = makeTmpDir();
     try {
       const snapshot = makeSnapshot([{
@@ -74,7 +74,7 @@ describe('generateRoadmap', () => {
         ],
       }]);
 
-      const result = generateRoadmap({ rootDir: root, snapshot });
+      const result = await generateRoadmap({ rootDir: root, snapshot });
       assert.equal(result.itemCount, 1);
 
       const content = readFileSync(join(root, '.cx', 'roadmap.md'), 'utf8');
@@ -86,7 +86,7 @@ describe('generateRoadmap', () => {
     }
   });
 
-  it('sorts high priority items before low priority', () => {
+  it('sorts high priority items before low priority', async () => {
     const root = makeTmpDir();
     try {
       const snapshot = makeSnapshot([{
@@ -98,7 +98,7 @@ describe('generateRoadmap', () => {
         ],
       }]);
 
-      generateRoadmap({ rootDir: root, snapshot });
+      await generateRoadmap({ rootDir: root, snapshot });
       const content = readFileSync(join(root, '.cx', 'roadmap.md'), 'utf8');
 
       const critIdx = content.indexOf('PROJ-11');
@@ -112,7 +112,7 @@ describe('generateRoadmap', () => {
     }
   });
 
-  it('handles snapshot with no open items gracefully', () => {
+  it('handles snapshot with no open items gracefully', async () => {
     const root = makeTmpDir();
     try {
       const snapshot = makeSnapshot([{
@@ -122,7 +122,7 @@ describe('generateRoadmap', () => {
         ],
       }]);
 
-      const result = generateRoadmap({ rootDir: root, snapshot });
+      const result = await generateRoadmap({ rootDir: root, snapshot });
       assert.equal(result.itemCount, 0);
 
       const content = readFileSync(join(root, '.cx', 'roadmap.md'), 'utf8');
@@ -132,7 +132,7 @@ describe('generateRoadmap', () => {
     }
   });
 
-  it('returns path pointing inside rootDir', () => {
+  it('returns path pointing inside rootDir', async () => {
     const root = makeTmpDir();
     try {
       const snapshot = makeSnapshot([{
@@ -140,14 +140,14 @@ describe('generateRoadmap', () => {
         items: [{ type: 'issue', key: 'LIN-1', summary: 'Build feature', status: 'todo', priority: 'High' }],
       }]);
 
-      const result = generateRoadmap({ rootDir: root, snapshot });
+      const result = await generateRoadmap({ rootDir: root, snapshot });
       assert.ok(result.path.startsWith(root));
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
   });
 
-  it('includes operating profile obligations when present', () => {
+  it('includes operating profile obligations when present', async () => {
     const root = makeTmpDir();
     try {
       const snapshot = {
@@ -156,7 +156,7 @@ describe('generateRoadmap', () => {
         operatingGaps: [{ severity: 'attention', summary: 'No snapshot outputs are configured.' }],
       };
 
-      generateRoadmap({ rootDir: root, snapshot });
+      await generateRoadmap({ rootDir: root, snapshot });
       const content = readFileSync(join(root, '.cx', 'roadmap.md'), 'utf8');
       assert.ok(content.includes('## Operating Profile'));
       assert.ok(content.includes('## Operating Gaps'));
@@ -168,17 +168,17 @@ describe('generateRoadmap', () => {
 });
 
 describe('roadmapSlackSummary', () => {
-  it('returns null when no snapshot provided', () => {
+  it('returns null when no snapshot provided', async () => {
     const root = makeTmpDir();
     try {
-      const result = roadmapSlackSummary({ rootDir: root, snapshot: null });
+      const result = await roadmapSlackSummary({ rootDir: root, snapshot: null });
       assert.equal(result, null);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
   });
 
-  it('returns a string under 3000 chars with open items', () => {
+  it('returns a string under 3000 chars with open items', async () => {
     const root = makeTmpDir();
     try {
       const snapshot = makeSnapshot([{
@@ -189,7 +189,7 @@ describe('roadmapSlackSummary', () => {
         ],
       }]);
 
-      const text = roadmapSlackSummary({ rootDir: root, snapshot });
+      const text = await roadmapSlackSummary({ rootDir: root, snapshot });
       assert.ok(typeof text === 'string');
       assert.ok(text.length <= 3000);
       assert.ok(text.includes('Roadmap'));

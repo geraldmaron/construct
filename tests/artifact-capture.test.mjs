@@ -1,5 +1,5 @@
 /**
- * tests/artifact-capture.test.mjs — tests for lib/artifact-capture.mjs session artifact extraction.
+ * tests/artifact-capture.test.mjs — tests for lib/artifact-capture.js session artifact extraction.
  *
  * Exercises captureSessionArtifacts end-to-end against a temp-dir fixture:
  * session-summary observation generation, capped decision extraction, and
@@ -26,30 +26,30 @@ afterEach(() => {
 
 describe('artifact-capture', () => {
   describe('captureSessionArtifacts', () => {
-    it('creates a session-summary observation from session', () => {
+    it('creates a session-summary observation from session', async () => {
       const session = {
         id: 'test-session',
         project: 'myapp',
         summary: 'Implemented JWT authentication with refresh tokens',
         decisions: ['Use httpOnly cookies for refresh tokens', 'JWT expiry set to 15 minutes'],
         filesChanged: [
-          { path: 'lib/auth/jwt.mjs', reason: 'new module' },
-          { path: 'lib/auth/refresh.mjs', reason: 'new module' },
-          { path: 'tests/auth.test.mjs', reason: 'tests' },
+          { path: 'lib/auth/jwt.js', reason: 'new module' },
+          { path: 'lib/auth/refresh.js', reason: 'new module' },
+          { path: 'tests/auth.test.js', reason: 'tests' },
         ],
         openQuestions: [],
       };
 
-      const ids = captureSessionArtifacts(tmpDir, session);
+      const ids = await captureSessionArtifacts(tmpDir, session);
       assert.ok(ids.length >= 1, 'should create at least one observation');
 
-      const obs = listObservations(tmpDir);
+      const obs = await listObservations(tmpDir);
       const sessionSummary = obs.find((o) => o.category === 'session-summary');
       assert.ok(sessionSummary, 'should have a session-summary observation');
       assert.ok(sessionSummary.summary.includes('JWT'));
     });
 
-    it('creates decision observations', () => {
+    it('creates decision observations', async () => {
       const session = {
         id: 'test-session',
         project: 'myapp',
@@ -58,44 +58,44 @@ describe('artifact-capture', () => {
         filesChanged: [],
       };
 
-      const ids = captureSessionArtifacts(tmpDir, session);
-      const obs = listObservations(tmpDir);
+      await captureSessionArtifacts(tmpDir, session);
+      const obs = await listObservations(tmpDir);
       const decisions = obs.filter((o) => o.category === 'decision');
       assert.equal(decisions.length, 2);
     });
 
-    it('creates file-group entities from file patterns', () => {
+    it('creates file-group entities from file patterns', async () => {
       const session = {
         id: 'test-session',
         project: 'myapp',
         summary: 'Refactored storage layer',
         decisions: [],
         filesChanged: [
-          { path: 'lib/storage/sql.mjs', reason: 'refactored' },
-          { path: 'lib/storage/vector.mjs', reason: 'refactored' },
-          { path: 'lib/storage/sync.mjs', reason: 'refactored' },
-          { path: 'tests/storage.test.mjs', reason: 'tests' },
+          { path: 'lib/storage/sql.js', reason: 'refactored' },
+          { path: 'lib/storage/vector.js', reason: 'refactored' },
+          { path: 'lib/storage/sync.js', reason: 'refactored' },
+          { path: 'tests/storage.test.js', reason: 'tests' },
         ],
       };
 
-      captureSessionArtifacts(tmpDir, session);
-      const entities = listEntities(tmpDir);
+      await captureSessionArtifacts(tmpDir, session);
+      const entities = await listEntities(tmpDir);
       const storageEntity = entities.find((e) => e.name === 'lib/storage');
       assert.ok(storageEntity, 'should create lib/storage entity');
       assert.equal(storageEntity.type, 'file-group');
     });
 
-    it('returns empty for null session', () => {
-      const ids = captureSessionArtifacts(tmpDir, null);
+    it('returns empty for null session', async () => {
+      const ids = await captureSessionArtifacts(tmpDir, null);
       assert.deepEqual(ids, []);
     });
 
-    it('returns empty for session without summary', () => {
-      const ids = captureSessionArtifacts(tmpDir, { id: 'x', decisions: [], filesChanged: [] });
+    it('returns empty for session without summary', async () => {
+      const ids = await captureSessionArtifacts(tmpDir, { id: 'x', decisions: [], filesChanged: [] });
       assert.deepEqual(ids, []);
     });
 
-    it('caps decision observations at MAX_DECISION_OBS', () => {
+    it('caps decision observations at MAX_DECISION_OBS', async () => {
       const session = {
         id: 'test',
         project: 'p',
@@ -104,13 +104,13 @@ describe('artifact-capture', () => {
         filesChanged: [],
       };
 
-      const ids = captureSessionArtifacts(tmpDir, session);
-      const obs = listObservations(tmpDir);
+      await captureSessionArtifacts(tmpDir, session);
+      const obs = await listObservations(tmpDir);
       const decisions = obs.filter((o) => o.category === 'decision');
       assert.ok(decisions.length <= 5, 'should cap at 5 decision observations');
     });
 
-    it('tags observations with project name', () => {
+    it('tags observations with project name', async () => {
       const session = {
         id: 'test',
         project: 'construct',
@@ -119,12 +119,12 @@ describe('artifact-capture', () => {
         filesChanged: [],
       };
 
-      captureSessionArtifacts(tmpDir, session);
-      const obs = listObservations(tmpDir);
+      await captureSessionArtifacts(tmpDir, session);
+      const obs = await listObservations(tmpDir);
       assert.ok(obs[0].project === 'construct');
     });
 
-    it('includes session source reference', () => {
+    it('includes session source reference', async () => {
       const session = {
         id: 'sess-abc',
         project: 'p',
@@ -133,8 +133,8 @@ describe('artifact-capture', () => {
         filesChanged: [],
       };
 
-      const ids = captureSessionArtifacts(tmpDir, session);
-      const obs = getObservation(tmpDir, ids[0]);
+      const ids = await captureSessionArtifacts(tmpDir, session);
+      const obs = await getObservation(tmpDir, ids[0]);
       assert.deepEqual(obs.source, { session: 'sess-abc' });
     });
   });

@@ -23,6 +23,58 @@
         "openrouter/google/gemma-3-27b-it:free",
         "anthropic/claude-haiku-4-5-20251001"
       ]
+    },
+    "embeddings": {
+      "local": {
+        "provider": "onnx",
+        "model": "Xenova/all-MiniLM-L6-v2",
+        "dimensions": 384,
+        "description": "Free, offline, runs locally via ONNX Runtime"
+      },
+      "openai": {
+        "provider": "openai",
+        "model": "text-embedding-3-small",
+        "dimensions": 1536,
+        "description": "Best quality, requires OPENAI_API_KEY"
+      },
+      "ollama": {
+        "provider": "ollama",
+        "model": "nomic-embed-text",
+        "dimensions": 768,
+        "description": "Local Ollama server, requires OLLAMA_BASE_URL"
+      },
+      "hashing": {
+        "provider": "local",
+        "model": "hashing-bow-v1",
+        "dimensions": 256,
+        "description": "Legacy deterministic hash — fast but no semantic understanding"
+      }
+    },
+    "embeddings": {
+      "local": {
+        "provider": "onnx",
+        "model": "Xenova/all-MiniLM-L6-v2",
+        "dimensions": 384,
+        "description": "Free, offline, runs locally via ONNX Runtime"
+      },
+      "openai": {
+        "provider": "openai",
+        "model": "text-embedding-3-small",
+        "dimensions": 1536,
+        "description": "Best quality, requires OPENAI_API_KEY"
+      },
+      "ollama": {
+        "provider": "ollama",
+        "model": "nomic-embed-text",
+        "dimensions": 768,
+        "description": "Local Ollama server, requires OLLAMA_BASE_URL"
+      },
+      "hashing": {
+        "provider": "local",
+        "model": "hashing-bow-v1",
+        "dimensions": 256,
+        "description": "Legacy deterministic hash — fast but no semantic understanding"
+      }
     }
   },
   "providers": {

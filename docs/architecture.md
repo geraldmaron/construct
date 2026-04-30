@@ -51,15 +51,15 @@ Transport-agnostic interface to external systems. Each provider implements a cap
 - A provider may support any subset of capabilities; unsupported capabilities return a typed error.
 - Provider implementations live in `providers/` with one directory per system.
 
-**Planned initial providers:**
+**Shipped providers:**
 
 | Provider | Transport | Capabilities |
 |---|---|---|
 | Git repo | git CLI | read, write, watch |
-| Project tracker (Jira, Linear) | MCP / REST | read, write, search, webhook |
-| Messaging (Slack, Discord) | REST / SDK | read, write, watch, webhook |
-| Code host (GitHub, GitLab) | CLI / REST | read, write, search, webhook |
-| Knowledge base (Confluence, Notion) | MCP / REST | read, write, search |
+| Project tracker (Jira) | REST API v3 | read, write, search, webhook |
+| Messaging (Slack) | Slack Web API | read, write, watch, webhook |
+| Code host (GitHub) | gh CLI | read, write, search, webhook |
+| Knowledge base (Confluence) | REST API v2 | read, write, search |
 
 ### Runtime
 
@@ -71,15 +71,17 @@ Docker service management, embed daemon, and scheduler.
 
 ### Dashboard
 
-Full web application replacing the minimal status page.
+Full web application shipped and running.
 
-- Auth (OAuth2 / JWT, multi-user, role-based)
-- Chat interface (interact with Construct)
-- Approval queue (approve/reject high-risk actions)
-- Config management (providers, embed settings, approval rules)
-- Snapshot viewer (health reports, risk analysis, recommendations)
-- Real-time updates (WebSocket/SSE)
-- Mode-aware layout (init, embed, point-at)
+- Auth — token-based (Bearer header + session cookie); `CONSTRUCT_DASHBOARD_TOKEN` in `~/.construct/config.env`; `construct serve --token` generates a token
+- Chat interface — interact with Construct via SSE-streaming claude session; `/api/chat/stream`, `/api/chat`, `/api/chat/history`
+- Approval queue — approve/reject high-risk actions queued by the embed daemon
+- Config management — providers, embed settings, approval rules editable in UI; reads/writes `config.env` and `embed.yaml`
+- Snapshot viewer — health reports, risk analysis, recommendations
+- Knowledge panel — Ask (RAG query), Trends (hot topics, patterns, risks, decision drift), Index (corpus breakdown)
+- Infrastructure tab — Terraform editor with validate + output buttons; `terraform validate`/`output` wired in server
+- Real-time updates — SSE for live status, new approvals, snapshot alerts
+- Mode-aware layout — badge in topbar: `embed` / `live` / `init` derived from config presence
 
 ### Deploy
 
