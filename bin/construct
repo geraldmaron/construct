@@ -26,7 +26,7 @@ import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
 import { runDistillCli } from '../lib/distill.mjs';
 import { runIngestCli } from '../lib/document-ingest.mjs';
 import { runInferCli } from '../lib/schema-infer.mjs';
-import { generateCompletions } from '../lib/completions.mjs';
+import { COMPLETIONS_DIR, generateCompletions, getCompletionScript } from '../lib/completions.mjs';
 import { runHeadhunt, listTeamTemplates } from '../lib/headhunt.mjs';
 import { auditSkills, runAuditSkillsCli } from '../lib/audit-skills.mjs';
 import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
@@ -115,6 +115,26 @@ async function cmdSync(args) {
   const { regenerateDocs } = await import('../lib/auto-docs.mjs');
   const { changed } = await regenerateDocs({ rootDir: ROOT_DIR });
   for (const f of changed) ok(`Updated ${path.relative(ROOT_DIR, f)}`);
+}
+
+async function cmdCompletions(args) {
+  const sub = args[0] ?? 'install';
+  if (sub === 'bash' || sub === 'zsh') {
+    println(getCompletionScript(sub));
+    return;
+  }
+  if (sub === 'install') {
+    const outDir = generateCompletions();
+    if (!outDir) process.exit(1);
+    println(`Completions written to ${outDir}`);
+    println('');
+    println('Enable them in your shell:');
+    println(`  bash: source ${path.join(outDir, 'construct.bash')}`);
+    println(`  zsh:  fpath=(${outDir} $fpath) && autoload -Uz compinit && compinit`);
+    return;
+  }
+  errorln('Usage: construct completions [bash|zsh|install]');
+  process.exit(1);
 }
 
 async function cmdList() {
@@ -739,6 +759,7 @@ const handlers = new Map([
   ['serve', cmdServe],
   ['setup', cmdSetup],
   ['update', cmdUpdate],
+  ['completions', cmdCompletions],
   ['sync', cmdSync],
   ['list', cmdList],
   ['doctor', cmdDoctor],

@@ -68,14 +68,31 @@ construct init-docs
 - `plan.md`
 - `.cx/context.md`
 - `.cx/context.json`
+- `.cx/inbox/`
 
 `construct init-docs` then stands up the durable docs system and starter templates:
 
 - `docs/README.md`
-- `docs/architecture.md`
-- `docs/prds/`, `docs/rfcs/`, `docs/adr/`, `docs/memos/`, `docs/runbooks/` by default
+- `docs/adr/`, `docs/intake/`, `docs/memos/`, `docs/notes/`, `docs/prds/` by default
+- `docs/<lane>/templates/` for starter templates
+- `docs/architecture.md` only when explicitly requested
 
 Both commands are additive-only: existing files are preserved and reported as skipped instead of overwritten.
+
+`construct init-docs` now uses a tighter setup flow:
+
+- numbered presets instead of open-text lane entry
+- explicit custom-lane input instead of treating any text as a folder name
+- consistent plural lane names in the selector: `adrs`, `briefs`, `memos`, `notes`, `prds`, `rfcs`, `runbooks`
+- optional architecture doc instead of forcing one into every repo
+- runbooks and briefs available, but not part of the default docs surface
+- `docs/intake/` is the human-facing intake log; raw source files belong in `.cx/inbox/`
+
+For command autocomplete:
+
+```bash
+construct completions install
+```
 
 For raw source material such as PDFs, spreadsheets, slide decks, and exports, ingest them into retrieval-ready markdown:
 
@@ -115,6 +132,7 @@ The team challenges itself along the way — reviewers push back on incomplete w
 | `construct serve` | Start the Construct dashboard (auto-selects port) |
 | `construct setup` | Bootstrap user config after npm or manual install |
 | `construct update` | Reinstall this checkout globally, then sync and verify hosts |
+| `construct completions` | Generate or print shell completion scripts for construct |
 
 ### Agents & Sync
 

@@ -219,6 +219,22 @@ Workflows that require external infrastructure are gated on repo variables so th
 | `deploy.yml` (Build/Push/Terraform) | `AWS_DEPLOY_ENABLED = true` | Set in repo Settings → Variables after configuring `AWS_DEPLOY_ROLE_ARN` secret + ECR/ECS |
 | `pages.yml` (GitHub Pages) | `PAGES_ENABLED = true` | Enable Pages in repo Settings → Pages (source: GitHub Actions), then set variable |
 
+## Recent Maintenance
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| M.1 | Tighten `construct init-docs` defaults and prompt flow | done | No default `docs/architecture.md`; no default runbooks; numbered preset flow replaces open-text lane selection |
+| M.2 | Move generated lane templates under `docs/<lane>/templates/` | done | Built-in and custom lanes now keep starter templates in a dedicated subdirectory |
+| M.3 | Make custom-lane prompt reject negative answers like `nope` | done | `no`, `none`, `nope`, blank, and similar answers no longer create junk directories |
+| M.4 | Expose shell completion as a first-class CLI command | done | `construct completions [bash|zsh|install]` added; completion generator now handles string and object subcommand metadata |
+| M.5 | Expand `construct init-docs` with 3 new lanes + improved prompts | done | Added `postmortems`, `changelogs`, `onboarding` lanes; wired orphaned `incident-report.md` template; new `changelog-entry.md` + `onboarding.md` templates; preset descriptions + padded lane picker in interactive prompt; `suggestContextualLanes` extended; 731 tests pass |
+
+## Recent Verification
+
+- `node --test tests/init-docs.test.mjs`
+- `node --check lib/completions.mjs`
+- `node --test tests/cli-surface.test.mjs`
+
 Until those variables are set, the jobs are skipped — not failed — on every push.
 
 - Layered architecture, not rewrite (ADR-0002).

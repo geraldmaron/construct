@@ -1,5 +1,5 @@
 <!--
-skills/docs/init-docs.md — Skill: init-docs — Initialize Project Documentation Structure — `init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `
+skills/docs/init-docs.md — Skill: init-docs — Initialize Project Documentation Structure — `init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`
 
 ## Trigger keywords `init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`
 -->
@@ -19,16 +19,16 @@ When invoked, gather the user's intent and create a tailored documentation direc
 Ask the user **all at once** (single message, not one at a time):
 
 1. **What is this project?** A brief description (one sentence is fine)
-2. **What doc types will you have?** Examples: architecture decisions, API reference, runbooks, user guides, changelogs, onboarding guides, RFCs, design docs, data models, deployment guides
+2. **What doc types will you have?** See the lane table below for options
 3. **Who is the audience?** Engineers, external users, both, or internal team only
-4. **Tech stack?** (affects whether API reference sections are needed)
+4. **Tech stack?** (affects whether API reference or RFC sections are needed)
 5. **Monorepo or single-service?** Affects directory depth
 
 ---
 
 ## Step 2 — Generate the structure
 
-Based on answers, create the `docs/` directory and appropriate subdirectories. Use this as a base — add or remove sections based on the user's answers:
+Based on answers, create the `docs/` directory and appropriate subdirectories. Use this as a base — add or remove sections based on the user's answers.
 
 ### Core structure (always include)
 
@@ -43,19 +43,40 @@ docs/
 └── workflow.json              # Canonical workflow/task state
 ```
 
-### Add based on doc types mentioned
+### Presets
 
-| Doc type mentioned | Create |
-|-------------------|--------|
-| Architecture / design | `docs/architecture/` with `overview.md` skeleton |
-| API reference | `docs/api/` with `README.md` skeleton |
-| Runbooks / ops | `docs/runbooks/` with `README.md` + `incident-response.md` skeleton |
-| Onboarding | `docs/onboarding/` with `README.md` + `local-setup.md` skeleton |
-| Changelog / releases | `docs/releases/` with `README.md` if the user explicitly wants public release history |
-| RFCs | `docs/rfcs/` with `README.md` + `0001-template.md` |
-| Data models | `docs/data-models/` with `README.md` skeleton |
-| User guides | `docs/guides/` with `README.md` skeleton |
-| Deployment | `docs/deployment/` with `README.md` + `environments.md` |
+| Preset  | Lanes included |
+|---------|----------------|
+| lean    | adrs, intake, memos, notes, prds |
+| product | adrs, intake, memos, notes, prds, rfcs |
+| full    | adrs, briefs, changelogs, intake, memos, notes, onboarding, postmortems, prds, rfcs, runbooks |
+
+### Available lanes
+
+| Lane         | Directory       | What goes here |
+|--------------|-----------------|----------------|
+| adrs         | `docs/adr/`         | Architecture decisions that have already been made |
+| briefs       | `docs/briefs/`      | Research, evidence, signals, one-pagers, customer profiles |
+| changelogs   | `docs/changelogs/`  | User-facing release notes and version history entries |
+| intake       | `docs/intake/`      | Raw source material staged for Construct ingestion |
+| memos        | `docs/memos/`       | Decision memos and internal arguments for alignment |
+| notes        | `docs/notes/`       | Working notes, meeting notes, lightweight durable context |
+| onboarding   | `docs/onboarding/`  | Runnable setup guides and first-day workflows |
+| postmortems  | `docs/postmortems/` | Blameless incident reports with root cause and corrective actions |
+| prds         | `docs/prds/`        | Product and capability requirement documents |
+| rfcs         | `docs/rfcs/`        | Architecture and implementation proposals needing review |
+| runbooks     | `docs/runbooks/`    | Operational procedures, diagnostics, escalation paths |
+
+### Guidance: which lanes to suggest
+
+| Signal in the project | Suggest |
+|-----------------------|---------|
+| Has `Dockerfile`, `.github/`, `deploy/`, or `infra/` | runbooks, postmortems |
+| Has `CHANGELOG.md` or release tagging | changelogs |
+| Has `onboarding/`, `setup/`, or `getting-started/` | onboarding |
+| Has `src/`, `lib/`, `api/`, or `services/` | rfcs |
+| Has research, customer, or market files | briefs |
+| Any project with decisions and requirements | adrs, prds (always lean default) |
 
 ---
 
@@ -120,7 +141,7 @@ Last updated: [date]
 
 ## Key decisions
 
-Link to `.cx/decisions/` or the canonical project decision log used in this repo.
+Link to `docs/adr/` or the canonical project decision log used in this repo.
 ```
 
 ---
@@ -156,5 +177,7 @@ Stack: [stack]
 
 After completing the docs init:
 - If the user has architecture questions → `@cx-explorer` or `@cx-docs-keeper` to explore and update `docs/architecture/`
-- If the user wants to document a decision → record it in `.cx/decisions/` or the repo's canonical decision log
+- If the user wants to document a decision → record it in `docs/adr/` using the ADR template
 - If the user wants to add API docs → `@cx-docs-keeper` to generate stubs from code
+- If the user wants to file an incident report → use `docs/postmortems/` with the incident-report template
+- If the user wants to document a release → use `docs/changelogs/` with the changelog-entry template

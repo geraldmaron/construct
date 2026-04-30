@@ -59,3 +59,13 @@ test('construct help includes the update command', () => {
 
   assert.match(out, /update\s+Reinstall this checkout globally, then sync and verify hosts/);
 });
+
+test('construct completions bash prints a bash completion script', () => {
+  const out = execFileSync(process.execPath, [BIN, 'completions', 'bash'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+
+  assert.match(out, /bash completion for construct/);
+  assert.match(out, /complete -F _construct_completions construct/);
+});
