@@ -2,7 +2,7 @@
   "name": "@geraldmaron/construct",
   "version": "1.0.0",
   "type": "module",
-  "description": "Construct — AI orchestration CLI with package-manager-first setup",
+  "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
   "bin": {
     "construct": "bin/construct"
   },

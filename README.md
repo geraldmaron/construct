@@ -1,22 +1,45 @@
 # Construct
 
-🏢 An org in a box.
+Construct is the orchestration layer behind an agentic software org.
 
-You say what needs to happen. Construct figures out who handles it, coordinates the work across the right roles, and holds the team accountable until it’s done.
+In OpenCode, Claude Code, and similar agent surfaces, you can use Construct as a single entry point: give it the outcome you want, and it routes the work across the right specialists, keeps shared state aligned, and pushes toward a verified result.
 
-You don’t manage the handoffs. You don’t direct the agents. You don’t watch the pipeline. You just set the outcome and trust the org to deliver — the same way you’d trust a real team.
+You do not manage the handoffs, decide which reviewer to call next, or manually preserve project context between sessions. Construct handles that coordination so the system behaves more like a team than a single chat loop.
 
 Works with Anthropic, OpenRouter, Ollama, and other OpenAI-compatible setups.
 
+## Use It In Agent Surfaces
+
+Construct is meant to be used from inside tools like OpenCode and Claude Code, where it becomes the single entry point for software work.
+
+```text
+@construct build the customer portal and ship it when it's verified
+@construct fix the login redirect bug
+@construct review the payment flow before release
+@construct explain how the caching layer works
+```
+
+The important shift is that you are not deciding which sub-agent to call, when to pull in review, or how to preserve context between sessions. You ask for the outcome. Construct routes, coordinates, verifies, and follows through.
+
+## What Construct Is
+
+Construct is primarily an orchestration layer, not just a standalone agent and not just a CLI.
+
+- From the user side, Construct feels like one agent you can talk to
+- Under the hood, it is an orchestration system that routes work across specialist roles
+- The CLI is the support surface for setup, sync, storage, and diagnostics
+
+If you ask "is Construct an agent or an orchestration layer?", the most accurate answer is: it presents as one agent, but its real job is orchestration.
+
 ## 💡 The idea
 
-A real organization doesn’t need its founder to coordinate every interaction between design, engineering, QA, and product. Each role knows its job, challenges the others where it sees a gap, and the system self-corrects.
+A real organization does not need its founder to coordinate every interaction between design, engineering, QA, and product. Each role knows its job, challenges the others where it sees a gap, and the system self-corrects.
 
 Construct works the same way.
 
-Under the hood it runs a full specialist team: architects, engineers, designers, reviewers, security, QA, product managers, data analysts, SREs, and more. Each one has domain expertise and a mandate to push back on work that isn’t ready.
+Under the hood it runs a full specialist team: architects, engineers, designers, reviewers, security, QA, product managers, data analysts, SREs, and more. Each one has domain expertise and a mandate to push back on work that is not ready.
 
-You don’t configure any of this. You give Construct a goal and it routes, coordinates, verifies, and ships.
+You give Construct a goal and it routes, coordinates, verifies, and ships. The CLI exists to bootstrap and maintain that system, but the core product is the agent workflow that runs inside your coding surface.
 
 ## ✨ What you get
 
@@ -29,38 +52,40 @@ You don’t configure any of this. You give Construct a goal and it routes, coor
 - **Hybrid retrieval** over file-state, SQL-ready records, and semantic search
 - **Shared storage setup** that can initialize Postgres and sync core state during `construct setup`
 
-## 📦 Install
+## Getting Started
 
-### npm
+The CLI is the setup and support surface for the agent system. Use it to bootstrap Construct locally, initialize repo state, and inspect health.
+
+### Install
+
+#### npm
 
 ```bash
 npm install -g @geraldmaron/construct
 construct setup
 ```
 
-If you pulled a newer Construct checkout from Git and want the device-level CLI and synced host adapters to match that checkout, run:
-
-```bash
-construct update
-```
-
-## 🚀 Quick start
-
-`construct setup` bootstraps everything — config, local services, and storage. Once it's done:
+`construct setup` bootstraps config, local services, and storage. Once that is done:
 
 ```bash
 construct status   # runtime health
 construct doctor   # installation checks
 ```
 
-After updating this repo from remote, `construct update` is the maintenance path: it reinstalls the current checkout globally, refreshes host adapters without rewriting repo docs, and finishes with `construct doctor`.
+If you pulled a newer Construct checkout from Git and want the local CLI and synced host adapters to match that checkout, run:
 
-To initialize a repo for ongoing LLM-assisted work:
+```bash
+construct update
+```
+
+### Initialize a repo
 
 ```bash
 construct init
 construct init-docs
 ```
+
+After updating this repo from remote, `construct update` is the maintenance path: it reinstalls the current checkout globally, refreshes host adapters without rewriting repo docs, and finishes with `construct doctor`.
 
 `construct init` bootstraps the shared repo operating files without overwriting existing ones:
 
@@ -105,18 +130,9 @@ By default, ingested markdown lands under `.cx/knowledge/internal/`, which keeps
 
 ## ⚙️ How it works
 
-Give it a goal. The org handles the rest.
-
-```text
-@construct build the customer portal and ship it when it's verified
-@construct fix the login redirect bug
-@construct review the payment flow before release
-@construct explain how the caching layer works
-```
-
 Construct routes the work, tracks state, verifies outcomes, and follows through.
 
-The team challenges itself along the way — reviewers push back on incomplete work, security flags risky patterns, QA confirms it actually works. You don’t coordinate any of that. You just get the result.
+The team challenges itself along the way: reviewers push back on incomplete work, security flags risky patterns, QA confirms it actually works, and project memory stays available across sessions and surfaces. You do not coordinate that manually. You just get the result.
 
 ## 🛠️ Core commands
 

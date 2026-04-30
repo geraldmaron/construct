@@ -219,6 +219,11 @@
       "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,list_teams,get_team,memory_search,memory_add_observations,cx_trace,cx_score",
       "injectAgentRoster": true,
       "promptFile": "agents/prompts/cx-orchestrator.md",
+      "embedOrientation": {
+        "focusAreas": ["routing accuracy", "workload balance", "handoff completeness", "specialist utilization"],
+        "riskSignals": ["misrouted tasks", "overloaded specialists", "dropped handoffs", "stale queued work"],
+        "artifactBias": ["notes", "memos"]
+      },
       "skills": [
         "ai/orchestration-workflow"
       ],
@@ -240,6 +245,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-rd-lead.md",
+      "embedOrientation": {
+        "focusAreas": ["hypothesis validation", "experiment progress", "assumption tracking", "learning velocity"],
+        "riskSignals": ["untested assumptions", "premature hardening", "stalled experiments", "unfalsifiable claims"],
+        "artifactBias": ["adrs", "notes"]
+      },
       "skills": [
         "ai/agent-dev",
         "ai/prompt-and-eval"
@@ -261,6 +271,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-product-manager.md",
+      "embedOrientation": {
+        "focusAreas": ["requirements coverage", "delivery risk", "user-facing gaps", "scope clarity"],
+        "riskSignals": ["untraced requirements", "scope creep", "blocked dependencies", "missing acceptance criteria"],
+        "artifactBias": ["prds", "intake", "memos"]
+      },
       "skills": [
         "docs/product-intelligence-workflow",
         "docs/evidence-ingest-workflow",
@@ -291,6 +306,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-ux-researcher.md",
+      "embedOrientation": {
+        "focusAreas": ["user evidence freshness", "friction points", "persona coverage", "research gaps"],
+        "riskSignals": ["stale user data", "untested assumptions about users", "missing friction analysis", "internal-only validation"],
+        "artifactBias": ["notes", "memos"]
+      },
       "skills": [
         "docs/research-workflow"
       ],
@@ -319,6 +339,11 @@
       "codexSandbox": "workspace-write",
       "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,Write,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-operations.md",
+      "embedOrientation": {
+        "focusAreas": ["dependency sequencing", "ownership clarity", "blocker resolution", "delivery cadence"],
+        "riskSignals": ["hidden dependencies", "unowned tasks", "blocked work aging", "parallel plans with serial reality"],
+        "artifactBias": ["notes", "memos"]
+      },
       "skills": [
         "docs/init-project"
       ],
@@ -339,6 +364,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-researcher.md",
+      "embedOrientation": {
+        "focusAreas": ["source freshness", "citation coverage", "dependency versions", "conflicting evidence"],
+        "riskSignals": ["undated sources", "unverified claims", "outdated dependencies", "single-source conclusions"],
+        "artifactBias": ["notes", "memos"]
+      },
       "skills": [
         "docs/research-workflow",
         "devops/dependency-management"
@@ -360,6 +390,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-business-strategist.md",
+      "embedOrientation": {
+        "focusAreas": ["market positioning", "competitive shifts", "timing relevance", "strategic coherence"],
+        "riskSignals": ["tactics dressed as strategy", "ignored competitive moves", "undifferentiated positioning", "missing market timing"],
+        "artifactBias": ["memos", "notes"]
+      },
       "skills": [
         "architecture/api-design"
       ],
@@ -385,6 +420,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-data-analyst.md",
+      "embedOrientation": {
+        "focusAreas": ["metric validity", "measurement coverage", "behavioral indicators", "distribution analysis"],
+        "riskSignals": ["vanity metrics", "averages hiding variance", "post-hoc success definitions", "ungamed metrics becoming gamed"],
+        "artifactBias": ["notes", "memos"]
+      },
       "skills": [
         "devops/observability",
         "devops/database"
@@ -413,6 +453,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
       "promptFile": "agents/prompts/cx-evaluator.md",
+      "embedOrientation": {
+        "focusAreas": ["eval coverage", "regression detection", "baseline drift", "failure case representation"],
+        "riskSignals": ["eval sets matching known outputs", "cherry-picked baselines", "missing failure cases", "promotion on too few traces"],
+        "artifactBias": ["notes", "adrs"]
+      },
       "skills": [
         "ai/prompt-and-eval",
         "quality-gates/verify-quality"
@@ -439,6 +484,11 @@
       "codexSandbox": "workspace-write",
       "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
       "promptFile": "agents/prompts/cx-ai-engineer.md",
+      "embedOrientation": {
+        "focusAreas": ["model reliability", "failure mode coverage", "prompt stability", "eval health"],
+        "riskSignals": ["untested failure paths", "hallucination risk dismissed", "prompt drift", "demo-only validation"],
+        "artifactBias": ["adrs", "notes"]
+      },
       "skills": [
         "ai/agent-dev",
         "ai/rag-system",
@@ -471,6 +521,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-architect.md",
+      "embedOrientation": {
+        "focusAreas": ["coupling and cohesion", "unvalidated assumptions", "interface contracts", "tech debt accumulation"],
+        "riskSignals": ["missing ADRs", "implicit contracts", "data model drift", "undocumented invariants"],
+        "artifactBias": ["adrs", "notes"]
+      },
       "skills": [
         "architecture/api-design",
         "architecture/caching",
@@ -497,6 +552,11 @@
       "description": "Reads before writing — understanding the existing pattern matters more than having the better one.",
       "modelTier": "standard",
       "reasoningEffort": "medium",
+      "embedOrientation": {
+        "focusAreas": ["implementation progress", "test coverage gaps", "build health", "PR velocity"],
+        "riskSignals": ["failing CI", "stale PRs", "untested paths", "pattern drift"],
+        "artifactBias": ["notes", "adrs"]
+      },
       "codexSandbox": "workspace-write",
       "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
       "promptFile": "agents/prompts/cx-engineer.md",
@@ -535,6 +595,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-devil-advocate.md",
+      "embedOrientation": {
+        "focusAreas": ["plan survivability", "hidden failure modes", "scope stability", "assumption stress-testing"],
+        "riskSignals": ["plans too elegant to survive contact", "unlikely failures unaddressed", "scope drift", "unanimous agreement without challenge"],
+        "artifactBias": ["notes", "memos"]
+      },
       "skills": [
         "quality-gates/review-work"
       ],
@@ -555,6 +620,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
       "promptFile": "agents/prompts/cx-reviewer.md",
+      "embedOrientation": {
+        "focusAreas": ["edge case coverage", "error handling completeness", "test fidelity", "code quality trends"],
+        "riskSignals": ["happy-path-only reviews", "excessive mocking", "missing error handlers", "review without reproduction"],
+        "artifactBias": ["notes"]
+      },
       "skills": [
         "quality-gates/verify-quality",
         "quality-gates/review-work",
@@ -577,6 +647,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
       "promptFile": "agents/prompts/cx-security.md",
+      "embedOrientation": {
+        "focusAreas": ["attack surface changes", "dependency vulnerabilities", "auth boundary integrity", "secret exposure"],
+        "riskSignals": ["new unauthed endpoints", "unaudited dependencies", "implicit trust boundaries", "hardcoded credentials"],
+        "artifactBias": ["adrs", "notes"]
+      },
       "skills": [
         "security/red-team",
         "security/blue-team",
@@ -604,6 +679,11 @@
       "codexSandbox": "workspace-write",
       "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
       "promptFile": "agents/prompts/cx-qa.md",
+      "embedOrientation": {
+        "focusAreas": ["test effectiveness", "behavioral coverage", "regression risk", "acceptance criteria traceability"],
+        "riskSignals": ["tests that never fail", "coverage without behavioral assertions", "untested acceptance criteria", "flaky tests ignored"],
+        "artifactBias": ["notes"]
+      },
       "skills": [
         "devops/testing",
         "quality-gates/verify-change",
@@ -626,6 +706,11 @@
       "codexSandbox": "workspace-write",
       "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
       "promptFile": "agents/prompts/cx-debugger.md",
+      "embedOrientation": {
+        "focusAreas": ["root cause identification", "reproduction reliability", "fix verification", "regression prevention"],
+        "riskSignals": ["symptom fixes without root cause", "non-reproducible bugs closed", "missing regression tests", "repeated failure patterns"],
+        "artifactBias": ["notes"]
+      },
       "skills": [
         "quality-gates/verify-change",
         "devops/observability",
@@ -648,6 +733,11 @@
       "codexSandbox": "workspace-write",
       "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-sre.md",
+      "embedOrientation": {
+        "focusAreas": ["reliability posture", "observability coverage", "incident readiness", "SLO adherence"],
+        "riskSignals": ["missing alerts", "untested rollbacks", "observability gaps", "SLOs defined post-incident"],
+        "artifactBias": ["adrs", "notes"]
+      },
       "skills": [
         "devops/observability",
         "devops/ci-cd",
@@ -679,6 +769,11 @@
       "codexSandbox": "workspace-write",
       "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,Write,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-platform-engineer.md",
+      "embedOrientation": {
+        "focusAreas": ["developer friction", "pipeline health", "dependency freshness", "build reliability"],
+        "riskSignals": ["slow CI", "stale dependencies", "manual steps in pipelines", "config only author understands"],
+        "artifactBias": ["adrs", "notes"]
+      },
       "skills": [
         "devops/ci-cd",
         "devops/monorepo",
@@ -711,6 +806,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-legal-compliance.md",
+      "embedOrientation": {
+        "focusAreas": ["license compliance", "data privacy posture", "AI disclosure obligations", "regulatory changes"],
+        "riskSignals": ["unreviewed dependency licenses", "undisclosed AI processing", "missing data basis documentation", "new jurisdiction exposure"],
+        "artifactBias": ["adrs", "memos"]
+      },
       "skills": [
         "compliance/license-audit",
         "compliance/data-privacy",
@@ -734,6 +834,11 @@
       "codexSandbox": "workspace-write",
       "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,Write,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-release-manager.md",
+      "embedOrientation": {
+        "focusAreas": ["release readiness", "rollback viability", "changelog completeness", "migration safety"],
+        "riskSignals": ["untested rollback", "irreversible migrations", "missing changelog entries", "canary without rollback trigger"],
+        "artifactBias": ["notes", "adrs"]
+      },
       "skills": [
         "devops/git-workflow",
         "quality-gates/verify-change"
@@ -755,6 +860,11 @@
       "codexSandbox": "workspace-write",
       "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-docs-keeper.md",
+      "embedOrientation": {
+        "focusAreas": ["documentation freshness", "decision traceability", "context completeness", "onboarding clarity"],
+        "riskSignals": ["stale docs", "undocumented decisions", "missing context updates", "tribal knowledge growing"],
+        "artifactBias": ["adrs", "notes", "memos"]
+      },
       "skills": [
         "docs/adr-workflow",
         "docs/runbook-workflow",
@@ -777,6 +887,11 @@
       "codexSandbox": "workspace-write",
       "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-designer.md",
+      "embedOrientation": {
+        "focusAreas": ["interaction completeness", "state coverage", "design consistency", "accessibility compliance"],
+        "riskSignals": ["missing error states", "no empty states", "inconsistent patterns", "untested responsive breakpoints"],
+        "artifactBias": ["notes", "memos"]
+      },
       "skills": [
         "frontend-design/ui-aesthetics",
         "frontend-design/ux-principles",
@@ -802,6 +917,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-accessibility.md",
+      "embedOrientation": {
+        "focusAreas": ["keyboard navigability", "screen reader compatibility", "contrast compliance", "ARIA correctness"],
+        "riskSignals": ["ARIA added without testing", "keyboard traps", "contrast failures", "missing focus indicators"],
+        "artifactBias": ["notes"]
+      },
       "skills": [
         "frontend-design/accessibility"
       ],
@@ -829,6 +949,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
       "promptFile": "agents/prompts/cx-explorer.md",
+      "embedOrientation": {
+        "focusAreas": ["codebase understanding", "pattern discovery", "dependency mapping", "drift detection"],
+        "riskSignals": ["assumptions without verification", "incomplete investigation", "outdated mental models", "undiscovered code paths"],
+        "artifactBias": ["notes"]
+      },
       "skills": [
         "exploration/repo-map"
       ],
@@ -848,6 +973,11 @@
       "reasoningEffort": "high",
       "claudeTools": "Read,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
       "promptFile": "agents/prompts/cx-trace-reviewer.md",
+      "embedOrientation": {
+        "focusAreas": ["agent performance trends", "variance detection", "degradation signals", "fleet health"],
+        "riskSignals": ["stable median hiding variance", "silent degradation", "promotion on few traces", "unreviewed failure clusters"],
+        "artifactBias": ["notes", "memos"]
+      },
       "skills": [
         "ai/prompt-optimizer"
       ],
@@ -867,6 +997,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
       "promptFile": "agents/prompts/cx-data-engineer.md",
+      "embedOrientation": {
+        "focusAreas": ["pipeline reliability", "data quality", "schema contract adherence", "idempotency"],
+        "riskSignals": ["non-idempotent pipelines", "missing data quality tests", "schema drift", "uncontracted outputs"],
+        "artifactBias": ["adrs", "notes"]
+      },
       "skills": [
         "devops/data-engineering",
         "devops/database",
@@ -888,6 +1023,11 @@
       "codexSandbox": "read-only",
       "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
       "promptFile": "agents/prompts/cx-test-automation.md",
+      "embedOrientation": {
+        "focusAreas": ["test determinism", "flakiness trends", "automation ROI", "behavioral coverage"],
+        "riskSignals": ["flaky tests ignored", "arbitrary sleeps", "tests that never caught a bug", "intermittent failures dismissed"],
+        "artifactBias": ["notes"]
+      },
       "skills": [
         "devops/testing",
         "quality-gates/verify-change",

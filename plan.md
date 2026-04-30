@@ -96,7 +96,7 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 3.5 | Approval queue — high-risk actions (work item creation, merge, doc publish) go to queue | done | lib/embed/approval-queue.mjs |
 | 3.6 | `construct embed start/stop/status` CLI commands | done | lib/cli-commands.mjs — embed + providers commands registered |
 | 3.7 | Artifact generation — PRDs, RFCs, ADRs on demand or triggered by embed analysis | done | lib/embed/artifact.mjs — generateArtifact, listArtifacts, recommendArtifacts; `construct artifact` CLI command; 18 tests |
-| 3.8 | Embedded operating profile — mission, strategy, focal resources, authority boundaries, artifact obligations, risk/gap model | in progress | `lib/embed/config.mjs`, `lib/embed/snapshot.mjs`, `lib/embed/roadmap.mjs`; snapshots/roadmaps disclose profile and gaps |
+| 3.8 | Embedded operating profile — mission, strategy, focal resources, authority boundaries, artifact obligations, risk/gap model | done | `lib/embed/config.mjs` (targets[], roles), `lib/embed/snapshot.mjs` + `lib/embed/roadmap.mjs` (role lens injection); all 28 agents have `embedOrientation`; target resolver + role framing modules |
 
 **Acceptance**: `construct embed --config ~/.construct/embed.yaml` produces a snapshot within configured interval. High-risk actions queue for approval. Snapshots appear in configured targets.
 
@@ -113,8 +113,9 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 4.3 | Dashboard views — overview, embed status, snapshots, approval queue, config editor | done | Artifacts, Approvals, Snapshots, Chat, Config sections; /api/artifacts, /api/approvals, /api/snapshots, /api/config |
 | 4.4 | Chat interface — interact with Construct through the dashboard | done | lib/server/chat.mjs; SSE streaming via claude --print CLI; /api/chat/stream, /api/chat, /api/chat/history |
 | 4.5 | Config management — providers, embed settings, approval rules, all editable in UI | done | /api/config GET+POST reads/writes ~/.construct/config.env and ~/.construct/embed.yaml |
-| 4.6 | Real-time updates — WebSocket or SSE for live status, new approvals, snapshot alerts | done | SSE already implemented; new sections refresh on SSE events |
+| 4.6 | Real-time updates — SSE for live status, new approvals, snapshot alerts, embed action toasts | done | SSE `notifyClients(event?)` supports typed JSON events; `lib/embed/notifications.mjs` event bus; daemon emits `emitEmbedNotification`; dashboard renders colour-coded toast (info/success/warning/error); 2 tests |
 | 4.7 | Mode-aware layout — views adapt based on active mode (init, embed, point-at) | done | Mode badge in topbar: embed/live/init derived from config presence; CSS classes mode-embed/mode-live/mode-init |
+| 4.8 | Role selector in Config panel | done | `#role-primary` + `#role-secondary` dropdowns populated from registry; saves to embed.yaml; `initRoleSelector()` in `app.js`; `/api/config` GET now returns `roles` |
 
 **Acceptance**: Dashboard serves on `construct up`. Users can log in, see status, chat with Construct, approve/reject actions, edit configs.
 
@@ -161,11 +162,15 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 7.5 | Learned patterns injected into prompts | done | `lib/prompt-composer.mjs` — `buildLearnedPatternsBlock()`; injected before task-packet; capped 800 chars, min-confidence 0.7 |
 | 7.6 | Score → observation feedback loop | done | `cx_score` in `lib/mcp/tools/telemetry.mjs`; score < 0.5 → `anti-pattern`; score ≥ 0.85 → `pattern` |
 | 7.7 | Eval dataset sync | done | `lib/telemetry/eval-datasets.mjs`; `syncEvalDatasets()`; scored traces → Langfuse Datasets grouped by agent+workCategory; `construct eval-datasets` CLI |
-| 7.8 | Self-healing daemon — 9 scheduled jobs | done | snapshot, provider-health, session-distill, self-repair, approval-expiry, eval-dataset-sync, prompt-regression-check, inbox-watcher, roadmap |
+| 7.8 | Self-healing daemon — 10 scheduled jobs | done | snapshot, provider-health, session-distill, self-repair, approval-expiry, eval-dataset-sync, prompt-regression-check, inbox-watcher, roadmap, docs-lifecycle |
 | 7.9 | Authority guard — runtime enforcement of operating profile authority boundaries | done | `lib/embed/authority-guard.mjs`; `AuthorityGuard` maps action types to authority keys; autonomous/approval-queued/denied levels; threaded through `daemon.mjs` + `output.mjs`; Slack posts and roadmap Slack summaries now gated; 22 tests |
 | 7.10 | `construct optimize` — pure JS optimize loop with Langfuse trace analysis + LLM patch generation | done | `scripts/optimize.mjs`; `--list` shows agents by quality score; fetches traces by `name`; bulk score join; applies patch to `skills/roles/<agent>.md`; auto-triggers `construct sync` after patch |
 | 7.11 | Session-end optimize hook | done | `lib/server/chat.mjs` `maybeRunOptimize()`: fires after every session, spawns optimize detached for below-threshold agents every `CX_OPTIMIZE_INTERVAL` sessions (default 5) |
 | 7.12 | Infrastructure tab — Terraform editor in dashboard | done | `authFetch` defined; `tfOriginal` + dirty indicator (`●`); Validate + Outputs buttons; `terraform validate`/`output` wired in server; all 4 run buttons disable together during execution |
+| 7.13 | Multi-target embed — target resolver + workspace fallback | done | `lib/embed/target-resolver.mjs` — resolveTargets, routeArtifact, resolveArtifactPath; explicit → signal-discovered → workspace fallback; 8 tests |
+| 7.14 | Role framing — embedOrientation lens for snapshots + roadmaps | done | `lib/embed/role-framing.mjs` — getOrientation, buildRoleLens, renderRoleLensSection; injected into snapshot/roadmap; 8 tests |
+| 7.15 | Docs lifecycle job — gap detection, risk classification, authority routing | done | `lib/embed/docs-lifecycle.mjs` — detectDocGaps, runDocsLifecycle; Job 10 in daemon, 30-min interval; auto-fix low-risk, queue high-risk; 5 tests |
+| 7.16 | Embed notification bus + Slack stub | done | `lib/embed/notifications.mjs` — emitEmbedNotification, onEmbedNotification, notifySlack; daemon emits on roadmap/docs-lifecycle; server subscribes → SSE toasts; Slack stub no-ops without `SLACK_EMBED_WEBHOOK_URL`; 2 tests |
 
 **Acceptance**: `construct embed start` runs daemon. After first snapshot, open Jira/GitHub/Linear items appear in observation store. Dropping a file into `.cx/inbox/` (or any `CX_INBOX_DIRS` path) causes it to be ingested and observed within 2 min. `.cx/roadmap.md` updates hourly. Slack bot posts roadmap summary when `SLACK_BOT_TOKEN` + `SLACK_CHANNELS` set. Authority boundaries are enforced at runtime — approval-queued actions are held for approval, not silently executed.
 
@@ -192,11 +197,17 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 
 Written under `docs/how-to/`:
 
-- `how-to-embed-start.md` — start, check, and stop the daemon; 9-job table
+- `how-to-embed-start.md` — start, configure targets/roles, check, stop; 10-job table; docs lifecycle, toasts, Slack stub
 - `how-to-inbox.md` — inbox watcher, `CX_INBOX_DIRS`, routing table, re-processing behavior
 - `how-to-slack-setup.md` — full Slack app setup, scopes, signing secret, channel intent format, authority config
 - `how-to-cx-data-dir.md` — override storage root, Docker volume example, path table
 - `how-to-reflect.md` — `construct reflect` usage, targets, what gets written
+
+## Documentation Maintenance
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| D.1 | Reposition public docs to lead with agent usage inside OpenCode/Claude Code instead of CLI-first framing | done | `README.md`, `package.json` now lead with agent-surface usage, clarify orchestration vs agent framing, and move CLI setup behind the product story |
 
 ## Pending Config
 

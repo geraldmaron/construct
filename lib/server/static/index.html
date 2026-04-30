@@ -1215,6 +1215,14 @@ for data fetching and rendering. Inline styles only — no build step required.
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
+
+    /* Toast notifications */
+    .toast { padding: 10px 14px; border-radius: 6px; font-size: 13px; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: opacity 0.3s; }
+    .toast-info { background: #2563eb; }
+    .toast-success { background: #16a34a; }
+    .toast-warning { background: #ca8a04; }
+    .toast-error { background: #dc2626; }
+    .toast-fade { opacity: 0; }
   </style>
 </head>
 <body>
@@ -1502,6 +1510,15 @@ for data fetching and rendering. Inline styles only — no build step required.
 
     <section id="section-config" class="section">
       <div class="section-title">Config</div>
+      <div id="config-tab-roles" class="tab-panel" style="margin-bottom:16px">
+        <div class="subsection-title" style="margin-bottom:8px">Embed Roles</div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <label style="font-size:13px">Primary: <select id="role-primary" style="margin-left:4px"></select></label>
+          <label style="font-size:13px">Secondary: <select id="role-secondary" style="margin-left:4px"></select></label>
+          <button class="btn-primary" id="role-save" style="font-size:12px;padding:4px 10px">Save Roles</button>
+          <span id="role-feedback" class="feedback"></span>
+        </div>
+      </div>
       <div id="config-tab-env" class="tab-panel active">
         <div id="config-env-content"><div class="loading">Loading...</div></div>
         <div class="form-actions" style="margin-top:12px">
