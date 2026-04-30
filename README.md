@@ -152,7 +152,7 @@ The team challenges itself along the way — reviewers push back on incomplete w
 | `construct search` | Run hybrid file, SQL, and semantic retrieval over core project state |
 | `construct storage` | Sync and inspect the hybrid storage backend |
 | `construct headhunt` | Create a temporary domain expertise overlay or promotion request |
-| `construct init-docs` | Stand up docs lanes and starter templates without overwriting existing docs |
+| `construct init-docs` | Stand up opinionated docs lanes and per-lane templates without overwriting existing docs |
 | `construct team` | Team review and template listing |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct reflect` | Capture improvement feedback from chat session and update Construct core |
