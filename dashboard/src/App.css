@@ -1,0 +1,38 @@
+/* Custom styles beyond Tailwind */
+
+/* Smooth gradient for active nav items */
+/* We already defined gradients in tailwind.config.js */
+
+/* Page title styling */
+.page-title {
+  @apply text-2xl font-bold mb-6;
+}
+
+/* Card styling */
+.card {
+  @apply bg-white rounded-lg border border-gray-200 p-6 mb-4;
+}
+
+/* Button styling */
+.btn-primary {
+  @apply bg-gradient-to-r from-gray-900 to-white text-white px-4 py-2 rounded hover:from-gray-800 hover:to-gray-100 transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-gray-100 text-gray-800 px-4 py-2 rounded hover:bg-gray-200 transition-colors;
+}
+
+/* Loading and empty states */
+.loading, .empty {
+  @apply text-center py-10 text-gray-500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  aside {
+    @apply hidden;
+  }
+  main {
+    @apply p-4;
+  }
+}

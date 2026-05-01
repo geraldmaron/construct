@@ -830,6 +830,14 @@ const handlers = new Map([
     const { runEvalDatasetsCli } = await import('../lib/telemetry/eval-datasets.mjs');
     return runEvalDatasetsCli(args);
   }],
+  ['llm-judge', async (args) => {
+    const { runLLMJudgeCli } = await import('../lib/telemetry/llm-judge.mjs');
+    return runLLMJudgeCli(args);
+  }],
+  ['langfuse-setup', async (args) => {
+    const { runLangfuseSetupCli } = await import('../lib/telemetry/langfuse-setup.mjs');
+    return runLangfuseSetupCli(args);
+  }],
   ['drop', async (args) => {
     const { runDropCli } = await import('../lib/drop.mjs');
     return runDropCli(args);

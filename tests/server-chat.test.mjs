@@ -87,7 +87,7 @@ test('handleChatHistory returns stored messages for known conversation', () => {
 });
 
 // ── CLI-missing fallback (handleChat) ─────────────────────────────────────
-// We test the fallback path by temporarily patching the PATH so that neither
+ // Testing the fallback path by temporarily patching the PATH so that neither
 // `claude` nor `anthropic` resolves. This exercises the cliMissing branch.
 
 test('handleChat returns cliMissing:true when CLI is not on PATH', async () => {
@@ -117,7 +117,7 @@ test('handleChat returns cliMissing:true when CLI is not on PATH', async () => {
 
   process.env.PATH = origPath;
 
-  // We can only assert the conversation was created (reply content depends on CLI)
-  // — but if PATH is empty, cliMissing branch fires.
-  // Just verify the test didn't throw (CLI detection handled gracefully).
+ // Asserting the conversation was created (reply content depends on CLI).
+ // When PATH is empty, cliMissing branch fires.
+ // Verifying the test didn't throw (CLI detection handled gracefully).
 });

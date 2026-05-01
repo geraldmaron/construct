@@ -1,0 +1,53 @@
+{
+  "id": "10002",
+  "key": "PLATFORM-456",
+  "fields": {
+    "summary": "Implement comprehensive platform reliability testing framework",
+    "description": "As part of our reliability engineering initiative, we need to establish a comprehensive testing framework that validates our platform's ability to withstand various failure scenarios and maintain SLOs under stress. This includes chaos engineering experiments, load testing, failure injection, and recovery validation.",
+    "issuetype": {
+      "name": "Story",
+      "subtask": false
+    },
+    "priority": {
+      "name": "High",
+      "id": "2"
+    },
+    "status": {
+      "name": "In Progress",
+      "description": "Work is actively being performed on this issue",
+      "iconUrl": "/images/icons/statuses/inprogress.png"
+    },
+    "assignee": {
+      "accountId": "557058:9a1e1a6b-b4d9-40e0-99f8-a822ef45d2e9",
+      "displayName": "Gerald Maron",
+      "active": true
+    },
+    "reporter": {
+      "accountId": "557058:abcdef12-3456-7890-abcd-ef1234567890",
+      "displayName": "Site Reliability Engineer",
+      "active": true
+    },
+    "created": "2026-04-15T09:15:00.000+0000",
+    "updated": "2026-04-29T11:30:00.000+0000",
+    "labels": ["reliability", "chaos-engineering", "testing", "platform", "slo"],
+    "components": [
+      {
+        "name": "Reliability Platform",
+        "id": "10001"
+      },
+      {
+        "name": "Testing Infrastructure",
+        "id": "10002"
+      }
+    ],
+    "timeSpentSeconds": 28800,
+    "timeEstimateSeconds": 57600,
+    "environment": "Production staging",
+    "fixVersions": [
+      {
+        "name": "v2.1.0",
+        "id": "10000"
+      }
+    ]
+  }
+}

@@ -20,7 +20,14 @@ This file is a living plan, not an archive:
 
 - PRD: `docs/prd/0001-construct-org-in-a-box.md`
 - ADR: `docs/adr/0002-layered-architecture.md`
-- Primary issue: TBD (will be created as Construct dogfoods)
+- Beads prefix: `construct-` (issues named `construct-<hash>`)
+- Active issues:
+  - `construct-lvx` P0 — CI green after deploy/pages gating fixes
+  - `construct-d4e` P1 — Embed daemon: consolidate and harden
+  - `construct-sjs` P1 — TPM gap analysis and ticket creation (Phase 9)
+  - `construct-oip` P2 — Docs lifecycle job: gap detection and authority routing
+  - `construct-94c` P2 — Init-docs: unified TTY menus, intake routing, custom lane polish
+  - `construct-an2` P3 — Shell completions and CLI surface polish
 
 ## Goal
 

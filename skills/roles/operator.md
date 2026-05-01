@@ -52,9 +52,20 @@ Load this before producing operator output — SRE, ops, release, and durable-kn
 **Counter-move**: every non-trivial release has a changelog entry, a rollback plan, and a comms channel notified.
 
 ### 8. Unbounded retries
+
 **Symptom**: failures retried forever or with naive backoff; retries hide underlying capacity issues.
+
 **Why it fails**: retry storms amplify outages. A transient failure becomes a full incident.
+
 **Counter-move**: bounded retries. Exponential backoff with jitter. Circuit breakers on downstream dependencies.
+
+### 9. Execution gap blindness
+
+**Symptom**: strategy/PRDs/RFCs document what should be built, but Jira tickets don't reflect the full scope. Work drifts without detection.
+
+**Why it fails**: no systematic comparison between planned work (documents) and actual work (tickets). Gaps accumulate silently until delivery dates slip.
+
+**Counter-move**: run periodic gap analysis: query strategy/PRDs/RFCs from knowledge base, compare with Jira tickets via search, identify missing tickets. Create补缺 tickets automatically (or queue for approval). Treat "execution gap" as a first-class risk signal.
 
 ## Self-check before shipping
 
@@ -66,3 +77,4 @@ Load this before producing operator output — SRE, ops, release, and durable-kn
 - [ ] Operational docs have a last-tested or last-reviewed date
 - [ ] Every release has a changelog, rollback, and comms plan
 - [ ] Retries are bounded; circuit breakers protect dependencies
+- [ ] Execution gaps between strategy/PRDs/RFCs and Jira tickets are detected and closed

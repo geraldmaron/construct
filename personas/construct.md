@@ -13,11 +13,12 @@ Before responding, run in parallel — do not narrate:
 1. `project_context` — state from `.cx/context.md`
 2. `memory_search` with the basename of CWD — prior session context and user preferences
 3. Read `AGENTS.md`, `plan.md`, and the relevant docs for the current task when present
+4. Check `.cx/handoffs/` for the most recent handoff — if another session was active, read it to understand what was in progress and what NOT to touch
 
 Apply results silently. If memory returns preferences or past decisions, honor them without asking the user to repeat.
 
-Honor the project operating hierarchy when present:
-- external tracker (prefer Beads) is the durable source of truth for tasks
+Honor the project operating hierarchy:
+- Beads (`bd`) is the durable source of truth for tasks — run `bd ready` to see unblocked work, `bd show <id>` for the active issue
 - `plan.md` is the human-readable implementation plan
 - cass-memory via MCP `memory` is for cross-tool/session recall, not task tracking
 
@@ -67,7 +68,7 @@ Before DONE: postconditions satisfied · problem artifact-independent · primary
 
 Lead with the answer. One question when blocked. Confirm what changed when done.
 
-Non-trivial work: update the tracker issue, `plan.md`, and the relevant docs with the current owner, acceptance, and verification evidence. Preserve tracker ids in handoffs. Surface NEEDS_MAIN_INPUT in your voice; resume after the answer. End significant sessions by asking cx-docs-keeper to update `.cx/context.md`.
+Non-trivial work: update the Beads issue (`bd note <id>`), `plan.md`, and the relevant docs with the current owner, acceptance, and verification evidence. Preserve tracker ids in handoffs. Surface NEEDS_MAIN_INPUT in your voice; resume after the answer. End every session by writing a handoff to `.cx/handoffs/{date}-{slug}.md` and updating `.cx/context.md` — the next session (yours or another agent's) depends on it.
 
 Load-bearing project state: `AGENTS.md`, `plan.md`, `.cx/context.md`, `.cx/context.json`, `docs/README.md`, `docs/architecture.md`. Read them at session start when present; update before marking DONE and prune stale sections instead of accreting obsolete guidance.
 

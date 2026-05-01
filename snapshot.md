@@ -1,0 +1,96 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]: Construct
+    - navigation [ref=e6]:
+      - link "Resources" [ref=e7] [cursor=pointer]:
+        - /url: "#/"
+      - link "Workflow" [ref=e8] [cursor=pointer]:
+        - /url: "#/workflow"
+      - link "Approvals" [ref=e9] [cursor=pointer]:
+        - /url: "#/approvals"
+      - link "Snapshots" [ref=e10] [cursor=pointer]:
+        - /url: "#/snapshots"
+      - link "Agents" [ref=e11] [cursor=pointer]:
+        - /url: "#/agents"
+      - link "Skills" [ref=e12] [cursor=pointer]:
+        - /url: "#/skills"
+      - link "Commands" [ref=e13] [cursor=pointer]:
+        - /url: "#/commands"
+      - link "Hooks" [ref=e14] [cursor=pointer]:
+        - /url: "#/hooks"
+      - link "MCP" [ref=e15] [cursor=pointer]:
+        - /url: "#/mcp"
+      - link "Plugins" [ref=e16] [cursor=pointer]:
+        - /url: "#/plugins"
+      - link "Models" [ref=e17] [cursor=pointer]:
+        - /url: "#/models"
+      - link "Artifacts" [ref=e18] [cursor=pointer]:
+        - /url: "#/artifacts"
+      - link "Knowledge" [ref=e19] [cursor=pointer]:
+        - /url: "#/knowledge"
+      - link "Infrastructure" [ref=e20] [cursor=pointer]:
+        - /url: "#/infrastructure"
+      - link "Config" [ref=e21] [cursor=pointer]:
+        - /url: "#/config"
+  - main [ref=e22]:
+    - generic [ref=e23]:
+      - heading "Resources" [level=1] [ref=e24]
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - heading "System Status" [level=2] [ref=e27]
+          - generic [ref=e28]:
+            - generic [ref=e29]:
+              - paragraph [ref=e30]: Version
+              - paragraph [ref=e31]: 1.0.0
+            - generic [ref=e32]:
+              - paragraph [ref=e33]: Last Sync
+              - paragraph [ref=e34]: 2026-05-01T02:50:48.277Z
+            - generic [ref=e35]:
+              - paragraph [ref=e36]: Mode
+              - paragraph [ref=e37]: N/A
+            - generic [ref=e38]:
+              - paragraph [ref=e39]: Health
+              - paragraph [ref=e40]: healthy
+        - generic [ref=e41]:
+          - heading "Features" [level=2] [ref=e42]
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - heading "Context7" [level=3] [ref=e45]
+              - paragraph [ref=e46]: Library and framework documentation lookup. Agents use this before writing code against any dependency.
+              - paragraph [ref=e47]: "Status: configured"
+            - generic [ref=e48]:
+              - heading "Sequential Thinking" [level=3] [ref=e49]
+              - paragraph [ref=e50]: Structured multi-step reasoning chains. Helps with complex planning and analysis.
+              - paragraph [ref=e51]: "Status: configured"
+            - generic [ref=e52]:
+              - heading "Memory" [level=3] [ref=e53]
+              - paragraph [ref=e54]: cass-memory over HTTP. Persistent cross-session and cross-agent memory for decisions, findings, and handoffs.
+              - paragraph [ref=e55]: "Status: configured"
+            - generic [ref=e56]:
+              - heading "Playwright" [level=3] [ref=e57]
+              - paragraph [ref=e58]: Browser automation for E2E testing and web research.
+              - paragraph [ref=e59]: "Status: configured"
+            - generic [ref=e60]:
+              - heading "GitHub" [level=3] [ref=e61]
+              - paragraph [ref=e62]: "GitHub API: issues, PRs, code search, repository operations."
+              - paragraph [ref=e63]: "Status: configured"
+            - generic [ref=e64]:
+              - heading "Atlassian (Jira + Confluence)" [level=3] [ref=e65]
+              - paragraph [ref=e66]: Jira issue tracking and Confluence wiki access via Atlassian's official remote MCP server. OAuth is handled by each MCP client.
+              - paragraph [ref=e67]: "Status: configured"
+            - generic [ref=e68]:
+              - heading "Linear" [level=3] [ref=e69]
+              - paragraph [ref=e70]: Linear issue tracking — create issues, update status, search projects.
+              - paragraph [ref=e71]: "Status: configured"
+            - generic [ref=e72]:
+              - heading "Slack" [level=3] [ref=e73]
+              - paragraph [ref=e74]: Slack messaging — send messages, read channels, search conversations.
+              - paragraph [ref=e75]: "Status: unavailable"
+            - generic [ref=e76]:
+              - heading "Notion" [level=3] [ref=e77]
+              - paragraph [ref=e78]: Notion workspace access — read/write pages, databases, and comments.
+              - paragraph [ref=e79]: "Status: unavailable"
+            - generic [ref=e80]:
+              - heading "Filesystem" [level=3] [ref=e81]
+              - paragraph [ref=e82]: Extended file operations beyond built-in Read/Write/Edit tools.
+              - paragraph [ref=e83]: "Status: unavailable"

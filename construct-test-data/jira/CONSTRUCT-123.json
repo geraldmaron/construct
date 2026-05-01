@@ -1,0 +1,42 @@
+{
+  "id": "10001",
+  "key": "CONSTRUCT-123",
+  "fields": {
+    "summary": "Implement dark mode toggle in settings panel",
+    "description": "Users have requested a dark mode option for better accessibility and reduced eye strain. Need to implement a toggle switch in the settings panel that persists user preference and applies theme changes across the application.",
+    "issuetype": {
+      "name": "Story",
+      "subtask": false
+    },
+    "priority": {
+      "name": "Medium",
+      "id": "3"
+    },
+    "status": {
+      "name": "In Progress",
+      "description": "Work is actively being performed on this issue",
+      "iconUrl": "/images/icons/statuses/inprogress.png"
+    },
+    "assignee": {
+      "accountId": "557058:9a1e1a6b-b4d9-40e0-99f8-a822ef45d2e9",
+      "displayName": "Gerald Maron",
+      "active": true
+    },
+    "reporter": {
+      "accountId": "557058:abcdef12-3456-7890-abcd-ef1234567890",
+      "displayName": "Product Manager",
+      "active": true
+    },
+    "created": "2026-04-20T10:30:00.000+0000",
+    "updated": "2026-04-28T14:22:00.000+0000",
+    "labels": ["ui", "accessibility", "frontend"],
+    "components": [
+      {
+        "name": "Settings Panel",
+        "id": "10000"
+      }
+    ],
+    "timeSpentSeconds": 14400,
+    "timeEstimateSeconds": 28800
+  }
+}

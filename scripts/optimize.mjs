@@ -82,10 +82,10 @@ async function fetchAgentTraces(agentName, { days = 7, limit = 50 } = {}) {
 }
 
 async function fetchQualityScoresByTraceIds(traceIds) {
-  // Fetch all quality scores in one request and build a traceId→value map.
-  // The Langfuse /scores endpoint supports userId/traceId filters individually;
-  // we use a broad fetch and filter in memory to avoid N+1 queries and work
-  // around local-instance traceId filter bugs.
+   // Fetch all quality scores in one request and build a traceId→value map.
+   // Langfuse /scores endpoint supports userId/traceId filters individually.
+   // Broad fetch with client-side filtering avoids N+1 queries.
+   // Works around local-instance traceId filter bugs.
   const limit = Math.min(traceIds.length * 3, 200);
   const data = await langfuseFetch(`/api/public/scores?name=quality&limit=${limit}`);
   const traceSet = new Set(traceIds);

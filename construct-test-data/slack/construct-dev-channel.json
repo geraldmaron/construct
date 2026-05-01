@@ -1,0 +1,47 @@
+{
+  "channel": "construct-dev",
+  "messages": [
+    {
+      "type": "message",
+      "user": "U0123456789",
+      "text": "Hey team, just finished implementing the dark mode toggle in the settings panel. It's working locally but needs testing on different screen sizes.",
+      "ts": "1650412800.000200",
+      "thread_ts": "1650412800.000200",
+      "reactions": [
+        {
+          "name": "thumbsup",
+          "count": 3,
+          "users": ["U0123456789", "U0987654321", "U0112233445"]
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "user": "U0987654321",
+      "text": "Great work! I'll help test it on mobile browsers. Also, did you update the CSS variables for the color scheme?",
+      "ts": "1650412900.000300",
+      "thread_ts": "1650412800.000200"
+    },
+    {
+      "type": "message",
+      "user": "U0123456789",
+      "text": "Yeah, I updated the CSS variables in :root. Using OKLCH colors as per our design system. Made sure to test contrast ratios too.",
+      "ts": "1650413000.000400",
+      "thread_ts": "1650412800.000200"
+    },
+    {
+      "type": "message",
+      "user": "U0112233445",
+      "text": "Just tested on iOS Safari and Android Chrome. Looks good! One minor issue - the toggle switch isn't animating smoothly on older devices.",
+      "ts": "1650413100.000500",
+      "thread_ts": "1650412800.000200"
+    },
+    {
+      "type": "message",
+      "user": "U0123456789",
+      "text": "Thanks for the feedback. I'll look into optimizing the animation for performance. Might need to use will-change or reduce the animation complexity.",
+      "ts": "1650413200.000600",
+      "thread_ts": "1650412800.000200"
+    }
+  ]
+}
