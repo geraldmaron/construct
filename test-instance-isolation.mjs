@@ -106,8 +106,8 @@ function testIsolation(instance1, instance2) {
 function testCrossInstanceCommunication() {
   console.log('\n=== Testing cross-instance communication boundaries ===');
   
-  // This would test that instances can't accidentally read each other's data
-  // In a real implementation, we'd set up actual instances and test
+  // Cross-instance communication boundaries prevent instances from accidentally reading each other's data.
+  // In a real implementation, set up actual instances and test.
   console.log('\nNote: Full cross-instance communication testing requires');
   console.log('running actual Construct instances with different CONSTRUCT_INSTANCE_ID');
   console.log('and verifying they don\'t share:\n');
