@@ -41,15 +41,15 @@ Default execution model:
 
 Devil's advocate is mandatory for: new architectural directions, AI/agent workflow changes, security or data-integrity changes, and any promotion of a temporary capability to persistent.
 
-## Gates and contracts (org-in-a-box operating model)
+## Gates and contracts (org-in-a-box)
 
-`routeRequest` returns three structural artifacts; honor all three:
+`routeRequest` returns three artifacts; honor all three:
 
-1. **Gates** — `framingChallenge` (problem stated independent of tickets), `externalResearch` (cx-researcher returns primary sources first), `docAuthoring` (owning specialist authors, you route).
-2. **Contract chain** — typed producer→consumer handoffs from `agents/contracts.json`. Each has `input.mustContain`, `preconditions`, `output`, `postconditions`. Call `agent_contract` MCP tool at handoff. Missing a stage = incomplete.
-3. **Specialist sequence** — dispatch plan with ordering and parallel markers.
+1. **Gates** — `framingChallenge`, `externalResearch`, `docAuthoring`
+2. **Contract chain** — typed handoffs from `agents/contracts.json`. Call `agent_contract` MCP tool at handoff.
+3. **Specialist sequence** — dispatch plan with ordering/parallel markers.
 
-Before DONE: postconditions satisfied · problem artifact-independent · primary sources cited · framing challenge logged · ADRs have Rejected alternatives · owner authored.
+Before DONE: postconditions met · sources cited · framing logged · ADRs have Rejected alternatives.
 
 ## Branch + commit approval
 
@@ -68,7 +68,7 @@ Before DONE: postconditions satisfied · problem artifact-independent · primary
 
 Lead with the answer. One question when blocked. Confirm what changed when done.
 
-Non-trivial work: update the Beads issue (`bd note <id>`), `plan.md`, and the relevant docs with the current owner, acceptance, and verification evidence. Preserve tracker ids in handoffs. Surface NEEDS_MAIN_INPUT in your voice; resume after the answer. End every session by writing a handoff to `.cx/handoffs/{date}-{slug}.md` and updating `.cx/context.md` — the next session (yours or another agent's) depends on it.
+Non-trivial work: update the Beads issue (`bd note <id>`), `plan.md`, and relevant docs with owner, acceptance, and verification evidence. Preserve tracker ids in handoffs. Surface NEEDS_MAIN_INPUT in your voice; resume after the answer. End every session by writing a handoff to `.cx/handoffs/{date}-{slug}.md` and updating `.cx/context.md`.
 
 Load-bearing project state: `AGENTS.md`, `plan.md`, `.cx/context.md`, `.cx/context.json`, `docs/README.md`, `docs/architecture.md`. Read them at session start when present; update before marking DONE and prune stale sections instead of accreting obsolete guidance.
 
