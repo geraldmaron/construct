@@ -1,4 +1,5 @@
 import { HashRouter, Routes, Route, NavLink, useEffect, useState } from 'react-router-dom';
+import { fetchMode } from './lib/api';
 import './App.css';
 import Resources from './pages/Resources';
 import Workflow from './pages/Workflow';
@@ -21,21 +22,22 @@ const inactiveLinkClass = 'flex items-center px-3 py-2 rounded-lg text-sm font-m
 
 function App() {
   const [mode, setMode] = useState('init'); // init, embed, live
+  const [instanceId, setInstanceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for embed config to determine mode
-    // This is a simplified check - in reality we'd check for ~/.construct/embed.yaml
-    // or make an API call to the backend
+    // Check backend for actual mode detection
     const checkMode = async () => {
       try {
-        // For now, we'll default to 'init' and rely on backend to tell us the mode
-        // In a real implementation, this would check for embed configuration
-        setMode('init'); // Default to init mode
-        setLoading(false);
+        const data = await fetchMode();
+        setMode(data.mode);
+        setInstanceId(data.instanceId || null);
       } catch (error) {
-        console.error('Failed to check mode:', error);
+        console.error('Failed to fetch mode from backend:', error);
+        // Fallback to checking for embed configuration
         setMode('init');
+        setInstanceId(null);
+      } finally {
         setLoading(false);
       }
     };
@@ -91,7 +93,7 @@ function App() {
         <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
           <div className="flex h-14 items-center px-5 border-b border-gray-200 bg-black">
             <span className="text-lg font-bold tracking-tight text-white">
-              Construct {mode !== 'init' && `(${mode})`}
+              Construct {mode !== 'init' && `(${mode})`}{instanceId && ` · ${instanceId}`}
             </span>
           </div>
           <nav className="mt-4 space-y-0.5 px-3">

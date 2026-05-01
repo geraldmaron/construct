@@ -126,8 +126,11 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 4.9 | Infrastructure Terraform editor in React dashboard | done | File tree, code editor with dirty-state indicator, Validate/Outputs/Plan/Apply buttons; uses `/api/terraform/*` endpoints |
 | 4.10 | Workflow screen with plan.md + workflow.json integration | done | Three-tab layout (Plan/Tasks/Phases); summary cards for task status counts; `/api/workflow` endpoint |
 | 4.11 | Enhanced mode-aware navigation — show/hide navigation items based on embed mode to prevent Construct internal information from showing unless explicitly embedded | done | Modified dashboard/src/App.tsx to conditionally render navigation based on mode (init/embed/live); prevents exposing internal Construct details in dashboard unless explicitly embedded |
+| 4.14 | Explicit embedding boundary API for running Construct instances within Construct | done | Added `/api/embed/boundary` GET and POST endpoints; provides boundary status, instance registration, and parent-child relationship tracking; enables Construct instances to run within other Construct instances with proper boundary definition |
 
 **Acceptance**: Dashboard serves on `construct up`. Users can log in, see status, chat with Construct, approve/reject actions, edit configs.
+
+| 4.15 | Embedded instance isolation testing — prevents cross-contamination between Construct instances | done | Created test-instance-isolation.mjs to verify config, data, port, and state separation; provides isolation verification and best practices for running multiple Construct instances |
 
 ## Phase 5: Cloud Deployment & Multi-User
 
