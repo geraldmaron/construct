@@ -116,6 +116,8 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 4.6 | Real-time updates — SSE for live status, new approvals, snapshot alerts, embed action toasts | done | SSE `notifyClients(event?)` supports typed JSON events; `lib/embed/notifications.mjs` event bus; daemon emits `emitEmbedNotification`; dashboard renders colour-coded toast (info/success/warning/error); 2 tests |
 | 4.7 | Mode-aware layout — views adapt based on active mode (init, embed, point-at) | done | Mode badge in topbar: embed/live/init derived from config presence; CSS classes mode-embed/mode-live/mode-init |
 | 4.8 | Role selector in Config panel | done | `#role-primary` + `#role-secondary` dropdowns populated from registry; saves to embed.yaml; `initRoleSelector()` in `app.js`; `/api/config` GET now returns `roles` |
+| 4.9 | Infrastructure Terraform editor in React dashboard | done | File tree, code editor with dirty-state indicator, Validate/Outputs/Plan/Apply buttons; uses `/api/terraform/*` endpoints |
+| 4.10 | Workflow screen with plan.md + workflow.json integration | done | Three-tab layout (Plan/Tasks/Phases); summary cards for task status counts; `/api/workflow` endpoint |
 
 **Acceptance**: Dashboard serves on `construct up`. Users can log in, see status, chat with Construct, approve/reject actions, edit configs.
 
@@ -173,6 +175,28 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 7.16 | Embed notification bus + Slack stub | done | `lib/embed/notifications.mjs` — emitEmbedNotification, onEmbedNotification, notifySlack; daemon emits on roadmap/docs-lifecycle; server subscribes → SSE toasts; Slack stub no-ops without `SLACK_EMBED_WEBHOOK_URL`; 2 tests |
 
 **Acceptance**: `construct embed start` runs daemon. After first snapshot, open Jira/GitHub/Linear items appear in observation store. Dropping a file into `.cx/inbox/` (or any `CX_INBOX_DIRS` path) causes it to be ingested and observed within 2 min. `.cx/roadmap.md` updates hourly. Slack bot posts roadmap summary when `SLACK_BOT_TOKEN` + `SLACK_CHANNELS` set. Authority boundaries are enforced at runtime — approval-queued actions are held for approval, not silently executed.
+
+## Phase 9: TPM Gap Analysis & Ticket Creation
+
+**Goal**: Operator role monitors execution against strategy/PRDs/RFCs, identifies gaps, and creates Jira tickets to close them.
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 9.1 | Update operator role with TPM gap-analysis capability | done | Added gap analysis, execution monitoring counter-moves to skills/roles/operator.md |
+| 9.2 | Add `execution-gap` job to daemon | done | Job 11: query strategy/PRDs/RFCs + Jira tickets, detect gaps, create tickets |
+| 9.3 | Wire Atlassian provider for gap analysis | done | Use Jira provider search + createIssue in gap detection |
+| 9.4 | Add gap analysis to snapshot engine | done | Include executionGaps in snapshot output |
+| 9.5 | Test with platform reliability test data | done | Test data ready: PLATFORM-456 + PLATFORM-RELIABILITY-OVERVIEW.md |
+| 9.6 | All 765 tests pass | done | Verified implementation doesn't break existing functionality |
+
+**Acceptance**: `construct embed start` runs daemon. Job 11 detects missing Jira tickets for PLATFORM-456 requirements. Creates tickets automatically (or queues for approval). Gap analysis appears in snapshot output.
+
+**Verification**: 
+- `npm test` passes (765 tests)
+- Operator role updated with execution gap counter-move
+- Daemon has Job 11: execution-gap
+- Snapshot includes executionGaps field
+- Test data in `construct-test-data/` for platform reliability
 
 ## Phase 8: Production Memory & Vector Infrastructure
 
