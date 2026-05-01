@@ -22,3 +22,8 @@ site/site/
 .playwright-mcp/
 dashboard-*.png
 *.screenshot.png
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
