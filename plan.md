@@ -120,11 +120,12 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 4.3 | Dashboard views — overview, embed status, snapshots, approval queue, config editor | done | Artifacts, Approvals, Snapshots, Chat, Config sections; /api/artifacts, /api/approvals, /api/snapshots, /api/config |
 | 4.4 | Chat interface — interact with Construct through the dashboard | done | lib/server/chat.mjs; SSE streaming via claude --print CLI; /api/chat/stream, /api/chat, /api/chat/history |
 | 4.5 | Config management — providers, embed settings, approval rules, all editable in UI | done | /api/config GET+POST reads/writes ~/.construct/config.env and ~/.construct/embed.yaml |
-| 4.6 | Real-time updates — SSE for live status, new approvals, snapshot alerts, embed action toasts | done | SSE `notifyClients(event?)` supports typed JSON events; `lib/embed/notifications.mjs` event bus; daemon emits `emitEmbedNotification`; dashboard renders colour-coded toast (info/success/warning/error); 2 tests |
+| 4.6 | Real-time updates — SSE for live status, new approvals, snapshot alerts, embed action toasts | done | SSE `notifyClients(event?)` supports typed JSON events; `lib/embed/notifications.mjs` event bus; daemon emits `embedEmbedNotification`; dashboard renders colour-coded toast (info/success/warning/error); 2 tests |
 | 4.7 | Mode-aware layout — views adapt based on active mode (init, embed, point-at) | done | Mode badge in topbar: embed/live/init derived from config presence; CSS classes mode-embed/mode-live/mode-init |
 | 4.8 | Role selector in Config panel | done | `#role-primary` + `#role-secondary` dropdowns populated from registry; saves to embed.yaml; `initRoleSelector()` in `app.js`; `/api/config` GET now returns `roles` |
 | 4.9 | Infrastructure Terraform editor in React dashboard | done | File tree, code editor with dirty-state indicator, Validate/Outputs/Plan/Apply buttons; uses `/api/terraform/*` endpoints |
 | 4.10 | Workflow screen with plan.md + workflow.json integration | done | Three-tab layout (Plan/Tasks/Phases); summary cards for task status counts; `/api/workflow` endpoint |
+| 4.11 | Enhanced mode-aware navigation — show/hide navigation items based on embed mode to prevent Construct internal information from showing unless explicitly embedded | done | Modified dashboard/src/App.tsx to conditionally render navigation based on mode (init/embed/live); prevents exposing internal Construct details in dashboard unless explicitly embedded |
 
 **Acceptance**: Dashboard serves on `construct up`. Users can log in, see status, chat with Construct, approve/reject actions, edit configs.
 
