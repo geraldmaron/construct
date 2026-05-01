@@ -26,7 +26,7 @@ import {
   writeCodexConfig,
 } from "./lib/codex-config.mjs";
 import { findOpenCodeConfigPath, readOpenCodeConfig, writeOpenCodeConfig } from "./lib/opencode-config.mjs";
-import { resolvePromptContract } from "./lib/prompt-composer.mjs";
+import { resolvePromptContract } from "./lib/prompt-composer.js";
 import {
   buildClaudeMcpEntry,
   buildOpenCodeMcpEntry,

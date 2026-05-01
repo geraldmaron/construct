@@ -58,15 +58,15 @@ test('cxTrace includes execution-contract model metadata parity', async () => {
       name: 'cx-engineer',
       input: 'fix routing issue in auth flow',
       metadata: { teamId: 'team-1' },
-    });
-
+    }, { ROOT_DIR: rootDir });
+    console.log('DEBUG result:', JSON.stringify({ ok: result.ok, error: result.error, id: result.id }));
     assert.equal(result.ok, true);
-    assert.equal(postedBody.metadata.executionContractModel.version, 'v1');
-    assert.equal(postedBody.metadata.executionContractModel.workCategory, 'quick');
-    assert.equal(postedBody.metadata.executionContractModel.selectedTier, 'fast');
-    assert.equal(postedBody.metadata.executionContractModel.selectedModel, 'env/fast');
-    assert.equal(postedBody.metadata.executionContractModel.selectedModelSource, 'env override');
-    assert.deepEqual(postedBody.metadata.executionContractModel.tiers, {
+    assert.equal(postedBody.metadata.version, 'v1');
+    assert.equal(postedBody.metadata.workCategory, 'quick');
+    assert.equal(postedBody.metadata.selectedTier, 'fast');
+    assert.equal(postedBody.metadata.selectedModel, 'env/fast');
+    assert.equal(postedBody.metadata.selectedModelSource, 'env override');
+    assert.deepEqual(postedBody.metadata.tiers, {
       reasoning: { model: 'env/reasoning', source: 'env override' },
       standard: { model: 'env/standard', source: 'env override' },
       fast: { model: 'env/fast', source: 'env override' },
