@@ -1,7 +1,7 @@
 ---
 cx_doc_id: 019dc30f-7305-7e13-a0b1-f633ab2a2792
 created_at: 2026-04-25T05:14:22.853Z
-updated_at: 2026-04-29T00:00:00.000Z
+updated_at: 2026-05-01T19:07:00.000Z
 generator: construct/init
 body_hash: sha256:placeholder
 ---
@@ -51,103 +51,63 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 0.1 | Write PRD | done | `docs/prd/0001-construct-org-in-a-box.md` |
-| 0.2 | Write ADR-0002 (layered architecture) | done | `docs/adr/0002-layered-architecture.md` |
-| 0.3 | Write this plan | done | `plan.md` |
-| 0.4 | Clean working tree, remove stale artifacts (changelog, etc.) | done | CHANGELOG nuked, .mcp.json gitignored |
-| 0.5 | Establish `docs/prd/`, `docs/adr/`, `docs/rfc/` as managed artifact dirs | done | All three dirs exist |
-| 0.6 | Verify existing tests pass | done | 87 tests passing |
-| 0.7 | Update `docs/architecture.md` with layer model | done | 5-layer model, provider matrix, operating model |
+| 0.1 | CLI shell: `construct`, `construct doctor`, `construct sync` | done | Zero-npm-dependency; ~500 LOC; `lib/cli-commands.mjs` |
+| 0.2 | Repository-aware project init: `construct init-docs` | done | Scans repo, recommends lanes, writes stub README/DESIGN.md, `lib/project-init-shared.mjs` |
+| 0.3 | Agent sync: `construct sync-agents` | done | Reads `agents/registry.json`, writes agents markdown to `~/.claude/agents/`, updates `CLAUDE.md`; 9 tests |
+| 0.4 | Provider abstraction | done | `lib/provider-interface.mjs`, `lib/provider-registry.mjs`; `init`, `read`, `write`, `search`, `webhook` capabilities; generic `notifyClients`; 4 test suites |
+| 0.5 | MCP server scaffolding: `construct mcp-manager` | done | `lib/mcp-manager.mjs`; adds memory, github, atlassian MCPs |
+| 0.6 | Embedded memory store via MCP server | done | `lib/mcp/memory.mjs`; `memory_search`, `memory_add_observations`, `memory_create_entities`; 7 tests |
+| 0.7 | Dashboard auth — token generation, cookie validation | done | `lib/server/auth.mjs`; token stored in config.env; session cookie; `isAuthenticated` middleware; 5 tests |
+| 0.8 | Chat interface: `/api/chat` + SSE toasts | done | `lib/server/chat.mjs`; conversation storage; history endpoint; `handleChat`; `notifyClients` |
+| 0.9 | Approval queue — `api/approvals` endpoints | done | `lib/server/approvals.mjs`; queue items with `queueId`, `action`, `description`, `status`, `approvedBy`, `approvedAt`; 5 tests |
+| 0.10 | Operating profile — authority configuration file | done | `lib/server/operating-profile.mjs`; `CX_OPERATING_PROFILE` path; `CX_OPERATING_PROFILE_ACTIVE` toggle; `approval` + `denied` keys per action type |
+| 0.11 | TPM gap analysis & ticket creation (Phase 9) | done | Operator role updated; Job 11 added to daemon; Atlassian provider wired; snapshot includes executionGaps; 765 tests pass |
+| 0.12 | Comment policy enforcement across git hooks, CI, and deployments | done | Pre-commit hook with LANGFUSE filtering; CI workflows (ci.yml, deploy.yml, release.yml); all violations fixed; 765 tests pass |
 
-## Phase 1: Core Hardening & Dependency Bootstrap
+**Acceptance**: `construct init-docs` works. `construct sync-agents` writes agent files. `construct mcp-manager add memory` adds the memory MCP. `node --test` passes. Chat UI works with authentication. Approval queue holds external writes when profile demands approval. `construct embed start` detects missing Jira tickets and creates them (or queues for approval).
 
-**Goal**: `construct init` and `construct up` work reliably. Dependency checking. Docker service lifecycle is solid.
+---
 
-| # | Task | Status | Notes |
-|---|---|---|---|
-| 1.1 | `construct doctor` — check Node, Docker, git, required env; offer install guidance | done | bin/construct cmdDoctor, checks 20+ items |
-| 1.2 | `construct init` — detect existing agent configs (Claude, Codex, Copilot), set up .cx/, shared memory, cross-agent configs | done | lib/init.mjs + lib/setup.mjs (full bootstrap) |
-| 1.3 | Docker service manager — reliable `up`/`down`/`status` for required containers | done | lib/service-manager.mjs, 497 lines |
-| 1.4 | Port probe — verify actual service health before reuse | done | findAvailablePort in host-capabilities.mjs |
-| 1.5 | Test coverage for service lifecycle | done | 17 tests passing (doctor + service-manager) |
+## Phase 1: Embed Daemon — Continuous Observation & Self-Repair
 
-**Acceptance**: `construct init` in a fresh repo → working setup. `construct up` → services healthy. `construct doctor` → clear report.
-
-## Phase 2: Provider Framework & Initial Implementations
-
-**Goal**: Transport-agnostic provider interface. First providers proving the abstraction works across different transports.
+**Goal**: Daemon runs continuously, ingests external systems, detects gaps, creates tickets, heals itself, posts roadmap.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 2.1 | Provider interface spec — capability matrix (read, write, search, watch, webhook), auth contract, error model | done | ADR-0003, providers/lib/interface.mjs, errors.mjs |
-| 2.2 | Provider registry and config schema — `construct.yaml` or `.cx/providers.yaml` | done | providers/lib/registry.mjs |
-| 2.3 | Git repo provider — local + remote repos, read commits/branches/files, write via branch+PR | done | providers/git/index.mjs, transport: git CLI |
-| 2.4 | Project tracker provider — work items, transitions, search (Jira as first impl) | done | providers/jira/index.mjs, transport: REST API v3 |
-| 2.5 | Messaging provider — read channels/threads, post messages (Slack as first impl) | done | providers/slack/index.mjs, transport: Slack Web API |
-| 2.6 | Code host provider — PRs, issues, reviews, repo metadata (GitHub as first impl) | done | providers/github/index.mjs, transport: gh CLI |
-| 2.7 | Knowledge base provider — pages, search, create/update (Confluence/Notion as first impl) | done | providers/confluence/index.mjs, transport: REST API v2 |
-| 2.8 | Provider test harness — contract tests any provider must pass | done | providers/lib/contract-tests.mjs, 35 tests passing |
+| 1.1 | Snapshot engine — collect open items from all configured providers | done | `lib/embed/snapshot-engine.mjs`; per-source `maxItems`; error capture; markdown render; `daemon.mjs` Job 1 (15 min) |
+| 1.2 | Snapshot file-state preservation — `.cx/snapshots/{timestamp}.md` | done | `lib/embed/daemon.mjs` Job 1 writes snapshots; `lib/embed/snapshot-store.mjs` with indexing |
+| 1.3 | Provider health check — `status()` call, error recovery | done | `lib/embed/daemon.mjs` Job 2 (30 min); `provider.health()`; `AUTH_ERROR`, `RATE_LIMIT_ERROR`, `NOT_FOUND` handling |
+| 1.4 | Session distill — session files → observations | done | `lib/embed/daemon.mjs` Job 3 (5 min); reads `.cx/sessions/`, creates `session-summary` observations |
+| 1.5 | Self-repair — fixes config drift, missing directories | done | `lib/embed/daemon.mjs` Job 4 (60 min); `.cx/` structure, agent files, missing hooks, etc. |
+| 1.6 | Approval expiry — auto-approve stale items after timeout | done | `lib/embed/daemon.mjs` Job 5 (15 min); fallback:proceed policy; `CX_APPROVAL_EXPIRY_MINUTES` |
+| 1.7 | Eval dataset sync — scored traces → Langfuse Datasets | done | `lib/embed/daemon.mjs` Job 6 (30 min); groups by agent+workCategory |
+| 1.8 | Prompt regression check — stale agent prompts → alerts | done | `lib/embed/daemon.mjs` Job 7 (120 min); `agents/registry.json` hash vs `~/.claude/agents/` |
+| 1.9 | Inbox watcher — ingest local filesystem documents into observations | done | `lib/embed/daemon.mjs` Job 8 (2 min); watches `.cx/inbox/` + `CX_INBOX_DIRS`; agnostic format; 8 tests |
+| 1.10 | Roadmap generator — cross-source prioritisation → `.cx/roadmap.md` | done | `lib/embed/daemon.mjs` Job 9 (60 min); heuristic scoring; posts Slack summary if `SLACK_CHANNELS` set; 8 tests |
+| 1.11 | Docs lifecycle job — gap detection, risk classification, authority routing | done | `lib/embed/daemon.mjs` Job 10 (30 min); auto-fix low-risk, queue high-risk; 5 tests |
+| 1.12 | Execution gap analysis — TPM gap detection & ticket creation | done | `lib/embed/daemon.mjs` Job 11 (60 min); queries strategy/PRDs/RFCs + Jira tickets; creates tickets (or queues) |
 
-**Acceptance**: `construct providers list` shows registered providers. `construct providers test <name>` validates the capability contract. At least 3 providers using different transports work end-to-end.
+**Acceptance**: `construct embed start` runs daemon. After first snapshot, open Jira/GitHub/Linear items appear in observation store. Dropping a file into `.cx/inbox/` (or any `CX_INBOX_DIRS` path) causes it to be ingested and observed within 2 min. `.cx/roadmap.md` updates hourly. Slack bot posts roadmap summary when `SLACK_BOT_TOKEN` + `SLACK_CHANNELS` set. Authority boundaries are enforced at runtime — approval-queued actions are held for approval, not silently executed.
 
-## Phase 3: Embed Mode & Snapshots
+---
 
-**Goal**: Construct runs as a daemon or scheduled process, monitoring sources through providers and producing organizational intelligence.
+## Phase 2: Continuous Deployment & Multi-User Dashboard
 
-| # | Task | Status | Notes |
-|---|---|---|---|
-| 3.1 | Embed config schema — sources (provider refs), intervals, output targets, approval rules | done | lib/embed/config.mjs — schema + zero-dep YAML parser |
-| 3.2 | Scheduler — cron-style or interval-based execution loop | done | lib/embed/scheduler.mjs |
-| 3.3 | Snapshot engine — aggregate data from providers, produce health/risk/gap report | done | lib/embed/snapshot.mjs |
-| 3.4 | Snapshot output targets — markdown file, messaging provider, dashboard, all configurable | done | lib/embed/output.mjs |
-| 3.5 | Approval queue — high-risk actions (work item creation, merge, doc publish) go to queue | done | lib/embed/approval-queue.mjs |
-| 3.6 | `construct embed start/stop/status` CLI commands | done | lib/cli-commands.mjs — embed + providers commands registered |
-| 3.7 | Artifact generation — PRDs, RFCs, ADRs on demand or triggered by embed analysis | done | lib/embed/artifact.mjs — generateArtifact, listArtifacts, recommendArtifacts; `construct artifact` CLI command; 18 tests |
-| 3.8 | Embedded operating profile — mission, strategy, focal resources, authority boundaries, artifact obligations, risk/gap model | done | `lib/embed/config.mjs` (targets[], roles), `lib/embed/snapshot.mjs` + `lib/embed/roadmap.mjs` (role lens injection); all 28 agents have `embedOrientation`; target resolver + role framing modules |
-
-**Acceptance**: `construct embed --config ~/.construct/embed.yaml` produces a snapshot within configured interval. High-risk actions queue for approval. Snapshots appear in configured targets.
-
-**Embed profile acceptance**: When embedded, Construct can state what it is watching, why those resources matter, which strategy and authority posture apply, what artifacts it is responsible for drafting or generating, and which gaps/risks block confident operation.
-
-## Phase 4: Dashboard
-
-**Goal**: Full web app. Auth, chat, approvals, config, mode-aware views.
+**Goal**: Dashboard is a full web app. Multi-user auth. Deployable via Docker. Terraform modules for cloud hosting.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 4.1 | Tech choice ADR — framework, bundled in container | done | Vanilla JS + Node http — no build step, zero core deps, existing server extended |
-| 4.2 | Auth — token-based, session cookie, Bearer header | done | lib/server/auth.mjs; CONSTRUCT_DASHBOARD_TOKEN in ~/.construct/config.env; `construct serve --token` generates token |
-| 4.3 | Dashboard views — overview, embed status, snapshots, approval queue, config editor | done | Artifacts, Approvals, Snapshots, Chat, Config sections; /api/artifacts, /api/approvals, /api/snapshots, /api/config |
-| 4.4 | Chat interface — interact with Construct through the dashboard | done | lib/server/chat.mjs; SSE streaming via claude --print CLI; /api/chat/stream, /api/chat, /api/chat/history |
-| 4.5 | Config management — providers, embed settings, approval rules, all editable in UI | done | /api/config GET+POST reads/writes ~/.construct/config.env and ~/.construct/embed.yaml |
-| 4.6 | Real-time updates — SSE for live status, new approvals, snapshot alerts, embed action toasts | done | SSE `notifyClients(event?)` supports typed JSON events; `lib/embed/notifications.mjs` event bus; daemon emits `embedEmbedNotification`; dashboard renders colour-coded toast (info/success/warning/error); 2 tests |
-| 4.7 | Mode-aware layout — views adapt based on active mode (init, embed, point-at) | done | Mode badge in topbar: embed/live/init derived from config presence; CSS classes mode-embed/mode-live/mode-init |
-| 4.8 | Role selector in Config panel | done | `#role-primary` + `#role-secondary` dropdowns populated from registry; saves to embed.yaml; `initRoleSelector()` in `app.js`; `/api/config` GET now returns `roles` |
-| 4.9 | Infrastructure Terraform editor in React dashboard | done | File tree, code editor with dirty-state indicator, Validate/Outputs/Plan/Apply buttons; uses `/api/terraform/*` endpoints |
-| 4.10 | Workflow screen with plan.md + workflow.json integration | done | Three-tab layout (Plan/Tasks/Phases); summary cards for task status counts; `/api/workflow` endpoint |
-| 4.11 | Enhanced mode-aware navigation — show/hide navigation items based on embed mode to prevent Construct internal information from showing unless explicitly embedded | done | Modified dashboard/src/App.tsx to conditionally render navigation based on mode (init/embed/live); prevents exposing internal Construct details in dashboard unless explicitly embedded |
-| 4.14 | Explicit embedding boundary API for running Construct instances within Construct | done | Added `/api/embed/boundary` GET and POST endpoints; provides boundary status, instance registration, and parent-child relationship tracking; enables Construct instances to run within other Construct instances with proper boundary definition |
-
-**Acceptance**: Dashboard serves on `construct up`. Users can log in, see status, chat with Construct, approve/reject actions, edit configs.
-
-| 4.15 | Embedded instance isolation testing — prevents cross-contamination between Construct instances | done | Created test-instance-isolation.mjs to verify config, data, port, and state separation; provides isolation verification and best practices for running multiple Construct instances |
-
-## Phase 5: Cloud Deployment & Multi-User
-
-**Goal**: Single-container deployable with multi-user support.
-
-| # | Task | Status | Notes |
-|---|---|---|---|
-| 5.1 | Dockerfile — single image with core, providers, dashboard, runtime | done | `Dockerfile`, `.dockerignore`; node:22-alpine, <500MB target, non-root user, health check |
-| 5.2 | Terraform modules — VPC, ECS/Fargate, RDS, secrets, DNS, IAM | done | `deploy/terraform/` — 6 modules (vpc, iam, secrets, rds, ecs, dns) + environments/staging + environments/production |
-| 5.3 | Webhook ingestion — receive events from providers for event-driven embed | done | `lib/server/webhook.mjs`; POST /api/webhooks/:provider; HMAC sig verification (GitHub, Slack, Jira, Confluence); 9 tests passing |
-| 5.4 | Persistent state — mount or managed database for observations, sessions, artifacts | done (infra) | RDS PostgreSQL provisioned via Terraform; app-layer ORM integration is Phase 6 work |
-| 5.5 | Multi-user isolation — user scoping for observations, sessions, configs | done (design) | Single shared token for Phase 5; per-user scoping deferred to Phase 6 alongside RAG pipeline |
-| 5.6 | Hybrid approval model — autonomous for low-risk, approval-gated for high-risk | done | `approvalMode()` in `approval-queue.mjs`; `autoApprove` flag; low-risk prefix list; `auto-approved` status |
-| 5.7 | Deployment guide — `terraform apply`, env vars, secrets, health checks | done | `deploy/RUNBOOK.md` — bootstrap, ECR push, token rotation, webhook config, rollback, monitoring, troubleshooting |
-| 5.8 | CI/CD — build, test, push image, optional `terraform plan` on PR | done | `.github/workflows/deploy.yml` — test → build/push ECR → tf plan (PRs) → tf apply + ECS wait + smoke test + rollback |
+| 2.1 | Web dashboard — React/Vite frontend | in progress | `dashboard/` directory; auth login; chat view; approval queue; knowledge panel |
+| 2.2 | Multi-user auth — OAuth via GitHub/Google, role-based permissions | planned | |
+| 2.3 | Dockerfile — single-container deployment | planned | |
+| 2.4 | Terraform modules — AWS, GCP, Azure deployment | planned | |
+| 2.5 | GitHub Actions workflows — CI, deploy, release | done | `ci.yml`, `deploy.yml`, `release.yml`; gated by repo variables |
+| 2.6 | GitHub Pages — public docs site | done | `pages.yml`; gated by `PAGES_ENABLED = true` |
+| 2.7 | Comment policy enforcement | done | Pre-commit hook + CI workflows; all violations fixed |
 
 **Acceptance**: `docker build && docker run` starts a working instance. Multi-user auth works. Webhook events trigger embed actions.
+
+---
 
 ## Phase 6: Continuous Learning & Knowledge Base
 
@@ -161,6 +121,8 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 6.4 | Dashboard knowledge view — browse and search accumulated intelligence | done | Knowledge panel in dashboard: Ask tab (RAG query UI), Trends tab (hot topics, recurring patterns, escalating risks, decision drift), Index tab (corpus breakdown) |
 
 **Acceptance**: `construct ask "what are the biggest risks?"` returns a sourced answer. Dashboard shows knowledge timeline. Trends are surfaced in snapshots.
+
+---
 
 ## Phase 7: Continuous Self-Improvement Loop
 
@@ -187,6 +149,8 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 
 **Acceptance**: `construct embed start` runs daemon. After first snapshot, open Jira/GitHub/Linear items appear in observation store. Dropping a file into `.cx/inbox/` (or any `CX_INBOX_DIRS` path) causes it to be ingested and observed within 2 min. `.cx/roadmap.md` updates hourly. Slack bot posts roadmap summary when `SLACK_BOT_TOKEN` + `SLACK_CHANNELS` set. Authority boundaries are enforced at runtime — approval-queued actions are held for approval, not silently executed.
 
+---
+
 ## Phase 9: TPM Gap Analysis & Ticket Creation
 
 **Goal**: Operator role monitors execution against strategy/PRDs/RFCs, identifies gaps, and creates Jira tickets to close them.
@@ -209,6 +173,8 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 - Snapshot includes executionGaps field
 - Test data in `construct-test-data/` for platform reliability
 
+---
+
 ## Phase 8: Production Memory & Vector Infrastructure
 
 **Goal**: Replace hashing-based BM25 RAG with neural embeddings backed by pgvector. Observations gain semantic retrieval. Local ONNX default; OpenAI/Ollama override via env.
@@ -227,6 +193,8 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 | 8.10 | End-of-session hygiene rules in `AGENTS.md` + `buildAgentsGuide` template | done | Both `AGENTS.md` and `lib/project-init-shared.mjs` updated; CI green gate enforced |
 
 **Acceptance**: `construct up` starts pgvector. `memory_search` returns semantically matched results. All 729 tests pass. CI green.
+
+---
 
 ## How-to documentation
 
@@ -275,6 +243,7 @@ Workflows that require external infrastructure are gated on repo variables so th
 | M.4 | Expose shell completion as a first-class CLI command | done | `construct completions [bash|zsh|install]` added; completion generator now handles string and object subcommand metadata |
 | M.5 | Expand `construct init-docs` with 3 new lanes + improved prompts | done | Added `postmortems`, `changelogs`, `onboarding` lanes; wired orphaned `incident-report.md` template; new `changelog-entry.md` + `onboarding.md` templates; preset descriptions + padded lane picker in interactive prompt; `suggestContextualLanes` extended; 731 tests pass |
 | M.6 | Replace ad hoc CLI menus with shared TTY prompts and fix intake/docs routing | done | Added shared `tty-prompts` module; aligned `init-docs`, `mcp-manager`, and `headhunt` discrete choice menus; made `docs/intake/` a watched recursive drop zone; added `meetings` as its own docs lane; intake now promotes matching docs into existing lanes; updated Pages workflow to Node 22 + `upload-pages-artifact@v4` |
+| M.7 | Enforce comment policy across git hooks, CI, and deployments | done | Added comment policy enforcement to pre-commit hook (filters LANGFUSE warnings); added to CI workflows (ci.yml, deploy.yml, release.yml); fixed all violations in codebase; 765 tests pass with clean linter output |
 
 ## Recent Verification
 
@@ -283,6 +252,7 @@ Workflows that require external infrastructure are gated on repo variables so th
 - `node --test tests/cli-surface.test.mjs`
 - `node --test tests/init-docs.test.mjs tests/embed-inbox.test.mjs`
 - `npm test`
+- `node ./bin/construct lint:comments` (comment policy enforcement)
 - `node ./bin/construct docs:update --check`
 
 Until those variables are set, the jobs are skipped — not failed — on every push.
@@ -298,7 +268,11 @@ Until those variables are set, the jobs are skipped — not failed — on every 
 
 Each phase has its own acceptance criteria above. Cross-cutting:
 
-- Tests pass at every phase boundary
-- `docs/architecture.md` reflects current reality after each phase
-- Construct's own PRDs/ADRs are managed through the system from Phase 0 onward
-- No secrets in observations, logs, or committed files
+- `npm test` passes (currently 765 tests)
+- `construct sync-agents` writes agents to `~/.claude/agents/`
+- `construct mcp-manager list` shows memory, github, atlassian
+- `construct embed start` runs daemon with 11 jobs
+- `construct ask "what are the biggest risks?"` returns a sourced answer
+- Comment policy enforced: `construct lint:comments` passes, pre-commit hook blocks violations
+- CI green on push: all workflows pass (or skip gracefully when gated)
+- Dashboard starts with auth: `construct up` → `http://localhost:3000`
