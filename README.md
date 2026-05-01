@@ -193,6 +193,7 @@ The team challenges itself along the way: reviewers push back on incomplete work
 | `construct optimize` | Prompt optimization using Langfuse trace quality scores |
 | `construct telemetry-backfill` | Backfill sparse traces with observations (trace backend) |
 | `construct eval-datasets` | Sync scored Langfuse traces into eval datasets for prompt regression testing |
+| `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
 | `construct cost` | Show token usage, cost, cache read rate, and per-agent breakdown |
 | `construct efficiency` | Show read efficiency, repeated files, and context-budget guidance |
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
@@ -371,9 +372,12 @@ That means:
 <!-- AUTO:structure -->
 ```text
 construct/
+├── ~
 ├── agents           Registry and generated platform adapter chains
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
+├── construct-test-data
+├── dashboard
 ├── db
 ├── deploy
 ├── docs             Architecture notes, runbooks, and documentation contract
