@@ -1,3 +1,9 @@
+/**
+ * tests/env-config.test.mjs — Unit tests for lib/env-config.mjs.
+ *
+ * Covers env file parsing, persistence helpers, and synthesized database
+ * connection resolution from the DB_* runtime variables.
+ */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';

@@ -1,3 +1,9 @@
+/**
+ * tests/deploy-contract.test.mjs — Contract tests for deploy/runtime wiring.
+ *
+ * Verifies Terraform templates and runtime env helpers stay aligned on
+ * named secrets, database settings, and expected container environment.
+ */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';

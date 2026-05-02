@@ -1,3 +1,9 @@
+/**
+ * tests/dashboard-static.test.mjs — Unit tests for dashboard static sync.
+ *
+ * Covers bundle copying, drift detection, and rebuild checks that keep the
+ * shipped server static assets aligned with the dashboard source build.
+ */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';

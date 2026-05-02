@@ -1,3 +1,9 @@
+/**
+ * tests/runtime-pressure.test.mjs — Unit tests for lib/runtime-pressure.mjs.
+ *
+ * Verifies pressure-guard defaults, environment serialization, and local
+ * diagnostics for swap pressure, helper age, and stale index detection.
+ */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
