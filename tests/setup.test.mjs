@@ -27,6 +27,9 @@ test("managed setup values configure local vector and Langfuse defaults", () => 
   assert.equal(values.LANGFUSE_BASEURL, "https://cloud.langfuse.com");
   assert.equal(values.CONSTRUCT_VECTOR_MODEL, "hashing-bow-v1");
   assert.equal(values.CONSTRUCT_VECTOR_INDEX_PATH, path.join(home, ".construct", "vector", "index.json"));
+  assert.equal(values.CONSTRUCT_PRESSURE_GUARD_ENABLED, "1");
+  assert.equal(values.CONSTRUCT_PRESSURE_GUARD_INTERVAL_SECONDS, "300");
+  assert.equal(values.CONSTRUCT_PRESSURE_GUARD_SWAP_GB, "6");
   assert.equal(values.DATABASE_URL, undefined);
 });
 
@@ -50,6 +53,7 @@ test("managed setup values preserve caller-provided external services", () => {
   assert.equal(values.LANGFUSE_BASEURL, "https://langfuse.example");
   assert.equal(values.LANGFUSE_PUBLIC_KEY, "pk-test");
   assert.equal(values.LANGFUSE_SECRET_KEY, "sk-test");
+  assert.equal(values.CONSTRUCT_PRESSURE_GUARD_ENABLED, "1");
 });
 
 test("local Postgres compose file is deterministic and scoped to localhost", () => {

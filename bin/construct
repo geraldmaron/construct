@@ -28,6 +28,14 @@ import { runIngestCli } from '../lib/document-ingest.mjs';
 import { runInferCli } from '../lib/schema-infer.mjs';
 import { COMPLETIONS_DIR, generateCompletions, getCompletionScript } from '../lib/completions.mjs';
 import { runHeadhunt, listTeamTemplates } from '../lib/headhunt.mjs';
+import {
+  getLockStatus,
+  cleanupStaleLock,
+  cleanupStaleQueue,
+  readQueue,
+  formatStatus,
+} from '../lib/beads-lock.mjs';
+import { runBd, getHumanStatus, acquireMergeSlot, releaseMergeSlot } from '../lib/beads-client.mjs';
 import { auditSkills, runAuditSkillsCli } from '../lib/audit-skills.mjs';
 import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
 import { readDashboardState, startDashboard, startServices } from '../lib/service-manager.mjs';
@@ -39,6 +47,7 @@ import { describeVectorStore } from '../lib/storage/vector-store.mjs';
 import { describeSqlStore } from '../lib/storage/sql-store.mjs';
 import { syncFileStateToSql } from '../lib/storage/sync.mjs';
 import { deleteIngestedArtifacts, getStorageStatus, inferProjectName, resetStorage } from '../lib/storage/admin.mjs';
+import { runPressureRelease } from '../lib/runtime-pressure.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const HOME = os.homedir();
@@ -599,7 +608,27 @@ async function cmdSeedTraces(args) {
 }
 
 async function cmdCleanup() {
-  warn('construct cleanup is not yet fully ported cross-platform.');
+  const force = restArgsCache.includes('--pressure-release');
+  const quiet = restArgsCache.includes('--quiet');
+  const report = runPressureRelease({ env: process.env, force });
+
+  if (!quiet) {
+    const swap = report.swapUsage
+      ? `${(report.swapUsage.usedBytes / (1024 ** 3)).toFixed(1)} GiB used`
+      : 'swap unavailable';
+    println(`Pressure guard: ${report.pressureTriggered ? 'triggered' : 'standby'} · ${swap}`);
+  }
+
+  if (!report.killed.length) {
+    if (!quiet) println('No stale dev-agent processes needed cleanup.');
+    return;
+  }
+
+  if (!quiet) {
+    for (const entry of report.killed) {
+      println(`Stopped pid ${entry.pid} (${entry.reason})`);
+    }
+  }
 }
 
 async function cmdCost(args) {
@@ -707,6 +736,12 @@ async function cmdDocsSite() {
   ok('site/docs/ generated successfully.');
 }
 
+async function cmdDashboardSync(args) {
+  const { runDashboardStaticCli } = await import('../lib/dashboard-static.mjs');
+  const exitCode = await runDashboardStaticCli(args, { rootDir: ROOT_DIR });
+  if (exitCode) process.exit(exitCode);
+}
+
 async function cmdBootstrap(args) {
   const verbose = args.includes('--verbose') || args.includes('-v');
   const { runBootstrap } = await import('../lib/bootstrap.mjs');
@@ -788,6 +823,7 @@ const handlers = new Map([
   ['docs:update', cmdDocsUpdate],
   ['docs:check', cmdDocsCheck],
   ['docs:site', cmdDocsSite],
+  ['dashboard:sync', cmdDashboardSync],
   ['lint:comments', cmdLintComments],
   ['bootstrap', cmdBootstrap],
   ['memory', cmdMemory],
@@ -838,9 +874,109 @@ const handlers = new Map([
     const { runLangfuseSetupCli } = await import('../lib/telemetry/langfuse-setup.mjs');
     return runLangfuseSetupCli(args);
   }],
-  ['drop', async (args) => {
-    const { runDropCli } = await import('../lib/drop.mjs');
-    return runDropCli(args);
+  ['beads', async (args) => {
+    const sub = args[0];
+    const subArgs = args.slice(1);
+    
+    if (!sub || sub === 'status') {
+      const jsonOutput = subArgs.includes('--json');
+      const status = getLockStatus({ cwd: process.cwd() });
+      if (jsonOutput) {
+        println(JSON.stringify(status, null, 2));
+      } else {
+        process.stdout.write(getHumanStatus(process.cwd()));
+      }
+      return;
+    }
+
+    if (sub === 'cleanup') {
+      const staleLocks = cleanupStaleLock({ cwd: process.cwd() });
+      const staleQueue = cleanupStaleQueue({ cwd: process.cwd() });
+      println(`Cleaned up: ${staleLocks ? '1 stale lock' : 'no stale locks'}, ${staleQueue} stale queue entries`);
+      return;
+    }
+
+    if (sub === 'queue') {
+      const jsonOutput = subArgs.includes('--json');
+      const queue = readQueue({ cwd: process.cwd() });
+      if (jsonOutput) {
+        println(JSON.stringify(queue, null, 2));
+      } else {
+        if (!queue.length) {
+          println('No requests in queue');
+        } else {
+          println(`Queue (${queue.length}):`);
+          queue.forEach((entry, idx) => {
+            const alive = entry.pid && (() => {
+              try { process.kill(entry.pid, 0); return true; } catch { return false; }
+            })();
+            println(`  ${idx + 1}. ${entry.actor} – ${entry.command || entry.args?.join(' ')}${alive ? '' : ' ⚠️ dead'}`);
+          });
+        }
+      }
+      return;
+    }
+
+    if (sub === 'lock-status' || sub === 'lock') {
+      const status = getLockStatus({ cwd: process.cwd() });
+      println(JSON.stringify(status, null, 2));
+      return;
+    }
+
+    if (sub === 'help' || sub === '--help' || sub === '-h') {
+      println('construct beads — manage beads lock and queue');
+      println('');
+      println('Subcommands:');
+      println('  status        Show lock and queue status (default)');
+      println('  lock-status   Detailed lock info in JSON');
+      println('  cleanup       Remove stale locks and dead queue entries');
+      println('  queue         Show pending requests');
+      println('  help          This help');
+      println('');
+      println('Examples:');
+      println('  construct beads            # Show status');
+      println('  construct beads --json     # JSON status');
+      println('  construct beads queue      # Show queue');
+      println('  construct beads cleanup    # Clean stale locks');
+      return;
+    }
+
+    // Default: run the bd command through our wrapper
+    const actor = process.env.USER || process.env.LOGNAME || 'construct';
+    const needsMergeSlot = sub === 'dolt' && subArgs[0] === 'push';
+    let mergeSlotHeld = false;
+    let result;
+    try {
+      if (needsMergeSlot) {
+        const mergeSlot = await acquireMergeSlot({
+          actor,
+          cwd: process.cwd(),
+          silent: subArgs.includes('--silent'),
+        });
+        mergeSlotHeld = Boolean(mergeSlot?.success);
+      }
+
+      result = await runBd(args, {
+        actor,
+        cwd: process.cwd(),
+        silent: subArgs.includes('--silent'),
+      });
+    } finally {
+      if (mergeSlotHeld) {
+        await releaseMergeSlot({
+          actor,
+          cwd: process.cwd(),
+          silent: subArgs.includes('--silent'),
+        });
+      }
+    }
+
+    if (result.success) {
+      process.stdout.write(result.output || '');
+    } else {
+      process.stderr.write(`bd failed: ${result.error || 'Unknown error'}\n`);
+      process.exit(result.exitCode || 1);
+    }
   }],
   ['wireframe', async (args) => {
     const { runWireframeCli } = await import('../lib/wireframe.mjs');

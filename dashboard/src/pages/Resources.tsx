@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchStatus } from '../lib/api';
+import { fetchAuthStatus, fetchStatus } from '../lib/api';
 
 interface StatusData {
   version?: string;
@@ -7,16 +7,24 @@ interface StatusData {
   system?: { overall?: { status?: string; summary?: string } };
   features?: Array<{ name: string; description: string; status: string }>;
   services?: Array<{ name: string; status: string; note?: string }>;
+  auth?: {
+    mode?: string;
+    providers?: string[];
+    tokenConfigured?: boolean;
+  };
 }
 
 export default function Resources() {
   const [data, setData] = useState<StatusData | null>(null);
+  const [auth, setAuth] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchStatus()
-      .then(setData)
+    Promise.all([
+      fetchStatus().then(setData),
+      fetchAuthStatus().then(setAuth),
+    ])
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
@@ -42,6 +50,17 @@ export default function Resources() {
             health === 'degraded' ? 'bg-yellow-100 text-yellow-800' :
             'bg-red-100 text-red-800'
           }`}>{health}</span>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <p className="text-sm text-gray-500 mb-1">Auth Mode</p>
+          <p className="text-xl font-semibold">{auth?.auth?.mode ?? 'token'}</p>
+          <p className="text-xs text-gray-500 mt-2">
+            {auth?.auth?.providers?.length
+              ? `Providers: ${auth.auth.providers.join(', ')}`
+              : auth?.auth?.tokenConfigured
+                ? 'Shared token auth is configured'
+                : 'Open local mode until a token is configured'}
+          </p>
         </div>
       </div>
 

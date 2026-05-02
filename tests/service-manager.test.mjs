@@ -141,6 +141,35 @@ test('startServices reuses an already-running memory service', async () => {
   assert.equal(spawnCalls.some((entry) => entry.command === 'cm'), false);
 });
 
+test('startServices runs pressure cleanup before probing OpenCode', async () => {
+  const homeDir = tempDir('construct-service-pressure-');
+  const rootDir = tempDir('construct-service-pressure-root-');
+  const calls = [];
+
+  const { results } = await startServices({
+    rootDir,
+    homeDir,
+    describeRuntimeSupportFn: async () => ({ docker: false, cm: false, opencode: true, tmux: false }),
+    getRuntimePortsFn: async () => ({ dashboard: 4242, memory: 8765, bridge: 5173 }),
+    startDashboardFn: async () => ({ url: 'http://127.0.0.1:4242', reused: true }),
+    detectDockerComposeFn: () => null,
+    loadConstructEnvFn: () => ({}),
+    runPressureReleaseFn: () => {
+      calls.push('cleanup');
+      return { pressureTriggered: false, killed: [] };
+    },
+    openCodeProbeFn: async () => {
+      calls.push('probe');
+      return true;
+    },
+  });
+
+  assert.deepEqual(calls, ['cleanup', 'probe']);
+  const openCode = results.find((entry) => entry.name === 'OpenCode');
+  assert.ok(openCode);
+  assert.equal(openCode.status, 'reused');
+});
+
 // ── pruneStashDir ─────────────────────────────────────────────────────────
 
 test('pruneStashDir keeps only the N most recent stash pairs', () => {

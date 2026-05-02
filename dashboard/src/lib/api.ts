@@ -7,6 +7,7 @@ async function apiGet(path: string) {
 }
 
 export const fetchStatus = () => apiGet('/status');
+export const fetchAuthStatus = () => apiGet('/auth/status');
 export const fetchRegistry = () => apiGet('/registry');
 export const fetchApprovals = () => apiGet('/approvals');
 export const fetchSnapshots = () => apiGet('/snapshots');

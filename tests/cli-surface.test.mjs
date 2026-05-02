@@ -69,3 +69,15 @@ test('construct completions bash prints a bash completion script', () => {
   assert.match(out, /bash completion for construct/);
   assert.match(out, /complete -F _construct_completions construct/);
 });
+
+test('construct beads status reports lock state for a local beads directory', () => {
+  const projectDir = tempDir('construct-cli-beads-');
+  fs.mkdirSync(path.join(projectDir, '.beads', 'embeddeddolt'), { recursive: true });
+
+  const out = execFileSync(process.execPath, [BIN, 'beads', 'status'], {
+    cwd: projectDir,
+    encoding: 'utf8',
+  });
+
+  assert.match(out, /No lock held|Lock held by/);
+});

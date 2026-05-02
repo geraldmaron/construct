@@ -33,6 +33,8 @@ jobs:
       - run: npm ci
       - name: Check managed doc regions are up to date
         run: node ./bin/construct docs:update --check
+      - name: Check dashboard static bundle is up to date
+        run: node ./bin/construct dashboard:sync --check
 
   lint-comments:
     name: comment policy

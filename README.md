@@ -146,6 +146,7 @@ The team challenges itself along the way: reviewers push back on incomplete work
 | `construct status` | Show canonical system health across runtime and integrations |
 | `construct show` | Show runtime service URLs and live status (compat view) |
 | `construct serve` | Start the Construct dashboard (auto-selects port) |
+| `construct beads` | Manage beads lock and queue, or run bd commands |
 | `construct setup` | Bootstrap user config after npm or manual install |
 | `construct update` | Reinstall this checkout globally, then sync and verify hosts |
 | `construct completions` | Generate or print shell completion scripts for construct |
@@ -205,6 +206,7 @@ The team challenges itself along the way: reviewers push back on incomplete work
 | `construct docs:update` | Regenerate AUTO-managed regions in README and docs/ |
 | `construct docs:check` | Report CLI commands that have no linked how-to guide in docs/README.md |
 | `construct docs:site` | Generate site/docs/ content for the MkDocs GitHub Pages site |
+| `construct dashboard:sync` | Sync the built dashboard bundle into lib/server/static for the HTTP server |
 | `construct lint:comments` | Check all files against the comment policy (rules/common/comments.md) |
 | `construct lint:research` | Check research and evidence artifacts for minimum structure and evidence metadata |
 
@@ -212,6 +214,7 @@ The team challenges itself along the way: reviewers push back on incomplete work
 
 | Command | What it does |
 |---|---|
+| `construct cleanup` | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
 | `construct audit` | Audit Construct internals and review the mutation trail |
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct skills` | Detect project tech stack and scope installed skills to relevance |

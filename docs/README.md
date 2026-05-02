@@ -46,6 +46,7 @@ Step-by-step operator guides for common tasks:
 - [Observability: review, optimize, cost, efficiency](./how-to/how-to-observability.md)
 - [Wireframe and drop commands](./how-to/how-to-wireframe-drop.md)
 - [Distill and infer commands](./how-to/how-to-distill-infer.md)
+- [Sync the dashboard static bundle](./how-to/how-to-dashboard-sync.md)
 
 ## Prompt surfaces
 

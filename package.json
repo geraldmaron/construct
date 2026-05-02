@@ -45,7 +45,7 @@
     "docs:update": "node ./bin/construct docs:update",
     "docs:site": "node ./bin/construct docs:site",
     "lint:comments": "node ./bin/construct lint:comments",
-    "release:check": "node ./bin/construct doctor && npm test && node ./bin/construct docs:update --check && node ./bin/construct lint:comments"
+    "release:check": "node ./bin/construct doctor && npm test && node ./bin/construct docs:update --check && node ./bin/construct dashboard:sync --check && node ./bin/construct lint:comments"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",

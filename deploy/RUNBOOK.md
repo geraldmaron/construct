@@ -175,11 +175,14 @@ All config is injected at container start. Nothing is baked into the image.
 | `ANTHROPIC_API_KEY` | Secrets Manager (optional) | Used by `claude` CLI inside container |
 | `NODE_ENV` | ECS task env | Set to `production` — enables `0.0.0.0` bind |
 | `PORT` | ECS task env | Default `4242` |
-| `CONSTRUCT_DATA_DIR` | ECS task env | Mount point for persistent data |
+| `HOME` | ECS task env | Set to `/data` so Construct writes user-scoped state to the mounted data path |
+| `CX_DATA_DIR` | ECS task env | Explicit Construct data root; also set to `/data` |
+| `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` | ECS task env | Discrete Postgres connection parts used to synthesize `DATABASE_URL` at runtime |
+| `DB_PASSWORD` | Secrets Manager | Postgres password secret injected into the task |
 | `WEBHOOK_SECRET_GITHUB` | Secrets Manager or env | HMAC secret for GitHub webhooks |
 | `WEBHOOK_SECRET_SLACK` | Secrets Manager or env | Signing secret for Slack webhooks |
 
-> Secrets Manager secrets are injected as environment variables by the ECS task definition (see `modules/ecs/main.tf`).
+> Secrets Manager secrets are injected as named environment variables by the ECS task definition (see `modules/ecs/main.tf`). Construct synthesizes `DATABASE_URL` from the discrete `DB_*` variables when an explicit `DATABASE_URL` is not already present.
 
 ---
 

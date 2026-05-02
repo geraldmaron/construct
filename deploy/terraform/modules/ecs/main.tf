@@ -100,17 +100,34 @@ resource "aws_ecs_task_definition" "this" {
     portMappings = [{ containerPort = var.port, protocol = "tcp" }]
 
     environment = [
-      { name = "PORT",      value = tostring(var.port) },
-      { name = "NODE_ENV",  value = "production" },
-      { name = "DB_HOST",   value = var.db_host },
-      { name = "DB_NAME",   value = var.db_name },
-      { name = "DB_USER",   value = "construct" },
+      { name = "HOME",        value = "/data" },
+      { name = "CX_DATA_DIR", value = "/data" },
+      { name = "PORT",        value = tostring(var.port) },
+      { name = "NODE_ENV",    value = "production" },
+      { name = "DB_HOST",     value = var.db_host },
+      { name = "DB_PORT",     value = "5432" },
+      { name = "DB_NAME",     value = var.db_name },
+      { name = "DB_USER",     value = "construct" },
     ]
 
-    secrets = [for arn in var.secrets_arns : {
-      name      = "SECRET_${index(var.secrets_arns, arn)}"
-      valueFrom = arn
-    }]
+    secrets = concat(
+      [
+        {
+          name      = "CONSTRUCT_DASHBOARD_TOKEN"
+          valueFrom = var.dashboard_token_secret_arn
+        },
+        {
+          name      = "DB_PASSWORD"
+          valueFrom = var.db_password_secret_arn
+        }
+      ],
+      var.anthropic_api_key_secret_arn != "" ? [
+        {
+          name      = "ANTHROPIC_API_KEY"
+          valueFrom = var.anthropic_api_key_secret_arn
+        }
+      ] : []
+    )
 
     logConfiguration = {
       logDriver = "awslogs"

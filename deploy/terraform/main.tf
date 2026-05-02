@@ -62,13 +62,16 @@ module "ecs" {
   image_uri            = var.image_uri
   task_role_arn        = module.iam.task_role_arn
   execution_role_arn   = module.iam.execution_role_arn
-  secrets_arns         = module.secrets.secret_arns
+  dashboard_token_secret_arn   = module.secrets.dashboard_token_secret_arn
+  db_password_secret_arn       = module.secrets.db_password_secret_arn
+  anthropic_api_key_secret_arn = module.secrets.anthropic_api_key_secret_arn
   db_host              = module.rds.endpoint
   db_name              = module.rds.db_name
   port                 = 4242
   cpu                  = var.task_cpu
   memory               = var.task_memory
   desired_count        = var.desired_count
+  certificate_arn      = var.acm_certificate_arn
 }
 
 module "dns" {

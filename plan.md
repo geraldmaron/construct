@@ -22,12 +22,16 @@ This file is a living plan, not an archive:
 - ADR: `docs/adr/0002-layered-architecture.md`
 - Beads prefix: `construct-` (issues named `construct-<hash>`)
 - Active issues:
-  - `construct-lvx` P0 — CI green after deploy/pages gating fixes
-  - `construct-d4e` P1 — Embed daemon: consolidate and harden
-  - `construct-sjs` P1 — TPM gap analysis and ticket creation (Phase 9)
-  - `construct-oip` P2 — Docs lifecycle job: gap detection and authority routing
-  - `construct-94c` P2 — Init-docs: unified TTY menus, intake routing, custom lane polish
-  - `construct-an2` P3 — Shell completions and CLI surface polish
+  - `construct-dj5` P3 — Live AWS deploy validation for ECS runtime contract
+  - `construct-bo7` P3 — OAuth provider login and role-based auth implementation
+
+## Current Gaps Not Yet Re-Ticketed
+
+- `Phase 2.1` Web dashboard source/build sync is now wired and verified; remaining dashboard work is auth and any feature gaps that emerge after shipping source changes through the new build path.
+- `Phase 2.2` Local auth groundwork is now in place; real GitHub/Google OAuth and RBAC implementation is re-ticketed as `construct-bo7`.
+- `Phase 2.3` Single-container Docker deployment exists and the local runtime contract has been tightened; remaining live validation is re-ticketed as `construct-dj5`.
+- `Phase 2.4` Terraform modules exist and local contract gaps have been fixed; remaining cloud-environment validation is re-ticketed as `construct-dj5`.
+- `SLACK_BOT_TOKEN` remains missing, so Slack posting paths are configured but not active.
 
 ## Goal
 
@@ -97,10 +101,10 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 2.1 | Web dashboard — React/Vite frontend | in progress | `dashboard/` directory; auth login; chat view; approval queue; knowledge panel |
-| 2.2 | Multi-user auth — OAuth via GitHub/Google, role-based permissions | planned | |
-| 2.3 | Dockerfile — single-container deployment | planned | |
-| 2.4 | Terraform modules — AWS, GCP, Azure deployment | planned | |
+| 2.1 | Web dashboard — React/Vite frontend | in progress | `dashboard/` directory exists; source-to-static sync now verified via `construct dashboard:sync`; auth/login remains token-based |
+| 2.2 | Multi-user auth — OAuth via GitHub/Google, role-based permissions | planned | Local auth config groundwork is done; real provider-backed OAuth/RBAC tracked in `construct-bo7` |
+| 2.3 | Dockerfile — single-container deployment | in progress | Dockerfile exists; local packaging/runtime contract fixed; live AWS validation tracked in `construct-dj5` |
+| 2.4 | Terraform modules — AWS, GCP, Azure deployment | in progress | Terraform modules exist; local runtime wiring fixed; live cloud validation tracked in `construct-dj5` |
 | 2.5 | GitHub Actions workflows — CI, deploy, release | done | `ci.yml`, `deploy.yml`, `release.yml`; gated by repo variables |
 | 2.6 | GitHub Pages — public docs site | done | `pages.yml`; gated by `PAGES_ENABLED = true` |
 | 2.7 | Comment policy enforcement | done | Pre-commit hook + CI workflows; all violations fixed |
@@ -276,3 +280,21 @@ Each phase has its own acceptance criteria above. Cross-cutting:
 - Comment policy enforced: `construct lint:comments` passes, pre-commit hook blocks violations
 - CI green on push: all workflows pass (or skip gracefully when gated)
 - Dashboard starts with auth: `construct up` → `http://localhost:3000`
+
+---
+
+## ✅ Phase 9: Parallel Agent Beads Lock Manager (COMPLETED)
+
+**Goal**: Eliminate lock errors and enable smooth parallel agent workflow with lock visibility, queueing, automatic plan/handoff updates, and stale lock cleanup.
+
+**Implemented**:
+1. **Lock manager** (`lib/beads-lock.mjs`) with stale‑detection and queue visibility
+2. **Beads client wrapper** (`lib/beads-client.mjs`) for queued execution  
+3. **CLI integration**: `construct beads <command>` for lock‑aware execution
+4. **Automation**: Auto‑sync plan.md with bead status, handoff creation
+5. **Merge‑slot bead** (`construct‑6uo`) for batch operation coordination
+6. **Updated AGENTS.md** with parallel‑agent workflow
+
+**Workflow**: Use `construct beads` instead of direct `bd`; check lock with `construct beads status`.
+
+**Handoff**: `.cx/handoffs/2026-05-01-parallel-agent-beads-lock.md`

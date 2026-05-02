@@ -20,6 +20,10 @@ function tempDir(prefix) {
   return fs.mkdtempSync(path.join('/tmp', prefix));
 }
 
+function hasPathSegment(relPath, segment) {
+  return relPath.split(path.sep).includes(segment);
+}
+
 function makeRepoCopy() {
   const dest = tempDir("construct-sync-repo-");
   fs.cpSync(root, dest, {
@@ -27,10 +31,11 @@ function makeRepoCopy() {
     filter: (source) => {
       const rel = path.relative(root, source);
       if (!rel) return true;
-      if (rel === "node_modules") return false;
-      if (rel.startsWith(`node_modules${path.sep}`)) return false;
-      if (rel === ".git") return false;
-      if (rel.startsWith(`.git${path.sep}`)) return false;
+      if (hasPathSegment(rel, "node_modules")) return false;
+      if (hasPathSegment(rel, ".git")) return false;
+      if (hasPathSegment(rel, "cache")) return false;
+      if (hasPathSegment(rel, ".tmp")) return false;
+      if (hasPathSegment(rel, "coverage")) return false;
       return true;
     },
   });

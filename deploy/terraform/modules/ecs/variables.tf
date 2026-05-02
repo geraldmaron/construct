@@ -6,7 +6,9 @@ variable "private_subnet_ids" { type = list(string) }
 variable "image_uri"          { type = string }
 variable "task_role_arn"      { type = string }
 variable "execution_role_arn" { type = string }
-variable "secrets_arns"       { type = list(string) }
+variable "dashboard_token_secret_arn"  { type = string }
+variable "db_password_secret_arn"      { type = string }
+variable "anthropic_api_key_secret_arn" { type = string; default = "" }
 variable "db_host"            { type = string }
 variable "db_name"            { type = string }
 variable "port"               { type = number; default = 4242 }

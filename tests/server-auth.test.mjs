@@ -196,3 +196,39 @@ test('isAuthConfigured returns true after token is set', async () => {
   assert.ok(isAuthConfigured());
   rmSync(home, { recursive: true });
 });
+
+test('getAuthConfig defaults to token mode with no OAuth providers', async () => {
+  const home = makeTmpHome();
+  const { getAuthConfig } = await loadAuth(home);
+  const config = getAuthConfig();
+  assert.equal(config.mode, 'token');
+  assert.deepEqual(config.providers, []);
+  assert.equal(config.sessionBackend, 'memory');
+  assert.equal(config.supportsTokenLogin, true);
+  assert.equal(config.oauthConfigured, false);
+  rmSync(home, { recursive: true });
+});
+
+test('getAuthConfig reports configured OAuth providers from env', async () => {
+  const home = makeTmpHome();
+  const prevMode = process.env.CONSTRUCT_AUTH_MODE;
+  const prevProviders = process.env.CONSTRUCT_OAUTH_PROVIDERS;
+  const prevRoles = process.env.CONSTRUCT_AUTH_ROLES_ENABLED;
+  process.env.CONSTRUCT_AUTH_MODE = 'oauth';
+  process.env.CONSTRUCT_OAUTH_PROVIDERS = 'github, google, github';
+  process.env.CONSTRUCT_AUTH_ROLES_ENABLED = '1';
+  try {
+    const { getAuthConfig } = await loadAuth(home);
+    const config = getAuthConfig();
+    assert.equal(config.mode, 'oauth');
+    assert.deepEqual(config.providers, ['github', 'google']);
+    assert.equal(config.rolesEnabled, true);
+    assert.equal(config.oauthConfigured, true);
+    assert.equal(config.supportsTokenLogin, true);
+  } finally {
+    if (prevMode === undefined) delete process.env.CONSTRUCT_AUTH_MODE; else process.env.CONSTRUCT_AUTH_MODE = prevMode;
+    if (prevProviders === undefined) delete process.env.CONSTRUCT_OAUTH_PROVIDERS; else process.env.CONSTRUCT_OAUTH_PROVIDERS = prevProviders;
+    if (prevRoles === undefined) delete process.env.CONSTRUCT_AUTH_ROLES_ENABLED; else process.env.CONSTRUCT_AUTH_ROLES_ENABLED = prevRoles;
+    rmSync(home, { recursive: true });
+  }
+});

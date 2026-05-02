@@ -1,4 +1,5 @@
-import { HashRouter, Routes, Route, NavLink, useEffect, useState } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { HashRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { fetchMode } from './lib/api';
 import './App.css';
 import Resources from './pages/Resources';
