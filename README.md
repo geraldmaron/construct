@@ -162,7 +162,9 @@ The team challenges itself along the way: reviewers push back on incomplete work
 
 | Command | What it does |
 |---|---|
-| `construct init` | Bootstrap Construct project state without overwriting existing repo rules |
+| `construct init` | Bootstrap Construct project state and documentation system |
+| `construct docs:verify` | Validate documentation completeness and quality |
+| `construct init:update` | Update existing project to current documentation standards |
 | `construct distill` | Distill documents with query-focused, citation-ready chunk selection |
 | `construct ingest` | Convert PDFs, office docs, spreadsheets, and text files into indexed markdown artifacts in the knowledge base |
 | `construct infer` | Infer a structured field schema from one or more documents using AI |
