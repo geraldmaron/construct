@@ -100,7 +100,7 @@ deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 **Goal**: Dashboard is a full web app. Multi-user auth. Deployable via Docker. Terraform modules for cloud hosting.
 
 | # | Task | Status | Notes |
-|---|---|---|---|
+|---|---|---|---|---|
 | 2.1 | Web dashboard — React/Vite frontend | in progress | `dashboard/` directory exists; source-to-static sync now verified via `construct dashboard:sync`; auth/login remains token-based |
 | 2.2 | Multi-user auth — OAuth via GitHub/Google, role-based permissions | planned | Local auth config groundwork is done; real provider-backed OAuth/RBAC tracked in `construct-bo7` |
 | 2.3 | Dockerfile — single-container deployment | in progress | Dockerfile exists; local packaging/runtime contract fixed; live AWS validation tracked in `construct-dj5` |
