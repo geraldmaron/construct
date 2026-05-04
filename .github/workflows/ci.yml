@@ -21,6 +21,7 @@ jobs:
       - run: node bin/construct lint:comments
       - run: node bin/construct setup --help
       - run: node bin/construct doctor
+      - run: node bin/construct docs:verify
 
   docs:
     name: docs drift check

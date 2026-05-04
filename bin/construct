@@ -340,8 +340,15 @@ async function cmdReview(args) {
   runNodeScript(path.join(ROOT_DIR, 'scripts', 'review.mjs'), args, ENV);
 }
 
-async function cmdInit(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init.mjs'), args); }
-async function cmdInitDocs(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init-docs.mjs'), args); }
+async function cmdInit(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init-unified.mjs'), args); }
+async function cmdInitDocs(args) { 
+  console.warn("⚠️  Warning: `construct init-docs` is deprecated. Use `construct init --docs-preset` instead.");
+  runNodeScript(path.join(ROOT_DIR, 'lib', 'init-unified.mjs'), args); 
+}
+async function cmdDocsVerify(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'docs-verify.mjs'), args); }
+async function cmdInitUpdate(args) { 
+  runNodeScript(path.join(ROOT_DIR, 'lib', 'init-update.mjs'), args);
+}
 async function cmdDistill(args) { runDistillCli(args); }
 async function cmdIngest(args) {
   try {
@@ -807,7 +814,8 @@ const handlers = new Map([
   ['storage', cmdStorage],
   ['headhunt', cmdHeadhunt],
   ['init', cmdInit],
-  ['init-docs', cmdInitDocs],
+  ['docs:verify', cmdDocsVerify],
+  ['init:update', cmdInitUpdate],
   ['models', cmdModels],
   ['mcp', cmdMcp],
   ['plugin', cmdPlugin],
