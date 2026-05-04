@@ -288,6 +288,30 @@ async function runOptimize(agentName) {
   applyPatch(skillFile, patch);
   println(`\nPatch applied to ${path.relative(ROOT_DIR, skillFile)}`);
 
+  // Trigger validation of the optimized persona
+  try {
+    println('\n🧪 Triggering persona validation...');
+    const validationResult = spawnSync(process.execPath, [
+      path.join(__dirname, '../lib/hooks/persona-validator.mjs')
+    ], {
+      cwd: ROOT_DIR,
+      input: JSON.stringify({
+        tool_name: 'optimize',
+        tool_result: {
+          result: `Optimized ${agentName} persona with patch: ${patch.slice(0, 200)}...`
+        }
+      }),
+      encoding: 'utf8',
+      timeout: 30000
+    });
+    
+    if (validationResult.status === 0) {
+      println('✅ Persona validation triggered');
+    }
+  } catch (error) {
+    warn(`Validation trigger failed: ${error.message}`);
+  }
+
   // Auto-trigger sync to propagate updated skill to all hosts
   const syncScript = path.join(ROOT_DIR, 'sync-agents.mjs');
   if (fs.existsSync(syncScript)) {

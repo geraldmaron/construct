@@ -444,6 +444,19 @@
         ],
         "id": "stop:snapshot",
         "description": "Snapshot .cx/context.md at session end so resume has real progress"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/session-optimize.mjs\"",
+            "timeout": 600,
+            "async": true
+          }
+        ],
+        "id": "stop:optimize-agents",
+        "description": "Check performance reviews and auto-optimize low-scoring agents at session end"
       }
     ],
     "TeammateIdle": [

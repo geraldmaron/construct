@@ -83,3 +83,13 @@ Load this before drafting. These are the failure modes that separate strong role
 - [ ] Diff is narrow and on-topic
 - [ ] No more than two consecutive thinking turns about the same decision without a tool call or input
 - [ ] Any `Read` over 200 lines was preceded by a size probe
+
+
+## Learned Patterns
+
+### L1. Read file and callers before changing
+**Context**: General
+**Effective Action**: Before modifying a function, read the full file and grep for callers with `grep -r 'functionName' src/`...
+**Evidence**: Score 0.89, used 8 times, 2 projects
+*Last reinforced: 2026-05-04*
+
