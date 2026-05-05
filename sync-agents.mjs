@@ -617,6 +617,10 @@ function hasCodexMcpTable(text, id) {
   return new RegExp(`^\\[mcp_servers\\.(?:${escapeRegExp(id)}|${escapeRegExp(tomlString(id))})\\]`, "m").test(text);
 }
 
+function isCodexMcpSupported(id) {
+  return id !== "memory";
+}
+
 function syncCodex(entries) {
   const codexDir = path.join(home, ".codex");
   const codexAgentsDir = path.join(codexDir, "agents");
@@ -631,10 +635,11 @@ function syncCodex(entries) {
   const existing = removeDanglingConstructMcpMarkers(removeDanglingConstructMcpTimeouts(readCodexConfig(configPath)));
   const entryNames = entries.map(adapterName);
   const registryMcp = registry.mcpServers ?? {};
-  const mcpIds = Object.keys(registryMcp).filter((id) => hasCodexMcpTable(existing, id));
+  const existingMcpIds = Object.keys(registryMcp).filter((id) => hasCodexMcpTable(existing, id));
+  const mcpIds = existingMcpIds.filter(isCodexMcpSupported);
   const withoutManagedTables = removeDanglingConstructMcpMarkers(removeTomlTables(
     removeCodexAgentTables(existing, entryNames),
-    mcpIds.flatMap((id) => [`mcp_servers.${id}`, `mcp_servers.${tomlString(id)}`]),
+    existingMcpIds.flatMap((id) => [`mcp_servers.${id}`, `mcp_servers.${tomlString(id)}`]),
   ));
   const hasAgentsRoot = /^\[agents\]\s*$/m.test(withoutManagedTables);
   const rootBlock = hasAgentsRoot ? "" : "[agents]\nmax_threads = 6\nmax_depth = 1\n\n";

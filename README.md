@@ -265,6 +265,8 @@ Hybrid storage readiness is also reported via `storage`:
 
 The status JSON also reports hybrid storage readiness so team-ready deployments can see whether SQL/vector stores are configured or still running file-only. Tracing becomes active once `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are present in `~/.construct/config.env` or `.env`.
 
+`construct up` is runtime hydration, not the source of truth. It starts or reuses helpers such as the dashboard, memory server, OpenCode bridge, Postgres, and Langfuse when their dependencies are available. If Docker, Postgres, Langfuse, or `cm` are down, Construct should still be recoverable from durable state: `plan.md`, `.cx/context.md`, the latest `.cx/handoffs/` file, Beads, docs, git, `~/.construct/config.env`, and `CX_DATA_DIR`/`~/.cx` data. The command now prints those recovery anchors after service startup so you can keep working even when optional services are degraded.
+
 The same public-health contract is exposed through the Construct MCP server on:
 
 - `project_context`

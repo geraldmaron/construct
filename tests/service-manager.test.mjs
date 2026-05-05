@@ -10,7 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { clearDashboardState, readDashboardState, startServices, stopDashboard, stopServices, getRuntimePorts, _verifyLangfuseKeys, _pruneStashDir } from '../lib/service-manager.mjs';
+import { buildRuntimeRecoverySummary, clearDashboardState, readDashboardState, isManagedConstructPostgresUrl, startServices, stopDashboard, stopServices, getRuntimePorts, _verifyLangfuseKeys, _pruneStashDir } from '../lib/service-manager.mjs';
 import { writeEnvValues } from '../lib/env-config.mjs';
 
 function tempDir(prefix) {
@@ -168,6 +168,59 @@ test('startServices runs pressure cleanup before probing OpenCode', async () => 
   const openCode = results.find((entry) => entry.name === 'OpenCode');
   assert.ok(openCode);
   assert.equal(openCode.status, 'reused');
+});
+
+test('startServices returns durable recovery anchors when Docker-backed services are unavailable', async () => {
+  const homeDir = tempDir('construct-service-recovery-home-');
+  const rootDir = tempDir('construct-service-recovery-root-');
+  fs.writeFileSync(path.join(rootDir, 'plan.md'), '# Plan\n');
+  fs.mkdirSync(path.join(rootDir, '.cx', 'handoffs'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, '.cx', 'context.md'), '# Context\n');
+  fs.writeFileSync(path.join(rootDir, '.cx', 'handoffs', '2026-05-05-resume.md'), '# Handoff\n');
+  fs.mkdirSync(path.join(rootDir, '.beads'), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, '.beads', 'metadata.json'), '{}\n');
+
+  const { results, recovery } = await startServices({
+    rootDir,
+    homeDir,
+    describeRuntimeSupportFn: async () => ({ docker: false, cm: false, opencode: false, tmux: false }),
+    getRuntimePortsFn: async () => ({ dashboard: 4242, memory: 8765, bridge: 5173 }),
+    startDashboardFn: async () => ({ url: 'http://127.0.0.1:4242', reused: true }),
+    detectDockerComposeFn: () => null,
+    loadConstructEnvFn: () => ({}),
+    runPressureReleaseFn: () => ({ pressureTriggered: false, killed: [] }),
+  });
+
+  assert.equal(results.some((entry) => entry.status === 'unavailable'), true);
+  assert.equal(recovery.canResumeFromFiles, true);
+  assert.equal(recovery.durable.plan, 'plan.md');
+  assert.equal(recovery.durable.context, '.cx/context.md');
+  assert.equal(recovery.durable.latestHandoff, path.join('.cx', 'handoffs', '2026-05-05-resume.md'));
+  assert.equal(recovery.durable.beads, '.beads/metadata.json');
+  assert.match(recovery.message, /partially degraded/);
+});
+
+test('buildRuntimeRecoverySummary works with only file-state anchors', () => {
+  const homeDir = tempDir('construct-service-recovery-home-');
+  const rootDir = tempDir('construct-service-recovery-root-');
+  fs.writeFileSync(path.join(rootDir, 'plan.md'), '# Plan\n');
+
+  const summary = buildRuntimeRecoverySummary({
+    rootDir,
+    homeDir,
+    results: [{ name: 'Langfuse', status: 'unavailable', note: 'Docker not available' }],
+  });
+
+  assert.equal(summary.canResumeFromFiles, true);
+  assert.equal(summary.durable.plan, 'plan.md');
+  assert.deepEqual(summary.degraded, [{ name: 'Langfuse', status: 'unavailable', note: 'Docker not available' }]);
+});
+
+test('managed Postgres detection does not capture external databases named construct', () => {
+  assert.equal(isManagedConstructPostgresUrl('postgresql://construct:construct@127.0.0.1:54329/construct'), true);
+  assert.equal(isManagedConstructPostgresUrl('postgresql://construct:construct@localhost:54329/construct'), true);
+  assert.equal(isManagedConstructPostgresUrl('postgresql://user:pass@db.example.com:5432/construct'), false);
+  assert.equal(isManagedConstructPostgresUrl('postgresql://user:pass@127.0.0.1:5432/construct'), false);
 });
 
 // ── pruneStashDir ─────────────────────────────────────────────────────────

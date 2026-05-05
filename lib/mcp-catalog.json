@@ -67,9 +67,9 @@
       "hostSupport": {
         "claude": { "mode": "unsupported", "label": "construct-mcp (project .mcp.json)" },
         "opencode": { "mode": "managed" },
-        "codex": { "mode": "managed" }
+        "codex": { "mode": "unsupported", "label": "construct-mcp / local observation tools" }
       },
-      "setupNote": "Claude Code rejects the cass-memory HTTP endpoint because `cm serve` skips the MCP `initialize` handshake. On Claude, memory tools (memory_search, memory_add_observations, memory_recent, memory_create_entities) are exposed through the project-local construct-mcp stdio server in .mcp.json. OpenCode and Codex tolerate the non-compliant handshake and use the HTTP endpoint directly.",
+      "setupNote": "Claude Code and Codex reject the cass-memory HTTP endpoint because `cm serve` skips the MCP `initialize` handshake. On Claude, memory tools (memory_search, memory_add_observations, memory_recent, memory_create_entities) are exposed through the project-local construct-mcp stdio server in .mcp.json. OpenCode tolerates the non-compliant handshake and uses the HTTP endpoint directly.",
       "usedBy": [
         "construct",
         "cx-docs-keeper",

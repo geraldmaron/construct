@@ -279,7 +279,7 @@ async function cmdDoctor() {
 }
 
 async function cmdUp() {
-  const { results } = await startServices({ rootDir: ROOT_DIR, homeDir: HOME });
+  const { results, recovery } = await startServices({ rootDir: ROOT_DIR, homeDir: HOME });
   for (const svc of results) {
     const label = svc.url ? `${svc.name} → ${svc.url}` : svc.name;
     if (svc.status === 'started') ok(svc.note ? `${label} (${svc.note})` : label);
@@ -287,6 +287,21 @@ async function cmdUp() {
     else if (svc.status === 'configured') info(`${svc.name}: ${svc.note}`);
     else if (svc.status === 'failed') errorln(`${svc.name}: ${svc.note}`);
     else warn(`${svc.name}: ${svc.note}`);
+  }
+
+  if (recovery) {
+    println('');
+    info(`Recovery: ${recovery.message}`);
+    const anchors = [
+      recovery.durable?.plan,
+      recovery.durable?.context,
+      recovery.durable?.latestHandoff,
+      recovery.durable?.beads,
+    ].filter(Boolean);
+    if (anchors.length) info(`Durable anchors: ${anchors.join(', ')}`);
+    if (recovery.degraded?.length) {
+      info(`Degraded services: ${recovery.degraded.map((entry) => `${entry.name} (${entry.status})`).join(', ')}`);
+    }
   }
 }
 
