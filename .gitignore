@@ -7,6 +7,9 @@ cache/
 .claude/
 .codex/
 .cx/*
+!.cx/
+!.cx/context.md
+!.cx/context.json
 .mcp.json
 config.env
 embed.yaml

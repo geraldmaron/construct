@@ -1,0 +1,13 @@
+{
+  "format": "json",
+  "savedAt": "2026-05-01T21:55:00.000Z",
+  "source": "pre-compact",
+  "projectName": "construct",
+  "lastSummary": "Completed local auth groundwork, dashboard static sync tooling, and local deploy/runtime contract review. Remaining open work is real provider-backed OAuth plus live AWS validation.",
+  "filesChanged": [],
+  "decisions": [],
+  "pendingTodos": [],
+  "efficiencySummary": "155 reads · 96 unique files · 59 repeated reads · 67 large reads · 2294 KB read",
+  "warnFlags": "None",
+  "contextSummary": "construct-nye, construct-mvf, and construct-1yu are complete. Remaining ready issues are construct-dj5 for live AWS validation and construct-bo7 for real OAuth/RBAC implementation."
+}
