@@ -1,0 +1,8 @@
+# drive policy
+# Controls stop-blocking when drive mode is active and acceptance criteria are unmet.
+
+rule: drive
+hook_event: Stop
+condition: drive_state.active == true AND drive_state.canStop != true
+action: block
+message: "Drive mode active — unmet criteria remain. Record evidence in .cx/drive-state.json to unblock."

@@ -1,0 +1,97 @@
+{
+  "_doc": "Retrieval-quality fixture. The corpus models a small product+infra knowledge base; the queries probe whether the retriever surfaces the right chunk under exact-keyword, paraphrase, and multi-keyword conditions. Edit deliberately — the regression test asserts a baseline against this set.",
+  "corpus": [
+    {
+      "id": "auth-jwt",
+      "title": "Authentication uses JWT tokens",
+      "body": "We decided to use JWT with RS256 for stateless auth. Session duration is 8 hours. The auth middleware verifies tokens against a public key cached from the IdP."
+    },
+    {
+      "id": "auth-oauth",
+      "title": "OAuth flow for third-party login",
+      "body": "Authorization code grant with PKCE for SPAs. The redirect URI must be registered with the provider. State cookie is HttpOnly, SameSite=lax."
+    },
+    {
+      "id": "rate-limiting",
+      "title": "Rate limiting anti-pattern",
+      "body": "No rate limiting on the webhook endpoint is a recurring risk and anti-pattern. Add a token bucket per source IP."
+    },
+    {
+      "id": "adr-zero-deps",
+      "title": "ADR-0001: Zero npm dependencies in core",
+      "body": "Core CLI must have zero npm dependencies. Providers may bring their own. Rationale: a package install error must never break the agent loop."
+    },
+    {
+      "id": "adr-layered",
+      "title": "ADR-0002: Layered architecture",
+      "body": "Five layers: core, providers, runtime, dashboard, deploy. Core never imports from runtime. Providers are stateless adapters."
+    },
+    {
+      "id": "snapshot-2026",
+      "title": "Weekly snapshot — 2026-04-28",
+      "body": "Risks: rate limiting not configured. Health: all providers connected. Approvals queue: 3 items pending."
+    },
+    {
+      "id": "docker-build",
+      "title": "Docker build optimisation",
+      "body": "Multi-stage Docker builds reduced image size by 40%. Use a slim base, copy only the build outputs, and pin the registry digest."
+    },
+    {
+      "id": "postgres-pgvector",
+      "title": "Postgres pgvector setup",
+      "body": "Install the vector extension, declare embedding columns at the engine's dimension, build an HNSW index. Tune ef_search per workload."
+    },
+    {
+      "id": "test-strategy",
+      "title": "Testing strategy for hooks",
+      "body": "Hooks fail-open and silent failure regressions. Use an in-memory mock for stdin, snapshot the JSONL telemetry, and assert exit codes per branch."
+    },
+    {
+      "id": "release-process",
+      "title": "Release process and versioning",
+      "body": "Cut a release branch, freeze non-critical merges, run release:check. Tag SemVer. Roll forward only — no force-push to main."
+    }
+  ],
+  "queries": [
+    {
+      "query": "JWT authentication with RS256",
+      "expected": ["auth-jwt"]
+    },
+    {
+      "query": "How do we handle stateless tokens?",
+      "expected": ["auth-jwt"]
+    },
+    {
+      "query": "rate limit webhook endpoint",
+      "expected": ["rate-limiting"]
+    },
+    {
+      "query": "core npm dependencies decision",
+      "expected": ["adr-zero-deps"]
+    },
+    {
+      "query": "five layer architecture",
+      "expected": ["adr-layered"]
+    },
+    {
+      "query": "weekly health snapshot risks",
+      "expected": ["snapshot-2026"]
+    },
+    {
+      "query": "Docker image size reduction",
+      "expected": ["docker-build"]
+    },
+    {
+      "query": "pgvector HNSW index",
+      "expected": ["postgres-pgvector"]
+    },
+    {
+      "query": "testing fail-open hooks",
+      "expected": ["test-strategy"]
+    },
+    {
+      "query": "release branch freeze",
+      "expected": ["release-process"]
+    }
+  ]
+}

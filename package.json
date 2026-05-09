@@ -1,0 +1,62 @@
+{
+  "name": "@geraldmaron/construct",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
+  "bin": {
+    "construct": "bin/construct"
+  },
+  "files": [
+    "bin/construct",
+    "bin/construct-postinstall.mjs",
+    "lib/**",
+    "agents/**",
+    "examples/**",
+    "personas/**",
+    "commands/**",
+    "skills/**",
+    "rules/**",
+    "platforms/**",
+    "templates/**",
+    "templates/distribution/**",
+    "langfuse/**",
+    "db/**",
+    "sync-agents.mjs",
+    "README.md",
+    ".env.example"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "Elastic-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/geraldmaron/construct.git"
+  },
+  "homepage": "https://github.com/geraldmaron/construct",
+  "bugs": {
+    "url": "https://github.com/geraldmaron/construct/issues"
+  },
+  "scripts": {
+    "mcp": "node lib/mcp/server.mjs",
+    "test": "node scripts/run-tests.mjs",
+    "docs:init": "node lib/init-docs.mjs --yes",
+    "docs:update": "node ./bin/construct docs:update",
+    "docs:site": "node ./bin/construct docs:site",
+    "lint:comments": "node ./bin/construct lint:comments",
+    "lint:templates": "node scripts/lint-commits-pr.mjs",
+    "release:check": "node ./bin/construct doctor && npm test && node ./bin/construct docs:update --check && node ./bin/construct dashboard:sync --check && node ./bin/construct lint:comments && node scripts/lint-commits-pr.mjs",
+    "postinstall": "node ./bin/construct-postinstall.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "postgres": "^3.4.9"
+  },
+  "overrides": {
+    "express-rate-limit": "8.5.1"
+  }
+}

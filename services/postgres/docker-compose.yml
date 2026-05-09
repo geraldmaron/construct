@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: construct-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: construct
+      POSTGRES_PASSWORD: construct
+      POSTGRES_DB: construct
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - construct-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U construct -d construct"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  construct-postgres-data:

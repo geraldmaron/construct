@@ -1,0 +1,35 @@
+# <type>(<scope>): <subject>
+#
+# Subject rules:
+#   - Imperative mood ("add", "fix", "remove" — not "added"/"adds")
+#   - <= 72 characters
+#   - No trailing period
+#   - Lowercase after the colon, except for proper nouns
+#
+# Allowed types:
+#   feat     - new user-visible capability
+#   fix      - bug fix
+#   refactor - internal change with no behavior change
+#   perf     - performance improvement
+#   docs     - documentation only
+#   test     - tests only
+#   chore    - build, deps, tooling, repo cleanup
+#   ci       - CI/CD changes
+#   build    - build system changes
+#   style    - formatting only, no logic
+#
+# Scope is optional but encouraged: e.g. hooks, cli, sync, providers, server
+#
+# Body (optional, separate with a blank line):
+#   - Explain the WHY, not the WHAT. The diff says what.
+#   - Wrap at 72 chars.
+#   - Reference Beads issue if non-trivial: "Refs: construct-XXX".
+#
+# Footer (optional):
+#   BREAKING CHANGE: <description of breaking change>
+#   Refs: construct-XXX, #123
+#
+# Forbidden:
+#   - "Co-Authored-By: Claude*" lines unless the user explicitly asks
+#   - Itemized feature lists in the body (the diff already shows them)
+#   - --no-verify or --no-gpg-sign without explicit user authorization

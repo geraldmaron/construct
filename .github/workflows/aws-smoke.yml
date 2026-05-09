@@ -1,0 +1,110 @@
+name: aws-smoke
+
+# Manual-only workflow: deploys an ephemeral stack, runs integration tests, tears it down.
+# Requires AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and NPM_TOKEN secrets.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment name (smoke stacks are always torn down)"
+        required: false
+        default: smoke
+
+env:
+  AWS_REGION: us-east-1
+  TF_DIR: deploy/terraform
+
+jobs:
+  smoke:
+    name: AWS smoke test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    env:
+      AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Full test suite must pass before any cloud resources are created.
+      - name: Unit tests
+        run: npm test
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.7"
+
+      - name: Build Docker image
+        run: |
+          docker build -t construct-smoke:${{ github.sha }} .
+          echo "IMAGE_URI=construct-smoke:${{ github.sha }}" >> "$GITHUB_ENV"
+
+      - name: Terraform init + workspace
+        run: |
+          terraform -chdir="$TF_DIR" init -input=false
+          terraform -chdir="$TF_DIR" workspace new "smoke-${{ github.run_id }}" 2>/dev/null || \
+            terraform -chdir="$TF_DIR" workspace select "smoke-${{ github.run_id }}"
+
+      - name: Terraform apply
+        id: apply
+        run: |
+          SMOKE_ENV="smoke-${{ github.run_id }}"
+          SMOKE_TOKEN="smoke-token-${{ github.run_id }}"
+          terraform -chdir="$TF_DIR" apply -auto-approve -input=false \
+            -var="name=construct" \
+            -var="environment=${SMOKE_ENV}" \
+            -var="image_uri=${IMAGE_URI}" \
+            -var="dashboard_token=${SMOKE_TOKEN}" \
+            -var="desired_count=1"
+          ALB_DNS=$(terraform -chdir="$TF_DIR" output -raw alb_dns_name)
+          echo "ALB_DNS=$ALB_DNS" >> "$GITHUB_ENV"
+
+      # Tag all resources so the cleanup step can sweep orphans.
+      - name: Run integration tests against stack
+        run: |
+          BASE_URL="http://$ALB_DNS"
+          TOKEN="smoke-token-${{ github.run_id }}"
+
+          # Wait for ALB to become healthy (up to 3 minutes).
+          for i in $(seq 1 18); do
+            STATUS=$(curl -sf -o /dev/null -w '%{http_code}' \
+              -H "Authorization: Bearer $TOKEN" \
+              "$BASE_URL/api/auth/status" || echo "000")
+            [ "$STATUS" = "200" ] && break
+            echo "Waiting for health check... attempt $i (status $STATUS)"
+            sleep 10
+          done
+
+          # Auth endpoint
+          curl -fsS -H "Authorization: Bearer $TOKEN" "$BASE_URL/api/auth/status"
+
+          # CSRF header enforcement
+          STATUS=$(curl -o /dev/null -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{}' "$BASE_URL/api/approvals")
+          [ "$STATUS" = "403" ] || { echo "CSRF gate failed: got $STATUS"; exit 1; }
+
+          echo "Smoke tests passed."
+
+      - name: Terraform destroy
+        if: always()
+        run: |
+          terraform -chdir="$TF_DIR" destroy -auto-approve -input=false \
+            -var="name=construct" \
+            -var="environment=smoke-${{ github.run_id }}" \
+            -var="image_uri=${IMAGE_URI:-placeholder}" \
+            -var="dashboard_token=placeholder" \
+            -var="desired_count=1"
+          terraform -chdir="$TF_DIR" workspace select default
+          terraform -chdir="$TF_DIR" workspace delete "smoke-${{ github.run_id }}" 2>/dev/null || true

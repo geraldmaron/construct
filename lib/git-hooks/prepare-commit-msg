@@ -1,0 +1,58 @@
+#!/usr/bin/env node
+/**
+ * lib/git-hooks/prepare-commit-msg
+ *
+ * Git hook that appends AI provenance trailers to every commit message.
+ * Follows the RFC 9562 / git-interpret-trailers convention.
+ *
+ * Trailers added (when env vars are present):
+ *   AI-Generator: construct/sync-agents
+ *   AI-Model:     claude-sonnet-4-6
+ *   AI-Session:   019dbb90-5885-...
+ *
+ * Install for a repo:
+ *   construct doc install-hooks
+ *
+ * Or manually:
+ *   cp node_modules/.bin/construct-prepare-commit-msg .git/hooks/prepare-commit-msg
+ *   chmod +x .git/hooks/prepare-commit-msg
+ *
+ * The hook reads env vars set by Construct sessions:
+ *   CONSTRUCT_MODEL       — active model name
+ *   CONSTRUCT_SESSION_ID  — UUIDv7 session id
+ *   CONSTRUCT_GENERATOR   — generator label (optional)
+ */
+
+import fs from 'node:fs';
+
+const msgFile = process.argv[2];
+const source  = process.argv[3]; // 'message', 'template', 'merge', 'squash', 'commit'
+
+// Only annotate regular commits and explicit message commits, not merges/squashes
+if (source === 'merge' || source === 'squash') process.exit(0);
+if (!msgFile) process.exit(0);
+
+const model     = process.env.CONSTRUCT_MODEL;
+const sessionId = process.env.CONSTRUCT_SESSION_ID;
+const generator = process.env.CONSTRUCT_GENERATOR;
+
+// Nothing to add if no Construct env vars are set
+if (!model && !sessionId && !generator) process.exit(0);
+
+const original = fs.readFileSync(msgFile, 'utf8');
+
+// Build trailers — only include fields that are populated
+const trailers = [];
+if (generator) trailers.push(`AI-Generator: ${generator}`);
+if (model)     trailers.push(`AI-Model: ${model}`);
+if (sessionId) trailers.push(`AI-Session: ${sessionId}`);
+
+if (!trailers.length) process.exit(0);
+
+// git-interpret-trailers convention: trailers follow a blank line after the body.
+// We append only if the trailers aren't already present (idempotent).
+const alreadyPresent = trailers.every(t => original.includes(t.split(':')[0] + ':'));
+if (alreadyPresent) process.exit(0);
+
+const separator = original.trimEnd().endsWith('\n\n') ? '' : '\n\n';
+fs.writeFileSync(msgFile, original.trimEnd() + separator + trailers.join('\n') + '\n');

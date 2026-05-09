@@ -1,0 +1,13 @@
+.git
+node_modules
+*.log
+.env
+config.env
+.claude
+.cx
+deploy/terraform/.terraform
+deploy/terraform/**/*.tfstate
+deploy/terraform/**/*.tfstate.backup
+deploy/terraform/**/.terraform.lock.hcl
+coverage
+.DS_Store
