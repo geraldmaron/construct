@@ -29,8 +29,9 @@ plan.md
 *.swo
 *.new
 
-# MkDocs build output
+# MkDocs build output and generated docs tree
 site/site/
+site/docs/
 
 # Local-only archived release notes and pre-release docs
 .archive/

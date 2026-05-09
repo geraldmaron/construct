@@ -2,6 +2,100 @@
 
 > Required project state. All LLMs working in this repo, including Construct, should treat this as canonical architecture context and keep it current.
 
+## A note before the diagrams
+
+If you're walking in cold — including future me — this page is the bridge between *what Construct is supposed to do* and *how it's actually wired up*. The diagrams come first because they're the cheapest way to orient. The text after explains the same thing twice on purpose: once in plain language, once in code-base terms. Pick whichever flavor lands faster, then read the other to lock it in.
+
+## The 30-second version
+
+Construct is one front door (a persona) that you talk to in Claude Code or OpenCode. Behind that door is a team of specialists — architect, engineer, reviewer, security, QA, and friends — who challenge each other and ship verified work. A small CLI keeps the team installed, healthy, and aligned with your project state. That's the whole product. The rest of this page is wiring.
+
+## How a request moves through Construct
+
+```mermaid
+flowchart TD
+    User["User<br/>@construct fix the login redirect"]
+    Persona["Persona<br/>(personas/construct.md)<br/>the only public surface"]
+    Policy["Orchestration policy<br/>(lib/orchestration-policy.mjs)<br/>classifies intent + execution track"]
+    Gates{"Gates<br/>framing · external research · doc owner"}
+    Contracts["Contract chain<br/>(agents/contracts.json)<br/>typed handoffs with pre/post conditions"]
+    Specialists["Specialist sequence<br/>architect → engineer → reviewer → qa → security<br/>(agents/prompts/cx-*.md)"]
+    Verification{"Verification gates<br/>npm test · lint:comments · docs:verify · contract postconditions"}
+    Result["Result<br/>back through the persona, in one voice"]
+
+    User --> Persona
+    Persona --> Policy
+    Policy --> Gates
+    Gates -->|preconditions met| Contracts
+    Gates -->|preconditions missing| Persona
+    Contracts --> Specialists
+    Specialists --> Verification
+    Verification -->|pass| Result
+    Verification -->|fail| Specialists
+    Result --> User
+```
+
+The loop is the differentiator. Other agent tools dispatch to specialists; Construct dispatches *and* gates *and* re-runs until verification passes or a real blocker surfaces.
+
+## Where things live
+
+```mermaid
+graph LR
+    subgraph core["core/ — orchestration brain"]
+        CLI["bin/construct<br/>+ lib/cli-commands.mjs"]
+        MCP["lib/mcp/<br/>MCP server + tools"]
+        PolicyMod["lib/orchestration-policy.mjs<br/>routing"]
+        Storage["lib/storage/<br/>file + SQL + vector"]
+        Hooks["lib/hooks/<br/>session-start, audit, guards"]
+    end
+    subgraph providers["providers/ — external systems"]
+        GitHub["GitHub"]
+        Jira["Atlassian Jira"]
+        Confluence["Atlassian Confluence"]
+        Slack["Slack"]
+        Salesforce["Salesforce"]
+        Plugins["Custom plugins"]
+    end
+    subgraph runtime["runtime/ — keeps the lights on"]
+        Embed["embed daemon<br/>+ supervisor"]
+        Sched["scheduler"]
+        Backup["backup<br/>(lib/storage/backup.mjs)"]
+    end
+    subgraph dashboard["dashboard/ — the web app"]
+        Chat["chat (SSE)"]
+        Approvals["approval queue"]
+        Knowledge["knowledge panel"]
+    end
+    subgraph deploy["deploy/ — ship it"]
+        Docker["multi-stage Dockerfile"]
+        Terraform["Terraform modules<br/>(ECS, ALB, RDS+pgvector)"]
+        Release["release.yml<br/>(SEA binaries, GHCR, npm)"]
+    end
+
+    core --> providers
+    core --> runtime
+    core --> dashboard
+    runtime --> providers
+    deploy --> dashboard
+    deploy --> runtime
+```
+
+## In human terms
+
+Picture a small company. **You are the founder.** You walk in and say "fix the login redirect" or "ship the customer portal." The **persona** is the chief of staff — the one person you actually talk to. They don't fix the login themselves; they walk down the hall and pull in the right people. The **architect** sketches the trade-offs. The **engineer** reads the code and writes the change. The **reviewer** pushes back on what the engineer didn't test. The **QA** runs the thing. The **security specialist** asks "what if someone's hostile?" Nothing leaves the building until the gates say it's done. Beads is the project tracker. The docs are the durable record of decisions. Memory is what the team remembers from yesterday. You never had to assign anything by name — the chief of staff did.
+
+## In technical terms
+
+A user request hits the Construct persona (`personas/construct.md`). The orchestration policy (`lib/orchestration-policy.mjs`) classifies the intent and resolves the execution track (`immediate`, `focused`, or `orchestrated`), the gate set (`framingChallenge`, `externalResearch`, `docAuthoring`), the contract chain (`agents/contracts.json` — typed producer→consumer handoffs with preconditions, postconditions, and input/output schemas validated at runtime by `lib/agent-contracts.mjs`), and the specialist sequence (`agents/prompts/cx-*.md`). Specialists dispatch through the MCP server (`lib/mcp/server.mjs`). Verification fires four hard gates locally before any commit (`npm test`, `lint:comments`, `docs:verify`, `docs:update --check`) plus contract postconditions on every handoff; failures get a chain-hashed JSONL entry in `~/.cx/contract-violations.jsonl`. Providers (`lib/providers/`) are stateless adapters with their own transport choice; durable state lives in `lib/storage/` and `~/.cx/`.
+
+## Why it's built this way
+
+- **One public surface.** The persona is the only thing the user talks to. Specialists can be reorganized, renamed, or replaced without breaking the user contract — they're implementation detail.
+- **Stateless providers.** Providers never own durable state. Swapping GitHub for a custom Git provider, or adding Salesforce, doesn't migrate any data — Construct's stores stay put.
+- **Local-first state.** Durable state lives in the user's repo and `~/.cx/`. If Postgres, Langfuse, the dashboard, or every cloud service goes down, Construct still works from `plan.md`, `.cx/context.md`, the latest handoff, Beads, git, and the local vector index.
+- **Hard gates over soft hooks.** Comment policy, doc verification, template policy, and contract postconditions fail the build. They are not advisory. The default is "stop and fix"; CI is a backstop, not the primary check.
+- **Specialists challenge each other.** Devil's advocate, reviewer, QA, security are peers, not rubber stamps. Agreement at every step is treated as a smell — if everyone always says yes, the gates aren't doing their job.
+
 ## System overview
 
 Construct is an org-in-a-box: an AI orchestration system that can be pointed at external systems (repos, project trackers, messaging, knowledge bases), embedded as a continuous monitor, and deployed locally or to the cloud. It produces organizational intelligence — PRDs, RFCs, ADRs, health snapshots, recommendations — and manages work across connected systems through a transport-agnostic provider abstraction.
@@ -70,7 +164,7 @@ Docker service management, embed daemon, and scheduler.
 - **Embed daemon** — scheduled or long-running process that monitors sources through providers, produces snapshots, manages approval queue. `construct embed supervise` installs a platform-native supervisor (launchd/systemd/Task Scheduler) for auto-restart on crash.
 - **Scheduler** — cron-style or interval-based execution (local: in-process schedule; cloud: cron + webhook triggers)
 - **Resource bootstrap** — `lib/bootstrap/resources.mjs` probes optional resources (Postgres, ONNX model, Docker, git). `lib/bootstrap/lazy-install.mjs` gates install on operator consent cached in `config.env`; `construct setup` runs the full wizard.
-- **Backup** — `lib/storage/backup.mjs` creates timestamped tar.gz archives covering observations, sessions, config.env (secrets redacted), registry snapshot, and Postgres dump. SHA-256 manifest for tamper detection. `construct backup create|verify|restore|list`.
+- **Backup** — `lib/storage/backup.mjs` creates timestamped tar.gz archives covering observations, sessions, config.env (secrets redacted), registry snapshot, and Postgres dump. SHA-256 manifest for tamper detection. `construct backup create|verify|restore|list|prune`. `create` auto-prunes to `CONSTRUCT_BACKUP_RETAIN` (default 10) unless `--no-prune` is passed. Optional embed-daemon job `auto-backup` runs every `CONSTRUCT_AUTO_BACKUP_DAYS` days (off by default).
 
 ### Dashboard
 
