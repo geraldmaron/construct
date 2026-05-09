@@ -316,7 +316,7 @@ Custom providers plug in by exporting a factory that satisfies the provider cont
 | `construct audit` | Audit Construct internals and review the mutation trail |
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct skills` | Detect project tech stack and scope installed skills to relevance |
-| `construct backup` | Create, verify, restore, or list full system backups (observations, sessions, config, registry, Postgres). |
+| `construct backup` | Create, verify, restore, list, or prune full system backups (observations, sessions, config, registry, Postgres). |
 | `construct doctor` | Run installation health checks |
 | `construct validate` | Validate registry.json structure and field constraints |
 | `construct diff` | Show which agents changed prompts or settings since HEAD |
