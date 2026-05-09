@@ -32,7 +32,7 @@ nav:
   - Architecture: architecture.md
   - Hooks: hooks.md
   - Agents: agents.md
-  - Templates: templates/README.md
+  - Templates: doc-templates/index.md
   - Contributing: contributing.md
   - CLAUDE: claude.md
 
