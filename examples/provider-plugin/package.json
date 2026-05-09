@@ -1,0 +1,15 @@
+{
+  "name": "@geraldmaron/construct-provider-hello-world",
+  "version": "1.0.0",
+  "description": "Reference provider plugin for Construct — canned data, no credentials required",
+  "type": "module",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "keywords": ["construct", "provider-plugin"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@geraldmaron/construct": ">=1.0.0"
+  }
+}

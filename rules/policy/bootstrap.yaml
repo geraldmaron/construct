@@ -1,0 +1,11 @@
+# bootstrap policy
+# Controls session bootstrap enforcement (write/bash gating until session grounded).
+
+rule: bootstrap
+hook_event: PreToolUse
+blocked_tools: [Write, Edit, MultiEdit, NotebookEdit, TodoWrite, Bash]
+bootstrap_trio: [workflow_status, project_context, memory_search]
+read_threshold: 3
+benign_bash_pattern: "^(git (status|log|diff|branch|show|rev-parse)|ls|cat|head|tail|pwd|wc|file|echo|which|node --version|npm --version)\\b"
+action: block
+message: "Requires session bootstrap. Run workflow_status + project_context + memory_search first (or 3+ read calls)."

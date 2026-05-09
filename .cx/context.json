@@ -1,0 +1,29 @@
+{
+  "format": "json",
+  "savedAt": "2026-05-08T02:35:00.000Z",
+  "source": "audit-remediation",
+  "projectName": "construct",
+  "lastSummary": "Started construct-009 audit remediation. Restored Beads usability after a corrupt embedded Dolt checkout, fixed the OpenCode skill sidecar regression, tightened agent contract-chain applicability, replaced vulnerable @xenova/transformers with @huggingface/transformers, made local embedding fallback explicit, and added pgvector dimension guards.",
+  "filesChanged": [
+    "lib/skills-apply.mjs",
+    "lib/agent-contracts.mjs",
+    "lib/orchestration-policy.mjs",
+    "lib/storage/embeddings-local.mjs",
+    "lib/storage/vector-client.mjs",
+    "tests/agent-contracts.test.mjs",
+    "tests/embedding-engine.test.mjs",
+    "tests/vector-client.test.mjs",
+    "package.json",
+    "package-lock.json"
+  ],
+  "decisions": [
+    "OpenCode skill sidecars now keep both recommendedDisable and disabledSkills for compatibility.",
+    "Contract chains are filtered to scheduled participants so routeRequest does not advertise impossible handoffs.",
+    "The local embedding dependency is @huggingface/transformers; hashing fallback is marked degraded.",
+    "The current pgvector schema is treated as a 384-dimensional contract."
+  ],
+  "pendingTodos": [],
+  "efficiencySummary": "155 reads · 96 unique files · 59 repeated reads · 67 large reads · 2294 KB read",
+  "warnFlags": "None",
+  "contextSummary": "construct-009 is active for audit hardening. Current remediation covers failing tests, contract-chain applicability, embedding supply-chain audit, explicit fallback reporting, and pgvector dimension guards. Follow-up issues: construct-3dw RAG consolidation, construct-3ty model-aware pgvector schema, construct-rsx contract validators/eval gates, construct-4zk live runtime validation, construct-49j AWS validation, construct-fqx OAuth/RBAC."
+}

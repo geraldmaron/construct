@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "description": "Named team templates for construct headhunt. Each template defines a focused group of cx-* specialists for a common workflow pattern.",
+  "templates": {
+    "incident": {
+      "description": "Production incident response — triage, mitigation, and resolution.",
+      "members": ["cx-sre", "cx-debugger", "cx-docs-keeper"],
+      "focus": "incident-response",
+      "skills": ["devops/incident-response", "devops/observability"],
+      "promotionGates": [
+        "Incident declared and severity assigned",
+        "IC and Scribe roles filled",
+        "Status page updated before investigation begins"
+      ]
+    },
+    "release": {
+      "description": "Release readiness — quality gate, security check, and rollout coordination.",
+      "members": ["cx-qa", "cx-security", "cx-release-manager"],
+      "focus": "release-readiness",
+      "skills": ["quality-gates/verify-security", "quality-gates/verify-change", "devops/git-workflow"],
+      "promotionGates": [
+        "All automated tests pass",
+        "Security scan complete with no critical findings",
+        "Rollback plan documented before deploy"
+      ]
+    },
+    "discovery": {
+      "description": "Product discovery — user research, requirements, and opportunity scoping.",
+      "members": ["cx-ux-researcher", "cx-product-manager", "cx-researcher"],
+      "focus": "discovery",
+      "skills": ["docs/research-workflow", "docs/product-intelligence-workflow", "docs/prd-workflow"],
+      "promotionGates": [
+        "User problem clearly stated",
+        "Evidence gathered from primary sources",
+        "PRD, Meta PRD, or brief written before design begins"
+      ]
+    },
+    "post-mortem": {
+      "description": "Post-incident review — blameless root cause analysis and action items.",
+      "members": ["cx-debugger", "cx-docs-keeper", "cx-sre"],
+      "focus": "post-incident-review",
+      "skills": ["devops/incident-response"],
+      "promotionGates": [
+        "Timeline written within 48 hours of resolution",
+        "5-whys root cause analysis complete",
+        "Action items assigned with owners and due dates"
+      ]
+    },
+    "architecture": {
+      "description": "Architecture review — design, tradeoffs, and challenge before implementation.",
+      "members": ["cx-architect", "cx-devil-advocate", "cx-security"],
+      "focus": "architecture",
+      "skills": ["architecture/api-design", "architecture/security-arch"],
+      "promotionGates": [
+        "ADR written before team review",
+        "Devil advocate challenge complete",
+        "Security implications assessed"
+      ]
+    },
+    "feature": {
+      "description": "End-to-end feature delivery — design, implementation, QA, and review.",
+      "members": ["cx-engineer", "cx-qa", "cx-reviewer"],
+      "focus": "implementation",
+      "skills": ["quality-gates/verify-change", "devops/testing"],
+      "promotionGates": [
+        "Requirements accepted before coding begins",
+        "Tests written before implementation",
+        "Code review approved before merge"
+      ]
+    },
+    "security-review": {
+      "description": "Security audit — threat modeling, code audit, and remediation.",
+      "members": ["cx-security", "cx-architect", "cx-devil-advocate"],
+      "focus": "security",
+      "skills": ["security/threat-intel", "security/code-audit", "quality-gates/verify-security"],
+      "promotionGates": [
+        "Threat model scoped before audit begins",
+        "All critical findings remediated before sign-off",
+        "Findings documented in ADR or security log"
+      ]
+    },
+    "data-pipeline": {
+      "description": "Data engineering — pipeline design, quality gates, and warehouse modeling.",
+      "members": ["cx-data-engineer", "cx-data-analyst", "cx-architect"],
+      "focus": "data",
+      "skills": ["devops/data-engineering", "devops/database"],
+      "promotionGates": [
+        "Data contract defined before pipeline build",
+        "Idempotency verified in pipeline design",
+        "Data quality checks implemented and passing"
+      ]
+    }
+  }
+}

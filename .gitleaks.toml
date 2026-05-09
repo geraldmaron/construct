@@ -1,0 +1,19 @@
+title = "Construct gitleaks config"
+
+# Extends the default gitleaks ruleset and adds project-specific allowlists for
+# files that intentionally contain secret-shaped strings — detection regexes,
+# documentation examples, and test fixtures.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Project allowlist for files that contain detection regexes or example strings"
+
+paths = [
+  '''lib/hooks/scan-secrets\.mjs''',
+  '''docs/security\.md''',
+  '''docs/reference/config\.md''',
+  '''.*\.test\.mjs''',
+  '''examples/.*''',
+]

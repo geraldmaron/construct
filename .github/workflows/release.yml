@@ -1,0 +1,224 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # ── Quality gate ──────────────────────────────────────────────────────────
+  gate:
+    name: release:check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Full test suite
+        run: npm test
+      - name: Check dashboard static bundle
+        run: node ./bin/construct dashboard:sync --check
+      - name: Enforce comment policy
+        run: node ./bin/construct lint:comments
+      - name: npm audit
+        run: npm audit --audit-level=high
+
+  # ── Build single-file binaries ────────────────────────────────────────────
+  build-binary:
+    name: binary (${{ matrix.os }}-${{ matrix.arch }})
+    needs: gate
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: x64
+            runner: ubuntu-latest
+            node_arch: x64
+          - os: linux
+            arch: arm64
+            runner: ubuntu-24.04-arm
+            node_arch: arm64
+          - os: darwin
+            arch: x64
+            runner: macos-13
+            node_arch: x64
+          - os: darwin
+            arch: arm64
+            runner: macos-latest
+            node_arch: arm64
+          - os: windows
+            arch: x64
+            runner: windows-latest
+            node_arch: x64
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          architecture: ${{ matrix.node_arch }}
+          cache: npm
+      - run: npm ci --omit=dev
+
+      - name: Install esbuild
+        run: npm install -g esbuild
+
+      - name: Bundle
+        shell: bash
+        run: |
+          esbuild bin/construct \
+            --bundle \
+            --platform=node \
+            --target=node22 \
+            --outfile=dist/construct-bundle.cjs \
+            --external:@huggingface/transformers \
+            --external:postgres \
+            --external:better-sqlite3
+          mkdir -p dist
+
+      - name: Build SEA blob
+        shell: bash
+        run: |
+          cat > dist/sea-config.json <<'EOF'
+          {
+            "main": "dist/construct-bundle.cjs",
+            "output": "dist/sea-prep.blob",
+            "disableExperimentalSEAWarning": true
+          }
+          EOF
+          node --experimental-sea-config dist/sea-config.json
+
+      - name: Produce binary (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          BIN_NAME="construct-${{ matrix.os }}-${{ matrix.arch }}"
+          cp "$(which node)" "dist/${BIN_NAME}"
+          npx postject "dist/${BIN_NAME}" NODE_SEA_BLOB dist/sea-prep.blob \
+            --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+          chmod +x "dist/${BIN_NAME}"
+          sha256sum "dist/${BIN_NAME}" > "dist/${BIN_NAME}.sha256"
+
+      - name: Produce binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $BIN_NAME = "construct-windows-x64.exe"
+          Copy-Item (Get-Command node).Source "dist\$BIN_NAME"
+          npx postject "dist\$BIN_NAME" NODE_SEA_BLOB dist\sea-prep.blob `
+            --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+          $hash = (Get-FileHash "dist\$BIN_NAME" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $BIN_NAME" | Out-File "dist\$BIN_NAME.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/construct-*
+          if-no-files-found: error
+
+  # ── Docker image ──────────────────────────────────────────────────────────
+  docker:
+    name: docker image
+    needs: gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version
+        id: ver
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/construct:${{ steps.ver.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/construct:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan image for CVEs
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/construct:${{ steps.ver.outputs.version }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+
+  # ── GitHub Release + npm publish ──────────────────────────────────────────
+  publish:
+    name: publish
+    needs: [build-binary, docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write  # for npm provenance
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download all binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          merge-multiple: true
+
+      - name: Determine npm dist-tag
+        id: tag
+        run: |
+          REF="${{ github.ref_name }}"
+          if [[ "$REF" =~ -rc\.|alpha\.|beta\. ]]; then
+            echo "tag=next" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public --tag ${{ steps.tag.outputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            dist/construct-linux-x64 \
+            dist/construct-linux-x64.sha256 \
+            dist/construct-linux-arm64 \
+            dist/construct-linux-arm64.sha256 \
+            dist/construct-darwin-x64 \
+            dist/construct-darwin-x64.sha256 \
+            dist/construct-darwin-arm64 \
+            dist/construct-darwin-arm64.sha256 \
+            dist/construct-windows-x64.exe \
+            dist/construct-windows-x64.exe.sha256 || true

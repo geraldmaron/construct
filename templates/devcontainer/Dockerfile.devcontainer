@@ -1,0 +1,38 @@
+# Dockerfile.devcontainer — development container for Construct projects.
+#
+# This is NOT the production image (see Dockerfile in the project root).
+# It bundles a full Node.js dev environment + Construct pre-installed so
+# any team member can open the project in VS Code / Codespaces and have
+# a working Construct environment without any host-side setup.
+#
+# Usage via construct init --devcontainer:
+#   - Copies this file + devcontainer.json into .devcontainer/
+#   - Commits both files; teammates open the project and VS Code prompts to
+#     "Reopen in Container"
+
+ARG NODE_VERSION=22
+ARG CONSTRUCT_VERSION=latest
+
+FROM node:${NODE_VERSION}-bookworm-slim
+
+# Install system deps for development (git, curl, docker CLI for resource spinup)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      git curl ca-certificates gnupg \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] \
+        https://download.docker.com/linux/debian bookworm stable" \
+        > /etc/apt/sources.list.d/docker.list \
+    && apt-get update && apt-get install -y --no-install-recommends docker-ce-cli \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install Construct globally so `construct` command is available everywhere.
+# The version is pinned by the ARG so the container is reproducible.
+RUN npm install -g @geraldmaron/construct@${CONSTRUCT_VERSION}
+
+# Pre-warm npx cache so the first `npx construct` is instant.
+RUN npx --yes @geraldmaron/construct@${CONSTRUCT_VERSION} --version 2>/dev/null || true
+
+WORKDIR /workspace
+
+# Project files are bind-mounted at runtime; this just ensures the dir exists.
+CMD ["bash"]

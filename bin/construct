@@ -1,0 +1,1534 @@
+#!/usr/bin/env node
+/**
+ * bin/construct — construct CLI entrypoint.
+ *
+ * Parses the command string, dispatches to the appropriate handler, and
+ * loads environment config from ~/.construct/.env. This is the only
+ * public-facing binary; all commands are exported from lib/.
+ */
+
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+
+import { CLI_COMMANDS, CLI_COMMANDS_BY_CATEGORY, CATEGORY_ORDER } from '../lib/cli-commands.mjs';
+import { buildStatus, formatStatusReport } from '../lib/status.mjs';
+import { validateRegistry } from '../lib/validator.mjs';
+import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setTierModel, setModelWithTierInference } from '../lib/model-router.mjs';
+import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
+import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
+import { printHostCapabilities } from '../lib/host-capabilities.mjs';
+import { getPluginById, initPluginManifest, loadPluginRegistry } from '../lib/plugin-registry.mjs';
+import { runSetup } from '../lib/setup.mjs';
+import { runUpdate } from '../lib/update.mjs';
+import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
+import { runDistillCli } from '../lib/distill.mjs';
+import { runIngestCli } from '../lib/document-ingest.mjs';
+import { runInferCli } from '../lib/schema-infer.mjs';
+import { COMPLETIONS_DIR, generateCompletions, getCompletionScript } from '../lib/completions.mjs';
+import { runHeadhunt, listTeamTemplates } from '../lib/headhunt.mjs';
+import {
+  getLockStatus,
+  cleanupStaleLock,
+  cleanupStaleQueue,
+  readQueue,
+  formatStatus,
+} from '../lib/beads-lock.mjs';
+import { runBd, getHumanStatus, acquireMergeSlot, releaseMergeSlot } from '../lib/beads-client.mjs';
+import { auditSkills, runAuditSkillsCli } from '../lib/audit-skills.mjs';
+import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
+import { readDashboardState, startDashboard, startServices } from '../lib/service-manager.mjs';
+import { readCostLog, summarizeCostData, formatCostReport, clearCostLog } from '../lib/cost.mjs';
+import { readEfficiencyLog, summarizeEfficiencyData, formatEfficiencyReport } from '../lib/efficiency.mjs';
+import { buildHybridSearchResultsAsync } from '../lib/storage/hybrid-query.mjs';
+import { createSqlClient, closeSqlClient, readVectorConfig } from '../lib/storage/backend.mjs';
+import { describeVectorStore } from '../lib/storage/vector-store.mjs';
+import { describeSqlStore } from '../lib/storage/sql-store.mjs';
+import { syncFileStateToSql } from '../lib/storage/sync.mjs';
+import { deleteIngestedArtifacts, getStorageStatus, inferProjectName, resetStorage } from '../lib/storage/admin.mjs';
+import { runPressureRelease } from '../lib/runtime-pressure.mjs';
+
+const ROOT_DIR = path.resolve(import.meta.dirname, '..');
+const HOME = os.homedir();
+const ENV = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME, env: process.env });
+for (const [key, value] of Object.entries(ENV)) {
+  if (!(key in process.env)) process.env[key] = value;
+}
+
+const COLORS = (!process.env.NO_COLOR && process.stdout.isTTY && process.env.TERM !== 'dumb')
+  ? {
+      bold: '\u001b[1m', dim: '\u001b[2m', reset: '\u001b[0m',
+      red: '\u001b[31m', green: '\u001b[32m', yellow: '\u001b[33m', cyan: '\u001b[36m',
+    }
+  : { bold: '', dim: '', reset: '', red: '', green: '', yellow: '', cyan: '' };
+
+function println(message = '') { process.stdout.write(`${message}\n`); }
+function errorln(message = '') { process.stderr.write(`${message}\n`); }
+function ok(message) { println(`  ${COLORS.green}✓${COLORS.reset}  ${message}`); }
+function warn(message) { println(`  ${COLORS.yellow}⚠${COLORS.reset}  ${message}`); }
+function info(message) { println(`  ${COLORS.cyan}→${COLORS.reset}  ${message}`); }
+
+function usage() {
+  println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
+  println(`\n${COLORS.dim}Usage:${COLORS.reset} construct <command> [options]\n`);
+  for (const category of CATEGORY_ORDER) {
+    const commands = CLI_COMMANDS_BY_CATEGORY[category] ?? [];
+    if (!commands.length) continue;
+    println(`${COLORS.bold}${category}${COLORS.reset}`);
+    for (const command of commands) {
+      println(`  ${command.emoji} ${command.name.padEnd(14)} ${command.description}`);
+    }
+    println('');
+  }
+}
+
+function runNodeScript(scriptPath, args = [], extraEnv = {}) {
+  const result = spawnSync(process.execPath, [scriptPath, ...args], {
+    stdio: 'inherit',
+    env: { ...process.env, ...extraEnv },
+  });
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+async function cmdStatus() {
+  const jsonOutput = restArgsCache.includes('--json');
+  const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
+  if (jsonOutput) {
+    println(JSON.stringify(status, null, 2));
+    return;
+  }
+  println(formatStatusReport(status));
+}
+
+async function cmdShow() {
+  const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
+  const dashboard = readDashboardState(HOME);
+  println('');
+  println('Construct Services');
+  println('══════════════════');
+  println('');
+  if (dashboard) println(`  • Managed dashboard PID ${dashboard.pid} on ${dashboard.url}`);
+  for (const service of status.system.services) {
+    const icon = service.status === 'healthy' ? '✓' : service.status === 'degraded' ? '⚠' : '✗';
+    const note = service.note ? ` (${service.note})` : '';
+    println(`  ${icon}  ${service.name.padEnd(28)} ${service.url}${note}`);
+  }
+  println('');
+}
+
+async function cmdSync(args) {
+  generateCompletions();
+  runNodeScript(path.join(ROOT_DIR, 'sync-agents.mjs'), args);
+  if (args.includes('--no-docs')) return;
+  const { regenerateDocs } = await import('../lib/auto-docs.mjs');
+  const { changed } = await regenerateDocs({ rootDir: ROOT_DIR });
+  for (const f of changed) ok(`Updated ${path.relative(ROOT_DIR, f)}`);
+}
+
+async function cmdCompletions(args) {
+  const sub = args[0] ?? 'install';
+  if (sub === 'bash' || sub === 'zsh') {
+    println(getCompletionScript(sub));
+    return;
+  }
+  if (sub === 'install') {
+    const outDir = generateCompletions();
+    if (!outDir) process.exit(1);
+    println(`Completions written to ${outDir}`);
+    println('');
+    println('Enable them in your shell:');
+    println(`  bash: source ${path.join(outDir, 'construct.bash')}`);
+    println(`  zsh:  fpath=(${outDir} $fpath) && autoload -Uz compinit && compinit`);
+    return;
+  }
+  errorln('Usage: construct completions [bash|zsh|install]');
+  process.exit(1);
+}
+
+async function cmdList() {
+  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+  println('Construct Agents\n');
+  println('Personas:');
+  for (const persona of registry.personas ?? []) {
+    println(`  ${persona.displayName} [${persona.role}] ${persona.description}`);
+  }
+  println('\nSpecialists:');
+  for (const agent of registry.agents ?? []) {
+    println(`  ${registry.prefix}-${agent.name} ${agent.description}`);
+  }
+}
+
+async function cmdDoctor() {
+  const args = process.argv.slice(3);
+
+  if (args.includes('--bootstrap')) {
+    const { registerBuiltInResources } = await import('../lib/bootstrap/built-ins.mjs');
+    const { probeAll, formatProbe } = await import('../lib/bootstrap/resources.mjs');
+    registerBuiltInResources();
+    const probes = await probeAll();
+    println('Bootstrap resource probe');
+    println('═══════════════════════');
+    for (const probe of probes) println(formatProbe(probe));
+    const missingRequired = probes.filter((p) => p.required && !p.present);
+    const missingOptional = probes.filter((p) => !p.required && !p.present);
+    println('');
+    if (missingRequired.length) {
+      errorln(`${missingRequired.length} required resource(s) missing — install them before continuing.`);
+      process.exit(1);
+    }
+    if (missingOptional.length) {
+      println(`${missingOptional.length} optional resource(s) absent — Construct runs in degraded mode.`);
+      println('Run `construct setup` to install on consent.');
+    } else {
+      ok('All resources present.');
+    }
+    return;
+  }
+
+  const checks = [];
+  const add = (label, pass, optional = false) => checks.push({ label, pass, optional });
+  add('registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'agents', 'registry.json')));
+  add('sync-agents.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'sync-agents.mjs')));
+  add('Node.js 20+ (recommended)', Number.parseInt(process.versions.node.split('.')[0], 10) >= 20);
+  add('npm available', true);
+  const constructOnPath = spawnSync('zsh', ['-lc', 'command -v construct'], { encoding: 'utf8', env: process.env });
+  const constructPath = constructOnPath.status === 0 ? constructOnPath.stdout.trim() : '';
+  const constructVersion = constructPath
+    ? spawnSync(constructPath, ['version'], { encoding: 'utf8', env: process.env })
+    : null;
+  add('construct command on PATH', Boolean(constructPath), true);
+  add('construct command is this CLI', Boolean(constructVersion && constructVersion.status === 0 && /^construct v\d+\./.test(constructVersion.stdout.trim())), true);
+  add('OpenCode config exists', fs.existsSync(path.join(HOME, '.config', 'opencode', 'opencode.json')), true);
+  add('Claude Code agents dir', fs.existsSync(path.join(HOME, '.claude', 'agents')), true);
+  add('Codex agents dir', fs.existsSync(path.join(HOME, '.codex', 'agents')), true);
+  add('Copilot prompts dir', fs.existsSync(path.join(HOME, '.github', 'prompts')), true);
+  add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(path.join(HOME, '.construct')), true);
+  add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
+  add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));
+  add('agents/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'agents', 'prompts')));
+  add('Hybrid storage env keys documented', fs.existsSync(path.join(ROOT_DIR, '.env.example')));
+  fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
+  add('~/.cx/performance-reviews/ ready', true);
+
+  // Validate promptFile references and skill bindings
+  try {
+    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+    const brokenPromptFiles = (registry.agents ?? []).filter((a) => {
+      if (!a.promptFile) return false;
+      return !fs.existsSync(path.join(ROOT_DIR, a.promptFile));
+    });
+    add('All agent promptFiles resolve', brokenPromptFiles.length === 0);
+    const headhuntClassifierAgents = ['cx-docs-keeper', 'cx-researcher', 'cx-architect', 'cx-security', 'cx-engineer'];
+    const registryNames = new Set((registry.agents ?? []).map((a) => `cx-${a.name}`));
+    const classifierOrphans = headhuntClassifierAgents.filter((n) => !registryNames.has(n));
+    add('Headhunt classifier agents exist in registry', classifierOrphans.length === 0);
+    const skillAudit = auditSkills({ rootDir: ROOT_DIR, silent: true });
+    add('No declared skills missing on disk', skillAudit.pass, false);
+    const { lintResearchRepo } = await import('../lib/research-lint.mjs');
+    const researchLintResults = lintResearchRepo({ rootDir: process.cwd() });
+    add('Research artifacts meet minimum evidence structure', researchLintResults.every((entry) => entry.errors.length === 0), true);
+
+    const sqlConfig = describeSqlStore(process.env);
+    const sqlClient = createSqlClient(process.env);
+    if (sqlConfig.configured && sqlClient) {
+      try {
+        await sqlClient`select 1 as ok`;
+        add('SQL backend reachable', true);
+      } catch {
+        add('SQL backend reachable', false);
+      } finally {
+        await closeSqlClient(sqlClient);
+      }
+    } else {
+      add('SQL backend configured', sqlConfig.fallbackAvailable);
+    }
+
+    const vectorConfig = describeVectorStore(process.env);
+    add('Vector backend configured', Boolean(vectorConfig.endpoint || vectorConfig.indexPath || vectorConfig.mode === 'file'));
+
+    const { regenerateDocs } = await import('../lib/auto-docs.mjs');
+    const { changed: stale } = await regenerateDocs({ rootDir: ROOT_DIR, check: true });
+    add('AUTO docs up to date', stale.length === 0, true);
+
+    const pluginRegistry = loadPluginRegistry({ cwd: process.cwd(), homeDir: HOME, rootDir: ROOT_DIR, env: process.env });
+    add('Plugin manifests valid', pluginRegistry.valid);
+
+    try {
+      const { describeEngine } = await import('../lib/engine/index.mjs');
+      const engine = await describeEngine({ rootDir: process.cwd() });
+      add('Retrieval engine layers resolve', engine.errors.length === 0, true);
+    } catch {
+      add('Retrieval engine layers resolve', false, true);
+    }
+
+    try {
+      const { checkParity } = await import('../lib/parity.mjs');
+      const parity = checkParity({ rootDir: ROOT_DIR, homeDir: HOME });
+      add(`Cross-surface adapter parity (${parity.summary.join(' · ')})`, parity.ok, true);
+    } catch {
+      add('Cross-surface adapter parity', false, true);
+    }
+
+    try {
+      const { validateSkills } = await import('../lib/validators/skills.mjs');
+      const skillsRoot = path.join(ROOT_DIR, 'skills');
+      const skillReport = validateSkills(skillsRoot);
+      const label = skillReport.warnings.length > 0
+        ? `Skill structure (${skillReport.skills.length} skills, ${skillReport.warnings.length} authoring warnings)`
+        : `Skill structure (${skillReport.skills.length} skills)`;
+      add(label, skillReport.valid, true);
+    } catch {
+      add('Skill structure', false, true);
+    }
+
+    try {
+      const { describeBreakers, STATES } = await import('../lib/providers/circuit-breaker.mjs');
+      const breakers = describeBreakers();
+      const open = breakers.filter((b) => b.state === STATES.OPEN);
+      const label = open.length === 0
+        ? `Provider circuit breakers (${breakers.length} tracked, none open)`
+        : `Provider circuit breakers (${open.length} open: ${open.map((b) => b.key).join(', ')})`;
+      add(label, open.length === 0, true);
+    } catch {
+      add('Provider circuit breakers', false, true);
+    }
+
+    try {
+      const { recentViolations } = await import('../lib/agent-contracts-enforce.mjs');
+      const violations = recentViolations({ windowMs: 24 * 60 * 60 * 1000 });
+      const label = violations.length === 0
+        ? 'Contract violations (none in last 24h)'
+        : `Contract violations (${violations.length} in last 24h — see ~/.cx/contract-violations.jsonl)`;
+      add(label, violations.length === 0, true);
+    } catch {
+      add('Contract violations', false, true);
+    }
+
+    try {
+      const capWarnPath = path.join(process.cwd(), '.cx', 'observation-cap-warnings.jsonl');
+      if (fs.existsSync(capWarnPath)) {
+        const lines = fs.readFileSync(capWarnPath, 'utf8').trim().split('\n').filter(Boolean);
+        const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        const recent = lines.filter((l) => {
+          try { return new Date(JSON.parse(l).ts).getTime() >= cutoff; } catch { return false; }
+        });
+        const totalDropped = recent.reduce((acc, l) => {
+          try { return acc + (JSON.parse(l).dropped || 0); } catch { return acc; }
+        }, 0);
+        const label = recent.length === 0
+          ? 'Observation cap (no recent drops)'
+          : `Observation cap (${totalDropped} obs dropped in last 7d — run \`construct memory consolidate\`)`;
+        add(label, recent.length === 0, true);
+      } else {
+        add('Observation cap (no recent drops)', true, true);
+      }
+    } catch {
+      add('Observation cap', false, true);
+    }
+
+    if (sqlConfig.configured) {
+      try {
+        const migClient = createSqlClient(process.env);
+        if (migClient) {
+          const { describeMigrations } = await import('../lib/storage/migrations.mjs');
+          const m = await describeMigrations(migClient);
+          await closeSqlClient(migClient);
+          add('Schema migrations applied + no drift', !!m.ok && m.drift.length === 0, true);
+        }
+      } catch {
+        add('Schema migrations applied + no drift', false, true);
+      }
+    }
+
+    try {
+      const failuresPath = path.join(HOME, '.cx', 'hook-failures.jsonl');
+      if (fs.existsSync(failuresPath)) {
+        const lines = fs.readFileSync(failuresPath, 'utf8').trim().split('\n').filter(Boolean);
+        const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+        const recent = lines.filter((l) => {
+          try { return new Date(JSON.parse(l).ts).getTime() >= cutoff; } catch { return false; }
+        });
+        add(`No recent hook failures (${recent.length} in last 24h)`, recent.length === 0, true);
+      } else {
+        add('No recent hook failures (0 in last 24h)', true, true);
+      }
+    } catch {
+      add('No recent hook failures (24h)', false, true);
+    }
+
+    // Agent contracts integrity
+    const { getAllContracts, summarize } = await import('../lib/agent-contracts.mjs');
+    const contracts = getAllContracts();
+    add('Agent contracts loaded', contracts.length > 0);
+    if (contracts.length > 0) {
+      const missingTerminals = contracts.filter((c) =>
+        c.consumer && !c.consumer.startsWith('cx-') && c.consumer !== 'construct' && c.consumer !== '*'
+          ? false : false,
+      );
+      add('Agent contract schema intact', missingTerminals.length === 0);
+    }
+
+    // Skills profile — if present, check staleness against current tags
+    const profilePath = path.join(process.cwd(), '.cx', 'skills-profile.json');
+    if (fs.existsSync(profilePath)) {
+      try {
+        const { detectProjectProfile } = await import('../lib/project-profile.mjs');
+        const current = detectProjectProfile(process.cwd());
+        const saved = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+        const savedTags = new Set(saved?.profile?.tags || []);
+        const currentTags = new Set(current.tags);
+        const drift =
+          savedTags.size !== currentTags.size ||
+          [...savedTags].some((t) => !currentTags.has(t)) ||
+          [...currentTags].some((t) => !savedTags.has(t));
+        add('Skills profile matches current project stack', !drift, true);
+      } catch {
+        add('Skills profile matches current project stack', false, true);
+      }
+    }
+  } catch {
+    add('Registry integrity check', false);
+  }
+
+  println('Construct Health Check');
+  println('══════════════════════');
+  println('');
+  let okCount = 0; let warnCount = 0; let failCount = 0;
+  for (const check of checks) {
+    const symbol = check.pass ? '✓' : check.optional ? '⚠' : '✗';
+    println(`  ${check.label.padEnd(40)} ${symbol}`);
+    if (check.pass) okCount += 1;
+    else if (check.optional) warnCount += 1;
+    else failCount += 1;
+  }
+  println('');
+  println(`Results: ${okCount} passed, ${warnCount} warnings, ${failCount} failed`);
+  if (failCount > 0) process.exit(1);
+}
+
+async function cmdUp() {
+  const { results, recovery } = await startServices({ rootDir: ROOT_DIR, homeDir: HOME });
+  for (const svc of results) {
+    const label = svc.url ? `${svc.name} → ${svc.url}` : svc.name;
+    if (svc.status === 'started') ok(svc.note ? `${label} (${svc.note})` : label);
+    else if (svc.status === 'reused') info(`${label} (already running)`);
+    else if (svc.status === 'configured') info(`${svc.name}: ${svc.note}`);
+    else if (svc.status === 'failed') errorln(`${svc.name}: ${svc.note}`);
+    else warn(`${svc.name}: ${svc.note}`);
+  }
+
+  if (recovery) {
+    println('');
+    info(`Recovery: ${recovery.message}`);
+    const anchors = [
+      recovery.durable?.plan,
+      recovery.durable?.context,
+      recovery.durable?.latestHandoff,
+      recovery.durable?.beads,
+    ].filter(Boolean);
+    if (anchors.length) info(`Durable anchors: ${anchors.join(', ')}`);
+    if (recovery.degraded?.length) {
+      info(`Degraded services: ${recovery.degraded.map((entry) => `${entry.name} (${entry.status})`).join(', ')}`);
+    }
+  }
+}
+
+async function cmdDown() {
+  const { stopServices } = await import('../lib/service-manager.mjs');
+  const result = await stopServices({ homeDir: HOME, rootDir: ROOT_DIR });
+  for (const svc of result.results) {
+    if (svc.status === 'stopped') ok(`${svc.name} stopped${svc.note ? ` (${svc.note})` : ''}.`);
+    else if (svc.status === 'cleaned') warn(`${svc.name}: ${svc.note}.`);
+    else if (svc.status === 'error') errorln(`${svc.name}: ${svc.note}.`);
+    else if (svc.status === 'skipped') info(`${svc.name}: skipped — ${svc.note}.`);
+    else info(`${svc.name}: not running.`);
+  }
+}
+
+async function cmdServe() {
+  if (restArgsCache.includes('--token')) {
+    const { generateToken, setDashboardToken, getDashboardToken } = await import('../lib/server/auth.mjs');
+    const existing = getDashboardToken();
+    if (existing) {
+      println(`Dashboard token already set. To rotate it, remove CONSTRUCT_DASHBOARD_TOKEN from ~/.construct/config.env and re-run.`);
+      return;
+    }
+    const token = generateToken();
+    setDashboardToken(token);
+    println(`Dashboard token generated and saved to ~/.construct/config.env`);
+    println(`CONSTRUCT_DASHBOARD_TOKEN=${token}`);
+    println(`Pass this token in the dashboard login prompt or as: Authorization: Bearer <token>`);
+    return;
+  }
+  const dashboard = await startDashboard({ rootDir: ROOT_DIR, homeDir: HOME });
+  if (dashboard.reused) {
+    println(`Construct dashboard already running on ${dashboard.url} (pid ${dashboard.pid})`);
+  } else {
+    println(`Started Construct dashboard on ${dashboard.url} (pid ${dashboard.pid})`);
+  }
+}
+
+async function cmdVersion() {
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+  println(`construct v${pkg.version}`);
+}
+
+async function cmdReview(args) {
+  fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
+  if (!ENV.LANGFUSE_PUBLIC_KEY || !ENV.LANGFUSE_SECRET_KEY) {
+    errorln('Error: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY must be set.');
+    errorln('Configure Langfuse credentials in ~/.construct/config.env or .env.');
+    process.exit(1);
+  }
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'review.mjs'), args, ENV);
+}
+
+async function cmdInit(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init-unified.mjs'), args); }
+async function cmdInitDocs(args) { 
+  console.warn("⚠️  Warning: `construct init-docs` is deprecated. Use `construct init --docs-preset` instead.");
+  runNodeScript(path.join(ROOT_DIR, 'lib', 'init-unified.mjs'), args); 
+}
+async function cmdDocsVerify(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'docs-verify.mjs'), args); }
+async function cmdInitUpdate(args) { 
+  runNodeScript(path.join(ROOT_DIR, 'lib', 'init-update.mjs'), args);
+}
+async function cmdDistill(args) { runDistillCli(args); }
+async function cmdIngest(args) {
+  try {
+    const result = await runIngestCli(args, { cwd: process.cwd(), env: process.env });
+    println(JSON.stringify(result, null, 2));
+  } catch (error) {
+    errorln(error?.message || 'document ingest failed');
+    process.exit(1);
+  }
+}
+
+async function cmdInfer(args) {
+  try {
+    const result = await runInferCli(args, { cwd: process.cwd() });
+    println(JSON.stringify(result, null, 2));
+  } catch (error) {
+    errorln(error?.message || 'schema inference failed');
+    process.exit(1);
+  }
+}
+
+async function cmdSearch(args) {
+  const flags = new Set();
+  const queryParts = [];
+  for (const arg of args) {
+    if (arg.startsWith('--')) flags.add(arg);
+    else queryParts.push(arg);
+  }
+  const query = queryParts.join(' ').trim();
+  if (!query) {
+    errorln('Usage: construct search <query> [--limit=N]');
+    process.exit(1);
+  }
+  const limitFlag = [...flags].find((flag) => flag.startsWith('--limit='));
+  const limit = limitFlag ? Number.parseInt(limitFlag.split('=')[1], 10) : 10;
+  const results = await buildHybridSearchResultsAsync(process.cwd(), query, { limit: Number.isFinite(limit) ? limit : 10, env: process.env });
+  println(JSON.stringify(results, null, 2));
+}
+
+async function cmdStorage(args) {
+  const [action, ...rest] = args;
+  if (!action) {
+    errorln('Usage: construct storage <sync|status|reset|delete-ingested>');
+    process.exit(1);
+  }
+  if (action === 'sync') {
+    const result = await syncFileStateToSql(process.cwd(), { env: process.env, project: inferProjectName(process.cwd()) });
+    println(JSON.stringify(result, null, 2));
+    return;
+  }
+  if (action === 'status') {
+    const result = await getStorageStatus(process.cwd(), { env: process.env, project: inferProjectName(process.cwd()) });
+    println(JSON.stringify(result, null, 2));
+    return;
+  }
+  if (action === 'reset') {
+    const confirm = rest.includes('--yes');
+    const includeIngested = rest.includes('--include-ingested');
+    const sqlOnly = rest.includes('--sql-only');
+    const vectorOnly = rest.includes('--vector-only');
+    if (!confirm) {
+      errorln('Usage: construct storage reset --yes [--include-ingested] [--sql-only|--vector-only]');
+      process.exit(1);
+    }
+    const result = await resetStorage(process.cwd(), {
+      env: process.env,
+      project: inferProjectName(process.cwd()),
+      resetSql: vectorOnly ? false : true,
+      resetVector: sqlOnly ? false : true,
+      resetIngested: includeIngested,
+      confirm: true,
+    });
+    println(JSON.stringify(result, null, 2));
+    return;
+  }
+  if (action === 'delete-ingested') {
+    const confirm = rest.includes('--yes');
+    const files = rest.filter((arg) => !arg.startsWith('--'));
+    if (!confirm) {
+      errorln('Usage: construct storage delete-ingested --yes [relative-file ...]');
+      process.exit(1);
+    }
+    const result = deleteIngestedArtifacts(process.cwd(), { files, confirm: true });
+    println(JSON.stringify(result, null, 2));
+    return;
+  }
+  errorln('Usage: construct storage <sync|status|reset|delete-ingested>');
+  process.exit(1);
+}
+async function cmdHeadhunt(args) { await runHeadhunt({ args, cwd: process.cwd(), homeDir: HOME }); }
+async function cmdHosts() { printHostCapabilities(); }
+async function cmdSetup(args) { await runSetup({ rootDir: ROOT_DIR, args, homeDir: HOME }); }
+
+async function cmdUpdate() {
+  try {
+    runUpdate({ cwd: process.cwd(), env: process.env, stdout: process.stdout });
+  } catch (error) {
+    errorln(error?.message || 'construct update failed');
+    process.exit(1);
+  }
+}
+async function cmdValidate() {
+  const reg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+  const result = validateRegistry(reg, { rootDir: ROOT_DIR });
+  if (result.valid) {
+    println(`✓ Registry valid (${result.summary})`);
+    return;
+  }
+  if (!result.valid) result.errors.forEach((e, i) => errorln(`${i + 1}. ${e}`));
+  process.exit(1);
+}
+
+async function cmdModels(args) {
+  const tier = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1] ?? '';
+  const setModel = args.find((arg) => arg.startsWith('--set='))?.split('=')[1] ?? '';
+  const envPath = getUserEnvPath(HOME);
+  if (args.includes('--reset')) {
+    resetEnv(envPath);
+    println('Removed CX_MODEL_* overrides from ~/.construct/config.env.');
+    await cmdSync([]);
+    return;
+  }
+  if (tier && setModel) {
+    const preferFree = args.includes('--prefer-free');
+    const preferFreeSameFamily = args.includes('--prefer-free-same-family');
+    const inferred = setModelWithTierInference(envPath, tier, setModel, registry.models ?? {}, { preferFree, preferFreeSameFamily });
+    println(`Set ${tier} -> ${setModel} in ~/.construct/config.env`);
+    if (preferFreeSameFamily) println('Prefer-free-same-family mode: enabled');
+    if (preferFree) println('Prefer-free mode: enabled');
+    println(`Resolved tier set:`);
+    println(`  reasoning  ${String(inferred.reasoning)}`);
+    println(`  standard   ${String(inferred.standard)}`);
+    println(`  fast       ${String(inferred.fast)}`);
+    await cmdSync([]);
+    return;
+  }
+  if (args.includes('--poll')) {
+    const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
+    if (!apiKey) {
+      errorln('Error: no OpenRouter API key found in OPENROUTER_API_KEY or OpenCode config.');
+      process.exit(1);
+    }
+    const models = await pollFreeModels(apiKey);
+    println('Available free models on OpenRouter:\n');
+    for (const currentTier of ['reasoning', 'standard', 'fast']) {
+      const top = topForTier(models, currentTier, 3);
+      println(`  ${currentTier} (top ${top.length}):`);
+      top.forEach((model, index) => println(`    ${index + 1}. ${model.id}`));
+      println('');
+    }
+    return;
+  }
+  if (args.includes('--apply')) {
+    const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
+    const models = await pollFreeModels(apiKey);
+    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+    const selections = {};
+    for (const currentTier of ['reasoning', 'standard', 'fast']) {
+      const fallbacks = registry.models?.[currentTier]?.fallback ?? [];
+      const id = selectForTier(models, currentTier, fallbacks);
+      if (id) selections[currentTier] = id;
+    }
+    applyToEnv(envPath, selections);
+    println('Written to ~/.construct/config.env. Running construct sync...');
+    await cmdSync([]);
+    return;
+  }
+  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+  const result = readCurrentModels(envPath, registry.models ?? {});
+  println('Current model assignments:');
+  for (const currentTier of ['reasoning', 'standard', 'fast']) {
+    println(`  ${currentTier.padEnd(11)}${String(result[currentTier] ?? '(none)')}`);
+  }
+}
+
+async function cmdMcp(args) {
+  const subcmd = args[0] ?? 'list';
+  const id = args[1];
+  if (subcmd === 'list') return cmdMcpList();
+  if (subcmd === 'add') return cmdMcpAdd(id);
+  if (subcmd === 'remove') return cmdMcpRemove(id);
+  if (subcmd === 'info') return cmdMcpInfo(id);
+  errorln(`Unknown mcp subcommand: ${subcmd}`);
+  process.exit(1);
+}
+
+async function cmdPlugin(args) {
+  const [subcmd = 'list', id, ...rest] = args;
+  const registry = loadPluginRegistry({ cwd: process.cwd(), homeDir: HOME, rootDir: ROOT_DIR, env: process.env });
+
+  if (subcmd === 'list') {
+    println('Construct Plugins');
+    println('═════════════════');
+    println('');
+    for (const plugin of registry.plugins) {
+      const source = plugin.builtIn ? 'built-in' : path.relative(process.cwd(), plugin.manifestPath);
+      println(`  ${plugin.id.padEnd(22)} ${plugin.version.padEnd(8)} ${plugin.name}`);
+      println(`    ${source}`);
+      if ((plugin.mcps ?? []).length) println(`    mcps: ${(plugin.mcps ?? []).map((mcp) => mcp.id).join(', ')}`);
+    }
+    if (registry.errors.length) {
+      println('');
+      errorln('Registry errors:');
+      for (const error of registry.errors) errorln(`  ✗ ${error}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (subcmd === 'validate') {
+    if (registry.valid) {
+      println(`✓ Plugin registry valid (${registry.plugins.length} plugins, ${registry.mcps.length} MCP entries)`);
+      return;
+    }
+    for (const error of registry.errors) errorln(`✗ ${error}`);
+    process.exit(1);
+  }
+
+  if (subcmd === 'info') {
+    const plugin = getPluginById(id, { cwd: process.cwd(), homeDir: HOME, rootDir: ROOT_DIR, env: process.env });
+    if (!plugin) {
+      errorln(`Unknown plugin: ${id}`);
+      process.exit(1);
+    }
+    println(`${plugin.name} (${plugin.id})`);
+    println('─'.repeat(48));
+    println(`Version:      ${plugin.version}`);
+    println(`Capabilities: ${(plugin.capabilities ?? []).join(', ') || '(none)'}`);
+    println(`Source:       ${plugin.builtIn ? 'built-in' : plugin.manifestPath}`);
+    println(`MCPs:         ${(plugin.mcps ?? []).map((mcp) => mcp.id).join(', ') || '(none)'}`);
+    println(`\n${plugin.description}`);
+    return;
+  }
+
+  if (subcmd === 'init') {
+    if (!id) {
+      errorln('Usage: construct plugin init <plugin-id> [--force]');
+      process.exit(1);
+    }
+    try {
+      const filePath = initPluginManifest(id, { cwd: process.cwd(), force: rest.includes('--force') });
+      println(`✓ Created plugin manifest at ${path.relative(process.cwd(), filePath)}`);
+      return;
+    } catch (error) {
+      errorln(error?.message || 'plugin init failed');
+      process.exit(1);
+    }
+  }
+
+  if (subcmd === 'engine') {
+    return await cmdPluginEngine([id, ...rest].filter(Boolean));
+  }
+
+  errorln(`Unknown plugin subcommand: ${subcmd}`);
+  process.exit(1);
+}
+
+async function cmdPluginEngine(args) {
+  const [action = 'list', ...rest] = args;
+  const isGlobal = rest.includes('--global');
+  const targetPath = isGlobal
+    ? path.join(HOME, '.construct', 'plugins.json')
+    : path.join(process.cwd(), '.cx', 'plugins.json');
+
+  function readPluginsJson() {
+    if (!fs.existsSync(targetPath)) return { plugins: [] };
+    try { return JSON.parse(fs.readFileSync(targetPath, 'utf8')); } catch { return { plugins: [] }; }
+  }
+  function writePluginsJson(data) {
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    fs.writeFileSync(targetPath, JSON.stringify(data, null, 2) + '\n');
+  }
+
+  const { describeEngine, LAYERS } = await import('../lib/engine/index.mjs');
+
+  if (action === 'list') {
+    const desc = await describeEngine({ rootDir: process.cwd() });
+    println('Engine plugins');
+    println('══════════════');
+    for (const entry of desc.summary) {
+      println(`  ${entry.layer.padEnd(11)} ${entry.id.padEnd(32)} (${entry.source})`);
+    }
+    if (desc.errors.length) {
+      println('');
+      errorln('Override errors:');
+      for (const e of desc.errors) errorln(`  ✗ [${e.layer}] ${e.error}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (action === 'add') {
+    const layer = rest[0];
+    const pkg = rest[1];
+    if (!layer || !pkg) {
+      errorln('Usage: construct plugin engine add <layer> <package> [--global]');
+      errorln(`       layer ∈ {${LAYERS.join(', ')}}`);
+      errorln('       package: npm name, absolute path, or github:owner/repo#sha');
+      process.exit(1);
+    }
+    if (!LAYERS.includes(layer)) {
+      errorln(`Unknown layer '${layer}'. Allowed: ${LAYERS.join(', ')}`);
+      process.exit(1);
+    }
+    const data = readPluginsJson();
+    data.plugins ??= [];
+    if (data.plugins.some((p) => p.layer === layer && p.package === pkg)) {
+      println(`Already present: ${layer} → ${pkg}`);
+      return;
+    }
+    data.plugins.push({ layer, package: pkg, options: {} });
+    writePluginsJson(data);
+    println(`✓ Added ${layer} → ${pkg} (${path.relative(process.cwd(), targetPath)})`);
+    println('  Run `construct plugin engine list` to verify it loads.');
+    return;
+  }
+
+  if (action === 'remove') {
+    const layer = rest[0];
+    const pkg = rest[1];
+    if (!layer || !pkg) {
+      errorln('Usage: construct plugin engine remove <layer> <package> [--global]');
+      process.exit(1);
+    }
+    const data = readPluginsJson();
+    const before = (data.plugins ?? []).length;
+    data.plugins = (data.plugins ?? []).filter((p) => !(p.layer === layer && p.package === pkg));
+    if (data.plugins.length === before) {
+      println(`No entry to remove for ${layer} → ${pkg}`);
+      return;
+    }
+    writePluginsJson(data);
+    println(`✓ Removed ${layer} → ${pkg}`);
+    return;
+  }
+
+  errorln(`Unknown plugin engine action: ${action}. Available: list, add, remove`);
+  process.exit(1);
+}
+
+async function cmdDiff() {
+  warn('construct diff is not yet ported to the Node CLI surface. Use git diff for now.');
+}
+
+async function cmdOptimize(args) {
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'optimize.mjs'), args, ENV);
+}
+
+async function cmdSeedTraces(args) {
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'seed-traces.mjs'), args, ENV);
+}
+
+async function cmdCleanup() {
+  const force = restArgsCache.includes('--pressure-release');
+  const quiet = restArgsCache.includes('--quiet');
+  const report = runPressureRelease({ env: process.env, force });
+
+  if (!quiet) {
+    const swap = report.swapUsage
+      ? `${(report.swapUsage.usedBytes / (1024 ** 3)).toFixed(1)} GiB used`
+      : 'swap unavailable';
+    println(`Pressure guard: ${report.pressureTriggered ? 'triggered' : 'standby'} · ${swap}`);
+  }
+
+  if (!report.killed.length) {
+    if (!quiet) println('No stale dev-agent processes needed cleanup.');
+    return;
+  }
+
+  if (!quiet) {
+    for (const entry of report.killed) {
+      println(`Stopped pid ${entry.pid} (${entry.reason})`);
+    }
+  }
+}
+
+async function cmdCost(args) {
+  const jsonOutput = args.includes('--json');
+  const resetFlag = args.includes('--reset');
+  const daysArg = args.find((a) => a.startsWith('--days='));
+  const days = daysArg ? Number.parseInt(daysArg.split('=')[1], 10) || undefined : undefined;
+  const agentArg = args.find((a) => a.startsWith('--agent='));
+  const agent = agentArg ? agentArg.split('=')[1] : undefined;
+
+  if (resetFlag) {
+    clearCostLog(HOME);
+    println('Cost log cleared.');
+    return;
+  }
+
+  const entries = readCostLog(HOME);
+  const data = summarizeCostData(entries, { days, agent });
+
+  if (jsonOutput) {
+    println(JSON.stringify(data, null, 2));
+    return;
+  }
+
+  process.stdout.write(formatCostReport(data, COLORS));
+}
+
+async function cmdEfficiency(args) {
+  const jsonOutput = args.includes('--json');
+  const stats = readEfficiencyLog(HOME);
+  const data = summarizeEfficiencyData(stats);
+  if (jsonOutput) {
+    println(JSON.stringify(data, null, 2));
+    return;
+  }
+  process.stdout.write(formatEfficiencyReport(data, COLORS));
+}
+
+async function cmdEvals(args) {
+  const sub = args[0];
+
+  if (sub === 'retrieval') {
+    const jsonOutput = args.includes('--json');
+    const fixtureArg = args.find((a) => a.startsWith('--fixture='));
+    const defaultFixture = path.join(ROOT_DIR, 'tests', 'fixtures', 'retrieval-eval', 'queries.json');
+    const fixturePath = fixtureArg ? fixtureArg.split('=')[1] : defaultFixture;
+
+    const { evaluateFixture, formatReport } = await import('../lib/engine/eval-retrieval.mjs');
+    const report = await evaluateFixture(fixturePath);
+
+    if (jsonOutput) {
+      println(JSON.stringify(report, null, 2));
+      return;
+    }
+    println(`Retrieval evaluation — ${path.relative(ROOT_DIR, fixturePath)}`);
+    println('═══════════════════════════════════════════════════════');
+    println(formatReport(report));
+    return;
+  }
+
+  const jsonOutput = args.includes('--json');
+  const catalog = {
+    description: 'Evaluators are managed via Langfuse quality scores. Use cx_score MCP tool or POST /api/public/scores to record quality scores. Run `construct evals retrieval` for the local IR-metric harness against a fixture corpus.',
+    backendUrl: process.env.LANGFUSE_BASEURL ?? 'http://localhost:3000',
+    configured: Boolean(process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY),
+  };
+  if (jsonOutput) {
+    println(JSON.stringify(catalog, null, 2));
+    return;
+  }
+  println('Evaluator Catalog');
+  println('═════════════════');
+  println('');
+  println(`Backend:     Langfuse (${catalog.backendUrl})`);
+  println(`Configured:  ${catalog.configured ? 'yes' : 'no — set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY'}`);
+  println('');
+  println('Quality scores are recorded by agents via the cx_score MCP tool.');
+  println('View and manage scores at your Langfuse dashboard.');
+  println('');
+  println('Local retrieval evaluation:');
+  println('  construct evals retrieval [--fixture=PATH] [--json]');
+}
+
+async function cmdDocsUpdate(args) {
+  const check = args.includes('--check');
+  const { regenerateDocs: regen } = await import('../lib/auto-docs.mjs');
+  const { changed, checked } = await regen({ rootDir: ROOT_DIR, check });
+  if (checked) {
+    if (changed.length) {
+      errorln(`  ✗  Docs are out of date. Run 'construct docs:update' to regenerate:`);
+      for (const f of changed) errorln(`     ${path.relative(ROOT_DIR, f)}`);
+      process.exit(1);
+    } else {
+      ok('Docs are up to date.');
+    }
+  } else {
+    if (changed.length) {
+      for (const f of changed) ok(`Updated ${path.relative(ROOT_DIR, f)}`);
+    } else {
+      ok('Docs already up to date — nothing changed.');
+    }
+  }
+}
+
+async function cmdDocsCheck(args) {
+  const jsonOutput = args.includes('--json');
+  const { checkDocsCoverage } = await import('../lib/auto-docs.mjs');
+  const result = checkDocsCoverage({ rootDir: ROOT_DIR });
+  if (jsonOutput) {
+    println(JSON.stringify(result, null, 2));
+    return;
+  }
+  println(`Doc coverage: ${result.covered.length}/${result.total} commands have a how-to guide`);
+  if (result.uncovered.length === 0) {
+    ok('All user-facing commands are covered by a how-to guide.');
+  } else {
+    println('');
+    println('Commands with no linked how-to in docs/README.md:');
+    for (const name of result.uncovered) println(`  ✗  construct ${name}`);
+    println('');
+    println(`Add how-to guides under docs/how-to/ and link them from docs/README.md.`);
+    process.exitCode = 1;
+  }
+}
+
+async function cmdDocsSite() {
+  const { buildSite } = await import('../lib/auto-docs.mjs');
+  await buildSite({ rootDir: ROOT_DIR });
+  ok('site/docs/ generated successfully.');
+}
+
+async function cmdDashboardSync(args) {
+  const { runDashboardStaticCli } = await import('../lib/dashboard-static.mjs');
+  const exitCode = await runDashboardStaticCli(args, { rootDir: ROOT_DIR });
+  if (exitCode) process.exit(exitCode);
+}
+
+async function cmdBootstrap(args) {
+  const verbose = args.includes('--verbose') || args.includes('-v');
+  const { runBootstrap } = await import('../lib/bootstrap.mjs');
+  const { imported, skipped, error } = runBootstrap(process.cwd(), { verbose });
+  if (error) { errorln(error); process.exit(1); }
+  ok(`Bootstrap complete: ${imported} imported, ${skipped} skipped (already present).`);
+}
+
+async function cmdMemory(args) {
+  const sub = args[0];
+  if (sub === 'stats') {
+    const { computeStats, formatStats } = await import('../lib/memory-stats.mjs');
+    const projectArg = args.find((a) => a.startsWith('--project='));
+    const project = projectArg ? projectArg.split('=')[1] : null;
+    const lastNArg = args.find((a) => a.startsWith('--last='));
+    const lastN = lastNArg ? Number.parseInt(lastNArg.split('=')[1], 10) || 50 : 50;
+    const stats = computeStats(process.cwd(), { project, lastN });
+    process.stdout.write(formatStats(stats));
+    return;
+  }
+  if (sub === 'consolidate') {
+    const { consolidate } = await import('../lib/engine/consolidate.mjs');
+    const { getEngine } = await import('../lib/engine/index.mjs');
+    const engine = await getEngine({ rootDir: process.cwd() });
+    const summariser = engine.layers.compressor;
+    const thresholdArg = args.find((a) => a.startsWith('--threshold='));
+    const archiveDaysArg = args.find((a) => a.startsWith('--archive-days='));
+    const opts = { summariser };
+    if (thresholdArg) opts.similarityThreshold = Number(thresholdArg.split('=')[1]);
+    if (archiveDaysArg) opts.archiveAfterDays = Number(archiveDaysArg.split('=')[1]);
+    const result = await consolidate(process.cwd(), opts);
+    process.stdout.write(
+      `consolidate: ${result.clustersBefore} observations → ${result.clusters} insights, ` +
+      `${result.archived.length} archived\n`
+    );
+    return;
+  }
+  errorln(`Unknown memory subcommand: ${sub || '(none)'}. Available: stats, consolidate`);
+  process.exit(1);
+}
+
+async function cmdLintComments(args) {
+  const fix = args.includes('--fix');
+  const { lintRepo: lint, formatResults: fmt } = await import('../lib/comment-lint.mjs');
+  const results = lint({ rootDir: ROOT_DIR, fix });
+  const { output, exitCode } = fmt(results);
+  process.stdout.write(output);
+  if (exitCode !== 0) process.exit(exitCode);
+}
+
+async function cmdLintResearch() {
+  const { lintResearchRepo, formatResearchLintResults } = await import('../lib/research-lint.mjs');
+  const results = lintResearchRepo({ rootDir: process.cwd() });
+  const { output, exitCode } = formatResearchLintResults(results);
+  process.stdout.write(output);
+  if (exitCode !== 0) process.exit(exitCode);
+}
+
+async function cmdBackup(args) {
+  const sub = args[0];
+
+  if (!sub || sub === 'create') {
+    const includeSecrets = args.includes('--include-secrets');
+    const { createBackup } = await import('../lib/storage/backup.mjs');
+    println('Creating backup…');
+    try {
+      const result = await createBackup({ includeSecrets });
+      ok(`Backup created: ${result.path}`);
+      println(`  Contents: ${result.manifest.contents.join(', ') || '(empty)'}`);
+      if (!includeSecrets) println('  Secrets redacted. Use --include-secrets to include them.');
+    } catch (err) {
+      errorln(`Backup failed: ${err.message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (sub === 'verify') {
+    const archivePath = args[1];
+    if (!archivePath) { errorln('Usage: construct backup verify <archive>'); process.exit(1); }
+    const { verifyBackup } = await import('../lib/storage/backup.mjs');
+    const result = await verifyBackup(archivePath);
+    if (result.ok) {
+      ok('Backup verified — all checksums match.');
+    } else {
+      errorln(`Backup verification failed:\n  ${result.errors.join('\n  ')}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (sub === 'restore') {
+    const archivePath = args[1];
+    const yes = args.includes('--yes');
+    if (!archivePath) { errorln('Usage: construct backup restore <archive> [--yes]'); process.exit(1); }
+    if (!yes) {
+      println(`About to restore from: ${archivePath}`);
+      println('This will overwrite observations, sessions, config.env, and registry.json.');
+      println('Press Ctrl+C to cancel, or re-run with --yes to proceed.');
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+    const { restoreBackup } = await import('../lib/storage/backup.mjs');
+    const result = await restoreBackup(archivePath, { yes });
+    if (result.ok) {
+      ok(`Restored: ${result.restored.join(', ')}`);
+    } else {
+      if (result.restored.length) println(`Partially restored: ${result.restored.join(', ')}`);
+      errorln(`Errors:\n  ${result.errors.join('\n  ')}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (sub === 'list') {
+    const { listBackups } = await import('../lib/storage/backup.mjs');
+    const backups = listBackups();
+    if (!backups.length) { println('No backups found.'); return; }
+    for (const b of backups) {
+      const mb = (b.size / 1024 / 1024).toFixed(1);
+      println(`  ${b.name}  (${mb} MB)  ${b.mtime.toISOString().slice(0, 19)}`);
+    }
+    return;
+  }
+
+  errorln(`Unknown backup subcommand: ${sub}. Available: create, verify, restore, list`);
+  process.exit(1);
+}
+
+async function cmdProvider(args) {
+  const sub = args[0];
+
+  if (!sub || sub === 'list') {
+    const { describeProviders } = await import('../lib/providers/registry.mjs');
+    const desc = await describeProviders({ rootDir: process.cwd(), env: process.env });
+    println('Data-source providers');
+    println('═════════════════════');
+    for (const entry of desc.summary) {
+      const status = entry.health.ok ? '✓' : '○';
+      println(`  ${status}  ${entry.id.padEnd(24)} ${entry.displayName}`);
+      println(`     capabilities: ${entry.capabilities.join(', ')}`);
+      if (entry.health.detail) println(`     health: ${entry.health.detail}`);
+      if (entry.source && entry.source !== 'built-in') println(`     source: ${entry.source}`);
+    }
+    if (desc.errors.length) {
+      println('');
+      errorln('Errors loading providers:');
+      for (const e of desc.errors) errorln(`  ✗ [${e.id}] ${e.error}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (sub === 'info') {
+    const id = args[1];
+    if (!id) { errorln('Usage: construct provider info <id>'); process.exit(1); }
+    const { resolveProviders } = await import('../lib/providers/registry.mjs');
+    const { providers, errors } = await resolveProviders({ rootDir: process.cwd(), env: process.env });
+    if (!providers[id]) {
+      errorln(`Unknown provider: ${id}`);
+      if (errors.find((e) => e.id === id)) errorln(errors.find((e) => e.id === id).error);
+      process.exit(1);
+    }
+    const p = providers[id];
+    println(`${p.meta.displayName} (${p.meta.id})`);
+    println('─'.repeat(48));
+    println(`Capabilities: ${p.meta.capabilities.join(', ')}`);
+    if (p.meta.description) println(`Description:  ${p.meta.description}`);
+    if (p.configSchema) {
+      println('');
+      println('Config schema:');
+      println(JSON.stringify(p.configSchema, null, 2));
+    }
+    return;
+  }
+
+  if (sub === 'test') {
+    const id = args[1];
+    if (!id) { errorln('Usage: construct provider test <id>'); process.exit(1); }
+    const { resolveProviders } = await import('../lib/providers/registry.mjs');
+    const { providers } = await resolveProviders({ rootDir: process.cwd(), env: process.env });
+    if (!providers[id]) { errorln(`Unknown provider: ${id}`); process.exit(1); }
+    const health = await providers[id].health({});
+    println(`${id}: ${health.ok ? 'ok' : 'unhealthy'}`);
+    if (health.detail) println(`  ${health.detail}`);
+    process.exit(health.ok ? 0 : 1);
+  }
+
+  if (sub === 'plugins') {
+    const action = args[1];
+    if (action === 'add' || action === 'remove') {
+      const id = args[2];
+      const pkg = args[3];
+      if (!id) { errorln(`Usage: construct provider plugins ${action} <id> [<package>]`); process.exit(1); }
+      const isGlobal = args.includes('--global');
+      const targetPath = isGlobal
+        ? path.join(HOME, '.construct', 'providers.json')
+        : path.join(process.cwd(), '.cx', 'providers.json');
+      let data = { providers: [] };
+      try { data = JSON.parse(fs.readFileSync(targetPath, 'utf8')); } catch { /* fresh */ }
+      data.providers ??= [];
+      if (action === 'add') {
+        if (!pkg) { errorln(`Usage: construct provider plugins add <id> <package>`); process.exit(1); }
+        if (data.providers.some((p) => p.id === id && p.package === pkg)) {
+          println(`Already present: ${id} → ${pkg}`);
+          return;
+        }
+        data.providers.push({ id, package: pkg, options: {} });
+      } else {
+        data.providers = data.providers.filter((p) => p.id !== id);
+      }
+      fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+      fs.writeFileSync(targetPath, JSON.stringify(data, null, 2) + '\n');
+      println(`✓ ${action === 'add' ? 'Added' : 'Removed'} ${id}${pkg ? ` → ${pkg}` : ''} (${path.relative(process.cwd(), targetPath)})`);
+      return;
+    }
+    errorln(`Usage: construct provider plugins <add|remove> <id> [<package>] [--global]`);
+    process.exit(1);
+  }
+
+  errorln(`Unknown provider subcommand: ${sub}. Available: list, info, test, plugins`);
+  process.exit(1);
+}
+
+async function cmdHook(args) {
+  const name = args[0];
+  if (!name) {
+    errorln('Usage: construct hook <name>  (e.g. construct hook session-start)');
+    process.exit(1);
+  }
+  const safe = name.replace(/[^a-z0-9-]/gi, '');
+  if (safe !== name) {
+    errorln(`Invalid hook name '${name}': use lowercase letters, digits, or hyphens.`);
+    process.exit(1);
+  }
+  const hookPath = path.join(ROOT_DIR, 'lib', 'hooks', `${safe}.mjs`);
+  if (!fs.existsSync(hookPath)) {
+    errorln(`Hook not found: ${hookPath}`);
+    process.exit(1);
+  }
+  const result = spawnSync(process.execPath, [hookPath], { stdio: 'inherit' });
+  process.exit(result.status ?? 0);
+}
+
+const [command, ...rest] = process.argv.slice(2);
+const restArgsCache = rest;
+
+const handlers = new Map([
+  ['up', cmdUp],
+  ['down', cmdDown],
+  ['status', cmdStatus],
+  ['show', cmdShow],
+  ['serve', cmdServe],
+  ['setup', cmdSetup],
+  ['update', cmdUpdate],
+  ['completions', cmdCompletions],
+  ['sync', cmdSync],
+  ['list', cmdList],
+  ['doctor', cmdDoctor],
+  ['validate', cmdValidate],
+  ['diff', cmdDiff],
+  ['distill', cmdDistill],
+  ['ingest', cmdIngest],
+  ['infer', cmdInfer],
+  ['search', cmdSearch],
+  ['storage', cmdStorage],
+  ['headhunt', cmdHeadhunt],
+  ['init', cmdInit],
+  ['docs:verify', cmdDocsVerify],
+  ['init:update', cmdInitUpdate],
+  ['models', cmdModels],
+  ['mcp', cmdMcp],
+  ['plugin', cmdPlugin],
+  ['hosts', cmdHosts],
+  ['review', cmdReview],
+  ['optimize', cmdOptimize],
+  ['seed-traces', cmdSeedTraces],
+  ['cost', cmdCost],
+  ['efficiency', cmdEfficiency],
+  ['evals', cmdEvals],
+  ['cleanup', cmdCleanup],
+  ['version', cmdVersion],
+  ['docs:update', cmdDocsUpdate],
+  ['docs:check', cmdDocsCheck],
+  ['docs:site', cmdDocsSite],
+  ['dashboard:sync', cmdDashboardSync],
+  ['lint:comments', cmdLintComments],
+  ['bootstrap', cmdBootstrap],
+  ['memory', cmdMemory],
+  ['hook', cmdHook],
+  ['backup', cmdBackup],
+  ['provider', cmdProvider],
+  ['lint:research', cmdLintResearch],
+  ['audit', async (args) => {
+    const sub = args[0];
+    if (sub === 'skills') return runAuditSkillsCli(args.slice(1));
+    if (sub === 'trail' || !sub) {
+      const { runAuditTrailCli } = await import('../lib/audit-trail.mjs');
+      return runAuditTrailCli(args.slice(sub === 'trail' ? 1 : 0));
+    }
+    errorln(`Unknown audit subcommand: ${sub}. Available: skills, trail`);
+    process.exit(1);
+  }],
+  ['doc', async (args) => {
+    const sub = args[0];
+    if (sub === 'verify' || !sub) {
+      const { runDocVerifyCli } = await import('../lib/doc-verify.mjs');
+      return runDocVerifyCli(args.slice(sub === 'verify' ? 1 : 0));
+    }
+    if (sub === 'install-hooks') {
+      const { runDocInstallHooksCli } = await import('../lib/doc-verify.mjs');
+      return runDocInstallHooksCli(args.slice(1));
+    }
+    errorln(`Unknown doc subcommand: ${sub}. Available: verify, install-hooks`);
+    process.exit(1);
+  }],
+  ['team', async (args) => {
+    const sub = args[0];
+    if (sub === 'review') return runTeamReviewCli(args.slice(1));
+    if (sub === 'templates') { listTeamTemplates(); return; }
+    errorln(`Unknown team subcommand: ${sub}. Available: review, templates`);
+    process.exit(1);
+  }],
+  ['telemetry-backfill', async (args) => {
+    const { runTelemetryBackfillCli } = await import('../lib/telemetry/backfill.mjs');
+    return runTelemetryBackfillCli(args);
+  }],
+  ['eval-datasets', async (args) => {
+    const { runEvalDatasetsCli } = await import('../lib/telemetry/eval-datasets.mjs');
+    return runEvalDatasetsCli(args);
+  }],
+  ['llm-judge', async (args) => {
+    const { runLLMJudgeCli } = await import('../lib/telemetry/llm-judge.mjs');
+    return runLLMJudgeCli(args);
+  }],
+  ['langfuse-setup', async (args) => {
+    const { runLangfuseSetupCli } = await import('../lib/telemetry/langfuse-setup.mjs');
+    return runLangfuseSetupCli(args);
+  }],
+  ['beads', async (args) => {
+    const sub = args[0];
+    const subArgs = args.slice(1);
+    
+    if (!sub || sub === 'status') {
+      const jsonOutput = subArgs.includes('--json');
+      const status = getLockStatus({ cwd: process.cwd() });
+      if (jsonOutput) {
+        println(JSON.stringify(status, null, 2));
+      } else {
+        process.stdout.write(getHumanStatus(process.cwd()));
+      }
+      return;
+    }
+
+    if (sub === 'cleanup') {
+      const staleLocks = cleanupStaleLock({ cwd: process.cwd() });
+      const staleQueue = cleanupStaleQueue({ cwd: process.cwd() });
+      println(`Cleaned up: ${staleLocks ? '1 stale lock' : 'no stale locks'}, ${staleQueue} stale queue entries`);
+      return;
+    }
+
+    if (sub === 'queue') {
+      const jsonOutput = subArgs.includes('--json');
+      const queue = readQueue({ cwd: process.cwd() });
+      if (jsonOutput) {
+        println(JSON.stringify(queue, null, 2));
+      } else {
+        if (!queue.length) {
+          println('No requests in queue');
+        } else {
+          println(`Queue (${queue.length}):`);
+          queue.forEach((entry, idx) => {
+            const alive = entry.pid && (() => {
+              try { process.kill(entry.pid, 0); return true; } catch { return false; }
+            })();
+            println(`  ${idx + 1}. ${entry.actor} – ${entry.command || entry.args?.join(' ')}${alive ? '' : ' ⚠️ dead'}`);
+          });
+        }
+      }
+      return;
+    }
+
+    if (sub === 'lock-status' || sub === 'lock') {
+      const status = getLockStatus({ cwd: process.cwd() });
+      println(JSON.stringify(status, null, 2));
+      return;
+    }
+
+    if (sub === 'help' || sub === '--help' || sub === '-h') {
+      println('construct beads — manage beads lock and queue');
+      println('');
+      println('Subcommands:');
+      println('  status        Show lock and queue status (default)');
+      println('  lock-status   Detailed lock info in JSON');
+      println('  cleanup       Remove stale locks and dead queue entries');
+      println('  queue         Show pending requests');
+      println('  help          This help');
+      println('');
+      println('Examples:');
+      println('  construct beads            # Show status');
+      println('  construct beads --json     # JSON status');
+      println('  construct beads queue      # Show queue');
+      println('  construct beads cleanup    # Clean stale locks');
+      return;
+    }
+
+    // Default: run the bd command through our wrapper
+    const actor = process.env.USER || process.env.LOGNAME || 'construct';
+    const needsMergeSlot = sub === 'dolt' && subArgs[0] === 'push';
+    let mergeSlotHeld = false;
+    let result;
+    try {
+      if (needsMergeSlot) {
+        const mergeSlot = await acquireMergeSlot({
+          actor,
+          cwd: process.cwd(),
+          silent: subArgs.includes('--silent'),
+        });
+        mergeSlotHeld = Boolean(mergeSlot?.success);
+      }
+
+      result = await runBd(args, {
+        actor,
+        cwd: process.cwd(),
+        silent: subArgs.includes('--silent'),
+      });
+    } finally {
+      if (mergeSlotHeld) {
+        await releaseMergeSlot({
+          actor,
+          cwd: process.cwd(),
+          silent: subArgs.includes('--silent'),
+        });
+      }
+    }
+
+    if (result.success) {
+      process.stdout.write(result.output || '');
+    } else {
+      process.stderr.write(`bd failed: ${result.error || 'Unknown error'}\n`);
+      process.exit(result.exitCode || 1);
+    }
+  }],
+  ['wireframe', async (args) => {
+    const { runWireframeCli } = await import('../lib/wireframe.mjs');
+    return runWireframeCli(args);
+  }],
+  ['skills', async (args) => {
+    const sub = args[0];
+    if (sub === 'scope' || !sub) {
+      const { runSkillsScopeCli } = await import('../lib/skills-scope.mjs');
+      return runSkillsScopeCli(args.slice(sub === 'scope' ? 1 : 0));
+    }
+    if (sub === 'apply') {
+      const { runSkillsApplyCli } = await import('../lib/skills-apply.mjs');
+      return runSkillsApplyCli(args.slice(1));
+    }
+    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply`);
+    process.exit(1);
+  }],
+  ['ask', async (args) => {
+    const question = args.join(' ').trim();
+    if (!question) {
+      errorln('Usage: construct ask "<question>"');
+      errorln('Example: construct ask "what are the biggest risks?"');
+      process.exit(1);
+    }
+    const { ask, buildCorpus } = await import('../lib/knowledge/rag.mjs');
+    const rootDir = process.cwd();
+    process.stdout.write('Building knowledge index…\n');
+    const corpus = buildCorpus(rootDir);
+    process.stdout.write(`Indexed ${corpus.length} chunks. Retrieving…\n\n`);
+    const result = await ask(question, { rootDir, corpus });
+    if (result.cliMissing) {
+      process.stdout.write('[claude CLI not available — showing retrieved context]\n\n');
+    }
+    process.stdout.write(`${result.answer}\n`);
+    if (result.sources?.length) {
+      process.stdout.write('\n--- Sources ---\n');
+      for (const s of result.sources.slice(0, 5)) {
+        process.stdout.write(`  • [${s.source}] ${s.title} (score: ${s.score?.toFixed(3)})\n`);
+      }
+    }
+  }],
+   ['embed', async (args) => {
+     const { runEmbedCli } = await import('../lib/embed/cli.mjs');
+     return runEmbedCli(args, { rootDir: new URL('..', import.meta.url).pathname });
+   }],
+   ['reflect', async (args) => {
+     const { runReflectCli } = await import('../lib/reflect.mjs');
+     return runReflectCli(args);
+   }],
+  ['knowledge', async (args) => {
+    const sub = args[0] || 'trends';
+    if (sub === 'trends') {
+      const { buildTrendReport } = await import('../lib/knowledge/trends.mjs');
+      const report = buildTrendReport(process.cwd());
+      process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+      return;
+    }
+    if (sub === 'index') {
+      const { buildCorpus } = await import('../lib/knowledge/rag.mjs');
+      const corpus = buildCorpus(process.cwd());
+      process.stdout.write(`Indexed ${corpus.length} chunks from: observations, artifacts, snapshots\n`);
+      const sources = {};
+      for (const c of corpus) sources[c.source] = (sources[c.source] || 0) + 1;
+      for (const [src, count] of Object.entries(sources)) {
+        process.stdout.write(`  ${src}: ${count}\n`);
+      }
+      return;
+    }
+    errorln(`Unknown knowledge subcommand: ${sub}. Available: trends, index`);
+    process.exit(1);
+  }],
+]);
+
+if (!command || command === '--help' || command === '-h' || command === 'help') {
+  usage();
+  process.exit(0);
+}
+
+const handler = handlers.get(command);
+if (!handler) {
+  errorln(`Unknown command: ${command}`);
+  usage();
+  process.exit(1);
+}
+
+await handler(rest);

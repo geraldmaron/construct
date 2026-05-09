@@ -1,0 +1,31 @@
+{
+  "name": "Construct Dev",
+  "build": {
+    "dockerfile": "Dockerfile.devcontainer",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [4242],
+  "portsAttributes": {
+    "4242": {
+      "label": "Construct Dashboard",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "node .construct/run.mjs setup --auto",
+  "remoteEnv": {
+    "CONSTRUCT_VERSION": "${localEnv:CONSTRUCT_VERSION}",
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["anthropic.claude-code"],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}

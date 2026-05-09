@@ -1,0 +1,149 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }} / node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows is excluded from the unit-test matrix: a portion of the test
+        # suite uses Unix-style paths, executable bits, and shell assumptions
+        # that don't translate cleanly. Windows correctness is validated at
+        # release time via the SEA binary build in release.yml. Cross-platform
+        # support for the test fixtures is tracked as future work.
+        os: [ubuntu-latest, macos-latest]
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - run: npm test
+      - run: node bin/construct lint:comments
+      - run: node bin/construct setup --help
+      - run: node bin/construct doctor
+      - run: node bin/construct docs:verify
+
+  evals:
+    name: retrieval evals
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Retrieval-quality regression
+        run: node bin/construct evals retrieval
+
+  audit:
+    name: dependency CVE audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: npm audit (high+ only)
+        run: npm audit --omit=dev --audit-level=high
+
+  secret-scan:
+    name: secret scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  postgres-integration:
+    name: postgres + pgvector integration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: construct
+          POSTGRES_USER: construct
+          POSTGRES_DB: construct
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Run migrations runner end-to-end
+        env:
+          DATABASE_URL: postgres://construct:construct@127.0.0.1:5432/construct
+          CONSTRUCT_EMBEDDING_MODEL: hashing
+        run: |
+          node -e "
+          const { runMigrations } = await import('./lib/storage/migrations.mjs');
+          const postgres = (await import('postgres')).default;
+          const sql = postgres(process.env.DATABASE_URL);
+          try {
+            const result = await runMigrations(sql);
+            console.log('migrations applied:', result.applied);
+            console.log('migrations skipped:', result.skipped);
+          } finally { await sql.end(); }
+          "
+
+  docs:
+    name: docs drift check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Check managed doc regions are up to date
+        run: node ./bin/construct docs:update --check
+      - name: Check dashboard static bundle is up to date
+        run: node ./bin/construct dashboard:sync --check
+
+  lint-comments:
+    name: comment policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Enforce comment policy
+        run: node ./bin/construct lint:comments
+
+  lint-templates:
+    name: template policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enforce commit + PR templates
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref || github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/lint-commits-pr.mjs

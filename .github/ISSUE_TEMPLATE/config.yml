@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://geraldmaron.github.io/construct/
+    about: Read the Construct docs before opening an issue.

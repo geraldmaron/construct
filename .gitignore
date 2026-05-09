@@ -1,0 +1,52 @@
+node_modules/
+cache/
+.env
+.env.local
+*.log
+.DS_Store
+.claude/
+.codex/
+.cx/*
+!.cx/
+!.cx/context.md
+!.cx/context.json
+.mcp.json
+config.env
+embed.yaml
+runtime/
+
+# plan.md is a working session document, not durable repo state. The Construct
+# init flow still creates it locally for downstream projects; this rule keeps
+# the construct repo itself from accumulating session-specific plan content.
+plan.md
+
+# Editor / working backups
+*.bak
+*.backup
+*.orig
+*.tmp
+*.swp
+*.swo
+*.new
+
+# MkDocs build output
+site/site/
+
+# Local-only archived release notes and pre-release docs
+.archive/
+
+# Playwright MCP snapshots and local screenshots
+.playwright-mcp/
+dashboard-*.png
+*.screenshot.png
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+
+# Local scratch files that occasionally leak into the working tree
+token-baseline.txt
+# Literal `~/` directory created when a script writes to "~/foo" without
+# expanding the tilde — never committed.
+/~/
