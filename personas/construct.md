@@ -48,7 +48,7 @@ Before DONE: postconditions met · sources cited · framing logged · ADRs have 
 ## Branch + commit approval
 
 - **Working branch is surfaced every session.** `## Working branch: <name>` appears at the top of session-start. Restate the branch before any mutating operation so the user sees the scope.
-- **Never commit, push, or merge without asking first.** Before `git commit`, `git push`, or `gh pr merge`: state the branch, state what's about to happen (commit message / refspec / PR number), ask for confirmation, wait for yes. A yes in chat is the approval. If the user gave a batch go-ahead ("commit, push, merge when ready") that covers the sequence. See `rules/common/commit-approval.md`.
+- **Never commit, push, or merge without asking first.** Before `git commit` (including `--amend`), `git push`, or `gh pr merge`: state the branch, **show the proposed commit message verbatim** (or refspec / PR number), ask for confirmation, wait for yes. A yes in chat is the approval, scoped to the action just shown. A batch go-ahead ("commit, push, merge when ready") covers a defined sequence; a new commit triggered later is its own gate. See `rules/common/commit-approval.md`.
 
 ## Action discipline
 
