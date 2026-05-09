@@ -327,6 +327,19 @@ async function cmdDoctor() {
       add('Observation cap', false, true);
     }
 
+    try {
+      const { checkObservationsSize } = await import('../lib/observation-store.mjs');
+      const sz = checkObservationsSize(process.cwd());
+      const mb = (sz.size / 1024 / 1024).toFixed(1);
+      const capMb = (sz.cap / 1024 / 1024).toFixed(0);
+      const sizeLabel = sz.ok
+        ? `Observation size (${mb} MB / ${capMb} MB cap)`
+        : `Observation size (${mb} MB exceeds ${capMb} MB cap — run \`construct memory consolidate\`)`;
+      add(sizeLabel, sz.ok, true);
+    } catch {
+      add('Observation size', false, true);
+    }
+
     if (sqlConfig.configured) {
       try {
         const migClient = createSqlClient(process.env);
@@ -1037,7 +1050,7 @@ async function cmdMemory(args) {
     const result = await consolidate(process.cwd(), opts);
     process.stdout.write(
       `consolidate: ${result.clustersBefore} observations → ${result.clusters} insights, ` +
-      `${result.archived.length} archived\n`
+      `${result.archived.length} archived, ${result.archivePruned ?? 0} pruned from archive\n`
     );
     return;
   }
@@ -1067,16 +1080,43 @@ async function cmdBackup(args) {
 
   if (!sub || sub === 'create') {
     const includeSecrets = args.includes('--include-secrets');
-    const { createBackup } = await import('../lib/storage/backup.mjs');
+    const noPrune = args.includes('--no-prune');
+    const keepArg = args.find((a) => a.startsWith('--keep='));
+    const keep = keepArg
+      ? Number(keepArg.split('=')[1])
+      : Number(process.env.CONSTRUCT_BACKUP_RETAIN || 10);
+    const { createBackup, pruneBackups } = await import('../lib/storage/backup.mjs');
     println('Creating backup…');
     try {
       const result = await createBackup({ includeSecrets });
       ok(`Backup created: ${result.path}`);
       println(`  Contents: ${result.manifest.contents.join(', ') || '(empty)'}`);
       if (!includeSecrets) println('  Secrets redacted. Use --include-secrets to include them.');
+      if (!noPrune) {
+        const pruned = pruneBackups({ keep });
+        if (pruned.removed.length) {
+          println(`  Auto-pruned ${pruned.removed.length} old backup(s); kept ${pruned.kept}.`);
+        }
+      }
     } catch (err) {
       errorln(`Backup failed: ${err.message}`);
       process.exit(1);
+    }
+    return;
+  }
+
+  if (sub === 'prune') {
+    const keepArg = args.find((a) => a.startsWith('--keep='));
+    const keep = keepArg
+      ? Number(keepArg.split('=')[1])
+      : Number(process.env.CONSTRUCT_BACKUP_RETAIN || 10);
+    const { pruneBackups } = await import('../lib/storage/backup.mjs');
+    const result = pruneBackups({ keep });
+    if (result.removed.length === 0) {
+      println(`Nothing to prune (have ${result.kept}, keeping ${keep}).`);
+    } else {
+      ok(`Pruned ${result.removed.length} backup(s); kept ${result.kept}.`);
+      for (const r of result.removed) println(`  removed ${r}`);
     }
     return;
   }
@@ -1128,7 +1168,7 @@ async function cmdBackup(args) {
     return;
   }
 
-  errorln(`Unknown backup subcommand: ${sub}. Available: create, verify, restore, list`);
+  errorln(`Unknown backup subcommand: ${sub}. Available: create, verify, restore, list, prune`);
   process.exit(1);
 }
 
