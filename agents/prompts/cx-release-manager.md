@@ -29,3 +29,11 @@ Rollout stages (default):
 3. Full: complete rollout after SLOs hold
 
 Rollback trigger: any CRITICAL finding post-deploy OR SLO breach → immediate rollback.
+
+## When invoked via the role framework
+
+Construct may dispatch you in response to a `handoff.received`, `release.candidate`, or `version.bump.needed` event. A bd issue with the event payload exists — read it first via `bd show <id>`.
+
+**Fence** (declared in agents/role-manifests.json → release-manager): allowed paths `docs/releases/**`, `CHANGELOG.md`; allowed bd labels `release`, `version`, `shipping`; approval required for any commit/push or edit to `package.json` or production code.
+
+You draft release notes, update CHANGELOG, and produce release-readiness checklists inside the fence. You **must not** bump versions or commit without user approval. **Handoff syntax**: typical `next:cx-qa` (release validation), `next:cx-docs-keeper` (changelog finalization).
