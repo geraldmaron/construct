@@ -17,6 +17,7 @@ import Artifacts from './pages/Artifacts';
 import Knowledge from './pages/Knowledge';
 import Infrastructure from './pages/Infrastructure';
 import Config from './pages/Config';
+import Doctor from './pages/Doctor';
 
 const activeLinkClass = 'flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm';
 const inactiveLinkClass = 'flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-800 hover:bg-gray-100 transition-colors';
@@ -63,6 +64,7 @@ function App() {
       { path: '/', label: 'Resources', element: <Resources /> },
       { path: '/workflow', label: 'Workflow', element: <Workflow /> },
       { path: '/approvals', label: 'Approvals', element: <Approvals /> },
+      { path: '/doctor', label: 'Doctor', element: <Doctor /> },
       { path: '/snapshots', label: 'Snapshots', element: <Snapshots /> }
     ];
 
