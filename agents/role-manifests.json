@@ -134,8 +134,32 @@
       "handoffCandidates": ["architect", "engineer", "designer", "researcher"],
       "killSwitchEnv": "CONSTRUCT_ROLE_PRODUCT_MANAGER"
     },
-    "designer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DESIGNER" },
-    "accessibility": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_ACCESSIBILITY" },
+    "designer": {
+      "events": ["handoff.received", "design.requested"],
+      "severityImmediate": [],
+      "fence": {
+        "allowedPaths": ["docs/design/**", "docs/wireframes/**", "design/**"],
+        "allowedBdLabels": ["design", "ux", "ui", "wireframe"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
+        "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**", "edit:src/**", "edit:app/**"]
+      },
+      "outputs": { "bdLabels": ["design"], "docTypes": ["memo"] },
+      "handoffCandidates": ["product-manager", "engineer", "accessibility"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_DESIGNER"
+    },
+    "accessibility": {
+      "events": ["handoff.received", "a11y.violation"],
+      "severityImmediate": [],
+      "fence": {
+        "allowedPaths": ["docs/accessibility/**", "docs/a11y/**"],
+        "allowedBdLabels": ["accessibility", "a11y"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
+        "approvalRequired": ["commit", "push", "edit:**"]
+      },
+      "outputs": { "bdLabels": ["accessibility", "a11y"], "docTypes": ["memo"] },
+      "handoffCandidates": ["engineer", "designer", "qa"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_ACCESSIBILITY"
+    },
     "reviewer": {
       "events": ["handoff.received", "pr.opened", "pr.ready-for-review"],
       "severityImmediate": [],
@@ -162,20 +186,32 @@
       "handoffCandidates": ["sre", "engineer", "reviewer"],
       "killSwitchEnv": "CONSTRUCT_ROLE_PLATFORM_ENGINEER"
     },
-    "data-analyst": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DATA_ANALYST" },
-    "data-engineer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DATA_ENGINEER" },
-    "evaluator": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_EVALUATOR" },
-    "trace-reviewer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_TRACE_REVIEWER" },
-    "test-automation": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_TEST_AUTOMATION" },
-    "ai-engineer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_AI_ENGINEER" },
-    "business-strategist": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_BUSINESS_STRATEGIST" },
-    "researcher": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_RESEARCHER" },
-    "ux-researcher": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_UX_RESEARCHER" },
-    "explorer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_EXPLORER" },
-    "operations": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_OPERATIONS" },
-    "orchestrator": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_ORCHESTRATOR" },
-    "rd-lead": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_RD_LEAD" },
-    "legal-compliance": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_LEGAL_COMPLIANCE" },
-    "devil-advocate": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DEVIL_ADVOCATE" }
+    "data-analyst": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/analytics/**", ".cx/analytics/**"], "allowedBdLabels": ["analytics", "metrics"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**"] }, "outputs": { "bdLabels": ["analytics"], "docTypes": ["memo"] }, "handoffCandidates": ["product-manager", "engineer"], "killSwitchEnv": "CONSTRUCT_ROLE_DATA_ANALYST" },
+    "data-engineer": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/data/**", "docs/etl/**"], "allowedBdLabels": ["data", "etl", "pipeline"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**"] }, "outputs": { "bdLabels": ["data"], "docTypes": ["memo"] }, "handoffCandidates": ["engineer", "platform-engineer", "data-analyst"], "killSwitchEnv": "CONSTRUCT_ROLE_DATA_ENGINEER" },
+    "evaluator": { "events": ["handoff.received", "eval.regression"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/evals/**", ".cx/evals/**", "tests/evals/**"], "allowedBdLabels": ["eval", "regression-eval"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["eval"], "docTypes": ["memo"] }, "handoffCandidates": ["engineer", "ai-engineer"], "killSwitchEnv": "CONSTRUCT_ROLE_EVALUATOR" },
+    "trace-reviewer": { "events": ["handoff.received", "trace.anomaly"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/traces/**", ".cx/traces/**"], "allowedBdLabels": ["trace", "observability"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["trace"], "docTypes": ["memo"] }, "handoffCandidates": ["sre", "ai-engineer", "engineer"], "killSwitchEnv": "CONSTRUCT_ROLE_TRACE_REVIEWER" },
+    "test-automation": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["tests/**", "docs/test-automation/**"], "allowedBdLabels": ["test-automation", "ci", "test-infra"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**"] }, "outputs": { "bdLabels": ["test-automation"], "docTypes": ["memo"] }, "handoffCandidates": ["qa", "engineer", "platform-engineer"], "killSwitchEnv": "CONSTRUCT_ROLE_TEST_AUTOMATION" },
+    "ai-engineer": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/ai/**", "docs/agents/**", "agents/**", "skills/ai/**"], "allowedBdLabels": ["ai", "agent", "model"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**"] }, "outputs": { "bdLabels": ["ai"], "docTypes": ["memo"] }, "handoffCandidates": ["engineer", "architect", "evaluator"], "killSwitchEnv": "CONSTRUCT_ROLE_AI_ENGINEER" },
+    "business-strategist": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/strategy/**", ".cx/strategy/**"], "allowedBdLabels": ["strategy", "business"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["strategy"], "docTypes": ["memo"] }, "handoffCandidates": ["product-manager", "researcher"], "killSwitchEnv": "CONSTRUCT_ROLE_BUSINESS_STRATEGIST" },
+    "researcher": {
+      "events": ["handoff.received", "research.requested", "evidence.requested"],
+      "severityImmediate": [],
+      "fence": {
+        "allowedPaths": ["docs/research/**", ".cx/research/**", "docs/evidence-briefs/**", "docs/signal-briefs/**"],
+        "allowedBdLabels": ["research", "evidence", "investigation"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
+        "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**"]
+      },
+      "outputs": { "bdLabels": ["research"], "docTypes": ["research-brief", "evidence-brief", "signal-brief", "product-intelligence-report"] },
+      "handoffCandidates": ["product-manager", "architect", "engineer"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_RESEARCHER"
+    },
+    "ux-researcher": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/ux-research/**", ".cx/ux-research/**"], "allowedBdLabels": ["ux-research", "user-research"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["ux-research"], "docTypes": ["memo"] }, "handoffCandidates": ["product-manager", "designer", "researcher"], "killSwitchEnv": "CONSTRUCT_ROLE_UX_RESEARCHER" },
+    "explorer": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/explorations/**", ".cx/explorations/**"], "allowedBdLabels": ["exploration", "spike"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["exploration"], "docTypes": ["memo"] }, "handoffCandidates": ["engineer", "architect", "researcher"], "killSwitchEnv": "CONSTRUCT_ROLE_EXPLORER" },
+    "operations": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/ops/**", "docs/operations/**"], "allowedBdLabels": ["ops", "operations"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["ops"], "docTypes": ["memo", "runbook"] }, "handoffCandidates": ["sre", "platform-engineer", "release-manager"], "killSwitchEnv": "CONSTRUCT_ROLE_OPERATIONS" },
+    "orchestrator": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/orchestration/**", "docs/workflows/**"], "allowedBdLabels": ["orchestration", "workflow"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["orchestration"], "docTypes": ["memo"] }, "handoffCandidates": ["product-manager", "architect", "engineer"], "killSwitchEnv": "CONSTRUCT_ROLE_ORCHESTRATOR" },
+    "rd-lead": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/research/**", "docs/experiments/**", ".cx/experiments/**"], "allowedBdLabels": ["rd", "research", "experiment"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["rd"], "docTypes": ["memo", "research-brief"] }, "handoffCandidates": ["researcher", "architect", "ai-engineer"], "killSwitchEnv": "CONSTRUCT_ROLE_RD_LEAD" },
+    "legal-compliance": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/legal/**", "docs/compliance/**"], "allowedBdLabels": ["legal", "compliance", "privacy"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["legal", "compliance"], "docTypes": ["memo"] }, "handoffCandidates": ["security", "product-manager"], "killSwitchEnv": "CONSTRUCT_ROLE_LEGAL_COMPLIANCE" },
+    "devil-advocate": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/critiques/**"], "allowedBdLabels": ["critique", "devil-advocate"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["critique"], "docTypes": ["memo"] }, "handoffCandidates": ["architect", "product-manager", "engineer"], "killSwitchEnv": "CONSTRUCT_ROLE_DEVIL_ADVOCATE" }
   }
 }
