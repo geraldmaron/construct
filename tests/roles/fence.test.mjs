@@ -47,6 +47,14 @@ test('every onboarded persona requires approval for commit and push', () => {
   }
 });
 
+test('bash fence uses prefix match against allowedCommands', () => {
+  assert.equal(checkAction({ personaId: 'sre', action: 'bash', target: 'bd note construct-abc some-note' }).allowed, true);
+  assert.equal(checkAction({ personaId: 'sre', action: 'bash', target: 'bd create incident-x -t bug' }).allowed, true);
+  const denied = checkAction({ personaId: 'sre', action: 'bash', target: 'npm install lodash' });
+  assert.equal(denied.allowed, false);
+  assert.equal(denied.reason, 'outside-fence');
+});
+
 test('bd-label inside allowed list is permitted; outside is denied', () => {
   assert.equal(checkAction({ personaId: 'sre', action: 'bd-label', target: 'incident,sre' }).allowed, true);
   assert.equal(checkAction({ personaId: 'sre', action: 'bd-label', target: 'incident,next:cx-engineer' }).allowed, true);
