@@ -90,3 +90,24 @@ test('enforcement on does block when caps blown', () => {
   const r = ledger.checkBudget({ personaId: 'sre' });
   assert.equal(r.allowed, false);
 });
+
+test('recordSpend buckets by the entry timestamp, not Date.now()', () => {
+  const yesterdayMs = Date.now() - 24 * 60 * 60 * 1000;
+  ledger.recordSpend({ personaId: 'sre', costUsd: 1.5, ts: yesterdayMs });
+  ledger.recordSpend({ personaId: 'sre', costUsd: 2.5, ts: Date.now() });
+  const yesterdayKey = ledger.dayKey(yesterdayMs);
+  const todayKey = ledger.dayKey(Date.now());
+  assert.notEqual(yesterdayKey, todayKey, 'sanity: keys differ across days');
+  const yesterdaySpend = ledger.getDailySpend({ personaId: 'sre', ts: yesterdayMs });
+  const todaySpend = ledger.getDailySpend({ personaId: 'sre' });
+  assert.equal(yesterdaySpend.costUsd, 1.5);
+  assert.equal(todaySpend.costUsd, 2.5);
+});
+
+test('recordSpend accepts ISO-string timestamps', () => {
+  const iso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const isoMs = Date.parse(iso);
+  ledger.recordSpend({ personaId: 'qa', costUsd: 3.0, ts: iso });
+  const spend = ledger.getDailySpend({ personaId: 'qa', ts: isoMs });
+  assert.equal(spend.costUsd, 3.0);
+});
