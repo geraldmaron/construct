@@ -50,6 +50,11 @@ This is the first slice of the **Construct on Construct** initiative — Constru
 - Cost-watcher ingestion fixed: now reads `input_tokens` / `output_tokens` / `cost_usd` / `agent` (the format stop-notify actually writes), strips the `cx-` prefix from agent names. Daily totals now reflect real spend.
 - **All 28 personas onboarded** with at minimum `handoff.received` support. Strategic personas (cx-designer, cx-accessibility, cx-researcher) got tailored fences. The remaining invitational personas (cx-ai-engineer, cx-business-strategist, cx-data-analyst, cx-data-engineer, cx-devil-advocate, cx-evaluator, cx-explorer, cx-legal-compliance, cx-operations, cx-orchestrator, cx-rd-lead, cx-test-automation, cx-trace-reviewer, cx-ux-researcher) have minimal fences + handoff-only events. EVENT_OWNERSHIP entries added for `eval.regression` (cx-evaluator) and `trace.anomaly` (cx-trace-reviewer).
 
+### Added — Construct on Construct (fence enforcement on Bash)
+
+- [lib/hooks/guard-bash.mjs](lib/hooks/guard-bash.mjs) now performs role-fence checks on every Bash invocation while a persona is the most recently dispatched agent. `git commit` / `git push` route to commit/push fence actions (advisory — surfaced to stderr); other commands prefix-match against `fence.allowedCommands`. Outside-fence commands are hard-blocked (exit 2).
+- [lib/roles/fence.mjs](lib/roles/fence.mjs) — `bash` action now uses **prefix matching** against `allowedCommands` so manifest entries like `"bd create"` match real invocations like `bd create -t bug ...`. Previously used exact-match glob which never fired in practice.
+
 ## 1.0.0 — 2026-05-08
 
 Initial public release.
