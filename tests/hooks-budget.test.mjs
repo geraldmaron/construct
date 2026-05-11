@@ -32,7 +32,7 @@ const DEPRECATED_HOOKS = [
 ];
 
 // Maximum number of hook files allowed. Prevents unreviewed hook accumulation.
-const MAX_HOOK_COUNT = 30;
+const MAX_HOOK_COUNT = 34;
 
 function hookFiles() {
   return fs.readdirSync(HOOKS_DIR).filter(f => f.endsWith('.mjs'));

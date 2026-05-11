@@ -1366,6 +1366,11 @@ const handlers = new Map([
     errorln(`Unknown team subcommand: ${sub}. Available: review, templates`);
     process.exit(1);
   }],
+  ['role', async (args) => {
+    const { runCli } = await import('../lib/roles/cli.mjs');
+    const code = await runCli(args);
+    if (code) process.exit(code);
+  }],
   ['telemetry-backfill', async (args) => {
     const { runTelemetryBackfillCli } = await import('../lib/telemetry/backfill.mjs');
     return runTelemetryBackfillCli(args);

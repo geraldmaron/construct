@@ -197,6 +197,18 @@ Every request flows through three structural layers:
 2. **Contract chain** (`routeRequest.contractChain`): ordered typed handoffs from `agents/contracts.json`. Each contract names a producer→consumer pair, required input fields, preconditions, expected output shape, and postconditions.
 3. **Specialist sequence**: dispatch plan with ordering and parallel markers. Gate-required specialists (cx-devil-advocate, cx-researcher, doc owner) are auto-prepended.
 
+## Construct on Construct
+
+The goal is for Construct to run itself like a real organization — a department-style model where deterministic watchers handle the boring stuff and LLM personas are summoned only when judgment is needed. The user stays in the loop for novel decisions and explicit approval, not routine ops.
+
+Three layers:
+
+1. **L0 — Deterministic agents (non-LLM, always-on).** Resource pressure (OOM, runaway PIDs, zombies), service health (Postgres, Langfuse, dashboard, cm), disk + log rotation, and cost/token budgets. Recoverable actions (restart, kill stale, scale, rotate) are auto-taken and audit-logged to `~/.cx/doctor-log.jsonl`. L0 escalates to L1 when deterministic rules can't resolve the problem (e.g., 2 failed restarts in a row). Today: nascent — `lib/runtime-pressure.mjs` is the first L0 agent. The `construct-doctor` daemon spawned by `construct up` is the planned home for the rest.
+2. **L1 — LLM personas (event-driven, fenced, rate-limited).** The role framework in `lib/roles/`. Events published by hooks or L0 are routed via `EVENT_OWNERSHIP` (in `lib/orchestration-policy.mjs` next to `DOC_OWNERSHIP`) to the owning persona declared in `agents/role-manifests.json`. The gateway applies threshold + cooldown + rate-ceiling, creates a bd issue, queues a pending invocation in `~/.cx/role-pending.jsonl`, and emits an SSE toast. Session-start drains the backlog (cap 5 per session) and surfaces invocations to Construct, which dispatches the persona via the existing Task path. Personas act inside a fence — allowed paths, allowed bd labels, `approvalRequired` list per role. Handoffs are recorded as `next:cx-<role>` bd labels.
+3. **L2 — User.** Commits, pushes, novel decisions, budget overrides, kill switches. Approval-required actions per `rules/common/commit-approval.md` are always L2. The goal is to make L2 rare — not zero.
+
+Kill switches throughout: `CONSTRUCT_ROLES=off` (global L1), `CONSTRUCT_ROLE_<NAME>=off` (per-persona L1). L0 watchers are individually toggleable when the doctor daemon ships.
+
 ## Modes of operation
 
 | Mode | Description | Trigger |

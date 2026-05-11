@@ -2,6 +2,22 @@
 
 All notable changes to Construct are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added — Construct on Construct (foundation: role framework + v1 onboarding)
+
+This is the first slice of the **Construct on Construct** initiative — Construct running its own organization, with deterministic L0 watchers, LLM personas at L1, and the user in the loop only for novel decisions or explicit approvals.
+
+- New `lib/roles/` module: event-bus, router, gateway, fence, manifest loader, CLI handler. Personas now operate as their organizational counterparts — SRE owns reliability, QA owns test health, Security audits dependencies, Docs Keeper notices drift.
+- `agents/role-manifests.json` declares onboarding state for all 28 personas; v1 wave (sre, qa, security, docs-keeper) ships fully wired.
+- `EVENT_OWNERSHIP` map added to [lib/orchestration-policy.mjs](lib/orchestration-policy.mjs) next to the existing `DOC_OWNERSHIP`.
+- Existing hooks now emit events when a domain signal fires: `pre-push-gate` → `push_gate.fail`, `stop-typecheck` → `test.fail`, `dep-audit` → `dep.cve`, `scan-secrets` → `secrets.detected`, `config-protection` → `config.protection.violation`. Service-manager emits `service.down` on probe failure.
+- New hooks (unregistered by default — opt in via `platforms/claude/settings.template.json`): `test-watch.mjs`, `post-merge-docs-check.mjs`, `readme-age-check.mjs`.
+- `construct role [list|latest|show|status|resolve|reset]` CLI lets users inspect pending invocations and the brief Construct dispatches.
+- Session-start surfaces queued role invocations and drains the event backlog into bd issues with strict rate limits.
+- Kill switches: `CONSTRUCT_ROLES=off` (global), `CONSTRUCT_ROLE_SRE=off` / `CONSTRUCT_ROLE_QA=off` / `CONSTRUCT_ROLE_SECURITY=off` / `CONSTRUCT_ROLE_DOCS_KEEPER=off` (per-persona).
+- Persona prompts (cx-sre, cx-qa, cx-security, cx-docs-keeper) updated with a "When invoked via the role framework" section that names the fence and handoff syntax (`next:cx-<role>` bd label).
+
 ## 1.0.0 — 2026-05-08
 
 Initial public release.
