@@ -18,6 +18,15 @@ This is the first slice of the **Construct on Construct** initiative — Constru
 - Kill switches: `CONSTRUCT_ROLES=off` (global), `CONSTRUCT_ROLE_SRE=off` / `CONSTRUCT_ROLE_QA=off` / `CONSTRUCT_ROLE_SECURITY=off` / `CONSTRUCT_ROLE_DOCS_KEEPER=off` (per-persona).
 - Persona prompts (cx-sre, cx-qa, cx-security, cx-docs-keeper) updated with a "When invoked via the role framework" section that names the fence and handoff syntax (`next:cx-<role>` bd label).
 
+### Added — Construct on Construct (L0 doctor daemon)
+
+- New `lib/doctor/` module: long-running daemon spawned by `construct up` next to dashboard/cm/opencode. Four watchers run on independent ticks: process-pressure (60s, extends `runtime-pressure`), service-health (60s, probes postgres/dashboard/cm + auto-restarts docker services), disk (5min, rotates `~/.cx/*.jsonl` and prunes `~/.construct/.runtime/`), cost (10min, ingests `session-cost.jsonl` into the daily ledger).
+- New `lib/cost-ledger.mjs`: per-persona / per-day token-spend ledger with hard caps. Gateway checks budget before bd-create; persona invocations stop at the cap. Defaults: `$1/persona/day`, `$10/total/day`. Per-persona override via `CONSTRUCT_BUDGET_<PERSONA>=N`; global enforcement disable via `CONSTRUCT_BUDGET_ENFORCE=off`.
+- All L0 actions audit-logged to `~/.cx/doctor-log.jsonl`. Daemon state at `~/.construct/doctor.json`.
+- `construct doctor [check|status|watch|stop|logs|tick]` — plain `construct doctor` keeps running the system health check; subcommands manage the daemon.
+- L0 → L1 bridge: when deterministic remediation fails (2 failed service restarts, repeated kill churn, disk below 500MB), the watcher escalates a `service.down` role event through the existing gateway, which routes to cx-sre.
+- Kill switch: `CONSTRUCT_DOCTOR=off` (disables spawn during `construct up`).
+
 ## 1.0.0 — 2026-05-08
 
 Initial public release.
