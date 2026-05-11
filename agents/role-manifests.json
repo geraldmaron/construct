@@ -82,14 +82,86 @@
       "handoffCandidates": ["qa", "reviewer", "security", "sre"],
       "killSwitchEnv": "CONSTRUCT_ROLE_ENGINEER"
     },
-    "architect": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_ARCHITECT" },
-    "debugger": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DEBUGGER" },
-    "release-manager": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_RELEASE_MANAGER" },
-    "product-manager": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_PRODUCT_MANAGER" },
+    "architect": {
+      "events": ["handoff.received", "adr.requested", "arch.boundary.violated"],
+      "severityImmediate": [],
+      "fence": {
+        "allowedPaths": ["docs/adr/**", "docs/rfc/**", "docs/architecture.md", "docs/system-design/**"],
+        "allowedBdLabels": ["architecture", "adr", "rfc", "design"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
+        "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**", "edit:agents/**"]
+      },
+      "outputs": { "bdLabels": ["architecture", "adr"], "docTypes": ["adr", "rfc", "rfc-platform", "architecture-overview", "system-design"] },
+      "handoffCandidates": ["engineer", "platform-engineer", "reviewer"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_ARCHITECT"
+    },
+    "debugger": {
+      "events": ["handoff.received", "regression.detected", "hang.detected"],
+      "severityImmediate": [],
+      "fence": {
+        "allowedPaths": ["docs/debug/**", "tests/**"],
+        "allowedBdLabels": ["bug", "regression", "investigation"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
+        "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**", "edit:src/**", "edit:app/**"]
+      },
+      "outputs": { "bdLabels": ["bug", "regression"], "docTypes": ["memo"] },
+      "handoffCandidates": ["engineer", "qa", "sre"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_DEBUGGER"
+    },
+    "release-manager": {
+      "events": ["handoff.received", "release.candidate", "version.bump.needed"],
+      "severityImmediate": [],
+      "fence": {
+        "allowedPaths": ["docs/releases/**", "CHANGELOG.md"],
+        "allowedBdLabels": ["release", "version", "shipping"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
+        "approvalRequired": ["commit", "push", "edit:package.json", "edit:lib/**", "edit:bin/**"]
+      },
+      "outputs": { "bdLabels": ["release"], "docTypes": ["memo", "changelog"] },
+      "handoffCandidates": ["qa", "engineer", "reviewer", "docs-keeper"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_RELEASE_MANAGER"
+    },
+    "product-manager": {
+      "events": ["handoff.received", "backlog.stale", "prd.requested"],
+      "severityImmediate": [],
+      "fence": {
+        "allowedPaths": ["docs/prd/**", "docs/meta-prd/**", "docs/prfaq/**", "docs/one-pager/**", ".cx/product-intel/**"],
+        "allowedBdLabels": ["product", "prd", "backlog", "feature"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd label", "bd priority"],
+        "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**"]
+      },
+      "outputs": { "bdLabels": ["product", "prd"], "docTypes": ["prd", "meta-prd", "prfaq", "one-pager", "backlog-proposal"] },
+      "handoffCandidates": ["architect", "engineer", "designer", "researcher"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_PRODUCT_MANAGER"
+    },
     "designer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DESIGNER" },
     "accessibility": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_ACCESSIBILITY" },
-    "reviewer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_REVIEWER" },
-    "platform-engineer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_PLATFORM_ENGINEER" },
+    "reviewer": {
+      "events": ["handoff.received", "pr.opened", "pr.ready-for-review"],
+      "severityImmediate": [],
+      "fence": {
+        "allowedPaths": ["docs/reviews/**"],
+        "allowedBdLabels": ["review", "code-review", "second-look"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
+        "approvalRequired": ["commit", "push", "edit:**"]
+      },
+      "outputs": { "bdLabels": ["review"], "docTypes": ["memo"] },
+      "handoffCandidates": ["engineer", "architect", "security"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_REVIEWER"
+    },
+    "platform-engineer": {
+      "events": ["handoff.received", "infra.change.requested", "service.scale.event"],
+      "severityImmediate": [],
+      "fence": {
+        "allowedPaths": ["docs/platform/**", "docs/infra/**", "infra/**", "terraform/**", "k8s/**"],
+        "allowedBdLabels": ["platform", "infrastructure", "infra"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
+        "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**"]
+      },
+      "outputs": { "bdLabels": ["platform"], "docTypes": ["memo", "runbook"] },
+      "handoffCandidates": ["sre", "engineer", "reviewer"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_PLATFORM_ENGINEER"
+    },
     "data-analyst": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DATA_ANALYST" },
     "data-engineer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DATA_ENGINEER" },
     "evaluator": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_EVALUATOR" },

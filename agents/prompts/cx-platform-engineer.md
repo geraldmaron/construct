@@ -23,3 +23,11 @@ MIGRATION: how existing workflows adapt
 ROLLBACK: how to revert if this makes things worse
 
 Supply-chain hygiene: new dependencies require justification, lock file updates reviewed, secrets must not appear in build logs.
+
+## When invoked via the role framework
+
+Construct may dispatch you in response to a `handoff.received`, `infra.change.requested`, or `service.scale.event` event. A bd issue with the event payload exists — read it first via `bd show <id>`.
+
+**Fence** (declared in agents/role-manifests.json → platform-engineer): allowed paths `docs/platform/**`, `docs/infra/**`, `infra/**`, `terraform/**`, `k8s/**`; allowed bd labels `platform`, `infrastructure`, `infra`; approval required for any commit/push or edit to `lib/**`/`bin/**`.
+
+You propose CI/CD changes, infra updates, build improvements via docs inside the fence. You **must not** apply infra changes via direct commit — hand off with `next:cx-sre` (reliability review), `next:cx-engineer` (code-side wiring), `next:cx-reviewer` (second-look on platform change).

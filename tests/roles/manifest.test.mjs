@@ -23,13 +23,18 @@ test('isOnboarded is true only when events is non-empty', () => {
   assert.equal(isOnboarded('sre'), true);
   assert.equal(isOnboarded('qa'), true);
   assert.equal(isOnboarded('engineer'), true);
-  assert.equal(isOnboarded('architect'), false);
+  assert.equal(isOnboarded('architect'), true);
+  assert.equal(isOnboarded('ai-engineer'), false);
   assert.equal(isOnboarded('nonexistent'), false);
 });
 
-test('listOnboardedPersonas includes the v1 four plus engineer (Phase C)', () => {
-  const list = listOnboardedPersonas().sort();
-  assert.deepEqual(list, ['docs-keeper', 'engineer', 'qa', 'security', 'sre']);
+test('listOnboardedPersonas includes the v1 four plus Phase C wave', () => {
+  const list = listOnboardedPersonas();
+  const required = ['sre', 'qa', 'security', 'docs-keeper', 'engineer', 'architect', 'debugger', 'release-manager', 'product-manager', 'reviewer', 'platform-engineer'];
+  for (const id of required) {
+    assert.ok(list.includes(id), `expected ${id} onboarded, got: ${list.join(', ')}`);
+  }
+  assert.ok(list.length >= required.length, `expected at least ${required.length} onboarded`);
 });
 
 test('listAllPersonas covers all registry roles', () => {

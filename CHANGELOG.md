@@ -36,6 +36,15 @@ This is the first slice of the **Construct on Construct** initiative — Constru
 - New `/api/doctor` endpoint in [lib/server/index.mjs](lib/server/index.mjs): returns `{daemon, audit, cost: {total, byPersona}}` for the dashboard.
 - Phase C — onboarded **cx-engineer**. Manifest entry with code-edit fence, allowed bd labels, handoff candidates (qa/reviewer/security/sre). Prompt updated with the "When invoked via the role framework" section. Engineer receives handoffs through agent-tracker's `next:cx-engineer` detection.
 
+### Added — Construct on Construct (M1 + Phase C wave 2)
+
+- `lib/doctor/report.mjs` + `construct doctor report --since=Nd` — tallies L0 actions, escalations, L1 events, pending invocations, cost. Used for M1 acceptance.
+- `docs/runbooks/m1-self-host-sre.md` — the M1 acceptance protocol (pre-flight, daily check, criteria, failure modes, stop procedure).
+- `docs/incidents/` pre-created with README — cx-sre's destination for incident reports during M1.
+- Doctor `readState()` now clears stale state files when the recorded PID is gone — no manual cleanup needed after a crash.
+- New `lib/doctor/watchers/bd-watch.mjs` (5th doctor watcher, 5-min cadence) — polls bd for issues labeled `next:cx-<role>` and enqueues handoffs for onboarded personas. Closes the gap where handoffs exist only as bd labels (not in Task result text).
+- Phase C wave 2 — onboarded **cx-architect, cx-debugger, cx-release-manager, cx-product-manager, cx-reviewer, cx-platform-engineer**. Each gets manifest with fence + EVENT_OWNERSHIP entries + prompt section. 11 of 28 personas now wired.
+
 ## 1.0.0 — 2026-05-08
 
 Initial public release.
