@@ -45,6 +45,11 @@ This is the first slice of the **Construct on Construct** initiative — Constru
 - New `lib/doctor/watchers/bd-watch.mjs` (5th doctor watcher, 5-min cadence) — polls bd for issues labeled `next:cx-<role>` and enqueues handoffs for onboarded personas. Closes the gap where handoffs exist only as bd labels (not in Task result text).
 - Phase C wave 2 — onboarded **cx-architect, cx-debugger, cx-release-manager, cx-product-manager, cx-reviewer, cx-platform-engineer**. Each gets manifest with fence + EVENT_OWNERSHIP entries + prompt section. 11 of 28 personas now wired.
 
+### Added — Construct on Construct (full org map)
+
+- Cost-watcher ingestion fixed: now reads `input_tokens` / `output_tokens` / `cost_usd` / `agent` (the format stop-notify actually writes), strips the `cx-` prefix from agent names. Daily totals now reflect real spend.
+- **All 28 personas onboarded** with at minimum `handoff.received` support. Strategic personas (cx-designer, cx-accessibility, cx-researcher) got tailored fences. The remaining invitational personas (cx-ai-engineer, cx-business-strategist, cx-data-analyst, cx-data-engineer, cx-devil-advocate, cx-evaluator, cx-explorer, cx-legal-compliance, cx-operations, cx-orchestrator, cx-rd-lead, cx-test-automation, cx-trace-reviewer, cx-ux-researcher) have minimal fences + handoff-only events. EVENT_OWNERSHIP entries added for `eval.regression` (cx-evaluator) and `trace.anomaly` (cx-trace-reviewer).
+
 ## 1.0.0 — 2026-05-08
 
 Initial public release.

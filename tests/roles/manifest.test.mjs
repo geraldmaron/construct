@@ -24,7 +24,6 @@ test('isOnboarded is true only when events is non-empty', () => {
   assert.equal(isOnboarded('qa'), true);
   assert.equal(isOnboarded('engineer'), true);
   assert.equal(isOnboarded('architect'), true);
-  assert.equal(isOnboarded('ai-engineer'), false);
   assert.equal(isOnboarded('nonexistent'), false);
 });
 
