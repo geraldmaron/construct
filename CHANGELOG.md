@@ -61,6 +61,12 @@ This is the first slice of the **Construct on Construct** initiative — Constru
 - Original defaults (`$1/persona/day`, `$10/total/day`) were unrealistically tight — a single Claude Opus turn with a large context can be ~$0.50-$1.00. With enforcement on, the gateway would have hard-stopped every persona dispatch immediately. Defaults bumped to `$10/persona/day` and `$50/total/day`.
 - **Enforcement is now advisory-by-default.** `CONSTRUCT_BUDGET_ENFORCE` must be explicitly set to `on` to enable hard-stop. Without it, the cost watcher still records and reports spend (audit + dashboard /api/doctor visibility); the gateway always lets invocations through. Prevents surprise blockers when a user first turns the framework on.
 
+### Fixed — Construct on Construct (cost bucketing + double-count)
+
+- **Bucketing bug**: `recordSpend` previously used `dayKey(Date.now())` regardless of the entry's actual timestamp — any session-cost entry would land in today's bucket even if the turn happened on a previous UTC day. Now accepts a `ts` parameter (number or ISO string) and buckets correctly. Cost watcher passes the entry's `ts` from session-cost.jsonl.
+- **Double-counting on doctor restart**: cost watcher previously tracked `lastSeenLineCount` in-memory only — a doctor restart caused it to re-ingest every prior entry, doubling the recorded daily spend. Now persists `lastIngestedTsMs` to `~/.cx/cost-watcher-state.json` and only ingests entries with timestamps after the cutoff.
+- **Pricing-source visibility**: doctor report now surfaces the cost_source breakdown (e.g., `estimated:static=616`) and warns when ≥50% of entries used the static fallback (meaning Langfuse model sync isn't live and absolute spend numbers are approximate).
+
 ## 1.0.0 — 2026-05-08
 
 Initial public release.
