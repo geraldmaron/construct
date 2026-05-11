@@ -23,7 +23,7 @@ describe('slack provider — init requires token', () => {
 });
 
 describe('slack provider — write item types', () => {
-  it('throws on unknown write type', async () => {
+  it('throws on unknown Slack write type', async () => {
     await assert.rejects(
       () => provider.write({ type: 'unknown' }),
       /Unknown Slack write item type/,
@@ -32,7 +32,7 @@ describe('slack provider — write item types', () => {
 });
 
 describe('slack provider — unknown read ref', () => {
-  it('throws NotFoundError for unknown ref', async () => {
+  it('throws NotFoundError for unknown Slack ref', async () => {
     await assert.rejects(
       () => provider.read('bananas'),
       (err) => err.code === 'NOT_FOUND',

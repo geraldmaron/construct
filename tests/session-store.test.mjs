@@ -101,7 +101,7 @@ describe("updateSession", () => {
     assert.ok(updated.summary.endsWith("\u2026"));
   });
 
-  test("returns null for nonexistent session", () => {
+  test("returns null for nonexistent session on update", () => {
     const result = updateSession(tmpDir, "nonexistent-id", { summary: "test" });
     assert.equal(result, null);
   });
@@ -116,7 +116,7 @@ describe("loadSession", () => {
     assert.equal(loaded.project, "proj");
   });
 
-  test("returns null for nonexistent session", () => {
+  test("returns null for nonexistent session on load", () => {
     assert.equal(loadSession(tmpDir, "does-not-exist"), null);
   });
 });

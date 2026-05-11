@@ -12,13 +12,14 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+function tempDir(prefix) {
+  return fs.mkdtempSync(path.join('/tmp', prefix));
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 const mcpManagerPath = path.join(root, "lib", "mcp-manager.mjs");
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join('/tmp', prefix));
-}
 
 function hasPathSegment(relPath, segment) {
   return relPath.split(path.sep).includes(segment);

@@ -12,9 +12,7 @@ import test from 'node:test';
 
 import { runHeadhunt, getActiveOverlays, promoteHeadhunt, cleanupHeadhunt, updatePromotionChallenge } from '../lib/headhunt.mjs';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 test('headhunt creates a temporary domain overlay by default', async () => {
   const cwd = tempDir('construct-headhunt-');

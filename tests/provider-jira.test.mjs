@@ -38,7 +38,7 @@ describe('jira provider — init requires credentials', () => {
 });
 
 describe('jira provider — unknown write type', () => {
-  it('throws on unknown write type', async () => {
+  it('throws on unknown Jira write type', async () => {
     await assert.rejects(
       () => provider.write({ type: 'unsupported-type' }),
       /Unknown Jira write item type/,
