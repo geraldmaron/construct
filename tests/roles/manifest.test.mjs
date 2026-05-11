@@ -22,13 +22,14 @@ test('loadManifest accepts cx- prefix', () => {
 test('isOnboarded is true only when events is non-empty', () => {
   assert.equal(isOnboarded('sre'), true);
   assert.equal(isOnboarded('qa'), true);
-  assert.equal(isOnboarded('engineer'), false);
+  assert.equal(isOnboarded('engineer'), true);
+  assert.equal(isOnboarded('architect'), false);
   assert.equal(isOnboarded('nonexistent'), false);
 });
 
-test('listOnboardedPersonas returns exactly the v1 four', () => {
+test('listOnboardedPersonas includes the v1 four plus engineer (Phase C)', () => {
   const list = listOnboardedPersonas().sort();
-  assert.deepEqual(list, ['docs-keeper', 'qa', 'security', 'sre']);
+  assert.deepEqual(list, ['docs-keeper', 'engineer', 'qa', 'security', 'sre']);
 });
 
 test('listAllPersonas covers all registry roles', () => {
