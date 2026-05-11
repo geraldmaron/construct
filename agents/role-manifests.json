@@ -66,7 +66,22 @@
       "handoffCandidates": ["engineer"],
       "killSwitchEnv": "CONSTRUCT_ROLE_DOCS_KEEPER"
     },
-    "engineer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_ENGINEER" },
+    "engineer": {
+      "events": ["handoff.received", "incident.handoff", "bug.assigned", "feature.assigned"],
+      "severityImmediate": [],
+      "fence": {
+        "allowedPaths": ["lib/**", "bin/**", "src/**", "app/**", "tests/**", "docs/**"],
+        "allowedBdLabels": ["bug", "feature", "task", "engineering", "fix"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd link", "bd label", "bd close"],
+        "approvalRequired": ["commit", "push", "edit:agents/registry.json", "edit:install.sh", "edit:claude/settings.template.json"]
+      },
+      "outputs": {
+        "bdLabels": ["engineering", "fix"],
+        "docTypes": ["memo"]
+      },
+      "handoffCandidates": ["qa", "reviewer", "security", "sre"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_ENGINEER"
+    },
     "architect": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_ARCHITECT" },
     "debugger": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DEBUGGER" },
     "release-manager": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_RELEASE_MANAGER" },

@@ -27,6 +27,15 @@ This is the first slice of the **Construct on Construct** initiative — Constru
 - L0 → L1 bridge: when deterministic remediation fails (2 failed service restarts, repeated kill churn, disk below 500MB), the watcher escalates a `service.down` role event through the existing gateway, which routes to cx-sre.
 - Kill switch: `CONSTRUCT_DOCTOR=off` (disables spawn during `construct up`).
 
+### Added — Construct on Construct (follow-up batch)
+
+- Registered the three Phase B hooks in [platforms/claude/settings.template.json](platforms/claude/settings.template.json): `test-watch` and `post-merge-docs-check` as PostToolUse Bash; `readme-age-check` as Stop. Now wired and firing.
+- Auto-restart for non-docker services in [lib/doctor/watchers/service-health.mjs](lib/doctor/watchers/service-health.mjs): dashboard restarts via idempotent `node bin/construct up` shell-out; cm restarts via `cm serve`. Postgres + Langfuse already used docker compose.
+- Fence advisory check in [lib/hooks/edit-guard.mjs](lib/hooks/edit-guard.mjs): when the most recently dispatched persona is one we manage and the dispatch is fresh (<10 min), edits outside the declared fence are blocked (`outside-fence`) or warned (`needs-approval`). Reads `~/.cx/last-agent.json`.
+- Handoff auto-enqueue in [lib/hooks/agent-tracker.mjs](lib/hooks/agent-tracker.mjs): when a completed Task's result text contains `next:cx-<role>` and the target persona is onboarded, an entry is appended to `~/.cx/role-pending.jsonl` so session-start surfaces it.
+- New `/api/doctor` endpoint in [lib/server/index.mjs](lib/server/index.mjs): returns `{daemon, audit, cost: {total, byPersona}}` for the dashboard.
+- Phase C — onboarded **cx-engineer**. Manifest entry with code-edit fence, allowed bd labels, handoff candidates (qa/reviewer/security/sre). Prompt updated with the "When invoked via the role framework" section. Engineer receives handoffs through agent-tracker's `next:cx-engineer` detection.
+
 ## 1.0.0 — 2026-05-08
 
 Initial public release.

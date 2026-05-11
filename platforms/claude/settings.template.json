@@ -317,6 +317,32 @@
         "description": "Persist long Bash outputs to ~/.cx/bash-logs/ and nudge toward referencing the log"
       },
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/test-watch.mjs\"",
+            "timeout": 5,
+            "async": true
+          }
+        ],
+        "id": "post:bash:test-watch",
+        "description": "Emit role events when a test command exits non-zero or repeats a flake"
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/post-merge-docs-check.mjs\"",
+            "timeout": 5,
+            "async": true
+          }
+        ],
+        "id": "post:bash:post-merge-docs-check",
+        "description": "Emit doc-drift events when a merge lands without matching docs/CHANGELOG updates"
+      },
+      {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
         "hooks": [
           {
@@ -420,6 +446,19 @@
         ],
         "id": "stop:typecheck",
         "description": "Batch TypeScript typecheck of edited files at end of response"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/readme-age-check.mjs\"",
+            "timeout": 5,
+            "async": true
+          }
+        ],
+        "id": "stop:readme-age-check",
+        "description": "Emit readme.stale role events for tracked READMEs older than 90 days"
       },
       {
         "matcher": "*",
