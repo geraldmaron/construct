@@ -253,6 +253,7 @@ Custom providers plug in by exporting a factory that satisfies the provider cont
 |---|---|
 | `construct sync` | Generate agent adapters for all platforms |
 | `construct list` | Show all personas and specialist agents |
+| `construct role` | Inspect or manage role-framework pending invocations |
 
 ### Work
 

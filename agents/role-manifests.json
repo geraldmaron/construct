@@ -1,0 +1,94 @@
+{
+  "$comment": "Role manifests for the Construct-on-Construct role framework. Keyed by registry persona name (without cx- prefix, matching agents/registry.json). Empty entries reserve the slot for future onboarding without code change.",
+  "version": 1,
+  "personas": {
+    "sre": {
+      "events": ["push_gate.fail", "service.down", "mcp.unhealthy.persistent", "edit_loop.stuck"],
+      "severityImmediate": ["service.down"],
+      "fence": {
+        "allowedPaths": ["docs/runbooks/**", "docs/incidents/**", "docs/postmortems/**"],
+        "allowedBdLabels": ["incident", "sre", "reliability"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd link", "bd label"],
+        "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**", "edit:agents/**"]
+      },
+      "outputs": {
+        "bdLabels": ["incident", "sre"],
+        "docTypes": ["runbook", "incident-report", "postmortem"]
+      },
+      "handoffCandidates": ["engineer", "platform-engineer", "debugger"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_SRE"
+    },
+    "qa": {
+      "events": ["test.fail", "test.flake", "coverage.drop"],
+      "severityImmediate": [],
+      "fence": {
+        "allowedPaths": ["docs/qa/**", "docs/test-plans/**"],
+        "allowedBdLabels": ["bug", "qa", "test", "flake"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
+        "approvalRequired": ["commit", "push", "edit:tests/**", "edit:lib/**", "edit:bin/**"]
+      },
+      "outputs": {
+        "bdLabels": ["bug", "qa"],
+        "docTypes": ["test-plan", "qa-strategy"]
+      },
+      "handoffCandidates": ["engineer", "debugger", "test-automation"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_QA"
+    },
+    "security": {
+      "events": ["dep.cve", "secrets.detected", "config.protection.violation"],
+      "severityImmediate": ["dep.cve", "secrets.detected"],
+      "fence": {
+        "allowedPaths": ["docs/security/**", "docs/threat-models/**"],
+        "allowedBdLabels": ["security", "vulnerability", "audit"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
+        "approvalRequired": ["commit", "push", "edit:**"]
+      },
+      "outputs": {
+        "bdLabels": ["security", "vulnerability"],
+        "docTypes": ["security-review", "threat-model"]
+      },
+      "handoffCandidates": ["engineer", "platform-engineer", "reviewer"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_SECURITY"
+    },
+    "docs-keeper": {
+      "events": ["pr.merged.no-docs", "changelog.missing", "readme.stale"],
+      "severityImmediate": [],
+      "fence": {
+        "allowedPaths": ["docs/**", "**/README.md", "CHANGELOG.md"],
+        "allowedBdLabels": ["docs", "doc-drift", "changelog"],
+        "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
+        "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**", "edit:agents/**"]
+      },
+      "outputs": {
+        "bdLabels": ["docs", "doc-drift"],
+        "docTypes": ["memo", "changelog"]
+      },
+      "handoffCandidates": ["engineer"],
+      "killSwitchEnv": "CONSTRUCT_ROLE_DOCS_KEEPER"
+    },
+    "engineer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_ENGINEER" },
+    "architect": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_ARCHITECT" },
+    "debugger": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DEBUGGER" },
+    "release-manager": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_RELEASE_MANAGER" },
+    "product-manager": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_PRODUCT_MANAGER" },
+    "designer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DESIGNER" },
+    "accessibility": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_ACCESSIBILITY" },
+    "reviewer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_REVIEWER" },
+    "platform-engineer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_PLATFORM_ENGINEER" },
+    "data-analyst": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DATA_ANALYST" },
+    "data-engineer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DATA_ENGINEER" },
+    "evaluator": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_EVALUATOR" },
+    "trace-reviewer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_TRACE_REVIEWER" },
+    "test-automation": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_TEST_AUTOMATION" },
+    "ai-engineer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_AI_ENGINEER" },
+    "business-strategist": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_BUSINESS_STRATEGIST" },
+    "researcher": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_RESEARCHER" },
+    "ux-researcher": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_UX_RESEARCHER" },
+    "explorer": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_EXPLORER" },
+    "operations": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_OPERATIONS" },
+    "orchestrator": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_ORCHESTRATOR" },
+    "rd-lead": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_RD_LEAD" },
+    "legal-compliance": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_LEGAL_COMPLIANCE" },
+    "devil-advocate": { "events": [], "severityImmediate": [], "fence": {}, "outputs": {}, "handoffCandidates": [], "killSwitchEnv": "CONSTRUCT_ROLE_DEVIL_ADVOCATE" }
+  }
+}
