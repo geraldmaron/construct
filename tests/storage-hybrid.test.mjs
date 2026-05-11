@@ -19,9 +19,7 @@ import { loadStateSnapshot, summarizeStateSnapshot } from '../lib/storage/state-
 import { syncFileStateToSql } from '../lib/storage/sync.mjs';
 import { deleteIngestedArtifacts, getStorageStatus, resetStorage } from '../lib/storage/admin.mjs';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 function writeJson(filePath, value) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });

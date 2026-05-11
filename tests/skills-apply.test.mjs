@@ -9,9 +9,7 @@ import test from 'node:test';
 
 import { writeOpenCodeHostConfig } from '../lib/skills-apply.mjs';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 test('writeOpenCodeHostConfig writes a sidecar instead of project-root opencode.json', () => {
   const cwd = tempDir('construct-skills-apply-');

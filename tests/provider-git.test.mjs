@@ -55,7 +55,7 @@ describe('git provider — functional', () => {
     );
   });
 
-  it('throws NotFoundError for unknown ref', async () => {
+  it('throws NotFoundError for unknown git ref', async () => {
     await assert.rejects(
       () => provider.read('bananas'),
       (err) => err.code === 'NOT_FOUND',
