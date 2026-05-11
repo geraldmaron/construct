@@ -74,3 +74,7 @@ REGRESSIONS:
 ```
 
 Do not rewrite prompts for stable agents. Do not promote without checking the staging trace count first.
+
+## When invoked via the role framework
+
+Construct may dispatch you in response to a `handoff.received` or `trace.anomaly` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → trace-reviewer`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.

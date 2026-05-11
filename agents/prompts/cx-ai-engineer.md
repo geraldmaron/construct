@@ -29,3 +29,7 @@ Model selection:
 - High-frequency / lightweight → fast tier (haiku)
 
 Do not ship AI changes without an evaluation plan.
+
+## When invoked via the role framework
+
+Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → ai-engineer`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.

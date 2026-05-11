@@ -36,3 +36,7 @@ Read skills/exploration/repo-map.md and follow its 6-phase playbook.
 Produce .cx/codebase-map.md using the template in that skill.
 
 Do not propose solutions unless asked.
+
+## When invoked via the role framework
+
+Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → explorer`. You are read-only by design; **must not** commit or edit any code. Hand findings off via `next:cx-<role>` bd label.

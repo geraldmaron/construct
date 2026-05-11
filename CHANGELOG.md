@@ -67,6 +67,14 @@ This is the first slice of the **Construct on Construct** initiative — Constru
 - **Double-counting on doctor restart**: cost watcher previously tracked `lastSeenLineCount` in-memory only — a doctor restart caused it to re-ingest every prior entry, doubling the recorded daily spend. Now persists `lastIngestedTsMs` to `~/.cx/cost-watcher-state.json` and only ingests entries with timestamps after the cutoff.
 - **Pricing-source visibility**: doctor report now surfaces the cost_source breakdown (e.g., `estimated:static=616`) and warns when ≥50% of entries used the static fallback (meaning Langfuse model sync isn't live and absolute spend numbers are approximate).
 
+### Added — Construct on Construct (everything-done pass: MCP fence + approval surface + UI + prompts)
+
+- **MCP fence enforcement** in [mcp-health-check.mjs](lib/hooks/mcp-health-check.mjs). When a persona declares `fence.allowedMcpTools`, MCP calls outside that list hard-block (exit 2). Dormant for personas that don't declare an MCP list — preserves backward compatibility.
+- **Approval surface v1** — new [lib/roles/approval-surface.mjs](lib/roles/approval-surface.mjs). When a fence check returns `needs-approval`, the marker is appended to `~/.cx/approval-pending.jsonl` and an SSE toast is emitted through the embed notification bus. Used by [edit-guard.mjs](lib/hooks/edit-guard.mjs) and [guard-bash.mjs](lib/hooks/guard-bash.mjs).
+- **`/api/doctor` extended** to return `approvals`, `pendingRoleInvocations`, and `onboardedPersonas` alongside the existing `daemon`/`audit`/`cost` fields. Costs limited to personas with non-zero spend.
+- **Dashboard Doctor page** — new React component at [dashboard/src/pages/Doctor.tsx](dashboard/src/pages/Doctor.tsx) wired into [App.tsx](dashboard/src/App.tsx). Shows daemon state, cost burn (total + per-persona with progress bar), approval queue, pending role invocations, recent audit log. Auto-refreshes every 30s.
+- **All 28 persona prompts now have the role-framework section.** The 14 invitational personas (ai-engineer, business-strategist, data-analyst, data-engineer, devil-advocate, evaluator, explorer, legal-compliance, operations, orchestrator, rd-lead, test-automation, trace-reviewer, ux-researcher) received a minimal section pointing to the manifest fence and the `next:cx-<role>` handoff syntax; the 3 strategic personas (designer, accessibility, researcher) got tailored sections.
+
 ## 1.0.0 — 2026-05-08
 
 Initial public release.

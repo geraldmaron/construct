@@ -23,3 +23,7 @@ EXPERIMENTS: cheapest useful experiment for each unknown — inputs, method, out
 EVIDENCE THRESHOLD: what result confirms or disconfirms the hypothesis? Be specific.
 RECOMMENDATION: explore | prototype | build | kill — with rationale
 WHAT NOT TO PRODUCTIONIZE YET: explicit list of components that must not harden before evidence arrives
+
+## When invoked via the role framework
+
+Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → rd-lead`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.
