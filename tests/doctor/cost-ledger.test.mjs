@@ -40,6 +40,7 @@ test('getTotalDailySpend sums across personas', () => {
 });
 
 test('checkBudget allows when under cap and warns at 80%', () => {
+  process.env.CONSTRUCT_BUDGET_ENFORCE = 'on';
   process.env.CONSTRUCT_BUDGET_DEFAULT = '1.00';
   ledger.recordSpend({ personaId: 'sre', costUsd: 0.85 });
   const r = ledger.checkBudget({ personaId: 'sre' });
@@ -47,7 +48,8 @@ test('checkBudget allows when under cap and warns at 80%', () => {
   assert.ok(r.warning, 'expected warning at 85%');
 });
 
-test('checkBudget denies when persona cap exhausted', () => {
+test('checkBudget denies when persona cap exhausted (enforcement on)', () => {
+  process.env.CONSTRUCT_BUDGET_ENFORCE = 'on';
   process.env.CONSTRUCT_BUDGET_DEFAULT = '0.50';
   ledger.recordSpend({ personaId: 'sre', costUsd: 0.55 });
   const r = ledger.checkBudget({ personaId: 'sre' });
@@ -55,7 +57,8 @@ test('checkBudget denies when persona cap exhausted', () => {
   assert.equal(r.reason, 'persona-budget-exhausted');
 });
 
-test('checkBudget denies when total cap exhausted', () => {
+test('checkBudget denies when total cap exhausted (enforcement on)', () => {
+  process.env.CONSTRUCT_BUDGET_ENFORCE = 'on';
   process.env.CONSTRUCT_BUDGET_DEFAULT = '10.00';
   process.env.CONSTRUCT_BUDGET_TOTAL = '1.00';
   ledger.recordSpend({ personaId: 'sre', costUsd: 0.6 });
@@ -72,11 +75,18 @@ test('per-persona budget override beats default', () => {
   assert.equal(ledger.personaBudget('qa'), 1.00);
 });
 
-test('enforcement kill switch lets traffic through', () => {
+test('default enforcement is advisory — over-cap still allowed', () => {
   process.env.CONSTRUCT_BUDGET_DEFAULT = '0.01';
-  process.env.CONSTRUCT_BUDGET_ENFORCE = 'off';
   ledger.recordSpend({ personaId: 'sre', costUsd: 1.0 });
   const r = ledger.checkBudget({ personaId: 'sre' });
   assert.equal(r.allowed, true);
-  assert.equal(r.reason, 'enforcement-off');
+  assert.equal(r.reason, 'enforcement-advisory');
+});
+
+test('enforcement on does block when caps blown', () => {
+  process.env.CONSTRUCT_BUDGET_ENFORCE = 'on';
+  process.env.CONSTRUCT_BUDGET_DEFAULT = '0.01';
+  ledger.recordSpend({ personaId: 'sre', costUsd: 1.0 });
+  const r = ledger.checkBudget({ personaId: 'sre' });
+  assert.equal(r.allowed, false);
 });
