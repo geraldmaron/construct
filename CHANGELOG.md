@@ -55,6 +55,12 @@ This is the first slice of the **Construct on Construct** initiative — Constru
 - [lib/hooks/guard-bash.mjs](lib/hooks/guard-bash.mjs) now performs role-fence checks on every Bash invocation while a persona is the most recently dispatched agent. `git commit` / `git push` route to commit/push fence actions (advisory — surfaced to stderr); other commands prefix-match against `fence.allowedCommands`. Outside-fence commands are hard-blocked (exit 2).
 - [lib/roles/fence.mjs](lib/roles/fence.mjs) — `bash` action now uses **prefix matching** against `allowedCommands` so manifest entries like `"bd create"` match real invocations like `bd create -t bug ...`. Previously used exact-match glob which never fired in practice.
 
+### Fixed — Construct on Construct (cost telemetry verification + safer defaults)
+
+- Verified end-to-end: `stop-notify.mjs` writes `~/.cx/session-cost.jsonl` from the Claude Code transcript; the doctor's cost watcher ingests it; the ledger aggregates per-persona / per-day. Confirmed by simulating a stop event against this session's transcript (616 invocations, ~$361 spend ingested cleanly).
+- Original defaults (`$1/persona/day`, `$10/total/day`) were unrealistically tight — a single Claude Opus turn with a large context can be ~$0.50-$1.00. With enforcement on, the gateway would have hard-stopped every persona dispatch immediately. Defaults bumped to `$10/persona/day` and `$50/total/day`.
+- **Enforcement is now advisory-by-default.** `CONSTRUCT_BUDGET_ENFORCE` must be explicitly set to `on` to enable hard-stop. Without it, the cost watcher still records and reports spend (audit + dashboard /api/doctor visibility); the gateway always lets invocations through. Prevents surprise blockers when a user first turns the framework on.
+
 ## 1.0.0 — 2026-05-08
 
 Initial public release.

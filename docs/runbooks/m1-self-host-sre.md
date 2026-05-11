@@ -9,8 +9,9 @@ The first milestone of "Construct runs on Construct." Scoped to reliability: doc
 unset CONSTRUCT_DOCTOR
 unset CONSTRUCT_ROLES
 
-# Optional: tighten budgets for the test if you want stricter cost ceilings.
-# Defaults: $1/persona/day, $10/total/day. Override per-persona via CONSTRUCT_BUDGET_SRE=N.
+# Cost tracking is on by default; enforcement is OFF (advisory-only) unless
+# you set CONSTRUCT_BUDGET_ENFORCE=on. Defaults when enforcement is on:
+# $10/persona/day, $50/total/day. Override via CONSTRUCT_BUDGET_<NAME>=N.
 
 # Start the daemon stack (spawns doctor next to dashboard/cm/opencode).
 node bin/construct up
@@ -68,7 +69,7 @@ The test passes if **all** of these hold:
 - [ ] All real-world infra issues that occurred during the window were detected by L0 watchers (no silent service deaths).
 - [ ] All cx-sre escalations resolved cleanly: bd issue closed, runbook or incident report filed, fence respected (no commits made by cx-sre).
 - [ ] No L2 user touches were required for **routine** reliability issues — only for novel ones (where "novel" means: no matching runbook existed before).
-- [ ] Cost stayed within budget (`CONSTRUCT_BUDGET_SRE=$1/day` default; total `$10/day`).
+- [ ] Cost stayed within budget (default `$10/persona/day`, `$50/total/day` when `CONSTRUCT_BUDGET_ENFORCE=on`; advisory-only when unset).
 - [ ] Zero hook regressions: full test suite still passes at end of window.
 
 ## Failure modes — what to do
