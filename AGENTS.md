@@ -130,14 +130,16 @@ construct beads queue        # Show pending requests
    git push
    git status  # MUST show "up to date with origin"
    ```
+   **IMPORTANT**: Before executing these commands, ask the human user for explicit confirmation. Show what will be pushed (e.g., using `git status` and `git diff --stat`) and wait for the user to say "yes" before proceeding. Do not execute any push operation without explicit user consent.
 5. **Run end‑of‑session automation**:
    ```bash
    # Sync plan.md with bead statuses
    node -e "import('./lib/beads-automation.mjs').then(m => m.syncPlanWithBeads({ cwd: process.cwd() }))"
    
-   # Create handoff
+   # Create handoff (will prompt for confirmation before pushing beads changes)
    node -e "import('./lib/beads-automation.mjs').then(m => m.endOfSessionHook({ actor: process.env.USER, cwd: process.cwd() }))"
    ```
+   **IMPORTANT**: The end-of-session automation includes built-in confirmation prompts before pushing beads changes. For automated environments, use `--yes` flag to skip prompts: `node -e "import('./lib/beads-automation.mjs').then(m => m.endOfSessionHook({ actor: process.env.USER, cwd: process.cwd(), yes: true }))"`.
 6. **Clean up** - Clear stashes, prune remote branches
 7. **Verify** - All changes committed AND pushed
 8. **Hand off** - Provide context for next session
@@ -149,4 +151,14 @@ construct beads queue        # Show pending requests
 - If push fails, resolve and retry until it succeeds
 - ALWAYS use `construct beads` for beads operations in multi‑agent sessions
 - Clean up stale locks with `construct beads cleanup` if operations hang
+- **USER CONFIRMATION REQUIRED BEFORE COMMIT**: You must explicitly ask the human user for confirmation before creating a git commit. Show:
+  - The proposed commit message
+  - `git status` or `git diff --stat` of changes
+  - Wait for explicit confirmation (accepts positive intent: y, yes, yeah, sure, ok, go, proceed)
+- **USER CONFIRMATION REQUIRED BEFORE PUSH**: You must explicitly ask the human user for confirmation before `git push` or `bd dolt push`. Show what will be pushed.
+- **CLARIFY REQUIREMENTS BEFORE IMPLEMENTATION**: If requirements are unclear, ambiguous, or lack specificity, ask the human user clarifying questions before proceeding. Do not make assumptions about what the user wants. Use targeted questions to understand:
+  - What is the expected behavior?
+  - What are the acceptance criteria?
+  - Are there any edge cases to consider?
+  - How should this interact with existing features?
 <!-- END BEADS INTEGRATION -->
