@@ -149,3 +149,23 @@ jobs:
           PR_BASE_REF: ${{ github.event.pull_request.base.ref || github.base_ref }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: node scripts/lint-commits-pr.mjs
+
+  gates-audit:
+    name: gates audit
+    runs-on: ubuntu-latest
+    # Default GITHUB_TOKEN cannot read branch protection (requires admin
+    # scope). The audit gracefully treats it as `unfetchable` in CI and
+    # skips protection-dependent gap detection; local runs by the repo
+    # owner still validate branch protection.
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Audit cross-surface enforcement (CI / pre-push / pre-commit / branch protection)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node ./bin/construct gates:audit

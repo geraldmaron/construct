@@ -319,6 +319,7 @@ Custom providers plug in by exporting a factory that satisfies the provider cont
 | `construct diff` | Show which agents changed prompts or settings since HEAD |
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct doctor` | Run installation health checks (default), or manage the L0 doctor daemon |
+| `construct gates:audit` | Audit policy gates across CI, local hooks, and branch protection; flag gaps |
 | `construct skills` | Detect project tech stack and scope installed skills to relevance |
 | `construct validate` | Validate registry.json structure and field constraints |
 | `construct version` | Show version |

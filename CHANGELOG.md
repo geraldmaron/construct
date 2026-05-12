@@ -4,6 +4,20 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Added — `construct gates:audit` and `gates audit` CI job
+
+Cross-surface enforcement audit. Walks the four places policy can live — CI workflow jobs in `.github/workflows/ci.yml`, the local pre-push hook (`lib/hooks/pre-push-gate.mjs`), the local pre-commit hook (`.beads/hooks/pre-commit`), and GitHub branch protection (required status checks) — and reports gaps where a check exists in one place but not another. Closes the long-running session pattern where each CI failure was patched as a one-off; the audit makes "what enforces what, and where" a single visible inventory.
+
+- **New `lib/gates-audit.mjs`** declares the authoritative mapping between CI job names and their expected local mirrors in `GATE_DEFINITIONS`. Each entry says whether the gate is critical, what label to look for in `pre-push-gate.mjs`, what check to look for in `.beads/hooks/pre-commit`, and any note about why a local mirror is absent (e.g., dockerized integration that's not practical to run locally).
+- **New `construct gates:audit [--json]` command** runs the audit and prints a four-column report: CI jobs · local pre-push jobs · local pre-commit checks · branch protection required contexts. Exits 1 if any *critical* gap is found; advisories are non-blocking.
+- **New `gates audit` CI job** in `.github/workflows/ci.yml` runs the audit on every push and pull request. The audit is self-validating — it gates the gates. Default `GITHUB_TOKEN` cannot read branch protection rules (admin scope required); the audit's `fetchBranchProtection` distinguishes HTTP 403 (forbidden = `unfetchable`) from the specific "Branch not protected" 404 (= `unprotected`), and `unfetchable` skips protection-dependent gap detection so CI doesn't false-fail. Local runs by the repo owner have the visibility to validate branch protection fully.
+- **CI-aware gap classification.** The `hooks-unwired` gap (which fires when `core.hooksPath` is not set to `.beads/hooks`) is suppressed when `CI=true`. CI environments don't run `git commit` and don't need the hook wiring; treating them as unwired produced false-positive failures on the audit's own CI runs.
+- **Six unit tests** in `tests/gates-audit.test.mjs` cover YAML parsing, pre-push job extraction, pre-commit check detection, branch-protection JSON ingestion, gap identification, and report formatting.
+
+### Fixed — `dependency CVE audit` had no local mirror
+
+The first run of `construct gates:audit` immediately surfaced a real gap: CI runs `npm audit --omit=dev --audit-level=high` but no local hook did. `lib/hooks/pre-push-gate.mjs` now includes an `audit` job invoking the same command, so high-severity dependency CVEs surface at push time rather than only in CI.
+
 ### Fixed — Git hooks were tracked but never executed
 
 Closes a phantom-enforcement class identical to the `settings.template.json` regressions caught earlier: `.beads/hooks/*` (ECC secret-scan, Construct policy gates, BEADS dispatcher) are tracked in git but were never wired to git's hook system. `core.hooksPath` was unset and `.git/hooks/` contained only the default `*.sample` templates. Every `git commit` since the start of the project had **zero pre-commit enforcement** locally. Enforcement was running only via the Claude Code `pre-push-gate.mjs` PreToolUse hook + CI; raw `git commit` from terminal or IDE bypassed everything.
