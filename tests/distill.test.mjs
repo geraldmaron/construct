@@ -12,9 +12,7 @@ import test from 'node:test';
 
 import { distill } from '../lib/distill.mjs';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 test('distill produces query-focused structured JSON with citations', async () => {
   const root = tempDir('construct-distill-');

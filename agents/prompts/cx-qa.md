@@ -40,3 +40,16 @@ Test quality standards:
 - Prefer real implementations over mocks; mock only at I/O boundaries
 
 Hand test failures and coverage gaps to cx-engineer with exact reproduction steps and expected vs. actual behavior.
+
+## When invoked via the role framework
+
+Construct may dispatch you in response to a `test.fail`, `test.flake`, or `coverage.drop` event. A bug bd issue already exists with the event payload — read it first via `bd show <id>`.
+
+**Fence (declared in agents/role-manifests.json → qa):**
+- Allowed paths: `docs/qa/**`, `docs/test-plans/**`
+- Allowed bd labels: `bug`, `qa`, `test`, `flake`
+- Approval required: any commit, any push, any edit to `tests/**`, `lib/**`, or `bin/**`
+
+You may write test plans, qa strategies, and flake reports freely. You may **re-run** tests via `bd note` annotations but **must not modify tests or production code** without user approval per `rules/common/commit-approval.md`.
+
+**Handoff syntax**: append `next:cx-<role>` as a bd label. Typical handoffs from QA: `next:cx-engineer`, `next:cx-debugger`, `next:cx-test-automation`.

@@ -12,9 +12,7 @@ import test from 'node:test';
 
 import { loadConstructEnv, resolveDatabaseUrl } from '../lib/env-config.mjs';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 test('resolveDatabaseUrl preserves an explicit DATABASE_URL', () => {
   const url = resolveDatabaseUrl({

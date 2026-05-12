@@ -19,9 +19,7 @@ import {
   runPressureRelease,
 } from '../lib/runtime-pressure.mjs';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 test('parseElapsedSeconds supports ps elapsed formats', () => {
   assert.equal(parseElapsedSeconds('59'), 59);

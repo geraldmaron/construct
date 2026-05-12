@@ -10,14 +10,11 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { tempDir } from './helpers.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 const setup = await import(path.join(root, "lib", "setup.mjs"));
-
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
 
 test("managed setup values configure local vector and Langfuse defaults", async () => {
   const home = tempDir("construct-setup-values-");

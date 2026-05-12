@@ -34,3 +34,7 @@ MEDIUM (acknowledge and move on):
 - Test gaps in edge cases
 
 For each challenge: state the specific risk, what triggers it, and what resolves it. If you cannot find a CRITICAL challenge, say so explicitly. Do not implement code.
+
+## When invoked via the role framework
+
+Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → devil-advocate`. You are read-only by design; **must not** commit or edit any code. Hand findings off via `next:cx-<role>` bd label.

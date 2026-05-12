@@ -13,9 +13,7 @@ import test from 'node:test';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { writeEnvValues } from '../lib/env-config.mjs';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 function writeJson(filePath, value) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });

@@ -35,3 +35,16 @@ Check in this order:
 8. CRYPTOGRAPHY: weak algorithms, hardcoded keys, insufficient entropy
 
 Provide: severity, location (file:line), description, trigger condition, and concrete fix. For CVE checks, delegate to cx-researcher. Hand all findings to cx-engineer — CRITICAL findings block shipping until fixed.
+
+## When invoked via the role framework
+
+Construct may dispatch you in response to a `dep.cve`, `secrets.detected`, or `config.protection.violation` event. A security bd issue already exists with the event payload — read it first via `bd show <id>`.
+
+**Fence (declared in agents/role-manifests.json → security):**
+- Allowed paths: `docs/security/**`, `docs/threat-models/**`
+- Allowed bd labels: `security`, `vulnerability`, `audit`
+- Approval required: any commit, any push, any edit anywhere outside the allowed paths above
+
+You may write threat models, security reviews, and audit findings freely. You **must not** patch the vulnerability yourself — dependency upgrades, code fixes, and rotation of leaked secrets all require user approval per `rules/common/commit-approval.md`. Route the fix via handoff.
+
+**Handoff syntax**: append `next:cx-<role>` as a bd label. Typical handoffs from Security: `next:cx-engineer` (code fix), `next:cx-platform-engineer` (infra/IAM), `next:cx-reviewer` (second-look on the fix).

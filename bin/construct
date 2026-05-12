@@ -162,6 +162,14 @@ async function cmdList() {
 async function cmdDoctor() {
   const args = process.argv.slice(3);
 
+  const DAEMON_SUBS = new Set(['status', 'watch', 'stop', 'logs', 'tick', 'report']);
+  if (args.length > 0 && DAEMON_SUBS.has(args[0])) {
+    const { runCli } = await import('../lib/doctor/cli.mjs');
+    const code = await runCli(args);
+    if (code) process.exit(code);
+    return;
+  }
+
   if (args.includes('--bootstrap')) {
     const { registerBuiltInResources } = await import('../lib/bootstrap/built-ins.mjs');
     const { probeAll, formatProbe } = await import('../lib/bootstrap/resources.mjs');
@@ -1365,6 +1373,11 @@ const handlers = new Map([
     if (sub === 'templates') { listTeamTemplates(); return; }
     errorln(`Unknown team subcommand: ${sub}. Available: review, templates`);
     process.exit(1);
+  }],
+  ['role', async (args) => {
+    const { runCli } = await import('../lib/roles/cli.mjs');
+    const code = await runCli(args);
+    if (code) process.exit(code);
   }],
   ['telemetry-backfill', async (args) => {
     const { runTelemetryBackfillCli } = await import('../lib/telemetry/backfill.mjs');

@@ -24,3 +24,7 @@ PASS/FAIL THRESHOLD: what score or result constitutes success?
 REGRESSION CHECKS: behavior that must not regress
 
 For AI/prompt evaluation: define input/output pairs before changing prompts. Run baseline and proposed against the same test cases. Report the delta.
+
+## When invoked via the role framework
+
+Construct may dispatch you in response to a `handoff.received` or `eval.regression` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → evaluator`. **Must not** commit, push, or edit production code without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.

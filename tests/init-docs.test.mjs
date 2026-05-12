@@ -12,9 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 test('construct init bootstraps repo state without overwriting existing AGENTS.md', () => {
   const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');

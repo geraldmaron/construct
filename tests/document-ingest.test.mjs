@@ -9,9 +9,7 @@ import test from 'node:test';
 
 import { ingestDocuments } from '../lib/document-ingest.mjs';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 test('ingestDocuments writes markdown into knowledge/internal by default', async () => {
   const root = tempDir('construct-ingest-root-');
