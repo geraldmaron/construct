@@ -237,75 +237,75 @@ Custom providers plug in by exporting a factory that satisfies the provider cont
 
 | Command | What it does |
 |---|---|
-| `construct up` | Start services (memory, dashboard) |
-| `construct down` | Stop all running services |
-| `construct status` | Show canonical system health across runtime and integrations |
-| `construct show` | Show runtime service URLs and live status (compat view) |
-| `construct serve` | Start the Construct dashboard (auto-selects port) |
 | `construct beads` | Manage beads lock and queue, or run bd commands |
-| `construct setup` | Bootstrap user config after npm or manual install |
-| `construct update` | Reinstall this checkout globally, then sync and verify hosts |
 | `construct completions` | Generate or print shell completion scripts for construct |
+| `construct down` | Stop all running services |
+| `construct serve` | Start the Construct dashboard (auto-selects port) |
+| `construct setup` | Bootstrap user config after npm or manual install |
+| `construct show` | Show runtime service URLs and live status (compat view) |
+| `construct status` | Show canonical system health across runtime and integrations |
+| `construct up` | Start services (memory, dashboard) |
+| `construct update` | Reinstall this checkout globally, then sync and verify hosts |
 
 ### Agents & Sync
 
 | Command | What it does |
 |---|---|
-| `construct sync` | Generate agent adapters for all platforms |
 | `construct list` | Show all personas and specialist agents |
 | `construct role` | Inspect or manage role-framework pending invocations |
+| `construct sync` | Generate agent adapters for all platforms |
 
 ### Work
 
 | Command | What it does |
 |---|---|
-| `construct init` | Bootstrap Construct project state and documentation system |
-| `construct docs:verify` | Validate documentation completeness and quality |
-| `construct init:update` | Update existing project to current documentation standards |
+| `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct distill` | Distill documents with query-focused, citation-ready chunk selection |
-| `construct ingest` | Convert PDFs, office docs, spreadsheets, and text files into indexed markdown artifacts in the knowledge base |
+| `construct docs:verify` | Validate documentation completeness and quality |
+| `construct drop` | Ingest the most recent file dropped into ~/Downloads, Desktop, Documents, or iCloud Drive |
+| `construct headhunt` | Create a temporary domain expertise overlay or promotion request |
 | `construct infer` | Infer a structured field schema from one or more documents using AI |
+| `construct ingest` | Convert PDFs, office docs, spreadsheets, and text files into indexed markdown artifacts in the knowledge base |
+| `construct init` | Bootstrap Construct project state and documentation system |
+| `construct init-docs` | Stand up opinionated docs lanes and per-lane templates without overwriting existing docs |
+| `construct init:update` | Update existing project to current documentation standards |
+| `construct memory` | Inspect or consolidate the memory layer |
+| `construct reflect` | Capture improvement feedback from chat session and update Construct core |
 | `construct search` | Run hybrid file, SQL, and semantic retrieval over core project state |
 | `construct storage` | Sync and inspect the hybrid storage backend |
-| `construct headhunt` | Create a temporary domain expertise overlay or promotion request |
-| `construct init-docs` | Stand up opinionated docs lanes and per-lane templates without overwriting existing docs |
 | `construct team` | Team review and template listing |
-| `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
-| `construct reflect` | Capture improvement feedback from chat session and update Construct core |
-| `construct memory` | Inspect or consolidate the memory layer |
-| `construct drop` | Ingest the most recent file dropped into ~/Downloads, Desktop, Documents, or iCloud Drive |
 | `construct wireframe` | Generate a low-fi wireframe (Mermaid diagram or sketch-style HTML) from a description |
 
 ### Models & Integrations
 
 | Command | What it does |
 |---|---|
-| `construct models` | Show or update model tier assignments |
-| `construct mcp` | Manage MCP integrations |
-| `construct plugin` | Manage external Construct plugin manifests |
 | `construct hosts` | Show host support for Construct orchestration |
+| `construct mcp` | Manage MCP integrations |
+| `construct models` | Show or update model tier assignments |
+| `construct plugin` | Manage external Construct plugin manifests |
 
 ### Observability
 
 | Command | What it does |
 |---|---|
-| `construct review` | Generate agent performance review from Langfuse trace backend |
-| `construct optimize` | Prompt optimization using Langfuse trace quality scores |
-| `construct telemetry-backfill` | Backfill sparse traces with observations (trace backend) |
-| `construct eval-datasets` | Sync scored Langfuse traces into eval datasets for prompt regression testing |
-| `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
 | `construct cost` | Show token usage, cost, cache read rate, and per-agent breakdown |
 | `construct efficiency` | Show read efficiency, repeated files, and context-budget guidance |
+| `construct eval-datasets` | Sync scored Langfuse traces into eval datasets for prompt regression testing |
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
+| `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
+| `construct optimize` | Prompt optimization using Langfuse trace quality scores |
+| `construct review` | Generate agent performance review from Langfuse trace backend |
+| `construct telemetry-backfill` | Backfill sparse traces with observations (trace backend) |
 
 ### Docs
 
 | Command | What it does |
 |---|---|
-| `construct docs:update` | Regenerate AUTO-managed regions in README and docs/ |
+| `construct dashboard:sync` | Sync the built dashboard bundle into lib/server/static for the HTTP server |
 | `construct docs:check` | Report CLI commands that have no linked how-to guide in docs/README.md |
 | `construct docs:site` | Generate site/docs/ content for the MkDocs GitHub Pages site |
-| `construct dashboard:sync` | Sync the built dashboard bundle into lib/server/static for the HTTP server |
+| `construct docs:update` | Regenerate AUTO-managed regions in README and docs/ |
 | `construct lint:comments` | Check all files against the comment policy (rules/common/comments.md) |
 | `construct lint:research` | Check research and evidence artifacts for minimum structure and evidence metadata |
 
@@ -313,14 +313,14 @@ Custom providers plug in by exporting a factory that satisfies the provider cont
 
 | Command | What it does |
 |---|---|
-| `construct cleanup` | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
 | `construct audit` | Audit Construct internals and review the mutation trail |
-| `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
-| `construct skills` | Detect project tech stack and scope installed skills to relevance |
 | `construct backup` | Create, verify, restore, list, or prune full system backups (observations, sessions, config, registry, Postgres). |
-| `construct doctor` | Run installation health checks (default), or manage the L0 doctor daemon |
-| `construct validate` | Validate registry.json structure and field constraints |
+| `construct cleanup` | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
 | `construct diff` | Show which agents changed prompts or settings since HEAD |
+| `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
+| `construct doctor` | Run installation health checks (default), or manage the L0 doctor daemon |
+| `construct skills` | Detect project tech stack and scope installed skills to relevance |
+| `construct validate` | Validate registry.json structure and field constraints |
 | `construct version` | Show version |
 <!-- /AUTO:commands -->
 

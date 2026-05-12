@@ -13,7 +13,7 @@ export default function Commands() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading...</div>;
+  if (loading) return <div className="text-center py-20 text-gray-600">Loading...</div>;
 
   return (
     <div>
@@ -49,7 +49,7 @@ export default function Commands() {
         </div>
       )}
       {cliCommands.length === 0 && slashCommands.length === 0 && (
-        <div className="text-center py-20 text-gray-400">No commands found.</div>
+        <div className="text-center py-20 text-gray-600">No commands found.</div>
       )}
     </div>
   );

@@ -10,7 +10,7 @@ export default function Artifacts() {
 
   const filtered = tab === 'all' ? artifacts : artifacts.filter(a => a.type === tab);
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading...</div>;
+  if (loading) return <div className="text-center py-20 text-gray-600">Loading...</div>;
 
   return (
     <div>
@@ -24,15 +24,15 @@ export default function Artifacts() {
         </div>
       </div>
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">No {tab === 'all' ? '' : tab.toUpperCase()} artifacts.</div>
+        <div className="text-center py-20 text-gray-600">No {tab === 'all' ? '' : tab.toUpperCase()} artifacts.</div>
       ) : (
         <div className="grid grid-cols-1 gap-3">
           {filtered.map((a, i) => (
             <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 flex items-start justify-between">
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">{a.type}</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">{a.type}</span>
                 <p className="font-semibold mt-0.5">{a.title}</p>
-                <p className="text-xs text-gray-400 font-mono mt-1">{a.relativePath ?? ''}</p>
+                <p className="text-xs text-gray-600 font-mono mt-1">{a.relativePath ?? ''}</p>
               </div>
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                 a.status === 'healthy' ? 'bg-green-100 text-green-800' :
