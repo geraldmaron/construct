@@ -73,7 +73,7 @@ export default function Infrastructure() {
     setRunning(false);
   };
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading...</div>;
+  if (loading) return <div className="text-center py-20 text-gray-600">Loading...</div>;
 
   return (
     <div className="flex flex-col h-full">
@@ -87,7 +87,7 @@ export default function Infrastructure() {
           </div>
           <div className="divide-y divide-gray-50">
             {files.length === 0 && (
-              <p className="px-4 py-6 text-sm text-gray-400 text-center">No .tf files found.</p>
+              <p className="px-4 py-6 text-sm text-gray-600 text-center">No .tf files found.</p>
             )}
             {files.map(f => (
               <button key={f} onClick={() => setSelectedFile(f)}
@@ -146,7 +146,7 @@ export default function Infrastructure() {
             )}
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-400">
+          <div className="flex-1 flex items-center justify-center text-gray-600">
             <p className="text-lg">Select a Terraform file to edit</p>
           </div>
         )}

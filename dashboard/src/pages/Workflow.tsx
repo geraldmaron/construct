@@ -16,9 +16,9 @@ export default function Workflow() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading...</div>;
+  if (loading) return <div className="text-center py-20 text-gray-600">Loading...</div>;
   if (error) return <div className="text-center py-20 text-red-500">{error}</div>;
-  if (!data) return <div className="text-center py-20 text-gray-400">No workflow data available.</div>;
+  if (!data) return <div className="text-center py-20 text-gray-600">No workflow data available.</div>;
 
   const counts = data.taskStatusCounts ?? {};
   const wf = data.workflowState;
@@ -43,7 +43,7 @@ export default function Workflow() {
           { label: 'In Progress', value: counts.inProgress ?? 0, color: 'bg-blue-100 text-blue-700' },
           { label: 'Blocked', value: counts.blocked ?? 0, color: 'bg-red-100 text-red-700' },
           { label: 'Done', value: counts.done ?? 0, color: 'bg-green-100 text-green-700' },
-          { label: 'Skipped', value: counts.skipped ?? 0, color: 'bg-gray-100 text-gray-500' },
+          { label: 'Skipped', value: counts.skipped ?? 0, color: 'bg-gray-100 text-gray-700' },
         ].map(s => (
           <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-4 text-center">
             <p className="text-2xl font-bold">{s.value}</p>
@@ -56,12 +56,12 @@ export default function Workflow() {
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Plan</p>
-            {data.hasPlan && <span className="text-xs text-gray-400 font-mono">plan.md</span>}
+            {data.hasPlan && <span className="text-xs text-gray-600 font-mono">plan.md</span>}
           </div>
           {data.hasPlan ? (
             <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">{data.planSummary || 'No summary'}</pre>
           ) : (
-            <p className="text-gray-400">No plan.md found.</p>
+            <p className="text-gray-600">No plan.md found.</p>
           )}
         </div>
       )}
@@ -72,22 +72,22 @@ export default function Workflow() {
             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">{data.taskCount} Tasks</p>
           </div>
           {(wf.tasks ?? []).length === 0 ? (
-            <div className="p-6 text-center text-gray-400">No tasks defined.</div>
+            <div className="p-6 text-center text-gray-600">No tasks defined.</div>
           ) : (
             <div className="divide-y divide-gray-50">
               {(wf.tasks ?? []).map((task: any, i: number) => {
                 const statusColor = task.status === 'done' ? 'bg-green-100 text-green-700'
                   : task.status === 'in-progress' ? 'bg-blue-100 text-blue-700'
                   : task.status?.startsWith('blocked') ? 'bg-red-100 text-red-700'
-                  : task.status === 'skipped' ? 'bg-gray-100 text-gray-500'
-                  : 'bg-gray-100 text-gray-500';
+                  : task.status === 'skipped' ? 'bg-gray-100 text-gray-700'
+                  : 'bg-gray-100 text-gray-700';
                 return (
                   <div key={i} className="px-6 py-4">
                     <div className="flex items-center justify-between mb-1">
                       <p className="font-medium text-sm">{task.title || task.key || `Task ${i + 1}`}</p>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColor}`}>{task.status || 'todo'}</span>
                     </div>
-                    {task.phase && <p className="text-xs text-gray-400 font-mono">{task.phase}</p>}
+                    {task.phase && <p className="text-xs text-gray-600 font-mono">{task.phase}</p>}
                   </div>
                 );
               })}
@@ -101,7 +101,7 @@ export default function Workflow() {
           {Object.entries(wf.phases ?? {}).map(([key, phase]: [string, any]) => {
             const statusColor = phase.status === 'done' ? 'bg-green-100 text-green-700'
               : phase.status === 'in-progress' ? 'bg-blue-100 text-blue-700'
-              : 'bg-gray-100 text-gray-500';
+              : 'bg-gray-100 text-gray-700';
             const isCurrent = key === wf.phase;
             return (
               <div key={key} className={`bg-white border rounded-xl p-5 ${isCurrent ? 'border-indigo-300 ring-1 ring-indigo-100' : 'border-gray-200'}`}>
