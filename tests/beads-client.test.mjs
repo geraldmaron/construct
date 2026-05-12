@@ -11,9 +11,7 @@ import test from 'node:test';
 
 import { runBd } from '../lib/beads-client.mjs';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 test('runBd times out long-running bd children and releases construct lock', async () => {
   const cwd = tempDir('construct-beads-client-');

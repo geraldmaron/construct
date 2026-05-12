@@ -12,9 +12,7 @@ import test from 'node:test';
 
 import { buildUpdatePlan, findConstructSourceRoot, runUpdate } from '../lib/update.mjs';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 function writeFile(root, relativePath, content) {
   const fullPath = path.join(root, relativePath);

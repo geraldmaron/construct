@@ -13,9 +13,7 @@ import test from 'node:test';
 import { buildRuntimeRecoverySummary, clearDashboardState, readDashboardState, isManagedConstructPostgresUrl, startServices, stopDashboard, stopServices, getRuntimePorts, _verifyLangfuseKeys, _pruneStashDir } from '../lib/service-manager.mjs';
 import { writeEnvValues } from '../lib/env-config.mjs';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 test('dashboard state is ignored when pid is no longer running', () => {
   const homeDir = tempDir('construct-service-home-');

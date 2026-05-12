@@ -7,13 +7,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { tempDir } from './helpers.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const BIN = path.join(ROOT, 'bin', 'construct');
-
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
 
 test('construct search uses the current working directory as project scope', () => {
   const homeDir = tempDir('construct-cli-home-');

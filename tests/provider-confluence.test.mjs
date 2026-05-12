@@ -20,7 +20,7 @@ describe('confluence provider — init requires credentials', () => {
 });
 
 describe('confluence provider — unknown read ref', () => {
-  it('throws NotFoundError for unknown ref', async () => {
+  it('throws NotFoundError for unknown Confluence ref', async () => {
     await assert.rejects(
       () => provider.read('bananas'),
       (err) => err.code === 'NOT_FOUND',
@@ -29,7 +29,7 @@ describe('confluence provider — unknown read ref', () => {
 });
 
 describe('confluence provider — unknown write type', () => {
-  it('throws on unknown write type', async () => {
+  it('throws on unknown Confluence write type', async () => {
     await assert.rejects(
       () => provider.write({ type: 'unsupported' }),
       /Unknown Confluence write item type/,

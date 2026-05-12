@@ -23,3 +23,7 @@ RECOMMENDATION: which option to pursue and why
 EVIDENCE: data, signals, or benchmarks that support the recommendation
 RISKS: what would make this recommendation wrong
 DECISION DEADLINE: when this must be decided and why
+
+## When invoked via the role framework
+
+Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → business-strategist`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.

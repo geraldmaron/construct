@@ -253,6 +253,7 @@ Custom providers plug in by exporting a factory that satisfies the provider cont
 |---|---|
 | `construct sync` | Generate agent adapters for all platforms |
 | `construct list` | Show all personas and specialist agents |
+| `construct role` | Inspect or manage role-framework pending invocations |
 
 ### Work
 
@@ -317,7 +318,7 @@ Custom providers plug in by exporting a factory that satisfies the provider cont
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct skills` | Detect project tech stack and scope installed skills to relevance |
 | `construct backup` | Create, verify, restore, list, or prune full system backups (observations, sessions, config, registry, Postgres). |
-| `construct doctor` | Run installation health checks |
+| `construct doctor` | Run installation health checks (default), or manage the L0 doctor daemon |
 | `construct validate` | Validate registry.json structure and field constraints |
 | `construct diff` | Show which agents changed prompts or settings since HEAD |
 | `construct version` | Show version |

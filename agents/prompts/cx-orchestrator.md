@@ -42,3 +42,7 @@ You coordinate. The owning specialist in `docAuthoring.owner` writes. Drafting t
 ## Skill preload
 
 Call `get_skill("roles/orchestrator")` before drafting your dispatch plan if the packet is non-trivial.
+
+## When invoked via the role framework
+
+Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → orchestrator`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.

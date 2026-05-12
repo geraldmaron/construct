@@ -12,9 +12,7 @@ import test from 'node:test';
 
 import { syncDashboardStatic, getDashboardStaticStatus } from '../lib/dashboard-static.mjs';
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
+import { tempDir } from './helpers.mjs';
 
 function writeFile(rootDir, relPath, content) {
   const fullPath = path.join(rootDir, relPath);

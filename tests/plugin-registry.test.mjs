@@ -12,13 +12,10 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { initPluginManifest, loadPluginRegistry, validatePluginManifest } from "../lib/plugin-registry.mjs";
+import { tempDir } from './helpers.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
 
 test("validatePluginManifest accepts a minimal valid plugin manifest", () => {
   const result = validatePluginManifest({
