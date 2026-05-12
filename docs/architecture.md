@@ -175,6 +175,10 @@ Full web application shipped and running.
 - Chat interface — SSE-streaming Claude session; `/api/chat/stream`, `/api/chat`, `/api/chat/history`
 - Approval queue — approve/reject high-risk actions queued by the embed daemon
 - Config management — providers, embed settings, approval rules; reads/writes `config.env` and `embed.yaml`
+- Models page — editable per-tier (reasoning/standard/fast) primary + fallback selection backed by `getProviderModelCatalog()`; persists via `POST /api/registry/models`. Credentials sub-block is fully editable via the shared `CredentialsCard` component (LLM kind).
+- Providers page — lists built-in integration providers (`lib/providers/`) and operator overrides from `~/.construct/providers.json`. Add / edit / delete plugin overrides via `POST /api/providers/registry`; entries are validated by `validateProviderEntry()` (5s timeout) before persisting, and built-in IDs cannot be overridden. Credentials editor (integration kind) reuses the same `CredentialsCard`.
+- Provider health classification — `GET /api/providers?probe=1` returns `status: 'healthy' | 'not_configured' | 'unhealthy'`. A provider whose required env vars are all unset is `not_configured` (gray dot, no degradation); `unhealthy` (red) only fires when env vars are set but the probe fails. Eliminates the prior false-positive where missing Jira/Slack/Salesforce creds read as broken.
+- Credentials write path — `POST /api/providers/credentials` writes to `~/.construct/config.env` with mode 0600 via `writeEnvValues()`, hot-reloads `process.env`, and audit-logs `{ts, action, envVar}` (never the value) to `~/.cx/credential-audit.jsonl`. Allowlisted env vars only (central `CREDENTIAL_MAP`). Localhost binds rely on OS file permissions; non-localhost binds require `CONSTRUCT_DASHBOARD_TOKEN`.
 - Snapshot viewer — health reports, risk analysis, recommendations
 - Knowledge panel — Ask (RAG query), Trends (hot topics, patterns, risks, decision drift), Index (corpus breakdown)
 - Infrastructure tab — Terraform editor with validate + output buttons

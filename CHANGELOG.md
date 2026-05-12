@@ -4,6 +4,29 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Added — Dashboard provider configuration surfaces
+
+- **Models page is now editable.** Per-tier (reasoning/standard/fast) primary + fallback selection backed by `getProviderModelCatalog()`. Save persists to `agents/registry.json` via existing `POST /api/registry/models`. SSE notifies other tabs.
+- **New `/providers` page** for integration providers (`lib/providers/`). Lists the five built-ins (github, atlassian-jira, atlassian-confluence, slack, salesforce) and any operator overrides from `~/.construct/providers.json`. Built-ins are read-only; overrides support add/delete via `POST /api/providers/registry`.
+- **Credentials are status-only by design.** `GET /api/providers/credentials` returns env-var presence + masked preview (`sk-ant…abc1`). The dashboard never accepts API keys — users edit `~/.construct/config.env` out-of-band; `GET /api/providers/config-path` returns the absolute path for a copy-to-clipboard hint.
+- **Override validation.** New `validateProviderEntry()` in [lib/providers/registry.mjs](lib/providers/registry.mjs) imports a candidate package and runs `assertProviderContract` without touching disk; the dashboard write path wraps it in a 5s timeout. Built-in IDs are refused. Failed loads write nothing (atomic `.tmp` → rename).
+- **Health probes are explicit.** `GET /api/providers` defaults to no health probe (Salesforce/Jira can be slow); `?probe=1` runs them on demand from a per-card "Probe" button.
+
+### Changed — Dashboard contrast sweep
+
+- All dashboard pages: `text-gray-400` → `text-gray-600` (16 pages, ~50 sites). The previous color was 2.85:1 contrast on white — failed WCAG AA for all text sizes. The replacement is 7.27:1 — passes AAA. Affects loading states, empty states, IDs, file paths, and helper text.
+- Workflow page status badges: `bg-gray-100 text-gray-500` → `bg-gray-100 text-gray-700` for the "Skipped" / "Todo" / phase-pending tags (was 4.21:1, borderline; now 9:1).
+
+### Added — Dashboard credential CRUD + correct health classification
+
+- **Inline credential editing** for all known providers. New shared component [dashboard/src/components/CredentialsCard.tsx](dashboard/src/components/CredentialsCard.tsx) renders a row per env var with Set / Update / Clear / Cancel actions. Used by both Models (LLM kind) and Providers (integration kind).
+- **`POST /api/providers/credentials`** — body `{envVar, value}`, validates against the central `CREDENTIAL_MAP` allowlist, atomic write through `writeEnvValues()`, file forced to mode 0600, hot-reloads `process.env` so providers pick up the new value without a dashboard restart. Empty value unsets the key.
+- **Audit log** at `~/.cx/credential-audit.jsonl`: `{ts, action: 'set'|'unset', envVar}` per change. Values never logged.
+- **Auth gate**: localhost binds (`127.0.0.1` / `localhost` / `::1`) inherit OS file-permission security and don't require a dashboard token. Non-localhost binds require `CONSTRUCT_DASHBOARD_TOKEN` to be set; the existing CSRF + bearer/session check still applies.
+- **Three-state provider health**: `GET /api/providers?probe=1` now returns `status: 'healthy' | 'not_configured' | 'unhealthy'`. A provider with no required env vars set reports `not_configured` (gray), not `unhealthy` (red). Missing Jira/Slack/Salesforce credentials no longer count as a degradation.
+- **Plugin overrides now editable**: Providers page gained an "Edit" button on each non-built-in card; clicking pre-fills the existing add form with the override's `id` and `package`. Save reuses the existing `POST /api/providers/registry` (action: `save` replaces by id).
+- **Grouped credentials response**: `GET /api/providers/credentials` reshaped from a flat list of `{provider, envVar, set, preview}` to grouped `{provider, label, kind, vars: [{envVar, set, preview}], configured: 'none'|'partial'|'full'}`. Multi-var providers (Jira, Confluence, Slack, Salesforce) now expose all required env vars individually with a per-provider configured indicator.
+
 ### Added — Construct on Construct (foundation: role framework + v1 onboarding)
 
 This is the first slice of the **Construct on Construct** initiative — Construct running its own organization, with deterministic L0 watchers, LLM personas at L1, and the user in the loop only for novel decisions or explicit approvals.

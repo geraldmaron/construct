@@ -29,9 +29,9 @@ export default function Resources() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading...</div>;
+  if (loading) return <div className="text-center py-20 text-gray-600">Loading...</div>;
   if (error) return <div className="text-center py-20 text-red-500">{error}</div>;
-  if (!data) return <div className="text-center py-20 text-gray-400">No data</div>;
+  if (!data) return <div className="text-center py-20 text-gray-600">No data</div>;
 
   const health = data.system?.overall?.status ?? 'unknown';
 
