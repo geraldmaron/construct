@@ -11,63 +11,67 @@ Hooks are removed when their behavior is absorbed into a consolidated hook, move
 declarative rules, or expressed as persona/skill guidance. Removal without an entry here
 is a policy violation — `construct doctor` checks this ledger against the hooks manifest.
 
-## Removed in P2 consolidation
+## Consolidation into `lib/hooks/policy-engine.mjs`
+
+`policy-engine.mjs` is the consolidated hook for session policy. It is wired in `platforms/claude/settings.template.json` for three events:
+
+- **PreToolUse** (matcher `Write|Edit|MultiEdit|NotebookEdit|TodoWrite|Bash`) — bootstrap rule
+- **Stop** — red-CI block, open-beads block, drive-mode criteria, drive-session advisory
+- **UserPromptSubmit** — reserved; no-op today
 
 ### bootstrap-guard.mjs
-- **Event:** PreToolUse
-- **Behavior:** Blocked write and bash operations until the session was grounded (workflow
-  state loaded, context read). Exited 2 on violations.
-- **Absorbed by:** `lib/hooks/policy-engine.mjs` — `bootstrap` rule in `rules/policy/bootstrap.yaml`
+- **Original event:** PreToolUse
+- **Original behavior:** Blocked Write/Edit/Bash mutations until the session was grounded — either via `project_context` + `memory_search` MCP calls or 3+ exploratory reads.
+- **Now:** `lib/hooks/policy-engine.mjs` PreToolUse handler. State persisted at `~/.cx/bootstrap-state.json`, scoped per-session, 24h TTL.
 
 ### drive-guard.mjs
-- **Event:** Stop
-- **Behavior:** Blocked the Stop event when drive mode was active and acceptance criteria
-  were not yet met. Tracked per-criterion evidence.
-- **Absorbed by:** `lib/hooks/policy-engine.mjs` — `drive` rule in `rules/policy/drive.yaml`
-
-### task-completed-guard.mjs
-- **Event:** PreToolUse (`workflow_update_task`)
-- **Behavior:** Required verification evidence before allowing implement-phase task status
-  to be set to `done`. Exited 2 without evidence.
-- **Absorbed by:** `lib/hooks/policy-engine.mjs` — `task` rule in `rules/policy/task.yaml`
-
-### workflow-guard.mjs
-- **Event:** UserPromptSubmit
-- **Behavior:** Routed significant work through workflow state. Warned when non-trivial
-  Bash or Edit operations ran without an active workflow task set.
-- **Absorbed by:** `lib/hooks/policy-engine.mjs` — `workflow` rule in `rules/policy/workflow.yaml`
-
-### mcp-task-scope.mjs
-- **Event:** PreToolUse (MCP tool calls)
-- **Behavior:** Warned when MCP tools were called outside the declared task scope. Provided
-  attribution and audit trail entries per call.
-- **Absorbed by:** `lib/hooks/policy-engine.mjs` (scope check) + `lib/hooks/mcp-audit.mjs`
-  (attribution and audit trail)
-
-### repeated-read-guard.mjs
-- **Event:** PreToolUse (Read)
-- **Behavior:** Warned after a file was read more than a configurable threshold within a
-  session. Used the session-efficiency store populated by read-tracker.mjs.
-- **Absorbed by:** `rules/common/efficiency.md` (agent guidance) + `lib/hooks/read-tracker.mjs`
-  (already records reads; session-start surfaces the efficiency digest)
+- **Original event:** Stop
+- **Original behavior:** Blocked Stop when drive mode was active and acceptance criteria lacked evidence.
+- **Now:** `lib/hooks/policy-engine.mjs` Stop handler — drive section. Reads `.cx/drive-state.json` (per-project) and `~/.cx/drive-session.json` (global advisory).
 
 ### continuation-enforcer.mjs
-- **Event:** Stop
-- **Behavior:** Checked workflow state for incomplete tasks and blocked the Stop event when
-  high-priority work was unfinished.
-- **Absorbed by:** `personas/construct.md` — loop guard and drive-mode sections enforce
-  continuation discipline at the persona level; `policy-engine.mjs` drive rule covers the
-  blocking case.
-
-### teammate-idle-guard.mjs
-- **Event:** PostToolUse (Task)
-- **Behavior:** Tracked agent start times and emitted a warning when a dispatched agent
-  appeared idle beyond the idle threshold.
-- **Absorbed by:** `commands/build/feature.md` — build command guidance covers agent
-  dispatch expectations and timeout handling.
+- **Original event:** PostToolUse (TodoWrite)
+- **Original behavior:** Reinforced TodoWrite usage to prevent premature stopping.
+- **Now:** Two replacements that are policy-aligned with `CLAUDE.md:85` ("use bd, not TodoWrite"):
+  - `policy-engine.mjs` Stop handler — `open-bd` section blocks Stop when any `bd list --status in_progress` issue is open. Bypass: `CONSTRUCT_STOP_OK_OPEN_BD=1`.
+  - `policy-engine.mjs` Stop handler — drive section enforces criteria completion.
 
 ### console-warn.mjs
-- **Event:** PostToolUse (Edit/Write)
-- **Behavior:** Detected `console.log` and `console.debug` statements in edited files and
-  emitted a non-blocking warning.
-- **Absorbed by:** `lib/hooks/adaptive-lint.mjs` — lint pass now flags debug logging.
+- **Original event:** PostToolUse (Edit/Write)
+- **Original behavior:** Detected `console.log` / `console.debug` / `debugger` statements in edited files.
+- **Now:** `lib/hooks/adaptive-lint.mjs:130` — `[adaptive-lint] console.log/debug in <file>:<loc>` advisory.
+
+## Stalled-mid-consolidation hooks
+
+These hooks were removed but the consolidated replacement is **not yet implemented** in `policy-engine.mjs`. Their behaviors are currently absent. Treat as known gaps:
+
+### task-completed-guard.mjs
+- **Was:** PreToolUse on `workflow_update_task`, required verification evidence before allowing status to be set to `done`.
+- **Status:** Not implemented in policy-engine. The Stop-time `open-bd` check is a partial substitute (blocks Stop with open work) but doesn't gate the status transition itself.
+- **Follow-up:** Add a `task` rule to `policy-engine.mjs` PreToolUse that checks `workflow_update_task` against the rule in `rules/policy/task.yaml`.
+
+### workflow-guard.mjs
+- **Was:** UserPromptSubmit; routed significant work through workflow state, warned when non-trivial mutations ran without an active workflow task.
+- **Status:** Not implemented. `policy-engine.mjs` UserPromptSubmit handler is a no-op.
+- **Follow-up:** Implement the `workflow` rule from `rules/policy/workflow.yaml`.
+
+### mcp-task-scope.mjs
+- **Was:** PreToolUse on MCP tool calls; warned when an MCP call was outside the declared task scope.
+- **Status:** Not implemented. `mcp-audit.mjs` records attribution but does not enforce scope.
+- **Follow-up:** Add MCP scope check to `policy-engine.mjs` PreToolUse.
+
+### repeated-read-guard.mjs
+- **Was:** PreToolUse on Read; warned after a file was read more than a configurable threshold within a session.
+- **Status:** Declarative-only via `rules/common/efficiency.md`. Behavioral enforcement absent.
+
+### teammate-idle-guard.mjs
+- **Was:** PostToolUse on Task; tracked agent start times and warned on idle dispatched agents.
+- **Status:** Declarative-only via `commands/build/feature.md`. Behavioral enforcement absent.
+
+## New Stop-time policy added with this consolidation
+
+These behaviors were never separate hooks but are new to `policy-engine.mjs` Stop:
+
+- **red-CI block** — queries `gh run list --branch=<current> --limit=1`; exits 2 if last run failed and the agent edited code this session. Bypass: `CONSTRUCT_STOP_OK_RED_CI=1`.
+- **open-bd block** — queries `bd list --status in_progress --json`; exits 2 if any issues are open. Bypass: `CONSTRUCT_STOP_OK_OPEN_BD=1`.
+- **drive-session advisory** — reads `~/.cx/drive-session.json`; emits stderr advisory if `open: true`. Non-blocking.

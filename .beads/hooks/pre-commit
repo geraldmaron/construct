@@ -74,6 +74,29 @@ EOF
   exit 1
 fi
 
+# --- BEGIN CONSTRUCT POLICY GATES ---
+# Enforce comment policy and doc coupling on staged files. Bypasses are
+# explicit env vars so every exception leaves an audit trail.
+#   CONSTRUCT_SKIP_GATES=1   skip both checks
+#   CONSTRUCT_SKIP_DOCS=1    skip doc coupling only (still lint comments)
+if [[ "${CONSTRUCT_SKIP_GATES:-0}" != "1" ]]; then
+  if [[ -x bin/construct ]]; then
+    if ! node ./bin/construct lint:comments --staged; then
+      cat >&2 <<'EOF'
+
+[Construct pre-commit] Comment policy violations in staged files.
+Fix the violations above and re-stage, or set CONSTRUCT_SKIP_COMMENT_LINT=1
+when re-running this commit (and CONSTRUCT_SKIP_GATES=1 to skip both gates).
+EOF
+      exit 1
+    fi
+    if ! node ./bin/construct docs:verify --staged; then
+      exit 1
+    fi
+  fi
+fi
+# --- END CONSTRUCT POLICY GATES ---
+
 exit 0
 
 # --- BEGIN BEADS INTEGRATION v1.0.0 ---

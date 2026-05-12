@@ -31,16 +31,16 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "*",
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|TodoWrite|Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/bootstrap-guard.mjs\"",
-            "timeout": 5
+            "command": "node \"$HOME/.construct/lib/hooks/policy-engine.mjs\" PreToolUse",
+            "timeout": 10
           }
         ],
-        "id": "pre:bootstrap-guard",
-        "description": "Block mutations until session bootstrap (project_context + memory_search, or equivalent exploratory reads) has run"
+        "id": "pre:policy-engine",
+        "description": "Consolidated policy gating (bootstrap rule): block mutations until session is grounded via project_context+memory_search or 3+ exploratory reads"
       },
       {
         "matcher": "Bash",
@@ -113,30 +113,6 @@
         ],
         "id": "pre:edit-guard",
         "description": "Hash-anchored edit verification — blocks Edit when old_string not found verbatim"
-      },
-      {
-        "matcher": "mcp__.*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/mcp-task-scope.mjs\"",
-            "timeout": 3
-          }
-        ],
-        "id": "pre:mcp-task-scope",
-        "description": "Warn when calling an MCP not declared in the active task mcpScope"
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/repeated-read-guard.mjs\"",
-            "timeout": 5
-          }
-        ],
-        "id": "pre:read:repeat-guard",
-        "description": "Block broad re-reads of files already read this session — steer to Grep or narrower range"
       }
     ],
     "PostToolUse": [
@@ -178,29 +154,28 @@
         "description": "Auto-run project linter/formatter after every file edit"
       },
       {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/console-warn.mjs\"",
-            "timeout": 5
-          }
-        ],
-        "id": "post:edit:console-warn",
-        "description": "Flag console.log/debugger left in edited source files"
-      },
-      {
-        "matcher": "Write|Edit",
+        "matcher": "Write|Edit|MultiEdit",
         "hooks": [
           {
             "type": "command",
             "command": "node \"$HOME/.construct/lib/hooks/comment-lint.mjs\"",
-            "timeout": 10,
-            "async": true
+            "timeout": 15
           }
         ],
         "id": "post:edit:comment-lint",
-        "description": "Warn on missing file headers or banned comment patterns after edits"
+        "description": "Block edits that violate comment policy (banned patterns, missing required header). Bypass: CONSTRUCT_SKIP_COMMENT_LINT=1"
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/doc-coupling-check.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "post:edit:doc-coupling",
+        "description": "Advisory: nudge when code edits accumulate without CHANGELOG/docs updates (pre-commit gate will block at commit time)"
       },
       {
         "matcher": "Write|Edit|MultiEdit",
@@ -239,18 +214,6 @@
         ],
         "id": "post:edit:dep-audit",
         "description": "Audit dependencies for vulnerabilities after manifest changes"
-      },
-      {
-        "matcher": "TodoWrite",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/continuation-enforcer.mjs\"",
-            "timeout": 5
-          }
-        ],
-        "id": "post:continuation-enforcer",
-        "description": "After TodoWrite, remind agent of remaining tasks to prevent premature stopping"
       },
       {
         "matcher": "Read",
@@ -428,12 +391,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/workflow-guard.mjs\"",
-            "timeout": 10
+            "command": "node \"$HOME/.construct/lib/hooks/policy-engine.mjs\" Stop",
+            "timeout": 15
           }
         ],
-        "id": "stop:workflow-guard",
-        "description": "Prevent accidental session stop while Construct workflow tasks or alignment blockers remain"
+        "id": "stop:policy-engine",
+        "description": "Consolidated stop policy: block on red CI (CONSTRUCT_STOP_OK_RED_CI=1 to ack), block on in_progress beads (CONSTRUCT_STOP_OK_OPEN_BD=1 to ack), enforce drive-mode criteria, advise on open drive-session"
       },
       {
         "matcher": "*",
@@ -478,18 +441,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/drive-guard.mjs\"",
-            "timeout": 10
-          }
-        ],
-        "id": "stop:drive-guard",
-        "description": "Block stop when drive mode active and acceptance criteria lack evidence"
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
             "command": "node \"$HOME/.construct/lib/hooks/pre-compact.mjs\"",
             "timeout": 15
           }
@@ -511,34 +462,6 @@
         "description": "Check performance reviews and auto-optimize low-scoring agents at session end"
       }
     ],
-    "TeammateIdle": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/teammate-idle-guard.mjs\"",
-            "timeout": 10
-          }
-        ],
-        "id": "team:teammate-idle-guard",
-        "description": "Keep worker sessions aligned with the tracker, plan.md, and single-writer coordination rules before they go idle"
-      }
-    ],
-    "TaskCompleted": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/task-completed-guard.mjs\"",
-            "timeout": 10
-          }
-        ],
-        "id": "team:task-completed-guard",
-        "description": "Block task completion when Construct workflow validation fails"
-      }
-    ],
     "UserPromptSubmit": [
       {
         "matcher": "*",
@@ -551,6 +474,18 @@
         ],
         "id": "prompt:context-watch",
         "description": "Inject compaction guidance when session token usage crosses 60% / 80% thresholds"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/ci-status-check.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "prompt:ci-status",
+        "description": "Inject remote CI status (gh run list) into agent context so red CI is visible immediately. Cached 60s."
       }
     ]
   },

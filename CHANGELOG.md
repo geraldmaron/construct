@@ -4,6 +4,36 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Added — Three-layer enforcement hardening
+
+Defense-in-depth so policy violations get caught during regular operations, not at code review.
+
+- **Retrieval CI fix.** `.github/workflows/ci.yml` evals job pins `CONSTRUCT_EMBEDDING_MODEL=hashing` and uses `npm ci --ignore-scripts`. The eval fixture is calibrated against the deterministic hashing-bow-v1 embedding so the ONNX runtime download is unnecessary; skipping it eliminates the `ETIMEDOUT 150.171.109.150:443` CDN-flake failure mode.
+- **`comment-lint` is now blocking** at PostToolUse. Banned patterns and missing required headers block the edit (exit 2) instead of printing a warning the agent ignores. Bypass: `CONSTRUCT_SKIP_COMMENT_LINT=1`.
+- **Commit-time doc gate.** `.beads/hooks/pre-commit` chains a Construct policy section that calls `construct lint:comments --staged` and `construct docs:verify --staged`. Code edits under `lib/|bin/|src/|app/` without a matching `CHANGELOG.md` / `docs/**` / `.cx/context.*` update refuse to commit. Bypasses: `CONSTRUCT_SKIP_GATES=1`, `CONSTRUCT_SKIP_DOCS=1`.
+- **`pre-push-gate.mjs` hardened.** Refuses to push `claude/*` branches without `CONSTRUCT_ALLOW_CLAUDE_PUSH=1`. Refuses to push when the last CI run on the current branch already failed. Adds `construct evals retrieval` and `construct docs:verify` to the local pre-push job set. Whole-gate bypass: `CONSTRUCT_SKIP_PREPUSH=1`.
+- **`policy-engine.mjs` consolidation finished and wired up.** The hook existed but was never registered — its bootstrap + drive logic never fired. Now registered in `platforms/claude/settings.template.json` for PreToolUse (bootstrap), Stop (drive + new red-CI + new open-beads + drive-session advisory), and UserPromptSubmit (reserved). Fixed a pre-existing `existsSync` import bug that would have crashed PreToolUse if it ever ran.
+- **Stop-time enforcement (new, in `policy-engine.mjs` Stop):**
+  - **red-CI block** — `gh run list` for current branch; exits 2 if last run failed and the agent edited code this session. Bypass: `CONSTRUCT_STOP_OK_RED_CI=1`. Directly answers "agents walk away from red CI."
+  - **open-beads block** — exits 2 if `bd list --status in_progress` returns any issue. Bypass: `CONSTRUCT_STOP_OK_OPEN_BD=1`. Replaces the deprecated `continuation-enforcer` TodoWrite hook with the beads-aware equivalent (per `CLAUDE.md:85`).
+  - **drive-session advisory** — non-blocking surface of open `~/.cx/drive-session.json` sessions.
+- **New `ci-status-check.mjs` UserPromptSubmit hook.** Queries `gh run list` once per prompt (60s cache) and injects the red-CI line into the agent observation so the agent can never plausibly say "I didn't know."
+- **New `doc-coupling-check.mjs` PostToolUse hook.** Counts code edits per session; emits stderr advisories at thresholds 3, 5, 10 when no doc files have been touched. Soft predecessor to the commit gate.
+- **Phantom hook drift cleanup.** Removed 9 registrations in `platforms/claude/settings.template.json` whose script files didn't exist (`bootstrap-guard`, `mcp-task-scope`, `repeated-read-guard`, `console-warn`, `continuation-enforcer`, `teammate-idle-guard`, `workflow-guard`, `drive-guard`, `task-completed-guard`). These silently no-op'd, creating an illusion of defense in depth that didn't exist — the single largest contributor to rules slipping through.
+- **`construct doctor` now checks hook drift.** New blocking check walks `settings.template.json`, extracts every `lib/hooks/*.mjs` reference, and fails if any file is missing. Prevents the phantom-hook regression from recurring.
+- **Cross-surface parity verifier finished** (closes the two open gaps in `construct-b5c`):
+  - Added Codex surface to [lib/parity.mjs](lib/parity.mjs:99) — diffs `~/.codex/agents/*.toml` against the registry alongside the existing Claude + OpenCode checks. Doctor now reports `claude · opencode · codex` parity.
+  - Parity check is no longer `optional: true` in `construct doctor` — drift now fails the doctor run instead of being silently observable.
+- **PR template policy enforced locally** (closes the same failure mode that caught this PR's first CI run red):
+  - New `construct lint:templates [--body-file=<path>] [--body=<string>]` command wraps `scripts/lint-commits-pr.mjs`, exposing the local-mode the script always supported but nothing called.
+  - `pre-push-gate.mjs` now intercepts `gh pr create` and `gh pr edit` in addition to `git push`. Extracts `--body` / `--body-file` / `-F`, lints against the PR template policy, exits 2 on violation. Bypass: `CONSTRUCT_SKIP_PR_LINT=1`.
+  - Fixed pre-existing bug in `scripts/lint-commits-pr.mjs:97` — used `require("node:fs")` in an ES module, silently failing `--body-file` mode for every caller. Now uses `import { readFileSync }` correctly.
+- **Honest deprecation ledger.** `docs/hooks-deprecated.md` rewritten to accurately reflect what's in `policy-engine.mjs` vs. what's still stalled-mid-consolidation (task, workflow, mcp-scope, repeated-read, teammate-idle). The stalled items are now explicitly known gaps with follow-up pointers.
+
+### Changed — Comment cleanup
+
+- Deleted five live comment-policy violations: `lib/cache-strategy-google.js:24-25,32`, `lib/doc-stamp.mjs:83,87`, `lib/hooks/post-merge-docs-check.mjs:61`. `node bin/construct lint:comments` now reports zero violations.
+
 ### Added — Dashboard provider configuration surfaces
 
 - **Models page is now editable.** Per-tier (reasoning/standard/fast) primary + fallback selection backed by `getProviderModelCatalog()`. Save persists to `agents/registry.json` via existing `POST /api/registry/models`. SSE notifies other tabs.

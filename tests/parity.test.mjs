@@ -57,6 +57,25 @@ after(() => {
 function resetSurfaces() {
   fs.rmSync(path.join(tmpHome, '.claude'), { recursive: true, force: true });
   fs.rmSync(path.join(tmpHome, '.config'), { recursive: true, force: true });
+  fs.rmSync(path.join(tmpHome, '.codex'), { recursive: true, force: true });
+}
+
+function writeAllSurfaces(extraAgents = []) {
+  const claudeDir = path.join(tmpHome, '.claude', 'agents');
+  fs.mkdirSync(claudeDir, { recursive: true });
+  const opencodeDir = path.join(tmpHome, '.config', 'opencode');
+  fs.mkdirSync(opencodeDir, { recursive: true });
+  const codexDir = path.join(tmpHome, '.codex', 'agents');
+  fs.mkdirSync(codexDir, { recursive: true });
+
+  const agentNames = ['cx-engineer', 'cx-security', 'construct', ...extraAgents];
+  const agentObj = {};
+  for (const name of agentNames) {
+    fs.writeFileSync(path.join(claudeDir, `${name}.md`), 'stub');
+    fs.writeFileSync(path.join(codexDir, `${name}.toml`), `name = "${name}"\n`);
+    agentObj[name] = {};
+  }
+  fs.writeFileSync(path.join(opencodeDir, 'opencode.json'), JSON.stringify({ agent: agentObj }));
 }
 
 describe('checkParity', () => {
@@ -66,27 +85,16 @@ describe('checkParity', () => {
     assert.equal(report.ok, true);
     assert.equal(report.surfaces.find((s) => s.surface === 'claude').status, 'absent');
     assert.equal(report.surfaces.find((s) => s.surface === 'opencode').status, 'absent');
+    assert.equal(report.surfaces.find((s) => s.surface === 'codex').status, 'absent');
   });
 
-  it('reports ok when both surfaces match the registry exactly', () => {
+  it('reports ok when all three surfaces match the registry exactly', () => {
     resetSurfaces();
-    const claudeDir = path.join(tmpHome, '.claude', 'agents');
-    fs.mkdirSync(claudeDir, { recursive: true });
-    fs.writeFileSync(path.join(claudeDir, 'cx-engineer.md'), 'stub');
-    fs.writeFileSync(path.join(claudeDir, 'cx-security.md'), 'stub');
-    fs.writeFileSync(path.join(claudeDir, 'construct.md'), 'stub');
-
-    const opencodeDir = path.join(tmpHome, '.config', 'opencode');
-    fs.mkdirSync(opencodeDir, { recursive: true });
-    fs.writeFileSync(
-      path.join(opencodeDir, 'opencode.json'),
-      JSON.stringify({
-        agent: { 'cx-engineer': {}, 'cx-security': {}, construct: {} },
-      })
-    );
+    writeAllSurfaces();
 
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     assert.equal(report.ok, true, JSON.stringify(report, null, 2));
+    assert.equal(report.surfaces.find((s) => s.surface === 'codex').status, 'ok');
   });
 
   it('reports drift when an agent is missing from claude', () => {
@@ -117,6 +125,33 @@ describe('checkParity', () => {
     const opencode = report.surfaces.find((s) => s.surface === 'opencode');
     assert.equal(opencode.status, 'drift');
     assert.deepEqual(opencode.extra, ['cx-orphan']);
+  });
+
+  it('reports drift when codex is missing an agent', () => {
+    resetSurfaces();
+    const codexDir = path.join(tmpHome, '.codex', 'agents');
+    fs.mkdirSync(codexDir, { recursive: true });
+    fs.writeFileSync(path.join(codexDir, 'cx-engineer.toml'), 'name = "cx-engineer"\n');
+    fs.writeFileSync(path.join(codexDir, 'construct.toml'), 'name = "construct"\n');
+
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    const codex = report.surfaces.find((s) => s.surface === 'codex');
+    assert.equal(codex.status, 'drift');
+    assert.deepEqual(codex.missing, ['cx-security']);
+    assert.equal(report.ok, false);
+  });
+
+  it('reports drift when codex has an extra agent not in registry', () => {
+    resetSurfaces();
+    const codexDir = path.join(tmpHome, '.codex', 'agents');
+    fs.mkdirSync(codexDir, { recursive: true });
+    for (const f of ['cx-engineer.toml', 'cx-security.toml', 'construct.toml', 'cx-orphan.toml']) {
+      fs.writeFileSync(path.join(codexDir, f), `name = "${f.replace('.toml', '')}"\n`);
+    }
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    const codex = report.surfaces.find((s) => s.surface === 'codex');
+    assert.equal(codex.status, 'drift');
+    assert.deepEqual(codex.extra, ['cx-orphan']);
   });
 
   it('respects entry.platforms allowlist when set', () => {
