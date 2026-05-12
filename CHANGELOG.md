@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Fixed — Help-output icon alignment
+
+- `construct` (no args / unknown command) prints the command catalog with consistent column alignment. Emojis using the `U+FE0F` variation selector (e.g. `⌨️`, `🛠️`, `⬆️`, `🖥️`, `🗄️`, `🗒️`, `🏗️`, `⚖️`, `⚙️`, `✏️`, `ℹ️`) render as 1 visual column in macOS Terminal / iTerm2 despite the emoji-presentation intent; non-VS16 emojis render double-wide. The bare-emoji-plus-space layout produced a wobbly name column. `bin/construct` now pads VS16 emojis with an extra trailing space so the command-name column stays aligned regardless of which icon is used.
+
 ### Changed — Beads work-tracking data is local-only
 
 - `.beads/issues.jsonl` and `.beads/metadata.json` are now `.gitignore`'d and untracked. Beads' SQL store (`.beads/`) remains the canonical local source. The git-shared bits — `config.yaml`, `hooks/*`, `.gitignore`, `README.md` — stay tracked so policy and tooling are still uniform across clones. When the project moves to a centrally-deployed / multi-person setup, revisit whether the work-tracking JSONL should be shared via git.
