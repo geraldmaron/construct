@@ -13,7 +13,7 @@ export default function Agents() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading...</div>;
+  if (loading) return <div className="text-center py-20 text-gray-600">Loading...</div>;
 
   return (
     <div>
@@ -46,7 +46,7 @@ export default function Agents() {
         </div>
       )}
       {personas.length === 0 && specialists.length === 0 && (
-        <div className="text-center py-20 text-gray-400">No agents found.</div>
+        <div className="text-center py-20 text-gray-600">No agents found.</div>
       )}
     </div>
   );

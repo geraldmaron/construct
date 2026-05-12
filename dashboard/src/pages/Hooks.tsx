@@ -12,7 +12,7 @@ export default function Hooks() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading...</div>;
+  if (loading) return <div className="text-center py-20 text-gray-600">Loading...</div>;
 
   const byPhase: Record<string, any[]> = {};
   for (const h of hooks) {
@@ -25,7 +25,7 @@ export default function Hooks() {
     <div>
       <h1 className="text-2xl font-bold mb-6">Hooks</h1>
       {hooks.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">No hooks configured.</div>
+        <div className="text-center py-20 text-gray-600">No hooks configured.</div>
       ) : Object.entries(byPhase).map(([phase, items]) => (
         <div key={phase} className="mb-6">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">{phase}</h2>
@@ -35,7 +35,7 @@ export default function Hooks() {
                 <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${h.blocking ? 'bg-yellow-500' : 'bg-gray-300'}`} />
                 <div>
                   <p className="text-sm text-gray-700">{h.description}</p>
-                  {!h.blocking && <p className="text-xs text-gray-400 mt-0.5">async</p>}
+                  {!h.blocking && <p className="text-xs text-gray-600 mt-0.5">async</p>}
                 </div>
               </div>
             ))}

@@ -7,8 +7,8 @@ export default function Snapshots() {
 
   useEffect(() => { fetchSnapshots().then(d => setSnapshots(d.snapshots ?? [])).catch(() => {}).finally(() => setLoading(false)); }, []);
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading...</div>;
-  if (!snapshots.length) return <div className="text-center py-20 text-gray-400">No snapshots recorded yet.</div>;
+  if (loading) return <div className="text-center py-20 text-gray-600">Loading...</div>;
+  if (!snapshots.length) return <div className="text-center py-20 text-gray-600">No snapshots recorded yet.</div>;
 
   return (
     <div>
@@ -18,7 +18,7 @@ export default function Snapshots() {
           <div key={i} className="bg-white border border-gray-200 rounded-xl p-6">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-gray-500">{s.capturedAt ? new Date(s.capturedAt).toLocaleString() : '—'}</span>
-              {s.providers && <span className="text-xs text-gray-400">{s.providers.join(', ')}</span>}
+              {s.providers && <span className="text-xs text-gray-600">{s.providers.join(', ')}</span>}
             </div>
             <p className="text-sm text-gray-700 whitespace-pre-wrap">{s.summary ?? JSON.stringify(s).slice(0, 300)}</p>
           </div>
