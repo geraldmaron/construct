@@ -38,12 +38,12 @@ export default function Knowledge() {
             <button onClick={doAsk} disabled={loading}
               className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:from-indigo-700 hover:to-violet-700 transition-colors disabled:opacity-50">Ask</button>
           </div>
-          {loading && <p className="text-sm text-gray-400">Thinking...</p>}
+          {loading && <p className="text-sm text-gray-600">Thinking...</p>}
           {answer && (
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="text-sm whitespace-pre-wrap">{answer.answer}</p>
               {answer.sources?.length > 0 && (
-                <div className="mt-3 text-xs text-gray-400">
+                <div className="mt-3 text-xs text-gray-600">
                   <p className="font-medium mb-1">Sources:</p>
                   {answer.sources.slice(0, 5).map((s: any, i: number) => <p key={i}>[{s.source}] {s.title}</p>)}
                 </div>

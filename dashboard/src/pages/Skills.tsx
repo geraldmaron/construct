@@ -12,13 +12,13 @@ export default function Skills() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading...</div>;
+  if (loading) return <div className="text-center py-20 text-gray-600">Loading...</div>;
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Skills</h1>
       {skills.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">No skills found.</div>
+        <div className="text-center py-20 text-gray-600">No skills found.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {skills.map((cat: any, i: number) => (

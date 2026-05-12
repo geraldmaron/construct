@@ -157,7 +157,7 @@ export default function Doctor() {
           <ul className="space-y-2 text-sm">
             {data.approvals.map((a) => (
               <li key={`${a.ts}-${a.target}`} className="flex items-start gap-3">
-                <span className="text-xs text-gray-400 font-mono whitespace-nowrap mt-0.5">{ago(a.ts)}</span>
+                <span className="text-xs text-gray-600 font-mono whitespace-nowrap mt-0.5">{ago(a.ts)}</span>
                 <span className="text-xs px-1.5 py-0.5 bg-amber-50 text-amber-800 rounded font-medium">{a.cxId}</span>
                 <span className="text-xs text-gray-500">{a.action}</span>
                 <span className="font-mono text-xs break-all flex-1">{a.target}</span>
@@ -175,7 +175,7 @@ export default function Doctor() {
           <ul className="space-y-2 text-sm">
             {data.pendingRoleInvocations.map((p) => (
               <li key={`${p.ts}-${p.bdIssueId}`} className="flex items-start gap-3">
-                <span className="text-xs text-gray-400 font-mono whitespace-nowrap mt-0.5">{ago(p.ts)}</span>
+                <span className="text-xs text-gray-600 font-mono whitespace-nowrap mt-0.5">{ago(p.ts)}</span>
                 <span className="text-xs px-1.5 py-0.5 bg-violet-50 text-violet-800 rounded font-medium">{p.cxId}</span>
                 <span className="text-xs text-gray-500 whitespace-nowrap">{p.bdIssueId || '—'}</span>
                 <span className="text-xs text-gray-500 whitespace-nowrap">{p.eventType}</span>
@@ -218,7 +218,7 @@ export default function Doctor() {
         )}
       </section>
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-gray-600">
         Onboarded personas ({data.onboardedPersonas.length}/28): {data.onboardedPersonas.map((p) => `cx-${p}`).join(', ')}
       </p>
     </div>

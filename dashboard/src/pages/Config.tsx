@@ -13,8 +13,8 @@ export default function Config() {
     ]).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="text-center py-20 text-gray-400">Loading...</div>;
-  if (!config) return <div className="text-center py-20 text-gray-400">No config data.</div>;
+  if (loading) return <div className="text-center py-20 text-gray-600">Loading...</div>;
+  if (!config) return <div className="text-center py-20 text-gray-600">No config data.</div>;
 
   return (
     <div>
