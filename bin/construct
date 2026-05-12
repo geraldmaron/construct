@@ -282,6 +282,20 @@ async function cmdDoctor() {
       add(label, missing.length === 0);
     }
 
+    const beadsPreCommit = path.join(ROOT_DIR, '.beads', 'hooks', 'pre-commit');
+    const inCI = process.env.CI === 'true' || process.env.CI === '1';
+    if (fs.existsSync(beadsPreCommit) && !inCI) {
+      const hp = spawnSync('git', ['config', '--get', 'core.hooksPath'], { cwd: ROOT_DIR, encoding: 'utf8' });
+      const value = hp.status === 0 ? (hp.stdout || '').trim() : '';
+      const wired = value === '.beads/hooks';
+      const label = wired
+        ? 'Git hooks wired (core.hooksPath = .beads/hooks)'
+        : value
+          ? `Git hooks unwired (core.hooksPath = '${value}', expected '.beads/hooks') — pre-commit policy gates inactive`
+          : 'Git hooks unwired (core.hooksPath unset) — pre-commit policy gates inactive. Fix: git config core.hooksPath .beads/hooks';
+      add(label, wired);
+    }
+
     const pluginRegistry = loadPluginRegistry({ cwd: process.cwd(), homeDir: HOME, rootDir: ROOT_DIR, env: process.env });
     add('Plugin manifests valid', pluginRegistry.valid);
 

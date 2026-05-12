@@ -4,6 +4,14 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Fixed — Git hooks were tracked but never executed
+
+Closes a phantom-enforcement class identical to the `settings.template.json` regressions caught earlier: `.beads/hooks/*` (ECC secret-scan, Construct policy gates, BEADS dispatcher) are tracked in git but were never wired to git's hook system. `core.hooksPath` was unset and `.git/hooks/` contained only the default `*.sample` templates. Every `git commit` since the start of the project had **zero pre-commit enforcement** locally. Enforcement was running only via the Claude Code `pre-push-gate.mjs` PreToolUse hook + CI; raw `git commit` from terminal or IDE bypassed everything.
+
+- **`construct setup`** now sets `core.hooksPath` to `.beads/hooks` for the current project clone when `.beads/hooks/pre-commit` is present and not already configured. Idempotent: if the user has `core.hooksPath` set to anything else, it logs a warning and leaves the existing value alone rather than clobbering.
+- **`construct doctor`** now has a blocking check that fails when `.beads/hooks/pre-commit` exists but `core.hooksPath` is unset or pointing elsewhere. Tells the user exactly how to fix it (`git config core.hooksPath .beads/hooks`).
+- Cloners running `construct setup` for the first time get hooks wired automatically. Existing clones: the doctor check will fail on next `construct doctor` until the user runs the one-line fix.
+
 ### Changed — `db/migrations/` renamed to `db/schema/`
 
 - Schema source files moved from `db/migrations/*.sql` to `db/schema/*.sql`. The directory name was technically inaccurate — `001_init.sql` is an initial schema baseline (no prior state to migrate from), not a true migration. Renaming to `db/schema/` reflects what the directory actually contains.
