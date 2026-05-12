@@ -4,6 +4,13 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Changed — `db/migrations/` renamed to `db/schema/`
+
+- Schema source files moved from `db/migrations/*.sql` to `db/schema/*.sql`. The directory name was technically inaccurate — `001_init.sql` is an initial schema baseline (no prior state to migrate from), not a true migration. Renaming to `db/schema/` reflects what the directory actually contains.
+- `lib/storage/migrations.mjs::runMigrations` still walks the directory the same way: lexical order, applied filenames + hashes tracked in `construct_schema_migrations`, hash-locked drift detection, forward-only. The runner mechanism is unchanged — only the input directory path moved. The function name and bookkeeping table name are retained because they describe the runner's behavior accurately regardless of input.
+- The `construct_schema_migrations` bookkeeping table records filenames only, not directory paths. Existing databases with prior applied state continue to work without re-application.
+- Callsites updated: `lib/setup.mjs` (initial schema bootstrap path), `lib/storage/migrations.mjs` (default dir + docstring).
+
 ### Fixed — Help-output icon alignment
 
 - `construct` (no args / unknown command) prints the command catalog with consistent column alignment. Emojis using the `U+FE0F` variation selector (e.g. `⌨️`, `🛠️`, `⬆️`, `🖥️`, `🗄️`, `🗒️`, `🏗️`, `⚖️`, `⚙️`, `✏️`, `ℹ️`) render as 1 visual column in macOS Terminal / iTerm2 despite the emoji-presentation intent; non-VS16 emojis render double-wide. The bare-emoji-plus-space layout produced a wobbly name column. `bin/construct` now pads VS16 emojis with an extra trailing space so the command-name column stays aligned regardless of which icon is used.

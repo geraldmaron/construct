@@ -1,4 +1,4 @@
--- db/migrations/002_pgvector.sql
+-- db/schema/002_pgvector.sql
 -- Enable pgvector extension and add vector-typed columns for semantic search.
 -- This migration is idempotent — safe to run multiple times.
 
