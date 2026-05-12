@@ -46,6 +46,12 @@ dashboard-*.png
 *.db
 .beads-credential-key
 
+# Beads work-tracking data — local-only while Construct is solo. When the
+# project moves to a centrally-deployed/multi-person setup, revisit whether
+# these should be shared via git.
+.beads/issues.jsonl
+.beads/metadata.json
+
 # Local scratch files that occasionally leak into the working tree
 token-baseline.txt
 # Literal `~/` directory created when a script writes to "~/foo" without
