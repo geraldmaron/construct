@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Changed — Beads work-tracking data is local-only
+
+- `.beads/issues.jsonl` and `.beads/metadata.json` are now `.gitignore`'d and untracked. Beads' SQL store (`.beads/`) remains the canonical local source. The git-shared bits — `config.yaml`, `hooks/*`, `.gitignore`, `README.md` — stay tracked so policy and tooling are still uniform across clones. When the project moves to a centrally-deployed / multi-person setup, revisit whether the work-tracking JSONL should be shared via git.
+
 ### Added — Three-layer enforcement hardening
 
 Defense-in-depth so policy violations get caught during regular operations, not at code review.
