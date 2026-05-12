@@ -12,7 +12,9 @@ import Commands from './pages/Commands';
 import Hooks from './pages/Hooks';
 import MCP from './pages/MCP';
 import Plugins from './pages/Plugins';
+import Providers from './pages/Providers';
 import Models from './pages/Models';
+import Beads from './pages/Beads';
 import Artifacts from './pages/Artifacts';
 import Knowledge from './pages/Knowledge';
 import Infrastructure from './pages/Infrastructure';
@@ -60,15 +62,22 @@ function App() {
 
   // Determine which navigation items to show based on mode
   const getNavItems = () => {
+    // Operational + core configuration surfaces — visible in every mode so users
+    // can manage providers, models, and credentials without first switching to
+    // embed/live mode. Provider config is fundamental, not an "advanced" view.
     const baseItems = [
       { path: '/', label: 'Resources', element: <Resources /> },
+      { path: '/beads', label: 'Beads', element: <Beads /> },
       { path: '/workflow', label: 'Workflow', element: <Workflow /> },
       { path: '/approvals', label: 'Approvals', element: <Approvals /> },
       { path: '/doctor', label: 'Doctor', element: <Doctor /> },
-      { path: '/snapshots', label: 'Snapshots', element: <Snapshots /> }
+      { path: '/snapshots', label: 'Snapshots', element: <Snapshots /> },
+      { path: '/providers', label: 'Providers', element: <Providers /> },
+      { path: '/models', label: 'Models', element: <Models /> },
+      { path: '/mcp', label: 'MCP', element: <MCP /> },
+      { path: '/config', label: 'Config', element: <Config /> }
     ];
 
-    // In embed mode, show more detailed views
     if (mode === 'embed' || mode === 'live') {
       return [
         ...baseItems,
@@ -76,17 +85,13 @@ function App() {
         { path: '/skills', label: 'Skills', element: <Skills /> },
         { path: '/commands', label: 'Commands', element: <Commands /> },
         { path: '/hooks', label: 'Hooks', element: <Hooks /> },
-        { path: '/mcp', label: 'MCP', element: <MCP /> },
         { path: '/plugins', label: 'Plugins', element: <Plugins /> },
-        { path: '/models', label: 'Models', element: <Models /> },
         { path: '/artifacts', label: 'Artifacts', element: <Artifacts /> },
         { path: '/knowledge', label: 'Knowledge', element: <Knowledge /> },
-        { path: '/infrastructure', label: 'Infrastructure', element: <Infrastructure /> },
-        { path: '/config', label: 'Config', element: <Config /> }
+        { path: '/infrastructure', label: 'Infrastructure', element: <Infrastructure /> }
       ];
     }
 
-    // In init mode, only show basic items
     return baseItems;
   };
 
