@@ -1141,6 +1141,17 @@ async function cmdLintComments(args) {
   if (exitCode !== 0) process.exit(exitCode);
 }
 
+async function cmdGatesAudit(args) {
+  const { auditGates, formatReport } = await import('../lib/gates-audit.mjs');
+  const report = auditGates({ rootDir: ROOT_DIR });
+  if (args.includes('--json')) {
+    println(JSON.stringify(report, null, 2));
+  } else {
+    process.stdout.write(formatReport(report));
+  }
+  if (!report.ok) process.exit(1);
+}
+
 async function cmdLintTemplates(args) {
   const bodyFileArg = args.find((a) => a.startsWith('--body-file='))?.split('=').slice(1).join('=');
   const bodyArgIdx = args.indexOf('--body-file');
@@ -1421,6 +1432,7 @@ const handlers = new Map([
   ['dashboard:sync', cmdDashboardSync],
   ['lint:comments', cmdLintComments],
   ['lint:templates', cmdLintTemplates],
+  ['gates:audit', cmdGatesAudit],
   ['bootstrap', cmdBootstrap],
   ['memory', cmdMemory],
   ['hook', cmdHook],
