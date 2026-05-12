@@ -69,6 +69,17 @@ function ok(message) { println(`  ${COLORS.green}✓${COLORS.reset}  ${message}`
 function warn(message) { println(`  ${COLORS.yellow}⚠${COLORS.reset}  ${message}`); }
 function info(message) { println(`  ${COLORS.cyan}→${COLORS.reset}  ${message}`); }
 
+// VS16-suffixed emojis (e.g. ⌨️, 🛠️, ⬆️) come from BMP "text symbol" Unicode
+// blocks and are commonly rendered as 1 visual column in macOS Terminal /
+// iTerm2 despite the U+FE0F variation-selector intent. Pad them with an
+// extra trailing space so the command-name column stays aligned regardless
+// of which icon a CLI entry uses.
+
+function iconColumn(emoji) {
+  const trailingSpaces = emoji.includes('️') ? '  ' : ' ';
+  return emoji + trailingSpaces;
+}
+
 function usage() {
   println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
   println(`\n${COLORS.dim}Usage:${COLORS.reset} construct <command> [options]\n`);
@@ -77,7 +88,7 @@ function usage() {
     if (!commands.length) continue;
     println(`${COLORS.bold}${category}${COLORS.reset}`);
     for (const command of commands) {
-      println(`  ${command.emoji} ${command.name.padEnd(14)} ${command.description}`);
+      println(`  ${iconColumn(command.emoji)}${command.name.padEnd(14)} ${command.description}`);
     }
     println('');
   }
