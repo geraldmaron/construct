@@ -253,12 +253,37 @@ Hybrid: autonomous for low-risk, human-gated for high-risk.
 | Low | Reading, analysis, draft generation, search | Autonomous |
 | High | Work item creation, merge, doc publish, config changes | Queued for approval (dashboard or messaging provider) |
 
+## Policy enforcement — three layers
+
+Policy rules (comment convention, doc-update requirement, CI green before walk-away, branch hygiene) are enforced at three layers so violations cannot fall through the cracks. Every blocking layer has an explicit env-var bypass so legitimate exceptions leave an audit trail.
+
+**Layer 1 — Real-time (write/edit time).** Catches at the source.
+
+- `comment-lint.mjs` — PostToolUse Write/Edit/MultiEdit, **blocking**. Banned patterns and missing required headers exit 2. Bypass: `CONSTRUCT_SKIP_COMMENT_LINT=1`.
+- `doc-coupling-check.mjs` — PostToolUse, advisory. Counts code-file edits per session, prints stderr nudge at 3/5/10 when no doc files touched. Soft predecessor to the commit gate.
+- `ci-status-check.mjs` — UserPromptSubmit. Queries `gh run list` (60s cache) and injects red-CI status into agent observation.
+
+**Layer 2 — Gate (commit/push time).** Catches at the boundary.
+
+- `.beads/hooks/pre-commit` Construct policy section — calls `construct lint:comments --staged` and `construct docs:verify --staged`. Refuses commits with banned-pattern violations or code-without-docs. Bypasses: `CONSTRUCT_SKIP_GATES=1`, `CONSTRUCT_SKIP_DOCS=1`.
+- `pre-push-gate.mjs` — refuses `claude/*` branch pushes (bypass `CONSTRUCT_ALLOW_CLAUDE_PUSH=1`); refuses push on red remote CI (bypass `CONSTRUCT_SKIP_PREPUSH=1`); runs `evals retrieval` and `docs:verify` in addition to project tests/build.
+
+**Layer 3 — Safety net (CI + session end).** Catches escapees.
+
+- `policy-engine.mjs` Stop handler (consolidated):
+  - **red-CI block** — exits 2 when CI is red on the current branch and the agent edited code this session. Bypass: `CONSTRUCT_STOP_OK_RED_CI=1`.
+  - **open-beads block** — exits 2 when `bd list --status in_progress` returns any issue. Bypass: `CONSTRUCT_STOP_OK_OPEN_BD=1`.
+  - **drive criteria enforcement** — blocks Stop when drive mode is active and acceptance criteria lack evidence.
+  - **drive-session advisory** — non-blocking surface of open `~/.cx/drive-session.json`.
+- `construct doctor` — phantom-hook drift check; refuses to pass when `settings.template.json` registers a hook whose file is missing. Prevents the failure mode where defenses look wired up but silently no-op.
+
+CI is the outermost safety net. Required status checks on `main` and `dev` (`retrieval evals`, `comment policy`, `docs drift check`, `dependency CVE audit`) prevent merges when any layer's escape made it to a PR.
+
 ## Context hygiene
 
 Enforced via hooks, not advisory text:
 
 - `bash-output-logger` — persists large outputs to disk, nudges grep over re-run
-- `repeated-read-guard` — blocks redundant broad re-reads
 - `context-watch` — compaction guidance at 60%/80% of resolved context window
 - Role skills loaded on demand via `get_skill`
 

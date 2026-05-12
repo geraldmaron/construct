@@ -2,7 +2,7 @@
 
 > Project state for the Construct repo. Keep this file aligned with the current state of the construct codebase. Do not paste session-specific or external-project details here — those belong in the local `.cx/handoffs/` (which is gitignored).
 
-Last saved: 2026-05-08
+Last saved: 2026-05-12
 
 ## Embedding Model
 
@@ -10,6 +10,27 @@ Last saved: 2026-05-08
 - Configurable via `CONSTRUCT_EMBEDDING_MODEL` env var
 - Options: local, openai, ollama, hashing
 - Local ONNX failures report an explicit degraded hashing fallback instead of silently masking neural retrieval loss.
+- **CI (retrieval evals) pins `hashing`** so the ONNX runtime postinstall is skipped (`npm ci --ignore-scripts`). Eliminates the CDN-timeout failure mode that killed the evals job pre-PR-#23.
+
+## Enforcement architecture (defense in depth)
+
+Three layers ensure policy violations don't fall through the cracks:
+
+1. **Real-time (write/edit time):**
+   - `comment-lint.mjs` PostToolUse blocks edits with banned patterns / missing headers (was advisory).
+   - `doc-coupling-check.mjs` PostToolUse emits stderr advisories at 3/5/10 code-file edits without doc updates.
+   - `ci-status-check.mjs` UserPromptSubmit injects last red CI run into agent context (60s cache).
+
+2. **Gate (commit/push time):**
+   - `.beads/hooks/pre-commit` chains `lint:comments --staged` and `docs:verify --staged`.
+   - `pre-push-gate.mjs` refuses `claude/*` pushes, refuses push on red remote CI, runs evals + docs locally.
+
+3. **Safety net (CI + session end):**
+   - `policy-engine.mjs` Stop (consolidated): red-CI block, open-beads block, drive-mode criteria, drive-session advisory.
+   - `construct doctor` validates that every hook in `settings.template.json` actually exists on disk (catches phantom-hook drift).
+   - The P2 consolidation that was stalled mid-flight is now finished and wired up — see `docs/hooks-deprecated.md` for the honest ledger.
+
+All blocking gates have explicit env-var bypasses (CONSTRUCT_SKIP_COMMENT_LINT, CONSTRUCT_SKIP_DOCS, CONSTRUCT_SKIP_GATES, CONSTRUCT_SKIP_PREPUSH, CONSTRUCT_ALLOW_CLAUDE_PUSH, CONSTRUCT_STOP_OK_RED_CI, CONSTRUCT_STOP_OK_OPEN_BD) so exceptions leave an audit trail.
 
 ## Vector Storage
 

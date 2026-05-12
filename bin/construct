@@ -259,6 +259,18 @@ async function cmdDoctor() {
     const { changed: stale } = await regenerateDocs({ rootDir: ROOT_DIR, check: true });
     add('AUTO docs up to date', stale.length === 0, true);
 
+    const settingsPath = path.join(ROOT_DIR, 'platforms', 'claude', 'settings.template.json');
+    if (fs.existsSync(settingsPath)) {
+      const raw = fs.readFileSync(settingsPath, 'utf8');
+      const refs = [...raw.matchAll(/lib\/hooks\/([\w-]+\.m?js)/g)].map((m) => m[1]);
+      const uniq = [...new Set(refs)];
+      const missing = uniq.filter((f) => !fs.existsSync(path.join(ROOT_DIR, 'lib', 'hooks', f)));
+      const label = missing.length === 0
+        ? `Hook registrations resolve (${uniq.length} hooks)`
+        : `Hook registrations resolve (${missing.length} phantom: ${missing.join(', ')})`;
+      add(label, missing.length === 0);
+    }
+
     const pluginRegistry = loadPluginRegistry({ cwd: process.cwd(), homeDir: HOME, rootDir: ROOT_DIR, env: process.env });
     add('Plugin manifests valid', pluginRegistry.valid);
 
@@ -273,9 +285,9 @@ async function cmdDoctor() {
     try {
       const { checkParity } = await import('../lib/parity.mjs');
       const parity = checkParity({ rootDir: ROOT_DIR, homeDir: HOME });
-      add(`Cross-surface adapter parity (${parity.summary.join(' · ')})`, parity.ok, true);
+      add(`Cross-surface adapter parity (${parity.summary.join(' · ')})`, parity.ok);
     } catch {
-      add('Cross-surface adapter parity', false, true);
+      add('Cross-surface adapter parity', false);
     }
 
     try {
@@ -1068,11 +1080,56 @@ async function cmdMemory(args) {
 
 async function cmdLintComments(args) {
   const fix = args.includes('--fix');
-  const { lintRepo: lint, formatResults: fmt } = await import('../lib/comment-lint.mjs');
-  const results = lint({ rootDir: ROOT_DIR, fix });
+  const staged = args.includes('--staged');
+  const { lintRepo: lint, lintFile, formatResults: fmt } = await import('../lib/comment-lint.mjs');
+
+  let results;
+  if (staged) {
+    const { execSync } = await import('node:child_process');
+    let stagedList = '';
+    try {
+      stagedList = execSync('git diff --cached --name-only --diff-filter=ACMR', {
+        cwd: process.cwd(),
+        timeout: 3000,
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).toString();
+    } catch {
+      process.stdout.write('  ✓  No staged files to lint.\n');
+      return;
+    }
+    const rels = stagedList.split('\n').map((s) => s.trim()).filter(Boolean)
+      .filter((f) => /\.(mjs|js|md|sh)$/.test(f));
+    if (!rels.length) {
+      process.stdout.write('  ✓  No staged comment-eligible files.\n');
+      return;
+    }
+    const path = (await import('node:path')).default;
+    results = rels
+      .map((rel) => lintFile(path.join(process.cwd(), rel), { rootDir: process.cwd(), fix }))
+      .filter((r) => r.errors.length || r.warnings.length);
+  } else {
+    results = lint({ rootDir: ROOT_DIR, fix });
+  }
+
   const { output, exitCode } = fmt(results);
   process.stdout.write(output);
   if (exitCode !== 0) process.exit(exitCode);
+}
+
+async function cmdLintTemplates(args) {
+  const bodyFileArg = args.find((a) => a.startsWith('--body-file='))?.split('=').slice(1).join('=');
+  const bodyArgIdx = args.indexOf('--body-file');
+  const bodyFile = bodyFileArg || (bodyArgIdx >= 0 ? args[bodyArgIdx + 1] : null);
+  const inlineBody = args.find((a) => a.startsWith('--body='))?.split('=').slice(1).join('=');
+  const env = { ...process.env };
+  if (bodyFile) env.PR_BODY_FILE = path.resolve(process.cwd(), bodyFile);
+  if (inlineBody) env.PR_BODY = inlineBody;
+  const result = spawnSync(
+    process.execPath,
+    [path.join(ROOT_DIR, 'scripts', 'lint-commits-pr.mjs')],
+    { stdio: 'inherit', env },
+  );
+  process.exit(result.status ?? 0);
 }
 
 async function cmdLintResearch() {
@@ -1291,7 +1348,7 @@ async function cmdHook(args) {
     errorln(`Hook not found: ${hookPath}`);
     process.exit(1);
   }
-  const result = spawnSync(process.execPath, [hookPath], { stdio: 'inherit' });
+  const result = spawnSync(process.execPath, [hookPath, ...args.slice(1)], { stdio: 'inherit' });
   process.exit(result.status ?? 0);
 }
 
@@ -1338,6 +1395,7 @@ const handlers = new Map([
   ['docs:site', cmdDocsSite],
   ['dashboard:sync', cmdDashboardSync],
   ['lint:comments', cmdLintComments],
+  ['lint:templates', cmdLintTemplates],
   ['bootstrap', cmdBootstrap],
   ['memory', cmdMemory],
   ['hook', cmdHook],

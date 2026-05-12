@@ -11,6 +11,7 @@
  * job and runnable locally before push.
  */
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
 const COMMIT_SUBJECT_RE =
   /^(feat|fix|refactor|perf|docs|test|chore|ci|build|style)(\([\w/.,:-]+\))?(!)?: [^A-Z].{1,70}$/;
@@ -94,7 +95,7 @@ function lintPrBody() {
   let body = process.env.PR_BODY;
   if (!body && path) {
     try {
-      body = require("node:fs").readFileSync(path, "utf8");
+      body = readFileSync(path, "utf8");
     } catch {
       return [`PR_BODY_FILE set but unreadable: ${path}`];
     }
