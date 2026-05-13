@@ -518,6 +518,7 @@ Core repo rule:
 ```text
 construct/
 ├── agents           Registry and generated platform adapter chains
+├── apps             User-facing apps shipped from this repo (e.g., apps/docs/ — Fumadocs docs site)
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
 ├── dashboard

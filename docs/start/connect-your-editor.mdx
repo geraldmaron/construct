@@ -1,0 +1,57 @@
+---
+title: Connect your editor
+description: Construct syncs agent adapters to Claude Code, OpenCode, Codex, Cursor, and Copilot.
+---
+
+`construct sync` writes the same persona + 28 specialists into every editor it finds. You don't pick agents per editor — pick the editor you want to use today, and the same team is there.
+
+## Claude Code
+
+Construct writes:
+
+- `~/.claude/agents/*.md` — one file per persona/specialist
+- `.claude/settings.json` (per-project) — hooks for pre-tool-use policy, post-tool-use formatters
+- `.claude/CLAUDE.md` — project context loader
+
+In Claude Code, address the persona with `@construct` from any session. The same prefix works for specialists: `@cx-engineer`, `@cx-security`, `@cx-architect`.
+
+## OpenCode
+
+Construct writes `~/.config/opencode/opencode.json` with all agents declared. In OpenCode, agents appear in the agent picker.
+
+## Codex (CLI)
+
+Construct writes `~/.codex/agents/*.toml` — one TOML per agent with model and capability config.
+
+## Cursor
+
+Construct writes `~/.cursor/agents/*.md`. Open the agent panel in Cursor and you'll see the team.
+
+## Copilot
+
+Construct writes `~/.github/prompts/*.md`. Reference any prompt from a Copilot session by name.
+
+## Cross-surface parity
+
+`construct doctor` includes a parity check that diffs your registry against every installed editor's adapter state. If you add a specialist and forget to `sync`, doctor reports the drift.
+
+```bash
+construct doctor
+# ... look for "Cross-surface adapter parity"
+```
+
+Healthy output:
+
+```
+Cross-surface adapter parity (claude: ok (29/29) · opencode: ok (29/29) · codex: ok (29/29)) ✓
+```
+
+Drift looks like:
+
+```
+claude: drift — missing: cx-newrole; opencode: ok (29/29); codex: drift — missing: cx-newrole
+```
+
+Fix with `construct sync`.
+
+Next: [what next →](/start/what-next)
