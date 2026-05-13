@@ -32,7 +32,7 @@ after(() => {
 function runSync(args = [], env = {}) {
   return spawnSync(
     process.execPath,
-    [path.join(ROOT_DIR, 'sync-agents.mjs'), ...args],
+    [path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs'), ...args],
     {
       encoding: 'utf8',
       env: {
@@ -181,7 +181,7 @@ describe('sync-agents contract tests', () => {
     it('writes a self-contained .claude/settings.json with portable hook commands', () => {
       const result = spawnSync(
         process.execPath,
-        [path.join(ROOT_DIR, 'sync-agents.mjs'), '--project'],
+        [path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs'), '--project'],
         {
           encoding: 'utf8',
           cwd: projectDir,

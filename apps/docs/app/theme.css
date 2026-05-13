@@ -1,0 +1,99 @@
+/*
+ * Construct docs theme — Geist typography + restrained palette + electric-blue accent.
+ *
+ * Overrides Fumadocs UI's default tokens. Single accent color (#2E6FF2) lifted
+ * by gradient highlights on the landing and key callouts. Pure-white / near-black
+ * background; never gray fades. Mono is Geist Mono everywhere code touches.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Fumadocs token overrides — light theme */
+  --color-fd-background: 0 0% 100%;
+  --color-fd-foreground: 220 12% 8%;
+  --color-fd-muted: 220 14% 96%;
+  --color-fd-muted-foreground: 220 8% 42%;
+  --color-fd-popover: 0 0% 100%;
+  --color-fd-popover-foreground: 220 12% 8%;
+  --color-fd-card: 0 0% 100%;
+  --color-fd-card-foreground: 220 12% 8%;
+  --color-fd-border: 220 14% 90%;
+  --color-fd-primary: 222 88% 56%;
+  --color-fd-primary-foreground: 0 0% 100%;
+  --color-fd-secondary: 220 14% 96%;
+  --color-fd-secondary-foreground: 220 12% 8%;
+  --color-fd-accent: 220 14% 94%;
+  --color-fd-accent-foreground: 222 88% 56%;
+  --color-fd-ring: 222 88% 56%;
+}
+
+.dark {
+  /* Pure-black background; near-white foreground. No charcoal fade. */
+  --color-fd-background: 0 0% 4%;
+  --color-fd-foreground: 0 0% 96%;
+  --color-fd-muted: 0 0% 10%;
+  --color-fd-muted-foreground: 0 0% 60%;
+  --color-fd-popover: 0 0% 6%;
+  --color-fd-popover-foreground: 0 0% 96%;
+  --color-fd-card: 0 0% 6%;
+  --color-fd-card-foreground: 0 0% 96%;
+  --color-fd-border: 0 0% 14%;
+  --color-fd-primary: 222 100% 70%;
+  --color-fd-primary-foreground: 0 0% 4%;
+  --color-fd-secondary: 0 0% 10%;
+  --color-fd-secondary-foreground: 0 0% 96%;
+  --color-fd-accent: 0 0% 12%;
+  --color-fd-accent-foreground: 222 100% 70%;
+  --color-fd-ring: 222 100% 70%;
+}
+
+body {
+  font-feature-settings:
+    'cv11', /* alt single-story g */
+    'ss03', /* tighter punctuation in Geist */
+    'cv01';
+  letter-spacing: -0.005em;
+}
+
+/* Code blocks: monospace tightened, copy button always visible */
+code,
+pre,
+kbd {
+  font-feature-settings: 'liga' 0, 'calt' 0;
+  letter-spacing: 0;
+}
+
+/* Headings: tighten tracking for display-scale type */
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+  font-feature-settings: 'ss01', 'cv11';
+}
+
+h1 {
+  letter-spacing: -0.03em;
+}
+
+/* Sidebar gets a subtle vertical hairline rather than a solid border */
+[data-sidebar='true'] {
+  border-right-color: hsl(var(--color-fd-border) / 0.6);
+}
+
+/* Inline code: more visual weight, less aggressive background */
+:not(pre) > code {
+  background: hsl(var(--color-fd-muted));
+  border: 1px solid hsl(var(--color-fd-border));
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+}

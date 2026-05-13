@@ -28,7 +28,7 @@ function makeConstructCheckout() {
     bin: { construct: 'bin/construct' },
   }, null, 2)}\n`);
   writeFile(root, 'bin/construct', '#!/usr/bin/env node\n');
-  writeFile(root, 'sync-agents.mjs', 'export {};\n');
+  writeFile(root, 'scripts/sync-agents.mjs', 'export {};\n');
   writeFile(root, 'lib/cli-commands.mjs', 'export const CLI_COMMANDS = [];\n');
   return root;
 }

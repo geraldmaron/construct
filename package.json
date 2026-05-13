@@ -21,7 +21,7 @@
     "templates/distribution/**",
     "langfuse/**",
     "db/**",
-    "sync-agents.mjs",
+    "scripts/sync-agents.mjs",
     "README.md",
     ".env.example"
   ],

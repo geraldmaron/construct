@@ -17,7 +17,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { generateCompletions } from "./lib/completions.mjs";
+import { generateCompletions } from "../lib/completions.mjs";
 import {
   buildCodexMcpEntry,
   getCodexConfigPath,
@@ -28,21 +28,21 @@ import {
   serializeCodexMcpTable,
   tomlString,
   writeCodexConfig,
-} from "./lib/codex-config.mjs";
-import { findOpenCodeConfigPath, readOpenCodeConfig, writeOpenCodeConfig } from "./lib/opencode-config.mjs";
-import { resolvePromptContract } from "./lib/prompt-composer.js";
+} from "../lib/codex-config.mjs";
+import { findOpenCodeConfigPath, readOpenCodeConfig, writeOpenCodeConfig } from "../lib/opencode-config.mjs";
+import { resolvePromptContract } from "../lib/prompt-composer.js";
 import {
   buildClaudeMcpEntry,
   buildOpenCodeMcpEntry,
   getOpenCodeMcpId,
-} from "./lib/mcp-platform-config.mjs";
-import { loadConstructEnv } from "./lib/env-config.mjs";
-import { inlineRoleAntiPatterns, PROMPT_WORD_CAP } from "./lib/role-preload.mjs";
-import { resolveTiersForPrimary } from "./lib/model-router.mjs";
-import { stampFrontmatter } from "./lib/doc-stamp.mjs";
+} from "../lib/mcp-platform-config.mjs";
+import { loadConstructEnv } from "../lib/env-config.mjs";
+import { inlineRoleAntiPatterns, PROMPT_WORD_CAP } from "../lib/role-preload.mjs";
+import { resolveTiersForPrimary } from "../lib/model-router.mjs";
+import { stampFrontmatter } from "../lib/doc-stamp.mjs";
 
 const home = os.homedir();
-const root = path.resolve(import.meta.dirname);
+const root = path.resolve(import.meta.dirname, "..");
 
 const mergedEnv = loadConstructEnv({ rootDir: root, homeDir: home, env: process.env });
 for (const [key, value] of Object.entries(mergedEnv)) {

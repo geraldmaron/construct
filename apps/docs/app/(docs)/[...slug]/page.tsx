@@ -6,7 +6,7 @@ import { getMDXComponents } from '@/mdx-components';
 export default async function Page({
   params,
 }: {
-  params: Promise<{ slug?: string[] }>;
+  params: Promise<{ slug: string[] }>;
 }) {
   const { slug } = await params;
   const page = source.getPage(slug);
@@ -32,7 +32,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug?: string[] }>;
+  params: Promise<{ slug: string[] }>;
 }) {
   const { slug } = await params;
   const page = source.getPage(slug);
