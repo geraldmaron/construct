@@ -8,13 +8,24 @@ Construct is the orchestration layer behind an agentic software organization. Yo
 
 ## Get started in 5 minutes
 
+Add Construct to your project's `package.json` like any other dev dependency:
+
 ```bash
-npm install -g @geraldmaron/construct
-construct setup --yes
-cd ~/your-project && construct init && construct sync
-construct up
+cd ~/your-project
+npm install -D @geraldmaron/construct
+```
+
+The postinstall hook stages `.construct/` and `.claude/` into your project, so hooks, agents, and slash commands are wired up automatically. Peers who clone your repo and run `npm install` get the same setup with no extra steps.
+
+First time on a new machine, bootstrap local services and open your editor:
+
+```bash
+npx construct setup --yes
+npx construct up
 # Open your editor and address @construct
 ```
+
+If you cloned a project that does not yet pin Construct, run `npx -y @geraldmaron/construct init` once to wire it up.
 
 [Full 5-minute walkthrough →](https://geraldmaron.github.io/construct/v2/docs/start)
 
