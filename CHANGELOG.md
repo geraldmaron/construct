@@ -8,7 +8,7 @@ Accumulated since 1.0.0 (2026-05-08).
 
 ### Added
 
-- Modern documentation site at `/v2/` with full-text search, structured navigation, and a 5-minute getting-started path. README rewritten as a landing page with links into the site.
+- Modern documentation site at `/v2/` with full-text search, structured navigation, a 5-minute getting-started path, task-oriented cookbook recipes (including walkthroughs for adding custom specialists, fixing policy violations, swapping LLM and retrieval components, and connecting Slack/GitHub/Jira+Confluence/Salesforce), and concept pages explaining the persona+specialists model, enforcement architecture, durable state, and local-first design. README rewritten as a landing page with links into the site.
 - New `construct gates:audit` command surfaces gaps where a policy gate exists in CI but not locally, or where required-status-checks drift from the actual CI workflow. Runs in CI on every PR.
 - Three-layer policy enforcement now activates automatically after `construct setup`: real-time comment lint at write time, commit-time policy gates via local hooks, and CI as the safety net. Each blocking gate has an explicit env-var bypass so legitimate exceptions leave an audit trail.
 - Specialist persona framework — all 28 specialists now operate as their organizational counterparts (SRE owns reliability, QA owns test health, Security audits dependencies, etc.) with typed event handoffs, rate-limited invocations, and an approval queue for high-stakes decisions.
