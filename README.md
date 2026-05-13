@@ -166,7 +166,6 @@ construct/
 ├── schemas
 ├── scripts
 ├── services
-├── site             MkDocs source for the GitHub Pages documentation site
 ├── skills           Reusable domain knowledge files
 ├── templates
 ├── tests            Test suite

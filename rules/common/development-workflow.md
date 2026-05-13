@@ -21,8 +21,8 @@ git operations. References testing.md, code-review.md, git-workflow.md.
 3. **Code Review** - Review immediately after writing. See [code-review.md](code-review.md).
 
 3.5. **Docs** _(mandatory for any user-facing change)_
-   - If you added or changed a CLI command, API endpoint, config option, or architecture boundary: update `docs/architecture.md` and create or update the relevant `docs/how-to/` guide.
-   - If you added a CLI command, ensure `docs/README.md` how-to list links to a guide for it.
+   - If you added or changed a CLI command, API endpoint, config option, or architecture boundary: update `docs/architecture.md` and create or update the relevant `docs/cookbook/` recipe.
+   - If you added a CLI command, ensure the cookbook index links to a recipe for it.
    - Run `construct docs:update` to regenerate AUTO-managed regions.
    - A change is not DONE if a user-facing capability exists with no documentation.
 
