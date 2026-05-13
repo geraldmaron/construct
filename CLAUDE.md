@@ -33,7 +33,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 
 Before any commit, ensure the following are current:
 - `CHANGELOG.md` — new entry describing what changed and why
-- `docs/architecture.md` — if runtime shape, contracts, or boundaries changed
+- `docs/concepts/architecture.md` — if runtime shape, contracts, or boundaries changed
 - `docs/README.md` — if core docs set or maintenance expectations changed
 - `.cx/context.md` / `.cx/context.json` — if active work, decisions, or architecture assumptions changed
 

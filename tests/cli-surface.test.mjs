@@ -34,7 +34,7 @@ test('construct search uses the current working directory as project scope', () 
 
   const json = JSON.parse(out);
   assert.equal(json.summary.hasPlan, true);
-  assert.ok(json.results.some((entry) => entry.id === 'docs/architecture.md'));
+  assert.ok(json.results.some((entry) => entry.id === 'docs/concepts/architecture.md'));
 });
 
 test('construct evals exposes Langfuse evaluator catalog', () => {

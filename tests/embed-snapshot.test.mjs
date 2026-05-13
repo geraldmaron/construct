@@ -42,7 +42,7 @@ describe('SnapshotEngine', () => {
     const snap = await engine.generate();
 
     assert.equal(snap.operatingProfile.schemaVersion, 'embed-operating-profile/v1');
-    assert.ok(snap.operatingGaps.some((gap) => gap.summary.includes('docs/architecture.md')));
+    assert.ok(snap.operatingGaps.some((gap) => gap.summary.includes('docs/concepts/architecture.md')));
   });
 
   it('collects items from a source', async () => {

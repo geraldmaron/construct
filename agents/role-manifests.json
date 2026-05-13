@@ -86,7 +86,7 @@
       "events": ["handoff.received", "adr.requested", "arch.boundary.violated"],
       "severityImmediate": [],
       "fence": {
-        "allowedPaths": ["docs/adr/**", "docs/rfc/**", "docs/architecture.md", "docs/system-design/**"],
+        "allowedPaths": ["docs/adr/**", "docs/rfc/**", "docs/concepts/architecture.md", "docs/system-design/**"],
         "allowedBdLabels": ["architecture", "adr", "rfc", "design"],
         "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
         "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**", "edit:agents/**"]

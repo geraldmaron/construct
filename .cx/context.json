@@ -21,7 +21,7 @@
     ".beads/hooks/pre-commit",
     "lib/parity.mjs",
     "tests/parity.test.mjs",
-    "docs/architecture.md",
+    "docs/concepts/architecture.md",
     "docs/hooks-deprecated.md",
     "CHANGELOG.md",
     ".cx/context.md",

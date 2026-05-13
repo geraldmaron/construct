@@ -94,7 +94,7 @@ test('hybrid search returns file-backed results and store modes', () => {
   assert.equal(result.stores.sql.mode, 'postgres');
   assert.equal(result.stores.vector.mode, 'remote');
   assert.ok(result.results.length > 0);
-  assert.equal(result.results[0].id, 'docs/architecture.md');
+  assert.equal(result.results[0].id, 'docs/concepts/architecture.md');
 });
 
 test('hybrid search indexes knowledge artifacts', () => {
