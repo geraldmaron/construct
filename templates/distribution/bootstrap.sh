@@ -110,6 +110,29 @@ invoke_via_docker() {
     "${image}" "$@"
 }
 
+# Compute the SHA-256 of a file using whichever tool is available, and compare
+# to the expected digest. Accepts the digest as either a bare hex string or a
+# `sha256sum -c`-style line ("<sha>  <filename>"); we only consume the first
+# 64 hex chars. Returns 0 on match, non-zero otherwise.
+verify_sha256() {
+  local file="$1"
+  local expected_raw="$2"
+  local expected
+  local actual
+  expected="$(echo "${expected_raw}" | tr -d '[:space:]' | cut -c1-64)"
+  if [ -z "${expected}" ] || [ "${#expected}" -ne 64 ]; then
+    return 1
+  fi
+  if command -v sha256sum >/dev/null 2>&1; then
+    actual="$(sha256sum "${file}" | cut -c1-64)"
+  elif command -v shasum >/dev/null 2>&1; then
+    actual="$(shasum -a 256 "${file}" | cut -c1-64)"
+  else
+    return 2
+  fi
+  [ "${actual}" = "${expected}" ]
+}
+
 if [ "${INSTALL_MODE}" = "1" ]; then
   if invoke_via_node_modules --version >/dev/null 2>&1; then
     echo "[construct] node_modules install ready: $(local_construct_in_node_modules)"
@@ -127,15 +150,26 @@ if [ "${INSTALL_MODE}" = "1" ]; then
   arch="$(resolve_arch)"
   if probe_curl && [ -n "${os}" ] && [ -n "${arch}" ] && [ -n "${VERSION}" ]; then
     binary_url="https://github.com/geraldmaron/construct/releases/download/v${VERSION}/construct-${os}-${arch}"
+    sha_url="${binary_url}.sha256"
     mkdir -p "${CACHE_BIN_DIR}"
     target="${CACHE_BIN_DIR}/construct-${os}-${arch}"
+    target_sha="${target}.sha256"
     echo "[construct] downloading binary to ${target}…"
-    if curl -fL "${binary_url}" -o "${target}"; then
+    if ! curl -fL "${binary_url}" -o "${target}"; then
+      echo "[construct] binary download failed; falling through." >&2
+      rm -f "${target}"
+    elif ! curl -fL "${sha_url}" -o "${target_sha}"; then
+      echo "[construct] SHA-256 download failed at ${sha_url}; refusing to install an unverified binary." >&2
+      rm -f "${target}" "${target_sha}"
+    elif ! verify_sha256 "${target}" "$(cat "${target_sha}")"; then
+      echo "[construct] SHA-256 mismatch; refusing to install. Re-run to retry." >&2
+      rm -f "${target}" "${target_sha}"
+    else
       chmod +x "${target}"
-      echo "[construct] binary cached. Subsequent invocations use it."
+      rm -f "${target_sha}"
+      echo "[construct] binary cached and SHA-verified. Subsequent invocations use it."
       exit 0
     fi
-    echo "[construct] binary download failed; falling through."
   fi
   echo "[construct] No installable runtime detected." >&2
   echo "  Install one of: Node.js 18+, Docker, or curl + a release binary." >&2
