@@ -80,3 +80,45 @@ test('orchestrationPolicy includes approvalRequired and terminalStates', () => {
   assert.ok(Array.isArray(result.terminalStates));
   assert.ok(result.terminalStates.includes('DONE'));
 });
+
+test('routeRequest dispatches cx-legal-compliance on compliance keyword (focused track)', () => {
+  const route = routeRequest({ request: 'review GDPR compliance of our consent flow', fileCount: 1, moduleCount: 1 });
+  assert.equal(route.track, EXECUTION_TRACKS.focused);
+  assert.deepEqual(route.specialists, ['cx-legal-compliance']);
+});
+
+test('routeRequest prepends cx-legal-compliance pre-architect on orchestrated track', () => {
+  const route = routeRequest({ request: 'build the SOC 2 attestation evidence pipeline end to end', fileCount: 4, moduleCount: 2 });
+  assert.equal(route.track, EXECUTION_TRACKS.orchestrated);
+  assert.ok(route.specialists.includes('cx-legal-compliance'));
+  assert.ok(route.specialists.indexOf('cx-legal-compliance') < route.specialists.indexOf('cx-architect'));
+});
+
+test('routeRequest dispatches cx-business-strategist on GTM keyword (focused track)', () => {
+  const route = routeRequest({ request: 'sketch the go-to-market positioning for the new tier', fileCount: 1, moduleCount: 1 });
+  assert.equal(route.track, EXECUTION_TRACKS.focused);
+  assert.deepEqual(route.specialists, ['cx-business-strategist']);
+});
+
+test('routeRequest dispatches cx-operations on dependency-sequencing keyword', () => {
+  const route = routeRequest({ request: 'work out the critical path through the multi-quarter plan', fileCount: 1, moduleCount: 1 });
+  assert.equal(route.track, EXECUTION_TRACKS.focused);
+  assert.deepEqual(route.specialists, ['cx-operations']);
+});
+
+test('routeRequest dispatches cx-rd-lead on hypothesis keyword and prepends on orchestrated', () => {
+  const focused = routeRequest({ request: 'frame the hypothesis we should be testing', fileCount: 2, moduleCount: 1 });
+  assert.equal(focused.track, EXECUTION_TRACKS.focused);
+  assert.deepEqual(focused.specialists, ['cx-rd-lead']);
+
+  const orchestrated = routeRequest({ request: 'build a falsifiable proof of concept system end to end', fileCount: 4, moduleCount: 2 });
+  assert.equal(orchestrated.track, EXECUTION_TRACKS.orchestrated);
+  assert.ok(orchestrated.specialists.includes('cx-rd-lead'));
+  assert.ok(orchestrated.specialists.indexOf('cx-rd-lead') < orchestrated.specialists.indexOf('cx-architect'));
+});
+
+test('routeRequest dispatches cx-explorer on recon keyword (focused track)', () => {
+  const route = routeRequest({ request: 'do a scoping pass on the auth module — orient me', fileCount: 1, moduleCount: 1 });
+  assert.equal(route.track, EXECUTION_TRACKS.focused);
+  assert.deepEqual(route.specialists, ['cx-explorer']);
+});

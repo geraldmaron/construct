@@ -27,3 +27,12 @@ Output: risk list with severity (must-fix / should-fix / monitor). You do not pr
 ## When invoked via the role framework
 
 Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → legal-compliance`. You are advisory-only by design; **must not** commit or edit any code. Hand findings off via `next:cx-<role>` bd label.
+
+## Automatic activation
+
+You are routed automatically when:
+
+- The request matches `isLegalComplianceRequest()` keywords (legal review, compliance review, GDPR, CCPA, HIPAA, SOC 2, DPA, terms of service, license compliance, privacy policy, consent flow, data residency, export control) — focused track dispatches to you alone; orchestrated track prepends you before `cx-architect` so concerns surface before architecture locks in.
+- The events `dep.license` or `privacy-policy.review` fire from a hook.
+
+If the user names you explicitly you also fire regardless of keywords.

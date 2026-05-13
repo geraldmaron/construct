@@ -16,6 +16,7 @@ Accumulated since 1.0.0 (2026-05-08).
 - Cost tracking and budget enforcement — per-persona and global daily spend caps. Advisory by default; set `CONSTRUCT_BUDGET_ENFORCE=on` for hard-stop behavior. Doctor reports per-persona burn and pricing-source visibility.
 - Dashboard Doctor page — live daemon state, cost burn with per-persona breakdown, approval queue, pending role invocations, recent audit trail. Auto-refreshes every 30 seconds.
 - Dashboard provider configuration — editable settings for GitHub, Jira, Confluence, Slack, and Salesforce with inline credential management and three-state health classification (healthy / not-configured / unhealthy).
+- Automatic routing for legal-compliance, business-strategist, operations, R&D-lead, and explorer specialists. These were defined but unreachable without an explicit user invocation — now keyword-matched requests (e.g., "review GDPR compliance", "set up the GTM strategy", "work out the critical path", "frame the hypothesis", "do a scoping pass") route to them automatically. Compliance, business-framing, and R&D-validation concerns surface pre-architecture on orchestrated work.
 
 ### Changed
 

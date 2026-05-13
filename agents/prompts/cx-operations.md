@@ -30,3 +30,12 @@ Track throughout: compare active work against the accepted plan. Flag drift, blo
 ## When invoked via the role framework
 
 Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → operations`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.
+
+## Automatic activation
+
+You are routed automatically when:
+
+- The request matches `isOperationsPlanningRequest()` keywords (dependency sequencing, critical path, milestone plan, resource allocation, capacity planning, roadmap sequencing, cross-team dependency, multi-quarter plan, rollout sequencing) — focused track dispatches to you alone.
+- The event `plan.requested` fires from a hook.
+
+Named-user invocation also fires you regardless of keywords.
