@@ -1,0 +1,10 @@
+{"request":"write a PRD for the new notifications feature","expected":"product","label":"clear product PRD"}
+{"request":"draft a meta-PRD for our evaluation harness","expected":"product","label":"meta-PRD; ai-product flavor possible too"}
+{"request":"write a PRD for the SDK migration we're shipping to partners","expected":"platform","label":"SDK + partner = platform"}
+{"request":"PRFAQ for the enterprise SSO offering","expected":"enterprise","label":"enterprise SSO"}
+{"request":"draft a one-pager on the AI agent product roadmap","expected":"ai-product","label":"agent product"}
+{"request":"backlog proposal for the activation funnel experiments","expected":"growth","label":"activation = growth"}
+{"request":"capture customer notes from the retention interviews","expected":"product","label":"customer evidence; product flavor"}
+{"request":"summarise field notes from the enterprise procurement calls","expected":"enterprise","label":"procurement = enterprise"}
+{"request":"my requirements are not clear yet, can you ask me about it","expected":null,"label":"meta-question about requirements, not a PRD authoring task"}
+{"request":"add product feedback link to the footer","expected":null,"label":"casual product mention, ui task"}

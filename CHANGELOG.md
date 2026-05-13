@@ -17,6 +17,7 @@ Accumulated since 1.0.0 (2026-05-08).
 - Dashboard Doctor page — live daemon state, cost burn with per-persona breakdown, approval queue, pending role invocations, recent audit trail. Auto-refreshes every 30 seconds.
 - Dashboard provider configuration — editable settings for GitHub, Jira, Confluence, Slack, and Salesforce with inline credential management and three-state health classification (healthy / not-configured / unhealthy).
 - Automatic routing for legal-compliance, business-strategist, operations, R&D-lead, and explorer specialists. These were defined but unreachable without an explicit user invocation — now keyword-matched requests (e.g., "review GDPR compliance", "set up the GTM strategy", "work out the critical path", "frame the hypothesis", "do a scoping pass") route to them automatically. Compliance, business-framing, and R&D-validation concerns surface pre-architecture on orchestrated work.
+- Intent-aware routing layer. Keyword classifiers used to suffer false positives ("the AI is slow" routes to AI-systems architect; "coverage" substring-matches "rag" inside it). The new `routeRequestVerified` API and `orchestration_policy` MCP tool overlay an optional fast-tier LLM verifier on top of the keyword match, dropping flavors below a confidence threshold. Falls back to keyword-only when no model key is configured, errored, or `CONSTRUCT_INTENT_VERIFY=off`. A scoring script (`npm run eval:routing -- --verify`) measures precision/recall/F1 of keyword-only vs verified against a labeled corpus.
 
 ### Changed
 

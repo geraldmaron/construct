@@ -17,7 +17,9 @@ import {
   buildDispatchPlan,
   requiresExecutiveApproval,
   routeRequest,
+  routeRequestVerified,
 } from '../lib/orchestration-policy.mjs';
+import { resetCache as resetIntentCache } from '../lib/intent-classifier.mjs';
 import { orchestrationPolicy } from '../lib/mcp/tools/skills.mjs';
 
 test('routeRequest classifies simple explanation as immediate research', () => {
@@ -57,8 +59,8 @@ test('buildDispatchPlan returns concise policy-driven plan text', () => {
   assert.match(buildDispatchPlan({ track: EXECUTION_TRACKS.orchestrated, intent: INTENT_CLASSES.implementation, specialists: ['cx-architect', 'cx-engineer', 'cx-reviewer', 'cx-qa'] }), /cx-architect/);
 });
 
-test('orchestrationPolicy includes draftTask for non-immediate requests', () => {
-  const result = orchestrationPolicy({ request: 'fix the login redirect bug', fileCount: 2, moduleCount: 1 });
+test('orchestrationPolicy includes draftTask for non-immediate requests', async () => {
+  const result = await orchestrationPolicy({ request: 'fix the login redirect bug', fileCount: 2, moduleCount: 1 });
   assert.ok(result.draftTask, 'draftTask should be present for focused/orchestrated requests');
   assert.equal(result.draftTask.status, 'todo');
   assert.ok(result.draftTask.owner, 'draftTask should have an owner');
@@ -68,14 +70,14 @@ test('orchestrationPolicy includes draftTask for non-immediate requests', () => 
   assert.equal(result.draftTask.source.track, EXECUTION_TRACKS.focused);
 });
 
-test('orchestrationPolicy omits draftTask for immediate requests', () => {
-  const result = orchestrationPolicy({ request: 'explain how the caching layer works', fileCount: 1, moduleCount: 1 });
+test('orchestrationPolicy omits draftTask for immediate requests', async () => {
+  const result = await orchestrationPolicy({ request: 'explain how the caching layer works', fileCount: 1, moduleCount: 1 });
   assert.equal(result.track, EXECUTION_TRACKS.immediate);
   assert.equal(result.draftTask, null);
 });
 
-test('orchestrationPolicy includes approvalRequired and terminalStates', () => {
-  const result = orchestrationPolicy({ request: 'build this feature end to end and ship it', fileCount: 4, moduleCount: 2 });
+test('orchestrationPolicy includes approvalRequired and terminalStates', async () => {
+  const result = await orchestrationPolicy({ request: 'build this feature end to end and ship it', fileCount: 4, moduleCount: 2 });
   assert.equal(typeof result.approvalRequired, 'boolean');
   assert.ok(Array.isArray(result.terminalStates));
   assert.ok(result.terminalStates.includes('DONE'));
@@ -121,4 +123,36 @@ test('routeRequest dispatches cx-explorer on recon keyword (focused track)', () 
   const route = routeRequest({ request: 'do a scoping pass on the auth module — orient me', fileCount: 1, moduleCount: 1 });
   assert.equal(route.track, EXECUTION_TRACKS.focused);
   assert.deepEqual(route.specialists, ['cx-explorer']);
+});
+
+test('routeRequestVerified keeps verified flavors and drops false-positive ones', async () => {
+  resetIntentCache();
+  const caller = async ({ user }) => {
+    const flavor = user.match(/Candidate flavor: (\S+)/)[1];
+    if (flavor === 'ai-eval') return JSON.stringify({ verified: false, confidence: 0.85, reason: 'mentions model in passing only' });
+    return JSON.stringify({ verified: true, confidence: 0.9, reason: 'core domain' });
+  };
+  const verified = await routeRequestVerified({
+    request: 'design a better cache architecture for the data model with the test plan attached',
+    fileCount: 4,
+    moduleCount: 2,
+    modelCaller: caller,
+  });
+  assert.equal(verified.roleFlavors.architect, 'data');
+  assert.equal(verified.roleFlavors.qa, null);
+  assert.equal(verified.verifications.architect.verified, true);
+  assert.equal(verified.verifications.qa.verified, false);
+});
+
+test('routeRequestVerified attaches verifications even when no flavor matched', async () => {
+  resetIntentCache();
+  const caller = async () => JSON.stringify({ verified: true, confidence: 1, reason: 'n/a' });
+  const verified = await routeRequestVerified({
+    request: 'explain how the caching layer works',
+    fileCount: 1,
+    moduleCount: 1,
+    modelCaller: caller,
+  });
+  assert.equal(verified.track, EXECUTION_TRACKS.immediate);
+  assert.ok(verified.verifications);
 });

@@ -1,0 +1,12 @@
+{"request":"design the kubernetes ingress and load balancing for the multi-tenant SaaS","expected":"platform","label":"clear platform infra"}
+{"request":"sketch the architecture for a developer-facing SDK exposing our agent runtime","expected":"platform","label":"developer experience"}
+{"request":"add a new OAuth integration with Stripe and reconcile their webhooks idempotently","expected":"integration","label":"third-party integration"}
+{"request":"design the warehouse schema and partition strategy for billing events","expected":"data","label":"warehouse schema"}
+{"request":"plan the data model and backfill for the new analytics index","expected":"data","label":"data model + backfill"}
+{"request":"draft the RBAC and tenant isolation model for enterprise customers","expected":"enterprise","label":"enterprise RBAC"}
+{"request":"design the retrieval pipeline: embedding model, chunking, and reranking","expected":"ai-systems","label":"RAG pipeline"}
+{"request":"design the agent eval loop with golden trace comparisons","expected":"ai-systems","label":"agent eval"}
+{"request":"the AI is slow, look at the cache layer","expected":null,"label":"casual AI mention; not architecture work"}
+{"request":"my coverage report shows 60%, can you bump it","expected":null,"label":"coverage substring would false-match 'rag'; actual intent is testing"}
+{"request":"explore how the auth module is structured","expected":null,"label":"explore-intent, not architecture design"}
+{"request":"fix the off-by-one in retry logic","expected":null,"label":"small bug fix, not architecture"}

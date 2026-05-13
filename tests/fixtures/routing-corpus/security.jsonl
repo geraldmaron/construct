@@ -1,0 +1,10 @@
+{"request":"review the prompt injection surface of our retrieval agent","expected":"ai","label":"clear AI security"}
+{"request":"audit how user PII flows through the trace pipeline and what's retained","expected":"privacy","label":"PII + retention"}
+{"request":"check the dependency SBOM for high-severity CVEs","expected":"supply-chain","label":"SBOM"}
+{"request":"audit our IAM and bucket policies for public-access drift","expected":"cloud","label":"cloud IAM"}
+{"request":"review the JWT verification logic for the new auth flow","expected":"appsec","label":"JWT authn = appsec"}
+{"request":"the new SSO integration needs a security review before we ship","expected":"appsec","label":"auth integration; appsec covers it"}
+{"request":"my password manager keeps forgetting credentials","expected":null,"label":"not actually about app security"}
+{"request":"set up consent banners for EU users","expected":"privacy","label":"consent + EU = privacy"}
+{"request":"can we make the API faster for premium customers","expected":null,"label":"perf, not security"}
+{"request":"investigate the slow signin issue","expected":null,"label":"auth-adjacent but it's a perf/bug, not security review"}

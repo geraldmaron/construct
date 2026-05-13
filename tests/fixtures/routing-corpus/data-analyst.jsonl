@@ -1,0 +1,8 @@
+{"request":"summarise the customer notes for the Q4 retention initiative","expected":"product-intelligence","label":"customer evidence"}
+{"request":"design the A/B test for the new onboarding flow with proper randomisation","expected":"experiment","label":"AB test"}
+{"request":"build a dashboard for activation telemetry with proper denominators","expected":"telemetry","label":"telemetry"}
+{"request":"compute the activation funnel from signup to first task","expected":"product","label":"funnel metric"}
+{"request":"investigate why retention metric dropped in the last release","expected":"product","label":"retention metric"}
+{"request":"sample size calc for the pricing experiment","expected":"experiment","label":"experiment sizing"}
+{"request":"set up custom event analytics for the conversion funnel","expected":"product","label":"conversion analytics"}
+{"request":"fix the experimental new feature","expected":null,"label":"experimental is incidental — it's just a feature label"}
