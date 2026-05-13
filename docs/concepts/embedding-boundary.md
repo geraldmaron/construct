@@ -98,7 +98,7 @@ node scripts/test-instance-isolation.mjs
 
 Run boundary API tests:
 ```bash
-node scripts/test-embed-boundary.mjs
+node scripts/embed-boundary-manual.mjs
 ```
 
 ## Best Practices

@@ -5,8 +5,40 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
 
+# Heavy jobs (test matrix, evals, audit, postgres-integration) only run when code or
+# workflow files change. Doc-only PRs skip them and still get the cheap policy checks
+# (lint-comments, lint-templates, docs drift, gates audit, secret scan).
+
 jobs:
+  filter:
+    name: detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      workflow: ${{ steps.filter.outputs.workflow }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'lib/**'
+              - 'bin/**'
+              - 'agents/**'
+              - 'skills/**'
+              - 'scripts/**'
+              - 'db/**'
+              - 'rules/**'
+              - 'templates/**'
+              - 'package.json'
+              - 'package-lock.json'
+            workflow:
+              - '.github/workflows/ci.yml'
+
   test:
+    needs: filter
+    if: needs.filter.outputs.code == 'true' || needs.filter.outputs.workflow == 'true'
     name: test (${{ matrix.os }} / node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -32,6 +64,8 @@ jobs:
       - run: node bin/construct docs:verify
 
   evals:
+    needs: filter
+    if: needs.filter.outputs.code == 'true' || needs.filter.outputs.workflow == 'true'
     name: retrieval evals
     runs-on: ubuntu-latest
     env:
@@ -46,6 +80,8 @@ jobs:
         run: node bin/construct evals retrieval
 
   audit:
+    needs: filter
+    if: needs.filter.outputs.code == 'true' || needs.filter.outputs.workflow == 'true'
     name: dependency CVE audit
     runs-on: ubuntu-latest
     steps:
@@ -70,6 +106,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   postgres-integration:
+    needs: filter
+    if: needs.filter.outputs.code == 'true' || needs.filter.outputs.workflow == 'true'
     name: postgres + pgvector integration
     runs-on: ubuntu-latest
     services:

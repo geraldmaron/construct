@@ -2,7 +2,20 @@
 
 > Project state for the Construct repo. Keep this file aligned with the current state of the construct codebase. Do not paste session-specific or external-project details here — those belong in the local `.cx/handoffs/` (which is gitignored).
 
-Last saved: 2026-05-12
+Last saved: 2026-05-13
+
+## Most recent session (2026-05-13)
+
+Bundled backlog cleanup PR landing on a single branch:
+
+- Touch-free local install — dropped the unconditional cloud Langfuse default; pgvector + migrations now run on every `construct setup` regardless of `--yes`; `construct doctor` now warns on missing Docker daemon / cm; opt-in Docker daemon auto-start on macOS via `CONSTRUCT_AUTO_START_DOCKER=1`; Langfuse magic-link bridge wired at `/api/services/langfuse/login`.
+- Agent contracts hardened — 5 specialist contracts (cx-reviewer, cx-security, cx-debugger, cx-docs-keeper, cx-designer) gained binary postconditions enforced by an extended `validatePacket` (one-of grouping + enum constraints).
+- Routing observability — `classifyEngineerFlavor` added so cx-engineer routes to its three overlays; `CONSTRUCT_VERBOSE=1` prints a one-line overlay trace from `routeRequest`.
+- Gate hygiene — pre-commit comment-lint and docs-verify now run on the full diff (no `--staged`) to match CI; new local-only-by-design section in `docs/concepts/gates-and-enforcement.md`; new cookbook page `slash-command-index.md`.
+- CI — `dorny/paths-filter` added so doc-only PRs skip the test matrix, evals, audit, and postgres-integration.
+- Housekeeping — `scripts/test-embed-boundary.mjs` → `scripts/embed-boundary-manual.mjs` (manual probe, not a unit test); `lib/hooks/probe-before-read.js` → `.mjs`.
+
+Deferred (out of scope for this PR, kept open in beads): dashboard rebuild epic, persona-as-role epic, runtime contract validators epic, proactive activation framework, GraphRAG Phase C9, live AWS / runtime-integration validations, distribution P0s (.construct layout + bootstrap shims).
 
 ## Embedding Model
 

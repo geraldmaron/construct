@@ -26,7 +26,10 @@ test("managed setup values configure local vector and Langfuse defaults", async 
   });
 
   assert.equal(values.CONSTRUCT_TRACE_BACKEND, "langfuse");
-  assert.equal(values.LANGFUSE_BASEURL, "https://cloud.langfuse.com");
+  // No default LANGFUSE_BASEURL: leaving it unset lets service-manager pick the
+  // local-Docker path and write back the actual URL on first `construct up`.
+  // Setting a cloud default here silently blocks local Langfuse startup.
+  assert.equal(values.LANGFUSE_BASEURL, undefined);
   assert.equal(values.CONSTRUCT_VECTOR_MODEL, "hashing-bow-v1");
   assert.equal(values.CONSTRUCT_VECTOR_INDEX_PATH, path.join(home, ".construct", "vector", "index.json"));
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_ENABLED, "1");
