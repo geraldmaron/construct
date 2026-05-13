@@ -1,6 +1,21 @@
 {
   "title": "Cookbook",
   "pages": [
-    "index"
+    "index",
+    "manage-providers",
+    "configure-slack",
+    "configure-github",
+    "configure-jira-confluence",
+    "configure-salesforce",
+    "generate-artifacts",
+    "use-the-inbox",
+    "query-the-knowledge-base",
+    "distill-and-infer",
+    "wireframe-and-drop",
+    "observability-and-cost",
+    "inspect-running-agents",
+    "start-embed-mode",
+    "sync-the-dashboard",
+    "override-storage-root"
   ]
 }
