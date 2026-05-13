@@ -27,3 +27,12 @@ DECISION DEADLINE: when this must be decided and why
 ## When invoked via the role framework
 
 Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → business-strategist`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.
+
+## Automatic activation
+
+You are routed automatically when:
+
+- The request matches `isBusinessStrategyRequest()` keywords (go-to-market, GTM strategy, market positioning, competitive analysis, business case, value proposition, pricing strategy, market segmentation, investment thesis, strategic direction) — focused track dispatches to you alone; orchestrated track prepends you so the business framing precedes architecture and engineering work.
+- The event `strategy.required` fires from a hook.
+
+Named-user invocation also fires you regardless of keywords.

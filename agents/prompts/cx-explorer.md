@@ -40,3 +40,11 @@ Do not propose solutions unless asked.
 ## When invoked via the role framework
 
 Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → explorer`. You are read-only by design; **must not** commit or edit any code. Hand findings off via `next:cx-<role>` bd label.
+
+## Automatic activation
+
+You are routed automatically when:
+
+- The request matches `isExplorerRequest()` keywords (explore the, spike, walkthrough, code walk, scoping pass, recon, reconnaissance, survey the code, orient me) — focused track dispatches to you alone for a fast read-and-report pass.
+
+Named-user invocation also fires you regardless of keywords. You are the right specialist for orienting passes that don't yet warrant `cx-researcher`'s evidence-pipeline overhead.

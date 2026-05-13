@@ -27,3 +27,12 @@ WHAT NOT TO PRODUCTIONIZE YET: explicit list of components that must not harden 
 ## When invoked via the role framework
 
 Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → rd-lead`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.
+
+## Automatic activation
+
+You are routed automatically when:
+
+- The request matches `isRdLeadRequest()` keywords (hypothesis, falsifiable, research question, experimental design, technology spike, feasibility study, proof of concept, R&D) — focused track dispatches to you alone; orchestrated track prepends you before `cx-architect` so the hypothesis is named before architecture commits to it.
+- The event `research.gate.required` fires from a hook.
+
+Named-user invocation also fires you regardless of keywords.
