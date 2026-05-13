@@ -4,7 +4,9 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
-Accumulated since 1.0.0 (2026-05-08).
+## 0.1.0 — 2026-05-13
+
+Version line reset to the 0.x series. The previously published 1.0.0 was a premature publish and has been deprecated on npm in favour of 0.1.x; breaking changes are expected during the 0.x series and may ride in on minor bumps. The dep-install path (`npm install -D @geraldmaron/construct`) is the primary distribution model — peers who clone a project that pins Construct get the full setup automatically through the postinstall hook, the same way any other dev dependency would land.
 
 ### Added
 
@@ -18,6 +20,7 @@ Accumulated since 1.0.0 (2026-05-08).
 - Dashboard provider configuration — editable settings for GitHub, Jira, Confluence, Slack, and Salesforce with inline credential management and three-state health classification (healthy / not-configured / unhealthy).
 - Automatic routing for legal-compliance, business-strategist, operations, R&D-lead, and explorer specialists. These were defined but unreachable without an explicit user invocation — now keyword-matched requests (e.g., "review GDPR compliance", "set up the GTM strategy", "work out the critical path", "frame the hypothesis", "do a scoping pass") route to them automatically. Compliance, business-framing, and R&D-validation concerns surface pre-architecture on orchestrated work.
 - Intent-aware routing layer. Keyword classifiers used to suffer false positives ("the AI is slow" routes to AI-systems architect; "coverage" substring-matches "rag" inside it). The new `routeRequestVerified` API and `orchestration_policy` MCP tool overlay an optional fast-tier LLM verifier on top of the keyword match, dropping flavors below a confidence threshold. Falls back to keyword-only when no model key is configured, errored, or `CONSTRUCT_INTENT_VERIFY=off`. A scoring script (`npm run eval:routing -- --verify`) measures precision/recall/F1 of keyword-only vs verified against a labeled corpus.
+- `construct init` stages the same `.construct/` launcher and `.claude/` adapters that the npm postinstall hook stages, sharing one code path via `lib/install/stage-project.mjs`. `init` is now self-sufficient for projects that did not yet pin Construct — running it after a clone produces the same project shape as `npm install` of a project that does pin it. Documented `release-policy.md` keeps release cadence deliberate.
 
 ### Changed
 
