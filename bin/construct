@@ -1045,15 +1045,13 @@ async function cmdDocsCheck(args) {
     println('Commands with no linked how-to in docs/README.md:');
     for (const name of result.uncovered) println(`  ✗  construct ${name}`);
     println('');
-    println(`Add how-to guides under docs/how-to/ and link them from docs/README.md.`);
+    println(`Add cookbook recipes under docs/cookbook/ and link them from the cookbook index.`);
     process.exitCode = 1;
   }
 }
 
 async function cmdDocsSite() {
-  const { buildSite, buildFumadocsReference } = await import('../lib/auto-docs.mjs');
-  await buildSite({ rootDir: ROOT_DIR });
-  ok('site/docs/ generated successfully (MkDocs source).');
+  const { buildFumadocsReference } = await import('../lib/auto-docs.mjs');
   const { written } = buildFumadocsReference({ rootDir: ROOT_DIR });
   if (written.length === 0) {
     ok('docs/reference/ already up to date.');

@@ -45,9 +45,9 @@ test('returns ok:false when repo has no docs', () => {
   } finally { cleanTmp(root); }
 });
 
-test('finds content in docs/architecture.md', () => {
+test('finds content in docs/concepts/architecture.md', () => {
   const root = makeTmpRepo({
-    'docs/architecture.md': `# Construct Architecture
+    'docs/concepts/architecture.md': `# Construct Architecture
 
 ## System overview
 
@@ -87,9 +87,9 @@ test('finds content in docs/README.md', () => {
   } finally { cleanTmp(root); }
 });
 
-test('finds content in how-to guides', () => {
+test('finds content in cookbook recipes', () => {
   const root = makeTmpRepo({
-    'docs/how-to/how-to-embed-start.md': `# How to start embed mode
+    'docs/cookbook/start-embed-mode.md': `# How to start embed mode
 
 ## Starting the daemon
 
@@ -101,7 +101,7 @@ configured GitHub repos and Jira projects on a schedule.
     const result = knowledgeSearch({ query: 'how to start embed daemon', repoRoot: root, rootDir: root });
     assert.equal(result.ok, true);
     assert.ok(result.hits.length > 0);
-    assert.ok(result.hits[0].file.includes('how-to'));
+    assert.ok(result.hits[0].file.includes('cookbook'));
   } finally { cleanTmp(root); }
 });
 
@@ -121,7 +121,7 @@ We use construct with three GitHub repos. Config lives in ~/.construct/config.en
 
 test('respects topK limit', () => {
   const root = makeTmpRepo({
-    'docs/architecture.md': Array.from({ length: 20 }, (_, i) =>
+    'docs/concepts/architecture.md': Array.from({ length: 20 }, (_, i) =>
       `## Section ${i}\n\nconstruct is a system with feature ${i} that does something useful.\n`
     ).join('\n'),
   });
@@ -133,7 +133,7 @@ test('respects topK limit', () => {
 
 test('hit fields are present and correct shape', () => {
   const root = makeTmpRepo({
-    'docs/architecture.md': `# Construct Architecture\n\n## Overview\n\nConstruct is an orchestration system.\n`,
+    'docs/concepts/architecture.md': `# Construct Architecture\n\n## Overview\n\nConstruct is an orchestration system.\n`,
   });
   try {
     const result = knowledgeSearch({ query: 'orchestration', repoRoot: root, rootDir: root });
@@ -151,7 +151,7 @@ test('hit fields are present and correct shape', () => {
 
 test('sources list contains only unique file paths', () => {
   const root = makeTmpRepo({
-    'docs/architecture.md': `# Construct Architecture\n\nconstruct orchestration system.\n`,
+    'docs/concepts/architecture.md': `# Construct Architecture\n\nconstruct orchestration system.\n`,
     'docs/README.md': `# Docs\n\nconstruct commands and guides.\n`,
   });
   try {
@@ -179,8 +179,8 @@ test('returns message when no hits found', () => {
 
 test('architecture.md ranks above how-to for overview questions', () => {
   const root = makeTmpRepo({
-    'docs/architecture.md': `# Construct Architecture\n\n## System overview\n\nConstruct is an AI orchestration system that manages organizational intelligence.\n`,
-    'docs/how-to/how-to-embed-start.md': `# Embed start\n\nConstruct embed mode monitors systems.\n`,
+    'docs/concepts/architecture.md': `# Construct Architecture\n\n## System overview\n\nConstruct is an AI orchestration system that manages organizational intelligence.\n`,
+    'docs/cookbook/start-embed-mode.md': `# Embed start\n\nConstruct embed mode monitors systems.\n`,
   });
   try {
     const result = knowledgeSearch({ query: 'what is construct system overview', repoRoot: root, rootDir: root });
