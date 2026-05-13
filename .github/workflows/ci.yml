@@ -3,6 +3,7 @@ name: ci
 on:
   push:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
 
 jobs:
   test:
@@ -143,7 +144,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # Advisory gate: PR-body shape has no local-pre-flight equivalent (the
+      # body doesn't exist until `gh pr create` runs), so a hard failure forces
+      # a close+reopen to retrigger CI after a body fix. Step `continue-on-error`
+      # surfaces violations in the logs without failing the job; a follow-up
+      # adds a local `construct lint:pr` pre-flight so devs catch this pre-push.
       - name: Enforce commit + PR templates
+        continue-on-error: true
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_BASE_REF: ${{ github.event.pull_request.base.ref || github.base_ref }}
