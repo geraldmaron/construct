@@ -1,0 +1,9 @@
+{"request":"set up pgvector indexing for the semantic search service","expected":"vector-retrieval","label":"pgvector vector retrieval"}
+{"request":"design a hybrid search combining BM25 and embedding similarity","expected":"vector-retrieval","label":"hybrid search"}
+{"request":"build the metric layer for the analytics warehouse","expected":"warehouse","label":"metric layer"}
+{"request":"set up incremental dbt models for the activation funnel","expected":"warehouse","label":"incremental warehouse model"}
+{"request":"design an idempotent backfill pipeline for stripe events","expected":"pipeline","label":"idempotent backfill pipeline"}
+{"request":"build the streaming ETL for click events","expected":"pipeline","label":"streaming ETL"}
+{"request":"add a data contract between the auth service and billing","expected":"pipeline","label":"data contract"}
+{"request":"index more meaningful fields in postgres for query performance","expected":null,"label":"indexing is incidental — it's perf tuning, not retrieval pipeline"}
+{"request":"vector files into a folder","expected":null,"label":"vector is incidental — image vector graphics, not embedding"}

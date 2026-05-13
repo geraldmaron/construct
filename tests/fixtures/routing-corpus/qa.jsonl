@@ -1,0 +1,10 @@
+{"request":"design the agent eval suite with golden traces","expected":"ai-eval","label":"agent eval"}
+{"request":"add API contract tests for the new partner endpoints","expected":"api-contract","label":"contract tests"}
+{"request":"verify the ETL pipeline freshness and data quality SLOs","expected":"data-pipeline","label":"ETL freshness"}
+{"request":"playwright tests for the onboarding screens","expected":"web-ui","label":"web-ui via playwright"}
+{"request":"verify the warehouse backfill produces stable rows under re-runs","expected":"data-pipeline","label":"backfill idempotency"}
+{"request":"the dashboard looks bad in safari, check the responsive layout","expected":"web-ui","label":"responsive web-ui"}
+{"request":"my model is giving weird outputs sometimes","expected":"ai-eval","label":"model behavior, eval needed"}
+{"request":"reorganize the model files in the repo","expected":null,"label":"refactor task; 'model' is incidental"}
+{"request":"replace the legacy API with the new one — coordinate the rollout","expected":null,"label":"migration plan, not test design"}
+{"request":"run the test suite","expected":null,"label":"test execution, not test design"}
