@@ -63,7 +63,7 @@ Do not edit these without reading the constraints in CLAUDE.md first:
 | File | Why |
 |---|---|
 | `agents/registry.json` | Source of truth for all agents on all platforms |
-| `sync-agents.mjs` | Regenerates every platform config |
+| `scripts/sync-agents.mjs` | Regenerates every platform config |
 | `lib/hooks/*.mjs` | Run in every Claude Code session |
 | `claude/settings.template.json` | Controls all Claude Code hook config |
 

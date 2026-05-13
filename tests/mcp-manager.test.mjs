@@ -81,7 +81,7 @@ function runMcpRemove(id, { home, cwd, env = {} }) {
 
 function runSync({ home, cwd, env = {} }) {
   const repoRoot = makeRepoCopy();
-  execFileSync(process.execPath, ["sync-agents.mjs"], {
+  execFileSync(process.execPath, ["scripts/sync-agents.mjs"], {
     cwd: repoRoot,
     env: {
       ...process.env,

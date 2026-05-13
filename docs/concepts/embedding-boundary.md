@@ -25,7 +25,7 @@ The Construct embedding boundary system prevents internal Construct information 
 - **Boundary tracking**: Stores parent instance info and relationship metadata
 
 ### 4. Isolation Testing
-- **Test suite**: `test-instance-isolation.mjs` verifies separation
+- **Test suite**: `scripts/test-instance-isolation.mjs` verifies separation
 - **Test vectors**: Config, data, ports, state, directories
 - **Best practices**: Provides guidance for production embedding
 
@@ -93,12 +93,12 @@ The system ensures:
 
 Run isolation tests:
 ```bash
-node test-instance-isolation.mjs
+node scripts/test-instance-isolation.mjs
 ```
 
 Run boundary API tests:
 ```bash
-node test-embed-boundary.mjs
+node scripts/test-embed-boundary.mjs
 ```
 
 ## Best Practices

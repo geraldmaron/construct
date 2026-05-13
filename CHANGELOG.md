@@ -19,14 +19,16 @@ Accumulated since 1.0.0 (2026-05-08).
 
 ### Changed
 
-- Documentation site moved from MkDocs to Fumadocs. The new site is the canonical docs surface; the MkDocs source (`site/`, `mkdocs.yml`) has been removed. Old per-topic markdown files (`docs/how-to/`, `docs/getting-started.md`, `docs/installation/`, `docs/reference/cli.md`, `docs/reference/hooks.md`) are deleted now that their content lives in the new IA (`docs/start/`, `docs/cookbook/`, `docs/reference/cli/`).
+- Documentation site moved from MkDocs to Fumadocs, with a redesigned landing page, Geist typography, and a restrained electric-blue accent palette in both light and dark themes. The new site is the canonical docs surface; the MkDocs source (`site/`, `mkdocs.yml`) has been removed. Old per-topic markdown files (`docs/how-to/`, `docs/getting-started.md`, `docs/installation/`, `docs/reference/cli.md`, `docs/reference/hooks.md`) are deleted now that their content lives in the new IA (`docs/start/`, `docs/cookbook/`, `docs/reference/cli/`).
 - Canonical architecture, prompt-surface, knowledge-layout, and embedding-boundary docs moved to `docs/concepts/` to match the docs-site information architecture. Tooling that operates on this repo's files (storage indexing, RAG, agent fences, doc-coupling checks, embed seed) updated. `construct init` still creates `docs/architecture.md` at the project root in downstream projects — the per-repo and per-downstream-project conventions are intentionally distinct.
 - Beads issue-tracking data (`.beads/issues.jsonl`, `.beads/metadata.json`) is no longer committed — it's local working state. Shared infrastructure (hooks, config, README) remains tracked. Revisit when the project moves to a multi-person setup.
+- Project-root cleanup: `sync-agents.mjs`, `test-embed-boundary.mjs`, and `test-instance-isolation.mjs` moved into `scripts/` alongside the existing tooling. Stale `snapshot.md` removed. Reduces the top-level entry count and matches the rest of the repo's directory conventions.
 - Schema source files moved from `db/migrations/` to `db/schema/` to reflect what they are. Runner mechanism unchanged.
 - Dashboard color contrast improved across all pages (WCAG AA on labels, AAA on body text).
 
 ### Fixed
 
+- Documentation menu sub-pages no longer 404. Docs now live at the site root — `/cookbook/`, `/reference/`, `/start/`, `/concepts/` are the canonical URLs (matching standard docs-site convention), and the dedicated marketing landing remains at `/`. The CLI reference auto-generator and the `reference/hooks` slug were also producing or pointing at unreachable paths and have been corrected.
 - Retrieval evaluation CI job no longer flakes on transient CDN failures during ONNX runtime download.
 - Help-output column alignment fixed for emoji rendering edge cases on macOS Terminal and iTerm2.
 - Local pre-commit policy gates now fire automatically after `construct setup` — the hook files were previously tracked in `.beads/hooks/` but `core.hooksPath` was never wired, so every commit ran with zero local enforcement.

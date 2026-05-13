@@ -130,7 +130,7 @@ async function cmdShow() {
 
 async function cmdSync(args) {
   generateCompletions();
-  runNodeScript(path.join(ROOT_DIR, 'sync-agents.mjs'), args);
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs'), args);
   if (args.includes('--no-docs')) return;
   const { regenerateDocs } = await import('../lib/auto-docs.mjs');
   const { changed } = await regenerateDocs({ rootDir: ROOT_DIR });
@@ -208,7 +208,7 @@ async function cmdDoctor() {
   const checks = [];
   const add = (label, pass, optional = false) => checks.push({ label, pass, optional });
   add('registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'agents', 'registry.json')));
-  add('sync-agents.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'sync-agents.mjs')));
+  add('sync-agents.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs')));
   add('Node.js 20+ (recommended)', Number.parseInt(process.versions.node.split('.')[0], 10) >= 20);
   add('npm available', true);
   const constructOnPath = spawnSync('zsh', ['-lc', 'command -v construct'], { encoding: 'utf8', env: process.env });

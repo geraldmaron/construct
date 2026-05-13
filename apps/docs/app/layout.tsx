@@ -1,20 +1,22 @@
 import { RootProvider } from 'fumadocs-ui/provider';
-import { Inter } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import type { ReactNode } from 'react';
 import 'fumadocs-ui/style.css';
-
-const inter = Inter({
-  subsets: ['latin'],
-});
+import './theme.css';
 
 export const metadata = {
   title: { default: 'Construct', template: '%s | Construct' },
-  description: 'Orchestration layer behind an agentic software organization. One AI interface, 28 specialists, hard gates, local-first.',
+  description: 'One AI interface. 28 specialists. Hard gates. Local-first.',
 };
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={inter.className} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      suppressHydrationWarning
+    >
       <body>
         <RootProvider>{children}</RootProvider>
       </body>

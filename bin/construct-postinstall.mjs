@@ -39,7 +39,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = path.resolve(HERE, '..');
-const SYNC_SCRIPT = path.join(PKG_ROOT, 'sync-agents.mjs');
+const SYNC_SCRIPT = path.join(PKG_ROOT, 'scripts', 'sync-agents.mjs');
 const PKG_VERSION = (() => {
   try { return JSON.parse(readFileSync(path.join(PKG_ROOT, 'package.json'), 'utf8')).version || ''; }
   catch { return ''; }

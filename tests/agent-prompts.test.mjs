@@ -196,7 +196,7 @@ test("prompt source files stay within token-efficiency budgets", () => {
 });
 
 test("sync-agents uses shared prompt resolution helpers instead of direct prompt file loading", () => {
-  const syncSource = fs.readFileSync(path.join(root, "sync-agents.mjs"), "utf8");
+  const syncSource = fs.readFileSync(path.join(root, "scripts", "sync-agents.mjs"), "utf8");
   assert.match(syncSource, /resolvePromptContract/);
   assert.match(syncSource, /function loadPersonaPrompt[\s\S]*resolvePromptContract/);
   assert.match(syncSource, /function buildPrompt[\s\S]*resolvePromptContract/);

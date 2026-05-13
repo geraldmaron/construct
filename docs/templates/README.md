@@ -106,7 +106,7 @@ After editing either surface, run:
 
 ```bash
 npm test                 # tests/agent-prompts.test.mjs covers both
-node sync-agents.mjs     # regenerate platform adapters
+node scripts/sync-agents.mjs   # regenerate platform adapters
 construct doctor         # health check
 ```
 

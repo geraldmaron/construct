@@ -313,7 +313,7 @@ async function runOptimize(agentName) {
   }
 
   // Auto-trigger sync to propagate updated skill to all hosts
-  const syncScript = path.join(ROOT_DIR, 'sync-agents.mjs');
+  const syncScript = path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs');
   if (fs.existsSync(syncScript)) {
     println('Running `construct sync` to propagate updated skill…');
     const result = spawnSync(process.execPath, [syncScript], {
