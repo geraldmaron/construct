@@ -66,6 +66,7 @@ Every code mutation runs through enforcement: no secrets committed, tests green,
 | `construct setup` | Bootstrap user config after npm or manual install |
 | `construct show` | Show runtime service URLs and live status (compat view) |
 | `construct status` | Show canonical system health across runtime and integrations |
+| `construct uninstall` | Interactively remove Construct state; never touches Docker, Homebrew, or shared resources |
 | `construct up` | Start services (memory, dashboard) |
 | `construct update` | Reinstall this checkout globally, then sync and verify hosts |
 
@@ -185,12 +186,26 @@ construct/
 
 ## Uninstall
 
+Run the uninstaller first, then drop the package:
+
 ```bash
-npm uninstall -g @geraldmaron/construct
-rm -rf ~/.construct ~/.cx
+construct uninstall          # interactive; pick what to remove
+npm uninstall @geraldmaron/construct
 ```
 
-That removes the global install, your user config, and the project-state index. Project-local `.cx/` and `.beads/` dirs stay in each repo — delete those if you want a clean slate.
+`construct uninstall` probes both project-scope (`.construct/`, the Construct-owned `.claude/agents/` + `.claude/commands/` files, hooks/mcpServers Construct added to `.claude/settings.json`) and machine-scope state (`~/.cx/`, `~/.construct/workspace/`, the embedding model cache, the local Postgres container). Auto-risk items are removed by default; ask-risk items (Postgres data, API keys, AGENTS.md/plan.md you may have edited) are skipped unless you opt in.
+
+It never touches Docker itself, Homebrew CLIs like `cm`/`cass`, the pgvector image, or anything you've added to `.claude/settings.json` by hand. Those appear in the final summary as follow-ups you can run if you want.
+
+Useful flags:
+
+```bash
+construct uninstall --dry-run            # show the plan, change nothing
+construct uninstall --yes                # non-interactive, auto-risk only
+construct uninstall --yes --all          # non-interactive, everything
+construct uninstall --scope=project      # only this project; leave ~/.construct alone
+construct uninstall --keep-state         # only .construct/ + .claude/; keep .cx/, ~/.construct, Postgres
+```
 
 ## License
 
