@@ -156,3 +156,39 @@ test('routeRequestVerified attaches verifications even when no flavor matched', 
   assert.equal(verified.track, EXECUTION_TRACKS.immediate);
   assert.ok(verified.verifications);
 });
+
+test('requestSignals returns structured signals for a vague feature ask', async () => {
+  const { requestSignals } = await import('../lib/orchestration-policy.mjs');
+  const signals = requestSignals('build me some kind of notifications feature, not sure exactly what');
+  assert.ok(signals.ambiguityScore > 0);
+  assert.equal(signals.hasSuccessMetric, false);
+  assert.equal(signals.blastRadius, 'narrow');
+});
+
+test('requestSignals flags wide blast radius and auth surface', async () => {
+  const { requestSignals } = await import('../lib/orchestration-policy.mjs');
+  const signals = requestSignals('migrate all users to the new auth flow — destructive backfill');
+  assert.equal(signals.blastRadius, 'wide');
+  assert.equal(signals.authOrPayments, true);
+});
+
+test('proactiveTriggers fires cx-security pre-dispatch on auth + wide blast', async () => {
+  const { proactiveTriggers, requestSignals } = await import('../lib/orchestration-policy.mjs');
+  const signals = requestSignals('migrate all users to the new auth flow — destructive backfill');
+  const triggers = proactiveTriggers(signals);
+  const security = triggers.find((t) => t.specialist === 'cx-security');
+  assert.ok(security, 'expected cx-security in triggers');
+  assert.match(security.reason, /auth|threat|payments/i);
+});
+
+test('routeRequest surfaces dispatchSummary with reasons for proactive triggers', async () => {
+  const { routeRequest } = await import('../lib/orchestration-policy.mjs');
+  const route = routeRequest({
+    request: 'migrate all users to the new auth flow with a destructive backfill end to end',
+    fileCount: 4,
+    moduleCount: 2,
+  });
+  assert.ok(route.dispatchSummary.startsWith('Engaging:'));
+  assert.ok(route.specialists.includes('cx-security'));
+  assert.match(route.dispatchReasons['cx-security'] || '', /auth|payments|threat/i);
+});

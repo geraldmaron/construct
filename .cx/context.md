@@ -14,8 +14,13 @@ Bundled backlog cleanup PR landing on a single branch:
 - Gate hygiene — pre-commit comment-lint and docs-verify now run on the full diff (no `--staged`) to match CI; new local-only-by-design section in `docs/concepts/gates-and-enforcement.md`; new cookbook page `slash-command-index.md`.
 - CI — `dorny/paths-filter` added so doc-only PRs skip the test matrix, evals, audit, and postgres-integration.
 - Housekeeping — `scripts/test-embed-boundary.mjs` → `scripts/embed-boundary-manual.mjs` (manual probe, not a unit test); `lib/hooks/probe-before-read.js` → `.mjs`.
+- Proactive activation framework — `requestSignals` + `proactiveTriggers` in `lib/orchestration-policy.mjs` plus a structured `dispatchSummary` on the `routeRequest` output. Replaces keyword-only pre-dispatch routing for cx-security (auth + non-narrow blast), cx-product-manager (high-ambiguity deep work), cx-designer (visual deliverable / UI risk), cx-devil-advocate (architecture change without success metric), and cx-sre (wide blast radius).
 
-Deferred (out of scope for this PR, kept open in beads): dashboard rebuild epic, persona-as-role epic, runtime contract validators epic, proactive activation framework, GraphRAG Phase C9, live AWS / runtime-integration validations, distribution P0s (.construct layout + bootstrap shims).
+Distribution P0s (heo + gi7) verified already implemented: `templates/distribution/run.mjs|bootstrap.sh|bootstrap.ps1` exist, `bin/construct-postinstall.mjs` stages them under `.construct/` on consumer installs, and `scripts/sync-agents.mjs` rewrites `$HOME/.construct/lib/hooks/...` → `node .construct/run.mjs hook X` via `makeHooksPortable` so the project-mode settings.json is portable.
+
+Phase D hygiene re-evaluated: D1 (rules consolidation) is already structurally in place — language rule files already extend `rules/common/*.md`. D2 (single-source CLAUDE.md generation) is incoherent on closer reading — the root and `platforms/claude/` files serve different audiences and shouldn't share a source. D3 (persona compressor at sync time) already exists as an opt-in `--compress-personas` flag; making it default-on is a behavior change deferred for a separate decision. D5 (probe-before-read .js → .mjs) is done in this PR.
+
+Still deferred (each needs its own PR): dashboard rebuild epic (slice 1 sits in worktree zen-dirac-790880), persona-as-role epic, GraphRAG Phase C9, live AWS / runtime-integration validations.
 
 ## Embedding Model
 

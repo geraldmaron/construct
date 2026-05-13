@@ -121,7 +121,7 @@ The foundation. Handles orchestration, specialist dispatch, memory, sessions, an
 
 - **CLI surface** — `bin/construct` and `lib/cli-commands.mjs`
 - **MCP server** — `lib/mcp/server.mjs`, tools split across `lib/mcp/tools/`
-- **Orchestration policy** — `lib/orchestration-policy.mjs` (intent classification, execution track selection, gate evaluation, contract-chain resolution)
+- **Orchestration policy** — `lib/orchestration-policy.mjs` (intent classification, execution track selection, gate evaluation, contract-chain resolution). `requestSignals(request, context)` exports a stable signals object (intent, work category, risk flags, ambiguity score, blast radius, auth/payments flag, success-metric presence) and `proactiveTriggers(signals)` returns a `{specialist, reason}` list for pre-dispatch engagement. The output of `routeRequest` carries `signals`, `triggers`, `dispatchReasons`, and a multi-line `dispatchSummary` so callers can surface routing decisions to the user before work starts.
 - **Agent contracts** — `agents/contracts.json` and `lib/agent-contracts.mjs` (producer→consumer service contracts with preconditions, postconditions, input/output schemas). Postconditions support `mustContain`, `mustContainOneOf` (at least one of a subgroup), and `mustMatchEnum` (field value must be in an allowed set); violations produce `BLOCKED_CONTRACT` rather than passing silently. `lib/agent-contracts-enforce.mjs` adds a tamper-evident violation log at `~/.cx/contract-violations.jsonl` for `construct doctor` surfacing.
 - **Observation store** — `.cx/observations/` (role-scoped, vectorized, capped insights for continuous learning)
 - **Session persistence** — `lib/session-store.mjs`, `.cx/sessions/` (distilled session records for resumption)
