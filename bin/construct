@@ -230,6 +230,16 @@ async function cmdDoctor() {
   fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
   add('~/.cx/performance-reviews/ ready', true);
 
+  // Optional runtime tooling — warnings, not failures. Doctor must not hide an unavailable
+  // Docker daemon or missing cm, since `construct up` then reports them and the conflict
+  // confuses users.
+
+  const dockerInfo = spawnSync('docker', ['info'], { stdio: 'ignore' });
+  add('Docker daemon reachable (for Langfuse, Postgres)', dockerInfo.status === 0, true);
+
+  const cmOnPath = spawnSync('zsh', ['-lc', 'command -v cm'], { encoding: 'utf8', env: process.env });
+  add('cm (memory CLI) available', cmOnPath.status === 0 && Boolean(cmOnPath.stdout.trim()), true);
+
   // Validate promptFile references and skill bindings
   try {
     const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));

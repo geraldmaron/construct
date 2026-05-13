@@ -122,7 +122,7 @@ The foundation. Handles orchestration, specialist dispatch, memory, sessions, an
 - **CLI surface** — `bin/construct` and `lib/cli-commands.mjs`
 - **MCP server** — `lib/mcp/server.mjs`, tools split across `lib/mcp/tools/`
 - **Orchestration policy** — `lib/orchestration-policy.mjs` (intent classification, execution track selection, gate evaluation, contract-chain resolution)
-- **Agent contracts** — `agents/contracts.json` and `lib/agent-contracts.mjs` (producer→consumer service contracts with preconditions, postconditions, input/output schemas)
+- **Agent contracts** — `agents/contracts.json` and `lib/agent-contracts.mjs` (producer→consumer service contracts with preconditions, postconditions, input/output schemas). Postconditions support `mustContain`, `mustContainOneOf` (at least one of a subgroup), and `mustMatchEnum` (field value must be in an allowed set); violations produce `BLOCKED_CONTRACT` rather than passing silently. `lib/agent-contracts-enforce.mjs` adds a tamper-evident violation log at `~/.cx/contract-violations.jsonl` for `construct doctor` surfacing.
 - **Observation store** — `.cx/observations/` (role-scoped, vectorized, capped insights for continuous learning)
 - **Session persistence** — `lib/session-store.mjs`, `.cx/sessions/` (distilled session records for resumption)
 - **Hybrid search** — `lib/storage/` (file-state source, SQL store, vector index, hybrid query facade)
@@ -165,7 +165,7 @@ Transport-agnostic interface to external systems. Each provider implements a cap
 
 Docker service management, embed daemon, and scheduler.
 
-- **Service manager** — `lib/service-manager.mjs` (container lifecycle for Postgres, Langfuse, memory)
+- **Service manager** — `lib/service-manager.mjs` (container lifecycle for Postgres, Langfuse, memory). Auto-starts the Docker daemon on macOS under `CONSTRUCT_AUTO_START_DOCKER=1`. The dashboard server exposes `/api/services/langfuse/login` (`lib/server/langfuse-login.mjs`) as a magic-link bridge that signs the user in to local Langfuse via the seeded `LANGFUSE_INIT_*` credentials, so the dashboard "Open Langfuse" link is one click instead of a signup screen.
 - **Embed daemon** — scheduled or long-running process that monitors sources through providers, produces snapshots, manages approval queue. `construct embed supervise` installs a platform-native supervisor (launchd/systemd/Task Scheduler) for auto-restart on crash.
 - **Scheduler** — cron-style or interval-based execution (local: in-process schedule; cloud: cron + webhook triggers)
 - **Resource bootstrap** — `lib/bootstrap/resources.mjs` probes optional resources (Postgres, ONNX model, Docker, git). `lib/bootstrap/lazy-install.mjs` gates install on operator consent cached in `config.env`; `construct setup` runs the full wizard.

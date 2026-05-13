@@ -22,8 +22,8 @@ Fires when you try to land changes.
 **Commit-time (`.beads/hooks/pre-commit`):**
 
 - ECC secret scan — blocks high-signal secret patterns in staged content.
-- `construct lint:comments --staged` — same banned-pattern check as Layer 1, scoped to staged files only (fast).
-- `construct docs:verify --staged` — blocks a commit that changes `lib/`, `bin/`, `src/`, or `app/` without a matching `CHANGELOG.md` / `docs/` / `.cx/context.*` update.
+- `construct lint:comments` — same banned-pattern check as Layer 1, runs on the full diff to match CI behaviour.
+- `construct docs:verify` — blocks a commit that changes `lib/`, `bin/`, `src/`, or `app/` without a matching `CHANGELOG.md` / `docs/` / `.cx/context.*` update.
 
 Bypasses: `CONSTRUCT_SKIP_GATES=1` (whole layer), `CONSTRUCT_SKIP_DOCS=1` (docs-coupling only), `ECC_SKIP_PRECOMMIT=1` (secret scan only).
 
@@ -57,6 +57,15 @@ Catches escapees from Layers 1 and 2.
 
 **Self-validation:** `construct gates:audit` walks all four enforcement surfaces (CI workflows, pre-push, pre-commit, branch protection) and reports gaps. Runs in CI on every PR; failures block merge.
 
+## Local-only by design
+
+Two gates are intentionally local-only and have no CI counterpart. This is a deliberate choice, not an oversight — future maintainers should not "fix" the asymmetry by mirroring them in CI.
+
+- **`claude/*` branch push refusal** (pre-push). Stylistic: agent-prefixed branch names should not appear in remote history. Enforcing in CI would block legitimate one-off pushes by a contributor who knew what they were doing; enforcing locally catches the accidental case and stays out of the way for the intentional one.
+- **Red-CI-before-push** (pre-push). Catches the "push on top of a known-red CI" footgun where the contributor hadn't yet seen the failure. The actual red-CI is already enforced by required status checks on `main` — pushing red commits to a feature branch is allowed and sometimes necessary (e.g., to trigger a CI debug). The local hook is a courtesy.
+
+Everything else in Layer 2 has a Layer 3 counterpart — comment-lint runs on full diff in CI, docs-verify runs on full diff in CI, secret scan runs on full diff in CI, template policy runs in CI. The pre-commit hook used to scope these checks to `--staged` files for speed, which created a divergence (local pass, CI fail). The hook now runs on full diff to match CI.
+
 ## Bypass philosophy
 
 Every blocking gate has an env-var bypass for one reason: emergencies happen, and silent-bypass is worse than explicit-bypass. When you set `CONSTRUCT_SKIP_*` in your shell history, the override is visible to future-you, reviewers, and audit logs.
@@ -68,7 +77,7 @@ The gate authors trust the override system because they trust the bypass *is* th
 | Symptom | Likely gate | Where to start |
 |---|---|---|
 | Edit got rejected with "banned pattern" | Layer 1 comment-lint | [`rules/common/comments.md`](https://github.com/geraldmaron/construct/blob/main/rules/common/comments.md) |
-| `git commit` refuses with "comment policy violations" | Layer 2 staged comment-lint | run `construct lint:comments --staged` locally |
+| `git commit` refuses with "comment policy violations" | Layer 2 comment-lint | run `construct lint:comments` locally |
 | `git commit` refuses with "code changed but docs unchanged" | Layer 2 doc-coupling | update `CHANGELOG.md` or pass `CONSTRUCT_SKIP_DOCS=1` |
 | `git push` refuses | Layer 2 pre-push | local test/build/evals/docs failed, OR remote CI was red |
 | `gh pr create` refuses | Layer 2.5 template policy | `construct lint:templates --body-file=path/to/draft` |
