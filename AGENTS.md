@@ -58,7 +58,7 @@ Never wait for CI to flag drift. Before any commit or push:
 
 Shortcut: `npm run release:check`. See `rules/common/release-gates.md` for the full contract.
 
-Doc updates are part of the same change, not a follow-up. If runtime shape, contracts, or boundaries changed → update `docs/architecture.md`. If the docs surface or maintenance contract changed → update `docs/README.md`. If active work, decisions, or assumptions changed → update `.cx/context.md` and `.cx/context.json`. Always add a `CHANGELOG.md` entry.
+Doc updates are part of the same change, not a follow-up. If runtime shape, contracts, or boundaries changed → update `docs/concepts/architecture.md`. If the docs surface or maintenance contract changed → update `docs/README.md`. If active work, decisions, or assumptions changed → update `.cx/context.md` and `.cx/context.json`. Always add a `CHANGELOG.md` entry.
 
 ## Parallel agent coordination
 

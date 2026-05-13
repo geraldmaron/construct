@@ -140,7 +140,7 @@ Every code mutation runs through enforcement: no secrets committed, tests green,
 
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md) — branch workflow, gates, review expectations.
 - [`CHANGELOG.md`](./CHANGELOG.md) — release history.
-- [`docs/architecture.md`](./docs/architecture.md) — canonical architecture (mirrored to the docs site at [Concepts → Architecture](https://geraldmaron.github.io/construct/v2/docs/concepts/architecture)).
+- [`docs/concepts/architecture.md`](./docs/concepts/architecture.md) — canonical architecture (rendered on the docs site at [Concepts → Architecture](https://geraldmaron.github.io/construct/docs/concepts/architecture)).
 - [`AGENTS.md`](./AGENTS.md) — agent operating contract.
 
 ## Project structure

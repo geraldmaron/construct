@@ -3,6 +3,8 @@ title: Architecture
 description: Diagrams + the request lifecycle + where things live. Read once when you want to understand the bones.
 ---
 
+# Construct Architecture
+
 > Required project state. All LLMs working in this repo, including Construct, should treat this as canonical architecture context and keep it current.
 
 ## A note before the diagrams

@@ -20,6 +20,7 @@ Accumulated since 1.0.0 (2026-05-08).
 ### Changed
 
 - Documentation site moved from MkDocs to Fumadocs. The new site is the canonical docs surface; the MkDocs source (`site/`, `mkdocs.yml`) has been removed. Old per-topic markdown files (`docs/how-to/`, `docs/getting-started.md`, `docs/installation/`, `docs/reference/cli.md`, `docs/reference/hooks.md`) are deleted now that their content lives in the new IA (`docs/start/`, `docs/cookbook/`, `docs/reference/cli/`).
+- Canonical architecture, prompt-surface, knowledge-layout, and embedding-boundary docs moved to `docs/concepts/` to match the docs-site information architecture. Tooling that operates on this repo's files (storage indexing, RAG, agent fences, doc-coupling checks, embed seed) updated. `construct init` still creates `docs/architecture.md` at the project root in downstream projects — the per-repo and per-downstream-project conventions are intentionally distinct.
 - Beads issue-tracking data (`.beads/issues.jsonl`, `.beads/metadata.json`) is no longer committed — it's local working state. Shared infrastructure (hooks, config, README) remains tracked. Revisit when the project moves to a multi-person setup.
 - Schema source files moved from `db/migrations/` to `db/schema/` to reflect what they are. Runner mechanism unchanged.
 - Dashboard color contrast improved across all pages (WCAG AA on labels, AAA on body text).
