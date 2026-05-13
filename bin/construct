@@ -22,6 +22,7 @@ import { printHostCapabilities } from '../lib/host-capabilities.mjs';
 import { getPluginById, initPluginManifest, loadPluginRegistry } from '../lib/plugin-registry.mjs';
 import { runSetup } from '../lib/setup.mjs';
 import { runUpdate } from '../lib/update.mjs';
+import { runUninstall } from '../lib/uninstall/uninstall.mjs';
 import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
 import { runDistillCli } from '../lib/distill.mjs';
 import { runIngestCli } from '../lib/document-ingest.mjs';
@@ -643,6 +644,15 @@ async function cmdStorage(args) {
 async function cmdHeadhunt(args) { await runHeadhunt({ args, cwd: process.cwd(), homeDir: HOME }); }
 async function cmdHosts() { printHostCapabilities(); }
 async function cmdSetup(args) { await runSetup({ rootDir: ROOT_DIR, args, homeDir: HOME }); }
+async function cmdUninstall(args) {
+  try {
+    const result = await runUninstall(args);
+    if (result?.canceled) process.exit(130);
+  } catch (err) {
+    errorln(err?.message || 'uninstall failed');
+    process.exit(1);
+  }
+}
 
 async function cmdUpdate() {
   try {
@@ -1402,6 +1412,7 @@ const handlers = new Map([
   ['show', cmdShow],
   ['serve', cmdServe],
   ['setup', cmdSetup],
+  ['uninstall', cmdUninstall],
   ['update', cmdUpdate],
   ['completions', cmdCompletions],
   ['sync', cmdSync],
