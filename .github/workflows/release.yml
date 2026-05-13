@@ -222,3 +222,23 @@ jobs:
             dist/construct-darwin-arm64.sha256 \
             dist/construct-windows-x64.exe \
             dist/construct-windows-x64.exe.sha256 || true
+
+  # ── Homebrew tap formula bump ─────────────────────────────────────────────
+  # Gated on a repository variable so the step is skipped until the tap repo
+  # and its access token exist. Set the variable via repo Settings → Variables
+  # once you have created github.com/geraldmaron/homebrew-construct and added
+  # the HOMEBREW_TAP_TOKEN secret. See docs/maintenance/homebrew-tap.md.
+  homebrew:
+    name: bump homebrew formula
+    needs: publish
+    if: ${{ vars.HOMEBREW_TAP_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bump construct formula in geraldmaron/homebrew-construct
+        uses: dawidd6/action-homebrew-bump-formula@v3
+        with:
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          tap: geraldmaron/homebrew-construct
+          formula: construct
+          tag: ${{ github.ref_name }}
+          force: false
