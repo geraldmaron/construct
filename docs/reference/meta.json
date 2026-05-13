@@ -1,0 +1,15 @@
+{
+  "title": "Reference",
+  "pages": [
+    "index",
+    "cli",
+    "config",
+    "hooks",
+    "mcp-tools",
+    "agents",
+    "providers",
+    "dependencies",
+    "standards",
+    "security"
+  ]
+}

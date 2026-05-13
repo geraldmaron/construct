@@ -1,0 +1,28 @@
+---
+title: Concepts
+description: The mental model behind Construct — read once, refer back.
+---
+
+Concept pages explain *why* Construct works the way it does. They're not how-to guides; for those, see [Cookbook](/cookbook).
+
+## The core model
+
+- **One persona, many specialists.** You address `@construct`. It dispatches work to a team of 28 specialists (architect, engineer, reviewer, QA, security, designer, …) under typed contracts. [Read more →](/concepts/agents-and-personas)
+
+- **Hard gates, not vibes.** Every code mutation runs through enforcement: no secrets, tests green, docs current, comments lint-clean, CI passes. Gates live in three places (write-time, commit-time, CI safety-net) and can be bypassed only with explicit env vars. [Read more →](/concepts/gates-and-enforcement)
+
+- **Durable state.** Sessions survive boundary changes. Decisions get written to `.cx/context.md`, work-in-progress to beads, handoffs to `.cx/handoffs/`. The next session resumes from the right place. [Read more →](/concepts/beads-and-state)
+
+- **Local-first.** Construct works offline. If Postgres, Langfuse, or any cloud service goes down, you can still operate from local files. [Read more →](/concepts/local-first)
+
+## How everything fits together
+
+[Architecture](/concepts/architecture) is the deep dive — diagrams, contracts, the request lifecycle, the plugin contracts. Read it once when you want to understand the bones.
+
+## Reference-shaped concepts
+
+A few topics earn dedicated concept pages because they affect many subsystems:
+
+- [Prompt surfaces](/concepts/prompt-surfaces) — what the persona vs. specialists see at each stage.
+- [Knowledge layout](/concepts/knowledge-layout) — how `.cx/`, beads, vector index, and SQL fit together.
+- [Embedding boundary](/concepts/embedding-boundary) — what stays local vs. what crosses the network boundary.

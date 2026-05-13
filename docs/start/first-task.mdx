@@ -1,0 +1,75 @@
+---
+title: Your first task
+description: Initialize a project, sync agents, and dispatch one task end-to-end.
+---
+
+## Pick a project
+
+```bash
+cd ~/code/your-project
+```
+
+It needs to be a git repo (Construct uses `.git/` to wire pre-commit hooks). Branch state doesn't matter.
+
+## Initialize Construct in the project
+
+```bash
+construct init
+```
+
+This scaffolds:
+
+- `.cx/context.md` and `.cx/context.json` — durable per-project state Construct reads at session start.
+- `.cx/handoffs/` — gitignored directory where session handoffs land.
+- `docs/` documentation lanes if your project doesn't have them yet.
+- A `.beads/` directory if your project doesn't already track issues.
+
+Re-running `construct init` on an existing project is safe; it's idempotent.
+
+## Sync the agents
+
+```bash
+construct sync
+```
+
+This writes the agent definitions to whichever editor configs it finds on disk:
+
+- `.claude/agents/*.md` for Claude Code
+- `~/.config/opencode/opencode.json` for OpenCode
+- `~/.codex/agents/*.toml` for Codex
+- `~/.cursor/agents/*.md` for Cursor
+- `~/.github/prompts/*.md` for Copilot
+
+You should see a "29/29" or similar across surfaces.
+
+## Start the services
+
+```bash
+construct up
+```
+
+Brings up:
+
+- Local dashboard at `http://localhost:<port>` (port auto-selected)
+- Memory MCP server at `127.0.0.1:8765`
+- Langfuse at `http://localhost:3000` (if Docker is available; otherwise skipped)
+
+## Dispatch a task
+
+Open your editor. Address `construct` directly:
+
+> @construct read the README and summarize what this project is.
+
+Construct's persona kicks in, decides whether to do the work directly or route through specialists, and returns the result. For a "read and summarize" request it'll usually skip the full chain and answer directly.
+
+For a more involved task:
+
+> @construct review the auth flow in `src/auth/` and flag risks.
+
+Now you'll see the specialist chain: architect frames, researcher gathers context, reviewer + security weigh in, and construct synthesizes. Hard gates fire on any code edits (no secrets, comments lint clean, etc.).
+
+## What just happened
+
+Construct's persona [held the conversation](/concepts/agents-and-personas), but behind the scenes it [routed work through specialists](/concepts/architecture) and [enforced policy gates](/concepts/gates-and-enforcement) on any mutations. Session state was persisted to `.cx/context.md` so the next session resumes mid-flight.
+
+Next: [connect your editor →](/start/connect-your-editor)

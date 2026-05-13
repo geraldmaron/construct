@@ -1,0 +1,49 @@
+---
+title: Install Construct
+description: One npm install plus construct setup. ~2 minutes with Docker running.
+---
+
+## Prerequisites
+
+- Node.js 20+ (`node --version`)
+- A git repo to play in. Construct expects `.git/` so it can wire pre-commit hooks.
+- Docker Desktop (optional but recommended) — Construct uses it to spin up local Postgres + Langfuse. Without Docker, retrieval falls back to a local JSON vector index.
+
+## Install the CLI
+
+```bash
+npm install -g @geraldmaron/construct
+construct version
+```
+
+You should see a semver line.
+
+If you prefer a project-pinned install (no global), see [project-pinned setup](/cookbook/manage-providers#project-pinned). For non-Node ecosystems, see [bootstrap script setup](/cookbook/manage-providers#bootstrap).
+
+## Run setup
+
+```bash
+construct setup --yes
+```
+
+What this does, in order:
+
+1. Creates `~/.construct/config.env` and seeds default model tier assignments.
+2. Generates shell completions (bash + zsh) so `construct <tab>` works.
+3. Detects Docker and starts local Postgres + pgvector container, writes `DATABASE_URL` to `config.env`.
+4. Installs the Pressure Guard launch agent on macOS so Construct can manage helper processes.
+5. Wires `core.hooksPath` to `.beads/hooks/` if your repo has the beads hook directory — activates the local pre-commit policy gates.
+
+You'll see a summary report at the end. Anything red is a degraded-mode warning; the system still works.
+
+If Docker isn't available, drop `--yes` and run interactively; Construct will skip Docker-dependent steps and tell you what's degraded.
+
+## Verify
+
+```bash
+construct doctor
+```
+
+`doctor` runs ~35 health checks across config, services, agents, hooks, and integrations. Anything green is healthy. Warnings explain themselves. Failures point at a fix.
+
+You're installed. Now [do your first task →](/start/first-task)

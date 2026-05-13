@@ -1,0 +1,15 @@
+{
+  "title": "CLI",
+  "pages": [
+    "index",
+    "services",
+    "agents-and-sync",
+    "work",
+    "embed",
+    "models-and-integrations",
+    "providers",
+    "observability",
+    "docs",
+    "diagnostics"
+  ]
+}

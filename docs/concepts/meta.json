@@ -1,0 +1,14 @@
+{
+  "title": "Concepts",
+  "pages": [
+    "index",
+    "architecture",
+    "agents-and-personas",
+    "gates-and-enforcement",
+    "beads-and-state",
+    "prompt-surfaces",
+    "knowledge-layout",
+    "embedding-boundary",
+    "local-first"
+  ]
+}

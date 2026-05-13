@@ -4,6 +4,23 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Added — Fumadocs docs site (Phase 1 — scaffold + new front door + reference spine)
+
+Phase 1 of the docs IA + Next.js site overhaul. A modern Fumadocs (Next.js App Router, MDX, built-in search) docs site builds from the canonical `docs/` directory and ships to GitHub Pages under `/v2/`. The MkDocs site at the root URL remains unchanged during transition; Phase 3 deletes it after Phase 2 finishes the content migration.
+
+- **New `apps/docs/` Next.js app.** Reads MDX/MD source directly from the repo-root `docs/` directory via `fumadocs-mdx` — no double-write. Static export (`next build`) to `apps/docs/out/` for GitHub Pages deployment.
+- **Information architecture skeleton.** New top-level sections under `docs/` for the rewrite: `start/` (5-minute first-success path), `concepts/`, `cookbook/`, `reference/`, `operations/`, `decisions/`, `contributing/`, plus a top-level `changelog.mdx`. Each has a `meta.json` controlling sidebar order and an `index` page orienting the section.
+- **8+ pages migrated live in Phase 1:** `start/install`, `start/first-task`, `start/connect-your-editor`, `start/what-next`, `concepts/architecture` (relocated from `docs/architecture.md`), `concepts/agents-and-personas`, `reference/cli/*` (9 auto-generated category pages: services, agents-and-sync, work, embed, models-and-integrations, providers, observability, docs, diagnostics), `reference/agents`, `reference/hooks-generated`.
+- **`construct docs:site` now emits Fumadocs reference MDX.** New `buildFumadocsReference` in `lib/auto-docs.mjs` generates `docs/reference/cli/*.md`, `docs/reference/agents.md`, and `docs/reference/hooks-generated.md` from the canonical sources (`lib/cli-commands.mjs`, `agents/registry.json`, `lib/hooks/`). Backward-compatible: existing MkDocs `buildSite()` still runs alongside.
+- **New `.github/workflows/pages-v2.yml` deploys to `/v2/`.** Runs on push to main and the Phase 1 branch. Uses the modern `actions/upload-pages-artifact` + `actions/deploy-pages` flow. Cuts over to the root URL in Phase 3.
+- **New npm scripts:** `npm run docs:dev` runs Next.js dev server; `npm run docs:build` runs the static export. Both delegate to `apps/docs/`.
+
+Phase 2 (next) migrates the remaining 20+ how-to / concepts / operations pages, rewrites the README from 561 to ~150 lines, and cuts the root URL over to Fumadocs. Phase 3 deletes the MkDocs site entirely.
+
+Notes:
+- `apps/` is now part of the `DIR_DESCRIPTIONS` map in `lib/auto-docs.mjs` so the README's `AUTO:structure` region picks it up correctly.
+- The `pages-v2.yml` workflow only **builds** the Fumadocs site in CI as an artifact for Phase 1 — it does not deploy. GitHub Pages allows only one environment per repo, so the actual cut-over from MkDocs to Fumadocs happens in Phase 3 (which replaces `pages.yml`). Phase 1 deliberately doesn't touch the existing site.
+
 ### Added — `construct gates:audit` and `gates audit` CI job
 
 Cross-surface enforcement audit. Walks the four places policy can live — CI workflow jobs in `.github/workflows/ci.yml`, the local pre-push hook (`lib/hooks/pre-push-gate.mjs`), the local pre-commit hook (`.beads/hooks/pre-commit`), and GitHub branch protection (required status checks) — and reports gaps where a check exists in one place but not another. Closes the long-running session pattern where each CI failure was patched as a one-off; the audit makes "what enforces what, and where" a single visible inventory.

@@ -1,0 +1,13 @@
+{
+  "title": "Construct",
+  "pages": [
+    "start",
+    "concepts",
+    "cookbook",
+    "reference",
+    "operations",
+    "decisions",
+    "contributing",
+    "changelog"
+  ]
+}

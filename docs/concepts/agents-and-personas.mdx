@@ -1,0 +1,62 @@
+---
+title: Agents and personas
+description: One public persona, 28 specialists, why we made that split.
+---
+
+Construct presents *one* interface to you: a persona named `construct`. Behind it lives a team of 28 specialists that operate as that persona's domain experts.
+
+The split is deliberate. You don't pick which agent to call. You ask Construct for an outcome, and Construct decides what specialist authority is needed.
+
+## The public persona
+
+`construct` is defined in [`personas/construct.md`](https://github.com/geraldmaron/construct/blob/main/personas/construct.md). It's the only persona you address.
+
+The persona's job is to:
+
+- Hold the conversation with you in one consistent voice.
+- Classify intent — is this a quick clarification, an architecture decision, a code change, a security review?
+- Dispatch to specialists according to the orchestration policy.
+- Synthesize specialist output back into a single response.
+- Enforce hard gates on any work that mutates the world (code edits, commits, pushes).
+
+You never see the specialist chain unless you ask for it. The persona returns the result.
+
+## The specialists
+
+28 cx-prefixed specialists live in [`agents/registry.json`](https://github.com/geraldmaron/construct/blob/main/agents/registry.json) and [`agents/prompts/cx-*.md`](https://github.com/geraldmaron/construct/tree/main/agents/prompts). Each has:
+
+- A **role** — what authority they exercise (cx-architect makes trade-off calls; cx-reviewer pushes back; cx-security blocks).
+- A **prompt** that frames their voice and decision boundaries.
+- An optional **skills allowlist** — which Construct skills they can invoke.
+- A **model tier** — reasoning / standard / fast. Configurable per specialist.
+
+Specialists ship pre-wired but you can [add custom ones](/cookbook/add-a-custom-agent).
+
+## How the chain runs
+
+When you ask Construct for an outcome:
+
+1. **Intent classification.** `lib/orchestration-policy.mjs` reads the request and your `.cx/context.md` and decides whether this is conversational (answer directly), exploratory (research first), or mutational (specialist chain).
+2. **Gate checks.** Framing gate, external research gate, doc owner gate. Each blocks the chain if its precondition isn't met (e.g., framing gate fails on a vague request — Construct asks you to clarify).
+3. **Contract chain.** Each specialist hands off to the next under a typed contract from `agents/contracts.json`. Postconditions are checked between handoffs. A failed postcondition re-runs the producer.
+4. **Verification gates.** Before the chain ends: `npm test`, comment lint, docs verify, contract postconditions all pass — or the chain re-runs.
+5. **Single response.** Construct synthesizes specialist output and returns one answer in its voice.
+
+## Cross-platform parity
+
+You install the SAME team across Claude Code, OpenCode, Codex, Cursor, and Copilot via `construct sync`. The registry is canonical; sync writes adapter files in each editor's expected format.
+
+`construct doctor` runs a parity check that diffs your registry against every installed editor's adapter state. Drift is flagged with the missing/extra entries.
+
+## Why one persona, not pick-an-agent
+
+The agent-picker pattern (where the user types `@architect` or `@reviewer`) puts cognitive load on the user. They have to know which specialist to call, what each specialist does, when to escalate. That's the wrong model for everyday use.
+
+One persona means you ask for outcomes, not assignments. Construct routes. If you want to talk to a specific specialist for a focused conversation, you still can — `@cx-security` works — but it's the exception, not the entry point.
+
+## Reference
+
+- [`agents/registry.json`](https://github.com/geraldmaron/construct/blob/main/agents/registry.json) — canonical list with role, model tier, capabilities.
+- [`agents/prompts/`](https://github.com/geraldmaron/construct/tree/main/agents/prompts) — prompt definitions.
+- [`agents/contracts.json`](https://github.com/geraldmaron/construct/blob/main/agents/contracts.json) — typed handoffs and pre/post conditions.
+- [`personas/construct.md`](https://github.com/geraldmaron/construct/blob/main/personas/construct.md) — the public persona prompt.

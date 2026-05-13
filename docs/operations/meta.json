@@ -1,0 +1,10 @@
+{
+  "title": "Operations",
+  "pages": [
+    "index",
+    "monitoring",
+    "backup-restore",
+    "dr",
+    "troubleshooting"
+  ]
+}
