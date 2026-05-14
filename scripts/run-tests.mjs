@@ -41,7 +41,7 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const nodeArgs = ["--test", "--test-concurrency=1"];
+const nodeArgs = ["--test"];
 if (enableCoverage) {
   nodeArgs.push("--experimental-test-coverage");
 }
