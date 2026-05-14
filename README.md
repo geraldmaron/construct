@@ -17,15 +17,19 @@ npm install -D @geraldmaron/construct
 
 The postinstall hook stages `.construct/` and `.claude/` into your project, so hooks, agents, and slash commands are wired up automatically. Peers who clone your repo and run `npm install` get the same setup with no extra steps.
 
-First time on a new machine, bootstrap local services and open your editor:
+First time on a new machine, bootstrap local services. `construct setup` auto-spins local Postgres + Langfuse via Docker and prints your Langfuse login at the end:
 
 ```bash
 npx construct setup --yes
-npx construct up
-# Open your editor and address @construct
+# Local services:
+#   Langfuse: http://localhost:54330
+#     Web login: admin@construct.local / construct-admin
+#   Postgres: postgresql://construct:construct@127.0.0.1:54329/construct
 ```
 
-If you cloned a project that does not yet pin Construct, run `npx -y @geraldmaron/construct init` once to wire it up.
+Open your editor and address `@construct`. A friendly orientation lives in `construct_guide.md` at your project root.
+
+If you cloned a project that does not yet pin Construct, run `npx -y @geraldmaron/construct init` once to wire it up. No Node at all? `brew install geraldmaron/construct/construct`.
 
 [Full 5-minute walkthrough →](https://geraldmaron.github.io/construct/v2/docs/start)
 

@@ -16,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 const setup = await import(path.join(root, "lib", "setup.mjs"));
 
-test("managed setup values configure local vector and Langfuse defaults", async () => {
+test("managed setup values configure local vector and local Langfuse defaults", async () => {
   const home = tempDir("construct-setup-values-");
   // Pin embedding model to hashing in tests so the expected CONSTRUCT_VECTOR_MODEL
   // value is deterministic without requiring the ONNX runtime.
@@ -26,13 +26,31 @@ test("managed setup values configure local vector and Langfuse defaults", async 
   });
 
   assert.equal(values.CONSTRUCT_TRACE_BACKEND, "langfuse");
-  assert.equal(values.LANGFUSE_BASEURL, "https://cloud.langfuse.com");
+  assert.equal(values.LANGFUSE_BASEURL, "http://localhost:54330", "local Langfuse on Construct port block — never defaults to cloud or to common :3000");
+  assert.equal(values.LANGFUSE_PUBLIC_KEY, "pk-lf-construct-local", "auto-seeded local public key");
+  assert.equal(values.LANGFUSE_SECRET_KEY, "sk-lf-construct-local", "auto-seeded local secret key");
   assert.equal(values.CONSTRUCT_VECTOR_MODEL, "hashing-bow-v1");
   assert.equal(values.CONSTRUCT_VECTOR_INDEX_PATH, path.join(home, ".construct", "vector", "index.json"));
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_ENABLED, "1");
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_INTERVAL_SECONDS, "300");
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_SWAP_GB, "6");
   assert.equal(values.DATABASE_URL, undefined);
+});
+
+test("managed setup values respect explicit remote Langfuse URL (opt-in cloud)", async () => {
+  const home = tempDir("construct-setup-remote-langfuse-");
+  const values = await setup.buildManagedSetupValues({
+    homeDir: home,
+    env: {
+      CONSTRUCT_EMBEDDING_MODEL: "hashing",
+      LANGFUSE_BASEURL: "https://langfuse.acme.example",
+      LANGFUSE_PUBLIC_KEY: "pk-acme",
+      LANGFUSE_SECRET_KEY: "sk-acme",
+    },
+  });
+  assert.equal(values.LANGFUSE_BASEURL, "https://langfuse.acme.example");
+  assert.equal(values.LANGFUSE_PUBLIC_KEY, "pk-acme");
+  assert.equal(values.LANGFUSE_SECRET_KEY, "sk-acme");
 });
 
 test("managed setup values preserve caller-provided external services", async () => {
@@ -162,4 +180,17 @@ test("cm installer reports missing Homebrew when no install path is available", 
     ["which", ["cm"]],
     ["which", ["brew"]],
   ]);
+});
+
+test("dockerInstallHint returns platform-specific guidance", () => {
+  const macHint = setup.dockerInstallHint('darwin');
+  assert.match(macHint, /Docker Desktop/);
+  assert.match(macHint, /OrbStack|Colima/, "macOS hint surfaces the lightweight alternatives");
+
+  const winHint = setup.dockerInstallHint('win32');
+  assert.match(winHint, /Docker Desktop for Windows/);
+
+  const linuxHint = setup.dockerInstallHint('linux');
+  assert.match(linuxHint, /Docker Engine/);
+  assert.match(linuxHint, /apt|dnf|pacman/, "Linux hint mentions the package managers users will reach for");
 });

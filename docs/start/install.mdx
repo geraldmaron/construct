@@ -1,42 +1,85 @@
 ---
 title: Install Construct
-description: One npm install plus construct setup. ~2 minutes with Docker running.
+description: Add Construct to your project like any other dev dependency, then run setup once per machine. ~2 minutes with Docker running.
 ---
 
 ## Prerequisites
 
 - Node.js 20+ (`node --version`)
 - A git repo to play in. Construct expects `.git/` so it can wire pre-commit hooks.
-- Docker Desktop (optional but recommended) — Construct uses it to spin up local Postgres + Langfuse. Without Docker, retrieval falls back to a local JSON vector index.
+- Docker Desktop (optional but recommended) — `construct setup` will spin up local Postgres + Langfuse via Docker. Without Docker, retrieval falls back to a local JSON vector index and traces are skipped; everything else still works.
 
-## Install the CLI
+## Install
 
-```bash
-npm install -g @geraldmaron/construct
-construct version
-```
-
-You should see a semver line.
-
-If you prefer a project-pinned install (no global), see [project-pinned setup](/cookbook/manage-providers#project-pinned). For non-Node ecosystems, see [bootstrap script setup](/cookbook/manage-providers#bootstrap).
-
-## Run setup
+### Project dependency (recommended)
 
 ```bash
-construct setup --yes
+cd ~/your-project
+npm install -D @geraldmaron/construct
 ```
 
-What this does, in order:
+That's it. The postinstall hook stages `.construct/` (launcher) and `.claude/` (agents, hooks, slash commands) into your project. Peers who clone your repo and run `npm install` get the same setup automatically — Construct travels with your project like Tailwind or ESLint.
+
+If you want to opt into Construct in a project that doesn't yet pin it:
+
+```bash
+cd ~/your-project
+npx -y @geraldmaron/construct init .
+```
+
+`init` does what the postinstall does, plus scaffolds `AGENTS.md`, `plan.md`, `.cx/`, `.beads/`, `docs/`, and `construct_guide.md` (a friendly orientation file you can keep or edit).
+
+### Homebrew (for users without Node)
+
+```bash
+brew install geraldmaron/construct/construct
+```
+
+Drops a single binary into `/opt/homebrew/bin/`. No Node required. For per-project wiring you still add `@geraldmaron/construct` to your `package.json` (or run `construct init` in the project).
+
+## Run setup (one time per machine)
+
+```bash
+construct setup
+```
+
+What setup does, in order:
 
 1. Creates `~/.construct/config.env` and seeds default model tier assignments.
-2. Generates shell completions (bash + zsh) so `construct <tab>` works.
-3. Detects Docker and starts local Postgres + pgvector container, writes `DATABASE_URL` to `config.env`.
-4. Installs the Pressure Guard launch agent on macOS so Construct can manage helper processes.
-5. Wires `core.hooksPath` to `.beads/hooks/` if your repo has the beads hook directory — activates the local pre-commit policy gates.
+2. Detects Docker. If present, prompts to install local Postgres and local Langfuse — accept the defaults (Y) and both come up automatically. Use `--yes` to skip the prompts and accept all defaults non-interactively. Use `--no-docker` to skip the Docker-managed services entirely.
+3. Generates shell completions (bash + zsh) so `construct <tab>` works.
+4. Installs optional CLIs (`cm`, `cass`) if Homebrew or cargo is available and you consent.
+5. Installs the Pressure Guard launch agent on macOS so Construct can manage helper processes.
+6. Wires `core.hooksPath` to `.beads/hooks/` if your repo has the beads hook directory — activates the local pre-commit policy gates.
+7. Prints a "Local services" summary block with the Langfuse web login and the Postgres URL.
 
-You'll see a summary report at the end. Anything red is a degraded-mode warning; the system still works.
+Consent for each service (Postgres, Langfuse) is cached in `~/.construct/config.env` as `BOOTSTRAP_POSTGRES=yes|no` and `BOOTSTRAP_LANGFUSE=yes|no`. Re-running `construct setup` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
 
-If Docker isn't available, drop `--yes` and run interactively; Construct will skip Docker-dependent steps and tell you what's degraded.
+## What you have when setup finishes
+
+Local services running via Docker, all auto-provisioned (no browser signup, no account creation) and on Construct's reserved 54329–54339 host port block (chosen to avoid Next.js :3000, Postgres :5432, Redis :6379, MinIO :9090, etc.):
+
+**Langfuse** — LLM observability dashboard
+
+- URL: <http://localhost:54330>
+- Login: `admin@construct.local` / `construct-admin`
+- API keys: `pk-lf-construct-local` / `sk-lf-construct-local` (saved to `~/.construct/config.env`)
+
+**Postgres + pgvector** — hybrid retrieval backend
+
+- URL: `postgresql://construct:construct@127.0.0.1:54329/construct`
+- Saved as `DATABASE_URL` in `~/.construct/config.env`
+- pgvector extension enabled by the bundled schema migration
+
+**Vector storage** — semantic search
+
+- Default: rides on the Postgres + pgvector you just installed (384-dim embeddings, `Xenova/all-MiniLM-L6-v2`)
+- Fallback (no Docker / no Postgres): local JSON vector index at `~/.construct/vector/index.json` — same retrieval API, slower at scale
+- The embedding model auto-downloads to `~/.construct/cache/embeddings/` on first use (~22 MB, one time)
+
+All host ports bind to `127.0.0.1` only — nothing reachable from other machines on your network.
+
+Cloud Langfuse is opt-in: set `LANGFUSE_BASEURL` to a non-localhost URL before running `construct setup` and Construct will respect it (no local stack spin-up). Construct never defaults to `cloud.langfuse.com`.
 
 ## Verify
 
@@ -47,3 +90,14 @@ construct doctor
 `doctor` runs ~35 health checks across config, services, agents, hooks, and integrations. Anything green is healthy. Warnings explain themselves. Failures point at a fix.
 
 You're installed. Now [do your first task →](/start/first-task)
+
+## Uninstall (when you're done)
+
+```bash
+construct uninstall          # interactive — pick what to remove
+npm uninstall @geraldmaron/construct
+```
+
+`construct uninstall` removes Construct-owned state (launcher, agents, hooks). Ask-risk items (Postgres data, API keys, the embedding model cache, `AGENTS.md`/`plan.md`) are skipped unless you opt in. It never touches Docker, Homebrew, the pgvector image, or anything you didn't put through Construct.
+
+For full reference: `construct uninstall --help`.
