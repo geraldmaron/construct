@@ -1191,6 +1191,19 @@ async function cmdLintResearch() {
   if (exitCode !== 0) process.exit(exitCode);
 }
 
+async function cmdLintAgents() {
+  const { validateRegistryFile } = await import('../lib/agents/schema.mjs');
+  const registryPath = path.join(ROOT_DIR, 'agents', 'registry.json');
+  const { errors, agentCount } = validateRegistryFile({ registryPath, rootDir: ROOT_DIR });
+  if (errors.length === 0) {
+    console.log(`agents/registry.json: ${agentCount} agents, 0 errors`);
+    return;
+  }
+  console.error(`agents/registry.json: ${errors.length} error(s) across ${agentCount} agents`);
+  for (const err of errors) console.error(`  ${err}`);
+  process.exit(1);
+}
+
 async function cmdBackup(args) {
   const sub = args[0];
 
@@ -1455,6 +1468,7 @@ const handlers = new Map([
   ['backup', cmdBackup],
   ['provider', cmdProvider],
   ['lint:research', cmdLintResearch],
+  ['lint:agents', cmdLintAgents],
   ['audit', async (args) => {
     const sub = args[0];
     if (sub === 'skills') return runAuditSkillsCli(args.slice(1));

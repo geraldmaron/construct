@@ -89,48 +89,47 @@ test('verifyIntent caches identical requests', async () => {
   assert.equal(caller.callCount(), 1);
 });
 
-test('verifyRoute drops flavors below confidence threshold', async () => {
+test('verifyRoute returns the route synchronously without awaiting the model', () => {
   resetCache();
   const route = {
-    roleFlavors: {
-      architect: 'platform',
-      security: 'appsec',
-      productManager: null,
-    },
+    roleFlavors: { architect: 'platform', security: 'appsec', productManager: null },
     specialists: ['cx-architect', 'cx-engineer'],
   };
-  const responses = {
-    'cx-architect|platform': { verified: true, confidence: 0.95, reason: 'core infra design' },
-    'cx-security|appsec': { verified: false, confidence: 0.3, reason: 'incidental mention' },
-  };
-  const caller = async ({ user }) => {
-    const matchSpec = user.match(/Matched specialist: (\S+)/)[1];
-    const matchFlavor = user.match(/Candidate flavor: (\S+)/)[1];
-    return JSON.stringify(responses[`${matchSpec}|${matchFlavor}`] ?? { verified: true, confidence: 1, reason: 'default' });
-  };
-
-  const verified = await verifyRoute(route, { request: 'design the platform', modelCaller: caller });
-  assert.equal(verified.roleFlavors.architect, 'platform');
-  assert.equal(verified.roleFlavors.security, null);
-  assert.equal(verified.roleFlavors.productManager, null);
-  assert.equal(verified.verifications.architect.verified, true);
-  assert.equal(verified.verifications.security.verified, false);
-  assert.ok(verified.verifications.security.confidence < CONFIDENCE_THRESHOLD);
+  const caller = async () => new Promise(() => { /* never resolves */ });
+  const result = verifyRoute(route, { request: 'design the platform', modelCaller: caller, logger: () => {} });
+  assert.equal(result.roleFlavors.architect, 'platform', 'keyword verdict preserved');
+  assert.equal(result.roleFlavors.security, 'appsec', 'flavor is no longer gated by LLM verdict');
+  assert.equal(result.verificationsPending, 2, 'background verifications scheduled for the two non-null flavors');
 });
 
-test('verifyRoute leaves the route unchanged when all flavors verify', async () => {
+test('verifyRoute fires the logger for each background verification', async () => {
   resetCache();
   const route = {
-    roleFlavors: { architect: 'platform' },
+    roleFlavors: { architect: 'platform', security: 'appsec' },
     specialists: ['cx-architect'],
   };
-  const caller = async () => JSON.stringify({ verified: true, confidence: 0.9, reason: 'clear platform' });
-  const verified = await verifyRoute(route, { request: 'design the platform', modelCaller: caller });
-  assert.equal(verified.roleFlavors.architect, 'platform');
+  const responses = {
+    'cx-architect|platform': { verified: true, confidence: 0.95, reason: 'core infra' },
+    'cx-security|appsec': { verified: false, confidence: 0.3, reason: 'incidental' },
+  };
+  const caller = async ({ user }) => {
+    const spec = user.match(/Matched specialist: (\S+)/)[1];
+    const flavor = user.match(/Candidate flavor: (\S+)/)[1];
+    return JSON.stringify(responses[`${spec}|${flavor}`]);
+  };
+  const logged = [];
+  verifyRoute(route, { request: 'design the platform', modelCaller: caller, logger: (e) => logged.push(e) });
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(logged.length, 2, 'one log entry per non-null flavor');
+  const securityEntry = logged.find((e) => e.specialist === 'cx-security');
+  assert.equal(securityEntry.llmVerdict, false);
+  assert.equal(securityEntry.agreed, false, 'keyword=true vs llm=false is a disagreement');
+  assert.equal(securityEntry.confidence, 0.3);
+  assert.ok(securityEntry.confidence < CONFIDENCE_THRESHOLD, 'threshold is exported for offline tuning');
 });
 
-test('verifyRoute is a no-op on a route without roleFlavors', async () => {
+test('verifyRoute is a no-op on a route without roleFlavors', () => {
   resetCache();
-  const r = await verifyRoute({}, { request: 'foo' });
+  const r = verifyRoute({}, { request: 'foo' });
   assert.deepEqual(r, {});
 });

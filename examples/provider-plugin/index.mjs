@@ -1,8 +1,8 @@
 /**
  * examples/provider-plugin/index.mjs — minimal Construct provider plugin.
  *
- * This is a reference implementation of the Construct provider contract.
- * It returns canned data so it can be tested without any external credentials.
+ * Reference implementation of the Construct provider contract. Returns canned
+ * data so the plugin can be exercised without any external credentials.
  *
  * Usage:
  *   1. Copy this directory somewhere accessible (npm package or local path).

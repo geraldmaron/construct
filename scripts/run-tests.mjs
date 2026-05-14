@@ -41,7 +41,7 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const nodeArgs = ["--test"];
+const nodeArgs = ["--test", "--test-timeout=30000"];
 if (enableCoverage) {
   nodeArgs.push("--experimental-test-coverage");
 }

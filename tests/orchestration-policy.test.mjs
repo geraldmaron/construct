@@ -125,34 +125,44 @@ test('routeRequest dispatches cx-explorer on recon keyword (focused track)', () 
   assert.deepEqual(route.specialists, ['cx-explorer']);
 });
 
-test('routeRequestVerified keeps verified flavors and drops false-positive ones', async () => {
+test('routeRequestVerified returns the keyword route synchronously without waiting on the LLM', () => {
   resetIntentCache();
-  const caller = async ({ user }) => {
-    const flavor = user.match(/Candidate flavor: (\S+)/)[1];
-    if (flavor === 'ai-eval') return JSON.stringify({ verified: false, confidence: 0.85, reason: 'mentions model in passing only' });
-    return JSON.stringify({ verified: true, confidence: 0.9, reason: 'core domain' });
+  let callerInvocations = 0;
+  const caller = async () => {
+    callerInvocations += 1;
+    return new Promise(() => { /* never resolves — pins that dispatch does not await */ });
   };
-  const verified = await routeRequestVerified({
+  const route = routeRequestVerified({
     request: 'design a better cache architecture for the data model with the test plan attached',
     fileCount: 4,
     moduleCount: 2,
     modelCaller: caller,
   });
-  assert.equal(verified.roleFlavors.architect, 'data');
-  assert.equal(verified.roleFlavors.qa, null);
-  assert.equal(verified.verifications.architect.verified, true);
-  assert.equal(verified.verifications.qa.verified, false);
+  assert.equal(route.roleFlavors.architect, 'data', 'flavor stays whatever the keyword classifier matched');
+  assert.equal(typeof route.verificationsPending, 'number', 'count of background verifications attached');
+  assert.ok(route.verificationsPending >= 1);
+  assert.equal(callerInvocations >= 1, true, 'verifier still fires — just in the background');
 });
 
-test('routeRequestVerified attaches verifications even when no flavor matched', async () => {
+test('routeRequestVerified logs an agreement record to the injected logger', async () => {
   resetIntentCache();
-  const caller = async () => JSON.stringify({ verified: true, confidence: 1, reason: 'n/a' });
-  const verified = await routeRequestVerified({
-    request: 'explain how the caching layer works',
-    fileCount: 1,
-    moduleCount: 1,
+  const logged = [];
+  const caller = async () => JSON.stringify({ verified: false, confidence: 0.85, reason: 'incidental keyword' });
+  routeRequest({ request: 'plan the test suite for the model evaluation harness' });
+  const route = await import('../lib/orchestration-policy.mjs').then((m) =>
+    m.routeRequest({ request: 'plan the test suite for the model evaluation harness' }),
+  );
+  const { verifyRoute } = await import('../lib/intent-classifier.mjs');
+  verifyRoute(route, {
+    request: 'plan the test suite for the model evaluation harness',
     modelCaller: caller,
+    logger: (e) => logged.push(e),
   });
-  assert.equal(verified.track, EXECUTION_TRACKS.immediate);
-  assert.ok(verified.verifications);
+  await new Promise((r) => setTimeout(r, 30));
+  assert.ok(logged.length >= 1, 'at least one verification record was emitted');
+  const entry = logged[0];
+  assert.equal(entry.keywordVerdict, true);
+  assert.equal(entry.llmVerdict, false);
+  assert.equal(entry.agreed, false, 'keyword=true, llm=false → disagreement');
+  assert.equal(entry.confidence, 0.85);
 });
