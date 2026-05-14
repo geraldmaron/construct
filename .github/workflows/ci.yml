@@ -19,6 +19,8 @@ jobs:
         # support for the test fixtures is tracked as future work.
         os: [ubuntu-latest, macos-latest]
         node: [20, 22]
+    env:
+      CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
