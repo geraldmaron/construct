@@ -7,8 +7,8 @@
  * inside a pull_request CI event) preserves the headings and at least one
  * checked box per gate group from `.github/pull_request_template.md`.
  *
- * Exit 0 on pass, 1 on any violation. Used by the ci.yml `template policy`
- * job and runnable locally before push.
+ * Exit 0 on pass, 1 on any violation. Runs as the ci.yml `template policy`
+ * job and is also runnable locally before push.
  */
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";

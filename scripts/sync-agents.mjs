@@ -367,8 +367,8 @@ function loadPersonaPrompt(persona) {
   return prompt;
 }
 
-function buildAgentRoster(allEntries) {
-  return allEntries.map((e) => `- ${adapterName(e)}: ${e.description}`).join("\n");
+export function buildAgentRoster(allEntries) {
+  return allEntries.map((e) => `- ${adapterName(e)}: ${e.when_to_use || e.description}`).join("\n");
 }
 
 function buildModelGuidanceBlock(entry) {

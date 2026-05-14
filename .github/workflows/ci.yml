@@ -136,6 +136,18 @@ jobs:
       - name: Enforce comment policy
         run: node ./bin/construct lint:comments
 
+  lint-agents:
+    name: agents registry schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Validate agents/registry.json against schema
+        run: node ./bin/construct lint:agents
+
   lint-templates:
     name: template policy
     runs-on: ubuntu-latest

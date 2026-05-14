@@ -125,6 +125,12 @@
           "description": "Agent name without prefix. Full name = '<prefix>-<name>'."
         },
         "description": { "type": "string", "minLength": 1 },
+        "when_to_use": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 500,
+          "description": "Optional routing-optimized trigger description. Preferred over `description` in the agent roster when present. Follows the Anthropic Skills progressive-disclosure pattern: name + when_to_use preloaded, body loaded only on dispatch."
+        },
         "prompt": { "type": "string" },
         "promptFile": { "type": "string" },
         "model": { "type": "string" },
