@@ -1,3 +1,5 @@
+create extension if not exists vector;
+
 create table if not exists construct_documents (
   id text primary key,
   project text not null,

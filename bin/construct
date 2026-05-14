@@ -23,6 +23,7 @@ import { getPluginById, initPluginManifest, loadPluginRegistry } from '../lib/pl
 import { runSetup } from '../lib/setup.mjs';
 import { runUpdate } from '../lib/update.mjs';
 import { runUninstall } from '../lib/uninstall/uninstall.mjs';
+import { maybeFirstInvocationProbe } from '../lib/install/first-invocation.mjs';
 import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
 import { runDistillCli } from '../lib/distill.mjs';
 import { runIngestCli } from '../lib/document-ingest.mjs';
@@ -1692,6 +1693,16 @@ if (!handler) {
   errorln(`Unknown command: ${command}`);
   usage();
   process.exit(1);
+}
+
+// First-invocation resource probe — skipped for hooks, setup, uninstall,
+// doctor, and once BOOTSTRAP_CHECKED=1 is cached in ~/.construct/config.env.
+// On TTY: if anything's missing, prints the status table and offers to run
+// setup. Silent on success; never blocks the command.
+
+const probe = await maybeFirstInvocationProbe({ command, homeDir: HOME, env: process.env });
+if (probe?.runSetup) {
+  await cmdSetup([]);
 }
 
 await handler(rest);
