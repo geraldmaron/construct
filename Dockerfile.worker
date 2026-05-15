@@ -1,0 +1,53 @@
+# syntax=docker/dockerfile:1
+# ── Construct worker plane image ──────────────────────────────────────────
+#
+# Build:  docker build -f Dockerfile.worker -t construct-worker .
+# Run:    docker run --rm \
+#           -e DATABASE_URL=postgres://construct:construct@host.docker.internal:5432/construct \
+#           -e CONSTRUCT_PROJECT_NAME=myproject \
+#           -e CONSTRUCT_DEPLOYMENT_MODE=team \
+#           -v /path/to/workspace:/work:ro \
+#           construct-worker
+#
+# The worker claims pending intake items from the Postgres queue
+# (FOR UPDATE SKIP LOCKED), runs each via `runJob` with allowedPaths = [/work],
+# attaches evidence to the matching task graph node (if named in the packet),
+# and exits when the queue stays empty for --idle-timeout-seconds. Path
+# policy is the workspace mount; a malicious command can't escape /work.
+
+ARG NODE_VERSION=22
+
+FROM node:${NODE_VERSION}-alpine AS worker-runtime
+
+# git is used by the embed daemon and some hooks; coreutils for sane sha256sum
+RUN apk add --no-cache git coreutils ca-certificates
+
+# Run as an unprivileged user so a workspace-relative path policy violation
+# can't write to the container's system dirs even if /work is bind-mounted rw.
+RUN addgroup -S construct && adduser -S -G construct construct
+
+WORKDIR /opt/construct
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts
+
+COPY agents ./agents
+COPY db ./db
+COPY lib ./lib
+COPY rules ./rules
+COPY scripts ./scripts
+COPY bin ./bin
+
+# Workspace mount point. Bind a project tree here at run time:
+#   docker run -v /path/to/project:/work ...
+RUN mkdir -p /work && chown construct:construct /work
+
+USER construct
+WORKDIR /work
+
+ENV CONSTRUCT_WORKSPACE=/work \
+    CONSTRUCT_DEPLOYMENT_MODE=team \
+    CONSTRUCT_INTAKE_QUEUE_BACKEND=postgres
+
+ENTRYPOINT ["node", "/opt/construct/lib/worker/entrypoint.mjs"]
+CMD ["--workspace=/work", "--idle-timeout-seconds=300", "--poll-interval-ms=2000"]

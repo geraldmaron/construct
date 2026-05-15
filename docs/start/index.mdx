@@ -26,4 +26,4 @@ If anything goes wrong, jump to [troubleshooting](/operations/troubleshooting).
 - A set of agent adapters that get written into your editor's config (Claude Code, OpenCode, Codex, Cursor, or Copilot).
 - Optional local services — Postgres + pgvector for retrieval, Langfuse for traces — managed via Docker if available.
 
-Everything runs locally. There's no Construct cloud account.
+You install in `solo` mode by default — everything runs locally, the intake queue is the filesystem under `.cx/intake/`, and there's no Construct cloud account. Two other deployment modes (`team` and `enterprise`) promote the queue and memory to shared Postgres and route MCP through a broker — see [deployment model](/concepts/deployment-model).

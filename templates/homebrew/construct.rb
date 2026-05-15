@@ -10,7 +10,7 @@
 # matching GitHub Release asset. The placeholder SHAs below are only used
 # when seeding the tap by hand the first time.
 class Construct < Formula
-  desc "Local-first agent orchestration layer for AI coding tools"
+  desc "Deployable AI R&D operating system for coding agents — runs locally or for teams"
   homepage "https://github.com/geraldmaron/construct"
   version "0.1.0"
   license "Elastic-2.0"

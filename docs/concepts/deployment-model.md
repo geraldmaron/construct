@@ -1,0 +1,101 @@
+---
+title: Deployment model
+description: Construct runs locally for individual users or is deployed centrally for shared team usage. Three modes — solo, team, enterprise.
+---
+
+Construct is a deployable AI R&D operating system. It runs locally for individual users (the default) and can be deployed centrally for shared team or enterprise usage with shared memory, telemetry, queues, artifacts, policies, and execution resources.
+
+The deployment posture is explicit. One config field — `CONSTRUCT_DEPLOYMENT_MODE` — selects the topology, and the rest of the system reads from there. The three modes are listed below.
+
+## Modes
+
+| Mode | Intended use | Queue | Memory | Database | Telemetry | Workers | Policy | MCP |
+|---|---|---|---|---|---|---|---|---|
+| `solo` (default) | Individual usage | filesystem | local | optional | optional | local | lightweight | direct |
+| `team` | Shared usage | postgres | shared | postgres | central | docker | server-side | brokered |
+| `enterprise` | Hardened usage | postgres | shared | postgres | central | isolated containers | enforceable, audited | brokered + signed |
+
+### Solo
+
+For individual work. State lives in the user's repo and `~/.construct/`. Queue is the filesystem under `.cx/intake/`. Postgres, Docker, and telemetry are optional accelerators — if they are present, Construct uses them; if not, the system falls back to local equivalents and reports the degraded state explicitly.
+
+### Team
+
+For shared usage by a development team. The intake queue is Postgres-backed (with row-locked worker claims). Memory is shared across the team. Workers run in a Docker pool, isolated from the host. Telemetry is centralized via Langfuse or an OpenTelemetry collector. MCP calls go through a broker that applies role-based policy.
+
+A reference compose topology ships at [`docker-compose.team.yml`](https://github.com/geraldmaron/construct/blob/main/docker-compose.team.yml): Postgres + a worker pool sized via `CONSTRUCT_WORKER_REPLICAS`, with the worker image built from [`Dockerfile.worker`](https://github.com/geraldmaron/construct/blob/main/Dockerfile.worker). The worker entrypoint (`lib/worker/entrypoint.mjs`) claims pending intake items via `PostgresIntakeQueue.claim()` (`FOR UPDATE SKIP LOCKED`), runs each through `runJob` with `allowedPaths: [/work]` so the bind-mounted workspace is the only writable surface, attaches evidence to the originating task graph node when named in the packet, and exits when the queue stays empty for `--idle-timeout-seconds` (default 300s) so a scheduler can scale workers to zero.
+
+### Enterprise
+
+Team mode plus tenant isolation, signed MCP allowlists, RBAC/ABAC-ready auth, isolated worker containers with policy-enforced workspace boundaries, retention controls, and mandatory audit events for every brokered call. Designed for environments where the orchestration surface and the data it touches both need explicit governance.
+
+## Picking and changing modes
+
+```bash
+construct config              # show the active mode and resource topology
+construct config mode         # print just the active mode
+construct config mode team    # set the mode (writes ~/.construct/config.env)
+```
+
+The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.construct/config.env`. `construct status` shows the active mode and resource topology at the top of its output.
+
+## What runs in each mode (capability matrix)
+
+| Capability | Solo default | Team / enterprise default |
+|---|---|---|
+| LLM inference | local server (Ollama, llama.cpp, any OpenAI-compatible) or hosted provider | hosted provider; local fallback configurable |
+| Embedding model | `@huggingface/transformers` ONNX in-process | shared embedding service or hosted |
+| Vector retrieval | Postgres + pgvector when present; `.cx/observations/` JSON index otherwise | shared Postgres + pgvector |
+| Trace observability | Langfuse via local Docker when present | central Langfuse or OTel collector |
+| Issue tracking | `bd` (beads), Dolt-backed | `bd` against shared Dolt remote |
+| Dashboard | `construct serve` on localhost | dashboard server in the shared deployment |
+| MCP | local processes | brokered through `mcp-broker` |
+| Intake queue | `.cx/intake/` files | `construct_intake_items` table in Postgres |
+| Session state | `.cx/context.md`, `.cx/handoffs/`, beads | shared state with per-user scoping |
+
+## Degraded-mode guarantees
+
+Construct degrades gracefully when an optional resource is unreachable and reports the degradation explicitly rather than silently masking it.
+
+- **No Docker:** managed Postgres + Langfuse are skipped; vector retrieval falls back to the JSON index. `construct doctor` reports which capabilities are degraded.
+- **No `cm` (memory CLI):** the memory MCP server doesn't start; observations still write to `.cx/observations/` and remain retrievable from there.
+- **No `OPENAI_API_KEY`:** if `CONSTRUCT_EMBEDDING_MODEL=openai`, the command exits with the env var name and an alternative. Opt into automatic fallback with `CONSTRUCT_EMBEDDING_FALLBACK=1`.
+- **No internet:** Construct refuses to fetch external resources. `construct evals retrieval` runs against the local fixture and works offline.
+
+A degraded mode that silently masks the degradation is worse than one that announces itself.
+
+## Why explicit modes
+
+Three concrete cases:
+
+1. **Plane wifi (solo mode).** You can still plan, write code, run tests, and have a coherent agent conversation. The vector index uses whatever you embedded locally; the LLM is whichever local model you wired up.
+2. **A vendor outage (any mode).** Falling back to a local model or to a different OpenAI-compatible endpoint is a config change, not a rewrite.
+3. **A team that needs centralized telemetry and policy.** Team mode promotes the intake queue, memory, and MCP through shared resources without changing the agent loop or the persona contracts.
+
+The orchestration loop — persona, specialists, contracts, gates, durable state — is the same across modes. What changes is the backend topology that supports it.
+
+## What remains remote even in team mode
+
+A few capabilities depend on external systems by their nature:
+
+- **Hosted Langfuse retention.** The local Langfuse stack works for development and team use; long-term hosted retention is the cloud product.
+- **Provider integrations to remote systems.** Slack messages, Jira issues, Salesforce records. The provider plugins are local code; the systems they talk to are remote.
+- **GitHub Actions / forge CI.** Required-status-checks live on the forge. Construct's local gates are designed to catch what CI would catch; the forge gate is the final say.
+
+These are integrations, not core dependencies. The orchestration loop runs without any of them.
+
+## How to verify the active mode
+
+```bash
+construct config
+construct status
+construct doctor
+```
+
+`construct config` prints the resolved deployment mode and resource topology. `construct status` shows them inline at the top of the health report. `construct doctor` reports degraded vs healthy across every cloud/local boundary; anything red is a real problem, anything yellow is degraded-but-working with a one-line explanation.
+
+```bash
+CONSTRUCT_EMBEDDING_MODEL=hashing construct evals retrieval
+```
+
+Runs the retrieval eval with the deterministic, dependency-free embedding. Should report `Recall@1: 100.0%` against the local fixture — proof of a working retrieval pipeline that needs no external network call.

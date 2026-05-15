@@ -114,6 +114,7 @@ describe('run.mjs resolution', () => {
           PATH: '/nonexistent',
           HOME: process.env.HOME,
           CONSTRUCT_DEV_PATH: '',
+          CONSTRUCT_DISABLE_DOCKER: '1',
         },
         timeout: 30_000,
       }
@@ -121,5 +122,41 @@ describe('run.mjs resolution', () => {
     assert.equal(result.status, 127, `expected 127, got ${result.status}`);
     assert.match(result.stderr, /No Construct install found/);
     assert.match(result.stderr, /nodejs\.org/);
+  });
+
+  it('failure message names docker + the bootstrap shims as install options', () => {
+    const result = spawnSync(
+      process.execPath,
+      [path.join(projectDir, '.construct', 'run.mjs'), 'doctor'],
+      {
+        encoding: 'utf8',
+        cwd: projectDir,
+        env: {
+          PATH: '/nonexistent',
+          HOME: process.env.HOME,
+          CONSTRUCT_DEV_PATH: '',
+          CONSTRUCT_DISABLE_DOCKER: '1',
+        },
+        timeout: 30_000,
+      }
+    );
+    assert.match(result.stderr, /docker pull/);
+    assert.match(result.stderr, /bootstrap\.sh/);
+    assert.match(result.stderr, /bootstrap\.ps1/);
+  });
+
+  it('lists docker between cached binary and the failure path in the resolver source', () => {
+    const text = fs.readFileSync(path.join(projectDir, '.construct', 'run.mjs'), 'utf8');
+    const cached = text.indexOf('tryCachedBinary()');
+    const docker = text.indexOf('tryDocker(');
+    const fail = text.indexOf('else fail();');
+    assert.ok(cached > 0 && docker > 0 && fail > 0, 'all three branches present');
+    // In the bottom-of-file resolver, docker must appear after cachedBinary
+    // and before fail so the resolution chain is npx → global → cached → docker → fail.
+    const finalCached = text.lastIndexOf('tryCachedBinary()');
+    const finalDocker = text.lastIndexOf('tryDocker(');
+    const finalFail = text.lastIndexOf('else fail();');
+    assert.ok(finalCached < finalDocker, 'docker fallback must come after cached binary');
+    assert.ok(finalDocker < finalFail, 'docker fallback must come before the fail() branch');
   });
 });

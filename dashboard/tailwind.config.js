@@ -1,4 +1,11 @@
 /** @type {import('tailwindcss').Config} */
+/*
+ * tailwind.config.js — Construct design system v2 (aurora).
+ *
+ * CSS vars in src/index.css are the source of truth; this file maps
+ * a small set of semantic Tailwind utilities (bg-bg, text-text-muted,
+ * border-border) onto them so components don't hard-code hex values.
+ */
 module.exports = {
   content: [
     "./index.html",
@@ -7,28 +14,42 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // We'll use black and white as primaries, with gray for nuances
-        'black': '#000',
-        'white': '#fff',
-        'gray': {
-          50: '#f9fafb',
-          100: '#f3f4f6',
-          200: '#e5e7eb',
-          300: '#d1d5db',
-          400: '#9ca3af',
-          500: '#6b7280',
-          600: '#4b5563',
-          700: '#374151',
-          800: '#1f2937',
-          900: '#111827',
-          950: '#030712',
-        }
+        bg:          'var(--bg)',
+        'bg-muted':  'var(--bg-muted)',
+        surface:     'var(--surface)',
+        border:      'var(--border)',
+        text:        'var(--text)',
+        'text-muted': 'var(--text-muted)',
+        'text-dim':  'var(--text-dim)',
+        ink: {
+          50:  'var(--ink-50)',
+          100: 'var(--ink-100)',
+          200: 'var(--ink-200)',
+          300: 'var(--ink-300)',
+          400: 'var(--ink-400)',
+          500: 'var(--ink-500)',
+          600: 'var(--ink-600)',
+          700: 'var(--ink-700)',
+          800: 'var(--ink-800)',
+          900: 'var(--ink-900)',
+        },
+        aurora: {
+          mint:   'var(--aurora-mint)',
+          cyan:   'var(--aurora-cyan)',
+          violet: 'var(--aurora-violet)',
+          pink:   'var(--aurora-pink)',
+        },
+        status: {
+          healthy:  'var(--status-healthy)',
+          degraded: 'var(--status-degraded)',
+          down:     'var(--status-down)',
+        },
       },
-      // We can define gradient colors here if needed, but we'll use the black and white with gray for gradients
       backgroundImage: {
-        'gradient-black-white': 'linear-gradient(to right, #000, #fff)',
-        'gradient-white-black': 'linear-gradient(to right, #fff, #000)',
-        'gradient-gray': 'linear-gradient(to right, #6b7280, #374151)',
+        aurora: 'var(--aurora-gradient)',
+      },
+      fontFamily: {
+        sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
       },
     },
   },

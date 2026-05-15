@@ -18,7 +18,7 @@ Before responding, run in parallel — do not narrate:
 Apply results silently. If memory returns preferences or past decisions, honor them without asking the user to repeat.
 
 Honor the project operating hierarchy:
-- Beads (`bd`) is the durable source of truth for tasks — run `bd ready` to see unblocked work, `bd show <id>` for the active issue
+- Beads (`bd`) is the durable source of truth for tasks; hygiene contract — claim, close, supersede, prune — lives in `rules/common/beads-hygiene.md`. `bd ready` for unblocked work, `bd show <id>` for the active issue.
 - `plan.md` is the human-readable implementation plan
 - cass-memory via MCP `memory` is for cross-tool/session recall, not task tracking
 
@@ -47,22 +47,26 @@ Before DONE: postconditions met · sources cited · framing logged · ADRs have 
 
 ## Branch + commit approval
 
-- **Working branch is surfaced every session.** `## Working branch: <name>` appears at the top of session-start. Restate the branch before any mutating operation so the user sees the scope.
-- **Never commit, push, or merge without asking first.** Before `git commit` (including `--amend`), `git push`, or `gh pr merge`: state the branch, **show the proposed commit message verbatim** (or refspec / PR number), ask for confirmation, wait for yes. A yes in chat is the approval, scoped to the action just shown. A batch go-ahead ("commit, push, merge when ready") covers a defined sequence; a new commit triggered later is its own gate. See `rules/common/commit-approval.md`.
+- **Working branch is surfaced every session** at the top of session-start. Restate it before any mutating operation.
+- **Never commit, push, or merge without asking first.** Before `git commit`, `git push`, or `gh pr merge`: state branch, show the proposed message / refspec / PR number verbatim, wait for explicit yes. A batch go-ahead covers a defined sequence; new commits later are their own gate. See `rules/common/commit-approval.md`.
+
+## R&D intake surface
+
+Session-start surfaces pending intake at `.cx/intake/pending/<id>.json`. Read with `construct intake show <id>`; the triage block names the primary owner, recommended chain, and next action. For non-trivial signals, plan with `construct graph from-intake <id>` and update node status with evidence (`construct graph status … done --evidence=…`). A node cannot reach `done` without an evidence record. Team / enterprise mode wraps tool calls in the MCP broker — when it returns `ApprovalRequired`, surface the question; never bypass.
 
 ## Action discipline
 
 - Dispatch, don't solo-plan: 3+ files, 2+ modules, or a new contract → cx-architect owns the plan.
-- Ask or look up, don't speculate: call `context7_query-docs` / `WebFetch`, ask the user, or commit to a default. Never a fourth round of internal debate.
+- Ask or look up, don't speculate: call `context7_query-docs` / `WebFetch`, ask, or commit to a default. Never a fourth round of internal debate.
 - Deliberation cap: two passes. Same decision twice without a new read, tool call, or user input = hand off, query, or ask.
-- Probe before bulk read: before `Read` with `limit > 200` or unset, check size via `Glob`, `wc -l`, or a `limit: 50` probe.
-- Start-of-task is binding: first action on any non-trivial request is the parallel bootstrap above plus `cx_trace`.
+- Probe before bulk read: check size via `Glob` / `wc -l` or a `limit: 50` probe before `Read` with `limit > 200`.
+- Start-of-task: parallel bootstrap (above) + `cx_trace` before anything mutating.
 
 ## Communication + state
 
 Lead with the answer. One question when blocked. Confirm what changed when done.
 
-Non-trivial work: update Beads (`bd note <id>`), `plan.md`, and relevant docs with owner, acceptance, and verification evidence. Preserve tracker ids in handoffs. Surface NEEDS_MAIN_INPUT in your voice; resume after the answer. End every session with a handoff at `.cx/handoffs/{date}-{slug}.md` and updates to `.cx/context.md`.
+Non-trivial work: update Beads (`bd note <id>`), `plan.md`, docs with owner / acceptance / verification. Preserve tracker ids in handoffs. Surface NEEDS_MAIN_INPUT in your voice; resume after the answer. End every session with a handoff at `.cx/handoffs/{date}-{slug}.md` and updates to `.cx/context.md`.
 
 Load-bearing state: `AGENTS.md`, `.cx/context.md`/`.json`, `docs/README.md`, `docs/architecture.md` (read at session start, update before DONE, prune stale sections). `plan.md` is local-only.
 
@@ -73,7 +77,7 @@ After any implementation, dispatch validation before marking done:
 2. cx-qa — tests pass, coverage meets threshold
 3. cx-security if auth/secrets/user data touched
 
-Do not mark `done` until cx-reviewer and cx-qa return verdicts. BLOCKED verdict or any CRITICAL finding stops shipping.
+Do not mark `done` until cx-reviewer and cx-qa return verdicts. BLOCKED or any CRITICAL finding stops shipping.
 
 ## Hard release gates
 
@@ -83,10 +87,10 @@ Run `npm run release:check` before any commit or push — never wait for CI. Com
 
 Same action 3+ times with no state change → stop. Report what was tried, what blocked progress, what decision is needed.
 
-Before stopping: surface incomplete high-priority tracker-linked plan slices and unmet acceptance criteria. Do not stop silently with work in-flight.
+Before stopping: surface incomplete tracker-linked plan slices and unmet acceptance criteria. Do not stop silently with work in-flight.
 
 ## Drive mode
 
-Activates only on explicit word-boundary triggers — `/work:drive`, a standalone `drive` (`\b(drive|full send)\b`), or `full send`. Substring matches do not count.
+Activates on word-boundary triggers — `/work:drive`, standalone `drive`, or `full send`. Substring matches do not count.
 
-On trigger: execute under the orchestrated track, skip planning confirmation, continue until verification is complete or a real blocker requires executive input. State the dispatch plan upfront; brief status at phase transitions. The user sees plan and outcomes, not deliberation.
+On trigger: orchestrated track, skip planning confirmation, continue until verification or a real blocker. State the dispatch plan upfront; brief status at phase transitions. User sees plan and outcomes, not deliberation.

@@ -47,6 +47,45 @@ export const fetchArtifacts = () => apiGet('/artifacts');
 export const fetchConfig = () => apiGet('/config');
 export const fetchEmbedStatus = () => apiGet('/embed/status');
 export const fetchMode = () => apiGet('/mode');
+export const fetchAlias = () => apiGet('/alias');
+export const fetchInsights = () => apiGet('/insights');
+export const fetchProjectConfig = () => apiGet('/project-config');
+export const fetchOverrideList = (category: string) => apiGet(`/overrides/${category}`);
+export const fetchOverrideContent = (category: string, name: string) =>
+  apiGet(`/overrides/${category}/${name}`);
+export const fetchOverrideBackups = (category: string, name: string) =>
+  apiGet(`/overrides/${category}/${name}?action=backups`);
+export const writeOverrideContent = (category: string, name: string, content: string) =>
+  fetch(`/api/overrides/${category}/${name}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  }).then(async (r) => {
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    return j;
+  });
+export const restoreOverrideBackup = (category: string, name: string, backupFilename: string) =>
+  fetch(`/api/overrides/${category}/${name}?action=restore`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ backupFilename }),
+  }).then(async (r) => {
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    return j;
+  });
+
+export const writeProjectConfig = (config: any) =>
+  fetch('/api/project-config', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  }).then(async (r) => {
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    return j;
+  });
 export const fetchKnowledgeTrends = () => apiGet('/knowledge/trends');
 export const fetchKnowledgeIndex = () => apiGet('/knowledge/index');
 export const fetchKnowledgeAsk = (question: string) => apiPost('/knowledge/ask', { question });

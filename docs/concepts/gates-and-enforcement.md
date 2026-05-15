@@ -57,6 +57,17 @@ Catches escapees from Layers 1 and 2.
 
 **Self-validation:** `construct gates:audit` walks all four enforcement surfaces (CI workflows, pre-push, pre-commit, branch protection) and reports gaps. Runs in CI on every PR; failures block merge.
 
+## Layer 4 — Brokered tool calls (team / enterprise)
+
+In team and enterprise deployments, MCP tool calls run through `lib/mcp/broker.mjs`. The broker consults `lib/policy/engine.mjs`, which reads per-role permissions from [`agents/role-manifests.json`](https://github.com/geraldmaron/construct/blob/main/agents/role-manifests.json) (`fence.deniedActions`, `fence.approvalRequired`, glob-suffix support for `edit:lib/**` style patterns), and returns a typed decision.
+
+- **Denied calls** throw `PolicyDenied` — the tool is never invoked. The denial reason is structured and audit-logged.
+- **Approval-required calls** throw `ApprovalRequired` — the broker refuses to execute until human consent is recorded.
+- **Allowed calls** proceed and emit a `tool.called` trace event tagged with `{tool, action, allowed, approvalRequired, source}` so the audit log carries the decision lineage.
+- **Rate-limited calls** throw `RateLimited` per (role, tool) per window.
+
+Solo mode leaves the broker off by default — set `CONSTRUCT_MCP_BROKER=on` to engage it for testing. Solo's policy posture is "agent decides"; the broker becomes the enforcer when the deployment is shared.
+
 ## Bypass philosophy
 
 Every blocking gate has an env-var bypass for one reason: emergencies happen, and silent-bypass is worse than explicit-bypass. When you set `CONSTRUCT_SKIP_*` in your shell history, the override is visible to future-you, reviewers, and audit logs.

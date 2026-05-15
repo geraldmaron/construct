@@ -93,6 +93,28 @@ construct setup [--yes] [--no-docker]
 | `--yes` | Apply sensible defaults without pausing for prompts |
 | `--no-docker` | Skip managed local Postgres startup |
 
+## construct config
+
+Inspect or set the deployment posture (solo, team, enterprise). The mode persists to `~/.construct/config.env` as `CONSTRUCT_DEPLOYMENT_MODE` and drives backend selection across the intake queue, memory, telemetry, workers, and MCP broker.
+
+**Usage**
+
+```bash
+construct config                             # show active mode + resource topology
+construct config mode                        # print just the active mode
+construct config mode solo|team|enterprise   # set + persist
+```
+
+**Modes**
+
+| Mode | Use | Queue | Memory | Workers | MCP |
+|---|---|---|---|---|---|
+| `solo` (default) | Individual use | filesystem | local | local | direct |
+| `team` | Shared team | postgres | shared | docker pool | brokered |
+| `enterprise` | Hardened multi-tenant | postgres | shared (tenant-scoped) | isolated containers | brokered + signed |
+
+See [Concepts → Deployment model](/concepts/deployment-model) for the full capability matrix.
+
 ## construct show
 
 Show runtime service URLs and live status (compat view)

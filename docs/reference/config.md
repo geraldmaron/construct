@@ -21,6 +21,27 @@ Config is loaded in this order (last write wins): repo `.env` → `~/.construct/
 | `HOME` | system | Used to resolve `~/.construct/` and `~/.cx/` paths |
 | `CX_DATA_DIR` | `$HOME` | Override root for `.cx/` data directories |
 
+## Deployment mode
+
+| Variable | Default | Description |
+|---|---|---|
+| `CONSTRUCT_DEPLOYMENT_MODE` | `solo` | `solo` \| `team` \| `enterprise` — selects backends for the intake queue, memory, workers, and MCP broker. Read at runtime by `lib/deployment-mode.mjs`. Set via `construct config mode <m>`. |
+
+## Intake queue
+
+| Variable | Default | Description |
+|---|---|---|
+| `CONSTRUCT_INTAKE_QUEUE_BACKEND` | — | `filesystem` \| `postgres` override. Wins over `CONSTRUCT_DEPLOYMENT_MODE`. Useful for testing the Postgres adapter from solo mode (requires `DATABASE_URL`). |
+| `CONSTRUCT_PROJECT_NAME` | basename of CWD | Project scope for Postgres-backed intake queue rows. |
+| `CONSTRUCT_TENANT_ID` | — | Tenant scope for enterprise mode. Filters `construct_intake_items` queries. |
+| `CONSTRUCT_DEBUG_INTAKE` | — | `1` to log daemon-side intake preparation failures to stderr (non-fatal otherwise). |
+
+## MCP broker
+
+| Variable | Default | Description |
+|---|---|---|
+| `CONSTRUCT_MCP_BROKER` | — | `on` \| `off` — override default broker engagement. Otherwise the broker is on in team / enterprise and off in solo. |
+
 ## Authentication
 
 | Variable | Description |

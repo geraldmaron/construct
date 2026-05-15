@@ -16,6 +16,8 @@ import {
   createConstructOpenCodePlugin,
   extractReadToolCalls,
   trackReadEfficiencyFromMessage,
+  emitSessionPrelude,
+  _resetPreludeForTests,
 } from "../lib/opencode-runtime-plugin.mjs";
 import { resetPricingCatalog } from "../lib/telemetry/langfuse-model-sync.mjs";
 
@@ -275,8 +277,8 @@ test("buildRuntimeTracePayload estimates non-zero cost from pricing metadata", (
   );
 
   assert.ok(payload.metadata.costUsd > 0);
-  assert.equal(payload.metadata.costSource, "estimated:static");
-  assert.equal(payload.input.pricing.costSource, "estimated:static");
+  assert.equal(payload.metadata.costSource, "estimated:static-fallback");
+  assert.equal(payload.input.pricing.costSource, "estimated:static-fallback");
 });
 
 test("buildRuntimeTracePayload skips message.updated for user role or incomplete messages", () => {
@@ -642,6 +644,72 @@ test("buildRuntimeTracePayload produces runtime_event kind with status for sessi
   assert.equal(payload.output.traceQualityFlags.hasText, false);
   assert.equal(payload.output.traceQualityFlags.hasError, false);
   assert.equal(payload.output.status, "idle");
+});
+
+test("emitSessionPrelude surfaces the broker status + pending intake on session.created via client.app.log", async () => {
+  _resetPreludeForTests();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cx-prelude-plugin-"));
+  const pendingDir = path.join(tmp, ".cx", "intake", "pending");
+  fs.mkdirSync(pendingDir, { recursive: true });
+  fs.writeFileSync(path.join(pendingDir, "p1.json"), JSON.stringify({
+    id: "p1",
+    status: "pending",
+    intake: { sourcePath: "spec.md" },
+    triage: { intakeType: "feature", rdStage: "planning", primaryOwner: "engineer", risk: "low" },
+  }));
+  const logged = [];
+  const client = {
+    app: {
+      log: async (entry) => { logged.push(entry); },
+    },
+  };
+  try {
+    const fired = await emitSessionPrelude(
+      { type: "session.created", session: { id: "sess-prelude" }, timestamp: "2026-05-14T10:00:00.000Z" },
+      {
+        client,
+        env: { CONSTRUCT_DEPLOYMENT_MODE: "team", CONSTRUCT_INTAKE_QUEUE_BACKEND: "filesystem" },
+        cwd: tmp,
+      },
+    );
+    assert.equal(fired, true);
+    assert.equal(logged.length, 1);
+    assert.equal(logged[0].body.service, "construct");
+    assert.equal(logged[0].body.level, "info");
+    assert.match(logged[0].body.message, /Pending R&D intake \(1\)/);
+    assert.match(logged[0].body.message, /MCP broker: on/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("emitSessionPrelude fires once per session id even if session.created repeats", async () => {
+  _resetPreludeForTests();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cx-prelude-once-"));
+  const logged = [];
+  const client = { app: { log: async (entry) => { logged.push(entry); } } };
+  try {
+    const event = { type: "session.created", session: { id: "sess-once" }, timestamp: "2026-05-14T10:00:00.000Z" };
+    const first = await emitSessionPrelude(event, { client, env: {}, cwd: tmp });
+    const second = await emitSessionPrelude(event, { client, env: {}, cwd: tmp });
+    assert.equal(first, true);
+    assert.equal(second, false);
+    assert.equal(logged.length, 1);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("emitSessionPrelude is a no-op for non-session.created events", async () => {
+  _resetPreludeForTests();
+  const logged = [];
+  const client = { app: { log: async (entry) => { logged.push(entry); } } };
+  const fired = await emitSessionPrelude(
+    { type: "session.idle", session: { id: "sess-idle" } },
+    { client, env: {} },
+  );
+  assert.equal(fired, false);
+  assert.equal(logged.length, 0);
 });
 
 test("buildRuntimeTracePayload produces runtime_event kind for session.created", () => {

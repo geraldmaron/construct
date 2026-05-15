@@ -39,7 +39,7 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 | `registry-sync` | Registry sync hook — reminds to run construct sync after registry changes. |
 | `scan-secrets` | Scan secrets hook — detects potential secrets in files before they are committed. |
 | `session-optimize` | Session end optimization hook — triggers agent optimization for low-performers. |
-| `session-start` | Session start hook — emits resumable project context at the start of each session. |
+| `session-start` | Session start hook — emits resumable project context plus the `Pending R&D intake (N)` block (read from `.cx/intake/pending/`) with a one-line triage summary per packet at the start of each session. |
 | `stop-notify` | Stop notify hook — emits a session summary notification when Claude stops. |
 | `stop-typecheck` | Stop typecheck hook — runs TypeScript type-check at session end and records result. |
 | `test-watch` | PostToolUse / Bash (async) |

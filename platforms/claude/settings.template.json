@@ -47,12 +47,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx block-no-verify@1.1.2",
+            "command": "node \"$HOME/.construct/lib/hooks/block-no-verify.mjs\"",
             "timeout": 5
           }
         ],
         "id": "pre:bash:block-no-verify",
-        "description": "Block git --no-verify to prevent pre-commit hook bypass"
+        "description": "Block git --no-verify / -n to prevent pre-commit/pre-push hook bypass (vendored)"
       },
       {
         "matcher": "Bash",
@@ -91,7 +91,7 @@
         "description": "Prevent weakening eslint/tsconfig/prettier/biome configs"
       },
       {
-        "matcher": "*",
+        "matcher": "mcp__.*",
         "hooks": [
           {
             "type": "command",

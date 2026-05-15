@@ -24,7 +24,27 @@ import { runSetup } from '../lib/setup.mjs';
 import { runUpdate } from '../lib/update.mjs';
 import { runUninstall } from '../lib/uninstall/uninstall.mjs';
 import { maybeFirstInvocationProbe } from '../lib/install/first-invocation.mjs';
-import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
+import { loadConstructEnv, getUserEnvPath, writeEnvValues, ensureUserConfigDir } from '../lib/env-config.mjs';
+import {
+  loadProjectConfig,
+  writeProjectConfig,
+  initProjectConfig,
+  findProjectConfigPath,
+  getConfigValue,
+  setConfigValue,
+  PROJECT_CONFIG_FILENAME,
+} from '../lib/config/project-config.mjs';
+import { validateProjectConfig } from '../lib/config/schema.mjs';
+import {
+  DEPLOYMENT_MODES,
+  DEFAULT_DEPLOYMENT_MODE,
+  DEPLOYMENT_MODE_ENV_KEY,
+  describeDeploymentMode,
+  describeResourceLine,
+  getDeploymentMode,
+  isValidDeploymentMode,
+  resolveResourceMode,
+} from '../lib/deployment-mode.mjs';
 import { runDistillCli } from '../lib/distill.mjs';
 import { runIngestCli } from '../lib/document-ingest.mjs';
 import { runInferCli } from '../lib/schema-infer.mjs';
@@ -232,6 +252,132 @@ async function cmdDoctor() {
   fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
   add('~/.cx/performance-reviews/ ready', true);
 
+  // construct.config.json — optional today (config is permitted to be absent;
+  // env vars + defaults still work). The check enforces that when the file
+  // *is* present it parses and validates against the v1 schema.
+  try {
+    const projectCfg = loadProjectConfig(process.cwd(), process.env);
+    if (projectCfg.source === 'invalid') {
+      add(`construct.config.json valid (${projectCfg.errors.length} error${projectCfg.errors.length === 1 ? '' : 's'} — run \`construct config validate\`)`, false, false);
+    } else if (projectCfg.source === 'file') {
+      add(`construct.config.json valid`, true, true);
+    } else {
+      add('construct.config.json (optional)', true, true);
+    }
+  } catch (err) {
+    add(`construct.config.json check failed: ${err.message}`, false, true);
+  }
+
+  // Claude Code Stop-hook installation check. The settings template
+  // wires several Stop hooks (policy-engine / stop-typecheck /
+  // stop-notify / readme-age-check) that reference
+  // $HOME/.construct/lib/hooks/*. If that path doesn't resolve, every
+  // Stop hook fails silently — including stop-notify, which is what
+  // appends session cost data. Result: the dashboard stops updating
+  // and the user sees stale data. Surface loudly so the fix is one
+  // command away.
+  try {
+    const settingsPath = path.join(HOME, '.claude', 'settings.json');
+    if (fs.existsSync(settingsPath)) {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      const stopHooks = settings?.hooks?.Stop || [];
+      const installRoot = path.join(HOME, '.construct', 'lib', 'hooks');
+      const installed = fs.existsSync(installRoot);
+      const referenced = [];
+      for (const group of stopHooks) {
+        for (const h of (group?.hooks || [])) {
+          const cmd = String(h?.command || '');
+          const m = cmd.match(/\.construct\/lib\/hooks\/([a-zA-Z0-9_-]+\.mjs)/);
+          if (m) referenced.push(m[1]);
+        }
+      }
+      const missing = installed
+        ? referenced.filter((f) => !fs.existsSync(path.join(installRoot, f)))
+        : referenced;
+      if (referenced.length > 0 && missing.length > 0) {
+        add(
+          `Claude Stop hooks broken: ${missing.length} hook${missing.length === 1 ? '' : 's'} missing in ~/.construct/lib/hooks/. Symlink the install: ln -sfn ${ROOT_DIR}/lib ~/.construct/lib`,
+          false,
+          false,
+        );
+      } else if (referenced.length > 0) {
+        add(`Claude Stop hooks installed (${referenced.length} hooks resolve)`, true, true);
+      }
+    }
+  } catch (err) {
+    add(`Claude Stop hooks check failed: ${err.message}`, false, true);
+  }
+
+  // Handoff hygiene. Files in .cx/handoffs/ accumulate per session; this
+  // probe surfaces stale files past retention and files whose bead refs
+  // have all closed (safe to prune). Advisory — graceful when no .cx/
+  // handoffs/ directory exists.
+  try {
+    const { summarizeHandoffs } = await import('../lib/handoffs/inventory.mjs');
+    const h = summarizeHandoffs(process.cwd(), process.env);
+    if (h.state === 'empty') {
+      add('Handoffs: empty', true, true);
+    } else if (h.pastRetentionCount > 0) {
+      add(`Handoffs: ${h.pastRetentionCount} past ${h.maxDays}d retention — \`construct prune\``, false, true);
+    } else if (h.resolvedCount > 0) {
+      add(`Handoffs: ${h.total} files (${h.resolvedCount} reference only closed beads)`, true, true);
+    } else {
+      add(`Handoffs: ${h.total} files (oldest ${h.oldestAgeDays?.toFixed(0)}d)`, true, true);
+    }
+  } catch (err) {
+    add(`Handoff check failed: ${err.message}`, false, true);
+  }
+
+  // Disk resource budgets. Construct writes .cx/traces/, .cx/intake/,
+  // task graphs, backups, worker logs continuously. Without ceilings a
+  // long-lived install can fill the user's disk. Doctor surfaces usage
+  // vs cap as advisory at <=80%, warn at 80-100%, fail at >100%.
+  try {
+    const { measureUsage } = await import('../lib/resources/budget.mjs');
+    const u = measureUsage(process.cwd(), process.env);
+    const usedMb = u.totalCxBytes / 1024 / 1024;
+    const capMb = u.totalCxCap / 1024 / 1024;
+    const pct = (u.totalCxUsageRatio * 100).toFixed(0);
+    if (u.totalCxUsageRatio > 1) {
+      add(`.cx/ ${usedMb.toFixed(0)}MB / ${capMb.toFixed(0)}MB cap (${pct}% — over) — run \`construct prune\``, false, false);
+    } else if (u.totalCxUsageRatio > 0.8) {
+      add(`.cx/ ${usedMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB cap (${pct}% — warning) — \`construct prune\` recommended`, false, true);
+    } else {
+      add(`.cx/ ${usedMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB cap (${pct}%)`, true, true);
+    }
+  } catch (err) {
+    add(`Resource budget check failed: ${err.message}`, false, true);
+  }
+
+  // Pricing-catalog freshness + divergence. Cost ceilings (Phase 7b)
+  // are only as trustworthy as the catalog underneath. Stale catalog →
+  // drift between computed cost and actual provider bill. Divergence
+  // (>25%) → LiteLLM and static disagree on a known model, surface so
+  // the operator can verify which is current. Both advisory: degraded
+  // pricing still falls back to a usable source.
+  try {
+    const { describePricingCatalogFreshness, checkPricingDivergence } = await import('../lib/telemetry/langfuse-model-sync.mjs');
+    const freshness = describePricingCatalogFreshness();
+    if (freshness.stale) {
+      add(`Pricing catalog: ${freshness.message}`, false, true);
+    } else {
+      add(`Pricing catalog fresh (${freshness.ageHours?.toFixed(1) || '0.0'}h old)`, true, true);
+    }
+    if (freshness.present) {
+      try {
+        const cached = JSON.parse(fs.readFileSync(path.join(HOME, '.cx', 'pricing-cache.json'), 'utf8'));
+        const divergences = checkPricingDivergence(cached.models || []);
+        if (divergences.length === 0) {
+          add('Pricing matches static fallback (no >25% divergence)', true, true);
+        } else {
+          add(`Pricing divergence on ${divergences.length} model(s) — run \`construct pricing check\``, false, true);
+        }
+      } catch { /* divergence is advisory */ }
+    }
+  } catch (err) {
+    add(`Pricing catalog check failed: ${err.message}`, false, true);
+  }
+
   // Validate promptFile references and skill bindings
   try {
     const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
@@ -394,11 +540,69 @@ async function cmdDoctor() {
           const { describeMigrations } = await import('../lib/storage/migrations.mjs');
           const m = await describeMigrations(migClient);
           await closeSqlClient(migClient);
-          add('Schema migrations applied + no drift', !!m.ok && m.drift.length === 0, true);
+          const ok = !!m.ok && m.drift.length === 0;
+          let label = 'Schema migrations applied + no drift';
+          if (!ok && m.drift && m.drift.length > 0) {
+            const repairable = m.drift.filter((d) => d.idempotent).length;
+            const notRepairable = m.drift.length - repairable;
+            if (notRepairable === 0) {
+              label = `Schema migrations: ${m.drift.length} drifted (all idempotent — run \`construct storage repair-migrations --yes\`)`;
+            } else {
+              label = `Schema migrations: ${m.drift.length} drifted (${notRepairable} non-idempotent — write a new migration file)`;
+            }
+          }
+          add(label, ok, true);
         }
       } catch {
         add('Schema migrations applied + no drift', false, true);
       }
+    }
+
+    try {
+      const { detectBeadsDrift } = await import('../lib/beads/drift.mjs');
+      const drift = detectBeadsDrift();
+      const ok = drift.counts.stuckInProgress === 0 && drift.counts.mergeDrift === 0;
+      let label = 'Beads hygiene: no drift';
+      if (!ok) {
+        const parts = [];
+        if (drift.counts.stuckInProgress > 0) parts.push(`${drift.counts.stuckInProgress} stuck in_progress`);
+        if (drift.counts.mergeDrift > 0) parts.push(`${drift.counts.mergeDrift} possible merge-drift`);
+        label = `Beads hygiene: ${parts.join(', ')} — run \`construct beads drift\``;
+      } else if (drift.counts.staleOpen > 0) {
+        label = `Beads hygiene: ${drift.counts.staleOpen} stale-open (advisory) — run \`construct beads drift\``;
+      }
+      add(label, ok, true);
+    } catch {
+      // bd not on PATH or repo not a bd workspace — skip silently.
+    }
+
+    // cm and Docker are optional but downstream services (memory MCP,
+    // Langfuse, managed Postgres) depend on them. Surface missing tools
+    // as warnings rather than failures so doctor doesn't flip-flop.
+    try {
+      const cmProbe = spawnSync(process.platform === 'win32' ? 'where' : 'which', ['cm'], { stdio: 'pipe' });
+      const cmAvailable = cmProbe.status === 0;
+      add(cmAvailable ? 'cm available' : 'cm available (optional — memory MCP at 127.0.0.1:8765 needs it)', cmAvailable, true);
+    } catch {
+      add('cm available', false, true);
+    }
+
+    try {
+      const dockerCli = spawnSync(process.platform === 'win32' ? 'where' : 'which', ['docker'], { stdio: 'pipe' });
+      let dockerOk = false;
+      let dockerNote = 'Docker not installed (optional — Langfuse and managed Postgres need it)';
+      if (dockerCli.status === 0) {
+        const dockerInfo = spawnSync('docker', ['info'], { stdio: 'pipe' });
+        if (dockerInfo.status === 0) {
+          dockerOk = true;
+          dockerNote = 'Docker daemon reachable';
+        } else {
+          dockerNote = 'Docker CLI installed but daemon not reachable — run `construct up` on macOS to auto-start, or start Docker manually';
+        }
+      }
+      add(dockerOk ? 'Docker daemon reachable' : `Docker daemon reachable (${dockerNote})`, dockerOk, true);
+    } catch {
+      add('Docker daemon reachable', false, true);
     }
 
     try {
@@ -536,12 +740,28 @@ async function cmdVersion() {
 
 async function cmdReview(args) {
   fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
-  if (!ENV.LANGFUSE_PUBLIC_KEY || !ENV.LANGFUSE_SECRET_KEY) {
-    errorln('Error: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY must be set.');
-    errorln('Configure Langfuse credentials in ~/.construct/config.env or .env.');
-    process.exit(1);
+  const sub = args[0];
+
+  if (!sub || sub === 'run') {
+    const { runGenerator } = await import('../lib/performance/generate.mjs');
+    const result = await runGenerator({ env: process.env });
+    info(`Wrote ${result.filename} · ${result.agentCount} agent${result.agentCount === 1 ? '' : 's'}`);
+    println(`  ${result.path}`);
+    return;
   }
-  runNodeScript(path.join(ROOT_DIR, 'scripts', 'review.mjs'), args, ENV);
+
+  if (sub === 'legacy') {
+    if (!ENV.LANGFUSE_PUBLIC_KEY || !ENV.LANGFUSE_SECRET_KEY) {
+      errorln('Error: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY must be set.');
+      errorln('Configure Langfuse credentials in ~/.construct/config.env or .env.');
+      process.exit(1);
+    }
+    runNodeScript(path.join(ROOT_DIR, 'scripts', 'review.mjs'), args.slice(1), ENV);
+    return;
+  }
+
+  errorln('Usage: construct review [run|legacy]');
+  process.exit(1);
 }
 
 async function cmdInit(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init-unified.mjs'), args); }
@@ -595,8 +815,52 @@ async function cmdSearch(args) {
 async function cmdStorage(args) {
   const [action, ...rest] = args;
   if (!action) {
-    errorln('Usage: construct storage <sync|status|reset|delete-ingested>');
+    errorln('Usage: construct storage <sync|status|reset|delete-ingested|repair-migrations|migrations>');
     process.exit(1);
+  }
+  if (action === 'migrations') {
+    const { describeMigrations } = await import('../lib/storage/migrations.mjs');
+    const sqlClient = createSqlClient(process.env);
+    if (!sqlClient) { errorln('No DATABASE_URL configured.'); process.exit(1); }
+    try {
+      const report = await describeMigrations(sqlClient);
+      println(JSON.stringify(report, null, 2));
+      if (report.drift?.length > 0) process.exit(2);
+    } finally {
+      await closeSqlClient(sqlClient);
+    }
+    return;
+  }
+  if (action === 'repair-migrations') {
+    const confirm = rest.includes('--yes');
+    if (!confirm) {
+      errorln('This re-applies drifted migrations (idempotent only) and updates their recorded SHA.');
+      errorln('Destructive migrations (DROP / TRUNCATE / ALTER…DROP / DELETE) are refused.');
+      errorln('Re-run with --yes to proceed.');
+      process.exit(1);
+    }
+    const { runMigrations } = await import('../lib/storage/migrations.mjs');
+    const sqlClient = createSqlClient(process.env);
+    if (!sqlClient) { errorln('No DATABASE_URL configured.'); process.exit(1); }
+    try {
+      const result = await runMigrations(sqlClient, { repair: true });
+      println(JSON.stringify({
+        applied: result.applied,
+        repaired: result.repaired,
+        skipped: result.skipped,
+        drift: result.drift,
+      }, null, 2));
+      if (result.drift.length > 0) {
+        errorln('');
+        errorln('Refused to repair non-idempotent migrations:');
+        for (const d of result.drift) errorln(`  ${d.filename}`);
+        process.exit(2);
+      }
+      info(`Repaired ${result.repaired.length} migration(s); applied ${result.applied.length} new.`);
+    } finally {
+      await closeSqlClient(sqlClient);
+    }
+    return;
   }
   if (action === 'sync') {
     const result = await syncFileStateToSql(process.cwd(), { env: process.env, project: inferProjectName(process.cwd()) });
@@ -639,12 +903,629 @@ async function cmdStorage(args) {
     println(JSON.stringify(result, null, 2));
     return;
   }
-  errorln('Usage: construct storage <sync|status|reset|delete-ingested>');
+  errorln('Usage: construct storage <sync|status|reset|delete-ingested|repair-migrations|migrations>');
   process.exit(1);
 }
+
+async function cmdPrune(args) {
+  const dryRun = args.includes('--dry-run');
+  const { planPrune, executePrune, measureUsage } = await import('../lib/resources/budget.mjs');
+  const actions = planPrune(process.cwd(), process.env);
+  if (actions.length === 0) { info('Nothing to prune. .cx/ is within all configured budgets.'); return; }
+  const byCat = {};
+  let totalBytes = 0;
+  for (const a of actions) {
+    byCat[a.category] = (byCat[a.category] || 0) + 1;
+    totalBytes += a.bytes || 0;
+  }
+  println(`Plan: prune ${actions.length} file(s), free ${Math.round(totalBytes / 1024)}KB`);
+  for (const [cat, count] of Object.entries(byCat)) println(`  ${cat}: ${count} file(s)`);
+  if (dryRun) { info('--dry-run: no files removed.'); return; }
+  const result = executePrune(actions);
+  info(`Pruned ${result.removed.length} file(s), freed ${Math.round(result.bytesFreed / 1024)}KB.`);
+  const after = measureUsage(process.cwd(), process.env);
+  println(`.cx/ now at ${Math.round(after.totalCxBytes / 1024 / 1024)}MB / ${Math.round(after.totalCxCap / 1024 / 1024)}MB cap (${Math.round(after.totalCxUsageRatio * 100)}%).`);
+}
+
+async function cmdCosts(args) {
+  const sub = args[0] || 'status';
+  const {
+    getDailySpend,
+    getTotalDailySpend,
+    personaBudget,
+    totalBudget,
+    enforcementActive,
+    checkBudget,
+  } = await import('../lib/cost-ledger.mjs');
+
+  if (sub === 'status') {
+    const total = getTotalDailySpend();
+    const cap = totalBudget();
+    const pct = cap > 0 ? Math.round((total.costUsd / cap) * 100) : 0;
+    println(`Today's total spend: $${total.costUsd.toFixed(4)} / $${cap.toFixed(2)} cap (${pct}%)`);
+    println(`Enforcement: ${enforcementActive() ? 'on (hard-stop at cap)' : 'advisory (warning only)'}`);
+    println('');
+    println('Per-persona daily spend:');
+    const personas = Object.keys(total.byPersona || {});
+    if (personas.length === 0) {
+      println('  (no recorded spend today)');
+    } else {
+      for (const p of personas.sort()) {
+        const spend = getDailySpend({ personaId: p });
+        const personaCap = personaBudget(p);
+        const personaPct = personaCap > 0 ? Math.round((spend.costUsd / personaCap) * 100) : 0;
+        println(`  ${p.padEnd(22)} $${spend.costUsd.toFixed(4).padStart(10)} / $${personaCap.toFixed(2)} (${personaPct}%)`);
+      }
+    }
+    return;
+  }
+
+  if (sub === 'check') {
+    const persona = args[1];
+    if (!persona) { errorln('Usage: construct costs check <personaId>'); process.exit(1); }
+    const result = checkBudget({ personaId: persona });
+    println(JSON.stringify(result, null, 2));
+    if (!result.allowed) process.exit(2);
+    return;
+  }
+
+  errorln('Usage: construct costs <status|check <personaId>>');
+  process.exit(1);
+}
+
+async function cmdHandoffs(args) {
+  const sub = args[0] || 'status';
+  const { summarizeHandoffs } = await import('../lib/handoffs/inventory.mjs');
+  const summary = summarizeHandoffs(process.cwd(), process.env);
+  if (sub === 'status') {
+    if (summary.state === 'empty') { info('No handoffs in .cx/handoffs/.'); return; }
+    println(`Handoffs: ${summary.total} files · ${Math.round(summary.bytes / 1024)}KB · oldest ${summary.oldestAgeDays?.toFixed(1)}d`);
+    println(`Retention: ${summary.maxDays}d / ${summary.maxItems} items`);
+    println('');
+    if (summary.pastRetentionCount > 0) {
+      println(`⚠  ${summary.pastRetentionCount} file(s) past retention — run \`construct prune\``);
+    }
+    if (summary.resolvedCount > 0) {
+      println(`ℹ  ${summary.resolvedCount} file(s) reference only closed beads (resolved-but-kept)`);
+    }
+    if (!summary.pastRetentionCount && !summary.resolvedCount) {
+      println(`✓ All handoffs within retention and reference open work.`);
+    }
+    println('');
+    println('Recent:');
+    for (const r of summary.recent) {
+      println(`  ${r.ageDays.toFixed(1).padStart(5)}d  ${r.filename}  ${r.beadRefs.length ? `(${r.beadRefs.join(', ')})` : ''}`);
+    }
+    return;
+  }
+  errorln('Usage: construct handoffs status');
+  process.exit(1);
+}
+
+async function cmdResources(args) {
+  const sub = args[0] || 'status';
+  const { measureUsage } = await import('../lib/resources/budget.mjs');
+  if (sub === 'status') {
+    const u = measureUsage(process.cwd(), process.env);
+    const totalMb = u.totalCxBytes / 1024 / 1024;
+    const capMb = u.totalCxCap / 1024 / 1024;
+    println(`.cx/ total: ${totalMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB (${(u.totalCxUsageRatio * 100).toFixed(0)}%)`);
+    println('');
+    println('Category                  Files     Size  Enforcement');
+    for (const [name, c] of Object.entries(u.categories)) {
+      const sizeKb = (c.bytes / 1024).toFixed(1);
+      println(`  ${name.padEnd(22)}  ${String(c.files).padStart(5)}  ${sizeKb.padStart(8)}KB  ${c.enforcement}`);
+    }
+    return;
+  }
+  errorln('Usage: construct resources status');
+  process.exit(1);
+}
+
+async function cmdOverrides(args) {
+  const sub = args[0] || 'list';
+  const {
+    describeOverrides,
+    listBackups,
+    pruneBackups,
+    resolveOverride,
+    SUPPORTED_CATEGORIES,
+  } = await import('../lib/overrides/resolver.mjs');
+
+  if (sub === 'list') {
+    const summary = describeOverrides(process.cwd());
+    let total = 0;
+    for (const category of SUPPORTED_CATEGORIES) {
+      const entries = summary[category] || [];
+      if (entries.length === 0) continue;
+      println(`${category}/`);
+      for (const entry of entries) println(`  ${entry}`);
+      total += entries.length;
+    }
+    if (total === 0) info('No user overrides — running on shipped defaults.');
+    return;
+  }
+
+  if (sub === 'backups') {
+    const category = args[1];
+    const name = args[2];
+    if (!category || !name) { errorln('Usage: construct overrides backups <category> <name>'); process.exit(1); }
+    const backups = listBackups(process.cwd(), category, name);
+    if (backups.length === 0) { info(`No backups for ${category}/${name}.`); return; }
+    for (const b of backups) {
+      const age = Math.floor((Date.now() - b.mtimeMs) / 1000);
+      println(`${b.filename}  ${b.size}B  ${age}s ago`);
+    }
+    return;
+  }
+
+  if (sub === 'prune') {
+    const daysFlag = args.find((a) => a.startsWith('--max-days='));
+    const maxDays = daysFlag ? Number.parseInt(daysFlag.split('=')[1], 10) : 60;
+    const result = pruneBackups(process.cwd(), { maxDays });
+    info(`Pruned ${result.pruned.length} backup file(s) older than ${maxDays}d (kept ${result.kept}).`);
+    return;
+  }
+
+  if (sub === 'resolve') {
+    const category = args[1];
+    const name = args[2];
+    if (!category || !name) { errorln('Usage: construct overrides resolve <category> <name>'); process.exit(1); }
+    const r = resolveOverride(process.cwd(), category, name);
+    println(JSON.stringify(r, null, 2));
+    return;
+  }
+
+  errorln('Usage: construct overrides <list|backups|prune|resolve>');
+  process.exit(1);
+}
+
+async function cmdPricing(args) {
+  const sub = args[0] || 'status';
+  const {
+    describePricingCatalogFreshness,
+    refreshPricingCatalog,
+    checkPricingDivergence,
+    resolveModelPricing,
+  } = await import('../lib/telemetry/langfuse-model-sync.mjs');
+
+  if (sub === 'status') {
+    const f = describePricingCatalogFreshness();
+    println(JSON.stringify(f, null, 2));
+    const tiers = ['CX_MODEL_REASONING', 'CX_MODEL_STANDARD', 'CX_MODEL_FAST'];
+    println('');
+    println('Resolved pricing per tier:');
+    for (const env of tiers) {
+      const model = process.env[env];
+      if (!model) { println(`  ${env}: (unset)`); continue; }
+      const p = resolveModelPricing(model);
+      if (!p) { println(`  ${env} (${model}): unavailable`); continue; }
+      println(`  ${env} (${model}): in $${p.inputPrice.toFixed(8)}/tok · out $${p.outputPrice.toFixed(8)}/tok · source: ${p.source}`);
+    }
+    return;
+  }
+
+  if (sub === 'refresh') {
+    const force = args.includes('--force');
+    info(`Refreshing LiteLLM pricing catalog${force ? ' (force)' : ''}…`);
+    const result = await refreshPricingCatalog(globalThis.fetch, { force });
+    info(`Fetched ${result.fetched} models.`);
+    if (result.divergences?.length) {
+      println('');
+      println(`⚠  ${result.divergences.length} model(s) diverge >25% from static fallback:`);
+      for (const d of result.divergences) println(`  ${d.message}`);
+    } else {
+      info('No pricing divergences from static fallback (>25%).');
+    }
+    return;
+  }
+
+  if (sub === 'check' || sub === 'divergence') {
+    const f = describePricingCatalogFreshness();
+    if (!f.present) { info(f.message); return; }
+    try {
+      const cached = JSON.parse(fs.readFileSync(path.join(HOME, '.cx', 'pricing-cache.json'), 'utf8'));
+      const divergences = checkPricingDivergence(cached.models || []);
+      if (divergences.length === 0) { info('No pricing divergences (>25%) between LiteLLM and the static fallback.'); return; }
+      println(`⚠  ${divergences.length} divergence(s):`);
+      for (const d of divergences) println(`  ${d.message}`);
+      process.exit(2);
+    } catch (err) {
+      errorln(`pricing cache read failed: ${err.message}`);
+      process.exit(1);
+    }
+  }
+
+  errorln(`Usage: construct pricing <status|refresh|check>`);
+  process.exit(1);
+}
+
 async function cmdHeadhunt(args) { await runHeadhunt({ args, cwd: process.cwd(), homeDir: HOME }); }
 async function cmdHosts() { printHostCapabilities(); }
 async function cmdSetup(args) { await runSetup({ rootDir: ROOT_DIR, args, homeDir: HOME }); }
+
+function printConfigModeHelp() {
+  println('Construct config — inspect and set deployment posture.');
+  println('');
+  println('Usage:');
+  println('  construct config            Show active deployment mode and resource topology.');
+  println('  construct config mode       Print the active deployment mode.');
+  println('  construct config mode <m>   Set mode to solo | team | enterprise.');
+  println('');
+  println('Modes:');
+  for (const mode of DEPLOYMENT_MODES) {
+    println(`  ${mode.padEnd(11)} ${describeDeploymentMode(mode)}`);
+  }
+}
+
+function printActiveConfig() {
+  const mode = getDeploymentMode(process.env);
+  const topology = resolveResourceMode(mode);
+  println(`Deployment mode: ${mode}`);
+  println(`  ${describeDeploymentMode(mode)}`);
+  println('');
+  println('Resource topology:');
+  for (const [key, value] of Object.entries(topology)) {
+    println(`  ${key.padEnd(11)} ${value}`);
+  }
+  println('');
+  println(`Persisted at: ${getUserEnvPath(HOME)} (${DEPLOYMENT_MODE_ENV_KEY})`);
+}
+
+function printIntakeHelp() {
+  println('Construct intake — inspect and process the R&D intake queue.');
+  println('');
+  println('Usage:');
+  println('  construct intake list                List pending intake packets (ID, type, stage, owner, action).');
+  println('  construct intake show <id>           Show a single packet: triage, source, excerpt, related docs.');
+  println('  construct intake done <id> [--notes=…]    Mark a pending packet processed.');
+  println('  construct intake skip <id> [--reason=…]   Mark a pending packet skipped (preserves audit trail).');
+  println('  construct intake reopen <id>         Move a processed or skipped packet back to pending.');
+}
+
+function parseKvFlags(args, keys) {
+  const out = {};
+  for (const arg of args) {
+    for (const key of keys) {
+      const prefix = `--${key}=`;
+      if (arg.startsWith(prefix)) out[key] = arg.slice(prefix.length);
+    }
+  }
+  return out;
+}
+
+function formatIntakeTable(rows) {
+  if (rows.length === 0) {
+    println('No pending intake packets.');
+    return;
+  }
+  const headers = ['ID', 'Type', 'Stage', 'Owner', 'Action'];
+  const widths = headers.map((h, i) => Math.max(h.length, ...rows.map((r) => String(r[i] || '').length)));
+  const fmt = (cells) => cells.map((c, i) => String(c || '').padEnd(widths[i])).join('  ');
+  println(fmt(headers));
+  println(widths.map((w) => '─'.repeat(w)).join('  '));
+  for (const row of rows) println(fmt(row));
+}
+
+async function cmdIntake(args) {
+  const sub = args[0];
+
+  if (!sub || sub === '--help' || sub === '-h') {
+    printIntakeHelp();
+    return;
+  }
+
+  const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
+  const cwd = process.cwd();
+  const queue = createIntakeQueue(cwd, process.env);
+
+  if (sub === 'list') {
+    const pending = queue.listPending();
+    const rows = pending.map((p) => {
+      const t = p.triage || {};
+      return [p.id, t.intakeType || 'unknown', t.rdStage || 'unknown', t.primaryOwner || '—', t.recommendedAction || '—'];
+    });
+    formatIntakeTable(rows);
+    return;
+  }
+
+  const id = args[1];
+  if (sub === 'show') {
+    if (!id) { errorln('Usage: construct intake show <id>'); process.exit(1); }
+    const entry = queue.read(id);
+    if (!entry) { errorln(`No intake packet with id: ${id}`); process.exit(1); }
+    const t = entry.triage || {};
+    println(`ID:        ${entry.id}`);
+    println(`Status:    ${entry.status}`);
+    println(`Source:    ${entry.intake?.sourcePath || '(none)'}`);
+    if (entry.processedAt) println(`Processed: ${entry.processedAt} by ${entry.processedBy || 'unknown'}`);
+    if (entry.skippedAt) println(`Skipped:   ${entry.skippedAt} by ${entry.skippedBy || 'unknown'}${entry.reason ? ` — ${entry.reason}` : ''}`);
+    println('');
+    println('Triage:');
+    println(`  intakeType:        ${t.intakeType || 'unknown'}`);
+    println(`  rdStage:           ${t.rdStage || 'unknown'}`);
+    println(`  primaryOwner:      ${t.primaryOwner || '—'}`);
+    println(`  recommendedChain:  ${(t.recommendedChain || []).join(' → ') || '—'}`);
+    println(`  recommendedAction: ${t.recommendedAction || '—'}`);
+    println(`  risk:              ${t.risk || '—'}`);
+    println(`  requiresApproval:  ${t.requiresApproval ? 'yes' : 'no'}`);
+    println(`  confidence:        ${typeof t.confidence === 'number' ? t.confidence.toFixed(2) : '—'}`);
+    if (t.rationale) println(`  rationale:         ${t.rationale}`);
+    if (entry.suggestion?.lane) {
+      println('');
+      println(`Suggested lane: ${entry.suggestion.lane} (${entry.suggestion.source})`);
+    }
+    if ((entry.related || []).length > 0) {
+      println('');
+      println('Related artifacts:');
+      for (const r of entry.related) {
+        const score = typeof r.score === 'number' ? ` · score ${r.score.toFixed(2)}` : '';
+        println(`  - ${r.path || r.title}${score}`);
+      }
+    }
+    if (entry.excerpt) {
+      println('');
+      println('Excerpt:');
+      for (const line of String(entry.excerpt).split('\n').slice(0, 12)) println(`  ${line}`);
+    }
+    return;
+  }
+
+  if (sub === 'done') {
+    if (!id) { errorln('Usage: construct intake done <id> [--notes=…]'); process.exit(1); }
+    const flags = parseKvFlags(args.slice(2), ['notes']);
+    try {
+      const r = queue.markProcessed(id, { processedBy: 'construct-intake-cli', notes: flags.notes || '' });
+      info(`Marked ${r.id} processed.`);
+    } catch (err) {
+      errorln(err.message || 'mark processed failed');
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (sub === 'skip') {
+    if (!id) { errorln('Usage: construct intake skip <id> [--reason=…]'); process.exit(1); }
+    const flags = parseKvFlags(args.slice(2), ['reason']);
+    try {
+      const r = queue.markSkipped(id, { skippedBy: 'construct-intake-cli', reason: flags.reason || '' });
+      info(`Marked ${r.id} skipped.`);
+    } catch (err) {
+      errorln(err.message || 'mark skipped failed');
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (sub === 'reopen') {
+    if (!id) { errorln('Usage: construct intake reopen <id>'); process.exit(1); }
+    try {
+      const r = queue.reopen(id);
+      info(`Reopened ${r.id} (from ${r.from}).`);
+    } catch (err) {
+      errorln(err.message || 'reopen failed');
+      process.exit(1);
+    }
+    return;
+  }
+
+  errorln(`Unknown intake subcommand: ${sub}. Available: list, show, done, skip, reopen`);
+  process.exit(1);
+}
+
+function printGraphHelp() {
+  println('Construct graph — inspect and generate task graphs derived from R&D intake.');
+  println('');
+  println('Usage:');
+  println('  construct graph list                            List all task graphs in this project.');
+  println('  construct graph show <graph-id>                 Print a graph: nodes, edges, status, verification.');
+  println('  construct graph from-intake <intake-id>         Generate a task graph from a pending intake packet.');
+  println('  construct graph status <graph-id> <node-id> <status> [--evidence=text]');
+  println('                                                  Update a node status. Valid: pending, claimed, in-progress, done, blocked, needs-input, skipped.');
+}
+
+async function cmdGraph(args) {
+  const sub = args[0];
+  if (!sub || sub === '--help' || sub === '-h') { printGraphHelp(); return; }
+
+  const { FilesystemTaskGraphStore } = await import('../lib/task-graph/store.mjs');
+  const { generateTaskGraphFromTriage } = await import('../lib/task-graph/generate.mjs');
+  const cwd = process.cwd();
+  const store = new FilesystemTaskGraphStore(cwd);
+
+  if (sub === 'list') {
+    const graphs = store.list();
+    if (graphs.length === 0) { println('No task graphs.'); return; }
+    println('Graph ID                                                Nodes  Triage');
+    println('-'.repeat(80));
+    for (const g of graphs) {
+      const triage = g.triage ? `${g.triage.intakeType}/${g.triage.rdStage}` : '—';
+      println(`${g.id.padEnd(56)}  ${String(g.nodes.length).padStart(5)}  ${triage}`);
+    }
+    return;
+  }
+
+  if (sub === 'show') {
+    const id = args[1];
+    if (!id) { errorln('Usage: construct graph show <graph-id>'); process.exit(1); }
+    const g = store.read(id);
+    if (!g) { errorln(`No graph: ${id}`); process.exit(1); }
+    println(`Graph: ${g.id}`);
+    println(`Created: ${g.createdAt}`);
+    if (g.triage) println(`Triage: ${g.triage.intakeType} / ${g.triage.rdStage} · owner ${g.triage.primaryOwner}`);
+    if (g.intake?.sourcePath) println(`Source: ${g.intake.sourcePath}`);
+    if (g.verificationRequirements?.length) println(`Verification: ${g.verificationRequirements.join(', ')}`);
+    println('');
+    println('Nodes:');
+    for (const node of g.nodes) {
+      const deps = (node.dependsOn || []).length > 0 ? ` ← ${node.dependsOn.length} dep(s)` : '';
+      println(`  [${node.status.padEnd(11)}] ${node.title}${deps}`);
+      if ((node.evidence || []).length > 0) {
+        for (const ev of node.evidence) println(`    evidence: ${typeof ev === 'string' ? ev : JSON.stringify(ev)}`);
+      }
+    }
+    if ((g.edges || []).length > 0) {
+      println('');
+      println(`Edges: ${g.edges.length}`);
+    }
+    return;
+  }
+
+  if (sub === 'from-intake') {
+    const intakeId = args[1];
+    if (!intakeId) { errorln('Usage: construct graph from-intake <intake-id>'); process.exit(1); }
+    const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
+    const queue = createIntakeQueue(cwd, process.env);
+    const entry = queue.read(intakeId);
+    if (!entry) { errorln(`No intake packet: ${intakeId}`); process.exit(1); }
+    const graph = generateTaskGraphFromTriage({
+      triage: entry.triage,
+      project: path.basename(path.resolve(cwd)),
+      request: entry.excerpt || '',
+      intake: entry.intake,
+    });
+    const r = store.save(graph);
+    info(`Generated ${graph.nodes.length}-node graph ${r.id}`);
+    println(`Wrote: ${r.filePath}`);
+    return;
+  }
+
+  if (sub === 'status') {
+    const graphId = args[1];
+    const nodeId = args[2];
+    const status = args[3];
+    if (!graphId || !nodeId || !status) {
+      errorln('Usage: construct graph status <graph-id> <node-id> <status> [--evidence=…]');
+      process.exit(1);
+    }
+    const flags = parseKvFlags(args.slice(4), ['evidence']);
+    try {
+      const patch = flags.evidence ? { addEvidence: flags.evidence } : {};
+      const updated = store.updateNodeStatus(graphId, nodeId, status, patch);
+      info(`Updated ${nodeId} → ${updated.status}`);
+    } catch (err) {
+      errorln(err.message || 'status update failed');
+      process.exit(1);
+    }
+    return;
+  }
+
+  errorln(`Unknown graph subcommand: ${sub}. Available: list, show, from-intake, status`);
+  process.exit(1);
+}
+
+async function cmdConfig(args) {
+  const sub = args[0];
+
+  if (!sub || sub === '--help' || sub === '-h') {
+    if (!sub) { printActiveConfig(); return; }
+    printConfigModeHelp();
+    return;
+  }
+
+  if (sub === 'mode') {
+    const value = args[1];
+
+    if (!value) {
+      println(getDeploymentMode(process.env));
+      return;
+    }
+
+    if (value === '--help' || value === '-h') { printConfigModeHelp(); return; }
+
+    if (!isValidDeploymentMode(value)) {
+      errorln(`Invalid deployment mode: ${value}. Valid modes: ${DEPLOYMENT_MODES.join(', ')}`);
+      process.exit(1);
+    }
+
+    ensureUserConfigDir(HOME);
+    writeEnvValues(getUserEnvPath(HOME), { [DEPLOYMENT_MODE_ENV_KEY]: value });
+    process.env[DEPLOYMENT_MODE_ENV_KEY] = value;
+
+    info(`Deployment mode set to ${value} (${describeResourceLine(value)})`);
+    println('');
+    println(describeDeploymentMode(value));
+    return;
+  }
+
+  if (sub === 'init') {
+    try {
+      const filePath = initProjectConfig(process.cwd());
+      info(`Created ${filePath}`);
+    } catch (err) {
+      errorln(err.message);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (sub === 'show') {
+    const { path: cfgPath, config, source, errors } = loadProjectConfig(process.cwd(), process.env);
+    if (errors.length) {
+      errorln(`Config has ${errors.length} error${errors.length === 1 ? '' : 's'}:`);
+      for (const e of errors) errorln(`  - ${e}`);
+    }
+    println(`# source: ${source}${cfgPath ? ` (${cfgPath})` : ''}`);
+    println(JSON.stringify(config, null, 2));
+    return;
+  }
+
+  if (sub === 'get') {
+    const keyPath = args[1];
+    if (!keyPath) { errorln('Usage: construct config get <dotted.key>'); process.exit(1); }
+    const { config } = loadProjectConfig(process.cwd(), process.env);
+    const value = getConfigValue(config, keyPath, null);
+    println(value === null ? '' : (typeof value === 'string' ? value : JSON.stringify(value)));
+    return;
+  }
+
+  if (sub === 'set') {
+    const keyPath = args[1];
+    const rawValue = args[2];
+    if (!keyPath || rawValue === undefined) {
+      errorln('Usage: construct config set <dotted.key> <value>');
+      process.exit(1);
+    }
+    let parsedValue = rawValue;
+    if (rawValue === 'true') parsedValue = true;
+    else if (rawValue === 'false') parsedValue = false;
+    else if (rawValue === 'null') parsedValue = null;
+    else if (!Number.isNaN(Number(rawValue)) && rawValue.trim() !== '') parsedValue = Number(rawValue);
+    const cfgPath = findProjectConfigPath(process.cwd()) || path.join(process.cwd(), PROJECT_CONFIG_FILENAME);
+    const { config } = loadProjectConfig(process.cwd(), process.env);
+    const next = setConfigValue(config, keyPath, parsedValue);
+    try {
+      writeProjectConfig(cfgPath, next);
+      info(`set ${keyPath} = ${JSON.stringify(parsedValue)} in ${cfgPath}`);
+    } catch (err) {
+      errorln(err.message);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (sub === 'validate') {
+    const cfgPath = findProjectConfigPath(process.cwd());
+    if (!cfgPath) {
+      info(`no ${PROJECT_CONFIG_FILENAME} found — using defaults`);
+      return;
+    }
+    let raw;
+    try { raw = JSON.parse(fs.readFileSync(cfgPath, 'utf8')); }
+    catch (err) { errorln(`parse error: ${err.message}`); process.exit(1); }
+    const result = validateProjectConfig(raw);
+    if (result.valid) {
+      info(`${cfgPath} is valid`);
+      return;
+    }
+    errorln(`${cfgPath} has ${result.errors.length} error${result.errors.length === 1 ? '' : 's'}:`);
+    for (const e of result.errors) errorln(`  - ${e}`);
+    process.exit(1);
+  }
+
+  errorln(`Unknown config subcommand: ${sub}. Available: mode, init, show, get, set, validate`);
+  process.exit(1);
+}
 async function cmdUninstall(args) {
   try {
     const result = await runUninstall(args);
@@ -985,6 +1866,27 @@ async function cmdEvals(args) {
 
     const { evaluateFixture, formatReport } = await import('../lib/engine/eval-retrieval.mjs');
     const report = await evaluateFixture(fixturePath);
+
+    try {
+      const cacheDir = path.join(HOME, '.cx', 'evals');
+      fs.mkdirSync(cacheDir, { recursive: true });
+      const ts = new Date().toISOString();
+      fs.writeFileSync(
+        path.join(cacheDir, 'retrieval-latest.json'),
+        JSON.stringify({ ts, fixture: fixturePath, report }, null, 2),
+      );
+      const sum = report?.summary || report || {};
+      const historyEntry = {
+        ts,
+        fixture: path.basename(fixturePath),
+        recallAt5: sum.recallAt5 ?? sum.recall_at_5 ?? null,
+        precisionAt5: sum.precisionAt5 ?? sum.precision_at_5 ?? null,
+        mrr: sum.mrr ?? null,
+        p50LatencyMs: sum.p50LatencyMs ?? sum.p50_latency_ms ?? null,
+        p95LatencyMs: sum.p95LatencyMs ?? sum.p95_latency_ms ?? null,
+      };
+      fs.appendFileSync(path.join(cacheDir, 'retrieval-history.jsonl'), JSON.stringify(historyEntry) + '\n');
+    } catch { /* cache write is best-effort */ }
 
     if (jsonOutput) {
       println(JSON.stringify(report, null, 2));
@@ -1426,6 +2328,9 @@ const handlers = new Map([
   ['show', cmdShow],
   ['serve', cmdServe],
   ['setup', cmdSetup],
+  ['config', cmdConfig],
+  ['intake', cmdIntake],
+  ['graph', cmdGraph],
   ['uninstall', cmdUninstall],
   ['update', cmdUpdate],
   ['completions', cmdCompletions],
@@ -1439,6 +2344,12 @@ const handlers = new Map([
   ['infer', cmdInfer],
   ['search', cmdSearch],
   ['storage', cmdStorage],
+  ['pricing', cmdPricing],
+  ['overrides', cmdOverrides],
+  ['prune', cmdPrune],
+  ['resources', cmdResources],
+  ['costs', cmdCosts],
+  ['handoffs', cmdHandoffs],
   ['headhunt', cmdHeadhunt],
   ['init', cmdInit],
   ['docs:verify', cmdDocsVerify],
@@ -1539,6 +2450,43 @@ const handlers = new Map([
       const staleLocks = cleanupStaleLock({ cwd: process.cwd() });
       const staleQueue = cleanupStaleQueue({ cwd: process.cwd() });
       println(`Cleaned up: ${staleLocks ? '1 stale lock' : 'no stale locks'}, ${staleQueue} stale queue entries`);
+      return;
+    }
+
+    if (sub === 'drift') {
+      const { detectBeadsDrift, formatDriftReport } = await import('../lib/beads/drift.mjs');
+      const jsonOutput = subArgs.includes('--json');
+      const opts = {};
+      for (const arg of subArgs) {
+        const m = arg.match(/^--([a-z-]+)=(\d+)$/);
+        if (!m) continue;
+        if (m[1] === 'stale-open-days') opts.staleOpenDays = Number(m[2]);
+        if (m[1] === 'stuck-in-progress-days') opts.stuckInProgressDays = Number(m[2]);
+        if (m[1] === 'merge-lookback') opts.mergeLookback = Number(m[2]);
+      }
+      const report = detectBeadsDrift(opts);
+      if (jsonOutput) {
+        println(JSON.stringify(report, null, 2));
+      } else {
+        process.stdout.write(formatDriftReport(report));
+      }
+      if (report.counts.stuckInProgress > 0 || report.counts.mergeDrift > 0) {
+        process.exit(2);
+      }
+      return;
+    }
+
+    if (sub === 'drift-report') {
+      // Writes a snapshot to .cx/handoffs/beads-drift-<date>.md for the
+      // weekly drift report mechanism the bd hygiene rule promises.
+      const { detectBeadsDrift, formatDriftReport } = await import('../lib/beads/drift.mjs');
+      const report = detectBeadsDrift();
+      const handoffsDir = path.join(process.cwd(), '.cx', 'handoffs');
+      fs.mkdirSync(handoffsDir, { recursive: true });
+      const date = new Date().toISOString().slice(0, 10);
+      const file = path.join(handoffsDir, `beads-drift-${date}.md`);
+      fs.writeFileSync(file, `# Beads drift report — ${date}\n\n${formatDriftReport(report)}\n`);
+      info(`Wrote ${file}`);
       return;
     }
 

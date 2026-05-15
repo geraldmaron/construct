@@ -109,6 +109,24 @@ provider auth failures, and dashboard unreachable.
    CREATE EXTENSION IF NOT EXISTS vector;
    ```
 
+## Schema migration drift
+
+**Symptom:** `construct doctor` shows `Schema migrations: N drifted` ⚠, or any storage sync errors out with `Migration drift detected (a previously-applied migration file has changed)`.
+
+**Cause:** A long-lived developer database has stale SHAs recorded in `construct_schema_migrations` for files that have since evolved. Fresh installs are not affected. Common after a Construct upgrade that ships an evolved earlier migration.
+
+**Resolution:**
+
+```bash
+# Inspect first — read-only, lists which files drifted and whether each is idempotent
+construct storage migrations
+
+# Heal idempotent drift (re-applies the file via CREATE … IF NOT EXISTS clauses, updates the recorded SHA)
+construct storage repair-migrations --yes
+```
+
+The repair refuses any file containing `DROP`, `TRUNCATE`, `ALTER … DROP`, or `DELETE`. If `construct storage migrations` reports drift on a non-idempotent file, the only safe path is to write a new migration file with a higher sequence number — never silently re-record the SHA.
+
 ## Provider auth failure
 
 **Symptoms:** `construct provider test <id>` returns `ok: false`; agent tools return "not authorized" or HTTP 401/403 errors.

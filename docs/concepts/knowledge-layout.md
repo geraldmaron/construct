@@ -10,14 +10,15 @@ description: How .cx/, beads, the vector index, and SQL fit together to make con
 
 ## Overview
 
-`.cx/` has two layers:
+`.cx/` has three layers:
 
 | Layer | Dirs | Purpose |
 |---|---|---|
 | **Knowledge** | `.cx/knowledge/` | Typed, persistent, human-curated or inbox-ingested documents |
+| **R&D loop** | `.cx/inbox/`, `.cx/intake/{pending,processed,skipped}/`, `.cx/task-graphs/`, `.cx/traces/` | Per-signal triage queue, per-signal execution plans, append-only trace event log |
 | **Runtime** | `.cx/observations/`, `.cx/sessions/`, `.cx/runtime/` | Machine-written, high-churn, agent working memory |
 
-Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable and version-controlled.
+Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable and version-controlled. R&D-loop dirs are written by the daemon and the CLI; agents update them via `construct intake` / `construct graph`, not by editing files.
 
 ---
 
@@ -69,11 +70,12 @@ These guidelines are aspirational; existing documents need not be refactored imm
 
 Drop any supported file into `.cx/inbox/` and the embed daemon will:
 
-1. Detect it on the next 2-minute inbox-watcher cycle
+1. Detect it on the next inbox-watcher cycle (reactive within a second or two; scheduler fallback every two minutes)
 2. Classify it using the filename rules above
 3. Extract text (PDF, DOCX, XLSX, PPTX, Markdown, plain text, code…)
 4. Write a normalised Markdown artifact to `.cx/knowledge/<subdir>/<filename>.md`
 5. Record a typed observation in `.cx/observations/` with tag `knowledge:<subdir>`
+6. Run `classifyRdIntake` and write an R&D triage packet to `.cx/intake/pending/<id>.json` — intake type, R&D stage, primary owner persona, recommended chain, recommended action, risk, confidence, rationale. Drive the queue with `construct intake list / show / done / skip / reopen`. See [intake and triage](/concepts/intake-and-triage).
 
 Supported formats: `.pdf`, `.docx`, `.xlsx`, `.pptx`, `.md`, `.txt`, `.csv`, `.json`, `.yaml`, `.toml`, `.mjs`, `.ts`, and all other extractable formats in `lib/document-extract.mjs`.
 
