@@ -1,38 +1,46 @@
-/* Custom styles beyond Tailwind */
+/*
+ * App.css — legacy class hooks that pre-date the aurora design system.
+ *
+ * Every rule routes through the CSS vars from index.css (--bg-muted,
+ * --border, --text, --text-dim) so light / dark / auto themes all
+ * follow the same single source of truth. Don't reintroduce
+ * `@apply bg-white` etc. here — that breaks dark mode.
+ */
 
-/* Smooth gradient for active nav items */
-/* We already defined gradients in tailwind.config.js */
-
-/* Page title styling */
 .page-title {
-  @apply text-2xl font-bold mb-6;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: var(--text);
 }
 
-/* Card styling */
-.card {
-  @apply bg-white rounded-lg border border-gray-200 p-6 mb-4;
-}
-
-/* Button styling */
-.btn-primary {
-  @apply bg-gradient-to-r from-gray-900 to-white text-white px-4 py-2 rounded hover:from-gray-800 hover:to-gray-100 transition-colors;
-}
+/*
+ * `.card` is already defined in index.css with theme-var backgrounds.
+ * Intentionally NOT redeclared here — the @layer components rule wins.
+ */
 
 .btn-secondary {
-  @apply bg-gray-100 text-gray-800 px-4 py-2 rounded hover:bg-gray-200 transition-colors;
+  background: var(--bg-muted);
+  color: var(--text);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 150ms ease;
+}
+.btn-secondary:hover {
+  background: var(--border);
 }
 
-/* Loading and empty states */
 .loading, .empty {
-  @apply text-center py-10 text-gray-500;
+  text-align: center;
+  padding: 2.5rem 0;
+  color: var(--text-dim);
 }
 
-/* Responsive adjustments */
 @media (max-width: 640px) {
   aside {
-    @apply hidden;
+    display: none;
   }
   main {
-    @apply p-4;
+    padding: 1rem;
   }
 }

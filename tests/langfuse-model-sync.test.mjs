@@ -84,21 +84,22 @@ test('unknown model returns zero cost with unavailable source', () => {
   assert.equal(result.costSource, 'unavailable');
 });
 
-test('static Anthropic pricing overrides OpenRouter when model is in static table', () => {
-  // OpenRouter quotes a marked-up rate for a model already in the static table.
+test('OpenRouter pricing overrides static-fallback when model is in static table', () => {
+  // Live catalog wins over the static fallback baseline — OpenRouter is
+  // the authoritative live source when LiteLLM has not been fetched.
   const openRouterModels = [
     {
       modelName: 'claude-haiku-4-5',
       matchPattern: '(?i)^claude-haiku-4-5$',
-      inputPrice: 9 / 1_000_000,   // inflated
+      inputPrice: 9 / 1_000_000,
       outputPrice: 45 / 1_000_000,
     },
   ];
   const catalog = buildPricingCatalog(openRouterModels);
   const pricing = resolveModelPricing('claude-haiku-4-5', catalog);
-  assert.equal(pricing.source, 'static');
-  assert.equal(pricing.inputPrice, 1 / 1_000_000);
-  assert.equal(pricing.outputPrice, 5 / 1_000_000);
+  assert.equal(pricing.source, 'openrouter');
+  assert.equal(pricing.inputPrice, 9 / 1_000_000);
+  assert.equal(pricing.outputPrice, 45 / 1_000_000);
 });
 
 test('OpenRouter-only model uses OpenRouter pricing when not in static table', () => {
@@ -116,20 +117,20 @@ test('OpenRouter-only model uses OpenRouter pricing when not in static table', (
   assert.equal(pricing.inputPrice, 2 / 1_000_000);
 });
 
-test('LiteLLM pricing is overridden by static table for known models', () => {
+test('LiteLLM pricing overrides static-fallback for known models', () => {
   const litellmModels = [
     {
       modelName: 'claude-haiku-4-5',
       matchPattern: '(?i)^claude-haiku-4-5$',
-      inputPrice: 0.5 / 1_000_000,  // stale/wrong rate
+      inputPrice: 0.5 / 1_000_000,
       outputPrice: 2 / 1_000_000,
     },
   ];
   const catalog = buildPricingCatalog([], litellmModels);
   const pricing = resolveModelPricing('claude-haiku-4-5', catalog);
-  // Static must win.
-  assert.equal(pricing.source, 'static');
-  assert.equal(pricing.inputPrice, 1 / 1_000_000);
+  assert.equal(pricing.source, 'litellm');
+  assert.equal(pricing.inputPrice, 0.5 / 1_000_000);
+  assert.equal(pricing.outputPrice, 2 / 1_000_000);
   resetPricingCatalog();
 });
 

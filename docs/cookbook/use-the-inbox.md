@@ -71,3 +71,9 @@ Or use the dashboard Knowledge → Index tab.
 ## Docs lane promotion
 
 When a file lands in `docs/intake/`, Construct ingests it into `.cx/knowledge/` and observations as usual. If the repo already has a matching docs lane such as `docs/meetings/`, `docs/prds/`, or `docs/rfcs/`, the watcher also writes a promoted markdown copy into that lane for review and incorporation.
+
+## R&D triage on every file
+
+After ingestion, the daemon classifies each file via `classifyRdIntake` and writes a triage packet to `.cx/intake/pending/<id>.json`. Inspect and drive the queue with `construct intake list / show / done / skip / reopen`. For non-trivial signals, generate a task graph with `construct graph from-intake <id>`.
+
+A full walkthrough of the triage taxonomy (intake types, R&D stages, recommended chains, recommended actions) lives in [Concepts → Intake and triage](/concepts/intake-and-triage). Session-start surfaces the most recent pending packets with a one-line triage summary per entry.

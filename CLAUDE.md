@@ -69,7 +69,7 @@ This applies to every file construct touches and to all agents working in this p
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Beads Issue Tracker
 
-This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
+This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands. Hygiene contract — claim/close/supersede rules, pre- and post-work checks, evidence requirements — lives in [rules/common/beads-hygiene.md](rules/common/beads-hygiene.md) and applies to every agent on every platform.
 
 ### Quick Reference
 

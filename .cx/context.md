@@ -2,7 +2,30 @@
 
 > Project state for the Construct repo. Keep this file aligned with the current state of the construct codebase. Do not paste session-specific or external-project details here — those belong in the local `.cx/handoffs/` (which is gitignored).
 
-Last saved: 2026-05-12
+Last saved: 2026-05-14
+
+## Active strategic track — Algorithmic R&D Operating System (2026-05-14)
+
+Product framing pivoted: Construct is now positioned as a **deployable AI R&D operating system** that runs locally for solo users OR is deployed centrally for shared team/enterprise usage. The prior "local-first developer tool" framing is rejected.
+
+Three deployment modes — `solo` (filesystem queue, local repo state, optional Postgres/Docker), `team` (Postgres queue, shared memory, Docker worker pool, central telemetry, brokered MCP), `enterprise` (TEAM + tenant isolation, RBAC/ABAC, isolated workers, signed MCP allowlists, mandatory audit).
+
+Tracked under epic `construct-7w5` with 10 PR-sized child issues:
+
+- `construct-c39` PR 1 — deployment mode foundation (config + CLI + docs reframe)
+- `construct-c99` PR 2 — R&D triage metadata on intake packets (supersedes construct-ca4)
+- `construct-ddq` PR 3 — `construct intake` CLI (list/show/done/skip/reopen)
+- `construct-7gs` PR 4 — IntakeQueue interface + FilesystemIntakeQueue
+- `construct-8v1` PR 5 — PostgresIntakeQueue with row-locking claims
+- `construct-c0r` PR 6 — role-aware context router
+- `construct-y1l` PR 7 — task graph as first-class object
+- `construct-mu2` PR 8 — worker sandbox container + evidence + trace (supersedes construct-rsx)
+- `construct-gox` PR 9 — retrieval hardening: hybrid fusion + benchmarks (supersedes construct-ly9)
+- `construct-b8p` PR 10 — MCP broker / policy gateway
+
+Branch: `feat/algorithmic-infrastructure`. Plan source: 2026-05-14 user-provided "Construct Algorithmic Infrastructure Plan" — verbatim phases in the bd issue descriptions, compressed from 14 phases into 10 PRs (phases 8/11/14 fold into PRs 8/8/each respectively).
+
+Closed as already shipped: construct-knl, construct-jun, construct-15m (PR #43), construct-qna (PR #45). Closed with direction-reversed reason: construct-bfg (intent-verify demoted to offline in PR #45 rather than promoted to inline).
 
 ## Embedding Model
 

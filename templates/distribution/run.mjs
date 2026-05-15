@@ -30,7 +30,14 @@
  *      a previous bootstrap downloaded the matching single-file binary
  *      from GitHub Releases.
  *
- *   5. Print a precise error with the exact install commands and exit
+ *   5. Docker container — if the docker daemon is reachable, invoke
+ *      `ghcr.io/geraldmaron/construct:<pinned-version>` with the project
+ *      bind-mounted at /work. Lets language-agnostic projects (no Node,
+ *      no global construct, no binary) still execute hooks. Disable with
+ *      `CONSTRUCT_DISABLE_DOCKER=1` for environments where docker is
+ *      reachable but undesirable (e.g. CI runners that prefer fail-fast).
+ *
+ *   6. Print a precise error with the exact install commands and exit
  *      with the documented exit code (127 = command not found).
  *
  * The launcher is intentionally tiny and dependency-free so it never
@@ -128,6 +135,30 @@ function tryCachedBinary() {
   return true;
 }
 
+function tryDocker(version) {
+  if (process.env.CONSTRUCT_DISABLE_DOCKER === '1') return false;
+  if (!commandOnPath('docker')) return false;
+  // Confirm the daemon is reachable, not just that the CLI is installed.
+  const info = spawnSync('docker', ['info'], { stdio: 'ignore' });
+  if (info.status !== 0) return false;
+  const tag = version || 'latest';
+  const image = `ghcr.io/geraldmaron/construct:${tag}`;
+  const userHome = process.env.HOME || process.env.USERPROFILE || '';
+  const hostConstructDir = userHome ? join(userHome, '.construct') : null;
+  const dockerArgs = [
+    'run', '--rm', '-i',
+    '-v', `${PROJECT_ROOT}:/work`,
+    '-w', '/work',
+    '-e', 'CONSTRUCT_PROJECT_ROOT=/work',
+  ];
+  if (hostConstructDir) {
+    dockerArgs.push('-v', `${hostConstructDir}:/data/.construct`);
+  }
+  dockerArgs.push(image, ...process.argv.slice(2));
+  runForeground('docker', dockerArgs);
+  return true;
+}
+
 function fail() {
   const v = readPinnedVersion();
   process.stderr.write(
@@ -138,6 +169,7 @@ function fail() {
     '  Pick one:\n' +
     '    - Install Node.js 18+ from https://nodejs.org and re-run.\n' +
     '    - Install Construct globally:  npm install -g @geraldmaron/construct\n' +
+    '    - Install Docker:              docker pull ghcr.io/geraldmaron/construct\n' +
     '    - Bootstrap a binary:           ./.construct/bootstrap.sh   (POSIX)\n' +
     '                                    powershell -File .construct/bootstrap.ps1   (Windows)\n'
   );
@@ -151,4 +183,5 @@ else if (tryNodeModules()) { /* spawned */ }
 else if (tryNpx(version)) { /* spawned */ }
 else if (tryGlobal()) { /* spawned */ }
 else if (tryCachedBinary()) { /* spawned */ }
+else if (tryDocker(version)) { /* spawned */ }
 else fail();

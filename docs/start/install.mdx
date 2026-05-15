@@ -89,6 +89,8 @@ construct doctor
 
 `doctor` runs ~35 health checks across config, services, agents, hooks, and integrations. Anything green is healthy. Warnings explain themselves. Failures point at a fix.
 
+You're installed in `solo` mode — everything runs locally, queue is the filesystem, telemetry is optional. Two other modes (`team` and `enterprise`) promote the intake queue and memory to shared Postgres and route MCP through a broker. Switch with `construct config mode [solo|team|enterprise]`. See [deployment model](/concepts/deployment-model).
+
 You're installed. Now [do your first task →](/start/first-task)
 
 ## Uninstall (when you're done)

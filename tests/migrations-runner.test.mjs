@@ -38,6 +38,7 @@ function makeMockClient() {
     );
 
     const insertMatch = /INSERT INTO construct_schema_migrations/i.test(text);
+    const updateMatch = /UPDATE construct_schema_migrations\s+SET sha/i.test(text);
     const selectAllMatch = /SELECT filename, sha FROM construct_schema_migrations/i.test(text);
     const selectLatestMatch = /ORDER BY applied_at DESC/i.test(text);
     const countMatch = /SELECT count\(\*\)/i.test(text);
@@ -46,6 +47,15 @@ function makeMockClient() {
       const filename = values[0];
       const sha = values[1];
       applied.set(filename, { sha, applied_at: new Date().toISOString() });
+      return Promise.resolve([]);
+    }
+    if (updateMatch) {
+      // UPDATE construct_schema_migrations SET sha = $1, applied_at = now() WHERE filename = $2
+      const sha = values[0];
+      const filename = values[1];
+      if (applied.has(filename)) {
+        applied.set(filename, { sha, applied_at: new Date().toISOString() });
+      }
       return Promise.resolve([]);
     }
     if (selectAllMatch) {
@@ -137,6 +147,41 @@ describe('runMigrations', () => {
     const after = await describeMigrations(client, { dir });
     assert.equal(after.ok, true);
     assert.equal(after.drift.length, 1);
-    assert.equal(after.drift[0], '001_a.sql');
+    assert.equal(after.drift[0].filename, '001_a.sql');
+    assert.equal(after.drift[0].idempotent, true, 'a benign SELECT is idempotent for repair purposes');
+  });
+
+  it('repair:true heals idempotent drift in-place', async () => {
+    const dir = fs.mkdtempSync(path.join(tmpDir, 'repair-'));
+    writeMigration(dir, '001_a.sql', 'CREATE TABLE IF NOT EXISTS a (id text);');
+    const { client } = makeMockClient();
+    await runMigrations(client, { dir });
+
+    // Simulate drift: change the on-disk file
+    writeMigration(dir, '001_a.sql', 'CREATE TABLE IF NOT EXISTS a (id text); -- now with comment');
+
+    const result = await runMigrations(client, { dir, repair: true });
+    assert.deepEqual(result.repaired, ['001_a.sql']);
+    assert.equal(result.drift.length, 0);
+
+    // Verify no further drift on a third run
+    const verify = await runMigrations(client, { dir });
+    assert.equal(verify.skipped.length, 1);
+    assert.equal(verify.drift.length, 0);
+  });
+
+  it('repair:true refuses destructive drift', async () => {
+    const dir = fs.mkdtempSync(path.join(tmpDir, 'destructive-'));
+    writeMigration(dir, '001_a.sql', 'CREATE TABLE IF NOT EXISTS a (id text);');
+    const { client } = makeMockClient();
+    await runMigrations(client, { dir });
+
+    // Drift the file to add a destructive statement
+    writeMigration(dir, '001_a.sql', 'CREATE TABLE IF NOT EXISTS a (id text); DROP TABLE b;');
+
+    await assert.rejects(
+      runMigrations(client, { dir, repair: true }),
+      /Migration drift detected/,
+    );
   });
 });

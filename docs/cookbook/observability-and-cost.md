@@ -16,6 +16,8 @@ Construct's observability commands read from two sources:
 - **Langfuse** — trace backend for `review`, `optimize`, and `eval-datasets` (requires `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`)
 - **Local cost log** — file-backed token ledger read by `cost` and `efficiency` (no external dependency)
 
+R&D-loop trace events (`intake.received`, `intake.triaged`, `task_graph.created`, `worker.started`, `worker.completed`, `evidence.recorded`, `tool.called`, `approval.requested`, …) are written to two places concurrently: `.cx/traces/<YYYY-MM-DD>.jsonl` (always on, no credentials required) and Langfuse (when the keys above are configured). Each `traceId` appears in Langfuse as a single trace with one observation per emitted event so the intake → graph → worker → evidence chain stays correlated end-to-end. Set `CONSTRUCT_TRACE_BACKEND=none` to suppress the Langfuse export while keeping the local JSONL log.
+
 ## Review agent performance
 
 ```bash

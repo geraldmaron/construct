@@ -88,6 +88,31 @@ Ingest the most recent file dropped into ~/Downloads, Desktop, Documents, or iCl
 construct drop [--list] [--index N] [--type ext] [--since 1h]
 ```
 
+## construct graph
+
+Generate and inspect task graphs derived from R&D intake triage. Each graph node carries an owner, dependsOn edges, acceptance criteria, and an evidence list. A node cannot transition to `done` without at least one evidence record.
+
+**Usage**
+
+```bash
+construct graph list                                              # all graphs in this project
+construct graph show <graph-id>                                   # nodes, edges, owners, evidence
+construct graph from-intake <intake-id>                           # generate a graph from a pending intake packet
+construct graph status <graph-id> <node-id> <status> [--evidence=text]
+```
+
+**Statuses**
+
+`pending`, `claimed`, `in-progress`, `done`, `blocked`, `needs-input`, `skipped`.
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--evidence=<text>` | Evidence string attached to the node on this status update |
+
+Graphs persist to `.cx/task-graphs/<graph-id>.json` in solo mode. See [Concepts → Intake and triage](/concepts/intake-and-triage).
+
 ## construct headhunt
 
 Create a temporary domain expertise overlay or promotion request
@@ -113,6 +138,29 @@ construct headhunt <domain> [--for=OBJECTIVE] [--scope=TEXT] [--temp|--save] [--
 | `challenge <id>` | Update devil's advocate challenge status for a promotion request |
 | `cleanup` | Remove expired temporary overlays |
 | `template [name] --for=OBJECTIVE` | Assemble a named team template as a domain overlay |
+
+## construct intake
+
+Inspect and process the R&D intake queue. Operates against the filesystem queue at `.cx/intake/` in solo mode, or the Postgres-backed queue in team / enterprise mode — the CLI contract is identical.
+
+**Usage**
+
+```bash
+construct intake list                              # tabular: id, type, stage, owner, action
+construct intake show <id>                         # full packet — triage, related artifacts, excerpt
+construct intake done <id> [--notes=text]          # move pending → processed
+construct intake skip <id> [--reason=text]         # move pending → skipped, audit trail preserved
+construct intake reopen <id>                       # processed or skipped → pending
+```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--notes=<text>` | Optional note attached when marking processed |
+| `--reason=<text>` | Optional reason attached when skipping |
+
+Triage classification (intakeType, rdStage, primaryOwner, recommendedChain, recommendedAction, risk, requiresApproval, confidence, rationale) is computed deterministically in the daemon — no LLM call. See [Concepts → Intake and triage](/concepts/intake-and-triage) for the full taxonomy and `recommendedAction` enum.
 
 ## construct infer
 
@@ -261,6 +309,32 @@ construct search <query> [--limit=N]
 | Flag | Description |
 |---|---|
 | `--limit=N` | Maximum results to return (default: 10) |
+
+## construct storage repair-migrations
+
+Re-apply drifted migration files (idempotent only) and update their recorded SHA in `construct_schema_migrations`. Long-lived developer databases pre-date the append-only-migrations policy and may carry stale SHAs; this command heals that drift safely.
+
+**Usage**
+
+```bash
+construct storage repair-migrations --yes
+```
+
+The safety bar is hard: any drifted file containing a destructive statement (`DROP`, `TRUNCATE`, `ALTER … DROP`, `DELETE`) is refused. The fix path there is to write a new migration file with a higher sequence number — never to silently re-record SHAs for destructive content.
+
+**Output** prints which files were `applied` (genuinely new), `repaired` (drift healed), and `skipped` (unchanged). Exit code 2 indicates non-idempotent drift remains.
+
+## construct storage migrations
+
+Report migration state without applying or repairing.
+
+**Usage**
+
+```bash
+construct storage migrations
+```
+
+Prints `lastApplied`, `appliedCount`, `onDiskCount`, and any `drift` (each entry includes `idempotent: true|false` so you can predict whether `repair-migrations` will heal it).
 
 ## construct storage
 

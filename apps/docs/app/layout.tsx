@@ -7,7 +7,7 @@ import './theme.css';
 
 export const metadata = {
   title: { default: 'Construct', template: '%s | Construct' },
-  description: 'One AI interface. 28 specialists. Hard gates. Local-first.',
+  description: 'One AI interface. 28 specialists. Hard gates. Runs locally or deploys for teams.',
 };
 
 export default function Layout({ children }: { children: ReactNode }) {

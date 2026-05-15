@@ -175,6 +175,40 @@ Looks up agent-to-agent service contracts from `agents/contracts.json`.
 | `producer` | string (optional) | Producer agent name — returns outgoing contracts |
 | `consumer` | string (optional) | Consumer agent name — returns incoming contracts |
 
+### `worker_run`
+Runs a bounded shell command via the worker plane and optionally records evidence on a named task graph node. Wraps `lib/worker/run.mjs:runJob`.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `command` | string | Yes | Shell command to run (e.g. `npm test`) |
+| `args` | string[] | | Argv to pass alongside the command (when not embedded in the command string) |
+| `workspaceRef` | string | | Absolute path the job runs in. Must be inside `allowedPaths` (default: cwd) |
+| `allowedPaths` | string[] | | Path allowlist for the workspace. Default: `[cwd]` |
+| `timeoutSeconds` | number | | Hard timeout. Default: 300 |
+| `envPolicy` | string | | `restricted` (default — PATH/HOME/USER/TZ/LANG plus `allowedEnvKeys`) or `inherit` |
+| `allowedEnvKeys` | string[] | | Additional env keys allowed through under restricted policy |
+| `graphId` | string | | Optional task graph id — when present with `nodeId`, evidence is recorded on that node |
+| `nodeId` | string | | Optional task graph node id — when present with `graphId`, evidence is recorded |
+| `evidenceType` | string | | `test-result` (default), `lint-result`, `build-result`, `manual-verification`, … |
+| `evidenceSummary` | string | | Optional override for the evidence summary string |
+| `traceId` | string | | Optional traceId to correlate with the rest of the agent's trace |
+
+Returns the job result (`{status, exitCode, stdoutPath, stderrPath, durationMs, artifacts, traceId}`) plus an `evidence` field when a graph node was named. Stdout/stderr land under `.cx/runtime/worker/<jobId>.{stdout,stderr}.log`. Emits `worker.started` / `worker.completed` trace events from inside `runJob` and an `evidence.recorded` event when evidence is appended.
+
+### `broker_check`
+Queries the MCP broker's policy gate for a pending action without executing it. Use BEFORE attempting a high-risk action so the response (`allowed` / `approvalRequired` / `reason` / `source`) can be surfaced in the agent's voice rather than triggering a denial after the fact.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `role` | string | Yes | Persona name (e.g. `engineer`, `security`) — must match a key in `agents/role-manifests.json` for team / enterprise mode |
+| `tool` | string | Yes | Tool the agent wants to invoke (e.g. `github`, `fs`) |
+| `action` | string | Yes | Action on that tool (e.g. `create_pr`, `edit:lib/foo.mjs`) |
+| `project` | string (optional) | | Project scope for the decision |
+| `risk` | string (optional) | | `low` \| `medium` \| `high` — high actions need approval for non-autonomous roles |
+| `traceId` | string (optional) | | TraceId to correlate this check with the rest of the agent's trace |
+
+Returns `{ allowed, reason, approvalRequired, source, brokerActive }`. Solo mode returns `brokerActive: false` with `allowed: true` so agents skip the prompt overhead when the broker is inactive. Always emits a `tool.called` trace event for audit-trail parity.
+
 ### `orchestration_policy`
 Classifies a request into intent, execution track, specialists, and approval boundaries.
 
@@ -186,6 +220,22 @@ Classifies a request into intent, execution track, specialists, and approval bou
 | `introducesContract` | boolean | Whether the change introduces a new contract |
 | `explicitDrive` | boolean | Whether drive/full-send mode is active |
 | `approval` | object | Approval-boundary flags (`scopeChange`, `productDecision`, `riskAcceptance`, etc.) |
+
+## R&D-loop primitives
+
+The intake, task-graph, and worker plane are surfaced through the `construct intake`, `construct graph`, and `construct storage` CLIs rather than MCP tools at this stage. The underlying modules are importable for agents that want to plan + execute programmatically:
+
+| Module | Surface |
+|---|---|
+| `lib/intake/classify.mjs` | `classifyRdIntake({sourcePath, extractedText, related})` returns the triage block. Deterministic, no LLM. |
+| `lib/intake/queue.mjs` | `createIntakeQueue(rootDir, env)` returns a queue implementing `{enqueue, listPending, count, read, markProcessed, markSkipped, reopen}` — Postgres-backed in team / enterprise mode, filesystem-backed in solo. |
+| `lib/task-graph/generate.mjs` | `generateTaskGraphFromTriage({triage, project, request, intake})` derives the plan-of-work from a triage packet. |
+| `lib/task-graph/store.mjs` | `FilesystemTaskGraphStore` — `.save / .read / .list / .updateNodeStatus` against `.cx/task-graphs/`. |
+| `lib/context-router.mjs` | `buildContextPacket({request, triage, role, candidates, budget})` — per-role artifact bundle with explicit omitted reasons. |
+| `lib/mcp/broker.mjs` | `Broker.invoke({role, tool, action, risk, execute})` — policy-gated MCP wrapper for team / enterprise. Throws typed `PolicyDenied`, `ApprovalRequired`, `RateLimited`. |
+| `lib/worker/run.mjs` | `runJob({rootDir, job})` — bounded command execution with path-policy denial, timeout, restricted env, and trace event emission. |
+| `lib/worker/evidence.mjs` | `evidenceFromJobResult`, `recordEvidence`, `blockedPacket`, `needsInputPacket` — typed verification packets gating node transitions. |
+| `lib/worker/trace.mjs` | `emitTraceEvent({rootDir, eventType, traceId, …})` — writes `.cx/traces/<date>.jsonl` and exports to Langfuse when configured. |
 
 ### `list_teams`
 Lists all available team templates with members, focus, and promotion gates.

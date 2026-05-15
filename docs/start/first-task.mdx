@@ -68,6 +68,36 @@ For a more involved task:
 
 Now you'll see the specialist chain: architect frames, researcher gathers context, reviewer + security weigh in, and construct synthesizes. Hard gates fire on any code edits (no secrets, comments lint clean, etc.).
 
+## Drop a signal into the intake queue
+
+For work that arrives as a file — a bug report, a customer comment, a competitor scan, a postmortem draft — drop it into `.cx/inbox/`:
+
+```bash
+echo "Stack trace on login redirect — reproduce at /auth. authMiddleware crash." > .cx/inbox/login-bug.md
+```
+
+The embed daemon picks it up within a second or two, classifies it deterministically (no LLM in the daemon), and writes a triage packet under `.cx/intake/pending/<id>.json`. Inspect via:
+
+```bash
+construct intake list           # tabular: id, type, stage, owner, action
+construct intake show <id>      # full packet — triage, related artifacts, excerpt
+```
+
+For non-trivial signals, generate the work plan as a task graph:
+
+```bash
+construct graph from-intake <id>   # writes .cx/task-graphs/<graph-id>.json
+construct graph show <graph-id>    # nodes, edges, owners, evidence
+```
+
+The graph mirrors the triage's `recommendedChain` one-to-one (e.g. a bug becomes `debugger → engineer → qa → reviewer`). Node status updates carry evidence:
+
+```bash
+construct graph status <graph-id> <node-id> done --evidence="npm test green, 1192 pass"
+```
+
+See [intake and triage](/concepts/intake-and-triage) for the full taxonomy.
+
 ## What just happened
 
 Construct's persona [held the conversation](/concepts/agents-and-personas), but behind the scenes it [routed work through specialists](/concepts/architecture) and [enforced policy gates](/concepts/gates-and-enforcement) on any mutations. Session state was persisted to `.cx/context.md` so the next session resumes mid-flight.

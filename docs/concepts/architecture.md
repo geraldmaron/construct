@@ -13,7 +13,31 @@ If you're walking in cold — including future me — this page is the bridge be
 
 ## The 30-second version
 
-Construct is one front door (a persona) that you talk to in Claude Code or OpenCode. Behind that door is a team of specialists — architect, engineer, reviewer, security, QA, and friends — who challenge each other and ship verified work. A small CLI keeps the team installed, healthy, and aligned with your project state. That's the whole product. The rest of this page is wiring.
+Construct is one front door (a persona) that you talk to in Claude Code or OpenCode. Behind that door is a team of specialists — architect, engineer, reviewer, security, QA, and friends — who challenge each other and ship verified work. A small CLI keeps the team installed, healthy, and aligned with your project state. The R&D loop turns signals into outcomes: anything dropped into `.cx/inbox/` is classified, owner-assigned, planned as a task graph, routed to the right persona with the right context, executed in a bounded worker, evidenced, evaluated, and persisted. That's the whole product. The rest of this page is wiring.
+
+## R&D loop
+
+```mermaid
+flowchart LR
+    Signal[".cx/inbox/<file>"]
+    Daemon["embed daemon<br/>+ classifyRdIntake"]
+    Intake[".cx/intake/pending/<id>.json<br/>triage block: type, stage, owner, chain"]
+    Graph[".cx/task-graphs/<id>.json<br/>node per persona in chain"]
+    Router["context router<br/>per-role artifact bundle"]
+    Worker["worker plane<br/>bounded exec + timeout + path policy"]
+    Evidence["evidence record<br/>linked to graph node"]
+    Trace[".cx/traces/<YYYY-MM-DD>.jsonl<br/>typed event log"]
+    Memory["durable state<br/>bd · .cx/context.md · vector index"]
+
+    Signal --> Daemon --> Intake
+    Intake -->|construct intake show / done / skip| Graph
+    Graph -->|per node| Router --> Worker --> Evidence
+    Worker --> Trace
+    Evidence --> Graph
+    Evidence --> Memory
+```
+
+The signal-to-memory path is deterministic where it should be (classification, routing, evidence) and LLM-driven where it must be (the agent in the user's editor does the actual analysis). Daemon code never calls an LLM.
 
 ## How a request moves through Construct
 
@@ -97,7 +121,7 @@ A user request hits the Construct persona (`personas/construct.md`). The orchest
 
 - **One public surface.** The persona is the only thing the user talks to. Specialists can be reorganized, renamed, or replaced without breaking the user contract — they're implementation detail.
 - **Stateless providers.** Providers never own durable state. Swapping GitHub for a custom Git provider, or adding Salesforce, doesn't migrate any data — Construct's stores stay put.
-- **Local-first state.** Durable state lives in the user's repo and `~/.cx/`. If Postgres, Langfuse, the dashboard, or every cloud service goes down, Construct still works from `plan.md`, `.cx/context.md`, the latest handoff, Beads, git, and the local vector index.
+- **Mode-driven topology.** Deployment mode (`solo` | `team` | `enterprise`) selects the backends for the intake queue, memory, telemetry, and workers. Solo runs everything locally and degrades gracefully when an optional resource is missing. Team and enterprise promote the same primitives to shared Postgres, brokered MCP, and Docker worker pools. See [deployment model](/concepts/deployment-model).
 - **Hard gates over soft hooks.** Comment policy, doc verification, template policy, and contract postconditions fail the build. They are not advisory. The default is "stop and fix"; CI is a backstop, not the primary check.
 - **Specialists challenge each other.** Devil's advocate, reviewer, QA, security are peers, not rubber stamps. Agreement at every step is treated as a smell — if everyone always says yes, the gates aren't doing their job.
 
@@ -338,6 +362,10 @@ body_hash:   sha256:<hex>          # SHA-256 of trimmed body
 - Single-writer rule governs parallel editing.
 - Mutations are traceable via audit trail with tamper-evidence chain.
 - Domain overlays must not auto-promote into permanent capabilities.
+- Deployment mode selects backends; the agent loop is identical across solo / team / enterprise.
+- Classification runs deterministically in the daemon; the agent does the LLM analysis.
+- Task graph nodes cannot transition to `done` without an evidence record.
+- Every brokered tool call emits a `tool.called` trace event; denials are typed errors.
 
 ## Agent registry
 

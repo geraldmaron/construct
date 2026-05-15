@@ -139,4 +139,4 @@ Embedding model is separate from LLM model. See [Plug in a retrieval backend](/c
 
 - [`construct models`](/reference/cli/models-and-integrations) — every flag.
 - [`agents/registry.json`](https://github.com/geraldmaron/construct/blob/main/agents/registry.json) — the `models` block + per-specialist overrides.
-- [Concepts → Local-first](/concepts/local-first) — model swap implications for the offline story.
+- [Concepts → Deployment model](/concepts/deployment-model) — solo/team/enterprise topology and model-swap implications for the offline story.

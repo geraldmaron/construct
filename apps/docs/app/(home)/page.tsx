@@ -11,7 +11,7 @@ const SECTION_CARDS = [
     title: 'Concepts',
     href: '/concepts',
     eyebrow: 'WHY',
-    description: 'Architecture, the persona-and-specialists model, gates, durable state, local-first.',
+    description: 'Architecture, the persona-and-specialists model, gates, durable state, deployment model.',
   },
   {
     title: 'Cookbook',
@@ -37,8 +37,8 @@ const FEATURES = [
     body: 'Every code mutation runs through enforcement: no secrets, tests green, docs current, comments clean. Three layers — write-time, commit/push, CI safety net. Each bypass leaves an audit trail.',
   },
   {
-    title: 'Local-first',
-    body: "Works offline. If Postgres, Langfuse, or every cloud service goes down, Construct keeps operating from plan.md, .cx/, beads, git, and the local vector index. No required hosted service. No Construct account.",
+    title: 'Solo, team, or enterprise',
+    body: "Three deployment modes select the topology: solo runs everything locally with filesystem queue and optional Postgres/Docker; team promotes intake to a Postgres queue with row-locked workers, shared memory, brokered MCP, and central telemetry; enterprise adds tenant isolation, signed allowlists, and audit. Same agent loop across all three.",
   },
   {
     title: 'Plug-shaped',
@@ -61,7 +61,7 @@ export default function HomePage() {
         <div className="mx-auto flex w-full max-w-5xl flex-col items-start gap-8 px-6 py-32 sm:py-40">
           <span className="inline-flex items-center gap-2 rounded-full border border-fd-border bg-fd-card/60 px-3 py-1 font-mono text-xs uppercase tracking-widest text-fd-muted-foreground backdrop-blur">
             <span className="size-1.5 rounded-full bg-fd-primary" />
-            Local-first agent orchestration
+            Deployable AI R&D operating system
           </span>
           <h1 className="max-w-4xl text-balance text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
             One AI interface.

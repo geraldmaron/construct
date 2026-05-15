@@ -1,7 +1,7 @@
 /**
  * tests/services-langfuse.test.mjs — `startManagedLangfuse` + `isRemoteLangfuse`.
  *
- * Pins the local-first invariant: Construct never points at cloud.langfuse.com
+ * Pins the default behavior: Construct never points at cloud.langfuse.com
  * by default. Verifies that startManagedLangfuse short-circuits for explicitly
  * remote URLs and otherwise spins the local stack with auto-seeded keys.
  */

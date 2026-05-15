@@ -6,9 +6,81 @@ on:
     types: [opened, synchronize, reopened, edited]
 
 jobs:
+  # Compute per-target outputs so each downstream job only runs when files
+  # in its scope changed. Saves CI minutes for doc-only PRs and avoids
+  # postgres-integration / retrieval evals running on persona/*.md edits.
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      retrieval: ${{ steps.filter.outputs.retrieval }}
+      postgres: ${{ steps.filter.outputs.postgres }}
+      deps: ${{ steps.filter.outputs.deps }}
+      agents: ${{ steps.filter.outputs.agents }}
+      docs: ${{ steps.filter.outputs.docs }}
+      templates: ${{ steps.filter.outputs.templates }}
+      workflow: ${{ steps.filter.outputs.workflow }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # `code` is the widest filter — any change to source / tests /
+          # bin / package.json triggers the full unit-test matrix. The
+          # narrower filters (retrieval, postgres, …) trigger jobs that
+          # don't need to run when the change is scoped elsewhere.
+          filters: |
+            code:
+              - 'bin/**'
+              - 'lib/**'
+              - 'tests/**'
+              - 'scripts/**'
+              - 'agents/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'db/schema/**'
+            retrieval:
+              - 'lib/storage/**'
+              - 'lib/evals/**'
+              - 'lib/agent-contracts.mjs'
+              - 'lib/agent-contracts-enforce.mjs'
+              - 'agents/contracts.json'
+              - 'db/schema/**'
+              - 'tests/retrieval*.test.mjs'
+              - 'package.json'
+            postgres:
+              - 'db/schema/**'
+              - 'lib/storage/**'
+              - 'lib/intake/**'
+              - 'tests/intake*.test.mjs'
+              - 'tests/migrations*.test.mjs'
+              - 'package.json'
+            deps:
+              - 'package.json'
+              - 'package-lock.json'
+            agents:
+              - 'agents/**'
+              - 'lib/agents/**'
+            docs:
+              - 'docs/**'
+              - 'README.md'
+              - 'AGENTS.md'
+              - 'CLAUDE.md'
+              - 'CHANGELOG.md'
+              - 'templates/docs/**'
+            templates:
+              - '.gitmessage'
+              - '.github/pull_request_template.md'
+              - 'scripts/lint-commits-pr.mjs'
+            workflow:
+              - '.github/workflows/**'
+
   test:
     name: test (${{ matrix.os }} / node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -36,6 +108,8 @@ jobs:
   evals:
     name: retrieval evals
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.retrieval == 'true' || needs.changes.outputs.workflow == 'true'
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
@@ -50,6 +124,8 @@ jobs:
   audit:
     name: dependency CVE audit
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.deps == 'true' || needs.changes.outputs.workflow == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -74,6 +150,8 @@ jobs:
   postgres-integration:
     name: postgres + pgvector integration
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.postgres == 'true' || needs.changes.outputs.workflow == 'true'
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -109,10 +187,17 @@ jobs:
             console.log('migrations skipped:', result.skipped);
           } finally { await sql.end(); }
           "
+      - name: PostgresIntakeQueue integration tests
+        env:
+          DATABASE_URL: postgres://construct:construct@127.0.0.1:5432/construct
+          CONSTRUCT_EMBEDDING_MODEL: hashing
+        run: node --test tests/intake-postgres-queue.test.mjs
 
   docs:
     name: docs drift check
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -127,6 +212,8 @@ jobs:
   lint-comments:
     name: comment policy
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -139,6 +226,8 @@ jobs:
   lint-agents:
     name: agents registry schema
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.workflow == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -151,6 +240,8 @@ jobs:
   lint-templates:
     name: template policy
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -174,6 +265,8 @@ jobs:
   gates-audit:
     name: gates audit
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.workflow == 'true' || needs.changes.outputs.code == 'true'
     # Default GITHUB_TOKEN cannot read branch protection (requires admin
     # scope). The audit gracefully treats it as `unfetchable` in CI and
     # skips protection-dependent gap detection; local runs by the repo
