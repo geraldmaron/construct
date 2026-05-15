@@ -2415,6 +2415,53 @@ const handlers = new Map([
     const code = await runCli(args);
     if (code) process.exit(code);
   }],
+  ['claude:allow', async (args) => {
+    const { listAllowEntries, addAllowEntries, removeAllowEntries, detectAllowlistGaps } =
+      await import('../lib/claude-allow.mjs');
+    const sub = args[0];
+    if (!sub || sub === 'list') {
+      const entries = listAllowEntries();
+      if (entries.length === 0) { console.log('(no permissions.allow entries)'); return; }
+      for (const e of entries) console.log(e);
+      return;
+    }
+    if (sub === 'add') {
+      const patterns = args.slice(1).filter(Boolean);
+      if (patterns.length === 0) { errorln('Usage: construct claude:allow add <pattern> [...]'); process.exit(1); }
+      const result = addAllowEntries(patterns);
+      for (const p of result.added) console.log(`+ ${p}`);
+      for (const p of result.existing) console.log(`= ${p} (already present)`);
+      console.log(`\n${result.added.length} added · ${result.existing.length} unchanged · ${result.total} total · ${result.path}`);
+      if (result.added.length > 0) console.log('Restart Claude Code so the classifier sees the new entries.');
+      return;
+    }
+    if (sub === 'remove') {
+      const patterns = args.slice(1).filter(Boolean);
+      if (patterns.length === 0) { errorln('Usage: construct claude:allow remove <pattern> [...]'); process.exit(1); }
+      const result = removeAllowEntries(patterns);
+      for (const p of result.removed) console.log(`- ${p}`);
+      for (const p of result.notFound) console.log(`? ${p} (not found)`);
+      console.log(`\n${result.removed.length} removed · ${result.notFound.length} not found · ${result.total} total`);
+      return;
+    }
+    if (sub === 'check') {
+      const apply = args.includes('--apply');
+      const gaps = detectAllowlistGaps({ cwd: process.cwd() });
+      if (gaps.length === 0) { console.log('No gaps detected — branch prefixes covered by current allowlist.'); return; }
+      console.log(`Detected ${gaps.length} gap${gaps.length === 1 ? '' : 's'} based on local branch prefixes:`);
+      for (const g of gaps) console.log(`  ${g.prefix}/ → ${g.pattern}`);
+      if (!apply) {
+        console.log(`\nRun \`construct claude:allow check --apply\` to add all ${gaps.length}, or \`construct claude:allow add '<pattern>'\` selectively.`);
+        return;
+      }
+      const result = addAllowEntries(gaps.map((g) => g.pattern));
+      console.log(`\n${result.added.length} added · ${result.total} total · ${result.path}`);
+      console.log('Restart Claude Code so the classifier sees the new entries.');
+      return;
+    }
+    errorln(`Unknown claude:allow subcommand: ${sub}. Available: list, add, remove, check`);
+    process.exit(1);
+  }],
   ['telemetry-backfill', async (args) => {
     const { runTelemetryBackfillCli } = await import('../lib/telemetry/backfill.mjs');
     return runTelemetryBackfillCli(args);
