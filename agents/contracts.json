@@ -193,7 +193,12 @@
       },
       "output": {
         "schema": "lib/schemas/review-report.json",
-        "type": "review-report"
+        "type": "review-report",
+        "mustContain": ["verdict"],
+        "mustContainOneOf": [["findings", "noIssuesFoundAt"]],
+        "mustMatchEnum": {
+          "verdict": ["APPROVED", "APPROVED_WITH_WARNINGS", "BLOCKED"]
+        }
       },
       "preconditions": [
         "Engineer status is not BLOCKED",
@@ -202,7 +207,8 @@
       "postconditions": [
         "Verdict in {APPROVED, APPROVED_WITH_WARNINGS, BLOCKED}",
         "BLOCKED verdict stops downstream work until addressed",
-        "CRITICAL findings prevent release"
+        "CRITICAL findings prevent release",
+        "Either findings is non-empty or noIssuesFoundAt enumerates the inspected paths — prevents silent rubber-stamp reviews"
       ]
     },
     {
@@ -239,14 +245,16 @@
       "output": {
         "schema": "lib/schemas/review-report.json",
         "type": "review-report",
-        "specialization": "security"
+        "specialization": "security",
+        "mustContain": ["threatModelUpdatedAt", "contractStart"]
       },
       "preconditions": [
         "Scope tagged as auth/secrets/payments/user-data"
       ],
       "postconditions": [
         "Attacker-perspective findings logged",
-        "Threat model updated if architecture surface changed"
+        "Threat model updated if architecture surface changed",
+        "threatModelUpdatedAt >= contractStart — prevents post-hoc threat models written after the architecture has shipped"
       ]
     },
     {
@@ -301,14 +309,58 @@
       },
       "output": {
         "shape": "doc-sync",
-        "mustContain": ["updatedDocs", "crossReferencesAdded"]
+        "mustContain": ["updatedDocs", "crossReferencesAdded", "crossDocCoherenceCheckRan", "coherenceDiff"]
       },
       "preconditions": [
         "Implementation or decision is marked DONE"
       ],
       "postconditions": [
         "Cross-doc coherence preserved (PRD ↔ ADR ↔ code)",
-        "AUTO-managed regions regenerated via construct sync"
+        "AUTO-managed regions regenerated via construct sync",
+        "crossDocCoherenceCheckRan=true with a named coherenceDiff — prevents stale-doc PRs that claim 'docs updated' without a real diff"
+      ]
+    },
+    {
+      "id": "any-to-debugger",
+      "producer": "*",
+      "consumer": "cx-debugger",
+      "trigger": { "intent": "investigation", "category": "bug" },
+      "input": {
+        "shape": "bug-signal",
+        "mustContain": ["symptoms", "scope"]
+      },
+      "output": {
+        "shape": "root-cause-report",
+        "mustContain": ["rootCause", "rootCauseConfirmedVia", "fix"],
+        "mustMatchEnum": {
+          "rootCauseConfirmedVia": ["reproduction", "trace", "test"]
+        }
+      },
+      "preconditions": [
+        "Bug reproduced or trace captured before proposing a fix"
+      ],
+      "postconditions": [
+        "rootCauseConfirmedVia in {reproduction, trace, test} — prevents symptom-only fixes that don't address the actual cause"
+      ]
+    },
+    {
+      "id": "any-to-designer",
+      "producer": "*",
+      "consumer": "cx-designer",
+      "trigger": { "riskFlags": ["ui", "accessibility"] },
+      "input": {
+        "shape": "design-brief",
+        "mustContain": ["surface", "users", "context"]
+      },
+      "output": {
+        "shape": "design-deliverable",
+        "mustContain": ["deliverable", "accessibilityCheckRan"]
+      },
+      "preconditions": [
+        "Affected surface scoped"
+      ],
+      "postconditions": [
+        "accessibilityCheckRan=true — prevents post-hoc a11y fixes by forcing a pre-ship check on every design deliverable"
       ]
     },
     {

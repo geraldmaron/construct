@@ -116,6 +116,7 @@ Every code mutation runs through enforcement: no secrets committed, tests green,
 
 | Command | What it does |
 |---|---|
+| `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
 | `construct models` | Show or update model tier assignments |
