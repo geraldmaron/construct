@@ -223,4 +223,4 @@ construct uninstall --keep-state         # only .construct/ + .claude/; keep .cx
 
 ## License
 
-Elastic License 2.0. See [`LICENSE`](./LICENSE).
+Apache License 2.0. See [`LICENSE`](./LICENSE).
