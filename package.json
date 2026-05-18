@@ -52,6 +52,7 @@
     "lint:templates": "node scripts/lint-commits-pr.mjs",
     "eval:routing": "node scripts/eval/score-intent-classifier.mjs",
     "release:check": "node ./bin/construct doctor && npm test && node ./bin/construct docs:update --check && node ./bin/construct dashboard:sync --check && node ./bin/construct lint:comments && node scripts/lint-commits-pr.mjs",
+    "npm:publish": "npm run release:check && npm publish --access public",
     "postinstall": "node ./bin/construct-postinstall.mjs"
   },
   "dependencies": {
