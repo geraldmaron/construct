@@ -38,6 +38,7 @@ The inbox watcher accepts any file that can produce extractable text:
 - Plain text (`.txt`)
 - PDF (`.pdf`)
 - Word documents (`.docx`)
+- Transcripts (`.vtt`, `.srt` — Zoom, Teams, meeting recordings)
 - Source code files
 
 This includes things like meeting notes, exports, specs, ADR drafts, research notes, and uploaded documents, as long as the file type is extractable.
