@@ -77,7 +77,15 @@ Drop any supported file into `.cx/inbox/` and the embed daemon will:
 5. Record a typed observation in `.cx/observations/` with tag `knowledge:<subdir>`
 6. Run `classifyRdIntake` and write an R&D triage packet to `.cx/intake/pending/<id>.json` — intake type, R&D stage, primary owner persona, recommended chain, recommended action, risk, confidence, rationale. Drive the queue with `construct intake list / show / done / skip / reopen`. See [intake and triage](/concepts/intake-and-triage).
 
-Supported formats: `.pdf`, `.docx`, `.xlsx`, `.pptx`, `.md`, `.txt`, `.csv`, `.json`, `.yaml`, `.toml`, `.mjs`, `.ts`, `.vtt`, `.srt` (Zoom/Teams transcripts), and all other extractable formats in `lib/document-extract.mjs`.
+Supported formats:
+- **Plain text / Code**: `.md`, `.txt`, `.rst`, `.adoc`, `.json`, `.yaml`, `.yml`, `.toml`, `.js`, `.mjs`, `.ts`, `.tsx`, `.jsx`, `.py`, `.go`, `.rs`, `.sh`, `.bash`, `.html`, `.css`, `.csv`, `.tsv`, `.xml`, `.env`, `.conf`, `.ini`, `.sql`, `.log`
+- **Transcripts**: `.vtt` (WebVTT), `.srt` (SubRip), `.lrc` (lyrics), `.transcript` — Zoom, Teams, meeting recordings
+- **Office documents**: `.docx`, `.xlsx`, `.pptx`, `.odt`, `.ods`
+- **Rich text**: `.doc`, `.rtf`
+- **macOS-only** (via `mdls`): `.xls`, `.ppt`, `.pages`, `.numbers`, `.key`
+- **PDF**: `.pdf`
+
+Full list in `lib/document-extract.mjs`.
 
 **50 MB hard cap** — files above this are skipped silently.
 

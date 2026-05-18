@@ -18,6 +18,7 @@ import { validateRegistry } from '../lib/validator.mjs';
 import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setTierModel, setModelWithTierInference } from '../lib/model-router.mjs';
 import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
+import { cmdOllama } from '../lib/ollama-manager.mjs';
 import { printHostCapabilities } from '../lib/host-capabilities.mjs';
 import { getPluginById, initPluginManifest, loadPluginRegistry } from '../lib/plugin-registry.mjs';
 import { runSetup } from '../lib/setup.mjs';
@@ -1808,6 +1809,10 @@ async function cmdMcp(args) {
   process.exit(1);
 }
 
+async function cmdOllamaCmd(args) {
+  return cmdOllama(args);
+}
+
 async function cmdPlugin(args) {
   const [subcmd = 'list', id, ...rest] = args;
   const registry = loadPluginRegistry({ cwd: process.cwd(), homeDir: HOME, rootDir: ROOT_DIR, env: process.env });
@@ -2535,6 +2540,7 @@ const handlers = new Map([
   ['init:update', cmdInitUpdate],
   ['models', cmdModels],
   ['mcp', cmdMcp],
+  ['ollama', cmdOllamaCmd],
   ['plugin', cmdPlugin],
   ['hosts', cmdHosts],
   ['review', cmdReview],

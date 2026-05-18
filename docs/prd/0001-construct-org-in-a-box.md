@@ -85,7 +85,7 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 ## Constraints
 
 - Zero npm dependencies for core CLI (providers and dashboard may add dependencies in isolated boundaries).
-- Elastic-2.0 license.
+- Apache-2.0 license.
 - Cloud deployment must not create vendor lock-in in the core — the Dockerfile runs anywhere containers run. Infrastructure is defined in Terraform so it's reproducible, auditable, and portable across AWS accounts (or adaptable to other clouds).
 - Provider implementations must not leak transport details into core. Core dispatches through the provider interface; the provider chooses MCP, REST, GraphQL, SDK, or whatever the external system supports.
 
