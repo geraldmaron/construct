@@ -23,6 +23,7 @@ import { printHostCapabilities } from '../lib/host-capabilities.mjs';
 import { getPluginById, initPluginManifest, loadPluginRegistry } from '../lib/plugin-registry.mjs';
 import { runSetup } from '../lib/setup.mjs';
 import { runUpdate } from '../lib/update.mjs';
+import { runUpgrade } from '../lib/upgrade.mjs';
 import { runUninstall } from '../lib/uninstall/uninstall.mjs';
 import { maybeFirstInvocationProbe } from '../lib/install/first-invocation.mjs';
 import { loadConstructEnv, getUserEnvPath, writeEnvValues, ensureUserConfigDir } from '../lib/env-config.mjs';
@@ -1715,6 +1716,17 @@ async function cmdUpdate() {
     process.exit(1);
   }
 }
+
+async function cmdUpgrade(args) {
+  try {
+    const yes = args.includes('--yes');
+    const result = runUpgrade({ cwd: process.cwd(), env: process.env, stdout: process.stdout, yes });
+    if (!result.success) process.exit(1);
+  } catch (error) {
+    errorln(error?.message || 'construct upgrade failed');
+    process.exit(1);
+  }
+}
 async function cmdValidate() {
   const reg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
   const result = validateRegistry(reg, { rootDir: ROOT_DIR });
@@ -2519,6 +2531,7 @@ const handlers = new Map([
   ['graph', cmdGraph],
   ['uninstall', cmdUninstall],
   ['update', cmdUpdate],
+  ['upgrade', cmdUpgrade],
   ['completions', cmdCompletions],
   ['sync', cmdSync],
   ['list', cmdList],

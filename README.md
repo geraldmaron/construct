@@ -80,6 +80,7 @@ Every code mutation runs through enforcement: no secrets committed, tests green,
 | `construct uninstall` | Interactively remove Construct state; never touches Docker, Homebrew, or shared resources |
 | `construct up` | Start services (memory, dashboard) |
 | `construct update` | Reinstall this checkout globally, then sync and verify hosts |
+| `construct upgrade` | Upgrade to latest npm version, re-sync editors, and verify health |
 
 ### Agents & Sync
 
