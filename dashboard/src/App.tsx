@@ -21,6 +21,7 @@ import Models from './pages/Models';
 import Beads from './pages/Beads';
 import Artifacts from './pages/Artifacts';
 import Knowledge from './pages/Knowledge';
+import Intake from './pages/Intake';
 import Infrastructure from './pages/Infrastructure';
 import Config from './pages/Config';
 import Doctor from './pages/Doctor';
@@ -44,6 +45,7 @@ function App() {
     return (stored === 'light' || stored === 'dark' || stored === 'auto') ? stored : 'auto';
   });
   const [loading, setLoading] = useState(true);
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -108,6 +110,7 @@ function App() {
         { path: '/doctor', label: 'Doctor', element: <Doctor /> },
         { path: '/performance', label: 'Performance', element: <Performance /> },
         { path: '/snapshots', label: 'Snapshots', element: <Snapshots /> },
+        { path: '/intake', label: 'Intake', element: <Intake /> },
       ],
     },
     {
@@ -144,6 +147,77 @@ function App() {
 
   const navItems = [...baseItems, ...extraItems];
 
+  const closeNav = () => setNavOpen(false);
+
+  const sidebar = (
+    <>
+      <SidebarWordmark alias={alias} setAlias={setAlias} mode={mode} />
+      {instanceId && (
+        <div className="px-5 py-2 text-xs text-text-dim border-b border-border truncate">
+          {instanceId}
+        </div>
+      )}
+      <nav className="flex-1 mt-3 px-3 space-y-3 overflow-y-auto" aria-label="Primary navigation">
+        {groups.map((group) => (
+          <div key={group.heading}>
+            <p className="px-3 mt-2 mb-1 text-[10px] uppercase tracking-wider text-text-dim font-medium">
+              {group.heading}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map(({ path, label }) => (
+                <NavLink
+                  key={path}
+                  to={path}
+                  end={path === '/'}
+                  onClick={closeNav}
+                  className={({ isActive }) =>
+                    [
+                      'block px-3 py-1.5 rounded-md text-sm transition-colors',
+                      isActive
+                        ? 'bg-bg-muted text-text border-l-2 border-aurora-cyan font-medium'
+                        : 'text-text-muted hover:text-text hover:bg-bg-muted',
+                    ].join(' ')
+                  }
+                >
+                  {label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+      <div className="hairline-aurora" aria-hidden="true" />
+      <div className="px-5 py-3 text-xs text-text-dim space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <span>Theme</span>
+          <select
+            value={theme}
+            onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'auto')}
+            aria-label="Theme"
+            className="bg-bg-muted border border-border rounded px-2 py-1 text-xs"
+          >
+            <option value="auto">auto</option>
+            <option value="light">light</option>
+            <option value="dark">dark</option>
+          </select>
+        </div>
+        <div className="hidden lg:block">
+          <span className="text-text-dim">Press </span>
+          <kbd className="px-1.5 py-0.5 bg-bg-muted rounded font-mono text-[10px]">⌘K</kbd>
+          <span className="text-text-dim"> to jump</span>
+        </div>
+        <a
+          href="https://construct.dev/docs"
+          target="_blank"
+          rel="noreferrer"
+          className="block hover:text-text"
+        >
+          Documentation ↗
+        </a>
+      </div>
+    </>
+  );
+
   return (
     <HashRouter>
       <a
@@ -152,76 +226,49 @@ function App() {
       >
         Skip to main content
       </a>
-      <div className="flex min-h-screen bg-bg text-text">
+
+      <div className="flex flex-col lg:flex-row min-h-screen bg-bg text-text">
+        {/* Mobile/tablet header strip with hamburger; hidden on lg+. */}
+        <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b border-border bg-surface">
+          <button
+            type="button"
+            onClick={() => setNavOpen(true)}
+            aria-label="Open navigation"
+            className="px-2 py-1 rounded border border-border text-sm"
+          >
+            ☰
+          </button>
+          <span className="text-aurora text-lg truncate ml-3">{alias}</span>
+          {mode !== 'init' && (
+            <span className="ml-auto pip pip-healthy" aria-label={`mode: ${mode}`}>{mode}</span>
+          )}
+        </header>
+
+        {/* Sidebar — inline on lg+, fixed drawer below lg. */}
         <aside
           aria-label="Primary"
-          className="w-64 border-r border-border flex flex-col"
+          className={[
+            'border-r border-border flex flex-col bg-surface',
+            'lg:w-64 lg:relative lg:translate-x-0',
+            // Below lg: full-height fixed drawer that slides in
+            'fixed inset-y-0 left-0 z-40 w-72 transition-transform duration-150 ease-out',
+            navOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+          ].join(' ')}
         >
-          <SidebarWordmark alias={alias} setAlias={setAlias} mode={mode} />
-          {instanceId && (
-            <div className="px-5 py-2 text-xs text-text-dim border-b border-border truncate">
-              {instanceId}
-            </div>
-          )}
-          <nav className="flex-1 mt-3 px-3 space-y-3 overflow-y-auto" aria-label="Primary navigation">
-            {groups.map((group) => (
-              <div key={group.heading}>
-                <p className="px-3 mt-2 mb-1 text-[10px] uppercase tracking-wider text-text-dim font-medium">
-                  {group.heading}
-                </p>
-                <div className="space-y-0.5">
-                  {group.items.map(({ path, label }) => (
-                    <NavLink
-                      key={path}
-                      to={path}
-                      end={path === '/'}
-                      className={({ isActive }) =>
-                        [
-                          'block px-3 py-1.5 rounded-md text-sm transition-colors',
-                          isActive
-                            ? 'bg-bg-muted text-text border-l-2 border-aurora-cyan font-medium'
-                            : 'text-text-muted hover:text-text hover:bg-bg-muted',
-                        ].join(' ')
-                      }
-                    >
-                      {label}
-                    </NavLink>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </nav>
-          <div className="hairline-aurora" aria-hidden="true" />
-          <div className="px-5 py-3 text-xs text-text-dim space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <span>Theme</span>
-              <select
-                value={theme}
-                onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'auto')}
-                aria-label="Theme"
-                className="bg-bg-muted border border-border rounded px-2 py-1 text-xs"
-              >
-                <option value="auto">auto</option>
-                <option value="light">light</option>
-                <option value="dark">dark</option>
-              </select>
-            </div>
-            <div>
-              <span className="text-text-dim">Press </span>
-              <kbd className="px-1.5 py-0.5 bg-bg-muted rounded font-mono text-[10px]">⌘K</kbd>
-              <span className="text-text-dim"> to jump</span>
-            </div>
-            <a
-              href="https://construct.dev/docs"
-              target="_blank"
-              rel="noreferrer"
-              className="block hover:text-text"
-            >
-              Documentation ↗
-            </a>
-          </div>
+          {sidebar}
         </aside>
-        <main id="main" className="flex-1 overflow-y-auto p-8">
+
+        {/* Backdrop only when drawer is open below lg. */}
+        {navOpen && (
+          <button
+            type="button"
+            aria-label="Close navigation"
+            onClick={closeNav}
+            className="lg:hidden fixed inset-0 z-30 bg-black/40"
+          />
+        )}
+
+        <main id="main" className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Routes>
             {navItems.map(({ path, element }) => (
               <Route key={path} path={path} element={element} />

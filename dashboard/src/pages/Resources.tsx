@@ -11,7 +11,7 @@
  * Auto-refreshes every 10s.
  */
 import { useEffect, useState } from 'react';
-import { fetchAuthStatus, fetchStatus, fetchInsights } from '../lib/api';
+import { fetchAuthStatus, fetchStatus, fetchInsights, fetchRegistry } from '../lib/api';
 
 interface StatusData {
   version?: string;
@@ -120,21 +120,34 @@ export default function Resources() {
   const [data, setData] = useState<StatusData | null>(null);
   const [auth, setAuth] = useState<any>(null);
   const [insights, setInsights] = useState<any>(null);
+  const [registry, setRegistry] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = () =>
       Promise.all([
-        fetchStatus().then(setData),
-        fetchAuthStatus().then(setAuth),
+        fetchStatus().then(setData).catch(() => {}),
+        fetchAuthStatus().then(setAuth).catch(() => {}),
         fetchInsights().then(setInsights).catch(() => {}),
+        fetchRegistry().then(setRegistry).catch(() => {}),
       ])
         .catch((e) => setError(e?.message || 'Failed to fetch status'))
         .finally(() => setLoading(false));
     load();
     const id = window.setInterval(load, 10000);
-    return () => window.clearInterval(id);
+    // Force a fresh poll whenever the tab returns to the foreground. macOS
+    // throttles setInterval to ~1s for backgrounded tabs but stops it entirely
+    // when minimized; without this, returning to the tab can show data from
+    // many minutes ago until the next interval tick.
+    const onVisible = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
   }, []);
 
   if (loading) return <p className="text-text-dim text-sm">Loading system snapshot…</p>;
@@ -154,44 +167,106 @@ export default function Resources() {
   const overall = (data.system?.overall?.status as string) || 'unknown';
   const openBeads = insights?.beads?.byStatus?.open || 0;
   const inProgressBeads = insights?.beads?.byStatus?.in_progress || 0;
-  const todayCost = insights?.cost?.budget?.todayUsd ?? 0;
+  // Two numbers per the per-provider billing-mode design:
+  //   meteredActualUsd  — sums only metered/mixed providers (real $ leaving your account today)
+  //   meteredEquivalentUsd — sums everything (what it WOULD cost if every call were metered)
+  // The card leads with actual; equivalent is a footnote. Subscription-only setups
+  // see "$0.00 actual" + an explainer instead of a misleading huge equivalent number.
+  const todayActual = insights?.cost?.budget?.todayActualUsd ?? insights?.cost?.budget?.todayUsd ?? 0;
+  const todayEquiv = insights?.cost?.budget?.todayMeteredEquivalentUsd ?? insights?.cost?.budget?.todayUsd ?? 0;
   const todayCap = insights?.cost?.budget?.capUsd ?? 0;
   const costRatio = insights?.cost?.budget?.usageRatio ?? 0;
   const billingMode = insights?.cost?.billingMode || 'subscription';
   const billingSource = insights?.cost?.billingSource || 'inferred';
-  const isSubscription = billingMode === 'subscription';
-  const isMixed = billingMode === 'mixed';
+  const providerBilling = insights?.cost?.providerBilling || {};
+  const hasProviderOverrides = Object.keys(providerBilling).length > 0;
+  const everythingSubscription = !hasProviderOverrides
+    ? billingMode === 'subscription'
+    : Object.values(providerBilling).every((p: any) => p?.billingMode === 'subscription');
+  const isMixed = billingMode === 'mixed' || (hasProviderOverrides && !everythingSubscription);
   const isInferred = billingSource === 'inferred';
-  const costPrefix = isSubscription ? '≈ ' : '';
-  const costLabel = isSubscription
-    ? "Today's usage (metered-equiv)"
+  const costLabel = everythingSubscription
+    ? "Today's actual spend"
     : isMixed
-      ? "Today's usage (mixed billing)"
-      : "Today's spend";
-  const costHelp = isSubscription
-    ? 'You declared a subscription billing mode in construct.config.json. The number below is the metered-API equivalent cost of the tokens you used today — it is NOT money that left your account. Real billing is whatever your Claude Pro / Max / Team / Enterprise plan charges flat per month.'
+      ? "Today's actual spend (mixed billing)"
+      : "Today's actual spend";
+  const costHelp = everythingSubscription
+    ? "You're on subscription billing across all providers, so actual spend today is $0. The metered-equivalent below shows what these calls WOULD cost on pay-per-token APIs — useful for capacity planning but not a real charge against your account."
     : isMixed
-      ? 'Mixed billing: some calls go through metered API, others through a subscription. The number below is the metered-equivalent cost; treat it as an upper bound on real billing.'
-      : "Total USD spent on LLM provider calls today (UTC midnight to now), summed across every persona. Pulled from the local append-only cost ledger at ~/.cx/session-cost.jsonl. 'Enforce on' means calls past the cap are refused; 'enforce off' is advisory only.";
+      ? 'Mixed billing: subscription providers contribute $0 to actual spend; metered providers are summed here. Configure per-provider modes on the Providers page.'
+      : "Total USD spent on metered LLM provider calls today (UTC midnight to now), summed across every persona. Pulled from the local cost ledger at ~/.cx/session-cost.jsonl. 'Enforce on' means calls past the cap are refused; 'enforce off' is advisory only.";
   const diskRatio = insights?.resources?.totalCxUsageRatio ?? 0;
   const diskMb = (insights?.resources?.totalCxBytes ?? 0) / 1024 / 1024;
   const diskCapMb = (insights?.resources?.totalCxCap ?? 0) / 1024 / 1024;
   const services = data.system?.services ?? [];
   const healthyCount = services.filter((s) => s.status === 'healthy').length;
 
+  // Onboarding gates — first-run guard rail. Reads the same registry the
+  // Models page edits, so there's no parallel "first-run path" diverging
+  // from the real surface. Auto-hides when every gate passes.
+  const tierPrimaries = ['reasoning', 'standard', 'fast']
+    .map((t) => registry?.models?.[t]?.primary)
+    .filter((v) => typeof v === 'string' && v.length > 0);
+
+  const gates = [
+    {
+      key: 'model',
+      label: `Pick a model per tier (${tierPrimaries.length} of 3 set)`,
+      done: tierPrimaries.length === 3,
+      href: '#/models',
+      hint: 'Construct ships with no default — choose reasoning / standard / fast. Auto-pick from free OpenRouter models is one click away.',
+    },
+    {
+      key: 'provider',
+      label: 'Configure at least one provider',
+      done: (insights?.providers ?? []).some((p: any) => p.state === 'configured'),
+      href: '#/providers',
+      hint: 'Set an API key (Anthropic / OpenAI / OpenRouter / Ollama) so the picked models can run.',
+    },
+  ];
+  const gatesRemaining = gates.filter((g) => !g.done);
+
   return (
     <div className="max-w-7xl space-y-6">
       <header>
         <p className="text-text-dim text-xs uppercase tracking-wider mb-1">Page</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Mission Control</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Mission Control</h1>
         <p className="text-text-muted text-sm mt-1">
           Live system snapshot · refreshes every 10s · {data.version ?? '—'}
           {data.lastSync && <> · last sync {new Date(data.lastSync).toLocaleTimeString()}</>}
         </p>
       </header>
 
+      {gatesRemaining.length > 0 && (
+        <section className="card border border-amber-300 bg-amber-50/40" aria-labelledby="getting-started-heading">
+          <h2 id="getting-started-heading" className="text-xs uppercase tracking-wider text-text-dim mb-3">
+            Getting started — {gates.filter((g) => g.done).length} of {gates.length} complete
+          </h2>
+          <ul className="space-y-2">
+            {gates.map((g) => (
+              <li key={g.key} className="flex items-start gap-3 text-sm">
+                <span aria-hidden="true" className={g.done ? 'text-green-700' : 'text-amber-700'}>
+                  {g.done ? '✓' : '○'}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                    <span className={g.done ? 'line-through text-text-dim' : 'font-medium'}>{g.label}</span>
+                    {!g.done && (
+                      <a href={g.href} className="text-xs underline hover:no-underline text-indigo-700">
+                        Fix here →
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-xs text-text-dim">{g.hint}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* HERO row — large numbers, three primary signals */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4" aria-labelledby="hero-heading">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" aria-labelledby="hero-heading">
         <h2 id="hero-heading" className="sr-only">Primary signals</h2>
 
         <article className="card">
@@ -216,46 +291,47 @@ export default function Resources() {
         <article className="card">
           <p className="text-xs uppercase tracking-wider text-text-dim mb-3">
             <Hint text={costHelp}>{costLabel}</Hint>
-            {isSubscription && (
+            {everythingSubscription && (
               <span
-                className="ml-2 pip pip-degraded text-[10px]"
-                title={
-                  isInferred
-                    ? 'Auto-detected as SUBSCRIPTION because no ANTHROPIC_API_KEY env var was found. If you actually pay per-token through the metered API, set costs.billingMode=metered in Configuration.'
-                    : 'Subscription billing: numbers below are theoretical metered-equivalent — NOT money charged to your card.'
-                }
+                className="ml-2 pip pip-healthy text-[10px]"
+                title={hasProviderOverrides
+                  ? 'All providers configured as subscription on the Providers page. Today\'s actual spend is $0 — flat-rate plan covers it.'
+                  : 'Subscription billing (global). Today\'s actual spend is $0; metered-equivalent shown as a footnote.'}
               >
-                <span aria-hidden="true">i</span>
-                subscription{isInferred ? ' (auto)' : ''}
+                <span aria-hidden="true">✓</span>
+                subscription{isInferred && !hasProviderOverrides ? ' (auto)' : ''}
               </span>
             )}
-            {!isSubscription && isInferred && (
-              <span
-                className="ml-2 pip text-[10px]"
-                title="Auto-detected as METERED because ANTHROPIC_API_KEY was found in env. If you're on a Claude subscription instead, set costs.billingMode=subscription in Configuration."
-              >
+            {!everythingSubscription && isMixed && (
+              <span className="ml-2 pip text-[10px]" title="Per-provider modes — some metered, some subscription. Configure on the Providers page.">
                 <span aria-hidden="true">i</span>
-                metered (auto)
+                mixed
               </span>
             )}
           </p>
-          {isInferred && (
+          {isInferred && !hasProviderOverrides && (
             <p className="text-[11px] mb-2" style={{ color: 'var(--status-degraded)' }}>
-              ⚠ Billing mode auto-detected. <a href="#/config" className="underline hover:opacity-80">Confirm in Config →</a>
+              ⚠ Billing mode auto-detected. <a href="#/providers" className="underline hover:opacity-80">Set per provider →</a>
             </p>
           )}
-          <p className="text-3xl font-semibold">{costPrefix}${todayCost.toFixed(4)}</p>
+          <p className="text-3xl font-semibold">${todayActual.toFixed(4)}</p>
           <p className="text-xs text-text-muted mt-1">
-            {isSubscription ? (
-              <>metered-equiv only · real bill is your monthly plan</>
+            {everythingSubscription ? (
+              <>covered by subscription · no pay-per-token charges today</>
             ) : (
               <>/ ${todayCap.toFixed(2)} cap · enforce {insights?.cost?.budget?.enforce ? 'on' : 'off'}</>
             )}
           </p>
-          {!isSubscription && <ProgressBar ratio={costRatio} />}
+          {todayEquiv > todayActual + 0.01 && (
+            <p className="text-[10px] text-text-dim mt-2 font-mono">
+              metered-equiv if all calls were pay-per-token: ≈ ${todayEquiv.toFixed(2)}
+              {hasProviderOverrides && <> · subscription providers excluded from headline</>}
+            </p>
+          )}
+          {!everythingSubscription && <ProgressBar ratio={costRatio} />}
           <p className="text-xs text-text-dim mt-2">
-            7d: {costPrefix}${(insights?.cost?.windows?.last7d?.totalCostUsd ?? 0).toFixed(2)} ·{' '}
-            <Hint text="Share of input tokens served from Anthropic prompt cache instead of paid full-price input. Higher is better — cache reads cost 10% of regular input.">
+            7d actual: ${(insights?.cost?.windows?.last7d?.meteredActualUsd ?? insights?.cost?.windows?.last7d?.totalCostUsd ?? 0).toFixed(2)} ·{' '}
+            <Hint text="Share of input tokens served from prompt cache instead of paid full-price input. Higher is better — cache reads cost ~10% of regular input.">
               cache hit
             </Hint>{' '}
             {Math.round((insights?.cost?.windows?.last7d?.cacheHitRate ?? 0) * 100)}%
@@ -344,7 +420,7 @@ export default function Resources() {
 
         <article className="card">
           <p className="text-xs uppercase tracking-wider text-text-dim mb-2">
-            {isSubscription ? (
+            {everythingSubscription ? (
               <Hint text="On a subscription plan you don't see dollar savings directly — your monthly fee is flat. But the cache still reduces the *input tokens* counted against your plan's rate limits. The number below is the share of input that was served from cache instead of consuming fresh input quota.">
                 Token cache efficiency (7d)
               </Hint>
@@ -355,7 +431,7 @@ export default function Resources() {
             )}
           </p>
           {insights?.cost?.cacheSavings ? (
-            isSubscription ? (
+            everythingSubscription ? (
               <>
                 <p className="text-2xl font-semibold" style={{ color: 'var(--status-healthy)' }}>
                   {Math.round((insights.cost.cacheSavings.savingsRatio || 0) * 100)}<span className="text-xs text-text-dim font-normal ml-1">% efficient</span>

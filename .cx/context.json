@@ -1,48 +1,13 @@
 {
   "format": "json",
-  "savedAt": "2026-05-12T04:00:00.000Z",
-  "source": "enforcement-hardening",
+  "savedAt": "2026-05-18T18:01:26.908Z",
+  "source": "pre-compact",
   "projectName": "construct",
-  "lastSummary": "Three-layer enforcement hardening + finished the stalled P2 hook consolidation. Fixed retrieval CI ETIMEDOUT (hashing + --ignore-scripts). Promoted comment-lint from advisory to blocking. Added commit-time doc gate via .beads/hooks/pre-commit chain. Hardened pre-push-gate with claude/* refusal, remote-CI check, evals + docs jobs. Wired up policy-engine.mjs (was phantom — had logic but no registration) and added new Stop-time policies (red-CI block, open-beads block, drive-session advisory). Removed 9 phantom registrations from settings.template.json. Added phantom-hook drift check to construct doctor.",
-  "filesChanged": [
-    ".github/workflows/ci.yml",
-    "platforms/claude/settings.template.json",
-    "lib/hooks/comment-lint.mjs",
-    "lib/hooks/pre-push-gate.mjs",
-    "lib/hooks/policy-engine.mjs",
-    "lib/hooks/doc-coupling-check.mjs",
-    "lib/hooks/ci-status-check.mjs",
-    "lib/hooks/post-merge-docs-check.mjs",
-    "lib/comment-lint.mjs",
-    "lib/cache-strategy-google.js",
-    "lib/doc-stamp.mjs",
-    "lib/docs-verify.mjs",
-    "bin/construct",
-    ".beads/hooks/pre-commit",
-    "lib/parity.mjs",
-    "tests/parity.test.mjs",
-    "docs/concepts/architecture.md",
-    "docs/hooks-deprecated.md",
-    "CHANGELOG.md",
-    ".cx/context.md",
-    ".cx/context.json"
-  ],
-  "decisions": [
-    "Retrieval evals CI pins CONSTRUCT_EMBEDDING_MODEL=hashing because the eval fixture is calibrated against hashing-bow-v1; the ONNX runtime postinstall is unnecessary and a CDN flake.",
-    "comment-lint is blocking at PostToolUse. Bypass: CONSTRUCT_SKIP_COMMENT_LINT=1.",
-    "Strict doc-coupling gate: any staged lib/|bin/|src/|app/ code change requires CHANGELOG.md or docs/* or .cx/context.* in the same commit. Bypass: CONSTRUCT_SKIP_DOCS=1.",
-    "Stop-time enforcement consolidated in policy-engine.mjs rather than fanning out to standalone hooks. Per multi-level audit: the P2 consolidation effort that deprecated 9 hook files was stalled mid-flight — policy-engine.mjs existed but was never registered, only bootstrap + drive logic was implemented. Finishing the consolidation honors the original architectural intent and keeps the hook budget under 34 (currently 34).",
-    "Hard-block on Stop when remote CI is red on the current branch. Bypass: CONSTRUCT_STOP_OK_RED_CI=1.",
-    "Hard-block on Stop when bd issues are in_progress. Bypass: CONSTRUCT_STOP_OK_OPEN_BD=1.",
-    "Refuse to push claude/* branches to remote. Bypass: CONSTRUCT_ALLOW_CLAUDE_PUSH=1.",
-    "construct doctor now treats phantom-hook drift (registered but missing files) as a critical (non-optional) check."
-  ],
-  "pendingTodos": [
-    "Configure GitHub branch protection to mark 'retrieval evals', 'comment policy', 'docs drift check', and 'dependency CVE audit' as required status checks on main and dev (user-side gh api command, surfaced in plan).",
-    "Implement the remaining stalled consolidations: task rule (PreToolUse on workflow_update_task), workflow rule (UserPromptSubmit), MCP scope rule (PreToolUse on MCP calls). Tracked in docs/hooks-deprecated.md.",
-    "Close construct-b5c (cross-surface parity verifier) — both gaps folded in: Codex surface coverage + non-optional doctor check."
-  ],
-  "efficiencySummary": "Single planning + implementation session with mid-course audit-driven pivot (standalone hooks → policy-engine consolidation). Final hook count: 34/34 budget.",
+  "lastSummary": "",
+  "filesChanged": [],
+  "decisions": [],
+  "pendingTodos": [],
+  "efficiencySummary": "145 reads · 56 unique files · 89 repeated reads · 32 large reads · 4097 KB read",
   "warnFlags": "None",
-  "contextSummary": "Enforcement architecture is now defense-in-depth: real-time (write), gate (commit/push), safety net (CI + session end). Every blocking gate has an explicit env-var bypass. Phantom hook drift is no longer possible because construct doctor catches it. The P2 hook consolidation that was stalled mid-flight is now finished and wired up — policy-engine.mjs is registered for PreToolUse/Stop/UserPromptSubmit and the deprecation ledger honestly documents what's implemented vs. still-stalled."
+  "contextSummary": ""
 }
