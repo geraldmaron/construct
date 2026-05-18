@@ -51,7 +51,7 @@ test('readCurrentModels still respects explicit env overrides first', () => {
   assert.equal(models.standard, 'custom/standard');
   assert.equal(models.fast, 'registry/fast');
   assert.equal(models.sources.reasoning, 'env override');
-  assert.equal(models.sources.fast, 'registry default');
+  assert.equal(models.sources.fast, 'registry');
 });
 
 test('readCurrentModels accepts process-style overrides in addition to env file values', () => {
@@ -159,9 +159,9 @@ test('resolveExecutionContractModelMetadata exposes selected tier and tier sourc
   assert.equal(metadata.selectedModel, 'custom/standard');
   assert.equal(metadata.selectedModelSource, 'env override');
   assert.deepEqual(metadata.tiers, {
-    reasoning: { model: 'registry/reasoning', source: 'registry default' },
+    reasoning: { model: 'registry/reasoning', source: 'registry' },
     standard: { model: 'custom/standard', source: 'env override' },
-    fast: { model: 'registry/fast', source: 'registry default' },
+    fast: { model: 'registry/fast', source: 'registry' },
   });
 });
 

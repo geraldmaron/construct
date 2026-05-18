@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "alias": "Construct",
+  "deployment": {
+    "mode": "solo",
+    "mcpBroker": "auto",
+    "projectName": null,
+    "tenantId": null
+  },
+  "providers": {},
+  "autoEmbed": true,
+  "telemetry": {
+    "enabled": true,
+    "langfuse": {
+      "baseUrl": null,
+      "publicKey": null,
+      "secretKey": null
+    }
+  },
+  "resources": {
+    "disk": {
+      "tracesMaxDays": 30,
+      "intakeArchiveMaxItems": 500,
+      "intakeArchiveMaxDays": 90,
+      "taskGraphsMaxItems": 200,
+      "taskGraphsMaxDays": 90,
+      "workerLogsMaxMb": 100,
+      "workerLogsMaxDays": 14,
+      "sessionsMaxItems": 100,
+      "backupsMaxDays": 60,
+      "handoffsMaxDays": 30,
+      "handoffsMaxItems": 50,
+      "totalCxMaxMb": 2000
+    },
+    "process": {
+      "embedDaemonMaxRssMb": 800,
+      "mcpServerMaxRssMb": 250,
+      "workerReplicaMaxRssMb": 256
+    }
+  },
+  "costs": {
+    "providers": {
+      "anthropic": {
+        "billingMode": "subscription"
+      },
+      "openrouter": {
+        "billingMode": "metered"
+      }
+    }
+  }
+}

@@ -2,54 +2,78 @@
  * dashboard/src/pages/Models.tsx — LLM model tier configuration.
  *
  * Per-tier (reasoning/standard/fast) primary + fallback selection backed by
- * the provider catalog returned from `/api/models/providers`. Save persists
- * to `agents/registry.json` via existing `POST /api/registry/models`.
+ * the provider catalog returned from `/api/models/providers`. Pricing is
+ * resolved on-demand from `/api/models/pricing` (OpenRouter live catalog +
+ * static built-ins; local/Ollama models are tagged free).
  *
- * LLM credentials are editable inline via the shared `CredentialsCard`
- * (admin-gated POST `/api/providers/credentials`, file mode 0600,
- * audit-logged, hot-reloads `process.env`). The dashboard only ever
- * displays masked previews — full values never leave the server.
+ * Provider credentials live exclusively on the Providers page. This page
+ * surfaces tier selection only — never another credential editor.
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import {
   fetchRegistry,
   fetchModelsProviders,
-  fetchProviderCredentials,
-  fetchProviderConfigPath,
+  fetchModelsPricing,
   saveModelTier,
+  applyFreeModels,
 } from '../lib/api';
-import CredentialsCard, { CredentialGroup } from '../components/CredentialsCard';
+import SmallScreenNotice from '../components/SmallScreenNotice';
 
 type Tier = 'reasoning' | 'standard' | 'fast';
 const TIERS: Tier[] = ['reasoning', 'standard', 'fast'];
 
 type TierState = { primary: string; fallback: string[] };
 
+type Provider = {
+  id: string;
+  label: string;
+  tiers: Record<Tier, string>;
+  options: Record<Tier, string[]>;
+  local?: boolean;
+  requiresEnv?: string[];
+  pricingHint?: string | null;
+};
+
 type Catalog = {
-  providers: Array<{ id: string; label: string; tiers: Record<Tier, string>; options: Record<Tier, string[]> }>;
+  providers: Provider[];
   tierOptions: Record<Tier, string[]>;
 };
+
+type PricingEntry = {
+  input: number;
+  output: number;
+  unit?: string;
+  currency?: string;
+  source?: string;
+  label?: string;
+};
+
+function formatPricingForOption(entry: PricingEntry | null | undefined): string {
+  if (!entry) return '';
+  if (entry.source === 'local') return entry.label || 'free · runs locally';
+  if (entry.input === 0 && entry.output === 0) return 'free';
+  if (!Number.isFinite(entry.input) || !Number.isFinite(entry.output)) return '';
+  return `$${entry.input.toFixed(2)} in · $${entry.output.toFixed(2)} out /1M`;
+}
 
 export default function Models() {
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [models, setModels] = useState<Record<Tier, TierState>>({ reasoning: { primary: '', fallback: [] }, standard: { primary: '', fallback: [] }, fast: { primary: '', fallback: [] } });
   const [original, setOriginal] = useState<Record<Tier, TierState> | null>(null);
-  const [creds, setCreds] = useState<CredentialGroup[]>([]);
-  const [paths, setPaths] = useState<{ envPath: string; overridesPath: string } | null>(null);
+  const [pricing, setPricing] = useState<Record<string, PricingEntry | null>>({});
+  const [pricingLoading, setPricingLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<Tier | null>(null);
+  const [applyingFree, setApplyingFree] = useState(false);
+  const [applyResult, setApplyResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const reloadCreds = () => fetchProviderCredentials().then(d => setCreds(d.credentials ?? [])).catch(() => {});
 
   useEffect(() => {
     Promise.all([
       fetchRegistry().then(d => d.models ?? {}).catch(() => ({})),
       fetchModelsProviders().catch(() => null),
-      fetchProviderCredentials().then(d => d.credentials ?? []).catch(() => []),
-      fetchProviderConfigPath().catch(() => null),
-    ]).then(([m, cat, c, p]) => {
+    ]).then(([m, cat]) => {
       const next: Record<Tier, TierState> = { reasoning: { primary: '', fallback: [] }, standard: { primary: '', fallback: [] }, fast: { primary: '', fallback: [] } };
       for (const t of TIERS) {
         next[t] = {
@@ -60,10 +84,29 @@ export default function Models() {
       setModels(next);
       setOriginal(JSON.parse(JSON.stringify(next)));
       setCatalog(cat);
-      setCreds(c);
-      setPaths(p);
     }).finally(() => setLoading(false));
   }, []);
+
+  // Pricing fetch — pulls live numbers for every id rendered in any selector.
+  // Locked behind catalog presence so we don't spam the API while loading.
+  useEffect(() => {
+    if (!catalog) return;
+    const ids = new Set<string>();
+    for (const t of TIERS) {
+      for (const id of catalog.tierOptions?.[t] ?? []) ids.add(id);
+    }
+    for (const t of TIERS) {
+      if (models[t].primary) ids.add(models[t].primary);
+      for (const f of models[t].fallback) if (f) ids.add(f);
+    }
+    const list = Array.from(ids);
+    if (list.length === 0) return;
+    setPricingLoading(true);
+    fetchModelsPricing(list)
+      .then((d) => setPricing(d.pricing ?? {}))
+      .catch(() => {})
+      .finally(() => setPricingLoading(false));
+  }, [catalog, models]);
 
   const dirty = useMemo<Record<Tier, boolean>>(() => {
     const d: Record<Tier, boolean> = { reasoning: false, standard: false, fast: false };
@@ -75,6 +118,12 @@ export default function Models() {
   }, [models, original]);
 
   const optionsFor = (t: Tier): string[] => catalog?.tierOptions?.[t] ?? [];
+
+  const renderOption = (id: string) => {
+    const price = pricing[id];
+    const priceLabel = formatPricingForOption(price);
+    return priceLabel ? `${id}  —  ${priceLabel}` : id;
+  };
 
   const setPrimary = (t: Tier, v: string) => setModels(s => ({ ...s, [t]: { ...s[t], primary: v } }));
   const setFallbackAt = (t: Tier, i: number, v: string) => setModels(s => ({ ...s, [t]: { ...s[t], fallback: s[t].fallback.map((x, j) => j === i ? v : x) } }));
@@ -97,20 +146,94 @@ export default function Models() {
     }
   };
 
+  const applyFree = async () => {
+    setApplyingFree(true);
+    setError(null);
+    setApplyResult(null);
+    try {
+      const res = await applyFreeModels();
+      const sel = res.selections || {};
+      const updated: Record<Tier, TierState> = { ...models };
+      for (const t of TIERS) {
+        if (sel[t]) updated[t] = { primary: sel[t], fallback: models[t].fallback };
+      }
+      setModels(updated);
+      setOriginal(JSON.parse(JSON.stringify(updated)));
+      const picked = TIERS.filter((t) => sel[t]).map((t) => `${t}: ${sel[t]}`).join(' · ');
+      setApplyResult(picked ? `Saved ${picked}` : 'Polled OpenRouter but no free models met the per-tier context thresholds.');
+    } catch (e: any) {
+      setError(e.message || 'Auto-pick failed. Set OPENROUTER_API_KEY in Providers, then retry.');
+    } finally {
+      setApplyingFree(false);
+    }
+  };
+
+  const noPrimarySet = TIERS.every((t) => !models[t].primary);
+
   if (loading) return <div className="text-center py-20 text-gray-600">Loading...</div>;
 
   const btnPrimary = 'px-2.5 py-1 text-xs font-medium rounded border border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50';
   const btnGhost = 'px-2.5 py-1 text-xs font-medium rounded border border-gray-300 bg-white text-gray-800 hover:bg-gray-100 transition-colors disabled:opacity-50';
 
+  const localProviders = (catalog?.providers ?? []).filter((p) => p.local);
+
   return (
     <div>
-      <h1 className="text-xl font-bold mb-4">Model Tiers</h1>
+      <SmallScreenNotice />
+      <h1 className="text-xl font-bold mb-1">Model Tiers</h1>
+      <p className="text-xs text-gray-600 mb-3">
+        Construct ships with no model selected — pick one per tier before running any LLM-backed
+        workflow. Pricing is per million tokens (USD). Live OpenRouter numbers refresh every 5
+        minutes; Anthropic and OpenAI direct endpoints use the published list price.
+        {pricingLoading && <span className="ml-2 text-indigo-600">refreshing…</span>}
+      </p>
+
+      {noPrimarySet && (
+        <div className="mb-3 px-3 py-2 rounded bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-center justify-between gap-3">
+          <div>
+            <p className="font-semibold">No models selected.</p>
+            <p>Pick a primary for each tier below, or use auto-pick to seed all three tiers from the OpenRouter free catalog.</p>
+          </div>
+          <button onClick={applyFree} disabled={applyingFree} className="px-2.5 py-1 text-xs font-medium rounded border border-amber-600 bg-amber-600 text-white hover:bg-amber-700 transition-colors disabled:opacity-50 whitespace-nowrap">
+            {applyingFree ? 'Polling…' : 'Auto-pick free models'}
+          </button>
+        </div>
+      )}
+
+      {!noPrimarySet && (
+        <div className="mb-3 flex items-center gap-3 text-xs">
+          <button onClick={applyFree} disabled={applyingFree} className="px-2.5 py-1 font-medium rounded border border-gray-300 bg-white text-gray-800 hover:bg-gray-100 transition-colors disabled:opacity-50">
+            {applyingFree ? 'Polling…' : 'Re-pick free OpenRouter models'}
+          </button>
+          <span className="text-gray-600">Replaces each tier's primary with the best free OpenRouter model meeting the context threshold (32k reasoning, 16k standard, 8k fast).</span>
+        </div>
+      )}
+
+      {applyResult && (
+        <div className="mb-3 px-3 py-2 rounded bg-green-50 border border-green-200 text-green-800 text-xs">{applyResult}</div>
+      )}
+
+      {localProviders.length > 0 && (
+        <div className="mb-3 px-3 py-2 rounded bg-indigo-50 border border-indigo-200 text-xs">
+          <p className="font-semibold text-indigo-900 mb-1">Local providers available</p>
+          <ul className="text-indigo-900 space-y-0.5">
+            {localProviders.map((p) => (
+              <li key={p.id}>
+                <span className="font-mono">{p.id}</span> — {p.label}
+                {p.requiresEnv?.length ? <> · needs <code className="px-1 bg-white rounded">{p.requiresEnv.join(', ')}</code></> : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {error && <div className="mb-3 px-3 py-2 rounded bg-red-50 border border-red-200 text-red-800 text-xs">{error}</div>}
 
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         {TIERS.map((t, idx) => {
           const opts = optionsFor(t);
           const m = models[t];
+          const primaryPrice = pricing[m.primary];
+          const primaryLabel = formatPricingForOption(primaryPrice);
           return (
             <div key={t} className={`px-3 py-2.5 ${idx > 0 ? 'border-t border-gray-200' : ''}`}>
               <div className="flex items-center justify-between mb-2">
@@ -122,12 +245,17 @@ export default function Models() {
               </div>
               <div className="grid grid-cols-[80px_1fr] items-center gap-x-2 gap-y-1">
                 <label className="text-xs font-medium text-gray-700">Primary</label>
-                <select value={m.primary} onChange={e => setPrimary(t, e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-white">
-                  <option value="">— select model —</option>
-                  {opts.map(o => <option key={o} value={o}>{o}</option>)}
-                  {m.primary && !opts.includes(m.primary) && <option value={m.primary}>{m.primary} (current)</option>}
-                </select>
+                <div>
+                  <select value={m.primary} onChange={e => setPrimary(t, e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-white">
+                    <option value="">— select model —</option>
+                    {opts.map(o => <option key={o} value={o}>{renderOption(o)}</option>)}
+                    {m.primary && !opts.includes(m.primary) && <option value={m.primary}>{renderOption(m.primary)} (current)</option>}
+                  </select>
+                  {primaryLabel && (
+                    <p className="text-[10px] text-gray-600 mt-0.5 font-mono">{primaryLabel}</p>
+                  )}
+                </div>
                 <label className="text-xs font-medium text-gray-700 self-start pt-1">Fallback</label>
                 <div>
                   {m.fallback.length === 0 && <p className="text-xs text-gray-600 mb-1">none</p>}
@@ -136,8 +264,8 @@ export default function Models() {
                       <select value={fb} onChange={e => setFallbackAt(t, i, e.target.value)}
                         className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-white">
                         <option value="">— select model —</option>
-                        {opts.map(o => <option key={o} value={o}>{o}</option>)}
-                        {fb && !opts.includes(fb) && <option value={fb}>{fb} (current)</option>}
+                        {opts.map(o => <option key={o} value={o}>{renderOption(o)}</option>)}
+                        {fb && !opts.includes(fb) && <option value={fb}>{renderOption(fb)} (current)</option>}
                       </select>
                       <button onClick={() => removeFallback(t, i)}
                         className="px-2 py-0.5 text-xs font-medium rounded border border-red-300 bg-white text-red-700 hover:bg-red-50 transition-colors">×</button>
@@ -151,7 +279,11 @@ export default function Models() {
         })}
       </div>
 
-      <CredentialsCard credentials={creds} kind="llm" envPath={paths?.envPath ?? null} onChange={reloadCreds} />
+      <p className="mt-4 text-xs text-gray-600">
+        Need to add or rotate an API key? Manage credentials on the{' '}
+        <a href="#/providers" className="underline hover:no-underline text-indigo-700">Providers</a> page —
+        the single edit surface for every provider env var.
+      </p>
     </div>
   );
 }
