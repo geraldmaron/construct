@@ -18,6 +18,7 @@ import { validateRegistry } from '../lib/validator.mjs';
 import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setTierModel, setModelWithTierInference } from '../lib/model-router.mjs';
 import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
+import { cmdOllama } from '../lib/ollama-manager.mjs';
 import { printHostCapabilities } from '../lib/host-capabilities.mjs';
 import { getPluginById, initPluginManifest, loadPluginRegistry } from '../lib/plugin-registry.mjs';
 import { runSetup } from '../lib/setup.mjs';
@@ -231,6 +232,27 @@ async function cmdDoctor() {
   const add = (label, pass, optional = false) => checks.push({ label, pass, optional });
   add('registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'agents', 'registry.json')));
   add('sync-agents.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs')));
+
+  // Tier model selection. Construct ships with no default — at least
+  // one tier must be configured (registry.json primary OR CX_MODEL_*
+  // env override) before any LLM-backed workflow can run.
+  // Skip in CI — model tiers are user-specific, not repo-wide.
+  const inCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+  try {
+    const reg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+    const current = readCurrentModels(getUserEnvPath(HOME), reg.models ?? {});
+    const configuredTiers = ['reasoning', 'standard', 'fast'].filter((t) => current[t]);
+    if (configuredTiers.length === 3) {
+      add('Models — all tiers configured', true);
+    } else if (configuredTiers.length === 0) {
+      add('Models — no tier configured (pick one in the dashboard or run `construct models --apply`)', inCI, inCI);
+    } else {
+      add(`Models — only ${configuredTiers.join('+')} configured (missing: ${['reasoning','standard','fast'].filter(t=>!current[t]).join(', ')})`, inCI, inCI);
+    }
+  } catch (err) {
+    add(`Models — check failed: ${err.message}`, inCI, inCI);
+  }
+
   add('Node.js 20+ (recommended)', Number.parseInt(process.versions.node.split('.')[0], 10) >= 20);
   add('npm available', true);
   const constructOnPath = spawnSync('zsh', ['-lc', 'command -v construct'], { encoding: 'utf8', env: process.env });
@@ -708,6 +730,13 @@ async function cmdDown() {
     else if (svc.status === 'skipped') info(`${svc.name}: skipped — ${svc.note}.`);
     else info(`${svc.name}: not running.`);
   }
+
+  try {
+    const { autoCleanHandoffs } = await import('../lib/handoffs/cleanup.mjs');
+    const { result: cleanResult } = autoCleanHandoffs(process.cwd(), process.env);
+    const total = (cleanResult.moved?.length || 0) + (cleanResult.deleted?.length || 0);
+    if (total > 0) info(`Handoff cleanup: ${cleanResult.moved?.length || 0} archived, ${cleanResult.deleted?.length || 0} deleted.`);
+  } catch { /* best effort */ }
 }
 
 async function cmdServe() {
@@ -998,7 +1027,69 @@ async function cmdHandoffs(args) {
     }
     return;
   }
-  errorln('Usage: construct handoffs status');
+  if (sub === 'list') {
+    if (summary.state === 'empty') { info('No handoffs.'); return; }
+    for (const f of summary.files) {
+      const tag = f.beadRefs.length ? ` (${f.beadRefs.join(', ')})` : '';
+      println(`${f.ageDays.toFixed(1).padStart(5)}d  ${f.status.padEnd(8)}  ${f.filename}${tag}`);
+    }
+    return;
+  }
+
+  if (sub === 'show') {
+    const target = args[1];
+    if (!target) { errorln('Usage: construct handoffs show <filename-or-id>'); process.exit(1); }
+    const match = summary.files?.find((f) => f.filename === target || f.filename.startsWith(target) || f.id === target);
+    if (!match) { errorln(`No handoff matching "${target}".`); process.exit(1); }
+    const { parseHandoffFile } = await import('../lib/handoffs/contract.mjs');
+    const parsed = parseHandoffFile(match.path);
+    println(`--- ${match.filename} ---`);
+    println(`Status: ${parsed.status}`);
+    if (parsed.frontmatter?.title) println(`Title:  ${parsed.frontmatter.title}`);
+    if (parsed.frontmatter?.beads?.length) println(`Beads:  ${parsed.frontmatter.beads.join(', ')}`);
+    if (parsed.frontmatter?.created) println(`Created: ${parsed.frontmatter.created}`);
+    println('');
+    for (const [heading, content] of Object.entries(parsed.sections)) {
+      println(`## ${heading}`);
+      println(content);
+      println('');
+    }
+    return;
+  }
+
+  if (sub === 'validate') {
+    const { parseHandoffFile, validateHandoff } = await import('../lib/handoffs/contract.mjs');
+    if (summary.state === 'empty') { info('No handoffs to validate.'); return; }
+    let hasErrors = false;
+    for (const f of summary.files) {
+      const parsed = parseHandoffFile(f.path);
+      const { valid, errors } = validateHandoff(parsed);
+      if (valid) {
+        println(`✓ ${f.filename}`);
+      } else {
+        hasErrors = true;
+        println(`✗ ${f.filename}`);
+        for (const e of errors) println(`    ${e}`);
+      }
+    }
+    if (hasErrors) process.exit(1);
+    return;
+  }
+
+  if (sub === 'prune') {
+    const { autoCleanHandoffs } = await import('../lib/handoffs/cleanup.mjs');
+    const { result } = autoCleanHandoffs(process.cwd(), process.env);
+    if (result.moved.length === 0 && result.deleted.length === 0) {
+      info('Nothing to prune.');
+      return;
+    }
+    for (const a of result.moved) println(`archived  ${path.basename(a.from)}`);
+    for (const a of result.deleted) println(`deleted   ${path.basename(a.path)}`);
+    println(`Done: ${result.moved.length} archived, ${result.deleted.length} deleted.`);
+    return;
+  }
+
+  errorln('Usage: construct handoffs [status|list|show|validate|prune]');
   process.exit(1);
 }
 
@@ -1148,9 +1239,14 @@ function printConfigModeHelp() {
   println('Construct config — inspect and set deployment posture.');
   println('');
   println('Usage:');
-  println('  construct config            Show active deployment mode and resource topology.');
-  println('  construct config mode       Print the active deployment mode.');
-  println('  construct config mode <m>   Set mode to solo | team | enterprise.');
+  println('  construct config                          Show active deployment mode and resource topology.');
+  println('  construct config mode                     Print the active deployment mode.');
+  println('  construct config set deployment.mode <m>  Set mode to solo | team | enterprise (writes construct.config.json).');
+  println('  construct config get deployment.mode      Read the configured mode from construct.config.json.');
+  println('');
+  println('Notes:');
+  println('  • Single setter: `construct config set` is the only way to persist mode changes.');
+  println('  • Env var CX_DEPLOYMENT_MODE still wins at runtime for one-off overrides (export it for the session).');
   println('');
   println('Modes:');
   for (const mode of DEPLOYMENT_MODES) {
@@ -1181,6 +1277,11 @@ function printIntakeHelp() {
   println('  construct intake done <id> [--notes=…]    Mark a pending packet processed.');
   println('  construct intake skip <id> [--reason=…]   Mark a pending packet skipped (preserves audit trail).');
   println('  construct intake reopen <id>         Move a processed or skipped packet back to pending.');
+  println('  construct intake config              Show current watch dirs + scan depth.');
+  println('  construct intake config set --depth=N [--add-dir=PATH] [--remove-dir=PATH]');
+  println('                                       Update intake config. --depth caps at the hard limit.');
+  println('  construct intake config set --include-project-inbox=on|off');
+  println('  construct intake config set --include-docs-intake=on|off');
 }
 
 function parseKvFlags(args, keys) {
@@ -1309,8 +1410,84 @@ async function cmdIntake(args) {
     return;
   }
 
-  errorln(`Unknown intake subcommand: ${sub}. Available: list, show, done, skip, reopen`);
+  if (sub === 'config') {
+    return await cmdIntakeConfig(args.slice(1));
+  }
+
+  errorln(`Unknown intake subcommand: ${sub}. Available: list, show, done, skip, reopen, config`);
   process.exit(1);
+}
+
+async function cmdIntakeConfig(args) {
+  const { loadIntakeConfig, saveIntakeConfig, INTAKE_DEPTH_GUIDANCE, INTAKE_HARD_MAX_DEPTH, describeIntakeDepth } =
+    await import('../lib/intake/intake-config.mjs');
+  const cwd = process.cwd();
+
+  const action = args[0];
+  if (!action || action === 'show') {
+    const cfg = loadIntakeConfig(cwd, process.env);
+    const desc = describeIntakeDepth(cfg.maxDepth);
+    println(`Intake config (root: ${cwd})`);
+    println('');
+    println(`  includeProjectInbox: ${cfg.includeProjectInbox ? 'on' : 'off'} (.cx/inbox)`);
+    println(`  includeDocsIntake:   ${cfg.includeDocsIntake ? 'on' : 'off'} (docs/intake)`);
+    println(`  maxDepth:            ${cfg.maxDepth} — ${desc.label}`);
+    println(`                       ${desc.detail}`);
+    println(`  hardMaxDepth:        ${INTAKE_HARD_MAX_DEPTH}`);
+    if (cfg.parentDirs.length === 0) {
+      println('  parentDirs:          (none — only the built-in zones are watched)');
+    } else {
+      println('  parentDirs:');
+      for (const dir of cfg.parentDirs) println(`    - ${dir}`);
+    }
+    println('');
+    println('Depth guide:');
+    for (const g of INTAKE_DEPTH_GUIDANCE) {
+      println(`  ${String(g.value).padStart(2)}  ${g.label} — ${g.detail}`);
+    }
+    return;
+  }
+
+  if (action !== 'set') {
+    errorln(`Unknown intake config action: ${action}. Available: show, set`);
+    process.exit(1);
+  }
+
+  const patch = {};
+  const tail = args.slice(1);
+  const depthFlag = tail.find((a) => a.startsWith('--depth='));
+  if (depthFlag) patch.maxDepth = Number(depthFlag.split('=')[1]);
+
+  const projectFlag = tail.find((a) => a.startsWith('--include-project-inbox='));
+  if (projectFlag) patch.includeProjectInbox = /^(on|true|1|yes)$/i.test(projectFlag.split('=')[1] || '');
+
+  const docsFlag = tail.find((a) => a.startsWith('--include-docs-intake='));
+  if (docsFlag) patch.includeDocsIntake = /^(on|true|1|yes)$/i.test(docsFlag.split('=')[1] || '');
+
+  const addFlags = tail.filter((a) => a.startsWith('--add-dir='));
+  const removeFlags = tail.filter((a) => a.startsWith('--remove-dir='));
+
+  if (addFlags.length || removeFlags.length) {
+    const current = loadIntakeConfig(cwd, process.env);
+    const toAdd = addFlags.map((a) => a.split('=').slice(1).join('=')).filter(Boolean);
+    const toRemove = new Set(removeFlags.map((a) => a.split('=').slice(1).join('=')).filter(Boolean));
+    const next = [...current.parentDirs.filter((d) => !toRemove.has(d)), ...toAdd];
+    patch.parentDirs = Array.from(new Set(next));
+  }
+
+  if (Object.keys(patch).length === 0) {
+    errorln('Nothing to change. Pass --depth=N, --add-dir=PATH, --remove-dir=PATH, --include-project-inbox=on|off, or --include-docs-intake=on|off.');
+    process.exit(1);
+  }
+
+  try {
+    const saved = saveIntakeConfig(cwd, patch);
+    println('Saved intake config:');
+    println(JSON.stringify(saved, null, 2));
+  } catch (err) {
+    errorln(err.message || 'failed to save intake config');
+    process.exit(1);
+  }
 }
 
 function printGraphHelp() {
@@ -1433,19 +1610,13 @@ async function cmdConfig(args) {
 
     if (value === '--help' || value === '-h') { printConfigModeHelp(); return; }
 
-    if (!isValidDeploymentMode(value)) {
-      errorln(`Invalid deployment mode: ${value}. Valid modes: ${DEPLOYMENT_MODES.join(', ')}`);
-      process.exit(1);
-    }
-
-    ensureUserConfigDir(HOME);
-    writeEnvValues(getUserEnvPath(HOME), { [DEPLOYMENT_MODE_ENV_KEY]: value });
-    process.env[DEPLOYMENT_MODE_ENV_KEY] = value;
-
-    info(`Deployment mode set to ${value} (${describeResourceLine(value)})`);
-    println('');
-    println(describeDeploymentMode(value));
-    return;
+    // Setter consolidated into `construct config set`. Refuse here with a one-line redirect
+    // so users learn the single canonical setter instead of two slightly-divergent paths.
+    errorln(`\`construct config mode <value>\` is no longer a setter. Use the single canonical path:`);
+    errorln(`  construct config set deployment.mode ${value}`);
+    errorln('');
+    errorln('For ephemeral runtime overrides (CI, scripts), export CX_DEPLOYMENT_MODE instead.');
+    process.exit(1);
   }
 
   if (sub === 'init') {
@@ -1612,9 +1783,20 @@ async function cmdModels(args) {
   }
   const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
   const result = readCurrentModels(envPath, registry.models ?? {});
+  const nothingSelected = ['reasoning', 'standard', 'fast'].every((t) => !result[t]);
   println('Current model assignments:');
   for (const currentTier of ['reasoning', 'standard', 'fast']) {
-    println(`  ${currentTier.padEnd(11)}${String(result[currentTier] ?? '(none)')}`);
+    const id = result[currentTier];
+    const source = result.sources?.[currentTier] || (id ? 'registry' : 'not configured');
+    println(`  ${currentTier.padEnd(11)}${id ? `${id} [${source}]` : '(not configured)'}`);
+  }
+  if (nothingSelected) {
+    println('');
+    println('No tier has a model selected. Construct ships with no default.');
+    println('Pick one of:');
+    println('  • Dashboard → Models page (single source of truth)');
+    println('  • construct models --set=<provider/model-id> --tier=reasoning|standard|fast');
+    println('  • construct models --apply           Poll OpenRouter free catalog and seed all tiers');
   }
 }
 
@@ -1627,6 +1809,10 @@ async function cmdMcp(args) {
   if (subcmd === 'info') return cmdMcpInfo(id);
   errorln(`Unknown mcp subcommand: ${subcmd}`);
   process.exit(1);
+}
+
+async function cmdOllamaCmd(args) {
+  return cmdOllama(args);
 }
 
 async function cmdPlugin(args) {
@@ -2356,6 +2542,7 @@ const handlers = new Map([
   ['init:update', cmdInitUpdate],
   ['models', cmdModels],
   ['mcp', cmdMcp],
+  ['ollama', cmdOllamaCmd],
   ['plugin', cmdPlugin],
   ['hosts', cmdHosts],
   ['review', cmdReview],

@@ -34,15 +34,18 @@ All directories are watched in addition to `~/.cx/inbox/` — you cannot disable
 
 The inbox watcher accepts any file that can produce extractable text:
 
-- Markdown (`.md`)
-- Plain text (`.txt`)
-- PDF (`.pdf`)
-- Word documents (`.docx`)
-- Source code files
+- **Plain text / Code**: `.md`, `.txt`, `.rst`, `.adoc`, `.json`, `.yaml`, `.yml`, `.toml`, `.js`, `.mjs`, `.ts`, `.tsx`, `.jsx`, `.py`, `.go`, `.rs`, `.sh`, `.bash`, `.html`, `.css`, `.csv`, `.tsv`, `.xml`, `.env`, `.conf`, `.ini`, `.sql`, `.log`
+- **Transcripts**: `.vtt` (WebVTT), `.srt` (SubRip), `.lrc` (lyrics), `.transcript` — Zoom, Teams, meeting recordings
+- **Office documents**: `.docx`, `.xlsx`, `.pptx`, `.odt`, `.ods`
+- **Rich text**: `.doc`, `.rtf`
+- **macOS-only** (via `mdls`): `.xls`, `.ppt`, `.pages`, `.numbers`, `.key`
+- **PDF**: `.pdf`
 
 This includes things like meeting notes, exports, specs, ADR drafts, research notes, and uploaded documents, as long as the file type is extractable.
 
 Binary files that cannot be read as text are skipped with a warning observation.
+
+**50 MB hard cap** — files above this are skipped silently.
 
 ## How routing works
 

@@ -104,8 +104,8 @@ function validateRegistry(registry) {
         errors.push(`models.${tier}: missing tier object`);
         continue;
       }
-      if (!t.primary || typeof t.primary !== "string") {
-        errors.push(`models.${tier}: primary model must be a non-empty string`);
+      if (t.primary !== null && (typeof t.primary !== "string" || !t.primary)) {
+        errors.push(`models.${tier}: primary must be null or a non-empty string`);
       }
     }
   }

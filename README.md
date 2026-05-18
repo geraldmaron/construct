@@ -120,6 +120,7 @@ Every code mutation runs through enforcement: no secrets committed, tests green,
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
 | `construct models` | Show or update model tier assignments |
+| `construct ollama` | Manage local Ollama LLM installation |
 | `construct plugin` | Manage external Construct plugin manifests |
 
 ### Observability
@@ -223,4 +224,4 @@ construct uninstall --keep-state         # only .construct/ + .claude/; keep .cx
 
 ## License
 
-Elastic License 2.0. See [`LICENSE`](./LICENSE).
+Apache License 2.0. See [`LICENSE`](./LICENSE).

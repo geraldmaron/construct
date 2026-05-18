@@ -8,12 +8,12 @@
  */
 import { useEffect, useState } from 'react';
 import { fetchProjectConfig, writeProjectConfig } from '../lib/api';
+import SmallScreenNotice from '../components/SmallScreenNotice';
 
 type ConfigPayload = {
   version: number;
   alias?: string;
   deployment?: { mode?: string; mcpBroker?: string; projectName?: string | null; tenantId?: string | null };
-  models?: { reasoning?: string | null; standard?: string | null; fast?: string | null; embeddings?: string | null };
   autoEmbed?: boolean;
   telemetry?: { enabled?: boolean };
   resources?: { disk?: { totalCxMaxMb?: number; tracesMaxDays?: number; backupsMaxDays?: number } };
@@ -86,9 +86,10 @@ export default function Config() {
 
   return (
     <div className="max-w-4xl space-y-8">
+      <SmallScreenNotice />
       <header>
         <p className="text-text-dim text-xs uppercase tracking-wider mb-1">Page</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Configuration</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Configuration</h1>
         <p className="text-text-muted text-sm mt-2">
           Edits write to <code className="px-1 py-0.5 bg-bg-muted rounded">construct.config.json</code> at the project root. Secrets stay in <code className="px-1 py-0.5 bg-bg-muted rounded">.env</code>.
         </p>
@@ -115,14 +116,9 @@ export default function Config() {
 
       <section className="card space-y-4" aria-labelledby="general-heading">
         <h2 id="general-heading" className="text-sm uppercase tracking-wider text-text-dim">General</h2>
-        <Field label="Alias" help="Display name in the dashboard wordmark + persona prompts.">
-          <input
-            type="text"
-            value={config.alias ?? 'Construct'}
-            onChange={(e) => setConfig((c) => ({ ...c!, alias: e.target.value }))}
-            className="w-full px-3 py-2 border border-border rounded bg-surface"
-          />
-        </Field>
+        <p className="text-xs text-text-muted">
+          Alias is edited in the sidebar wordmark — click <strong>{config.alias ?? 'Construct'}</strong> in the top-left to rename.
+        </p>
         <Field label="Deployment mode" help="Routes the intake queue, worker pool, and telemetry backend.">
           <select
             value={config.deployment?.mode ?? 'solo'}
@@ -163,20 +159,14 @@ export default function Config() {
         </Field>
       </section>
 
-      <section className="card space-y-4" aria-labelledby="models-heading">
-        <h2 id="models-heading" className="text-sm uppercase tracking-wider text-text-dim">Model tier overrides</h2>
-        <p className="text-xs text-text-muted">Leave blank to use the registry default. Env vars (CX_MODEL_*) still override.</p>
-        {(['reasoning', 'standard', 'fast', 'embeddings'] as const).map((tier) => (
-          <Field key={tier} label={tier} help={`CX_MODEL_${tier.toUpperCase()}`}>
-            <input
-              type="text"
-              value={config.models?.[tier] ?? ''}
-              placeholder="provider/model-id"
-              onChange={(e) => setConfig((c) => ({ ...c!, models: { ...c?.models, [tier]: e.target.value || null } }))}
-              className="w-full px-3 py-2 border border-border rounded bg-surface font-mono text-sm"
-            />
-          </Field>
-        ))}
+      <section className="card space-y-2" aria-labelledby="models-heading">
+        <h2 id="models-heading" className="text-sm uppercase tracking-wider text-text-dim">Models</h2>
+        <p className="text-xs text-text-muted">
+          Model tiers are configured on the <a href="#/models" className="underline hover:no-underline">Models page</a>.
+          That page is the single source of truth — selections persist to <code className="px-1 bg-bg-muted rounded">agents/registry.json</code> and
+          stay there. Env vars <code className="px-1 bg-bg-muted rounded">CX_MODEL_REASONING|STANDARD|FAST</code> still
+          override at runtime for CI and ops; they are not editable from the dashboard.
+        </p>
       </section>
 
       <section className="card space-y-4" aria-labelledby="resources-heading">

@@ -183,7 +183,16 @@ construct infer <file> [more files] [--unified] [--max-chars=N] [--sample=N] [--
 
 ## construct ingest
 
-Convert PDFs, office docs, spreadsheets, and text files into indexed markdown artifacts in the knowledge base
+Convert PDFs, office docs, spreadsheets, transcripts, and text files into indexed markdown artifacts in the knowledge base
+
+**Supported formats**
+
+- **Plain text / Code**: `.md`, `.txt`, `.rst`, `.adoc`, `.json`, `.yaml`, `.yml`, `.toml`, `.js`, `.mjs`, `.ts`, `.tsx`, `.jsx`, `.py`, `.go`, `.rs`, `.sh`, `.bash`, `.html`, `.css`, `.csv`, `.tsv`, `.xml`, `.env`, `.conf`, `.ini`, `.sql`, `.log`
+- **Transcripts**: `.vtt` (WebVTT), `.srt` (SubRip), `.lrc` (lyrics), `.transcript` — Zoom, Teams, meeting recordings
+- **Office documents**: `.docx`, `.xlsx`, `.pptx`, `.odt`, `.ods`
+- **Rich text**: `.doc`, `.rtf`
+- **macOS-only** (via `mdls`): `.xls`, `.ppt`, `.pages`, `.numbers`, `.key`
+- **PDF**: `.pdf`
 
 **Usage**
 

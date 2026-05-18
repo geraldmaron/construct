@@ -122,7 +122,8 @@ test('buildStatus separates runtime health from configured integrations', async 
   assert.equal(status.system.services.find((service) => service.id === 'dashboard').status, 'healthy');
   assert.equal(status.system.services.find((service) => service.id === 'langfuse').status, 'unavailable');
   assert.equal(status.features.find((feature) => feature.id === 'github').status, 'configured');
-  assert.equal(status.features.find((feature) => feature.id === 'memory').status, 'configured');
+  // Memory MCP is unavailable in OpenCode: SSE transport incompatible with cm serve
+  assert.equal(status.features.find((feature) => feature.id === 'memory').status, 'unavailable');
   assert.match(status.system.integrations.summary, /configured/);
   assert.equal(status.system.plugins.status, 'configured');
   assert.match(status.system.plugins.summary, /1 plugin/);
@@ -139,9 +140,9 @@ test('buildStatus separates runtime health from configured integrations', async 
   assert.equal(status.executionContractModel.version, 'v1');
   assert.equal(status.executionContractModel.selectedTier, null);
   assert.equal(status.executionContractModel.selectedModel, null);
-  assert.equal(status.executionContractModel.tiers.reasoning.model, 'openrouter/deepseek/deepseek-r1');
-  assert.equal(status.executionContractModel.tiers.standard.model, 'openrouter/qwen/qwen3-coder:free');
-  assert.equal(status.executionContractModel.tiers.fast.model, 'openrouter/meta-llama/llama-3.3-70b-instruct:free');
+  assert.equal(status.executionContractModel.tiers.reasoning.model, null);
+  assert.equal(status.executionContractModel.tiers.standard.model, null);
+  assert.equal(status.executionContractModel.tiers.fast.model, null);
   assert.equal(status.sessionEfficiency.score, 0.87);
   assert.equal(status.sessionUsage.status, 'available');
   assert.equal(status.sessionUsage.providerTotalTokens, 265);

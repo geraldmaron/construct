@@ -199,7 +199,7 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
   assert.equal(payload.metadata.executionContractModel.workCategory, "quick");
   assert.equal(payload.metadata.executionContractModel.selectedTier, "fast");
   assert.equal(payload.metadata.executionContractModel.selectedModel, "openrouter/meta-llama/llama-3.3-70b-instruct:free");
-  assert.equal(payload.metadata.executionContractModel.selectedModelSource, "registry default");
+  assert.equal(payload.metadata.executionContractModel.selectedModelSource, "registry");
   assert.equal(payload.metadata.promptHasTaskPacket, false);
   assert.ok(payload.metadata.promptHasContextDigest);
   assert.ok(payload.metadata.promptHasHostConstraints);
