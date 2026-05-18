@@ -23,17 +23,21 @@ async function apiGet(path: string) {
 }
 
 async function apiPost(path: string, body: unknown) {
+  return apiMutate(path, body, 'POST');
+}
+
+async function apiMutate(path: string, body: unknown, method: 'POST' | 'PUT' | 'PATCH' | 'DELETE') {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const csrf = getCsrfToken();
   if (csrf) headers['x-construct-csrf'] = csrf;
   const res = await fetch(`${BASE_URL}${path}`, {
-    method: 'POST',
+    method,
     headers,
     body: JSON.stringify(body),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || `POST ${path}: ${res.status}`);
+    throw new Error(data.error || `${method} ${path}: ${res.status}`);
   }
   return res.json();
 }
@@ -56,36 +60,11 @@ export const fetchOverrideContent = (category: string, name: string) =>
 export const fetchOverrideBackups = (category: string, name: string) =>
   apiGet(`/overrides/${category}/${name}?action=backups`);
 export const writeOverrideContent = (category: string, name: string, content: string) =>
-  fetch(`/api/overrides/${category}/${name}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content }),
-  }).then(async (r) => {
-    const j = await r.json();
-    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
-    return j;
-  });
+  apiMutate(`/overrides/${category}/${name}`, { content }, 'PUT');
 export const restoreOverrideBackup = (category: string, name: string, backupFilename: string) =>
-  fetch(`/api/overrides/${category}/${name}?action=restore`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ backupFilename }),
-  }).then(async (r) => {
-    const j = await r.json();
-    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
-    return j;
-  });
+  apiMutate(`/overrides/${category}/${name}?action=restore`, { backupFilename }, 'POST');
 
-export const writeProjectConfig = (config: any) =>
-  fetch('/api/project-config', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(config),
-  }).then(async (r) => {
-    const j = await r.json();
-    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
-    return j;
-  });
+export const writeProjectConfig = (config: any) => apiMutate('/project-config', config, 'PUT');
 export const fetchKnowledgeTrends = () => apiGet('/knowledge/trends');
 export const fetchKnowledgeIndex = () => apiGet('/knowledge/index');
 export const fetchKnowledgeAsk = (question: string) => apiPost('/knowledge/ask', { question });
@@ -94,11 +73,34 @@ export const registerEmbedBoundary = (data: { parentInstance: string, parentUrl:
   apiPost('/embed/boundary/register', data);
 export const fetchTerraformFiles = () => apiGet('/terraform/files');
 export const fetchModelsProviders = () => apiGet('/models/providers');
+export const fetchModelsPricing = (ids: string[]) =>
+  apiGet(`/models/pricing?ids=${encodeURIComponent(ids.filter(Boolean).join(','))}`);
+export const applyFreeModels = () => apiPost('/models/free/apply', {});
+export const fetchIntakeConfig = () => apiGet('/intake/config');
+export const browseFilesystem = (path?: string) =>
+  apiGet(`/fs/browse${path ? `?path=${encodeURIComponent(path)}` : ''}`);
+export const writeIntakeConfig = (config: {
+  parentDirs?: string[];
+  maxDepth?: number;
+  includeProjectInbox?: boolean;
+  includeDocsIntake?: boolean;
+}) => apiPost('/intake/config', config);
 export const fetchSessionUsage = () => apiGet('/session-usage');
 
 export const fetchProviders = (probe = false) => apiGet(`/providers${probe ? '?probe=1' : ''}`);
 export const fetchProviderCredentials = () => apiGet('/providers/credentials');
 export const fetchProviderConfigPath = () => apiGet('/providers/config-path');
+export const fetchCustomCredentials = () => apiGet('/providers/credentials/custom');
+export const saveCustomCredentialProvider = (entry: { provider: string; label: string; kind: 'llm' | 'integration'; envVars: string[] }) =>
+  apiPost('/providers/credentials/custom', { action: 'save', ...entry });
+export const deleteCustomCredentialProvider = (provider: string) =>
+  apiPost('/providers/credentials/custom', { action: 'delete', provider });
+export const fetchOpStatus = () => apiGet('/providers/credentials/op-status');
+export const pullCredentialFromOp = (envVar: string, opRef: string) =>
+  apiPost('/providers/credentials/op-pull', { envVar, opRef });
+export const fetchProviderBilling = () => apiGet('/providers/billing');
+export const setProviderBilling = (provider: string, billingMode: 'metered' | 'subscription' | 'mixed') =>
+  apiPost('/providers/billing', { provider, billingMode });
 
 export const saveModelTier = (tier: string, primary: string, fallback: string[]) =>
   apiPost('/registry/models', { tier, primary, fallback });

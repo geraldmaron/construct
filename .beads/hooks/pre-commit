@@ -81,6 +81,26 @@ fi
 #   CONSTRUCT_SKIP_DOCS=1    skip doc coupling only (still lint comments)
 if [[ "${CONSTRUCT_SKIP_GATES:-0}" != "1" ]]; then
   if [[ -x bin/construct ]]; then
+    # Auto-update AUTO-managed docs if any trigger files changed
+    docs_dirty=0
+    for file in $staged_files; do
+      case "$file" in
+        lib/cli-commands.mjs|bin/construct|lib/model-router.mjs|lib/status.mjs)
+          docs_dirty=1
+          break
+          ;;
+      esac
+    done
+    if [[ "$docs_dirty" -eq 1 ]]; then
+      if ! node ./bin/construct docs:update --check >/dev/null 2>&1; then
+        echo "[Construct pre-commit] AUTO docs out of date. Regenerating..." >&2
+        node ./bin/construct docs:update >/dev/null 2>&1
+        git add README.md docs/reference/cli/*.md 2>/dev/null || true
+        echo "[Construct pre-commit] Docs updated and staged. Please review and commit again." >&2
+        exit 1
+      fi
+    fi
+    
     if ! node ./bin/construct lint:comments --staged; then
       cat >&2 <<'EOF'
 

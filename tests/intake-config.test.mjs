@@ -1,0 +1,136 @@
+/**
+ * tests/intake-config.test.mjs — intake config schema, persistence, env merge.
+ */
+
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { describe, it, beforeEach, afterEach } from 'node:test';
+
+import {
+  loadIntakeConfig,
+  saveIntakeConfig,
+  describeIntakeDepth,
+  INTAKE_DEFAULT_MAX_DEPTH,
+  INTAKE_HARD_MAX_DEPTH,
+  INTAKE_DEPTH_GUIDANCE,
+} from '../lib/intake/intake-config.mjs';
+
+let projectRoot;
+
+beforeEach(() => {
+  projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-intake-config-'));
+  fs.mkdirSync(path.join(projectRoot, '.cx'), { recursive: true });
+});
+
+afterEach(() => {
+  fs.rmSync(projectRoot, { recursive: true, force: true });
+});
+
+describe('loadIntakeConfig', () => {
+  it('returns defaults when no config exists', () => {
+    const cfg = loadIntakeConfig(projectRoot, {});
+    assert.equal(cfg.maxDepth, INTAKE_DEFAULT_MAX_DEPTH);
+    assert.equal(cfg.includeProjectInbox, true);
+    assert.equal(cfg.includeDocsIntake, true);
+    assert.deepEqual(cfg.parentDirs, []);
+  });
+
+  it('reads parentDirs and maxDepth from saved file', () => {
+    fs.writeFileSync(
+      path.join(projectRoot, '.cx', 'intake-config.json'),
+      JSON.stringify({ parentDirs: ['/tmp/a'], maxDepth: 2, includeDocsIntake: false }),
+    );
+    const cfg = loadIntakeConfig(projectRoot, {});
+    assert.equal(cfg.maxDepth, 2);
+    assert.equal(cfg.includeDocsIntake, false);
+    assert.deepEqual(cfg.parentDirs, ['/tmp/a']);
+  });
+
+  it('merges CX_INBOX_DIRS env into parentDirs without dupes', () => {
+    fs.writeFileSync(
+      path.join(projectRoot, '.cx', 'intake-config.json'),
+      JSON.stringify({ parentDirs: ['/tmp/a'] }),
+    );
+    const cfg = loadIntakeConfig(projectRoot, { CX_INBOX_DIRS: '/tmp/a:/tmp/b' });
+    assert.deepEqual(cfg.parentDirs, ['/tmp/a', '/tmp/b']);
+  });
+
+  it('CX_INTAKE_MAX_DEPTH env wins over saved file', () => {
+    fs.writeFileSync(
+      path.join(projectRoot, '.cx', 'intake-config.json'),
+      JSON.stringify({ maxDepth: 1 }),
+    );
+    const cfg = loadIntakeConfig(projectRoot, { CX_INTAKE_MAX_DEPTH: '5' });
+    assert.equal(cfg.maxDepth, 5);
+  });
+
+  it('clamps maxDepth to the hard limit', () => {
+    fs.writeFileSync(
+      path.join(projectRoot, '.cx', 'intake-config.json'),
+      JSON.stringify({ maxDepth: 999 }),
+    );
+    const cfg = loadIntakeConfig(projectRoot, {});
+    assert.equal(cfg.maxDepth, INTAKE_HARD_MAX_DEPTH);
+  });
+
+  it('rejects negative depth (falls back to default)', () => {
+    fs.writeFileSync(
+      path.join(projectRoot, '.cx', 'intake-config.json'),
+      JSON.stringify({ maxDepth: -3 }),
+    );
+    const cfg = loadIntakeConfig(projectRoot, {});
+    assert.equal(cfg.maxDepth, INTAKE_DEFAULT_MAX_DEPTH);
+  });
+});
+
+describe('saveIntakeConfig', () => {
+  it('persists patch to .cx/intake-config.json', () => {
+    saveIntakeConfig(projectRoot, { maxDepth: 2, parentDirs: ['/tmp/x'] });
+    const saved = JSON.parse(
+      fs.readFileSync(path.join(projectRoot, '.cx', 'intake-config.json'), 'utf8'),
+    );
+    assert.equal(saved.maxDepth, 2);
+    assert.deepEqual(saved.parentDirs, ['/tmp/x']);
+  });
+
+  it('preserves untouched fields on a partial save', () => {
+    saveIntakeConfig(projectRoot, { maxDepth: 8, includeProjectInbox: false });
+    saveIntakeConfig(projectRoot, { maxDepth: 6 });
+    const cfg = loadIntakeConfig(projectRoot, {});
+    assert.equal(cfg.maxDepth, 6);
+    assert.equal(cfg.includeProjectInbox, false);
+  });
+
+  it('refuses to write in an uninitialized project', () => {
+    const fresh = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-uninit-'));
+    try {
+      assert.throws(() => saveIntakeConfig(fresh, { maxDepth: 2 }), /Refusing to write/);
+    } finally {
+      fs.rmSync(fresh, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('describeIntakeDepth', () => {
+  it('returns the canonical guidance entry for known stops', () => {
+    const four = describeIntakeDepth(4);
+    assert.equal(four.value, 4);
+    assert.match(four.label, /default/i);
+  });
+
+  it('synthesizes a label for custom depths', () => {
+    const custom = describeIntakeDepth(5);
+    assert.equal(custom.value, 5);
+    assert.match(custom.label, /Custom/);
+  });
+
+  it('every guidance entry has the required shape', () => {
+    for (const g of INTAKE_DEPTH_GUIDANCE) {
+      assert.equal(typeof g.value, 'number');
+      assert.equal(typeof g.label, 'string');
+      assert.equal(typeof g.detail, 'string');
+    }
+  });
+});

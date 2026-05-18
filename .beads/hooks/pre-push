@@ -86,6 +86,14 @@ if [[ -f "package.json" ]]; then
     fi
   done
 
+  # Construct-specific: verify AUTO docs are up to date before push
+  if [[ -x "bin/construct" ]]; then
+    log "Checking AUTO docs are up to date"
+    if ! node ./bin/construct docs:update --check >/dev/null 2>&1; then
+      fail "AUTO docs are out of date. Run 'construct docs:update' and commit before pushing"
+    fi
+  fi
+
   if [[ "${ECC_PREPUSH_AUDIT:-0}" == "1" ]]; then
     ran_any_check=1
     log "Running dependency audit (ECC_PREPUSH_AUDIT=1)"

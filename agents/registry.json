@@ -3,53 +3,9 @@
   "system": "construct",
   "prefix": "cx",
   "models": {
-    "reasoning": {
-      "primary": "openrouter/deepseek/deepseek-r1",
-      "fallback": [
-        "openrouter/google/gemini-2.5-pro",
-        "anthropic/claude-opus-4-6"
-      ]
-    },
-    "standard": {
-      "primary": "openrouter/qwen/qwen3-coder:free",
-      "fallback": [
-        "openrouter/google/gemini-2.0-flash-001",
-        "anthropic/claude-sonnet-4-6"
-      ]
-    },
-    "fast": {
-      "primary": "openrouter/meta-llama/llama-3.3-70b-instruct:free",
-      "fallback": [
-        "openrouter/google/gemma-3-27b-it:free",
-        "anthropic/claude-haiku-4-5-20251001"
-      ]
-    },
-    "embeddings": {
-      "local": {
-        "provider": "onnx",
-        "model": "Xenova/all-MiniLM-L6-v2",
-        "dimensions": 384,
-        "description": "Free, offline, runs locally via ONNX Runtime"
-      },
-      "openai": {
-        "provider": "openai",
-        "model": "text-embedding-3-small",
-        "dimensions": 1536,
-        "description": "Best quality, requires OPENAI_API_KEY"
-      },
-      "ollama": {
-        "provider": "ollama",
-        "model": "nomic-embed-text",
-        "dimensions": 768,
-        "description": "Local Ollama server, requires OLLAMA_BASE_URL"
-      },
-      "hashing": {
-        "provider": "local",
-        "model": "hashing-bow-v1",
-        "dimensions": 256,
-        "description": "Legacy deterministic hash — fast but no semantic understanding"
-      }
-    },
+    "reasoning": { "primary": null, "fallback": [] },
+    "standard": { "primary": null, "fallback": [] },
+    "fast": { "primary": null, "fallback": [] },
     "embeddings": {
       "local": {
         "provider": "onnx",
