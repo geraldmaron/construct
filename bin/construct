@@ -904,10 +904,11 @@ async function showDevRepl(services, credentials) {
   });
 
   println('Type a command (or \x1b[32mq\x1b[0m to quit):');
-  println('  \x1b[32mstatus\x1b[0m  Show current service status');
-  println('  \x1b[32mstop\x1b[0m   Stop all services');
-  println('  \x1b[32mopen\x1b[0m  Open dashboard in browser');
-  println('  \x1b[32mq\x1b[0m     Exit');
+  println('  \x1b[32mstatus\x1b[0m     Show service health');
+  println('  \x1b[32mstop\x1b[0m      Stop all services');
+  println('  \x1b[32mopen\x1b[0m      Open dashboard in browser');
+  println('  \x1b[32mopencode\x1b[0m  Open dashboard in browser');
+  println('  \x1b[32mq\x1b[0m         Exit');
   println('');
 
   rl.prompt();
@@ -915,33 +916,30 @@ async function showDevRepl(services, credentials) {
   return new Promise((resolve) => {
     rl.on('line', async (line) => {
       const cmd = line.trim().toLowerCase();
-      switch (cmd) {
-        case 'status':
-          const { buildStatus } = await import('../lib/status.mjs');
-          const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
-          println(JSON.stringify(status, null, 2));
-          break;
-        case 'stop':
-          const { stopServices } = await import('../lib/service-manager.mjs');
-          const result = await stopServices({ homeDir: HOME, rootDir: ROOT_DIR });
-          for (const svc of result.results) {
-            if (svc.status === 'stopped' || svc.status === 'cleaned') println(`Stopped ${svc.name}`);
-          }
-          process.exit(0);
-          break;
-        case 'open':
-          const { execSync } = await import('node:child_process');
-          execSync('open http://127.0.0.1:4242', { stdio: 'ignore' });
-          println('Opened dashboard in browser');
-          break;
-        case 'q':
-        case 'quit':
-        case 'exit':
-          process.exit(0);
-          break;
-        default:
-          println(`Unknown command: ${cmd}`);
-          println('Available: status, stop, open, q');
+
+      // Fuzzy match — infer intent from partial input
+      const fuzzy = (prefixes) => prefixes.some(p => cmd === p || cmd.startsWith(p));
+
+      if (fuzzy(['status', 'sta'])) {
+        const { buildStatus } = await import('../lib/status.mjs');
+        const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
+        println(JSON.stringify(status, null, 2));
+      } else if (fuzzy(['stop', 'sto', 'halt', 'down'])) {
+        const { stopServices } = await import('../lib/service-manager.mjs');
+        const result = await stopServices({ homeDir: HOME, rootDir: ROOT_DIR });
+        for (const svc of result.results) {
+          if (svc.status === 'stopped' || svc.status === 'cleaned') println(`Stopped ${svc.name}`);
+        }
+        process.exit(0);
+      } else if (fuzzy(['open', 'dashboard', 'dash', 'code', 'opencode', 'ui'])) {
+        const { execSync } = await import('node:child_process');
+        execSync('open http://127.0.0.1:4242', { stdio: 'ignore' });
+        println('Opened dashboard in browser');
+      } else if (fuzzy(['quit', 'q', 'exit', 'bye'])) {
+        process.exit(0);
+      } else {
+        println(`Unknown: ${cmd}`);
+        println('Try: status, stop, open, q');
       }
       rl.prompt();
     });
