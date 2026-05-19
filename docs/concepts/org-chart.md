@@ -12,7 +12,8 @@ Construct (Your AI R&D Organization)
 │   ├── Product Department
 │   │   ├── cx-product-manager — Product strategy, PRDs, backlog
 │   │   ├── cx-designer — UI/UX design, wireframes, flows
-│   │   └── cx-ux-researcher — User interviews, usability studies
+│   │   ├── cx-ux-researcher — User interviews, usability studies
+│   │   └── cx-accessibility — WCAG compliance, inclusive design
 │   │
 │   ├── Engineering Department
 │   │   ├── cx-architect — System design, ADRs, RFCs, tech strategy
@@ -20,14 +21,17 @@ Construct (Your AI R&D Organization)
 │   │   ├── cx-debugger — Root cause analysis, complex debugging
 │   │   ├── cx-qa — Test strategy, quality gates, coverage
 │   │   ├── cx-sre — Reliability, incidents, runbooks, SLOs
-│   │   └── cx-platform-engineer — Infrastructure, CI/CD, devex
+│   │   ├── cx-platform-engineer — Infrastructure, CI/CD, devex
+│   │   └── cx-test-automation — Test frameworks, CI integration, flake prevention
 │   │
 │   └── Intelligence Department
 │       ├── cx-researcher — Market research, competitive analysis, SOTA
 │       ├── cx-data-analyst — Metrics, experiments, product intelligence
+│       ├── cx-data-engineer — Data pipelines, ETL, data quality
 │       ├── cx-ai-engineer — AI/ML workflows, agent design, evals
 │       ├── cx-evaluator — Quality scoring, rubric design, judge systems
-│       └── cx-trace-reviewer — Trace analysis, performance patterns
+│       ├── cx-trace-reviewer — Trace analysis, performance patterns
+│       └── cx-explorer — Code exploration, pattern discovery, unknown surfaces
 │
 ├── Governance (independent oversight)
 │   ├── cx-security — Threat modeling, security reviews, CVE response
@@ -41,7 +45,9 @@ Construct (Your AI R&D Organization)
 │
 └── Strategy (business alignment)
     ├── cx-business-strategist — Market positioning, business models
-    └── cx-operations — Logistics, dependencies, sequencing
+    ├── cx-operations — Logistics, dependencies, sequencing
+    ├── cx-orchestrator — Multi-specialist coordination, dispatch optimization
+    └── cx-rd-lead — Hypothesis validation, experiment design, assumption tracking
 ```
 
 ## Key Principle: R&D Is The Top Level
@@ -77,6 +83,7 @@ This mirrors real-world tech orgs where the CTO/VP Engineering organization is c
 | cx-qa | Quality assurance | Test plans, coverage reports |
 | cx-sre | Reliability | Runbooks, incident reports, SLOs |
 | cx-platform-engineer | Developer experience | CI/CD, infra, tooling |
+| cx-test-automation | Test frameworks | Flake prevention, CI integration |
 
 ### Intelligence Department (within R&D)
 **Mission:** Discover what's possible and what's broken. Own the learning loop.
@@ -85,9 +92,11 @@ This mirrors real-world tech orgs where the CTO/VP Engineering organization is c
 |------|-------|---------------|
 | cx-researcher | External intelligence | Research briefs, evidence briefs |
 | cx-data-analyst | Product intelligence | Dashboards, experiment results |
+| cx-data-engineer | Data pipelines | ETL, data quality, freshness |
 | cx-ai-engineer | AI system design | Agent workflows, eval frameworks |
 | cx-evaluator | Quality measurement | Rubrics, eval datasets, scores |
 | cx-trace-reviewer | Performance analysis | Trace summaries, optimization recs |
+| cx-explorer | Code exploration | Pattern discovery, unknown surfaces |
 
 ### Governance (independent from R&D)
 **Mission:** Keep it safe and sound. Own the risk surface.
@@ -114,6 +123,7 @@ This mirrors real-world tech orgs where the CTO/VP Engineering organization is c
 |------|-------|---------------|
 | cx-business-strategist | Business model | Market analysis, positioning |
 | cx-operations | Execution planning | Project plans, dependency maps |
+| cx-orchestrator | Coordination | Dispatch optimization, multi-specialist workflows |
 
 ## Consolidated Roles (28 → 12)
 
