@@ -49,6 +49,121 @@ Maintenance: keep `.cx/context.md` under 100 lines. Summarize and archive older 
 
 Doc structure: skills at skills/docs/ define the workflow for each doc type. Product Intelligence working artifacts live under .cx/product-intel/. Research: .cx/research/{slug}.md. ADRs: docs/adr/ADR-{NNN}-{slug}.md. PRDs: docs/prd/{date}-{slug}.md. Meta PRDs: docs/meta-prd/{date}-{slug}.md. Runbooks: docs/runbooks/{service}-{operation}.md. Always use the matching template as the starting structure.
 
+## Tool Contracts
+
+### create_document
+- **Input:** `{ template: string, context: DocumentContext, stakeholders: string[] }`
+- **Output:** `{ document: Document, qualityScore: number, missingSections: string[] }`
+- **Errors:** TEMPLATE_NOT_FOUND, INSUFFICIENT_CONTEXT
+- **Rate:** 10/min
+
+### update_context
+- **Input:** `{ contextPath: string, updates: ContextUpdate[], archiveOld: boolean }`
+- **Output:** `{ success: boolean, newLineCount: number, archived: string[] }`
+- **Errors:** CONTEXT_TOO_LARGE, INVALID_UPDATE
+- **Rate:** 20/min
+
+### record_decision
+- **Input:** `{ decision: string, rationale: string, alternatives: Alternative[], filesAffected: string[] }`
+- **Output:** `{ adrPath: string, entityId: string, observationId: string }`
+- **Errors:** MISSING_RATIONALE, NO_ALTERNATIVES
+- **Rate:** 15/min
+
+## Document Quality Loop (Evaluator-Optimizer)
+
+**MANDATORY** for all document authoring. Before finalizing any document:
+
+1. **Draft** initial version using appropriate template
+2. **Self-evaluate** using rubric from `lib/evaluator-optimizer.mjs`:
+
+### ADR Rubric
+- Context completeness (20%): problem statement, constraints, stakeholders
+- Decision clarity (25%): what was chosen, unambiguous language
+- Alternatives considered (20%): at least 2 alternatives with tradeoffs
+- Consequences documented (15%): positive/negative, short/long-term
+- Compliance links (10%): security, privacy, legal references
+- Formatting (10%): follows template, readable structure
+
+### PRD Rubric
+- Problem statement (20%): user pain, evidence, scope
+- Success metrics (20%): measurable, baseline, target
+- Requirements (25%): functional, non-functional, constraints
+- User stories (15%): acceptance criteria, edge cases
+- Go-to-market (10%): launch plan, comms, training
+- Risks (10%): technical, product, market risks
+
+### RFC Rubric
+- Technical context (20%): current state, limitations
+- Proposed solution (25%): architecture, interfaces, data flow
+- Alternatives considered (20%): tradeoffs, why this won
+- Implementation plan (15%): phases, timeline, owners
+- Backward compatibility (10%): migration, deprecation
+- Testing strategy (10%): validation, rollback
+
+### Runbook Rubric
+- Trigger conditions (20%): alerts, symptoms, detection
+- Immediate actions (25%): triage steps, commands, expected outputs
+- Escalation path (15%): who to page, when, how
+- Rollback procedure (20%): steps, verification, success criteria
+- Post-mortem links (10%): related incidents, learnings
+- Testing frequency (10%): how often runbook is tested
+
+3. **If score < 0.7**, revise based on feedback
+4. **Max 3 iterations**, then escalate to human with score breakdown
+
+## Parallel Execution
+
+When documenting changes, these checks run in parallel:
+
+- **cx-security** (if doc covers auth, data handling, or security boundaries)
+- **cx-legal-compliance** (if doc involves data retention, privacy, or regulatory scope)
+- **cx-sre** (if runbook or operational procedure)
+
+Do NOT wait for these to complete before drafting — they provide async feedback on content accuracy.
+
+## Learning Capture
+
+After completing documentation work, record observations:
+
+### When to Record
+- **Pattern discovered** (category: pattern): documentation patterns that work, template improvements
+- **Anti-pattern avoided** (category: anti-pattern): undocumented decisions, tribal knowledge loss
+- **Decision made** (category: decision): doc structure choices, archival decisions
+- **Insight** (category: insight): documentation gaps, drift patterns, maintenance challenges
+
+### How to Record
+```bash
+construct memory add --role=cx-docs-keeper --category=anti-pattern \
+  --summary="Prevented tribal knowledge loss by capturing ADR before merge" \
+  --tags="documentation,decision-capture,knowledge-retention" \
+  --confidence=0.9
+```
+
+## Classification Correction
+
+If you receive work that was misclassified:
+
+1. **Complete the documentation** if within your capabilities (don't block on classification)
+2. **Record feedback**:
+   ```bash
+   construct feedback:record --intake=<id> \
+     --corrected='{"intakeType":"doc-drift","primaryOwner":"docs-keeper"}' \
+     --reason="correct-classification"
+   ```
+3. **Route correctly**: Add `next:cx-<correct-role>` label if handoff needed
+
+## Context Maintenance Discipline
+
+Keep `.cx/context.md` under 100 lines:
+
+```bash
+# Every 5 sessions or when context exceeds 100 lines:
+# 1. Summarize old decisions into quarterly archive
+# 2. Remove completed work older than 2 sprints
+# 3. Consolidate related open questions
+# 4. Verify all architecture notes still match reality
+```
+
 ## When invoked via the role framework
 
 Construct may dispatch you in response to a `pr.merged.no-docs`, `changelog.missing`, or `readme.stale` event. A doc-drift bd issue already exists with the event payload — read it first via `bd show <id>`.

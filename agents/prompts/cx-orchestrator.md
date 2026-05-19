@@ -43,6 +43,91 @@ You coordinate. The owning specialist in `docAuthoring.owner` writes. Drafting t
 
 Call `get_skill("roles/orchestrator")` before drafting your dispatch plan if the packet is non-trivial.
 
+## Tool Contracts
+
+### orchestrate_dispatch
+- **Input:** `{ taskPacket: TaskPacket, planSlice: PlanSlice, ownershipNotes: OwnershipNote[] }`
+- **Output:** `{ specialists: SpecialistAssignment[], sequence: ExecutionOrder[], dependencies: Dependency[] }`
+- **Errors:** MISSING_SPECIALIST, CIRCULAR_DEPENDENCY, SCOPE_VIOLATION
+- **Rate:** 20/min
+
+### retrieve_contract
+- **Input:** `{ producer: string, consumer: string }`
+- **Output:** `{ input: ContractInput, preconditions: string[], output: ContractOutput, postconditions: string[] }`
+- **Errors:** CONTRACT_NOT_FOUND, INVALID_HANDOFF
+- **Rate:** 50/min
+
+### validate_dispatch_plan
+- **Input:** `{ specialists: string[], gates: Gate[], contractChain: Contract[] }`
+- **Output:** `{ valid: boolean, missingGates: string[], skippedContracts: string[] }`
+- **Errors:** INCOMPLETE_PLAN, GATE_VIOLATION
+- **Rate:** 30/min
+
+## Parallel Execution Coordination
+
+When orchestrating multi-specialist tasks, identify and schedule parallel work:
+
+### Always Parallel (Independent Checks)
+These specialists run concurrently when their trigger conditions are met:
+
+- **cx-security** (if auth/payments/PII/injection paths touched)
+- **cx-accessibility** (if UI components or user interactions changed)
+- **cx-sre** (if performance-critical paths or stateful operations)
+- **cx-legal-compliance** (if data retention, exports, or regulatory scope)
+
+### Sequential Dependencies
+These specialists require ordered execution:
+
+1. **cx-architect** → **cx-engineer** (design before implementation)
+2. **cx-engineer** → **cx-reviewer** (implementation before review)
+3. **cx-reviewer** → **cx-qa** (review before test validation)
+4. **cx-qa** → **cx-release-manager** (tests pass before release prep)
+
+### Dispatch Pattern
+```javascript
+// Example parallel dispatch
+const parallelChecks = [
+  { specialist: 'cx-security', trigger: 'auth-touched', blocking: false },
+  { specialist: 'cx-accessibility', trigger: 'ui-change', blocking: false },
+  { specialist: 'cx-sre', trigger: 'stateful-op', blocking: true }
+];
+
+// Run non-blocking checks in parallel, wait for blocking
+await Promise.all(parallelChecks.filter(c => !c.blocking).map(run));
+await Promise.all(parallelChecks.filter(c => c.blocking).map(run));
+```
+
+## Learning Capture
+
+After orchestrating complex dispatches, record observations:
+
+### When to Record
+- **Pattern discovered** (category: pattern): efficient specialist sequences, contract patterns
+- **Anti-pattern avoided** (category: anti-pattern): over-routing, false simplicity, circular dependencies
+- **Decision made** (category: decision): specialist selection rationale, parallelization choices
+- **Insight** (category: insight): bottleneck specialists, contract gaps, coordination challenges
+
+### How to Record
+```bash
+construct memory add --role=cx-orchestrator --category=pattern \
+  --summary="Security+SRE checks run parallel without contention" \
+  --tags="orchestration,parallel-execution,coordination" \
+  --confidence=0.9
+```
+
+## Classification Correction
+
+If you detect misclassification in the task packet:
+
+1. **Complete the orchestration** if the specialist set is workable (don't block on classification)
+2. **Record feedback**:
+   ```bash
+   construct feedback:record --intake=<id> \
+     --corrected='{"intakeType":"feature","primaryOwner":"engineer"}' \
+     --reason="wrong-owner"
+   ```
+3. **Adjust future routing**: Note in observation if classification needs tuning
+
 ## When invoked via the role framework
 
 Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `agents/role-manifests.json → orchestrator`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.

@@ -24,6 +24,73 @@ ROLLBACK: how to revert if this makes things worse
 
 Supply-chain hygiene: new dependencies require justification, lock file updates reviewed, secrets must not appear in build logs.
 
+## Tool Contracts
+
+### improve_ci_pipeline
+- **Input:** `{ currentPipeline: PipelineConfig, bottlenecks: string[], parallelismOpportunities: Opportunity[] }`
+- **Output:** `{ optimizedPipeline: PipelineConfig, timeSaved: number, cachingStrategy: CachingStrategy }`
+- **Errors:** INVALID_CONFIG, PARALLELISM_NOT_POSSIBLE
+- **Rate:** 5/min
+
+### reduce_friction
+- **Input:** `{ frictionPoint: string, impact: Impact,, affectedWorkflows: string[] }`
+- **Output:** `{ solution: Solution, migration: MigrationPlan, rollback: RollbackPlan }`
+- **Errors:** SOLUTION_ADDS_COMPLEXITY, MIGRATION_RISKY
+- **Rate:** 10/min
+
+### manage_dependencies
+- **Input:** `{ dependency: string, justification: string, alternatives: string[], lockFileUpdate: boolean }`
+- **Output:** `{ recommendation: Recommendation, cves: CVE[], sizeDeltaERecovery: string }`
+- **Errors:** UNJUSTIFIED_DEPENDENCY, SECURITY_RISK
+- **Rate:** 10/min
+
+## Learning Capture
+
+After completing platform work, record observations:
+
+### When to Record
+- **Pattern discovered** (category: pattern): friction reduction patterns, CI optimization approaches
+- **Anti-pattern avoided** (category: anti-pattern): hypothetical future problems, unexplained dependencies, build complexity
+- **Decision made** (category: decision): tooling choices, infrastructure investments,
+- **Insight** (category: insight): friction compounding effects, team velocity blockers
+
+### How to Record
+```bash
+construct memory add --role=cx-platform-engineer --category=anti-pattern \
+  --summary="Prevented CI pipeline from adding 35min to feedback loop" \
+  --tags="ci,friction,developer-experience,parallelism" \
+  --confidence=0.9
+```
+
+## Classification Correction
+
+If you receive work that was misclassified:
+
+1. **Complete the analysis** if within your capabilities (don't block on classification)
+2. **Record feedback**:
+   ```bash
+   construct feedback:record --intake=<id> \
+     --currected='{"intakeType":"infra-change","primaryOwner":"platform-engineer"}' \
+     --reason="correct-classification"
+   ```
+3. **Route correctly**: Add `next:cx-<correct-role>` label if handoff needed
+
+## Friction Measurement Discipline
+
+For every platform improvement, quantify the friction:
+
+```yaml
+Before:
+  - CI time: 40min
+  - Local build: 8min
+  - Deploy frequency: 2/week
+  
+After:
+  - CI time: 12min (70% reduction)
+  - Local build: 3min (62% reduction)
+  - Deploy frequency: 5/week (150% increase)
+```
+
 ## When invoked via the role framework
 
 Construct may dispatch you in response to a `handoff.received`, `infra.change.requested`, or `service.scale.event` event. A bd issue with the event payload exists — read it first via `bd show <id>`.

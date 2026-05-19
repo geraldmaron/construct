@@ -240,15 +240,17 @@ async function cmdDoctor() {
   // Skip in CI — model tiers are user-specific, not repo-wide.
   const inCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
   try {
-    const reg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
-    const current = readCurrentModels(getUserEnvPath(HOME), reg.models ?? {});
-    const configuredTiers = ['reasoning', 'standard', 'fast'].filter((t) => current[t]);
-    if (configuredTiers.length === 3) {
+    const { resolveModelTiers } = await import('../lib/model-registry.mjs');
+    const resolved = resolveModelTiers({ env: process.env });
+    if (resolved.complete && !resolved.errors) {
       add('Models — all tiers configured', true);
-    } else if (configuredTiers.length === 0) {
+    } else if (resolved.configured === 0) {
       add('Models — no tier configured (pick one in the dashboard or run `construct models --apply`)', inCI, inCI);
     } else {
-      add(`Models — only ${configuredTiers.join('+')} configured (missing: ${['reasoning','standard','fast'].filter(t=>!current[t]).join(', ')})`, inCI, inCI);
+      const missing = Object.entries(resolved.models)
+        .filter(([, v]) => !v)
+        .map(([k]) => k);
+      add(`Models — only ${resolved.configured}/3 tiers configured (missing: ${missing.join(', ')})`, inCI, inCI);
     }
   } catch (err) {
     add(`Models — check failed: ${err.message}`, inCI, inCI);
@@ -718,6 +720,31 @@ async function cmdUp() {
     if (recovery.degraded?.length) {
       info(`Degraded services: ${recovery.degraded.map((entry) => `${entry.name} (${entry.status})`).join(', ')}`);
     }
+  }
+  
+  // Auto-start embed daemon if embed.yaml exists and autoEmbed is enabled
+  const { loadProjectConfig } = await import('../lib/config/project-config.mjs');
+  const { existsSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  
+  const embedConfigExists = existsSync(join(ROOT_DIR, 'embed.yaml'));
+  const config = loadProjectConfig(ROOT_DIR);
+  const autoEmbed = config.config?.autoEmbed;
+  
+  if (embedConfigExists && autoEmbed) {
+    println('');
+    info('embed.yaml found + autoEmbed enabled — starting embed daemon...');
+    try {
+      const { runEmbedCli } = await import('../lib/embed/cli.mjs');
+      await runEmbedCli(['start']);
+      ok('Embed daemon started (monitoring git, inbox, CI)');
+    } catch (err) {
+      warn(`Embed daemon failed to start: ${err.message}`);
+      info('Run `construct embed start` manually when ready');
+    }
+  } else if (embedConfigExists && !autoEmbed) {
+    println('');
+    info('embed.yaml found but autoEmbed is off — run `construct embed start` to enable monitoring');
   }
 }
 
@@ -2003,6 +2030,10 @@ async function cmdCleanup() {
       ? `${(report.swapUsage.usedBytes / (1024 ** 3)).toFixed(1)} GiB used`
       : 'swap unavailable';
     println(`Pressure guard: ${report.pressureTriggered ? 'triggered' : 'standby'} · ${swap}`);
+    for (const entry of report.warnings ?? []) {
+      const grace = entry.graceMinutes ? `; will terminate after ${entry.graceMinutes}m if still matched` : '';
+      println(`Warning pid ${entry.pid} (${entry.reason})${grace}`);
+    }
   }
 
   if (!report.killed.length) {
@@ -2521,7 +2552,9 @@ const restArgsCache = rest;
 
 const handlers = new Map([
   ['up', cmdUp],
+  ['start', cmdUp],  // Alias for 'up' — single command that starts everything
   ['down', cmdDown],
+  ['stop', cmdDown],  // Alias for 'down'
   ['status', cmdStatus],
   ['show', cmdShow],
   ['serve', cmdServe],
@@ -2554,6 +2587,75 @@ const handlers = new Map([
   ['docs:verify', cmdDocsVerify],
   ['init:update', cmdInitUpdate],
   ['models', cmdModels],
+  ['beads:stats', async (args) => {
+    const { getContentionStats, getHumanStatus } = await import('../lib/beads-optimistic.mjs');
+    const jsonOutput = args.includes('--json');
+    if (args.includes('--health')) {
+      process.stdout.write(await getHumanStatus(process.cwd()));
+      return;
+    }
+    const stats = await getContentionStats(process.cwd());
+    if (jsonOutput) {
+      println(JSON.stringify(stats, null, 2));
+    } else {
+      println('Beads Contention Statistics');
+      println('============================');
+      println(`Total operations: ${stats.totalOperations || 0}`);
+      println(`Conflicts: ${stats.conflicts || 0}`);
+      println(`Retries: ${stats.retries || 0}`);
+      println(`Average attempts: ${stats.avgAttempts?.toFixed(2) || '1.00'}`);
+      if (stats.operations) {
+        println('\nPer-operation breakdown:');
+        for (const [op, data] of Object.entries(stats.operations)) {
+          println(`  ${op}: ${data.count} calls, ${data.conflicts} conflicts`);
+        }
+      }
+    }
+  }],
+  ['hooks:health', async (args) => {
+    const { checkAllHooksHealth, formatHealthStatus } = await import('../lib/hook-health.mjs');
+    const health = await checkAllHooksHealth({ 
+      verbose: true, 
+      fix: args.includes('--fix') 
+    });
+    if (args.includes('--json')) {
+      println(JSON.stringify(health, null, 2));
+    } else {
+      process.stdout.write(formatHealthStatus(health));
+    }
+    if (!health.healthy) {
+      process.exit(1);
+    }
+  }],
+  ['policy:list', async (args) => {
+    const { listPolicies, formatPolicyList } = await import('../lib/policy/unified-gates.mjs');
+    if (args.includes('--json')) {
+      println(JSON.stringify(listPolicies(), null, 2));
+    } else {
+      process.stdout.write(formatPolicyList());
+    }
+  }],
+  ['auth:status', async (args) => {
+    const { getTokenStatus } = await import('../lib/providers/auth-manager.mjs');
+    const providers = ['github', 'slack', 'jira', 'salesforce', 'linear'];
+    const results = {};
+    for (const provider of providers) {
+      results[provider] = getTokenStatus(provider);
+    }
+    if (args.includes('--json')) {
+      println(JSON.stringify(results, null, 2));
+    } else {
+      println('Provider Auth Status');
+      println('====================');
+      for (const [provider, status] of Object.entries(results)) {
+        const icon = status.valid ? '✓' : '✗';
+        println(`${icon} ${provider}: ${status.valid ? 'valid' : status.error}`);
+        if (status.expiresIn) {
+          println(`  Expires in: ${Math.floor(status.expiresIn / 60)} minutes`);
+        }
+      }
+    }
+  }],
   ['mcp', cmdMcp],
   ['ollama', cmdOllamaCmd],
   ['plugin', cmdPlugin],
@@ -2614,6 +2716,166 @@ const handlers = new Map([
     const { runCli } = await import('../lib/roles/cli.mjs');
     const code = await runCli(args);
     if (code) process.exit(code);
+  }],
+  ['roles:list', async (args) => {
+    const { listRoles, formatRoleList } = await import('../lib/roles/catalog.mjs');
+    const json = args.includes('--json');
+    const departments = args.includes('--departments');
+    const consolidated = args.includes('--consolidated');
+    
+    if (json) {
+      println(JSON.stringify(listRoles({ departments, consolidated }), null, 2));
+    } else {
+      process.stdout.write(formatRoleList({ departments, consolidated }));
+    }
+  }],
+  ['roles:set', async (args) => {
+    const { setRolePreference, getRolePreference } = await import('../lib/roles/preference.mjs');
+    const primaryIdx = args.indexOf('--primary');
+    const secondaryIdx = args.indexOf('--secondary');
+    const primary = primaryIdx !== -1 ? args[primaryIdx + 1] : null;
+    const secondary = secondaryIdx !== -1 ? args[secondaryIdx + 1] : null;
+    
+    if (primary) {
+      const result = setRolePreference('primary', primary);
+      println(`Primary role set: ${result.role}`);
+    }
+    if (secondary) {
+      const result = setRolePreference('secondary', secondary);
+      println(`Secondary role set: ${result.role}`);
+    }
+    if (!primary && !secondary) {
+      const prefs = { primary: getRolePreference('primary'), secondary: getRolePreference('secondary') };
+      println(`Current: primary=${prefs.primary || 'auto'}, secondary=${prefs.secondary || 'auto'}`);
+    }
+  }],
+  ['feedback:record', async (args) => {
+    const { createClassificationFeedback, recordFeedback, getAccuracyStats } = await import('../lib/intake/feedback.mjs');
+    const json = args.includes('--json');
+    const intakeIdIdx = args.indexOf('--intake');
+    const reasonIdx = args.indexOf('--reason');
+    const correctedIdx = args.indexOf('--corrected');
+    
+    if (intakeIdIdx === -1) {
+      // Show stats instead
+      const stats = getAccuracyStats(process.cwd());
+      if (json) {
+        println(JSON.stringify(stats, null, 2));
+      } else {
+        println('Classification Feedback Stats');
+        println('===========================');
+        println(`Total feedback: ${stats.overall.total}`);
+        println(`Corrections: ${stats.overall.corrected}`);
+        println(`Accuracy: ${(stats.overall.accuracy * 100).toFixed(1)}%`);
+      }
+      return;
+    }
+    
+    const intakeId = args[intakeIdIdx + 1];
+    const reason = reasonIdx !== -1 ? args[reasonIdx + 1] : 'other';
+    const corrected = correctedIdx !== -1 ? JSON.parse(args[correctedIdx + 1]) : null;
+    
+    if (!corrected) {
+      errorln('Usage: construct feedback:record --intake <id> --corrected \'{"intakeType":"bug","primaryOwner":"debugger"}\' [--reason wrong-owner]');
+      process.exit(1);
+    }
+    
+    const feedback = createClassificationFeedback({
+      intakeId,
+      original: { intakeType: 'unknown', primaryOwner: 'unknown' }, // Would load from intake
+      corrected,
+      reason,
+    });
+    
+    recordFeedback(process.cwd(), feedback);
+    println(`Feedback recorded for intake ${intakeId}`);
+  }],
+  ['feedback:history', async (args) => {
+    const { getFeedbackHistory, getKeywordAdjustments } = await import('../lib/intake/feedback.mjs');
+    const json = args.includes('--json');
+    const adjustments = args.includes('--adjustments');
+    const limitIdx = args.indexOf('--limit');
+    const limit = limitIdx !== -1 ? parseInt(args[limitIdx + 1], 10) : 20;
+    
+    if (adjustments) {
+      const adj = getKeywordAdjustments(process.cwd());
+      if (json) {
+        println(JSON.stringify(adj, null, 2));
+      } else {
+        println('Keyword Adjustment Suggestions');
+        println('==============================');
+        if (adj.length === 0) {
+          println('No patterns detected yet (need more feedback)');
+        } else {
+          for (const a of adj) {
+            println(`${a.frequency}x: ${a.suggestion}`);
+          }
+        }
+      }
+      return;
+    }
+    
+    const history = getFeedbackHistory(process.cwd(), { limit });
+    if (json) {
+      println(JSON.stringify(history, null, 2));
+    } else {
+      println(`Recent Feedback (last ${history.length})`);
+      for (const fb of history) {
+        println(`[${fb.timestamp}] ${fb.intakeId}: ${fb.reason}`);
+      }
+    }
+  }],
+  ['evaluator:rubrics', async (args) => {
+    const { listRubrics } = await import('../lib/evaluator-optimizer.mjs');
+    const json = args.includes('--json');
+    const rubrics = listRubrics();
+    
+    if (json) {
+      println(JSON.stringify(rubrics, null, 2));
+    } else {
+      println('Available Document Rubrics');
+      println('==========================');
+      for (const r of rubrics) {
+        println(`\n${r.docType.toUpperCase()} — ${r.name}`);
+        println(`Criteria (${r.criteriaCount}):`);
+        for (const c of r.criteria) {
+          println(`  - ${c.name} (${(c.weight * 100).toFixed(0)}%)`);
+        }
+      }
+    }
+  }],
+  ['activation:status', async (args) => {
+    const { getActivationSummary, getActivationStats } = await import('../lib/hooks/proactive-activation.mjs');
+    const json = args.includes('--json');
+    const specialistIdx = args.indexOf('--specialist');
+    
+    if (specialistIdx !== -1) {
+      const specialist = args[specialistIdx + 1];
+      const stats = getActivationStats(specialist);
+      if (json) {
+        println(JSON.stringify(stats, null, 2));
+      } else {
+        println(`Activation Stats: ${specialist}`);
+        println(`Recent: ${stats.recentActivations}/${stats.rateLimit} (rate limit)`);
+        println(`Total: ${stats.totalActivations}`);
+        println(`Last: ${stats.lastActivation ? new Date(stats.lastActivation).toISOString() : 'never'}`);
+      }
+    } else {
+      const summary = getActivationSummary();
+      if (json) {
+        println(JSON.stringify(summary, null, 2));
+      } else {
+        println('Proactive Activation Summary');
+        println('============================');
+        if (Object.keys(summary).length === 0) {
+          println('No activations recorded yet');
+        } else {
+          for (const [specialist, data] of Object.entries(summary)) {
+            println(`${specialist}: ${data.recentActivations} recent, ${data.totalActivations} total`);
+          }
+        }
+      }
+    }
   }],
   ['claude:allow', async (args) => {
     const { listAllowEntries, addAllowEntries, removeAllowEntries, detectAllowlistGaps } =
@@ -2688,7 +2950,7 @@ const handlers = new Map([
       if (jsonOutput) {
         println(JSON.stringify(status, null, 2));
       } else {
-        process.stdout.write(getHumanStatus(process.cwd()));
+        process.stdout.write(await getHumanStatus(process.cwd()));
       }
       return;
     }

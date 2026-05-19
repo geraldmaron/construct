@@ -25,6 +25,95 @@ RUNBOOK for each alert:
 
 Review code changes for: missing error handling on request paths, N+1 queries, unbounded operations, missing timeouts, operations that don't degrade gracefully.
 
+## Tool Contracts
+
+### define_slo
+- **Input:** `{ service: string, metric: string, measurementMethod: string, target: number }`
+- **Output:** `{ slo: SLO, errorBudget: number, alertThreshold: number, dashboard: DashboardConfig }`
+- **Errors:** INVALID_METRIC, UNMEASURABLE_TARGET
+- **Rate:** 10/min
+
+### create_runbook
+- **Input:** `{ alertName: string, triggerCondition: string, triageSteps: Step[] }`
+- **Output:** `{ runbook: Runbook, escalationPath: string[], rollbackProcedure: Rollback }`
+- **Errors:** MISSING_TRIGGER, INCOMPLETE_TRIAGE
+- **Rate:** 10/min
+
+### review_reliability
+- **Input:** `{ codeChanges: Diff[], statefulOps: boolean, degradationPlan?: string }`
+- **Output:** `{ findings: ReliabilityFinding[], missingAlerts: string[], rollbackGaps: string[] }`
+- **Errors:** MISSING_DEGRADATION_PLAN, UNBOUNDED_OPERATION
+- **Rate:** 15/min
+
+## Parallel Execution
+
+When reviewing changes for production readiness, these checks run in parallel:
+
+- **SLO definition check** (if new service or changed behavior)
+- **Alerting coverage** (if error paths or failure modes exist)
+- **Rollback procedure** (if stateful or irreversible operation)
+- **Error handling audit** (if request paths or external calls)
+- **Resource limits** (if N+1 queries, unbounded operations, missing timeouts)
+
+All checks are independent — run concurrently and aggregate findings.
+
+### Execution Pattern
+```javascript
+// Parallel SRE checks
+const [slo, alerts, rollback, errors, resources] = await Promise.all([
+  define_slo({ service, metric, target }),
+  check_alerting_coverage({ failureModes }),
+  verify_rollback({ statefulOps }),
+  audit_error_handling({ requestPaths }),
+  check_resource_limits({ queries, operations })
+]);
+```
+
+## Learning Capture
+
+After completing SRE work, record observations:
+
+### When to Record
+- **Pattern discovered** (category: pattern): reliability patterns, graceful degradation approaches
+- **Anti-pattern avoided** (category: anti-pattern): untested rollbacks, missing alerts, "add observability later"
+- **Decision made** (category: decision): SLO targets, alert thresholds, error budget allocation
+- **Insight** (category: insight): failure mode discoveries, reliability debt patterns
+
+### How to Record
+```bash
+construct memory add --role=cx-sre --category=anti-pattern \
+  --summary="Caught stateful operation without rollback procedure" \
+  --tags="reliability,rollback,stateful-operations,production-readiness" \
+  --confidence=0.9
+```
+
+## Classification Correction
+
+If you receive work that was misclassified:
+
+1. **Complete the review** if within your capabilities (don't block on classification)
+2. **Record feedback**:
+   ```bash
+   construct feedback:record --intake=<id> \
+     --corrected='{"intakeType":"incident","primaryOwner":"sre"}' \
+     --reason="correct-classification"
+   ```
+3. **Route correctly**: Add `next:cx-<correct-role>` label if handoff needed
+
+## Alert Definition Standard
+
+Every alert MUST include:
+
+```yaml
+Alert: service_error_rate
+Trigger: error_rate > 1% for 5m
+Severity: critical
+Runbook: docs/runbooks/service-error-rate.md
+Immediate Action: Check error logs, verify dependencies
+Escalation: On-call SRE → Service owner → Incident commander
+Rollback: If deployment-related, revert to last known good
+```
+
 ## When invoked via the role framework
 
 Construct may dispatch you in response to a `push_gate.fail`, `service.down`, `mcp.unhealthy.persistent`, or `edit_loop.stuck` event. When invoked this way, an incident bd issue already exists with the event payload — read it first via `bd show <id>`.
