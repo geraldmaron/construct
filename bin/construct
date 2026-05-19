@@ -834,20 +834,30 @@ async function cmdUp() {
   const autoEmbed = config.config?.autoEmbed;
   
   if (embedConfigExists && autoEmbed) {
-    println('');
-    info('embed.yaml found + autoEmbed enabled — starting embed daemon...');
     try {
       const { runEmbedCli } = await import('../lib/embed/cli.mjs');
       await runEmbedCli(['start']);
-      ok('Embed daemon started (monitoring git, inbox, CI)');
-    } catch (err) {
-      warn(`Embed daemon failed to start: ${err.message}`);
-      info('Run `construct embed start` manually when ready');
+    } catch {
+      // best effort
     }
-  } else if (embedConfigExists && !autoEmbed) {
-    println('');
-    info('embed.yaml found but autoEmbed is off — run `construct embed start` to enable monitoring');
   }
+
+  // Post-start summary
+  println('');
+  println('═══════════════════════════════════════════════════════════');
+  println('  SERVICES RUNNING');
+  println('═══════════════════════════════════════════════════════════');
+  println('');
+  for (const svc of results) {
+    if (svc.status === 'started' || svc.status === 'reused') {
+      const label = svc.url ? `${svc.url}` : svc.name;
+      println(`  ${svc.name.padEnd(14)} ${label}`);
+    }
+  }
+  println('');
+  println('Dashboard: http://127.0.0.1:4242');
+  println('Run \x1b[32mconstruct help\x1b[0m to see available commands');
+  println('');
 }
 
 async function cmdDown() {
