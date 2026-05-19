@@ -998,6 +998,151 @@
       "canEdit": true
     }
   ],
+  "departments": {
+    "rnd": {
+      "name": "R&D (Research & Development)",
+      "description": "The entire product-building organization. You are the founder/CEO; R&D executes your vision.",
+      "subDepartments": {
+        "product": {
+          "name": "Product Department",
+          "mission": "Define what to build and why. Own the user outcome.",
+          "roles": ["product-manager", "designer", "ux-researcher", "accessibility"]
+        },
+        "engineering": {
+          "name": "Engineering Department",
+          "mission": "Build it right. Own the implementation.",
+          "roles": ["architect", "engineer", "debugger", "qa", "sre", "platform-engineer"]
+        },
+        "intelligence": {
+          "name": "Intelligence Department",
+          "mission": "Discover what's possible and what's broken. Own the learning loop.",
+          "roles": ["researcher", "data-analyst", "ai-engineer", "evaluator", "trace-reviewer"]
+        }
+      }
+    },
+    "governance": {
+      "name": "Governance",
+      "description": "Oversight, risk management, and compliance — independent from R&D.",
+      "subDepartments": {
+        "security": {
+          "name": "Security",
+          "mission": "Keep it safe. Own the threat surface.",
+          "roles": ["security", "legal-compliance"]
+        },
+        "quality": {
+          "name": "Quality Assurance",
+          "mission": "Challenge assumptions. Own the critical eye.",
+          "roles": ["reviewer", "devil-advocate"]
+        }
+      }
+    },
+    "operations": {
+      "name": "Operations",
+      "description": "Shipping, documentation, and release management.",
+      "subDepartments": {
+        "release": {
+          "name": "Release Management",
+          "mission": "Ship smoothly. Own the release process.",
+          "roles": ["release-manager"]
+        },
+        "documentation": {
+          "name": "Documentation",
+          "mission": "Maintain institutional knowledge. Own the record.",
+          "roles": ["docs-keeper"]
+        }
+      }
+    },
+    "strategy": {
+      "name": "Strategy",
+      "description": "Business alignment and execution planning.",
+      "subDepartments": {
+        "business": {
+          "name": "Business Strategy",
+          "mission": "Ensure market fit. Own the business model.",
+          "roles": ["business-strategist"]
+        },
+        "planning": {
+          "name": "Operations Planning",
+          "mission": "Map dependencies. Own the execution plan.",
+          "roles": ["operations"]
+        }
+      }
+    }
+  },
+  "consolidatedRoles": {
+    "description": "Simplified 12-role structure for smaller projects. Each consolidated role absorbs multiple specialists.",
+    "roles": [
+      {
+        "id": "product-lead",
+        "absorbs": ["product-manager", "designer", "ux-researcher"],
+        "whenToUse": "Small teams, early-stage products"
+      },
+      {
+        "id": "tech-lead",
+        "absorbs": ["architect", "engineer", "debugger"],
+        "whenToUse": "Startups, MVP development"
+      },
+      {
+        "id": "quality-lead",
+        "absorbs": ["qa", "accessibility", "reviewer"],
+        "whenToUse": "Projects with compliance needs"
+      },
+      {
+        "id": "reliability-lead",
+        "absorbs": ["sre", "platform-engineer", "release-manager"],
+        "whenToUse": "Production systems"
+      },
+      {
+        "id": "research-lead",
+        "absorbs": ["researcher", "data-analyst", "evaluator"],
+        "whenToUse": "Data-driven products"
+      },
+      {
+        "id": "ai-lead",
+        "absorbs": ["ai-engineer", "trace-reviewer"],
+        "whenToUse": "AI/ML products"
+      },
+      {
+        "id": "security-lead",
+        "absorbs": ["security", "legal-compliance"],
+        "whenToUse": "Regulated industries"
+      },
+      {
+        "id": "strategy-lead",
+        "absorbs": ["business-strategist", "operations"],
+        "whenToUse": "Growth-stage companies"
+      },
+      {
+        "id": "docs-lead",
+        "absorbs": ["docs-keeper"],
+        "whenToUse": "Documentation-heavy projects"
+      },
+      {
+        "id": "orchestrator",
+        "absorbs": ["orchestrator", "rd-lead"],
+        "whenToUse": "Complex multi-team initiatives"
+      },
+      {
+        "id": "critic",
+        "absorbs": ["devil-advocate", "evaluator"],
+        "whenToUse": "High-stakes decisions"
+      },
+      {
+        "id": "generalist",
+        "absorbs": ["engineer"],
+        "whenToUse": "General purpose, default role"
+      }
+    ]
+  },
+  "roleSelection": {
+    "description": "User-configurable primary/secondary role preferences. Set via dashboard or CLI.",
+    "defaults": {
+      "primary": null,
+      "secondary": null
+    },
+    "perConversationOverride": true,
+    "cliSyntax": "@construct --primary=cx-pm --secondary=cx-arch"
+  },
   "modelGuidance": {
     "claude": "If you are a Claude model: leverage extended thinking for deep analysis. Use artifact outputs for structured deliverables. You have strong tool-use — prefer parallel tool calls when tasks are independent.",
     "deepseek": "If you are a DeepSeek model: use explicit chain-of-thought reasoning. Break complex logic into numbered steps before implementing. You excel at code generation — write complete implementations rather than pseudocode.",

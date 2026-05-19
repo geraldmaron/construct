@@ -12,7 +12,7 @@
   "telemetry": {
     "enabled": true,
     "langfuse": {
-      "baseUrl": null,
+      "baseUrl": "http://localhost:54330",
       "publicKey": null,
       "secretKey": null
     }

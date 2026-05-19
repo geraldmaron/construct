@@ -154,11 +154,14 @@ Every code mutation runs through enforcement: no secrets committed, tests green,
 |---|---|
 | `construct audit` | Audit Construct internals and review the mutation trail |
 | `construct backup` | Create, verify, restore, list, or prune full system backups (observations, sessions, config, registry, Postgres). |
+| `construct beads:stats` | Show beads contention statistics and optimistic locking health |
 | `construct cleanup` | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
 | `construct diff` | Show which agents changed prompts or settings since HEAD |
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct doctor` | Run installation health checks (default), or manage the L0 doctor daemon |
 | `construct gates:audit` | Audit policy gates across CI, local hooks, and branch protection; flag gaps |
+| `construct hooks:health` | Check hook health and verify hooks are executing correctly |
+| `construct policy:list` | List all unified policy gates and their bypass options |
 | `construct skills` | Detect project tech stack and scope installed skills to relevance |
 | `construct validate` | Validate registry.json structure and field constraints |
 | `construct version` | Show version |
