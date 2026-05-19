@@ -32,7 +32,7 @@ describe("langfuse-setup", () => {
     assert.match(result.error, /LANGFUSE_PUBLIC_KEY/);
   });
 
-  it("should create annotation queue if missing", async () => {
+  it("should skip creation when annotation queue is missing (read-only safe mode)", async () => {
     mockFetch = async (url, opts) => {
       calls.push([url, opts]);
       if (opts?.method === "POST") return { ok: true, json: () => Promise.resolve({}) };
@@ -47,8 +47,9 @@ describe("langfuse-setup", () => {
     });
 
     assert.equal(result.ok, true);
-    const postCall = calls.find(([, opts]) => opts?.method === "POST");
-    assert.ok(postCall, "Expected a POST request");
+    // Read-only mode: never POSTs to annotation-queues (avoids Langfuse ZodError crash)
+    const annotationPost = calls.find(([url, opts]) => url?.includes('annotation-queues') && opts?.method === 'POST');
+    assert.equal(annotationPost, undefined, "Should not POST to annotation-queues");
   });
 
   it("should skip queue and eval config if both exist", async () => {
@@ -77,7 +78,7 @@ describe("langfuse-setup", () => {
     assert.deepEqual(methods, ["GET", "GET"]); // list queue + list eval, no creates/updates
   });
 
-  it("should create eval config if missing", async () => {
+  it("should skip eval config creation when missing (read-only safe mode)", async () => {
     const seen = [];
     mockFetch = async (url, opts) => {
       seen.push(opts?.method || "GET");
@@ -93,6 +94,6 @@ describe("langfuse-setup", () => {
     });
 
     assert.equal(result.ok, true);
-    assert.ok(seen.includes("POST"), "Expected at least one POST request");
+    assert.ok(!seen.includes("POST"), "Should not POST (read-only safe mode)");
   });
 });

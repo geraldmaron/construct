@@ -84,6 +84,7 @@ Every code mutation runs through enforcement: no secrets committed, tests green,
 | `construct install` | Machine setup: install Docker, cm, and bootstrap config |
 | `construct intake` | View and process R&D intake queue |
 | `construct models` | Manage AI model assignments |
+| `construct recommendations` | View and manage artifact recommendations |
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
@@ -93,18 +94,21 @@ Every code mutation runs through enforcement: no secrets committed, tests green,
 | Command | What it does |
 |---|---|
 | `construct bootstrap` | Import seed observations |
+| `construct customer` | Manage customer profiles for product intelligence |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
 | `construct graph` | Task graph management |
 | `construct headhunt` | Create domain expertise overlays |
 | `construct infer` | Infer schema from documents |
 | `construct ingest` | Convert documents to indexed markdown |
+| `construct integrations` | Check and manage external system connections |
 | `construct memory` | Inspect memory layer |
 | `construct reflect` | Capture improvement feedback |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct team` | Team review and templates |
 | `construct wireframe` | Generate wireframes from description |
+| `construct workspace` | Manage PM workspaces for multi-PM signal routing |
 
 ### Integrations
 

@@ -89,8 +89,8 @@ test('Langfuse compose healthcheck does not depend on curl', () => {
   const composePath = path.join(process.cwd(), 'langfuse', 'docker-compose.yml');
   const compose = fs.readFileSync(composePath, 'utf8');
 
-  assert.match(compose, /fetch\('http:\/\/127\.0\.0\.1:3000\/api\/public\/health'\)/);
-  assert.doesNotMatch(compose, /curl -sf http:\/\/localhost:3000\/api\/public\/health/);
+  assert.match(compose, /require\('http'\)\.get\('http:\/\/localhost:3000\/api\/public\/traces\?limit=1'/);
+  assert.doesNotMatch(compose, /curl -sf/);
 });
 
 test('getRuntimePorts reuses configured memory port when MCP endpoint is already live', async () => {

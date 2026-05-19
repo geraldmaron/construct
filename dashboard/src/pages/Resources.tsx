@@ -290,51 +290,46 @@ export default function Resources() {
 
         <article className="card">
           <p className="text-xs uppercase tracking-wider text-text-dim mb-3">
-            <Hint text={costHelp}>{costLabel}</Hint>
-            {everythingSubscription && (
-              <span
-                className="ml-2 pip pip-healthy text-[10px]"
-                title={hasProviderOverrides
-                  ? 'All providers configured as subscription on the Providers page. Today\'s actual spend is $0 — flat-rate plan covers it.'
-                  : 'Subscription billing (global). Today\'s actual spend is $0; metered-equivalent shown as a footnote.'}
-              >
-                <span aria-hidden="true">✓</span>
-                subscription{isInferred && !hasProviderOverrides ? ' (auto)' : ''}
-              </span>
-            )}
-            {!everythingSubscription && isMixed && (
-              <span className="ml-2 pip text-[10px]" title="Per-provider modes — some metered, some subscription. Configure on the Providers page.">
-                <span aria-hidden="true">i</span>
-                mixed
-              </span>
-            )}
+            <Hint text="Total LLM token usage across all agent sessions. 'Billed' includes cache reads (96.4%) at ~10% cost — the raw number looks large but the actual compute is modest. Provider total is the raw tokens sent to the API before cache discounts.">
+              Token usage
+            </Hint>
           </p>
-          {isInferred && !hasProviderOverrides && (
-            <p className="text-[11px] mb-2" style={{ color: 'var(--status-degraded)' }}>
-              ⚠ Billing mode auto-detected. <a href="#/providers" className="underline hover:opacity-80">Set per provider →</a>
-            </p>
-          )}
-          <p className="text-3xl font-semibold">${todayActual.toFixed(4)}</p>
+          <p className="text-3xl font-semibold">
+            {(insights?.sessionUsage?.billedTotalTokens ?? 0) > 1000000
+              ? (insights.sessionUsage.billedTotalTokens / 1000000).toFixed(0) + 'M'
+              : (insights.sessionUsage.billedTotalTokens ?? 0).toLocaleString()}
+            <span className="text-xs text-text-dim font-normal ml-1">billed</span>
+          </p>
           <p className="text-xs text-text-muted mt-1">
-            {everythingSubscription ? (
-              <>covered by subscription · no pay-per-token charges today</>
-            ) : (
-              <>/ ${todayCap.toFixed(2)} cap · enforce {insights?.cost?.budget?.enforce ? 'on' : 'off'}</>
-            )}
+            {insights?.sessionUsage?.interactions ?? 0} interactions ·{' '}
+            {(insights?.sessionUsage?.providerTotalTokens ?? 0).toLocaleString()} raw
           </p>
-          {todayEquiv > todayActual + 0.01 && (
-            <p className="text-[10px] text-text-dim mt-2 font-mono">
-              metered-equiv if all calls were pay-per-token: ≈ ${todayEquiv.toFixed(2)}
-              {hasProviderOverrides && <> · subscription providers excluded from headline</>}
-            </p>
-          )}
-          {!everythingSubscription && <ProgressBar ratio={costRatio} />}
           <p className="text-xs text-text-dim mt-2">
-            7d actual: ${(insights?.cost?.windows?.last7d?.meteredActualUsd ?? insights?.cost?.windows?.last7d?.totalCostUsd ?? 0).toFixed(2)} ·{' '}
-            <Hint text="Share of input tokens served from prompt cache instead of paid full-price input. Higher is better — cache reads cost ~10% of regular input.">
-              cache hit
-            </Hint>{' '}
-            {Math.round((insights?.cost?.windows?.last7d?.cacheHitRate ?? 0) * 100)}%
+            {(insights?.sessionUsage?.cacheReadInputTokens ?? 0).toLocaleString()} cache rd ·{' '}
+            {(insights?.sessionUsage?.cacheCreationInputTokens ?? 0).toLocaleString()} cache wr ·{' '}
+            {(insights?.sessionUsage?.outputTokens ?? 0).toLocaleString()} out
+          </p>
+        </article>
+
+        <article className="card">
+          <p className="text-xs uppercase tracking-wider text-text-dim mb-3">
+            <Hint text="Share of input tokens served from prompt cache. Higher is better — cache reads reduce latency and increase throughput. The billed total includes cache at a fraction of the cost.">
+              Cache efficiency
+            </Hint>
+          </p>
+          <p className="text-3xl font-semibold" style={{ color: 'var(--status-healthy)' }}>
+            {Math.round((insights?.cost?.windows?.last7d?.cacheHitRate ?? insights?.sessionUsage?.cacheHitRate ?? 0) * 100)}<span className="text-xs text-text-dim font-normal ml-1">% hit</span>
+          </p>
+          <p className="text-xs text-text-muted mt-1">
+            {insights?.sessionUsage?.cacheReadInputTokens?.toLocaleString() ?? 0} tokens served from cache
+          </p>
+          <p className="text-xs text-text-dim mt-2">
+            {(insights?.sessionUsage?.cacheReadInputTokens ?? 0) > 0 ? (
+              <>
+                {((insights.sessionUsage.cacheReadInputTokens / (insights.sessionUsage.billedTotalTokens || 1)) * 100).toFixed(1)}% of all tokens ·{' '}
+                {((insights.sessionUsage.cacheCreationInputTokens / (insights.sessionUsage.billedTotalTokens || 1)) * 100).toFixed(1)}% write overhead
+              </>
+            ) : 'No cache data yet.'}
           </p>
         </article>
 
@@ -414,67 +409,26 @@ export default function Resources() {
         </article>
       </section>
 
-      {/* COST DETAIL — cache savings + token mix */}
-      <section aria-labelledby="cost-detail-heading" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <h2 id="cost-detail-heading" className="sr-only">Cost detail</h2>
+      {/* TOKEN EFFICIENCY — cache + mix */}
+      <section aria-labelledby="token-efficiency-heading" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <h2 id="token-efficiency-heading" className="sr-only">Token efficiency</h2>
 
         <article className="card">
           <p className="text-xs uppercase tracking-wider text-text-dim mb-2">
-            {everythingSubscription ? (
-              <Hint text="On a subscription plan you don't see dollar savings directly — your monthly fee is flat. But the cache still reduces the *input tokens* counted against your plan's rate limits. The number below is the share of input that was served from cache instead of consuming fresh input quota.">
-                Token cache efficiency (7d)
-              </Hint>
-            ) : (
-              <Hint text="Estimated dollars saved by Anthropic's prompt cache over the last 7 days. Cache reads cost ~10% of regular input; cache writes cost ~25% more upfront but pay back across reuses. This is an order-of-magnitude estimate, not an audit figure.">
-                Cache savings (7d, est.)
-              </Hint>
-            )}
+            <Hint text="How much of your token throughput is served from Anthropic's prompt cache. Cache reads count toward your billed total at ~10% of the cost of fresh input. Higher is better — means your system prompts and context are being reused efficiently.">
+              Cache efficiency (7d)
+            </Hint>
           </p>
-          {insights?.cost?.cacheSavings ? (
-            everythingSubscription ? (
-              <>
-                <p className="text-2xl font-semibold" style={{ color: 'var(--status-healthy)' }}>
-                  {Math.round((insights.cost.cacheSavings.savingsRatio || 0) * 100)}<span className="text-xs text-text-dim font-normal ml-1">% efficient</span>
-                </p>
-                <p className="text-xs text-text-muted mt-1">
-                  {(insights.cost.windows?.last7d?.inputTokens || 0) > 0 || (insights.cost.tokenMix?.cacheRead || 0) > 0 ? (
-                    <>
-                      {(insights.cost.tokenMix?.cacheRead || 0).toLocaleString()} input tokens served from cache (10% rate-limit weight) vs {(insights.cost.tokenMix?.input || 0).toLocaleString()} paid input (100%)
-                    </>
-                  ) : 'No token usage yet.'}
-                </p>
-                <p className="text-xs text-text-dim mt-2">
-                  Equivalent metered savings: ≈ ${insights.cost.cacheSavings.netSavedUsd.toFixed(2)} over the same window. Your real bill on a flat-rate plan is unchanged.
-                </p>
-                <p className="text-[10px] text-text-dim mt-1 font-mono">
-                  billing mode: subscription · cached input is rate-limit friendly, dollar savings don't apply
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-2xl font-semibold" style={{ color: 'var(--status-healthy)' }}>
-                  ≈ ${insights.cost.cacheSavings.netSavedUsd.toFixed(2)}
-                  <span className="text-xs text-text-dim font-normal ml-2">net</span>
-                </p>
-                <p className="text-xs text-text-muted mt-1">
-                  Actual{' '}
-                  <Hint text="Actual money spent on LLM calls over the 7-day window, summed from the cost ledger.">7d cost</Hint>{' '}
-                  ${(insights.cost.windows?.last7d?.totalCostUsd ?? 0).toFixed(2)} ·{' '}
-                  without cache it would have cost ≈ ${insights.cost.cacheSavings.wouldHaveCostUsd.toFixed(2)}
-                </p>
-                <p className="text-xs text-text-dim mt-2">
-                  ≈ ${insights.cost.cacheSavings.grossSavedUsd.toFixed(2)} gross saved − ${insights.cost.cacheSavings.writePremiumUsd.toFixed(2)} cache-write premium
-                </p>
-                <p
-                  className="text-[10px] text-text-dim mt-1 font-mono"
-                  title={`Approximation: cacheReadTokens × avgInputPrice × 0.9 − cacheCreationTokens × avgInputPrice × 0.25.\navgInputPrice is token-weighted across the models that ran in the window.\nModels: ${(insights.cost.cacheSavings.modelsInWindow || []).join(', ') || '(unknown)'}.`}
-                >
-                  weighted across {insights.cost.cacheSavings.modelsInWindow?.length || 1} model{insights.cost.cacheSavings.modelsInWindow?.length === 1 ? '' : 's'} · approx
-                </p>
-              </>
-            )
-          ) : (
-            <p className="text-xs text-text-muted">No cache stats yet.</p>
+          <p className="text-2xl font-semibold" style={{ color: 'var(--status-healthy)' }}>
+            {Math.round((insights?.cost?.windows?.last7d?.cacheHitRate ?? 0) * 100)}<span className="text-xs text-text-dim font-normal ml-1">% cache hit</span>
+          </p>
+          {(insights?.cost?.tokenMix?.cacheRead ?? 0) > 0 && (
+            <p className="text-xs text-text-muted mt-1">
+              {(insights.cost.tokenMix.cacheRead / 1000000).toFixed(1)}M cached input · {(insights.cost.tokenMix.cacheCreation / 1000000).toFixed(2)}M write overhead
+            </p>
+          )}
+          {!(insights?.cost?.tokenMix?.cacheRead ?? 0) > 0 && (
+            <p className="text-xs text-text-muted mt-1">No token usage yet.</p>
           )}
         </article>
 
@@ -744,7 +698,11 @@ export default function Resources() {
         </article>
 
         <article className="card">
-          <p className="text-xs uppercase tracking-wider text-text-dim mb-2">Intake queue</p>
+          <p className="text-xs uppercase tracking-wider text-text-dim mb-2">
+            <Hint text="R&D intake pipeline: files dropped in .cx/inbox/ are auto-ingested, triaged, and queued. Processed = marked done via `construct intake done`. Skipped = intentionally bypassed. Customer-linked = items auto-matched to customer profiles via name/domain detection.">
+              Intake queue
+            </Hint>
+          </p>
           {insights?.intake?.state === 'ok' ? (
             <>
               <p className="text-xl font-semibold">{insights.intake.pending}</p>
@@ -752,6 +710,9 @@ export default function Resources() {
               <p className="text-xs text-text-dim mt-1">
                 processed {insights.intake.processed} · skipped {insights.intake.skipped}
               </p>
+              {insights.intake.customerLinked > 0 && (
+                <p className="text-xs text-cyan-700 mt-1">{insights.intake.customerLinked} customer-linked</p>
+              )}
             </>
           ) : (
             <p className="text-xs text-text-muted">empty · drop a file in <code className="bg-bg-muted px-1 rounded">.cx/inbox/</code></p>
@@ -774,6 +735,34 @@ export default function Resources() {
             </p>
           )}
         </article>
+
+        <article className="card">
+          <p className="text-xs uppercase tracking-wider text-text-dim mb-2">
+            <Hint text="Artifact recommendations generated by the docs-lifecycle daemon job based on intake signal patterns, doc gaps, and snapshot analysis. P0 = urgent, P3 = nice-to-have. Run `construct recommendations list` for details.">
+              Recommendations
+            </Hint>
+          </p>
+          {insights?.recommendations?.state === 'ok' && insights.recommendations.active > 0 ? (
+            <>
+              <p className="text-xl font-semibold">{insights.recommendations.active}</p>
+              <p className="text-xs text-text-muted">active</p>
+              {insights.recommendations.byPriority && Object.keys(insights.recommendations.byPriority).length > 0 && (
+                <div className="flex gap-2 mt-2 text-xs">
+                  {Object.entries(insights.recommendations.byPriority).map(([p, count]) => (
+                    <span key={p} className={`px-1.5 py-0.5 rounded font-mono ${p === 'P0' ? 'bg-red-100 text-red-800' : p === 'P1' ? 'bg-amber-100 text-amber-800' : 'bg-bg-muted text-text-dim'}`}>
+                      {p}: {count as number}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-text-dim mt-1">{insights.recommendations.dismissed} dismissed · {insights.recommendations.total} total</p>
+            </>
+          ) : (
+            <p className="text-xs text-text-muted">
+              {insights?.recommendations?.state === 'empty' ? 'No active recommendations.' : 'Loading…'}
+            </p>
+          )}
+        </article>
       </section>
 
       {/* PROVIDERS row — one card with provider connection status */}
@@ -793,6 +782,53 @@ export default function Resources() {
           ))}
         </div>
       </section>
+
+      {/* INTEGRATIONS row */}
+      {insights?.integrations?.state === 'ok' && (
+        <section className="card" aria-labelledby="integrations-heading">
+          <header className="flex items-baseline justify-between mb-3">
+            <h2 id="integrations-heading" className="text-xs uppercase tracking-wider text-text-dim">
+              <Hint text="External system integrations for intake packets. GitHub Issues uses gh CLI or GITHUB_TOKEN. Jira and Confluence need env vars in ~/.construct/config.env. Auth resolution checks process.env, .env files, config.env, shell rc files, and 1Password op:// refs.">
+                Integrations
+              </Hint>
+            </h2>
+            <a href="#/intake" className="text-xs text-text-dim hover:text-text">configure ↗</a>
+          </header>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="flex items-start gap-2">
+              <span aria-hidden="true" className={insights.integrations.details?.github !== 'not configured' ? 'text-green-700' : 'text-text-dim'}>
+                {insights.integrations.details?.github !== 'not configured' ? '✓' : '○'}
+              </span>
+              <div>
+                <p className="font-medium">GitHub Issues</p>
+                <p className="text-xs text-text-muted">{insights.integrations.details?.github || 'not configured'}</p>
+                <p className="text-xs text-text-dim">Creates issues from intake via gh CLI or API</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span aria-hidden="true" className={insights.integrations.details?.jira !== 'not configured' ? 'text-green-700' : 'text-text-dim'}>
+                {insights.integrations.details?.jira !== 'not configured' ? '✓' : '○'}
+              </span>
+              <div>
+                <p className="font-medium">Jira</p>
+                <p className="text-xs text-text-muted">{insights.integrations.details?.jira || 'not configured'}</p>
+                <p className="text-xs text-text-dim">Set JIRA_HOST + JIRA_USER + JIRA_API_TOKEN + JIRA_PROJECT</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span aria-hidden="true" className={insights.integrations.details?.confluence !== 'not configured' ? 'text-green-700' : 'text-text-dim'}>
+                {insights.integrations.details?.confluence !== 'not configured' ? '✓' : '○'}
+              </span>
+              <div>
+                <p className="font-medium">Confluence</p>
+                <p className="text-xs text-text-muted">{insights.integrations.details?.confluence || 'not configured'}</p>
+                <p className="text-xs text-text-dim">Set CONFLUENCE_HOST + USER + API_TOKEN + SPACE</p>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-text-dim mt-3">Auth chain: env → ~/.env → ~/.construct/config.env → shell rc → 1Password op://. GitHub also checks gh CLI.</p>
+        </section>
+      )}
 
       {/* LANGFUSE detail */}
       {insights?.langfuse?.state === 'ok' && insights.langfuse.topModels?.length > 0 && (

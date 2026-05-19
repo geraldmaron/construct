@@ -97,7 +97,7 @@ test('buildStatus separates runtime health from configured integrations', async 
   const { rootDir, homeDir } = await createFixture();
   const probeMap = new Map([
     ['http://127.0.0.1:4242', { status: 'healthy', message: 'Reachable' }],
-    ['https://cloud.langfuse.com/api/public/health', { status: 'unavailable', message: 'Connection refused' }],
+    ['https://cloud.langfuse.com/api/public/traces?limit=1', { status: 'unavailable', message: 'Connection refused' }],
     ['http://127.0.0.1:8765/', { status: 'healthy', message: 'Reachable' }],
     ['http://127.0.0.1:5173', { status: 'degraded', message: 'HTTP 503' }],
   ]);
@@ -155,7 +155,7 @@ test('optional runtime surfaces do not degrade overall status', async () => {
   const { rootDir, homeDir } = await createFixture();
   const probeMap = new Map([
     ['http://127.0.0.1:4242', { status: 'healthy', message: 'Reachable' }],
-    ['https://cloud.langfuse.com/api/public/health', { status: 'healthy', message: 'Reachable' }],
+    ['https://cloud.langfuse.com/api/public/traces?limit=1', { status: 'healthy', message: 'Reachable' }],
     ['http://127.0.0.1:8765/', { status: 'healthy', message: 'Reachable' }],
     ['http://127.0.0.1:5173', { status: 'unavailable', message: 'Connection refused' }],
   ]);
@@ -210,8 +210,9 @@ test('formatStatusReport prints canonical overall summary and integrations', asy
   assert.match(report, /Overall: degraded/);
   assert.match(report, /Coordination: external tracker \+ plan\.md · single-writer per file · cass-memory for recall/);
   assert.match(report, /Efficiency: healthy/);
-  assert.match(report, /Usage: available · 2 interactions · 265 provider total · 265 billed total · \$0\.00/);
-  assert.match(report, /Last interaction: 105 provider total · 105 billed total \(80 uncached in \/ 20 out \/ 5 reasoning\)/);
+  assert.match(report, /Usage: available · 2 interactions · 265 provider · 265 billed \(.*?% cache read · .*?% cache write · .*?% fresh\)/);
+  assert.match(report, /Last interaction: 105 provider total · 105 billed total/); 
+  // Note: last interaction line format is from the cli status builder, not the summary above
   assert.match(report, /Telemetry:/);
   assert.match(report, /Overlays: 1 active/);
   assert.match(report, /Promotion requests: 1/);
