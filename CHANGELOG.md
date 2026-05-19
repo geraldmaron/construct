@@ -19,12 +19,16 @@ All notable changes to Construct are documented here. The format follows [Keep a
 - **Production-grade `construct init`** — Silent, non-interactive by default with smart defaults.
   - **Non-interactive default:** No prompts unless `--interactive` flag is used
   - **Silent git checks:** Working tree status only shown with `--verbose`
-  - **Smart defaults:** Documentation preset defaults to `lean` without asking
+  - **Project type detection:** Auto-detects API, web app, CLI, platform, etc.
+  - **Workflow-based docs:** Asks about specific needs (ADRs? RFCs? Runbooks?) not bland presets
+  - **Granular flags:** `--with-adrs`, `--with-rfcs`, `--with-runbooks`, `--with-postmortems`, `--with-docs=adrs,rfcs`
+  - **Smart suggestions:** Recommends docs based on detected project type
   - **Clean output:** Professional, emoji-free output suitable for CI
   - **New flags:** `--quiet` (minimal output), `--verbose` (detailed), `--interactive` (enable prompts)
   - **Auto-start:** Services start automatically without prompting (use `--no-start` to opt out)
-  - Before: Noisy git status warnings, childish prompts about documentation presets
-  - After: Silent initialization that just works
+  - Removed: `lean`, `product`, `full` presets (too generic)
+  - Before: Noisy git status warnings, childish "lean/product/full" prompts
+  - After: Silent initialization with project-aware documentation suggestions
 
 ### Added
 
