@@ -9,6 +9,26 @@ description: Single command to start everything — services, dashboard, and emb
 
 ## Single Startup Command
 
+### New Project (Recommended)
+
+```bash
+# Initialize project + start services in one command
+construct init --auto-start
+
+# Or interactively (asks if you want to start services)
+construct init
+```
+
+**What this does:**
+1. ✅ Creates `.cx/` directory structure
+2. ✅ Creates `construct.config.json`
+3. ✅ Creates `embed.yaml` (if not exists)
+4. ✅ **Starts all services** (Dashboard, Langfuse, Memory, Embed)
+5. ✅ Shows Langfuse credentials
+6. ✅ Opens Dashboard in browser
+
+### Existing Project
+
 ```bash
 # Start ALL services (dashboard, Langfuse, memory, embed daemon)
 construct up
@@ -16,15 +36,6 @@ construct up
 # Or use the alias
 construct start
 ```
-
-**What this does:**
-
-1. ✅ Starts **Dashboard** → http://127.0.0.1:4242
-2. ✅ Starts **Local Langfuse** (Docker) → http://localhost:54330
-3. ✅ Starts **Memory Server** (cm) → http://127.0.0.1:8765
-4. ✅ Starts **Embed Daemon** (if `embed.yaml` exists + `autoEmbed: true`)
-5. ✅ Checks **Docker** availability
-6. ✅ Verifies **Langfuse credentials**
 
 ## What You Get
 
@@ -38,6 +49,8 @@ construct start
 ║  ✓  Embed daemon started (monitoring git, inbox, CI)                    ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 ```
+
+**Pro tip:** Run `construct init --auto-start` to skip the confirmation prompt.
 
 ## Prerequisites
 
