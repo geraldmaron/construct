@@ -887,71 +887,8 @@ async function cmdUp() {
   
   println('');
   println('Dashboard: http://127.0.0.1:4242');
+  println('Run \x1b[32mconstruct\x1b[0m for commands');
   println('');
-
-  // Interactive command prompt
-  if (process.stdin.isTTY && !restArgsCache.includes('--no-repl')) {
-    await showDevRepl(results, resolvedCreds);
-  }
-}
-
-async function showDevRepl(services, credentials) {
-  const readlineMod = await import('node:readline');
-  const rl = readlineMod.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    prompt: 'construct> ',
-  });
-
-  println('Type a command (or \x1b[32mq\x1b[0m to quit):');
-  println('  \x1b[32mstatus\x1b[0m     Show service health');
-  println('  \x1b[32mstop\x1b[0m      Stop all services');
-  println('  \x1b[32mopen\x1b[0m      Open dashboard in browser');
-  println('  \x1b[32mopencode\x1b[0m  Open dashboard in browser');
-  println('  \x1b[32mq\x1b[0m         Exit');
-  println('');
-
-  rl.prompt();
-
-  return new Promise((resolve) => {
-    rl.on('line', async (line) => {
-      const cmd = line.trim().toLowerCase();
-
-      // Fuzzy match — infer intent from partial input
-      const fuzzy = (prefixes) => prefixes.some(p => cmd === p || cmd.startsWith(p));
-
-      if (fuzzy(['status', 'sta'])) {
-        const { buildStatus } = await import('../lib/status.mjs');
-        const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
-        println(JSON.stringify(status, null, 2));
-      } else if (fuzzy(['stop', 'sto', 'halt', 'down'])) {
-        const { stopServices } = await import('../lib/service-manager.mjs');
-        const result = await stopServices({ homeDir: HOME, rootDir: ROOT_DIR });
-        for (const svc of result.results) {
-          if (svc.status === 'stopped' || svc.status === 'cleaned') println(`Stopped ${svc.name}`);
-        }
-        process.exit(0);
-      } else if (fuzzy(['open', 'dashboard', 'dash', 'code', 'opencode', 'ui'])) {
-        const { execSync } = await import('node:child_process');
-        execSync('open http://127.0.0.1:4242', { stdio: 'ignore' });
-        println('Opened dashboard in browser');
-      } else if (fuzzy(['quit', 'q', 'exit', 'bye'])) {
-        process.exit(0);
-      } else {
-        println(`Unknown: ${cmd}`);
-        println('Try: status, stop, open, q');
-      }
-      rl.prompt();
-    });
-
-    rl.on('close', () => {
-      process.exit(0);
-    });
-
-    process.on('SIGINT', () => {
-      process.exit(0);
-    });
-  });
 }
 
 async function cmdDown() {
