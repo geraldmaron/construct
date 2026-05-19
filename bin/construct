@@ -105,15 +105,72 @@ function iconColumn(emoji) {
 }
 
 function usage() {
-  println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
+  const showAll = restArgsCache.includes('--all') || restArgsCache.includes('-a');
+  const commands = showAll ? CLI_COMMANDS : CLI_COMMANDS.filter(c => c.core);
+  
+  if (showAll) {
+    println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness (all commands)`);
+  } else {
+    println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
+    println(`${COLORS.dim}Tip: Run ${COLORS.reset}construct --all${COLORS.dim} to see all commands${COLORS.reset}`);
+  }
+  
   println(`\n${COLORS.dim}Usage:${COLORS.reset} construct <command> [options]\n`);
+  
   for (const category of CATEGORY_ORDER) {
-    const commands = CLI_COMMANDS_BY_CATEGORY[category] ?? [];
-    if (!commands.length) continue;
+    const categoryCommands = commands.filter(c => c.category === category);
+    if (!categoryCommands.length) continue;
     println(`${COLORS.bold}${category}${COLORS.reset}`);
-    for (const command of commands) {
+    for (const command of categoryCommands) {
       println(`  ${iconColumn(command.emoji)}${command.name.padEnd(14)} ${command.description}`);
     }
+    println('');
+  }
+}
+
+/** Show interactive context-aware menu when construct is run without arguments. */
+async function showInteractiveMenu() {
+  const { loadProjectConfig } = await import('./lib/config/project-config.mjs');
+  const { existsSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  
+  const projectRoot = process.cwd();
+  const isConstructProject = existsSync(join(projectRoot, 'construct.config.json')) ||
+                             existsSync(join(projectRoot, '.cx'));
+  
+  println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
+  println('');
+  
+  if (isConstructProject) {
+    const projectName = process.env.CX_PROJECT_NAME || require('path').basename(projectRoot);
+    println(`${COLORS.dim}Project:${COLORS.reset} ${projectName}`);
+    println('');
+  }
+  
+  println(`${COLORS.bold}Core Commands:${COLORS.reset}`);
+  println(`  ${COLORS.green}🚀 dev${COLORS.reset}              Start services for development`);
+  println(`  ${COLORS.green}⏹ stop${COLORS.reset}              Stop all running services`);
+  println(`  ${COLORS.green}📡 status${COLORS.reset}           Show system health and credentials`);
+  println(`  ${COLORS.green}🏗️  init${COLORS.reset}             Initialize project and start services`);
+  println(`  ${COLORS.green}🔄 sync${COLORS.reset}             Sync agent adapters to AI tools`);
+  println('');
+  println(`${COLORS.dim}Run 'construct <command> --help' for command details${COLORS.reset}`);
+  println(`${COLORS.dim}Run 'construct --all' to see all commands${COLORS.reset}`);
+  println('');
+  
+  // Show context-aware suggestions
+  if (isConstructProject) {
+    const { readDashboardState } = await import('./lib/service-manager.mjs');
+    const dashboard = readDashboardState(HOME);
+    
+    if (!dashboard) {
+      println(`${COLORS.yellow}💡 Services not running. Start with:${COLORS.reset}`);
+      println(`   ${COLORS.green}construct dev${COLORS.reset}`);
+      println('');
+    }
+  } else {
+    println(`${COLORS.yellow}💡 Not a Construct project. Initialize with:${COLORS.reset}`);
+    println(`   ${COLORS.green}construct init${COLORS.reset}`);
     println('');
   }
 }
@@ -2582,14 +2639,19 @@ const [command, ...rest] = process.argv.slice(2);
 const restArgsCache = rest;
 
 const handlers = new Map([
-  ['up', cmdUp],
-  ['start', cmdUp],  // Alias for 'up' — single command that starts everything
-  ['down', cmdDown],
-  ['stop', cmdDown],  // Alias for 'down'
+  // Services
+  ['dev', cmdUp],
+  ['stop', cmdDown],
   ['status', cmdStatus],
-  ['show', cmdShow],
-  ['serve', cmdServe],
-  ['setup', cmdSetup],
+  ['install', cmdSetup],
+  
+  // Deprecated commands (show helpful error)
+  ['up', () => { errorln('`construct up` renamed to `construct dev`. Use `construct dev` to start services.'); process.exit(1); }],
+  ['down', () => { errorln('`construct down` renamed to `construct stop`. Use `construct stop` to stop services.'); process.exit(1); }],
+  ['start', () => { errorln('`construct start` renamed to `construct dev`. Use `construct dev` to start services.'); process.exit(1); }],
+  ['serve', () => { errorln('`construct serve` removed. Use `construct dev` to start the Dashboard.'); process.exit(1); }],
+  ['show', () => { errorln('`construct show` removed. Use `construct status` for service status.'); process.exit(1); }],
+  ['setup', () => { errorln('`construct setup` renamed to `construct install`. Use `construct install` for machine setup.'); process.exit(1); }],
   ['config', cmdConfig],
   ['intake', cmdIntake],
   ['graph', cmdGraph],
@@ -3185,7 +3247,14 @@ const handlers = new Map([
   }],
 ]);
 
-if (!command || command === '--help' || command === '-h' || command === 'help') {
+// No command provided → show interactive menu
+if (!command) {
+  await showInteractiveMenu();
+  process.exit(0);
+}
+
+// Help flags → show usage
+if (command === '--help' || command === '-h' || command === 'help') {
   usage();
   process.exit(0);
 }
@@ -3193,7 +3262,8 @@ if (!command || command === '--help' || command === '-h' || command === 'help') 
 const handler = handlers.get(command);
 if (!handler) {
   errorln(`Unknown command: ${command}`);
-  usage();
+  println('');
+  println(`${COLORS.dim}Run 'construct --help' for available commands${COLORS.reset}`);
   process.exit(1);
 }
 
