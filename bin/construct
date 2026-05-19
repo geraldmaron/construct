@@ -129,11 +129,32 @@ function runNodeScript(scriptPath, args = [], extraEnv = {}) {
 async function cmdStatus() {
   const jsonOutput = restArgsCache.includes('--json');
   const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
+  
   if (jsonOutput) {
     println(JSON.stringify(status, null, 2));
     return;
   }
+  
   println(formatStatusReport(status));
+  
+  // Show Langfuse credentials if running locally
+  const langfuseService = status.system.services.find(s => s.name === 'Langfuse');
+  if (langfuseService && langfuseService.url?.includes('localhost')) {
+    const { loadConstructEnv } = await import('../lib/env-config.mjs');
+    const env = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME });
+    
+    if (env.LANGFUSE_ADMIN_EMAIL && env.LANGFUSE_ADMIN_PASSWORD) {
+      println('');
+      println('Langfuse Credentials (Local)');
+      println('════════════════════════════');
+      println(`  Dashboard:     ${langfuseService.url}`);
+      println(`  Login:         ${env.LANGFUSE_ADMIN_EMAIL} / ${env.LANGFUSE_ADMIN_PASSWORD}`);
+      println(`  API Public:    ${env.LANGFUSE_PUBLIC_KEY || 'auto-configured'}`);
+      println(`  API Secret:    ${env.LANGFUSE_SECRET_KEY || 'auto-configured'}`);
+      println('');
+      info('Credentials saved to ~/.construct/config.env — edit if needed');
+    }
+  }
 }
 
 async function cmdShow() {
@@ -705,6 +726,16 @@ async function cmdUp() {
     else if (svc.status === 'configured') info(`${svc.name}: ${svc.note}`);
     else if (svc.status === 'failed') errorln(`${svc.name}: ${svc.note}`);
     else warn(`${svc.name}: ${svc.note}`);
+  }
+
+  // Show Langfuse credentials guidance after first start
+  const langfuseService = results.find(r => r.name === 'Langfuse');
+  if (langfuseService && langfuseService.status === 'started' && langfuseService.note?.includes('auto-configured')) {
+    println('');
+    info('Langfuse credentials:');
+    info('  Dashboard: http://localhost:54330 (login: admin@construct.local / construct-admin)');
+    info('  API keys auto-saved to ~/.construct/config.env');
+    info('  Run `construct status` anytime to view credentials');
   }
 
   if (recovery) {

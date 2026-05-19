@@ -41,26 +41,7 @@ construct start
 
 ## Prerequisites
 
-### 1. Langfuse Credentials (Required for telemetry)
-
-Add to `~/.construct/.env`:
-
-```bash
-CONSTRUCT_LANGFUSE_BASE_URL=http://localhost:54330
-CONSTRUCT_LANGFUSE_PUBLIC_KEY=langfuse-public-key
-CONSTRUCT_LANGFUSE_SECRET_KEY=langfuse-secret-key
-```
-
-**Get credentials from local Langfuse:**
-```bash
-# After running `construct up` once, open:
-open http://localhost:54330
-
-# Go to Settings → API Keys
-# Copy public and secret keys to ~/.construct/.env
-```
-
-### 2. Docker (for Langfuse + Postgres)
+### 1. Docker (for Langfuse + Postgres)
 
 ```bash
 # Check Docker is running
@@ -71,7 +52,9 @@ docker ps
 # Linux: sudo systemctl start docker
 ```
 
-### 3. Embed Configuration (Optional but Recommended)
+**That's it!** Langfuse credentials are auto-configured on first `construct up`.
+
+### 2. Embed Configuration (Optional but Recommended)
 
 Create `embed.yaml` at project root:
 
