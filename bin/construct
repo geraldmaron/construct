@@ -776,7 +776,11 @@ async function cmdDoctor() {
 
 async function cmdUp() {
   // Auto-magic health check — catch missing prerequisites before starting services
-  const { quickHealthCheck, detectCredentials } = await import('../lib/health-check.mjs');
+  const { quickHealthCheck, detectCredentials, resolveCredentials } = await import('../lib/health-check.mjs');
+  
+  // Resolve credentials from env, .env files, and 1Password before starting services
+  const resolvedCreds = await resolveCredentials({ homeDir: HOME });
+  
   const health = await quickHealthCheck({ homeDir: HOME, showCredentials: true });
   
   if (!health.ok) {
@@ -857,23 +861,27 @@ async function cmdUp() {
 
   // Show credentials summary
   const creds = health.credentials;
-  if (creds) {
+  const credKeys = Object.keys(resolvedCreds);
+  if (creds || credKeys.length > 0) {
     const configured = [];
     if (creds.github_cli) configured.push('GitHub CLI');
     if (creds.copilot) configured.push('Copilot');
-    if (creds.anthropic_key) configured.push('Anthropic');
-    if (creds.openai_key) configured.push('OpenAI');
-    if (creds.openrouter_key) configured.push('OpenRouter');
+    if (creds.anthropic_key || credKeys.includes('ANTHROPIC_API_KEY')) configured.push('Anthropic');
+    if (creds.openai_key || credKeys.includes('OPENAI_API_KEY')) configured.push('OpenAI');
+    if (creds.openrouter_key || credKeys.includes('OPENROUTER_API_KEY')) configured.push('OpenRouter');
     if (creds.ollama) configured.push('Ollama');
     if (creds.vscode) configured.push('VS Code');
     if (creds.claude_code) configured.push('Claude Code');
     if (creds.opencode) configured.push('OpenCode');
-    if (creds.github_token) configured.push('GitHub token');
+    if (creds.github_token || credKeys.includes('GITHUB_TOKEN') || credKeys.includes('GH_TOKEN')) configured.push('GitHub token');
 
     if (configured.length > 0) {
       println('');
-      println('  Credentials detected:');
+      println('  Credentials:');
       println(`  ${configured.join(', ')}`);
+      if (credKeys.length > 0) {
+        println(`  ${credKeys.length} key${credKeys.length === 1 ? '' : 's'} resolved`);
+      }
     }
   }
   
