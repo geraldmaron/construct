@@ -76,8 +76,8 @@ test('startServices starts Langfuse in the background and records the log path',
   const langfuse = results.find((entry) => entry.name === 'Langfuse');
   assert.ok(langfuse);
   assert.equal(langfuse.status, 'started');
-  assert.match(langfuse.note, /startup complete/);
-  assert.match(langfuse.note, /langfuse\.log/);
+  assert.match(langfuse.note, /credentials auto-configured/);
+  assert.match(langfuse.note, /localhost:54330/);
 
   const dockerCall = calls.find((entry) => entry.command === 'docker' && entry.args[0] === 'compose');
   assert.ok(dockerCall);
