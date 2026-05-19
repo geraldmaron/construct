@@ -1,24 +1,21 @@
 # Construct — Langfuse Self-Hosted (v3)
-# Auto-provisioned: keys are seeded at container startup via LANGFUSE_INIT_* vars.
-# No browser setup required. 'construct up' writes keys to config.env automatically.
+# Based on official Langfuse docker-compose.yml with minimal changes:
+#   - Ports remapped to 543xx to avoid conflicts with local services
+#   - Auto-provisioning keys for zero-config setup
+#   - Telemetry disabled
+#   - Memory limits to prevent runaway resource usage
 #
-# Manual usage:
-#   docker-compose -f langfuse/docker-compose.yml -p construct-langfuse up -d
-#   # Keys are ready immediately — see LANGFUSE_INIT_PROJECT_* below
-#
-# Resource limits (prevent disk/memory exhaustion on developer machines):
-#   langfuse-server: 1.5 GB RAM, no swap bleed
-#   langfuse-db:     512 MB RAM, no swap bleed
-#   dspy-optimizer:  1 GB RAM,   no swap bleed
-# To override, set LANGFUSE_SERVER_MEM, LANGFUSE_DB_MEM, DSPY_MEM env vars.
+# Usage:
+#   docker compose -f langfuse/docker-compose.yml -p construct-langfuse up -d
 
 name: construct-langfuse
 
 services:
   langfuse-worker:
-    image: docker.io/langfuse/langfuse-worker:3
+    image: docker.io/langfuse/langfuse-worker:3.100.0
     container_name: construct-langfuse-worker
     restart: unless-stopped
+    mem_limit: ${LANGFUSE_WORKER_MEM:-768m}
     depends_on: &langfuse-depends-on
       postgres:
         condition: service_healthy
@@ -32,7 +29,9 @@ services:
       - "127.0.0.1:54331:3030"
     environment: &langfuse-env
       DATABASE_URL: postgresql://langfuse:langfuse@postgres:5432/langfuse
-      NEXTAUTH_URL: http://localhost:54330
+      # NEXTAUTH_URL must be reachable from INSIDE the container (localhost:3000).
+      # Using the external port (54330) causes init scripts to infinite-loop.
+      NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: construct-nextauth-secret
       SALT: construct-salt-value
       ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
@@ -68,16 +67,16 @@ services:
       REDIS_TLS_ENABLED: "false"
 
   langfuse-web:
-    image: docker.io/langfuse/langfuse:3
+    image: docker.io/langfuse/langfuse:3.100.0
     container_name: construct-langfuse
     restart: unless-stopped
+    mem_limit: ${LANGFUSE_SERVER_MEM:-1536m}
     depends_on: *langfuse-depends-on
     ports:
-      - "127.0.0.1:54330:3000"
-    mem_limit: ${LANGFUSE_SERVER_MEM:-1536m}
-    memswap_limit: ${LANGFUSE_SERVER_MEM:-1536m}
+      - "54330:3000"
     environment:
       <<: *langfuse-env
+      HOSTNAME: "0.0.0.0"
       # ── Auto-provisioning (no browser setup needed) ────────────────
       LANGFUSE_INIT_ORG_ID: "construct-org"
       LANGFUSE_INIT_ORG_NAME: "Construct"
@@ -89,17 +88,18 @@ services:
       LANGFUSE_INIT_USER_NAME: "Admin"
       LANGFUSE_INIT_USER_PASSWORD: "construct-admin"
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/public/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
-      interval: 10s
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/public/health || exit 1"]
+      interval: 15s
       timeout: 5s
-      retries: 10
-      start_period: 60s
+      retries: 5
+      start_period: 90s
 
   clickhouse:
-    image: docker.io/clickhouse/clickhouse-server
+    image: docker.io/clickhouse/clickhouse-server:24.12
     container_name: construct-langfuse-clickhouse
     restart: unless-stopped
     user: "101:101"
+    mem_limit: ${CLICKHOUSE_MEM:-2g}
     environment:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: clickhouse
@@ -121,6 +121,7 @@ services:
     image: cgr.dev/chainguard/minio
     container_name: construct-langfuse-minio
     restart: unless-stopped
+    mem_limit: ${MINIO_MEM:-256m}
     entrypoint: sh
     command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
     environment:
@@ -139,11 +140,13 @@ services:
       start_period: 1s
 
   redis:
-    image: docker.io/redis:7
+    image: docker.io/redis:7.4
     container_name: construct-langfuse-redis
     restart: unless-stopped
+    mem_limit: ${REDIS_MEM:-128m}
     command: >
       --requirepass construct-redis-secret
+      --maxmemory 96mb
       --maxmemory-policy noeviction
     ports:
       - "127.0.0.1:54337:6379"
@@ -156,11 +159,10 @@ services:
       retries: 10
 
   postgres:
-    image: docker.io/postgres:17
+    image: docker.io/postgres:17.4
     container_name: construct-langfuse-db
     restart: unless-stopped
     mem_limit: ${LANGFUSE_DB_MEM:-512m}
-    memswap_limit: ${LANGFUSE_DB_MEM:-512m}
     environment:
       POSTGRES_USER: langfuse
       POSTGRES_PASSWORD: langfuse
@@ -176,26 +178,6 @@ services:
       interval: 3s
       timeout: 3s
       retries: 10
-
-  dspy-optimizer:
-    build:
-      context: ./dspy-optimizer
-      dockerfile: Dockerfile
-    container_name: construct-dspy-optimizer
-    restart: "no"
-    mem_limit: ${DSPY_MEM:-1024m}
-    memswap_limit: ${DSPY_MEM:-1024m}
-    profiles:
-      - optimize
-    env_file:
-      - ../.env
-    environment:
-      LANGFUSE_BASEURL: http://langfuse-web:3000
-    depends_on:
-      langfuse-web:
-        condition: service_healthy
-    volumes:
-      - ../.cx:/app/.cx
 
 volumes:
   langfuse_postgres_data:
