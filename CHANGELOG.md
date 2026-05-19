@@ -4,6 +4,18 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Changed
+
+- **Breaking: CLI command restructuring** — Complete overhaul of command structure for clarity and progressive disclosure. 
+  - **Renamed commands:** `setup`→`install`, `up`→`dev`, `down`→`stop`
+  - **Removed commands:** `start`, `serve`, `show` (no backwards compatibility shims)
+  - **Progressive disclosure:** Default `--help` shows only 11 core commands; `construct --all` shows all 60+
+  - **Interactive mode:** Running `construct` with no args shows context-aware menu with smart suggestions
+  - **Auto-magic health checks:** `construct dev` automatically checks prerequisites (Docker, cm, Node.js) before starting services
+  - **Smart defaults:** `construct init` auto-starts services by default (use `--no-start` to opt out)
+  - **Categories consolidated:** Core, Work, Integrations, Observability, Advanced
+  - `lib/health-check.mjs` provides shared prerequisite checking across install/init/dev
+
 ### Added
 
 - `construct upgrade` command — Upgrade to latest npm version with one command. Runs `npm install -g`, re-syncs all editor adapters, and verifies health. Usage: `construct upgrade [--yes]`. `lib/upgrade.mjs` implements the flow; `bin/construct` wires the handler; `lib/cli-commands.mjs` documents the command.

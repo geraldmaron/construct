@@ -775,6 +775,20 @@ async function cmdDoctor() {
 }
 
 async function cmdUp() {
+  // Auto-magic health check — catch missing prerequisites before starting services
+  const { quickHealthCheck } = await import('../lib/health-check.mjs');
+  const health = await quickHealthCheck({ homeDir: HOME });
+  
+  if (!health.ok) {
+    errorln('Prerequisites missing for starting services:');
+    for (const item of health.missing) {
+      errorln(`  ✗  ${item}`);
+    }
+    println('');
+    info('Run `construct install --yes` to install missing dependencies.');
+    process.exit(1);
+  }
+  
   const { results, recovery } = await startServices({ rootDir: ROOT_DIR, homeDir: HOME });
   for (const svc of results) {
     const label = svc.url ? `${svc.name} → ${svc.url}` : svc.name;
@@ -910,10 +924,6 @@ async function cmdReview(args) {
 }
 
 async function cmdInit(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init-unified.mjs'), args); }
-async function cmdInitDocs(args) { 
-  console.warn("⚠️  Warning: `construct init-docs` is deprecated. Use `construct init --docs-preset` instead.");
-  runNodeScript(path.join(ROOT_DIR, 'lib', 'init-unified.mjs'), args); 
-}
 async function cmdDocsVerify(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'docs-verify.mjs'), args); }
 async function cmdInitUpdate(args) { 
   runNodeScript(path.join(ROOT_DIR, 'lib', 'init-update.mjs'), args);
@@ -2639,19 +2649,11 @@ const [command, ...rest] = process.argv.slice(2);
 const restArgsCache = rest;
 
 const handlers = new Map([
-  // Services
+  // Core
   ['dev', cmdUp],
   ['stop', cmdDown],
   ['status', cmdStatus],
   ['install', cmdSetup],
-  
-  // Deprecated commands (show helpful error)
-  ['up', () => { errorln('`construct up` renamed to `construct dev`. Use `construct dev` to start services.'); process.exit(1); }],
-  ['down', () => { errorln('`construct down` renamed to `construct stop`. Use `construct stop` to stop services.'); process.exit(1); }],
-  ['start', () => { errorln('`construct start` renamed to `construct dev`. Use `construct dev` to start services.'); process.exit(1); }],
-  ['serve', () => { errorln('`construct serve` removed. Use `construct dev` to start the Dashboard.'); process.exit(1); }],
-  ['show', () => { errorln('`construct show` removed. Use `construct status` for service status.'); process.exit(1); }],
-  ['setup', () => { errorln('`construct setup` renamed to `construct install`. Use `construct install` for machine setup.'); process.exit(1); }],
   ['config', cmdConfig],
   ['intake', cmdIntake],
   ['graph', cmdGraph],
