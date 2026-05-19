@@ -6,7 +6,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Changed
 
-- **Breaking: CLI command restructuring** — Complete overhaul of command structure for clarity and progressive disclosure. 
+- **Breaking: CLI command restructuring** — Complete overhaul of command structure for clarity and progressive disclosure.
   - **Renamed commands:** `setup`→`install`, `up`→`dev`, `down`→`stop`
   - **Removed commands:** `start`, `serve`, `show` (no backwards compatibility shims)
   - **Progressive disclosure:** Default `--help` shows only 11 core commands; `construct --all` shows all 60+
@@ -15,6 +15,16 @@ All notable changes to Construct are documented here. The format follows [Keep a
   - **Smart defaults:** `construct init` auto-starts services by default (use `--no-start` to opt out)
   - **Categories consolidated:** Core, Work, Integrations, Observability, Advanced
   - `lib/health-check.mjs` provides shared prerequisite checking across install/init/dev
+
+- **Production-grade `construct init`** — Silent, non-interactive by default with smart defaults.
+  - **Non-interactive default:** No prompts unless `--interactive` flag is used
+  - **Silent git checks:** Working tree status only shown with `--verbose`
+  - **Smart defaults:** Documentation preset defaults to `lean` without asking
+  - **Clean output:** Professional, emoji-free output suitable for CI
+  - **New flags:** `--quiet` (minimal output), `--verbose` (detailed), `--interactive` (enable prompts)
+  - **Auto-start:** Services start automatically without prompting (use `--no-start` to opt out)
+  - Before: Noisy git status warnings, childish prompts about documentation presets
+  - After: Silent initialization that just works
 
 ### Added
 
