@@ -1,18 +1,70 @@
 ---
 title: Quick Start
-description: Single command to start everything — services, dashboard, and embed daemon.
+description: Get started with Construct in 5 minutes.
 ---
 
 # Quick Start
 
-> **One command to start everything:** `construct up` or `construct start`
+> **Standard onboarding:** Install CLI → Machine Setup → Project Init → Development
 
-## Single Startup Command
-
-### New Project (Recommended)
+## Step 1: Install CLI (One-Time)
 
 ```bash
-# Initialize project + start services in one command
+# Install globally (one-time, per machine)
+npm install -g @geraldmaron/construct
+
+# Verify installation
+construct --version
+construct doctor
+```
+
+This adds `construct` to your PATH. The CLI is your single interface for everything.
+
+---
+
+## Step 2: Machine Setup (One-Time)
+
+First time on a new machine, bootstrap local services:
+
+```bash
+construct install --yes
+```
+
+**What this does:**
+1. ✅ Checks Docker → offers to install if missing
+2. ✅ Checks `cm` (Memory MCP server) → installs if missing
+3. ✅ Checks Node.js ≥ 20 → shows download link if needed
+4. ✅ Creates `~/.construct/config.env`
+5. ✅ Sets up Langfuse credentials automatically
+6. ✅ Runs `construct doctor` health check
+
+**Output:**
+```
+🔍 Checking prerequisites...
+
+  ✓  Docker                    v24.0.0
+  ✓  cm (Memory Server)        installed
+  ✓  Node.js                   v20.11.0
+
+✅ All prerequisites met!
+
+Local services:
+  ✓  Langfuse → http://localhost:54330 (credentials auto-configured)
+  ✓  Postgres → postgresql://127.0.0.1:54329/construct
+
+🔐 Langfuse Credentials:
+  Dashboard: http://localhost:54330
+  Login: admin@construct.local / construct-admin
+```
+
+---
+
+## Step 3: Initialize Project (Per Project)
+
+```bash
+cd ~/your-project
+
+# Initialize + start services in one command
 construct init --auto-start
 
 # Or interactively (asks if you want to start services)
@@ -27,15 +79,22 @@ construct init
 5. ✅ Shows Langfuse credentials
 6. ✅ Opens Dashboard in browser
 
-### Existing Project
+---
+
+## Step 4: Development (Per Session)
 
 ```bash
-# Start ALL services (dashboard, Langfuse, memory, embed daemon)
-construct up
+# Start services for development
+construct dev
 
-# Or use the alias
-construct start
+# Work via Dashboard or your AI tools
+# Dashboard: http://127.0.0.1:4242
+
+# Stop services when done (optional)
+construct stop
 ```
+
+---
 
 ## What You Get
 
@@ -50,11 +109,43 @@ construct start
 ╚══════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Pro tip:** Run `construct init --auto-start` to skip the confirmation prompt.
+---
 
-## Prerequisites
+## Checking Status
 
-### 1. Docker (for Langfuse + Postgres)
+```bash
+# Full status report with credentials
+construct status
+
+# JSON output
+construct status --json
+```
+
+**Output:**
+```
+Construct Services
+══════════════════
+
+  ✓  Dashboard                    http://127.0.0.1:4242 (Dashboard API)
+  ✓  Langfuse                     http://localhost:54330 (Trace backend)
+  ✓  Memory (cm)                  http://127.0.0.1:8765 (MCP-managed)
+  ✓  Embed daemon                 Running (watching git, inbox)
+
+Langfuse Credentials (Local)
+════════════════════════════
+  Dashboard:     http://localhost:54330
+  Login:         admin@construct.local / construct-admin
+  API Public:    pk-lf-construct-local
+  API Secret:    sk-lf-construct-local
+
+INFO Credentials saved to ~/.construct/config.env — edit if needed
+```
+
+---
+
+## Troubleshooting
+
+### "Docker not available"
 
 ```bash
 # Check Docker is running
@@ -63,77 +154,20 @@ docker ps
 # If not running, start Docker Desktop or:
 # macOS: open -a Docker
 # Linux: sudo systemctl start docker
+
+# Then retry
+construct install --yes
 ```
-
-**That's it!** Langfuse credentials are auto-configured on first `construct up`.
-
-### 2. Embed Configuration (Optional but Recommended)
-
-Create `embed.yaml` at project root:
-
-```yaml
-version: 1
-project: construct
-
-sources:
-  - type: filesystem
-    path: .cx/inbox/
-    watch: true
-  - type: git
-    watch: true
-    events: [push, merge]
-
-roles:
-  primary: architect
-  secondary: product-manager
-```
-
-## Stopping Everything
-
-```bash
-# Stop all services
-construct down
-
-# Or use the alias
-construct stop
-```
-
-## Checking Status
-
-```bash
-# Full status report
-construct status
-
-# Quick service check
-construct show
-```
-
-**Output:**
-```
-Construct Services
-══════════════════
-
-  • Managed dashboard PID 6014 on http://127.0.0.1:4242
-  ✓  Dashboard                    http://127.0.0.1:4242 (Dashboard API)
-  ✓  Langfuse                     http://localhost:54330 (Trace backend)
-  ✓  Memory (cm)                  http://127.0.0.1:8765 (MCP-managed)
-  ✓  Embed daemon                 Running (watching git, inbox)
-```
-
-## Troubleshooting
 
 ### "Langfuse failed to start"
 
 ```bash
-# Check Docker is running
-docker ps
-
 # Check if port 54330 is already in use
 lsof -i :54330
 
-# Restart Langfuse
-construct down
-construct up
+# Restart services
+construct stop
+construct dev
 ```
 
 ### "Embed daemon not starting"
@@ -155,69 +189,34 @@ construct embed start
 
 ```bash
 # Check if dashboard is running
-construct show
+construct status
 
-# Restart dashboard
-construct down
-construct up
+# Restart services
+construct stop
+construct dev
 
 # Check for port conflicts
 lsof -i :4242
 ```
 
-## Dogfooding: Running Construct on Itself
+---
 
-This project (`construct`) is configured to dogfood itself:
+## Command Reference
 
-```bash
-# Start everything for Construct development
-cd /path/to/construct
-construct up
+| Command | Description |
+|---------|-------------|
+| `construct install` | Machine setup: Docker, cm, config (one-time) |
+| `construct init` | Project initialization (per project) |
+| `construct dev` | Start services (per session) |
+| `construct stop` | Stop services |
+| `construct status` | System health and credentials |
+| `construct doctor` | Health check |
 
-# Verify embed is watching
-construct embed status
-
-# Drop a signal in the inbox
-echo "# Test signal" > .cx/inbox/test.md
-
-# Watch it get classified
-construct intake list
-```
-
-**What gets monitored:**
-- `.cx/inbox/` — Manual signal drops
-- Git commits, pushes, merges
-- GitHub Actions CI failures
-- Scheduled activations (stale docs, CVE review, trace review)
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                  construct up / start                        │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  1. Dashboard (HTTP server)                                 │
-│     └─→ http://127.0.0.1:4242                              │
-│                                                              │
-│  2. Langfuse (Docker)                                       │
-│     └─→ http://localhost:54330                             │
-│     └─→ Telemetry backend (traces, evals, costs)           │
-│                                                              │
-│  3. Memory Server (cm)                                      │
-│     └─→ http://127.0.0.1:8765                              │
-│     └─→ Cross-session recall, observations                 │
-│                                                              │
-│  4. Embed Daemon (if embed.yaml + autoEmbed)               │
-│     └─→ Watches git, inbox, CI                             │
-│     └─→ Scheduled activations (docs, security, traces)     │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-```
+---
 
 ## Related Documents
 
 - [Embed Mode](/concepts/embed-mode) — How embed daemon works
 - [Deployment Model](/concepts/deployment-model) — Solo/team/enterprise modes
 - [Org Chart](/concepts/org-chart) — Specialist roles and departments
-- [Prompt Audit](/audit/prompt-audit-20260519) — 2026 best practices analysis
+- [Installation](/reference/cli/install) — Detailed install guide

@@ -48,13 +48,27 @@ test('construct evals exposes Langfuse evaluator catalog', () => {
   assert.ok(typeof json.configured === 'boolean');
 });
 
-test('construct help includes the update command', () => {
+test('construct help includes core commands by default', () => {
   const out = execFileSync(process.execPath, [BIN, '--help'], {
     cwd: ROOT,
     encoding: 'utf8',
   });
 
-  assert.match(out, /update\s+Reinstall this checkout globally, then sync and verify hosts/);
+  // Core commands should be visible
+  assert.match(out, /dev\s+Start services for development/);
+  assert.match(out, /stop\s+Stop all running services/);
+  assert.match(out, /init\s+Initialize project/);
+});
+
+test('construct help --all includes advanced commands', () => {
+  const out = execFileSync(process.execPath, [BIN, '--help', '--all'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+
+  // Advanced commands should only be visible with --all
+  assert.match(out, /update\s+Reinstall this checkout/);
+  assert.match(out, /beads\s+Task queue management/);
 });
 
 test('construct completions bash prints a bash completion script', () => {
