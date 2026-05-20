@@ -76,8 +76,7 @@ jobs:
             --target=node22 \
             --outfile=dist/construct-bundle.cjs \
             --external:@huggingface/transformers \
-            --external:postgres \
-            --external:better-sqlite3
+            --external:postgres
           mkdir -p dist
 
       - name: Build SEA blob

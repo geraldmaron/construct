@@ -580,12 +580,12 @@ async function cmdDoctor() {
         await sqlClient`select 1 as ok`;
         add('SQL backend reachable', true);
       } catch {
-        add('SQL backend reachable', false);
+        add('SQL backend reachable', false, true);
       } finally {
         await closeSqlClient(sqlClient);
       }
     } else {
-      add('SQL backend configured', sqlConfig.fallbackAvailable);
+      add('SQL backend configured', sqlConfig.fallbackAvailable, true);
     }
 
     const vectorConfig = describeVectorStore(process.env);
