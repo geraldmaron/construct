@@ -85,11 +85,11 @@ test('startServices starts Langfuse in the background and records the log path',
   assert.equal(dockerCall.options, undefined);
 });
 
-test('Langfuse compose healthcheck does not depend on curl', () => {
+test('Langfuse compose healthcheck uses wget not curl', () => {
   const composePath = path.join(process.cwd(), 'langfuse', 'docker-compose.yml');
   const compose = fs.readFileSync(composePath, 'utf8');
 
-  assert.match(compose, /require\('http'\)\.get\('http:\/\/localhost:3000\/api\/public\/traces\?limit=1'/);
+  assert.match(compose, /wget.*127\.0\.0\.1:3000\/api\/public\/health/);
   assert.doesNotMatch(compose, /curl -sf/);
 });
 
