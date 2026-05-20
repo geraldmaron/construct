@@ -18,6 +18,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 - **`/api/intake/list` dashboard endpoint**: `GET /api/intake/list` returns the current intake queue (`{ items, total }`). Items are read via `createIntakeQueue(ROOT_DIR)` so it works in both filesystem (solo) and Postgres (team/enterprise) modes. `lib/server/index.mjs`.
 - **Ingested knowledge in RAG corpus**: `buildCorpus()` now includes `.cx/knowledge/{internal,external,decisions,how-tos,reference}/` files as indexed chunks alongside ADRs, PRDs, RFCs, and snapshots. Files dropped into the inbox and processed by the embed daemon are immediately searchable via `construct knowledge ask`. `lib/knowledge/rag.mjs`.
+- **`--version` / `-V` flags**: Standard CLI convention. `construct --version` and `construct -V` now print the version and exit, matching the behaviour of `construct version`. `bin/construct`.
 
 ## Unreleased
 
