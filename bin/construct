@@ -160,7 +160,7 @@ async function showInteractiveMenu() {
   
   // Show context-aware suggestions
   if (isConstructProject) {
-    const { readDashboardState } = await import('./lib/service-manager.mjs');
+    const { readDashboardState } = await import('../lib/service-manager.mjs');
     const dashboard = readDashboardState(HOME);
     
     if (!dashboard) {
