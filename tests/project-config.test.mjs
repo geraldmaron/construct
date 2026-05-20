@@ -78,10 +78,10 @@ describe('validateProjectConfig', () => {
 describe('interpolateSecrets', () => {
   it('replaces $VAR pointers with env values', () => {
     const out = interpolateSecrets(
-      { telemetry: { langfuse: { publicKey: '$LF_PUB' } } },
-      { LF_PUB: 'pk-abc' },
+      { providers: { anthropic: { apiKey: '$ANTHROPIC_KEY' } } },
+      { ANTHROPIC_KEY: 'sk-ant-abc' },
     );
-    assert.equal(out.telemetry.langfuse.publicKey, 'pk-abc');
+    assert.equal(out.providers.anthropic.apiKey, 'sk-ant-abc');
   });
 
   it('returns null when the pointed-to env var is missing', () => {
@@ -166,11 +166,11 @@ describe('loadProjectConfig', () => {
     const cfgPath = path.join(tmpRoot, PROJECT_CONFIG_FILENAME);
     fs.writeFileSync(cfgPath, JSON.stringify({
       version: 1,
-      telemetry: { langfuse: { publicKey: '$LF_PUB_TEST' } },
+      providers: { openai: { apiKey: '$OAI_KEY_TEST' } },
     }));
     try {
-      const result = loadProjectConfig(tmpRoot, { LF_PUB_TEST: 'pk-test' });
-      assert.equal(result.config.telemetry.langfuse.publicKey, 'pk-test');
+      const result = loadProjectConfig(tmpRoot, { OAI_KEY_TEST: 'sk-oai-test' });
+      assert.equal(result.config.providers.openai.apiKey, 'sk-oai-test');
     } finally {
       fs.unlinkSync(cfgPath);
     }

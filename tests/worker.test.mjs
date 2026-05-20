@@ -13,7 +13,7 @@ import path from 'node:path';
 import { describe, it, beforeEach, afterEach } from 'node:test';
 
 import { runJob } from '../lib/worker/run.mjs';
-import { emitTraceEvent, traceDir, newTraceId, TRACE_EVENT_TYPES, _resetLangfuseClient } from '../lib/worker/trace.mjs';
+import { emitTraceEvent, traceDir, newTraceId, TRACE_EVENT_TYPES, _resetTelemetryClient } from '../lib/worker/trace.mjs';
 import { evidenceFromJobResult, recordEvidence, blockedPacket, needsInputPacket, EVIDENCE_TYPES } from '../lib/worker/evidence.mjs';
 import { FilesystemTaskGraphStore } from '../lib/task-graph/store.mjs';
 import { generateTaskGraphFromTriage } from '../lib/task-graph/generate.mjs';
@@ -151,8 +151,8 @@ describe('trace event log', () => {
     }
   });
 
-  it('is a no-op for Langfuse when keys are not configured (solo mode default)', () => {
-    _resetLangfuseClient();
+  it('is a no-op for telemetry when keys are not configured (solo mode default)', () => {
+    _resetTelemetryClient();
     let fetchCalls = 0;
     const originalFetch = globalThis.fetch;
     globalThis.fetch = () => { fetchCalls += 1; return Promise.resolve({ ok: true, status: 200 }); };
@@ -160,17 +160,17 @@ describe('trace event log', () => {
       emitTraceEvent({
         rootDir: projectRoot,
         eventType: 'intake.received',
-        env: {}, // no Langfuse env
+        env: {}, // no telemetry env
       });
-      assert.equal(fetchCalls, 0, 'no Langfuse POST when keys absent');
+      assert.equal(fetchCalls, 0, 'no telemetry POST when keys absent');
     } finally {
       globalThis.fetch = originalFetch;
-      _resetLangfuseClient();
+      _resetTelemetryClient();
     }
   });
 
-  it('exports to Langfuse when LANGFUSE_PUBLIC_KEY + SECRET_KEY are configured', async () => {
-    _resetLangfuseClient();
+  it('exports to telemetry when CONSTRUCT_TELEMETRY_PUBLIC_KEY + SECRET_KEY are configured', async () => {
+    _resetTelemetryClient();
     const captured = [];
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async (url, init) => {
@@ -179,16 +179,16 @@ describe('trace event log', () => {
     };
     try {
       const env = {
-        LANGFUSE_BASEURL: 'http://langfuse.test',
-        LANGFUSE_PUBLIC_KEY: 'pk-test',
-        LANGFUSE_SECRET_KEY: 'sk-test',
+        CONSTRUCT_TELEMETRY_URL: 'http://telemetry.test',
+        CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-test',
+        CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-test',
       };
       const traceId = newTraceId();
       emitTraceEvent({ rootDir: projectRoot, eventType: 'intake.received', traceId, env });
       emitTraceEvent({ rootDir: projectRoot, eventType: 'worker.started', traceId, env });
       emitTraceEvent({ rootDir: projectRoot, eventType: 'worker.completed', traceId, env });
 
-      const { createIngestClient } = await import('../lib/telemetry/langfuse-ingest.mjs');
+      const { createIngestClient } = await import('../lib/telemetry/ingest.mjs');
       // Pull the live client off the trace module to flush its queue.
       const traceMod = await import('../lib/worker/trace.mjs');
       // The exported reset helper proves the singleton exists; force a flush
@@ -197,7 +197,7 @@ describe('trace event log', () => {
       // Wait for the debounced flush.
       await new Promise((r) => setTimeout(r, 700));
 
-      assert.ok(captured.length >= 1, `Langfuse ingest fetch should have fired; got ${captured.length}`);
+      assert.ok(captured.length >= 1, `Telemetry ingest fetch should have fired; got ${captured.length}`);
       const target = captured[0];
       assert.match(target.url, /api\/public\/ingestion/);
       assert.ok(target.authHeader.startsWith('Basic '), 'Basic auth header present');
@@ -209,7 +209,7 @@ describe('trace event log', () => {
       assert.ok(types.includes('event-create'), `expected event-create; got ${types.join(',')}`);
     } finally {
       globalThis.fetch = originalFetch;
-      _resetLangfuseClient();
+      _resetTelemetryClient();
     }
   });
 });

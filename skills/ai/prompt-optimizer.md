@@ -1,12 +1,12 @@
 <!--
 skills/ai/prompt-optimizer.md — Closed-loop prompt auto-optimization guide.
 
-Uses Langfuse traces and quality scores as the feedback signal, Claude as the optimizer,
+Uses telemetry traces and quality scores as the feedback signal, Claude as the optimizer,
 and the agent registry + construct sync as the deployment layer.
 -->
 # Prompt Auto-Optimization Loop
 
-Construct's prompt improvement system uses Langfuse traces and quality scores as the feedback signal, Claude as the optimizer, and the agent registry (`agents/registry.json`) as the deployment layer. This is a closed loop: production data → failure analysis → improved prompt → staging → promotion.
+Construct's prompt improvement system uses telemetry traces and quality scores as the feedback signal, Claude as the optimizer, and the agent registry (`agents/registry.json`) as the deployment layer. This is a closed loop: production data → failure analysis → improved prompt → staging → promotion.
 
 ## Running the optimizer
 
@@ -36,16 +36,16 @@ The optimizer requires Python 3.12+ (`pip3` must be available). It will auto-ins
 
 Retrieve the current production prompt for the target agent from `agents/registry.json` (or the corresponding `promptFile` if using extracted prompts).
 
-Then retrieve recent traces via the Langfuse REST API:
+Then retrieve recent traces via the telemetry backend REST API:
 
 ```
-GET {LANGFUSE_BASEURL}/api/public/traces?tags={agentName}&limit=50
-# Auth: Basic base64(LANGFUSE_PUBLIC_KEY:LANGFUSE_SECRET_KEY)
+GET {CONSTRUCT_TELEMETRY_URL}/api/public/traces?tags={agentName}&limit=50
+# Auth: Basic base64(CONSTRUCT_TELEMETRY_PUBLIC_KEY:CONSTRUCT_TELEMETRY_SECRET_KEY)
 ```
 
 To fetch quality scores for traces:
 ```
-GET {LANGFUSE_BASEURL}/api/public/scores?traceId={id}&name=quality
+GET {CONSTRUCT_TELEMETRY_URL}/api/public/scores?traceId={id}&name=quality
 ```
 
 Filter to scores where `value < 0.7`. For each low-scoring trace, extract: the prompt used, the user input, the model output, the quality score, and any human comments.
@@ -110,5 +110,5 @@ Run `cx-trace-reviewer` after every promotion. If the newly promoted prompt show
 
 ## What this does not replace
 
-- **DSPy**: If you need algorithmic optimization over large datasets with measurable metrics (classification, structured output), DSPy is the right tool and integrates with Langfuse for tracing. This skill is for natural-language agent prompts where the metric is quality score.
+- **DSPy**: If you need algorithmic optimization over large datasets with measurable metrics (classification, structured output), DSPy is the right tool and integrates with telemetry backend for tracing. This skill is for natural-language agent prompts where the metric is quality score.
 - **Human review**: Always read the generated prompt before pushing to staging. The LLM optimizer can introduce subtle regressions. Automated promotion should only happen after confirming the diff makes sense.

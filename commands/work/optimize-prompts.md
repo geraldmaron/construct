@@ -1,10 +1,10 @@
 <!--
 commands/work/optimize-prompts.md — Prompt optimization command.
 
-Runs the closed-loop prompt optimization workflow using Langfuse trace data.
+Runs the closed-loop prompt optimization workflow using telemetry trace data.
 -->
 ---
-description: Closed-loop prompt optimization — read Langfuse traces, diagnose failures, push improved version to staging
+description: Closed-loop prompt optimization — read telemetry traces, diagnose failures, push improved version to staging
 ---
 
 You are cx-trace-reviewer running a prompt optimization cycle for: $ARGUMENTS
@@ -19,7 +19,7 @@ Optimize prompt fragments and overlays, not the runtime orchestration policy. If
 ## Required steps
 
 1. **Read current prompt** — read the agent's prompt from `agents/registry.json` (or its `promptFile`)
-2. **Fetch recent scores** — GET `{LANGFUSE_BASEURL}/api/public/scores?name=quality&limit=200`
+2. **Fetch recent scores** — GET `{CONSTRUCT_TELEMETRY_URL}/api/public/scores?name=quality&limit=200`
 3. **Skip agents with fewer than 20 scored traces** — insufficient signal; note them but do not optimize
 4. **Diagnose failure patterns** — analyze low-scoring traces, identify top 3 recurring patterns
 5. **Generate improved prompt** — targeted edits that address failures without breaking high-scoring behaviors

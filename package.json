@@ -19,7 +19,6 @@
     "platforms/**",
     "templates/**",
     "templates/distribution/**",
-    "langfuse/**",
     "db/**",
     "scripts/sync-agents.mjs",
     "README.md",

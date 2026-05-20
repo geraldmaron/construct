@@ -270,10 +270,10 @@ test("user env config path can be written during setup-style flows", async () =>
   const { getUserEnvPath, writeEnvValues, parseEnvFile } = await import(path.join(root, 'lib', 'env-config.mjs'));
   const home = tempDir('construct-user-env-home-');
   const envPath = getUserEnvPath(home);
-  writeEnvValues(envPath, { LANGFUSE_BASEURL: 'https://cloud.langfuse.com', LANGFUSE_PUBLIC_KEY: 'pk-lf-test' });
+  writeEnvValues(envPath, { CONSTRUCT_TELEMETRY_URL: 'https://telemetry.example.com', CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test' });
   const parsed = parseEnvFile(envPath);
-  assert.equal(parsed.LANGFUSE_BASEURL, 'https://cloud.langfuse.com');
-  assert.equal(parsed.LANGFUSE_PUBLIC_KEY, 'pk-lf-test');
+  assert.equal(parsed.CONSTRUCT_TELEMETRY_URL, 'https://telemetry.example.com');
+  assert.equal(parsed.CONSTRUCT_TELEMETRY_PUBLIC_KEY, 'pk-lf-test');
 });
 
 test("user env config can persist hybrid backend settings", async () => {
@@ -291,7 +291,7 @@ test("user env config can persist hybrid backend settings", async () => {
   assert.equal(parsed.CONSTRUCT_VECTOR_MODEL, 'text-embedding-3-small');
 });
 
-test("sync wires managed OpenCode runtime plugin and construct-mcp Langfuse env", () => {
+test("sync wires managed OpenCode runtime plugin and construct-mcp telemetry env", () => {
   const home = tempDir("construct-opencode-plugin-home-");
   const cwd = root;
   const opencodeDir = path.join(home, ".config", "opencode");
@@ -314,8 +314,8 @@ test("sync wires managed OpenCode runtime plugin and construct-mcp Langfuse env"
     home,
     cwd,
     env: {
-      LANGFUSE_BASEURL: "https://cloud.langfuse.com",
-      LANGFUSE_PUBLIC_KEY: "pk-lf-test",
+      CONSTRUCT_TELEMETRY_URL: "https://telemetry.example.com",
+      CONSTRUCT_TELEMETRY_PUBLIC_KEY: "pk-lf-test",
     },
   });
 

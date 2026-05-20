@@ -136,7 +136,7 @@ Previews prompt changes inferred from low-quality traces without applying them.
 construct optimize cx-engineer
 ```
 
-Rewrites the agent's system prompt slice in `registry.json` based on recurring failure patterns in Langfuse traces. Requires `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` to be set.
+Rewrites the agent's system prompt slice in `registry.json` based on recurring failure patterns in telemetry traces. Requires `CONSTRUCT_TELEMETRY_PUBLIC_KEY` and `CONSTRUCT_TELEMETRY_SECRET_KEY` to be set.
 
 ## Verify after changes
 

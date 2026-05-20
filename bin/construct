@@ -194,24 +194,6 @@ async function cmdStatus() {
   
   println(formatStatusReport(status));
   
-  // Show Langfuse credentials if running locally
-  const langfuseService = status.system.services.find(s => s.name === 'Langfuse');
-  if (langfuseService && langfuseService.url?.includes('localhost')) {
-    const { loadConstructEnv } = await import('../lib/env-config.mjs');
-    const env = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME });
-    
-    if (env.LANGFUSE_ADMIN_EMAIL && env.LANGFUSE_ADMIN_PASSWORD) {
-      println('');
-      println('Langfuse Credentials (Local)');
-      println('════════════════════════════');
-      println(`  Dashboard:     ${langfuseService.url}`);
-      println(`  Login:         ${env.LANGFUSE_ADMIN_EMAIL} / ${env.LANGFUSE_ADMIN_PASSWORD}`);
-      println(`  API Public:    ${env.LANGFUSE_PUBLIC_KEY || 'auto-configured'}`);
-      println(`  API Secret:    ${env.LANGFUSE_SECRET_KEY || 'auto-configured'}`);
-      println('');
-      info('Credentials saved to ~/.construct/config.env — edit if needed');
-    }
-  }
 }
 
 async function cmdShow() {
@@ -551,7 +533,7 @@ async function cmdDoctor() {
   // the operator can verify which is current. Both advisory: degraded
   // pricing still falls back to a usable source.
   try {
-    const { describePricingCatalogFreshness, checkPricingDivergence } = await import('../lib/telemetry/langfuse-model-sync.mjs');
+    const { describePricingCatalogFreshness, checkPricingDivergence } = await import('../lib/telemetry/model-pricing-catalog.mjs');
     const freshness = describePricingCatalogFreshness();
     if (freshness.stale) {
       add(`Pricing catalog: ${freshness.message}`, false, true);
@@ -772,7 +754,7 @@ async function cmdDoctor() {
     }
 
     // cm and Docker are optional but downstream services (memory MCP,
-    // Langfuse, managed Postgres) depend on them. Surface missing tools
+    // managed Postgres) depend on them. Surface missing tools
     // as warnings rather than failures so doctor doesn't flip-flop.
     try {
       const cmProbe = spawnSync(process.platform === 'win32' ? 'where' : 'which', ['cm'], { stdio: 'pipe' });
@@ -785,7 +767,7 @@ async function cmdDoctor() {
     try {
       const dockerCli = spawnSync(process.platform === 'win32' ? 'where' : 'which', ['docker'], { stdio: 'pipe' });
       let dockerOk = false;
-      let dockerNote = 'Docker not installed (optional — Langfuse and managed Postgres need it)';
+      let dockerNote = 'Docker not installed (optional — managed Postgres needs it)';
       if (dockerCli.status === 0) {
         const dockerInfo = spawnSync('docker', ['info'], { stdio: 'pipe' });
         if (dockerInfo.status === 0) {
@@ -893,16 +875,6 @@ async function cmdUp() {
     else if (svc.status === 'configured') info(`${svc.name}: ${svc.note}`);
     else if (svc.status === 'failed') errorln(`${svc.name}: ${svc.note}`);
     else warn(`${svc.name}: ${svc.note}`);
-  }
-
-  // Show Langfuse credentials guidance after first start
-  const langfuseService = results.find(r => r.name === 'Langfuse');
-  if (langfuseService && langfuseService.status === 'started' && langfuseService.note?.includes('auto-configured')) {
-    println('');
-    info('Langfuse credentials:');
-    info('  Dashboard: http://localhost:54330 (login: admin@construct.local / construct-admin)');
-    info('  API keys auto-saved to ~/.construct/config.env');
-    info('  Run `construct status` anytime to view credentials');
   }
 
   if (recovery) {
@@ -1043,9 +1015,9 @@ async function cmdReview(args) {
   }
 
   if (sub === 'legacy') {
-    if (!ENV.LANGFUSE_PUBLIC_KEY || !ENV.LANGFUSE_SECRET_KEY) {
-      errorln('Error: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY must be set.');
-      errorln('Configure Langfuse credentials in ~/.construct/config.env or .env.');
+    if (!ENV.CONSTRUCT_TELEMETRY_PUBLIC_KEY || !ENV.CONSTRUCT_TELEMETRY_SECRET_KEY) {
+      errorln('Error: CONSTRUCT_TELEMETRY_PUBLIC_KEY and CONSTRUCT_TELEMETRY_SECRET_KEY must be set.');
+      errorln('Configure telemetry credentials in ~/.construct/config.env or .env.');
       process.exit(1);
     }
     runNodeScript(path.join(ROOT_DIR, 'scripts', 'review.mjs'), args.slice(1), ENV);
@@ -1437,7 +1409,7 @@ async function cmdPricing(args) {
     refreshPricingCatalog,
     checkPricingDivergence,
     resolveModelPricing,
-  } = await import('../lib/telemetry/langfuse-model-sync.mjs');
+  } = await import('../lib/telemetry/model-pricing-catalog.mjs');
 
   if (sub === 'status') {
     const f = describePricingCatalogFreshness();
@@ -2786,9 +2758,9 @@ async function cmdEvals(args) {
 
   const jsonOutput = args.includes('--json');
   const catalog = {
-    description: 'Evaluators are managed via Langfuse quality scores. Use cx_score MCP tool or POST /api/public/scores to record quality scores. Run `construct evals retrieval` for the local IR-metric harness against a fixture corpus.',
-    backendUrl: process.env.LANGFUSE_BASEURL ?? 'http://localhost:3000',
-    configured: Boolean(process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY),
+    description: 'Evaluators are managed via telemetry quality scores. Use cx_score MCP tool or POST /api/public/scores to record quality scores. Run `construct evals retrieval` for the local IR-metric harness against a fixture corpus.',
+    backendUrl: process.env.CONSTRUCT_TELEMETRY_BASEURL ?? 'http://localhost:3000',
+    configured: Boolean(process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY && process.env.CONSTRUCT_TELEMETRY_SECRET_KEY),
   };
   if (jsonOutput) {
     println(JSON.stringify(catalog, null, 2));
@@ -2797,11 +2769,11 @@ async function cmdEvals(args) {
   println('Evaluator Catalog');
   println('═════════════════');
   println('');
-  println(`Backend:     Langfuse (${catalog.backendUrl})`);
-  println(`Configured:  ${catalog.configured ? 'yes' : 'no — set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY'}`);
+  println(`Backend:     Telemetry (${catalog.backendUrl})`);
+  println(`Configured:  ${catalog.configured ? 'yes' : 'no — set CONSTRUCT_TELEMETRY_PUBLIC_KEY and CONSTRUCT_TELEMETRY_SECRET_KEY'}`);
   println('');
   println('Quality scores are recorded by agents via the cx_score MCP tool.');
-  println('View and manage scores at your Langfuse dashboard.');
+  println('View and manage scores at your telemetry dashboard.');
   println('');
   println('Local retrieval evaluation:');
   println('  construct evals retrieval [--fixture=PATH] [--json]');
@@ -3594,9 +3566,9 @@ const handlers = new Map([
     const { runLLMJudgeCli } = await import('../lib/telemetry/llm-judge.mjs');
     return runLLMJudgeCli(args);
   }],
-  ['langfuse-setup', async (args) => {
-    const { runLangfuseSetupCli } = await import('../lib/telemetry/langfuse-setup.mjs');
-    return runLangfuseSetupCli(args);
+  ['telemetry-setup', async (args) => {
+    const { runTelemetrySetupCli } = await import('../lib/telemetry/setup.mjs');
+    return runTelemetrySetupCli(args);
   }],
   ['beads', async (args) => {
     const sub = args[0];

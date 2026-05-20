@@ -148,7 +148,7 @@ export default function Config() {
             <span className="text-sm">{config.autoEmbed ? 'on' : 'off'}</span>
           </label>
         </Field>
-        <Field label="Telemetry (Langfuse ingest)" help="When off, R&D-loop traces stay in .cx/traces/ only.">
+        <Field label="Telemetry (Remote ingest)" help="When off, R&D-loop traces stay in .cx/traces/ only.">
           <label className="inline-flex items-center gap-2">
             <input
               type="checkbox"

@@ -37,7 +37,7 @@ test('construct search uses the current working directory as project scope', () 
   assert.ok(json.results.some((entry) => entry.id === 'docs/concepts/architecture.md'));
 });
 
-test('construct evals exposes Langfuse evaluator catalog', () => {
+test('construct evals exposes evaluator catalog', () => {
   const out = execFileSync(process.execPath, [BIN, 'evals', '--json'], {
     cwd: ROOT,
     encoding: 'utf8',

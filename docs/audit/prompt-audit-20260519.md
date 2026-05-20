@@ -80,12 +80,7 @@ The following updates were applied to all specialist prompts:
 {
   "autoEmbed": true,  // ✅ Enabled
   "telemetry": {
-    "enabled": true,  // ✅ Enabled
-    "langfuse": {
-      "baseUrl": "http://localhost:54330",  // ✅ LOCAL Langfuse (Docker)
-      "publicKey": "configured-in-env",     // ✅ Set in ~/.construct/.env
-      "secretKey": "configured-in-env"      // ✅ NEVER cloud.langfuse.com
-    }
+    "enabled": true   // ✅ Enabled
   }
 }
 ```
@@ -109,11 +104,10 @@ The following updates were applied to all specialist prompts:
    - Cross-session recall working
    - Feedback loop integrated
 
-4. **Langfuse Telemetry LOCAL-FIRST**
+4. **Telemetry Backend Configured**
    - Runs on `http://localhost:54330` (Docker via `construct up`)
    - Traces stay local in `.cx/traces/` and local Postgres
    - Dashboard at `http://localhost:54330` for trace visibility
-   - **NEVER** uses cloud.langfuse.com
 
 5. **All 8 Specialist Prompts Updated** with:
    - ✅ Tool contracts (input/output schemas, errors, rate limits)
@@ -175,7 +169,7 @@ Configuration includes:
 - Targets: knowledge, decisions, how-tos
 - Schedule: 4 scheduled activations (docs, classification, security, traces)
 - Activations: 4 event-driven triggers (test.fail, secrets, CVE, docs)
-- Telemetry: LOCAL Langfuse (http://localhost:54330), NEVER cloud
+- Telemetry: local (http://localhost:54330)
 - Resources: RSS limits, observation limits, trace retention
 
 #### 2. **All 28 Prompts Updated** ✅
@@ -197,16 +191,9 @@ Each now includes:
 - ✅ Learning capture (when/how to record observations)
 - ✅ Classification correction workflow
 
-#### 3. **Langfuse Credentials Documented** ✅
+#### 3. **Telemetry Credentials Configured** ✅
 
-Added to `~/.construct/.env`:
-```bash
-CONSTRUCT_LANGFUSE_BASE_URL=http://localhost:54330
-CONSTRUCT_LANGFUSE_PUBLIC_KEY=langfuse-public-key
-CONSTRUCT_LANGFUSE_SECRET_KEY=langfuse-secret-key
-```
-
-**IMPORTANT**: Use LOCAL Langfuse (Docker via `construct up`), NEVER cloud.langfuse.com
+The telemetry backend runs on `http://localhost:54330` with auto-provisioned credentials saved to `~/.construct/config.env`.
 
 Documentation updated in:
 - `docs/cookbook/quick-start.md` — Setup instructions
@@ -236,7 +223,7 @@ Add a "Dogfooding Status" panel to the dashboard showing:
 - Observations captured (last 7 days)
 - Classification accuracy for this project
 - Specialist activation frequency
-- Langfuse trace count
+- Telemetry trace count
 
 #### 6. **Record Richer Observations**
 
@@ -257,7 +244,7 @@ memory_add_observations([{
 **COMPLETED 2026-05-19** ✅
 
 - [x] `embed.yaml` exists and daemon runs on `construct up`
-- [x] Langfuse traces visible in dashboard (http://localhost:54330)
+- [x] Telemetry traces visible in dashboard (http://localhost:54330)
 - [x] All 28 prompts updated with tool contracts
 - [x] Evaluator-optimizer loop integrated for doc roles
 - [x] Parallel execution documented in relevant prompts
@@ -271,7 +258,7 @@ memory_add_observations([{
 
 **Construct is now fully dogfooding itself:**
 - ✅ embed.yaml exists and daemon runs on `construct up`
-- ✅ Langfuse credentials configured (LOCAL, not cloud)
+- ✅ Telemetry backend configured
 - ✅ All 8 specialist prompts updated with 2026 best practices
 - ✅ Tool contracts defined for all specialists
 - ✅ Evaluator-optimizer integration complete

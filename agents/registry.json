@@ -103,7 +103,7 @@
       "args": [
         "__CX_TOOLKIT_DIR__/lib/mcp/server.mjs"
       ],
-      "description": "Agent health, diff summary, file scanner, project context, Langfuse trace write"
+      "description": "Agent health, diff summary, file scanner, project context, telemetry trace write"
     }
   },
   "sharedGuidance": [
