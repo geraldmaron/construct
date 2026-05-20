@@ -36,7 +36,7 @@ test('parseSwapUsage extracts used and total bytes from macOS sysctl output', ()
   assert.equal(parsed.freeBytes, Math.round(1204.56 * 1024 * 1024));
 });
 
-test('buildCleanupPlan targets stale helpers and duplicate opencode processes first', () => {
+test('buildCleanupPlan marks opencode cleanup as warn-first and still targets stale helpers', () => {
   const plan = buildCleanupPlan([
     { pid: 100, command: 'opencode', elapsedSeconds: 60 * 60 * 30, rssKb: 100000 },
     { pid: 101, command: 'opencode', elapsedSeconds: 60 * 60 * 12, rssKb: 110000 },
@@ -53,18 +53,22 @@ test('buildCleanupPlan targets stale helpers and duplicate opencode processes fi
   });
 
   assert.deepEqual(plan.terminate.map((entry) => entry.pid), [102, 100, 101, 200, 201, 202]);
+  assert.deepEqual(plan.terminate.slice(0, 3).map((entry) => entry.warnFirst), [true, true, true]);
   assert.match(plan.summary, /6 processes/);
   assert.equal(plan.cassCandidates.length, 1);
   assert.equal(plan.cassCandidates[0].pid, 300);
 });
 
-test('runPressureRelease terminates cass only when pressure threshold is crossed', () => {
+test('runPressureRelease warns before terminating opencode sessions and terminates cass only under pressure', () => {
   const killed = [];
+  const homeDir = tempDir('construct-pressure-home-');
   const report = runPressureRelease({
     env: {
+      HOME: homeDir,
       CONSTRUCT_PRESSURE_GUARD_SWAP_GB: '6',
       CONSTRUCT_PRESSURE_GUARD_MAX_OPENCODE: '2',
       CONSTRUCT_PRESSURE_GUARD_MAX_OPENCODE_AGE_HOURS: '24',
+      CONSTRUCT_PRESSURE_GUARD_OPENCODE_WARN_GRACE_MINUTES: '15',
       CONSTRUCT_PRESSURE_GUARD_MAX_HELPER_AGE_HOURS: '2',
       CONSTRUCT_PRESSURE_GUARD_MAX_CASS_INDEX_AGE_HOURS: '8',
     },
@@ -83,7 +87,8 @@ test('runPressureRelease terminates cass only when pressure threshold is crossed
   });
 
   assert.equal(report.pressureTriggered, true);
-  assert.deepEqual(killed.map((entry) => entry.pid), [100, 200, 300]);
+  assert.deepEqual(report.warnings.map((entry) => entry.pid), [100]);
+  assert.deepEqual(killed.map((entry) => entry.pid), [200, 300]);
 });
 
 test('buildPressureGuardValues writes realistic default constraints', () => {
@@ -91,8 +96,9 @@ test('buildPressureGuardValues writes realistic default constraints', () => {
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_ENABLED, '1');
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_INTERVAL_SECONDS, '300');
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_SWAP_GB, '6');
-  assert.equal(values.CONSTRUCT_PRESSURE_GUARD_MAX_OPENCODE, '2');
+  assert.equal(values.CONSTRUCT_PRESSURE_GUARD_MAX_OPENCODE, '6');
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_MAX_OPENCODE_AGE_HOURS, '24');
+  assert.equal(values.CONSTRUCT_PRESSURE_GUARD_OPENCODE_WARN_GRACE_MINUTES, '15');
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_MAX_HELPER_AGE_HOURS, '2');
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_MAX_CASS_INDEX_AGE_HOURS, '8');
 });
@@ -113,7 +119,7 @@ test('installPressureGuardLaunchAgent writes a launch agent plist', () => {
   assert.match(plist, /dev\.construct\.pressure-release/);
   assert.match(plist, /<string>cleanup<\/string>/);
   assert.match(plist, /<string>--pressure-release<\/string>/);
-  assert.match(plist, /<string>--quiet<\/string>/);
+  assert.doesNotMatch(plist, /<string>--quiet<\/string>/);
   assert.match(plist, /<integer>300<\/integer>/);
   assert.match(plist, /\/usr\/local\/bin\/node/);
 });

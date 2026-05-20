@@ -59,7 +59,7 @@ Read the matching skill file before responding when the user's request matches t
 | workflow state, orchestration state, task key, handoff contract, phase gate, project alignment | `skills/ai/orchestration-workflow.md` | Construct-style workflow state and phase alignment |
 | LLM security, prompt injection, jailbreak, guardrail | `skills/ai/llm-security.md` | LLM security and guardrails |
 | prompt engineering, model evaluation, benchmark, fine-tuning | `skills/ai/prompt-and-eval.md` | Prompt engineering and evaluation |
-| prompt optimization, improve prompt, optimize agent, quality score, staging prompt, promotion | `skills/ai/prompt-optimizer.md` | Closed-loop prompt auto-optimization via Langfuse traces |
+| prompt optimization, improve prompt, optimize agent, quality score, staging prompt, promotion | `skills/ai/prompt-optimizer.md` | Closed-loop prompt auto-optimization via telemetry traces |
 | MLOps, ML pipeline, model registry, model deployment, feature store, drift detection, model monitoring, training pipeline | `skills/ai/ml-ops.md` | ML operations and model lifecycle |
 
 ## DevOps Domain

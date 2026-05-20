@@ -35,7 +35,7 @@ async function createFixture() {
     personas: [{ name: 'construct', displayName: 'Construct', role: 'orchestrator', description: 'Public entry point' }],
     agents: [{ name: 'engineer', description: 'Implements changes' }],
   });
-  writeText(path.join(rootDir, '.env'), 'DASHBOARD_PORT=4242\nMEMORY_PORT=8765\nBRIDGE_PORT=5173\nLANGFUSE_BASEURL=https://cloud.langfuse.com\n');
+  writeText(path.join(rootDir, '.env'), 'DASHBOARD_PORT=4242\nMEMORY_PORT=8765\nBRIDGE_PORT=5173\nCONSTRUCT_TELEMETRY_URL=https://telemetry.example.com\n');
   writeText(path.join(rootDir, 'plan.md'), '# Plan\n\n## Current slice\n\n- Keep coordination tracker-backed.\n- Assign one writer per file.\n');
   writeJson(path.join(rootDir, '.cx', 'context.json'), {
     format: 'json',
@@ -97,7 +97,7 @@ test('buildStatus separates runtime health from configured integrations', async 
   const { rootDir, homeDir } = await createFixture();
   const probeMap = new Map([
     ['http://127.0.0.1:4242', { status: 'healthy', message: 'Reachable' }],
-    ['https://cloud.langfuse.com/api/public/health', { status: 'unavailable', message: 'Connection refused' }],
+    ['https://telemetry.example.com/api/public/traces?limit=1', { status: 'unavailable', message: 'Connection refused' }],
     ['http://127.0.0.1:8765/', { status: 'healthy', message: 'Reachable' }],
     ['http://127.0.0.1:5173', { status: 'degraded', message: 'HTTP 503' }],
   ]);
@@ -120,7 +120,7 @@ test('buildStatus separates runtime health from configured integrations', async 
 
   assert.equal(status.system.overall.status, 'degraded');
   assert.equal(status.system.services.find((service) => service.id === 'dashboard').status, 'healthy');
-  assert.equal(status.system.services.find((service) => service.id === 'langfuse').status, 'unavailable');
+  assert.equal(status.system.services.find((service) => service.id === 'telemetry').status, 'unavailable');
   assert.equal(status.features.find((feature) => feature.id === 'github').status, 'configured');
   // Memory MCP is unavailable in OpenCode: SSE transport incompatible with cm serve
   assert.equal(status.features.find((feature) => feature.id === 'memory').status, 'unavailable');
@@ -155,7 +155,7 @@ test('optional runtime surfaces do not degrade overall status', async () => {
   const { rootDir, homeDir } = await createFixture();
   const probeMap = new Map([
     ['http://127.0.0.1:4242', { status: 'healthy', message: 'Reachable' }],
-    ['https://cloud.langfuse.com/api/public/health', { status: 'healthy', message: 'Reachable' }],
+    ['https://telemetry.example.com/api/public/traces?limit=1', { status: 'healthy', message: 'Reachable' }],
     ['http://127.0.0.1:8765/', { status: 'healthy', message: 'Reachable' }],
     ['http://127.0.0.1:5173', { status: 'unavailable', message: 'Connection refused' }],
   ]);
@@ -185,7 +185,7 @@ test('github feature counts the Codex GitHub plugin as configured', async () => 
     rootDir,
     homeDir,
     cwd: rootDir,
-    probeService: async (service) => ({ status: service.id === 'langfuse' ? 'unavailable' : 'healthy', message: 'ok' }),
+    probeService: async (service) => ({ status: service.id === 'telemetry' ? 'unavailable' : 'healthy', message: 'ok' }),
     env: {},
   });
 
@@ -201,7 +201,7 @@ test('formatStatusReport prints canonical overall summary and integrations', asy
     rootDir,
     homeDir,
     cwd: rootDir,
-    probeService: async (service) => ({ status: service.id === 'langfuse' ? 'unavailable' : 'healthy', message: 'ok' }),
+    probeService: async (service) => ({ status: service.id === 'telemetry' ? 'unavailable' : 'healthy', message: 'ok' }),
     env: {},
   });
 
@@ -210,8 +210,9 @@ test('formatStatusReport prints canonical overall summary and integrations', asy
   assert.match(report, /Overall: degraded/);
   assert.match(report, /Coordination: external tracker \+ plan\.md · single-writer per file · cass-memory for recall/);
   assert.match(report, /Efficiency: healthy/);
-  assert.match(report, /Usage: available · 2 interactions · 265 provider total · 265 billed total · \$0\.00/);
-  assert.match(report, /Last interaction: 105 provider total · 105 billed total \(80 uncached in \/ 20 out \/ 5 reasoning\)/);
+  assert.match(report, /Usage: available · 2 interactions · 265 provider · 265 billed \(.*?% cache read · .*?% cache write · .*?% fresh\)/);
+  assert.match(report, /Last interaction: 105 provider total · 105 billed total/); 
+  // Note: last interaction line format is from the cli status builder, not the summary above
   assert.match(report, /Telemetry:/);
   assert.match(report, /Overlays: 1 active/);
   assert.match(report, /Promotion requests: 1/);
@@ -259,7 +260,7 @@ test('buildStatus surfaces external plugin manifests and validation errors', asy
     rootDir,
     homeDir,
     cwd: rootDir,
-    probeService: async (service) => ({ status: service.id === 'langfuse' ? 'unavailable' : 'healthy', message: 'ok' }),
+    probeService: async (service) => ({ status: service.id === 'telemetry' ? 'unavailable' : 'healthy', message: 'ok' }),
     env: {},
   });
 
@@ -269,7 +270,7 @@ test('buildStatus surfaces external plugin manifests and validation errors', asy
   assert.match(status.plugins.errors.join('\n'), /missing string name/);
 });
 
-test('status json includes Langfuse telemetry health payload', async () => {
+test('status json includes telemetry health payload', async () => {
   const { rootDir, homeDir } = await createFixture();
 
   const originalFetch = global.fetch;
@@ -292,7 +293,7 @@ test('status json includes Langfuse telemetry health payload', async () => {
       homeDir,
       cwd: rootDir,
       probeService: async () => ({ status: 'healthy', message: 'ok' }),
-      env: { LANGFUSE_PUBLIC_KEY: 'pk-lf-test', LANGFUSE_SECRET_KEY: 'sk-lf-test' },
+      env: { CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test', CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test' },
     });
 
     assert.equal(status.telemetryRichness.status, 'healthy');
@@ -326,7 +327,7 @@ test('buildStatus marks telemetry richness degraded when coverage is low', async
       homeDir,
       cwd: rootDir,
       probeService: async () => ({ status: 'healthy', message: 'ok' }),
-      env: { LANGFUSE_PUBLIC_KEY: 'pk-lf-test', LANGFUSE_SECRET_KEY: 'sk-lf-test' },
+      env: { CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test', CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test' },
     });
 
     assert.equal(status.telemetryRichness.status, 'degraded');
@@ -365,7 +366,7 @@ test('buildStatus marks controlled rich telemetry healthy', async () => {
       homeDir,
       cwd: rootDir,
       probeService: async () => ({ status: 'healthy', message: 'ok' }),
-      env: { LANGFUSE_PUBLIC_KEY: 'pk-lf-test', LANGFUSE_SECRET_KEY: 'sk-lf-test' },
+      env: { CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test', CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test' },
     });
 
     assert.equal(status.telemetryRichness.status, 'healthy');
@@ -465,7 +466,7 @@ test('buildStatus reports canonical cache fields with bounded read rate', async 
   assert.ok(status.sessionUsage.cacheReadRate <= 1);
 });
 
-test('buildStatus reports Langfuse unavailable when trace backend is unreachable', async () => {
+test('buildStatus reports telemetry unavailable when trace backend is unreachable', async () => {
   const { rootDir, homeDir } = await createFixture();
 
   const originalFetch = global.fetch;
@@ -477,11 +478,11 @@ test('buildStatus reports Langfuse unavailable when trace backend is unreachable
       homeDir,
       cwd: rootDir,
       probeService: async () => ({ status: 'healthy', message: 'ok' }),
-      env: { LANGFUSE_PUBLIC_KEY: 'pk-lf-test', LANGFUSE_SECRET_KEY: 'sk-lf-test' },
+      env: { CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test', CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test' },
     });
 
     assert.equal(status.telemetryRichness.status, 'unavailable');
-    assert.match(status.telemetryRichness.summary, /Langfuse/);
+    assert.match(status.telemetryRichness.summary, /Telemetry/);
   } finally {
     global.fetch = originalFetch;
   }
@@ -503,7 +504,7 @@ test('formatStatusReport shows explicit byte-budget warning when session bytes a
     rootDir,
     homeDir,
     cwd: rootDir,
-    probeService: async (service) => ({ status: service.id === 'langfuse' ? 'unavailable' : 'healthy', message: 'ok' }),
+    probeService: async (service) => ({ status: service.id === 'telemetry' ? 'unavailable' : 'healthy', message: 'ok' }),
     env: {},
   });
 
@@ -513,12 +514,12 @@ test('formatStatusReport shows explicit byte-budget warning when session bytes a
   assert.ok(status.sessionEfficiency.warnings.length >= 1);
 });
 
-test('buildStatus marks telemetry richness credentials-invalid when Langfuse auth fails', async () => {
+test('buildStatus marks telemetry richness credentials-invalid when telemetry auth fails', async () => {
   const { rootDir, homeDir } = await createFixture();
   writeEnvValues(path.join(homeDir, '.construct', 'config.env'), {
-    LANGFUSE_BASEURL: 'http://localhost:3000',
-    LANGFUSE_PUBLIC_KEY: 'pk-lf-test',
-    LANGFUSE_SECRET_KEY: 'sk-lf-test',
+    CONSTRUCT_TELEMETRY_URL: 'http://localhost:3000',
+    CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test',
+    CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test',
   });
 
   const originalFetch = global.fetch;

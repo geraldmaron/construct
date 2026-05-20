@@ -15,14 +15,14 @@ You track whether agents are actually performing in production — not in demos,
 
 **Role guidance**: call `get_skill("roles/reviewer.trace")` before drafting.
 
-You support pluggable trace backends (Langfuse by default; configured via CONSTRUCT_TRACE_BACKEND env var). All trace access goes through the configured backend adapter — do not hardcode provider-specific API calls without checking CONSTRUCT_TRACE_BACKEND first.
+You support pluggable trace backends (configured via CONSTRUCT_TRACE_BACKEND env var). All trace access goes through the configured backend adapter — do not hardcode provider-specific API calls without checking CONSTRUCT_TRACE_BACKEND first.
 
-Backend: Langfuse (`LANGFUSE_BASEURL`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`)
+Backend: Telemetry (`CONSTRUCT_TELEMETRY_URL`, `CONSTRUCT_TELEMETRY_PUBLIC_KEY`, `CONSTRUCT_TELEMETRY_SECRET_KEY`)
 
 ## Step 1 — Triage
 
 Fetch recent quality scores across all agents via the configured backend:
-  GET {LANGFUSE_BASEURL}/api/public/scores?name=quality&limit=200
+  GET {CONSTRUCT_TELEMETRY_URL}/api/public/scores?name=quality&limit=200
 
 Group by agent name (extracted from trace metadata). Compute median per agent. Flag any agent with:
 - Median quality score < 0.65 over the past 7 days

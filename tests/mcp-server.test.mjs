@@ -31,8 +31,8 @@ test('cxTrace includes execution-contract model metadata parity', async () => {
 
   const originalToolkit = process.env.CX_TOOLKIT_DIR;
   const originalHome = process.env.HOME;
-  const originalPublic = process.env.LANGFUSE_PUBLIC_KEY;
-  const originalSecret = process.env.LANGFUSE_SECRET_KEY;
+  const originalPublic = process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY;
+  const originalSecret = process.env.CONSTRUCT_TELEMETRY_SECRET_KEY;
   const originalReasoning = process.env.CX_MODEL_REASONING;
   const originalStandard = process.env.CX_MODEL_STANDARD;
   const originalFast = process.env.CX_MODEL_FAST;
@@ -40,8 +40,8 @@ test('cxTrace includes execution-contract model metadata parity', async () => {
 
   process.env.CX_TOOLKIT_DIR = rootDir;
   process.env.HOME = homeDir;
-  process.env.LANGFUSE_PUBLIC_KEY = 'pk-test';
-  process.env.LANGFUSE_SECRET_KEY = 'sk-test';
+  process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY = 'pk-test';
+  process.env.CONSTRUCT_TELEMETRY_SECRET_KEY = 'sk-test';
   process.env.CX_MODEL_REASONING = 'env/reasoning';
   process.env.CX_MODEL_STANDARD = 'env/standard';
   process.env.CX_MODEL_FAST = 'env/fast';
@@ -75,8 +75,8 @@ test('cxTrace includes execution-contract model metadata parity', async () => {
     global.fetch = originalFetch;
     if (originalToolkit === undefined) delete process.env.CX_TOOLKIT_DIR; else process.env.CX_TOOLKIT_DIR = originalToolkit;
     if (originalHome === undefined) delete process.env.HOME; else process.env.HOME = originalHome;
-    if (originalPublic === undefined) delete process.env.LANGFUSE_PUBLIC_KEY; else process.env.LANGFUSE_PUBLIC_KEY = originalPublic;
-    if (originalSecret === undefined) delete process.env.LANGFUSE_SECRET_KEY; else process.env.LANGFUSE_SECRET_KEY = originalSecret;
+    if (originalPublic === undefined) delete process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY; else process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY = originalPublic;
+    if (originalSecret === undefined) delete process.env.CONSTRUCT_TELEMETRY_SECRET_KEY; else process.env.CONSTRUCT_TELEMETRY_SECRET_KEY = originalSecret;
     if (originalReasoning === undefined) delete process.env.CX_MODEL_REASONING; else process.env.CX_MODEL_REASONING = originalReasoning;
     if (originalStandard === undefined) delete process.env.CX_MODEL_STANDARD; else process.env.CX_MODEL_STANDARD = originalStandard;
     if (originalFast === undefined) delete process.env.CX_MODEL_FAST; else process.env.CX_MODEL_FAST = originalFast;

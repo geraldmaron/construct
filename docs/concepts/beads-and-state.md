@@ -54,7 +54,7 @@ Two newer surfaces complete the durable substrate, both written by the daemon an
 
 These two are distinct from `bd` issues. Beads is the project-wide task tracker. The intake queue is the inbox; task graphs are the per-signal execution plans. They eventually graduate to beads issues when work crosses session boundaries.
 
-`.cx/traces/<YYYY-MM-DD>.jsonl` is the append-only audit log: every intake.received, task_graph.created, worker.started, evidence.recorded, and tool.called event lands there with a stable traceId / spanId, ready to be ingested into Langfuse or an OTel collector.
+`.cx/traces/<YYYY-MM-DD>.jsonl` is the append-only audit log: every intake.received, task_graph.created, worker.started, evidence.recorded, and tool.called event lands there with a stable traceId / spanId, ready to be ingested into a telemetry backend or an OTel collector.
 
 ## What goes where
 
@@ -72,7 +72,7 @@ These two are distinct from `bd` issues. Beads is the project-wide task tracker.
 
 ## Failure modes Construct guards against
 
-- **Cloud went down mid-session.** Postgres / Langfuse / the dashboard can all fail. Construct keeps working from beads + `.cx/` + git + the local vector index.
+- **Cloud went down mid-session.** Postgres / the telemetry backend / the dashboard can all fail. Construct keeps working from beads + `.cx/` + git + the local vector index.
 - **Session ended with work in progress.** The Stop hook refuses to end a session with open beads issues. You either close them, defer them, or explicitly acknowledge with `CONSTRUCT_STOP_OK_OPEN_BD=1`.
 - **A specialist's reasoning got lost.** Observations are written as the chain runs; the next session can re-read them via semantic retrieval.
 - **A decision drifted without anyone noticing.** ADRs in `docs/adr/` are append-only and reviewed; `.cx/context.md` mirrors active state and is part of the doc-coupling gate.

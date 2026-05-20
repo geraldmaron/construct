@@ -9,11 +9,11 @@ description: Observability commands for Construct.
 |---|---|
 | `construct cost` | Show token usage, cost, cache read rate, and per-agent breakdown |
 | `construct efficiency` | Show read efficiency, repeated files, and context-budget guidance |
-| `construct eval-datasets` | Sync scored Langfuse traces into eval datasets for prompt regression testing |
+| `construct eval-datasets` | Sync scored telemetry traces into eval datasets for prompt regression testing |
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
 | `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
-| `construct optimize` | Prompt optimization using Langfuse trace quality scores |
-| `construct review` | Generate agent performance review from Langfuse trace backend |
+| `construct optimize` | Prompt optimization using telemetry trace quality scores |
+| `construct review` | Generate agent performance review from telemetry trace backend |
 | `construct telemetry-backfill` | Backfill sparse traces with observations (trace backend) |
 
 ## construct cost
@@ -53,7 +53,7 @@ construct efficiency [--json]
 
 ## construct eval-datasets
 
-Sync scored Langfuse traces into eval datasets for prompt regression testing
+Sync scored telemetry traces into eval datasets for prompt regression testing
 
 **Usage**
 
@@ -102,7 +102,7 @@ construct llm-judge [--limit=N] [--model=NAME]
 
 ## construct optimize
 
-Prompt optimization using Langfuse trace quality scores
+Prompt optimization using telemetry trace quality scores
 
 **Usage**
 
@@ -122,7 +122,7 @@ construct optimize <agent> [--dry-run] [--list]
 
 ## construct review
 
-Generate agent performance review from Langfuse trace backend
+Generate agent performance review from telemetry trace backend
 
 **Usage**
 

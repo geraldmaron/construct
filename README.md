@@ -8,24 +8,31 @@ Construct is a deployable AI R&D operating system. You address one persona — `
 
 ## Get started in 5 minutes
 
-Add Construct to your project's `package.json` like any other dev dependency:
+### Step 1: Install CLI (one-time, per machine)
+
+```bash
+npm install -g @geraldmaron/construct
+```
+
+### Step 2: Machine Setup (one-time, per machine)
+
+First time on a new machine, bootstrap local services. `construct install` auto-spins local Postgres + telemetry backend via Docker:
+
+```bash
+construct install --yes
+# Local services:
+#   Telemetry: http://localhost:54330
+#   Postgres: postgresql://construct:construct@127.0.0.1:54329/construct
+```
+
+### Step 3: Initialize Project (per project)
 
 ```bash
 cd ~/your-project
-npm install -D @geraldmaron/construct
+construct init --auto-start
 ```
 
 The postinstall hook stages `.construct/` and `.claude/` into your project, so hooks, agents, and slash commands are wired up automatically. Peers who clone your repo and run `npm install` get the same setup with no extra steps.
-
-First time on a new machine, bootstrap local services. `construct setup` auto-spins local Postgres + Langfuse via Docker and prints your Langfuse login at the end:
-
-```bash
-npx construct setup --yes
-# Local services:
-#   Langfuse: http://localhost:54330
-#     Web login: admin@construct.local / construct-admin
-#   Postgres: postgresql://construct:construct@127.0.0.1:54329/construct
-```
 
 Open your editor and address `@construct`. A friendly orientation lives in `construct_guide.md` at your project root.
 
@@ -65,101 +72,87 @@ Every code mutation runs through enforcement: no secrets committed, tests green,
 ## Core commands
 
 <!-- AUTO:commands -->
-### Services
+### Core
 
 | Command | What it does |
 |---|---|
-| `construct beads` | Manage beads lock and queue, or run bd commands |
-| `construct completions` | Generate or print shell completion scripts for construct |
-| `construct config` | Inspect or set deployment posture (solo, team, enterprise) |
-| `construct down` | Stop all running services |
-| `construct serve` | Start the Construct dashboard (auto-selects port) |
-| `construct setup` | Bootstrap user config after npm or manual install |
-| `construct show` | Show runtime service URLs and live status (compat view) |
-| `construct status` | Show canonical system health across runtime and integrations |
-| `construct uninstall` | Interactively remove Construct state; never touches Docker, Homebrew, or shared resources |
-| `construct up` | Start services (memory, dashboard) |
-| `construct update` | Reinstall this checkout globally, then sync and verify hosts |
-
-### Agents & Sync
-
-| Command | What it does |
-|---|---|
-| `construct list` | Show all personas and specialist agents |
-| `construct role` | Inspect or manage role-framework pending invocations |
-| `construct sync` | Generate agent adapters for all platforms |
+| `construct dev` | Start services for development |
+| `construct docs` | Documentation commands |
+| `construct doctor` | Check installation health |
+| `construct init` | Initialize project and start services |
+| `construct install` | Machine setup: install Docker, cm, and bootstrap config |
+| `construct intake` | View and process R&D intake queue |
+| `construct models` | Manage AI model assignments |
+| `construct recommendations` | View and manage artifact recommendations |
+| `construct status` | Show system health and credentials |
+| `construct stop` | Stop all running services |
+| `construct sync` | Sync agent adapters to AI tools |
 
 ### Work
 
 | Command | What it does |
 |---|---|
-| `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
-| `construct distill` | Distill documents with query-focused, citation-ready chunk selection |
-| `construct docs:verify` | Validate documentation completeness and quality |
-| `construct drop` | Ingest the most recent file dropped into ~/Downloads, Desktop, Documents, or iCloud Drive |
-| `construct graph` | Generate and inspect task graphs derived from R&D intake triage |
-| `construct headhunt` | Create a temporary domain expertise overlay or promotion request |
-| `construct infer` | Infer a structured field schema from one or more documents using AI |
-| `construct ingest` | Convert PDFs, office docs, spreadsheets, and text files into indexed markdown artifacts in the knowledge base |
-| `construct init` | Bootstrap Construct project state and documentation system |
-| `construct init-docs` | Stand up opinionated docs lanes and per-lane templates without overwriting existing docs |
-| `construct init:update` | Update existing project to current documentation standards |
-| `construct intake` | Inspect and process the R&D intake queue (list/show/done/skip/reopen) |
-| `construct memory` | Inspect or consolidate the memory layer |
-| `construct reflect` | Capture improvement feedback from chat session and update Construct core |
-| `construct search` | Run hybrid file, SQL, and semantic retrieval over core project state |
-| `construct storage` | Sync and inspect the hybrid storage backend |
-| `construct team` | Team review and template listing |
-| `construct wireframe` | Generate a low-fi wireframe (Mermaid diagram or sketch-style HTML) from a description |
+| `construct bootstrap` | Import seed observations |
+| `construct customer` | Manage customer profiles for product intelligence |
+| `construct distill` | Distill documents with query-focused chunking |
+| `construct drop` | Ingest file from Downloads/Desktop |
+| `construct graph` | Task graph management |
+| `construct headhunt` | Create domain expertise overlays |
+| `construct infer` | Infer schema from documents |
+| `construct ingest` | Convert documents to indexed markdown |
+| `construct integrations` | Check and manage external system connections |
+| `construct memory` | Inspect memory layer |
+| `construct reflect` | Capture improvement feedback |
+| `construct search` | Hybrid search across project state |
+| `construct storage` | Manage storage backend |
+| `construct team` | Team review and templates |
+| `construct wireframe` | Generate wireframes from description |
+| `construct workspace` | Manage PM workspaces for multi-PM signal routing |
 
-### Models & Integrations
+### Integrations
 
 | Command | What it does |
 |---|---|
-| `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
-| `construct hosts` | Show host support for Construct orchestration |
+| `construct claude:allow` | Manage Claude Code permissions |
+| `construct hosts` | Check host capabilities |
 | `construct mcp` | Manage MCP integrations |
-| `construct models` | Show or update model tier assignments |
-| `construct ollama` | Manage local Ollama LLM installation |
-| `construct plugin` | Manage external Construct plugin manifests |
+| `construct ollama` | Manage local Ollama models |
+| `construct plugin` | Manage plugin manifests |
 
 ### Observability
 
 | Command | What it does |
 |---|---|
-| `construct cost` | Show token usage, cost, cache read rate, and per-agent breakdown |
-| `construct efficiency` | Show read efficiency, repeated files, and context-budget guidance |
-| `construct eval-datasets` | Sync scored Langfuse traces into eval datasets for prompt regression testing |
-| `construct evals` | Show evaluator catalog for prompt and agent experiments |
-| `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
-| `construct optimize` | Prompt optimization using Langfuse trace quality scores |
-| `construct review` | Generate agent performance review from Langfuse trace backend |
-| `construct telemetry-backfill` | Backfill sparse traces with observations (trace backend) |
+| `construct cost` | Token usage and cost breakdown |
+| `construct efficiency` | Read efficiency metrics |
+| `construct evals` | Evaluator catalog |
+| `construct llm-judge` | LLM-as-judge evaluations |
+| `construct optimize` | Prompt optimization |
+| `construct review` | Agent performance review |
 
-### Docs
+### Advanced
 
 | Command | What it does |
 |---|---|
-| `construct dashboard:sync` | Sync the built dashboard bundle into lib/server/static for the HTTP server |
-| `construct docs:check` | Report CLI commands that have no linked how-to guide in docs/README.md |
-| `construct docs:site` | Generate site/docs/ content for the MkDocs GitHub Pages site |
-| `construct docs:update` | Regenerate AUTO-managed regions in README and docs/ |
-| `construct lint:comments` | Check all files against the comment policy (rules/common/comments.md) |
-| `construct lint:research` | Check research and evidence artifacts for minimum structure and evidence metadata |
-
-### Diagnostics
-
-| Command | What it does |
-|---|---|
-| `construct audit` | Audit Construct internals and review the mutation trail |
-| `construct backup` | Create, verify, restore, list, or prune full system backups (observations, sessions, config, registry, Postgres). |
-| `construct cleanup` | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
-| `construct diff` | Show which agents changed prompts or settings since HEAD |
-| `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
-| `construct doctor` | Run installation health checks (default), or manage the L0 doctor daemon |
-| `construct gates:audit` | Audit policy gates across CI, local hooks, and branch protection; flag gaps |
-| `construct skills` | Detect project tech stack and scope installed skills to relevance |
-| `construct validate` | Validate registry.json structure and field constraints |
+| `construct audit` | Audit Construct internals |
+| `construct auth:status` | Check auth status |
+| `construct backup` | System backups |
+| `construct beads` | Task queue management |
+| `construct cleanup` | Clean stale processes |
+| `construct completions` | Shell completion scripts |
+| `construct config` | Deployment mode configuration |
+| `construct diff` | Show agent changes since HEAD |
+| `construct embed` | Embed mode management |
+| `construct gates:audit` | Audit policy gates |
+| `construct hooks:health` | Check hook health |
+| `construct list` | List all agents |
+| `construct provider` | Provider management |
+| `construct role` | Role framework management |
+| `construct skills` | Skill relevance detection |
+| `construct uninstall` | Remove Construct state |
+| `construct update` | Reinstall this checkout |
+| `construct upgrade` | Upgrade to latest npm version |
+| `construct validate` | Validate registry structure |
 | `construct version` | Show version |
 <!-- /AUTO:commands -->
 
@@ -184,7 +177,6 @@ construct/
 ├── deploy
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples
-├── langfuse         Langfuse trace backend for agent observability
 ├── lib              Core runtime: CLI, hooks, MCP, status, sync, workflow
 ├── personas         Persona prompt definitions
 ├── platforms

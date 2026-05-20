@@ -189,7 +189,7 @@ Transport-agnostic interface to external systems. Each provider implements a cap
 
 Docker service management, embed daemon, and scheduler.
 
-- **Service manager** — `lib/service-manager.mjs` (container lifecycle for Postgres, Langfuse, memory)
+- **Service manager** — `lib/service-manager.mjs` (container lifecycle for Postgres, memory)
 - **Embed daemon** — scheduled or long-running process that monitors sources through providers, produces snapshots, manages approval queue. `construct embed supervise` installs a platform-native supervisor (launchd/systemd/Task Scheduler) for auto-restart on crash.
 - **Scheduler** — cron-style or interval-based execution (local: in-process schedule; cloud: cron + webhook triggers)
 - **Resource bootstrap** — `lib/bootstrap/resources.mjs` probes optional resources (Postgres, ONNX model, Docker, git). `lib/bootstrap/lazy-install.mjs` gates install on operator consent cached in `config.env`; `construct setup` runs the full wizard.

@@ -16,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 const setup = await import(path.join(root, "lib", "setup.mjs"));
 
-test("managed setup values configure local vector and local Langfuse defaults", async () => {
+test("managed setup values configure local vector and remote telemetry defaults", async () => {
   const home = tempDir("construct-setup-values-");
   // Pin embedding model to hashing in tests so the expected CONSTRUCT_VECTOR_MODEL
   // value is deterministic without requiring the ONNX runtime.
@@ -25,10 +25,8 @@ test("managed setup values configure local vector and local Langfuse defaults", 
     env: { CONSTRUCT_EMBEDDING_MODEL: "hashing" },
   });
 
-  assert.equal(values.CONSTRUCT_TRACE_BACKEND, "langfuse");
-  assert.equal(values.LANGFUSE_BASEURL, "http://localhost:54330", "local Langfuse on Construct port block — never defaults to cloud or to common :3000");
-  assert.equal(values.LANGFUSE_PUBLIC_KEY, "pk-lf-construct-local", "auto-seeded local public key");
-  assert.equal(values.LANGFUSE_SECRET_KEY, "sk-lf-construct-local", "auto-seeded local secret key");
+  assert.equal(values.CONSTRUCT_TRACE_BACKEND, "remote");
+  assert.equal(values.CONSTRUCT_TELEMETRY_URL, undefined, "no default telemetry URL — user must configure");
   assert.equal(values.CONSTRUCT_VECTOR_MODEL, "hashing-bow-v1");
   assert.equal(values.CONSTRUCT_VECTOR_INDEX_PATH, path.join(home, ".construct", "vector", "index.json"));
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_ENABLED, "1");
@@ -37,20 +35,20 @@ test("managed setup values configure local vector and local Langfuse defaults", 
   assert.equal(values.DATABASE_URL, undefined);
 });
 
-test("managed setup values respect explicit remote Langfuse URL (opt-in cloud)", async () => {
-  const home = tempDir("construct-setup-remote-langfuse-");
+test("managed setup values respect explicit remote telemetry URL", async () => {
+  const home = tempDir("construct-setup-remote-telemetry-");
   const values = await setup.buildManagedSetupValues({
     homeDir: home,
     env: {
       CONSTRUCT_EMBEDDING_MODEL: "hashing",
-      LANGFUSE_BASEURL: "https://langfuse.acme.example",
-      LANGFUSE_PUBLIC_KEY: "pk-acme",
-      LANGFUSE_SECRET_KEY: "sk-acme",
+      CONSTRUCT_TELEMETRY_URL: "https://telemetry.acme.example",
+      CONSTRUCT_TELEMETRY_PUBLIC_KEY: "pk-acme",
+      CONSTRUCT_TELEMETRY_SECRET_KEY: "sk-acme",
     },
   });
-  assert.equal(values.LANGFUSE_BASEURL, "https://langfuse.acme.example");
-  assert.equal(values.LANGFUSE_PUBLIC_KEY, "pk-acme");
-  assert.equal(values.LANGFUSE_SECRET_KEY, "sk-acme");
+  assert.equal(values.CONSTRUCT_TELEMETRY_URL, "https://telemetry.acme.example");
+  assert.equal(values.CONSTRUCT_TELEMETRY_PUBLIC_KEY, "pk-acme");
+  assert.equal(values.CONSTRUCT_TELEMETRY_SECRET_KEY, "sk-acme");
 });
 
 test("managed setup values preserve caller-provided external services", async () => {
@@ -61,18 +59,18 @@ test("managed setup values preserve caller-provided external services", async ()
       DATABASE_URL: "postgresql://db.example/construct",
       CONSTRUCT_VECTOR_URL: "https://vector.example",
       CONSTRUCT_VECTOR_MODEL: "external-model",
-      LANGFUSE_BASEURL: "https://langfuse.example",
-      LANGFUSE_PUBLIC_KEY: "pk-test",
-      LANGFUSE_SECRET_KEY: "sk-test",
+      CONSTRUCT_TELEMETRY_URL: "https://telemetry.example",
+      CONSTRUCT_TELEMETRY_PUBLIC_KEY: "pk-test",
+      CONSTRUCT_TELEMETRY_SECRET_KEY: "sk-test",
     },
   });
 
   assert.equal(values.DATABASE_URL, "postgresql://db.example/construct");
   assert.equal(values.CONSTRUCT_VECTOR_URL, "https://vector.example");
   assert.equal(values.CONSTRUCT_VECTOR_MODEL, "external-model");
-  assert.equal(values.LANGFUSE_BASEURL, "https://langfuse.example");
-  assert.equal(values.LANGFUSE_PUBLIC_KEY, "pk-test");
-  assert.equal(values.LANGFUSE_SECRET_KEY, "sk-test");
+  assert.equal(values.CONSTRUCT_TELEMETRY_URL, "https://telemetry.example");
+  assert.equal(values.CONSTRUCT_TELEMETRY_PUBLIC_KEY, "pk-test");
+  assert.equal(values.CONSTRUCT_TELEMETRY_SECRET_KEY, "sk-test");
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_ENABLED, "1");
 });
 

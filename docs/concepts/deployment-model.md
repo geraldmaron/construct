@@ -21,7 +21,7 @@ For individual work. State lives in the user's repo and `~/.construct/`. Queue i
 
 ### Team
 
-For shared usage by a development team. The intake queue is Postgres-backed (with row-locked worker claims). Memory is shared across the team. Workers run in a Docker pool, isolated from the host. Telemetry is centralized via Langfuse or an OpenTelemetry collector. MCP calls go through a broker that applies role-based policy.
+For shared usage by a development team. The intake queue is Postgres-backed (with row-locked worker claims). Memory is shared across the team. Workers run in a Docker pool, isolated from the host. Telemetry is centralized via a telemetry backend or an OpenTelemetry collector. MCP calls go through a broker that applies role-based policy.
 
 A reference compose topology ships at [`docker-compose.team.yml`](https://github.com/geraldmaron/construct/blob/main/docker-compose.team.yml): Postgres + a worker pool sized via `CONSTRUCT_WORKER_REPLICAS`, with the worker image built from [`Dockerfile.worker`](https://github.com/geraldmaron/construct/blob/main/Dockerfile.worker). The worker entrypoint (`lib/worker/entrypoint.mjs`) claims pending intake items via `PostgresIntakeQueue.claim()` (`FOR UPDATE SKIP LOCKED`), runs each through `runJob` with `allowedPaths: [/work]` so the bind-mounted workspace is the only writable surface, attaches evidence to the originating task graph node when named in the packet, and exits when the queue stays empty for `--idle-timeout-seconds` (default 300s) so a scheduler can scale workers to zero.
 
@@ -46,7 +46,7 @@ The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.construct/config.env
 | LLM inference | local server (Ollama, llama.cpp, any OpenAI-compatible) or hosted provider | hosted provider; local fallback configurable |
 | Embedding model | `@huggingface/transformers` ONNX in-process | shared embedding service or hosted |
 | Vector retrieval | Postgres + pgvector when present; `.cx/observations/` JSON index otherwise | shared Postgres + pgvector |
-| Trace observability | Langfuse via local Docker when present | central Langfuse or OTel collector |
+| Trace observability | Telemetry backend via local Docker when present | central telemetry backend or OTel collector |
 | Issue tracking | `bd` (beads), Dolt-backed | `bd` against shared Dolt remote |
 | Dashboard | `construct serve` on localhost | dashboard server in the shared deployment |
 | MCP | local processes | brokered through `mcp-broker` |
@@ -57,7 +57,7 @@ The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.construct/config.env
 
 Construct degrades gracefully when an optional resource is unreachable and reports the degradation explicitly rather than silently masking it.
 
-- **No Docker:** managed Postgres + Langfuse are skipped; vector retrieval falls back to the JSON index. `construct doctor` reports which capabilities are degraded.
+- **No Docker:** managed Postgres + the telemetry backend are skipped; vector retrieval falls back to the JSON index. `construct doctor` reports which capabilities are degraded.
 - **No `cm` (memory CLI):** the memory MCP server doesn't start; observations still write to `.cx/observations/` and remain retrievable from there.
 - **No `OPENAI_API_KEY`:** if `CONSTRUCT_EMBEDDING_MODEL=openai`, the command exits with the env var name and an alternative. Opt into automatic fallback with `CONSTRUCT_EMBEDDING_FALLBACK=1`.
 - **No internet:** Construct refuses to fetch external resources. `construct evals retrieval` runs against the local fixture and works offline.
@@ -78,7 +78,7 @@ The orchestration loop — persona, specialists, contracts, gates, durable state
 
 A few capabilities depend on external systems by their nature:
 
-- **Hosted Langfuse retention.** The local Langfuse stack works for development and team use; long-term hosted retention is the cloud product.
+- **Hosted telemetry retention.** The local telemetry stack works for development and team use; long-term hosted retention is the cloud product.
 - **Provider integrations to remote systems.** Slack messages, Jira issues, Salesforce records. The provider plugins are local code; the systems they talk to are remote.
 - **GitHub Actions / forge CI.** Required-status-checks live on the forge. Construct's local gates are designed to catch what CI would catch; the forge gate is the final say.
 
