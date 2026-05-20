@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * scripts/seed-traces.mjs — Seed synthetic traces + quality scores into Langfuse.
+ * scripts/seed-traces.mjs — Seed synthetic traces + quality scores into telemetry.
  *
  * Creates realistic agent traces with a spread of quality scores so that
  * `construct review` and `construct optimize` have data to work with
@@ -9,7 +9,7 @@
  * Usage:
  *   node scripts/seed-traces.mjs [--agents=cx-engineer,cx-architect] [--count=5] [--dry-run]
  *
- * Requires env: LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_BASEURL
+ * Requires env: CONSTRUCT_TELEMETRY_PUBLIC_KEY, CONSTRUCT_TELEMETRY_SECRET_KEY, CONSTRUCT_TELEMETRY_BASEURL
  */
 
 import { randomBytes } from 'node:crypto';
@@ -32,13 +32,13 @@ const AGENT_LIST = flags.agents
   ? flags.agents.split(',')
   : ['cx-engineer', 'cx-architect', 'cx-reviewer', 'cx-qa', 'cx-debugger'];
 
-// ─── Langfuse config ─────────────────────────────────────────────────────────
-const BASE = (process.env.LANGFUSE_BASEURL ?? 'https://cloud.langfuse.com').replace(/\/$/, '');
+// ─── Telemetry config ────────────────────────────────────────────────────────
+const BASE = (process.env.CONSTRUCT_TELEMETRY_BASEURL ?? '').replace(/\/$/, '');
 
 function headers() {
-  const key = process.env.LANGFUSE_PUBLIC_KEY;
-  const secret = process.env.LANGFUSE_SECRET_KEY;
-  if (!key || !secret) { process.stderr.write('Error: LANGFUSE keys not set.\n'); process.exit(1); }
+  const key = process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY;
+  const secret = process.env.CONSTRUCT_TELEMETRY_SECRET_KEY;
+  if (!key || !secret) { process.stderr.write('Error: CONSTRUCT_TELEMETRY keys not set.\n'); process.exit(1); }
   return {
     Authorization: `Basic ${Buffer.from(`${key}:${secret}`).toString('base64')}`,
     'Content-Type': 'application/json',
@@ -68,7 +68,7 @@ const INPUTS = [
   'Write tests for the knowledge search BM25 scorer',
   'Explain why the daemon heap keeps growing',
   'Add error handling to the snapshot output writer',
-  'Create a circuit breaker for the Langfuse trace calls',
+  'Create a circuit breaker for the telemetry trace calls',
 ];
 
 const OUTPUTS_GOOD = [
@@ -134,7 +134,7 @@ async function seedAgent(agentName, count) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-console.log(`Seeding synthetic Langfuse traces${DRY_RUN ? ' [DRY RUN]' : ''}`);
+console.log(`Seeding synthetic telemetry traces${DRY_RUN ? ' [DRY RUN]' : ''}`);
 console.log(`Agents: ${AGENT_LIST.join(', ')}`);
 console.log(`Traces per agent: ${COUNT}\n`);
 

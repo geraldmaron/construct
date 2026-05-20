@@ -16,6 +16,7 @@ type ConfigPayload = {
   deployment?: { mode?: string; mcpBroker?: string; projectName?: string | null; tenantId?: string | null };
   autoEmbed?: boolean;
   telemetry?: { enabled?: boolean };
+  roleSelection?: { primary?: string | null; secondary?: string | null; perConversationOverride?: boolean };
   resources?: { disk?: { totalCxMaxMb?: number; tracesMaxDays?: number; backupsMaxDays?: number } };
   costs?: {
     billingMode?: 'metered' | 'subscription' | 'mixed';
@@ -147,7 +148,7 @@ export default function Config() {
             <span className="text-sm">{config.autoEmbed ? 'on' : 'off'}</span>
           </label>
         </Field>
-        <Field label="Telemetry (Langfuse ingest)" help="When off, R&D-loop traces stay in .cx/traces/ only.">
+        <Field label="Telemetry (Remote ingest)" help="When off, R&D-loop traces stay in .cx/traces/ only.">
           <label className="inline-flex items-center gap-2">
             <input
               type="checkbox"
@@ -155,6 +156,92 @@ export default function Config() {
               onChange={(e) => setConfig((c) => ({ ...c!, telemetry: { ...c?.telemetry, enabled: e.target.checked } }))}
             />
             <span className="text-sm">{config.telemetry?.enabled !== false ? 'on' : 'off'}</span>
+          </label>
+        </Field>
+      </section>
+
+      <section className="card space-y-4" aria-labelledby="roles-heading">
+        <h2 id="roles-heading" className="text-sm uppercase tracking-wider text-text-dim">Team Configuration</h2>
+        <p className="text-xs text-text-muted">
+          Set your default primary and secondary personas. The primary sets the analysis lens; the secondary provides complementary perspective.
+          Override per-conversation with <code className="px-1 py-0.5 bg-bg-muted rounded">@construct --primary=cx-pm --secondary=cx-arch</code>.
+        </p>
+        <Field label="Primary persona" help="Default orientation for all work. Leave null for automatic routing.">
+          <select
+            value={config.roleSelection?.primary ?? ''}
+            onChange={(e) => setConfig((c) => ({ ...c!, roleSelection: { ...c?.roleSelection, primary: e.target.value || null } }))}
+            className="w-full px-3 py-2 border border-border rounded bg-surface"
+          >
+            <option value="">Automatic (context-based)</option>
+            <option value="cx-product-manager">cx-product-manager</option>
+            <option value="cx-architect">cx-architect</option>
+            <option value="cx-engineer">cx-engineer</option>
+            <option value="cx-debugger">cx-debugger</option>
+            <option value="cx-qa">cx-qa</option>
+            <option value="cx-sre">cx-sre</option>
+            <option value="cx-platform-engineer">cx-platform-engineer</option>
+            <option value="cx-designer">cx-designer</option>
+            <option value="cx-ux-researcher">cx-ux-researcher</option>
+            <option value="cx-accessibility">cx-accessibility</option>
+            <option value="cx-researcher">cx-researcher</option>
+            <option value="cx-data-analyst">cx-data-analyst</option>
+            <option value="cx-ai-engineer">cx-ai-engineer</option>
+            <option value="cx-evaluator">cx-evaluator</option>
+            <option value="cx-trace-reviewer">cx-trace-reviewer</option>
+            <option value="cx-security">cx-security</option>
+            <option value="cx-legal-compliance">cx-legal-compliance</option>
+            <option value="cx-reviewer">cx-reviewer</option>
+            <option value="cx-devil-advocate">cx-devil-advocate</option>
+            <option value="cx-release-manager">cx-release-manager</option>
+            <option value="cx-docs-keeper">cx-docs-keeper</option>
+            <option value="cx-business-strategist">cx-business-strategist</option>
+            <option value="cx-operations">cx-operations</option>
+            <option value="cx-orchestrator">cx-orchestrator</option>
+            <option value="cx-rd-lead">cx-rd-lead</option>
+          </select>
+        </Field>
+        <Field label="Secondary persona" help="Complementary perspective. Leave null for automatic routing.">
+          <select
+            value={config.roleSelection?.secondary ?? ''}
+            onChange={(e) => setConfig((c) => ({ ...c!, roleSelection: { ...c?.roleSelection, secondary: e.target.value || null } }))}
+            className="w-full px-3 py-2 border border-border rounded bg-surface"
+          >
+            <option value="">Automatic (context-based)</option>
+            <option value="cx-product-manager">cx-product-manager</option>
+            <option value="cx-architect">cx-architect</option>
+            <option value="cx-engineer">cx-engineer</option>
+            <option value="cx-debugger">cx-debugger</option>
+            <option value="cx-qa">cx-qa</option>
+            <option value="cx-sre">cx-sre</option>
+            <option value="cx-platform-engineer">cx-platform-engineer</option>
+            <option value="cx-designer">cx-designer</option>
+            <option value="cx-ux-researcher">cx-ux-researcher</option>
+            <option value="cx-accessibility">cx-accessibility</option>
+            <option value="cx-researcher">cx-researcher</option>
+            <option value="cx-data-analyst">cx-data-analyst</option>
+            <option value="cx-ai-engineer">cx-ai-engineer</option>
+            <option value="cx-evaluator">cx-evaluator</option>
+            <option value="cx-trace-reviewer">cx-trace-reviewer</option>
+            <option value="cx-security">cx-security</option>
+            <option value="cx-legal-compliance">cx-legal-compliance</option>
+            <option value="cx-reviewer">cx-reviewer</option>
+            <option value="cx-devil-advocate">cx-devil-advocate</option>
+            <option value="cx-release-manager">cx-release-manager</option>
+            <option value="cx-docs-keeper">cx-docs-keeper</option>
+            <option value="cx-business-strategist">cx-business-strategist</option>
+            <option value="cx-operations">cx-operations</option>
+            <option value="cx-orchestrator">cx-orchestrator</option>
+            <option value="cx-rd-lead">cx-rd-lead</option>
+          </select>
+        </Field>
+        <Field label="Per-conversation override" help="Allow CLI overrides with --primary and --secondary flags.">
+          <label className="inline-flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={config.roleSelection?.perConversationOverride !== false}
+              onChange={(e) => setConfig((c) => ({ ...c!, roleSelection: { ...c?.roleSelection, perConversationOverride: e.target.checked } }))}
+            />
+            <span className="text-sm">{config.roleSelection?.perConversationOverride !== false ? 'enabled' : 'disabled'}</span>
           </label>
         </Field>
       </section>

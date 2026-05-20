@@ -52,6 +52,10 @@ dashboard-*.png
 .beads/issues.jsonl
 .beads/metadata.json
 
+# Build artifacts
+dashboard/dist/
+lib/server/static/
+
 # Local scratch files that occasionally leak into the working tree
 token-baseline.txt
 # Literal `~/` directory created when a script writes to "~/foo" without

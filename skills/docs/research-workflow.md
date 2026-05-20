@@ -34,7 +34,7 @@ Follow [rules/common/research.md](../../rules/common/research.md) as the default
 
 ## File naming
 - Topic slug: lowercase, hyphens, no spaces — e.g., `firebase-auth-v9-migration.md`
-- Date prefix for time-sensitive research: `2026-04-langfuse-v2-vs-v3.md`
+- Date prefix for time-sensitive research: `2026-04-release-comparison.md`
 
 ## When research feeds a decision
 → Also create `.cx/decisions/ADR-{NNN}-{slug}.md` referencing the research doc

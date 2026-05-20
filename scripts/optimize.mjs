@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * scripts/optimize.mjs — Agent prompt improvement loop.
+ *  scripts/optimize.mjs — Agent prompt improvement loop.
  *
- * Reads low-scoring Langfuse traces for a given agent, extracts failure
+ * Reads low-scoring telemetry traces for a given agent, extracts failure
  * patterns, and generates a prompt patch that is applied to the agent's
  * role skill file. Zero external deps — uses the same fetch + chat API
  * as the rest of the pipeline.
@@ -11,7 +11,7 @@
  *   node scripts/optimize.mjs <agent> [--dry-run] [--list]
  *   node scripts/optimize.mjs --list
  *
- * Requires env: LANGFUSE_BASEURL, LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY
+ * Requires env: CONSTRUCT_TELEMETRY_BASEURL, CONSTRUCT_TELEMETRY_PUBLIC_KEY, CONSTRUCT_TELEMETRY_SECRET_KEY
  * Optional env: OPENROUTER_API_KEY or ANTHROPIC_API_KEY (for patch generation)
  */
 
@@ -44,15 +44,15 @@ const HOME = os.homedir();
 const REVIEW_DIR = path.join(HOME, '.cx', 'performance-reviews');
 const SKILLS_DIR = path.join(ROOT_DIR, 'skills', 'roles');
 
-const LANGFUSE_BASEURL = (process.env.LANGFUSE_BASEURL ?? 'https://cloud.langfuse.com').replace(/\/$/, '');
+const TELEMETRY_BASEURL = (process.env.CONSTRUCT_TELEMETRY_BASEURL ?? '').replace(/\/$/, '');
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function langfuseHeaders() {
-  const key = process.env.LANGFUSE_PUBLIC_KEY;
-  const secret = process.env.LANGFUSE_SECRET_KEY;
+function telemetryHeaders() {
+  const key = process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY;
+  const secret = process.env.CONSTRUCT_TELEMETRY_SECRET_KEY;
   if (!key || !secret) {
-    process.stderr.write('Error: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY must be set.\n');
+    process.stderr.write('Error: CONSTRUCT_TELEMETRY_PUBLIC_KEY and CONSTRUCT_TELEMETRY_SECRET_KEY must be set.\n');
     process.exit(1);
   }
   return {
@@ -61,10 +61,10 @@ function langfuseHeaders() {
   };
 }
 
-async function langfuseFetch(endpoint) {
-  const url = `${LANGFUSE_BASEURL}${endpoint}`;
-  const res = await fetch(url, { headers: langfuseHeaders() });
-  if (!res.ok) throw new Error(`Langfuse ${endpoint} returned ${res.status}: ${await res.text()}`);
+async function telemetryFetch(endpoint) {
+  const url = `${TELEMETRY_BASEURL}${endpoint}`;
+  const res = await fetch(url, { headers: telemetryHeaders() });
+  if (!res.ok) throw new Error(`Telemetry ${endpoint} returned ${res.status}: ${await res.text()}`);
   return res.json();
 }
 
@@ -77,17 +77,17 @@ async function fetchAgentTraces(agentName, { days = 7, limit = 50 } = {}) {
   const from = new Date(Date.now() - days * 86400_000).toISOString();
   // Query by name (how cx_trace sets it) — tags are a secondary fallback
   const params = new URLSearchParams({ page: 1, limit, name: agentName, fromTimestamp: from });
-  const data = await langfuseFetch(`/api/public/traces?${params}`);
+  const data = await telemetryFetch(`/api/public/traces?${params}`);
   return data.data ?? [];
 }
 
 async function fetchQualityScoresByTraceIds(traceIds) {
    // Fetch all quality scores in one request and build a traceId→value map.
-   // Langfuse /scores endpoint supports userId/traceId filters individually.
+   // Telemetry /scores endpoint supports userId/traceId filters individually.
    // Broad fetch with client-side filtering avoids N+1 queries.
    // Works around local-instance traceId filter bugs.
   const limit = Math.min(traceIds.length * 3, 200);
-  const data = await langfuseFetch(`/api/public/scores?name=quality&limit=${limit}`);
+  const data = await telemetryFetch(`/api/public/scores?name=quality&limit=${limit}`);
   const traceSet = new Set(traceIds);
   const map = new Map();
   for (const s of data.data ?? []) {

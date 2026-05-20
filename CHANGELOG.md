@@ -4,8 +4,35 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Changed
+
+- **Breaking: CLI command restructuring** — Complete overhaul of command structure for clarity and progressive disclosure.
+  - **Renamed commands:** `setup`→`install`, `up`→`dev`, `down`→`stop`
+  - **Removed commands:** `start`, `serve`, `show` (no backwards compatibility shims)
+  - **Progressive disclosure:** Default `--help` shows only 11 core commands; `construct --all` shows all 60+
+  - **Interactive mode:** Running `construct` with no args shows context-aware menu with smart suggestions
+  - **Auto-magic health checks:** `construct dev` automatically checks prerequisites (Docker, cm, Node.js) before starting services
+  - **Smart defaults:** `construct init` auto-starts services by default (use `--no-start` to opt out)
+  - **Categories consolidated:** Core, Work, Integrations, Observability, Advanced
+  - `lib/health-check.mjs` provides shared prerequisite checking across install/init/dev
+
+- **Production-grade `construct init`** — Silent, non-interactive by default with smart defaults.
+  - **Non-interactive default:** No prompts unless `--interactive` flag is used
+  - **Silent git checks:** Working tree status only shown with `--verbose`
+  - **Project type detection:** Auto-detects API, web app, CLI, platform, etc.
+  - **Workflow-based docs:** Asks about specific needs (ADRs? RFCs? Runbooks?) not bland presets
+  - **Granular flags:** `--with-adrs`, `--with-rfcs`, `--with-runbooks`, `--with-postmortems`, `--with-docs=adrs,rfcs`
+  - **Smart suggestions:** Recommends docs based on detected project type
+  - **Clean output:** Professional, emoji-free output suitable for CI
+  - **New flags:** `--quiet` (minimal output), `--verbose` (detailed), `--interactive` (enable prompts)
+  - **Auto-start:** Services start automatically without prompting (use `--no-start` to opt out)
+  - Removed: `lean`, `product`, `full` presets (too generic)
+  - Before: Noisy git status warnings, childish "lean/product/full" prompts
+  - After: Silent initialization with project-aware documentation suggestions
+
 ### Added
 
+- `construct upgrade` command — Upgrade to latest npm version with one command. Runs `npm install -g`, re-syncs all editor adapters, and verifies health. Usage: `construct upgrade [--yes]`. `lib/upgrade.mjs` implements the flow; `bin/construct` wires the handler; `lib/cli-commands.mjs` documents the command.
 - Handoff contracts (`cx-handoff/v1`) and automatic lifecycle cleanup. `lib/handoffs/contract.mjs` defines a YAML frontmatter schema for handoff files — `schema`, `id`, `created`, `beads`, `status` (open/resolved/archived), `title` — plus required body sections ("What was done", "What's left"). `parseHandoff` is permissive (pre-contract files get `status: 'legacy'`); `validateHandoff` is strict (used when writing). `formatHandoff` produces contract-compliant markdown. `lib/handoffs/cleanup.mjs` implements three-phase lifecycle: resolved handoffs past retention → archived to `.cx/handoffs/archive/`; archived handoffs past 2× retention → deleted; open handoffs past max-items → warning only (open work is never auto-deleted). Wired into three callers: doctor daemon tick (30-min interval via `lib/doctor/watchers/handoffs.mjs`), `construct down` (best-effort at shutdown), and `construct handoffs prune` (manual). CLI expanded: `construct handoffs list` (all files with status/age/beads), `construct handoffs show <id>` (parsed frontmatter + sections), `construct handoffs validate` (strict check against contract), `construct handoffs prune` (run cleanup immediately).
 - Document metadata extraction. `extractDocumentMetadata(filePath)` in `lib/document-extract.mjs` returns structured metadata from source documents: `title` (from frontmatter, H1, HTML `<title>`, or filename), `authors` (from `author`/`authors`/`contributor` frontmatter fields), `dates` (from frontmatter date fields or filesystem timestamps), and `links` (deduplicated URLs from document body). `lib/document-ingest.mjs` now calls `extractDocumentMetadata` during ingestion and writes source metadata (`authors`, `source_date`, `source_links_count`) into the output frontmatter. Ingested document title is now derived from source content rather than always falling back to the filename.
 

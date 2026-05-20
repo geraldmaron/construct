@@ -68,6 +68,7 @@ export default function Models() {
   const [applyingFree, setApplyingFree] = useState(false);
   const [applyResult, setApplyResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showAllModels, setShowAllModels] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -108,6 +109,13 @@ export default function Models() {
       .finally(() => setPricingLoading(false));
   }, [catalog, models]);
 
+  // Only models from configured providers by default. Expand to all with toggle.
+  const configuredProviders = useMemo(() => catalog?.providers?.filter(p => p.configured) ?? [], [catalog]);
+  const allOptionsFor = (t: Tier): string[] => catalog?.tierOptions?.[t] ?? [];
+  const configuredOptionsFor = (t: Tier): string[] => {
+    const configured = configuredProviders.flatMap(p => p.options[t] || []);
+    return [...new Set(configured)];
+  };
   const dirty = useMemo<Record<Tier, boolean>>(() => {
     const d: Record<Tier, boolean> = { reasoning: false, standard: false, fast: false };
     if (!original) return d;
@@ -117,7 +125,7 @@ export default function Models() {
     return d;
   }, [models, original]);
 
-  const optionsFor = (t: Tier): string[] => catalog?.tierOptions?.[t] ?? [];
+  const optionsFor = (t: Tier): string[] => showAllModels ? allOptionsFor(t) : configuredOptionsFor(t);
 
   const renderOption = (id: string) => {
     const price = pricing[id];
@@ -213,6 +221,37 @@ export default function Models() {
         <div className="mb-3 px-3 py-2 rounded bg-green-50 border border-green-200 text-green-800 text-xs">{applyResult}</div>
       )}
 
+      {/* Configured providers summary */}
+      {configuredProviders.length > 0 && (
+        <div className="mb-3 px-3 py-2 rounded bg-green-50 border border-green-200 text-xs">
+          <p className="font-semibold text-green-900 mb-1">Your configured providers ({configuredProviders.length})</p>
+          <ul className="text-green-800 space-y-0.5 flex flex-wrap gap-x-4 gap-y-0.5">
+            {configuredProviders.map((p) => (
+              <li key={p.id} className="inline-flex items-center gap-1">
+                <span className="text-green-700">✓</span>
+                <span className="font-mono">{p.id}</span>
+                <span className="text-green-700">— {p.label}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {configuredProviders.length === 0 && catalog?.providers?.length > 0 && (
+        <div className="mb-3 px-3 py-2 rounded bg-amber-50 border border-amber-200 text-xs">
+          <p className="font-semibold text-amber-900 mb-1">No providers configured</p>
+          <p className="text-amber-800">Add API keys on the <a href="#/providers" className="underline">Providers</a> page, then models from those providers will appear here.</p>
+        </div>
+      )}
+
+      {/* Toggle to show all models (including unconfigured providers) */}
+      {catalog && (
+        <label className="flex items-center gap-2 mb-3 text-xs text-gray-600 cursor-pointer">
+          <input type="checkbox" checked={showAllModels} onChange={e => setShowAllModels(e.target.checked)}
+            className="w-3.5 h-3.5 rounded border-gray-300" />
+          Show all models (including unconfigured providers)
+        </label>
+      )}
+
       {localProviders.length > 0 && (
         <div className="mb-3 px-3 py-2 rounded bg-indigo-50 border border-indigo-200 text-xs">
           <p className="font-semibold text-indigo-900 mb-1">Local providers available</p>
@@ -230,10 +269,36 @@ export default function Models() {
 
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         {TIERS.map((t, idx) => {
-          const opts = optionsFor(t);
+          const providers = showAllModels ? catalog?.providers ?? [] : configuredProviders;
           const m = models[t];
           const primaryPrice = pricing[m.primary];
           const primaryLabel = formatPricingForOption(primaryPrice);
+
+          // Build optgroups: for each provider, list its models for this tier
+          const optgroups = providers
+            .filter(p => (p.options[t] ?? []).length > 0)
+            .map(p => ({
+              label: p.label,
+              configured: p.configured,
+              models: p.options[t] ?? [],
+            }));
+
+          const renderGroupedOptions = (selected: string) => (
+            <>
+              <option value="">— select model —</option>
+              {optgroups.map(g => (
+                <optgroup key={g.label} label={`${g.configured ? '' : '○ '}${g.label}`}>
+                  {g.models.map(mId => (
+                    <option key={mId} value={mId}>{renderOption(mId)}</option>
+                  ))}
+                </optgroup>
+              ))}
+              {selected && !optionsFor(t).includes(selected) && (
+                <option value={selected}>{renderOption(selected)} (current)</option>
+              )}
+            </>
+          );
+
           return (
             <div key={t} className={`px-3 py-2.5 ${idx > 0 ? 'border-t border-gray-200' : ''}`}>
               <div className="flex items-center justify-between mb-2">
@@ -248,11 +313,9 @@ export default function Models() {
                 <div>
                   <select value={m.primary} onChange={e => setPrimary(t, e.target.value)}
                     className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-white">
-                    <option value="">— select model —</option>
-                    {opts.map(o => <option key={o} value={o}>{renderOption(o)}</option>)}
-                    {m.primary && !opts.includes(m.primary) && <option value={m.primary}>{renderOption(m.primary)} (current)</option>}
+                    {renderGroupedOptions(m.primary)}
                   </select>
-                  {primaryLabel && (
+                  {primaryLabel && m.primary && (
                     <p className="text-[10px] text-gray-600 mt-0.5 font-mono">{primaryLabel}</p>
                   )}
                 </div>
@@ -263,9 +326,7 @@ export default function Models() {
                     <div key={i} className="flex gap-1 mb-1">
                       <select value={fb} onChange={e => setFallbackAt(t, i, e.target.value)}
                         className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-white">
-                        <option value="">— select model —</option>
-                        {opts.map(o => <option key={o} value={o}>{renderOption(o)}</option>)}
-                        {fb && !opts.includes(fb) && <option value={fb}>{renderOption(fb)} (current)</option>}
+                        {renderGroupedOptions(fb)}
                       </select>
                       <button onClick={() => removeFallback(t, i)}
                         className="px-2 py-0.5 text-xs font-medium rounded border border-red-300 bg-white text-red-700 hover:bg-red-50 transition-colors">×</button>

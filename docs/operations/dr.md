@@ -106,6 +106,6 @@ If the tool returns results from before the backup date, the memory store restor
 
 ## Notes
 
-- The backup does not include Langfuse trace data. Historical performance reviews are not recoverable unless you have a separate Langfuse backup.
+- The backup does not include telemetry trace data. Historical performance reviews are not recoverable unless you have a separate telemetry backup.
 - SSH keys, GitHub tokens, and other secrets in `config.env` should be stored in a separate secrets manager. Losing them means rotating them, not recovering them from backup.
 - If the original machine is still accessible, compare `~/.cx/audit-trail.jsonl` checksums to confirm no data was lost between the last backup and the failure.

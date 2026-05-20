@@ -2,7 +2,7 @@
 #
 # Brings up the control plane (Construct CLI + dashboard), a worker pool
 # claiming from the Postgres-backed intake queue, the data plane (Postgres
-# + pgvector), and the telemetry plane (Langfuse). The MCP broker is a
+# + pgvector), and the telemetry plane. The MCP broker is a
 # library that lives inside the control plane (lib/mcp/broker.mjs) — not
 # a separate service yet, so it's not its own container here.
 #
@@ -15,8 +15,7 @@
 # CONSTRUCT_WORKSPACE to override.
 #
 # Solo mode does NOT use this file — it uses ~/.construct/services/postgres
-# and langfuse/docker-compose.yml managed by `construct up`. This file is
-# specifically for shared / team deployments.
+# managed by `construct up`. This file is specifically for shared / team deployments.
 
 version: "3.9"
 
@@ -53,21 +52,18 @@ services:
       CONSTRUCT_TENANT_ID: ${CONSTRUCT_TENANT_ID:-}
       CONSTRUCT_DEPLOYMENT_MODE: team
       CONSTRUCT_INTAKE_QUEUE_BACKEND: postgres
-      CONSTRUCT_TRACE_BACKEND: langfuse
-      LANGFUSE_BASEURL: http://langfuse:3000
-      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-construct-local}
-      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-construct-local}
+      CONSTRUCT_TRACE_BACKEND: remote
+      CONSTRUCT_TELEMETRY_URL: ${CONSTRUCT_TELEMETRY_URL:-}
+      CONSTRUCT_TELEMETRY_PUBLIC_KEY: ${CONSTRUCT_TELEMETRY_PUBLIC_KEY:-}
+      CONSTRUCT_TELEMETRY_SECRET_KEY: ${CONSTRUCT_TELEMETRY_SECRET_KEY:-}
     volumes:
       - ${CONSTRUCT_WORKSPACE:-./}:/work:ro
     depends_on:
       postgres:
         condition: service_healthy
 
-  # Langfuse stays in its own compose file (langfuse/docker-compose.yml) so
-  # the team topology can choose to point at it via `LANGFUSE_BASEURL`
-  # rather than re-declare ten services here. Run them side by side:
-  #   docker compose -f langfuse/docker-compose.yml up -d
-  #   docker compose -f docker-compose.team.yml up -d
+  # To use a remote telemetry backend, set CONSTRUCT_TELEMETRY_URL,
+  # CONSTRUCT_TELEMETRY_PUBLIC_KEY, and CONSTRUCT_TELEMETRY_SECRET_KEY.
 
 volumes:
   construct-team-postgres-data:

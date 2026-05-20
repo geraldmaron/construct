@@ -17,7 +17,7 @@ import {
   resolveModelPricing,
   checkPricingDivergence,
   resetPricingCatalog,
-} from '../lib/telemetry/langfuse-model-sync.mjs';
+} from '../lib/telemetry/model-pricing-catalog.mjs';
 
 after(() => {
   resetPricingCatalog();

@@ -87,10 +87,10 @@ Config is loaded in this order (last write wins): repo `.env` → `~/.construct/
 
 | Variable | Default | Description |
 |---|---|---|
-| `CONSTRUCT_TRACE_BACKEND` | `langfuse` | Trace backend (`langfuse` or `none`) |
-| `LANGFUSE_BASEURL` | `https://cloud.langfuse.com` | Langfuse endpoint |
-| `LANGFUSE_PUBLIC_KEY` | — | Langfuse project public key |
-| `LANGFUSE_SECRET_KEY` | — | Langfuse project secret key |
+| `CONSTRUCT_TRACE_BACKEND` | `telemetry` | Trace backend (`telemetry` or `none`) |
+| `CONSTRUCT_TELEMETRY_URL` | — | Telemetry backend endpoint |
+| `CONSTRUCT_TELEMETRY_PUBLIC_KEY` | — | Telemetry project public key |
+| `CONSTRUCT_TELEMETRY_SECRET_KEY` | — | Telemetry project secret key |
 
 ## MCP
 

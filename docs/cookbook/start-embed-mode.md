@@ -56,7 +56,7 @@ The daemon runs ten scheduled jobs:
 | session-distill | Extracts session summaries into the observation store | 10 min |
 | self-repair | Removes stale locks, heals broken state files | 15 min |
 | approval-expiry | Expires stale approval queue items | 1 hour |
-| eval-dataset-sync | Syncs scored Langfuse traces to Dataset items | 1 hour |
+  | eval-dataset-sync | Syncs scored telemetry traces to Dataset items | 1 hour |
 | prompt-regression-check | Detects low-quality score clusters per prompt | 1 hour |
 | inbox-watcher | Ingests new files from `.cx/inbox/` | 2 min |
 | roadmap | Reconciles open items + observations → `docs/roadmap.md` | 1 hour |

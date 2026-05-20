@@ -74,10 +74,10 @@ describe('consentToInstall', () => {
     assert.equal(result.source, 'cached');
   });
 
-  it('returns cached no without re-prompting when BOOTSTRAP_LANGFUSE=no', async () => {
-    fs.writeFileSync(envPath, 'BOOTSTRAP_LANGFUSE=no\n');
+  it('returns cached no without re-prompting when BOOTSTRAP_TELEMETRY=no', async () => {
+    fs.writeFileSync(envPath, 'BOOTSTRAP_TELEMETRY=no\n');
     const result = await consentToInstall({
-      name: 'langfuse',
+      name: 'telemetry',
       isYes: false,
       envPath,
       stdin: fakeTty(),
@@ -129,7 +129,7 @@ describe('consentToInstall', () => {
 
   it('interactive TTY accepts n as no, writes cache', async () => {
     const result = await consentToInstall({
-      name: 'langfuse',
+      name: 'telemetry',
       isYes: false,
       envPath,
       readlineModule: fakeReadline('n'),
@@ -138,7 +138,7 @@ describe('consentToInstall', () => {
     });
     assert.equal(result.decision, false);
     assert.equal(result.source, 'prompt');
-    assert.equal(parseEnvFile(envPath).BOOTSTRAP_LANGFUSE, 'no');
+    assert.equal(parseEnvFile(envPath).BOOTSTRAP_TELEMETRY, 'no');
   });
 
   it('empty answer uses the defaultYes (yes by default)', async () => {

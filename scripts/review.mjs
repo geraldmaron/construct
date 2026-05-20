@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * scripts/review.mjs — Langfuse performance data pipeline
+ * scripts/review.mjs — Telemetry performance data pipeline
  *
- * Fetches traces and quality scores from Langfuse, aggregates per-agent
+ * Fetches traces and quality scores from telemetry, aggregates per-agent
  * metrics, and writes two files:
  *
  *   {outDir}/{date}-raw.json     — raw aggregated metrics for cx-trace-reviewer
@@ -11,7 +11,7 @@
  * Usage (via construct review):
  *   node scripts/review.mjs [--days=N] [--agent=cx-NAME] [--out=PATH] [--json-only]
  *
- * Requires env: LANGFUSE_BASEURL (default: https://cloud.langfuse.com), LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY
+ * Requires env: CONSTRUCT_TELEMETRY_BASEURL, CONSTRUCT_TELEMETRY_PUBLIC_KEY, CONSTRUCT_TELEMETRY_SECRET_KEY
  */
 
 import fs from "node:fs";
@@ -45,12 +45,12 @@ const outDir = (args.out && typeof args.out === "string")
 
 fs.mkdirSync(outDir, { recursive: true });
 
-const LANGFUSE_BASEURL = (process.env.LANGFUSE_BASEURL ?? "https://cloud.langfuse.com").replace(/\/$/, "");
+const TELEMETRY_BASEURL = (process.env.CONSTRUCT_TELEMETRY_BASEURL ?? "").replace(/\/$/, "");
 
-function langfuseHeaders() {
-  const key = process.env.LANGFUSE_PUBLIC_KEY;
-  const secret = process.env.LANGFUSE_SECRET_KEY;
-  if (!key || !secret) throw new Error("LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY must be set.");
+function telemetryHeaders() {
+  const key = process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY;
+  const secret = process.env.CONSTRUCT_TELEMETRY_SECRET_KEY;
+  if (!key || !secret) throw new Error("CONSTRUCT_TELEMETRY_PUBLIC_KEY and CONSTRUCT_TELEMETRY_SECRET_KEY must be set.");
   return {
     Accept: "application/json",
     "Content-Type": "application/json",
@@ -90,17 +90,17 @@ function readSessionEfficiency() {
   }
 }
 
-// ─── Langfuse API ────────────────────────────────────────────────────────────
+// ─── Telemetry API ───────────────────────────────────────────────────────────
 
-async function langfuseGet(path, params = {}) {
-  const url = new URL(`${LANGFUSE_BASEURL}${path}`);
+async function telemetryGet(path, params = {}) {
+  const url = new URL(`${TELEMETRY_BASEURL}${path}`);
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
   }
-  const res = await fetch(url.toString(), { headers: langfuseHeaders() });
+  const res = await fetch(url.toString(), { headers: telemetryHeaders() });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`Langfuse ${path} returned ${res.status}: ${body}`);
+    throw new Error(`Telemetry ${path} returned ${res.status}: ${body}`);
   }
   return res.json();
 }
@@ -114,13 +114,13 @@ async function fetchData(fromDate, toDate) {
   const traceParams = { fromTimestamp: from, limit: 100 };
   if (agentFilter) traceParams.name = agentFilter;
 
-  const tracesJson = await langfuseGet("/api/public/traces", traceParams);
+  const tracesJson = await telemetryGet("/api/public/traces", traceParams);
   const rawTraces = tracesJson.data ?? [];
 
   // Fetch quality scores for all traces
   const scoreMap = {};
   for (const t of rawTraces) {
-    const scoresJson = await langfuseGet("/api/public/scores", { traceId: t.id, name: "quality", limit: 10 }).catch(() => ({ data: [] }));
+    const scoresJson = await telemetryGet("/api/public/scores", { traceId: t.id, name: "quality", limit: 10 }).catch(() => ({ data: [] }));
     for (const s of scoresJson.data ?? []) {
       scoreMap[t.id] = s;
     }
@@ -131,7 +131,7 @@ async function fetchData(fromDate, toDate) {
     id: t.id,
     name: t.metadata?.agentName ?? t.name ?? "unknown",
     timestamp: t.timestamp,
-    latency: t.latency != null ? Math.round(t.latency * 1000) : undefined, // Langfuse returns seconds; convert to ms
+    latency: t.latency != null ? Math.round(t.latency * 1000) : undefined, // Telemetry returns seconds; convert to ms
     input: t.input,
     output: t.output,
   }));
@@ -365,7 +365,7 @@ function buildMarkdownReport(metrics, fromDate, toDate, dateStr, efficiencyStats
     lines.push("1. Run `@cx-trace-reviewer` for detailed prompt suggestions on underperformers.");
     let i = 2;
     for (const a of underperforming.slice(0, 3)) {
-      lines.push(`${i++}. Review traces for \`${a.name}\` in Langfuse (${LANGFUSE_BASEURL}).`);
+      lines.push(`${i++}. Review traces for \`${a.name}\` in telemetry (${TELEMETRY_BASEURL}).`);
     }
   } else if (noData.length > 0) {
     lines.push("1. Ensure validation is scoring agent outputs — call `cx_score` after verification passes.");
@@ -391,7 +391,7 @@ async function main() {
   try {
     rawData = await fetchData(fromDate, toDate);
   } catch (err) {
-    console.error(`Failed to fetch Langfuse data: ${err.message}`);
+    console.error(`Failed to fetch telemetry data: ${err.message}`);
     process.exit(1);
   }
 
@@ -404,7 +404,7 @@ async function main() {
     generated: toDate.toISOString(),
     period: { from: fromDate.toISOString(), to: toDate.toISOString(), days },
     agentFilter,
-    baseUrl: LANGFUSE_BASEURL,
+    baseUrl: TELEMETRY_BASEURL,
     efficiency: efficiencyStats,
     ...metrics,
   }, null, 2) + "\n");

@@ -23,6 +23,7 @@ import { printHostCapabilities } from '../lib/host-capabilities.mjs';
 import { getPluginById, initPluginManifest, loadPluginRegistry } from '../lib/plugin-registry.mjs';
 import { runSetup } from '../lib/setup.mjs';
 import { runUpdate } from '../lib/update.mjs';
+import { runUpgrade } from '../lib/upgrade.mjs';
 import { runUninstall } from '../lib/uninstall/uninstall.mjs';
 import { maybeFirstInvocationProbe } from '../lib/install/first-invocation.mjs';
 import { loadConstructEnv, getUserEnvPath, writeEnvValues, ensureUserConfigDir } from '../lib/env-config.mjs';
@@ -104,15 +105,72 @@ function iconColumn(emoji) {
 }
 
 function usage() {
-  println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
+  const showAll = restArgsCache.includes('--all') || restArgsCache.includes('-a');
+  const commands = showAll ? CLI_COMMANDS : CLI_COMMANDS.filter(c => c.core);
+  
+  if (showAll) {
+    println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness (all commands)`);
+  } else {
+    println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
+    println(`${COLORS.dim}Tip: Run ${COLORS.reset}construct --all${COLORS.dim} to see all commands${COLORS.reset}`);
+  }
+  
   println(`\n${COLORS.dim}Usage:${COLORS.reset} construct <command> [options]\n`);
+  
   for (const category of CATEGORY_ORDER) {
-    const commands = CLI_COMMANDS_BY_CATEGORY[category] ?? [];
-    if (!commands.length) continue;
+    const categoryCommands = commands.filter(c => c.category === category);
+    if (!categoryCommands.length) continue;
     println(`${COLORS.bold}${category}${COLORS.reset}`);
-    for (const command of commands) {
+    for (const command of categoryCommands) {
       println(`  ${iconColumn(command.emoji)}${command.name.padEnd(14)} ${command.description}`);
     }
+    println('');
+  }
+}
+
+/** Show interactive context-aware menu when construct is run without arguments. */
+async function showInteractiveMenu() {
+  const { loadProjectConfig } = await import('./lib/config/project-config.mjs');
+  const { existsSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  
+  const projectRoot = process.cwd();
+  const isConstructProject = existsSync(join(projectRoot, 'construct.config.json')) ||
+                             existsSync(join(projectRoot, '.cx'));
+  
+  println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
+  println('');
+  
+  if (isConstructProject) {
+    const projectName = process.env.CX_PROJECT_NAME || require('path').basename(projectRoot);
+    println(`${COLORS.dim}Project:${COLORS.reset} ${projectName}`);
+    println('');
+  }
+  
+  println(`${COLORS.bold}Core Commands:${COLORS.reset}`);
+  println(`  ${COLORS.green}🚀 dev${COLORS.reset}              Start services for development`);
+  println(`  ${COLORS.green}⏹ stop${COLORS.reset}              Stop all running services`);
+  println(`  ${COLORS.green}📡 status${COLORS.reset}           Show system health and credentials`);
+  println(`  ${COLORS.green}🏗️  init${COLORS.reset}             Initialize project and start services`);
+  println(`  ${COLORS.green}🔄 sync${COLORS.reset}             Sync agent adapters to AI tools`);
+  println('');
+  println(`${COLORS.dim}Run 'construct <command> --help' for command details${COLORS.reset}`);
+  println(`${COLORS.dim}Run 'construct --all' to see all commands${COLORS.reset}`);
+  println('');
+  
+  // Show context-aware suggestions
+  if (isConstructProject) {
+    const { readDashboardState } = await import('./lib/service-manager.mjs');
+    const dashboard = readDashboardState(HOME);
+    
+    if (!dashboard) {
+      println(`${COLORS.yellow}💡 Services not running. Start with:${COLORS.reset}`);
+      println(`   ${COLORS.green}construct dev${COLORS.reset}`);
+      println('');
+    }
+  } else {
+    println(`${COLORS.yellow}💡 Not a Construct project. Initialize with:${COLORS.reset}`);
+    println(`   ${COLORS.green}construct init${COLORS.reset}`);
     println('');
   }
 }
@@ -128,11 +186,14 @@ function runNodeScript(scriptPath, args = [], extraEnv = {}) {
 async function cmdStatus() {
   const jsonOutput = restArgsCache.includes('--json');
   const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
+  
   if (jsonOutput) {
     println(JSON.stringify(status, null, 2));
     return;
   }
+  
   println(formatStatusReport(status));
+  
 }
 
 async function cmdShow() {
@@ -204,6 +265,98 @@ async function cmdDoctor() {
     return;
   }
 
+  if (args[0] === 'credentials' || (args.length && args.some(a => a.startsWith('cred')))) {
+    println(`${COLORS.bold}Credential diagnostics${COLORS.reset}`);
+    println('');
+
+    const { execSync } = await import('node:child_process');
+    const { homedir } = await import('node:os');
+    const { join } = await import('node:path');
+    const fs = await import('node:fs');
+
+    const vars = [
+      'OPENROUTER_API_KEY',
+      'ANTHROPIC_API_KEY',
+      'GITHUB_TOKEN',
+      'OPENAI_API_KEY',
+      'OPENCODE_API_KEY',
+      'JIRA_API_TOKEN',
+      'CONFLUENCE_API_TOKEN',
+      'SLACK_BOT_TOKEN',
+    ];
+
+    for (const varName of vars) {
+      const sources = [];
+
+      // 1. process.env
+      if (process.env[varName]) {
+        sources.push(`process.env (${process.env[varName].slice(0, 8)}…)`);
+      }
+
+      // 2. .env files
+      for (const envPath of [join(process.cwd(), '.env'), join(homedir(), '.env'), join(homedir(), '.construct', 'config.env')]) {
+        if (fs.existsSync(envPath)) {
+          try {
+            const content = fs.readFileSync(envPath, 'utf8');
+            const m = content.match(new RegExp(`^${varName}=["']?(.+?)["']?$`, 'm'));
+            if (m) sources.push(`${envPath.replace(homedir(), '~')} (found)`);
+          } catch {}
+        }
+      }
+
+      // 3. Shell rc files
+      const shellFiles = [join(homedir(), '.zshrc'), join(homedir(), '.bashrc'), join(homedir(), '.bash_profile'), join(homedir(), '.profile')];
+      for (const rcPath of shellFiles) {
+        if (!fs.existsSync(rcPath)) continue;
+        try {
+          const content = fs.readFileSync(rcPath, 'utf8');
+          const opRe = new RegExp(`export\\s+${varName}=["']?\\$\\(op read '([^']+)'\\)["']?`, 'm');
+          const opMatch = content.match(opRe);
+          if (opMatch) {
+            try {
+              const r = execSync(`op read '${opMatch[1]}'`, { encoding: 'utf8', timeout: 5000 });
+              sources.push(`${rcPath.replace(homedir(), '~')} → op read ✓ (${r.stdout?.trim()?.slice(0, 8)}…)`);
+            } catch (e) {
+              const err = (e.stderr || e.message || '').slice(0, 120);
+              sources.push(`${rcPath.replace(homedir(), '~')} → op read ✗: ${err}`);
+            }
+          }
+          // Check for direct export (allow leading whitespace for indented rc files)
+          const directRe = new RegExp(`^\\s*export\\s+${varName}=(.+)$`, 'm');
+          const directMatch = content.match(directRe);
+          if (directMatch) {
+            sources.push(`${rcPath.replace(homedir(), '~')} (export found)`);
+          }
+        } catch {}
+      }
+
+      const pip = sources.length > 0 ? COLORS.green + '✓' : COLORS.yellow + '○';
+      println(`  ${pip}${COLORS.reset} ${COLORS.bold}${varName}${COLORS.reset}`);
+      if (sources.length) {
+        for (const s of sources.slice(0, 3)) {
+          if (s.includes('op read ✗')) {
+            println(`       ${COLORS.red}⚠${COLORS.reset} ${s}`);
+          } else {
+            println(`       ${s}`);
+          }
+        }
+        if (sources.length > 3) println(`       … +${sources.length - 3} more`);
+      } else {
+        println(`       not found in env, .env, config.env, or shell rc files`);
+      }
+    }
+
+    println('');
+    println('Fix tips:');
+    println('  - If op read fails with "does not have a field": the field name in .zshrc');
+    println('    doesn\'t match the 1Password item. Run `op item get <item> --vault <vault>`');
+    println('    to see the correct field name, then update your .zshrc.');
+    println('  - If op read fails with "not signed in": run `op signin` or enable the');
+    println('    1Password desktop app CLI integration (Settings → Developer).');
+    println('  - Set env vars directly in ~/.construct/config.env to bypass shell rc.');
+    return;
+  }
+
   if (args.includes('--bootstrap')) {
     const { registerBuiltInResources } = await import('../lib/bootstrap/built-ins.mjs');
     const { probeAll, formatProbe } = await import('../lib/bootstrap/resources.mjs');
@@ -239,15 +392,17 @@ async function cmdDoctor() {
   // Skip in CI — model tiers are user-specific, not repo-wide.
   const inCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
   try {
-    const reg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
-    const current = readCurrentModels(getUserEnvPath(HOME), reg.models ?? {});
-    const configuredTiers = ['reasoning', 'standard', 'fast'].filter((t) => current[t]);
-    if (configuredTiers.length === 3) {
+    const { resolveModelTiers } = await import('../lib/model-registry.mjs');
+    const resolved = resolveModelTiers({ env: process.env });
+    if (resolved.complete && !resolved.errors) {
       add('Models — all tiers configured', true);
-    } else if (configuredTiers.length === 0) {
+    } else if (resolved.configured === 0) {
       add('Models — no tier configured (pick one in the dashboard or run `construct models --apply`)', inCI, inCI);
     } else {
-      add(`Models — only ${configuredTiers.join('+')} configured (missing: ${['reasoning','standard','fast'].filter(t=>!current[t]).join(', ')})`, inCI, inCI);
+      const missing = Object.entries(resolved.models)
+        .filter(([, v]) => !v)
+        .map(([k]) => k);
+      add(`Models — only ${resolved.configured}/3 tiers configured (missing: ${missing.join(', ')})`, inCI, inCI);
     }
   } catch (err) {
     add(`Models — check failed: ${err.message}`, inCI, inCI);
@@ -378,7 +533,7 @@ async function cmdDoctor() {
   // the operator can verify which is current. Both advisory: degraded
   // pricing still falls back to a usable source.
   try {
-    const { describePricingCatalogFreshness, checkPricingDivergence } = await import('../lib/telemetry/langfuse-model-sync.mjs');
+    const { describePricingCatalogFreshness, checkPricingDivergence } = await import('../lib/telemetry/model-pricing-catalog.mjs');
     const freshness = describePricingCatalogFreshness();
     if (freshness.stale) {
       add(`Pricing catalog: ${freshness.message}`, false, true);
@@ -425,12 +580,12 @@ async function cmdDoctor() {
         await sqlClient`select 1 as ok`;
         add('SQL backend reachable', true);
       } catch {
-        add('SQL backend reachable', false);
+        add('SQL backend reachable', false, true);
       } finally {
         await closeSqlClient(sqlClient);
       }
     } else {
-      add('SQL backend configured', sqlConfig.fallbackAvailable);
+      add('SQL backend configured', sqlConfig.fallbackAvailable, true);
     }
 
     const vectorConfig = describeVectorStore(process.env);
@@ -599,7 +754,7 @@ async function cmdDoctor() {
     }
 
     // cm and Docker are optional but downstream services (memory MCP,
-    // Langfuse, managed Postgres) depend on them. Surface missing tools
+    // managed Postgres) depend on them. Surface missing tools
     // as warnings rather than failures so doctor doesn't flip-flop.
     try {
       const cmProbe = spawnSync(process.platform === 'win32' ? 'where' : 'which', ['cm'], { stdio: 'pipe' });
@@ -612,7 +767,7 @@ async function cmdDoctor() {
     try {
       const dockerCli = spawnSync(process.platform === 'win32' ? 'where' : 'which', ['docker'], { stdio: 'pipe' });
       let dockerOk = false;
-      let dockerNote = 'Docker not installed (optional — Langfuse and managed Postgres need it)';
+      let dockerNote = 'Docker not installed (optional — managed Postgres needs it)';
       if (dockerCli.status === 0) {
         const dockerInfo = spawnSync('docker', ['info'], { stdio: 'pipe' });
         if (dockerInfo.status === 0) {
@@ -694,6 +849,24 @@ async function cmdDoctor() {
 }
 
 async function cmdUp() {
+  // Auto-magic health check — catch missing prerequisites before starting services
+  const { quickHealthCheck, detectCredentials, resolveCredentials } = await import('../lib/health-check.mjs');
+  
+  // Resolve credentials from env, .env files, and 1Password before starting services
+  const resolvedCreds = await resolveCredentials({ homeDir: HOME });
+  
+  const health = await quickHealthCheck({ homeDir: HOME, showCredentials: true });
+  
+  if (!health.ok) {
+    errorln('Prerequisites missing for starting services:');
+    for (const item of health.missing) {
+      errorln(`  ✗  ${item}`);
+    }
+    println('');
+    info('Run `construct install --yes` to install missing dependencies.');
+    process.exit(1);
+  }
+  
   const { results, recovery } = await startServices({ rootDir: ROOT_DIR, homeDir: HOME });
   for (const svc of results) {
     const label = svc.url ? `${svc.name} → ${svc.url}` : svc.name;
@@ -718,6 +891,68 @@ async function cmdUp() {
       info(`Degraded services: ${recovery.degraded.map((entry) => `${entry.name} (${entry.status})`).join(', ')}`);
     }
   }
+  
+  // Auto-start embed daemon if embed.yaml exists and autoEmbed is enabled
+  const { loadProjectConfig } = await import('../lib/config/project-config.mjs');
+  const { existsSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  
+  const embedConfigExists = existsSync(join(ROOT_DIR, 'embed.yaml'));
+  const config = loadProjectConfig(ROOT_DIR);
+  const autoEmbed = config.config?.autoEmbed;
+  
+  if (embedConfigExists && autoEmbed) {
+    try {
+      const { runEmbedCli } = await import('../lib/embed/cli.mjs');
+      await runEmbedCli(['start']);
+    } catch {
+      // best effort
+    }
+  }
+
+  // Post-start summary
+  println('');
+  println('═══════════════════════════════════════════════════════════');
+  println('  SERVICES RUNNING');
+  println('═══════════════════════════════════════════════════════════');
+  println('');
+  for (const svc of results) {
+    if (svc.status === 'started' || svc.status === 'reused') {
+      const label = svc.url ? `${svc.url}` : svc.name;
+      println(`  ${svc.name.padEnd(14)} ${label}`);
+    }
+  }
+
+  // Show credentials summary
+  const creds = health.credentials;
+  const credKeys = Object.keys(resolvedCreds);
+  if (creds || credKeys.length > 0) {
+    const configured = [];
+    if (creds.github_cli) configured.push('GitHub CLI');
+    if (creds.copilot) configured.push('Copilot');
+    if (creds.anthropic_key || credKeys.includes('ANTHROPIC_API_KEY')) configured.push('Anthropic');
+    if (creds.openai_key || credKeys.includes('OPENAI_API_KEY')) configured.push('OpenAI');
+    if (creds.openrouter_key || credKeys.includes('OPENROUTER_API_KEY')) configured.push('OpenRouter');
+    if (creds.ollama) configured.push('Ollama');
+    if (creds.vscode) configured.push('VS Code');
+    if (creds.claude_code) configured.push('Claude Code');
+    if (creds.opencode) configured.push('OpenCode');
+    if (creds.github_token || credKeys.includes('GITHUB_TOKEN') || credKeys.includes('GH_TOKEN')) configured.push('GitHub token');
+
+    if (configured.length > 0) {
+      println('');
+      println('  Credentials:');
+      println(`  ${configured.join(', ')}`);
+      if (credKeys.length > 0) {
+        println(`  ${credKeys.length} key${credKeys.length === 1 ? '' : 's'} resolved`);
+      }
+    }
+  }
+  
+  println('');
+  println('Dashboard: http://127.0.0.1:4242');
+  println('Run \x1b[32mconstruct\x1b[0m for commands');
+  println('');
 }
 
 async function cmdDown() {
@@ -780,9 +1015,9 @@ async function cmdReview(args) {
   }
 
   if (sub === 'legacy') {
-    if (!ENV.LANGFUSE_PUBLIC_KEY || !ENV.LANGFUSE_SECRET_KEY) {
-      errorln('Error: LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY must be set.');
-      errorln('Configure Langfuse credentials in ~/.construct/config.env or .env.');
+    if (!ENV.CONSTRUCT_TELEMETRY_PUBLIC_KEY || !ENV.CONSTRUCT_TELEMETRY_SECRET_KEY) {
+      errorln('Error: CONSTRUCT_TELEMETRY_PUBLIC_KEY and CONSTRUCT_TELEMETRY_SECRET_KEY must be set.');
+      errorln('Configure telemetry credentials in ~/.construct/config.env or .env.');
       process.exit(1);
     }
     runNodeScript(path.join(ROOT_DIR, 'scripts', 'review.mjs'), args.slice(1), ENV);
@@ -794,10 +1029,6 @@ async function cmdReview(args) {
 }
 
 async function cmdInit(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init-unified.mjs'), args); }
-async function cmdInitDocs(args) { 
-  console.warn("⚠️  Warning: `construct init-docs` is deprecated. Use `construct init --docs-preset` instead.");
-  runNodeScript(path.join(ROOT_DIR, 'lib', 'init-unified.mjs'), args); 
-}
 async function cmdDocsVerify(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'docs-verify.mjs'), args); }
 async function cmdInitUpdate(args) { 
   runNodeScript(path.join(ROOT_DIR, 'lib', 'init-update.mjs'), args);
@@ -1178,7 +1409,7 @@ async function cmdPricing(args) {
     refreshPricingCatalog,
     checkPricingDivergence,
     resolveModelPricing,
-  } = await import('../lib/telemetry/langfuse-model-sync.mjs');
+  } = await import('../lib/telemetry/model-pricing-catalog.mjs');
 
   if (sub === 'status') {
     const f = describePricingCatalogFreshness();
@@ -1277,7 +1508,10 @@ function printIntakeHelp() {
   println('  construct intake done <id> [--notes=…]    Mark a pending packet processed.');
   println('  construct intake skip <id> [--reason=…]   Mark a pending packet skipped (preserves audit trail).');
   println('  construct intake reopen <id>         Move a processed or skipped packet back to pending.');
-  println('  construct intake config              Show current watch dirs + scan depth.');
+  println('  construct intake metrics               Show pipeline volume, velocity, and processing stats.');
+  println('  construct intake integrate <id> <system>    Push intake to external system (github, jira, confluence).');
+  println('  construct intake integrate <id> <system> --create-issue  Create an issue from the intake packet.');
+  println('  construct intake config               Show current watch dirs + scan depth.');
   println('  construct intake config set --depth=N [--add-dir=PATH] [--remove-dir=PATH]');
   println('                                       Update intake config. --depth caps at the hard limit.');
   println('  construct intake config set --include-project-inbox=on|off');
@@ -1352,6 +1586,17 @@ async function cmdIntake(args) {
     println(`  requiresApproval:  ${t.requiresApproval ? 'yes' : 'no'}`);
     println(`  confidence:        ${typeof t.confidence === 'number' ? t.confidence.toFixed(2) : '—'}`);
     if (t.rationale) println(`  rationale:         ${t.rationale}`);
+    if (entry.customers?.length > 0) {
+      println('');
+      println(`Linked customers: ${entry.customers.join(', ')}`);
+    }
+    if (entry.externalRefs) {
+      println('');
+      println('External references:');
+      for (const [system, ref] of Object.entries(entry.externalRefs)) {
+        println(`  ${system}: ${ref.url} (id: ${ref.id})`);
+      }
+    }
     if (entry.suggestion?.lane) {
       println('');
       println(`Suggested lane: ${entry.suggestion.lane} (${entry.suggestion.source})`);
@@ -1369,6 +1614,49 @@ async function cmdIntake(args) {
       println('Excerpt:');
       for (const line of String(entry.excerpt).split('\n').slice(0, 12)) println(`  ${line}`);
     }
+    // Show similar items if there are multiple pending packets
+    try {
+      const pendingDir = path.join(cwd || process.cwd(), '.cx', 'intake', 'pending');
+      if (fs.existsSync(pendingDir)) {
+        const allPackets = [];
+        for (const f of fs.readdirSync(pendingDir)) {
+          if (!f.endsWith('.json')) continue;
+          if (f === `${entry.id}.json`) continue;
+          try {
+            const pkt = JSON.parse(fs.readFileSync(path.join(pendingDir, f), 'utf8'));
+            allPackets.push({ id: f.replace('.json', ''), text: (pkt.excerpt || '') + ' ' + (pkt.triage?.intakeType || '') });
+          } catch { /* skip */ }
+        }
+        if (allPackets.length > 0) {
+          println('');
+          println('Similar signals (semantic):');
+          println('  (run `construct intake list` to see all pending)');
+        }
+      }
+    } catch { /* dir not available */ }
+
+    // Show active recommendations related to this packet
+    try {
+      const { listActiveRecommendations } = await import('../lib/embed/recommendation-store.mjs');
+      const active = listActiveRecommendations({ limit: 5 });
+      if (active.length > 0) {
+        println('');
+        println('Active recommendations:');
+        for (const rec of active) {
+          println(`  ${rec.priority} ${rec.type.toUpperCase()}: ${rec.title} (${rec.totalSignalCount} signal(s) · score ${rec.score})`);
+        }
+        println('  Run `construct recommendations list` for details');
+      }
+    } catch { /* recommendations not available */ }
+
+    println('');
+    println('Next steps:');
+    println(`  construct graph from-intake ${entry.id}     Generate task graph from triage`);
+    if (entry.suggestion?.lane) {
+      println(`  Edit docs/${entry.suggestion.lane}/          Review/update the suggested lane`);
+    }
+    println(`  construct intake done ${entry.id}            Mark as processed`);
+    println(`  construct intake skip ${entry.id}             Mark as skipped`);
     return;
   }
 
@@ -1410,11 +1698,19 @@ async function cmdIntake(args) {
     return;
   }
 
+  if (sub === 'metrics') {
+    return await cmdIntakeMetrics();
+  }
+
+  if (sub === 'integrate') {
+    return await cmdIntakeIntegrate(id, args.slice(2), cwd);
+  }
+
   if (sub === 'config') {
     return await cmdIntakeConfig(args.slice(1));
   }
 
-  errorln(`Unknown intake subcommand: ${sub}. Available: list, show, done, skip, reopen, config`);
+  errorln(`Unknown intake subcommand: ${sub}. Available: list, show, done, skip, reopen, integrate, config`);
   process.exit(1);
 }
 
@@ -1490,6 +1786,111 @@ async function cmdIntakeConfig(args) {
   }
 }
 
+async function cmdIntakeMetrics() {
+  try {
+    const { computeIntakeMetrics, pendingAge } = await import('../lib/embed/intake-metrics.mjs');
+    const metrics = computeIntakeMetrics({ rootDir: cwd });
+    const age = pendingAge({ rootDir: cwd });
+
+    println(`${COLORS.bold}Intake pipeline metrics:${COLORS.reset}`);
+    println('');
+    println(`  ${COLORS.cyan}Volume${COLORS.reset}`);
+    println(`    Pending:     ${metrics.volume.pending}`);
+    println(`    Processed:   ${metrics.volume.processed}`);
+    println(`    Skipped:     ${metrics.volume.skipped}`);
+    println(`    Total:       ${metrics.volume.total}`);
+    println('');
+    println(`  ${COLORS.cyan}Velocity${COLORS.reset}`);
+    println(`    Rate:        ${metrics.velocity} items/day (trailing 7d)`);
+    if (metrics.avgProcessingTimeFormatted) {
+      println(`    Avg process: ${metrics.avgProcessingTimeFormatted}`);
+    }
+    if (metrics.acceptRate !== null) {
+      println(`    Accept rate: ${metrics.acceptRate}%`);
+    }
+    println('');
+    println(`  ${COLORS.cyan}Customer intelligence${COLORS.reset}`);
+    println(`    Customer-linked items: ${metrics.customerLinked}`);
+    println('');
+    println(`  ${COLORS.cyan}Recommendations${COLORS.reset}`);
+    println(`    Active:      ${metrics.recommendations.active}`);
+    println(`    Dismissed:   ${metrics.recommendations.dismissed}`);
+    println(`    Total:       ${metrics.recommendations.total}`);
+    println('');
+    println(`  ${COLORS.cyan}Backlog${COLORS.reset}`);
+    println(`    Pending items: ${age.count}`);
+    if (age.oldest) {
+      println(`    Oldest:      ${age.oldest} (${age.ageHours}h old)`);
+      println(`    Stale (>24h): ${age.oldItemsCount}`);
+    }
+  } catch (err) {
+    errorln(`Intake metrics error: ${err.message}`);
+  }
+}
+
+async function cmdIntakeIntegrate(id, args, cwd) {
+  if (!id) { errorln('Usage: construct intake integrate <id> <github|jira|confluence>'); process.exit(1); }
+
+  const system = args[0];
+  if (!system || !['github', 'jira', 'confluence'].includes(system)) {
+    errorln('Usage: construct intake integrate <id> <github|jira|confluence>');
+    errorln('Available systems: github, jira, confluence');
+    process.exit(1);
+  }
+
+  const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
+  const queue = createIntakeQueue(cwd, process.env);
+  const entry = queue.read(id);
+  if (!entry) { errorln(`No intake packet with id: ${id}`); process.exit(1); }
+
+  let result;
+
+  if (system === 'github') {
+    const { createGitHubIssue, tagIntakeWithExternalRef } = await import('../lib/integrations/intake-integrations.mjs');
+    info(`Creating GitHub issue from intake ${id}...`);
+    result = await createGitHubIssue(entry);
+    if (result.ok) {
+      ok(`GitHub issue created: ${result.externalUrl}`);
+      tagIntakeWithExternalRef(cwd, id, 'github', result.externalUrl, result.externalId);
+    } else {
+      errorln(`Failed: ${result.error}`);
+      process.exit(1);
+    }
+  }
+
+  if (system === 'jira') {
+    const { createJiraTicket, tagIntakeWithExternalRef } = await import('../lib/integrations/intake-integrations.mjs');
+    info(`Creating Jira ticket from intake ${id}...`);
+    result = await createJiraTicket(entry);
+    if (result.ok) {
+      ok(`Jira ticket created: ${result.externalUrl}`);
+      tagIntakeWithExternalRef(cwd, id, 'jira', result.externalUrl, result.externalId);
+    } else {
+      errorln(`Failed: ${result.error}`);
+      process.exit(1);
+    }
+  }
+
+  if (system === 'confluence') {
+    const { publishArtifactToConfluence, tagIntakeWithExternalRef } = await import('../lib/integrations/intake-integrations.mjs');
+    const artifact = {
+      type: entry?.triage?.intakeType === 'requirement' ? 'prd' : 'adr',
+      number: 1,
+      title: entry?.excerpt?.slice(0, 60) || `Intake ${id}`,
+      content: `# Intake: ${id}\n\n${entry?.excerpt || ''}\n\nSee also: ${entry?.intake?.sourcePath || ''}`,
+    };
+    info(`Publishing Confluence page from intake ${id}...`);
+    result = await publishArtifactToConfluence(artifact);
+    if (result.ok) {
+      ok(`Confluence page: ${result.externalUrl}`);
+      tagIntakeWithExternalRef(cwd, id, 'confluence', result.externalUrl, result.externalId);
+    } else {
+      errorln(`Failed: ${result.error}`);
+      process.exit(1);
+    }
+  }
+}
+
 function printGraphHelp() {
   println('Construct graph — inspect and generate task graphs derived from R&D intake.');
   println('');
@@ -1499,6 +1900,262 @@ function printGraphHelp() {
   println('  construct graph from-intake <intake-id>         Generate a task graph from a pending intake packet.');
   println('  construct graph status <graph-id> <node-id> <status> [--evidence=text]');
   println('                                                  Update a node status. Valid: pending, claimed, in-progress, done, blocked, needs-input, skipped.');
+}
+
+async function cmdIntegrations(args) {
+  const sub = args[0];
+  if (sub === '--help' || sub === '-h') {
+    println('construct integrations — check and manage external system integrations.');
+    println('');
+    println('Usage:');
+    println('  construct integrations status    Check which integrations are configured');
+    return;
+  }
+
+  if (sub === 'status') {
+    const { detectIntegrationConfig } = await import('../lib/integrations/intake-integrations.mjs');
+    const config = detectIntegrationConfig();
+    println(`${COLORS.bold}Integration status:${COLORS.reset}`);
+    const ghMethod = config.githubMethod === 'gh' ? ' (gh CLI)' : config.githubMethod === 'env' ? ' (env vars)' : '';
+    const ghLabel = `GitHub Issues${ghMethod}`;
+    if (config.github) {
+      println(`  ${COLORS.green}✓${COLORS.reset} ${ghLabel} — repo: ${config.githubRepo}`);
+    } else {
+      println(`  ${COLORS.yellow}⚠${COLORS.reset} GitHub Issues not configured (run gh auth login, or set GITHUB_TOKEN)`);
+    }
+    println(`  ${config.jira ? COLORS.green + '✓' : COLORS.yellow + '⚠'}${COLORS.reset} Jira${config.jira ? ` — ${config.jiraHost}` : ' not configured'}`);
+    println(`  ${config.confluence ? COLORS.green + '✓' : COLORS.yellow + '⚠'}${COLORS.reset} Confluence${config.confluence ? ` — ${config.confluenceSpace}` : ' not configured'}`);
+    println('');
+    println('Auth methods (tried in order):');
+    println('  GitHub:    gh CLI → GITHUB_TOKEN env → .env → config.env → 1Password');
+    println('  Jira/Conf: JIRA_/CONFLUENCE_ env → ~/.env → config.env → shell rc → 1Password');
+    println('');
+    println('Configure: construct intake integrate <id> <github|jira|confluence>');
+    return;
+  }
+
+  errorln(`Unknown subcommand: ${sub}. Available: status`);
+}
+
+function printCustomerHelp() {
+  println('');
+  println('Construct customer — manage customer profiles for product intelligence.');
+  println('');
+  println('Usage:');
+  println('  construct customer list                     List all customer profiles');
+  println('  construct customer show <id>                Show detailed profile');
+  println('  construct customer add --name=Acme [--owner=Jane] [--domain=acme.com]');
+  println('  construct customer search <query>           Search by name, domain, or alias');
+  println('  construct customer update <id> --status=inactive   Update profile status');
+}
+
+async function cmdCustomer(args) {
+  const sub = args[0];
+  if (!sub || sub === '--help' || sub === '-h') { printCustomerHelp(); return; }
+
+  const { createCustomerProfile, getCustomerProfile, listCustomerProfiles, searchCustomerProfiles, updateCustomerProfile } = await import('../lib/embed/customer-profiles.mjs');
+
+  if (sub === 'list') {
+    const profiles = listCustomerProfiles();
+    if (!profiles.length) { println('No customer profiles. Create one with: construct customer add --name=Acme'); return; }
+    println(`${COLORS.bold}Customer profiles:${COLORS.reset}`);
+    for (const p of profiles) {
+      println(`  ${COLORS.cyan}${p.id}${COLORS.reset}  ${COLORS.bold}${p.name}${COLORS.reset}  [${p.status}]  ${p.workspace}  updated ${p.updatedAt?.slice(0, 10)}`);
+    }
+    return;
+  }
+
+  if (sub === 'show') {
+    const id = args[1];
+    if (!id) { errorln('Usage: construct customer show <id>'); process.exit(1); }
+    const profile = getCustomerProfile(id);
+    if (!profile) { errorln(`Customer profile not found: ${id}`); process.exit(1); }
+    println(`ID:      ${profile.id}`);
+    println(`Name:    ${profile.name}`);
+    println(`Status:  ${profile.status}`);
+    println(`Owner:   ${profile.owner}`);
+    println(`Workspace: ${profile.workspace}`);
+    println(`Updated: ${profile.updatedAt?.slice(0, 10) || '—'}`);
+    return;
+  }
+
+  if (sub === 'add') {
+    const name = args.find(a => a.startsWith('--name='))?.split('=').slice(1).join('=');
+    const owner = args.find(a => a.startsWith('--owner='))?.split('=').slice(1).join('=');
+    const domain = args.find(a => a.startsWith('--domain='))?.split('=').slice(1).join('=');
+    if (!name) { errorln('Usage: construct customer add --name=Acme [--owner=Jane] [--domain=acme.com]'); process.exit(1); }
+    const result = createCustomerProfile({ name, owner, domain });
+    println(`Created customer profile: ${result.id} — ${result.profile.name}`);
+    return;
+  }
+
+  if (sub === 'search') {
+    const query = args.slice(1).join(' ');
+    if (!query) { errorln('Usage: construct customer search <query>'); process.exit(1); }
+    const results = searchCustomerProfiles(query);
+    if (!results.length) { println('No matches.'); return; }
+    for (const r of results) {
+      println(`  ${r.id}  ${r.name}  [${r.status}]`);
+    }
+    return;
+  }
+
+  if (sub === 'update') {
+    const id = args[1];
+    const status = args.find(a => a.startsWith('--status='))?.split('=').slice(1).join('=');
+    if (!id || !status) { errorln('Usage: construct customer update <id> --status=active|inactive|archived'); process.exit(1); }
+    updateCustomerProfile(id, { status, changeLogEntry: `Status changed to ${status} via CLI` });
+    println(`Updated: ${id}`);
+    return;
+  }
+
+  errorln(`Unknown customer subcommand: ${sub}. Available: list, show, add, search, update`);
+}
+
+function printWorkspaceHelp() {
+  println('');
+  println('Construct workspace — manage PM workspaces for signal routing.');
+  println('');
+  println('Usage:');
+  println('  construct workspace list                              List all workspaces');
+  println('  construct workspace create --name=Auth --owner=Jane   Create a new workspace');
+  println('  construct workspace show <id>                         Show workspace details');
+  println('  construct workspace assign --customer=X --workspace=Y Assign customer to workspace');
+}
+
+async function cmdWorkspace(args) {
+  const sub = args[0];
+  if (!sub || sub === '--help' || sub === '-h') { printWorkspaceHelp(); return; }
+
+  const { createWorkspace, getWorkspace, listWorkspaces, updateWorkspace } = await import('../lib/embed/workspaces.mjs');
+
+  if (sub === 'list') {
+    const workspaces = listWorkspaces();
+    if (!workspaces.length) { println('No workspaces.'); return; }
+    println(`${COLORS.bold}Workspaces:${COLORS.reset}`);
+    for (const ws of workspaces) {
+      println(`  ${COLORS.cyan}${ws.id}${COLORS.reset}  ${COLORS.bold}${ws.name}${COLORS.reset}  owner: ${ws.owner}  [${ws.status}]  areas: ${(ws.productAreas || []).join(', ') || '—'}`);
+    }
+    return;
+  }
+
+  if (sub === 'create') {
+    const name = args.find(a => a.startsWith('--name='))?.split('=').slice(1).join('=');
+    const owner = args.find(a => a.startsWith('--owner='))?.split('=').slice(1).join('=');
+    const areas = args.find(a => a.startsWith('--areas='))?.split('=').slice(1).join('=')?.split(',') || [];
+    if (!name || !owner) { errorln('Usage: construct workspace create --name=Auth --owner=Jane [--areas=auth,users]'); process.exit(1); }
+    const result = createWorkspace({ name, owner, productAreas: areas });
+    println(`Created workspace: ${result.id} — ${result.workspace.name}`);
+    return;
+  }
+
+  if (sub === 'show') {
+    const id = args[1];
+    if (!id) { errorln('Usage: construct workspace show <id>'); process.exit(1); }
+    const ws = getWorkspace(id);
+    if (!ws) { errorln(`Workspace not found: ${id}`); process.exit(1); }
+    println(`ID:          ${ws.id}`);
+    println(`Name:        ${ws.name}`);
+    println(`Owner:       ${ws.owner}`);
+    println(`Status:      ${ws.status}`);
+    println(`Product areas: ${(ws.productAreas || []).join(', ') || '—'}`);
+    println(`Customers:   ${(ws.customerIds || []).join(', ') || '—'}`);
+    return;
+  }
+
+  errorln(`Unknown workspace subcommand: ${sub}. Available: list, create, show`);
+}
+
+function printRecommendationsHelp() {
+  println('');
+  println('Construct recommendations — view and manage artifact recommendations.');
+  println('');
+  println('These are generated by the daemon\'s docs-lifecycle job based on intake');
+  println('signals, snapshot analysis, and doc gap detection. Recommendations are');
+  println('deduplicated, prioritized, and auto-suppressed after 7 days without new signals.');
+  println('');
+  println('Usage:');
+  println('  construct recommendations list [--type=prd] [--priority=P0]');
+  println('                                        List active recommendations, sorted by priority.');
+  println('  construct recommendations stats       Show recommendation store stats.');
+  println('  construct recommendations dismiss <type> <title> [--reason=…]');
+  println('                                        Permanently dismiss a recommendation.');
+  println('  construct recommendations dismiss <type> <title> --suppress-days=30');
+  println('                                        Temporarily suppress a recommendation.');
+}
+
+async function cmdRecommendations(args) {
+  const sub = args[0];
+  if (!sub || sub === '--help' || sub === '-h') { printRecommendationsHelp(); return; }
+
+  if (sub === 'list') {
+    const typeFlag = args.find(a => a.startsWith('--type='))?.split('=')[1];
+    const priorityFlag = args.find(a => a.startsWith('--priority='))?.split('=')[1];
+    try {
+      const { listActiveRecommendations, recommendationStats } = await import('../lib/embed/recommendation-store.mjs');
+      const recs = listActiveRecommendations({ type: typeFlag, priority: priorityFlag, limit: 30 });
+      if (!recs.length) {
+        println('No active recommendations.');
+        const stats = recommendationStats();
+        println(`(${stats.total} total in store: ${stats.active} active, ${stats.dismissed} dismissed, ${stats.superseded} superseded)`);
+        return;
+      }
+      println(`${COLORS.bold}Active recommendations:${COLORS.reset}`);
+      for (const rec of recs) {
+        const priorityColor = rec.priority === 'P0' ? COLORS.red : rec.priority === 'P1' ? COLORS.yellow : COLORS.reset;
+        println(`  ${priorityColor}${rec.priority}${COLORS.reset} ${COLORS.bold}${rec.type.toUpperCase()}${COLORS.reset}: ${rec.title}`);
+        println(`       Score: ${rec.score} · Signals: ${rec.totalSignalCount} · Impact: ${rec.customerImpact}/3 · ${rec.reason?.slice(0, 80)}`);
+      }
+      const stats = recommendationStats();
+      println(`\n(${stats.active} active · ${stats.dismissed} dismissed · ${stats.superseded} superseded)`);
+    } catch (err) {
+      errorln(`Recommendations error: ${err.message}`);
+    }
+    return;
+  }
+
+  if (sub === 'stats') {
+    try {
+      const { recommendationStats } = await import('../lib/embed/recommendation-store.mjs');
+      const stats = recommendationStats();
+      println('Recommendation store:');
+      println(`  Total:       ${stats.total}`);
+      println(`  Active:      ${stats.active}`);
+      println(`  Dismissed:   ${stats.dismissed}`);
+      println(`  Superseded:  ${stats.superseded}`);
+      println(`  By priority: ${JSON.stringify(stats.byPriority)}`);
+      println(`  By type:     ${JSON.stringify(stats.byType)}`);
+    } catch (err) {
+      errorln(`Recommendations stats error: ${err.message}`);
+    }
+    return;
+  }
+
+  if (sub === 'dismiss') {
+    const recType = args[1];
+    const recTitle = args[2];
+    if (!recType || !recTitle) {
+      errorln('Usage: construct recommendations dismiss <type> <title> [--reason=…] [--suppress-days=N]');
+      process.exit(1);
+    }
+    const reasonFlag = args.find(a => a.startsWith('--reason='))?.split('=').slice(1).join('=');
+    const suppressDaysFlag = args.find(a => a.startsWith('--suppress-days='))?.split('=')[1];
+    try {
+      const { dedupKey: computeKey } = await import('../lib/embed/recommendation-store.mjs');
+      const key = `${recType}::${recTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60)}`;
+      const { dismissRecommendation } = await import('../lib/embed/recommendation-store.mjs');
+      dismissRecommendation(key, {
+        reason: reasonFlag || 'CLI dismiss',
+        suppressDays: suppressDaysFlag ? Number(suppressDaysFlag) : undefined,
+      });
+      println(`Dismissed: ${recType} / ${recTitle}`);
+    } catch (err) {
+      errorln(`Dismiss error: ${err.message}`);
+    }
+    return;
+  }
+
+  errorln(`Unknown recommendations subcommand: ${sub}. Available: list, stats, dismiss`);
 }
 
 async function cmdGraph(args) {
@@ -1712,6 +2369,17 @@ async function cmdUpdate() {
     runUpdate({ cwd: process.cwd(), env: process.env, stdout: process.stdout });
   } catch (error) {
     errorln(error?.message || 'construct update failed');
+    process.exit(1);
+  }
+}
+
+async function cmdUpgrade(args) {
+  try {
+    const yes = args.includes('--yes');
+    const result = runUpgrade({ cwd: process.cwd(), env: process.env, stdout: process.stdout, yes });
+    if (!result.success) process.exit(1);
+  } catch (error) {
+    errorln(error?.message || 'construct upgrade failed');
     process.exit(1);
   }
 }
@@ -1991,6 +2659,10 @@ async function cmdCleanup() {
       ? `${(report.swapUsage.usedBytes / (1024 ** 3)).toFixed(1)} GiB used`
       : 'swap unavailable';
     println(`Pressure guard: ${report.pressureTriggered ? 'triggered' : 'standby'} · ${swap}`);
+    for (const entry of report.warnings ?? []) {
+      const grace = entry.graceMinutes ? `; will terminate after ${entry.graceMinutes}m if still matched` : '';
+      println(`Warning pid ${entry.pid} (${entry.reason})${grace}`);
+    }
   }
 
   if (!report.killed.length) {
@@ -2086,9 +2758,9 @@ async function cmdEvals(args) {
 
   const jsonOutput = args.includes('--json');
   const catalog = {
-    description: 'Evaluators are managed via Langfuse quality scores. Use cx_score MCP tool or POST /api/public/scores to record quality scores. Run `construct evals retrieval` for the local IR-metric harness against a fixture corpus.',
-    backendUrl: process.env.LANGFUSE_BASEURL ?? 'http://localhost:3000',
-    configured: Boolean(process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY),
+    description: 'Evaluators are managed via telemetry quality scores. Use cx_score MCP tool or POST /api/public/scores to record quality scores. Run `construct evals retrieval` for the local IR-metric harness against a fixture corpus.',
+    backendUrl: process.env.CONSTRUCT_TELEMETRY_BASEURL ?? 'http://localhost:3000',
+    configured: Boolean(process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY && process.env.CONSTRUCT_TELEMETRY_SECRET_KEY),
   };
   if (jsonOutput) {
     println(JSON.stringify(catalog, null, 2));
@@ -2097,11 +2769,11 @@ async function cmdEvals(args) {
   println('Evaluator Catalog');
   println('═════════════════');
   println('');
-  println(`Backend:     Langfuse (${catalog.backendUrl})`);
-  println(`Configured:  ${catalog.configured ? 'yes' : 'no — set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY'}`);
+  println(`Backend:     Telemetry (${catalog.backendUrl})`);
+  println(`Configured:  ${catalog.configured ? 'yes' : 'no — set CONSTRUCT_TELEMETRY_PUBLIC_KEY and CONSTRUCT_TELEMETRY_SECRET_KEY'}`);
   println('');
   println('Quality scores are recorded by agents via the cx_score MCP tool.');
-  println('View and manage scores at your Langfuse dashboard.');
+  println('View and manage scores at your telemetry dashboard.');
   println('');
   println('Local retrieval evaluation:');
   println('  construct evals retrieval [--fixture=PATH] [--json]');
@@ -2508,17 +3180,21 @@ const [command, ...rest] = process.argv.slice(2);
 const restArgsCache = rest;
 
 const handlers = new Map([
-  ['up', cmdUp],
-  ['down', cmdDown],
+  // Core
+  ['dev', cmdUp],
+  ['stop', cmdDown],
   ['status', cmdStatus],
-  ['show', cmdShow],
-  ['serve', cmdServe],
-  ['setup', cmdSetup],
+  ['install', cmdSetup],
   ['config', cmdConfig],
   ['intake', cmdIntake],
+  ['recommendations', cmdRecommendations],
+  ['integrations', cmdIntegrations],
+  ['customer', cmdCustomer],
+  ['workspace', cmdWorkspace],
   ['graph', cmdGraph],
   ['uninstall', cmdUninstall],
   ['update', cmdUpdate],
+  ['upgrade', cmdUpgrade],
   ['completions', cmdCompletions],
   ['sync', cmdSync],
   ['list', cmdList],
@@ -2541,6 +3217,75 @@ const handlers = new Map([
   ['docs:verify', cmdDocsVerify],
   ['init:update', cmdInitUpdate],
   ['models', cmdModels],
+  ['beads:stats', async (args) => {
+    const { getContentionStats, getHumanStatus } = await import('../lib/beads-optimistic.mjs');
+    const jsonOutput = args.includes('--json');
+    if (args.includes('--health')) {
+      process.stdout.write(await getHumanStatus(process.cwd()));
+      return;
+    }
+    const stats = await getContentionStats(process.cwd());
+    if (jsonOutput) {
+      println(JSON.stringify(stats, null, 2));
+    } else {
+      println('Beads Contention Statistics');
+      println('============================');
+      println(`Total operations: ${stats.totalOperations || 0}`);
+      println(`Conflicts: ${stats.conflicts || 0}`);
+      println(`Retries: ${stats.retries || 0}`);
+      println(`Average attempts: ${stats.avgAttempts?.toFixed(2) || '1.00'}`);
+      if (stats.operations) {
+        println('\nPer-operation breakdown:');
+        for (const [op, data] of Object.entries(stats.operations)) {
+          println(`  ${op}: ${data.count} calls, ${data.conflicts} conflicts`);
+        }
+      }
+    }
+  }],
+  ['hooks:health', async (args) => {
+    const { checkAllHooksHealth, formatHealthStatus } = await import('../lib/hook-health.mjs');
+    const health = await checkAllHooksHealth({ 
+      verbose: true, 
+      fix: args.includes('--fix') 
+    });
+    if (args.includes('--json')) {
+      println(JSON.stringify(health, null, 2));
+    } else {
+      process.stdout.write(formatHealthStatus(health));
+    }
+    if (!health.healthy) {
+      process.exit(1);
+    }
+  }],
+  ['policy:list', async (args) => {
+    const { listPolicies, formatPolicyList } = await import('../lib/policy/unified-gates.mjs');
+    if (args.includes('--json')) {
+      println(JSON.stringify(listPolicies(), null, 2));
+    } else {
+      process.stdout.write(formatPolicyList());
+    }
+  }],
+  ['auth:status', async (args) => {
+    const { getTokenStatus } = await import('../lib/providers/auth-manager.mjs');
+    const providers = ['github', 'slack', 'jira', 'salesforce', 'linear'];
+    const results = {};
+    for (const provider of providers) {
+      results[provider] = getTokenStatus(provider);
+    }
+    if (args.includes('--json')) {
+      println(JSON.stringify(results, null, 2));
+    } else {
+      println('Provider Auth Status');
+      println('====================');
+      for (const [provider, status] of Object.entries(results)) {
+        const icon = status.valid ? '✓' : '✗';
+        println(`${icon} ${provider}: ${status.valid ? 'valid' : status.error}`);
+        if (status.expiresIn) {
+          println(`  Expires in: ${Math.floor(status.expiresIn / 60)} minutes`);
+        }
+      }
+    }
+  }],
   ['mcp', cmdMcp],
   ['ollama', cmdOllamaCmd],
   ['plugin', cmdPlugin],
@@ -2602,6 +3347,166 @@ const handlers = new Map([
     const code = await runCli(args);
     if (code) process.exit(code);
   }],
+  ['roles:list', async (args) => {
+    const { listRoles, formatRoleList } = await import('../lib/roles/catalog.mjs');
+    const json = args.includes('--json');
+    const departments = args.includes('--departments');
+    const consolidated = args.includes('--consolidated');
+    
+    if (json) {
+      println(JSON.stringify(listRoles({ departments, consolidated }), null, 2));
+    } else {
+      process.stdout.write(formatRoleList({ departments, consolidated }));
+    }
+  }],
+  ['roles:set', async (args) => {
+    const { setRolePreference, getRolePreference } = await import('../lib/roles/preference.mjs');
+    const primaryIdx = args.indexOf('--primary');
+    const secondaryIdx = args.indexOf('--secondary');
+    const primary = primaryIdx !== -1 ? args[primaryIdx + 1] : null;
+    const secondary = secondaryIdx !== -1 ? args[secondaryIdx + 1] : null;
+    
+    if (primary) {
+      const result = setRolePreference('primary', primary);
+      println(`Primary role set: ${result.role}`);
+    }
+    if (secondary) {
+      const result = setRolePreference('secondary', secondary);
+      println(`Secondary role set: ${result.role}`);
+    }
+    if (!primary && !secondary) {
+      const prefs = { primary: getRolePreference('primary'), secondary: getRolePreference('secondary') };
+      println(`Current: primary=${prefs.primary || 'auto'}, secondary=${prefs.secondary || 'auto'}`);
+    }
+  }],
+  ['feedback:record', async (args) => {
+    const { createClassificationFeedback, recordFeedback, getAccuracyStats } = await import('../lib/intake/feedback.mjs');
+    const json = args.includes('--json');
+    const intakeIdIdx = args.indexOf('--intake');
+    const reasonIdx = args.indexOf('--reason');
+    const correctedIdx = args.indexOf('--corrected');
+    
+    if (intakeIdIdx === -1) {
+      // Show stats instead
+      const stats = getAccuracyStats(process.cwd());
+      if (json) {
+        println(JSON.stringify(stats, null, 2));
+      } else {
+        println('Classification Feedback Stats');
+        println('===========================');
+        println(`Total feedback: ${stats.overall.total}`);
+        println(`Corrections: ${stats.overall.corrected}`);
+        println(`Accuracy: ${(stats.overall.accuracy * 100).toFixed(1)}%`);
+      }
+      return;
+    }
+    
+    const intakeId = args[intakeIdIdx + 1];
+    const reason = reasonIdx !== -1 ? args[reasonIdx + 1] : 'other';
+    const corrected = correctedIdx !== -1 ? JSON.parse(args[correctedIdx + 1]) : null;
+    
+    if (!corrected) {
+      errorln('Usage: construct feedback:record --intake <id> --corrected \'{"intakeType":"bug","primaryOwner":"debugger"}\' [--reason wrong-owner]');
+      process.exit(1);
+    }
+    
+    const feedback = createClassificationFeedback({
+      intakeId,
+      original: { intakeType: 'unknown', primaryOwner: 'unknown' }, // Would load from intake
+      corrected,
+      reason,
+    });
+    
+    recordFeedback(process.cwd(), feedback);
+    println(`Feedback recorded for intake ${intakeId}`);
+  }],
+  ['feedback:history', async (args) => {
+    const { getFeedbackHistory, getKeywordAdjustments } = await import('../lib/intake/feedback.mjs');
+    const json = args.includes('--json');
+    const adjustments = args.includes('--adjustments');
+    const limitIdx = args.indexOf('--limit');
+    const limit = limitIdx !== -1 ? parseInt(args[limitIdx + 1], 10) : 20;
+    
+    if (adjustments) {
+      const adj = getKeywordAdjustments(process.cwd());
+      if (json) {
+        println(JSON.stringify(adj, null, 2));
+      } else {
+        println('Keyword Adjustment Suggestions');
+        println('==============================');
+        if (adj.length === 0) {
+          println('No patterns detected yet (need more feedback)');
+        } else {
+          for (const a of adj) {
+            println(`${a.frequency}x: ${a.suggestion}`);
+          }
+        }
+      }
+      return;
+    }
+    
+    const history = getFeedbackHistory(process.cwd(), { limit });
+    if (json) {
+      println(JSON.stringify(history, null, 2));
+    } else {
+      println(`Recent Feedback (last ${history.length})`);
+      for (const fb of history) {
+        println(`[${fb.timestamp}] ${fb.intakeId}: ${fb.reason}`);
+      }
+    }
+  }],
+  ['evaluator:rubrics', async (args) => {
+    const { listRubrics } = await import('../lib/evaluator-optimizer.mjs');
+    const json = args.includes('--json');
+    const rubrics = listRubrics();
+    
+    if (json) {
+      println(JSON.stringify(rubrics, null, 2));
+    } else {
+      println('Available Document Rubrics');
+      println('==========================');
+      for (const r of rubrics) {
+        println(`\n${r.docType.toUpperCase()} — ${r.name}`);
+        println(`Criteria (${r.criteriaCount}):`);
+        for (const c of r.criteria) {
+          println(`  - ${c.name} (${(c.weight * 100).toFixed(0)}%)`);
+        }
+      }
+    }
+  }],
+  ['activation:status', async (args) => {
+    const { getActivationSummary, getActivationStats } = await import('../lib/hooks/proactive-activation.mjs');
+    const json = args.includes('--json');
+    const specialistIdx = args.indexOf('--specialist');
+    
+    if (specialistIdx !== -1) {
+      const specialist = args[specialistIdx + 1];
+      const stats = getActivationStats(specialist);
+      if (json) {
+        println(JSON.stringify(stats, null, 2));
+      } else {
+        println(`Activation Stats: ${specialist}`);
+        println(`Recent: ${stats.recentActivations}/${stats.rateLimit} (rate limit)`);
+        println(`Total: ${stats.totalActivations}`);
+        println(`Last: ${stats.lastActivation ? new Date(stats.lastActivation).toISOString() : 'never'}`);
+      }
+    } else {
+      const summary = getActivationSummary();
+      if (json) {
+        println(JSON.stringify(summary, null, 2));
+      } else {
+        println('Proactive Activation Summary');
+        println('============================');
+        if (Object.keys(summary).length === 0) {
+          println('No activations recorded yet');
+        } else {
+          for (const [specialist, data] of Object.entries(summary)) {
+            println(`${specialist}: ${data.recentActivations} recent, ${data.totalActivations} total`);
+          }
+        }
+      }
+    }
+  }],
   ['claude:allow', async (args) => {
     const { listAllowEntries, addAllowEntries, removeAllowEntries, detectAllowlistGaps } =
       await import('../lib/claude-allow.mjs');
@@ -2661,9 +3566,9 @@ const handlers = new Map([
     const { runLLMJudgeCli } = await import('../lib/telemetry/llm-judge.mjs');
     return runLLMJudgeCli(args);
   }],
-  ['langfuse-setup', async (args) => {
-    const { runLangfuseSetupCli } = await import('../lib/telemetry/langfuse-setup.mjs');
-    return runLangfuseSetupCli(args);
+  ['telemetry-setup', async (args) => {
+    const { runTelemetrySetupCli } = await import('../lib/telemetry/setup.mjs');
+    return runTelemetrySetupCli(args);
   }],
   ['beads', async (args) => {
     const sub = args[0];
@@ -2675,7 +3580,7 @@ const handlers = new Map([
       if (jsonOutput) {
         println(JSON.stringify(status, null, 2));
       } else {
-        process.stdout.write(getHumanStatus(process.cwd()));
+        process.stdout.write(await getHumanStatus(process.cwd()));
       }
       return;
     }
@@ -2879,7 +3784,14 @@ const handlers = new Map([
   }],
 ]);
 
-if (!command || command === '--help' || command === '-h' || command === 'help') {
+// No command provided → show interactive menu
+if (!command) {
+  await showInteractiveMenu();
+  process.exit(0);
+}
+
+// Help flags → show usage
+if (command === '--help' || command === '-h' || command === 'help') {
   usage();
   process.exit(0);
 }
@@ -2887,7 +3799,8 @@ if (!command || command === '--help' || command === '-h' || command === 'help') 
 const handler = handlers.get(command);
 if (!handler) {
   errorln(`Unknown command: ${command}`);
-  usage();
+  println('');
+  println(`${COLORS.dim}Run 'construct --help' for available commands${COLORS.reset}`);
   process.exit(1);
 }
 

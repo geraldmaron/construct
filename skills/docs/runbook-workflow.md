@@ -15,7 +15,7 @@ Use when: creating operational procedures for services, alerts, or recurring ope
 4. **cx-docs-keeper** adds to `.cx/context.md` if it's a critical path runbook
 
 ## File naming
-- `docs/runbooks/langfuse-restart.md`
+- `docs/runbooks/telemetry-restart.md`
 - `docs/runbooks/db-migration.md`
 - `docs/runbooks/incident-response.md`
 
