@@ -21,6 +21,14 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Fixed
+
+- **Release binary build**: Resolved four `esbuild` bundle errors that blocked all five platform binaries in the release workflow.
+  - `bin/construct`: fixed incorrect dynamic import path `./lib/service-manager.mjs` → `../lib/service-manager.mjs` (relative to `bin/` location).
+  - Created `lib/roles/catalog.mjs` (exports `listRoles`, `formatRoleList`) and `lib/roles/preference.mjs` (exports `getRolePreference`, `setRolePreference`) — both referenced by existing CLI commands but never committed.
+  - `lib/evaluator-optimizer.mjs`: removed dead import of `./templates.mjs` (`getTemplate` was imported but never called; the file does not exist).
+- **Docker builder stage**: Replaced `ENV CONSTRUCT_SKIP_POSTINSTALL=1` with `npm ci --ignore-scripts` so the postinstall hook is fully bypassed when only `package.json`/`package-lock.json` are present (before the `COPY . .` layer copies `bin/`).
+
 ## [1.0.2] - 2026-05-20
 
 ### Changed
