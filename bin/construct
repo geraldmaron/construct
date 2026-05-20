@@ -2449,6 +2449,44 @@ async function cmdModels(args) {
     await cmdSync([]);
     return;
   }
+  if (args.includes('--cheapest')) {
+    const { selectCheapestProvider, rankConfiguredProvidersByCost, formatCheapestProviderMessage, isCheapestProviderEnabled } =
+      await import('../lib/model-cheapest-provider.mjs');
+    const cheapestTier = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1] ?? 'standard';
+    const verbose = args.includes('--verbose');
+    const enabled = isCheapestProviderEnabled(envPath, { env: process.env });
+    const result = await selectCheapestProvider(cheapestTier, { env: process.env });
+    const msg = formatCheapestProviderMessage(result, { showRanking: verbose });
+    println(msg);
+    if (enabled) println('\nCheapest provider mode: enabled');
+    return;
+  }
+  if (args.includes('--apply-cheapest')) {
+    const { selectCheapestForAllTiers, setCheapestProviderPreference } =
+      await import('../lib/model-cheapest-provider.mjs');
+    const allTiers = args.includes('--all-tiers') || !args.find((arg) => arg.startsWith('--tier='));
+    const tierArg = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1];
+    const tiers = allTiers ? ['reasoning', 'standard', 'fast'] : (tierArg ? [tierArg] : ['standard']);
+    const selections = {};
+    for (const currentTier of tiers) {
+      const { selectCheapestProvider } = await import('../lib/model-cheapest-provider.mjs');
+      const result = await selectCheapestProvider(currentTier, { env: process.env });
+      if (result.modelId) selections[currentTier] = result.modelId;
+    }
+    if (Object.keys(selections).length === 0) {
+      errorln('No configured providers found. Set API keys or install Ollama first.');
+      process.exit(1);
+    }
+    applyToEnv(envPath, selections);
+    println('Applying cheapest models:');
+    for (const [tier, model] of Object.entries(selections)) {
+      println(`  ${tier.padEnd(11)} ${model}`);
+    }
+    println('Written to ~/.construct/config.env. Running construct sync...');
+    setCheapestProviderPreference(envPath, true);
+    await cmdSync([]);
+    return;
+  }
   const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
   const result = readCurrentModels(envPath, registry.models ?? {});
   const nothingSelected = ['reasoning', 'standard', 'fast'].every((t) => !result[t]);
