@@ -182,8 +182,6 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm install -g npm@latest  # npm 11+ required for Trusted Publishing OIDC
-
       - run: npm ci
 
       - name: Download all binaries
@@ -192,18 +190,8 @@ jobs:
           path: dist/
           merge-multiple: true
 
-      - name: Determine npm dist-tag
-        id: tag
-        run: |
-          REF="${{ github.ref_name }}"
-          if [[ "$REF" =~ -rc\.|alpha\.|beta\. ]]; then
-            echo "tag=next" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=latest" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Publish to npm (Trusted Publishing via OIDC)
-        run: npm publish --provenance --access public --tag ${{ steps.tag.outputs.tag }}
+      # npm publish is done manually for now (requires 2FA/WebAuthn)
+      # Run locally: npm publish --provenance --access public --tag latest
 
       - name: Create GitHub Release
         env:
