@@ -26,7 +26,9 @@ WORKDIR /build
 
 COPY package.json package-lock.json ./
 
-# Production deps only; postinstall hooks run in build stage, not runtime.
+# Production deps only; postinstall hook is for consumer-project adoption and
+# must not run during image builds where only package.json is present.
+ENV CONSTRUCT_SKIP_POSTINSTALL=1
 RUN npm ci --omit=dev
 
 # Install the claude CLI globally for dashboard chat
