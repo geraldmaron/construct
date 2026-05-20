@@ -24,6 +24,12 @@ RUN apk add --no-cache git
 
 WORKDIR /build
 
+# Upgrade npm before any install step.  The npm version shipped in the base
+# image (10.x) bundles picomatch 4.0.3 (CVE-2026-33671, ReDoS).  npm 11+
+# no longer bundles picomatch at all — upgrading eliminates the vulnerability
+# from the image rather than suppressing it.
+RUN npm install -g npm@latest --silent
+
 COPY package.json package-lock.json ./
 
 # Production deps only. --ignore-scripts skips the postinstall hook which
