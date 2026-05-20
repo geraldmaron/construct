@@ -2,7 +2,7 @@
 
 All notable changes to Construct are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## [1.0.3] - 2026-05-20
 
 ### Fixed
 
@@ -12,11 +12,16 @@ All notable changes to Construct are documented here. The format follows [Keep a
 - **Telemetry setup log noise**: The `[embed] Telemetry setup skipped` message is no longer logged at daemon startup when telemetry credentials are not configured (solo mode default). Only unexpected errors are logged. `lib/embed/daemon.mjs`.
 - **Telemetry and Memory (cm) no longer degrade overall health**: Both are optional services (`impactsOverall: false`). Missing telemetry credentials or a stopped cass-memory server no longer marks Construct as `degraded`. `lib/status.mjs`.
 - **`construct init` silently skipped starting services**: `init-unified.mjs` imported `node:os` with destructuring (`const { os } = await import('node:os')`), but `os` is not a named export — the module itself is the default export. This caused `os.homedir()` to throw, the `catch` block swallowed the error, and `cm serve` (plus all other services) was never started. Fixed to `const { homedir } = await import('node:os')`. `lib/init-unified.mjs`.
+- **Embed daemon start reliability**: `construct dev` (and `construct embed start`) now pass `rootDir` explicitly to avoid path-resolution fragility, close the log file descriptor in the parent process after spawn, verify the worker is still alive after a 400 ms liveness check, and surface any failure as a warning rather than silently swallowing it. `lib/embed/cli.mjs`, `bin/construct`.
 
 ### Added
 
 - **`/api/intake/list` dashboard endpoint**: `GET /api/intake/list` returns the current intake queue (`{ items, total }`). Items are read via `createIntakeQueue(ROOT_DIR)` so it works in both filesystem (solo) and Postgres (team/enterprise) modes. `lib/server/index.mjs`.
 - **Ingested knowledge in RAG corpus**: `buildCorpus()` now includes `.cx/knowledge/{internal,external,decisions,how-tos,reference}/` files as indexed chunks alongside ADRs, PRDs, RFCs, and snapshots. Files dropped into the inbox and processed by the embed daemon are immediately searchable via `construct knowledge ask`. `lib/knowledge/rag.mjs`.
+
+## Unreleased
+
+## [1.0.2] - 2026-05-20
 
 ### Changed
 

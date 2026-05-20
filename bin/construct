@@ -288,12 +288,12 @@ async function cmdDoctor() {
     for (const varName of vars) {
       const sources = [];
 
-      // 1. process.env
+      // process.env
       if (process.env[varName]) {
         sources.push(`process.env (${process.env[varName].slice(0, 8)}…)`);
       }
 
-      // 2. .env files
+      // .env files
       for (const envPath of [join(process.cwd(), '.env'), join(homedir(), '.env'), join(homedir(), '.construct', 'config.env')]) {
         if (fs.existsSync(envPath)) {
           try {
@@ -304,7 +304,7 @@ async function cmdDoctor() {
         }
       }
 
-      // 3. Shell rc files
+      // Shell rc files
       const shellFiles = [join(homedir(), '.zshrc'), join(homedir(), '.bashrc'), join(homedir(), '.bash_profile'), join(homedir(), '.profile')];
       for (const rcPath of shellFiles) {
         if (!fs.existsSync(rcPath)) continue;
@@ -904,9 +904,9 @@ async function cmdUp() {
   if (embedConfigExists && autoEmbed) {
     try {
       const { runEmbedCli } = await import('../lib/embed/cli.mjs');
-      await runEmbedCli(['start']);
-    } catch {
-      // best effort
+      await runEmbedCli(['start'], { rootDir: ROOT_DIR });
+    } catch (err) {
+      warn(`embed start failed: ${err.message} — check ~/.cx/runtime/embed-daemon.log`);
     }
   }
 
