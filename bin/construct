@@ -3834,6 +3834,13 @@ if (command === '--help' || command === '-h' || command === 'help') {
   process.exit(0);
 }
 
+// Version flags → print version and exit
+if (command === '--version' || command === '-V') {
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+  println(`construct v${pkg.version}`);
+  process.exit(0);
+}
+
 const handler = handlers.get(command);
 if (!handler) {
   errorln(`Unknown command: ${command}`);
