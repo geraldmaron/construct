@@ -4,6 +4,20 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Fixed
+
+- **Integration status icon**: Integrations found in any AI host config now show `✓` instead of `⚠`. The `⚠` icon is reserved for `degraded` services (those that failed a health probe), not for fully-configured integrations. `lib/status.mjs` `serviceIcon()`.
+- **Memory integration always showed unavailable**: MCPs whose `hostSupport` has all entries set to `mode: 'unsupported'` (e.g. cass-memory, which is served through the built-in construct-mcp stdio server) now report `configured — Available via construct-mcp (built-in)` instead of `unavailable — Not configured in any host`. `lib/features.mjs` `buildFeatures()`.
+- **Embed daemon crash on `emitTraceEvent(...).catch`**: `emitTraceEvent` is synchronous and returns a plain object, not a Promise. Three call sites in `lib/embed/daemon.mjs` called `.catch(() => {})` on the return value, throwing `TypeError: (intermediate value).catch is not a function` at runtime. Fixed by wrapping each call site in `try/catch`.
+- **Telemetry setup log noise**: The `[embed] Telemetry setup skipped` message is no longer logged at daemon startup when telemetry credentials are not configured (solo mode default). Only unexpected errors are logged. `lib/embed/daemon.mjs`.
+- **Telemetry and Memory (cm) no longer degrade overall health**: Both are optional services (`impactsOverall: false`). Missing telemetry credentials or a stopped cass-memory server no longer marks Construct as `degraded`. `lib/status.mjs`.
+- **`construct init` silently skipped starting services**: `init-unified.mjs` imported `node:os` with destructuring (`const { os } = await import('node:os')`), but `os` is not a named export — the module itself is the default export. This caused `os.homedir()` to throw, the `catch` block swallowed the error, and `cm serve` (plus all other services) was never started. Fixed to `const { homedir } = await import('node:os')`. `lib/init-unified.mjs`.
+
+### Added
+
+- **`/api/intake/list` dashboard endpoint**: `GET /api/intake/list` returns the current intake queue (`{ items, total }`). Items are read via `createIntakeQueue(ROOT_DIR)` so it works in both filesystem (solo) and Postgres (team/enterprise) modes. `lib/server/index.mjs`.
+- **Ingested knowledge in RAG corpus**: `buildCorpus()` now includes `.cx/knowledge/{internal,external,decisions,how-tos,reference}/` files as indexed chunks alongside ADRs, PRDs, RFCs, and snapshots. Files dropped into the inbox and processed by the embed daemon are immediately searchable via `construct knowledge ask`. `lib/knowledge/rag.mjs`.
+
 ### Changed
 
 - **Breaking: CLI command restructuring** — Complete overhaul of command structure for clarity and progressive disclosure.
