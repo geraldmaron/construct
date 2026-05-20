@@ -118,12 +118,13 @@ test('buildStatus separates runtime health from configured integrations', async 
     global.fetch = originalFetch;
   }
 
-  assert.equal(status.system.overall.status, 'degraded');
+  // Telemetry and memory are optional (impactsOverall: false) — dashboard healthy → overall healthy
+  assert.equal(status.system.overall.status, 'healthy');
   assert.equal(status.system.services.find((service) => service.id === 'dashboard').status, 'healthy');
   assert.equal(status.system.services.find((service) => service.id === 'telemetry').status, 'unavailable');
   assert.equal(status.features.find((feature) => feature.id === 'github').status, 'configured');
-  // Memory MCP is unavailable in OpenCode: SSE transport incompatible with cm serve
-  assert.equal(status.features.find((feature) => feature.id === 'memory').status, 'unavailable');
+  // Memory MCP has all hosts unsupported — served through construct-mcp built-in, so it's 'configured'
+  assert.equal(status.features.find((feature) => feature.id === 'memory').status, 'configured');
   assert.match(status.system.integrations.summary, /configured/);
   assert.equal(status.system.plugins.status, 'configured');
   assert.match(status.system.plugins.summary, /1 plugin/);
@@ -207,7 +208,8 @@ test('formatStatusReport prints canonical overall summary and integrations', asy
 
   const report = formatStatusReport(status);
   assert.match(report, /Construct Status/);
-  assert.match(report, /Overall: degraded/);
+  // Telemetry has impactsOverall: false — its status never degrades overall health
+  assert.match(report, /Overall: healthy/);
   assert.match(report, /Coordination: external tracker \+ plan\.md · single-writer per file · cass-memory for recall/);
   assert.match(report, /Efficiency: healthy/);
   assert.match(report, /Usage: available · 2 interactions · 265 provider · 265 billed \(.*?% cache read · .*?% cache write · .*?% fresh\)/);
