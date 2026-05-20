@@ -12,7 +12,7 @@ name: construct-langfuse
 
 services:
   langfuse-worker:
-    image: docker.io/langfuse/langfuse-worker:3.100.0
+    image: docker.io/langfuse/langfuse-worker:3.174.1
     container_name: construct-langfuse-worker
     restart: unless-stopped
     mem_limit: ${LANGFUSE_WORKER_MEM:-768m}
@@ -67,7 +67,7 @@ services:
       REDIS_TLS_ENABLED: "false"
 
   langfuse-web:
-    image: docker.io/langfuse/langfuse:3.100.0
+    image: docker.io/langfuse/langfuse:3.174.1
     container_name: construct-langfuse
     restart: unless-stopped
     mem_limit: ${LANGFUSE_SERVER_MEM:-1536m}
