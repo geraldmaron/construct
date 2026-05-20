@@ -1,5 +1,5 @@
 {
-  "totalOperations": 10,
+  "totalOperations": 13,
   "conflicts": 0,
   "retries": 0,
   "operations": {
@@ -49,6 +49,21 @@
       "avgAttempts": 1
     },
     "close construct-yo0 --reason Policy gate cleanup completed": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "create --help": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "create Harden local 1Password secret workflow --type task --priority P1 --description Audit and harden local developer secret handling so 1Password remains the source of truth without exporting raw API tokens globally. Scope includes shell startup cleanup, safer helper wrappers, raw secret inventory, and a 1Password item-structure audit once CLI desktop integration is healthy. --acceptance 1. Shell startup no longer resolves and exports API tokens globally. 2. Developer tools have a reusable op run helper for per-process secret injection. 3. Raw local secret stores and leaked local logs are documented for rotation/cleanup. 4. 1Password CLI connectivity and item organization are audited without printing secret values. --labels security,1password,secrets --assignee geralddagher --silent": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "update construct-vkq --claim": {
       "count": 1,
       "conflicts": 0,
       "avgAttempts": 1
