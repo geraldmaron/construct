@@ -54,7 +54,12 @@ RUN apk add --no-cache git curl \
 
 WORKDIR /app
 
-# Copy only what runtime needs from builder
+# Copy only what runtime needs from builder.
+# rm -rf first: the base image ships npm 10.x (with vulnerable picomatch 4.0.3).
+# Docker COPY merges into existing directories — without the rm, the base layer's
+# old npm/node_modules/picomatch persists through overlayfs even when the builder's
+# upgraded npm no longer bundles it.
+RUN rm -rf /usr/local/lib/node_modules
 COPY --from=builder /build/node_modules        ./node_modules
 COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=builder /usr/local/bin/claude*     /usr/local/bin/
