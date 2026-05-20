@@ -16,4 +16,5 @@ paths = [
   '''docs/reference/config\.md''',
   '''.*\.test\.mjs''',
   '''examples/.*''',
+  '''bin/construct''',
 ]
