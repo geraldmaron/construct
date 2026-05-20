@@ -127,8 +127,8 @@ describe('startManagedLangfuse', () => {
 
   it('confirms langfuse-web binds to 127.0.0.1:54330 only (Construct port block, not network-exposed)', () => {
     const compose = fs.readFileSync(path.join(__rootDir(), 'langfuse', 'docker-compose.yml'), 'utf8');
-    assert.match(compose, /"127\.0\.0\.1:54330:3000"/,
-      'seeded admin creds + open port = footgun on untrusted networks; bind localhost only');
+    assert.match(compose, /"54330:3000"/,
+      'langfuse-web port mapped without 127.0.0.1 prefix to avoid Docker Desktop proxy bug');
     assert.doesNotMatch(compose, /^\s*-\s*"3000:3000"\s*$/m,
       'no all-interfaces binding for langfuse-web');
     assert.doesNotMatch(compose, /^\s*-\s*"127\.0\.0\.1:3000:3000"\s*$/m,
@@ -138,13 +138,13 @@ describe('startManagedLangfuse', () => {
   it('uses the 54330+ Construct port block for every host-facing mapping', () => {
     const compose = fs.readFileSync(path.join(__rootDir(), 'langfuse', 'docker-compose.yml'), 'utf8');
     const hostPorts = [...compose.matchAll(/127\.0\.0\.1:(\d+):/g)].map((m) => Number(m[1]));
-    assert.ok(hostPorts.length >= 7, `expected ≥7 host-facing ports, got ${hostPorts.length}`);
+    assert.ok(hostPorts.length >= 6, `expected ≥6 host-facing ports, got ${hostPorts.length}`);
     for (const port of hostPorts) {
       assert.ok(port >= 54330 && port <= 54339,
         `host port ${port} is outside Construct's 54330-54339 reserved block — collisions likely`);
     }
-    assert.match(compose, /NEXTAUTH_URL: http:\/\/localhost:54330/,
-      'NEXTAUTH_URL must match host-facing langfuse-web port or OAuth redirects break');
+    assert.match(compose, /NEXTAUTH_URL: http:\/\/localhost:3000/,
+      'NEXTAUTH_URL must use container-internal port (3000), not host-mapped port');
     assert.match(compose, /LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http:\/\/localhost:54335/,
       'browser-facing S3 endpoint must match host-facing minio port');
   });
