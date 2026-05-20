@@ -93,7 +93,7 @@ provider auth failures, and dashboard unreachable.
    grep DATABASE_URL ~/.construct/config.env
    ```
 
-   If missing, run `construct setup` to configure it.
+   If missing, run `construct init` to configure it.
 
 3. Test the connection directly:
 

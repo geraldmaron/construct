@@ -130,7 +130,7 @@ function usage() {
 
 /** Show interactive context-aware menu when construct is run without arguments. */
 async function showInteractiveMenu() {
-  const { loadProjectConfig } = await import('./lib/config/project-config.mjs');
+  const { loadProjectConfig } = await import('../lib/config/project-config.mjs');
   const { existsSync } = await import('node:fs');
   const { join } = await import('node:path');
   
@@ -142,7 +142,7 @@ async function showInteractiveMenu() {
   println('');
   
   if (isConstructProject) {
-    const projectName = process.env.CX_PROJECT_NAME || require('path').basename(projectRoot);
+    const projectName = process.env.CX_PROJECT_NAME || path.basename(projectRoot);
     println(`${COLORS.dim}Project:${COLORS.reset} ${projectName}`);
     println('');
   }
@@ -1789,8 +1789,8 @@ async function cmdIntakeConfig(args) {
 async function cmdIntakeMetrics() {
   try {
     const { computeIntakeMetrics, pendingAge } = await import('../lib/embed/intake-metrics.mjs');
-    const metrics = computeIntakeMetrics({ rootDir: cwd });
-    const age = pendingAge({ rootDir: cwd });
+    const metrics = computeIntakeMetrics({ rootDir: process.cwd() });
+    const age = pendingAge({ rootDir: process.cwd() });
 
     println(`${COLORS.bold}Intake pipeline metrics:${COLORS.reset}`);
     println('');

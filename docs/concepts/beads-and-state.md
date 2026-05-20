@@ -36,7 +36,7 @@ Other `.cx/` files:
 
 Construct runs hybrid retrieval — BM25 + cosine — over your codebase + ingested docs + observations. The vector backend is one of:
 
-1. **Postgres + pgvector** — preferred when available. `construct setup` brings it up via Docker.
+1. **Postgres + pgvector** — preferred when available. `construct init` brings it up via Docker.
 2. **Local JSON index** — fallback when Postgres isn't available. Lives in `.cx/observations/` or `~/.construct/vector/`. Smaller corpora, slower, no concurrency, but works offline.
 
 Either way, the embedding model is configurable. `construct evals retrieval` measures recall against a fixture so changes to the model or chunker don't silently degrade quality.

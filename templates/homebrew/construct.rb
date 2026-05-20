@@ -49,7 +49,7 @@ class Construct < Formula
   def caveats
     <<~EOS
       To finish setup on this machine, run:
-        construct setup
+        construct init
 
       Construct uses a local Postgres container (via Docker) for hybrid
       retrieval. If Docker is not installed, Construct falls back to a JSON

@@ -80,7 +80,7 @@ construct doctor             # verify everything's healthy
 
 ## Local services
 
-If you ran `construct setup` and have Docker, you have three things running locally on Construct's reserved port block (`54329-54339`, chosen to avoid colliding with Next.js, Postgres, Redis, etc.):
+If you ran `construct init` and have Docker, you have three things running locally on Construct's reserved port block (`54329-54339`, chosen to avoid colliding with Next.js, Postgres, Redis, etc.):
 
 **Telemetry backend** (LLM observability — see your traces, costs, and quality scores)
 
@@ -105,7 +105,7 @@ All ports bind to `127.0.0.1` only; nothing is reachable from other machines on 
 
 | Command | What it does |
 |---|---|
-| `construct setup` | One-time per-machine: spins up local services, writes config |
+| `construct init` | One-time per-machine: spins up local services, writes config |
 | `construct config [mode <m>]` | Show active deployment mode (solo / team / enterprise) or set a new one |
 | `construct doctor` | Health check across config, services, agents, hooks |
 | `construct sync` | Regenerate platform adapters (Claude Code, OpenCode, Codex, Cursor) |

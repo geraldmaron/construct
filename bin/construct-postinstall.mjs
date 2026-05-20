@@ -6,7 +6,7 @@
  * and runs `npm install`, npm fetches Construct into the project's
  * `node_modules/` and then runs this script. Its job: regenerate the project's
  * `.claude/agents/` and `.claude/settings.json` from the bundled registry so
- * the project clone is fully runnable without a manual `construct setup`.
+ * the project clone is fully runnable without a manual `construct init`.
  *
  * The script is a no-op in three cases:
  *

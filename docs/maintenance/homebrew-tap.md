@@ -7,7 +7,7 @@ Construct ships a Homebrew formula via a personal tap so users without Node can 
 ```bash
 brew install geraldmaron/construct/construct   # one-time
 brew upgrade construct                          # whenever a new release ships
-construct setup                                 # first time on the machine
+construct init                                 # first time on the machine
 ```
 
 The formula drops one binary into `/opt/homebrew/bin/construct` (Apple Silicon) or `/usr/local/bin/construct` (Intel macOS / Linuxbrew). No Node, no Docker required at install time. Construct's optional resources (Postgres via Docker, embedding model) are probed and bootstrapped on demand at first use.
