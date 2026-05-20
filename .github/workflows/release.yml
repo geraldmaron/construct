@@ -45,11 +45,11 @@ jobs:
             node_arch: arm64
           - os: darwin
             arch: x64
-            runner: macos-13
+            runner: macos-15
             node_arch: x64
           - os: darwin
             arch: arm64
-            runner: macos-latest
+            runner: macos-15
             node_arch: arm64
           - os: windows
             arch: x64
