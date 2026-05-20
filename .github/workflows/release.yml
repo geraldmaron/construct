@@ -32,6 +32,7 @@ jobs:
     needs: gate
     runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: linux
@@ -70,21 +71,22 @@ jobs:
       - name: Bundle
         shell: bash
         run: |
+          mkdir -p dist
           esbuild bin/construct \
             --bundle \
             --platform=node \
             --target=node22 \
-            --outfile=dist/construct-bundle.cjs \
+            --format=esm \
+            --outfile=dist/construct-bundle.mjs \
             --external:@huggingface/transformers \
             --external:postgres
-          mkdir -p dist
 
       - name: Build SEA blob
         shell: bash
         run: |
           cat > dist/sea-config.json <<'EOF'
           {
-            "main": "dist/construct-bundle.cjs",
+            "main": "dist/construct-bundle.mjs",
             "output": "dist/sea-prep.blob",
             "disableExperimentalSEAWarning": true
           }
