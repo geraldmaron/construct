@@ -103,7 +103,7 @@ export default function HomePage() {
               npm install -g @geraldmaron/construct
               {'\n'}
               <span className="text-fd-muted-foreground">$ </span>
-              construct setup --yes
+              construct init --yes
               {'\n'}
               <span className="text-fd-muted-foreground">$ </span>
               construct init && construct sync

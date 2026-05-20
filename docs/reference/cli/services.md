@@ -11,7 +11,7 @@ description: Services commands for Construct.
 | `construct completions` | Generate or print shell completion scripts for construct |
 | `construct down` | Stop all running services |
 | `construct serve` | Start the Construct dashboard (auto-selects port) |
-| `construct setup` | Bootstrap user config after npm or manual install |
+| `construct init` | Bootstrap user config after npm or manual install |
 | `construct show` | Show runtime service URLs and live status (compat view) |
 | `construct status` | Show canonical system health across runtime and integrations |
 | `construct up` | Start services (memory, dashboard) |
@@ -76,14 +76,14 @@ construct serve [--token]
 |---|---|
 | `--token` | Generate and print a new dashboard token, then exit |
 
-## construct setup
+## construct init
 
 Bootstrap user config after npm or manual install
 
 **Usage**
 
 ```bash
-construct setup [--yes] [--no-docker]
+construct init [--yes] [--no-docker]
 ```
 
 **Options**

@@ -28,7 +28,7 @@ construct version   # confirm install succeeded
 If your backup includes secrets (created with `--include-secrets`), skip to Step 3. Otherwise, recreate `~/.construct/config.env` manually:
 
 ```bash
-construct setup --yes
+construct init --yes
 ```
 
 The wizard prompts for all required API keys. If you have the original `config.env`, copy it to `~/.construct/config.env` instead of running the wizard.

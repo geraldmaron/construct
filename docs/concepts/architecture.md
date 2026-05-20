@@ -192,7 +192,7 @@ Docker service management, embed daemon, and scheduler.
 - **Service manager** — `lib/service-manager.mjs` (container lifecycle for Postgres, memory)
 - **Embed daemon** — scheduled or long-running process that monitors sources through providers, produces snapshots, manages approval queue. `construct embed supervise` installs a platform-native supervisor (launchd/systemd/Task Scheduler) for auto-restart on crash.
 - **Scheduler** — cron-style or interval-based execution (local: in-process schedule; cloud: cron + webhook triggers)
-- **Resource bootstrap** — `lib/bootstrap/resources.mjs` probes optional resources (Postgres, ONNX model, Docker, git). `lib/bootstrap/lazy-install.mjs` gates install on operator consent cached in `config.env`; `construct setup` runs the full wizard.
+- **Resource bootstrap** — `lib/bootstrap/resources.mjs` probes optional resources (Postgres, ONNX model, Docker, git). `lib/bootstrap/lazy-install.mjs` gates install on operator consent cached in `config.env`; `construct init` runs the full wizard.
 - **Backup** — `lib/storage/backup.mjs` creates timestamped tar.gz archives covering observations, sessions, config.env (secrets redacted), registry snapshot, and Postgres dump. SHA-256 manifest for tamper detection. `construct backup create|verify|restore|list|prune`. `create` auto-prunes to `CONSTRUCT_BACKUP_RETAIN` (default 10) unless `--no-prune` is passed. Optional embed-daemon job `auto-backup` runs every `CONSTRUCT_AUTO_BACKUP_DAYS` days (off by default).
 
 ### Dashboard
