@@ -180,7 +180,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
           cache: npm
 
       - run: npm ci
@@ -201,10 +200,8 @@ jobs:
             echo "tag=latest" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Publish to npm
+      - name: Publish to npm (Trusted Publishing via OIDC)
         run: npm publish --provenance --access public --tag ${{ steps.tag.outputs.tag }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         env:
