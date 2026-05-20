@@ -182,6 +182,8 @@ jobs:
           node-version: 22
           cache: npm
 
+      - run: npm install -g npm@latest  # npm 11+ required for Trusted Publishing OIDC
+
       - run: npm ci
 
       - name: Download all binaries
