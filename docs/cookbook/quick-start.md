@@ -35,7 +35,7 @@ construct install --yes
 2. ✅ Checks `cm` (Memory MCP server) → installs if missing
 3. ✅ Checks Node.js ≥ 20 → shows download link if needed
 4. ✅ Creates `~/.construct/config.env`
-5. ✅ Sets up Langfuse credentials automatically
+5. ✅ Sets up telemetry backend credentials automatically
 6. ✅ Runs `construct doctor` health check
 
 **Output:**
@@ -49,12 +49,8 @@ construct install --yes
 ✅ All prerequisites met!
 
 Local services:
-  ✓  Langfuse → http://localhost:54330 (credentials auto-configured)
+  ✓  Telemetry backend → http://localhost:54330 (credentials auto-configured)
   ✓  Postgres → postgresql://127.0.0.1:54329/construct
-
-🔐 Langfuse Credentials:
-  Dashboard: http://localhost:54330
-  Login: admin@construct.local / construct-admin
 ```
 
 ---
@@ -75,8 +71,7 @@ construct init
 1. ✅ Creates `.cx/` directory structure
 2. ✅ Creates `construct.config.json`
 3. ✅ Creates `embed.yaml` (if not exists)
-4. ✅ **Starts all services** (Dashboard, Langfuse, Memory, Embed)
-5. ✅ Shows Langfuse credentials
+4. ✅ **Starts all services** (Dashboard, Telemetry backend, Memory, Embed)
 6. ✅ Opens Dashboard in browser
 
 ---
@@ -103,7 +98,7 @@ construct stop
 ║                    Construct Runtime Started                              ║
 ╠══════════════════════════════════════════════════════════════════════════╣
 ║  ✓  Dashboard → http://127.0.0.1:4242                                    ║
-║  ✓  Langfuse → http://localhost:54330 (Docker)                          ║
+║  ✓  Telemetry backend → http://localhost:54330 (Docker)                          ║
 ║  ✓  Memory (cm) → http://127.0.0.1:8765                                  ║
 ║  ✓  Embed daemon started (monitoring git, inbox, CI)                    ║
 ╚══════════════════════════════════════════════════════════════════════════╝
@@ -127,16 +122,13 @@ Construct Services
 ══════════════════
 
   ✓  Dashboard                    http://127.0.0.1:4242 (Dashboard API)
-  ✓  Langfuse                     http://localhost:54330 (Trace backend)
+  ✓  Telemetry backend            http://localhost:54330 (Trace backend)
   ✓  Memory (cm)                  http://127.0.0.1:8765 (MCP-managed)
   ✓  Embed daemon                 Running (watching git, inbox)
 
-Langfuse Credentials (Local)
-════════════════════════════
+Telemetry Credentials (Local)
+═════════════════════════════
   Dashboard:     http://localhost:54330
-  Login:         admin@construct.local / construct-admin
-  API Public:    pk-lf-construct-local
-  API Secret:    sk-lf-construct-local
 
 INFO Credentials saved to ~/.construct/config.env — edit if needed
 ```
@@ -159,7 +151,7 @@ docker ps
 construct install --yes
 ```
 
-### "Langfuse failed to start"
+### "Telemetry backend failed to start"
 
 ```bash
 # Check if port 54330 is already in use

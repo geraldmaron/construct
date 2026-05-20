@@ -82,11 +82,9 @@ construct doctor             # verify everything's healthy
 
 If you ran `construct setup` and have Docker, you have three things running locally on Construct's reserved port block (`54329-54339`, chosen to avoid colliding with Next.js, Postgres, Redis, etc.):
 
-**Langfuse** (LLM observability — see your traces, costs, and quality scores)
+**Telemetry backend** (LLM observability — see your traces, costs, and quality scores)
 
 - URL: <http://localhost:54330>
-- Login: `admin@construct.local` / `construct-admin`
-- API keys saved to `~/.construct/config.env`
 
 **Postgres + pgvector** (the database that backs hybrid retrieval)
 
@@ -99,7 +97,7 @@ If you ran `construct setup` and have Docker, you have three things running loca
 - Model auto-downloaded to `~/.construct/cache/embeddings/` on first use (~22 MB, one time)
 - Run `construct search "your query"` to see it work
 
-If you skipped Docker, Construct falls back to a local JSON vector index at `~/.construct/vector/index.json` and stops emitting traces — semantic search still works, just slower at scale, and Langfuse isn't available.
+If you skipped Docker, Construct falls back to a local JSON vector index at `~/.construct/vector/index.json` and stops emitting traces — semantic search still works, just slower at scale, and the telemetry backend isn't available.
 
 All ports bind to `127.0.0.1` only; nothing is reachable from other machines on your network.
 

@@ -109,7 +109,7 @@ export default function Performance() {
         <section className="card">
           <h2 className="text-lg font-semibold mb-2">No performance reviews yet</h2>
           <p className="text-sm text-text-muted">
-            Run <code className="px-1 py-0.5 bg-bg-muted rounded">construct review run</code> to generate the first review from your cost ledger + Langfuse generations. The Stop hook also runs this every 24 hours automatically once the hooks are installed.
+            Run <code className="px-1 py-0.5 bg-bg-muted rounded">construct review run</code> to generate the first review from your cost ledger + telemetry generations. The Stop hook also runs this every 24 hours automatically once the hooks are installed.
           </p>
           {mockFiltered > 0 && (
             <p className="text-xs text-text-dim mt-3">

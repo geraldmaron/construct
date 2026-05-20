@@ -7,7 +7,7 @@ description: Add Construct to your project like any other dev dependency, then r
 
 - Node.js 20+ (`node --version`)
 - A git repo to play in. Construct expects `.git/` so it can wire pre-commit hooks.
-- Docker Desktop (optional but recommended) — `construct setup` will spin up local Postgres + Langfuse via Docker. Without Docker, retrieval falls back to a local JSON vector index and traces are skipped; everything else still works.
+- Docker Desktop (optional but recommended) — `construct setup` will spin up local Postgres + telemetry backend via Docker. Without Docker, retrieval falls back to a local JSON vector index and traces are skipped; everything else still works.
 
 ## Install
 
@@ -46,24 +46,22 @@ construct setup
 What setup does, in order:
 
 1. Creates `~/.construct/config.env` and seeds default model tier assignments.
-2. Detects Docker. If present, prompts to install local Postgres and local Langfuse — accept the defaults (Y) and both come up automatically. Use `--yes` to skip the prompts and accept all defaults non-interactively. Use `--no-docker` to skip the Docker-managed services entirely.
+2. Detects Docker. If present, prompts to install local Postgres and local telemetry backend — accept the defaults (Y) and both come up automatically. Use `--yes` to skip the prompts and accept all defaults non-interactively. Use `--no-docker` to skip the Docker-managed services entirely.
 3. Generates shell completions (bash + zsh) so `construct <tab>` works.
 4. Installs optional CLIs (`cm`, `cass`) if Homebrew or cargo is available and you consent.
 5. Installs the Pressure Guard launch agent on macOS so Construct can manage helper processes.
 6. Wires `core.hooksPath` to `.beads/hooks/` if your repo has the beads hook directory — activates the local pre-commit policy gates.
-7. Prints a "Local services" summary block with the Langfuse web login and the Postgres URL.
+7. Prints a "Local services" summary block with the telemetry backend and the Postgres URL.
 
-Consent for each service (Postgres, Langfuse) is cached in `~/.construct/config.env` as `BOOTSTRAP_POSTGRES=yes|no` and `BOOTSTRAP_LANGFUSE=yes|no`. Re-running `construct setup` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
+Consent for each service (Postgres, telemetry backend) is cached in `~/.construct/config.env` as `BOOTSTRAP_POSTGRES=yes|no`. Re-running `construct setup` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
 
 ## What you have when setup finishes
 
 Local services running via Docker, all auto-provisioned (no browser signup, no account creation) and on Construct's reserved 54329–54339 host port block (chosen to avoid Next.js :3000, Postgres :5432, Redis :6379, MinIO :9090, etc.):
 
-**Langfuse** — LLM observability dashboard
+**Telemetry backend** — LLM observability dashboard
 
 - URL: `http://localhost:54330`
-- Login: `admin@construct.local` / `construct-admin`
-- API keys: `pk-lf-construct-local` / `sk-lf-construct-local` (saved to `~/.construct/config.env`)
 
 **Postgres + pgvector** — hybrid retrieval backend
 
@@ -79,7 +77,7 @@ Local services running via Docker, all auto-provisioned (no browser signup, no a
 
 All host ports bind to `127.0.0.1` only — nothing reachable from other machines on your network.
 
-Cloud Langfuse is opt-in: set `LANGFUSE_BASEURL` to a non-localhost URL before running `construct setup` and Construct will respect it (no local stack spin-up). Construct never defaults to `cloud.langfuse.com`.
+Cloud telemetry is opt-in: set `CONSTRUCT_TELEMETRY_URL` to a non-localhost URL before running `construct setup` and Construct will respect it.
 
 ## Verify
 

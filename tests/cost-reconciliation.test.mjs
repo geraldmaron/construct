@@ -22,7 +22,7 @@ import {
   estimateUsageCost,
   resetPricingCatalog,
   resolveModelPricing,
-} from '../lib/telemetry/langfuse-model-sync.mjs';
+} from '../lib/telemetry/model-pricing-catalog.mjs';
 import { buildRuntimeTracePayload } from '../lib/opencode-runtime-plugin.mjs';
 
 const MODEL = 'claude-sonnet-4-6';

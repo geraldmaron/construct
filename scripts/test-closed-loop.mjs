@@ -197,7 +197,7 @@ console.log('6. Results logged → inform future improvements');
 
 console.log('\n🔧 To activate the system:');
 console.log('1. Run `construct sync` to install hooks');
-console.log('2. Ensure Langfuse is configured for telemetry');
+console.log('2. Ensure telemetry backend is configured (CONSTRUCT_TELEMETRY_* env vars)');
 console.log('3. Agents must use `cx_trace` with quality scores');
 console.log('4. Run `construct review` regularly for performance data');
 console.log('5. System auto-triggers on session end when scores are low');

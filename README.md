@@ -16,13 +16,12 @@ npm install -g @geraldmaron/construct
 
 ### Step 2: Machine Setup (one-time, per machine)
 
-First time on a new machine, bootstrap local services. `construct install` auto-spins local Postgres + Langfuse via Docker and prints your Langfuse login at the end:
+First time on a new machine, bootstrap local services. `construct install` auto-spins local Postgres + telemetry backend via Docker:
 
 ```bash
 construct install --yes
 # Local services:
-#   Langfuse: http://localhost:54330
-#     Web login: admin@construct.local / construct-admin
+#   Telemetry: http://localhost:54330
 #   Postgres: postgresql://construct:construct@127.0.0.1:54329/construct
 ```
 
@@ -178,7 +177,6 @@ construct/
 ├── deploy
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples
-├── langfuse         Langfuse trace backend for agent observability
 ├── lib              Core runtime: CLI, hooks, MCP, status, sync, workflow
 ├── personas         Persona prompt definitions
 ├── platforms

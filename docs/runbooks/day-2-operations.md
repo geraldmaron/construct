@@ -102,7 +102,7 @@ run `construct distill` with a focused query and compact context before continui
 
 ---
 
-## 6. Review agent quality (requires Langfuse)
+## 6. Review agent quality (requires telemetry backend)
 
 ```bash
 construct review --days=7
@@ -122,7 +122,7 @@ the agents table if the registry was modified.
 
 ---
 
-## 7. Sync eval datasets (requires Langfuse)
+## 7. Sync eval datasets (requires telemetry backend)
 
 ```bash
 construct eval-datasets

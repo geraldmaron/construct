@@ -10,12 +10,7 @@
   "providers": {},
   "autoEmbed": true,
   "telemetry": {
-    "enabled": true,
-    "langfuse": {
-      "baseUrl": "http://localhost:54330",
-      "publicKey": null,
-      "secretKey": null
-    }
+    "enabled": true
   },
   "resources": {
     "disk": {

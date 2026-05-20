@@ -3,7 +3,7 @@
  *
  * Covers buildRuntimeTracePayload (metadata extraction) and the plugin's
  * model fallback behavior. Telemetry calls are no-ops in the test environment
- * because LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY are not set.
+ * because CONSTRUCT_TELEMETRY_PUBLIC_KEY and CONSTRUCT_TELEMETRY_SECRET_KEY are not set.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -19,7 +19,7 @@ import {
   emitSessionPrelude,
   _resetPreludeForTests,
 } from "../lib/opencode-runtime-plugin.mjs";
-import { resetPricingCatalog } from "../lib/telemetry/langfuse-model-sync.mjs";
+import { resetPricingCatalog } from "../lib/telemetry/model-pricing-catalog.mjs";
 
 test("buildRuntimeTracePayload creates deterministic OpenCode runtime trace metadata", () => {
   const payload = buildRuntimeTracePayload(
@@ -508,10 +508,10 @@ test("plugin continues fallback even when telemetry logging fails", async () => 
   assert.equal(state.targetModel, "openrouter/qwen/qwen3-coder:free");
 });
 
-test("plugin does not crash when Langfuse is not configured and telemetry is skipped", async () => {
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-plugin-nolangfuse-"));
-  const toolkitDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-toolkit-nolangfuse-"));
-  const configPath = path.join(os.tmpdir(), "opencode-nolangfuse.json");
+test("plugin does not crash when telemetry is not configured", async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-plugin-notelemetry-"));
+  const toolkitDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-toolkit-notelemetry-"));
+  const configPath = path.join(os.tmpdir(), "opencode-notelemetry.json");
   fs.writeFileSync(configPath, JSON.stringify({}));
 
   const logs = [];
