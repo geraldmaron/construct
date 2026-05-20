@@ -544,7 +544,7 @@ test('buildStatus marks telemetry richness credentials-invalid when telemetry au
 
     assert.equal(status.telemetryRichness.status, 'credentials-invalid');
     assert.match(status.telemetryRichness.summary, /credentials rejected/);
-    assert.match(status.telemetryRichness.summary, /construct setup/);
+    assert.match(status.telemetryRichness.summary, /construct init/);
   } finally {
     global.fetch = originalFetch;
   }
