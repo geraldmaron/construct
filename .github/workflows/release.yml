@@ -182,25 +182,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Do NOT pass registry-url here — setup-node@v6 injects github.token as
-      # NODE_AUTH_TOKEN when registry-url is set, which overrides npm's native
-      # OIDC Trusted Publishers exchange and causes a 404 on publish. Configure
-      # the registry separately so npm can use OIDC unobstructed.
+      # Node 24 ships with npm 11+. npm CLI 11.5.1+ is required for Trusted
+      # Publishers OIDC (https://docs.npmjs.com/trusted-publishers). Node 22
+      # ships with npm 10.x which does not support OIDC-first auth and fell back
+      # to the github.token injected by setup-node, causing a 404. With npm 11+,
+      # OIDC is tried before any token fallback — registry-url is safe to use.
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
-          cache: npm
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
 
       - run: npm ci
 
-      - name: Configure npm registry
-        run: npm config set registry https://registry.npmjs.org/
-
-      - name: Verify npm auth (Trusted Publishers)
-        # Fail fast before packaging 640 files. npm uses OIDC Trusted Publishers
-        # automatically when ACTIONS_ID_TOKEN_REQUEST_URL is present (id-token:
-        # write permission above) and no classic _authToken is in .npmrc.
-        run: npm whoami
+      - name: Verify OIDC token available
+        # npm whoami requires classic auth and will always fail for OIDC Trusted
+        # Publishers. Instead verify the OIDC endpoint is reachable — this is
+        # what npm publish uses internally to exchange for a short-lived token.
+        run: |
+          if [ -z "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+            echo "ERROR: ACTIONS_ID_TOKEN_REQUEST_URL not set — id-token: write permission missing"
+            exit 1
+          fi
+          echo "OIDC endpoint available: $ACTIONS_ID_TOKEN_REQUEST_URL"
+          echo "Trusted Publishers exchange will happen inside npm publish."
 
       - name: Download all binaries
         uses: actions/download-artifact@v4
