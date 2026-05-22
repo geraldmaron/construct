@@ -16,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 const setup = await import(path.join(root, "lib", "setup.mjs"));
 
-test("managed setup values configure local vector and remote telemetry defaults", async () => {
+test("managed setup values configure local vector and local trace defaults", async () => {
   const home = tempDir("construct-setup-values-");
   // Pin embedding model to hashing in tests so the expected CONSTRUCT_VECTOR_MODEL
   // value is deterministic without requiring the ONNX runtime.
@@ -25,7 +25,7 @@ test("managed setup values configure local vector and remote telemetry defaults"
     env: { CONSTRUCT_EMBEDDING_MODEL: "hashing" },
   });
 
-  assert.equal(values.CONSTRUCT_TRACE_BACKEND, "remote");
+  assert.equal(values.CONSTRUCT_TRACE_BACKEND, "local");
   assert.equal(values.CONSTRUCT_TELEMETRY_URL, undefined, "no default telemetry URL — user must configure");
   assert.equal(values.CONSTRUCT_VECTOR_MODEL, "hashing-bow-v1");
   assert.equal(values.CONSTRUCT_VECTOR_INDEX_PATH, path.join(home, ".construct", "vector", "index.json"));

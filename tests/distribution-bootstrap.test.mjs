@@ -26,8 +26,28 @@ const PKG_VERSION = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 
 
 let projectDir;
 
+function writableTmpRoot() {
+  const candidates = [
+    process.env.CONSTRUCT_TEST_TMPDIR,
+    path.join(ROOT, '.tmp', 'tests'),
+    '/private/tmp',
+    os.tmpdir(),
+    '/tmp',
+  ].filter(Boolean);
+  for (const candidate of candidates) {
+    try {
+      fs.mkdirSync(candidate, { recursive: true });
+      fs.accessSync(candidate, fs.constants.W_OK);
+      return candidate;
+    } catch {
+      continue;
+    }
+  }
+  throw new Error('No writable temp root available for distribution bootstrap tests');
+}
+
 before(() => {
-  projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-dist-bootstrap-'));
+  projectDir = fs.mkdtempSync(path.join(writableTmpRoot(), 'cx-dist-bootstrap-'));
   fs.writeFileSync(
     path.join(projectDir, 'package.json'),
     JSON.stringify({ name: 'fixture-consumer', version: '0.0.0' })

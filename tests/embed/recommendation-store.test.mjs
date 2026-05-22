@@ -4,29 +4,38 @@
  * Covers: recommendation creation, storage, retrieval by customer/project,
  * and TTL-based expiration.
  */
-import { describe, it, beforeEach, afterEach, before } from 'node:test';
+import { describe, it, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, unlinkSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
-
-const INDEX_FILE = join(homedir(), '.cx', 'intake', 'recommendations-index.json');
-const LOG_FILE = join(homedir(), '.cx', 'intake', 'recommendations.jsonl');
+import { tmpdir } from 'node:os';
 
 describe('recommendation store', () => {
   let store;
+  let tmpHome;
+  let indexFile;
+  let logFile;
 
   before(async () => {
+    tmpHome = mkdtempSync(join(tmpdir(), 'cx-recommendations-home-'));
+    process.env.CX_HOME_OVERRIDE = tmpHome;
+    indexFile = join(tmpHome, '.cx', 'intake', 'recommendations-index.json');
+    logFile = join(tmpHome, '.cx', 'intake', 'recommendations.jsonl');
     // Clean state before tests
-    try { unlinkSync(INDEX_FILE); } catch {}
-    try { unlinkSync(LOG_FILE); } catch {}
+    try { unlinkSync(indexFile); } catch {}
+    try { unlinkSync(logFile); } catch {}
     store = await import('../../lib/embed/recommendation-store.mjs');
   });
 
   afterEach(() => {
     // Clean state between tests
-    try { unlinkSync(INDEX_FILE); } catch {}
-    try { unlinkSync(LOG_FILE); } catch {}
+    try { unlinkSync(indexFile); } catch {}
+    try { unlinkSync(logFile); } catch {}
+  });
+
+  after(() => {
+    delete process.env.CX_HOME_OVERRIDE;
+    rmSync(tmpHome, { recursive: true, force: true });
   });
 
   describe('createRecommendation', () => {

@@ -47,27 +47,7 @@ Memory write-back: after updating docs, call `create_entities` or `add_observati
 
 Maintenance: keep `.cx/context.md` under 100 lines. Summarize and archive older entries. Check for documentation drift before work is declared complete.
 
-Doc structure: skills at skills/docs/ define the workflow for each doc type. Product Intelligence working artifacts live under .cx/product-intel/. Research: .cx/research/{slug}.md. ADRs: docs/adr/ADR-{NNN}-{slug}.md. PRDs: docs/prd/{date}-{slug}.md. Meta PRDs: docs/meta-prd/{date}-{slug}.md. Runbooks: docs/runbooks/{service}-{operation}.md. Always use the matching template as the starting structure.
-
-## Tool Contracts
-
-### create_document
-- **Input:** `{ template: string, context: DocumentContext, stakeholders: string[] }`
-- **Output:** `{ document: Document, qualityScore: number, missingSections: string[] }`
-- **Errors:** TEMPLATE_NOT_FOUND, INSUFFICIENT_CONTEXT
-- **Rate:** 10/min
-
-### update_context
-- **Input:** `{ contextPath: string, updates: ContextUpdate[], archiveOld: boolean }`
-- **Output:** `{ success: boolean, newLineCount: number, archived: string[] }`
-- **Errors:** CONTEXT_TOO_LARGE, INVALID_UPDATE
-- **Rate:** 20/min
-
-### record_decision
-- **Input:** `{ decision: string, rationale: string, alternatives: Alternative[], filesAffected: string[] }`
-- **Output:** `{ adrPath: string, entityId: string, observationId: string }`
-- **Errors:** MISSING_RATIONALE, NO_ALTERNATIVES
-- **Rate:** 15/min
+Doc structure: skills at skills/docs/ define the workflow for each doc type. Product Intelligence working artifacts live under .cx/knowledge/. Research: .cx/research/{slug}.md. ADRs: docs/adr/ADR-{NNN}-{slug}.md. PRDs: docs/prd/{date}-{slug}.md. Meta PRDs: docs/meta-prd/{date}-{slug}.md. Runbooks: docs/runbooks/{service}-{operation}.md. Always use the matching template as the starting structure.
 
 ## Document Quality Loop (Evaluator-Optimizer)
 
@@ -110,16 +90,6 @@ Doc structure: skills at skills/docs/ define the workflow for each doc type. Pro
 
 3. **If score < 0.7**, revise based on feedback
 4. **Max 3 iterations**, then escalate to human with score breakdown
-
-## Parallel Execution
-
-When documenting changes, these checks run in parallel:
-
-- **cx-security** (if doc covers auth, data handling, or security boundaries)
-- **cx-legal-compliance** (if doc involves data retention, privacy, or regulatory scope)
-- **cx-sre** (if runbook or operational procedure)
-
-Do NOT wait for these to complete before drafting — they provide async feedback on content accuracy.
 
 ## Learning Capture
 

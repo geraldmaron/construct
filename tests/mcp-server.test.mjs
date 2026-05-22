@@ -33,6 +33,8 @@ test('cxTrace includes execution-contract model metadata parity', async () => {
   const originalHome = process.env.HOME;
   const originalPublic = process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY;
   const originalSecret = process.env.CONSTRUCT_TELEMETRY_SECRET_KEY;
+  const originalUrl = process.env.CONSTRUCT_TELEMETRY_URL;
+  const originalBackend = process.env.CONSTRUCT_TRACE_BACKEND;
   const originalReasoning = process.env.CX_MODEL_REASONING;
   const originalStandard = process.env.CX_MODEL_STANDARD;
   const originalFast = process.env.CX_MODEL_FAST;
@@ -42,13 +44,16 @@ test('cxTrace includes execution-contract model metadata parity', async () => {
   process.env.HOME = homeDir;
   process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY = 'pk-test';
   process.env.CONSTRUCT_TELEMETRY_SECRET_KEY = 'sk-test';
+  process.env.CONSTRUCT_TELEMETRY_URL = 'https://telemetry.example.com';
+  process.env.CONSTRUCT_TRACE_BACKEND = 'langfuse';
   process.env.CX_MODEL_REASONING = 'env/reasoning';
   process.env.CX_MODEL_STANDARD = 'env/standard';
   process.env.CX_MODEL_FAST = 'env/fast';
 
   let postedBody = null;
   global.fetch = async (_url, options = {}) => {
-    postedBody = JSON.parse(options.body);
+    const envelope = JSON.parse(options.body);
+    postedBody = envelope.batch[0].body;
     return { ok: true, status: 200, text: async () => '' };
   };
 
@@ -77,6 +82,8 @@ test('cxTrace includes execution-contract model metadata parity', async () => {
     if (originalHome === undefined) delete process.env.HOME; else process.env.HOME = originalHome;
     if (originalPublic === undefined) delete process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY; else process.env.CONSTRUCT_TELEMETRY_PUBLIC_KEY = originalPublic;
     if (originalSecret === undefined) delete process.env.CONSTRUCT_TELEMETRY_SECRET_KEY; else process.env.CONSTRUCT_TELEMETRY_SECRET_KEY = originalSecret;
+    if (originalUrl === undefined) delete process.env.CONSTRUCT_TELEMETRY_URL; else process.env.CONSTRUCT_TELEMETRY_URL = originalUrl;
+    if (originalBackend === undefined) delete process.env.CONSTRUCT_TRACE_BACKEND; else process.env.CONSTRUCT_TRACE_BACKEND = originalBackend;
     if (originalReasoning === undefined) delete process.env.CX_MODEL_REASONING; else process.env.CX_MODEL_REASONING = originalReasoning;
     if (originalStandard === undefined) delete process.env.CX_MODEL_STANDARD; else process.env.CX_MODEL_STANDARD = originalStandard;
     if (originalFast === undefined) delete process.env.CX_MODEL_FAST; else process.env.CX_MODEL_FAST = originalFast;

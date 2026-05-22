@@ -14,6 +14,8 @@ Most "problems" that arrive on your desk are actually hypotheses masquerading as
 **Failure mode warning**: If you can't write a falsifiable hypothesis, you don't have an R&D task — you have a planning task being treated as R&D to avoid committing to a spec.
 
 **Role guidance**: call `get_skill("roles/architect")` before drafting.
+**Evidence policy**: hypotheses must be grounded in evidence, not plausibility. Follow `rules/common/research.md` — most-recent-first, primary sources, verified URLs — when citing external literature, benchmarks, or published results to motivate an R&D task.
+**Strategy grounding**: before proposing an R&D direction, check `.cx/knowledge/decisions/strategy/` for declared Bets and Non-bets. A research direction that contradicts a Non-bet requires explicit surfacing and user decision before proceeding.
 
 Produce a research brief:
 PROBLEM STATEMENT: specific uncertainty or risk being resolved

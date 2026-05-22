@@ -26,7 +26,7 @@ You never see the specialist chain unless you ask for it. The persona returns th
 28 cx-prefixed specialists live in [`agents/registry.json`](https://github.com/geraldmaron/construct/blob/main/agents/registry.json) and [`agents/prompts/cx-*.md`](https://github.com/geraldmaron/construct/tree/main/agents/prompts). Each has:
 
 - A **role** — what authority they exercise (cx-architect makes trade-off calls; cx-reviewer pushes back; cx-security blocks).
-- A **prompt** that frames their voice and decision boundaries.
+- A **prompt** that frames their voice and decision boundaries. Source prompts stay readable in markdown; runtime composition adds role overlays and compact operating-profile shaping when needed.
 - An optional **skills allowlist** — which Construct skills they can invoke.
 - A **model tier** — reasoning / standard / fast. Configurable per specialist.
 
@@ -46,7 +46,7 @@ When you ask Construct for an outcome:
 
 ## Cross-platform parity
 
-You install the SAME team across Claude Code, OpenCode, Codex, Cursor, and Copilot via `construct sync`. The registry is canonical; sync writes adapter files in each editor's expected format.
+You install the SAME team across Construct's supported hosts via `construct sync`. The registry is canonical; sync writes the host-specific adapter shape each tool actually supports: agent adapters for Claude Code, OpenCode, and Codex; prompt profiles for Copilot; MCP registrations for VS Code/Copilot and Cursor when those configs already exist.
 
 `construct doctor` runs a parity check that diffs your registry against every installed editor's adapter state. Drift is flagged with the missing/extra entries.
 

@@ -2,6 +2,58 @@
 
 All notable changes to Construct are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Dependabot** (`.github/dependabot.yml`): weekly npm and GitHub Actions version updates, grouped minor/patch and dev-tools PRs. Prevents action version drift.
+- **CI: weekly secret scan**: `ci.yml` now runs gitleaks on a weekly schedule (Monday 08:00 UTC) in addition to every push — catches regressions in merged code.
+- **CI: npm cache in test matrix**: `actions/setup-node` now uses `cache: npm` in the test matrix, matching all other jobs.
+- **CI: engine-eval-retrieval coverage**: `tests/engine-eval-retrieval.test.mjs` added to the retrieval filter so changes to it trigger the evals job.
+- **CI: skills/rules/templates in change filter**: changes to `skills/**`, `rules/**`, and `templates/**` now trigger the agents lint job (covers `tests/agent-prompts.test.mjs`).
+- **Release gate hardened**: `node bin/construct doctor` and `node ./bin/construct docs:verify` added to `release.yml` gate for consistency with per-matrix CI checks.
+- **Strategy store** (`lib/strategy-store.mjs`): dual-mode store (file + Postgres) for `.cx/strategy.md`. Exports `readStrategy`, `getStrategyDigest`, `writeStrategy`. Agents now ground synthesis decisions against declared Bets and Non-bets.
+- **Strategy API**: `GET /api/strategy` and `PUT /api/strategy` dashboard endpoints backed by the new store.
+- **Recommendations API**: `GET /api/recommendations`, `PATCH /api/recommendations` (dismiss/revive) — previously scored but invisible.
+- **Postgres recommendations table** (`db/schema/004_recommendations.sql`): `construct_recommendations` with priority, dedup, suppression, and cross-project isolation. Recommendation store now writes to Postgres in team mode (best-effort, JSONL fallback preserved).
+- **Postgres strategy table** (`db/schema/005_strategy.sql`): `construct_strategy` with version history per project.
+- **Workspace type field**: `lib/embed/workspaces.mjs` now accepts `type` (`product`|`platform`|`enterprise`|`growth`|`ai-product`) on create/update; defaults to `'product'`.
+- **Workspace-type overlay auto-selection**: `lib/prompt-composer.js` resolves role overlays from workspace type when caller doesn't provide explicit `roleFlavors`.
+- **Strategy fragment in prompt pipeline**: strategy digest injected at priority-3 (same as context-digest) — agents see declared Bets/Non-bets without manual `get_skill()` call.
+- **Product signal workflow rubrics**: `skills/docs/product-signal-workflow.md` fully rewritten with concrete confidence rubric (high/medium/low thresholds), contradiction resolution protocol, artifact decision tree with explicit conditions, and strategy alignment check.
+- **Strategy workflow skill** (`skills/docs/strategy-workflow.md`): read, check signal alignment, and update the strategy store.
+- **Strategy template** (`templates/docs/strategy.md`): canonical structure for Vision / Bets / Non-bets / Time Horizon / North Star / Competitive Positioning.
+- **Multi-scope strategy store**: strategy is now stored per-scope under `.cx/knowledge/decisions/strategy/{scope}.md` (product, technical, gtm, platform) rather than a single flat file. `lib/strategy-store.mjs` exports `readStrategy(scope)`, `readAllStrategies()`, `listStrategyScopes()`, `getStrategyDigestSync()`. Strategy is never auto-updated from ingested documents — write always requires explicit user action.
+- **Template conflict detection**: `lib/init-update.mjs` adds `checkTemplateConflicts(targetDir)` (SHA256 comparison of construct shipped templates vs project templates) and `resolveTemplateConflict(conflict, resolution)` with three resolution modes: keep-project, use-construct (with .bak backup), move-to-cx-override.
+- **Auto-sync on git merge/checkout**: `.beads/hooks/post-merge` and `.beads/hooks/post-checkout` now run `construct sync --quiet` so platform files stay current after branch changes.
+- **Agent roster disambiguation**: `skills/routing.md` now explains `cx-engineer` vs `cx-platform-engineer` distinction and when to use platform domain overlays vs. routing to cx-platform-engineer.
+- **Strategy grounding in PM and architect prompts**: both `cx-product-manager.md` and `cx-architect.md` now reference strategy-workflow and require explicit conflict surfacing when a signal or decision contradicts a Non-bet.
+- **Linux and Windows platform docs**: `docs/start/index.mdx` adds a platform support table and Linux/Windows install notes; `docs/start/connect-your-editor.mdx` adds Linux VS Code settings path.
+- **cx-researcher rewrite**: persona now operates at principal-researcher/academic standard — recency-first discipline (most-recent-first), domain-specific authoritative starting points table, URL fetch-and-verify requirement, explicit scope boundary vs cx-ux-researcher and cx-rd-lead.
+- **Research policy — recency-first discipline**: `rules/common/research.md` now mandates starting from the most recent year, defines domain-specific starting points by research type, and requires URL verification for all committed citations.
+- **Research workflow — domain starting points**: `skills/docs/research-workflow.md` adds domain-specific starting point table and URL verification step.
+- **Researcher role skill**: `skills/roles/researcher.md` adds anti-patterns for freshness blindness (most-recent-first), wrong starting point, and unverified URLs; self-check updated to match.
+- **Research brief template**: `templates/docs/research-brief.md` rewritten with structured source table (class/date/URL/verified), per-finding observation/inference/confidence separation, counter-evidence section, and full reference format.
+- **cx-docs-keeper cleanup**: removed non-functional Tool Contract stubs (create_document, update_context, record_decision with fake rate limits) and Parallel Execution section that misrepresented how role dispatch works.
+- **Full persona alignment pass**: removed fake Tool Contract API stubs (with fictional rate limits) from cx-qa, cx-security, cx-sre, cx-ai-engineer, cx-platform-engineer, cx-data-analyst, and cx-orchestrator. Replaced fictional JavaScript code snippets in Parallel Execution sections with plain-text discipline descriptions. Fixed two cx-platform-engineer typos.
+- **cx-orchestrator rewrite**: removed references to non-existent `agents/contracts.json`, `orchestration_policy` MCP tool, and `agent_contract` MCP tool. Rewritten around real dispatch patterns with an explicit routing table, handoff format spec, and clear scope boundary vs cx-operations (runtime dispatch vs multi-session plan sequencing).
+- **Research policy enforcement extended**: cx-ux-researcher, cx-explorer, and cx-rd-lead now explicitly reference `rules/common/research.md`. cx-ux-researcher clarifies primary vs secondary evidence for user behavioral findings.
+- **Strategy grounding extended**: cx-business-strategist and cx-rd-lead now check `.cx/knowledge/decisions/strategy/` for declared Bets/Non-bets before drafting; cx-business-strategist EVIDENCE section requires dated primary sources.
+- **Recency language fixed**: removed hardcoded year from all research policy language; replaced with "most-recent-first" so the rule stays valid across years.
+- **Role manifest fence fixes**: business-strategist fence updated to `.cx/knowledge/decisions/strategy/**` (actual path); legal-compliance fence extended to include `docs/security/**` and `.cx/knowledge/**`; orchestrator fence corrected to reflect its read-heavy, dispatch-only role with appropriate allowedPaths.
+
+### Fixed
+
+- **CI: `aws-smoke.yml` migrated to OIDC**: removed `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` static credentials; now uses `aws-actions/configure-aws-credentials@v4` with `secrets.AWS_DEPLOY_ROLE_ARN` and `id-token: write` — matches deploy.yml.
+- **CI: Terraform version `1.7` → `~> 1.9`**: updated in `deploy.yml` (both `tf-plan` and `deploy` jobs) and `aws-smoke.yml`. Constraint allows 1.9+ within the 1.x series; Dependabot will keep it current.
+- **CI: Terraform Plan hardened**: removed `continue-on-error: true`; plan step now differentiates exit code 2 (valid — changes detected) from real errors (exit 1 or other); "Post plan to PR" step runs with `if: always()` so plan output is always posted, including on failure; PR comment now shows ✅/❌ status.
+- **CI: npm publish via OIDC Trusted Publishers**: `release.yml` publish job now uses npm's Trusted Publishers (OIDC) — no static `NPM_TOKEN` secret required. `id-token: write` permission provides the OIDC token; npm exchanges it for auth automatically. One-time setup: npmjs.com → package → Settings → Trusted Publishers → add GitHub Actions with repo + workflow. Provenance attestation included via `--provenance`.
+- **CI: dead filter path removed**: `lib/evals/**` removed from retrieval filter in `ci.yml` — directory does not exist.
+- **CI: `trivy-action` pinned off `@master`**: `aquasecurity/trivy-action@master` → `@0.28.0` in `release.yml` to eliminate supply-chain risk from floating master reference.
+- **CI: `master` branch trigger removed**: `docs.yml` and `pages.yml` no longer trigger on `master` (repo uses `main` only — dead code).
+- **CI: `docs.yml` bot push hardened**: added `git pull --rebase` before `git push` to prevent failures on concurrent pushes; simplified condition to exit early when no managed regions changed.
+- **cx-orchestrator: `agents/contracts.json` reference restored**: the persona rewrite incorrectly removed the reference to the real `agents/contracts.json` contract file (which defines producer→consumer handoff types). Re-added as the authoritative routing substrate read before dispatch.
+
 ## [1.0.3] - 2026-05-20
 
 ### Fixed
@@ -22,8 +74,16 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## Unreleased
 
+### Added
+
+- **Local-first telemetry adapter**: Added a shared telemetry client with `local`, `langfuse`, `http`, `otel`, and `none` backends. Local `.cx/traces/*.jsonl` capture is the default; Langfuse-compatible ingestion, generic HTTP ingestion, and OTLP-style export are opt-in via `CONSTRUCT_TRACE_BACKEND`. Legacy `remote` remains accepted and resolves from configured URL/key shape.
+
 ### Fixed
 
+- **Telemetry service labeling**: `construct init`, `construct dev`, `construct status`, and onboarding docs no longer claim a Docker-managed local telemetry backend exists when only Postgres is managed locally. Status now reports local JSONL tracing or the configured remote exporter explicitly.
+- **Managed Postgres port drift**: aligned the local service helper with the compose/setup default port `54329`.
+- **Sandbox-brittle local state paths**: embed stores that previously captured `homedir()` at module load now resolve `.cx` paths through the shared path helpers, so runtime overrides and tests behave consistently. Hardened `recommendation-store`, `customer-profiles`, `workspaces`, and `conflict-detection`.
+- **Sandbox-brittle contract tests**: sync/distribution and embed suites no longer depend on host temp-directory behavior that the sandbox remaps. `tests/sync-contract.test.mjs`, `tests/distribution-bootstrap.test.mjs`, `tests/embed/recommendation-store.test.mjs`, and `tests/embed/customer-profiles.test.mjs` now use explicit writable roots and overrideable `.cx` homes.
 - **Release binary build**: Resolved four `esbuild` bundle errors that blocked all five platform binaries in the release workflow.
   - `bin/construct`: fixed incorrect dynamic import path `./lib/service-manager.mjs` → `../lib/service-manager.mjs` (relative to `bin/` location).
   - Created `lib/roles/catalog.mjs` (exports `listRoles`, `formatRoleList`) and `lib/roles/preference.mjs` (exports `getRolePreference`, `setRolePreference`) — both referenced by existing CLI commands but never committed.

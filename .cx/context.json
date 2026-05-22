@@ -1,13 +1,13 @@
 {
   "format": "json",
-  "savedAt": "2026-05-18T18:13:33.344Z",
+  "savedAt": "2026-05-22T04:45:17.543Z",
   "source": "pre-compact",
   "projectName": "construct",
   "lastSummary": "",
   "filesChanged": [],
   "decisions": [],
   "pendingTodos": [],
-  "efficiencySummary": "158 reads · 61 unique files · 97 repeated reads · 33 large reads · 4425 KB read",
+  "efficiencySummary": "173 reads · 97 unique files · 76 repeated reads · 123 large reads · 2435 KB read",
   "warnFlags": "None",
   "contextSummary": ""
 }

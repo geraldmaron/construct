@@ -2,13 +2,13 @@
 #
 # Authoritative copy lives in the construct repo at templates/homebrew/
 # construct.rb. The tap repo (geraldmaron/homebrew-construct) carries the
-# active formula at Formula/construct.rb and is updated by the release
-# workflow's Homebrew bump step on every tag push.
+# active formula at Formula/construct.rb.
 #
-# When the release pipeline fires for `vX.Y.Z`, dawidd6/action-homebrew-bump-
-# formula rewrites the url + sha256 fields for each platform from the
-# matching GitHub Release asset. The placeholder SHAs below are only used
-# when seeding the tap by hand the first time.
+# The release workflow's `homebrew` job regenerates Formula/construct.rb from
+# scratch on every `v*` tag push — it downloads sha256 sidecars from the
+# GitHub Release, fills in the version and per-platform URLs/SHAs, and pushes
+# directly to the tap. The placeholder SHAs below are only used when seeding
+# the tap by hand the first time (see docs/maintenance/homebrew-tap.md).
 class Construct < Formula
   desc "Deployable AI R&D operating system for coding agents — runs locally or for teams"
   homepage "https://github.com/geraldmaron/construct"

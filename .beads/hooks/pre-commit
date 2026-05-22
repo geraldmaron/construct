@@ -101,7 +101,7 @@ if [[ "${CONSTRUCT_SKIP_GATES:-0}" != "1" ]]; then
       fi
     fi
     
-    if ! node ./bin/construct lint:comments --staged; then
+    if ! node ./bin/construct lint:comments; then
       cat >&2 <<'EOF'
 
 [Construct pre-commit] Comment policy violations in staged files.
@@ -110,7 +110,7 @@ when re-running this commit (and CONSTRUCT_SKIP_GATES=1 to skip both gates).
 EOF
       exit 1
     fi
-    if ! node ./bin/construct docs:verify --staged; then
+    if ! node ./bin/construct docs:verify; then
       exit 1
     fi
   fi

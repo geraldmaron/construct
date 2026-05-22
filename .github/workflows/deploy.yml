@@ -72,7 +72,7 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: '1.7'
+          terraform_version: '~> 1.9'
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
@@ -91,22 +91,30 @@ jobs:
           TF_VAR_dashboard_token: ${{ secrets.DASHBOARD_TOKEN }}
           TF_VAR_anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
+          set +e
           terraform plan -no-color -out=tfplan 2>&1 | tee plan.txt
-          echo "exitcode=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
-        continue-on-error: true
+          TF_EXIT=${PIPESTATUS[0]}
+          echo "exitcode=${TF_EXIT}" >> "$GITHUB_OUTPUT"
+          # Exit 0 = no changes, 2 = changes detected — both valid plan outcomes.
+          # Any other code (1, 3, …) is a real error; propagate it.
+          [ "$TF_EXIT" -eq 0 ] || [ "$TF_EXIT" -eq 2 ] || exit "$TF_EXIT"
 
       - name: Post plan to PR
+        # Always post — even when the plan step failed — so reviewers see the error output.
+        if: always()
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const plan = fs.readFileSync('${{ env.TF_WORKING_DIR }}/plan.txt', 'utf8');
+            const planPath = '${{ env.TF_WORKING_DIR }}/plan.txt';
+            const plan = fs.existsSync(planPath) ? fs.readFileSync(planPath, 'utf8') : '(plan output unavailable)';
             const truncated = plan.length > 60000 ? plan.slice(0, 60000) + '\n... (truncated)' : plan;
+            const status = '${{ steps.plan.outcome }}' === 'success' ? '✅ Plan succeeded' : '❌ Plan failed';
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## Terraform Plan\n\`\`\`\n${truncated}\n\`\`\``
+              body: `## Terraform Plan — ${status}\n\`\`\`\n${truncated}\n\`\`\``
             });
 
   # ── Deploy ──────────────────────────────────────────────────────────────
@@ -124,7 +132,7 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: '1.7'
+          terraform_version: '~> 1.9'
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4

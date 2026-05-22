@@ -1,22 +1,22 @@
 ---
 title: Observability and cost
-description: Trace agent runs in the telemetry backend, see token spend per agent, identify hotspots.
+description: Trace agent runs locally or through a configured exporter, see token spend per agent, identify hotspots.
 ---
 
 <!--
 docs/how-to/how-to-observability.md — How to use Construct's observability commands.
 
 Covers construct review, construct optimize, construct cost, construct efficiency,
-and construct eval-datasets. Requires a telemetry backend for review/optimize/eval-datasets.
+and construct eval-datasets. Remote review/optimize/eval-datasets require a configured telemetry exporter.
 -->
 
 # How to Use Observability Commands
 
 Construct's observability commands read from two sources:
-- **Telemetry backend** — trace backend for `review`, `optimize`, and `eval-datasets` (requires `CONSTRUCT_TELEMETRY_PUBLIC_KEY` and `CONSTRUCT_TELEMETRY_SECRET_KEY`)
+- **Trace adapter** — local JSONL by default; Langfuse-compatible, generic HTTP, or OTLP export when configured
 - **Local cost log** — file-backed token ledger read by `cost` and `efficiency` (no external dependency)
 
-R&D-loop trace events (`intake.received`, `intake.triaged`, `task_graph.created`, `worker.started`, `worker.completed`, `evidence.recorded`, `tool.called`, `approval.requested`, …) are written to two places concurrently: `.cx/traces/<YYYY-MM-DD>.jsonl` (always on, no credentials required) and the telemetry backend (when the keys above are configured). Each `traceId` appears in the telemetry backend as a single trace with one observation per emitted event so the intake → graph → worker → evidence chain stays correlated end-to-end. Set `CONSTRUCT_TRACE_BACKEND=none` to suppress the telemetry export while keeping the local JSONL log.
+R&D-loop trace events (`intake.received`, `intake.triaged`, `task_graph.created`, `worker.started`, `worker.completed`, `evidence.recorded`, `tool.called`, `approval.requested`, …) always write to `.cx/traces/<YYYY-MM-DD>.jsonl` with no credentials. When `CONSTRUCT_TRACE_BACKEND=langfuse|http|otel` is configured, the same events are exported remotely so the intake → graph → worker → evidence chain stays correlated end-to-end. Set `CONSTRUCT_TRACE_BACKEND=none` to suppress remote export while keeping the local JSONL log.
 
 ## Review agent performance
 
@@ -26,7 +26,7 @@ construct review --days=7
 construct review --agent=cx-engineer
 ```
 
-Fetches traces from the telemetry backend, computes per-agent quality scores, and writes a markdown report to
+Fetches traces from the configured trace source, computes per-agent quality scores, and writes a markdown report to
 `.cx/reviews/`. The report covers quality score distribution, latency, cost, and recurring failure
 patterns.
 
@@ -95,4 +95,4 @@ construct eval-datasets --limit=50
 
 Pulls scored telemetry traces (those with a `quality` score) and writes them as eval datasets
 under `.cx/evals/`. Use these datasets for prompt regression testing or to seed a fine-tuning
-corpus. Requires telemetry backend credentials.
+corpus. Requires a remote trace backend when the local JSONL store has no scored traces.

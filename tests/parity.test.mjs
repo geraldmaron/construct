@@ -14,6 +14,13 @@ let tmpRoot;
 let tmpHome;
 let checkParity;
 
+function getVsCodeUserDir(homeDir) {
+  if (process.platform === 'darwin') return path.join(homeDir, 'Library', 'Application Support', 'Code', 'User');
+  if (process.platform === 'linux') return path.join(homeDir, '.config', 'Code', 'User');
+  const appData = process.env.APPDATA ?? path.join(homeDir, 'AppData', 'Roaming');
+  return path.join(appData, 'Code', 'User');
+}
+
 const FIXTURE_REGISTRY = {
   version: 1,
   system: 'cx',
@@ -37,6 +44,10 @@ const FIXTURE_REGISTRY = {
       model: 'anthropic/claude-opus-4-7',
     },
   ],
+  mcpServers: {
+    github: { type: 'url', url: 'https://example.test/github' },
+    context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp@latest'] },
+  },
 };
 
 before(async () => {
@@ -58,6 +69,10 @@ function resetSurfaces() {
   fs.rmSync(path.join(tmpHome, '.claude'), { recursive: true, force: true });
   fs.rmSync(path.join(tmpHome, '.config'), { recursive: true, force: true });
   fs.rmSync(path.join(tmpHome, '.codex'), { recursive: true, force: true });
+  fs.rmSync(path.join(tmpHome, '.github'), { recursive: true, force: true });
+  fs.rmSync(path.join(tmpHome, '.cursor'), { recursive: true, force: true });
+  fs.rmSync(path.join(tmpHome, 'Library'), { recursive: true, force: true });
+  fs.rmSync(path.join(tmpHome, 'AppData'), { recursive: true, force: true });
 }
 
 function writeAllSurfaces(extraAgents = []) {
@@ -67,15 +82,27 @@ function writeAllSurfaces(extraAgents = []) {
   fs.mkdirSync(opencodeDir, { recursive: true });
   const codexDir = path.join(tmpHome, '.codex', 'agents');
   fs.mkdirSync(codexDir, { recursive: true });
+  const copilotDir = path.join(tmpHome, '.github', 'prompts');
+  fs.mkdirSync(copilotDir, { recursive: true });
+  const cursorDir = path.join(tmpHome, '.cursor');
+  fs.mkdirSync(cursorDir, { recursive: true });
+  const vscodeDir = getVsCodeUserDir(tmpHome);
+  fs.mkdirSync(vscodeDir, { recursive: true });
 
   const agentNames = ['cx-engineer', 'cx-security', 'construct', ...extraAgents];
   const agentObj = {};
   for (const name of agentNames) {
     fs.writeFileSync(path.join(claudeDir, `${name}.md`), 'stub');
     fs.writeFileSync(path.join(codexDir, `${name}.toml`), `name = "${name}"\n`);
+    fs.writeFileSync(path.join(copilotDir, `${name}.prompt.md`), 'stub');
     agentObj[name] = {};
   }
   fs.writeFileSync(path.join(opencodeDir, 'opencode.json'), JSON.stringify({ agent: agentObj }));
+  fs.writeFileSync(path.join(cursorDir, 'mcp.json'), JSON.stringify({ mcpServers: { github: {}, context7: {} } }));
+  fs.writeFileSync(
+    path.join(vscodeDir, 'settings.json'),
+    JSON.stringify({ 'github.copilot.mcpServers': { github: {}, context7: {} } }),
+  );
 }
 
 describe('checkParity', () => {
@@ -86,15 +113,21 @@ describe('checkParity', () => {
     assert.equal(report.surfaces.find((s) => s.surface === 'claude').status, 'absent');
     assert.equal(report.surfaces.find((s) => s.surface === 'opencode').status, 'absent');
     assert.equal(report.surfaces.find((s) => s.surface === 'codex').status, 'absent');
+    assert.equal(report.surfaces.find((s) => s.surface === 'copilot').status, 'absent');
+    assert.equal(report.surfaces.find((s) => s.surface === 'vscode').status, 'absent');
+    assert.equal(report.surfaces.find((s) => s.surface === 'cursor').status, 'absent');
   });
 
-  it('reports ok when all three surfaces match the registry exactly', () => {
+  it('reports ok when all managed surfaces match the registry exactly', () => {
     resetSurfaces();
     writeAllSurfaces();
 
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     assert.equal(report.ok, true, JSON.stringify(report, null, 2));
     assert.equal(report.surfaces.find((s) => s.surface === 'codex').status, 'ok');
+    assert.equal(report.surfaces.find((s) => s.surface === 'copilot').status, 'ok');
+    assert.equal(report.surfaces.find((s) => s.surface === 'vscode').status, 'ok');
+    assert.equal(report.surfaces.find((s) => s.surface === 'cursor').status, 'ok');
   });
 
   it('reports drift when an agent is missing from claude', () => {
@@ -125,6 +158,49 @@ describe('checkParity', () => {
     const opencode = report.surfaces.find((s) => s.surface === 'opencode');
     assert.equal(opencode.status, 'drift');
     assert.deepEqual(opencode.extra, ['cx-orphan']);
+  });
+
+  it('reports drift when copilot is missing a prompt', () => {
+    resetSurfaces();
+    const promptsDir = path.join(tmpHome, '.github', 'prompts');
+    fs.mkdirSync(promptsDir, { recursive: true });
+    fs.writeFileSync(path.join(promptsDir, 'cx-engineer.prompt.md'), 'stub');
+    fs.writeFileSync(path.join(promptsDir, 'construct.prompt.md'), 'stub');
+
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    const copilot = report.surfaces.find((s) => s.surface === 'copilot');
+    assert.equal(copilot.status, 'drift');
+    assert.deepEqual(copilot.missing, ['cx-security']);
+  });
+
+  it('reports drift when vscode mcp settings are missing a managed server', () => {
+    resetSurfaces();
+    const vscodeDir = getVsCodeUserDir(tmpHome);
+    fs.mkdirSync(vscodeDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(vscodeDir, 'settings.json'),
+      JSON.stringify({ 'github.copilot.mcpServers': { github: {} } }),
+    );
+
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    const vscode = report.surfaces.find((s) => s.surface === 'vscode');
+    assert.equal(vscode.status, 'drift');
+    assert.deepEqual(vscode.missing, ['context7']);
+  });
+
+  it('reports drift when cursor mcp config has an extra server', () => {
+    resetSurfaces();
+    const cursorDir = path.join(tmpHome, '.cursor');
+    fs.mkdirSync(cursorDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(cursorDir, 'mcp.json'),
+      JSON.stringify({ mcpServers: { github: {}, context7: {}, orphan: {} } }),
+    );
+
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    const cursor = report.surfaces.find((s) => s.surface === 'cursor');
+    assert.equal(cursor.status, 'drift');
+    assert.deepEqual(cursor.extra, ['orphan']);
   });
 
   it('reports drift when codex is missing an agent', () => {

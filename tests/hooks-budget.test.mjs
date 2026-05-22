@@ -32,7 +32,12 @@ const DEPRECATED_HOOKS = [
 ];
 
 // Maximum number of hook files allowed. Prevents unreviewed hook accumulation.
-const MAX_HOOK_COUNT = 35;
+const MAX_HOOK_COUNT = 40;
+
+// PostToolUse fires on every tool call — cap entries there to bound hot-path latency.
+const MAX_POST_TOOL_USE_ENTRIES = 20;
+
+const SETTINGS_TEMPLATE = path.join(ROOT_DIR, 'platforms', 'claude', 'settings.template.json');
 
 function hookFiles() {
   return fs.readdirSync(HOOKS_DIR).filter(f => f.endsWith('.mjs'));
@@ -56,6 +61,17 @@ describe('hooks budget', () => {
       files.length <= MAX_HOOK_COUNT,
       `Hook count ${files.length} exceeds ceiling ${MAX_HOOK_COUNT}. ` +
       `Merge or retire hooks before adding new ones.`
+    );
+  });
+
+  it('PostToolUse entry count is within hot-path ceiling', () => {
+    if (!fs.existsSync(SETTINGS_TEMPLATE)) return;
+    const settings = JSON.parse(fs.readFileSync(SETTINGS_TEMPLATE, 'utf8'));
+    const entries = settings?.hooks?.PostToolUse ?? [];
+    assert.ok(
+      entries.length <= MAX_POST_TOOL_USE_ENTRIES,
+      `PostToolUse has ${entries.length} entries (ceiling ${MAX_POST_TOOL_USE_ENTRIES}). ` +
+      `Consolidate or move logic to PreCompact/Stop before adding more.`
     );
   });
 

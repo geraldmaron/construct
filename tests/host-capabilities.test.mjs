@@ -14,10 +14,12 @@ test("host capabilities classify full multi-agent support separately from OpenCo
   const hosts = detectHostCapabilities();
   const names = hosts.map((host) => host.host);
 
-  assert.deepEqual(names, ["Claude Code", "OpenCode", "Codex"]);
+  assert.deepEqual(names, ["Claude Code", "OpenCode", "Codex", "VS Code", "Cursor", "Copilot"]);
   assert.match(hosts.find((host) => host.host === "OpenCode").orchestration, /primary-plus-subagents|plugin-augmented-subagents/);
   assert.equal(hosts.find((host) => host.host === "OpenCode").promptableWorkers, false);
   assert.equal(hosts.find((host) => host.host === "Codex").orchestration, "profile-and-mcp");
+  assert.equal(hosts.find((host) => host.host === "Cursor").orchestration, "mcp-only");
+  assert.equal(hosts.find((host) => host.host === "Copilot").orchestration, "prompt-profiles");
 });
 
 test("findAvailablePort rejects invalid port ranges before calling net.listen", async () => {
@@ -25,12 +27,20 @@ test("findAvailablePort rejects invalid port ranges before calling net.listen", 
   await assert.rejects(() => findAvailablePort(9000, { maxPort: 8999 }), /must be less than or equal to maxPort/);
 });
 
-test("findAvailablePort stops scanning at maxPort instead of overflowing past 65535", async () => {
+test("findAvailablePort stops scanning at maxPort instead of overflowing past 65535", async (t) => {
   const server = net.createServer();
-  await new Promise((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, resolve);
-  });
+  try {
+    await new Promise((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, resolve);
+    });
+  } catch (error) {
+    if (error?.code === "EPERM") {
+      t.skip("sandbox does not permit binding an ephemeral port");
+      return;
+    }
+    throw error;
+  }
 
   const address = server.address();
   assert.ok(address && typeof address === "object");

@@ -110,6 +110,7 @@ test("product manager flavor overlays exist for Product Intelligence routing", (
 
 test("domain role flavor overlays exist for routing metadata", () => {
   const overlays = {
+    engineer: ["ai", "data", "platform"],
     architect: ["platform", "integration", "data", "ai-systems", "enterprise"],
     qa: ["web-ui", "api-contract", "data-pipeline", "ai-eval"],
     security: ["appsec", "cloud", "ai", "privacy", "supply-chain"],

@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
     types: [opened, synchronize, reopened, edited]
+  schedule:
+    # Weekly secret scan on Monday 08:00 UTC — catches regressions in merged code
+    - cron: '0 8 * * 1'
 
 jobs:
   # Compute per-target outputs so each downstream job only runs when files
@@ -41,12 +44,12 @@ jobs:
               - 'db/schema/**'
             retrieval:
               - 'lib/storage/**'
-              - 'lib/evals/**'
               - 'lib/agent-contracts.mjs'
               - 'lib/agent-contracts-enforce.mjs'
               - 'agents/contracts.json'
               - 'db/schema/**'
               - 'tests/retrieval*.test.mjs'
+              - 'tests/engine-eval-retrieval.test.mjs'
               - 'package.json'
 
             deps:
@@ -55,6 +58,9 @@ jobs:
             agents:
               - 'agents/**'
               - 'lib/agents/**'
+              - 'skills/**'
+              - 'rules/**'
+              - 'templates/**'
             docs:
               - 'docs/**'
               - 'README.md'
@@ -91,6 +97,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+          cache: npm
       - run: npm ci
       - run: npm test
       - run: node bin/construct doctor

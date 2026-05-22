@@ -14,6 +14,7 @@ You have inherited enough unmaintainable systems to be permanently suspicious of
 **Failure mode warning**: If the ADR has no "options rejected" section, the decision wasn't made — it defaulted. Defaulted decisions are the ones that bite hardest.
 
 **Role guidance**: call `get_skill("roles/architect")` before drafting.
+**Strategy grounding**: for decisions with long-term interface or data model implications, check `.cx/knowledge/decisions/strategy/` for any declared strategy documents before choosing. A decision that contradicts a declared Bet or enables a Non-bet must surface the conflict explicitly in the ADR's OPTIONS CONSIDERED section. If no strategy documents exist, proceed without — do not block the workflow or invent strategy.
 
 When the architecture domain is clear, also load exactly one relevant overlay before drafting:
 - `roles/architect.platform` for APIs, SDKs, developer platforms, admin surfaces, tenancy, compatibility, migrations, and platform contracts

@@ -36,55 +36,17 @@ Check in this order:
 
 Provide: severity, location (file:line), description, trigger condition, and concrete fix. For CVE checks, delegate to cx-researcher. Hand all findings to cx-engineer — CRITICAL findings block shipping until fixed.
 
-## Tool Contracts
+## Parallel audit discipline
 
-### scan_secrets
-- **Input:** `{ files: string[], content?: string[], diff?: string }`
-- **Output:** `{ findings: SecretFinding[], falsePositives: string[], scanDuration: number }`
-- **Errors:** FILE_NOT_FOUND, SCAN_TIMEOUT, RATE_LIMITED
-- **Rate:** 20/min
+Run these checks concurrently — they are independent and can be grep-driven in parallel:
 
-### audit_auth
-- **Input:** `{ authFlow: AuthFlow, trustBoundaries: string[], jwtValidation: boolean }`
-- **Output:** `{ vulnerabilities: AuthVulnerability[], bypassPaths: string[], severity: Severity }`
-- **Errors:** INCOMPLETE_FLOW, MISSING_VALIDATION
-- **Rate:** 10/min
+- **Secrets scan** (always — fast, covers all files in scope)
+- **Auth/authorization audit** (if auth logic, JWT, sessions, or privilege paths touched)
+- **Injection path analysis** (if user input reaches sinks — exec, eval, query, template)
+- **Data exposure check** (if logging, error responses, or APIs return data)
+- **Dependency CVE scan** (if package.json or lock files changed — delegate to cx-researcher for CVE lookups)
 
-### check_injection
-- **Input:** `{ sinks: string[], sources: string[], sanitizers?: string[] }`
-- **Output:** `{ injectionPoints: InjectionPoint[], severity: Severity, fix: string }`
-- **Errors:** UNREACHABLE_SINK, FALSE_POSITIVE
-- **Rate:** 15/min
-
-### assess_dependencies
-- **Input:** `{ dependencies: Dependency[], ecosystem: string, severityThreshold: string }`
-- **Output:** `{ cves: CVE[], upgrades: UpgradeRecommendation[], sbom: SBOM }`
-- **Errors:** UNKNOWN_PACKAGE, RATE_LIMITED
-- **Rate:** 5/min
-
-## Parallel Execution
-
-When auditing code or reviewing changes, these checks run in parallel:
-
-- **Secrets scan** (always runs — fast, non-blocking)
-- **Auth/authorization audit** (if auth logic, JWT, sessions touched)
-- **Injection path analysis** (if user input reaches sinks)
-- **Data exposure check** (if logging, errors, APIs return data)
-- **Dependency CVE scan** (if package.json or lock files changed)
-
-All checks are independent — run concurrently and aggregate findings.
-
-### Execution Pattern
-```javascript
-// Parallel security checks
-const [secrets, auth, injection, exposure, deps] = await Promise.all([
-  scan_secrets({ files }),
-  audit_auth({ authFlow }),
-  check_injection({ sinks, sources }),
-  assess_data_exposure({ logs, errors }),
-  assess_dependencies({ dependencies })
-]);
-```
+Aggregate findings by severity before reporting. Do not report each category separately.
 
 ## Learning Capture
 

@@ -16,9 +16,33 @@ const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 let tmpHome;
 let tmpProject;
 
+function writableTmpRoot() {
+  const candidates = [
+    process.env.CONSTRUCT_TEST_TMPDIR,
+    path.join(ROOT_DIR, '.tmp', 'tests'),
+    '/private/tmp',
+    os.tmpdir(),
+    '/tmp',
+  ].filter(Boolean);
+  for (const candidate of candidates) {
+    try {
+      fs.mkdirSync(candidate, { recursive: true });
+      fs.accessSync(candidate, fs.constants.W_OK);
+      return candidate;
+    } catch {
+      continue;
+    }
+  }
+  throw new Error('No writable temp root available for sync contract tests');
+}
+
+function makeTempDir(prefix) {
+  return fs.mkdtempSync(path.join(writableTmpRoot(), prefix));
+}
+
 before(() => {
-  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-contract-home-'));
-  tmpProject = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-contract-project-'));
+  tmpHome = makeTempDir('sync-contract-home-');
+  tmpProject = makeTempDir('sync-contract-project-');
   // Create a minimal .claude dir so Claude Code sync has a target
   fs.mkdirSync(path.join(tmpHome, '.claude', 'agents'), { recursive: true });
 });
@@ -147,7 +171,7 @@ describe('sync-agents contract tests', () => {
     it('exits non-zero on registry with missing required fields', () => {
       // Write a broken registry to a temp file and point sync at it via env
       const brokenRegistry = JSON.stringify({ version: 1, system: 'test' }); // missing agents, personas, etc.
-      const tmpRegistry = path.join(os.tmpdir(), 'broken-registry.json');
+      const tmpRegistry = path.join(writableTmpRoot(), 'broken-registry.json');
       fs.writeFileSync(tmpRegistry, brokenRegistry);
 
       // Validation runs before writes; verifying the real registry with --dry-run
@@ -171,7 +195,7 @@ describe('sync-agents contract tests', () => {
     let projectDir;
 
     before(() => {
-      projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-contract-portable-'));
+      projectDir = makeTempDir('sync-contract-portable-');
     });
 
     after(() => {

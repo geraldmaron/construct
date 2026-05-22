@@ -10,7 +10,31 @@ that depends on external facts or evolving internal evidence.
 
 Construct treats research as a reproducible evidence-gathering process, not free-form browsing. If a claim could change decisions, scope, architecture, or roadmap, it must be tied to verifiable evidence.
 
-## 1. Start order
+## 1. Recency discipline
+
+Research always starts from the most recent available evidence.
+
+- Default to sources from the current year before earlier years — always search most-recent-first.
+- For fast-moving topics (AI tools, LLM behavior, cloud APIs, security advisories, market data), treat anything older than 12 months as presumptively stale unless a newer source confirms it is still accurate.
+- When using a search engine or index, always filter or sort by date — do not rely on relevance ranking alone.
+- State the publication or access date for every external source. If a source has no date, treat its confidence as `low` until recency is established another way.
+
+## 2. Domain-specific starting points
+
+Use the narrowest, most authoritative starting point for the research domain:
+
+| Domain | Starting points (most recent first) |
+|---|---|
+| AI tools, LLM behavior, multi-agent | arXiv (cs.AI, cs.SE, cs.CL), ACL Anthology, NeurIPS/ICML/ICLR proceedings, then vendor research blogs |
+| Developer tools, IDE, editor | Stack Overflow Developer Survey (current year), JetBrains Developer Survey, GitHub/Copilot blog, then product changelogs |
+| Security, CVEs, supply chain | NVD, GitHub Security Advisories, OWASP, vendor security blogs (Google Project Zero, Microsoft Security Response), then ProjectDiscovery/Snyk reports |
+| Market data, adoption, ARR | Primary company announcements or SEC filings, then TechCrunch/Bloomberg/WSJ (where citing company sources), then analyst reports |
+| Cloud infra, APIs, SDKs | Official vendor docs for the exact version, changelog, migration guides |
+| Regulatory, compliance, privacy | Primary regulation text, then official guidance from the issuing authority, then law firm analysis |
+
+Tertiary sources (blogs, forums, Q&A, AI-generated summaries) may help locate primaries. They are not sufficient evidence for load-bearing claims.
+
+## 3. Start order
 
 Start with the narrowest authoritative source that can answer the question:
 
@@ -28,9 +52,7 @@ Start with the narrowest authoritative source that can answer the question:
 4. **Tertiary sources last**
    - blogs, forums, Q&A, analyst summaries, AI-generated summaries
 
-Tertiary sources may help discover primary sources. They are not sufficient evidence for load-bearing claims.
-
-## 2. Required metadata for every source
+## 4. Required metadata for every source
 
 Record:
 
@@ -40,9 +62,16 @@ Record:
 - publication date, release date, or access date
 - why this source is relevant
 
-If a source has no date and the topic is time-sensitive, treat confidence as reduced until recency is established another way.
+## 5. URL verification
 
-## 3. Verification rules
+Every URL cited in a committed document must be verified before the document is published.
+
+- Fetch the URL. Confirm it resolves and the content matches the cited claim.
+- Do not cite aggregate or index pages (e.g., arxiv.org search results, Google Scholar listings) for quantitative claims — cite the specific paper or article URL.
+- If a URL returns a 404, paywall, or redirect loop, find the canonical source or replace the citation.
+- Unverified URLs must be marked `[unverified]` until confirmed.
+
+## 6. Verification rules
 
 For each load-bearing claim:
 
@@ -54,7 +83,7 @@ For each load-bearing claim:
 
 Claims about versions, APIs, security, pricing, compatibility, regulations, and timelines must cite the exact version/date basis.
 
-## 4. Reproducibility
+## 7. Reproducibility
 
 Research must be reproducible by another person in the repo.
 
@@ -67,7 +96,7 @@ Record:
 
 If you cannot explain how the answer was obtained, the research is incomplete.
 
-## 5. Evidence thresholds
+## 8. Evidence thresholds
 
 Recommendations must state what evidence threshold was used.
 
@@ -81,27 +110,30 @@ Examples:
 
 If the threshold is not met, the output should recommend more research, a weaker artifact, or a narrower decision.
 
-## 6. Output standard
+## 9. Output standard
 
 Research outputs should include:
 
 - question
 - method
-- sources
+- sources (with dates and classes)
 - findings
 - confidence
 - open questions
 - recommendation or next step
 
-Every substantive finding should point to a source path, URL, or document reference.
+Every substantive finding should point to a verified source path, URL, or document reference.
 
-## 7. Anti-patterns
+## 10. Anti-patterns
 
 Do not:
 
+- start research from older years when more-recent sources are available
 - stop at the first plausible answer
 - cite a blog when the spec or source code is available
+- cite an aggregate or index page when the specific document is available
 - present inference as if the source said it directly
 - ignore conflicting evidence
 - use stale undated material for fast-moving topics without saying so
 - promote weak product evidence into committed requirements
+- include URLs that have not been fetched and confirmed

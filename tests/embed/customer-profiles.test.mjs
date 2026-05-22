@@ -4,33 +4,42 @@
  * Covers: profile creation, retrieval, update, deletion, and persistence
  * across restarts.
  */
-import { describe, it, beforeEach, afterEach, before } from 'node:test';
+import { describe, it, before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, unlinkSync, readdirSync } from 'node:fs';
+import { mkdtempSync, readdirSync, rmSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
-
-const PROFILES_DIR = join(homedir(), '.cx', 'product-intel', 'customer-profiles');
-const INDEX_FILE = join(PROFILES_DIR, 'index.json');
+import { tmpdir } from 'node:os';
 
 describe('customer profiles', () => {
   let profiles;
+  let tmpHome;
+  let profilesDir;
+  let indexFile;
 
   before(async () => {
+    tmpHome = mkdtempSync(join(tmpdir(), 'cx-customer-profiles-home-'));
+    process.env.CX_HOME_OVERRIDE = tmpHome;
+    profilesDir = join(tmpHome, '.cx', 'knowledge', 'internal', 'customer-profiles');
+    indexFile = join(profilesDir, 'index.json');
     profiles = await import('../../lib/embed/customer-profiles.mjs');
   });
 
   afterEach(() => {
     // Remove test profiles
     try {
-      const files = readdirSync(PROFILES_DIR);
+      const files = readdirSync(profilesDir);
       for (const f of files) {
         if (f.includes('testcorp') || f.includes('acme') || f.includes('othercorp')) {
-          unlinkSync(join(PROFILES_DIR, f));
+          unlinkSync(join(profilesDir, f));
         }
       }
     } catch {}
-    try { unlinkSync(INDEX_FILE); } catch {}
+    try { unlinkSync(indexFile); } catch {}
+  });
+
+  after(() => {
+    delete process.env.CX_HOME_OVERRIDE;
+    rmSync(tmpHome, { recursive: true, force: true });
   });
 
   describe('createCustomerProfile', () => {

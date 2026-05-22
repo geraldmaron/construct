@@ -7,7 +7,7 @@ description: Add Construct to your project like any other dev dependency, then r
 
 - Node.js 20+ (`node --version`)
 - A git repo to play in. Construct expects `.git/` so it can wire pre-commit hooks.
-- Docker Desktop (optional but recommended) — `construct init` will spin up local Postgres + telemetry backend via Docker. Without Docker, retrieval falls back to a local JSON vector index and traces are skipped; everything else still works.
+- Docker Desktop (optional but recommended) — `construct init` can spin up local Postgres + pgvector via Docker. Without Docker, retrieval falls back to a local JSON vector index; traces still write to `.cx/traces/*.jsonl`.
 
 ## Install
 
@@ -36,6 +36,9 @@ brew install geraldmaron/construct/construct
 ```
 
 Drops a single binary into `/opt/homebrew/bin/`. No Node required. For per-project wiring you still add `@geraldmaron/construct` to your `package.json` (or run `construct init` in the project).
+If `brew install` reports that `bin/construct` already exists, resolve the path
+conflict explicitly with `brew link --overwrite construct` after you confirm you
+want the Homebrew-managed binary to win.
 
 ## Run setup (one time per machine)
 
@@ -46,22 +49,23 @@ construct init
 What setup does, in order:
 
 1. Creates `~/.construct/config.env` and seeds default model tier assignments.
-2. Detects Docker. If present, prompts to install local Postgres and local telemetry backend — accept the defaults (Y) and both come up automatically. Use `--yes` to skip the prompts and accept all defaults non-interactively. Use `--no-docker` to skip the Docker-managed services entirely.
+2. Detects Docker. If present, prompts to install local Postgres — accept the default (Y) to start it automatically. Use `--yes` to skip prompts and accept detected defaults non-interactively. Use `--no-docker` to skip Docker-managed services entirely.
 3. Generates shell completions (bash + zsh) so `construct <tab>` works.
 4. Installs optional CLIs (`cm`, `cass`) if Homebrew or cargo is available and you consent.
 5. Installs the Pressure Guard launch agent on macOS so Construct can manage helper processes.
 6. Wires `core.hooksPath` to `.beads/hooks/` if your repo has the beads hook directory — activates the local pre-commit policy gates.
-7. Prints a "Local services" summary block with the telemetry backend and the Postgres URL.
+7. Prints a "Local services" summary block with local trace capture and the Postgres URL when Postgres is running.
 
-Consent for each service (Postgres, telemetry backend) is cached in `~/.construct/config.env` as `BOOTSTRAP_POSTGRES=yes|no`. Re-running `construct init` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
+Postgres consent is cached in `~/.construct/config.env` as `BOOTSTRAP_POSTGRES=yes|no`. Re-running `construct init` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
 
 ## What you have when setup finishes
 
-Local services running via Docker, all auto-provisioned (no browser signup, no account creation) and on Construct's reserved 54329–54339 host port block (chosen to avoid Next.js :3000, Postgres :5432, Redis :6379, MinIO :9090, etc.):
+Local services run on Construct's reserved 54329–54339 host port block when Docker is used (chosen to avoid Next.js :3000, Postgres :5432, Redis :6379, MinIO :9090, etc.).
 
-**Telemetry backend** — LLM observability dashboard
+**Traces** — local-first observability
 
-- URL: `http://localhost:54330`
+- Local: `.cx/traces/*.jsonl`
+- Remote export: optional with `CONSTRUCT_TRACE_BACKEND=langfuse|http|otel`
 
 **Postgres + pgvector** — hybrid retrieval backend
 
@@ -77,7 +81,7 @@ Local services running via Docker, all auto-provisioned (no browser signup, no a
 
 All host ports bind to `127.0.0.1` only — nothing reachable from other machines on your network.
 
-Cloud telemetry is opt-in: set `CONSTRUCT_TELEMETRY_URL` to a non-localhost URL before running `construct init` and Construct will respect it.
+Cloud telemetry is opt-in: set `CONSTRUCT_TRACE_BACKEND` plus the matching endpoint/key variables before running `construct init` and Construct will respect them.
 
 ## Verify
 

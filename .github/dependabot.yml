@@ -1,0 +1,31 @@
+version: 2
+updates:
+  # npm dependencies
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    groups:
+      dev-tools:
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "prettier*"
+      minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # GitHub Actions — keeps action pins from drifting
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5

@@ -35,7 +35,7 @@ construct install --yes
 2. ✅ Checks `cm` (Memory MCP server) → installs if missing
 3. ✅ Checks Node.js ≥ 20 → shows download link if needed
 4. ✅ Creates `~/.construct/config.env`
-5. ✅ Sets up telemetry backend credentials automatically
+5. ✅ Enables local JSONL traces in `.cx/traces`
 6. ✅ Runs `construct doctor` health check
 
 **Output:**
@@ -49,7 +49,7 @@ construct install --yes
 ✅ All prerequisites met!
 
 Local services:
-  ✓  Telemetry backend → http://localhost:54330 (credentials auto-configured)
+  ✓  Traces → .cx/traces/*.jsonl (local by default)
   ✓  Postgres → postgresql://127.0.0.1:54329/construct
 ```
 
@@ -71,7 +71,7 @@ construct init
 1. ✅ Creates `.cx/` directory structure
 2. ✅ Creates `construct.config.json`
 3. ✅ Creates `embed.yaml` (if not exists)
-4. ✅ **Starts all services** (Dashboard, Telemetry backend, Memory, Embed)
+4. ✅ **Starts local services** (Dashboard, Postgres when configured, Memory, Embed)
 6. ✅ Opens Dashboard in browser
 
 ---
@@ -98,7 +98,7 @@ construct stop
 ║                    Construct Runtime Started                              ║
 ╠══════════════════════════════════════════════════════════════════════════╣
 ║  ✓  Dashboard → http://127.0.0.1:4242                                    ║
-║  ✓  Telemetry backend → http://localhost:54330 (Docker)                          ║
+║  ✓  Traces → .cx/traces/*.jsonl                                           ║
 ║  ✓  Memory (cm) → http://127.0.0.1:8765                                  ║
 ║  ✓  Embed daemon started (monitoring git, inbox, CI)                    ║
 ╚══════════════════════════════════════════════════════════════════════════╝
@@ -122,15 +122,14 @@ Construct Services
 ══════════════════
 
   ✓  Dashboard                    http://127.0.0.1:4242 (Dashboard API)
-  ✓  Telemetry backend            http://localhost:54330 (Trace backend)
+  ✓  Telemetry                    local://.cx/traces (Local JSONL traces)
   ✓  Memory (cm)                  http://127.0.0.1:8765 (MCP-managed)
   ✓  Embed daemon                 Running (watching git, inbox)
 
-Telemetry Credentials (Local)
-═════════════════════════════
-  Dashboard:     http://localhost:54330
-
-INFO Credentials saved to ~/.construct/config.env — edit if needed
+Telemetry
+═════════
+  Local traces: .cx/traces/*.jsonl
+  Remote export: optional (`CONSTRUCT_TRACE_BACKEND=langfuse|http|otel`)
 ```
 
 ---
@@ -151,15 +150,14 @@ docker ps
 construct install --yes
 ```
 
-### "Telemetry backend failed to start"
+### "Remote telemetry is unavailable"
 
 ```bash
-# Check if port 54330 is already in use
-lsof -i :54330
+# Local traces still work without remote export
+ls .cx/traces
 
-# Restart services
-construct stop
-construct dev
+# Check configured remote export
+construct status --json
 ```
 
 ### "Embed daemon not starting"
