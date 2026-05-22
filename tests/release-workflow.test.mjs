@@ -6,11 +6,12 @@
  * caught before they can affect a tag push.
  *
  * Key failure mode protected against:
- *   setup-node@v6 automatically sets NODE_AUTH_TOKEN=github.token when
- *   registry-url is configured without an explicit node-auth-token. A GitHub
- *   token is not a valid npm token — the npm registry returns 404. The fix is
- *   to omit registry-url from the publish job's setup-node step and configure
- *   the registry separately, letting npm use OIDC Trusted Publishers natively.
+ *   npm CLI 10.x (shipped with Node 22) does not support OIDC-first auth for
+ *   Trusted Publishers. It falls back to NODE_AUTH_TOKEN (github.token injected
+ *   by setup-node when registry-url is set), and github.token is not a valid
+ *   npm publish token — the registry returns 404. npm CLI 11.5.1+ is required
+ *   (https://docs.npmjs.com/trusted-publishers). Node 24 ships with npm 11+ and
+ *   npm 11 tries OIDC before any token fallback, so registry-url is safe.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -41,25 +42,27 @@ test('publish job has id-token: write permission for OIDC provenance', () => {
   assert.match(yaml, /id-token:\s*write/);
 });
 
-test('publish job setup-node does not use registry-url without explicit node-auth-token', () => {
-  // setup-node@v6 injects github.token as NODE_AUTH_TOKEN when registry-url is
-  // set and no node-auth-token is passed. github.token is not a valid npm token.
+test('publish job uses Node 24+ so npm CLI satisfies the 11.5.1+ OIDC requirement', () => {
+  // npm CLI 11.5.1+ is required for Trusted Publishers OIDC. Node 22 ships with
+  // npm 10.x which doesn't support OIDC-first auth. Node 24 ships with npm 11+.
+  // https://docs.npmjs.com/trusted-publishers
   const setupNodeBlock = publishSection.match(/uses:\s*actions\/setup-node[\s\S]*?(?=\n      -|\n  \w)/)?.[0] ?? '';
-  const hasRegistryUrl = /registry-url/.test(setupNodeBlock);
-  const hasExplicitToken = /node-auth-token/.test(setupNodeBlock);
-  assert.ok(
-    !hasRegistryUrl || hasExplicitToken,
-    'setup-node in publish job uses registry-url without node-auth-token — ' +
-    'setup-node@v6 will inject github.token as NODE_AUTH_TOKEN, breaking npm OIDC auth. ' +
-    'Either remove registry-url (configure registry separately) or pass node-auth-token explicitly.',
+  assert.match(
+    setupNodeBlock,
+    /node-version.*'?2[4-9]|node-version.*'?[3-9]\d/,
+    'publish job setup-node must use node-version 24+ — npm CLI 11.5.1+ (required for OIDC Trusted Publishers) ships with Node 24',
   );
 });
 
-test('publish job has npm whoami verification step before publish', () => {
+test('publish job verifies OIDC endpoint is available before publish', () => {
+  // npm whoami always fails for OIDC Trusted Publishers (uses classic auth, not OIDC).
+  // The correct check is that ACTIONS_ID_TOKEN_REQUEST_URL is set — that variable is
+  // provided by the GitHub Actions OIDC runtime and is what npm publish exchanges.
   assert.match(
     publishSection,
-    /npm whoami/,
-    'publish job must run `npm whoami` before packaging to fail fast on auth errors',
+    /ACTIONS_ID_TOKEN_REQUEST_URL/,
+    'publish job must verify OIDC endpoint (ACTIONS_ID_TOKEN_REQUEST_URL) is available — ' +
+    'npm whoami always fails for Trusted Publishers OIDC and should not be used',
   );
 });
 
