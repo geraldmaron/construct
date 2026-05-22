@@ -47,6 +47,17 @@ Most of the time, tag-driven releases via the workflow are the only path. The ex
 
 ### npm Trusted Publishers (one-time setup)
 
-The release workflow uses npm's OIDC-based Trusted Publishers — no static `NPM_TOKEN` secret is stored in the repo. The GitHub Actions `id-token: write` permission provides a short-lived OIDC token that npm exchanges for publish auth automatically.
+The release workflow uses npm's OIDC-based Trusted Publishers — **no static `NPM_TOKEN` secret is needed or stored**. npm detects the GitHub Actions OIDC environment (`ACTIONS_ID_TOKEN_REQUEST_URL`, provided by `id-token: write`) and exchanges the token with the npm registry automatically. No `NODE_AUTH_TOKEN` is set in the workflow; the registry verifies the OIDC token against the configured Trusted Publisher entry.
+
+**Critical**: `setup-node@v6` injects `github.token` as `NODE_AUTH_TOKEN` when `registry-url` is configured and no explicit token is passed. A GitHub token is not a valid npm token and causes a 404. The workflow avoids this by not passing `registry-url` to `setup-node`, configuring the registry separately instead.
 
 **One-time setup on npmjs.com:** package → Settings → Trusted Publishers → add GitHub Actions → set owner/repo to `geraldmaron/construct` and workflow file name to `release.yml`. Until this is configured, `npm publish` in the workflow will fail with an auth error.
+
+### Pre-release preflight (run locally before tagging)
+
+```bash
+npm run release:preflight             # full check including npm auth
+npm run release:preflight:no-auth     # skip npm auth (if not logged in locally)
+```
+
+The preflight script checks: clean git tree, on main, CHANGELOG entry exists, tests pass, comment policy, docs verify, npm audit, and `npm pack --dry-run`. Run it before `git tag` — not after. If it passes locally, CI will pass.

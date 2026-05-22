@@ -4,6 +4,13 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- **Release publish: `setup-node@v6` + `registry-url` injects `github.token` as `NODE_AUTH_TOKEN`**, overriding npm's native OIDC Trusted Publishers exchange and causing a 404 on every tag push. Fix: remove `registry-url` from the `setup-node` step; configure the registry separately so npm can perform the OIDC exchange unobstructed. No `NPM_TOKEN` secret required or used.
+- **Release publish: `npm whoami` gate added** before packaging begins — auth failures surface in seconds rather than after uploading 640 files.
+- **Pre-release preflight script** (`scripts/pre-release-check.mjs`, `npm run release:preflight`): validates clean tree, on-main, CHANGELOG entry, tests, comment policy, docs:verify, npm audit, and `npm pack --dry-run` locally before tagging so CI is never the first to find a release problem.
+- **Failed CI release runs purged**: 14 failed/cancelled release workflow runs deleted from Actions history.
+
 ## [1.0.4] - 2026-05-22
 
 ### Added
