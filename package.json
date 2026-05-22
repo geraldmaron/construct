@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
   "bin": {
@@ -61,6 +61,7 @@
     "postgres": "^3.4.9"
   },
   "overrides": {
-    "express-rate-limit": "8.5.1"
+    "express-rate-limit": "8.5.1",
+    "protobufjs": "^8.4.2"
   }
 }

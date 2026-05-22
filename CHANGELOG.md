@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-05-22
+
 ### Added
 
 - **Dependabot** (`.github/dependabot.yml`): weekly npm and GitHub Actions version updates, grouped minor/patch and dev-tools PRs. Prevents action version drift.
