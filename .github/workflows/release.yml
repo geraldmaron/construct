@@ -340,6 +340,7 @@ jobs:
           cd /tmp/tap
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/geraldmaron/homebrew-construct.git"
           git add Formula/construct.rb
           git commit -m "construct ${VERSION}"
           git push
