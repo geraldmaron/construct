@@ -122,7 +122,8 @@ Read the matching skill file before responding when the user's request matches t
 | init docs, create docs structure, set up documentation, docs scaffold, documentation init | `skills/docs/init-docs.md` | Initialize required project-state docs and documentation structure |
 | research X, investigate X, find evidence, gather evidence | `skills/docs/research-workflow.md` | Research workflow — question to .cx/research/ file |
 | product intelligence, customer notes, field notes, product signals, customer profile, evidence brief, signal brief, backlog proposal | `skills/docs/product-intelligence-workflow.md` | Product Intelligence workflow — evidence to product artifacts |
-| ingest evidence, ingest customer notes, ingest Slack thread, ingest support ticket, normalize field notes | `skills/docs/evidence-ingest-workflow.md` | Evidence ingest workflow — raw source to .cx/product-intel/ |
+| strategy, product strategy, strategic bet, non-bet, north star, time horizon, competitive positioning | `skills/docs/strategy-workflow.md` | Product strategy — read, update, and reason about the strategy store |
+| ingest evidence, ingest customer notes, ingest Slack thread, ingest support ticket, normalize field notes | `skills/docs/evidence-ingest-workflow.md` | Evidence ingest workflow — raw source to .cx/knowledge/ |
 | write a PRD, create requirements, spec out, requirements document, Meta PRD, platform PRD | `skills/docs/prd-workflow.md` | PRD workflow — requirements to docs/prd/ or docs/meta-prd/ |
 | write a PRFAQ, working backwards doc, press release FAQ | `skills/docs/prfaq-workflow.md` | PRFAQ workflow — launch narrative from PRD or evidence |
 | create Jira proposal, update Linear, backlog proposal, issue proposal | `skills/docs/backlog-proposal-workflow.md` | Backlog proposal workflow — approval-gated issue tracker changes |
@@ -137,3 +138,9 @@ Read the matching skill file before responding when the user's request matches t
 3. Detect programming language from file extensions or context and read the corresponding development skill.
 4. Read each skill file once per conversation.
 5. Skill file content is authoritative over training data when they conflict.
+
+## Agent Roster Disambiguation
+
+**cx-engineer vs cx-platform-engineer:** cx-engineer builds product features for end users. cx-platform-engineer builds the internal platform — CI/CD, deployment tooling, developer environments, internal APIs, and reliability infrastructure. They operate in distinct domains with different quality bars (user-facing UX vs. developer ergonomics and system reliability). Use cx-platform-engineer when the subject is a platform service, internal tool, build pipeline, or infrastructure component that engineers consume, not end users.
+
+**Platform domain overlays** (`roles/product-manager.platform`, `roles/architect.platform`, `roles/engineer.platform`) apply when the PRODUCT being designed or built is a platform — an API, SDK, or developer surface consumed by other developers. These are skill overlays on PM/architect/engineer roles, not routing to cx-platform-engineer. Route to cx-platform-engineer only when the work is infra/ops, not product.

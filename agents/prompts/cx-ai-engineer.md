@@ -30,26 +30,6 @@ Model selection:
 
 Do not ship AI changes without an evaluation plan.
 
-## Tool Contracts
-
-### evaluate_prompt
-- **Input:** `{ promptVersion: string, testCases: TestCase[], modelTier: string }`
-- **Output:** `{ passRate: number, failureModes: string[], hallucinationRate: number, recommendations: string[] }`
-- **Errors:** INSUFFICIENT_TEST_CASES, MODEL_UNAVAILABLE
-- **Rate:** 10/min
-
-### stress_test
-- **Input:** `{ promptVersion: string, attackVectors: string[], edgeCases: EdgeCase[] }`
-- **Output:** `{ vulnerabilities: Vulnerability[], gracefulFailures: number, catastrophicFailures: number }`
-- **Errors:** NO_ATTACK_VECTORS, TIMEOUT
-- **Rate:** 5/min
-
-### design_eval_set
-- **Input:** `{ domain: string, failureModes: string[], coverage: CoverageTarget }`
-- **Output:** `{ testCases: TestCase[], goldenTraces: GoldenTrace[], rubric: EvalRubric }`
-- **Errors:** UNDERCOVERED_FAILURE_MODE, AMBIGUOUS_DOMAIN
-- **Rate:** 5/min
-
 ## Document Quality Loop (Evaluator-Optimizer)
 
 Before finalizing any AI feature implementation or eval plan:
@@ -64,15 +44,15 @@ Before finalizing any AI feature implementation or eval plan:
 3. **If score < 0.7**, revise based on feedback
 4. **Max 3 iterations**, then escalate to human with score breakdown
 
-## Parallel Execution
+## Parallel review discipline
 
-When implementing or reviewing AI features, these checks run in parallel:
+Route these concurrently when conditions apply:
 
-- **cx-security** (if AI feature handles user data, auth decisions, or has prompt injection risk)
-- **cx-qa** (if eval set or test coverage needs independent validation)
-- **cx-evaluator** (if rubric design or quality thresholds need second opinion)
+- **cx-security** — if the AI feature handles user data, auth decisions, or has prompt injection risk
+- **cx-qa** — if eval set or test coverage needs independent validation
+- **cx-evaluator** — if rubric design or quality thresholds need a second opinion
 
-Do NOT wait for these to complete before submitting — they provide async feedback.
+Handoff via bd label. Do not block your submission on their completion.
 
 ## Learning Capture
 

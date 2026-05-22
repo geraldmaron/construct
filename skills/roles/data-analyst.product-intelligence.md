@@ -28,7 +28,7 @@ Additional failure modes on top of the data-analyst core.
 ### 3. Evidence store ignored
 **Symptom**: new briefs are written without checking prior Product Intelligence artifacts.
 **Why it fails**: teams rediscover the same signal and lose longitudinal context.
-**Counter-move**: query `.cx/product-intel`, `docs/prd`, and `docs/meta-prd` through hybrid search before drafting.
+**Counter-move**: query `.cx/knowledge`, `docs/prd`, and `docs/meta-prd` through hybrid search before drafting.
 
 ## Self-check before shipping
 - [ ] Evidence count, confidence, and counter-evidence are explicit

@@ -87,10 +87,12 @@ Config is loaded in this order (last write wins): repo `.env` → `~/.construct/
 
 | Variable | Default | Description |
 |---|---|---|
-| `CONSTRUCT_TRACE_BACKEND` | `telemetry` | Trace backend (`telemetry` or `none`) |
-| `CONSTRUCT_TELEMETRY_URL` | — | Telemetry backend endpoint |
-| `CONSTRUCT_TELEMETRY_PUBLIC_KEY` | — | Telemetry project public key |
-| `CONSTRUCT_TELEMETRY_SECRET_KEY` | — | Telemetry project secret key |
+| `CONSTRUCT_TRACE_BACKEND` | `local` | Trace backend: `local`, `langfuse`, `http`, `otel`, or `none`. Legacy `remote` resolves to `langfuse` when keys are present, otherwise `http` when a URL is set. |
+| `CONSTRUCT_TELEMETRY_URL` | — | Langfuse-compatible or generic HTTP ingestion endpoint |
+| `CONSTRUCT_TELEMETRY_PUBLIC_KEY` | — | Langfuse-compatible public key |
+| `CONSTRUCT_TELEMETRY_SECRET_KEY` | — | Langfuse-compatible secret key |
+| `CONSTRUCT_OTEL_EXPORTER_OTLP_ENDPOINT` | — | OTLP HTTP collector endpoint used when `CONSTRUCT_TRACE_BACKEND=otel` |
+| `CONSTRUCT_TELEMETRY_PROVIDER` | derived | Optional display label for dashboard/status |
 
 ## MCP
 
@@ -124,6 +126,11 @@ Config is loaded in this order (last write wins): repo `.env` → `~/.construct/
 | `OPENROUTER_API_KEY` | OpenRouter key — enables free model fallback when primary provider is down |
 | `ANTHROPIC_API_KEY` | Anthropic key for Claude model calls |
 | `OPENAI_API_KEY` | OpenAI key — used for OpenAI model tier or openai embedding model |
+| `CX_MODEL_REASONING` | Override the reasoning-tier model id |
+| `CX_MODEL_STANDARD` | Override the standard-tier model id |
+| `CX_MODEL_FAST` | Override the fast-tier model id |
+| `CONSTRUCT_MODEL_PROFILE` | Optional runtime profile. `small` enables tighter prompt budgets, compressed overlays, and retrieval-first prompt shaping for smaller local or cost-constrained models; `balanced` keeps the default posture. |
+| `OLLAMA_BASE_URL` | Base URL for the Ollama HTTP API. `OLLAMA_HOST` remains accepted as a legacy alias. |
 
 ## Deprecations & Debug
 

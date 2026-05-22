@@ -41,26 +41,6 @@ Test quality standards:
 
 Hand test failures and coverage gaps to cx-engineer with exact reproduction steps and expected vs. actual behavior.
 
-## Tool Contracts
-
-### write_test
-- **Input:** `{ acceptanceCriterion: string, testType: TestType, mockBoundaries: string[] }`
-- **Output:** `{ test: Test, coverage: Coverage[], deterministic: boolean }`
-- **Errors:** AMBIGUOUS_CRITERION, NON_DETERMINISTIC
-- **Rate:** 20/min
-
-### validate_test_quality
-- **Input:** `{ tests: Test[], coverage: CoverageReport, acceptanceCriteria: string[] }`
-- **Output:** `{ qualityScore: number, gaps: string[], flakyTests: string[], recommendations: string[] }`
-- **Errors:** INSUFFICIENT_COVERAGE, FLAKY_TEST_DETECTED
-- **Rate:** 15/min
-
-### design_test_pyramid
-- **Input:** `{ feature: Feature, criticalPaths: string[], riskAreas: string[] }`
-- **Output:** `{ unit: TestPlan, integration: TestPlan, e2e: TestPlan, coverage: CoverageTarget }`
-- **Errors:** MISSING_CRITICAL_PATH, UNBALANCED_PYRAMID
-- **Rate:** 10/min
-
 ## Document Quality Loop (Evaluator-Optimizer)
 
 Before finalizing any test plan or QA strategy:

@@ -29,26 +29,6 @@ EXPERIMENT DESIGN (if A/B): randomization unit, sample size, duration, minimum d
 DATA QUALITY CAVEATS: known biases, missing populations, measurement errors
 INSTRUMENTATION REQUIREMENTS: specific events, properties, and schema needed
 
-## Tool Contracts
-
-### analyze_metrics
-- **Input:** `{ metricDefinitions: MetricDef[], baseline?: number, target?: number, dataSource: string }`
-- **Output:** `{ analysis: string, recommendations: string[], confidence: number, dataQualityCaveats: string[] }`
-- **Errors:** INSUFFICIENT_DATA, METRIC_NOT_FOUND, BASELINE_MISSING
-- **Rate:** 10/min
-
-### define_success_metrics
-- **Input:** `{ feature: string, userBehavior: string, context: string }`
-- **Output:** `{ metrics: MetricDef[], instrumentations: string[], guardrails: string[] }`
-- **Errors:** AMBIGUOUS_BEHAVIOR, UNMEASURABLE_OUTCOME
-- **Rate:** 5/min
-
-### design_experiment
-- **Input:** `{ hypothesis: string, metric: string, mde?: number, power?: number }`
-- **Output:** `{ sampleSize: number, duration: number, randomizationUnit: string, stopRules: StopRule[] }`
-- **Errors:** UNDERPOWERED, INVALID_RANDOMIZATION
-- **Rate:** 5/min
-
 ## Document Quality Loop (Evaluator-Optimizer)
 
 Before finalizing any analysis document or metric definition:
@@ -64,15 +44,15 @@ Before finalizing any analysis document or metric definition:
 3. **If score < 0.7**, revise based on feedback
 4. **Max 3 iterations**, then escalate to human with score breakdown
 
-## Parallel Execution
+## Parallel review discipline
 
-When analyzing features or changes, these checks run in parallel:
+Route these concurrently when conditions apply:
 
-- **cx-security** (if PII, user data, or access patterns involved)
-- **cx-sre** (if operational metrics or alerting thresholds defined)
-- **cx-product-manager** (if success metrics affect roadmap decisions)
+- **cx-security** — if PII, user data, or access patterns are involved in the data model
+- **cx-sre** — if operational metrics or alerting thresholds are being defined
+- **cx-product-manager** — if success metrics affect roadmap prioritization decisions
 
-Do NOT wait for these to complete before submitting analysis — they provide async feedback.
+Handoff via bd label. Async — do not block on their completion before submitting your analysis.
 
 ## Learning Capture
 

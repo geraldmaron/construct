@@ -6,7 +6,7 @@ Construct is a deployable AI R&D operating system. You address one persona — `
 
 **Full docs:** [`geraldmaron.github.io/construct/v2/`](https://geraldmaron.github.io/construct/v2/) (Phase 1) · while the new docs site is rolling out, the legacy MkDocs site still serves the root URL.
 
-## Get started in 5 minutes
+## Getting Started
 
 ### Step 1: Install CLI (one-time, per machine)
 
@@ -16,12 +16,12 @@ npm install -g @geraldmaron/construct
 
 ### Step 2: Machine Setup (one-time, per machine)
 
-First time on a new machine, bootstrap local services. `construct install` auto-spins local Postgres + telemetry backend via Docker:
+First time on a new machine, bootstrap local services. `construct install` can start local Postgres/pgvector via Docker; traces are written locally by default and remote telemetry export is optional:
 
 ```bash
 construct install --yes
 # Local services:
-#   Telemetry: http://localhost:54330
+#   Traces: .cx/traces/*.jsonl
 #   Postgres: postgresql://construct:construct@127.0.0.1:54329/construct
 ```
 
@@ -59,7 +59,7 @@ Works with Anthropic, OpenRouter, Ollama, and other OpenAI-compatible providers.
 
 ## Deployable: solo, team, or enterprise
 
-Construct has three deployment modes. `solo` (the default) runs everything locally — filesystem queue, local repo state, optional Postgres/Docker/telemetry — so if every cloud service goes down you still work from `plan.md`, `.cx/context.md`, beads, git, and the local vector index. `team` promotes the intake queue to Postgres with row-locked worker claims, shares memory across the team, runs workers in a Docker pool, centralizes telemetry, and routes MCP through a broker. `enterprise` adds tenant isolation, RBAC/ABAC scaffolding, isolated worker containers, signed MCP allowlists, and mandatory audit. Pick or change modes with `construct config mode [solo|team|enterprise]`. [Concepts → Deployment model](https://geraldmaron.github.io/construct/v2/docs/concepts/deployment-model).
+Construct has three deployment modes. `solo` (the default) runs everything locally — filesystem queue, local repo state, optional Postgres/Docker, and local JSONL traces — so if every cloud service goes down you still work from `plan.md`, `.cx/context.md`, beads, git, and the local vector index. `team` promotes the intake queue to Postgres with row-locked worker claims, shares memory across the team, runs workers in a Docker pool, centralizes telemetry through Langfuse-compatible, HTTP, or OTLP export, and routes MCP through a broker. `enterprise` adds tenant isolation, RBAC/ABAC scaffolding, isolated worker containers, signed MCP allowlists, and mandatory audit. Pick or change modes with `construct config mode [solo|team|enterprise]`. [Concepts → Deployment model](https://geraldmaron.github.io/construct/v2/docs/concepts/deployment-model).
 
 ## Signals to R&D
 

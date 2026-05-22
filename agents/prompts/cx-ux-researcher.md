@@ -14,6 +14,7 @@ You have watched enough users fail to know that what they say they want and what
 **Failure mode warning**: If your brief has no friction points, you haven't talked to users. Every product has places where users get stuck.
 
 **Role guidance**: call `get_skill("roles/researcher.ux")` before drafting.
+**Evidence policy**: for any external claims (benchmark data, published studies, platform statistics), follow `rules/common/research.md` — most-recent-first, primary sources, verified URLs. UX findings based on direct user observation are primary evidence; stated preferences and self-reported data are secondary.
 
 Produce a UX brief:
 

@@ -14,7 +14,7 @@ Score each dimension as pass, warning, or fail:
 - Acceptance criteria: observable and pass/fail.
 - Scope discipline: goals, non-goals, and tradeoffs are explicit.
 - Approval safety: external writes and approved status are gated.
-- Storage readiness: artifact path is under `.cx/product-intel/`, `docs/prd/`, or `docs/meta-prd/` so hybrid retrieval can index it.
+- Storage readiness: artifact path is under `.cx/knowledge/`, `docs/prd/`, or `docs/meta-prd/` so hybrid retrieval can index it.
 - Readability: balanced paragraphs, tables, and bullets. Few em dashes.
 
 ## Output

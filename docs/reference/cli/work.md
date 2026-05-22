@@ -250,20 +250,20 @@ construct init-docs [path] [--yes] [--docs=lean|product|full|prds,adrs] [--extra
 
 ## construct init:update
 
-Update existing project to current documentation standards
+Prepare non-destructive proposal files for current documentation standards
 
 **Usage**
 
 ```bash
-construct init:update [--force] [--dry-run]
+construct init:update [--dry-run] [--cwd=path]
 ```
 
 **Options**
 
 | Flag | Description |
 |---|---|
-| `--force` | Apply all updates without prompting |
-| `--dry-run` | Show what would be updated without making changes |
+| `--dry-run` | Show which proposal files would be written without creating them |
+| `--cwd=path` | Review a different project directory instead of the current working directory |
 
 ## construct memory
 

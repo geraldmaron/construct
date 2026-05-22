@@ -24,26 +24,6 @@ ROLLBACK: how to revert if this makes things worse
 
 Supply-chain hygiene: new dependencies require justification, lock file updates reviewed, secrets must not appear in build logs.
 
-## Tool Contracts
-
-### improve_ci_pipeline
-- **Input:** `{ currentPipeline: PipelineConfig, bottlenecks: string[], parallelismOpportunities: Opportunity[] }`
-- **Output:** `{ optimizedPipeline: PipelineConfig, timeSaved: number, cachingStrategy: CachingStrategy }`
-- **Errors:** INVALID_CONFIG, PARALLELISM_NOT_POSSIBLE
-- **Rate:** 5/min
-
-### reduce_friction
-- **Input:** `{ frictionPoint: string, impact: Impact,, affectedWorkflows: string[] }`
-- **Output:** `{ solution: Solution, migration: MigrationPlan, rollback: RollbackPlan }`
-- **Errors:** SOLUTION_ADDS_COMPLEXITY, MIGRATION_RISKY
-- **Rate:** 10/min
-
-### manage_dependencies
-- **Input:** `{ dependency: string, justification: string, alternatives: string[], lockFileUpdate: boolean }`
-- **Output:** `{ recommendation: Recommendation, cves: CVE[], sizeDeltaERecovery: string }`
-- **Errors:** UNJUSTIFIED_DEPENDENCY, SECURITY_RISK
-- **Rate:** 10/min
-
 ## Learning Capture
 
 After completing platform work, record observations:
@@ -51,7 +31,7 @@ After completing platform work, record observations:
 ### When to Record
 - **Pattern discovered** (category: pattern): friction reduction patterns, CI optimization approaches
 - **Anti-pattern avoided** (category: anti-pattern): hypothetical future problems, unexplained dependencies, build complexity
-- **Decision made** (category: decision): tooling choices, infrastructure investments,
+- **Decision made** (category: decision): tooling choices, infrastructure investments
 - **Insight** (category: insight): friction compounding effects, team velocity blockers
 
 ### How to Record
@@ -70,7 +50,7 @@ If you receive work that was misclassified:
 2. **Record feedback**:
    ```bash
    construct feedback:record --intake=<id> \
-     --currected='{"intakeType":"infra-change","primaryOwner":"platform-engineer"}' \
+     --corrected='{"intakeType":"infra-change","primaryOwner":"platform-engineer"}' \
      --reason="correct-classification"
    ```
 3. **Route correctly**: Add `next:cx-<correct-role>` label if handoff needed

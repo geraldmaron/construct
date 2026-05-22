@@ -1,5 +1,5 @@
 {
-  "totalOperations": 13,
+  "totalOperations": 38,
   "conflicts": 0,
   "retries": 0,
   "operations": {
@@ -54,7 +54,7 @@
       "avgAttempts": 1
     },
     "create --help": {
-      "count": 1,
+      "count": 2,
       "conflicts": 0,
       "avgAttempts": 1
     },
@@ -64,6 +64,126 @@
       "avgAttempts": 1
     },
     "update construct-vkq --claim": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "create Harden telemetry adapters and provider configuration --priority 1 --description Implement adapter-first telemetry with local JSONL default, pluggable Langfuse, generic HTTP, OTLP-style, and none backends. Fix misleading local service naming, config drift, startup/status behavior, docs, and tests so telemetry is optional, production-grade, and offline-friendly.": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "update construct-oix --claim": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-oix --reason completed": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "create --title Fix Homebrew tap formula for current release --priority 1 --description Update the live geraldmaron/homebrew-construct Formula/construct.rb to point at the current Construct release assets so brew install is actually wired to the published binary instead of the seeded 0.1.0 placeholders. Validate npm, npx, and brew delivery paths end to end and document any permissions/token requirements clearly.": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "update construct-6t9 --claim": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-6t9 --reason completed": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "create Harden cross-tool host setup and config/doc parity -t chore -p P1 -d Review Construct's setup, init, sync, and status flows for Claude Code, OpenCode, Codex, Cursor, VS Code, Copilot, and adjacent tool surfaces. Ensure Construct behaves like a good citizen inside existing toolchains: reuse existing provider config where possible, avoid clobbering user-managed files such as AGENTS.md/agents.md or host settings, make host integration behavior configurable from Construct setup, and align docs/status output with what the implementation really does. Success means the supported-host matrix is accurate, host-specific config writes are merge-safe, setup exposes the right knobs, and docs/handoffs/context/beads hygiene reflect the intended self-running workflow. --acceptance 1. Supported host surfaces and what Construct manages for each are implemented and documented consistently. 2. Setup/init/sync avoid destructive overwrites of existing host instruction/config files and use managed-block or merge behavior where appropriate. 3. Existing provider/model config is reused where possible instead of forcing duplicate configuration, with tests covering the intended behavior. 4. Status/doctor/docs clearly distinguish supported, partial, and unsupported host integrations. 5. Context docs, handoff, and tracker evidence are updated in the same change.": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "update construct-4i2 --claim": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "create Audit project operating patterns, open trackers, and retrieval/model optimization -t chore -p P1 -d Perform a holistic audit of Construct's operational patterns and technical positioning. Scope: (1) address currently known verification blockers where practical, or document precisely why they remain blocked; (2) review all open Beads issues and determine whether each is still needed, stale, superseded, or should remain open; (3) review changelog, handoffs, plan/context files, and similar durable-state patterns for consistency and best-practice alignment; (4) review prompts, personas, host surfaces, and agent adapters for consistency issues or best-practice drift; (5) review retrieval, vector, RAG, memory, and model-selection/optimization paths, including whether smaller-model workflows are positioned to succeed. Use the referenced small-model project only as external input for learnings, not as a template to copy. Success means the repo has a concrete audit result, actionable fixes where low-risk, and durable notes for the remaining gaps. --acceptance 1. Every currently open Bead is reviewed and classified with evidence. 2. Blocking verification failures are either fixed or recorded with concrete root cause and next action. 3. Durable-state patterns (CHANGELOG, handoffs, plan/context, docs) are assessed and corrected where clearly drifting. 4. Prompt/host/configuration inconsistencies are assessed and corrected where clearly drifting. 5. Retrieval/model optimization findings are documented with specific recommended changes or explicit rationale for no change.": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "update construct-2jz --claim": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-37m --reason False positive from tests/hook-scan-secrets.test.mjs runtime fixture under os.tmpdir() (cx-secrets-*/fixture.env), not a committed or persistent secret. Verified the detector sample values are synthesized at runtime and deleted after the test.": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-om2 --reason False positive from tests/hook-scan-secrets.test.mjs runtime fixture under os.tmpdir() (cx-secrets-*/fixture.env), not a committed or persistent secret. Verified the detector sample values are synthesized at runtime and deleted after the test.": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-p64 --reason False positive from tests/hook-scan-secrets.test.mjs runtime fixture under os.tmpdir() (cx-secrets-*/fixture.env), not a committed or persistent secret. Verified the detector sample values are synthesized at runtime and deleted after the test.": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-dos --reason Landed in code. agents/role-manifests.json now defines live manifests for sre, qa, security, and docs-keeper plus the broader role wave, and tests/roles/manifest.test.mjs verifies those personas are onboarded. Remaining prompt/routing hygiene followups are tracked separately (for example construct-cr6 and construct-e2s).": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-vkq --reason Acceptance criteria are satisfied per the issue notes: shell startup no longer exports secrets globally, helper-based per-process injection exists, local secret locations were audited, and 1Password item metadata and references were migrated/validated. Remaining deletion of legacy-secure-note backups is optional cleanup, not required for workflow hardening.": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "create Migrate retired .cx/product-intel namespace to .cx/knowledge across code and prompts -t task -p 2 --description Audit and remove remaining runtime, fence, and prompt references to .cx/product-intel/** now that docs/concepts/knowledge-layout.md declares product-intel retired. Scope: storage helpers under lib/embed/*, role fences in agents/role-manifests.json and prompts, command/docs surfaces, and any migration shim needed for older state. Success means the canonical docs and live code agree on the knowledge layout, and legacy paths are either migrated or explicitly treated as compatibility-only.": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "create Add a small-model operating profile for prompt, routing, and retrieval budgets -t task -p 2 --description Construct already has tiered model routing and fallback, but its runtime contract is still primarily tuned for frontier models. Add an explicit small-model operating profile for local 8B-35B deployments: stricter prompt/context budgets, compressed overlays by default where safe, retrieval-first context assembly, and work-shape guidance that keeps smaller models successful on multi-step coding tasks. Use existing routing/tests/docs and external lessons from small-model coding agents as input; do not copy another project wholesale.": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-2jz --reason Audit completed on dev. Fixed the sandbox-only release blockers in code/tests, verified npm test + docs/comment gates locally, closed stale/false-positive beads, and split remaining durable work into construct-8ok and construct-1yy plus the existing follow-up beads.": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "update construct-8ok --claim": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "update construct-1yy --claim": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "update construct-e2s --claim": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "update construct-rxn --claim": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "update construct-cr6 --claim": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "update construct-ddu --claim": {
       "count": 1,
       "conflicts": 0,
       "avgAttempts": 1

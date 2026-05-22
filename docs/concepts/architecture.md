@@ -294,7 +294,7 @@ Policy rules (comment convention, doc-update requirement, CI green before walk-a
 
 **Layer 2 — Gate (commit/push time).** Catches at the boundary.
 
-- `.beads/hooks/pre-commit` Construct policy section — calls `construct lint:comments --staged` and `construct docs:verify --staged`. Refuses commits with banned-pattern violations or code-without-docs. Bypasses: `CONSTRUCT_SKIP_GATES=1`, `CONSTRUCT_SKIP_DOCS=1`.
+- `.beads/hooks/pre-commit` Construct policy section — calls `construct lint:comments` and `construct docs:verify` across the current worktree. Refuses commits with banned-pattern violations or code-without-docs. Bypasses: `CONSTRUCT_SKIP_GATES=1`, `CONSTRUCT_SKIP_DOCS=1`.
 - `pre-push-gate.mjs` — refuses `claude/*` branch pushes (bypass `CONSTRUCT_ALLOW_CLAUDE_PUSH=1`); refuses push on red remote CI (bypass `CONSTRUCT_SKIP_PREPUSH=1`); runs `evals retrieval` and `docs:verify` in addition to project tests/build.
 
 **Layer 3 — Safety net (CI + session end).** Catches escapees.

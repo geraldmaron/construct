@@ -55,8 +55,8 @@ jobs.push({ label: 'docs',  cmd: 'node', args: ['bin/construct', 'docs:verify'],
 const PRE_COMMIT = `#!/usr/bin/env bash
 # fake pre-commit
 scan_added_lines() { :; }
-node ./bin/construct lint:comments --staged
-node ./bin/construct docs:verify --staged
+node ./bin/construct lint:comments
+node ./bin/construct docs:verify
 # --- BEGIN BEADS INTEGRATION v1.0.0 ---
 exit 0
 `;
@@ -103,8 +103,8 @@ describe('auditGates', () => {
   it('parses pre-commit checks', () => {
     const report = auditGates({ rootDir: tmpRoot, branch: 'main' });
     assert.ok(report.preCommitChecks.includes('ECC secret scan'));
-    assert.ok(report.preCommitChecks.includes('Construct comment-lint (staged)'));
-    assert.ok(report.preCommitChecks.includes('Construct docs:verify (staged)'));
+    assert.ok(report.preCommitChecks.includes('Construct comment-lint'));
+    assert.ok(report.preCommitChecks.includes('Construct docs:verify'));
     assert.ok(report.preCommitChecks.includes('BEADS dispatcher'));
   });
 

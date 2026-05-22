@@ -295,7 +295,7 @@ test('status json includes telemetry health payload', async () => {
       homeDir,
       cwd: rootDir,
       probeService: async () => ({ status: 'healthy', message: 'ok' }),
-      env: { CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test', CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test' },
+      env: { CONSTRUCT_TRACE_BACKEND: 'langfuse', CONSTRUCT_TELEMETRY_URL: 'https://telemetry.example.com', CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test', CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test' },
     });
 
     assert.equal(status.telemetryRichness.status, 'healthy');
@@ -329,7 +329,7 @@ test('buildStatus marks telemetry richness degraded when coverage is low', async
       homeDir,
       cwd: rootDir,
       probeService: async () => ({ status: 'healthy', message: 'ok' }),
-      env: { CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test', CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test' },
+      env: { CONSTRUCT_TRACE_BACKEND: 'langfuse', CONSTRUCT_TELEMETRY_URL: 'https://telemetry.example.com', CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test', CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test' },
     });
 
     assert.equal(status.telemetryRichness.status, 'degraded');
@@ -368,7 +368,7 @@ test('buildStatus marks controlled rich telemetry healthy', async () => {
       homeDir,
       cwd: rootDir,
       probeService: async () => ({ status: 'healthy', message: 'ok' }),
-      env: { CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test', CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test' },
+      env: { CONSTRUCT_TRACE_BACKEND: 'langfuse', CONSTRUCT_TELEMETRY_URL: 'https://telemetry.example.com', CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test', CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test' },
     });
 
     assert.equal(status.telemetryRichness.status, 'healthy');
@@ -480,7 +480,7 @@ test('buildStatus reports telemetry unavailable when trace backend is unreachabl
       homeDir,
       cwd: rootDir,
       probeService: async () => ({ status: 'healthy', message: 'ok' }),
-      env: { CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test', CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test' },
+      env: { CONSTRUCT_TRACE_BACKEND: 'langfuse', CONSTRUCT_TELEMETRY_URL: 'https://telemetry.example.com', CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test', CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test' },
     });
 
     assert.equal(status.telemetryRichness.status, 'unavailable');
@@ -519,6 +519,7 @@ test('formatStatusReport shows explicit byte-budget warning when session bytes a
 test('buildStatus marks telemetry richness credentials-invalid when telemetry auth fails', async () => {
   const { rootDir, homeDir } = await createFixture();
   writeEnvValues(path.join(homeDir, '.construct', 'config.env'), {
+    CONSTRUCT_TRACE_BACKEND: 'langfuse',
     CONSTRUCT_TELEMETRY_URL: 'http://localhost:3000',
     CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test',
     CONSTRUCT_TELEMETRY_SECRET_KEY: 'sk-lf-test',

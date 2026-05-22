@@ -67,6 +67,7 @@ test("backfillSparseTraces skips rich traces and backfills only sparse ones", as
   const result = await backfillSparseTraces({
     publicKey: "test-pub",
     secretKey: "test-sec",
+    baseUrl: "https://telemetry.example.com",
     fetchImpl,
   });
 
@@ -94,8 +95,8 @@ test("backfillSparseTraces backfill observation ID is deterministic for same tra
     return { ok: false, status: 404, json: async () => ({}) };
   };
 
-  await backfillSparseTraces({ publicKey: "p", secretKey: "s", fetchImpl });
-  await backfillSparseTraces({ publicKey: "p", secretKey: "s", fetchImpl });
+  await backfillSparseTraces({ baseUrl: "https://telemetry.example.com", publicKey: "p", secretKey: "s", fetchImpl });
+  await backfillSparseTraces({ baseUrl: "https://telemetry.example.com", publicKey: "p", secretKey: "s", fetchImpl });
 
   assert.equal(bodyIds.size, 1, "same trace should produce same observation body.id on repeated calls");
 });
@@ -104,6 +105,7 @@ test("backfillSparseTraces returns empty result when no sparse traces found", as
   const result = await backfillSparseTraces({
     publicKey: "p",
     secretKey: "s",
+    baseUrl: "https://telemetry.example.com",
     fetchImpl: makeFetch([RICH_TRACE]),
   });
   assert.equal(result.backfilled, 0);

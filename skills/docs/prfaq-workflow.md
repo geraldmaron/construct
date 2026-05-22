@@ -18,7 +18,7 @@ Use when: the user asks for a PRFAQ, working-backwards doc, launch narrative, or
 4. Write the press release in shipped-state language.
 5. Write external FAQ for customers and internal FAQ for engineering, sales, support, security, finance, and leadership.
 6. Include unknowns as `TBD` with what would resolve them.
-7. Save to `.cx/product-intel/prfaqs/` until approved.
+7. Save to `.cx/knowledge/internal/prfaqs/` until approved.
 
 ## Approval
 

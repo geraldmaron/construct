@@ -22,15 +22,15 @@ Fires when you try to land changes.
 **Commit-time (`.beads/hooks/pre-commit`):**
 
 - ECC secret scan — blocks high-signal secret patterns in staged content.
-- `construct lint:comments --staged` — same banned-pattern check as Layer 1, scoped to staged files only (fast).
-- `construct docs:verify --staged` — blocks a commit that changes `lib/`, `bin/`, `src/`, or `app/` without a matching `CHANGELOG.md` / `docs/` / `.cx/context.*` update.
+- `construct lint:comments` — same banned-pattern check as Layer 1, across the full worktree so local commit behavior matches CI.
+- `construct docs:verify` — blocks a commit that changes `lib/`, `bin/`, `src/`, or `app/` without a matching `CHANGELOG.md` / `docs/` / `.cx/context.*` update.
 
 Bypasses: `CONSTRUCT_SKIP_GATES=1` (whole layer), `CONSTRUCT_SKIP_DOCS=1` (docs-coupling only), `ECC_SKIP_PRECOMMIT=1` (secret scan only).
 
 **Push-time (`lib/hooks/pre-push-gate.mjs`):**
 
 - Refuses `claude/*` branch pushes. Bypass: `CONSTRUCT_ALLOW_CLAUDE_PUSH=1`.
-- Refuses push if the last remote CI run on the current branch failed.
+- Refuses push if the last remote CI run on the current branch failed. This is intentionally a local-only guardrail; CI itself does not mirror it because CI cannot know the operator's "stop and fix before pushing more" intent.
 - Runs `npm test`, `npm run build`, `construct evals retrieval`, `construct docs:verify`, `npm audit --omit=dev --audit-level=high` locally before allowing the push.
 
 Bypass: `CONSTRUCT_SKIP_PREPUSH=1`.
@@ -52,6 +52,7 @@ Catches escapees from Layers 1 and 2.
 **Session-end checks (`policy-engine.mjs` Stop handler):**
 
 - **Red-CI block** — refuses to end the session if CI is red on the current branch and the agent edited code this session. Bypass: `CONSTRUCT_STOP_OK_RED_CI=1`.
+- **Red-CI block** is also intentionally local-only. It protects session discipline, not merge safety; branch protection remains the actual merge gate.
 - **Open-beads block** — refuses to end the session if beads issues are in `in_progress` status. Bypass: `CONSTRUCT_STOP_OK_OPEN_BD=1`.
 - **Drive-mode criteria** — refuses to end a `drive` autonomous session if acceptance criteria are unmet.
 
@@ -79,7 +80,7 @@ The gate authors trust the override system because they trust the bypass *is* th
 | Symptom | Likely gate | Where to start |
 |---|---|---|
 | Edit got rejected with "banned pattern" | Layer 1 comment-lint | [`rules/common/comments.md`](https://github.com/geraldmaron/construct/blob/main/rules/common/comments.md) |
-| `git commit` refuses with "comment policy violations" | Layer 2 staged comment-lint | run `construct lint:comments --staged` locally |
+| `git commit` refuses with "comment policy violations" | Layer 2 comment-lint | run `construct lint:comments` locally |
 | `git commit` refuses with "code changed but docs unchanged" | Layer 2 doc-coupling | update `CHANGELOG.md` or pass `CONSTRUCT_SKIP_DOCS=1` |
 | `git push` refuses | Layer 2 pre-push | local test/build/evals/docs failed, OR remote CI was red |
 | `gh pr create` refuses | Layer 2.5 template policy | `construct lint:templates --body-file=path/to/draft` |

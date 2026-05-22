@@ -9,7 +9,7 @@ A release happens when all four of these are true:
 1. `package.json` `version` is bumped.
 2. `CHANGELOG.md` has an entry for the new version describing the user-visible change.
 3. A `vX.Y.Z` git tag matching `package.json` is pushed to origin.
-4. The tag push triggers `.github/workflows/release.yml`, which builds SEA binaries for linux/darwin/windows × x64/arm64, builds and pushes the Docker image, and runs `npm publish`.
+4. The tag push triggers `.github/workflows/release.yml`, which builds SEA binaries for linux/darwin/windows × x64/arm64, builds and pushes the Docker image, and runs `npm publish --provenance --access public` via npm Trusted Publishers (OIDC — no static `NPM_TOKEN` secret required).
 
 The tag is the trigger. If you don't tag, nothing publishes.
 
@@ -43,4 +43,10 @@ Until then, expect 0.x volatility — pin to `~0.1.x` if you want to opt into pa
 
 ## Manual one-off publishes
 
-Most of the time, tag-driven releases via the workflow are the only path. The exception is administrative version moves (the v0.1.0 reset that re-anchors `latest` away from the prematurely published `1.0.0`). For those, publish manually with `npm publish --access public --tag latest` and use `npm dist-tag` to fix tags rather than firing the release pipeline. Document the manual move in the CHANGELOG.
+Most of the time, tag-driven releases via the workflow are the only path. The exception is administrative version moves (the v0.1.0 reset that re-anchors `latest` away from the prematurely published `1.0.0`). For those, publish manually with `npm publish --provenance --access public --tag latest` and use `npm dist-tag` to fix tags rather than firing the release pipeline. Document the manual move in the CHANGELOG.
+
+### npm Trusted Publishers (one-time setup)
+
+The release workflow uses npm's OIDC-based Trusted Publishers — no static `NPM_TOKEN` secret is stored in the repo. The GitHub Actions `id-token: write` permission provides a short-lived OIDC token that npm exchanges for publish auth automatically.
+
+**One-time setup on npmjs.com:** package → Settings → Trusted Publishers → add GitHub Actions → set owner/repo to `geraldmaron/construct` and workflow file name to `release.yml`. Until this is configured, `npm publish` in the workflow will fail with an auth error.

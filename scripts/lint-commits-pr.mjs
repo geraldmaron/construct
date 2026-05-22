@@ -33,6 +33,8 @@ const REQUIRED_GATE_GROUPS = [
 ];
 
 function getRange() {
+  const currentBranch = process.env.GIT_BRANCH;
+  const upstreamRef = process.env.GIT_UPSTREAM_REF;
   const baseSha = process.env.PR_BASE_SHA;
   const baseRef = process.env.PR_BASE_REF || process.env.GITHUB_BASE_REF;
 
@@ -51,6 +53,22 @@ function getRange() {
       execSync(`git fetch --no-tags --depth=200 origin ${baseRef}`, { stdio: "pipe" });
       return `origin/${baseRef}..HEAD`;
     } catch { /* fall through */ }
+  }
+
+  if (!baseSha && !baseRef) {
+    try {
+      const branch = currentBranch || execSync('git branch --show-current', { stdio: 'pipe', encoding: 'utf8' }).trim();
+      const upstream = upstreamRef || execSync(`git rev-parse --abbrev-ref ${branch}@{upstream}`, {
+        stdio: 'pipe',
+        encoding: 'utf8',
+      }).trim();
+      if (upstream) {
+        try {
+          execSync(`git fetch --no-tags --depth=200 ${upstream.split('/')[0]} ${upstream.split('/').slice(1).join('/')}`, { stdio: 'pipe' });
+        } catch { /* already available or offline */ }
+        return `${upstream}..HEAD`;
+      }
+    } catch { /* no upstream configured */ }
   }
 
   try {

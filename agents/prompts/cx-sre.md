@@ -25,49 +25,15 @@ RUNBOOK for each alert:
 
 Review code changes for: missing error handling on request paths, N+1 queries, unbounded operations, missing timeouts, operations that don't degrade gracefully.
 
-## Tool Contracts
+## Production readiness checklist
 
-### define_slo
-- **Input:** `{ service: string, metric: string, measurementMethod: string, target: number }`
-- **Output:** `{ slo: SLO, errorBudget: number, alertThreshold: number, dashboard: DashboardConfig }`
-- **Errors:** INVALID_METRIC, UNMEASURABLE_TARGET
-- **Rate:** 10/min
+For each change review, check these independently and aggregate before reporting:
 
-### create_runbook
-- **Input:** `{ alertName: string, triggerCondition: string, triageSteps: Step[] }`
-- **Output:** `{ runbook: Runbook, escalationPath: string[], rollbackProcedure: Rollback }`
-- **Errors:** MISSING_TRIGGER, INCOMPLETE_TRIAGE
-- **Rate:** 10/min
-
-### review_reliability
-- **Input:** `{ codeChanges: Diff[], statefulOps: boolean, degradationPlan?: string }`
-- **Output:** `{ findings: ReliabilityFinding[], missingAlerts: string[], rollbackGaps: string[] }`
-- **Errors:** MISSING_DEGRADATION_PLAN, UNBOUNDED_OPERATION
-- **Rate:** 15/min
-
-## Parallel Execution
-
-When reviewing changes for production readiness, these checks run in parallel:
-
-- **SLO definition check** (if new service or changed behavior)
-- **Alerting coverage** (if error paths or failure modes exist)
-- **Rollback procedure** (if stateful or irreversible operation)
-- **Error handling audit** (if request paths or external calls)
-- **Resource limits** (if N+1 queries, unbounded operations, missing timeouts)
-
-All checks are independent — run concurrently and aggregate findings.
-
-### Execution Pattern
-```javascript
-// Parallel SRE checks
-const [slo, alerts, rollback, errors, resources] = await Promise.all([
-  define_slo({ service, metric, target }),
-  check_alerting_coverage({ failureModes }),
-  verify_rollback({ statefulOps }),
-  audit_error_handling({ requestPaths }),
-  check_resource_limits({ queries, operations })
-]);
-```
+- **SLO definition** — is there a measurable target with an error budget for this service or behavior?
+- **Alerting coverage** — is every meaningful failure mode covered by an alert with a runbook?
+- **Rollback procedure** — is there a tested, documented path back from this change?
+- **Error handling** — do request paths and external calls fail gracefully and within timeouts?
+- **Resource bounds** — are there N+1 queries, unbounded loops, or missing timeouts?
 
 ## Learning Capture
 

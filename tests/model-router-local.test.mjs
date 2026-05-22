@@ -55,6 +55,12 @@ describe('getProviderModelCatalog', () => {
     assert.deepEqual(remote.requiresEnv, []);
   });
 
+  it('accepts OLLAMA_HOST as a legacy configured-provider alias', () => {
+    const catalog = getProviderModelCatalog({ env: { OLLAMA_HOST: 'http://127.0.0.1:11434' } });
+    const ollama = catalog.providers.find((p) => p.id === 'ollama');
+    assert.equal(ollama.configured, true);
+  });
+
   it('includes ollama model ids in tierOptions', () => {
     const catalog = getProviderModelCatalog();
     assert.ok(catalog.tierOptions.reasoning.some((id) => id.startsWith('ollama/')));

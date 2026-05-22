@@ -38,12 +38,14 @@ Generate agent adapters for all platforms
 **Usage**
 
 ```bash
-construct sync [--project] [--no-docs]
+construct sync [--project] [--dry-run] [--no-docs] [--compress-personas]
 ```
 
 **Options**
 
 | Flag | Description |
 |---|---|
-| `--project` | Sync to current project directory only |
+| `--project` | Sync to the current project's `.claude/` directory only |
+| `--dry-run` | Preview adapter changes without writing files |
 | `--no-docs` | Skip AUTO docs regeneration and only refresh host adapters/completions |
+| `--compress-personas` | Write compressed runtime persona prompts without changing the source prompts. Recommended when `CONSTRUCT_MODEL_PROFILE=small`. |

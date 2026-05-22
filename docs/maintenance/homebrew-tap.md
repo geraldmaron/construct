@@ -11,6 +11,9 @@ construct init                                 # first time on the machine
 ```
 
 The formula drops one binary into `/opt/homebrew/bin/construct` (Apple Silicon) or `/usr/local/bin/construct` (Intel macOS / Linuxbrew). No Node, no Docker required at install time. Construct's optional resources (Postgres via Docker, embedding model) are probed and bootstrapped on demand at first use.
+If Homebrew reports that `bin/construct` is already occupied by an npm global
+install or another shim, choose the owner explicitly with `brew link --overwrite
+construct` or remove the older binary before linking.
 
 ## One-time tap setup (do this once before the first release)
 
@@ -55,10 +58,10 @@ On every `v*` tag push to the construct repo, `.github/workflows/release.yml` ru
 1. `gate` — full test suite, lint, npm audit.
 2. `build-binary` — SEA binary per platform with SHA-256 sidecar.
 3. `docker` — image to ghcr.io with Trivy scan.
-4. `publish` — `npm publish` + GitHub Release with all binaries + sha256 files.
-5. `homebrew` — `dawidd6/action-homebrew-bump-formula@v3` opens a PR against `geraldmaron/homebrew-construct` that rewrites the `url` and `sha256` fields for every platform to point at the new release. Merge the PR (or configure the action's `force: true` if you want it to commit directly).
+4. `publish` — `npm publish --provenance --access public` (OIDC Trusted Publishers, no static token) + GitHub Release with all binaries + sha256 files.
+5. `homebrew` — an inline script downloads the sha256 sidecars from the release, regenerates `Formula/construct.rb` from scratch with the new version and per-platform URLs/SHAs, clones `geraldmaron/homebrew-construct`, commits the updated formula, and pushes directly to the tap's default branch.
 
-The action computes each platform's SHA from the matching GitHub Release asset, so the formula always references a verified artifact. If the action fails (token missing, tap repo rate-limited, formula syntax invalid), the release itself is unaffected — the `homebrew` job is downstream of `publish` and its failure does not retroactively undo npm publish or the GH Release.
+The inline script reads each platform's SHA from the matching GitHub Release asset sidecar, so the formula always references a verified artifact. If the job fails (token missing, tap repo rate-limited, formula syntax invalid), the release itself is unaffected — the `homebrew` job is downstream of `publish` and its failure does not retroactively undo npm publish or the GH Release.
 
 ## Disabling the bump
 

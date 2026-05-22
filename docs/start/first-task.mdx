@@ -34,13 +34,14 @@ construct sync
 
 This writes the agent definitions to whichever editor configs it finds on disk:
 
-- `.claude/agents/*.md` for Claude Code
+- `~/.claude/agents/*.md` for Claude Code
 - `~/.config/opencode/opencode.json` for OpenCode
 - `~/.codex/agents/*.toml` for Codex
-- `~/.cursor/agents/*.md` for Cursor
-- `~/.github/prompts/*.md` for Copilot
+- `~/.github/prompts/*.prompt.md` for Copilot prompt profiles
+- `~/.cursor/mcp.json` for Cursor MCP registrations if Cursor is already configured
+- VS Code user `settings.json` for GitHub Copilot MCP registrations if VS Code is already configured
 
-You should see a "29/29" or similar across surfaces.
+You should see parity output across whichever managed surfaces are installed on the machine.
 
 ## Start the services
 
@@ -52,7 +53,7 @@ Brings up:
 
 - Local dashboard at `http://localhost:<port>` (port auto-selected)
 - Memory MCP server at `127.0.0.1:8765`
-- Telemetry backend at `http://localhost:54330` (if Docker is available; otherwise skipped)
+- Local trace capture in `.cx/traces/*.jsonl`; remote telemetry export only when configured
 
 ## Dispatch a task
 

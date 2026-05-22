@@ -10,7 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { applyFreePreferenceToTierSet, applyFreeSameFamilyPreferenceToTierSet, classifyProviderFailure, getProviderModelCatalog, inferTierModelsFromSelection, isProviderOnCooldown, readCurrentModels, readProviderCooldowns, resolveExecutionContractModelMetadata, resolveFallbackAction, selectFallbackModel, selectModelTierForWorkCategory, setModelWithTierInference, writeProviderCooldown } from '../lib/model-router.mjs';
+import { applyFreePreferenceToTierSet, applyFreeSameFamilyPreferenceToTierSet, classifyProviderFailure, getProviderModelCatalog, inferTierModelsFromSelection, isProviderOnCooldown, readCurrentModels, readProviderCooldowns, resolveExecutionContractModelMetadata, resolveFallbackAction, resolveModelOperatingProfile, selectFallbackModel, selectModelTierForWorkCategory, setModelWithTierInference, writeProviderCooldown } from '../lib/model-router.mjs';
 
 function tempFile(prefix) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -158,11 +158,37 @@ test('resolveExecutionContractModelMetadata exposes selected tier and tier sourc
   assert.equal(metadata.selectedTier, 'standard');
   assert.equal(metadata.selectedModel, 'custom/standard');
   assert.equal(metadata.selectedModelSource, 'env override');
+  assert.equal(metadata.profile.id, 'balanced');
   assert.deepEqual(metadata.tiers, {
     reasoning: { model: 'registry/reasoning', source: 'registry' },
     standard: { model: 'custom/standard', source: 'env override' },
     fast: { model: 'registry/fast', source: 'registry' },
   });
+});
+
+test('resolveModelOperatingProfile accepts explicit small-model override', () => {
+  const profile = resolveModelOperatingProfile({
+    envValues: { CONSTRUCT_MODEL_PROFILE: 'small' },
+    selectedModel: 'anthropic/claude-sonnet-4-6',
+  });
+  assert.equal(profile.id, 'small');
+  assert.equal(profile.retrievalFirst, true);
+});
+
+test('resolveExecutionContractModelMetadata infers small-model posture for local small checkpoints', () => {
+  const metadata = resolveExecutionContractModelMetadata({
+    envValues: {
+      CX_MODEL_STANDARD: 'ollama/llama3.1:8b',
+    },
+    registryModels: {
+      standard: { primary: 'ollama/llama3.1:8b' },
+    },
+    requestedTier: 'standard',
+    workCategory: 'analysis',
+  });
+
+  assert.equal(metadata.profile.id, 'small');
+  assert.equal(metadata.profile.maxPromptTokens, 1800);
 });
 
 test('classifyProviderFailure recognizes provider rate-limit and outage signals', () => {

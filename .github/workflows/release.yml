@@ -19,6 +19,10 @@ jobs:
       - run: npm ci
       - name: Full test suite
         run: npm test
+      - name: System health check
+        run: node bin/construct doctor
+      - name: Check managed doc regions
+        run: node ./bin/construct docs:verify
       - name: Check dashboard static bundle
         run: node ./bin/construct dashboard:sync --check
       - name: Enforce comment policy
@@ -159,7 +163,8 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan image for CVEs
-        uses: aquasecurity/trivy-action@master
+        # Pin to a release tag — never use @master (supply-chain risk). Update when new releases ship.
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/construct:${{ steps.ver.outputs.version }}
           format: table
@@ -181,6 +186,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          # registry-url is required for NODE_AUTH_TOKEN to be passed to npm publish
+          registry-url: 'https://registry.npmjs.org'
 
       - run: npm ci
 
@@ -190,8 +197,12 @@ jobs:
           path: dist/
           merge-multiple: true
 
-      # npm publish is done manually for now (requires 2FA/WebAuthn)
-      # Run locally: npm publish --provenance --access public --tag latest
+      - name: Publish to npm
+        # Uses npm Trusted Publishers (OIDC) — no static NPM_TOKEN secret required.
+        # One-time setup: npmjs.com → package → Settings → Trusted Publishers →
+        # add GitHub Actions with owner/repo and this workflow file name.
+        # The id-token: write permission above provides the OIDC token npm exchanges for auth.
+        run: npm publish --provenance --access public
 
       - name: Create GitHub Release
         env:
@@ -222,11 +233,96 @@ jobs:
     if: ${{ vars.HOMEBREW_TAP_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Bump construct formula in geraldmaron/homebrew-construct
-        uses: dawidd6/action-homebrew-bump-formula@v3
-        with:
-          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          tap: geraldmaron/homebrew-construct
-          formula: construct
-          tag: ${{ github.ref_name }}
-          force: false
+      - name: Update multi-arch formula in geraldmaron/homebrew-construct
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+
+          # Download sha256 files from the release
+          for asset in construct-darwin-arm64 construct-darwin-x64 construct-linux-arm64 construct-linux-x64; do
+            gh release download "$TAG" --repo geraldmaron/construct --pattern "${asset}.sha256" --dir /tmp/shas
+          done
+
+          # Extract sha256 values
+          SHA_DARWIN_ARM64=$(awk '{print $1}' /tmp/shas/construct-darwin-arm64.sha256)
+          SHA_DARWIN_X64=$(awk '{print $1}' /tmp/shas/construct-darwin-x64.sha256)
+          SHA_LINUX_ARM64=$(awk '{print $1}' /tmp/shas/construct-linux-arm64.sha256)
+          SHA_LINUX_X64=$(awk '{print $1}' /tmp/shas/construct-linux-x64.sha256)
+
+          BASE_URL="https://github.com/geraldmaron/construct/releases/download/${TAG}"
+
+          # Generate the formula
+          cat > /tmp/construct.rb << FORMULA
+          class Construct < Formula
+            desc "Local-first agent orchestration layer for AI coding tools"
+            homepage "https://github.com/geraldmaron/construct"
+            version "${VERSION}"
+            license "Elastic-2.0"
+
+            livecheck do
+              url :stable
+              strategy :github_latest
+            end
+
+            on_macos do
+              on_arm do
+                url "${BASE_URL}/construct-darwin-arm64"
+                sha256 "${SHA_DARWIN_ARM64}"
+              end
+              on_intel do
+                url "${BASE_URL}/construct-darwin-x64"
+                sha256 "${SHA_DARWIN_X64}"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "${BASE_URL}/construct-linux-arm64"
+                sha256 "${SHA_LINUX_ARM64}"
+              end
+              on_intel do
+                url "${BASE_URL}/construct-linux-x64"
+                sha256 "${SHA_LINUX_X64}"
+              end
+            end
+
+            def install
+              bin.install Dir["construct-*"].first => "construct"
+            end
+
+            def caveats
+              <<~EOS
+                To finish setup on this machine, run:
+                  construct setup
+
+                Construct uses a local Postgres container (via Docker) for hybrid
+                retrieval. If Docker is not installed, Construct falls back to a JSON
+                vector index — no hard requirement.
+
+                To wire up hooks and agents per project, add Construct as a dev
+                dependency in that project:
+                  npm install -D @geraldmaron/construct
+              EOS
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/construct version")
+            end
+          end
+          FORMULA
+
+          # Remove leading whitespace from heredoc indentation
+          sed -i 's/^          //' /tmp/construct.rb
+
+          # Clone tap, update formula, push
+          gh repo clone geraldmaron/homebrew-construct /tmp/tap -- --depth 1
+          cp /tmp/construct.rb /tmp/tap/Formula/construct.rb
+          cd /tmp/tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/construct.rb
+          git commit -m "construct ${VERSION}"
+          git push

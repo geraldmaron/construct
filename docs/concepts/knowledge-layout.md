@@ -26,12 +26,15 @@ Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable and
 
 ```
 .cx/knowledge/
-  internal/    ← team notes, meeting minutes, internal specs, ADRs, PRDs, incident records
-  external/    ← customer feedback, support tickets, field notes, external research
-  decisions/   ← architecture decision records (ADRs), design decisions, RFCs accepted
-  how-tos/     ← runbooks, setup guides, operational playbooks, troubleshooting procedures
-  reference/   ← specs, RFCs (pre-decision), schemas, API references, architecture docs
+  internal/              ← team notes, meeting minutes, internal specs, ADRs, PRDs, incident records
+  external/              ← customer feedback, support tickets, field notes, external research
+  decisions/             ← architecture decision records (ADRs), design decisions, RFCs accepted
+    strategy/            ← product strategy per scope: product.md, technical.md, gtm.md, platform.md
+  how-tos/               ← runbooks, setup guides, operational playbooks, troubleshooting procedures
+  reference/             ← specs, RFCs (pre-decision), schemas, API references, architecture docs
 ```
+
+**Strategy is a protected subdirectory.** Files under `decisions/strategy/` are NEVER written automatically by the embed daemon or intake pipeline — they require an explicit `writeStrategy()` call or a user-initiated `construct strategy update` invocation. The strategy store exposes `readStrategy(scope)`, `readAllStrategies()`, and `getStrategyDigestSync()`. Agents inject a compact strategy digest (≤ 500 tokens) at prompt-assembly time so declared Bets and Non-bets are visible without a manual `get_skill()` call.
 
 ### Routing rules
 
@@ -181,3 +184,10 @@ SLACK_CHANNELS=#eng-general,#incidents:risk,#decisions:decision,#customer-feedba
 `product-intel` is retired. New ingests and cleanup tools use `.cx/knowledge/` only.
 
 If an older project still has `.cx/product-intel/sources/ingested/`, move those markdown files into the closest matching `.cx/knowledge/<subdir>/` directory.
+
+Structured Product Intelligence stores now live under `.cx/knowledge/internal/` as well:
+
+- `customer-profiles/`
+- `workspaces/`
+
+Compatibility shims still read or migrate older `product-intel` locations when present, but new writes should never target that namespace.

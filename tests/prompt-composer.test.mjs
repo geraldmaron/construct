@@ -112,6 +112,38 @@ test('composePrompt skips flavor overlay when no roleFlavors match agent', () =>
   assert.equal(flavorFragment, undefined, 'engineer should not get architect flavor');
 });
 
+test('composePrompt injects engineer flavor overlays for the general engineer', () => {
+  const result = composePrompt('cx-engineer', {
+    rootDir: root,
+    intent: 'implementation',
+    roleFlavors: { engineer: 'platform' },
+  });
+
+  const flavorFragment = result.fragments.find((f) => f.type === 'role-flavor');
+  assert.ok(flavorFragment, 'should include engineer flavor guidance');
+  assert.match(flavorFragment.label, /engineer\.platform/);
+  assert.match(flavorFragment.content, /platform engineer overlay/i);
+});
+
+test('composePrompt switches to compact small-model mode when requested by execution contract', () => {
+  const result = composePrompt('cx-engineer', {
+    rootDir: root,
+    task: { title: 'Implement retrieval-first compact mode for small local models' },
+    roleFlavors: { engineer: 'ai' },
+    executionContractModel: {
+      profile: { id: 'small' },
+      selectedModel: 'ollama/llama3.1:8b',
+    },
+  });
+
+  const profileFragment = result.fragments.find((f) => f.type === 'model-profile');
+  const flavorFragment = result.fragments.find((f) => f.type === 'role-flavor');
+  assert.ok(profileFragment);
+  assert.match(profileFragment.content, /small-model operating mode/i);
+  assert.ok(flavorFragment);
+  assert.ok(flavorFragment.content.length < 2200, `expected compressed overlay, got ${flavorFragment.content.length} chars`);
+});
+
 test('resolveRuntimePromptMetadata includes explicit task packet and routing summary', () => {
   const metadata = resolveRuntimePromptMetadata('cx-engineer', {
     rootDir: root,
@@ -153,4 +185,29 @@ test('resolveRuntimePromptMetadata includes explicit task packet and routing sum
   assert.ok(metadata.promptHasContextDigest);
   assert.ok(metadata.promptHasHostConstraints);
   assert.equal(metadata.composedPromptVersion.length, 12);
+});
+
+test('resolveRuntimePromptMetadata exposes selected prompt role flavor', () => {
+  const metadata = resolveRuntimePromptMetadata('cx-engineer', {
+    rootDir: root,
+    request: 'tighten the CI and docker workflow for platform engineering',
+    route: {
+      intent: 'implementation',
+      track: 'focused',
+      workCategory: 'deep',
+      specialists: ['cx-engineer'],
+      dispatchPlan: 'Plan: cx-engineer.',
+      roleFlavors: { engineer: 'platform' },
+    },
+    executionContractModel: {
+      version: 'v1',
+      profile: { id: 'balanced' },
+      selectedTier: 'standard',
+      selectedModel: 'anthropic/claude-sonnet-4-6',
+      selectedModelSource: 'registry',
+      tiers: {},
+    },
+  });
+
+  assert.equal(metadata.promptRoleFlavor, 'engineer.platform');
 });

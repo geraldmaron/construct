@@ -74,7 +74,7 @@ Set `OPENAI_API_KEY`.
 construct models --apply --tier=fast --model=ollama/llama3.3:70b
 ```
 
-Ollama needs to be running locally (`ollama serve`). No API key. Construct talks to `http://localhost:11434` by default; override with `OLLAMA_HOST`.
+Ollama needs to be running locally (`ollama serve`). No API key. Construct talks to `http://localhost:11434` by default; override with `OLLAMA_BASE_URL`. `OLLAMA_HOST` is accepted as a legacy alias where supported.
 
 **Any OpenAI-compatible endpoint:**
 
@@ -92,6 +92,8 @@ construct models --apply --prefer-free
 ```
 
 Walks the registry and remaps each tier to the cheapest available model. Useful for development, exploration, and when you don't want to burn cloud credits on routine work.
+
+For smaller local checkpoints, set `CONSTRUCT_MODEL_PROFILE=small` in `~/.construct/config.env`. That keeps runtime prompts tighter, compresses role overlays, and biases prompt assembly toward retrieval-first context instead of broad prompt stuffing.
 
 ## Configure fallbacks
 

@@ -421,6 +421,22 @@ async function cmdDoctor() {
   add('Claude Code agents dir', fs.existsSync(path.join(HOME, '.claude', 'agents')), true);
   add('Codex agents dir', fs.existsSync(path.join(HOME, '.codex', 'agents')), true);
   add('Copilot prompts dir', fs.existsSync(path.join(HOME, '.github', 'prompts')), true);
+  add('Cursor MCP config', fs.existsSync(path.join(HOME, '.cursor', 'mcp.json')), true);
+  const vscodeSettingsPaths = process.platform === 'darwin'
+    ? [
+        path.join(HOME, 'Library', 'Application Support', 'Code', 'User', 'settings.json'),
+        path.join(HOME, 'Library', 'Application Support', 'Code - Insiders', 'User', 'settings.json'),
+      ]
+    : process.platform === 'linux'
+      ? [
+          path.join(HOME, '.config', 'Code', 'User', 'settings.json'),
+          path.join(HOME, '.config', 'Code - Insiders', 'User', 'settings.json'),
+        ]
+      : [
+          path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code', 'User', 'settings.json'),
+          path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code - Insiders', 'User', 'settings.json'),
+        ];
+  add('VS Code settings file', vscodeSettingsPaths.some((candidate) => fs.existsSync(candidate)), true);
   add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(path.join(HOME, '.construct')), true);
   add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
   add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));

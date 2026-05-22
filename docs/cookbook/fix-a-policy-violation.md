@@ -25,7 +25,7 @@ For the full enforcement model, see [Concepts → Gates and enforcement](/concep
 
 **You see:** `git commit` refuses with `Code changed but CHANGELOG.md / docs / .cx/context not updated.`
 
-**What fired:** Layer 2 `.beads/hooks/pre-commit` — specifically the `construct docs:verify --staged` check.
+**What fired:** Layer 2 `.beads/hooks/pre-commit` — specifically the `construct docs:verify` check.
 
 **Fix:**
 

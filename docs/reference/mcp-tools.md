@@ -235,7 +235,7 @@ The intake, task-graph, and worker plane are surfaced through the `construct int
 | `lib/mcp/broker.mjs` | `Broker.invoke({role, tool, action, risk, execute})` — policy-gated MCP wrapper for team / enterprise. Throws typed `PolicyDenied`, `ApprovalRequired`, `RateLimited`. |
 | `lib/worker/run.mjs` | `runJob({rootDir, job})` — bounded command execution with path-policy denial, timeout, restricted env, and trace event emission. |
 | `lib/worker/evidence.mjs` | `evidenceFromJobResult`, `recordEvidence`, `blockedPacket`, `needsInputPacket` — typed verification packets gating node transitions. |
-| `lib/worker/trace.mjs` | `emitTraceEvent({rootDir, eventType, traceId, …})` — writes `.cx/traces/<date>.jsonl` and exports to the telemetry backend when configured. |
+| `lib/worker/trace.mjs` | `emitTraceEvent({rootDir, eventType, traceId, …})` — writes `.cx/traces/<date>.jsonl` and exports remotely when configured. |
 
 ### `list_teams`
 Lists all available team templates with members, focus, and promotion gates.
@@ -252,7 +252,7 @@ Returns the full definition of a named team template.
 ## Telemetry tools
 
 ### `cx_trace`
-Records an agent trace in the telemetry backend. Call at the start of every significant task.
+Records an agent trace through the shared telemetry adapter. Local JSONL capture is always available; remote export is optional.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -275,7 +275,7 @@ Updates an existing telemetry trace with output and metadata.
 | `metadata` | object | No | Additional metadata to merge |
 
 ### `cx_score`
-Attaches a quality score to a trace in the telemetry backend.
+Attaches a quality score to a trace through the shared telemetry adapter.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
