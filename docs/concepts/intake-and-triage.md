@@ -1,37 +1,26 @@
 ---
 title: Intake and triage
-description: How signals dropped into `.cx/inbox/` become triaged R&D work routed to the right specialist persona.
+description: How signals dropped into `.cx/inbox/` get classified by the active profile's taxonomy and routed to the right specialist.
 ---
 
-Construct treats every file that lands in `.cx/inbox/` as a candidate R&D signal. a bug report, a customer comment, an experiment hypothesis, an incident note, a competitor PDF. and routes it through a deterministic triage path before any agent reads it.
+Construct treats every file that lands in `.cx/inbox/` as a candidate signal: a bug report, a customer comment, an experiment hypothesis, an incident note, a competitor PDF, a campaign brief, a research question. The active org profile decides how that signal is classified and where it routes; the pipeline that moves it through triage is the same across every profile.
 
-This page explains the R&D intake loop, the triage taxonomy, the on-disk layout, and the `construct intake` CLI you use to drive it.
+This page explains the pipeline once, then walks the taxonomy under each curated profile.
 
-## The R&D loop
-
-Signals enter on the left, outcomes leave on the right:
-
-```
-signal → framing → hypothesis → research → artifact
-       → design → implementation → evaluation → release → operations → memory
-```
-
-Each `rdStage` is a checkpoint in that loop. Triage assigns one stage to each signal so the agent knows where in the loop the work picks up. a stack-trace bug enters at `implementation`; a customer NPS drop enters at `signal`; a CVE disclosure enters at `operations`.
-
-## What happens when a file lands in `.cx/inbox/`
+## The pipeline (profile-agnostic)
 
 1. The embed daemon's reactive watcher (`lib/embed/inbox-live-watcher.mjs`) picks the file up within a second or two.
 2. The inbox ingester normalizes it into markdown under `~/.cx/knowledge/` and indexes it for retrieval.
 3. `prepareIntakeForIngestedFile` runs four deterministic preparation steps:
-   - **lane suggestion** via `lib/docs-routing.mjs` (postmortem? PRD? ADR?)
+   - **lane suggestion** via `lib/docs-routing.mjs`
    - **related-doc retrieval** via the hybrid corpus query
    - **excerpt extraction** for the agent to see without reopening the file
-   - **R&D triage** via `classifyRdIntake` (keyword/heuristic, no LLM)
+   - **triage** via `classifyRdIntake` (keyword/heuristic, no LLM) against the active profile's table
 4. The result is written to `.cx/intake/pending/<id>.json`.
 5. At the next session start, the hook surfaces a one-line summary per pending packet:
 
    ```
-   ## Pending R&D intake (3)
+   ## Pending intake (3)
    - login-feedback.md → bug / implementation · owner: debugger · next: diagnose
    - competitor-pricing.md → research / research · owner: business-strategist · next: research
    - hallucination-trace.md → eval-finding / evaluation · owner: evaluator · next: evaluate
@@ -39,81 +28,113 @@ Each `rdStage` is a checkpoint in that loop. Triage assigns one stage to each si
 
 The daemon never calls an LLM. The model spend stays with the agent in the user's editor.
 
-## Triage taxonomy
+## How the active profile shapes triage
 
-`classifyRdIntake` returns a triage block with nine fields. Three of them are enums.
+Each profile ships a classification table at `lib/intake/tables/<profile>.mjs`. The table defines:
 
-### `intakeType`. what kind of signal this is
+- the **intake types** the profile recognizes (e.g. `bug`, `brief`, `request`)
+- the **stages** in this profile's work loop (e.g. `implementation` vs `draft` vs `triage`)
+- the **owner role** per intake type
+- the **recommended chain** of specialists for the handoff sequence
 
-| Type | Examples |
+`construct profile show` tells you which table is active. `construct profile set <id>` switches.
+
+### Default: `rnd` (software R&D)
+
+Loop: `signal → framing → hypothesis → research → artifact → design → implementation → evaluation → release → operations`.
+
+| Intake type | Examples | Primary owner |
+|---|---|---|
+| `user-signal` | customer feedback, NPS, support tickets, churn | product-manager |
+| `bug` | stack traces, errors, regressions, crashes | debugger |
+| `requirement` | feature requests, PRD drafts, acceptance criteria | product-manager |
+| `research` | competitor scans, market research, pricing teardowns | business-strategist |
+| `experiment` | hypotheses, spikes, prototypes, falsifiable plans | rd-lead |
+| `eval-finding` | hallucinations, score regressions, judge findings | evaluator |
+| `architecture` | ADR drafts, RFC drafts, system-design tradeoffs | architect |
+| `incident` | outages, SLO breaches, latency spikes, pages | sre |
+| `launch-asset` | release notes, version bumps, ship candidates | release-manager |
+| `ops` | runbooks, cron jobs, capacity plans, dependency upgrades | operations |
+| `security` | CVEs, vulnerabilities, secret leaks, exploit reports | security |
+| `legal-compliance` | GDPR, license audits, DPA reviews | legal-compliance |
+| `unknown` | nothing matched; agent decides | orchestrator |
+
+### `operations`
+
+Loop: `request → triage → resolve → document → improve`.
+
+Intake types: `request`, `bug`, `incident`, `ops`, `security`, `docs`, `unknown`. Owners map to operator / engineer / sre roles.
+
+### `creative`
+
+Loop: `brief → research → draft → review → publish → measure`.
+
+Intake types: `brief`, `content-request`, `asset`, `experiment`, `report`, `legal-compliance`, `ops`, `unknown`. Owners map to product-lead / content-writer / designer / data-analyst.
+
+### `research`
+
+Loop: `question → gather → analyze → synthesize → recommend`.
+
+Intake types: `question`, `study`, `synthesis`, `report`, `experiment`, `ops`, `unknown`. Owners map to researcher / ux-researcher / evaluator / data-analyst.
+
+### Custom
+
+Drop a `.cx/profile.json` with `custom: true` and an `intake.classificationTable` path that lives under `.cx/`. The validator at `lib/profiles/validate-custom.mjs` enforces the cap structure. See [Profile lifecycle](/concepts/profile-lifecycle).
+
+## Triage block schema (same across profiles)
+
+`classifyRdIntake` returns a triage object with nine fields. The values vary by profile; the shape does not.
+
+| Field | Purpose |
 |---|---|
-| `user-signal` | customer feedback, NPS comments, support tickets, churn signals |
-| `bug` | stack traces, error reports, regressions, crashes |
-| `requirement` | feature requests, PRD drafts, acceptance criteria, success metrics |
-| `research` | competitor scans, market research, pricing teardowns |
-| `experiment` | hypotheses, spikes, prototypes, falsifiable plans |
-| `eval-finding` | hallucinations, score regressions, judge-rubric findings |
-| `architecture` | ADR drafts, RFC drafts, system-design tradeoffs |
-| `incident` | outages, SLO/SLA breaches, latency spikes, pages |
-| `launch-asset` | release notes, version bumps, ship candidates |
-| `ops` | runbooks, cron jobs, capacity plans, dependency upgrades |
-| `security` | CVEs, vulnerabilities, secret leaks, exploit reports |
-| `legal-compliance` | GDPR, license audits, DPA reviews |
-| `unknown` | nothing matched. agent decides |
-
-### `rdStage`. where in the R&D loop the signal enters
-
-`signal`, `framing`, `hypothesis`, `research`, `artifact`, `design`, `implementation`, `evaluation`, `release`, `operations`, `unknown`.
-
-### `recommendedAction`. what the next move is
-
-`summarize`, `clarify`, `research`, `create-hypothesis`, `draft-prd`, `draft-rfc`, `draft-adr`, `create-experiment`, `diagnose`, `implement`, `evaluate`, `release-review`, `create-runbook`, `archive`.
-
-### Other fields
-
-- `primaryOwner`. persona name from `agents/registry.json` (e.g. `debugger`, `product-manager`, `sre`).
-- `recommendedChain`. ordered handoff sequence (e.g. `['debugger', 'engineer', 'qa', 'reviewer']`).
-- `risk`. `low`, `medium`, or `high`.
-- `requiresApproval`. `true` when the action is high-risk enough to need human confirmation.
-- `confidence`. `[0, 1]` driven by keyword-match density.
-- `rationale`. one-line explanation of why this classification was picked.
+| `intakeType` | One of the profile's declared types |
+| `rdStage` | One of the profile's declared stages (the field name is historical; it's the active profile's stage) |
+| `primaryOwner` | Persona name from `agents/registry.json` |
+| `recommendedChain` | Ordered handoff sequence |
+| `recommendedAction` | Verb-led next step (`diagnose`, `draft-prd`, `create-runbook`, etc.) |
+| `risk` | `low`, `medium`, or `high` |
+| `requiresApproval` | `true` for high-stakes actions |
+| `confidence` | `[0, 1]`, keyword-match density |
+| `rationale` | One-line explanation |
 
 ## Classification heuristics
 
-The classifier is deterministic: same input → same output, no LLM. It builds a signal corpus from the filename, the extracted excerpt, and the titles of related docs, then scores it against keyword sets per `intakeType`. Ties break in favor of higher-stakes classes. `security` beats `research` when both match, `incident` beats `architecture`, etc.
+The classifier is deterministic: same input → same output, no LLM. It builds a signal corpus from the filename, the extracted excerpt, and the titles of related docs, then scores it against the active profile's keyword sets. Ties break in favor of higher-stakes classes. `security` beats `research` when both match; `incident` beats `architecture`.
 
-This is a fast-tier classifier, not a final answer. The agent in the user's editor reads the packet and does the actual analysis: does this signal overlap with an existing PRD? Contradict an ADR? Need an RFC? The triage block is a routing hint, not a verdict.
+This is a fast-tier classifier, not a final answer. The agent in the user's editor reads the packet and does the actual analysis. The triage block is a routing hint, not a verdict.
 
 ## On-disk layout
 
 ```
 <project>/.cx/intake/
   pending/
-    2026-05-14T15-22-08-login-feedback.json   . newly arrived signal
+    2026-05-14T15-22-08-login-feedback.json     newly arrived signal
   processed/
-    2026-05-13T11-04-19-payment-postmortem.json. agent finished
+    2026-05-13T11-04-19-payment-postmortem.json agent finished
   skipped/
-    2026-05-12T09-47-30-noise-pdf.json         . agent intentionally skipped
+    2026-05-12T09-47-30-noise-pdf.json          agent intentionally skipped
 ```
 
-Each `<id>.json` carries: `id`, `createdAt`, `status`, `intake` (sourcePath, outputPath, characters, knowledgeSubdir), `triage` (the nine fields above), `suggestion` (lane), `related` (top-K artifacts), `excerpt`, `query`. Status transitions add `processedAt + processedBy + notes` or `skippedAt + skippedBy + reason`.
+Each `<id>.json` carries: `id`, `createdAt`, `status`, `intake` (sourcePath, outputPath, characters, knowledgeSubdir), `triage` (the fields above), `suggestion` (lane), `related` (top-K artifacts), `excerpt`, `query`. Status transitions add `processedAt + processedBy + notes` or `skippedAt + skippedBy + reason`.
 
 ## CLI
 
 ```bash
 construct intake list                  # ID, type, stage, owner, action
-construct intake show <id>             # full packet. triage, excerpt, related artifacts
+construct intake show <id>             # full packet: triage, excerpt, related artifacts
 construct intake done <id> [--notes=…] # move pending → processed
 construct intake skip <id> [--reason=…] # move pending → skipped, audit trail preserved
 construct intake reopen <id>           # processed or skipped → pending
+construct profile show                 # which taxonomy is currently active
 ```
 
 In `solo` mode the queue is the filesystem (`.cx/intake/`). In `team` and `enterprise` modes the same CLI talks to a Postgres-backed queue with row-locked worker claims; the contract is identical.
 
 ## See also
 
-- [Intake loop](/concepts/intake-loop). Implementation deep dive of the 8-step pipeline (this doc is the operator's view, that one is the internals).
-- [Profile lifecycle](/concepts/profile-lifecycle). How the intake taxonomy is set per profile.
+- [Profile lifecycle](/concepts/profile-lifecycle). How the intake taxonomy is designed and validated per profile.
+- [Persona and skill research](/concepts/persona-research). The methodology behind the owners and chains each profile names.
+- [Intake loop](/concepts/intake-loop). Implementation deep dive of the 8-step pipeline (that doc is the internals; this one is the operator's view).
 - [Deployment model](/concepts/deployment-model). Solo vs team vs enterprise topology.
 - [Beads and durable state](/concepts/beads-and-state). How triaged work becomes tracked work.
 - [Gates and enforcement](/concepts/gates-and-enforcement). What the agent must satisfy before closing intake.
