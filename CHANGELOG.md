@@ -4,11 +4,15 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-05-23
+
 ### Added
 
+- **MCP parity for the org profile and learning surfaces** (`lib/mcp/tools/profile.mjs`). The construct-mcp stdio server now registers 11 new tools wrapping the PR #67 capabilities so subagents reach them without shelling out: `profile_show`, `profile_list`, `profile_drafts`, `profile_health`, `outcomes_summary`, `outcomes_record`, `knowledge_add`, `profile_create`, `profile_archive`, `sandbox_list`, `learning_status`. Read-only tools are direct calls; mutating tools require `confirm=true` matching the existing storage_reset pattern; `profile_archive` additionally requires a substantive `reason`. `optimize_apply` and `optimize_rollback` stay CLI-only because they mutate registry state. Refs `construct-pxi`.
 - **GraphRAG global query over the entity graph** (`lib/knowledge/graph.mjs`). New retrieval primitive answers "how does X relate across the project?" questions that pure semantic search handles poorly. Reads the existing entity store, builds an undirected graph from `relatedEntities[]`, detects communities, ranks them against the query via BM25 over central-member summaries, and returns structured communities with top members. Exposed to subagents as the `knowledge_graph_ask` MCP tool. Schema migration `db/schema/006_graph.sql` adds the Postgres projection for team and enterprise deployments; the JSONL entity store stays the source of truth in solo mode. Refs `construct-sl7`.
 - **`construct profile set` previews structural changes before writing.** Shows a role / intake taxonomy / department diff between the current and target profile, supports `--dry-run` to preview without writing and `--yes` to skip the confirm prompt. Selecting the already-active profile is now a clean no-op. Refs `construct-78v`.
 - **`construct profile archive` previews the destructive move before running.** Gathers a reason interactively when missing, lists the exact files that move and what stays (observations and outcomes are preserved), and confirms before any rename. Supports `--dry-run` and `--yes`. The 8-character minimum reason is enforced up front. Refs `construct-78v`.
+- **Functional test for MCP parity** (`tests/functional/mcp-parity.functional.test.mjs`). Boots the real `lib/mcp/server.mjs` over stdio, performs the JSON-RPC handshake, and asserts each new surface is reachable and writes the expected durable artifact when confirmed. Closes the loop the unit tests can't see.
 
 ### Changed
 
@@ -18,11 +22,6 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ### Removed
 
 - **Two completed migration scripts**. Both ran once against the tree they targeted and the work has landed; the resulting test-suite references to them are also cleaned up.
-
-### Added
-
-- **MCP parity for the org profile and learning surfaces** (`lib/mcp/tools/profile.mjs`). The construct-mcp stdio server now registers 11 new tools wrapping the PR #67 capabilities so subagents reach them without shelling out: `profile_show`, `profile_list`, `profile_drafts`, `profile_health`, `outcomes_summary`, `outcomes_record`, `knowledge_add`, `profile_create`, `profile_archive`, `sandbox_list`, `learning_status`. Read-only tools are direct calls; mutating tools require `confirm=true` matching the existing storage_reset pattern; `profile_archive` additionally requires a substantive `reason`. `optimize_apply` and `optimize_rollback` stay CLI-only because they mutate registry state. Refs `construct-pxi`.
-- **Functional test for MCP parity** (`tests/functional/mcp-parity.functional.test.mjs`). Boots the real `lib/mcp/server.mjs` over stdio, performs the JSON-RPC handshake, and asserts each new surface is reachable and writes the expected durable artifact when confirmed. Closes the loop the unit tests can't see.
 
 ### Fixed
 
