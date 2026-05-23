@@ -4,7 +4,7 @@ commands/review/security.md (Security scan) secrets, auth, injection, data expos
 Security scan: secrets, auth, injection, data exposure, dependency risk
 -->
 ---
-description: Security scan: secrets, auth, injection, data exposure, dependency risk
+description: "Security scan: secrets, auth, injection, data exposure, dependency risk"
 ---
 
 You are Construct. Scan: $ARGUMENTS

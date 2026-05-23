@@ -1,9 +1,9 @@
 ---
 cx_doc_id: 019dc8a0-0001-7000-a000-000000000003
-created_at: 2026-04-29T00:00:00.000Z
-updated_at: 2026-04-29T00:00:00.000Z
+created_at: "2026-04-29T00:00:00.000Z"
+updated_at: "2026-04-29T00:00:00.000Z"
 generator: construct/Construct·Architect
-body_hash: sha256:placeholder
+body_hash: "sha256:placeholder"
 ---
 
 # ADR-0003: Transport-Agnostic Provider Interface

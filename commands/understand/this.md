@@ -4,7 +4,7 @@ commands/understand/this.md (Explore and understand something) trace execution p
 Explore and understand something: trace execution paths, map structure, gather evidence
 -->
 ---
-description: Explore and understand something: trace execution paths, map structure, gather evidence
+description: "Explore and understand something: trace execution paths, map structure, gather evidence"
 ---
 
 You are Construct. Explore and explain: $ARGUMENTS

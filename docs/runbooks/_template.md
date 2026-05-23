@@ -1,9 +1,9 @@
 ---
 cx_doc_id: 019ddb68-5aee-794d-a34f-5a409d9b75b6
-created_at: 2026-04-29T22:42:22.574Z
-updated_at: 2026-04-29T22:42:22.574Z
+created_at: "2026-04-29T22:42:22.574Z"
+updated_at: "2026-04-29T22:42:22.574Z"
 generator: construct/init-docs
-body_hash: sha256:22aa3a599d1274ceba966d6fdd026f71aec2be0be56edd7242b86b6a94e4bde1
+body_hash: "sha256:22aa3a599d1274ceba966d6fdd026f71aec2be0be56edd7242b86b6a94e4bde1"
 ---
 # Runbook: {service or alert name}
 

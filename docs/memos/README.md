@@ -1,9 +1,9 @@
 ---
 cx_doc_id: 019ddb68-5aee-726b-afbb-8e752a24e8ea
-created_at: 2026-04-29T22:42:22.574Z
-updated_at: 2026-04-29T22:42:22.574Z
+created_at: "2026-04-29T22:42:22.574Z"
+updated_at: "2026-04-29T22:42:22.574Z"
 generator: construct/init-docs
-body_hash: sha256:7c7ffea3a795a99441072671a68a9b705cd2c60e69b6b973af6a38688200314b
+body_hash: "sha256:7c7ffea3a795a99441072671a68a9b705cd2c60e69b6b973af6a38688200314b"
 ---
 <!--
 docs/memos/README.md: lane guide for Memos.

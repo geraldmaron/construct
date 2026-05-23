@@ -4,7 +4,7 @@ commands/measure/experiment.md (Design an experiment) hypothesis, test, evidence
 Design an experiment: hypothesis, test, evidence threshold, go/no-go decision
 -->
 ---
-description: Design an experiment: hypothesis, test, evidence threshold, go/no-go decision
+description: "Design an experiment: hypothesis, test, evidence threshold, go/no-go decision"
 ---
 
 You are Construct. Design an experiment for: $ARGUMENTS

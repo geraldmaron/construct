@@ -5,7 +5,7 @@ Produces a structured spec using the canonical Construct plan format, saves it
 to .cx/plans/ as a durable planning artifact linked to the active tracker slice.
 -->
 ---
-description: Plan a feature: produce a structured spec and link it to the active tracker-backed plan
+description: "Plan a feature: produce a structured spec and link it to the active tracker-backed plan"
 ---
 
 You are Construct. Plan the following: $ARGUMENTS

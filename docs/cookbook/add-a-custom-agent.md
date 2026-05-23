@@ -1,6 +1,6 @@
 ---
 title: Add a custom agent
-description: Add a new specialist (or persona) to your Construct team: registry entry, prompt file, sync, test.
+description: "Add a new specialist (or persona) to your Construct team: registry entry, prompt file, sync, test."
 ---
 
 You want a `cx-performance-auditor` for your project (or any other specialist that doesn't ship in the default 28). This walks the full flow: registry entry, prompt, model tier, contract wiring, sync to every editor, smoke test.

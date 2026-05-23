@@ -1,7 +1,7 @@
 ---
 cx_doc_id: 0003-rfc-dashboard-chat-protocol
-created_at: 2026-04-29T00:00:00.000Z
-updated_at: 2026-04-29T00:00:00.000Z
+created_at: "2026-04-29T00:00:00.000Z"
+updated_at: "2026-04-29T00:00:00.000Z"
 generator: construct/Construct-Engineer
 status: accepted
 ---

@@ -1,6 +1,6 @@
 ---
 title: Plug in your own LLM
-description: Swap models per tier (reasoning / standard / fast): Anthropic, OpenAI, OpenRouter, Ollama, or any OpenAI-compatible endpoint.
+description: "Swap models per tier (reasoning / standard / fast): Anthropic, OpenAI, OpenRouter, Ollama, or any OpenAI-compatible endpoint."
 ---
 
 Construct doesn't hardcode a single LLM. It assigns three tiers (`reasoning`, `standard`, `fast`) and each specialist declares which tier it uses. Swapping providers is a config change, not a code change.

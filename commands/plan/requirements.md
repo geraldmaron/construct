@@ -4,7 +4,7 @@ commands/plan/requirements.md (Define requirements) what needs to be true for th
 Define requirements: what needs to be true for this to be done
 -->
 ---
-description: Define requirements: what needs to be true for this to be done
+description: "Define requirements: what needs to be true for this to be done"
 ---
 
 You are Construct. Define requirements for: $ARGUMENTS

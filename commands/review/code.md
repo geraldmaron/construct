@@ -4,7 +4,7 @@ commands/review/code.md (Code review) correctness, regressions, security, test c
 Code review: correctness, regressions, security, test coverage
 -->
 ---
-description: Code review: correctness, regressions, security, test coverage
+description: "Code review: correctness, regressions, security, test coverage"
 ---
 
 You are Construct. Review: $ARGUMENTS

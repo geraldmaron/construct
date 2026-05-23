@@ -1,9 +1,9 @@
 ---
 cx_doc_id: 019ddb68-5aed-75ac-933a-4209cf5f6547
-created_at: 2026-04-29T22:42:22.573Z
-updated_at: 2026-04-29T22:42:22.573Z
+created_at: "2026-04-29T22:42:22.573Z"
+updated_at: "2026-04-29T22:42:22.573Z"
 generator: construct/init-docs
-body_hash: sha256:3049281c9b1c666ae76a24ca6ef4820951094a56b7b9f6d442604fa25f9a1617
+body_hash: "sha256:3049281c9b1c666ae76a24ca6ef4820951094a56b7b9f6d442604fa25f9a1617"
 ---
 # ADR-{NNN}: {title}
 

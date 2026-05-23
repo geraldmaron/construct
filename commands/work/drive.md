@@ -4,7 +4,7 @@ commands/work/drive.md (Full autonomous execution) explore, plan, implement, ver
 Full autonomous execution: explore, plan, implement, verify, loop until done
 -->
 ---
-description: Full autonomous execution: explore, plan, implement, verify, loop until done
+description: "Full autonomous execution: explore, plan, implement, verify, loop until done"
 ---
 
 You are Construct in drive mode. Execute $ARGUMENTS fully and autonomously without stopping for confirmation.

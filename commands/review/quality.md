@@ -4,7 +4,7 @@ commands/review/quality.md (Quality audit) complexity, naming, duplication, dead
 Quality audit: complexity, naming, duplication, dead code, maintainability
 -->
 ---
-description: Quality audit: complexity, naming, duplication, dead code, maintainability
+description: "Quality audit: complexity, naming, duplication, dead code, maintainability"
 ---
 
 You are Construct. Audit quality for: $ARGUMENTS

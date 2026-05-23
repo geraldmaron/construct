@@ -4,7 +4,7 @@ commands/remember/runbook.md (Write a runbook) step-by-step procedure for a recu
 Write a runbook: step-by-step procedure for a recurring task or incident
 -->
 ---
-description: Write a runbook: step-by-step procedure for a recurring task or incident
+description: "Write a runbook: step-by-step procedure for a recurring task or incident"
 ---
 
 You are Construct. Write a runbook for: $ARGUMENTS

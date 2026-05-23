@@ -1,6 +1,6 @@
 ---
 title: Prompt surfaces
-description: The persona, the specialists, what each sees at every stage: the public-facing prompt boundary.
+description: "The persona, the specialists, what each sees at every stage: the public-facing prompt boundary."
 ---
 
 # Prompt Surface Architecture

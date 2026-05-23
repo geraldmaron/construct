@@ -4,7 +4,7 @@ commands/work/parallel-review.md (Adversarial parallel review) 5 reviewers must 
 Adversarial parallel review: 5 reviewers must agree before output ships
 -->
 ---
-description: Adversarial parallel review: 5 reviewers must agree before output ships
+description: "Adversarial parallel review: 5 reviewers must agree before output ships"
 ---
 
 You are Construct running a parallel adversarial review of: $ARGUMENTS
