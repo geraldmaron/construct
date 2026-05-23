@@ -1,0 +1,200 @@
+/**
+ * tests/mcp-profile-tools.test.mjs — Contract tests for lib/mcp/tools/profile.mjs.
+ *
+ * Each MCP wrapper is exercised in an isolated tmpdir so a green run guarantees:
+ *   - read-only tools return structured data for a fresh project
+ *   - mutating tools refuse to run without confirm=true
+ *   - mutating tools write the expected durable artifacts with confirm=true
+ *
+ * Operator-only surfaces (optimize_apply / optimize_rollback) intentionally
+ * remain CLI-only and are not asserted here.
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import {
+  profileShow,
+  profileList,
+  profileDrafts,
+  profileHealthTool,
+  outcomesSummary,
+  outcomesRecord,
+  knowledgeAdd,
+  profileCreate,
+  sandboxList,
+  learningStatus,
+} from '../lib/mcp/tools/profile.mjs';
+
+function freshProject(profileId = 'rnd') {
+  const dir = mkdtempSync(join(tmpdir(), 'cx-mcp-profile-'));
+  writeFileSync(join(dir, 'construct.config.json'), JSON.stringify({ version: 1, profile: profileId }, null, 2));
+  return dir;
+}
+
+test('profile_show returns the configured profile shape', () => {
+  const cwd = freshProject('rnd');
+  const res = profileShow({ cwd });
+  assert.equal(res.id, 'rnd');
+  assert.ok(Array.isArray(res.roles));
+  assert.ok(Array.isArray(res.intake.types));
+  assert.ok(Array.isArray(res.intake.stages));
+  assert.equal(res.custom, false);
+});
+
+test('profile_show falls back to rnd when config is missing', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'cx-mcp-profile-default-'));
+  const res = profileShow({ cwd });
+  assert.equal(res.id, 'rnd');
+});
+
+test('profile_list returns the curated catalog with counts', () => {
+  const res = profileList();
+  assert.ok(Array.isArray(res.profiles));
+  const ids = res.profiles.map((p) => p.id);
+  assert.ok(ids.includes('rnd'), 'rnd must be in the catalog');
+  for (const p of res.profiles) {
+    assert.equal(typeof p.id, 'string');
+    assert.equal(typeof p.roleCount, 'number');
+  }
+});
+
+test('profile_drafts returns empty arrays for a fresh project', () => {
+  const cwd = freshProject();
+  const res = profileDrafts({ cwd });
+  assert.deepEqual(res.drafts, []);
+  assert.equal(res.custom, null);
+});
+
+test('profile_health returns a deterministic zero-state for a fresh project', () => {
+  const cwd = freshProject();
+  const res = profileHealthTool({ cwd, id: 'rnd', window_days: 7 });
+  assert.equal(res.id, 'rnd');
+  assert.equal(res.windowDays, 7);
+  assert.equal(typeof res.observationCount, 'number');
+});
+
+test('outcomes_summary returns an empty-roles note when no data is recorded', () => {
+  const cwd = freshProject();
+  const res = outcomesSummary({ cwd });
+  assert.ok('roles' in res);
+  // Either no data note or empty roles dict; both are acceptable empty shapes.
+  if (res.note) assert.equal(typeof res.note, 'string');
+});
+
+test('outcomes_record refuses to write without confirm=true', () => {
+  const cwd = freshProject();
+  const res = outcomesRecord({ cwd, role: 'cx-engineer', success: true });
+  assert.ok(res.error && res.error.includes('confirm=true'));
+});
+
+test('outcomes_record validates required fields under confirm=true', () => {
+  const cwd = freshProject();
+  const res = outcomesRecord({ cwd, confirm: true });
+  assert.ok(res.error && res.error.includes('role:string'));
+});
+
+test('outcomes_record appends a JSONL line when confirmed', () => {
+  const cwd = freshProject();
+  const res = outcomesRecord({
+    cwd,
+    confirm: true,
+    role: 'cx-engineer',
+    success: true,
+    duration_ms: 1234,
+    notes: 'unit',
+  });
+  assert.ok(res.ok, `expected ok, got ${JSON.stringify(res)}`);
+  const file = join(cwd, '.cx', 'outcomes', 'cx-engineer.jsonl');
+  assert.ok(existsSync(file));
+  const lines = readFileSync(file, 'utf8').trim().split('\n');
+  assert.equal(lines.length, 1);
+  const entry = JSON.parse(lines[0]);
+  assert.equal(entry.role, 'cx-engineer');
+  assert.equal(entry.success, true);
+  assert.equal(entry.source, 'mcp');
+  assert.equal(entry.profile, 'rnd');
+});
+
+test('knowledge_add refuses to write without confirm=true', async () => {
+  const cwd = freshProject();
+  const res = await knowledgeAdd({ cwd, slug: 't', topic: 't', body: 'b' });
+  assert.ok(res.error && res.error.includes('confirm=true'));
+});
+
+test('knowledge_add writes a research finding when confirmed', async () => {
+  const cwd = freshProject();
+  const res = await knowledgeAdd({
+    cwd,
+    confirm: true,
+    slug: 'mcp-parity-smoke',
+    topic: 'MCP parity smoke test',
+    body: 'Findings:\nThis is a unit test artifact.\n',
+    confidence: 'inferred',
+  });
+  assert.ok(res.ok, `expected ok, got ${JSON.stringify(res)}`);
+  const expected = join(cwd, '.cx', 'knowledge', 'external', 'research', 'mcp-parity-smoke.md');
+  assert.ok(existsSync(expected));
+  const md = readFileSync(expected, 'utf8');
+  assert.ok(md.includes('kind: research-finding'));
+  assert.ok(md.includes('profile: rnd'));
+});
+
+test('knowledge_add enforces confirmed-needs-source guard', async () => {
+  const cwd = freshProject();
+  const res = await knowledgeAdd({
+    cwd,
+    confirm: true,
+    slug: 'mcp-parity-confirmed',
+    topic: 'requires source',
+    body: 'body',
+    confidence: 'confirmed',
+    sources: [],
+  });
+  assert.ok(res.error && res.error.includes('at least one source'));
+});
+
+test('profile_create refuses without confirm=true', () => {
+  const cwd = freshProject();
+  const res = profileCreate({ cwd, id: 'mcp-smoke' });
+  assert.ok(res.error && res.error.includes('confirm=true'));
+});
+
+test('profile_create scaffolds a draft when confirmed', () => {
+  const cwd = freshProject();
+  const res = profileCreate({
+    cwd,
+    confirm: true,
+    id: 'mcp-smoke-draft',
+    display_name: 'MCP Smoke',
+    seed_roles: ['scribe', 'analyst'],
+    seed_departments: [{ id: 'craft', displayName: 'Craft' }],
+  });
+  assert.ok(res.ok, `expected ok, got ${JSON.stringify(res)}`);
+  assert.ok(existsSync(join(cwd, '.cx', 'profiles', 'draft-mcp-smoke-draft', 'profile.json')));
+  assert.ok(existsSync(join(cwd, '.cx', 'profiles', 'draft-mcp-smoke-draft', 'requirements.md')));
+  assert.equal(res.personaPaths.length, 2);
+  assert.equal(res.departmentPaths.length, 1);
+});
+
+test('sandbox_list returns the sandbox roster as an array', () => {
+  const res = sandboxList();
+  assert.ok(Array.isArray(res.sandboxes));
+});
+
+test('learning_status returns a structured one-shot dashboard for a fresh project', () => {
+  const cwd = freshProject();
+  // Seed one observation so observations.total exercises the read path.
+  mkdirSync(join(cwd, '.cx', 'observations'), { recursive: true });
+  writeFileSync(
+    join(cwd, '.cx', 'observations', 'index.json'),
+    JSON.stringify([{ createdAt: new Date().toISOString(), project: 'rnd' }]),
+  );
+  const res = learningStatus({ cwd });
+  assert.equal(res.profile.id, 'rnd');
+  assert.equal(res.observations.total, 1);
+  assert.equal(res.research.count, 0);
+  assert.ok('roles' in res.outcomes);
+});
