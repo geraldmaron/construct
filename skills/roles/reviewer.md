@@ -1,5 +1,5 @@
 <!--
-skills/roles/reviewer.md — Anti-pattern guidance for the Reviewer role.
+skills/roles/reviewer.md. Anti-pattern guidance for the Reviewer role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the reviewer domain and counter-moves to avoid them.
@@ -9,17 +9,19 @@ Applies to: cx-reviewer, cx-devil-advocate, cx-evaluator, cx-trace-reviewer.
 role: reviewer
 applies_to: [cx-reviewer, cx-devil-advocate, cx-evaluator, cx-trace-reviewer]
 inherits: null
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
-# Reviewer — Role guidance
+# Reviewer. Role guidance
 
-Load this before drafting. These are the failure modes that separate strong role output from weak role output — check your draft against each.
+Load this before drafting. These are the failure modes that separate strong role output from weak role output. check your draft against each.
 
 
 ### 1. Nit-picking over structure
-**Symptom**: the review focuses on variable names and formatting while leaving the structural problem — wrong abstraction, missing tests, unsafe concurrency — unflagged.
+**Symptom**: the review focuses on variable names and formatting while leaving the structural problem. wrong abstraction, missing tests, unsafe concurrency. unflagged.
 **Why it fails**: the author fixes the surface and ships the real bug. The reviewer signals thoroughness while providing no real coverage.
-**Counter-move**: audit structure first — correctness, blast radius, invariants, test coverage — before any style feedback.
+**Counter-move**: audit structure first. correctness, blast radius, invariants, test coverage. before any style feedback.
 
 ### 2. LGTM without running the code
 **Symptom**: approval given based on reading the diff, with no build, no test run, no exploration of the change in situ.
@@ -32,7 +34,7 @@ Load this before drafting. These are the failure modes that separate strong role
 **Counter-move**: grep for callers of anything changed. Check whether the change is backwards-compatible for each.
 
 ### 4. No severity
-**Symptom**: all feedback presented at the same weight — a typo and a security vulnerability get equal prominence.
+**Symptom**: all feedback presented at the same weight. a typo and a security vulnerability get equal prominence.
 **Why it fails**: the author cannot tell what blocks merge versus what is optional. Real issues get lost.
 **Counter-move**: label each finding CRITICAL / HIGH / MEDIUM / LOW. State what the author must address before merge.
 
@@ -71,11 +73,11 @@ Load this before drafting. These are the failure modes that separate strong role
 
 A review that approves while these gates would fail in CI is a failed review. Run or confirm the author ran:
 
-- [ ] `npm test` — 0 failed
-- [ ] `node bin/construct lint:comments` — 0 errors AND 0 warnings (treat warnings as blocking)
-- [ ] `node bin/construct docs:verify` — all checks passed, no warnings
-- [ ] `node bin/construct docs:update --check` — AUTO regions up to date
-- [ ] `npm run lint:templates` — commit subjects + PR body match the canonical templates
+- [ ] `npm test`. 0 failed
+- [ ] `node bin/construct lint:comments`. 0 errors AND 0 warnings (treat warnings as blocking)
+- [ ] `node bin/construct docs:verify`. all checks passed, no warnings
+- [ ] `node bin/construct docs:update --check`. AUTO regions up to date
+- [ ] `npm run lint:templates`. commit subjects + PR body match the canonical templates
 
 See `rules/common/release-gates.md`. Block approval until evidence is in the PR body.
 

@@ -33,15 +33,24 @@ const args = Object.fromEntries(
 );
 const agentArg = process.argv.slice(2).find((a) => !a.startsWith('--'));
 
-const DRY_RUN = Boolean(args['dry-run']);
+// Default is preview only. --apply is required to write changes to disk so
+// prompt-rewriting can never happen silently as a side-effect of a hook or
+// scheduled job. --dry-run is retained as an alias for clarity. --rollback
+// restores the most recent backup created by a prior --apply.
+const APPLY = Boolean(args.apply);
+const ROLLBACK = Boolean(args.rollback);
+const DRY_RUN = Boolean(args['dry-run']) || (!APPLY && !ROLLBACK);
 const LIST_MODE = Boolean(args.list);
 const THRESHOLD = parseFloat(args.threshold ?? '0.7');
 const DAYS = parseInt(args.days ?? '7', 10);
 const MIN_TRACES = parseInt(args['min-traces'] ?? '3', 10);
+const APPLY_RATE_LIMIT_DAYS = 7;
+const HISTORY_CAP = 5;
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HOME = os.homedir();
 const REVIEW_DIR = path.join(HOME, '.cx', 'performance-reviews');
+const HISTORY_DIR = path.join(HOME, '.cx', 'prompt-history');
 const SKILLS_DIR = path.join(ROOT_DIR, 'skills', 'roles');
 
 const TELEMETRY_BASEURL = (process.env.CONSTRUCT_TELEMETRY_BASEURL ?? '').replace(/\/$/, '');
@@ -196,6 +205,76 @@ function applyPatch(skillFile, patch) {
   fs.writeFileSync(skillFile, updated, 'utf8');
 }
 
+// Backup + audit-trail helpers for the --apply / --rollback gate.
+
+function historyFile(agentName) {
+  const safe = agentName.replace(/^cx-/, '').replace(/[^a-z0-9-]/gi, '-');
+  fs.mkdirSync(HISTORY_DIR, { recursive: true });
+  return path.join(HISTORY_DIR, `${safe}.jsonl`);
+}
+
+function backupSkill(skillFile) {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const backup = `${skillFile}.${stamp}.bak`;
+  fs.copyFileSync(skillFile, backup);
+  return backup;
+}
+
+function trimHistoryBackups(skillFile) {
+  const dir = path.dirname(skillFile);
+  const base = path.basename(skillFile);
+  const backups = fs.readdirSync(dir)
+    .filter((f) => f.startsWith(`${base}.`) && f.endsWith('.bak'))
+    .map((f) => path.join(dir, f))
+    .sort();
+  while (backups.length > HISTORY_CAP) {
+    const oldest = backups.shift();
+    try { fs.unlinkSync(oldest); } catch { /* race */ }
+  }
+}
+
+function readHistory(agentName) {
+  const f = historyFile(agentName);
+  if (!fs.existsSync(f)) return [];
+  return fs.readFileSync(f, 'utf8').split('\n').filter(Boolean)
+    .map((line) => { try { return JSON.parse(line); } catch { return null; } })
+    .filter(Boolean);
+}
+
+function appendHistory(agentName, entry) {
+  const f = historyFile(agentName);
+  fs.appendFileSync(f, JSON.stringify(entry) + '\n');
+}
+
+function lastApplyAt(agentName) {
+  const entries = readHistory(agentName);
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (entries[i].action === 'apply') return Date.parse(entries[i].ts) || 0;
+  }
+  return 0;
+}
+
+function rateLimitOk(agentName) {
+  const last = lastApplyAt(agentName);
+  if (!last) return { ok: true };
+  const elapsedDays = (Date.now() - last) / (24 * 60 * 60 * 1000);
+  return { ok: elapsedDays >= APPLY_RATE_LIMIT_DAYS, lastApplyDaysAgo: Math.floor(elapsedDays) };
+}
+
+function rollbackToLatestBackup(skillFile) {
+  const dir = path.dirname(skillFile);
+  const base = path.basename(skillFile);
+  const backups = fs.readdirSync(dir)
+    .filter((f) => f.startsWith(`${base}.`) && f.endsWith('.bak'))
+    .map((f) => path.join(dir, f))
+    .sort();
+  if (backups.length === 0) return null;
+  const latest = backups[backups.length - 1];
+  fs.copyFileSync(latest, skillFile);
+  fs.unlinkSync(latest);
+  return latest;
+}
+
 // ─── List mode ───────────────────────────────────────────────────────────────
 
 async function runList() {
@@ -281,12 +360,31 @@ async function runOptimize(agentName) {
   println(patch);
 
   if (DRY_RUN) {
-    println('\n[dry-run] Patch not applied.');
+    println('\n[dry-run] Patch not applied. Pass --apply to write changes (cap: 1 apply per agent per 7 days).');
     return;
   }
 
+  const rl = rateLimitOk(agentName);
+  if (!rl.ok) {
+    warn(`Rate-limited: last --apply was ${rl.lastApplyDaysAgo} day(s) ago; minimum interval is ${APPLY_RATE_LIMIT_DAYS} days.`);
+    warn('Use --rollback to revert the prior change before applying a new patch, or wait out the window.');
+    return;
+  }
+
+  const backup = backupSkill(skillFile);
   applyPatch(skillFile, patch);
+  trimHistoryBackups(skillFile);
+  appendHistory(agentName, {
+    ts: new Date().toISOString(),
+    agent: agentName,
+    action: 'apply',
+    skillFile: path.relative(ROOT_DIR, skillFile),
+    backup: path.relative(ROOT_DIR, backup),
+    score: lowScoring[0]?.qualityScore ?? null,
+    traceCount: withScores.length,
+  });
   println(`\nPatch applied to ${path.relative(ROOT_DIR, skillFile)}`);
+  println(`Backup written to ${path.relative(ROOT_DIR, backup)}; --rollback restores it.`);
 
   // Trigger validation of the optimized persona
   try {
@@ -333,10 +431,32 @@ async function runOptimize(agentName) {
 
 if (LIST_MODE) {
   await runList();
+} else if (ROLLBACK) {
+  if (!agentArg) {
+    process.stderr.write('Usage: construct optimize <agent> --rollback\n');
+    process.exit(1);
+  }
+  const skillFile = findSkillFile(agentArg);
+  if (!skillFile) {
+    process.stderr.write(`No skill file found for ${agentArg}\n`);
+    process.exit(1);
+  }
+  const restored = rollbackToLatestBackup(skillFile);
+  if (!restored) {
+    process.stderr.write(`No backup found for ${agentArg}. Nothing to roll back.\n`);
+    process.exit(1);
+  }
+  appendHistory(agentArg, {
+    ts: new Date().toISOString(),
+    agent: agentArg,
+    action: 'rollback',
+    restoredFrom: path.relative(ROOT_DIR, restored),
+  });
+  process.stdout.write(`Rolled ${agentArg} back from ${path.relative(ROOT_DIR, restored)}\n`);
 } else if (agentArg) {
   await runOptimize(agentArg);
 } else {
-  process.stderr.write('Usage: construct optimize <agent> [--dry-run] [--list]\n');
+  process.stderr.write('Usage: construct optimize <agent> [--apply | --rollback | --dry-run]\n');
   process.stderr.write('       construct optimize --list\n');
   process.exit(1);
 }

@@ -1,5 +1,5 @@
 <!--
-skills/roles/designer.accessibility.md — Anti-pattern guidance for the Designer.accessibility (accessibility) role.
+skills/roles/designer.accessibility.md. Anti-pattern guidance for the Designer.accessibility (accessibility) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the designer.accessibility (accessibility) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-accessibility.
 role: designer.accessibility
 applies_to: [cx-accessibility]
 inherits: designer
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Accessibility Overlay
 

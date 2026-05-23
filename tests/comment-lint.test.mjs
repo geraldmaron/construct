@@ -106,3 +106,26 @@ test('lintRepo: finds violations across multiple files', () => {
   assert.ok(results.length >= 2, 'should find violations in both files');
   assert.ok(results.every(r => r.errors.length > 0), 'both should have header errors');
 });
+
+test('lintFile: .md under tests/ uses markdown header rule (regression for tests/ glob)', () => {
+  // Pre-fix bug: JS_HEADER_GLOBS includes /^tests\// so a .md file under
+  // tests/ was mis-classified as JS and required /** */ format. The fix
+  // routes .md extensions to markdown header detection regardless of the
+  // directory glob match.
+  const { dir, full } = makeTempFile('tests/functional/README.md', [
+    '<!--',
+    'tests/functional/README.md. Discipline doc.',
+    '-->',
+    '',
+    '# Functional tests',
+    'body',
+  ].join('\n'));
+  const result = lintFile(full, { rootDir: dir });
+  assert.equal(result.errors.length, 0, `unexpected errors: ${JSON.stringify(result.errors)}`);
+});
+
+test('lintFile: .md without markdown header still reports the error', () => {
+  const { dir, full } = makeTempFile('skills/roles/example.md', '# No header\n\nbody');
+  const result = lintFile(full, { rootDir: dir });
+  assert.ok(result.errors.some((e) => e.label.includes('missing file header')));
+});

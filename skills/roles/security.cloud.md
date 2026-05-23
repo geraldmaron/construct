@@ -1,5 +1,5 @@
 <!--
-skills/roles/security.cloud.md — Anti-pattern guidance for the Security.cloud (cloud) role.
+skills/roles/security.cloud.md. Anti-pattern guidance for the Security.cloud (cloud) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the security.cloud (cloud) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-security.
 role: security.cloud
 applies_to: [cx-security]
 inherits: security
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Cloud Security Overlay
 

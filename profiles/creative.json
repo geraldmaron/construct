@@ -1,0 +1,79 @@
+{
+  "$schema": "../schemas/profile.schema.json",
+  "id": "creative",
+  "displayName": "Creative",
+  "tagline": "Brief, research, draft, review, publish, measure. Make and ship content.",
+  "extends": null,
+  "roles": [
+    "product-lead",
+    "researcher",
+    "content-writer",
+    "designer",
+    "data-analyst",
+    "operator",
+    "reviewer",
+    "legal-compliance"
+  ],
+  "departments": [
+    {
+      "id": "strategy",
+      "displayName": "Strategy",
+      "charter": "Frame the brief and decide what is worth making. Owns positioning, audience definition, and the campaign hypothesis.",
+      "roles": ["product-lead", "researcher"]
+    },
+    {
+      "id": "production",
+      "displayName": "Production",
+      "charter": "Make the work. Owns content, visual assets, and the editorial calendar.",
+      "roles": ["content-writer", "designer", "operator"]
+    },
+    {
+      "id": "measurement",
+      "displayName": "Measurement",
+      "charter": "Tell the truth about whether the work worked. Owns analytics, attribution, and experiment design.",
+      "roles": ["data-analyst", "reviewer"]
+    },
+    {
+      "id": "governance",
+      "displayName": "Governance",
+      "charter": "Keep the work inside legal and brand boundaries. Owns disclosure, consent, and compliance review.",
+      "roles": ["legal-compliance"]
+    }
+  ],
+  "intake": {
+    "types": [
+      "brief",
+      "content-request",
+      "asset",
+      "experiment",
+      "report",
+      "legal-compliance",
+      "ops",
+      "unknown"
+    ],
+    "stages": [
+      "brief",
+      "research",
+      "draft",
+      "review",
+      "publish",
+      "measure"
+    ],
+    "classificationTable": "lib/intake/tables/creative.mjs"
+  },
+  "docTemplates": [
+    "one-pager",
+    "memo",
+    "strategy",
+    "changelog-entry"
+  ],
+  "hooks": {
+    "sessionReflect": "on",
+    "sessionOptimize": "on"
+  },
+  "defaultSkills": [],
+  "rebrand": {
+    "intakeQueueLabel": "Creative queue",
+    "signalNoun": "brief"
+  }
+}

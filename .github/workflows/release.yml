@@ -27,6 +27,10 @@ jobs:
         run: node ./bin/construct dashboard:sync --check
       - name: Enforce comment policy
         run: node ./bin/construct lint:comments
+      - name: Validate profiles + flavor overlays
+        run: npm run lint:profiles -- --quiet
+      - name: Functional tests
+        run: npm run test:functional
       - name: npm audit
         run: npm audit --audit-level=high
 
@@ -147,11 +151,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version
+      - name: Extract version + prerelease flag
         id: ver
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        # A semver pre-release tag carries a "-" after the patch number, e.g.
+        # 1.0.5-alpha.1. The pre-release channel (alpha, beta, rc, next) is the
+        # identifier between the "-" and the first "." after it. Stable tags
+        # (no "-") publish to the latest channel and bump the :latest image.
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" == *-* ]]; then
+            CHANNEL=$(echo "$VERSION" | sed -E 's/^[0-9]+\.[0-9]+\.[0-9]+-([a-z]+).*/\1/')
+            if [[ -z "$CHANNEL" || "$CHANNEL" == "$VERSION" ]]; then CHANNEL=next; fi
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "channel=latest" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Build and push
+      - name: Build and push (stable, both version + latest tags)
+        if: steps.ver.outputs.prerelease == 'false'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -159,6 +179,18 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/construct:${{ steps.ver.outputs.version }}
             ghcr.io/${{ github.repository_owner }}/construct:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push (prerelease, version + channel tag only)
+        if: steps.ver.outputs.prerelease == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/construct:${{ steps.ver.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/construct:${{ steps.ver.outputs.channel }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -212,22 +244,39 @@ jobs:
           path: dist/
           merge-multiple: true
 
+      - name: Detect pre-release channel
+        id: ver
+        # Same detection as the docker job; computed here so the publish job is
+        # self-contained. A tag like v1.0.5-alpha.1 publishes to the alpha dist
+        # channel (not latest). Stable tags go to latest by default.
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ "$VERSION" == *-* ]]; then
+            CHANNEL=$(echo "$VERSION" | sed -E 's/^[0-9]+\.[0-9]+\.[0-9]+-([a-z]+).*/\1/')
+            if [[ -z "$CHANNEL" || "$CHANNEL" == "$VERSION" ]]; then CHANNEL=next; fi
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "channel=latest" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
-        # Trusted Publishers OIDC — no stored secret. npm detects GitHub Actions
-        # OIDC environment and exchanges the token with the npm registry, which
-        # verifies it against the configured Trusted Publisher entry.
-        # One-time setup: npmjs.com → package → Settings → Trusted Publishers →
-        # add GitHub Actions with owner/repo = geraldmaron/construct and
-        # workflow file = release.yml.
-        run: npm publish --provenance --access public
+        # Trusted Publishers OIDC. No stored secret. The --tag flag controls
+        # which dist-tag the version is published under; stable goes to latest,
+        # pre-releases go to alpha/beta/rc/next so `npm install` keeps
+        # installing the stable line.
+        run: npm publish --provenance --access public --tag ${{ steps.ver.outputs.channel }}
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          PRERELEASE_FLAG: ${{ steps.ver.outputs.prerelease == 'true' && '--prerelease' || '' }}
         run: |
           gh release create "${{ github.ref_name }}" \
             --title "${{ github.ref_name }}" \
             --generate-notes \
+            $PRERELEASE_FLAG \
             dist/construct-linux-x64 \
             dist/construct-linux-x64.sha256 \
             dist/construct-linux-arm64 \
@@ -247,7 +296,10 @@ jobs:
   homebrew:
     name: bump homebrew formula
     needs: publish
-    if: ${{ vars.HOMEBREW_TAP_ENABLED == 'true' }}
+    # Homebrew tracks the stable line. Pre-release tags (e.g. v1.0.5-alpha.1)
+    # are skipped here; alpha/beta/rc consumers install via npm with the
+    # matching dist-tag instead.
+    if: ${{ vars.HOMEBREW_TAP_ENABLED == 'true' && !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     steps:
       - name: Update multi-arch formula in geraldmaron/homebrew-construct

@@ -1,0 +1,72 @@
+{
+  "$schema": "../schemas/profile.schema.json",
+  "id": "operations",
+  "displayName": "Operations",
+  "tagline": "Request, triage, resolve, document, improve. Keep things running.",
+  "extends": null,
+  "roles": [
+    "operator",
+    "engineer",
+    "qa",
+    "sre",
+    "security",
+    "docs-keeper",
+    "reviewer",
+    "product-lead"
+  ],
+  "departments": [
+    {
+      "id": "intake",
+      "displayName": "Intake",
+      "charter": "Triage requests and route them. Owns the queue and the first response. Does not own implementation.",
+      "roles": ["operator", "product-lead"]
+    },
+    {
+      "id": "delivery",
+      "displayName": "Delivery",
+      "charter": "Resolve requests. Owns fixes, small builds, and the verification step that closes the loop.",
+      "roles": ["engineer", "qa", "reviewer"]
+    },
+    {
+      "id": "reliability",
+      "displayName": "Reliability",
+      "charter": "Keep the system up and the audit trail honest. Owns incident response, runbook authorship, and security review.",
+      "roles": ["sre", "security", "docs-keeper"]
+    }
+  ],
+  "intake": {
+    "types": [
+      "request",
+      "bug",
+      "incident",
+      "ops",
+      "security",
+      "docs",
+      "unknown"
+    ],
+    "stages": [
+      "request",
+      "triage",
+      "resolve",
+      "document",
+      "improve"
+    ],
+    "classificationTable": "lib/intake/tables/operations.mjs"
+  },
+  "docTemplates": [
+    "runbook",
+    "incident-report",
+    "memo",
+    "one-pager",
+    "changelog-entry"
+  ],
+  "hooks": {
+    "sessionReflect": "on",
+    "sessionOptimize": "on"
+  },
+  "defaultSkills": [],
+  "rebrand": {
+    "intakeQueueLabel": "Request queue",
+    "signalNoun": "request"
+  }
+}

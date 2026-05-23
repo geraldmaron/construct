@@ -1,5 +1,5 @@
 <!--
-skills/roles/data-analyst.product-intelligence.md — Anti-pattern guidance for the Data-analyst.product-intelligence (product intelligence) role.
+skills/roles/data-analyst.product-intelligence.md. Anti-pattern guidance for the Data-analyst.product-intelligence (product intelligence) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the data-analyst.product-intelligence (product intelligence) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-data-analyst, cx-product-manager.
 role: data-analyst.product-intelligence
 applies_to: [cx-data-analyst, cx-product-manager]
 inherits: data-analyst
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Product Intelligence Analyst Overlay
 

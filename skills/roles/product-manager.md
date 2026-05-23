@@ -1,5 +1,5 @@
 <!--
-skills/roles/product-manager.md — Anti-pattern guidance for the Product-manager role.
+skills/roles/product-manager.md. Anti-pattern guidance for the Product-manager role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the product-manager domain and counter-moves to avoid them.
@@ -9,11 +9,13 @@ Applies to: cx-product-manager, cx-business-strategist.
 role: product-manager
 applies_to: [cx-product-manager, cx-business-strategist]
 inherits: null
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
-# Product Manager — Role guidance
+# Product Manager. Role guidance
 
-Load this before drafting. These are the failure modes that separate strong role output from weak role output — check your draft against each.
+Load this before drafting. These are the failure modes that separate strong role output from weak role output. check your draft against each.
 
 
 ### 1. Solution in the problem statement

@@ -1,5 +1,5 @@
 <!--
-skills/roles/qa.test-automation.md — Anti-pattern guidance for the Qa.test-automation (test automation) role.
+skills/roles/qa.test-automation.md. Anti-pattern guidance for the Qa.test-automation (test automation) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the qa.test-automation (test automation) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-test-automation.
 role: qa.test-automation
 applies_to: [cx-test-automation]
 inherits: qa
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Test Automation Overlay
 
@@ -18,7 +20,7 @@ Additional failure modes on top of the qa core.
 
 ### 1. Flaky tests tolerated
 **Symptom**: tests retried until green; flakes treated as "environmental noise."
-**Why it fails**: signal erodes — real regressions hide among the flakes. Developers stop trusting the suite.
+**Why it fails**: signal erodes. real regressions hide among the flakes. Developers stop trusting the suite.
 **Counter-move**: quarantine flakes immediately with a tracking ticket. Target zero retries for trusted tests.
 
 ### 2. E2E-heavy pyramid

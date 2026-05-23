@@ -1,5 +1,5 @@
 <!--
-skills/roles/product-manager.business-strategy.md — Anti-pattern guidance for the Product-manager.business-strategy (business strategy) role.
+skills/roles/product-manager.business-strategy.md. Anti-pattern guidance for the Product-manager.business-strategy (business strategy) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the product-manager.business-strategy (business strategy) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-business-strategist.
 role: product-manager.business-strategy
 applies_to: [cx-business-strategist]
 inherits: product-manager
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Business Strategy Overlay
 

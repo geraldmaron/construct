@@ -1,5 +1,5 @@
 <!--
-skills/roles/security.legal-compliance.md — Anti-pattern guidance for the Security.legal-compliance (legal compliance) role.
+skills/roles/security.legal-compliance.md. Anti-pattern guidance for the Security.legal-compliance (legal compliance) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the security.legal-compliance (legal compliance) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-legal-compliance.
 role: security.legal-compliance
 applies_to: [cx-legal-compliance]
 inherits: security
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Legal & Compliance Overlay
 

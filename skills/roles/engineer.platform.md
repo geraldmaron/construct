@@ -1,5 +1,5 @@
 <!--
-skills/roles/engineer.platform.md — Anti-pattern guidance for the Engineer.platform (platform) role.
+skills/roles/engineer.platform.md. Anti-pattern guidance for the Engineer.platform (platform) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the engineer.platform (platform) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-platform-engineer.
 role: engineer.platform
 applies_to: [cx-platform-engineer]
 inherits: engineer
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Platform Engineer Overlay
 
@@ -38,7 +40,7 @@ Additional failure modes on top of the engineer core.
 
 ### 5. Security as afterthought
 **Symptom**: CI secrets in plaintext env, broad GitHub tokens, no SBOM, no dependency audit in the pipeline.
-**Why it fails**: platform surface area compounds blast radius — one leaked token touches every repo.
+**Why it fails**: platform surface area compounds blast radius. one leaked token touches every repo.
 **Counter-move**: treat platform secrets as production secrets. Rotate, scope-minimize, and audit.
 
 ## Self-check before shipping

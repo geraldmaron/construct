@@ -61,3 +61,4 @@ token-baseline.txt
 # Literal `~/` directory created when a script writes to "~/foo" without
 # expanding the tilde — never committed.
 /~/
+skills/roles/*.bak

@@ -1,0 +1,130 @@
+{
+  "$schema": "../schemas/profile.schema.json",
+  "id": "rnd",
+  "displayName": "Software R&D",
+  "tagline": "The default. Product, engineering, governance, operations under one persona.",
+  "extends": null,
+  "roles": [
+    "product-manager",
+    "architect",
+    "engineer",
+    "reviewer",
+    "qa",
+    "security",
+    "designer",
+    "ux-researcher",
+    "researcher",
+    "evaluator",
+    "debugger",
+    "devil-advocate",
+    "data-analyst",
+    "data-engineer",
+    "platform-engineer",
+    "sre",
+    "release-manager",
+    "docs-keeper",
+    "test-automation",
+    "trace-reviewer",
+    "ai-engineer",
+    "rd-lead",
+    "operations",
+    "accessibility",
+    "legal-compliance",
+    "explorer",
+    "business-strategist",
+    "orchestrator"
+  ],
+  "departments": [
+    {
+      "id": "product",
+      "displayName": "Product",
+      "charter": "Translate user reality into shippable change. Owns problem framing, requirements, and acceptance. Does not own implementation choices.",
+      "roles": ["product-manager", "ux-researcher", "designer", "researcher", "accessibility"]
+    },
+    {
+      "id": "engineering",
+      "displayName": "Engineering",
+      "charter": "Design, build, and harden the system. Owns architecture, code, debugging, AI integration, and the platform underneath. Does not own product framing.",
+      "roles": ["architect", "engineer", "debugger", "ai-engineer", "data-engineer", "platform-engineer"]
+    },
+    {
+      "id": "quality",
+      "displayName": "Quality",
+      "charter": "Verify the system does what it claims and surface what is broken. Owns review, testing, evaluation, trace analysis, and devil's-advocate framing.",
+      "roles": ["reviewer", "qa", "test-automation", "evaluator", "trace-reviewer", "devil-advocate"]
+    },
+    {
+      "id": "governance",
+      "displayName": "Governance",
+      "charter": "Keep the system safe to operate and inside its legal envelope. Owns security review, compliance, and the audit trail.",
+      "roles": ["security", "legal-compliance"]
+    },
+    {
+      "id": "operations",
+      "displayName": "Operations",
+      "charter": "Keep the system running and shipping. Owns release management, SRE response, ops runbooks, and documentation upkeep.",
+      "roles": ["release-manager", "sre", "operations", "docs-keeper"]
+    },
+    {
+      "id": "strategy",
+      "displayName": "Strategy",
+      "charter": "Hold the long view: what to build next, what to measure, what to retire. Owns R&D direction, business framing, exploration, and cross-team orchestration.",
+      "roles": ["rd-lead", "business-strategist", "data-analyst", "explorer", "orchestrator"]
+    }
+  ],
+  "intake": {
+    "types": [
+      "user-signal",
+      "bug",
+      "requirement",
+      "research",
+      "experiment",
+      "eval-finding",
+      "architecture",
+      "incident",
+      "launch-asset",
+      "ops",
+      "security",
+      "legal-compliance"
+    ],
+    "stages": [
+      "signal",
+      "framing",
+      "hypothesis",
+      "design",
+      "implementation",
+      "evaluation",
+      "release",
+      "operations"
+    ],
+    "classificationTable": "lib/intake/tables/rnd.mjs"
+  },
+  "docTemplates": [
+    "prd",
+    "prd-platform",
+    "prd-business",
+    "rfc",
+    "rfc-platform",
+    "adr",
+    "prfaq",
+    "research-brief",
+    "evidence-brief",
+    "signal-brief",
+    "customer-profile",
+    "runbook",
+    "incident-report",
+    "memo",
+    "strategy",
+    "one-pager",
+    "changelog-entry"
+  ],
+  "hooks": {
+    "sessionReflect": "on",
+    "sessionOptimize": "on"
+  },
+  "defaultSkills": [],
+  "rebrand": {
+    "intakeQueueLabel": "R&D intake queue",
+    "signalNoun": "signal"
+  }
+}

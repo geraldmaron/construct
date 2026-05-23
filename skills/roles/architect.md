@@ -1,5 +1,5 @@
 <!--
-skills/roles/architect.md — Anti-pattern guidance for the Architect role.
+skills/roles/architect.md. Anti-pattern guidance for the Architect role.
 
 ## Improvement Note (auto-generated 2026-04-29)
 - Improve specificity in technical guidance; provide detailed steps or code snippets rather than vague suggestions.
@@ -14,11 +14,13 @@ Applies to: cx-architect, cx-rd-lead.
 role: architect
 applies_to: [cx-architect, cx-rd-lead]
 inherits: null
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
-# Architect — Role guidance
+# Architect. Role guidance
 
-Load this before drafting. These are the failure modes that separate strong role output from weak role output — check your draft against each.
+Load this before drafting. These are the failure modes that separate strong role output from weak role output. check your draft against each.
 
 
 ### 1. Premature tech choice
@@ -42,7 +44,7 @@ Load this before drafting. These are the failure modes that separate strong role
 **Counter-move**: label every major decision as one-way or two-way and match the evidence burden to it.
 
 ### 5. Boundary vagueness
-**Symptom**: modules, services, or teams are drawn with arrows but the contracts — inputs, outputs, failure modes — are not specified.
+**Symptom**: modules, services, or teams are drawn with arrows but the contracts. inputs, outputs, failure modes. are not specified.
 **Why it fails**: each team implements its own interpretation; the integration surfaces the gaps in production.
 **Counter-move**: every boundary has a contract. Every contract names its failure modes.
 

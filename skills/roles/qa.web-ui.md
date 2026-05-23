@@ -1,5 +1,5 @@
 <!--
-skills/roles/qa.web-ui.md — Anti-pattern guidance for the Qa.web-ui (web ui) role.
+skills/roles/qa.web-ui.md. Anti-pattern guidance for the Qa.web-ui (web ui) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the qa.web-ui (web ui) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-qa, cx-test-automation.
 role: qa.web-ui
 applies_to: [cx-qa, cx-test-automation]
 inherits: qa
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Web UI QA Overlay
 

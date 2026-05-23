@@ -1,5 +1,5 @@
 <!--
-skills/roles/security.md — Anti-pattern guidance for the Security role.
+skills/roles/security.md. Anti-pattern guidance for the Security role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the security domain and counter-moves to avoid them.
@@ -9,15 +9,17 @@ Applies to: cx-security, cx-legal-compliance.
 role: security
 applies_to: [cx-security, cx-legal-compliance]
 inherits: null
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
-# Security — Role guidance
+# Security. Role guidance
 
-Load this before drafting. These are the failure modes that separate strong role output from weak role output — check your draft against each.
+Load this before drafting. These are the failure modes that separate strong role output from weak role output. check your draft against each.
 
 
 ### 1. Defense in absence
-**Symptom**: protection depends on a single layer — a firewall, a middleware, a validation step — with no defense if that layer is bypassed.
+**Symptom**: protection depends on a single layer. a firewall, a middleware, a validation step. with no defense if that layer is bypassed.
 **Why it fails**: one misconfiguration or bug eliminates all protection at once.
 **Counter-move**: assume any single control can fail. Layer controls at the network, application, and data boundaries.
 

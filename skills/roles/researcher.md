@@ -1,5 +1,5 @@
 <!--
-skills/roles/researcher.md — Anti-pattern guidance for the Researcher role.
+skills/roles/researcher.md. Anti-pattern guidance for the Researcher role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the researcher domain and counter-moves to avoid them.
@@ -9,11 +9,13 @@ Applies to: cx-researcher, cx-ux-researcher, cx-explorer.
 role: researcher
 applies_to: [cx-researcher, cx-ux-researcher, cx-explorer]
 inherits: null
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
-# Researcher — Role guidance
+# Researcher. Role guidance
 
-Load this before drafting. These are the failure modes that separate strong role output from weak role output — check your draft against each.
+Load this before drafting. These are the failure modes that separate strong role output from weak role output. check your draft against each.
 
 
 ### 1. Confirmation bias
@@ -27,17 +29,17 @@ Load this before drafting. These are the failure modes that separate strong role
 **Counter-move**: require at least two independent sources for each load-bearing claim. Note when they disagree.
 
 ### 3. Freshness blindness
-**Symptom**: cited source dated 2019–2024 used as current for a fast-moving topic — AI capabilities, framework APIs, security advisories.
+**Symptom**: cited source dated 2019–2024 used as current for a fast-moving topic. AI capabilities, framework APIs, security advisories.
 **Why it fails**: the reader assumes the finding is current; acts on stale information.
 **Counter-move**: start searches from the most recent year and step backward only if insufficient. Record the publication date of every source. For fast-moving topics (LLM behavior, security advisories, market data), treat anything older than 12 months as presumptively stale unless a newer source confirms it is still accurate.
 
 ### 4. Wrong starting point
-**Symptom**: searching Google or a general index when a domain-specific authoritative source exists — arXiv for AI research, NVD for CVEs, NeurIPS/ICML proceedings for ML, official vendor docs for APIs.
+**Symptom**: searching Google or a general index when a domain-specific authoritative source exists. arXiv for AI research, NVD for CVEs, NeurIPS/ICML proceedings for ML, official vendor docs for APIs.
 **Why it fails**: general search returns popularity-ranked results, not authority-ranked ones. The most-cited blog post is not the same as the primary paper.
 **Counter-move**: use the domain's authoritative starting point first (see `rules/common/research.md` §2). Only fall back to general search if the authoritative source is insufficient.
 
 ### 5. Unverified URLs
-**Symptom**: URLs included in the brief have not been fetched — the researcher copied them from a search result or from memory.
+**Symptom**: URLs included in the brief have not been fetched. the researcher copied them from a search result or from memory.
 **Why it fails**: URLs rot. A confident citation pointing to a 404 or a different page than intended is worse than no citation.
 **Counter-move**: fetch every URL before including it. Confirm the content matches the cited claim. Mark any URL that cannot be fetched `[unverified]` and flag it as a gap.
 
@@ -54,7 +56,7 @@ Load this before drafting. These are the failure modes that separate strong role
 ### 8. Secondary sources passed as primary
 **Symptom**: citations point to summaries, listicles, or syntheses instead of the underlying paper, spec, or changelog.
 **Why it fails**: the summary may misrepresent the primary source. The chain of error is invisible.
-**Counter-move**: cite primary sources — the actual paper, spec, commit, or dataset. Use secondary sources only to discover primary ones.
+**Counter-move**: cite primary sources. the actual paper, spec, commit, or dataset. Use secondary sources only to discover primary ones.
 
 ### 9. Scope creep
 **Symptom**: the research question was about X but the brief covers X, Y, and Z because they came up.
@@ -75,7 +77,7 @@ Load this before drafting. These are the failure modes that separate strong role
 - [ ] Each load-bearing claim has at least two independent sources (or one authoritative primary)
 - [ ] Source dates recorded; fast-moving topics use sources within last 12 months
 - [ ] Each finding labeled with confidence (high/medium/low) and one-line reason
-- [ ] Observation separated from inference — labeled differently
+- [ ] Observation separated from inference. labeled differently
 - [ ] Citations point to primary sources, not summaries or index pages
 - [ ] Original question answered first; tangents in a separate section
 - [ ] Evidence threshold for the recommendation is stated explicitly

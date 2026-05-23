@@ -94,3 +94,32 @@ test('trivy-action is pinned to a specific release tag, not @master', () => {
   assert.doesNotMatch(yaml, /trivy-action@master/, 'trivy-action must not float on @master (supply-chain risk)');
   assert.match(yaml, /trivy-action@v?\d+\.\d+\.\d+/, 'trivy-action must be pinned to a specific version tag');
 });
+
+test('release workflow detects pre-release tags and routes the npm dist-tag', () => {
+  // Pre-release tags (v1.0.5-alpha.1, v1.0.5-beta.N, v1.0.5-rc.N) must not
+  // overwrite the latest dist-tag. The workflow extracts the channel from the
+  // tag suffix and passes it to npm publish via --tag.
+  assert.match(publishSection, /prerelease=true/, 'publish job must compute a prerelease flag from the tag');
+  assert.match(publishSection, /npm publish .* --tag \$\{\{ steps\.ver\.outputs\.channel \}\}/,
+    'npm publish must use --tag <channel> so pre-releases do not move latest');
+});
+
+test('homebrew tap bump is gated on stable tags (no "-" in the ref)', () => {
+  const homebrewSection = jobSection(yaml, 'homebrew');
+  assert.match(
+    homebrewSection,
+    /!contains\(github\.ref_name,\s*'-'\)/,
+    'homebrew job must be gated on stable tags; pre-release should not bump the formula',
+  );
+});
+
+test('docker image: latest tag is only pushed for stable releases', () => {
+  // Two build-and-push steps exist: one for stable (version + latest tags),
+  // one for pre-release (version + channel tags). The stable step is gated on
+  // prerelease == false; the pre-release step is gated on prerelease == true.
+  // The :latest tag must only appear under the stable conditional.
+  const stableBlock = yaml.match(/Build and push \(stable[^\n]*\n[\s\S]*?cache-to: type=gha,mode=max/)?.[0] ?? '';
+  const preBlock = yaml.match(/Build and push \(prerelease[^\n]*\n[\s\S]*?cache-to: type=gha,mode=max/)?.[0] ?? '';
+  assert.match(stableBlock, /construct:latest/, 'stable docker build must push :latest');
+  assert.doesNotMatch(preBlock, /construct:latest/, 'pre-release docker build must NOT push :latest');
+});

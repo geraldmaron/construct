@@ -1,5 +1,5 @@
 <!--
-skills/roles/engineer.data.md — Anti-pattern guidance for the Engineer.data (data) role.
+skills/roles/engineer.data.md. Anti-pattern guidance for the Engineer.data (data) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the engineer.data (data) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-data-engineer.
 role: engineer.data
 applies_to: [cx-data-engineer]
 inherits: engineer
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Data Engineer Overlay
 
@@ -24,7 +26,7 @@ Additional failure modes on top of the engineer core.
 ### 2. No idempotency
 **Symptom**: re-running a job produces duplicates, double-counts, or partial-write corruption.
 **Why it fails**: every retry or backfill becomes a data cleanup event. Oncall pages multiply.
-**Counter-move**: design writes to be idempotent — upsert on natural key, or tag by run-id and replace.
+**Counter-move**: design writes to be idempotent. upsert on natural key, or tag by run-id and replace.
 
 ### 3. Silent data loss
 **Symptom**: ETL rows that fail validation get logged and dropped.
