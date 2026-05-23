@@ -1,5 +1,5 @@
 <!--
-examples/seed-observations/README.md — seed corpus for Construct's in-tree memory layer.
+examples/seed-observations/README.md: seed corpus for Construct's in-tree memory layer.
 
 Run `construct bootstrap` to import these files into the local observation and entity stores.
 The seed corpus gives the hybrid BM25 + cosine retrieval a meaningful starting signal
@@ -25,14 +25,14 @@ This corpus seeds the Construct memory layer with high-value starting knowledge.
 construct bootstrap
 ```
 
-Imports all three files into the local observation store. Safe to re-run — duplicate
+Imports all three files into the local observation store. Safe to re-run: duplicate
 observations are deduplicated by content hash.
 
 ## Payoff Timeline
 
-- **0 sessions** — retrieval is cold; seed corpus provides baseline recall
-- **5 sessions** — personal patterns start surfacing; seed corpus still dominant
-- **20 sessions** — personal patterns dominate; seed corpus recedes to backstop
-- **50+ sessions** — retrieval is fully personalized; seed corpus rarely surfaces
+- **0 sessions**: retrieval is cold; seed corpus provides baseline recall
+- **5 sessions**: personal patterns start surfacing; seed corpus still dominant
+- **20 sessions**: personal patterns dominate; seed corpus recedes to backstop
+- **50+ sessions**: retrieval is fully personalized; seed corpus rarely surfaces
 
 Run `construct memory stats` to see whether memory is paying off.

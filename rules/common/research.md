@@ -1,5 +1,5 @@
 <!--
-rules/common/research.md — canonical research and evidence policy for Construct.
+rules/common/research.md: canonical research and evidence policy for Construct.
 
 Defines how research starts, which sources to prefer, how claims are verified,
 and what must be recorded so findings are reproducible. Applies to research,
@@ -14,9 +14,9 @@ Construct treats research as a reproducible evidence-gathering process, not free
 
 Research always starts from the most recent available evidence.
 
-- Default to sources from the current year before earlier years — always search most-recent-first.
+- Default to sources from the current year before earlier years: always search most-recent-first.
 - For fast-moving topics (AI tools, LLM behavior, cloud APIs, security advisories, market data), treat anything older than 12 months as presumptively stale unless a newer source confirms it is still accurate.
-- When using a search engine or index, always filter or sort by date — do not rely on relevance ranking alone.
+- When using a search engine or index, always filter or sort by date: do not rely on relevance ranking alone.
 - State the publication or access date for every external source. If a source has no date, treat its confidence as `low` until recency is established another way.
 
 ## 2. Domain-specific starting points
@@ -67,7 +67,7 @@ Record:
 Every URL cited in a committed document must be verified before the document is published.
 
 - Fetch the URL. Confirm it resolves and the content matches the cited claim.
-- Do not cite aggregate or index pages (e.g., arxiv.org search results, Google Scholar listings) for quantitative claims — cite the specific paper or article URL.
+- Do not cite aggregate or index pages (e.g., arxiv.org search results, Google Scholar listings) for quantitative claims: cite the specific paper or article URL.
 - If a URL returns a 404, paywall, or redirect loop, find the canonical source or replace the citation.
 - Unverified URLs must be marked `[unverified]` until confirmed.
 

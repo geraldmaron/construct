@@ -33,7 +33,9 @@ const DEFAULT_EXCLUDES = [
   'node_modules/',
   '.git/',
   '.cx/',
-  '.claude/worktrees/',
+  '.claude/',
+  '.codex/',
+  '.opencode/',
   '.tmp/',
   'dist/',
   '.beads/',
@@ -53,7 +55,10 @@ function loadProseIgnore() {
 }
 
 function isExcluded(rel, excludes) {
-  return excludes.some((pat) => rel === pat || rel.startsWith(pat));
+  if (excludes.some((pat) => rel === pat || rel.startsWith(pat))) return true;
+  const probe = `/${rel}`;
+  if (EXTERNAL_FRAGMENTS.some((f) => probe.includes(f))) return true;
+  return false;
 }
 
 function walk(dir, out) {
@@ -81,10 +86,30 @@ function listChangedMarkdown() {
   }
 }
 
+// Strip triple-backtick fenced code blocks before linting prose. The fenced
+// content may legitimately contain em-dashes (CLI output samples, third-party
+// snippets), and the style rule is about user-facing prose, not code.
+function stripFencedCode(text) {
+  const lines = text.split('\n');
+  const out = [];
+  let inFence = false;
+  let marker = null;
+  for (const line of lines) {
+    const m = line.match(/^(\s*)(```+|~~~+)/);
+    if (m) {
+      if (!inFence) { inFence = true; marker = m[2]; out.push(''); continue; }
+      if (line.trimStart().startsWith(marker)) { inFence = false; marker = null; out.push(''); continue; }
+    }
+    out.push(inFence ? '' : line);
+  }
+  return out.join('\n');
+}
+
 function lintFile(rel) {
   const full = path.join(ROOT, rel);
   if (!existsSync(full) || !statSync(full).isFile()) return [];
-  const content = readFileSync(full, 'utf8');
+  const raw = readFileSync(full, 'utf8');
+  const content = stripFencedCode(raw);
   const violations = [];
   for (const rule of BANNED) {
     let m;

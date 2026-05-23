@@ -1,9 +1,9 @@
 <!--
-skills/exploration/repo-map.md — Repo Exploration — Codebase Mapping Playbook — Use this skill when entering an unfamiliar codebase, doing deep investigation wo
+skills/exploration/repo-map.md (Repo Exploration) Codebase Mapping Playbook: Use this skill when entering an unfamiliar codebase, doing deep investigation wo
 
 Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.cx/codebase-map.md` artifact for future sessions. Agents: `
 -->
-# Repo Exploration — Codebase Mapping Playbook
+# Repo Exploration: Codebase Mapping Playbook
 
 Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.cx/codebase-map.md` artifact for future sessions.
 
@@ -51,14 +51,14 @@ find . -maxdepth 2 -type d \
 ```
 
 Classify each top-level directory as one of:
-- **entry** — main executables, CLIs, servers (cmd/, bin/, app/, main.*)
-- **lib** — shared library code (lib/, pkg/, src/, internal/)
-- **ui** — frontend/views (web/, frontend/, views/, components/)
-- **config** — configuration, env templates (.env.example, config/, etc/)
-- **infra** — deployment, CI/CD, Docker (deploy/, k8s/, .github/, terraform/)
-- **test** — test-only code (test/, tests/, __tests__/, spec/)
-- **docs** — documentation (docs/, .cx/)
-- **generated** — auto-generated, do not read (dist/, build/, .next/, vendor/)
+- **entry**: main executables, CLIs, servers (cmd/, bin/, app/, main.*)
+- **lib**: shared library code (lib/, pkg/, src/, internal/)
+- **ui**: frontend/views (web/, frontend/, views/, components/)
+- **config**: configuration, env templates (.env.example, config/, etc/)
+- **infra**: deployment, CI/CD, Docker (deploy/, k8s/, .github/, terraform/)
+- **test**: test-only code (test/, tests/, __tests__/, spec/)
+- **docs**: documentation (docs/, .cx/)
+- **generated**: auto-generated, do not read (dist/, build/, .next/, vendor/)
 
 ### 2b. Entry points
 
@@ -254,7 +254,7 @@ If you're about to {do Y}, start with: {file or path}
 
 ---
 
-## Quick Reference — Useful One-Liners
+## Quick Reference: Useful One-Liners
 
 ```bash
 # File count by extension

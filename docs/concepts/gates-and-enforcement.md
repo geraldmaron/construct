@@ -1,29 +1,29 @@
 ---
 title: Gates and enforcement
-description: Three layers of policy enforcement — real-time, commit/push, CI safety net. Every blocking gate has an explicit bypass.
+description: Three layers of policy enforcement: real-time, commit/push, CI safety net. Every blocking gate has an explicit bypass.
 ---
 
-Construct treats policy enforcement as defense in depth. Every meaningful rule lives in three places: a real-time gate that catches violations at the source, a commit/push gate that blocks them before they leave your machine, and a CI gate that catches anything that escaped the first two. The architecture is deliberately redundant — the failure mode you want to avoid is "the rule existed but never fired."
+Construct treats policy enforcement as defense in depth. Every meaningful rule lives in three places: a real-time gate that catches violations at the source, a commit/push gate that blocks them before they leave your machine, and a CI gate that catches anything that escaped the first two. The architecture is deliberately redundant: the failure mode you want to avoid is "the rule existed but never fired."
 
 Every blocking gate ships with an explicit env-var bypass. Bypasses are auditable because they're explicit in command history; silent bypasses are not allowed.
 
-## Layer 1 — Real time
+## Layer 1: Real time
 
 Fires during write, while the agent is composing code or running commands.
 
-- **`comment-lint` (PostToolUse)** — blocks Write/Edit/MultiEdit if the edit introduces a banned comment pattern (narrative voice, point-in-time notes, noise sentinels) or a missing required header. Bypass: `CONSTRUCT_SKIP_COMMENT_LINT=1`.
-- **`doc-coupling-check` (PostToolUse, advisory)** — counts code-file edits per session and emits stderr advisories at thresholds (3, 5, 10) when no doc files have been touched. Doesn't block; just nudges. The commit-time gate is the real enforcement.
-- **`ci-status-check` (UserPromptSubmit)** — injects the most recent CI run status for the current branch into the agent's context every prompt. Cached 60s. The agent literally cannot claim "I didn't know CI was red."
+- **`comment-lint` (PostToolUse)**: blocks Write/Edit/MultiEdit if the edit introduces a banned comment pattern (narrative voice, point-in-time notes, noise sentinels) or a missing required header. Bypass: `CONSTRUCT_SKIP_COMMENT_LINT=1`.
+- **`doc-coupling-check` (PostToolUse, advisory)**: counts code-file edits per session and emits stderr advisories at thresholds (3, 5, 10) when no doc files have been touched. Doesn't block; just nudges. The commit-time gate is the real enforcement.
+- **`ci-status-check` (UserPromptSubmit)**: injects the most recent CI run status for the current branch into the agent's context every prompt. Cached 60s. The agent literally cannot claim "I didn't know CI was red."
 
-## Layer 2 — Commit and push
+## Layer 2: Commit and push
 
 Fires when you try to land changes.
 
 **Commit-time (`.beads/hooks/pre-commit`):**
 
-- ECC secret scan — blocks high-signal secret patterns in staged content.
-- `construct lint:comments` — same banned-pattern check as Layer 1, across the full worktree so local commit behavior matches CI.
-- `construct docs:verify` — blocks a commit that changes `lib/`, `bin/`, `src/`, or `app/` without a matching `CHANGELOG.md` / `docs/` / `.cx/context.*` update.
+- ECC secret scan: blocks high-signal secret patterns in staged content.
+- `construct lint:comments`: same banned-pattern check as Layer 1, across the full worktree so local commit behavior matches CI.
+- `construct docs:verify`: blocks a commit that changes `lib/`, `bin/`, `src/`, or `app/` without a matching `CHANGELOG.md` / `docs/` / `.cx/context.*` update.
 
 Bypasses: `CONSTRUCT_SKIP_GATES=1` (whole layer), `CONSTRUCT_SKIP_DOCS=1` (docs-coupling only), `ECC_SKIP_PRECOMMIT=1` (secret scan only).
 
@@ -41,7 +41,7 @@ Bypass: `CONSTRUCT_SKIP_PREPUSH=1`.
 
 Bypass: `CONSTRUCT_SKIP_PR_LINT=1`.
 
-## Layer 3 — CI + session end
+## Layer 3: CI + session end
 
 Catches escapees from Layers 1 and 2.
 
@@ -51,23 +51,23 @@ Catches escapees from Layers 1 and 2.
 
 **Session-end checks (`policy-engine.mjs` Stop handler):**
 
-- **Red-CI block** — refuses to end the session if CI is red on the current branch and the agent edited code this session. Bypass: `CONSTRUCT_STOP_OK_RED_CI=1`.
+- **Red-CI block**: refuses to end the session if CI is red on the current branch and the agent edited code this session. Bypass: `CONSTRUCT_STOP_OK_RED_CI=1`.
 - **Red-CI block** is also intentionally local-only. It protects session discipline, not merge safety; branch protection remains the actual merge gate.
-- **Open-beads block** — refuses to end the session if beads issues are in `in_progress` status. Bypass: `CONSTRUCT_STOP_OK_OPEN_BD=1`.
-- **Drive-mode criteria** — refuses to end a `drive` autonomous session if acceptance criteria are unmet.
+- **Open-beads block**: refuses to end the session if beads issues are in `in_progress` status. Bypass: `CONSTRUCT_STOP_OK_OPEN_BD=1`.
+- **Drive-mode criteria**: refuses to end a `drive` autonomous session if acceptance criteria are unmet.
 
 **Self-validation:** `construct gates:audit` walks all four enforcement surfaces (CI workflows, pre-push, pre-commit, branch protection) and reports gaps. Runs in CI on every PR; failures block merge.
 
-## Layer 4 — Brokered tool calls (team / enterprise)
+## Layer 4: Brokered tool calls (team / enterprise)
 
 In team and enterprise deployments, MCP tool calls run through `lib/mcp/broker.mjs`. The broker consults `lib/policy/engine.mjs`, which reads per-role permissions from [`agents/role-manifests.json`](https://github.com/geraldmaron/construct/blob/main/agents/role-manifests.json) (`fence.deniedActions`, `fence.approvalRequired`, glob-suffix support for `edit:lib/**` style patterns), and returns a typed decision.
 
-- **Denied calls** throw `PolicyDenied` — the tool is never invoked. The denial reason is structured and audit-logged.
-- **Approval-required calls** throw `ApprovalRequired` — the broker refuses to execute until human consent is recorded.
+- **Denied calls** throw `PolicyDenied`: the tool is never invoked. The denial reason is structured and audit-logged.
+- **Approval-required calls** throw `ApprovalRequired`: the broker refuses to execute until human consent is recorded.
 - **Allowed calls** proceed and emit a `tool.called` trace event tagged with `{tool, action, allowed, approvalRequired, source}` so the audit log carries the decision lineage.
 - **Rate-limited calls** throw `RateLimited` per (role, tool) per window.
 
-Solo mode leaves the broker off by default — set `CONSTRUCT_MCP_BROKER=on` to engage it for testing. Solo's policy posture is "agent decides"; the broker becomes the enforcer when the deployment is shared.
+Solo mode leaves the broker off by default: set `CONSTRUCT_MCP_BROKER=on` to engage it for testing. Solo's policy posture is "agent decides"; the broker becomes the enforcer when the deployment is shared.
 
 ## Bypass philosophy
 
@@ -85,6 +85,6 @@ The gate authors trust the override system because they trust the bypass *is* th
 | `git push` refuses | Layer 2 pre-push | local test/build/evals/docs failed, OR remote CI was red |
 | `gh pr create` refuses | Layer 2.5 template policy | `construct lint:templates --body-file=path/to/draft` |
 | CI green but PR can't merge | Layer 3 branch protection | required status check missing or pending |
-| Session won't end | Layer 3 policy-engine Stop | red CI, open beads, or drive criteria — output tells you which |
+| Session won't end | Layer 3 policy-engine Stop | red CI, open beads, or drive criteria: output tells you which |
 
 [Cookbook → Fix a policy violation](/cookbook/fix-a-policy-violation) walks the most common failures end-to-end.

@@ -1,6 +1,6 @@
 ---
 title: Configure Slack
-description: Wire Slack as a Construct provider — bot tokens, channels, capability scopes.
+description: Wire Slack as a Construct provider: bot tokens, channels, capability scopes.
 ---
 
 # How to Configure Slack

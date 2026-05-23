@@ -1,4 +1,4 @@
-# Construct — Deployment Runbook
+# Construct: Deployment Runbook
 
 > **Audience**: Engineers deploying or operating a cloud instance of Construct.  
 > **Scope**: AWS ECS/Fargate via Terraform. Single-container, multi-user, HTTPS.
@@ -84,7 +84,7 @@ cp deploy/terraform/environments/staging/terraform.tfvars \
    deploy/terraform/environments/staging/terraform.tfvars.local
 ```
 
-Edit `terraform.tfvars.local` — required values:
+Edit `terraform.tfvars.local`: required values:
 
 | Variable | Description |
 |----------|-------------|
@@ -93,7 +93,7 @@ Edit `terraform.tfvars.local` — required values:
 | `hostname` | e.g. `construct-staging.example.com` |
 | `acm_certificate_arn` | ACM cert ARN for the hostname (must be in us-east-1 for ALB) |
 
-Sensitive values — pass as env vars, not in tfvars files:
+Sensitive values: pass as env vars, not in tfvars files:
 
 ```bash
 export TF_VAR_dashboard_token="$(openssl rand -hex 32)"
@@ -110,9 +110,9 @@ terraform apply tfplan
 ```
 
 Terraform will output:
-- `alb_dns_name` — ALB DNS (point your domain here if not using Route53)
-- `ecs_cluster_name` — for monitoring
-- `ecr_repository_url` — for CI/CD
+- `alb_dns_name`: ALB DNS (point your domain here if not using Route53)
+- `ecs_cluster_name`: for monitoring
+- `ecr_repository_url`: for CI/CD
 
 ---
 
@@ -173,7 +173,7 @@ All config is injected at container start. Nothing is baked into the image.
 |----------|--------|-------------|
 | `CONSTRUCT_DASHBOARD_TOKEN` | Secrets Manager | Bearer token for dashboard auth |
 | `ANTHROPIC_API_KEY` | Secrets Manager (optional) | Used by `claude` CLI inside container |
-| `NODE_ENV` | ECS task env | Set to `production` — enables `0.0.0.0` bind |
+| `NODE_ENV` | ECS task env | Set to `production`: enables `0.0.0.0` bind |
 | `PORT` | ECS task env | Default `4242` |
 | `HOME` | ECS task env | Set to `/data` so Construct writes user-scoped state to the mounted data path |
 | `CX_DATA_DIR` | ECS task env | Explicit Construct data root; also set to `/data` |
@@ -235,7 +235,7 @@ aws ecs update-service \
 ### Terraform rollback
 
 If Terraform state is diverged, revert the ECR image URI in tfvars and re-apply.  
-Do **not** run `terraform destroy` in production — it will delete the RDS instance.
+Do **not** run `terraform destroy` in production: it will delete the RDS instance.
 
 ---
 

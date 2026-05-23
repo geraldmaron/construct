@@ -1,10 +1,10 @@
 <!--
-commands/build/feature.md — Build a feature — implement it end to end, tested and ready to ship
+commands/build/feature.md (Build a feature) implement it end to end, tested and ready to ship
 
-Build a feature — implement it end to end, tested and ready to ship
+Build a feature: implement it end to end, tested and ready to ship
 -->
 ---
-description: Build a feature — implement it end to end, tested and ready to ship
+description: Build a feature: implement it end to end, tested and ready to ship
 ---
 
 You are Construct. Build the following: $ARGUMENTS
@@ -18,4 +18,4 @@ produces no output or tool activity within two minutes, surface it to the user w
 agent description and elapsed time rather than waiting silently. Do not re-dispatch until
 the user confirms the prior invocation is not still running.
 
-Verification protocol is owned by `cx-engineer` — apply its checklist before declaring done.
+Verification protocol is owned by `cx-engineer`: apply its checklist before declaring done.

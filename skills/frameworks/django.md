@@ -1,5 +1,5 @@
 <!--
-skills/frameworks/django.md — Django — ```
+skills/frameworks/django.md (Django) ```
 
 ## Project Structure ```
 -->
@@ -37,10 +37,10 @@ Keep apps small and feature-bounded. Do not put everything in one app.
 
 ### Field choices
 
-- `CharField` / `TextField` — strings; always set `blank=False` unless optional
-- `UUIDField(default=uuid.uuid4, primary_key=True)` — preferred over auto-increment for external-facing IDs
-- `JSONField` — use sparingly; prefer normalized columns for queryable data
-- `select_related` for FK, `prefetch_related` for M2M — avoid N+1 queries
+- `CharField` / `TextField`: strings; always set `blank=False` unless optional
+- `UUIDField(default=uuid.uuid4, primary_key=True)`: preferred over auto-increment for external-facing IDs
+- `JSONField`: use sparingly; prefer normalized columns for queryable data
+- `select_related` for FK, `prefetch_related` for M2M: avoid N+1 queries
 
 ### Migrations
 
@@ -115,13 +115,13 @@ class ItemSerializer(serializers.ModelSerializer):
 
 ## Security
 
-- `SECRET_KEY` from env — never commit
+- `SECRET_KEY` from env: never commit
 - `ALLOWED_HOSTS` locked down in production
 - `DEBUG = False` in production (template errors expose internals)
 - CSRF: enabled by default for form views; DRF uses `SessionAuthentication` + CSRF for browser clients
 - `django-environ` or `python-decouple` for settings from environment variables
 - Content security policy: `django-csp` middleware
-- SQL: always use ORM or parameterized `raw()` — never string-format user input into queries
+- SQL: always use ORM or parameterized `raw()`: never string-format user input into queries
 
 ## Testing
 
@@ -137,8 +137,8 @@ class ItemAPITest(APITestCase):
     self.assertEqual(Item.objects.count(), 1)
 ```
 
-- Use `APITestCase` (DRF) for API tests — wraps each test in a transaction that rolls back
-- `factory_boy` for fixtures — more maintainable than raw `create()`
+- Use `APITestCase` (DRF) for API tests: wraps each test in a transaction that rolls back
+- `factory_boy` for fixtures: more maintainable than raw `create()`
 - `pytest-django` with `@pytest.mark.django_db` for pytest-style tests
 - `django-silk` or `django-debug-toolbar` for query profiling in development
 
@@ -146,14 +146,14 @@ class ItemAPITest(APITestCase):
 
 - Database: add `db_index=True` for filtered columns; `select_related`/`prefetch_related` to eliminate N+1
 - Caching: `django.core.cache` with Redis backend (`django-redis`)
-- Async views: `async def` views supported in Django 4.1+ — use for I/O-bound operations with `asyncio`
+- Async views: `async def` views supported in Django 4.1+: use for I/O-bound operations with `asyncio`
 - Task queues: `Celery` + Redis/RabbitMQ for background jobs; `django-celery-beat` for scheduling
 - `gunicorn` + `uvicorn` workers for async support in production
 
 ## Common Pitfalls
 
-- `objects.all()` in views without pagination — always use `Paginator` or DRF `pagination_class`
-- Accessing related objects in a loop without `select_related` — profile with `django-debug-toolbar`
-- `settings.DEBUG` checks in production-like environments — use environment-specific settings modules
-- File uploads to local storage in production — use `django-storages` with S3/GCS
-- Signals for business logic — prefer explicit service functions; signals are invisible and hard to test
+- `objects.all()` in views without pagination: always use `Paginator` or DRF `pagination_class`
+- Accessing related objects in a loop without `select_related`: profile with `django-debug-toolbar`
+- `settings.DEBUG` checks in production-like environments: use environment-specific settings modules
+- File uploads to local storage in production: use `django-storages` with S3/GCS
+- Signals for business logic: prefer explicit service functions; signals are invisible and hard to test

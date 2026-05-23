@@ -1,5 +1,5 @@
 <!--
-skills/compliance/ai-disclosure.md — AI Disclosure — AI transparency, disclosure, and regulatory compliance.
+skills/compliance/ai-disclosure.md (AI Disclosure) AI transparency, disclosure, and regulatory compliance.
 
 Use this skill when reviewing AI features for disclosure requirements, transparency obligations, or emerging AI regulation compliance.
 -->

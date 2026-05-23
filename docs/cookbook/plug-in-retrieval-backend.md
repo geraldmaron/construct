@@ -3,7 +3,7 @@ title: Plug in a retrieval backend
 description: Swap the embedder, chunker, indexer, fuser, reranker, or compressor. Six plugin contracts, one source of truth.
 ---
 
-Construct's retrieval pipeline is a six-layer plugin contract. Any layer can be replaced — embedder, chunker, indexer, fuser, reranker, compressor — without touching the others. Defaults work out of the box; swaps are config.
+Construct's retrieval pipeline is a six-layer plugin contract. Any layer can be replaced (embedder, chunker, indexer, fuser, reranker, compressor) without touching the others. Defaults work out of the box; swaps are config.
 
 ## The six layers
 
@@ -39,9 +39,9 @@ Reports Recall@k, MRR, NDCG@k against the project's fixture queries. If any numb
 
 ## Swap the embedder
 
-Easiest swap — embedder is just config.
+Easiest swap: embedder is just config.
 
-**Local (default):** `local` — uses `@huggingface/transformers` (Xenova/all-MiniLM-L6-v2).
+**Local (default):** `local`: uses `@huggingface/transformers` (Xenova/all-MiniLM-L6-v2).
 
 **OpenAI:**
 
@@ -68,7 +68,7 @@ export CONSTRUCT_EMBEDDING_MODEL=hashing
 
 SHA-256 bag-of-words. Lower quality but zero dependencies and zero network. Useful for CI fixtures and offline development.
 
-**Important:** if you swap embedders, vector dimensions change. The pgvector schema is dimension-locked. Run `construct doctor` after the swap — it'll report a dimension mismatch and tell you what to do. For Postgres, this means a schema migration.
+**Important:** if you swap embedders, vector dimensions change. The pgvector schema is dimension-locked. Run `construct doctor` after the swap: it'll report a dimension mismatch and tell you what to do. For Postgres, this means a schema migration.
 
 ## Custom embedder plugin
 
@@ -134,9 +134,9 @@ export default {
 
 Common reasons to swap:
 
-- Your documents are code, not prose — use a syntax-aware chunker.
-- Your documents are very long — use a recursive chunker.
-- You want to experiment with contextual chunking (Anthropic's Sep 2024 technique) — write a plugin that calls an LLM per chunk to prepend context.
+- Your documents are code, not prose: use a syntax-aware chunker.
+- Your documents are very long: use a recursive chunker.
+- You want to experiment with contextual chunking (Anthropic's Sep 2024 technique): write a plugin that calls an LLM per chunk to prepend context.
 
 ## Swap the indexer
 
@@ -156,7 +156,7 @@ export default {
 };
 ```
 
-Most users don't swap the indexer — pgvector handles tens of millions of vectors at low latency without an external service. But for hosted retrieval (Pinecone, Weaviate, Qdrant), the contract is the same.
+Most users don't swap the indexer: pgvector handles tens of millions of vectors at low latency without an external service. But for hosted retrieval (Pinecone, Weaviate, Qdrant), the contract is the same.
 
 ## Swap the fuser, reranker, compressor
 
@@ -180,11 +180,11 @@ The eval harness uses a fixed query fixture and reports Recall@k, MRR, NDCG. If 
 
 ## The whole point
 
-Construct ships opinionated defaults — they work — but it's plugin-shaped so external projects can absorb. If you have a custom embedder, a domain-specific chunker, or a hosted retrieval service, you swap one layer and keep everything else. The contracts are stable; the implementations are yours.
+Construct ships opinionated defaults (they work) but it's plugin-shaped so external projects can absorb. If you have a custom embedder, a domain-specific chunker, or a hosted retrieval service, you swap one layer and keep everything else. The contracts are stable; the implementations are yours.
 
 ## Reference
 
-- [Concepts → Embedding boundary](/concepts/embedding-boundary) — what stays local, what crosses the network.
-- [Concepts → Knowledge layout](/concepts/knowledge-layout) — how retrieval fits into Construct's state model.
-- [`lib/engine/contracts.mjs`](https://github.com/geraldmaron/construct/blob/main/lib/engine/contracts.mjs) — the six interface definitions.
-- [`lib/engine/defaults.mjs`](https://github.com/geraldmaron/construct/blob/main/lib/engine/defaults.mjs) — built-in implementations.
+- [Concepts → Embedding boundary](/concepts/embedding-boundary): what stays local, what crosses the network.
+- [Concepts → Knowledge layout](/concepts/knowledge-layout): how retrieval fits into Construct's state model.
+- [`lib/engine/contracts.mjs`](https://github.com/geraldmaron/construct/blob/main/lib/engine/contracts.mjs): the six interface definitions.
+- [`lib/engine/defaults.mjs`](https://github.com/geraldmaron/construct/blob/main/lib/engine/defaults.mjs): built-in implementations.

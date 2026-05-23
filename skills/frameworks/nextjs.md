@@ -1,5 +1,5 @@
 <!--
-skills/frameworks/nextjs.md — Next.js (App Router) — ```
+skills/frameworks/nextjs.md (Next.js (App Router)) ```
 
 ## App Router Mental Model ```
 -->
@@ -46,9 +46,9 @@ Caching behaviors:
 
 | Option | Behavior |
 |---|---|
-| `cache: 'force-cache'` | Static — cache forever (default) |
-| `next: { revalidate: N }` | ISR — revalidate after N seconds |
-| `cache: 'no-store'` | Dynamic — always fresh |
+| `cache: 'force-cache'` | Static: cache forever (default) |
+| `next: { revalidate: N }` | ISR: revalidate after N seconds |
+| `cache: 'no-store'` | Dynamic: always fresh |
 | `next: { tags: ['items'] }` | Tag for on-demand revalidation |
 
 ### On-demand revalidation
@@ -91,15 +91,15 @@ export async function createItem(formData: FormData) {
 </form>
 ```
 
-Validate Server Action inputs — they are network endpoints.
+Validate Server Action inputs: they are network endpoints.
 
 ## Rendering Strategies
 
 | Strategy | When |
 |---|---|
-| Static (SSG) | Marketing pages, docs — no user-specific data |
-| ISR | Listings, product pages — stale-ok, periodic refresh |
-| Dynamic (SSR) | Dashboards, auth-gated pages — always fresh |
+| Static (SSG) | Marketing pages, docs: no user-specific data |
+| ISR | Listings, product pages: stale-ok, periodic refresh |
+| Dynamic (SSR) | Dashboards, auth-gated pages: always fresh |
 | Client | Highly interactive UIs, real-time, after-hydration only |
 
 Prefer static/ISR by default; reach for dynamic only when the data must be per-request.
@@ -129,20 +129,20 @@ export function middleware(req: NextRequest) {
 export const config = { matcher: ['/dashboard/:path*'] };
 ```
 
-Middleware runs on the Edge Runtime — no Node.js APIs. Keep it fast; no DB calls.
+Middleware runs on the Edge Runtime: no Node.js APIs. Keep it fast; no DB calls.
 
 ## Performance
 
 - Enable Partial Prerendering (PPR) in Next.js 15 for shell + streaming content
-- Use `next/image` for all images — automatic WebP, lazy loading, CLS prevention
-- Use `next/font` for self-hosted fonts — eliminates FOUT and external requests
+- Use `next/image` for all images: automatic WebP, lazy loading, CLS prevention
+- Use `next/font` for self-hosted fonts: eliminates FOUT and external requests
 - Bundle analysis: `ANALYZE=true next build`
 - Streaming: wrap slow data-dependent sections in `<Suspense>`
 
 ## Common Pitfalls
 
-- Importing client-only code (browser APIs, hooks) in Server Components — add `'use client'`
-- Large `layout.tsx` re-renders — use `memo` on stable child subtrees
-- Fetching the same data in multiple components — hoist to the nearest shared ancestor Server Component (fetch is deduplicated within a request)
-- Dynamic routes missing `generateStaticParams` for static builds — causes runtime 404
-- Server Actions called without input validation — treat as untrusted user input
+- Importing client-only code (browser APIs, hooks) in Server Components: add `'use client'`
+- Large `layout.tsx` re-renders: use `memo` on stable child subtrees
+- Fetching the same data in multiple components: hoist to the nearest shared ancestor Server Component (fetch is deduplicated within a request)
+- Dynamic routes missing `generateStaticParams` for static builds: causes runtime 404
+- Server Actions called without input validation: treat as untrusted user input

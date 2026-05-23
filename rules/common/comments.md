@@ -1,5 +1,5 @@
 <!--
-rules/common/comments.md — Construct comment convention for JS/TS/MJS source files.
+rules/common/comments.md: Construct comment convention for JS/TS/MJS source files.
 
 Defines the two allowed comment forms (file header, section context block) and
 what is never allowed (inline narration, trailing comments, mid-function notes).
@@ -37,12 +37,12 @@ The blank line between the comment and the code is required. It signals "this co
 
 ## What is never allowed
 
-- **Inline trailing comments** — `const x = 1; // increment` — delete them
-- **Mid-function narration** — a comment in the middle of a function body that describes what the next line does — delete it; rename the variable or extract a function instead
-- **Between-group labels** — `// Language patterns`, `// Dashboard`, `// Step 1:` — delete them
-- **Narrative voice** — `// We weight BM25`, `// Now test the keys`, `// This correctly scores` — delete them
-- **Point-in-time notes** — `// X removed`, `// previously`, `// no longer` — belongs in git log
-- **Noise sentinels** — `// ok`, `// best effort`, `// skip` — delete them; use `/* non-critical */` inline only when the catch clause would otherwise look like a bug
+- **Inline trailing comments** (`const x = 1; // increment`) delete them
+- **Mid-function narration** (a comment in the middle of a function body that describes what the next line does) delete it; rename the variable or extract a function instead
+- **Between-group labels** (`// Language patterns`, `// Dashboard`, `// Step 1:`) delete them
+- **Narrative voice** (`// We weight BM25`, `// Now test the keys`, `// This correctly scores`) delete them
+- **Point-in-time notes** (`// X removed`, `// previously`, `// no longer`) belongs in git log
+- **Noise sentinels** (`// ok`, `// best effort`, `// skip`) delete them; use `/* non-critical */` inline only when the catch clause would otherwise look like a bug
 
 ## SLA annotations (hooks only)
 
@@ -54,5 +54,5 @@ The blank line between the comment and the code is required. It signals "this co
 
 ## Rule of thumb
 
-Delete the comment. If the section becomes harder to understand, the comment earns its place — as a block before it, with a blank line after. If it reads just as clearly without, it stays deleted.
+Delete the comment. If the section becomes harder to understand, the comment earns its place: as a block before it, with a blank line after. If it reads just as clearly without, it stays deleted.
 

@@ -1,4 +1,4 @@
-# Changelog: {version} — {YYYY-MM-DD}
+# Changelog: {version}: {YYYY-MM-DD}
 
 - **Version**: {semver or date-based tag}
 - **Type**: major | minor | patch | hotfix

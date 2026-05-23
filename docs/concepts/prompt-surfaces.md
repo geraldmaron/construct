@@ -1,6 +1,6 @@
 ---
 title: Prompt surfaces
-description: The persona, the specialists, what each sees at every stage — the public-facing prompt boundary.
+description: The persona, the specialists, what each sees at every stage: the public-facing prompt boundary.
 ---
 
 # Prompt Surface Architecture
@@ -32,7 +32,7 @@ At runtime:
 - the user talks to Construct
 - Construct classifies the request and routes work internally when needed
 - when a request arrives as a file in `.cx/inbox/`, `classifyRdIntake` writes a triage packet that names the owner persona and the recommended chain (see [intake and triage](/concepts/intake-and-triage))
-- per dispatched specialist, `buildContextPacket` ([role-aware context router](https://github.com/geraldmaron/construct/blob/main/lib/context-router.mjs)) selects only the artifact kinds that role prioritizes within an explicit token budget — unrelated artifacts are omitted with a stated reason
+- per dispatched specialist, `buildContextPacket` ([role-aware context router](https://github.com/geraldmaron/construct/blob/main/lib/context-router.mjs)) selects only the artifact kinds that role prioritizes within an explicit token budget: unrelated artifacts are omitted with a stated reason
 - specialists and role overlays are implementation detail, not peer user-facing personas
 
 The routing contract lives in code and prompt policy, not in the examples corpus.

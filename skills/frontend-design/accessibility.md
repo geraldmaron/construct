@@ -1,5 +1,5 @@
 <!--
-skills/frontend-design/accessibility.md — Accessibility (WCAG 2.2 / Inclusive Design) — Target **WCAG 2.1 AA** as the minimum for any public-facing product. WCAG 2.2 AA
+skills/frontend-design/accessibility.md (Accessibility (WCAG 2.2 / Inclusive Design)) Target **WCAG 2.1 AA** as the minimum for any public-facing product. WCAG 2.2 AA
 
 ## Compliance Baseline Target **WCAG 2.1 AA** as the minimum for any public-facing product. WCAG 2.2 AA is the current standard (published October 2023) and req
 -->
@@ -25,7 +25,7 @@ ARIA augments semantics it can't add natively; it cannot fix broken semantics.
 
 ## ARIA Rules
 
-1. If a native HTML element provides the required semantics, use it — do not add ARIA to a `<div>` when `<button>` exists.
+1. If a native HTML element provides the required semantics, use it: do not add ARIA to a `<div>` when `<button>` exists.
 2. Do not change native semantics: `<h2 role="button">` is invalid.
 3. All interactive ARIA widgets must be keyboard-operable.
 4. Do not hide focusable elements with `aria-hidden="true"`.
@@ -84,11 +84,11 @@ function trapFocus(modal: HTMLElement) {
 |---|---|---|
 | Normal text (< 18pt / 14pt bold) | 4.5:1 | 7:1 |
 | Large text (≥ 18pt / 14pt bold) | 3:1 | 4.5:1 |
-| UI components / graphical objects | 3:1 | — |
+| UI components / graphical objects | 3:1 |: |
 
 Tools: Figma Contrast plugin, axe DevTools, APCA calculator for sophisticated use cases.
 
-Do not convey information by color alone — add shape, pattern, or text.
+Do not convey information by color alone: add shape, pattern, or text.
 
 ## Motion
 
@@ -136,11 +136,11 @@ if (!prefersReduced) gsap.to(el, { y: -20, duration: 0.3 });
 
 ## Testing Checklist
 
-- [ ] Run `axe` or `Lighthouse Accessibility` — fix all violations
+- [ ] Run `axe` or `Lighthouse Accessibility`: fix all violations
 - [ ] Navigate entire flow with keyboard only
 - [ ] Test with VoiceOver (macOS/iOS) or NVDA/JAWS (Windows)
 - [ ] Verify color contrast meets 4.5:1 for body text
-- [ ] Test with browser zoom at 200% — no horizontal scroll, no content loss
+- [ ] Test with browser zoom at 200%: no horizontal scroll, no content loss
 - [ ] Test with `prefers-reduced-motion: reduce` enabled
 - [ ] All form errors are announced by screen reader
 

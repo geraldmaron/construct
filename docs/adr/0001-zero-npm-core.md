@@ -1,4 +1,4 @@
-# ADR 0001 — Zero npm dependencies in core
+# ADR 0001: Zero npm dependencies in core
 
 **Date:** 2026-04-23  
 **Status:** Accepted  
@@ -38,7 +38,7 @@ Implementations affected by this decision: BM25 text search, cosine similarity, 
 ### Mitigation
 - `docs/in-tree-implementations.md` tracks LOC, coverage, and known limitations for every hand-rolled component
 - Promotion trigger: 3+ defects in 6 months on any component → library replacement ADR required
-- Services zone (`services/`) is exempt — deployed services may use npm packages with ADR justification
+- Services zone (`services/`) is exempt: deployed services may use npm packages with ADR justification
 
 ## Exception path
 

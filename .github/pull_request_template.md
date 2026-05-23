@@ -1,5 +1,5 @@
 <!--
-Project PR template — required structure. Every section below stays in the
+Project PR template: required structure. Every section below stays in the
 description. CI fails the PR if a required section is missing or all gate
 boxes are unchecked. Replace <...> placeholders; do not delete the headings.
 -->

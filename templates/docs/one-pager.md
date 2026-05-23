@@ -12,7 +12,7 @@
 <!-- One paragraph. What we will do, at a level a non-specialist can understand. -->
 
 ## Why now
-<!-- One paragraph. What makes this the right moment — a trigger, a constraint, a window. -->
+<!-- One paragraph. What makes this the right moment: a trigger, a constraint, a window. -->
 
 ## Success measure
 <!-- The single metric that tells us this worked. Numeric, time-bound. -->

@@ -1,5 +1,5 @@
 <!--
-docs/providers/salesforce.md — Salesforce provider setup and usage guide.
+docs/providers/salesforce.md: Salesforce provider setup and usage guide.
 
 Covers credential configuration, capabilities (read/search), and SOQL examples.
 -->
@@ -21,11 +21,11 @@ SALESFORCE_ACCESS_TOKEN=your_access_token_here
 
 Obtain an access token through one of these flows:
 
-- **SFDX / Salesforce CLI**: `sf org login web -a myorg && sf org display --target-org myorg --json` — copy the `accessToken` field
+- **SFDX / Salesforce CLI**: `sf org login web -a myorg && sf org display --target-org myorg --json`: copy the `accessToken` field
 - **OAuth 2.0 flow**: authorize via the connected app and exchange the code for a token
 - **Named credentials** (if deploying to server infrastructure): configure via Salesforce Setup
 
-The provider uses API version `v60.0`. It does not implement an automatic token refresh — rotate the token externally and update `config.env` when it expires.
+The provider uses API version `v60.0`. It does not implement an automatic token refresh: rotate the token externally and update `config.env` when it expires.
 
 ## Verify the connection
 
@@ -48,7 +48,7 @@ config.id      = "0013000000AbCdEfG"
 
 Returns the full sObject record. Both `sobject` and `id` are required for reads.
 
-Valid `sobject` values: any standard or custom Salesforce object — `Account`, `Opportunity`, `Contact`, `Case`, `Lead`, `Custom__c`, etc.
+Valid `sobject` values: any standard or custom Salesforce object: `Account`, `Opportunity`, `Contact`, `Case`, `Lead`, `Custom__c`, etc.
 
 ### Search with SOQL
 

@@ -1,5 +1,5 @@
 <!--
-skills/docs/init-project.md — Project Initialization — Use when: starting work on a new project or joining an existing one without doc
+skills/docs/init-project.md (Project Initialization) Use when: starting work on a new project or joining an existing one without doc
 
 Use when: starting work on a new project or joining an existing one without doc structure. ## Command
 -->

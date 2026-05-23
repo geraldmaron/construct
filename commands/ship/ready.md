@@ -1,10 +1,10 @@
 <!--
-commands/ship/ready.md — Pre-release check — is this ready to ship?
+commands/ship/ready.md (Pre-release check) is this ready to ship?
 
-Pre-release check — is this ready to ship?
+Pre-release check: is this ready to ship?
 -->
 ---
-description: Pre-release check — is this ready to ship?
+description: Pre-release check: is this ready to ship?
 ---
 
 You are Construct. Check if the following is ready: $ARGUMENTS

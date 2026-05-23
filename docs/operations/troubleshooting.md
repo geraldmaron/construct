@@ -1,5 +1,5 @@
 <!--
-docs/operations/troubleshooting.md — Common errors and resolutions for Construct.
+docs/operations/troubleshooting.md: Common errors and resolutions for Construct.
 
 Covers hook not firing, embedding model missing, Postgres not found,
 provider auth failures, and dashboard unreachable.
@@ -125,7 +125,7 @@ construct storage migrations
 construct storage repair-migrations --yes
 ```
 
-The repair refuses any file containing `DROP`, `TRUNCATE`, `ALTER … DROP`, or `DELETE`. If `construct storage migrations` reports drift on a non-idempotent file, the only safe path is to write a new migration file with a higher sequence number — never silently re-record the SHA.
+The repair refuses any file containing `DROP`, `TRUNCATE`, `ALTER … DROP`, or `DELETE`. If `construct storage migrations` reports drift on a non-idempotent file, the only safe path is to write a new migration file with a higher sequence number: never silently re-record the SHA.
 
 ## Provider auth failure
 
@@ -212,7 +212,7 @@ This validates `agents/registry.json` and prints specific field constraint viola
    construct memory stats
    ```
 
-3. Cold start is expected — the first 5 sessions have sparse observations. Run `construct bootstrap` to import a seed corpus that provides baseline recall immediately.
+3. Cold start is expected: the first 5 sessions have sparse observations. Run `construct bootstrap` to import a seed corpus that provides baseline recall immediately.
 
 4. If stats show observations exist but search returns nothing, rebuild the index:
 

@@ -1,5 +1,5 @@
 <!--
-docs/deploy/aws.md — AWS Terraform deploy guide for Construct.
+docs/deploy/aws.md: AWS Terraform deploy guide for Construct.
 
 Covers prerequisites, terraform init/apply, what gets created, secret flow,
 dashboard access, and CloudWatch logs.
@@ -13,7 +13,7 @@ Construct ships Terraform modules that deploy a single-tenant instance to AWS. T
 
 - AWS CLI configured with credentials that can create VPCs, RDS, ECS, ALB, Secrets Manager resources, and Route53 records
 - Terraform 1.6 or later
-- Docker — to build and push the Construct image
+- Docker: to build and push the Construct image
 - An ACM certificate for your dashboard hostname (or leave blank for HTTP-only)
 - An ECR repository for the Construct image
 
@@ -61,8 +61,8 @@ terraform apply
 | Application Load Balancer | Public-facing, forwards HTTPS → ECS on port 4242 |
 | Secrets Manager | Stores dashboard token, DB password, and Anthropic API key |
 | IAM roles | Task role (Secrets Manager read) and execution role (ECR pull, CloudWatch logs) |
-| Route53 record | A-record pointing your hostname at the ALB (optional — requires `route53_zone_id`) |
-| CloudWatch log group | `construct-<environment>` — receives all ECS task stderr |
+| Route53 record | A-record pointing your hostname at the ALB (optional: requires `route53_zone_id`) |
+| CloudWatch log group | `construct-<environment>`: receives all ECS task stderr |
 
 ## How secrets flow
 
@@ -108,8 +108,8 @@ Open the `dashboard_url` in a browser and authenticate with your `dashboard_toke
 | `task_memory` | `1024` | ECS task memory in MB |
 | `desired_count` | `1` | Number of ECS task replicas |
 | `hostname` | (required) | FQDN for the dashboard |
-| `route53_zone_id` | `""` | Route53 zone ID — omit to skip DNS automation |
-| `acm_certificate_arn` | `""` | ACM cert ARN — omit for HTTP-only |
+| `route53_zone_id` | `""` | Route53 zone ID: omit to skip DNS automation |
+| `acm_certificate_arn` | `""` | ACM cert ARN: omit for HTTP-only |
 | `dashboard_token` | (required) | Dashboard auth token |
 | `anthropic_api_key` | `""` | Anthropic API key for the container |
 

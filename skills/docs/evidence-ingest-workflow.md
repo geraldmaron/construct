@@ -1,5 +1,5 @@
 <!--
-skills/docs/evidence-ingest-workflow.md — Normalize raw product evidence into Construct knowledge artifacts.
+skills/docs/evidence-ingest-workflow.md: Normalize raw product evidence into Construct knowledge artifacts.
 -->
 # Evidence Ingest Workflow
 

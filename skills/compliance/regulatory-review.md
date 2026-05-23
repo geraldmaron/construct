@@ -1,5 +1,5 @@
 <!--
-skills/compliance/regulatory-review.md — Regulatory Review — Pre-ship compliance review checklist and process.
+skills/compliance/regulatory-review.md (Regulatory Review) Pre-ship compliance review checklist and process.
 
 Use this skill when conducting a compliance review before shipping features that handle user data, financial transactions, AI decisions, or regulated content.
 -->

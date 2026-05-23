@@ -37,10 +37,10 @@ are tagged `vMAJOR.MINOR.PATCH` and published to npm under
 
 ## Pre-release versions
 
-- `vX.Y.Z-rc.N` — release candidate. Published to npm under the `next`
+- `vX.Y.Z-rc.N`: release candidate. Published to npm under the `next`
   dist-tag. Not promoted to `latest` until the corresponding `vX.Y.Z`
   release ships.
-- `vX.Y.Z-alpha.N` / `vX.Y.Z-beta.N` — early previews. Not auto-published.
+- `vX.Y.Z-alpha.N` / `vX.Y.Z-beta.N`: early previews. Not auto-published.
 
 ## Deprecation discipline
 
@@ -56,20 +56,20 @@ warning at least one minor version before the removal:
 Deprecation warnings are emitted once per process to stderr in the format:
 
 ```
-[construct] deprecated: <name> will be removed in vX.0.0 — use <replacement>
+[construct] deprecated: <name> will be removed in vX.0.0. Use <replacement>
 ```
 
 ## CHANGELOG discipline
 
-Every release has a corresponding `## [vX.Y.Z] — YYYY-MM-DD` heading in
+Every release has a corresponding `## [vX.Y.Z] - YYYY-MM-DD` heading in
 `CHANGELOG.md` with sub-headings:
 
-- `### Added` — new surface area
-- `### Changed` — non-breaking behaviour changes
-- `### Removed` — removed surface area
-- `### BREAKING CHANGES` — required for any MAJOR bump; the release
+- `### Added`: new surface area
+- `### Changed`: non-breaking behaviour changes
+- `### Removed`: removed surface area
+- `### BREAKING CHANGES`: required for any MAJOR bump; the release
   workflow refuses to publish a major bump without one.
-- `### Deprecated` — newly-warned surface that will be removed later
+- `### Deprecated`: newly-warned surface that will be removed later
 
 The release workflow extracts the latest section to populate the GitHub
 Release notes.
@@ -79,10 +79,10 @@ Release notes.
 The `release:check` npm script runs before any tag is allowed to publish.
 It runs:
 
-1. `construct doctor` — installation + parity checks pass.
-2. `npm test` — full test suite, including the retrieval-eval regression.
-3. `construct docs:update --check` — auto-generated doc regions are current.
-4. `construct dashboard:sync --check` — dashboard bundle is rebuilt.
-5. `construct lint:comments` — comment-policy compliance.
+1. `construct doctor`: installation + parity checks pass.
+2. `npm test`: full test suite, including the retrieval-eval regression.
+3. `construct docs:update --check`: auto-generated doc regions are current.
+4. `construct dashboard:sync --check`: dashboard bundle is rebuilt.
+5. `construct lint:comments`: comment-policy compliance.
 
 A failure in any step blocks the publish.

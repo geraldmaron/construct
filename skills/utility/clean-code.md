@@ -1,5 +1,5 @@
 <!--
-skills/utility/clean-code.md — AI Slop Removal — Patterns and heuristics for identifying and removing AI-generated code smells. U
+skills/utility/clean-code.md (AI Slop Removal) Patterns and heuristics for identifying and removing AI-generated code smells. U
 
 Patterns and heuristics for identifying and removing AI-generated code smells. Use when cleaning up output from AI coding tools. ## Decision Tree
 -->
@@ -160,6 +160,6 @@ async function getUserById(id: string): Promise<User> { ... }
 ## Rules
 
 - Remove smell, nothing else. Do not refactor, reorganize, or add new abstractions.
-- Keep diffs minimal — one smell per change where possible.
+- Keep diffs minimal: one smell per change where possible.
 - Never change behavior. If a removal would change behavior, flag it instead.
 - Show before/after for every change.

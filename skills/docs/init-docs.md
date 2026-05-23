@@ -1,20 +1,20 @@
 <!--
-skills/docs/init-docs.md — Skill: init-docs — Initialize Project Documentation Structure — `init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`
+skills/docs/init-docs.md (Skill: init-docs) Initialize Project Documentation Structure: `init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`
 
 ## Trigger keywords `init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`
 -->
-# Skill: init-docs — Initialize Project Documentation Structure
+# Skill: init-docs: Initialize Project Documentation Structure
 
 ## Trigger keywords
 `init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`
 
 ## What this skill does
 
-When invoked, gather the user's intent and create a tailored documentation directory structure. The structure serves as both human reference and **required operational project state** — all LLMs working in this project, including Construct, should read these docs to understand purpose, decisions, constraints, and active reality before acting.
+When invoked, gather the user's intent and create a tailored documentation directory structure. The structure serves as both human reference and **required operational project state**: all LLMs working in this project, including Construct, should read these docs to understand purpose, decisions, constraints, and active reality before acting.
 
 ---
 
-## Step 1 — Gather intent (ask these questions)
+## Step 1: Gather intent (ask these questions)
 
 Ask the user **all at once** (single message, not one at a time):
 
@@ -26,9 +26,9 @@ Ask the user **all at once** (single message, not one at a time):
 
 ---
 
-## Step 2 — Generate the structure
+## Step 2: Generate the structure
 
-Based on answers, create the `docs/` directory and appropriate subdirectories. Use this as a base — add or remove sections based on the user's answers.
+Based on answers, create the `docs/` directory and appropriate subdirectories. Use this as a base: add or remove sections based on the user's answers.
 
 ### Core structure (always include)
 
@@ -45,12 +45,12 @@ docs/
 
 ## Interactive UX (TTY)
 
-When run interactively, `construct init-docs` renders a keyboard-driven **full-screen checkbox picker** — all available lanes listed with the default set pre-checked and context-suggested lanes highlighted in the UI. No typing required.
+When run interactively, `construct init-docs` renders a keyboard-driven **full-screen checkbox picker**: all available lanes listed with the default set pre-checked and context-suggested lanes highlighted in the UI. No typing required.
 
-- **↑ / ↓** — move cursor (details shown in a dedicated panel)
-- **Space** — toggle lane on/off
-- **a** — toggle all on/off
-- **Enter** — confirm and scaffold
+- **↑ / ↓**: move cursor (details shown in a dedicated panel)
+- **Space**: toggle lane on/off
+- **a**: toggle all on/off
+- **Enter**: confirm and scaffold
 - Follow-up choices use the same menu pattern instead of free-text answers
 
 If the user selects the `intake` lane, `construct init-docs` should also create `.cx/inbox/`. Both `.cx/inbox/` and `docs/intake/` act as drop zones for ingestable files, while `docs/intake/` also serves as the durable paper trail lane.
@@ -90,7 +90,7 @@ When run non-interactively (`--yes` or piped stdin), the lean default set is use
 
 ---
 
-## Step 3 — Make the core docs explicit project state
+## Step 3: Make the core docs explicit project state
 
 The required core documents are the operational state surface for the repo. All LLMs working here should read and maintain them:
 
@@ -104,9 +104,9 @@ Fill these in based on the user's answers and the actual repo shape. Treat them 
 
 ---
 
-## Step 4 — Create skeleton files
+## Step 4: Create skeleton files
 
-Each created file should have a minimal, useful skeleton — not just a title. Skeletons should include:
+Each created file should have a minimal, useful skeleton: not just a title. Skeletons should include:
 - A one-line description of what goes in this file
 - Section headings relevant to the doc type
 - A note at the top that the file is required project state and all LLMs should keep it current.
@@ -156,7 +156,7 @@ Link to `docs/adr/` or the canonical project decision log used in this repo.
 
 ---
 
-## Step 5 — Tell the repo how upkeep works
+## Step 5: Tell the repo how upkeep works
 
 After creating the files, instruct the user:
 

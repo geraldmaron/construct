@@ -1,5 +1,5 @@
 <!--
-skills/docs/strategy-workflow.md — Read, update, and reason about the product strategy.
+skills/docs/strategy-workflow.md: Read, update, and reason about the product strategy.
 Canonical store: ~/.cx/strategy.md (user-global) or .cx/strategy.md (project-local, committed).
 Template: templates/docs/strategy.md.
 -->
@@ -32,5 +32,5 @@ Given a product signal or PRD, check:
 
 | Scope | Path | Committed? |
 |---|---|---|
-| User-global | `~/.cx/strategy.md` | No — local only |
-| Project-local | `.cx/strategy.md` | Yes — source of truth for this repo |
+| User-global | `~/.cx/strategy.md` | No: local only |
+| Project-local | `.cx/strategy.md` | Yes: source of truth for this repo |

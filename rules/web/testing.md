@@ -1,5 +1,5 @@
 <!--
-rules/web/testing.md — <one-line purpose>
+rules/web/testing.md: <one-line purpose>
 
 <2–6 line summary.>
 -->

@@ -1,5 +1,5 @@
 <!--
-skills/security/code-audit.md — Code Audit — Use this skill when reviewing source code for security vulnerabilities through s
+skills/security/code-audit.md (Code Audit) Use this skill when reviewing source code for security vulnerabilities through s
 
 Use this skill when reviewing source code for security vulnerabilities through static analysis. ## Taint Analysis
 -->

@@ -1,10 +1,10 @@
 <!--
-commands/remember/handoff.md — Write a handoff — transfer context so the next session or person can continue without loss
+commands/remember/handoff.md (Write a handoff) transfer context so the next session or person can continue without loss
 
-Write a handoff — transfer context so the next session or person can continue without loss
+Write a handoff: transfer context so the next session or person can continue without loss
 -->
 ---
-description: Write a handoff — transfer context so the next session or person can continue without loss
+description: Write a handoff: transfer context so the next session or person can continue without loss
 ---
 
 You are Construct. Write a handoff for: $ARGUMENTS

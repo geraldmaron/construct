@@ -3,7 +3,7 @@ title: Knowledge layout
 description: How .cx/, beads, the vector index, and SQL fit together to make context durable across sessions.
 ---
 
-# Knowledge Layout — `.cx/` Directory Structure
+# Knowledge Layout: `.cx/` Directory Structure
 
 > Canonical reference for how Construct organises knowledge inside `.cx/`.
 > Agents and operators must treat this as the authoritative layout spec.
@@ -34,7 +34,7 @@ Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable and
   reference/             ← specs, RFCs (pre-decision), schemas, API references, architecture docs
 ```
 
-**Strategy is a protected subdirectory.** Files under `decisions/strategy/` are NEVER written automatically by the embed daemon or intake pipeline — they require an explicit `writeStrategy()` call or a user-initiated `construct strategy update` invocation. The strategy store exposes `readStrategy(scope)`, `readAllStrategies()`, and `getStrategyDigestSync()`. Agents inject a compact strategy digest (≤ 500 tokens) at prompt-assembly time so declared Bets and Non-bets are visible without a manual `get_skill()` call.
+**Strategy is a protected subdirectory.** Files under `decisions/strategy/` are NEVER written automatically by the embed daemon or intake pipeline: they require an explicit `writeStrategy()` call or a user-initiated `construct strategy update` invocation. The strategy store exposes `readStrategy(scope)`, `readAllStrategies()`, and `getStrategyDigestSync()`. Agents inject a compact strategy digest (≤ 500 tokens) at prompt-assembly time so declared Bets and Non-bets are visible without a manual `get_skill()` call.
 
 ### Routing rules
 
@@ -49,7 +49,7 @@ Files dropped in `.cx/inbox/` are automatically routed by filename convention:
 | `*postmortem*`, `*incident*`, `*rca*` | `internal/` |
 | (everything else) | `internal/` |
 
-Routing is **additive** — files already in the right subdirectory are not moved.
+Routing is **additive**: files already in the right subdirectory are not moved.
 
 ### Neurodiversity-friendly documentation guidelines
 
@@ -78,11 +78,11 @@ Drop any supported file into `.cx/inbox/` and the embed daemon will:
 3. Extract text (PDF, DOCX, XLSX, PPTX, Markdown, plain text, code…)
 4. Write a normalised Markdown artifact to `.cx/knowledge/<subdir>/<filename>.md`
 5. Record a typed observation in `.cx/observations/` with tag `knowledge:<subdir>`
-6. Run `classifyRdIntake` and write an R&D triage packet to `.cx/intake/pending/<id>.json` — intake type, R&D stage, primary owner persona, recommended chain, recommended action, risk, confidence, rationale. Drive the queue with `construct intake list / show / done / skip / reopen`. See [intake and triage](/concepts/intake-and-triage).
+6. Run `classifyRdIntake` and write an R&D triage packet to `.cx/intake/pending/<id>.json`: intake type, R&D stage, primary owner persona, recommended chain, recommended action, risk, confidence, rationale. Drive the queue with `construct intake list / show / done / skip / reopen`. See [intake and triage](/concepts/intake-and-triage).
 
 Supported formats:
 - **Plain text / Code**: `.md`, `.txt`, `.rst`, `.adoc`, `.json`, `.yaml`, `.yml`, `.toml`, `.js`, `.mjs`, `.ts`, `.tsx`, `.jsx`, `.py`, `.go`, `.rs`, `.sh`, `.bash`, `.html`, `.css`, `.csv`, `.tsv`, `.xml`, `.env`, `.conf`, `.ini`, `.sql`, `.log`
-- **Transcripts**: `.vtt` (WebVTT), `.srt` (SubRip), `.lrc` (lyrics), `.transcript` — Zoom, Teams, meeting recordings
+- **Transcripts**: `.vtt` (WebVTT), `.srt` (SubRip), `.lrc` (lyrics), `.transcript`: Zoom, Teams, meeting recordings
 - **Office documents**: `.docx`, `.xlsx`, `.pptx`, `.odt`, `.ods`
 - **Rich text**: `.doc`, `.rtf`
 - **macOS-only** (via `mdls`): `.xls`, `.ppt`, `.pages`, `.numbers`, `.key`
@@ -90,7 +90,7 @@ Supported formats:
 
 Full list in `lib/document-extract.mjs`.
 
-**50 MB hard cap** — files above this are skipped silently.
+**50 MB hard cap**: files above this are skipped silently.
 
 ### Extra inbox dirs
 
@@ -144,6 +144,8 @@ Use these tags in `searchObservations` calls or the dashboard to filter by type.
 ```
 .cx/
   observations/          ← machine-written observations (addObservation)
+    entities.json        ← entity store: name, type, summary, relatedEntities[] (graph edges)
+    entity-vectors.json  ← entity embeddings for hybrid search
   sessions/              ← distilled session records
   runtime/
     inbox-state.json     ← mtime-keyed state so files aren't re-ingested
@@ -155,6 +157,22 @@ Use these tags in `searchObservations` calls or the dashboard to filter by type.
   context.json           ← machine-readable context (kept in sync with context.md)
   inbox/                 ← drop zone (auto-created, files moved to knowledge/ after processing)
 ```
+
+### Entity graph (GraphRAG)
+
+`entities.json` is the JSONL-backed graph. Each entity carries a
+`relatedEntities[]` array which forms the undirected edge set.
+`lib/knowledge/graph.mjs` reads this file and produces communities via label
+propagation. Two queries are exposed:
+
+- `askGlobal({ query, rootDir })` returns the top communities ranked by BM25
+  against their member summaries. Useful for "how does X relate across the
+  project?" questions that pure semantic retrieval misses.
+- MCP wrapper `knowledge_graph_ask` exposes the same primitive to subagents.
+
+The Postgres projection lives in `construct_entities.community_id` and
+`construct_entity_communities` (see `db/schema/006_graph.sql`). The JSONL
+file remains the source of truth in solo mode.
 
 ---
 

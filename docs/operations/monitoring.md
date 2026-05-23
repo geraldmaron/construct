@@ -1,5 +1,5 @@
 <!--
-docs/operations/monitoring.md — Monitoring guide for Construct.
+docs/operations/monitoring.md: Monitoring guide for Construct.
 
 Covers structured JSON logs (lib/logger.mjs), CloudWatch metrics on AWS,
 construct doctor checks, and circuit breaker states.
@@ -16,7 +16,7 @@ Construct's non-interactive services (HTTP server, embed daemon) emit one JSON o
 | `ts` | ISO string | Timestamp |
 | `level` | string | `debug`, `info`, `warn`, `error` |
 | `event` | string | Short stable identifier (e.g. `http.request`, `auth.fail`) |
-| `req_id` | string | Correlation ID — ties a request's log lines together |
+| `req_id` | string | Correlation ID: ties a request's log lines together |
 | `route` | string | Request path (HTTP server only) |
 | `actor` | string | Token label or user identity when authenticated |
 | `latency_ms` | number | Request duration (HTTP server only) |
@@ -107,9 +107,9 @@ Every provider method is wrapped with a circuit breaker that opens after 5 conse
 
 | State | Behavior |
 |---|---|
-| Closed | Normal — requests flow through |
-| Open | Failing fast — requests reject immediately with a circuit-open error |
-| Half-open | After cooldown — next request is a probe; success closes it, failure reopens |
+| Closed | Normal: requests flow through |
+| Open | Failing fast: requests reject immediately with a circuit-open error |
+| Half-open | After cooldown: next request is a probe; success closes it, failure reopens |
 
 Check provider health (which is not circuit-breaker-wrapped) to observe the current state:
 

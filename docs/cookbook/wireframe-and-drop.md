@@ -4,7 +4,7 @@ description: Generate Mermaid diagrams or sketch-style HTML from a description; 
 ---
 
 <!--
-docs/how-to/how-to-wireframe-drop.md — How to use construct wireframe and construct drop.
+docs/how-to/how-to-wireframe-drop.md: How to use construct wireframe and construct drop.
 
 Covers generating low-fi wireframes from descriptions and ingesting recently
 dropped files from Downloads/Desktop/iCloud Drive.
@@ -45,7 +45,7 @@ construct wireframe "new user activation" --type user-journey
 | `layout` | Page/component layout sketches (HTML output) |
 | `user-journey` | User-facing step sequences |
 
-HTML output is self-contained — no server needed. Share the file directly or commit it under
+HTML output is self-contained: no server needed. Share the file directly or commit it under
 `docs/wireframes/`.
 
 ---

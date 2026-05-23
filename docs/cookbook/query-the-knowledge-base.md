@@ -4,7 +4,7 @@ description: Hybrid file + SQL + semantic retrieval over your project state.
 ---
 
 <!--
-docs/how-to/how-to-knowledge.md — How to query and manage the knowledge base.
+docs/how-to/how-to-knowledge.md: How to query and manage the knowledge base.
 
 Covers construct ask, construct search, construct knowledge, construct ingest,
 and construct storage.
@@ -47,7 +47,7 @@ docs, and snapshots with snippet previews.
 construct knowledge trends
 ```
 
-Shows recurring patterns across stored observations — which roles are most active, which
+Shows recurring patterns across stored observations: which roles are most active, which
 categories recur most, and which observations have been retrieved most often.
 
 ## Rebuild the knowledge index

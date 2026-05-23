@@ -1,5 +1,5 @@
 <!--
-skills/quality-gates/review-work.md — Parallel Adversarial Review — Use this methodology when a change needs rigorous pre-merge validation. Five ind
+skills/quality-gates/review-work.md (Parallel Adversarial Review) Use this methodology when a change needs rigorous pre-merge validation. Five ind
 
 Use this methodology when a change needs rigorous pre-merge validation. Five independent review roles run concurrently. All must pass. ## When to use
 -->
@@ -46,13 +46,13 @@ Use this methodology when a change needs rigorous pre-merge validation. Five ind
 
 ### 5. Quality (cx-accessibility for UI; cx-trace-reviewer for non-UI)
 
-**UI changes — cx-accessibility:**
+**UI changes: cx-accessibility:**
 - Keyboard navigation
 - Screen reader compatibility
 - Color contrast and focus visibility
 - Reduced motion support
 
-**Non-UI changes — cx-trace-reviewer:**
+**Non-UI changes: cx-trace-reviewer:**
 - N+1 queries or unbounded loops
 - Memory or connection leaks
 - Missing caching for expensive operations

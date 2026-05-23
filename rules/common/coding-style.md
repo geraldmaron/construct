@@ -1,5 +1,5 @@
 <!--
-rules/common/coding-style.md — language-agnostic coding standards.
+rules/common/coding-style.md: language-agnostic coding standards.
 
 Covers immutability, core principles (KISS/DRY/YAGNI), file organization,
 error handling, input validation, naming conventions, and quality checklist.

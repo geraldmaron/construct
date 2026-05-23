@@ -1,5 +1,5 @@
 <!--
-skills/ai/prompt-optimizer.md — Closed-loop prompt auto-optimization guide.
+skills/ai/prompt-optimizer.md: Closed-loop prompt auto-optimization guide.
 
 Uses telemetry traces and quality scores as the feedback signal, Claude as the optimizer,
 and the agent registry + construct sync as the deployment layer.
@@ -24,15 +24,15 @@ construct optimize --list
 construct optimize cx-debugger --threshold=0.65 --days=14 --min-traces=15
 ```
 
-The optimizer requires Python 3.12+ (`pip3` must be available). It will auto-install `dspy-ai` and `requests` on first run. Set `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in `.env`. DSPy uses the same LLM key Construct uses — no separate setup.
+The optimizer requires Python 3.12+ (`pip3` must be available). It will auto-install `dspy-ai` and `requests` on first run. Set `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in `.env`. DSPy uses the same LLM key Construct uses: no separate setup.
 
 ## When to run
 
 - Triggered by `/work:optimize-prompts` (manual) or the scheduled task `prompt-optimization-weekly`
 - Automatically suggested when `cx-trace-reviewer` finds an agent with median quality score below 0.65 over the past 7 days
-- Never run optimization on prompts with fewer than 20 scored traces — insufficient signal
+- Never run optimization on prompts with fewer than 20 scored traces: insufficient signal
 
-## Step 1 — Gather signal
+## Step 1: Gather signal
 
 Retrieve the current production prompt for the target agent from `agents/registry.json` (or the corresponding `promptFile` if using extracted prompts).
 
@@ -50,7 +50,7 @@ GET {CONSTRUCT_TELEMETRY_URL}/api/public/scores?traceId={id}&name=quality
 
 Filter to scores where `value < 0.7`. For each low-scoring trace, extract: the prompt used, the user input, the model output, the quality score, and any human comments.
 
-## Step 2 — Diagnose failure patterns
+## Step 2: Diagnose failure patterns
 
 Analyze the low-scoring traces as a batch. Identify recurring failure modes. Common patterns:
 
@@ -65,16 +65,16 @@ Analyze the low-scoring traces as a batch. Identify recurring failure modes. Com
 
 Write a failure summary: top 3 patterns with supporting trace count and representative examples.
 
-## Step 3 — Generate improved prompt
+## Step 3: Generate improved prompt
 
 Write an improved prompt that directly addresses the diagnosed failures. Rules:
 
-1. **Keep what works** — compare high-scoring traces (>0.8) to low-scoring ones. Only change what's associated with failures.
-2. **Surgical edits, not rewrites** — changing everything risks breaking current strengths. Identify the specific clauses that correlate with failures.
-3. **Be explicit, not vague** — if the failure is "too verbose", add a concrete rule ("respond in under 150 words for questions that fit on one line") not a general note ("be concise").
-4. **Add a self-check instruction** — append a brief checklist the agent runs before responding, derived from the top failure patterns.
+1. **Keep what works**: compare high-scoring traces (>0.8) to low-scoring ones. Only change what's associated with failures.
+2. **Surgical edits, not rewrites**: changing everything risks breaking current strengths. Identify the specific clauses that correlate with failures.
+3. **Be explicit, not vague**: if the failure is "too verbose", add a concrete rule ("respond in under 150 words for questions that fit on one line") not a general note ("be concise").
+4. **Add a self-check instruction**: append a brief checklist the agent runs before responding, derived from the top failure patterns.
 
-## Step 4 — Push to staging
+## Step 4: Push to staging
 
 Update the agent's prompt in `agents/registry.json` (or the corresponding `promptFile`) with a staging marker comment. Tag the version by writing to `.cx/decisions/prompt-staging-{agent}-{date}.md`.
 
@@ -82,7 +82,7 @@ Log the candidate prompt as a span attribute on a test run batch using `cx_trace
 
 Do not overwrite the production prompt in the registry until promotion is confirmed.
 
-## Step 5 — Monitor staging
+## Step 5: Monitor staging
 
 After at least 20 scored traces on the staging version:
 - Compare median quality score: staging vs production
@@ -91,7 +91,7 @@ After at least 20 scored traces on the staging version:
 
 To promote: update the agent registry with the accepted prompt and run `construct sync`.
 
-## Step 6 — Document the optimization
+## Step 6: Document the optimization
 
 Write to `.cx/decisions/` with:
 - Which agent was optimized

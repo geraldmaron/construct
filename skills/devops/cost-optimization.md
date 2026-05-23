@@ -1,5 +1,5 @@
 <!--
-skills/devops/cost-optimization.md — Cloud Cost Optimization — Use this skill when reducing cloud spend, right-sizing resources, or implementin
+skills/devops/cost-optimization.md (Cloud Cost Optimization) Use this skill when reducing cloud spend, right-sizing resources, or implementin
 
 Use this skill when reducing cloud spend, right-sizing resources, or implementing FinOps practices. ## Cost Visibility
 -->

@@ -1,5 +1,5 @@
 <!--
-rules/typescript/hooks.md — <one-line purpose>
+rules/typescript/hooks.md: <one-line purpose>
 
 <2–6 line summary.>
 -->

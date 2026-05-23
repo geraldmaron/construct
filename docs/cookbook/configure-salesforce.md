@@ -67,7 +67,7 @@ Returns 5 accounts.
 | Apex execution | ✗ not supported |
 | Reports / Dashboards API | ✗ not supported |
 
-Write actions follow the same fence model as every other provider — opt-in per specialist.
+Write actions follow the same fence model as every other provider: opt-in per specialist.
 
 ## Common gotchas
 
@@ -78,5 +78,5 @@ Write actions follow the same fence model as every other provider — opt-in per
 
 ## Reference
 
-- [`docs/providers/salesforce.md`](https://github.com/geraldmaron/construct/blob/main/docs/providers/salesforce.md) — full provider reference, all queryable objects.
-- [Cookbook → Manage providers](/cookbook/manage-providers) — the broader provider model.
+- [`docs/providers/salesforce.md`](https://github.com/geraldmaron/construct/blob/main/docs/providers/salesforce.md): full provider reference, all queryable objects.
+- [Cookbook → Manage providers](/cookbook/manage-providers): the broader provider model.

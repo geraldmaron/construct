@@ -1,5 +1,5 @@
 <!--
-rules/typescript/security.md — <one-line purpose>
+rules/typescript/security.md: <one-line purpose>
 
 <2–6 line summary.>
 -->

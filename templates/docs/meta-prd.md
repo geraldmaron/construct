@@ -27,8 +27,8 @@ the org decides, documents, or evaluates work once this ships.
 <!--
 The current state of the operating system: which workflow, template, eval
 loop, or governance process is in play today, and what's actually happening
-when teams or agents use it. Cite real examples — recent PRDs, prior decisions,
-trace evidence, support tickets — not hypotheticals.
+when teams or agents use it. Cite real examples: recent PRDs, prior decisions,
+trace evidence, support tickets: not hypotheticals.
 -->
 
 ## Problem
@@ -40,7 +40,7 @@ Examples of the right shape:
 - "PRDs ship without rejected alternatives, so reviewers re-litigate decisions
   three weeks in. Happens on ~40% of PRDs in the last quarter."
 - "Postmortems are written by the on-call who shipped the bug, so the action
-  items reflect their proposals — not independent review."
+  items reflect their proposals: not independent review."
 -->
 
 ## Goals
@@ -63,7 +63,7 @@ the doc enters review."
 | | Description |
 |---|---|
 | **In scope** | <which templates, workflows, agents, gates, or evals are touched> |
-| **Out of scope** | <related operating systems explicitly deferred — name the reason> |
+| **Out of scope** | <related operating systems explicitly deferred: name the reason> |
 | **Adjacent (deferred)** | <natural follow-up changes not in this Meta PRD> |
 
 ## Principles
@@ -74,7 +74,7 @@ principle should be testable enough to guide tradeoffs when phases conflict.
 
 ## Inputs and evidence
 <!--
-What evidence the system consumes — customer notes, interviews, traces, Jira
+What evidence the system consumes: customer notes, interviews, traces, Jira
 issues, PRDs, research, analytics, support tickets, prior decisions. State
 minimum evidence thresholds where useful (e.g. "two independent customer
 interviews before a PRD enters review").
@@ -98,53 +98,53 @@ constraints, anti-patterns, rubric dimensions, pass/fail checks.
 Status values: not started | in progress | shipped | deferred.
 -->
 
-### Phase 1 — <name>
+### Phase 1: <name>
 
 - **Goal**: <what this phase delivers>
 - **Status**: not started
 
 **Workflow**
 
-- **MR-1.1** — <imperative statement of how the workflow must behave>
+- **MR-1.1**: <imperative statement of how the workflow must behave>
   - *Acceptance*: <how a reviewer or trace verifies this without asking the author>
-- **MR-1.2** — <...>
+- **MR-1.2**: <...>
   - *Acceptance*: <...>
 
 **Document + evaluation**
 
-- **DR-1.1** — <required section, evidence rule, citation rule, formatting constraint, or anti-pattern>
+- **DR-1.1**: <required section, evidence rule, citation rule, formatting constraint, or anti-pattern>
   - *Acceptance*: <rubric dimension, pass/fail check, or trace signal that proves it>
 
-### Phase 2 — <name>
+### Phase 2: <name>
 
 - **Goal**: <what this phase delivers>
 - **Status**: not started
 
 **Workflow**
 
-- **MR-2.1** — <...>
+- **MR-2.1**: <...>
   - *Acceptance*: <...>
-- **MR-2.2** — <...>
+- **MR-2.2**: <...>
   - *Acceptance*: <...>
 
 **Document + evaluation**
 
-- **DR-2.1** — <...>
+- **DR-2.1**: <...>
   - *Acceptance*: <...>
 
-### Phase 3 — <name>
+### Phase 3: <name>
 
 - **Goal**: <what this phase delivers>
 - **Status**: not started
 
 **Workflow**
 
-- **MR-3.1** — <...>
+- **MR-3.1**: <...>
   - *Acceptance*: <...>
 
 **Document + evaluation**
 
-- **DR-3.1** — <...>
+- **DR-3.1**: <...>
   - *Acceptance*: <...>
 
 ## Human approval gates

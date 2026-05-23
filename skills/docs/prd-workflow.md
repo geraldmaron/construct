@@ -1,9 +1,9 @@
 <!--
-skills/docs/prd-workflow.md — Workflow for producing a PRD and connecting it to workflow task packets.
+skills/docs/prd-workflow.md: Workflow for producing a PRD and connecting it to workflow task packets.
 
 Guides cx-product-manager through requirements gathering, user research, and writing a PRD
 to docs/prd/. Once approved, the PRD feeds /plan feature to create bead packets in
-.cx/workflow.json — closing the loop from discovery to execution.
+.cx/workflow.json: closing the loop from discovery to execution.
 -->
 # PRD Workflow
 
@@ -17,7 +17,7 @@ Choose the document type before drafting:
 | `prd-platform` | Internal platform, APIs, SDKs, developer tooling, operational infrastructure, shared services |
 | `prd-business` | Strategic bets, market positioning, business model changes, make-vs-buy, pricing strategy |
 | `meta-prd` | Requirements about the product operating system itself: agent workflows, evidence pipelines, templates, evaluation loops, governance |
-| `rfc` | Technical or architectural proposals that need structured review before implementation — no contract changes |
+| `rfc` | Technical or architectural proposals that need structured review before implementation: no contract changes |
 | `rfc-platform` | Proposals that change an external contract: API, SDK, schema, event payload, permission model, protocol |
 
 Style constraint: do not produce a wall of bullets. Use paragraphs for reasoning and narrative, tables for comparison, and bullets only where scanability helps. Keep em dashes rare.

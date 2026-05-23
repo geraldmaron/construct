@@ -1,5 +1,5 @@
 <!--
-skills/docs/document-ingest-workflow.md — Convert source documents into retrieval-ready markdown artifacts.
+skills/docs/document-ingest-workflow.md: Convert source documents into retrieval-ready markdown artifacts.
 -->
 # Document Ingest Workflow
 

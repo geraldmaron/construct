@@ -1,5 +1,5 @@
 <!--
-skills/ai/orchestration-workflow.md — Construct Orchestration Workflow — Use this skill when the request involves agent orchestration, phase transitions,
+skills/ai/orchestration-workflow.md (Construct Orchestration Workflow) Use this skill when the request involves agent orchestration, phase transitions,
 
 Use this skill when the request involves agent orchestration, phase transitions, task keys, handoff quality, workflow state, or project alignment. ## Core Model
 -->

@@ -1,6 +1,6 @@
 ---
 title: Configure Jira and Confluence
-description: Connect Construct to Atlassian Cloud — tickets, sprints, runbooks, design pages. One credential set covers both.
+description: Connect Construct to Atlassian Cloud: tickets, sprints, runbooks, design pages. One credential set covers both.
 ---
 
 The Atlassian providers (Jira + Confluence) share one credential set and one API token. Configure once; both providers come online.
@@ -48,7 +48,7 @@ Returns matching pages.
 - Get ticket context (`@construct what's in MYPROJ-123?`).
 - Search by JQL (`@construct list bugs assigned to me in sprint 14`).
 - Inspect linked PRs and commits (Jira's DevOps panel data).
-- Trigger workflow transitions (e.g., move a ticket to "In Review") — gated by the provider's write fence.
+- Trigger workflow transitions (e.g., move a ticket to "In Review"): gated by the provider's write fence.
 
 **For Confluence:**
 
@@ -66,7 +66,7 @@ Returns matching pages.
 | Watch (webhooks) | ✓ | ✓ |
 | Attachments | ✓ | ✓ |
 
-Write actions only fire when the originating specialist's fence allows them. By default, fences are read-only — opt into write per-specialist.
+Write actions only fire when the originating specialist's fence allows them. By default, fences are read-only: opt into write per-specialist.
 
 ## Webhooks (optional)
 
@@ -87,13 +87,13 @@ Typical event-to-role mappings:
 
 ## Common gotchas
 
-- **403 on every request.** The user's Atlassian account doesn't have access to the project/space. Atlassian permissions are per-project — not all projects inherit from the org.
+- **403 on every request.** The user's Atlassian account doesn't have access to the project/space. Atlassian permissions are per-project: not all projects inherit from the org.
 - **Rate limiting.** Atlassian Cloud caps at ~10 req/sec per user. Construct's circuit breaker backs off; if you see "rate-limited" messages, slow your queries.
 - **`ATLASSIAN_API_TOKEN` vs `ATLASSIAN_OAUTH_TOKEN`.** Construct uses API tokens (the basic-auth-with-email model). OAuth tokens aren't currently supported.
-- **Self-hosted Jira/Confluence.** Set `ATLASSIAN_SITE` to the on-prem host. Auth mechanism may differ — check `docs/providers/atlassian-jira.md`.
+- **Self-hosted Jira/Confluence.** Set `ATLASSIAN_SITE` to the on-prem host. Auth mechanism may differ: check `docs/providers/atlassian-jira.md`.
 
 ## Reference
 
-- [`docs/providers/atlassian-jira.md`](https://github.com/geraldmaron/construct/blob/main/docs/providers/atlassian-jira.md) — Jira queries and capabilities.
-- [`docs/providers/atlassian-confluence.md`](https://github.com/geraldmaron/construct/blob/main/docs/providers/atlassian-confluence.md) — Confluence queries and capabilities.
-- [Cookbook → Manage providers](/cookbook/manage-providers) — broader provider model.
+- [`docs/providers/atlassian-jira.md`](https://github.com/geraldmaron/construct/blob/main/docs/providers/atlassian-jira.md): Jira queries and capabilities.
+- [`docs/providers/atlassian-confluence.md`](https://github.com/geraldmaron/construct/blob/main/docs/providers/atlassian-confluence.md): Confluence queries and capabilities.
+- [Cookbook → Manage providers](/cookbook/manage-providers): broader provider model.

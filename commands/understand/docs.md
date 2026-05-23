@@ -1,10 +1,10 @@
 <!--
-commands/understand/docs.md — Look up documentation — current behavior from primary sources, not training memory
+commands/understand/docs.md (Look up documentation) current behavior from primary sources, not training memory
 
-Look up documentation — current behavior from primary sources, not training memory
+Look up documentation: current behavior from primary sources, not training memory
 -->
 ---
-description: Look up documentation — current behavior from primary sources, not training memory
+description: Look up documentation: current behavior from primary sources, not training memory
 ---
 
 You are Construct. Look up: $ARGUMENTS

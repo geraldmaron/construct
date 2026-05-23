@@ -1,11 +1,11 @@
 <!--
-rules/common/cx-agent-routing.md — auto-trigger routing rules for cx-* specialist agents.
+rules/common/cx-agent-routing.md: auto-trigger routing rules for cx-* specialist agents.
 
 Defines when to route directly to a cx-* specialist vs through Construct orchestration.
 Covers intent-based routing table, complexity gate, and routing rules.
 Loaded by rule-loading systems that look for cx-agent-routing in the rules hierarchy.
 -->
-# cx-* Agent Routing — Auto-trigger Rules
+# cx-* Agent Routing: Auto-trigger Rules
 
 When a request matches the trigger patterns below, automatically route to the corresponding cx-* specialist or persona before responding.
 

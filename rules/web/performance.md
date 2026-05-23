@@ -1,5 +1,5 @@
 <!--
-rules/web/performance.md — <one-line purpose>
+rules/web/performance.md: <one-line purpose>
 
 <2–6 line summary.>
 -->

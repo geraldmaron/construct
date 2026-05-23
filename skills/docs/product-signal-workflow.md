@@ -1,5 +1,5 @@
 <!--
-skills/docs/product-signal-workflow.md — Synthesize product signals from evidence into the right artifact.
+skills/docs/product-signal-workflow.md: Synthesize product signals from evidence into the right artifact.
 Confidence rubric, contradiction resolution, artifact decision tree, and storage are all defined here.
 Follow rules/common/research.md for source-handling policy.
 -->
@@ -18,10 +18,10 @@ Use when: the user asks what customers are asking for, what themes are emerging,
 ## Contradiction Resolution
 
 When two signals conflict:
-1. Name both signals explicitly — do not average them away.
+1. Name both signals explicitly: do not average them away.
 2. Weight by customer tier (enterprise > growth > SMB) and recency (weight decays after 90 days).
 3. Record the contradiction in the signal brief as an open question.
-4. Never let a minority signal disappear — it may be the leading indicator.
+4. Never let a minority signal disappear: it may be the leading indicator.
 
 ## Artifact Decision Tree
 
@@ -43,11 +43,11 @@ After grouping evidence, check `.cx/knowledge/decisions/strategy/` for any decla
 
 ## Steps
 
-1. **Gather** — collect evidence briefs, customer profiles, field notes, tickets, and research from `.cx/knowledge/` and linked sources.
-2. **Group** — cluster by theme, ask, pain point, affected persona, product area, and counter-signal.
-3. **Assign confidence** — apply the rubric above; separate observation from inference.
-4. **Check strategy** — check `.cx/knowledge/decisions/strategy/`; flag alignment or conflict with Bets and Non-bets if documents exist.
-5. **Select artifact** — apply the decision tree; write the artifact; store to the path below.
+1. **Gather**: collect evidence briefs, customer profiles, field notes, tickets, and research from `.cx/knowledge/` and linked sources.
+2. **Group**: cluster by theme, ask, pain point, affected persona, product area, and counter-signal.
+3. **Assign confidence**: apply the rubric above; separate observation from inference.
+4. **Check strategy**: check `.cx/knowledge/decisions/strategy/`; flag alignment or conflict with Bets and Non-bets if documents exist.
+5. **Select artifact**: apply the decision tree; write the artifact; store to the path below.
 
 ## Storage
 
@@ -58,4 +58,4 @@ After grouping evidence, check `.cx/knowledge/decisions/strategy/` for any decla
 | PRD | `docs/prd/` |
 | PRFAQ | `docs/prfaq/` |
 | Meta PRD | `docs/meta-prd/` |
-| Backlog proposal | pending approval gate — do not file until explicit user approval |
+| Backlog proposal | pending approval gate: do not file until explicit user approval |

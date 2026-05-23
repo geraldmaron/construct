@@ -1,5 +1,5 @@
 <!--
-skills/frameworks/spring-boot.md — Spring Boot — ```
+skills/frameworks/spring-boot.md (Spring Boot) ```
 
 ## Project Structure ```
 -->
@@ -80,9 +80,9 @@ interface ItemRepository : JpaRepository<Item, UUID> {
 }
 ```
 
-- Default `FetchType.LAZY` for associations — never `EAGER`
+- Default `FetchType.LAZY` for associations: never `EAGER`
 - Use `JOIN FETCH` in queries when you need the association
-- Enable `spring.jpa.open-in-view=false` — prevents lazy-loading in the web layer
+- Enable `spring.jpa.open-in-view=false`: prevents lazy-loading in the web layer
 - Use Flyway or Liquibase for schema migrations; never `ddl-auto=update` in production
 
 ## Transactions
@@ -101,8 +101,8 @@ class ItemService(private val repo: ItemRepository) {
 ```
 
 - `@Transactional` on service layer, not repository or controller
-- `readOnly = true` as class-level default; override on writes — signals no dirty-check needed
-- Do not call `@Transactional` methods via `this` — Spring proxy won't intercept it
+- `readOnly = true` as class-level default; override on writes: signals no dirty-check needed
+- Do not call `@Transactional` methods via `this`: Spring proxy won't intercept it
 
 ## Security (Spring Security 6)
 
@@ -145,12 +145,12 @@ class ItemControllerIT(@Autowired val restTemplate: TestRestTemplate) {
 
 - `@WebMvcTest` for controller-only tests (fast, no DB)
 - `@DataJpaTest` for repository tests against a real embedded or Testcontainers DB
-- `@SpringBootTest` for integration tests — use Testcontainers for realistic DB
+- `@SpringBootTest` for integration tests: use Testcontainers for realistic DB
 - `MockMvc` + `@AutoConfigureMockMvc` for HTTP-layer testing without a real port
 
 ## Performance
 
-- Connection pool: `HikariCP` (default) — tune `maximumPoolSize` based on load testing
+- Connection pool: `HikariCP` (default): tune `maximumPoolSize` based on load testing
 - N+1 queries: use `JOIN FETCH` or `@EntityGraph`; verify with `spring.jpa.show-sql=true` in dev
 - Caching: `@Cacheable` + Spring Cache with Redis (`spring-boot-starter-data-redis`)
 - Async: `@EnableAsync` + `@Async` on service methods for fire-and-forget; use `CompletableFuture<T>` return type
@@ -158,8 +158,8 @@ class ItemControllerIT(@Autowired val restTemplate: TestRestTemplate) {
 
 ## Common Pitfalls
 
-- `LazyInitializationException` after transaction closes — resolve with `JOIN FETCH` or DTO projection
-- `@Transactional` on private methods — Spring AOP proxy can't intercept; move to public
-- Bean cycle injection — restructure or use `@Lazy`
-- Returning JPA entities directly from controllers — exposes internal model; always map to DTOs
-- `findAll()` without pagination on large tables — always use `Pageable`
+- `LazyInitializationException` after transaction closes: resolve with `JOIN FETCH` or DTO projection
+- `@Transactional` on private methods: Spring AOP proxy can't intercept; move to public
+- Bean cycle injection: restructure or use `@Lazy`
+- Returning JPA entities directly from controllers: exposes internal model; always map to DTOs
+- `findAll()` without pagination on large tables: always use `Pageable`

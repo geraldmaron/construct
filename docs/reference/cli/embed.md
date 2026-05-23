@@ -8,7 +8,7 @@ description: Embed commands for Construct.
 | Command | What it does |
 |---|---|
 | `construct artifact` | Generate or list structured artifacts (PRD, ADR, RFC) |
-| `construct embed` | Manage embed mode — continuous monitoring and snapshot production |
+| `construct embed` | Manage embed mode: continuous monitoring and snapshot production |
 | `construct providers` | List registered providers and test their capability contracts |
 
 ## construct artifact
@@ -38,7 +38,7 @@ construct artifact <generate|list> [--type <prd|adr|rfc>] [--title <title>]
 
 ## construct embed
 
-Manage embed mode — continuous monitoring and snapshot production
+Manage embed mode: continuous monitoring and snapshot production
 
 **Usage**
 

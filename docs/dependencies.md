@@ -2,22 +2,22 @@
 
 ## Zones
 
-### Core zone — `lib/`, `bin/`
+### Core zone: `lib/`, `bin/`
 
 **Allowed:** Node.js built-ins (`node:fs`, `node:path`, `node:crypto`, etc.) plus the two declared runtime dependencies:
-- `@modelcontextprotocol/sdk` — MCP server/client protocol
-- `postgres` — PostgreSQL client for SQL storage backend
+- `@modelcontextprotocol/sdk`: MCP server/client protocol
+- `postgres`: PostgreSQL client for SQL storage backend
 
 **Not allowed:** Any other npm package without an ADR (see below).
 
-### Services zone — `services/`
+### Services zone: `services/`
 
 Additional runtime dependencies are allowed. Each new dependency requires an ADR in `docs/adr/` answering:
 1. What in-tree code does it replace?
 2. What is the maintenance cost of keeping the in-tree version vs. adopting the library?
 3. What is the security surface (weekly downloads, known CVEs, supply chain history)?
 
-### Tooling zone — `tests/`, `scripts/`
+### Tooling zone: `tests/`, `scripts/`
 
 Dependencies are allowed freely. No ADR required. These never ship to end users.
 

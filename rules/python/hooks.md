@@ -1,5 +1,5 @@
 <!--
-rules/python/hooks.md — <one-line purpose>
+rules/python/hooks.md: <one-line purpose>
 
 <2–6 line summary.>
 -->

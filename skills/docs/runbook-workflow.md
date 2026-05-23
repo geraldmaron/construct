@@ -1,5 +1,5 @@
 <!--
-skills/docs/runbook-workflow.md — Runbook Workflow — Use when: creating operational procedures for services, alerts, or recurring ope
+skills/docs/runbook-workflow.md (Runbook Workflow) Use when: creating operational procedures for services, alerts, or recurring ope
 
 Use when: creating operational procedures for services, alerts, or recurring operations. ## Steps
 -->
@@ -10,7 +10,7 @@ Use when: creating operational procedures for services, alerts, or recurring ope
 ## Steps
 
 1. **cx-sre** or **cx-release-manager** identifies the need
-2. **Write to `docs/runbooks/{service}-{operation}.md`** using the template from `get_template("runbook")` — resolves `.cx/templates/docs/runbook.md` (override) then `templates/docs/runbook.md` (shipped)
+2. **Write to `docs/runbooks/{service}-{operation}.md`** using the template from `get_template("runbook")`: resolves `.cx/templates/docs/runbook.md` (override) then `templates/docs/runbook.md` (shipped)
 3. **Link from the relevant alert** or monitoring dashboard
 4. **cx-docs-keeper** adds to `.cx/context.md` if it's a critical path runbook
 

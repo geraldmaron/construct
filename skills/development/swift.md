@@ -1,5 +1,5 @@
 <!--
-skills/development/swift.md — Swift / iOS Development — Swift 6 enforces data-race safety at compile time. Annotate isolation boundary e
+skills/development/swift.md (Swift / iOS Development) Swift 6 enforces data-race safety at compile time. Annotate isolation boundary e
 
 ## Concurrency (Swift 6 Strict Concurrency) Swift 6 enforces data-race safety at compile time. Annotate isolation boundary explicitly:
 -->
@@ -26,7 +26,7 @@ Key rules:
 - `Sendable` conformance on types crossing isolation boundaries
 - Prefer `async/await` over completion handlers; avoid mixing the two
 
-Common pitfall: `Task { }` inherits the actor context of its caller — do not assume it runs on a background thread.
+Common pitfall: `Task { }` inherits the actor context of its caller: do not assume it runs on a background thread.
 
 ## SwiftUI Patterns
 
@@ -80,7 +80,7 @@ func testFetchReturnsItems() async throws {
 
 ### UI tests
 
-Prefer `XCUITest` for critical flows only — it is slow and flaky. Supplement with snapshot tests (`swift-snapshot-testing`) for visual regression.
+Prefer `XCUITest` for critical flows only: it is slow and flaky. Supplement with snapshot tests (`swift-snapshot-testing`) for visual regression.
 
 ### Test doubles
 
@@ -119,11 +119,11 @@ View → ViewModel (@MainActor) → Repository (actor) → Network/DB
 
 ### The Composable Architecture (TCA)
 
-Use TCA when state fan-out is complex or testability of reducers is a priority. Adds boilerplate — evaluate against team familiarity.
+Use TCA when state fan-out is complex or testability of reducers is a priority. Adds boilerplate: evaluate against team familiarity.
 
 ## Common Pitfalls
 
-- Do not call `@MainActor` methods from synchronous non-main contexts — use `Task { @MainActor in ... }`
+- Do not call `@MainActor` methods from synchronous non-main contexts: use `Task { @MainActor in ... }`
 - Avoid `DispatchQueue.main.async` in new code; use `await MainActor.run { }` instead
-- `@StateObject` vs `@ObservedObject` confusion causes double-initialization bugs — `@StateObject` only at the owner
+- `@StateObject` vs `@ObservedObject` confusion causes double-initialization bugs: `@StateObject` only at the owner
 - `List` with large datasets: use `lazy` loading or pagination; do not load everything into `@State`

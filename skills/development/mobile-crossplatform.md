@@ -1,5 +1,5 @@
 <!--
-skills/development/mobile-crossplatform.md — Mobile Cross-Platform Development — Before choosing a framework, answer:
+skills/development/mobile-crossplatform.md (Mobile Cross-Platform Development) Before choosing a framework, answer:
 
 ## Decision Framework: Native vs Cross-Platform Before choosing a framework, answer:
 -->
@@ -13,11 +13,11 @@ Before choosing a framework, answer:
 |---|---|---|
 | Platform-specific APIs needed (ARKit, Health, NFC)? | Yes | No |
 | Animation fidelity is a differentiator? | Yes | Partial |
-| Single team, both platforms? | — | Yes |
+| Single team, both platforms? |: | Yes |
 | Heavy use of platform OS widgets? | Yes | No |
-| App is primarily data-display / CRUD? | — | Yes |
-| Existing web team? | — | React Native |
-| Existing Kotlin/Swift team? | Native | — |
+| App is primarily data-display / CRUD? |: | Yes |
+| Existing web team? |: | React Native |
+| Existing Kotlin/Swift team? | Native |: |
 
 ---
 
@@ -42,7 +42,7 @@ Future<List<Item>> items(ItemsRef ref) async {
 
 ### Performance
 
-- `const` constructors everywhere possible — eliminates widget rebuilds
+- `const` constructors everywhere possible: eliminates widget rebuilds
 - `RepaintBoundary` around independently-animated subtrees
 - Profile with Flutter DevTools → CPU flame chart + widget rebuild tracker
 - `ListView.builder` for lazy lists; never `ListView(children: [...])` for long lists
@@ -78,8 +78,8 @@ testWidgets('shows items on load', (tester) async {
 ### New Architecture (React Native 0.74+)
 
 Enable the New Architecture by default on new projects. Key changes:
-- JSI replaces the async bridge — sync native calls
-- Fabric replaces the native renderer — concurrent React features work correctly
+- JSI replaces the async bridge: sync native calls
+- Fabric replaces the native renderer: concurrent React features work correctly
 - TurboModules replace native modules
 
 ### State & logic sharing with web
@@ -130,11 +130,11 @@ export default function ItemScreen() { ... }
 
 ## Common Pitfalls (both frameworks)
 
-- **Deep linking not tested until late** — set up universal links / app links in week 1
-- **Push notifications complexity** — Expo Notifications or Firebase Cloud Messaging; plan for permission states
-- **Over-the-air update strategy** — define what can be OTA vs what requires App Store review
-- **Platform capability divergence** — features available on iOS 17+ may be absent on Android 12; maintain a capability matrix
-- **Code signing automation** — `fastlane match` (iOS) and keystore management (Android) require upfront investment; do it early
+- **Deep linking not tested until late**: set up universal links / app links in week 1
+- **Push notifications complexity**: Expo Notifications or Firebase Cloud Messaging; plan for permission states
+- **Over-the-air update strategy**: define what can be OTA vs what requires App Store review
+- **Platform capability divergence**: features available on iOS 17+ may be absent on Android 12; maintain a capability matrix
+- **Code signing automation**: `fastlane match` (iOS) and keystore management (Android) require upfront investment; do it early
 
 ## When to go native anyway
 

@@ -3994,18 +3994,85 @@ const handlers = new Map([
     }
     if (sub === 'set') {
       const id = args[1];
-      if (!id) { errorln('Usage: construct profile set <id>'); process.exit(1); }
+      if (!id) {
+        errorln('Usage: construct profile set <id> [--yes] [--dry-run]');
+        process.exit(1);
+      }
       const target = loadProfile(id);
       if (!target) {
         errorln(`Unknown profile: ${id}. Available: ${listProfiles().join(', ')}`);
         process.exit(1);
       }
+      const skipConfirm = args.includes('--yes') || args.includes('-y') || args.includes('--non-interactive');
+      const dryRun = args.includes('--dry-run');
+      const isTTY = process.stdin.isTTY && process.stdout.isTTY;
+
       const { findProjectConfigPath, loadProjectConfig, writeProjectConfig, PROJECT_CONFIG_FILENAME } = await import('../lib/config/project-config.mjs');
-      const fsMod = await import('node:fs');
       const pathMod = await import('node:path');
       const found = findProjectConfigPath(process.cwd());
       const cfgPath = found || pathMod.join(process.cwd(), PROJECT_CONFIG_FILENAME);
-      const cfg = found ? (loadProjectConfig(process.cwd()) || { version: 1 }) : { version: 1 };
+      // loadProjectConfig returns a wrapper { path, raw, config, source, errors };
+      // operate on the raw user-authored object so the write call sees the
+      // version field that validateProjectConfig requires.
+      const loaded = found ? loadProjectConfig(process.cwd()) : null;
+      const cfg = loaded?.raw ? structuredClone(loaded.raw) : { version: 1 };
+      if (!cfg.version) cfg.version = 1;
+
+      const currentId = cfg.profile || 'rnd';
+      if (currentId === id) {
+        println(`Profile already set to ${id} (${target.displayName}). Nothing to do.`);
+        return;
+      }
+      const current = loadProfile(currentId) || { id: currentId, displayName: currentId, roles: [], intake: { types: [], stages: [] }, departments: [] };
+
+      // Render a structural diff so the operator sees what loop they are switching into.
+      const setDiff = (label, before, after) => {
+        const b = new Set(before || []);
+        const a = new Set(after || []);
+        const added = [...a].filter((x) => !b.has(x));
+        const removed = [...b].filter((x) => !a.has(x));
+        const unchanged = [...a].filter((x) => b.has(x));
+        println(`  ${label}:`);
+        if (added.length) println(`    + ${added.join(', ')}`);
+        if (removed.length) println(`    - ${removed.join(', ')}`);
+        if (!added.length && !removed.length) println(`    (no change, ${unchanged.length} entr${unchanged.length === 1 ? 'y' : 'ies'})`);
+      };
+
+      println('');
+      println(`About to switch active profile:`);
+      println(`  from:  ${currentId} (${current.displayName})`);
+      println(`  to:    ${id} (${target.displayName})`);
+      println('');
+      println(`Structural diff:`);
+      setDiff('roles', current.roles, target.roles);
+      setDiff('intake.types', current.intake?.types, target.intake?.types);
+      setDiff('intake.stages', current.intake?.stages, target.intake?.stages);
+      const cDept = (current.departments || []).map((d) => d.id);
+      const tDept = (target.departments || []).map((d) => d.id);
+      setDiff('departments', cDept, tDept);
+      println('');
+      println(`Files that will change:`);
+      println(`  ${pathMod.relative(process.cwd(), cfgPath)}  (profile field: ${currentId} -> ${id})`);
+      println('');
+      println(`The change only writes the profile field. No specialists are added or removed.`);
+      println(`Sync runs against the new profile on next \`construct sync\`.`);
+      println('');
+
+      if (dryRun) {
+        println(`[dry-run] No files were written.`);
+        return;
+      }
+      if (!skipConfirm && isTTY) {
+        const readline = await import('node:readline');
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        const answer = await new Promise((res) => rl.question(`Switch profile to ${id}? (Y/n) `, (a) => res(a.trim().toLowerCase())));
+        rl.close();
+        if (answer && answer !== 'y' && answer !== 'yes') {
+          println('Aborted. No config was changed.');
+          return;
+        }
+      }
+
       cfg.profile = id;
       writeProjectConfig(cfgPath, cfg, { validate: true });
       process.stdout.write(`✓ profile set to ${id} (${target.displayName})\n`);
@@ -4138,12 +4205,84 @@ const handlers = new Map([
     if (sub === 'archive') {
       const id = args[1];
       const reasonArg = args.find((a) => a.startsWith('--reason='));
-      const reason = reasonArg ? reasonArg.split('=')[1] : '';
-      if (!id) { errorln('Usage: construct profile archive <id> --reason="..."'); process.exit(1); }
+      let reason = reasonArg ? reasonArg.split('=')[1] : '';
+      if (!id) {
+        errorln('Usage: construct profile archive <id> --reason="..." [--yes] [--dry-run]');
+        process.exit(1);
+      }
+      const skipConfirm = args.includes('--yes') || args.includes('-y') || args.includes('--non-interactive');
+      const dryRun = args.includes('--dry-run');
+      const isTTY = process.stdin.isTTY && process.stdout.isTTY;
+
+      const pathMod = await import('node:path');
+      const fsMod = await import('node:fs');
+      const target = loadProfile(id);
+      if (!target) {
+        errorln(`Unknown profile: ${id}. Curated catalog: ${listProfiles().join(', ')}`);
+        process.exit(1);
+      }
+      const fileURL = await import('node:url');
+      const moduleDir = pathMod.dirname(fileURL.fileURLToPath(import.meta.url));
+      const repoRoot = pathMod.resolve(moduleDir, '..');
+      const srcProfile = pathMod.join(repoRoot, 'profiles', `${id}.json`);
+      const tableRel = typeof target?.intake?.classificationTable === 'string' ? target.intake.classificationTable : null;
+      const srcTable = tableRel ? pathMod.join(repoRoot, tableRel) : null;
+      const dstDir = pathMod.join(repoRoot, 'archive', 'profiles', id);
+
+      // Gather reason interactively if missing. The lifecycle module already
+      // enforces a >= 8 char reason, but the operator should see why before
+      // the call fails.
+      if (!reason && isTTY && !skipConfirm) {
+        const readline = await import('node:readline');
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        reason = await new Promise((res) => rl.question('Archive reason (>= 8 chars): ', (a) => res(a.trim())));
+        rl.close();
+      }
+      if (!reason || reason.trim().length < 8) {
+        errorln('A substantive --reason (>= 8 chars) is required. Archiving is permanent in repo history; the reason becomes the archive note.');
+        process.exit(1);
+      }
+
+      println('');
+      println(`About to archive curated profile:`);
+      println(`  id:           ${id}`);
+      println(`  displayName:  ${target.displayName || id}`);
+      println(`  reason:       ${reason}`);
+      println('');
+      println(`Files that will move:`);
+      println(`  ${pathMod.relative(process.cwd(), srcProfile)}`);
+      println(`    -> ${pathMod.relative(process.cwd(), pathMod.join(dstDir, `${id}.json`))}`);
+      if (srcTable && fsMod.existsSync(srcTable)) {
+        println(`  ${pathMod.relative(process.cwd(), srcTable)}`);
+        println(`    -> ${pathMod.relative(process.cwd(), pathMod.join(dstDir, pathMod.basename(srcTable)))}`);
+      }
+      println(`  ${pathMod.relative(process.cwd(), pathMod.join(dstDir, 'archive-note.md'))}  (new)`);
+      println('');
+      println(`What stays:`);
+      println(`  Observations under .cx/observations/ are not touched.`);
+      println(`  Outcomes under .cx/outcomes/ are not touched.`);
+      println(`  Any project still configured with profile=${id} will fall back to rnd on next load.`);
+      println('');
+
+      if (dryRun) {
+        println(`[dry-run] No files were moved.`);
+        return;
+      }
+      if (!skipConfirm && isTTY) {
+        const readline = await import('node:readline');
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        const answer = await new Promise((res) => rl.question(`Archive ${id}? (y/N) `, (a) => res(a.trim().toLowerCase())));
+        rl.close();
+        if (answer !== 'y' && answer !== 'yes') {
+          println('Aborted. Nothing was archived.');
+          return;
+        }
+      }
+
       const { archiveProfile } = await import('../lib/profiles/lifecycle.mjs');
       try {
         const { archived } = archiveProfile({ id, reason });
-        process.stdout.write(`✓ archived ${id} to ${archived}\n`);
+        process.stdout.write(`✓ archived ${id} to ${pathMod.relative(process.cwd(), archived)}\n`);
         return;
       } catch (err) {
         errorln(err.message);

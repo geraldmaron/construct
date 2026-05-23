@@ -12,7 +12,7 @@ process, template, evaluation loop, or operating model.
 Before drafting, read rules/common/framing.md.
 
 Owning specialist: cx-product-manager (see rules/common/doc-ownership.md).
-Construct must route PRD authoring to cx-product-manager rather than drafting directly —
+Construct must route PRD authoring to cx-product-manager rather than drafting directly.
 doing so is how requirements traceability, user grounding, and external research fire.
 
 Write with a balance of short paragraphs, tables, and bullets. Bullets are for scans,

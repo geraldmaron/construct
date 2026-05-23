@@ -13,7 +13,7 @@ status: accepted
 
 ## Summary
 
-Define a structured YAML schema for configuring Construct's embed mode — the continuous monitoring loop that polls providers, produces snapshots, dispatches output, and queues approval requests. The schema must be human-readable, zero-dependency parseable, and support multi-source, multi-output configurations.
+Define a structured YAML schema for configuring Construct's embed mode: the continuous monitoring loop that polls providers, produces snapshots, dispatches output, and queues approval requests. The schema must be human-readable, zero-dependency parseable, and support multi-source, multi-output configurations.
 
 ## Motivation
 
@@ -23,7 +23,7 @@ Embed mode needs a durable, file-backed configuration format that:
 - Supports multiple provider sources, configurable polling intervals, multiple output targets, and approval rules per action pattern
 - Can be validated at startup with clear error messages
 
-The alternative — env vars or JSON — was rejected because YAML's block syntax is significantly more readable for nested multi-source configs, and the schema is narrow enough that a hand-rolled parser covers it without deps.
+The alternative (env vars or JSON) was rejected because YAML's block syntax is significantly more readable for nested multi-source configs, and the schema is narrow enough that a hand-rolled parser covers it without deps.
 
 ## Design
 
@@ -77,9 +77,9 @@ approval:
 
 ## Drawbacks
 
-- Hand-rolled parser limits schema to simple structures — no inline flow sequences, no anchors
+- Hand-rolled parser limits schema to simple structures: no inline flow sequences, no anchors
 - Version field requires migration logic if schema evolves
-- No JSON Schema validation — schema errors surface at runtime
+- No JSON Schema validation: schema errors surface at runtime
 
 ## Alternatives
 

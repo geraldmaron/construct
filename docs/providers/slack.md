@@ -1,5 +1,5 @@
 <!--
-docs/providers/slack.md — Slack provider setup and usage guide.
+docs/providers/slack.md: Slack provider setup and usage guide.
 
 Covers token configuration, capabilities (read/search), and example queries.
 -->
@@ -30,10 +30,10 @@ Both variables are checked; `SLACK_BOT_TOKEN` takes precedence if both are set.
 
 1. Go to [api.slack.com/apps](https://api.slack.com/apps) and create a new app
 2. Under **OAuth & Permissions**, add these bot token scopes:
-   - `channels:history` — read messages from public channels
-   - `channels:read` — list channels
-   - `groups:history` — read messages from private channels the bot is in
-   - `search:read` — message search (requires user token scope, not bot)
+   - `channels:history`: read messages from public channels
+   - `channels:read`: list channels
+   - `groups:history`: read messages from private channels the bot is in
+   - `search:read`: message search (requires user token scope, not bot)
 3. Install the app to your workspace
 4. Copy the **Bot User OAuth Token** (`xoxb-...`)
 
@@ -93,6 +93,6 @@ Returns matching messages with channel, author, timestamp, and permalink. Requir
 
 ## Notes
 
-- Channel IDs are preferred over names — names can change, IDs are stable. Find the ID by right-clicking a channel in Slack and selecting **Copy link**.
-- The `search.messages` API is user-scoped. A bot token does not have access to this method — if search is important, configure `SLACK_USER_TOKEN`.
+- Channel IDs are preferred over names: names can change, IDs are stable. Find the ID by right-clicking a channel in Slack and selecting **Copy link**.
+- The `search.messages` API is user-scoped. A bot token does not have access to this method: if search is important, configure `SLACK_USER_TOKEN`.
 - Message history beyond the free plan retention period (90 days on paid plans) is not accessible via the API.

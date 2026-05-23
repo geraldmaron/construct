@@ -7,7 +7,7 @@
 
 ## Problem
 
-Construct needs to integrate with an unbounded set of external systems — project trackers, messaging platforms, code hosts, knowledge bases, and anything else an organization uses. Each system has its own transport: some expose MCP servers, some have REST APIs, some have GraphQL, some have SDKs, some only have CLIs. Hardcoding integrations per system creates an ever-growing maintenance surface and couples core logic to transport details.
+Construct needs to integrate with an unbounded set of external systems: project trackers, messaging platforms, code hosts, knowledge bases, and anything else an organization uses. Each system has its own transport: some expose MCP servers, some have REST APIs, some have GraphQL, some have SDKs, some only have CLIs. Hardcoding integrations per system creates an ever-growing maintenance surface and couples core logic to transport details.
 
 At the same time, Construct needs to grow from a CLI into a deployable product with a dashboard, cloud deployment, and embed mode without destabilizing the working core (orchestration, memory, sessions, MCP server).
 
@@ -16,8 +16,8 @@ At the same time, Construct needs to grow from a CLI into a deployable product w
 - The core runtime (MCP server, orchestration policy, agent contracts, observation store) is stable and tested.
 - The CLI surface is thin and command-driven, easy to extend.
 - Docker service management already handles container lifecycle.
-- No provider framework exists — integrations are ad-hoc or via MCP tools available at runtime.
-- The dashboard is minimal — needs replacement with a full web app.
+- No provider framework exists: integrations are ad-hoc or via MCP tools available at runtime.
+- The dashboard is minimal: needs replacement with a full web app.
 - No deployment surface exists.
 - The zero-npm-core constraint applies to the CLI; providers and dashboard may bring their own dependencies.
 
@@ -33,11 +33,11 @@ dashboard/    — full web app: auth, chat, approvals, config
 deploy/       — Dockerfile, Terraform modules, cloud configs, multi-user auth
 ```
 
-The **provider interface** defines a capability matrix (read, write, search, watch, webhook) that every external system adapter implements. The adapter chooses its own transport — MCP, REST, GraphQL, SDK, CLI subprocess, webhook listener, or any combination. Core never knows the transport. Core dispatches through the interface; the provider resolves it.
+The **provider interface** defines a capability matrix (read, write, search, watch, webhook) that every external system adapter implements. The adapter chooses its own transport: MCP, REST, GraphQL, SDK, CLI subprocess, webhook listener, or any combination. Core never knows the transport. Core dispatches through the interface; the provider resolves it.
 
 ## Rationale
 
-1. **Transport is the provider's problem, not core's.** An Atlassian provider might use the Atlassian MCP server. A GitHub provider might use `gh` CLI. A custom internal tool might use REST. Core doesn't care — it calls `provider.read()`, `provider.write()`, `provider.search()`.
+1. **Transport is the provider's problem, not core's.** An Atlassian provider might use the Atlassian MCP server. A GitHub provider might use `gh` CLI. A custom internal tool might use REST. Core doesn't care: it calls `provider.read()`, `provider.write()`, `provider.search()`.
 2. **The core works.** MCP server, orchestration policy, agent contracts, and memory store are tested. Rewriting them gains nothing.
 3. **The gaps are additive.** Providers, embed mode, dashboard, and deployment are new capabilities built on top of core, not replacements.
 4. **Layering isolates risk.** A broken Slack provider doesn't crash the CLI. A dashboard regression doesn't affect embed mode.
@@ -57,17 +57,17 @@ The **provider interface** defines a capability matrix (read, write, search, wat
 ## Consequences
 
 - **Easier:** Adding a new external system = implement the provider interface, choose your transport. No core changes.
-- **Easier:** Testing providers in isolation — mock the external system, verify the interface contract.
+- **Easier:** Testing providers in isolation: mock the external system, verify the interface contract.
 - **Harder:** Provider authors must map diverse system semantics onto a common capability matrix. Some mappings will be lossy (e.g., a system with no search → search capability returns `unsupported`).
 - **Locked in:** The provider interface shape. Changing it requires updating all implementations. This should be designed carefully up front.
 - **New constraint:** Providers are stateless adapters. Durable state (observations, sessions, cached data) lives in core stores, not in provider-local storage.
 
 ## Reversibility
 
-Two-way door for the layering. The provider interface shape is a soft one-way door — it can evolve but breaking changes require a migration pass across all implementations. At current scale (< 10 providers) this is manageable.
+Two-way door for the layering. The provider interface shape is a soft one-way door: it can evolve but breaking changes require a migration pass across all implementations. At current scale (< 10 providers) this is manageable.
 
 ## References
 
 - PRD: `docs/prd/0001-construct-org-in-a-box.md`
 - Architecture: `docs/architecture.md`
-- ADR-0001: Zero npm core — `docs/adr/0001-zero-npm-core.md`
+- ADR-0001: Zero npm core: `docs/adr/0001-zero-npm-core.md`

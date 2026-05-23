@@ -1,5 +1,5 @@
 <!--
-skills/devops/git-workflow.md — Git Workflow — Use this skill when establishing branching strategies, commit conventions, or co
+skills/devops/git-workflow.md (Git Workflow) Use this skill when establishing branching strategies, commit conventions, or co
 
 Use this skill when establishing branching strategies, commit conventions, or code integration practices. ## Branching Strategies
 -->

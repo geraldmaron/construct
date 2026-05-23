@@ -1,5 +1,5 @@
 <!--
-skills/devops/dependency-management.md — Dependency Management — Use this skill when managing package upgrades, resolving CVEs, or establishing l
+skills/devops/dependency-management.md (Dependency Management) Use this skill when managing package upgrades, resolving CVEs, or establishing l
 
 Use this skill when managing package upgrades, resolving CVEs, or establishing lock file and versioning policy. ## Lock File Hygiene
 -->
@@ -11,7 +11,7 @@ Use this skill when managing package upgrades, resolving CVEs, or establishing l
 
 - Always commit lock files: `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `go.sum`, `Cargo.lock`.
 - Never delete and regenerate a lock file without reviewing the full diff; regeneration silently upgrades all transitive dependencies.
-- Review lock file diffs in PRs for unexpected transitive version changes — these are where supply chain attacks hide.
+- Review lock file diffs in PRs for unexpected transitive version changes: these are where supply chain attacks hide.
 - Do not add lock files to `.gitignore`; they are the reproducibility contract for the build.
 - A PR that changes only the lock file (no `package.json` change) warrants careful scrutiny.
 
@@ -22,7 +22,7 @@ Use this skill when managing package upgrades, resolving CVEs, or establishing l
 | Dependabot | Daily/weekly schedule | One PR per package by default; group with `groups:` config | Patch: auto-merge if CI passes. Minor: batch weekly, manual review. Major: manual always. |
 | Renovate | Configurable schedule | Group by ecosystem, semver range, or custom regex via `packageRules` | Auto-merge patch and minor with passing CI; use `stabilityDays: 3` to avoid merging on day of release |
 
-Prefer Renovate for complex repos — its `rangeStrategy`, `grouping`, `stabilityDays`, and `automerge` controls are more expressive than Dependabot's.
+Prefer Renovate for complex repos: its `rangeStrategy`, `grouping`, `stabilityDays`, and `automerge` controls are more expressive than Dependabot's.
 
 Always require CI to pass before any auto-merge. Never auto-merge major version bumps.
 

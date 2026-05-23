@@ -1,5 +1,5 @@
 <!--
-rules/python/testing.md — <one-line purpose>
+rules/python/testing.md: <one-line purpose>
 
 <2–6 line summary.>
 -->

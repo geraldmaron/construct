@@ -55,13 +55,13 @@ construct` or remove the older binary before linking.
 
 On every `v*` tag push to the construct repo, `.github/workflows/release.yml` runs (in order):
 
-1. `gate` — full test suite, lint, npm audit.
-2. `build-binary` — SEA binary per platform with SHA-256 sidecar.
-3. `docker` — image to ghcr.io with Trivy scan.
-4. `publish` — `npm publish --provenance --access public` (OIDC Trusted Publishers, no static token) + GitHub Release with all binaries + sha256 files.
-5. `homebrew` — an inline script downloads the sha256 sidecars from the release, regenerates `Formula/construct.rb` from scratch with the new version and per-platform URLs/SHAs, clones `geraldmaron/homebrew-construct`, commits the updated formula, and pushes directly to the tap's default branch.
+1. `gate`: full test suite, lint, npm audit.
+2. `build-binary`: SEA binary per platform with SHA-256 sidecar.
+3. `docker`: image to ghcr.io with Trivy scan.
+4. `publish`: `npm publish --provenance --access public` (OIDC Trusted Publishers, no static token) + GitHub Release with all binaries + sha256 files.
+5. `homebrew`: an inline script downloads the sha256 sidecars from the release, regenerates `Formula/construct.rb` from scratch with the new version and per-platform URLs/SHAs, clones `geraldmaron/homebrew-construct`, commits the updated formula, and pushes directly to the tap's default branch.
 
-The inline script reads each platform's SHA from the matching GitHub Release asset sidecar, so the formula always references a verified artifact. If the job fails (token missing, tap repo rate-limited, formula syntax invalid), the release itself is unaffected — the `homebrew` job is downstream of `publish` and its failure does not retroactively undo npm publish or the GH Release.
+The inline script reads each platform's SHA from the matching GitHub Release asset sidecar, so the formula always references a verified artifact. If the job fails (token missing, tap repo rate-limited, formula syntax invalid), the release itself is unaffected: the `homebrew` job is downstream of `publish` and its failure does not retroactively undo npm publish or the GH Release.
 
 ## Disabling the bump
 
@@ -72,4 +72,4 @@ Two ways:
 
 ## Why a personal tap and not homebrew-core
 
-Homebrew-core has strict criteria — stable project (typically 1.0+), prefers source builds over downloading prebuilt binaries from random GitHub repos, no telemetry by default, no self-update mechanism in the binary. While Construct is in the 0.x pre-stable phase, a personal tap is appropriate; the formula format is identical, so migration to homebrew-core later (when there is real adoption signal and a 1.0 release) is straightforward.
+Homebrew-core has strict criteria: stable project (typically 1.0+), prefers source builds over downloading prebuilt binaries from random GitHub repos, no telemetry by default, no self-update mechanism in the binary. While Construct is in the 0.x pre-stable phase, a personal tap is appropriate; the formula format is identical, so migration to homebrew-core later (when there is real adoption signal and a 1.0 release) is straightforward.

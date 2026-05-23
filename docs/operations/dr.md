@@ -1,5 +1,5 @@
 <!--
-docs/operations/dr.md — Disaster recovery runbook for Construct.
+docs/operations/dr.md: Disaster recovery runbook for Construct.
 
 Fresh-machine recovery: install, restore backup, re-sync platform adapters,
 and verify health.

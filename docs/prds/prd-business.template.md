@@ -29,7 +29,7 @@ Use prd-platform.md for internal platform and developer-facing capabilities.
 <!-- The one-paragraph view of market shape, buyer behavior, and where value accrues. Every decision in this document links back here or challenges it. -->
 
 ## Problem and opportunity
-<!-- What is broken in the market or business today? What does the opportunity look like at full scale? State the pain and the size of the prize — with evidence. -->
+<!-- What is broken in the market or business today? What does the opportunity look like at full scale? State the pain and the size of the prize: with evidence. -->
 
 ## Strategic goals
 <!-- What this decision achieves at the business level: position, revenue, defensibility, optionality. Tie to company objectives. -->

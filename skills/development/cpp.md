@@ -1,5 +1,5 @@
 <!--
-skills/development/cpp.md — C/C++ Best Practices — Use this skill when writing, reviewing, or debugging C or C++ code.
+skills/development/cpp.md (C/C++ Best Practices) Use this skill when writing, reviewing, or debugging C or C++ code.
 
 Use this skill when writing, reviewing, or debugging C or C++ code. ## Project Structure
 -->

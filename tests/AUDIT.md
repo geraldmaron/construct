@@ -28,7 +28,7 @@ Assert that a file exists, that a string appears in a config, that a registry pa
 - `parity.test.mjs` (cross-surface adapter parity, with new copilot regression)
 - `comment-lint.test.mjs` (comment policy, with new `.md`-in-tests regression)
 - `agents-registry.test.mjs` (registry schema)
-- `cli-catalog-accuracy.test.mjs` (catalog ↔ handler parity — new)
+- `cli-catalog-accuracy.test.mjs` (catalog ↔ handler parity: new)
 - `auto-docs.test.mjs`, `docs-verify.test.mjs`
 
 Keep. These are the cheapest tests that catch the loudest classes of bug.
@@ -61,12 +61,12 @@ Keep. Hooks are protected files per `CLAUDE.md`; a regression here can block eve
 
 New in this PR. Pattern documented at `tests/functional/README.md`:
 
-- `a1-session-reflect.functional.test.mjs` — A1 end-to-end + vector-index regression
-- `a2-research-persistence.functional.test.mjs` — A2 CLI round-trip
-- `a3-outcomes.functional.test.mjs` — A3 + live `agent-tracker` production trigger
-- `a4-optimize-gate.functional.test.mjs` — A4 `--apply` / `--rollback` gate
-- `b1-profile-loader.functional.test.mjs` — every profile classifies its representative input
-- `profile-lifecycle.functional.test.mjs` — draft → archive → health round-trip
+- `a1-session-reflect.functional.test.mjs`: A1 end-to-end + vector-index regression
+- `a2-research-persistence.functional.test.mjs`: A2 CLI round-trip
+- `a3-outcomes.functional.test.mjs`: A3 + live `agent-tracker` production trigger
+- `a4-optimize-gate.functional.test.mjs`: A4 `--apply` / `--rollback` gate
+- `b1-profile-loader.functional.test.mjs`: every profile classifies its representative input
+- `profile-lifecycle.functional.test.mjs`: draft → archive → health round-trip
 
 Expand. Every multi-component change must land with a functional test going forward (rule in `CLAUDE.md`).
 
@@ -78,11 +78,10 @@ Five tests are marked `skip` in the suite, all pre-existing. Each has an inline 
 
 These showed up while categorizing:
 
-- **`lib/sandbox.mjs`** — new module, no dedicated test file. Smoke-tested via the CLI but should grow a unit test for `pruneSandboxes` time-window logic.
-- **`lib/profiles/validate-custom.mjs`** — validator has no direct test. The lifecycle functional test exercises the happy path through it; the cap and shape error branches are not regression-locked.
-- **`lib/profiles/lifecycle.mjs::archiveProfile`** — file-move path is only tested for the empty-reason rejection. The success path (moving + writing archive-note) is not asserted because it would mutate the real `profiles/` directory; a tmpdir fork of the function would let this be tested cleanly.
-- **`scripts/lint-prose.mjs`** — em-dash detection logic has no unit test. Manual smoke shows it works; a fixture test would close the regression risk.
-- **`scripts/migrate-flavors.mjs`** — idempotency was verified by hand during the audit, not by test. A fixture-based test for the partial-state case (has `profiles:` but missing `cap:`) would prove the path that an earlier audit caught manually.
+- **`lib/sandbox.mjs`**: new module, no dedicated test file. Smoke-tested via the CLI but should grow a unit test for `pruneSandboxes` time-window logic.
+- **`lib/profiles/validate-custom.mjs`**: validator has no direct test. The lifecycle functional test exercises the happy path through it; the cap and shape error branches are not regression-locked.
+- **`lib/profiles/lifecycle.mjs::archiveProfile`**: file-move path is only tested for the empty-reason rejection. The success path (moving + writing archive-note) is not asserted because it would mutate the real `profiles/` directory; a tmpdir fork of the function would let this be tested cleanly.
+- **`scripts/lint-prose.mjs`**: em-dash detection logic has no unit test. Manual smoke shows it works; a fixture test would close the regression risk.
 
 These are gaps, not bugs. Future PRs that touch these surfaces should close their corresponding gap before merge.
 

@@ -1,11 +1,11 @@
 ---
 title: Deployment model
-description: Construct runs locally for individual users or is deployed centrally for shared team usage. Three modes — solo, team, enterprise.
+description: Construct runs locally for individual users or is deployed centrally for shared team usage. Three modes: solo, team, enterprise.
 ---
 
 Construct is a deployable AI R&D operating system. It runs locally for individual users (the default) and can be deployed centrally for shared team or enterprise usage with shared memory, telemetry, queues, artifacts, policies, and execution resources.
 
-The deployment posture is explicit. One config field — `CONSTRUCT_DEPLOYMENT_MODE` — selects the topology, and the rest of the system reads from there. The three modes are listed below.
+The deployment posture is explicit. One config field (`CONSTRUCT_DEPLOYMENT_MODE`) selects the topology, and the rest of the system reads from there. The three modes are listed below.
 
 ## Modes
 
@@ -72,7 +72,7 @@ Three concrete cases:
 2. **A vendor outage (any mode).** Falling back to a local model or to a different OpenAI-compatible endpoint is a config change, not a rewrite.
 3. **A team that needs centralized telemetry and policy.** Team mode promotes the intake queue, memory, and MCP through shared resources without changing the agent loop or the persona contracts.
 
-The orchestration loop — persona, specialists, contracts, gates, durable state — is the same across modes. What changes is the backend topology that supports it.
+The orchestration loop (persona, specialists, contracts, gates, durable state) is the same across modes. What changes is the backend topology that supports it.
 
 ## What remains remote even in team mode
 
@@ -98,4 +98,4 @@ construct doctor
 CONSTRUCT_EMBEDDING_MODEL=hashing construct evals retrieval
 ```
 
-Runs the retrieval eval with the deterministic, dependency-free embedding. Should report `Recall@1: 100.0%` against the local fixture — proof of a working retrieval pipeline that needs no external network call.
+Runs the retrieval eval with the deterministic, dependency-free embedding. Should report `Recall@1: 100.0%` against the local fixture: proof of a working retrieval pipeline that needs no external network call.

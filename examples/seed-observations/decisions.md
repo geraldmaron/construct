@@ -1,5 +1,5 @@
 <!--
-examples/seed-observations/decisions.md — key architectural decisions for Construct memory seed corpus.
+examples/seed-observations/decisions.md: key architectural decisions for Construct memory seed corpus.
 
 Each entry becomes one observation in the store with category "decision". Imported via
 `construct bootstrap`.
@@ -13,7 +13,7 @@ Each entry becomes one observation in the store with category "decision". Import
 
 ## Two-Phase Sync with Lockfile
 
-`construct sync` writes to `.cx/sync-staging/` first, then atomically renames into place. A lockfile at `.cx/sync.lock` prevents concurrent runs from corrupting the output. This makes partial syncs impossible — either the full sync lands or nothing does.
+`construct sync` writes to `.cx/sync-staging/` first, then atomically renames into place. A lockfile at `.cx/sync.lock` prevents concurrent runs from corrupting the output. This makes partial syncs impossible: either the full sync lands or nothing does.
 
 ## Hook Ceiling: 30
 
@@ -25,7 +25,7 @@ The memory layer uses a hashing bag-of-words cosine similarity for dense recall 
 
 ## Tiered Session-Start Injection
 
-Session-start injects context in three tiers: Tier 1 (always — header, branch, status), Tier 2 (when fresh and meaningful — workflow, observations, context.md), Tier 3 (hint-only — efficiency snapshot, skill scope). This caps injection size and avoids loading the model with stale or irrelevant context on every session.
+Session-start injects context in three tiers: Tier 1 (always (header, branch, status), Tier 2 (when fresh and meaningful) workflow, observations, context.md), Tier 3 (hint-only: efficiency snapshot, skill scope). This caps injection size and avoids loading the model with stale or irrelevant context on every session.
 
 ## Declarative Policy Rules
 
@@ -33,4 +33,4 @@ Hook guards for workflow, drive, bootstrap, and task behavior are expressed as Y
 
 ## Registry as Single Source of Truth
 
-`agents/registry.json` is the canonical definition for all agents on all platforms (Claude Code, OpenCode, Codex, Copilot). `construct sync` regenerates all platform-specific files from the registry. Never edit generated files directly — edits are overwritten on the next sync.
+`agents/registry.json` is the canonical definition for all agents on all platforms (Claude Code, OpenCode, Codex, Copilot). `construct sync` regenerates all platform-specific files from the registry. Never edit generated files directly: edits are overwritten on the next sync.

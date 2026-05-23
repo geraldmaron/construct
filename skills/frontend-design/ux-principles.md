@@ -1,5 +1,5 @@
 <!--
-skills/frontend-design/ux-principles.md — UX Principles — Use this skill when designing user flows, evaluating usability, or planning info
+skills/frontend-design/ux-principles.md (UX Principles) Use this skill when designing user flows, evaluating usability, or planning info
 
 Use this skill when designing user flows, evaluating usability, or planning information architecture. ## Core Heuristics
 -->

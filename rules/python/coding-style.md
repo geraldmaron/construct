@@ -1,5 +1,5 @@
 <!--
-rules/python/coding-style.md — <one-line purpose>
+rules/python/coding-style.md: <one-line purpose>
 
 <2–6 line summary.>
 -->

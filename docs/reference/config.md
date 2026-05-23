@@ -1,5 +1,5 @@
 <!--
-docs/reference/config.md — Every environment variable and config key for Construct.
+docs/reference/config.md: Every environment variable and config key for Construct.
 
 Sensitive values live in ~/.construct/config.env (mode 0600). Non-sensitive
 project values go in .cx/env. Source: lib/env-config.mjs and individual modules.
@@ -25,22 +25,22 @@ Config is loaded in this order (last write wins): repo `.env` → `~/.construct/
 
 | Variable | Default | Description |
 |---|---|---|
-| `CONSTRUCT_DEPLOYMENT_MODE` | `solo` | `solo` \| `team` \| `enterprise` — selects backends for the intake queue, memory, workers, and MCP broker. Read at runtime by `lib/deployment-mode.mjs`. Set via `construct config mode <m>`. |
+| `CONSTRUCT_DEPLOYMENT_MODE` | `solo` | `solo` \| `team` \| `enterprise`: selects backends for the intake queue, memory, workers, and MCP broker. Read at runtime by `lib/deployment-mode.mjs`. Set via `construct config mode <m>`. |
 
 ## Intake queue
 
 | Variable | Default | Description |
 |---|---|---|
-| `CONSTRUCT_INTAKE_QUEUE_BACKEND` | — | `filesystem` \| `postgres` override. Wins over `CONSTRUCT_DEPLOYMENT_MODE`. Useful for testing the Postgres adapter from solo mode (requires `DATABASE_URL`). |
+| `CONSTRUCT_INTAKE_QUEUE_BACKEND` |: | `filesystem` \| `postgres` override. Wins over `CONSTRUCT_DEPLOYMENT_MODE`. Useful for testing the Postgres adapter from solo mode (requires `DATABASE_URL`). |
 | `CONSTRUCT_PROJECT_NAME` | basename of CWD | Project scope for Postgres-backed intake queue rows. |
-| `CONSTRUCT_TENANT_ID` | — | Tenant scope for enterprise mode. Filters `construct_intake_items` queries. |
-| `CONSTRUCT_DEBUG_INTAKE` | — | `1` to log daemon-side intake preparation failures to stderr (non-fatal otherwise). |
+| `CONSTRUCT_TENANT_ID` |: | Tenant scope for enterprise mode. Filters `construct_intake_items` queries. |
+| `CONSTRUCT_DEBUG_INTAKE` |: | `1` to log daemon-side intake preparation failures to stderr (non-fatal otherwise). |
 
 ## MCP broker
 
 | Variable | Default | Description |
 |---|---|---|
-| `CONSTRUCT_MCP_BROKER` | — | `on` \| `off` — override default broker engagement. Otherwise the broker is on in team / enterprise and off in solo. |
+| `CONSTRUCT_MCP_BROKER` | (| `on` \| `off`) override default broker engagement. Otherwise the broker is on in team / enterprise and off in solo. |
 
 ## Authentication
 
@@ -55,8 +55,8 @@ Config is loaded in this order (last write wins): repo `.env` → `~/.construct/
 | Variable | Default | Description |
 |---|---|---|
 | `CONSTRUCT_EMBEDDING_MODEL` | `hashing` | `hashing` (offline), `local-onnx` (384d), `openai` (1536d) |
-| `CONSTRUCT_EMBEDDING_FALLBACK` | — | `1` to silently fall back to `local-onnx` when `openai` key missing |
-| `OPENAI_API_KEY` | — | Required when `CONSTRUCT_EMBEDDING_MODEL=openai` |
+| `CONSTRUCT_EMBEDDING_FALLBACK` |: | `1` to silently fall back to `local-onnx` when `openai` key missing |
+| `OPENAI_API_KEY` |: | Required when `CONSTRUCT_EMBEDDING_MODEL=openai` |
 
 ## Database
 
@@ -70,16 +70,16 @@ Config is loaded in this order (last write wins): repo `.env` → `~/.construct/
 | Variable | Description |
 |---|---|
 | `GITHUB_TOKEN` | GitHub personal access token. Alias: `GH_TOKEN`. Without this, unauthenticated rate limits apply (60 req/h). |
-| `GH_TOKEN` | Alias for `GITHUB_TOKEN` — checked when `GITHUB_TOKEN` is absent |
+| `GH_TOKEN` | Alias for `GITHUB_TOKEN`: checked when `GITHUB_TOKEN` is absent |
 | `GITHUB_REPOS` | Comma-separated `owner/repo` list surfaced as provider source hints at session start |
 | `JIRA_BASE_URL` | Atlassian Jira base URL (e.g. `https://yourorg.atlassian.net`) |
-| `JIRA_EMAIL` | Jira account email — used for Basic auth |
+| `JIRA_EMAIL` | Jira account email: used for Basic auth |
 | `JIRA_API_TOKEN` | Jira API token (from id.atlassian.com/manage-profile/security/api-tokens) |
-| `CONFLUENCE_BASE_URL` | Confluence base URL — defaults to `JIRA_BASE_URL` if unset |
-| `CONFLUENCE_EMAIL` | Confluence account email — defaults to `JIRA_EMAIL` if unset |
-| `CONFLUENCE_API_TOKEN` | Confluence API token — defaults to `JIRA_API_TOKEN` if unset |
+| `CONFLUENCE_BASE_URL` | Confluence base URL: defaults to `JIRA_BASE_URL` if unset |
+| `CONFLUENCE_EMAIL` | Confluence account email: defaults to `JIRA_EMAIL` if unset |
+| `CONFLUENCE_API_TOKEN` | Confluence API token: defaults to `JIRA_API_TOKEN` if unset |
 | `SLACK_BOT_TOKEN` | Slack bot OAuth token (`xoxb-...`) |
-| `SLACK_USER_TOKEN` | Slack user token (`xoxp-...`) — required for `search.messages` |
+| `SLACK_USER_TOKEN` | Slack user token (`xoxp-...`): required for `search.messages` |
 | `SALESFORCE_INSTANCE_URL` | Salesforce instance URL (e.g. `https://yourorg.my.salesforce.com`) |
 | `SALESFORCE_ACCESS_TOKEN` | Salesforce OAuth access token (bearer) |
 
@@ -88,10 +88,10 @@ Config is loaded in this order (last write wins): repo `.env` → `~/.construct/
 | Variable | Default | Description |
 |---|---|---|
 | `CONSTRUCT_TRACE_BACKEND` | `local` | Trace backend: `local`, `langfuse`, `http`, `otel`, or `none`. Legacy `remote` resolves to `langfuse` when keys are present, otherwise `http` when a URL is set. |
-| `CONSTRUCT_TELEMETRY_URL` | — | Langfuse-compatible or generic HTTP ingestion endpoint |
-| `CONSTRUCT_TELEMETRY_PUBLIC_KEY` | — | Langfuse-compatible public key |
-| `CONSTRUCT_TELEMETRY_SECRET_KEY` | — | Langfuse-compatible secret key |
-| `CONSTRUCT_OTEL_EXPORTER_OTLP_ENDPOINT` | — | OTLP HTTP collector endpoint used when `CONSTRUCT_TRACE_BACKEND=otel` |
+| `CONSTRUCT_TELEMETRY_URL` |: | Langfuse-compatible or generic HTTP ingestion endpoint |
+| `CONSTRUCT_TELEMETRY_PUBLIC_KEY` |: | Langfuse-compatible public key |
+| `CONSTRUCT_TELEMETRY_SECRET_KEY` |: | Langfuse-compatible secret key |
+| `CONSTRUCT_OTEL_EXPORTER_OTLP_ENDPOINT` |: | OTLP HTTP collector endpoint used when `CONSTRUCT_TRACE_BACKEND=otel` |
 | `CONSTRUCT_TELEMETRY_PROVIDER` | derived | Optional display label for dashboard/status |
 
 ## MCP
@@ -123,9 +123,9 @@ Config is loaded in this order (last write wins): repo `.env` → `~/.construct/
 
 | Variable | Description |
 |---|---|
-| `OPENROUTER_API_KEY` | OpenRouter key — enables free model fallback when primary provider is down |
+| `OPENROUTER_API_KEY` | OpenRouter key: enables free model fallback when primary provider is down |
 | `ANTHROPIC_API_KEY` | Anthropic key for Claude model calls |
-| `OPENAI_API_KEY` | OpenAI key — used for OpenAI model tier or openai embedding model |
+| `OPENAI_API_KEY` | OpenAI key: used for OpenAI model tier or openai embedding model |
 | `CX_MODEL_REASONING` | Override the reasoning-tier model id |
 | `CX_MODEL_STANDARD` | Override the standard-tier model id |
 | `CX_MODEL_FAST` | Override the fast-tier model id |

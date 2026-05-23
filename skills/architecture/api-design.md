@@ -1,5 +1,5 @@
 <!--
-skills/architecture/api-design.md — API Design — Use this skill when designing REST, GraphQL, or gRPC APIs.
+skills/architecture/api-design.md (API Design) Use this skill when designing REST, GraphQL, or gRPC APIs.
 
 Use this skill when designing REST, GraphQL, or gRPC APIs. ## REST Design Principles
 -->

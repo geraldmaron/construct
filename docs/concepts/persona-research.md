@@ -73,9 +73,9 @@ Use the Galbraith STAR test: strategy drives structure drives roles. A departmen
 
 Common groupings that work:
 
-- **By function** — Engineering, Product, Quality, Operations. Good for stable, repeatable work.
-- **By output type** — Platform teams, Product teams. Good when output domains diverge.
-- **By process stage** — Discovery, Build, Operate. Good when the same person does similar work across many domains.
+- **By function**: Engineering, Product, Quality, Operations. Good for stable, repeatable work.
+- **By output type**: Platform teams, Product teams. Good when output domains diverge.
+- **By process stage**: Discovery, Build, Operate. Good when the same person does similar work across many domains.
 
 The four curated Construct profiles use functional + process-stage groupings.
 

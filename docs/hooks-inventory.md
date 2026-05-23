@@ -1,5 +1,5 @@
 <!--
-docs/hooks-inventory.md — classification of all hooks in lib/hooks/.
+docs/hooks-inventory.md: classification of all hooks in lib/hooks/.
 
 Four buckets: observability, guardrail, keep, and deprecated. Each hook has an
 assigned event, approximate LOC, and a one-line description. Deprecated hooks are
@@ -11,9 +11,9 @@ removed from this table; see docs/hooks-deprecated.md for the removal ledger.
 Classification of all hooks in `lib/hooks/` into three active buckets plus a
 deprecated ledger. Deprecated hooks are recorded in `docs/hooks-deprecated.md`.
 
-- **observability** — logging, tracing, metrics; keep as hooks
-- **guardrail** — policy enforcement on tool use; keep or consolidate
-- **keep** — session lifecycle and recovery; does not fit other buckets
+- **observability**: logging, tracing, metrics; keep as hooks
+- **guardrail**: policy enforcement on tool use; keep or consolidate
+- **keep**: session lifecycle and recovery; does not fit other buckets
 
 Hook count target: ≤ 30 (see projection below).
 

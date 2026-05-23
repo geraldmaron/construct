@@ -1,5 +1,5 @@
 <!--
-docs/providers/github.md — GitHub provider setup and usage guide.
+docs/providers/github.md: GitHub provider setup and usage guide.
 
 Covers token configuration, capabilities (read/search/webhook), and example queries.
 -->
@@ -21,8 +21,8 @@ GITHUB_TOKEN=ghp_your_token_here
 Without a token, the GitHub API allows 60 requests per hour per IP. With a token, the limit is 5,000 requests per hour.
 
 Minimum token scopes:
-- `repo` — private repository access (omit for public-only)
-- `read:org` — if searching across organization repos
+- `repo`: private repository access (omit for public-only)
+- `read:org`: if searching across organization repos
 - No write scopes needed unless you add a `write` capability via a plugin
 
 ## Verify the connection
@@ -66,7 +66,7 @@ config.kind  = "code"
 config.query = "class PaymentService repo:owner/repo-name"
 ```
 
-Code search requires `GITHUB_TOKEN` — unauthenticated code search is not supported by the GitHub API.
+Code search requires `GITHUB_TOKEN`: unauthenticated code search is not supported by the GitHub API.
 
 ### Webhook signature verification
 
@@ -85,7 +85,7 @@ The provider verifies the HMAC-SHA256 signature using timing-safe comparison and
 | Variable | Required | Description |
 |---|---|---|
 | `GITHUB_TOKEN` | No | Personal access token or GitHub App token |
-| `GH_TOKEN` | No | Alias for `GITHUB_TOKEN` — checked if `GITHUB_TOKEN` is absent |
+| `GH_TOKEN` | No | Alias for `GITHUB_TOKEN`: checked if `GITHUB_TOKEN` is absent |
 | `GITHUB_REPOS` | No | Comma-separated `owner/repo` list surfaced in session-start provider hints |
 
 ## Common query examples

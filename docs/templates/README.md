@@ -35,14 +35,14 @@ Each specialist prompt points to the template via an MCP call:
 
 The `get_template(name)` MCP tool (see [`lib/mcp/server.mjs`](../../lib/mcp/server.mjs)) resolves:
 
-1. `.cx/templates/docs/{name}.md` — **project override** (preferred if present)
-2. `templates/docs/{name}.md` — **shipped default** (fallback)
+1. `.cx/templates/docs/{name}.md`: **project override** (preferred if present)
+2. `templates/docs/{name}.md`: **shipped default** (fallback)
 
 Use `list_templates` to see both shipped and overridden names.
 
 ### Overriding a template
 
-Drop a file at `.cx/templates/docs/{name}.md` inside your project. That's it — next time a specialist drafts that doc type, they'll pick up your version. No sync, no restart.
+Drop a file at `.cx/templates/docs/{name}.md` inside your project. That's it: next time a specialist drafts that doc type, they'll pick up your version. No sync, no restart.
 
 Example: reshape the PRD to lead with success metrics:
 
@@ -70,10 +70,10 @@ Core roles live in [`skills/roles/`](../../skills/roles/):
 | `designer` | `designer.accessibility` | cx-designer, cx-accessibility |
 | `security` | `security.legal-compliance` | cx-security, cx-legal-compliance |
 | `qa` | `qa.test-automation` | cx-qa, cx-test-automation |
-| `architect` | — | cx-architect, cx-rd-lead |
-| `debugger` | — | cx-debugger |
-| `data-analyst` | — | cx-data-analyst |
-| `orchestrator` | — | cx-orchestrator |
+| `architect` |: | cx-architect, cx-rd-lead |
+| `debugger` |: | cx-debugger |
+| `data-analyst` |: | cx-data-analyst |
+| `orchestrator` |: | cx-orchestrator |
 
 ### How they're loaded
 
@@ -83,7 +83,7 @@ Unlike templates, role anti-patterns are **inlined at sync time** (not fetched a
 **Anti-patterns**: call `get_skill("roles/engineer.ai")` before drafting.
 ```
 
-`construct sync` (via [`lib/role-preload.mjs`](../../lib/role-preload.mjs)) replaces that line with the full core role body + flavor overlay under `## Role anti-patterns`. The content is always present in the final platform prompt — no runtime dependency, no chance for the model to skip the pre-work.
+`construct sync` (via [`lib/role-preload.mjs`](../../lib/role-preload.mjs)) replaces that line with the full core role body + flavor overlay under `## Role anti-patterns`. The content is always present in the final platform prompt: no runtime dependency, no chance for the model to skip the pre-work.
 
 ### Editing or adding roles
 
@@ -98,7 +98,7 @@ Unlike templates, role anti-patterns are **inlined at sync time** (not fetched a
   ---
   ```
   Update the corresponding `cx-*.md` source prompt to reference the new flavor name, then `construct sync`.
-- **No project-level override for roles** today — roles are platform-wide and curated. If you need per-project role overrides, open a request.
+- **No project-level override for roles** today: roles are platform-wide and curated. If you need per-project role overrides, open a request.
 
 ## Verification
 
