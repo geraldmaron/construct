@@ -40,29 +40,46 @@ Skipped automatically: sessions with no tool calls and very short final text. Av
 
 `construct reflect --target=internal --summary="..."` still works for explicit captures. The auto hook does not replace it. Use it when you want to record a specific insight, not just a session rollup.
 
-## Loops not yet wired
+### Research persistence (A2)
 
-The auto-reflect hook is the first of four learning loops on the roadmap. The plan is at `~/.claude/plans/stateful-sleeping-hellman.md`. Tracker IDs in beads.
+`commands/understand/research.md` produces FINDINGS, INFERENCES, GAPS, RECOMMENDATION. The output lands as `.cx/knowledge/external/research/<slug>.md` with frontmatter (`kind: research-finding`, topic, confidence, sources, accessedAt, expiresAt, profile). Schema validates `confidence=confirmed` against `sources[]`. Files cap at 50 KB. The standard sync path indexes them for retrieval. CLI: `construct knowledge add --source=research --slug=<topic>`. MCP: `knowledge_add` (requires `confirm=true`).
 
-### Research persistence (A2, construct-32d)
+### Specialist outcome capture (A3)
 
-`commands/understand/research.md` produces FINDINGS, INFERENCES, GAPS. Today those vanish at session end. A2 wires the output into `lib/document-ingest.mjs` so each research run becomes a durable file under `.cx/knowledge/external/research/<slug>.md` with frontmatter (topic, confidence, sources, expiresAt).
+Every dispatched specialist writes a JSONL line to `.cx/outcomes/<role>.jsonl` via `lib/outcomes/record.mjs`. The agent-tracker hook stamps `success`, `escalated`, `durationMs`, `profile`. `lib/outcomes/aggregate.mjs` rolls up per-role success rate and 30-day trend into `.cx/outcomes/_summary.json`. `lib/intake/classify.mjs` consumes that as a soft tiebreaker (capped at plus or minus 0.05; cannot invert the primary signal). Files rotate at 10k lines per role. MCP: `outcomes_summary` (read), `outcomes_record` (write, requires `confirm=true`).
 
-### Specialist outcome capture (A3, construct-bya)
+### Prompt improvement (A4)
 
-When a specialist finishes (cx-security, cx-engineer, etc.), nothing currently records whether the work matched the predicted outcome. A3 adds `.cx/outcomes/<role>.jsonl` and feeds the running success rate back into `lib/intake/classify.mjs` as a soft tiebreaker (capped at plus or minus 0.05, so it cannot invert the primary signal).
+`lib/evaluator-optimizer.mjs` generates unified diffs against `agents/prompts/cx-*.md` when an agent's score drops below the threshold. Patches land at `~/.cx/performance-reviews/patches/<agent>-<ts>.diff`. Nothing auto-applies. `node scripts/optimize.mjs <agent> --apply` promotes a version; `--rollback` restores from `.bak` history. Versions live in `agents/registry.json` under `promptHistory[]` (capped at 5). Rate-limited to one auto-generated patch per agent per week. Apply/rollback are CLI-only by design. Registry mutations stay on the operator path.
 
-### Prompt improvement (A4, construct-06o)
+## Profile-aware learning
 
-The chain in `lib/evaluator-optimizer.mjs` + `lib/hooks/session-optimize.mjs` references `~/.cx/performance-reviews/` and `construct optimize <agent>` but does not actually generate patches today. A4 finishes it. Low-scoring agents get a unified diff written to disk. Nothing auto-applies. `construct optimize <agent> --apply` promotes a version, `--rollback` restores. Versions live in `agents/registry.json` under `promptHistory[]`, capped at 5 entries.
+The PR #67 surfaces (profile lifecycle, intake taxonomies, departments) feed the same loops. Each observation, outcome, and research finding carries the active profile id, so `construct profile health` and `learning_status` filter cleanly. Profiles themselves are research artifacts: `docs/concepts/profile-lifecycle.md` walks the discover → frame → architect → validate → promote chain.
 
-### Telemetry dashboard (construct-mov)
+## Telemetry dashboard
 
-`npm run learning:status` will produce a one-screen table: observations per day, research files indexed, outcomes per role with success rate, prompt-version churn, active profile. The single answer to "is this thing actually learning?" Blocked on A1-A4 plus B1.
+`npm run learning:status` prints a one-screen table: active profile, observations (last 24h plus total), research findings indexed, per-role outcome rollup. Pass `--aggregate` to rebuild `_summary.json` first. Source: `scripts/learning-status.mjs`. MCP: `learning_status` returns the same dashboard as a structured object.
+
+## MCP exposure
+
+Subagents talk to Construct through the `construct-mcp` stdio server, not the CLI. Every learning surface above is reachable as an MCP tool registered in `lib/mcp/server.mjs`:
+
+| Tool | Surface | Mutating |
+|---|---|---|
+| `profile_show`, `profile_list`, `profile_drafts`, `profile_health` | Profile state | no |
+| `outcomes_summary` | Outcome rollups | no |
+| `outcomes_record` | Outcome capture | yes (`confirm=true`) |
+| `knowledge_add` | Research persistence | yes (`confirm=true`) |
+| `learning_status` | Dashboard mirror | no |
+| `sandbox_list` | Isolated environments | no |
+| `profile_create` | Draft scaffold | yes (`confirm=true`) |
+| `profile_archive` | Curated archive | yes (`confirm=true`, destructive) |
+
+`optimize_apply` and `optimize_rollback` stay CLI-only on purpose: prompt-version mutations belong to the operator, not to subagents.
 
 ## Where to dig
 
-- Tracker: `bd show construct-h47` and the issues listed above.
-- Roadmap: `~/.claude/plans/stateful-sleeping-hellman.md`.
 - Search: `node bin/construct search "session"` returns observations from the auto-reflect hook.
 - Inspect: `node bin/construct memory` shows the observation store.
+- Outcomes: `cat .cx/outcomes/_summary.json` after `node scripts/learning-status.mjs --aggregate`.
+- MCP tool list: `node lib/mcp/server.mjs` and send `tools/list` to see every learning surface exposed to subagents.

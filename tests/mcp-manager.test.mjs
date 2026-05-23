@@ -37,6 +37,12 @@ function makeRepoCopy() {
       if (hasPathSegment(rel, "cache")) return false;
       if (hasPathSegment(rel, ".tmp")) return false;
       if (hasPathSegment(rel, "coverage")) return false;
+
+      // Carrying .cx/ into the copy is a flake source: a stale .cx/sync.lock from any
+      // earlier sync (local or CI step) gets cloned, and acquireLock() then aborts
+      // when process.kill(N, 0) happens to find a live PID on the runner.
+      if (hasPathSegment(rel, ".cx")) return false;
+
       return true;
     },
   });

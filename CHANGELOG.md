@@ -4,6 +4,15 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- **MCP parity for the org profile and learning surfaces** (`lib/mcp/tools/profile.mjs`). The construct-mcp stdio server now registers 11 new tools wrapping the PR #67 capabilities so subagents reach them without shelling out: `profile_show`, `profile_list`, `profile_drafts`, `profile_health`, `outcomes_summary`, `outcomes_record`, `knowledge_add`, `profile_create`, `profile_archive`, `sandbox_list`, `learning_status`. Read-only tools are direct calls; mutating tools require `confirm=true` matching the existing storage_reset pattern; `profile_archive` additionally requires a substantive `reason`. `optimize_apply` and `optimize_rollback` stay CLI-only because they mutate registry state. Refs `construct-pxi`.
+- **Functional test for MCP parity** (`tests/functional/mcp-parity.functional.test.mjs`). Boots the real `lib/mcp/server.mjs` over stdio, performs the JSON-RPC handshake, and asserts each new surface is reachable and writes the expected durable artifact when confirmed. Closes the loop the unit tests can't see.
+
+### Fixed
+
+- **mcp-manager test flake on Ubuntu node 22**. `makeRepoCopy` carried `.cx/` into the test fixture, and a stale `.cx/sync.lock` PID could collide with a live process on the runner. The `.cx` directory is now excluded from the copy so sync tests are self-contained.
+
 ## [1.0.5] - 2026-05-22
 
 ### Added
