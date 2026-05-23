@@ -18,6 +18,9 @@ interactions.jsonl
 # Push state (runtime, per-machine)
 push-state.json
 
+# Contention stats (per-machine bd telemetry, mutates on every bd command)
+contention-stats.json
+
 # Lock files (various runtime locks)
 *.lock
 
