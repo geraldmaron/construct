@@ -37,11 +37,11 @@ For PR-creation/edit access (e.g., specialists that can open PRs on your behalf)
 construct doctor
 ```
 
-Look for `Provider: github` — should show `healthy`. Three-state classification:
+Look for `Provider: github`: should show `healthy`. Three-state classification:
 
-- **healthy** — token present, API reachable, rate-limit headroom OK.
-- **not_configured** — no `GITHUB_TOKEN`, no degraded experience expected.
-- **unhealthy** — token present but API call failed (revoked token, network, GitHub outage).
+- **healthy**: token present, API reachable, rate-limit headroom OK.
+- **not_configured**: no `GITHUB_TOKEN`, no degraded experience expected.
+- **unhealthy**: token present but API call failed (revoked token, network, GitHub outage).
 
 Inline test:
 
@@ -82,6 +82,6 @@ The webhook handler verifies the signature, normalizes the payload, and emits th
 
 ## Reference
 
-- [`docs/providers/github.md`](https://github.com/geraldmaron/construct/blob/main/docs/providers/github.md) — full provider reference, including all queryable fields.
-- [Cookbook → Manage providers](/cookbook/manage-providers) — the broader provider model.
-- [Concepts → Architecture](/concepts/architecture#providers) — how the provider layer fits into Construct.
+- [`docs/providers/github.md`](https://github.com/geraldmaron/construct/blob/main/docs/providers/github.md): full provider reference, including all queryable fields.
+- [Cookbook → Manage providers](/cookbook/manage-providers): the broader provider model.
+- [Concepts → Architecture](/concepts/architecture#providers): how the provider layer fits into Construct.

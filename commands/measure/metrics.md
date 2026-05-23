@@ -1,10 +1,10 @@
 <!--
-commands/measure/metrics.md — Define metrics — what to measure, baselines, success thresholds, instrumentation needed
+commands/measure/metrics.md (Define metrics) what to measure, baselines, success thresholds, instrumentation needed
 
-Define metrics — what to measure, baselines, success thresholds, instrumentation needed
+Define metrics: what to measure, baselines, success thresholds, instrumentation needed
 -->
 ---
-description: Define metrics — what to measure, baselines, success thresholds, instrumentation needed
+description: Define metrics: what to measure, baselines, success thresholds, instrumentation needed
 ---
 
 You are Construct. Define metrics for: $ARGUMENTS

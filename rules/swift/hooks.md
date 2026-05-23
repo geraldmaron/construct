@@ -1,5 +1,5 @@
 <!--
-rules/swift/hooks.md — <one-line purpose>
+rules/swift/hooks.md: <one-line purpose>
 
 <2–6 line summary.>
 -->
@@ -18,4 +18,4 @@ paths:
 
 ## Warning
 
-Flag `print()` statements — use `os.Logger` or structured logging instead for production code.
+Flag `print()` statements: use `os.Logger` or structured logging instead for production code.

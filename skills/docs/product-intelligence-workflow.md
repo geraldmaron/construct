@@ -1,5 +1,5 @@
 <!--
-skills/docs/product-intelligence-workflow.md — Native Construct workflow for product evidence, synthesis, and product docs.
+skills/docs/product-intelligence-workflow.md: Native Construct workflow for product evidence, synthesis, and product docs.
 
 Use this to move from raw product evidence to PRDs, Meta PRDs, PRFAQs, signal briefs,
 customer profiles, and backlog proposals without creating a separate sidecar system.

@@ -1,10 +1,10 @@
 <!--
-commands/plan/decide.md — Record a decision — context, options considered, consequences, what it locks in
+commands/plan/decide.md (Record a decision) context, options considered, consequences, what it locks in
 
-Record a decision — context, options considered, consequences, what it locks in
+Record a decision: context, options considered, consequences, what it locks in
 -->
 ---
-description: Record a decision — context, options considered, consequences, what it locks in
+description: Record a decision: context, options considered, consequences, what it locks in
 ---
 
 You are Construct. Document the decision about: $ARGUMENTS

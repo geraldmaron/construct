@@ -1,5 +1,5 @@
 <!--
-docs/security.md — Security guide for Construct.
+docs/security.md: Security guide for Construct.
 
 Covers credential handling, audit log, CSRF, CORS, rate limiting,
 token rotation, and CONSTRUCT_DEPRECATIONS=error mode.
@@ -13,7 +13,7 @@ All secrets (API keys, database passwords, tokens) are stored in `~/.construct/c
 
 **Rules:**
 
-- Do not set secrets in shell profiles (`~/.bashrc`, `~/.zshrc`) that get sourced by all processes — they become visible to all programs on the machine.
+- Do not set secrets in shell profiles (`~/.bashrc`, `~/.zshrc`) that get sourced by all processes: they become visible to all programs on the machine.
 - Do not set secrets in project `.env` files that are tracked by git. Use `.gitignore` to exclude `.env` if you use one.
 - `config.env` is owned by your user with mode `600`. The setup wizard sets this automatically; verify with `ls -la ~/.construct/config.env`.
 
@@ -120,7 +120,7 @@ Hooks run as shell commands before and after every tool use. The following hooks
 | `config-protection` | Blocks edits to protected configuration files without an explicit override |
 | `pre-push-gate` | Validates branch, tests, and documentation completeness before `git push` |
 
-Hook scripts in `lib/hooks/*.mjs` are protected files. Do not edit them without testing in isolation — a broken hook blocks all tool use in the session.
+Hook scripts in `lib/hooks/*.mjs` are protected files. Do not edit them without testing in isolation: a broken hook blocks all tool use in the session.
 
 ## Principle of least privilege
 

@@ -1,5 +1,5 @@
 <!--
-docs/providers/authoring.md — Plugin author guide for Construct data-source providers.
+docs/providers/authoring.md: Plugin author guide for Construct data-source providers.
 
 Covers the factory signature, meta object, configSchema, the five optional methods,
 error handling, and registration. Source of truth: lib/providers/contract.mjs.
@@ -55,7 +55,7 @@ Only declare capabilities you actually implement. The registry checks that every
 
 ## `configSchema`
 
-A JSON Schema draft 2020-12 object describing the per-call configuration shape. The registry does not enforce this schema automatically — it is surfaced to the agent so it knows what fields to pass.
+A JSON Schema draft 2020-12 object describing the per-call configuration shape. The registry does not enforce this schema automatically: it is surfaced to the agent so it knows what fields to pass.
 
 Example:
 
@@ -159,7 +159,7 @@ Throw a descriptive `Error` on validation failures. Include the provider id and 
 throw new Error('myProvider.read: config.resourceId required');
 ```
 
-Do not swallow errors silently — the circuit breaker counts uncaught rejections to track failure rate. If an error is non-retryable (e.g. invalid credentials), throw with a clear message so the operator can act on it.
+Do not swallow errors silently: the circuit breaker counts uncaught rejections to track failure rate. If an error is non-retryable (e.g. invalid credentials), throw with a clear message so the operator can act on it.
 
 ## Registration
 

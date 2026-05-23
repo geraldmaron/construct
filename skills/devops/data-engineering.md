@@ -1,5 +1,5 @@
 <!--
-skills/devops/data-engineering.md — Data Engineering — 1. **Idempotency**: pipelines can run multiple times without duplicating data
+skills/devops/data-engineering.md (Data Engineering) 1. **Idempotency**: pipelines can run multiple times without duplicating data
 
 ## Core Principles 1. **Idempotency**: pipelines can run multiple times without duplicating data
 -->
@@ -59,7 +59,7 @@ stream = env \
 env.execute("Orders Streaming Pipeline")
 ```
 
-Watermarks define event-time handling for late-arriving events — configure based on source latency SLA.
+Watermarks define event-time handling for late-arriving events: configure based on source latency SLA.
 
 ## Data Modeling
 

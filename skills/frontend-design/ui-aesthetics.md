@@ -1,5 +1,5 @@
 <!--
-skills/frontend-design/ui-aesthetics.md — UI Aesthetics — Use this skill when making visual design decisions: color, typography, layout, s
+skills/frontend-design/ui-aesthetics.md (UI Aesthetics) Use this skill when making visual design decisions: color, typography, layout, s
 
 Use this skill when making visual design decisions: color, typography, layout, spacing, and visual hierarchy. ## Color
 -->

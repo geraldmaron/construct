@@ -1,5 +1,5 @@
 <!--
-rules/common/git-workflow.md — commit message format and PR workflow.
+rules/common/git-workflow.md: commit message format and PR workflow.
 
 Defines conventional commit types and pull request creation steps.
 -->

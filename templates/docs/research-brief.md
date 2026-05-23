@@ -8,7 +8,7 @@
 
 ## Question
 
-<!-- One specific, falsifiable question this research must answer. Not a topic — a question with a determinate answer. -->
+<!-- One specific, falsifiable question this research must answer. Not a topic: a question with a determinate answer. -->
 
 ## Method
 
@@ -30,25 +30,25 @@
 <!-- Class definitions:
   - primary: peer-reviewed papers, official docs at exact version, raw source code, standards, company announcements, SEC filings
   - secondary: changelogs, migration guides, tracked issues, maintainer posts, conference talks by authors
-  - tertiary: blog posts, forums, Q&A, analyst summaries — for discovery only, never as evidence
+  - tertiary: blog posts, forums, Q&A, analyst summaries: for discovery only, never as evidence
   Mark Verified = yes only after fetching the URL and confirming content matches. -->
 
 ## Findings
 
 <!-- For each finding, state separately:
-  - Observation: what the source(s) actually say — direct, traceable
-  - Inference: what is concluded from the observation — labeled as inference
+  - Observation: what the source(s) actually say: direct, traceable
+  - Inference: what is concluded from the observation: labeled as inference
   - Confidence: high / medium / low, with a one-line reason
   - Sources: reference the Source table row(s) -->
 
-### Finding 1 — {short label}
+### Finding 1: {short label}
 
 **Observation**: <!-- what the sources say -->
-**Inference**: <!-- what is concluded — labeled as inference -->
-**Confidence**: high / medium / low — {reason}
+**Inference**: <!-- what is concluded: labeled as inference -->
+**Confidence**: high / medium / low: {reason}
 **Sources**: {source title(s) from table}
 
-### Finding N — {short label}
+### Finding N: {short label}
 
 <!-- repeat as needed -->
 

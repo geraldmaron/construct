@@ -1,5 +1,5 @@
 <!--
-skills/security/threat-intel.md — Threat Intelligence — Use this skill when performing OSINT, threat modeling, or building threat intell
+skills/security/threat-intel.md (Threat Intelligence) Use this skill when performing OSINT, threat modeling, or building threat intell
 
 Use this skill when performing OSINT, threat modeling, or building threat intelligence programs. ## OSINT Collection
 -->

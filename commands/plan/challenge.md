@@ -1,10 +1,10 @@
 <!--
-commands/plan/challenge.md — Challenge a plan — stress-test assumptions, surface failure modes and risks
+commands/plan/challenge.md (Challenge a plan) stress-test assumptions, surface failure modes and risks
 
-Challenge a plan — stress-test assumptions, surface failure modes and risks
+Challenge a plan: stress-test assumptions, surface failure modes and risks
 -->
 ---
-description: Challenge a plan — stress-test assumptions, surface failure modes and risks
+description: Challenge a plan: stress-test assumptions, surface failure modes and risks
 ---
 
 You are Construct. Challenge the following: $ARGUMENTS

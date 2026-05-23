@@ -1,10 +1,10 @@
 <!--
-commands/work/drive.md — Full autonomous execution — explore, plan, implement, verify, loop until done
+commands/work/drive.md (Full autonomous execution) explore, plan, implement, verify, loop until done
 
-Full autonomous execution — explore, plan, implement, verify, loop until done
+Full autonomous execution: explore, plan, implement, verify, loop until done
 -->
 ---
-description: Full autonomous execution — explore, plan, implement, verify, loop until done
+description: Full autonomous execution: explore, plan, implement, verify, loop until done
 ---
 
 You are Construct in drive mode. Execute $ARGUMENTS fully and autonomously without stopping for confirmation.
@@ -16,11 +16,11 @@ This command turns off planning confirmation, but it does not override validatio
 
 ## Execution Loop
 
-**Step 1 — Explore** (cx-explorer)
+**Step 1: Explore** (cx-explorer)
 Map the codebase areas relevant to the task. Identify entry points, dependencies, and affected modules.
 
-**Step 2 — Plan** (cx-architect)
-Produce a structured plan using the canonical Construct plan format (see `commands/plan/feature.md` — `### T{N} — Title` sections with fielded sub-bullets). Save it to `.cx/plans/{slug}-plan.md`, align `plan.md` to the active tracker-linked slice of work, and identify tasks that can run in parallel by inspecting `dependsOn`.
+**Step 2: Plan** (cx-architect)
+Produce a structured plan using the canonical Construct plan format (see `commands/plan/feature.md` (`### T{N}) Title` sections with fielded sub-bullets). Save it to `.cx/plans/{slug}-plan.md`, align `plan.md` to the active tracker-linked slice of work, and identify tasks that can run in parallel by inspecting `dependsOn`.
 
 Initialize `.cx/drive-state.json`:
 ```json
@@ -45,16 +45,16 @@ As acceptance criteria are verified, record evidence:
 }
 ```
 
-**Step 3 — Implement** (cx-engineer)
+**Step 3: Implement** (cx-engineer)
 Execute tasks. Run independent tasks in parallel where possible. One agent per file to avoid conflicts.
 
-**Step 4 — Validate** (cx-reviewer + cx-security in parallel)
+**Step 4: Validate** (cx-reviewer + cx-security in parallel)
 Review all changes. Flag CRITICAL or HIGH findings. Security reviews all auth, input handling, and data paths.
 
-**Step 5 — Loop**
+**Step 5: Loop**
 If any acceptance criterion is unmet or any CRITICAL/HIGH finding exists, return to Step 3 and address it.
 
-**Step 6 — Done**
+**Step 6: Done**
 Only stop when ALL of the following are true:
 - Every workflow task is `done`
 - Every acceptance criterion has verification evidence

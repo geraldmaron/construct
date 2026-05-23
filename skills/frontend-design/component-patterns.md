@@ -1,5 +1,5 @@
 <!--
-skills/frontend-design/component-patterns.md — Component Patterns — Use this skill when designing component architecture, building design systems, o
+skills/frontend-design/component-patterns.md (Component Patterns) Use this skill when designing component architecture, building design systems, o
 
 Use this skill when designing component architecture, building design systems, or structuring reusable UI. ## Component Hierarchy
 -->

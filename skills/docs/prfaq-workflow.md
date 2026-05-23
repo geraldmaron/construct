@@ -1,5 +1,5 @@
 <!--
-skills/docs/prfaq-workflow.md — Working-backwards PRFAQ generation from PRDs or evidence.
+skills/docs/prfaq-workflow.md: Working-backwards PRFAQ generation from PRDs or evidence.
 -->
 # PRFAQ Workflow
 

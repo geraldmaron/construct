@@ -25,11 +25,11 @@ description: Analysis of specialist prompts against 2026 best practices and Cons
 ### Key Updates (2026-05-19)
 
 ✅ **COMPLETED:** All 8 specialist prompts updated with:
-1. **Explicit tool contracts** — Input/output schemas, error types, rate limits
-2. **Evaluator-optimizer integration** — Document quality loops with rubrics
-3. **Parallel execution guidance** — Which checks run concurrently
-4. **Feedback loop instructions** — How to record observations and correct classifications
-5. **Learning capture** — When/how to record patterns, decisions, anti-patterns
+1. **Explicit tool contracts**: Input/output schemas, error types, rate limits
+2. **Evaluator-optimizer integration**: Document quality loops with rubrics
+3. **Parallel execution guidance**: Which checks run concurrently
+4. **Feedback loop instructions**: How to record observations and correct classifications
+5. **Learning capture**: When/how to record patterns, decisions, anti-patterns
 
 ---
 
@@ -196,9 +196,9 @@ Each now includes:
 The telemetry backend runs on `http://localhost:54330` with auto-provisioned credentials saved to `~/.construct/config.env`.
 
 Documentation updated in:
-- `docs/cookbook/quick-start.md` — Setup instructions
-- `docs/audit/prompt-audit-20260519.md` — This document
-- `embed.yaml` — Configuration comments
+- `docs/cookbook/quick-start.md`: Setup instructions
+- `docs/audit/prompt-audit-20260519.md`: This document
+- `embed.yaml`: Configuration comments
 
 ### Short-Term (This Month)
 
@@ -252,7 +252,7 @@ memory_add_observations([{
 - [x] Observations include patterns/decisions (not just summaries)
 - [x] Proactive activation wired to session-start
 - [x] Dogfooding dashboard panel shows live metrics
-- [ ] Cross-project learning enabled (optional — currently disabled by design)
+- [ ] Cross-project learning enabled (optional: currently disabled by design)
 
 ### Status: DOGFOODING COMPLETE ✅
 

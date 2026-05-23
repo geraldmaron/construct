@@ -1,5 +1,5 @@
 <!--
-rules/golang/hooks.md — <one-line purpose>
+rules/golang/hooks.md: <one-line purpose>
 
 <2–6 line summary.>
 -->

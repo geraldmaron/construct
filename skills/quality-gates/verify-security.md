@@ -1,5 +1,5 @@
 <!--
-skills/quality-gates/verify-security.md — Verify Security — Use this skill to scan code for security vulnerabilities before commits or relea
+skills/quality-gates/verify-security.md (Verify Security) Use this skill to scan code for security vulnerabilities before commits or relea
 
 Use this skill to scan code for security vulnerabilities before commits or releases. ## Scan Scope
 -->

@@ -1,5 +1,5 @@
 <!--
-docs/operations/backup-restore.md — Backup and restore guide for Construct.
+docs/operations/backup-restore.md: Backup and restore guide for Construct.
 
 Covers construct backup create/verify/restore, what gets backed up, and
 how to schedule regular backups.
@@ -30,7 +30,7 @@ By default, `config.env` is not included in the backup. Add `--include-secrets` 
 construct backup create --include-secrets
 ```
 
-Backup files are stored unencrypted. Keep them in a secure location — treat them with the same care as `config.env`.
+Backup files are stored unencrypted. Keep them in a secure location: treat them with the same care as `config.env`.
 
 ### Backup file naming
 
@@ -110,6 +110,6 @@ Verify the cron is working by checking the log file and the backup timestamps.
 
 ## What is not backed up
 
-- `~/.cx/knowledge/` — indexed documents. Re-index with `construct storage sync` after restore.
-- `~/.cx/skills-profile.json` — skill scope cache. Regenerates automatically on next `construct skills scope`.
-- Platform adapter files (e.g. Claude Code settings) — regenerate with `construct sync`.
+- `~/.cx/knowledge/`: indexed documents. Re-index with `construct storage sync` after restore.
+- `~/.cx/skills-profile.json`: skill scope cache. Regenerates automatically on next `construct skills scope`.
+- Platform adapter files (e.g. Claude Code settings): regenerate with `construct sync`.

@@ -1,5 +1,5 @@
 <!--
-skills/development/kotlin.md — Kotlin / Android Development — | Scope | Use when |
+skills/development/kotlin.md (Kotlin / Android Development) | Scope | Use when |
 
 ## Coroutines & Flows ### Coroutine scope discipline
 -->
@@ -14,7 +14,7 @@ skills/development/kotlin.md — Kotlin / Android Development — | Scope | Use 
 | `viewModelScope` | ViewModel-bound work; auto-cancelled on clear |
 | `lifecycleScope` | Fragment/Activity-bound; cancelled on destroy |
 | `rememberCoroutineScope()` | Compose-scoped; cancelled on composition exit |
-| `GlobalScope` | Never — uncontrolled lifetime |
+| `GlobalScope` | Never: uncontrolled lifetime |
 
 ```kotlin
 class ItemViewModel(private val repo: ItemRepository) : ViewModel() {
@@ -31,7 +31,7 @@ class ItemViewModel(private val repo: ItemRepository) : ViewModel() {
 
 ### Flow operators
 
-- `stateIn(scope, SharingStarted.WhileSubscribed(5_000), initial)` — converts cold flow to hot StateFlow for UI consumption
+- `stateIn(scope, SharingStarted.WhileSubscribed(5_000), initial)`: converts cold flow to hot StateFlow for UI consumption
 - `map`, `filter`, `distinctUntilChanged`, `debounce` for transform chains
 - `combine` for merging multiple flows
 - Use `flowOn(Dispatchers.IO)` for upstream CPU/IO work; do not switch dispatchers in the collector
@@ -43,7 +43,7 @@ class ItemViewModel(private val repo: ItemRepository) : ViewModel() {
 | `Dispatchers.Main` | UI updates |
 | `Dispatchers.IO` | Network, disk, database |
 | `Dispatchers.Default` | CPU-intensive work |
-| `Dispatchers.Unconfined` | Rarely — only in tests |
+| `Dispatchers.Unconfined` | Rarely: only in tests |
 
 ## Jetpack Compose
 
@@ -69,7 +69,7 @@ fun ItemList(items: List<Item>, onDelete: (Item) -> Unit) { ... }
 
 - `remember` expensive computations with stable keys
 - `key(id) { ... }` in lazy lists to preserve item identity
-- Avoid unstable lambdas — use `remember { { ... } }` or stable function references
+- Avoid unstable lambdas: use `remember { { ... } }` or stable function references
 - Enable Compose compiler metrics to detect recomposition hot spots
 - Prefer `LazyColumn` over `Column` for variable-length lists
 
@@ -134,7 +134,7 @@ Scoping: `@Singleton` for app-scoped, `@ActivityRetainedScoped` for ViewModel-li
 
 ## Common Pitfalls
 
-- `collect` in `Fragment.onViewCreated` without `repeatOnLifecycle(STARTED)` — causes collection after view destruction
-- `StateFlow.value` reads in tests without collecting — use `turbine` or `runTest { first() }`
-- Leaking `Activity` context into long-lived objects — use `applicationContext`
-- `LazyColumn` with `items(list)` where `list` is `State<List<...>>` causing full recomposition — use `key` param
+- `collect` in `Fragment.onViewCreated` without `repeatOnLifecycle(STARTED)`: causes collection after view destruction
+- `StateFlow.value` reads in tests without collecting: use `turbine` or `runTest { first() }`
+- Leaking `Activity` context into long-lived objects: use `applicationContext`
+- `LazyColumn` with `items(list)` where `list` is `State<List<...>>` causing full recomposition: use `key` param

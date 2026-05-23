@@ -1,5 +1,5 @@
 <!--
-rules/common/development-workflow.md — feature implementation pipeline.
+rules/common/development-workflow.md: feature implementation pipeline.
 
 Defines the research-plan-TDD-review-commit workflow that runs before
 git operations. References testing.md, code-review.md, git-workflow.md.

@@ -1,5 +1,5 @@
 <!--
-skills/devops/incident-response.md — Incident Response — | Sev | User impact | Response time | Example |
+skills/devops/incident-response.md (Incident Response) | Sev | User impact | Response time | Example |
 
 ## Severity Levels | Sev | User impact | Response time | Example |
 -->
@@ -14,7 +14,7 @@ skills/devops/incident-response.md — Incident Response — | Sev | User impact
 | **P2** | Significant degradation, partial outage | < 1 hour | Elevated error rate, slow responses |
 | **P3** | Minor impact, workaround available | Best effort / next business day | Single user affected, cosmetic |
 
-Define severity in your runbook and assign it early — it determines escalation and comms cadence.
+Define severity in your runbook and assign it early: it determines escalation and comms cadence.
 
 ## The Response Loop
 
@@ -36,9 +36,9 @@ Healthy detection requires:
 Declare an incident early, even if uncertain. It is easier to downgrade than to delay comms.
 
 1. Create incident channel: `#incident-YYYY-MM-DD-brief-description`
-2. Assign **Incident Commander (IC)** — one person owns the call and all decisions
-3. Assign **Scribe** — records timeline, decisions, actions in real time
-4. Assign **Comms Lead** — status page updates and stakeholder notifications
+2. Assign **Incident Commander (IC)**: one person owns the call and all decisions
+3. Assign **Scribe**: records timeline, decisions, actions in real time
+4. Assign **Comms Lead**: status page updates and stakeholder notifications
 
 ### Triage
 
@@ -53,14 +53,14 @@ IC asks: **"What is the user impact and is it getting better or worse?"**
 
 Use `git log --since="2 hours ago"` and deployment logs to find the change vector.
 
-### Mitigate (not root cause — stop the bleeding first)
+### Mitigate (not root cause: stop the bleeding first)
 
 Mitigation options in priority order:
-1. **Rollback** — fastest if a recent deploy is the cause
-2. **Feature flag off** — disable the failing feature
-3. **Traffic shift** — route to a healthy region or canary
-4. **Scale up** — if resource exhaustion is the cause
-5. **Restart** — for stuck processes (last resort — often hides root cause)
+1. **Rollback**: fastest if a recent deploy is the cause
+2. **Feature flag off**: disable the failing feature
+3. **Traffic shift**: route to a healthy region or canary
+4. **Scale up**: if resource exhaustion is the cause
+5. **Restart** (for stuck processes (last resort) often hides root cause)
 
 Do NOT wait for a perfect fix. Mitigate first, fix properly after users are unblocked.
 
@@ -107,12 +107,12 @@ Write the post-mortem within 48 hours while memory is fresh.
 
 ### Required sections
 
-1. **Summary** — 3-sentence description of what happened, impact, and resolution
-2. **Timeline** — chronological log with timestamps
-3. **Root cause(s)** — use 5-whys to reach systemic causes, not surface symptoms
-4. **Contributing factors** — process/tooling gaps that allowed the issue
-5. **What went well** — detection worked, rollback was fast, etc.
-6. **Action items** — concrete, assigned, time-bounded; not vague recommendations
+1. **Summary**: 3-sentence description of what happened, impact, and resolution
+2. **Timeline**: chronological log with timestamps
+3. **Root cause(s)**: use 5-whys to reach systemic causes, not surface symptoms
+4. **Contributing factors**: process/tooling gaps that allowed the issue
+5. **What went well**: detection worked, rollback was fast, etc.
+6. **Action items**: concrete, assigned, time-bounded; not vague recommendations
 
 ### 5-Whys example
 
@@ -129,7 +129,7 @@ Action: Add query plan check to PR template + CI gate for slow queries
 
 ### Blameless culture
 
-The post-mortem finds systemic failures, not individual errors. A person took an action that made sense given the information and tools available at the time — the question is why the system allowed that action to cause an outage.
+The post-mortem finds systemic failures, not individual errors. A person took an action that made sense given the information and tools available at the time: the question is why the system allowed that action to cause an outage.
 
 ## Runbook Template
 

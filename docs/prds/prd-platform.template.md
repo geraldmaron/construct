@@ -13,7 +13,7 @@ body_hash: sha256:a667eec1e8e6b7fd7157e2c727ee64efa76df4de430f0d87063d40f8b68714
 
 <!--
 Use this for capabilities consumed by internal systems, developers, operators, or other
-services — not directly by end users. Covers APIs, SDKs, admin surfaces, data contracts,
+services: not directly by end users. Covers APIs, SDKs, admin surfaces, data contracts,
 shared infrastructure, and operational tooling.
 
 Use prd.md instead for customer-facing product capabilities.

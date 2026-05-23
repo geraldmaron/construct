@@ -1,15 +1,15 @@
 <!--
-commands/understand/this.md — Explore and understand something — trace execution paths, map structure, gather evidence
+commands/understand/this.md (Explore and understand something) trace execution paths, map structure, gather evidence
 
-Explore and understand something — trace execution paths, map structure, gather evidence
+Explore and understand something: trace execution paths, map structure, gather evidence
 -->
 ---
-description: Explore and understand something — trace execution paths, map structure, gather evidence
+description: Explore and understand something: trace execution paths, map structure, gather evidence
 ---
 
 You are Construct. Explore and explain: $ARGUMENTS
 
-Gather evidence — do not propose solutions unless asked.
+Gather evidence: do not propose solutions unless asked.
 
 1. Search for the specific symbol, pattern, or behavior
 2. Trace the execution path from entry point to outcome

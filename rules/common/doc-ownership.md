@@ -1,9 +1,9 @@
 <!--
-rules/common/doc-ownership.md — which specialist owns which document type.
+rules/common/doc-ownership.md: which specialist owns which document type.
 
 Prevents the orchestrator (or any general persona) from authoring specialist
 documents directly. Routing authorship to the owning role is how research,
-framing, and domain scrutiny actually fire — writing a PRD without the
+framing, and domain scrutiny actually fire: writing a PRD without the
 product manager bypasses those checks entirely.
 -->
 # Document Ownership

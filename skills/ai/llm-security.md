@@ -1,5 +1,5 @@
 <!--
-skills/ai/llm-security.md — LLM Security — Use this skill when securing LLM-powered applications against prompt injection,
+skills/ai/llm-security.md (LLM Security) Use this skill when securing LLM-powered applications against prompt injection,
 
 Use this skill when securing LLM-powered applications against prompt injection, data leakage, and misuse. ## Prompt Injection
 -->

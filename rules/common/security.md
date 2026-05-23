@@ -1,5 +1,5 @@
 <!--
-rules/common/security.md — mandatory security checks and secret management.
+rules/common/security.md: mandatory security checks and secret management.
 
 Defines pre-commit security checklist, secret management rules,
 and response protocol for discovered vulnerabilities.

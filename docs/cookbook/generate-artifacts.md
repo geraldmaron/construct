@@ -4,7 +4,7 @@ description: Create structured documents from templates with one command.
 ---
 
 <!--
-docs/how-to/how-to-artifact.md — How to generate and list structured artifacts.
+docs/how-to/how-to-artifact.md: How to generate and list structured artifacts.
 
 Covers PRD, ADR, RFC, and memo generation via construct doc and init-docs,
 plus verifying artifact stamps with construct doc verify.
@@ -22,7 +22,7 @@ construct init-docs
 ```
 
 Creates `docs/prd/`, `docs/adr/`, `docs/rfc/`, `docs/memos/`, `docs/runbooks/`, and `docs/how-to/`
-with `README.md` indices and `_template.md` starters. Safe to run on an existing repo — will not
+with `README.md` indices and `_template.md` starters. Safe to run on an existing repo: will not
 overwrite files that already exist.
 
 ## Generate a new artifact from a template
@@ -59,7 +59,7 @@ ls docs/rfc/
 ls docs/memos/
 ```
 
-No special command is needed — artifacts are plain markdown files in their lanes.
+No special command is needed: artifacts are plain markdown files in their lanes.
 
 ## Audit the mutation trail
 

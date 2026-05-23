@@ -95,9 +95,9 @@ Providers run `runContractTests` in their test suite to prove compliance.
 
 ## Drawbacks
 
-- `read(ref)` is intentionally generic — providers interpret `ref` differently (git SHA vs Jira issue key vs Slack channel ID). This flexibility makes cross-provider code harder to write.
+- `read(ref)` is intentionally generic: providers interpret `ref` differently (git SHA vs Jira issue key vs Slack channel ID). This flexibility makes cross-provider code harder to write.
 - `watch` uses polling internally for most providers; true push requires webhook infrastructure (Phase 5).
-- No pagination contract — providers return arrays directly. Large result sets require `opts.limit` / `opts.cursor` conventions that are currently informal.
+- No pagination contract: providers return arrays directly. Large result sets require `opts.limit` / `opts.cursor` conventions that are currently informal.
 
 ## Alternatives
 
@@ -112,6 +112,6 @@ Rejected: too heavyweight; providers change frequently in early development; spe
 
 ## Unresolved questions
 
-- Should `read` return a single Item when ref is an ID, or always an array? Currently always array — reconsider if single-item lookup becomes common.
+- Should `read` return a single Item when ref is an ID, or always an array? Currently always array: reconsider if single-item lookup becomes common.
 - Pagination: should `opts.cursor` / `opts.limit` be formalized in the contract test harness?
 - Should `write` support a `patch` operation distinct from `create`?

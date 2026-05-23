@@ -1,5 +1,5 @@
 <!--
-skills/devops/observability.md — Observability — Use this skill when designing logging, tracing, metrics, or alerting systems.
+skills/devops/observability.md (Observability) Use this skill when designing logging, tracing, metrics, or alerting systems.
 
 Use this skill when designing logging, tracing, metrics, or alerting systems. ## Three Pillars
 -->

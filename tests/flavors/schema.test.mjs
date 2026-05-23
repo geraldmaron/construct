@@ -1,7 +1,7 @@
 /**
  * tests/flavors/schema.test.mjs — Every flavor overlay conforms to the schema.
  *
- * After scripts/migrate-flavors.mjs runs, every file in skills/roles/ must:
+ * Every file in skills/roles/ must:
  *   - Have parseable frontmatter
  *   - Declare profiles: [...] (non-empty)
  *   - Declare cap: 1

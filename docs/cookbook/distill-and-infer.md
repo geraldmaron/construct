@@ -4,7 +4,7 @@ description: Pull citation-ready chunks from a corpus and infer structured field
 ---
 
 <!--
-docs/how-to/how-to-distill-infer.md — How to use construct distill and construct infer.
+docs/how-to/how-to-distill-infer.md: How to use construct distill and construct infer.
 
 Covers distilling a directory of documents with query-focused chunk selection
 and inferring structured field schemas from one or more documents.
@@ -23,7 +23,7 @@ construct distill docs/ --query="what are the accepted ADR decisions?"
 ```
 
 Without `--query`, it produces a general summary. With `--query`, chunk selection is focused on
-answering that question specifically — useful before a long coding session to pre-load only
+answering that question specifically: useful before a long coding session to pre-load only
 the relevant context.
 
 ### Output formats
@@ -56,7 +56,7 @@ construct distill src/ --depth=2 --ext=ts,tsx
 ## Infer a document schema
 
 `construct infer` sends a document (or a batch of documents) to the model and returns a
-structured field schema — field names, types, formats, examples, and confidence scores.
+structured field schema: field names, types, formats, examples, and confidence scores.
 
 ### Single document
 
@@ -86,4 +86,4 @@ are excluded by default.
 
 The MCP tool `infer_document_schema` accepts a `save: true` flag that writes the result to
 `.cx/knowledge/reference/schemas/<name>.schema.json`. This is not available via the CLI flag
-yet — use the MCP surface directly when saving to the schema registry is needed.
+yet: use the MCP surface directly when saving to the schema registry is needed.

@@ -13,7 +13,7 @@ body_hash: sha256:00000000000000000000000000000000000000000000000000000000000000
 - **Severity**: SEV-3 (routine maintenance)
 
 Recurring tasks to keep Construct healthy, docs current, and costs under control.
-Run these on a cadence that fits your team — weekly is a reasonable default.
+Run these on a cadence that fits your team: weekly is a reasonable default.
 
 ---
 
@@ -146,7 +146,7 @@ audit stamps. Add `--json` for machine-readable output.
 
 ## References
 
-- `docs/architecture.md` — system overview, provider table, dashboard design
-- `docs/how-to/how-to-observability.md` — detail on review/optimize/cost/efficiency
-- `docs/how-to/how-to-providers.md` — model tier management
-- `rules/common/development-workflow.md` — docs update step (3.5)
+- `docs/architecture.md`: system overview, provider table, dashboard design
+- `docs/how-to/how-to-observability.md`: detail on review/optimize/cost/efficiency
+- `docs/how-to/how-to-providers.md`: model tier management
+- `rules/common/development-workflow.md`: docs update step (3.5)

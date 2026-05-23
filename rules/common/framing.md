@@ -1,5 +1,5 @@
 <!--
-rules/common/framing.md — how to frame a problem before acting on it.
+rules/common/framing.md: how to frame a problem before acting on it.
 
 Establishes the hard separation between execution artifacts (tickets, chat
 transcripts, existing docs) and sources of truth (the underlying problem).

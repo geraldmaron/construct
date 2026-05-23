@@ -1,6 +1,6 @@
 # Construct Org Chart
 
-> **Org-in-a-box framing:** Construct is your AI R&D organization. You are the founder/CEO — you give outcomes, the org figures out execution.
+> **Org-in-a-box framing:** Construct is your AI R&D organization. You are the founder/CEO: you give outcomes, the org figures out execution.
 
 ## Reporting Structure
 
@@ -54,9 +54,9 @@ Construct (Your AI R&D Organization)
 
 **R&D (Research & Development)** is the **entire product-building organization**, not a department. It contains:
 
-1. **Product** — defines what to build
-2. **Engineering** — builds it
-3. **Intelligence** — discovers what's possible and measures what's broken
+1. **Product**: defines what to build
+2. **Engineering**: builds it
+3. **Intelligence**: discovers what's possible and measures what's broken
 
 This mirrors real-world tech orgs where the CTO/VP Engineering organization is called "R&D" and encompasses all product development.
 

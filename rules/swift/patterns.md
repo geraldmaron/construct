@@ -1,5 +1,5 @@
 <!--
-rules/swift/patterns.md — <one-line purpose>
+rules/swift/patterns.md: <one-line purpose>
 
 <2–6 line summary.>
 -->
@@ -53,7 +53,7 @@ actor Cache<Key: Hashable & Sendable, Value: Sendable> {
 
 ## Dependency Injection
 
-Inject protocols with default parameters — production uses defaults, tests inject mocks:
+Inject protocols with default parameters: production uses defaults, tests inject mocks:
 
 ```swift
 struct UserService {

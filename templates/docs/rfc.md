@@ -9,7 +9,7 @@
 <!--
 Use this for significant technical or architectural proposals that need structured
 review before implementation begins. An RFC is not an ADR (which records a decision
-already made) — it is the proposal that leads to one.
+already made): it is the proposal that leads to one.
 
 Use rfc-platform.md instead when the proposal introduces breaking changes to a
 contract, API, schema, or protocol consumed by other systems.

@@ -1,5 +1,5 @@
 <!--
-skills/security/blue-team.md — Blue Team — Use this skill when defending systems, responding to incidents, or building dete
+skills/security/blue-team.md (Blue Team) Use this skill when defending systems, responding to incidents, or building dete
 
 Use this skill when defending systems, responding to incidents, or building detection and monitoring capabilities. ## Detection Engineering
 -->

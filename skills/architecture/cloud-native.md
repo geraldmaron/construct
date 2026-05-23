@@ -1,5 +1,5 @@
 <!--
-skills/architecture/cloud-native.md — Cloud-Native Architecture — Use this skill when designing containerized, orchestrated, or microservice-based
+skills/architecture/cloud-native.md (Cloud-Native Architecture) Use this skill when designing containerized, orchestrated, or microservice-based
 
 Use this skill when designing containerized, orchestrated, or microservice-based systems. ## Container Best Practices
 -->

@@ -1,10 +1,10 @@
 <!--
-commands/ship/release.md — Release — plan rollout, changelog, rollback, and post-release verification
+commands/ship/release.md (Release) plan rollout, changelog, rollback, and post-release verification
 
-Release — plan rollout, changelog, rollback, and post-release verification
+Release: plan rollout, changelog, rollback, and post-release verification
 -->
 ---
-description: Release — plan rollout, changelog, rollback, and post-release verification
+description: Release: plan rollout, changelog, rollback, and post-release verification
 ---
 
 You are Construct. Release the following: $ARGUMENTS

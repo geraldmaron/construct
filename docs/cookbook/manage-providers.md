@@ -1,10 +1,10 @@
 ---
 title: Manage providers
-description: GitHub, Jira, Confluence, Slack, Salesforce — credentials, contracts, and the capability matrix.
+description: GitHub, Jira, Confluence, Slack, Salesforce: credentials, contracts, and the capability matrix.
 ---
 
 <!--
-docs/how-to/how-to-providers.md — How to manage model providers and external data sources.
+docs/how-to/how-to-providers.md: How to manage model providers and external data sources.
 
 Covers listing current model tier assignments, changing a tier,
 applying configuration via construct models, and adding/scoping external sources.
@@ -50,7 +50,7 @@ construct models --apply
 
 ## Adding External Data Sources
 
-Construct connects to external systems via providers. Only configured repos/projects are focal anchors — everything else is ambient (ignored by auto-fetch, searchable via Rovo).
+Construct connects to external systems via providers. Only configured repos/projects are focal anchors: everything else is ambient (ignored by auto-fetch, searchable via Rovo).
 
 ### GitHub Repos
 
@@ -120,7 +120,7 @@ Or via the dashboard Models screen.
 construct optimize --list
 ```
 
-Shows each agent's average quality score and trace count — useful for deciding which tier to bump up before a review.
+Shows each agent's average quality score and trace count: useful for deciding which tier to bump up before a review.
 
 ## Dry-run prompt optimization
 

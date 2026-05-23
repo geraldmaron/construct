@@ -1,5 +1,5 @@
 <!--
-skills/devops/monorepo.md — Monorepo — Use this skill when selecting monorepo tooling, structuring packages, or optimiz
+skills/devops/monorepo.md (Monorepo) Use this skill when selecting monorepo tooling, structuring packages, or optimiz
 
 Use this skill when selecting monorepo tooling, structuring packages, or optimizing affected-only builds. ## Tool Selection
 -->
@@ -32,12 +32,12 @@ packages/
   auth/
 ```
 
-Keep `apps/` for deployable surfaces and `packages/` for everything importable. Never put deployable entrypoints inside `packages/`. Config packages (`packages/config/`) centralise tooling setup — each app/package extends rather than duplicates.
+Keep `apps/` for deployable surfaces and `packages/` for everything importable. Never put deployable entrypoints inside `packages/`. Config packages (`packages/config/`) centralise tooling setup: each app/package extends rather than duplicates.
 
 ## Package Boundaries
 
 - One package per domain or product surface (`packages/billing`, `packages/auth`, `apps/web`, `apps/api`).
-- Place shared utilities in `packages/utils` or `packages/shared` — never in an app package.
+- Place shared utilities in `packages/utils` or `packages/shared`: never in an app package.
 - Never import directly from one `apps/` package to another `apps/` package; extract shared code to `packages/`.
 - Each package exposes its public API through a single `index.ts` barrel file; internal modules are private.
 - Enforce boundaries with Nx `@nrwl/enforce-module-boundaries` lint rules or ESLint's `import/no-restricted-paths`.
@@ -56,7 +56,7 @@ nx affected --target=build --base=origin/main
 nx affected --target=test --base=origin/main
 ```
 
-Both tools build a change graph from the dependency tree. A change to `packages/utils` marks every downstream package as affected. Only affected packages run in CI — unaffected packages use cached results.
+Both tools build a change graph from the dependency tree. A change to `packages/utils` marks every downstream package as affected. Only affected packages run in CI: unaffected packages use cached results.
 
 CI integration: set `--base` to the merge base of the PR branch (`origin/main` or `$(git merge-base HEAD origin/main)`), not `HEAD^1`, to correctly identify all changed files in the PR.
 
@@ -82,6 +82,6 @@ Generate changelogs automatically from changeset files; do not write changelogs 
 ## CI Optimization
 
 - Cache `.turbo` or Nx's default cache directory (`node_modules/.cache/nx`) between CI runs, keyed to the lock file hash.
-- Enable remote caching (Turborepo Remote Cache, Nx Cloud) for team environments — local caches do not transfer between CI runners.
+- Enable remote caching (Turborepo Remote Cache, Nx Cloud) for team environments: local caches do not transfer between CI runners.
 - Run `turbo prune --scope=<app>` to generate a minimal lockfile subset for Docker builds of individual apps.
 - Gate PR merges on `affected` tests, not the full suite, to keep CI under 10 minutes for large repos.

@@ -12,7 +12,7 @@ process, template, evaluation loop, or operating model.
 Before drafting, read rules/common/framing.md.
 
 Owning specialist: cx-product-manager (see rules/common/doc-ownership.md).
-Construct must route PRD authoring to cx-product-manager rather than drafting directly —
+Construct must route PRD authoring to cx-product-manager rather than drafting directly.
 doing so is how requirements traceability, user grounding, and external research fire.
 
 Write with a balance of short paragraphs, tables, and bullets. Bullets are for scans,
@@ -67,7 +67,7 @@ Examples:
 ## Outcome
 <!--
 What is concretely different for users, the business, or the system once this
-ships and is adopted. This is the observable end state — written from the
+ships and is adopted. This is the observable end state: written from the
 user's perspective when possible. The acceptance criteria below should be the
 falsifiable evidence that this outcome was achieved.
 
@@ -80,13 +80,13 @@ section and see the delta in plain language.
 | | Description |
 |---|---|
 | **In scope** | <what this PRD covers and commits to ship> |
-| **Out of scope** | <related work explicitly deferred — name the reason> |
+| **Out of scope** | <related work explicitly deferred: name the reason> |
 | **Adjacent (deferred)** | <work that's a natural follow-up but not in this PRD> |
 
 <!--
 Be specific. "Authentication" is too vague; "OAuth login for the web dashboard,
 not for the CLI" is right. The Out of scope list is a tool for protecting
-schedule and reviewer attention — use it.
+schedule and reviewer attention: use it.
 -->
 
 ## Phases
@@ -94,7 +94,7 @@ schedule and reviewer attention — use it.
 <!--
 Phases are how this work ships, not how it's organized internally. Each phase
 is independently shippable and provides observable user value (or a clearly
-defined platform capability). Avoid "phase 1: backend, phase 2: frontend" —
+defined platform capability). Avoid "phase 1: backend, phase 2: frontend".
 that's a task list, not a phasing.
 
 Each phase below holds its own goal, status, functional requirements (FR),
@@ -108,53 +108,53 @@ NFR categories to consider: performance, reliability, security, privacy,
 accessibility, observability, compliance, cost. Numeric targets where possible.
 -->
 
-### Phase 1 — <name>
+### Phase 1: <name>
 
 - **Goal**: <what this phase delivers>
 - **Status**: not started
 
 **Functional**
 
-- **FR-1.1** — <imperative statement of what the system must do>
+- **FR-1.1**: <imperative statement of what the system must do>
   - *Acceptance*: <observable, falsifiable condition a reviewer can check without asking the author>
-- **FR-1.2** — <...>
+- **FR-1.2**: <...>
   - *Acceptance*: <...>
 
 **Non-functional**
 
-- **NFR-1.1** — <category>: <target with number>
+- **NFR-1.1**: <category>: <target with number>
   - *Acceptance*: <how this is measured and what counts as pass>
 
-### Phase 2 — <name>
+### Phase 2: <name>
 
 - **Goal**: <what this phase delivers>
 - **Status**: not started
 
 **Functional**
 
-- **FR-2.1** — <...>
+- **FR-2.1**: <...>
   - *Acceptance*: <...>
-- **FR-2.2** — <...>
+- **FR-2.2**: <...>
   - *Acceptance*: <...>
 
 **Non-functional**
 
-- **NFR-2.1** — <category>: <target>
+- **NFR-2.1**: <category>: <target>
   - *Acceptance*: <...>
 
-### Phase 3 — <name>
+### Phase 3: <name>
 
 - **Goal**: <what this phase delivers>
 - **Status**: not started
 
 **Functional**
 
-- **FR-3.1** — <...>
+- **FR-3.1**: <...>
   - *Acceptance*: <...>
 
 **Non-functional**
 
-- **NFR-3.1** — <category>: <target>
+- **NFR-3.1**: <category>: <target>
   - *Acceptance*: <...>
 
 ## Success metrics
@@ -165,7 +165,7 @@ acceptance criteria. Leading vs. lagging. Avoid vanity metrics.
 
 ## Constraints
 <!--
-Budget, timeline, platform, team, legal, technical debt — anything that shapes
+Budget, timeline, platform, team, legal, technical debt: anything that shapes
 the solution and isn't a requirement.
 -->
 

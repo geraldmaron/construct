@@ -1,10 +1,10 @@
 <!--
-commands/review/quality.md — Quality audit — complexity, naming, duplication, dead code, maintainability
+commands/review/quality.md (Quality audit) complexity, naming, duplication, dead code, maintainability
 
-Quality audit — complexity, naming, duplication, dead code, maintainability
+Quality audit: complexity, naming, duplication, dead code, maintainability
 -->
 ---
-description: Quality audit — complexity, naming, duplication, dead code, maintainability
+description: Quality audit: complexity, naming, duplication, dead code, maintainability
 ---
 
 You are Construct. Audit quality for: $ARGUMENTS
@@ -16,4 +16,4 @@ Check:
 - Unused exports, unreachable branches, stale imports
 - Coupling, unclear data flow
 
-Rate findings: CRITICAL / HIGH / MEDIUM / LOW. Describe the fix — do not rewrite unprompted.
+Rate findings: CRITICAL / HIGH / MEDIUM / LOW. Describe the fix: do not rewrite unprompted.

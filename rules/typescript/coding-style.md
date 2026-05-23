@@ -1,5 +1,5 @@
 <!--
-rules/typescript/coding-style.md — <one-line purpose>
+rules/typescript/coding-style.md: <one-line purpose>
 
 <2–6 line summary.>
 -->

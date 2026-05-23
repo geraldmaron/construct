@@ -1,5 +1,5 @@
 <!--
-skills/frameworks/react.md — React — By default, components are **Server Components** — they run on the server, have
+skills/frameworks/react.md (React) By default, components are **Server Components**: they run on the server, have
 
 ## Component Design ### Server vs Client Components (React 19 / Next.js App Router)
 -->
@@ -9,7 +9,7 @@ skills/frameworks/react.md — React — By default, components are **Server Com
 
 ### Server vs Client Components (React 19 / Next.js App Router)
 
-By default, components are **Server Components** — they run on the server, have no state, and can fetch data directly. Add `'use client'` only when you need interactivity, browser APIs, or hooks.
+By default, components are **Server Components**: they run on the server, have no state, and can fetch data directly. Add `'use client'` only when you need interactivity, browser APIs, or hooks.
 
 ```tsx
 // Server Component — no directive needed
@@ -53,7 +53,7 @@ See decision matrix:
 | URL state | `useSearchParams` / router |
 | Component-local state | `useState` / `useReducer` |
 
-Do not put server data in a client store — TanStack Query is the cache. Derive don't duplicate.
+Do not put server data in a client store: TanStack Query is the cache. Derive don't duplicate.
 
 ## Performance
 
@@ -95,8 +95,8 @@ export function useItems() {
 
 ### Controlled vs uncontrolled
 
-- Controlled: React owns value via `state` — use for forms with validation, derived fields
-- Uncontrolled: DOM owns value via `ref` — use for file inputs and simple browser-owned fields
+- Controlled: React owns value via `state`: use for forms with validation, derived fields
+- Uncontrolled: DOM owns value via `ref`: use for file inputs and simple browser-owned fields
 
 ## Testing
 
@@ -113,20 +113,20 @@ test('submits search query', async () => {
 });
 ```
 
-- Use `@testing-library/react` — test behavior, not implementation
-- `userEvent` over `fireEvent` — simulates real user interactions
+- Use `@testing-library/react`: test behavior, not implementation
+- `userEvent` over `fireEvent`: simulates real user interactions
 - Mock at the network boundary (`msw`) not the component boundary
 
 ## Tooling
 
 - **Vite** for non-Next apps; fast HMR, native ESM
 - **Biome** for lint + format in a single fast tool (replaces ESLint + Prettier)
-- **TypeScript strict mode** — enables `noUncheckedIndexedAccess`, `strictNullChecks`, etc.
+- **TypeScript strict mode**: enables `noUncheckedIndexedAccess`, `strictNullChecks`, etc.
 - React DevTools Profiler for recomposition analysis
 
 ## Common Pitfalls
 
-- Stale closures in `useEffect` — include all reactive values in the dependency array or use `useEffectEvent` (React 19)
-- `useEffect` for data fetching — use TanStack Query instead
-- Direct DOM mutation inside render — causes tearing with concurrent mode
-- Key prop as array index — breaks reconciliation on reorder/insert
+- Stale closures in `useEffect`: include all reactive values in the dependency array or use `useEffectEvent` (React 19)
+- `useEffect` for data fetching: use TanStack Query instead
+- Direct DOM mutation inside render: causes tearing with concurrent mode
+- Key prop as array index: breaks reconciliation on reorder/insert

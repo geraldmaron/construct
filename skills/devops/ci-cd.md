@@ -1,5 +1,5 @@
 <!--
-skills/devops/ci-cd.md — CI/CD — Use this skill when designing, debugging, or optimizing CI/CD pipelines.
+skills/devops/ci-cd.md (CI/CD) Use this skill when designing, debugging, or optimizing CI/CD pipelines.
 
 Use this skill when designing, debugging, or optimizing CI/CD pipelines. ## Pipeline Stages
 -->
@@ -11,12 +11,12 @@ Use this skill when designing, debugging, or optimizing CI/CD pipelines.
 
 | Stage | Purpose | Tools | Failure Policy |
 |---|---|---|---|
-| Build | Compile, lint, typecheck | tsc, eslint, cargo check, go vet | Fail fast — block all downstream stages |
+| Build | Compile, lint, typecheck | tsc, eslint, cargo check, go vet | Fail fast: block all downstream stages |
 | Test | Unit → integration → e2e | Jest, Pytest, go test, Playwright | Fail on any; parallelize within stage |
 | Security Scan | SAST, dep audit, secrets detection | Semgrep, CodeQL, Trivy, gitleaks | Block on CRITICAL/HIGH; warn on MEDIUM |
 | Deploy | Promote artifact through environments | GitHub Actions, ArgoCD, Helm | Gate on all prior stages passing |
 
-Always run lint and typecheck before tests — they are faster and catch more errors per second of CI time.
+Always run lint and typecheck before tests: they are faster and catch more errors per second of CI time.
 
 ## GitHub Actions
 
@@ -94,14 +94,14 @@ Never auto-deploy to production without a passing security scan and at least one
 
 - Store secrets in the platform's encrypted secret store (GitHub Actions Secrets, GitLab CI Variables).
 - Never hardcode secrets in workflow files or Dockerfiles.
-- Mask secrets in logs — CI platforms do this automatically for registered secrets; verify it works before relying on it.
+- Mask secrets in logs: CI platforms do this automatically for registered secrets; verify it works before relying on it.
 - Rotate any secret immediately after a potential exposure; treat "may have leaked" the same as "did leak".
 - Use OIDC-based short-lived tokens (GitHub OIDC → AWS/GCP/Azure) over long-lived service account keys wherever the cloud provider supports it.
 
 ## Speed Optimization
 
 - Cache dependency layers keyed to lock file hash; a clean install on every run is a CI antipattern.
-- Run lint and typecheck first — they fail fast and cost less than a full test suite.
+- Run lint and typecheck first: they fail fast and cost less than a full test suite.
 - Split slow test suites across workers using matrix or `--shard` flags (Vitest, Jest, Playwright all support sharding).
 - Parallelize independent test files; do not serialize unit tests.
 - In monorepos, run only affected packages: `turbo run test --filter=[HEAD^1]` or `nx affected --target=test`.

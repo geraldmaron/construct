@@ -1,5 +1,5 @@
 <!--
-docs/providers/atlassian-jira.md — Jira provider setup and usage guide.
+docs/providers/atlassian-jira.md: Jira provider setup and usage guide.
 
 Covers credential configuration, capabilities (read/search), and JQL examples.
 -->
@@ -80,4 +80,4 @@ Fields returned per issue: `summary`, `status`, `assignee`, `priority`, `updated
 
 - Jira Cloud uses API v3 (`/rest/api/3/`). Jira Server and Jira Data Center may require `JIRA_BASE_URL` adjusted to the server's domain and may use a different auth scheme.
 - `search` uses a `POST` request to `/rest/api/3/search` to support long JQL strings.
-- The Confluence provider shares the same credentials — no separate setup needed if both are used.
+- The Confluence provider shares the same credentials: no separate setup needed if both are used.

@@ -141,7 +141,7 @@ construct headhunt <domain> [--for=OBJECTIVE] [--scope=TEXT] [--temp|--save] [--
 
 ## construct intake
 
-Inspect and process the R&D intake queue. Operates against the filesystem queue at `.cx/intake/` in solo mode, or the Postgres-backed queue in team / enterprise mode — the CLI contract is identical.
+Inspect and process the R&D intake queue. Operates against the filesystem queue at `.cx/intake/` in solo mode, or the Postgres-backed queue in team / enterprise mode: the CLI contract is identical.
 
 **Usage**
 
@@ -160,7 +160,7 @@ construct intake reopen <id>                       # processed or skipped → pe
 | `--notes=<text>` | Optional note attached when marking processed |
 | `--reason=<text>` | Optional reason attached when skipping |
 
-Triage classification (intakeType, rdStage, primaryOwner, recommendedChain, recommendedAction, risk, requiresApproval, confidence, rationale) is computed deterministically in the daemon — no LLM call. See [Concepts → Intake and triage](/concepts/intake-and-triage) for the full taxonomy and `recommendedAction` enum.
+Triage classification (intakeType, rdStage, primaryOwner, recommendedChain, recommendedAction, risk, requiresApproval, confidence, rationale) is computed deterministically in the daemon: no LLM call. See [Concepts → Intake and triage](/concepts/intake-and-triage) for the full taxonomy and `recommendedAction` enum.
 
 ## construct infer
 
@@ -188,7 +188,7 @@ Convert PDFs, office docs, spreadsheets, transcripts, and text files into indexe
 **Supported formats**
 
 - **Plain text / Code**: `.md`, `.txt`, `.rst`, `.adoc`, `.json`, `.yaml`, `.yml`, `.toml`, `.js`, `.mjs`, `.ts`, `.tsx`, `.jsx`, `.py`, `.go`, `.rs`, `.sh`, `.bash`, `.html`, `.css`, `.csv`, `.tsv`, `.xml`, `.env`, `.conf`, `.ini`, `.sql`, `.log`
-- **Transcripts**: `.vtt` (WebVTT), `.srt` (SubRip), `.lrc` (lyrics), `.transcript` — Zoom, Teams, meeting recordings
+- **Transcripts**: `.vtt` (WebVTT), `.srt` (SubRip), `.lrc` (lyrics), `.transcript`: Zoom, Teams, meeting recordings
 - **Office documents**: `.docx`, `.xlsx`, `.pptx`, `.odt`, `.ods`
 - **Rich text**: `.doc`, `.rtf`
 - **macOS-only** (via `mdls`): `.xls`, `.ppt`, `.pages`, `.numbers`, `.key`
@@ -329,7 +329,7 @@ Re-apply drifted migration files (idempotent only) and update their recorded SHA
 construct storage repair-migrations --yes
 ```
 
-The safety bar is hard: any drifted file containing a destructive statement (`DROP`, `TRUNCATE`, `ALTER … DROP`, `DELETE`) is refused. The fix path there is to write a new migration file with a higher sequence number — never to silently re-record SHAs for destructive content.
+The safety bar is hard: any drifted file containing a destructive statement (`DROP`, `TRUNCATE`, `ALTER … DROP`, `DELETE`) is refused. The fix path there is to write a new migration file with a higher sequence number: never to silently re-record SHAs for destructive content.
 
 **Output** prints which files were `applied` (genuinely new), `repaired` (drift healed), and `skipped` (unchanged). Exit code 2 indicates non-idempotent drift remains.
 

@@ -28,14 +28,14 @@ Set `CX_INBOX_DIRS` to a colon-separated list of additional paths:
 CX_INBOX_DIRS=/Users/you/Downloads/construct-inbox:/Volumes/shared/team-docs
 ```
 
-All directories are watched in addition to `~/.cx/inbox/` — you cannot disable the default.
+All directories are watched in addition to `~/.cx/inbox/`: you cannot disable the default.
 
 ## Supported file types
 
 The inbox watcher accepts any file that can produce extractable text:
 
 - **Plain text / Code**: `.md`, `.txt`, `.rst`, `.adoc`, `.json`, `.yaml`, `.yml`, `.toml`, `.js`, `.mjs`, `.ts`, `.tsx`, `.jsx`, `.py`, `.go`, `.rs`, `.sh`, `.bash`, `.html`, `.css`, `.csv`, `.tsv`, `.xml`, `.env`, `.conf`, `.ini`, `.sql`, `.log`
-- **Transcripts**: `.vtt` (WebVTT), `.srt` (SubRip), `.lrc` (lyrics), `.transcript` — Zoom, Teams, meeting recordings
+- **Transcripts**: `.vtt` (WebVTT), `.srt` (SubRip), `.lrc` (lyrics), `.transcript`: Zoom, Teams, meeting recordings
 - **Office documents**: `.docx`, `.xlsx`, `.pptx`, `.odt`, `.ods`
 - **Rich text**: `.doc`, `.rtf`
 - **macOS-only** (via `mdls`): `.xls`, `.ppt`, `.pages`, `.numbers`, `.key`
@@ -45,7 +45,7 @@ This includes things like meeting notes, exports, specs, ADR drafts, research no
 
 Binary files that cannot be read as text are skipped with a warning observation.
 
-**50 MB hard cap** — files above this are skipped silently.
+**50 MB hard cap**: files above this are skipped silently.
 
 ## How routing works
 

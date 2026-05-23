@@ -1,5 +1,5 @@
 <!--
-rules/golang/testing.md — <one-line purpose>
+rules/golang/testing.md: <one-line purpose>
 
 <2–6 line summary.>
 -->

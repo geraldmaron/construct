@@ -1,5 +1,5 @@
 <!--
-skills/development/rust.md — Rust Best Practices — Use this skill when writing, reviewing, or debugging Rust code.
+skills/development/rust.md (Rust Best Practices) Use this skill when writing, reviewing, or debugging Rust code.
 
 Use this skill when writing, reviewing, or debugging Rust code. ## Project Structure
 -->

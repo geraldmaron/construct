@@ -1,17 +1,17 @@
 ---
 title: Plug in your own LLM
-description: Swap models per tier (reasoning / standard / fast) — Anthropic, OpenAI, OpenRouter, Ollama, or any OpenAI-compatible endpoint.
+description: Swap models per tier (reasoning / standard / fast): Anthropic, OpenAI, OpenRouter, Ollama, or any OpenAI-compatible endpoint.
 ---
 
-Construct doesn't hardcode a single LLM. It assigns three tiers — `reasoning`, `standard`, `fast` — and each specialist declares which tier it uses. Swapping providers is a config change, not a code change.
+Construct doesn't hardcode a single LLM. It assigns three tiers (`reasoning`, `standard`, `fast`) and each specialist declares which tier it uses. Swapping providers is a config change, not a code change.
 
 ## The tier model
 
 Three tiers. Every specialist uses one of them.
 
-- **`reasoning`** — slow, expensive, best at long-context analysis and architectural decisions. Defaults to Claude Opus.
-- **`standard`** — everyday work. Defaults to Claude Sonnet.
-- **`fast`** — quick lookups, low-stakes responses. Defaults to Claude Haiku.
+- **`reasoning`**: slow, expensive, best at long-context analysis and architectural decisions. Defaults to Claude Opus.
+- **`standard`**: everyday work. Defaults to Claude Sonnet.
+- **`fast`**: quick lookups, low-stakes responses. Defaults to Claude Haiku.
 
 Specialists declare their tier in `agents/registry.json`. Changing the tier→model mapping changes the model for every specialist on that tier.
 
@@ -103,7 +103,7 @@ Each tier has a fallback chain. If the primary model returns rate-limit, model-u
 construct models --apply --tier=reasoning --fallback=openrouter/anthropic/claude-opus,openrouter/meta-llama/llama-3.3
 ```
 
-Empty fallback (`--fallback=`) disables fallback for that tier — strict mode.
+Empty fallback (`--fallback=`) disables fallback for that tier: strict mode.
 
 ## Verify
 
@@ -116,7 +116,7 @@ construct doctor
 
 ## Per-specialist override
 
-Most of the time you swap by tier — but a single specialist can override its tier with a direct model:
+Most of the time you swap by tier: but a single specialist can override its tier with a direct model:
 
 ```json
 {
@@ -127,7 +127,7 @@ Most of the time you swap by tier — but a single specialist can override its t
 }
 ```
 
-When `model` is set, it overrides the tier mapping for this specialist only. Use sparingly — it defeats the point of the tier model.
+When `model` is set, it overrides the tier mapping for this specialist only. Use sparingly: it defeats the point of the tier model.
 
 ## Track cost across providers
 
@@ -139,6 +139,6 @@ Embedding model is separate from LLM model. See [Plug in a retrieval backend](/c
 
 ## Reference
 
-- [`construct models`](/reference/cli/models-and-integrations) — every flag.
-- [`agents/registry.json`](https://github.com/geraldmaron/construct/blob/main/agents/registry.json) — the `models` block + per-specialist overrides.
-- [Concepts → Deployment model](/concepts/deployment-model) — solo/team/enterprise topology and model-swap implications for the offline story.
+- [`construct models`](/reference/cli/models-and-integrations): every flag.
+- [`agents/registry.json`](https://github.com/geraldmaron/construct/blob/main/agents/registry.json): the `models` block + per-specialist overrides.
+- [Concepts → Deployment model](/concepts/deployment-model): solo/team/enterprise topology and model-swap implications for the offline story.

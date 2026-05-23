@@ -1,5 +1,5 @@
 <!--
-skills/compliance/license-audit.md — License Audit — Dependency license review and open-source compliance.
+skills/compliance/license-audit.md (License Audit) Dependency license review and open-source compliance.
 
 Use this skill when auditing dependency licenses, evaluating OSS compliance risk, or preparing license inventories for legal review.
 -->
@@ -24,7 +24,7 @@ Use this skill when auditing dependency licenses, evaluating OSS compliance risk
 3. Map each dependency to its SPDX license identifier
 4. Flag any dependency without a clear license file as unknown-risk
 5. Check for license changes between pinned versions and latest
-6. Look past layer one — transitive copyleft taints the whole tree
+6. Look past layer one: transitive copyleft taints the whole tree
 
 ## Red Flags
 

@@ -1,5 +1,5 @@
 <!--
-skills/docs/customer-profile-workflow.md — Maintain durable customer/account memory for Product Intelligence.
+skills/docs/customer-profile-workflow.md: Maintain durable customer/account memory for Product Intelligence.
 -->
 # Customer Profile Workflow
 

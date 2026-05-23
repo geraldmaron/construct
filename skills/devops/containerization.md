@@ -1,5 +1,5 @@
 <!--
-skills/devops/containerization.md — Containerization — Use this skill when writing Dockerfiles, optimizing image size, or securing cont
+skills/devops/containerization.md (Containerization) Use this skill when writing Dockerfiles, optimizing image size, or securing cont
 
 Use this skill when writing Dockerfiles, optimizing image size, or securing container builds. ## Multi-Stage Builds
 -->
@@ -26,14 +26,14 @@ COPY --from=builder /app/node_modules ./node_modules
 ```
 
 Runtime base image selection:
-- `gcr.io/distroless/nodejs20-debian12` — no shell, no package manager, smallest attack surface for Node.
-- `node:20-alpine` — shell available for debugging; use when distroless breaks scripts.
-- `scratch` — static binaries only (Go, Rust with `musl`).
+- `gcr.io/distroless/nodejs20-debian12`: no shell, no package manager, smallest attack surface for Node.
+- `node:20-alpine`: shell available for debugging; use when distroless breaks scripts.
+- `scratch`: static binaries only (Go, Rust with `musl`).
 - Never use `debian`, `ubuntu`, or `node:20` (Debian-based) as a production runtime base; they carry thousands of unnecessary packages.
 
 ## Layer Caching
 
-Order layers by change frequency — least-changed first:
+Order layers by change frequency: least-changed first:
 
 1. Base OS packages (`RUN apk add ...`)
 2. App dependencies (`COPY package*.json ./` then `RUN npm ci`)
@@ -54,7 +54,7 @@ RUN apk add --no-cache curl git && \
     rm -rf /var/cache/apk/*
 ```
 
-Never put cache cleanup in a separate `RUN` — it creates a new layer that does not reclaim space from the previous layer.
+Never put cache cleanup in a separate `RUN`: it creates a new layer that does not reclaim space from the previous layer.
 
 ## Security
 
@@ -67,7 +67,7 @@ Never put cache cleanup in a separate `RUN` — it creates a new layer that does
 | No `apt-get upgrade` | Pin the base image digest instead; `upgrade` produces non-reproducible layers |
 | Read-only filesystem | Pass `--read-only` at runtime; mount writable tmpfs only for paths that need writes |
 
-Never use `ADD` with a URL — it bypasses layer caching in unpredictable ways and cannot be verified. Use `COPY` for local files and `curl` + checksum verification for remote files.
+Never use `ADD` with a URL: it bypasses layer caching in unpredictable ways and cannot be verified. Use `COPY` for local files and `curl` + checksum verification for remote files.
 
 ## Image Scanning
 
@@ -94,7 +94,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 Use an HTTP endpoint for web services. Use a process check (`pgrep`) only for non-HTTP workloads.
 
-Kubernetes uses separate liveness, readiness, and startup probes — configure those in the deployment manifest, not in the Dockerfile. The Docker `HEALTHCHECK` is relevant for `docker run` and Docker Compose only.
+Kubernetes uses separate liveness, readiness, and startup probes: configure those in the deployment manifest, not in the Dockerfile. The Docker `HEALTHCHECK` is relevant for `docker run` and Docker Compose only.
 
 ## Size Optimization
 
@@ -102,5 +102,5 @@ Kubernetes uses separate liveness, readiness, and startup probes — configure t
 - `--no-install-recommends` with `apt-get install` eliminates suggested packages.
 - Always clean package manager caches in the same `RUN` layer as the install command.
 - Use `COPY --chown=app:app` instead of a separate `RUN chown` to avoid a wasted layer.
-- Multi-stage builds remove all build tools, source files, and intermediate artifacts automatically — they are the single highest-impact size reduction technique.
+- Multi-stage builds remove all build tools, source files, and intermediate artifacts automatically: they are the single highest-impact size reduction technique.
 - For Go and Rust, build a statically linked binary (`CGO_ENABLED=0` for Go, `musl` target for Rust) and copy it into `scratch` or distroless for a final image under 20 MB.

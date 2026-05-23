@@ -1,5 +1,5 @@
 <!--
-skills/docs/product-intelligence-review.md — Evaluate Product Intelligence artifacts before they become docs of record.
+skills/docs/product-intelligence-review.md: Evaluate Product Intelligence artifacts before they become docs of record.
 -->
 # Product Intelligence Review
 

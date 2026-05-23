@@ -1,5 +1,5 @@
 <!--
-rules/common/testing.md — test coverage requirements and TDD workflow.
+rules/common/testing.md: test coverage requirements and TDD workflow.
 
 Defines minimum 80% coverage, TDD red-green-refactor cycle,
 AAA test structure, and descriptive naming conventions.

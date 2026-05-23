@@ -1,5 +1,5 @@
 <!--
-skills/architecture/caching.md — Caching — Use this skill when designing caching strategies for applications, APIs, or infr
+skills/architecture/caching.md (Caching) Use this skill when designing caching strategies for applications, APIs, or infr
 
 Use this skill when designing caching strategies for applications, APIs, or infrastructure. ## Cache Layers
 -->

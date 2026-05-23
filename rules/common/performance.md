@@ -1,5 +1,5 @@
 <!--
-rules/common/performance.md — model-agnostic performance and context management rules.
+rules/common/performance.md: model-agnostic performance and context management rules.
 
 Defines model selection tiers, context window management heuristics,
 and build troubleshooting steps. No platform-specific tool names or config paths.

@@ -1,5 +1,5 @@
 <!--
-skills/ai/ml-ops.md — ML Operations (MLOps) — ```
+skills/ai/ml-ops.md (ML Operations (MLOps)) ```
 
 ## The MLOps Lifecycle ```
 -->
@@ -86,7 +86,7 @@ Central store for model versions and deployment state:
 
 | Stage | Meaning |
 |---|---|
-| Staging | Candidate — passes evaluation, not yet in production |
+| Staging | Candidate: passes evaluation, not yet in production |
 | Production | Currently serving |
 | Archived | Superseded |
 
@@ -117,7 +117,7 @@ async def predict(req: PredictRequest) -> PredictResponse:
 
 ### A/B testing / Shadow mode
 
-- **Shadow mode**: new model receives traffic and logs predictions but does not serve users — validate before switching
+- **Shadow mode**: new model receives traffic and logs predictions but does not serve users: validate before switching
 - **A/B test**: split traffic (e.g., 10% new model) and measure business metrics, not just accuracy
 - Use a feature flag system to control routing
 
@@ -162,8 +162,8 @@ Trigger retraining when:
 
 ## Common Pitfalls
 
-- **Training-serving skew**: feature engineering in training differs from serving — solve with a shared feature pipeline
-- **Data leakage**: future information in training features inflates metrics — use strict temporal splits
+- **Training-serving skew**: feature engineering in training differs from serving: solve with a shared feature pipeline
+- **Data leakage**: future information in training features inflates metrics: use strict temporal splits
 - **Model staleness without detection**: set up drift monitoring day 1, not after the model degrades
 - **No rollback plan**: always keep N-1 model version in registry and test rollback procedure
-- **GPU waste**: jobs that could run on CPU scheduled on GPU — profile resource usage
+- **GPU waste**: jobs that could run on CPU scheduled on GPU: profile resource usage

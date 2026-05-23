@@ -1,5 +1,5 @@
 <!--
-skills/docs/backlog-proposal-workflow.md — Approval-gated issue tracker proposals.
+skills/docs/backlog-proposal-workflow.md: Approval-gated issue tracker proposals.
 -->
 # Backlog Proposal Workflow
 

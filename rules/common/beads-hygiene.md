@@ -1,5 +1,5 @@
 <!--
-rules/common/beads-hygiene.md — Beads issue tracker hygiene contract.
+rules/common/beads-hygiene.md: Beads issue tracker hygiene contract.
 
 Beads is the system of record for durable work in this project. Status drifts
 when issues are not updated alongside the code, so every agent and persona
@@ -7,16 +7,16 @@ operating in Construct treats hygiene as part of the work, not as cleanup.
 Loaded by AGENTS.md, CLAUDE.md, the construct persona, and the engineer /
 operator / planner role overlays.
 -->
-# Beads Hygiene — Project Contract
+# Beads Hygiene: Project Contract
 
-Beads (`bd`) is the canonical durable tracker for Construct. Beads only earn their keep when their state matches the world. Stale "open" issues pollute `bd ready`, hide real work, and let agents propose work that already shipped. Every agent — human or AI, on any platform — is responsible for keeping the tracker honest.
+Beads (`bd`) is the canonical durable tracker for Construct. Beads only earn their keep when their state matches the world. Stale "open" issues pollute `bd ready`, hide real work, and let agents propose work that already shipped. Every agent (human or AI, on any platform) is responsible for keeping the tracker honest.
 
 ## When to update beads
 
 | Event | Required action |
 |---|---|
 | About to start non-trivial work | A Beads issue exists. `bd ready` to find or `bd create` if missing. `bd update <id> --claim` before edits. |
-| Work lands on `main` | `bd close <id> --reason="Landed in PR #N — verified: <file:line evidence>"`. Do not wait for someone else to notice. |
+| Work lands on `main` | `bd close <id> --reason="Landed in PR #N. Verified: <file:line evidence>"`. Do not wait for someone else to notice. |
 | Direction reverses mid-work | `bd supersede <old-id> --with=<new-id>`. Do not edit the old description in place. |
 | Issue scope expands | Update the description and acceptance criteria in the same change that broadens scope. |
 | A blocker is discovered | Add the dependency with `bd dep add <id> <depends-on>` so the readiness queue reflects reality. |
@@ -27,10 +27,10 @@ Beads (`bd`) is the canonical durable tracker for Construct. Beads only earn the
 
 Run before planning, before claiming work, before proposing changes:
 
-1. `bd ready` — surface unblocked work.
-2. `bd list --status=in_progress` — verify nothing has been left mid-flight by an earlier session.
-3. `bd stale` — surface anything untouched past the staleness window.
-4. Cross-check the open list against `git log --oneline -20 origin/main` — close anything whose work actually landed.
+1. `bd ready`: surface unblocked work.
+2. `bd list --status=in_progress`: verify nothing has been left mid-flight by an earlier session.
+3. `bd stale`: surface anything untouched past the staleness window.
+4. Cross-check the open list against `git log --oneline -20 origin/main`: close anything whose work actually landed.
 
 If any of these surface drift, fix it before starting new work. Drift you observe and ignore becomes drift the next agent inherits.
 
@@ -40,14 +40,14 @@ After the code changes land in main:
 
 1. The bead the work was claimed against is closed with evidence in the reason.
 2. Any beads superseded by the change are marked superseded, not left open.
-3. New beads exist for follow-up work that was discovered but not done — file them in the same session, not "later".
+3. New beads exist for follow-up work that was discovered but not done: file them in the same session, not "later".
 4. `bd doctor` and `bd preflight` should run before push and report clean.
 
 ## What goes in a bead
 
 | Field | Standard |
 |---|---|
-| Title | Imperative, scoped, parseable. "PR 3 — `construct intake` CLI" beats "intake CLI". |
+| Title | Imperative, scoped, parseable. "PR 3: `construct intake` CLI" beats "intake CLI". |
 | Description | Why the bead exists + what success looks like. State the new shape directly. Do not preserve a "current behavior must keep working" goal unless the user explicitly asked for migration. |
 | Acceptance criteria | Numbered, binary checks. A reviewer can answer pass/fail without re-reading the description. |
 | Dependencies | Wire `bd dep add` whenever order matters. Implicit ordering rots into parallel work that breaks each other. |
@@ -72,4 +72,4 @@ There is no authorized bypass. Beads hygiene is a release gate. If the tooling i
 
 ## Automation
 
-Project-level automation is tracked in the beads queue — auto-close on merge, pre-push `bd preflight` gate, weekly drift report, memory-contradiction detection. Until that ships, hygiene is a per-session discipline.
+Project-level automation is tracked in the beads queue: auto-close on merge, pre-push `bd preflight` gate, weekly drift report, memory-contradiction detection. Until that ships, hygiene is a per-session discipline.

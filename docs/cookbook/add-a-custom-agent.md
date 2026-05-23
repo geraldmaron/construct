@@ -1,6 +1,6 @@
 ---
 title: Add a custom agent
-description: Add a new specialist (or persona) to your Construct team — registry entry, prompt file, sync, test.
+description: Add a new specialist (or persona) to your Construct team: registry entry, prompt file, sync, test.
 ---
 
 You want a `cx-performance-auditor` for your project (or any other specialist that doesn't ship in the default 28). This walks the full flow: registry entry, prompt, model tier, contract wiring, sync to every editor, smoke test.
@@ -9,14 +9,14 @@ You want a `cx-performance-auditor` for your project (or any other specialist th
 
 Every specialist has four pieces:
 
-1. **An entry in `agents/registry.json`** — declares name, role, model tier, capability list, and (optionally) skills allowlist.
-2. **A prompt file at `agents/prompts/cx-<name>.md`** — defines the specialist's voice, decision authority, and operating boundaries.
-3. **(Optional) An entry in `agents/contracts.json`** — typed input/output for handoffs from other specialists.
-4. **(Optional) A role manifest entry in `agents/role-manifests.json`** — for personas that should also operate as an organizational role (with fences, allowed bd labels, event ownership).
+1. **An entry in `agents/registry.json`**: declares name, role, model tier, capability list, and (optionally) skills allowlist.
+2. **A prompt file at `agents/prompts/cx-<name>.md`**: defines the specialist's voice, decision authority, and operating boundaries.
+3. **(Optional) An entry in `agents/contracts.json`**: typed input/output for handoffs from other specialists.
+4. **(Optional) A role manifest entry in `agents/role-manifests.json`**: for personas that should also operate as an organizational role (with fences, allowed bd labels, event ownership).
 
 For a basic specialist, only the first two are required.
 
-## Step 1 — Add the registry entry
+## Step 1: Add the registry entry
 
 Open `agents/registry.json` and add an object to the `agents` array:
 
@@ -33,12 +33,12 @@ Open `agents/registry.json` and add an object to the `agents` array:
 
 Field notes:
 
-- **`name`** — without the `cx-` prefix. The prefix is added automatically when adapters are generated.
-- **`role`** — a one-line role definition. This is what other specialists see when they consider whether to route work to you.
-- **`model_tier`** — `reasoning` (deep, slow), `standard` (everyday), or `fast` (cheap, quick lookups). The tier→model mapping lives in `models` at the top of `registry.json` and can be remapped per-project.
-- **`platforms`** — optional allowlist. Omit to mirror to every editor. Use to scope a specialist to a subset of surfaces.
+- **`name`**: without the `cx-` prefix. The prefix is added automatically when adapters are generated.
+- **`role`**: a one-line role definition. This is what other specialists see when they consider whether to route work to you.
+- **`model_tier`**: `reasoning` (deep, slow), `standard` (everyday), or `fast` (cheap, quick lookups). The tier→model mapping lives in `models` at the top of `registry.json` and can be remapped per-project.
+- **`platforms`**: optional allowlist. Omit to mirror to every editor. Use to scope a specialist to a subset of surfaces.
 
-## Step 2 — Write the prompt
+## Step 2: Write the prompt
 
 Create `agents/prompts/cx-performance-auditor.md`. The prompt is the specialist's full operating instructions. Look at `agents/prompts/cx-engineer.md` or `cx-security.md` for shape.
 
@@ -72,7 +72,7 @@ You receive `next:cx-performance-auditor` handoffs from any specialist. Read the
 
 The prompt is the most consequential file. Iterate on it. Test by addressing the specialist directly in your editor: `@cx-performance-auditor look at lib/storage/sync.mjs and flag perf risks`.
 
-## Step 3 — Sync to every editor
+## Step 3: Sync to every editor
 
 ```bash
 construct sync
@@ -91,9 +91,9 @@ construct doctor
 # expect: Cross-surface adapter parity (claude: ok (N/N) · opencode: ok (N/N) · codex: ok (N/N))
 ```
 
-Drift (e.g., one surface missing the new specialist) means sync didn't reach that adapter — usually a permissions issue or the editor's config dir doesn't exist yet.
+Drift (e.g., one surface missing the new specialist) means sync didn't reach that adapter: usually a permissions issue or the editor's config dir doesn't exist yet.
 
-## Step 4 — Smoke test
+## Step 4: Smoke test
 
 Open your editor and address the new specialist directly:
 
@@ -101,18 +101,18 @@ Open your editor and address the new specialist directly:
 
 If you get a reasonable response, the prompt is doing its job.
 
-For the routing test — ask `construct` (the persona) something performance-shaped:
+For the routing test: ask `construct` (the persona) something performance-shaped:
 
 > @construct review lib/storage/vector-client.mjs for performance risks.
 
-`construct` should consider the specialist chain and dispatch to `cx-performance-auditor`. If the orchestration policy doesn't route to your specialist, check the prompt's "What you own" section — that's the signal Construct uses for routing.
+`construct` should consider the specialist chain and dispatch to `cx-performance-auditor`. If the orchestration policy doesn't route to your specialist, check the prompt's "What you own" section: that's the signal Construct uses for routing.
 
-## (Optional) Step 5 — Add contracts and role manifest
+## (Optional) Step 5: Add contracts and role manifest
 
 If your specialist needs to receive structured handoffs from other specialists, add entries to:
 
-- **`agents/contracts.json`** — declares `producer → consumer` contracts with required input fields and postconditions. See existing contracts for shape.
-- **`agents/role-manifests.json`** — declares the role's fence (allowed paths, allowed bd labels), event ownership (which events route to this role), and approval-required actions.
+- **`agents/contracts.json`**: declares `producer → consumer` contracts with required input fields and postconditions. See existing contracts for shape.
+- **`agents/role-manifests.json`**: declares the role's fence (allowed paths, allowed bd labels), event ownership (which events route to this role), and approval-required actions.
 
 These are required for the role framework to dispatch your specialist on event-driven triggers (e.g., a `perf.regression` event auto-routing to `cx-performance-auditor`). For a specialist that's only addressed by name, you can skip.
 
@@ -128,4 +128,4 @@ These are required for the role framework to dispatch your specialist on event-d
 - [Specialist registry source: `agents/registry.json`](https://github.com/geraldmaron/construct/blob/main/agents/registry.json)
 - [Prompt examples: `agents/prompts/`](https://github.com/geraldmaron/construct/tree/main/agents/prompts)
 - [Contract definitions: `agents/contracts.json`](https://github.com/geraldmaron/construct/blob/main/agents/contracts.json)
-- [Concepts → Agents and personas](/concepts/agents-and-personas) — the model behind one-persona, many-specialists.
+- [Concepts → Agents and personas](/concepts/agents-and-personas): the model behind one-persona, many-specialists.

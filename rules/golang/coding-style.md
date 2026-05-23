@@ -1,5 +1,5 @@
 <!--
-rules/golang/coding-style.md — <one-line purpose>
+rules/golang/coding-style.md: <one-line purpose>
 
 <2–6 line summary.>
 -->
@@ -15,7 +15,7 @@ paths:
 
 ## Formatting
 
-- **gofmt** and **goimports** are mandatory — no style debates
+- **gofmt** and **goimports** are mandatory: no style debates
 
 ## Design Principles
 

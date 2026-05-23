@@ -1,4 +1,4 @@
-# PRD: Construct — Org-in-a-Box
+# PRD: Construct: Org-in-a-Box
 
 - **Date**: 2026-04-28
 - **Owner**: Construct·Product
@@ -23,17 +23,17 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 - G1: Construct operates as a self-contained "org-in-a-box" that can be pointed at external systems and produce organizational intelligence (PRDs, RFCs, ADRs, snapshots, recommendations).
 - G2: `construct init` bootstraps a project with shared memory, agent configs, and structure usable by Claude, Codex, Copilot, and other agent harnesses.
 - G3: Embed mode allows Construct to continuously monitor configured sources, manage work items, propose doc changes, and produce periodic health snapshots.
-- G4: Construct runs on Construct — the construct repo is the first customer, with its own PRDs, ADRs, and RFCs managed by the system.
+- G4: Construct runs on Construct: the construct repo is the first customer, with its own PRDs, ADRs, and RFCs managed by the system.
 - G5: Deployable as a single container with multi-user support and a hybrid approval model (autonomous for low-risk, human approval for high-risk).
 - G6: A full web dashboard for configuration, chat interaction, approval queues, and mode-aware views.
 - G7: Continuous learning through RAG over historical decisions, trend detection, and a queryable knowledge base.
 
 ### Non-goals
 
-- NG1: Replacing specialized external tools — Construct reads from and writes to them, doesn't replace them.
-- NG2: Real-time pair-programming or IDE integration — that's the agent harness's job.
+- NG1: Replacing specialized external tools: Construct reads from and writes to them, doesn't replace them.
+- NG2: Real-time pair-programming or IDE integration: that's the agent harness's job.
 - NG3: Fine-tuning or training custom models.
-- NG4: Multi-cloud abstraction layer — Terraform handles infra, not a custom cloud SDK.
+- NG4: Multi-cloud abstraction layer: Terraform handles infra, not a custom cloud SDK.
 
 ## Functional requirements
 
@@ -42,7 +42,7 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 | FR-1 | **Point-at-things mode**: Accept a target URI (repo, project tracker, messaging channel, document, API endpoint) and produce a structured analysis or artifact (PRD, RFC, ADR, research brief). Target type is resolved by the provider abstraction, not hardcoded. |
 | FR-2 | **Init mode**: `construct init` detects existing agent configs, sets up shared memory, cross-agent config files, and project structure (.cx/). Checks for required dependencies and installs or prompts for missing ones. |
 | FR-3 | **Embed mode**: Long-running or scheduled process that monitors configured sources through providers, produces periodic snapshots (health, risks, gaps, recommendations), manages work items, proposes doc changes, and posts to configured output channels. |
-| FR-4 | **Provider abstraction**: A typed interface that any external system implements. Providers expose a capability matrix (read, write, search, watch, webhook) and Construct dispatches through the interface. The transport is the provider's choice — MCP server, REST API, GraphQL, SDK, CLI, webhook, or any combination. Initial implementations include project trackers (Jira, Linear), messaging (Slack, Discord), code hosts (GitHub, GitLab), knowledge bases (Confluence, Notion), and git repos, but the system accepts any provider that satisfies the interface. Third-party providers are added without modifying core. |
+| FR-4 | **Provider abstraction**: A typed interface that any external system implements. Providers expose a capability matrix (read, write, search, watch, webhook) and Construct dispatches through the interface. The transport is the provider's choice: MCP server, REST API, GraphQL, SDK, CLI, webhook, or any combination. Initial implementations include project trackers (Jira, Linear), messaging (Slack, Discord), code hosts (GitHub, GitLab), knowledge bases (Confluence, Notion), and git repos, but the system accepts any provider that satisfies the interface. Third-party providers are added without modifying core. |
 | FR-5 | **Docker service management**: `construct up` spins up required containers for services Construct needs (database, observability, memory). Checks for Docker availability and installs/prompts if missing. |
 | FR-6 | **Self-hosting**: Construct manages its own docs, PRDs, ADRs, RFCs. Construct orchestrates its own development (proposes PRs, runs tests, updates plans). |
 | FR-7 | **Cloud deployment**: Single-container deployable (Docker image) with multi-user auth, persistent state, and webhook ingestion for embed mode event triggers. Infrastructure provisioned via Terraform (VPC, ECS/Fargate, RDS, secrets, DNS). |
@@ -86,16 +86,16 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 
 - Zero npm dependencies for core CLI (providers and dashboard may add dependencies in isolated boundaries).
 - Apache-2.0 license.
-- Cloud deployment must not create vendor lock-in in the core — the Dockerfile runs anywhere containers run. Infrastructure is defined in Terraform so it's reproducible, auditable, and portable across AWS accounts (or adaptable to other clouds).
+- Cloud deployment must not create vendor lock-in in the core: the Dockerfile runs anywhere containers run. Infrastructure is defined in Terraform so it's reproducible, auditable, and portable across AWS accounts (or adaptable to other clouds).
 - Provider implementations must not leak transport details into core. Core dispatches through the provider interface; the provider chooses MCP, REST, GraphQL, SDK, or whatever the external system supports.
 
 ## Dependencies
 
 | Dependency | Owner | Risk |
 |---|---|---|
-| External system API/MCP access | User-provided credentials per provider | Medium — auth variance across systems |
-| Docker for optional services | User's machine or cloud host | Low — optional, not required for core |
-| LLM API access | User-provided keys (Anthropic, OpenAI, etc.) | Low — pluggable |
+| External system API/MCP access | User-provided credentials per provider | Medium: auth variance across systems |
+| Docker for optional services | User's machine or cloud host | Low: optional, not required for core |
+| LLM API access | User-provided keys (Anthropic, OpenAI, etc.) | Low: pluggable |
 
 ## Open questions
 
@@ -104,7 +104,7 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 | OQ-1 | What is the minimum capability set a provider must expose? (read-only sufficient, or must all providers support write?) | Gerald | Phase 1 start |
 | OQ-2 | What auth provider for multi-user dashboard? Self-contained JWT, or integrate with an IdP? | Gerald | Phase 3 start |
 | OQ-3 | Should snapshots be versioned and diffable, or point-in-time only? | Gerald | Phase 2 start |
-| OQ-4 | What is the approval SLA model — does a pending approval block the action indefinitely, or auto-expire? | Gerald | Phase 2 start |
+| OQ-4 | What is the approval SLA model: does a pending approval block the action indefinitely, or auto-expire? | Gerald | Phase 2 start |
 
 ## References
 

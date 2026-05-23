@@ -1,4 +1,4 @@
-# Construct — Claude Code Integration
+# Construct: Claude Code Integration
 
 This project uses Construct. Personas and specialists are defined in `agents/registry.json` and synced to Claude Code via `construct sync`.
 
@@ -6,11 +6,11 @@ This project uses Construct. Personas and specialists are defined in `agents/reg
 
 Construct is the only intended user-facing surface.
 
-- **Planning** — requirements, strategy, architecture
-- **Implementation** — builds features and fixes bugs
-- **Validation** — quality gates, security, accessibility
-- **Research** — docs, debugging, codebase exploration
-- **Operations** — releases, dev servers, health checks
+- **Planning**: requirements, strategy, architecture
+- **Implementation**: builds features and fixes bugs
+- **Validation**: quality gates, security, accessibility
+- **Research**: docs, debugging, codebase exploration
+- **Operations**: releases, dev servers, health checks
 
 ## Usage
 
