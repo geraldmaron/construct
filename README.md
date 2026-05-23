@@ -4,7 +4,9 @@
 
 One AI interface. A team of specialists behind it. Hard gates. Runs locally, or deploys for teams.
 
-Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. You talk to one persona called `construct`. Behind it are 28 specialists (architect, engineer, reviewer, QA, security, designer, and more) under typed contracts and enforced gates. Sessions survive boundary changes via durable state in `.cx/`, beads, and a local vector index. Solo by default. Can deploy centrally for teams that want shared memory, telemetry, queues, and policy.
+Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. You talk to one persona called `construct`. Behind it is a team of specialists shaped by your **org profile**: software R&D by default, with curated profiles for operations, creative, and research orgs, plus a schema-validated escape hatch for custom profiles. Each profile organizes its specialists by department (Product, Engineering, Operations, etc.) and carries its own intake taxonomy, doc templates, and role set. Sessions survive boundary changes via durable state in `.cx/`, beads, and a local vector index. Solo by default. Can deploy centrally for teams that want shared memory, telemetry, queues, and policy.
+
+`construct profile show|list|set <id>` to switch. See [`docs/concepts/profile-lifecycle.md`](./docs/concepts/profile-lifecycle.md) for how new profiles are built (it's a research process, not a JSON exercise).
 
 The team and enterprise modes exist because I wanted to learn what shipping a real multi-tenant tool would look like. The project is still open source, the code is still public, and the bar is still "does this help me learn." Run it solo if that's all you need.
 
@@ -62,9 +64,11 @@ Three modes. `solo` is the default and runs everything locally. Filesystem queue
 
 Pick or change modes with `construct config mode [solo|team|enterprise]`. [Deployment model](https://geraldmaron.github.io/construct/v2/docs/concepts/deployment-model).
 
-## Signals to R&D
+## Intake
 
-Anything dropped into `.cx/inbox/` (a bug report, a customer comment, a competitor PDF, a postmortem draft) is classified into one of: bug, user-signal, experiment, eval-finding, architecture, incident, security, requirement, research, ops, legal-compliance. Each signal gets a primary owner and a recommended handoff chain. Inspect with `construct intake list` and `construct intake show <id>`. Generate a task graph with `construct graph from-intake <id>`. The classifier runs in the daemon and is deterministic. The agent in your editor does the actual analysis. [Intake and triage](https://geraldmaron.github.io/construct/v2/docs/concepts/intake-and-triage).
+Anything dropped into `.cx/inbox/` (a bug report, a customer comment, a competitor PDF, a postmortem draft) is classified by the active profile's intake taxonomy. The default `rnd` profile uses bug, user-signal, experiment, architecture, incident, security, requirement, research, ops, eval-finding, launch-asset, legal-compliance. The `operations` profile uses request, incident, ops, security, docs. The `creative` profile uses brief, content-request, asset, experiment, report. The `research` profile uses question, study, synthesis, report.
+
+Each signal gets a primary owner and a recommended handoff chain. Inspect with `construct intake list` and `construct intake show <id>`. Generate a task graph with `construct graph from-intake <id>`. The classifier runs in the daemon and is deterministic. The agent in your editor does the actual analysis. [Intake and triage](https://geraldmaron.github.io/construct/v2/docs/concepts/intake-and-triage).
 
 ## Hard gates
 
@@ -86,7 +90,7 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct doctor` | Check installation health |
 | `construct init` | Initialize project and start services |
 | `construct install` | Machine setup: install Docker, cm, and bootstrap config |
-| `construct intake` | View and process R&D intake queue |
+| `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
 | `construct models` | Manage AI model assignments |
 | `construct profile` | Manage the active org profile and its lifecycle (draft, promote, archive, health) |
 | `construct recommendations` | View and manage artifact recommendations |

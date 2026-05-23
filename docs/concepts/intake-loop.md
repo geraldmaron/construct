@@ -1,20 +1,24 @@
 ---
-title: R&D Intake Loop
-description: How signals become outcomes — the complete knowledge ingestion and dispatch flow.
+title: Intake loop
+description: The eight-step pipeline that turns inbox signals into routed work, evidence, and durable learning.
 ---
 
-# R&D Intake Loop
+# Intake loop
 
-> **Org-in-a-box framing:** This is how your AI R&D organization processes incoming signals. You drop signals in; the org classifies, routes, executes, and learns — automatically.
+Construct's "org in a box" runs the same eight-step pipeline regardless of org type. The active profile (R&D, operations, creative, research, or a custom one) determines the taxonomy at the classification step; everything else is profile-agnostic.
+
+For the operator's view of how to interact with this pipeline, see [Intake and triage](/concepts/intake-and-triage). This page is the implementation deep dive.
 
 ## Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         R&D INTAKE LOOP                                     │
+│                         INTAKE LOOP                                         │
 │                                                                             │
-│   Signal → Classify → Retrieve → Dispatch → Execute → Evidence → Learn     │
+│   Signal → Classify → Retrieve → Dispatch → Execute → Evidence → Learn      │
 │                                                                             │
+│   The classify and dispatch steps consult the active profile.               │
+│   The other six steps are identical across profiles.                        │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -51,7 +55,7 @@ const triage = classifyRdIntake({
 // Output:
 {
   intakeType: 'user-signal',      // What kind of work
-  rdStage: 'signal',              // Where in R&D loop
+  rdStage: 'signal',              // Where in the active profile's loop
   primaryOwner: 'product-manager', // Who owns it
   recommendedChain: ['product-manager', 'ux-researcher', 'researcher'],
   recommendedAction: 'clarify',   // What to do
@@ -99,9 +103,9 @@ Retrieved Documents:
 ```
 
 **Hybrid Search:**
-1. **BM25** — Keyword matching (fast, exact)
-2. **Vector** — Semantic similarity (ONNX embeddings, 384-dim)
-3. **Reciprocal Rank Fusion** — Combines both rankings
+1. **BM25**. Keyword matching (fast, exact)
+2. **Vector**. Semantic similarity (ONNX embeddings, 384-dim)
+3. **Reciprocal Rank Fusion**. Combines both rankings
 
 **Fallback:** If Postgres unavailable → local JSON index
 
@@ -112,14 +116,14 @@ Retrieved Documents:
 ```javascript
 // For bug intake:
 Dispatch Chain:
-  1. cx-debugger      (primary — root cause analysis)
+  1. cx-debugger      (primary. root cause analysis)
   2. cx-engineer      (implementation)
   3. cx-qa            (verification)
-  4. cx-reviewer      (parallel — code review)
+  4. cx-reviewer      (parallel. code review)
   
 // For user-signal intake:
 Dispatch Chain:
-  1. cx-product-manager (primary — clarify requirements)
+  1. cx-product-manager (primary. clarify requirements)
   2. cx-ux-researcher  (user research)
   3. cx-researcher     (competitive analysis)
 ```
@@ -188,12 +192,12 @@ addObservation(rootDir, {
 ```
 
 **Observation Categories:**
-- `pattern` — Recurring themes
-- `anti-pattern` — What to avoid
-- `decision` — Choices made with rationale
-- `insight` — New understanding
-- `dependency` — Relationships discovered
-- `session-summary` — Session-level distillation
+- `pattern`. Recurring themes
+- `anti-pattern`. What to avoid
+- `decision`. Choices made with rationale
+- `insight`. New understanding
+- `dependency`. Relationships discovered
+- `session-summary`. Session-level distillation
 
 ### 7. Learning Feedback Loop
 
@@ -222,7 +226,7 @@ recordFeedback(rootDir, {
 
 ```
 Pattern detected: bug → incident (5 times)
-Suggestion: Review keywords for 'bug' — frequently confused with 'incident'
+Suggestion: Review keywords for 'bug'. frequently confused with 'incident'
 ```
 
 ### 8. Cross-Document Knowledge Graph
@@ -347,16 +351,16 @@ construct activation:status
 
 ## Key Design Principles
 
-1. **Daemon never calls LLM** — Classification is deterministic (keyword/heuristic)
-2. **Agent does the analysis** — The LLM in your editor does the real thinking
-3. **Evidence required** — No task transitions to `done` without evidence
-4. **Everything traced** — Audit trail in `.cx/traces/<YYYY-MM-DD>.jsonl`
-5. **Degraded gracefully** — Works without Postgres, falls back to local JSON
-6. **Learning loop closed** — Feedback improves classification over time
+1. **Daemon never calls LLM**. Classification is deterministic (keyword/heuristic)
+2. **Agent does the analysis**. The LLM in your editor does the real thinking
+3. **Evidence required**. No task transitions to `done` without evidence
+4. **Everything traced**. Audit trail in `.cx/traces/<YYYY-MM-DD>.jsonl`
+5. **Degraded gracefully**. Works without Postgres, falls back to local JSON
+6. **Learning loop closed**. Feedback improves classification over time
 
 ## Related Documents
 
-- [Intake and Triage](/concepts/intake-and-triage) — Full taxonomy and classification table
-- [Beads and State](/concepts/beads-and-state) — Durable state management
-- [Architecture](/concepts/architecture) — System overview
-- [Org Chart](/concepts/org-chart) — Specialist roles and departments
+- [Intake and Triage](/concepts/intake-and-triage). Full taxonomy and classification table
+- [Beads and State](/concepts/beads-and-state). Durable state management
+- [Architecture](/concepts/architecture). System overview
+- [Org Chart](/concepts/org-chart). Specialist roles and departments

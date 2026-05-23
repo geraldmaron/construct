@@ -4014,36 +4014,111 @@ const handlers = new Map([
     if (sub === 'create') {
       const id = args[1];
       if (!id) {
-        errorln('Usage: construct profile create <id> [--display="..."] [--role=<id>...] [--department=<id>:<displayName>...]');
+        errorln('Usage: construct profile create <id> [--display="..."] [--role=<id>...] [--department=<id>:<displayName>...] [--yes]');
+        errorln('  Run with no flags for interactive mode; pass --yes to skip the confirmation prompt.');
         process.exit(1);
       }
+      if (!/^[a-z][a-z0-9-]{1,30}$/.test(id)) {
+        errorln(`Invalid id "${id}". Must match ^[a-z][a-z0-9-]{1,30}$.`);
+        process.exit(1);
+      }
+
       const displayArg = args.find((a) => a.startsWith('--display='));
-      const displayName = displayArg ? displayArg.split('=')[1] : id;
-      const seedRoles = args
+      const skipConfirm = args.includes('--yes') || args.includes('-y') || args.includes('--non-interactive');
+      const dryRun = args.includes('--dry-run');
+      const isTTY = process.stdin.isTTY && process.stdout.isTTY;
+
+      let displayName = displayArg ? displayArg.split('=')[1] : null;
+      let seedRoles = args
         .filter((a) => a.startsWith('--role='))
         .map((a) => a.slice('--role='.length))
         .filter(Boolean);
-      const seedDepartments = args
+      let seedDepartments = args
         .filter((a) => a.startsWith('--department='))
         .map((a) => a.slice('--department='.length))
         .map((spec) => {
           const [deptId, deptDisplay] = spec.split(':');
           return { id: deptId, displayName: deptDisplay || deptId };
         });
+
+      // Interactive gather. Only prompt when stdin is a real terminal and the
+      // operator did not pass enough flags to scaffold without input. A
+      // non-TTY invocation with no flags falls through to an empty scaffold
+      // so scripts and CI can still create drafts non-interactively.
+      const needsInteractive = isTTY && !skipConfirm && (!displayName || (seedRoles.length === 0 && seedDepartments.length === 0));
+      if (needsInteractive) {
+        const readline = await import('node:readline');
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        const ask = (q, def = '') => new Promise((res) => rl.question(`${q}${def ? ` [${def}]` : ''} `, (a) => res(a.trim() || def)));
+
+        println('');
+        println(`Scaffolding a new profile draft. Three questions, then a preview.`);
+        println(`Background: docs/concepts/persona-research.md and docs/concepts/profile-lifecycle.md`);
+        println('');
+        if (!displayName) displayName = await ask('Display name?', id);
+        if (seedDepartments.length === 0) {
+          const dInput = await ask('Departments (id:Name, id:Name, ...)?', '');
+          if (dInput) seedDepartments = dInput.split(',').map((s) => s.trim()).filter(Boolean).map((spec) => {
+            const [dId, dName] = spec.split(':').map((x) => x.trim());
+            return { id: dId, displayName: dName || dId };
+          });
+        }
+        if (seedRoles.length === 0) {
+          const rInput = await ask('Roles (role-id, role-id, ...)?', '');
+          if (rInput) seedRoles = rInput.split(',').map((s) => s.trim()).filter(Boolean);
+        }
+        rl.close();
+      }
+      if (!displayName) displayName = id;
+
+      const pathMod = await import('node:path');
+      const draftRoot = pathMod.join(process.cwd(), '.cx', 'profiles', `draft-${id}`);
+
+      println('');
+      println(`About to scaffold a draft profile:`);
+      println(`  id:           ${id}`);
+      println(`  displayName:  ${displayName}`);
+      println(`  departments:  ${seedDepartments.length}${seedDepartments.length ? ` (${seedDepartments.map((d) => d.id).join(', ')})` : ''}`);
+      println(`  roles:        ${seedRoles.length}${seedRoles.length ? ` (${seedRoles.join(', ')})` : ''}`);
+      println('');
+      println(`Files that will be written under ${pathMod.relative(process.cwd(), draftRoot)}/:`);
+      println(`  profile.json                       structural manifest`);
+      println(`  requirements.md                    research brief naming each cx-* specialist`);
+      for (const r of seedRoles) println(`  personas/${r}.md`.padEnd(40) + `  persona artifact (filled during discover)`);
+      for (const d of seedDepartments) println(`  departments/${d.id}.md`.padEnd(40) + `  department charter (filled during frame)`);
+      println('');
+      println(`Nothing else is touched. No config is changed, no active profile is switched.`);
+      println(`To activate this profile after promotion: construct profile set ${id}`);
+      println('');
+
+      if (dryRun) {
+        println(`[dry-run] No files were written.`);
+        return;
+      }
+      if (!skipConfirm && isTTY) {
+        const readline = await import('node:readline');
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        const answer = await new Promise((res) => rl.question('Create draft? (Y/n) ', (a) => res(a.trim().toLowerCase())));
+        rl.close();
+        if (answer && answer !== 'y' && answer !== 'yes') {
+          println('Aborted. Nothing was written.');
+          return;
+        }
+      }
+
       const { createDraftProfile } = await import('../lib/profiles/lifecycle.mjs');
       try {
         const result = createDraftProfile({ cwd: process.cwd(), id, displayName, seedRoles, seedDepartments });
-        const pathMod = await import('node:path');
-        process.stdout.write(`✓ draft created for ${id}\n`);
-        process.stdout.write(`  brief:        ${pathMod.relative(process.cwd(), result.briefPath)}\n`);
-        process.stdout.write(`  draft:        ${pathMod.relative(process.cwd(), result.draftPath)}\n`);
-        if (result.personaPaths.length) process.stdout.write(`  personas:     ${result.personaPaths.length} scaffold(s) under personas/\n`);
-        if (result.departmentPaths.length) process.stdout.write(`  departments:  ${result.departmentPaths.length} charter(s) under departments/\n`);
-        process.stdout.write(`\nNext steps (in order, per docs/concepts/profile-lifecycle.md):\n`);
-        process.stdout.write(`  1. Discover: dispatch cx-ux-researcher to fill personas/<role>.md from interviews + primary sources.\n`);
-        process.stdout.write(`  2. Frame:    dispatch cx-product-manager to fill departments/<dept>.md charters and the intake taxonomy in profile.json.\n`);
-        process.stdout.write(`  3. Architect: dispatch cx-architect to reconcile role reuse vs new, and to populate departments[].\n`);
-        process.stdout.write(`  4. Validate: dispatch cx-evaluator to run persona-eval and classifier-eval against representative signals.\n`);
+        println('');
+        println(`✓ draft created at ${pathMod.relative(process.cwd(), result.dir)}`);
+        println('');
+        println(`Next steps (in order, per docs/concepts/profile-lifecycle.md):`);
+        println(`  1. Discover  (cx-ux-researcher): fill personas/<role>.md from interviews + primary sources.`);
+        println(`  2. Frame     (cx-product-manager): fill departments/<dept>.md charters and intake taxonomy.`);
+        println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in profile.json.`);
+        println(`  4. Validate  (cx-evaluator): run persona-eval and classifier-eval against representative signals.`);
+        println('');
+        println(`Inspect the brief:  open ${pathMod.relative(process.cwd(), result.briefPath)}`);
         return;
       } catch (err) {
         errorln(err.message);
