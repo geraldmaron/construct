@@ -1,9 +1,9 @@
 ---
 cx_doc_id: 019ddb68-5aed-7224-8287-5fb37cd18c6f
-created_at: 2026-04-29T22:42:22.573Z
-updated_at: 2026-04-29T22:42:22.573Z
+created_at: "2026-04-29T22:42:22.573Z"
+updated_at: "2026-04-29T22:42:22.573Z"
 generator: construct/init-docs
-body_hash: sha256:a667eec1e8e6b7fd7157e2c727ee64efa76df4de430f0d87063d40f8b6871492
+body_hash: "sha256:a667eec1e8e6b7fd7157e2c727ee64efa76df4de430f0d87063d40f8b6871492"
 ---
 # Platform PRD: {title}
 

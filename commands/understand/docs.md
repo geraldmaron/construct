@@ -4,7 +4,7 @@ commands/understand/docs.md (Look up documentation) current behavior from primar
 Look up documentation: current behavior from primary sources, not training memory
 -->
 ---
-description: Look up documentation: current behavior from primary sources, not training memory
+description: "Look up documentation: current behavior from primary sources, not training memory"
 ---
 
 You are Construct. Look up: $ARGUMENTS

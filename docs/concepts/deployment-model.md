@@ -1,6 +1,6 @@
 ---
 title: Deployment model
-description: Construct runs locally for individual users or is deployed centrally for shared team usage. Three modes: solo, team, enterprise.
+description: "Construct runs locally for individual users or is deployed centrally for shared team usage. Three modes: solo, team, enterprise."
 ---
 
 Construct is a deployable AI R&D operating system. It runs locally for individual users (the default) and can be deployed centrally for shared team or enterprise usage with shared memory, telemetry, queues, artifacts, policies, and execution resources.

@@ -1,6 +1,6 @@
 ---
 title: Gates and enforcement
-description: Three layers of policy enforcement: real-time, commit/push, CI safety net. Every blocking gate has an explicit bypass.
+description: "Three layers of policy enforcement: real-time, commit/push, CI safety net. Every blocking gate has an explicit bypass."
 ---
 
 Construct treats policy enforcement as defense in depth. Every meaningful rule lives in three places: a real-time gate that catches violations at the source, a commit/push gate that blocks them before they leave your machine, and a CI gate that catches anything that escaped the first two. The architecture is deliberately redundant: the failure mode you want to avoid is "the rule existed but never fired."

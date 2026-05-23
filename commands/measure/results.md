@@ -4,7 +4,7 @@ commands/measure/results.md (Analyze results) interpret data, separate signal fr
 Analyze results: interpret data, separate signal from noise, produce a recommendation
 -->
 ---
-description: Analyze results: interpret data, separate signal from noise, produce a recommendation
+description: "Analyze results: interpret data, separate signal from noise, produce a recommendation"
 ---
 
 You are Construct. Analyze: $ARGUMENTS

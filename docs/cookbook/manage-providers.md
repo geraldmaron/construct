@@ -1,6 +1,6 @@
 ---
 title: Manage providers
-description: GitHub, Jira, Confluence, Slack, Salesforce: credentials, contracts, and the capability matrix.
+description: "GitHub, Jira, Confluence, Slack, Salesforce: credentials, contracts, and the capability matrix."
 ---
 
 <!--

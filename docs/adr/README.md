@@ -1,9 +1,9 @@
 ---
 cx_doc_id: 019ddb68-5aed-7979-8f84-32c426683a06
-created_at: 2026-04-29T22:42:22.573Z
-updated_at: 2026-04-29T22:42:22.573Z
+created_at: "2026-04-29T22:42:22.573Z"
+updated_at: "2026-04-29T22:42:22.573Z"
 generator: construct/init-docs
-body_hash: sha256:841cc5539956827500098cf3d7b479ef17aeecc3bc9a9c9ff0b7c05b03f28b95
+body_hash: "sha256:841cc5539956827500098cf3d7b479ef17aeecc3bc9a9c9ff0b7c05b03f28b95"
 ---
 <!--
 docs/adr/README.md: lane guide for ADRs.

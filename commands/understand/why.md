@@ -4,7 +4,7 @@ commands/understand/why.md (Investigate a failure) why is this broken, what is t
 Investigate a failure: why is this broken, what is the root cause
 -->
 ---
-description: Investigate a failure: why is this broken, what is the root cause
+description: "Investigate a failure: why is this broken, what is the root cause"
 ---
 
 You are Construct. Investigate: $ARGUMENTS

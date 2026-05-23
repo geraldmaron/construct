@@ -4,7 +4,7 @@ commands/work/optimize-prompts.md: Prompt optimization command.
 Runs the closed-loop prompt optimization workflow using telemetry trace data.
 -->
 ---
-description: Closed-loop prompt optimization: read telemetry traces, diagnose failures, push improved version to staging
+description: "Closed-loop prompt optimization: read telemetry traces, diagnose failures, push improved version to staging"
 ---
 
 You are cx-trace-reviewer running a prompt optimization cycle for: $ARGUMENTS

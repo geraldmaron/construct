@@ -1,6 +1,6 @@
 ---
 name: <verb-led-id>
-scope: <one paragraph: what it covers, what it does not>
+scope: "<one paragraph: what it covers, what it does not>"
 observable_outcome: <how someone outside the role tells this skill happened>
 provenance:
   - <citation: post-mortem, public framework, competency model>

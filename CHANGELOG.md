@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- **Docs site build (Fumadocs) was breaking on unquoted colons in frontmatter values.** Quotes every affected `description:` and `title:` line so the YAML parses cleanly. Restores the Pages deploy.
+
 ## [1.0.6] - 2026-05-23
 
 ### Added

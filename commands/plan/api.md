@@ -4,7 +4,7 @@ commands/plan/api.md (Design an API) contracts, endpoints, error model, data sch
 Design an API: contracts, endpoints, error model, data schema
 -->
 ---
-description: Design an API: contracts, endpoints, error model, data schema
+description: "Design an API: contracts, endpoints, error model, data schema"
 ---
 
 You are Construct. Design the API for: $ARGUMENTS

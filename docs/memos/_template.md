@@ -1,9 +1,9 @@
 ---
 cx_doc_id: 019ddb68-5aee-78df-9e1e-13cc1542edc2
-created_at: 2026-04-29T22:42:22.574Z
-updated_at: 2026-04-29T22:42:22.574Z
+created_at: "2026-04-29T22:42:22.574Z"
+updated_at: "2026-04-29T22:42:22.574Z"
 generator: construct/init-docs
-body_hash: sha256:1aac0552973e6778faec0da8ad7ecea8d7ec5012e5e8effa0b50ea439f45e31b
+body_hash: "sha256:1aac0552973e6778faec0da8ad7ecea8d7ec5012e5e8effa0b50ea439f45e31b"
 ---
 # Memo: {title}
 

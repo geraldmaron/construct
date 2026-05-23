@@ -1,9 +1,9 @@
 ---
 cx_doc_id: 019ddb68-5aed-7850-8fea-1b7f9b4bfd5e
-created_at: 2026-04-29T22:42:22.573Z
-updated_at: 2026-04-29T22:42:22.573Z
+created_at: "2026-04-29T22:42:22.573Z"
+updated_at: "2026-04-29T22:42:22.573Z"
 generator: construct/init-docs
-body_hash: sha256:d5dcf910bccb8266d48c15bf111f215eae5d44dd999f81ae509a48ad5134376a
+body_hash: "sha256:d5dcf910bccb8266d48c15bf111f215eae5d44dd999f81ae509a48ad5134376a"
 ---
 # RFC: {title}
 

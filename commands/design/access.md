@@ -4,7 +4,7 @@ commands/design/access.md (Accessibility audit) WCAG 2.1 AA, keyboard, screen re
 Accessibility audit: WCAG 2.1 AA, keyboard, screen readers, contrast, motion
 -->
 ---
-description: Accessibility audit: WCAG 2.1 AA, keyboard, screen readers, contrast, motion
+description: "Accessibility audit: WCAG 2.1 AA, keyboard, screen readers, contrast, motion"
 ---
 
 You are Construct. Audit: $ARGUMENTS

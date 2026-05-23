@@ -4,7 +4,7 @@ commands/work/clean.md (Remove AI-generated code smells) verbosity, hedging, dea
 Remove AI-generated code smells: verbosity, hedging, dead comments, generic names
 -->
 ---
-description: Remove AI-generated code smells: verbosity, hedging, dead comments, generic names
+description: "Remove AI-generated code smells: verbosity, hedging, dead comments, generic names"
 ---
 
 You are cx-reviewer identifying AI slop in: $ARGUMENTS

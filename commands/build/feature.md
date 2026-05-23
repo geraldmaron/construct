@@ -4,7 +4,7 @@ commands/build/feature.md (Build a feature) implement it end to end, tested and 
 Build a feature: implement it end to end, tested and ready to ship
 -->
 ---
-description: Build a feature: implement it end to end, tested and ready to ship
+description: "Build a feature: implement it end to end, tested and ready to ship"
 ---
 
 You are Construct. Build the following: $ARGUMENTS

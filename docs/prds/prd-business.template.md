@@ -1,9 +1,9 @@
 ---
 cx_doc_id: 019ddb68-5aed-7fb9-a133-c7b0a6d29e0c
-created_at: 2026-04-29T22:42:22.573Z
-updated_at: 2026-04-29T22:42:22.573Z
+created_at: "2026-04-29T22:42:22.573Z"
+updated_at: "2026-04-29T22:42:22.573Z"
 generator: construct/init-docs
-body_hash: sha256:785205d428740c4f474564d4284dae6fddc9a9a42ced9de4f86e12dc18d87494
+body_hash: "sha256:785205d428740c4f474564d4284dae6fddc9a9a42ced9de4f86e12dc18d87494"
 ---
 # Business PRD: {title}
 

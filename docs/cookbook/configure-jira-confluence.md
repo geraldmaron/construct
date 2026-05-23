@@ -1,6 +1,6 @@
 ---
 title: Configure Jira and Confluence
-description: Connect Construct to Atlassian Cloud: tickets, sprints, runbooks, design pages. One credential set covers both.
+description: "Connect Construct to Atlassian Cloud: tickets, sprints, runbooks, design pages. One credential set covers both."
 ---
 
 The Atlassian providers (Jira + Confluence) share one credential set and one API token. Configure once; both providers come online.
