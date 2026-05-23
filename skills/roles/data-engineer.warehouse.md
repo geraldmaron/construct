@@ -1,5 +1,5 @@
 <!--
-skills/roles/data-engineer.warehouse.md — Anti-pattern guidance for the Data-engineer.warehouse (warehouse) role.
+skills/roles/data-engineer.warehouse.md. Anti-pattern guidance for the Data-engineer.warehouse (warehouse) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the data-engineer.warehouse (warehouse) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-data-engineer.
 role: data-engineer.warehouse
 applies_to: [cx-data-engineer]
 inherits: engineer.data
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Warehouse Engineer Overlay
 

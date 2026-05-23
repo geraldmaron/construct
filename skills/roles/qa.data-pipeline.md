@@ -1,5 +1,5 @@
 <!--
-skills/roles/qa.data-pipeline.md — Anti-pattern guidance for the Qa.data-pipeline (data pipeline) role.
+skills/roles/qa.data-pipeline.md. Anti-pattern guidance for the Qa.data-pipeline (data pipeline) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the qa.data-pipeline (data pipeline) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-qa, cx-test-automation.
 role: qa.data-pipeline
 applies_to: [cx-qa, cx-test-automation]
 inherits: qa
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Data Pipeline QA Overlay
 

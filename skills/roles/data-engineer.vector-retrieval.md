@@ -1,5 +1,5 @@
 <!--
-skills/roles/data-engineer.vector-retrieval.md — Anti-pattern guidance for the Data-engineer.vector-retrieval (vector retrieval) role.
+skills/roles/data-engineer.vector-retrieval.md. Anti-pattern guidance for the Data-engineer.vector-retrieval (vector retrieval) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the data-engineer.vector-retrieval (vector retrieval) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-data-engineer, cx-ai-engineer.
 role: data-engineer.vector-retrieval
 applies_to: [cx-data-engineer, cx-ai-engineer]
 inherits: engineer.data
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Vector Retrieval Engineer Overlay
 

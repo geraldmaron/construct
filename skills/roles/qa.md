@@ -1,5 +1,5 @@
 <!--
-skills/roles/qa.md — Anti-pattern guidance for the Qa role.
+skills/roles/qa.md. Anti-pattern guidance for the Qa role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the qa domain and counter-moves to avoid them.
@@ -9,15 +9,17 @@ Applies to: cx-qa, cx-test-automation.
 role: qa
 applies_to: [cx-qa, cx-test-automation]
 inherits: null
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
-# QA — Role guidance
+# QA. Role guidance
 
-Load this before drafting. These are the failure modes that separate strong role output from weak role output — check your draft against each.
+Load this before drafting. These are the failure modes that separate strong role output from weak role output. check your draft against each.
 
 
 ### 1. Testing the mock
-**Symptom**: the test asserts that the mock was called with the expected arguments — and that is all it asserts.
+**Symptom**: the test asserts that the mock was called with the expected arguments. and that is all it asserts.
 **Why it fails**: the test passes regardless of whether the real system would. Mocks drift from the real contract silently.
 **Counter-move**: assert on observable outputs or state. Use mocks for isolation, not as the thing being tested.
 

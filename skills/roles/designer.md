@@ -1,5 +1,5 @@
 <!--
-skills/roles/designer.md — Anti-pattern guidance for the Designer role.
+skills/roles/designer.md. Anti-pattern guidance for the Designer role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the designer domain and counter-moves to avoid them.
@@ -9,15 +9,17 @@ Applies to: cx-designer, cx-accessibility.
 role: designer
 applies_to: [cx-designer, cx-accessibility]
 inherits: null
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
-# Designer — Role guidance
+# Designer. Role guidance
 
-Load this before drafting. These are the failure modes that separate strong role output from weak role output — check your draft against each.
+Load this before drafting. These are the failure modes that separate strong role output from weak role output. check your draft against each.
 
 
 ### 1. Template defaults
-**Symptom**: the design looks like an unmodified Tailwind, shadcn, or Material page — centered hero, gradient blob, uniform card grid, one accent color.
+**Symptom**: the design looks like an unmodified Tailwind, shadcn, or Material page. centered hero, gradient blob, uniform card grid, one accent color.
 **Why it fails**: nothing about the output communicates product intent. It could be any app.
 **Counter-move**: pick an explicit visual direction before designing. Commit to typography, color, and layout choices specific to the product.
 
@@ -39,12 +41,12 @@ Load this before drafting. These are the failure modes that separate strong role
 ### 5. Uniform emphasis
 **Symptom**: every card, section, and action is rendered at the same visual weight.
 **Why it fails**: the user cannot tell what matters. Attention fails; scanning fails.
-**Counter-move**: use hierarchy — scale, weight, color, spacing — to express importance. One primary action per view.
+**Counter-move**: use hierarchy. scale, weight, color, spacing. to express importance. One primary action per view.
 
 ### 6. Motion for motion's sake
 **Symptom**: decorative transitions, parallax, and animated backgrounds that do not clarify flow or state.
 **Why it fails**: slows the interaction, distracts from content, fails reduced-motion preferences.
-**Counter-move**: motion should clarify — state change, origin-destination, or loading progress. Respect `prefers-reduced-motion`.
+**Counter-move**: motion should clarify. state change, origin-destination, or loading progress. Respect `prefers-reduced-motion`.
 
 ### 7. Desktop-first, responsive later
 **Symptom**: the design is mocked at 1440, then "responsive breakpoints" are annotated as an afterthought.
@@ -54,7 +56,7 @@ Load this before drafting. These are the failure modes that separate strong role
 ### 8. Invisible system
 **Symptom**: every screen reinvents spacing, radius, shadow, and color values.
 **Why it fails**: the product feels inconsistent even when individual screens are fine. Engineering cannot implement cleanly.
-**Counter-move**: name the tokens — space, color, type, radius, motion — before designing. Use them.
+**Counter-move**: name the tokens. space, color, type, radius, motion. before designing. Use them.
 
 ## Self-check before shipping
 

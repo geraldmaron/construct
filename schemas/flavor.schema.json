@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geraldmaron.github.io/construct/schemas/flavor.schema.json",
+  "title": "Construct role flavor overlay",
+  "description": "Frontmatter contract for skills/roles/<role>.<flavor>.md files. Every overlay declares which profile(s) it applies to and counts toward a per-role cap so flavors do not sprawl.",
+  "type": "object",
+  "required": ["role", "applies_to"],
+  "additionalProperties": true,
+  "properties": {
+    "role": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)?$",
+      "description": "Role id, optionally with a .flavor suffix. e.g. architect, architect.ai-systems"
+    },
+    "applies_to": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]+$" }
+    },
+    "inherits": { "type": ["string", "null"] },
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]+$" },
+      "description": "Curated profiles this overlay applies to. Default for migrated files: [rnd]. Custom profiles are validated against this field by lib/profiles/validate-custom.mjs."
+    },
+    "cap": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1,
+      "description": "Count toward the per-role flavor cap. Always 1 today; reserved for future weighting."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

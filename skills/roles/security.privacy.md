@@ -1,5 +1,5 @@
 <!--
-skills/roles/security.privacy.md — Anti-pattern guidance for the Security.privacy (privacy) role.
+skills/roles/security.privacy.md. Anti-pattern guidance for the Security.privacy (privacy) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the security.privacy (privacy) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-security, cx-legal-compliance.
 role: security.privacy
 applies_to: [cx-security, cx-legal-compliance]
 inherits: security
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Privacy Security Overlay
 

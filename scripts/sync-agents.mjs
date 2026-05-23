@@ -38,6 +38,7 @@ import {
 } from "../lib/mcp-platform-config.mjs";
 import { loadConstructEnv } from "../lib/env-config.mjs";
 import { inlineRoleAntiPatterns, PROMPT_WORD_CAP } from "../lib/role-preload.mjs";
+import { resolveActiveProfile } from "../lib/profiles/loader.mjs";
 import { resolveTiersForPrimary } from "../lib/model-router.mjs";
 import { stampFrontmatter } from "../lib/doc-stamp.mjs";
 
@@ -499,7 +500,17 @@ function buildEntries() {
     });
   }
 
+  // Filter agents by the active profile's role set. RND lists every specialist
+  // so behavior is unchanged for the default; non-RND profiles emit only the
+  // specialists they declare. Profiles whose role list is empty (legacy/test)
+  // fall through to no filter so callers don't get a silent empty registry.
+  const activeProfile = resolveActiveProfile(process.cwd());
+  const profileRoles = Array.isArray(activeProfile?.roles) && activeProfile.roles.length > 0
+    ? new Set(activeProfile.roles)
+    : null;
+
   for (const agent of registry.agents ?? []) {
+    if (profileRoles && !profileRoles.has(agent.name)) continue;
     entries.push({
       ...agent,
       isPersona: false,

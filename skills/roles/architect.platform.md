@@ -1,5 +1,5 @@
 <!--
-skills/roles/architect.platform.md — Anti-pattern guidance for the Architect.platform (platform) role.
+skills/roles/architect.platform.md. Anti-pattern guidance for the Architect.platform (platform) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the architect.platform (platform) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-architect.
 role: architect.platform
 applies_to: [cx-architect]
 inherits: architect
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Platform Architect Overlay
 

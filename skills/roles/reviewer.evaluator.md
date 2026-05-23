@@ -1,5 +1,5 @@
 <!--
-skills/roles/reviewer.evaluator.md — Anti-pattern guidance for the Reviewer.evaluator (evaluator) role.
+skills/roles/reviewer.evaluator.md. Anti-pattern guidance for the Reviewer.evaluator (evaluator) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the reviewer.evaluator (evaluator) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-evaluator.
 role: reviewer.evaluator
 applies_to: [cx-evaluator]
 inherits: reviewer
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Evaluator Overlay
 

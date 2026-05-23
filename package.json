@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "type": "module",
   "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
   "bin": {
@@ -42,12 +42,17 @@
   "scripts": {
     "mcp": "node lib/mcp/server.mjs",
     "test": "node scripts/run-tests.mjs",
+    "test:functional": "node --test --test-timeout=30000 tests/functional/*.functional.test.mjs",
+    "test:unit": "node scripts/run-tests.mjs --exclude=tests/functional",
     "docs:init": "node lib/init-docs.mjs --yes",
     "docs:update": "node ./bin/construct docs:update",
     "docs:site": "node ./bin/construct docs:site",
     "docs:dev": "npm --prefix apps/docs run dev",
     "docs:build": "npm --prefix apps/docs run build",
     "lint:comments": "node ./bin/construct lint:comments",
+    "lint:prose": "node scripts/lint-prose.mjs",
+    "lint:profiles": "node scripts/lint-profiles.mjs",
+    "learning:status": "node scripts/learning-status.mjs",
     "lint:templates": "node scripts/lint-commits-pr.mjs",
     "eval:routing": "node scripts/eval/score-intent-classifier.mjs",
     "release:check": "node ./bin/construct doctor && npm test && node ./bin/construct docs:update --check && node ./bin/construct dashboard:sync --check && node ./bin/construct lint:comments && node scripts/lint-commits-pr.mjs",

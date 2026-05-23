@@ -1,5 +1,5 @@
 <!--
-skills/roles/debugger.md — Anti-pattern guidance for the Debugger role.
+skills/roles/debugger.md. Anti-pattern guidance for the Debugger role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the debugger domain and counter-moves to avoid them.
@@ -9,11 +9,13 @@ Applies to: cx-debugger.
 role: debugger
 applies_to: [cx-debugger]
 inherits: null
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
-# Debugger — Role guidance
+# Debugger. Role guidance
 
-Load this before drafting. These are the failure modes that separate strong role output from weak role output — check your draft against each.
+Load this before drafting. These are the failure modes that separate strong role output from weak role output. check your draft against each.
 
 
 ### 1. Fixing the symptom
@@ -63,6 +65,6 @@ Load this before drafting. These are the failure modes that separate strong role
 - [ ] Failure reproduced locally and reproduction preserved as a test
 - [ ] No speculative logs, retries, or sleeps in the fix
 - [ ] Earliest anomaly in the log is the starting point
-- [ ] Diff is narrow — fix only, no drive-bys
+- [ ] Diff is narrow. fix only, no drive-bys
 - [ ] Intermittent failures investigated, not shelved
 - [ ] Regression test added alongside the fix

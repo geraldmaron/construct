@@ -1,5 +1,5 @@
 <!--
-skills/roles/engineer.ai.md — Anti-pattern guidance for the Engineer.ai (ai) role.
+skills/roles/engineer.ai.md. Anti-pattern guidance for the Engineer.ai (ai) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the engineer.ai (ai) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-ai-engineer.
 role: engineer.ai
 applies_to: [cx-ai-engineer]
 inherits: engineer
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # AI Engineer Overlay
 

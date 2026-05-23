@@ -9,6 +9,9 @@ This repo IS Construct. Changes here affect every session, every platform, every
 - **Never edit running hook files** (`lib/hooks/*.mjs`) without testing them in isolation first. A broken hook blocks all tool use.
 - **Never commit directly to main.** Branch, test, then merge.
 - **Run `construct doctor` after any structural change** to verify the system is healthy.
+- **Multi-component features require a functional test.** If a change touches more than one of: hook + observation, profile + classifier, CLI + durable state, then a test must live in `tests/functional/` that spawns the real binary or imports the real module in an isolated tmpdir and asserts on durable artifacts. CI is a backstop, not a primary gate. See `tests/functional/README.md`.
+- **No em-dashes in user-facing markdown.** Voice and punctuation rules are in `docs/STYLE.md`. Enforced by `npm run lint:prose`. CHANGELOG history and this file are exempt.
+- **Profiles are research artifacts, not JSON exercises.** Any new profile that lands in `profiles/` must go through the lifecycle in `docs/concepts/profile-lifecycle.md`: discover → frame → architect → validate → promote. The cx-ux-researcher, cx-product-manager, cx-architect, and cx-evaluator specialists each own a phase. `construct profile create <id>` scaffolds the draft and the requirements brief; drop-in JSON is allowed for experiments but not for the curated catalog.
 
 ## Protected files — edit with extra care
 
@@ -64,6 +67,7 @@ This applies to every file construct touches and to all agents working in this p
 3. Run `construct sync` to regenerate platform files
 4. Verify with `construct list`
 5. Update documentation (see above)
+6. Run the full gate before commit: see `CONTRIBUTING.md` § "Before opening a PR" for the eight-check list. The release pipeline (`docs/maintenance/release-and-deploy.md`) runs the same checks.
 
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->

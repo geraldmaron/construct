@@ -1,5 +1,5 @@
 <!--
-skills/roles/security.appsec.md — Anti-pattern guidance for the Security.appsec (appsec) role.
+skills/roles/security.appsec.md. Anti-pattern guidance for the Security.appsec (appsec) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the security.appsec (appsec) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-security.
 role: security.appsec
 applies_to: [cx-security]
 inherits: security
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # AppSec Overlay
 

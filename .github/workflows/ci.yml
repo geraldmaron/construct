@@ -39,6 +39,8 @@ jobs:
               - 'tests/**'
               - 'scripts/**'
               - 'agents/**'
+              - 'profiles/**'
+              - 'schemas/**'
               - 'package.json'
               - 'package-lock.json'
               - 'db/schema/**'
@@ -61,6 +63,8 @@ jobs:
               - 'skills/**'
               - 'rules/**'
               - 'templates/**'
+              - 'profiles/**'
+              - 'schemas/**'
             docs:
               - 'docs/**'
               - 'README.md'
@@ -174,6 +178,36 @@ jobs:
       - run: npm ci
       - name: Enforce comment policy
         run: node ./bin/construct lint:comments
+
+  lint-prose:
+    name: prose policy (em-dash + voice)
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.workflow == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Enforce prose policy on changed markdown
+        run: npm run lint:prose
+
+  lint-profiles:
+    name: profile + flavor schema
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Validate profiles and flavor overlays
+        run: npm run lint:profiles -- --quiet
 
   lint-agents:
     name: agents registry schema

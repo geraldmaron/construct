@@ -1,5 +1,5 @@
 <!--
-skills/roles/security.supply-chain.md — Anti-pattern guidance for the Security.supply-chain (supply chain) role.
+skills/roles/security.supply-chain.md. Anti-pattern guidance for the Security.supply-chain (supply chain) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the security.supply-chain (supply chain) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-security, cx-platform-engineer.
 role: security.supply-chain
 applies_to: [cx-security, cx-platform-engineer]
 inherits: security
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Supply Chain Security Overlay
 

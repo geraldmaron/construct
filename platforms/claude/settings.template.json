@@ -460,6 +460,19 @@
         ],
         "id": "stop:optimize-agents",
         "description": "Check performance reviews and auto-optimize low-scoring agents at session end"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/session-reflect.mjs\"",
+            "timeout": 5,
+            "async": true
+          }
+        ],
+        "id": "stop:auto-reflect",
+        "description": "Deterministic session-end reflect: extracts a transcript summary into .cx/observations (500ms hard budget; CONSTRUCT_REFLECT_AUTO=off to disable)"
       }
     ],
     "UserPromptSubmit": [

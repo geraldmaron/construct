@@ -1,5 +1,5 @@
 <!--
-skills/roles/architect.integration.md — Anti-pattern guidance for the Architect.integration (integration) role.
+skills/roles/architect.integration.md. Anti-pattern guidance for the Architect.integration (integration) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the architect.integration (integration) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-architect.
 role: architect.integration
 applies_to: [cx-architect]
 inherits: architect
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # Integration Architect Overlay
 

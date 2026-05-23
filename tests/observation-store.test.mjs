@@ -240,4 +240,28 @@ describe('observation-store', () => {
       assert.equal(countObservations(tmpDir, { role: 'cx-qa' }), 1);
     });
   });
+
+  describe('extras field', () => {
+    it('persists structured extras alongside the observation', async () => {
+      const rec = await addObservation(tmpDir, {
+        summary: 'with extras',
+        extras: { sessionId: 's-1', toolCallCount: 7, files: ['a.mjs'] },
+      });
+      const stored = JSON.parse(fs.readFileSync(path.join(tmpDir, `.cx/observations/${rec.id}.json`), 'utf8'));
+      assert.deepEqual(stored.extras, { sessionId: 's-1', toolCallCount: 7, files: ['a.mjs'] });
+    });
+
+    it('drops extras that are not plain objects', async () => {
+      const rec = await addObservation(tmpDir, { summary: 'bad extras', extras: 'not-an-object' });
+      const stored = JSON.parse(fs.readFileSync(path.join(tmpDir, `.cx/observations/${rec.id}.json`), 'utf8'));
+      assert.equal(stored.extras, null);
+    });
+
+    it('drops extras that exceed the 2KB stringified cap', async () => {
+      const big = { blob: 'x'.repeat(3000) };
+      const rec = await addObservation(tmpDir, { summary: 'huge extras', extras: big });
+      const stored = JSON.parse(fs.readFileSync(path.join(tmpDir, `.cx/observations/${rec.id}.json`), 'utf8'));
+      assert.equal(stored.extras, null);
+    });
+  });
 });

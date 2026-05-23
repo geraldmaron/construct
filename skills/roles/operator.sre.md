@@ -1,5 +1,5 @@
 <!--
-skills/roles/operator.sre.md — Anti-pattern guidance for the Operator.sre (sre) role.
+skills/roles/operator.sre.md. Anti-pattern guidance for the Operator.sre (sre) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the operator.sre (sre) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-sre.
 role: operator.sre
 applies_to: [cx-sre]
 inherits: operator
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # SRE Overlay
 
@@ -24,7 +26,7 @@ Additional failure modes on top of the operator core.
 ### 2. SLOs without error budgets
 **Symptom**: publishing an SLO (e.g., 99.9% availability) with no policy for what happens when it's breached.
 **Why it fails**: the SLO becomes decorative; feature work continues to burn reliability.
-**Counter-move**: define the error budget policy up front — what freezes, who's notified, when it resumes.
+**Counter-move**: define the error budget policy up front. what freezes, who's notified, when it resumes.
 
 ### 3. Dashboards of everything
 **Symptom**: 40-panel dashboards covering every metric the team could expose.

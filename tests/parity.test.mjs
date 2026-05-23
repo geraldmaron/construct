@@ -230,6 +230,28 @@ describe('checkParity', () => {
     assert.deepEqual(codex.extra, ['cx-orphan']);
   });
 
+  it('copilot parity uses the same internal-flag rule as Claude/OpenCode/Codex (regression for false-drift)', () => {
+    // Pre-fix bug: checkCopilot uniquely dropped entries with internal:true
+    // from its expected set while sync writes all 29 to disk. That produced
+    // "extra: cx-*" drift for every internal specialist. The fix routes
+    // copilot through entriesForSurface, the same helper the other surfaces
+    // use. This test would have failed under the old code.
+    resetSurfaces();
+    const registryWithInternal = {
+      ...FIXTURE_REGISTRY,
+      agents: [
+        { ...FIXTURE_REGISTRY.agents[0], internal: true },
+        { ...FIXTURE_REGISTRY.agents[1], internal: true },
+      ],
+    };
+    fs.writeFileSync(path.join(tmpRoot, 'agents', 'registry.json'), JSON.stringify(registryWithInternal, null, 2));
+    writeAllSurfaces();
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    const copilot = report.surfaces.find((s) => s.surface === 'copilot');
+    assert.equal(copilot.status, 'ok', `copilot drift: missing=${copilot.missing}, extra=${copilot.extra}`);
+    fs.writeFileSync(path.join(tmpRoot, 'agents', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
+  });
+
   it('respects entry.platforms allowlist when set', () => {
     resetSurfaces();
     fs.writeFileSync(

@@ -1,5 +1,5 @@
 <!--
-skills/roles/data-analyst.md — Anti-pattern guidance for the Data-analyst role.
+skills/roles/data-analyst.md. Anti-pattern guidance for the Data-analyst role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the data-analyst domain and counter-moves to avoid them.
@@ -9,27 +9,29 @@ Applies to: cx-data-analyst.
 role: data-analyst
 applies_to: [cx-data-analyst]
 inherits: null
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
-# Data Analyst — Role guidance
+# Data Analyst. Role guidance
 
-Load this before drafting. These are the failure modes that separate strong role output from weak role output — check your draft against each.
+Load this before drafting. These are the failure modes that separate strong role output from weak role output. check your draft against each.
 
 
 ### 1. Metric without definition
-**Symptom**: a metric cited without its precise definition — which events, what time window, deduplication rules, filters.
+**Symptom**: a metric cited without its precise definition. which events, what time window, deduplication rules, filters.
 **Why it fails**: two teams compute "active users" differently. Decisions rest on numbers nobody can reproduce.
 **Counter-move**: name the metric and its SQL-level or event-level definition before any number. Version the definition.
 
 ### 2. Vanity over outcome
-**Symptom**: reports lead with impressions, pageviews, clicks — activity disconnected from whether users got value.
+**Symptom**: reports lead with impressions, pageviews, clicks. activity disconnected from whether users got value.
 **Why it fails**: rewards teams for moving activity numbers while outcomes stagnate.
 **Counter-move**: tie every vanity metric to an outcome metric. Report both. Lead with the outcome.
 
 ### 3. Ignoring data quality
 **Symptom**: analysis assumes the underlying events fire correctly, are deduped, and have consistent schemas.
 **Why it fails**: real pipelines drop, duplicate, and malform events. Analysis without QA produces confident wrong numbers.
-**Counter-move**: run sanity checks — row counts, null rates, distribution shape, schema checks — before analysis. Report data quality alongside findings.
+**Counter-move**: run sanity checks. row counts, null rates, distribution shape, schema checks. before analysis. Report data quality alongside findings.
 
 ### 4. Correlation as causation
 **Symptom**: "users who did X had higher retention" presented as a reason to make everyone do X.

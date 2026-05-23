@@ -1,5 +1,5 @@
 <!--
-skills/roles/qa.api-contract.md — Anti-pattern guidance for the Qa.api-contract (api contract) role.
+skills/roles/qa.api-contract.md. Anti-pattern guidance for the Qa.api-contract (api contract) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the qa.api-contract (api contract) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-qa, cx-test-automation.
 role: qa.api-contract
 applies_to: [cx-qa, cx-test-automation]
 inherits: qa
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # API Contract QA Overlay
 

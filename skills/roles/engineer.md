@@ -1,5 +1,5 @@
 <!--
-skills/roles/engineer.md — Anti-pattern guidance for the Engineer role.
+skills/roles/engineer.md. Anti-pattern guidance for the Engineer role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the engineer domain and counter-moves to avoid them.
@@ -9,11 +9,13 @@ Applies to: cx-engineer, cx-ai-engineer, cx-data-engineer, cx-platform-engineer.
 role: engineer
 applies_to: [cx-engineer, cx-ai-engineer, cx-data-engineer, cx-platform-engineer]
 inherits: null
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
-# Engineer — Role guidance
+# Engineer. Role guidance
 
-Load this before drafting. These are the failure modes that separate strong role output from weak role output — check your draft against each.
+Load this before drafting. These are the failure modes that separate strong role output from weak role output. check your draft against each.
 
 
 ### 1. Writing before reading
@@ -57,7 +59,7 @@ Load this before drafting. These are the failure modes that separate strong role
 **Counter-move**: explain the cause in one sentence before writing the fix. If you cannot, keep investigating.
 
 ### 9. Ignoring the diff
-**Symptom**: the change includes unrelated edits — formatting churn, drive-by renames, comment cleanups.
+**Symptom**: the change includes unrelated edits. formatting churn, drive-by renames, comment cleanups.
 **Why it fails**: drowns the real change in noise; reviewers cannot separate intent from accident.
 **Counter-move**: one change per commit. Keep the diff narrow. Bank the drive-bys for a separate PR.
 
@@ -68,7 +70,7 @@ Load this before drafting. These are the failure modes that separate strong role
 
 ### 11. Unbounded file reads
 **Symptom**: reading files with large `limit` values without checking size first, or offset reads that fail with "out of range".
-**Why it fails**: wastes context, and the failure reveals the file was smaller than assumed — a signal that the reading strategy was guess-driven.
+**Why it fails**: wastes context, and the failure reveals the file was smaller than assumed. a signal that the reading strategy was guess-driven.
 **Counter-move**: before any `Read` over 200 lines, probe with `Glob`, `wc -l`, or a `limit: 50` read. Then request the right range.
 
 ## Self-check before shipping
@@ -84,15 +86,15 @@ Load this before drafting. These are the failure modes that separate strong role
 - [ ] No more than two consecutive thinking turns about the same decision without a tool call or input
 - [ ] Any `Read` over 200 lines was preceded by a size probe
 
-## Hard release gates (blocking, run locally — never push and pray)
+## Hard release gates (blocking, run locally. never push and pray)
 
 Run all four before declaring work done. CI is a backstop, not the primary gate. See `rules/common/release-gates.md`.
 
-- [ ] `npm test` — 0 failed
-- [ ] `node bin/construct lint:comments` — 0 errors AND 0 warnings
-- [ ] `node bin/construct docs:verify` — all checks passed, no warnings
-- [ ] `node bin/construct docs:update --check` — AUTO regions clean
-- [ ] `npm run lint:templates` — commit subjects + PR body match templates
+- [ ] `npm test`. 0 failed
+- [ ] `node bin/construct lint:comments`. 0 errors AND 0 warnings
+- [ ] `node bin/construct docs:verify`. all checks passed, no warnings
+- [ ] `node bin/construct docs:update --check`. AUTO regions clean
+- [ ] `npm run lint:templates`. commit subjects + PR body match templates
 
 Shortcut: `npm run release:check`.
 

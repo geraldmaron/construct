@@ -1,5 +1,5 @@
 <!--
-skills/roles/qa.ai-eval.md — Anti-pattern guidance for the Qa.ai-eval (ai eval) role.
+skills/roles/qa.ai-eval.md. Anti-pattern guidance for the Qa.ai-eval (ai eval) role.
 
 Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
 Covers common failure modes for the qa.ai-eval (ai eval) domain and counter-moves to avoid them.
@@ -9,7 +9,9 @@ Applies to: cx-qa, cx-test-automation, cx-evaluator.
 role: qa.ai-eval
 applies_to: [cx-qa, cx-test-automation, cx-evaluator]
 inherits: qa
-version: 1
+version: 2
+profiles: [rnd]
+cap: 1
 ---
 # AI Eval QA Overlay
 

@@ -1,4 +1,4 @@
-# construct — Documentation
+# construct documentation
 
 > Required project state. All LLMs working in this repo, including Construct, must keep the core documents below current.
 
@@ -13,7 +13,7 @@
 | `docs/README.md` | Docs index and maintenance contract | Core docs set or maintenance expectations change |
 | `docs/concepts/architecture.md` | Canonical architecture and invariants | Runtime shape, contracts, boundaries, or major dependencies change |
 
-`plan.md` is a local working document. `construct init` creates it for the active session, but it is gitignored and not committed — durable work belongs in the tracker (Beads or external).
+`plan.md` is a local working document. `construct init` creates it for the active session, but it is gitignored and not committed; durable work belongs in the tracker (Beads or external).
 
 Tracker hierarchy: external tracker (prefer Beads) for durable work, `plan.md` for the local working plan, and cass-memory via MCP `memory` for cross-session recall.
 
@@ -25,12 +25,20 @@ All LLMs working in the repo, including Construct, must read these as project st
 
 - [Architecture](./architecture.md)
 - [Prompt surface architecture](./prompt-surfaces.md)
-- [Knowledge layout](./knowledge-layout.md) — `.cx/` directory structure, inbox routing, Slack intent → category
+- [Knowledge layout](./knowledge-layout.md). `.cx/` directory structure, inbox routing, Slack intent → category
+- [Style](./STYLE.md). Voice, punctuation, structure rules (canonical reference for prose lint)
+- [Learning loops](./concepts/learning-loops.md). What is wired vs aspirational across A1-A4
+- [Profile lifecycle](./concepts/profile-lifecycle.md). Draft → promote → archive flow for org-type profiles
+- [Persona and skill research](./concepts/persona-research.md). Methodology grounded in Goodwin, Cooper, Galbraith STAR, Bloom
+- [Release policy](./maintenance/release-policy.md). When to tag
+- [Release and deploy automation](./maintenance/release-and-deploy.md). What fires when you tag, plus the failure-mode lookup
 - [Templates and role anti-patterns](./templates/README.md)
 - [Runbooks](./runbooks/)
-- [ADRs](../.cx/decisions/) — session-context decisions (longer ADRs live in `docs/adr/`)
-- [Plans](../.cx/plans/) — plan artifacts and supporting specs for tracker-linked work
-- [Skills](../skills/) — domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
+- [ADRs](../.cx/decisions/). Session-context decisions (longer ADRs live in `docs/adr/`)
+- [Plans](../.cx/plans/). Plan artifacts and supporting specs for tracker-linked work
+- [Skills](../skills/). Domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
+- [Tests audit](../tests/AUDIT.md). Category-by-category survey of the 188 test files
+- [Functional tests pattern](../tests/functional/README.md). When and how to add an end-to-end test
 
 ## How-to guides
 
