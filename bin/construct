@@ -292,7 +292,7 @@ async function cmdList() {
 async function cmdDoctor() {
   const args = process.argv.slice(3);
 
-  const DAEMON_SUBS = new Set(['status', 'watch', 'stop', 'logs', 'tick', 'report']);
+  const DAEMON_SUBS = new Set(['status', 'watch', 'stop', 'logs', 'tick', 'report', 'consistency']);
   if (args.length > 0 && DAEMON_SUBS.has(args[0])) {
     const { runCli } = await import('../lib/doctor/cli.mjs');
     const code = await runCli(args);
