@@ -4,6 +4,13 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- **Daemon safeguard contract** (`lib/daemons/contract.mjs`). `createDaemon(spec)` enforces bounded lifetime, idle shutdown, heartbeat, single-writer lock, killswitch env, and resource caps. `classifyPacket()` routes per-item TTL + retry-budget decisions. Every long-running Construct process is required to use this contract.
+- **Intake daemon** (`lib/intake/daemon.mjs`). Polls `.cx/inbox/`, classifies new files, writes packets to `.cx/intake/pending/`, dead-letters TTL-exceeded or retry-exhausted items to `.cx/intake/dead-letter/`. Killswitch: `CONSTRUCT_INTAKE_DAEMON=off`.
+- **Post-execution rule verifier hook** (`lib/hooks/rule-verifier.mjs`). Stop hook that audits the session transcript for consequential actions (commits, pushes, edits to protected files) and classifies whether each had a preceding approval signal. Intent-based — no specific word is required; the classifier is pluggable for LLM-graded inference. Records `.cx/audit.jsonl` entries with verdict pass / fail / inconclusive.
+- **PR auto-review workflow** (`.github/workflows/pr-review.yml`). On `pull_request: [opened, synchronize, ready_for_review]` runs `construct review --persona=cx-reviewer` and posts findings as a single PR comment. Read-only — never commits, never auto-approves.
+
 ### Fixed
 
 - **Docs site build (Fumadocs) was breaking on unquoted colons in frontmatter values.** Quotes every affected `description:` and `title:` line so the YAML parses cleanly. Restores the Pages deploy.
