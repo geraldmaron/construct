@@ -7,6 +7,25 @@ Construct doesn't hardcode a single LLM. It assigns three tiers (`reasoning`, `s
 
 ## The tier model
 
+```mermaid
+flowchart LR
+    subgraph tiers["tiers (assigned per specialist)"]
+        R["reasoning<br/>long context · architecture"]
+        S["standard<br/>everyday work"]
+        F["fast<br/>quick lookups"]
+    end
+    subgraph providers["interchangeable providers"]
+        A["Anthropic (default)<br/>opus · sonnet · haiku"]
+        OR["OpenRouter<br/>any model"]
+        OAI["OpenAI<br/>gpt-4o · o-series"]
+        OL["Ollama (local)<br/>llama · mistral · qwen"]
+        Custom["custom/&lt;id&gt; + endpoint<br/>any OpenAI-compatible"]
+    end
+    R --> providers
+    S --> providers
+    F --> providers
+```
+
 Three tiers. Every specialist uses one of them.
 
 - **`reasoning`**: slow, expensive, best at long-context analysis and architectural decisions. Defaults to Claude Opus.

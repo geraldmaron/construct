@@ -7,6 +7,24 @@ Construct treats every file that lands in `.cx/inbox/` as a candidate signal: a 
 
 This page explains the pipeline once, then walks the taxonomy under each curated profile.
 
+```mermaid
+flowchart LR
+    Inbox[".cx/inbox/&lt;file&gt;<br/>any signal"]
+    Watcher["inbox-live-watcher<br/>(reactive, ~1s)"]
+    Ingest["ingester<br/>normalize to markdown<br/>+ index for retrieval"]
+    Prep["prepareIntake<br/>lane · related · excerpt · triage"]
+    Classify["classifyRdIntake<br/>deterministic, keyword<br/>(active profile table)"]
+    Pending[".cx/intake/pending/&lt;id&gt;.json<br/>triage block"]
+    SessionStart["session start hook<br/>surface pending packets"]
+    Agent["agent in editor<br/>reads packet · does analysis"]
+    Done["done · skip · reopen<br/>(processed / skipped)"]
+
+    Inbox --> Watcher --> Ingest --> Prep --> Classify --> Pending
+    Pending --> SessionStart --> Agent --> Done
+```
+
+The daemon path (watcher through classification) never calls an LLM. The agent in your editor does the analysis. The triage block is a routing hint, not a verdict.
+
 ## The pipeline (profile-agnostic)
 
 1. The embed daemon's reactive watcher (`lib/embed/inbox-live-watcher.mjs`) picks the file up within a second or two.

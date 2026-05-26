@@ -1609,7 +1609,8 @@ function printIntakeHelp() {
   println('Usage:');
   println('  construct intake list                List pending intake packets (ID, type, stage, owner, action).');
   println('  construct intake show <id>           Show a single packet: triage, source, excerpt, related docs.');
-  println('  construct intake done <id> [--notes=…]    Mark a pending packet processed.');
+  println('  construct intake done <id> [--notes=…] [--output=<path>] [--no-output=<rejected|deferred|merged>]');
+  println('                                       Mark a pending packet processed. --output stamps intake_id + confidence into the artifact frontmatter (provenance).');
   println('  construct intake skip <id> [--reason=…]   Mark a pending packet skipped (preserves audit trail).');
   println('  construct intake reopen <id>         Move a processed or skipped packet back to pending.');
   println('  construct intake metrics               Show pipeline volume, velocity, and processing stats.');
@@ -1765,11 +1766,59 @@ async function cmdIntake(args) {
   }
 
   if (sub === 'done') {
-    if (!id) { errorln('Usage: construct intake done <id> [--notes=…]'); process.exit(1); }
-    const flags = parseKvFlags(args.slice(2), ['notes']);
+    if (!id) {
+      errorln('Usage: construct intake done <id> [--notes=…] [--output=<path>] [--no-output=<rejected|deferred|merged>]');
+      process.exit(1);
+    }
+    const flags = parseKvFlags(args.slice(2), ['notes', 'output', 'no-output']);
+    const outputPath = flags.output || null;
+    const noOutputOutcome = flags['no-output'] || null;
+
+    if (outputPath && noOutputOutcome) {
+      errorln('--output and --no-output are mutually exclusive');
+      process.exit(1);
+    }
+    if (noOutputOutcome && !['rejected', 'deferred', 'merged'].includes(noOutputOutcome)) {
+      errorln(`--no-output value must be one of: rejected, deferred, merged (got "${noOutputOutcome}")`);
+      process.exit(1);
+    }
+
+    let stamped = null;
+    if (outputPath) {
+      const packet = queue.read(id);
+      if (!packet) {
+        errorln(`No intake packet found: ${id}`);
+        process.exit(1);
+      }
+      const triage = packet.triage || {};
+      try {
+        const { stampIntakeProvenance } = await import('../lib/intake/traceability.mjs');
+        const path = (await import('node:path')).default;
+        const absPath = path.isAbsolute(outputPath) ? outputPath : path.join(cwd, outputPath);
+        stamped = stampIntakeProvenance(absPath, {
+          intakeId: id,
+          confidence: triage.confidence,
+          rationale: triage.rationale,
+        });
+      } catch (err) {
+        errorln(err.message || 'intake stamping failed');
+        process.exit(1);
+      }
+    }
+
+    const notes = flags.notes
+      || (noOutputOutcome ? `intake_outcome: ${noOutputOutcome}` : '')
+      || (outputPath ? `output: ${outputPath}` : '');
+
     try {
-      const r = queue.markProcessed(id, { processedBy: 'construct-intake-cli', notes: flags.notes || '' });
-      info(`Marked ${r.id} processed.`);
+      const r = queue.markProcessed(id, { processedBy: 'construct-intake-cli', notes });
+      if (stamped) {
+        info(`Marked ${r.id} processed. Stamped ${outputPath} with intake_id=${id} (confidence=${stamped.intake_confidence ?? 'n/a'}).`);
+      } else if (noOutputOutcome) {
+        info(`Marked ${r.id} processed (intake_outcome: ${noOutputOutcome}).`);
+      } else {
+        info(`Marked ${r.id} processed.`);
+      }
     } catch (err) {
       errorln(err.message || 'mark processed failed');
       process.exit(1);
@@ -3023,6 +3072,12 @@ async function cmdMemory(args) {
 async function cmdLintComments(args) {
   const fix = args.includes('--fix');
   const staged = args.includes('--staged');
+  // CLI invocation enforces block severity for artifact-prose lint (see
+  // lib/comment-lint.mjs#checkArtifactBanned). Operators may opt back into
+  // warn-only by exporting CONSTRUCT_ARTIFACT_LINT_MODE=warn explicitly.
+  if (!process.env.CONSTRUCT_ARTIFACT_LINT_MODE) {
+    process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  }
   const { lintRepo: lint, lintFile, formatResults: fmt } = await import('../lib/comment-lint.mjs');
 
   let results;

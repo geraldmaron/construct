@@ -7,6 +7,22 @@ You want a `cx-performance-auditor` for your project (or any other specialist th
 
 ## The shape of a specialist
 
+```mermaid
+flowchart LR
+    Registry["agents/registry.json<br/>name · tier · platforms<br/>(required)"]
+    Prompt["agents/prompts/cx-&lt;name&gt;.md<br/>voice · authority · boundaries<br/>(required)"]
+    Contracts["agents/contracts.json<br/>typed handoffs<br/>(optional)"]
+    Manifest["agents/role-manifests.json<br/>fence · events · approvals<br/>(optional, for role framework)"]
+    Sync["construct sync"]
+    Editors["Claude · OpenCode · Codex · Copilot"]
+
+    Registry --> Sync
+    Prompt --> Sync
+    Contracts -.-> Sync
+    Manifest -.-> Sync
+    Sync --> Editors
+```
+
 Every specialist has four pieces:
 
 1. **An entry in `agents/registry.json`**: declares name, role, model tier, capability list, and (optionally) skills allowlist.

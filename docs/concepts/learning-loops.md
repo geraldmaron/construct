@@ -13,6 +13,23 @@ A loop is closed when:
 
 Anything less is a stub, not a loop.
 
+```mermaid
+flowchart LR
+    Session["session N<br/>agent does work"]
+    Observe["observe<br/>session-reflect · outcomes · research"]
+    Persist[".cx/observations/<br/>.cx/outcomes/<br/>.cx/knowledge/"]
+    Index["index<br/>BM25 + pgvector or<br/>local hashing-bow"]
+    Retrieve["session N+1 start<br/>searchObservations · listObservations"]
+    Inject["inject 'Prior observations'<br/>into next session context"]
+    Next["session N+1<br/>same agent, sharper"]
+
+    Session --> Observe --> Persist --> Index
+    Index --> Retrieve --> Inject --> Next
+    Next -.->|next loop| Session
+```
+
+Each loop below either closes this cycle end to end or is honestly labeled a stub.
+
 ## Loops in place
 
 ### Session-end auto-reflect (A1)

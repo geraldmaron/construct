@@ -8,8 +8,9 @@ git operations. References testing.md, code-review.md, git-workflow.md.
 
 ## Feature Implementation Workflow
 
-0. **Research & Reuse** _(mandatory before any new implementation)_
+0. **Research & Reuse** _(mandatory before any new implementation or artifact)_
    - **Search existing code first:** Look for existing implementations, templates, and patterns before writing anything new.
+   - **Search existing artifacts:** Before authoring a doc, rule, template, strategy, PRD, ADR, or RFC, audit what already exists. See [review-before-change.md](review-before-change.md) for the audit checklist. Extend or supersede; do not duplicate.
    - **Check docs:** Confirm API behavior, package usage, and version-specific details before implementing.
    - **Check package registries:** npm, PyPI, crates.io before writing utility code.
    - Prefer adopting a proven approach over writing net-new code.

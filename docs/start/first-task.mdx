@@ -3,6 +3,24 @@ title: Your first task
 description: Initialize a project, sync agents, and dispatch one task end-to-end.
 ---
 
+```mermaid
+flowchart TD
+    Init["construct init<br/>scaffolds .cx/ · .beads/ · docs/"]
+    Sync["construct sync<br/>writes editor adapters"]
+    Up["construct up<br/>dashboard · MCP · trace capture"]
+    Editor{"editor"}
+    Direct["@construct &lt;ask&gt;<br/>persona answers directly"]
+    Chain["specialist chain<br/>architect → researcher → reviewer → security"]
+    Inbox[".cx/inbox/&lt;file&gt;<br/>signal"]
+    Triage["intake triage<br/>type · owner · chain"]
+    Graph["construct graph from-intake<br/>nodes · edges · evidence"]
+
+    Init --> Sync --> Up --> Editor
+    Editor -->|simple ask| Direct
+    Editor -->|involved work| Chain
+    Inbox --> Triage --> Graph
+```
+
 ## Pick a project
 
 ```bash

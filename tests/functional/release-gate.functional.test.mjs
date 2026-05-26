@@ -42,7 +42,11 @@ test('release gate: construct doctor exits 0 (warnings allowed, no failures)', (
 
 test('release gate: construct docs:verify is clean', () => {
   const result = run(['docs:verify']);
-  assert.equal(result.status, 0, `docs:verify exited ${result.status}; stderr: ${result.stderr}`);
+  assert.equal(
+    result.status,
+    0,
+    `docs:verify exited ${result.status}\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
+  );
 });
 
 test('release gate: construct docs:update --check reports no drift', () => {
