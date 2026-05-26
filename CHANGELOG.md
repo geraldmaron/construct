@@ -4,6 +4,11 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- **Schema migration scaffolding** (`lib/migrations/`). `CURRENT_SCHEMA_VERSION` is the contract between the binary and machine-readable artifacts (registry, contracts, role-manifests, project config). New `construct migrate` CLI plans + applies migrations, defaults to dry-run preview with `--dry-run`. `checkCompatibility(artifactVersion)` surfaces three outcomes — compatible, needsMigration, needsUpgrade — so callers can route operators to the right action. v1 baseline stamps pre-versioned artifacts with `version: 1` without changing shape.
+- **`lib/version.mjs`** centralizes installed-version reads and exposes `parseSemver` / `compareSemver` so doctor watchers and migration code stop duplicating `package.json` parsing.
+
 ### Fixed
 
 - **Docs site build (Fumadocs) was breaking on unquoted colons in frontmatter values.** Quotes every affected `description:` and `title:` line so the YAML parses cleanly. Restores the Pages deploy.

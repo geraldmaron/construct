@@ -1053,6 +1053,59 @@ async function cmdVersion() {
   println(`construct v${pkg.version}`);
 }
 
+async function cmdMigrate(args) {
+  const dryRun = args.includes('--dry-run');
+  const pathArg = args.find((a) => a.startsWith('--path='))?.split('=')[1];
+  const fromArg = args.find((a) => a.startsWith('--from='))?.split('=')[1];
+  const { runMigrations, planMigrations, CURRENT_SCHEMA_VERSION } = await import('../lib/migrations/index.mjs');
+
+  const candidates = pathArg
+    ? [pathArg]
+    : [
+        path.join(ROOT_DIR, 'agents', 'registry.json'),
+        path.join(ROOT_DIR, 'agents', 'contracts.json'),
+        path.join(ROOT_DIR, 'agents', 'role-manifests.json'),
+        path.join(process.cwd(), '.cx', 'config.json'),
+      ];
+
+  let anyFailed = false;
+  for (const artifactPath of candidates) {
+    if (!fs.existsSync(artifactPath)) continue;
+    let from;
+    try {
+      const data = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+      from = typeof data?.version === 'number' ? data.version : Number(fromArg) || 0;
+    } catch {
+      println(`  ⚠  ${artifactPath}: parse error, skipping`);
+      continue;
+    }
+
+    const plan = planMigrations(from, CURRENT_SCHEMA_VERSION);
+    if (plan === null) {
+      println(`  ✗  ${artifactPath}: no migration path from v${from} to v${CURRENT_SCHEMA_VERSION}`);
+      anyFailed = true;
+      continue;
+    }
+    if (plan.length === 0) {
+      println(`  ✓  ${artifactPath}: already at v${CURRENT_SCHEMA_VERSION}`);
+      continue;
+    }
+
+    println(`  ${dryRun ? '·' : '→'}  ${artifactPath}: ${plan.length} step(s) (v${from} → v${CURRENT_SCHEMA_VERSION})`);
+    const result = await runMigrations({ artifactPath, fromVersion: from, dryRun });
+    for (const step of result.applied) {
+      println(`     v${step.from}→v${step.to}: ${step.summary}`);
+    }
+    if (!result.ok) {
+      println(`  ✗  ${result.error}`);
+      anyFailed = true;
+    }
+  }
+
+  if (dryRun) println(`\n(dry-run — no files were written)`);
+  if (anyFailed) process.exit(1);
+}
+
 async function cmdReview(args) {
   fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
   const sub = args[0];
@@ -3426,6 +3479,7 @@ const handlers = new Map([
   ['evals', cmdEvals],
   ['cleanup', cmdCleanup],
   ['version', cmdVersion],
+  ['migrate', cmdMigrate],
   ['docs:update', cmdDocsUpdate],
   ['docs:check', cmdDocsCheck],
   ['docs:site', cmdDocsSite],
