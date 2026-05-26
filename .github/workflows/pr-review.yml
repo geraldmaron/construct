@@ -1,0 +1,74 @@
+name: pr-review
+
+# Construct-on-Construct: every PR opened or synchronized triggers an
+# automated read-only review by the cx-reviewer persona. The reviewer never
+# commits and never auto-approves; it posts findings as a single PR review.
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Resolve the cx-reviewer fence
+        id: fence
+        run: |
+          node -e "
+            const fs = require('fs');
+            const manifests = JSON.parse(fs.readFileSync('agents/role-manifests.json', 'utf8'));
+            const fence = (manifests.reviewer || manifests['cx-reviewer'])?.fence || {};
+            console.log('::notice::cx-reviewer fence: ' + JSON.stringify(fence));
+          "
+
+      - name: Run construct review on the PR diff
+        id: review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch origin "$BASE_REF" --depth=1
+          if command -v construct >/dev/null 2>&1; then
+            construct review --pr="$PR_NUMBER" --persona=cx-reviewer --output=.cx/pr-review.json || true
+          else
+            node ./bin/construct review --pr="$PR_NUMBER" --persona=cx-reviewer --output=.cx/pr-review.json || true
+          fi
+          if [ ! -f .cx/pr-review.json ]; then
+            echo '{"findings":[],"summary":"construct review produced no output — manual review still required"}' > .cx/pr-review.json
+          fi
+
+      - name: Post review summary as a PR comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${GITHUB_REPOSITORY}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          BODY="$(jq -r '
+            "## cx-reviewer (automated, read-only)\n\n" +
+            (if .summary then .summary + "\n\n" else "" end) +
+            (if (.findings // []) | length == 0 then "No blocking findings."
+             else "### Findings\n\n" + ((.findings | map("- **" + (.severity // "info") + "**: " + (.message // .summary // "(no message)"))) | join("\n"))
+             end)
+          ' .cx/pr-review.json)"
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY"
