@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- **Cross-surface consistency watcher** (`lib/doctor/watchers/consistency.mjs`). Five bundled drift checks run on a 15-minute cadence: hook manifest references resolve to real files; MCP tool exports match the dispatch table; `agents/role-manifests.json` keys resolve to registry personas; persona `promptFile` references exist on disk; `agents/contracts.json` validates (when the W2 validator is present). Blocking findings escalate; warnings record only. New `construct doctor consistency` CLI runs the checks once and exits non-zero on blocking findings.
+
 ### Fixed
 
 - **Docs site build (Fumadocs) was breaking on unquoted colons in frontmatter values.** Quotes every affected `description:` and `title:` line so the YAML parses cleanly. Restores the Pages deploy.
