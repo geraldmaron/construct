@@ -4,6 +4,11 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- **Contract enforcement is now a real gate.** `agents/contracts.schema.json` defines the shape of `agents/contracts.json`; `lib/contracts/validate.mjs` exposes `validateContractsFile` (sync-time + CI) and `validateHandoff` (runtime). `construct lint:contracts` is the new CLI command. `npm run lint:contracts` and a matching `lint-contracts` CI job validate every push that touches `agents/`. Sync (`scripts/sync-agents.mjs`) fails fast when contracts diverge from the registry or reference schemas that no longer exist.
+- **`workflow_contract_validate` MCP tool** routes a producer→consumer handoff through `validateHandoff`. Honors `CONSTRUCT_CONTRACT_ENFORCEMENT=warn|block` (default `warn`); `block` returns `BLOCKED_CONTRACT` with errors so the workflow refuses to advance.
+
 ### Fixed
 
 - **Docs site build (Fumadocs) was breaking on unquoted colons in frontmatter values.** Quotes every affected `description:` and `title:` line so the YAML parses cleanly. Restores the Pages deploy.

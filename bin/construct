@@ -3053,6 +3053,18 @@ async function cmdLintAgents() {
   process.exit(1);
 }
 
+async function cmdLintContracts() {
+  const { validateContractsFile } = await import('../lib/contracts/validate.mjs');
+  const result = validateContractsFile({ repoRoot: ROOT_DIR });
+  if (result.ok) {
+    console.log('agents/contracts.json: 0 errors');
+    return;
+  }
+  console.error(`agents/contracts.json: ${result.errors.length} error(s)`);
+  for (const err of result.errors) console.error(`  ${err}`);
+  process.exit(1);
+}
+
 async function cmdBackup(args) {
   const sub = args[0];
 
@@ -3440,6 +3452,7 @@ const handlers = new Map([
   ['provider', cmdProvider],
   ['lint:research', cmdLintResearch],
   ['lint:agents', cmdLintAgents],
+  ['lint:contracts', cmdLintContracts],
   ['audit', async (args) => {
     const sub = args[0];
     if (sub === 'skills') return runAuditSkillsCli(args.slice(1));
