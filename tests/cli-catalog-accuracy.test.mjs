@@ -47,6 +47,7 @@ const HANDLER_ONLY_ALLOWLIST = new Set([
   'eval-datasets',         // dev-only eval dataset listing
   'ask',                   // RAG ask path; surfaced via knowledge in the catalog
   'pricing', 'overrides',  // cost subcommand sub-tools
+  'migrate',               // schema migration runner (lib/migrations/)
 ]);
 
 function extractHandlerNames() {
