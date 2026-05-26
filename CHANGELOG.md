@@ -6,7 +6,18 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Added
 
+- **Boundary registration is now an authenticated handshake.** `POST /api/embed/boundary/register` validates parent URL reachability and verifies an HMAC signature over `childInstanceId|nonce` when `CONSTRUCT_BOUNDARY_SECRET` is set. Conflicting parents are rejected unless `CONSTRUCT_BOUNDARY_ALLOW_OVERRIDE=1`; rotated configs are archived to `~/.construct/boundary.<ts>.json`. The bound state lives at `~/.construct/boundary.json` with `0600` permissions. Closes the multitenancy boundary stub.
+- **Provider adapter extension contracts are now first-class.** `lib/cache-strategy-google.js` exposes `setCachedContentResolver(resolver)` so provider plugins can supply Gemini cachedContent resources without Construct owning the API call. `lib/providers/auth-manager.mjs` exposes `registerRefreshAdapter(provider, adapter)` for vendor-specific token rotation. `lib/provider-capabilities.js#probeProviderCapabilities` dispatches to an adapter's optional `probe(modelId)` export. Construct stays provider-agnostic; vendor integrations plug in through these contracts.
+- **`construct reflect` auto-derives a summary when `--summary` is omitted.** Falls back to a digest of `.cx/context.md` plus the most recent session-summary observation. The auto-derived path is tagged `source:auto-derived` on the captured observation with a lower confidence (0.65 vs 0.9) so downstream consumers can distinguish operator-authored from agent-derived feedback.
 - **Release-gate functional test** (`tests/functional/release-gate.functional.test.mjs`) spawns the real `construct` binary against the repo and asserts every release-blocking gate exits cleanly: `--version`, `doctor`, `docs:verify`, `docs:update --check`, `lint:comments`, `lint:agents`, plus conditional checks for `lint:contracts` (W2), `doctor consistency` (W3), `migrate --dry-run` (W4), boundary contract (W1), daemon + rule-verifier surface (W5), and a final "no misleading wording" sweep across `lib/`, `bin/`, `scripts/`. Each conditional skip prints a clear reason so the gate self-activates as workstream PRs land. New `npm run release:gate` script.
+
+### Changed
+
+- **Comment lint blocks misleading "future implementation" wording.** New banned patterns: `phase [abc] follow-up`, `in a real implementation`, `would go here`, `coming soon`, `not yet supported`. Hits enforce on PostToolUse and via `construct lint:comments`. Existing offending comments rewritten honestly (no behavior change).
+
+### Removed
+
+- **Dead `getPendingActivations` export from `lib/hooks/proactive-activation.mjs`.** Had no consumers and carried a misleading "in a full implementation" comment.
 
 ### Fixed
 
