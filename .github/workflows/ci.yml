@@ -102,7 +102,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm test
       - run: node bin/construct doctor
       - run: node bin/construct docs:verify
@@ -133,7 +133,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: npm audit (high+ only)
         run: npm audit --omit=dev --audit-level=high
 
@@ -159,7 +159,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Check managed doc regions are up to date
         run: node ./bin/construct docs:update --check
       - name: Check dashboard static bundle is up to date
@@ -175,7 +175,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Enforce comment policy
         run: node ./bin/construct lint:comments
 
@@ -191,7 +191,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Enforce prose policy on changed markdown
         run: npm run lint:prose
 
@@ -205,7 +205,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Validate profiles and flavor overlays
         run: npm run lint:profiles -- --quiet
 
@@ -219,7 +219,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Validate agents/registry.json against schema
         run: node ./bin/construct lint:agents
 
@@ -233,7 +233,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Validate agents/contracts.json against schema and refs
         run: node ./bin/construct lint:contracts
 
@@ -278,7 +278,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Audit cross-surface enforcement (CI / pre-push / pre-commit / branch protection)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
