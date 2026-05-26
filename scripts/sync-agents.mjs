@@ -121,6 +121,18 @@ if (validationErrors.length > 0) {
   process.exit(1);
 }
 
+// Sync-time contract validation: contracts.json shape, schema refs, and
+// producer/consumer name resolution against the registry above.
+{
+  const { validateContractsFile } = await import("../lib/contracts/validate.mjs");
+  const contractsResult = validateContractsFile();
+  if (!contractsResult.ok) {
+    console.error("Contract validation failed:");
+    for (const err of contractsResult.errors) console.error(`  - ${err}`);
+    process.exit(1);
+  }
+}
+
 // --- Dry-run + lockfile + two-phase write infrastructure ---
 
 const DRY_RUN = process.argv.includes("--dry-run");

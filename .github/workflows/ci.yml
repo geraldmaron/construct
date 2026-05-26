@@ -223,6 +223,20 @@ jobs:
       - name: Validate agents/registry.json against schema
         run: node ./bin/construct lint:agents
 
+  lint-contracts:
+    name: agent contracts schema
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.workflow == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Validate agents/contracts.json against schema and refs
+        run: node ./bin/construct lint:contracts
+
   lint-templates:
     name: template policy
     runs-on: ubuntu-latest
