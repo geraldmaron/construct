@@ -37,7 +37,7 @@ const HANDLER_ONLY_ALLOWLIST = new Set([
   'policy:list',           // operational policy-engine inspector
   'seed-traces',           // dev-only trace generator
   'dashboard:sync',        // operational sync gate
-  'lint:comments', 'lint:templates', 'lint:research', 'lint:agents', // gates
+  'lint:comments', 'lint:templates', 'lint:research', 'lint:agents', 'lint:contracts', // gates
   'hook', 'doc',           // single-arg utility dispatchers
   'roles:list', 'roles:set',                              // role framework admin
   'feedback:record', 'feedback:history',                  // intake feedback admin
@@ -47,6 +47,7 @@ const HANDLER_ONLY_ALLOWLIST = new Set([
   'eval-datasets',         // dev-only eval dataset listing
   'ask',                   // RAG ask path; surfaced via knowledge in the catalog
   'pricing', 'overrides',  // cost subcommand sub-tools
+  'migrate',               // schema migration runner (lib/migrations/)
 ]);
 
 function extractHandlerNames() {
