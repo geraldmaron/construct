@@ -7,6 +7,33 @@ Construct treats policy enforcement as defense in depth. Every meaningful rule l
 
 Every blocking gate ships with an explicit env-var bypass. Bypasses are auditable because they're explicit in command history; silent bypasses are not allowed.
 
+```mermaid
+flowchart TD
+    Edit["agent edits a file"]
+    L1{"Layer 1<br/>real-time hooks<br/>comment-lint · doc-coupling · ci-status"}
+    Commit["git commit"]
+    L2a{"Layer 2<br/>pre-commit<br/>secret scan · lint:comments · docs:verify"}
+    Push["git push"]
+    L2b{"Layer 2<br/>pre-push<br/>tests · build · evals · docs · red-CI check"}
+    PR["gh pr create"]
+    L25{"Layer 2.5<br/>template policy"}
+    L3{"Layer 3<br/>CI required checks<br/>+ session-end Stop handler"}
+    Land["merged to main"]
+    Block(["blocked<br/>(explicit bypass or fix)"])
+
+    Edit --> L1 -->|pass| Commit
+    L1 -->|fail| Block
+    Commit --> L2a -->|pass| Push
+    L2a -->|fail| Block
+    Push --> L2b -->|pass| PR
+    L2b -->|fail| Block
+    PR --> L25 -->|pass| L3 -->|pass| Land
+    L25 -->|fail| Block
+    L3 -->|fail| Block
+```
+
+In team and enterprise modes a fourth gate (the MCP broker) sits inline with every tool call. See "Layer 4" below.
+
 ## Layer 1: Real time
 
 Fires during write, while the agent is composing code or running commands.

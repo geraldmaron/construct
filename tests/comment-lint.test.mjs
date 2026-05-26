@@ -129,3 +129,147 @@ test('lintFile: .md without markdown header still reports the error', () => {
   const result = lintFile(full, { rootDir: dir });
   assert.ok(result.errors.some((e) => e.label.includes('missing file header')));
 });
+
+// --- artifact-prose lint (no-fabrication) ---
+
+function artifactBody(extra) {
+  return [
+    '<!--',
+    'docs/prd/fixture.md — test fixture.',
+    '-->',
+    '',
+    '# Fixture PRD',
+    '',
+    extra,
+  ].join('\n');
+}
+
+test('artifact lint: manufactured confidence in PRD prose is flagged', () => {
+  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Clearly the dashboard is the bottleneck.'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir });
+  assert.ok(
+    result.warnings.some((w) => w.kind === 'artifact' && w.label.includes('manufactured confidence')),
+    `expected manufactured-confidence warning; got ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test('artifact lint: same banned phrase in docs/cookbook is NOT flagged (out of scope)', () => {
+  const { dir, full } = makeTempFile('docs/cookbook/fixture.md', artifactBody('Clearly this is intentional content for cookbook prose.'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir });
+  assert.ok(
+    !result.warnings.some((w) => w.kind === 'artifact'),
+    `cookbook should not trigger artifact lint; got ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test('artifact lint: percentage with citation does NOT trigger', () => {
+  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Dashboard latency dropped 30% under load [source: bench-2026-04-12].'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir });
+  assert.ok(
+    !result.warnings.some((w) => w.kind === 'artifact' && w.label.includes('unattributed percentage')),
+    `cited percentage should pass; got ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test('artifact lint: percentage without citation IS flagged', () => {
+  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Dashboard latency dropped 30% under load.'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir });
+  assert.ok(
+    result.warnings.some((w) => w.kind === 'artifact' && w.label.includes('unattributed percentage')),
+    `uncited percentage should fail; got ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test('artifact lint: customer mind-reading requires citation', () => {
+  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Users want faster dashboards.'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir });
+  assert.ok(
+    result.warnings.some((w) => w.kind === 'artifact' && w.label.includes('customer mind-reading')),
+    `uncited customer claim should fail; got ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test('artifact lint: speculative projection requires source', () => {
+  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Latency will likely drop after rollout.'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir });
+  assert.ok(
+    result.warnings.some((w) => w.kind === 'artifact' && w.label.includes('speculative projection')),
+    `speculative projection should fail; got ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test('artifact lint: code block content is skipped', () => {
+  const body = [
+    '<!--',
+    'docs/prd/fixture.md — fixture.',
+    '-->',
+    '',
+    '# Fixture',
+    '',
+    '```',
+    'Clearly this is sample code, not narrative prose.',
+    '```',
+  ].join('\n');
+  const { dir, full } = makeTempFile('docs/prd/fixture.md', body);
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir });
+  assert.ok(
+    !result.warnings.some((w) => w.kind === 'artifact'),
+    `code blocks should be skipped; got ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test('artifact lint: table rows are skipped (targets, not narrative)', () => {
+  const body = [
+    '<!--',
+    'docs/prd/fixture.md — fixture.',
+    '-->',
+    '',
+    '# Metrics',
+    '',
+    '| Metric | Target |',
+    '|---|---|',
+    '| Dashboard latency | <200ms p95 30% improvement |',
+  ].join('\n');
+  const { dir, full } = makeTempFile('docs/prd/fixture.md', body);
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir });
+  assert.ok(
+    !result.warnings.some((w) => w.kind === 'artifact'),
+    `table rows should be skipped; got ${JSON.stringify(result.warnings)}`,
+  );
+});
+
+test('artifact lint: block mode routes hits to errors instead of warnings', () => {
+  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Clearly this works.'));
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      result.errors.some((e) => e.label.includes('manufactured confidence')),
+      `block mode should put hits in errors[]; got ${JSON.stringify(result)}`,
+    );
+    assert.ok(
+      !result.warnings.some((w) => w.kind === 'artifact'),
+      `block mode should not put hits in warnings[]; got ${JSON.stringify(result.warnings)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});
+
+test('artifact lint: construct-lint-ignore marker suppresses the hit on that line', () => {
+  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Clearly intentional. construct-lint-ignore'));
+  delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  const result = lintFile(full, { rootDir: dir });
+  assert.ok(
+    !result.warnings.some((w) => w.kind === 'artifact'),
+    `construct-lint-ignore should suppress hit; got ${JSON.stringify(result.warnings)}`,
+  );
+});

@@ -5,6 +5,26 @@ description: Construct syncs host adapters to Claude Code, OpenCode, Codex, Copi
 
 `construct sync` keeps one canonical registry and writes the right host-specific shape for each supported tool. Full agent adapters exist on Claude Code, OpenCode, and Codex. Copilot gets prompt profiles. VS Code and Cursor get MCP registrations when their config files already exist.
 
+```mermaid
+flowchart LR
+    Registry["agents/registry.json<br/>one canonical source"]
+    Sync["construct sync"]
+    Claude["Claude Code<br/>~/.claude/agents/*.md<br/>full adapters"]
+    OpenCode["OpenCode<br/>~/.config/opencode/opencode.json<br/>full adapters"]
+    Codex["Codex<br/>~/.codex/agents/*.toml<br/>full adapters"]
+    Copilot["Copilot<br/>~/.github/prompts/*.prompt.md<br/>prompt profiles"]
+    VSCode["VS Code<br/>settings.json<br/>MCP only (if installed)"]
+    Cursor["Cursor<br/>~/.cursor/mcp.json<br/>MCP only (if installed)"]
+
+    Registry --> Sync
+    Sync --> Claude
+    Sync --> OpenCode
+    Sync --> Codex
+    Sync --> Copilot
+    Sync --> VSCode
+    Sync --> Cursor
+```
+
 ## Claude Code
 
 Construct writes:

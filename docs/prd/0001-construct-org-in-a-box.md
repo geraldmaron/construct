@@ -1,3 +1,8 @@
+---
+intake: none
+intake_rationale: foundational PRD authored before intake traceability was wired; intake-independent by construction.
+---
+
 # PRD: Construct: Org-in-a-Box
 
 - **Date**: 2026-04-28

@@ -7,6 +7,30 @@ Construct enforces policy in three places. If something's blocking, the gate's o
 
 For the full enforcement model, see [Concepts → Gates and enforcement](/concepts/gates-and-enforcement). For an inventory of every gate, see [`construct gates:audit`](/reference/cli/diagnostics).
 
+```mermaid
+flowchart TD
+    Block["something is blocked"]
+    Q1{"where did it fire?"}
+    Edit["edit was rejected"]
+    Commit["git commit refused"]
+    Push["git push refused"]
+    PR["PR can't merge"]
+    Stop["session won't end"]
+
+    L1["Layer 1: comment-lint<br/>fix the banned phrase"]
+    L2a["Layer 2: pre-commit<br/>secrets · comments · docs"]
+    L2b["Layer 2: pre-push<br/>tests · build · evals · red CI"]
+    L3["Layer 3: branch protection<br/>required status checks"]
+    L3s["Layer 3: Stop handler<br/>red CI · open beads · drive criteria"]
+
+    Block --> Q1
+    Q1 --> Edit --> L1
+    Q1 --> Commit --> L2a
+    Q1 --> Push --> L2b
+    Q1 --> PR --> L3
+    Q1 --> Stop --> L3s
+```
+
 ## "Edit blocked: comment policy"
 
 **You see:** the agent tries to write a file, the write fails, output mentions `comment-lint` and a banned pattern (narrative voice, point-in-time note, noise sentinel, missing required header).

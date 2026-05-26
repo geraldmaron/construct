@@ -6,10 +6,7 @@ cache/
 .DS_Store
 .claude/
 .codex/
-.cx/*
-!.cx/
-!.cx/context.md
-!.cx/context.json
+.cx/
 .mcp.json
 config.env
 embed.yaml

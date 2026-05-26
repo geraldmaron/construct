@@ -81,6 +81,7 @@ Doc updates are part of the same change, not a follow-up. If runtime shape, cont
 
 ## Verification rules
 
+- Every load-bearing claim in artifacts traces to a source the reader can re-verify. Fabrication, embellishment, and unverified confidence are blocking violations. See [`rules/common/no-fabrication.md`](rules/common/no-fabrication.md).
 - Record verification evidence in the Beads issue (`bd note <id>`) or `plan.md`, or the relevant durable doc before calling work done.
 - If architecture, contracts, or operating rules change, update the relevant canonical docs in the same change.
 - All local tests must pass (`npm test`) before pushing. CI must be green after pushing before the task is considered done.

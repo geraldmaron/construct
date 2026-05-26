@@ -10,7 +10,7 @@ Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. You 
 
 The team and enterprise modes exist because I wanted to learn what shipping a real multi-tenant tool would look like. The project is still open source, the code is still public, and the bar is still "does this help me learn." Run it solo if that's all you need.
 
-Full docs: [`geraldmaron.github.io/construct/v2/`](https://geraldmaron.github.io/construct/v2/).
+Full docs: [`geraldmaron.github.io/construct/`](https://geraldmaron.github.io/construct/).
 
 ## Getting started
 
@@ -37,20 +37,20 @@ Open your editor and talk to `@construct`. A walkthrough lives in `construct_gui
 
 No Node? Try `brew install geraldmaron/construct/construct`. Cloning a project that already uses Construct? `npx -y @geraldmaron/construct init` wires it up.
 
-[Five minute walkthrough](https://geraldmaron.github.io/construct/v2/docs/start).
+[Five minute walkthrough](https://geraldmaron.github.io/construct/docs/start).
 
 ## What you can do
 
 | If you want to... | Read |
 |---|---|
-| Install and run a first task | [Start](https://geraldmaron.github.io/construct/v2/docs/start) |
-| Understand how it works | [Architecture](https://geraldmaron.github.io/construct/v2/docs/concepts/architecture) |
-| Pick a deployment mode | [Deployment model](https://geraldmaron.github.io/construct/v2/docs/concepts/deployment-model) |
-| Drop a signal and triage it | [Intake and triage](https://geraldmaron.github.io/construct/v2/docs/concepts/intake-and-triage) |
-| Add a custom specialist | [Add a custom agent](https://geraldmaron.github.io/construct/v2/docs/cookbook/add-a-custom-agent) |
-| Fix a blocked commit or red CI | [Fix a policy violation](https://geraldmaron.github.io/construct/v2/docs/cookbook/fix-a-policy-violation) |
-| Plug in your own LLM | [Plug in your own LLM](https://geraldmaron.github.io/construct/v2/docs/cookbook/plug-in-your-own-llm) |
-| Look up a CLI command | [CLI reference](https://geraldmaron.github.io/construct/v2/docs/reference/cli) |
+| Install and run a first task | [Start](https://geraldmaron.github.io/construct/docs/start) |
+| Understand how it works | [Architecture](https://geraldmaron.github.io/construct/docs/concepts/architecture) |
+| Pick a deployment mode | [Deployment model](https://geraldmaron.github.io/construct/docs/concepts/deployment-model) |
+| Drop a signal and triage it | [Intake and triage](https://geraldmaron.github.io/construct/docs/concepts/intake-and-triage) |
+| Add a custom specialist | [Add a custom agent](https://geraldmaron.github.io/construct/docs/cookbook/add-a-custom-agent) |
+| Fix a blocked commit or red CI | [Fix a policy violation](https://geraldmaron.github.io/construct/docs/cookbook/fix-a-policy-violation) |
+| Plug in your own LLM | [Plug in your own LLM](https://geraldmaron.github.io/construct/docs/cookbook/plug-in-your-own-llm) |
+| Look up a CLI command | [CLI reference](https://geraldmaron.github.io/construct/docs/reference/cli) |
 
 Works with Anthropic, OpenRouter, Ollama, and other OpenAI-compatible providers.
 
@@ -62,17 +62,17 @@ Three modes. `solo` is the default and runs everything locally. Filesystem queue
 
 `enterprise` adds tenant isolation, RBAC and ABAC scaffolding, isolated worker containers, signed MCP allowlists, and mandatory audit.
 
-Pick or change modes with `construct config mode [solo|team|enterprise]`. [Deployment model](https://geraldmaron.github.io/construct/v2/docs/concepts/deployment-model).
+Pick or change modes with `construct config mode [solo|team|enterprise]`. [Deployment model](https://geraldmaron.github.io/construct/docs/concepts/deployment-model).
 
 ## Intake
 
 Anything dropped into `.cx/inbox/` (a bug report, a customer comment, a competitor PDF, a postmortem draft) is classified by the active profile's intake taxonomy. The default `rnd` profile uses bug, user-signal, experiment, architecture, incident, security, requirement, research, ops, eval-finding, launch-asset, legal-compliance. The `operations` profile uses request, incident, ops, security, docs. The `creative` profile uses brief, content-request, asset, experiment, report. The `research` profile uses question, study, synthesis, report.
 
-Each signal gets a primary owner and a recommended handoff chain. Inspect with `construct intake list` and `construct intake show <id>`. Generate a task graph with `construct graph from-intake <id>`. The classifier runs in the daemon and is deterministic. The agent in your editor does the actual analysis. [Intake and triage](https://geraldmaron.github.io/construct/v2/docs/concepts/intake-and-triage).
+Each signal gets a primary owner and a recommended handoff chain. Inspect with `construct intake list` and `construct intake show <id>`. Generate a task graph with `construct graph from-intake <id>`. The classifier runs in the daemon and is deterministic. The agent in your editor does the actual analysis. [Intake and triage](https://geraldmaron.github.io/construct/docs/concepts/intake-and-triage).
 
 ## Hard gates
 
-Every code mutation runs through enforcement. No secrets committed, tests green, docs current, comments lint-clean, CI passes. Gates live in three places: write-time, commit-time, CI safety net. They can only be bypassed with explicit env vars so every exception leaves an audit trail. [Gates and enforcement](https://geraldmaron.github.io/construct/v2/docs/concepts/gates-and-enforcement).
+Every code mutation runs through enforcement. No secrets committed, tests green, docs current, comments lint-clean, CI passes. Gates live in three places: write-time, commit-time, CI safety net. They can only be bypassed with explicit env vars so every exception leaves an audit trail. [Gates and enforcement](https://geraldmaron.github.io/construct/docs/concepts/gates-and-enforcement).
 
 ## Learning loops
 
