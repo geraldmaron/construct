@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- **Release-gate functional test** (`tests/functional/release-gate.functional.test.mjs`) spawns the real `construct` binary against the repo and asserts every release-blocking gate exits cleanly: `--version`, `doctor`, `docs:verify`, `docs:update --check`, `lint:comments`, `lint:agents`, plus conditional checks for `lint:contracts` (W2), `doctor consistency` (W3), `migrate --dry-run` (W4), boundary contract (W1), daemon + rule-verifier surface (W5), and a final "no misleading wording" sweep across `lib/`, `bin/`, `scripts/`. Each conditional skip prints a clear reason so the gate self-activates as workstream PRs land. New `npm run release:gate` script.
+
 ### Fixed
 
 - **Docs site build (Fumadocs) was breaking on unquoted colons in frontmatter values.** Quotes every affected `description:` and `title:` line so the YAML parses cleanly. Restores the Pages deploy.
