@@ -65,3 +65,71 @@ describe('Scheduler', () => {
     assert.equal(ran, countAtStop);
   });
 });
+
+// Regression coverage for the bug where the scheduler silently dropped the
+// `repeat: false` option, turning a one-time startup job with intervalMs=0
+// into setInterval(fn, 0) — which fired every event-loop tick and produced
+// 34 GB of duplicate "Telemetry setup skipped" lines in embed-daemon.log.
+describe('Scheduler one-shot tasks (repeat: false)', () => {
+  it('runs a runImmediately + repeat:false task exactly once', async () => {
+    const s = new Scheduler();
+    let count = 0;
+    s.register('startup-job', 0, async () => { count += 1; }, {
+      runImmediately: true,
+      repeat: false,
+      unref: true,
+    });
+    s.start();
+    await new Promise((r) => setTimeout(r, 50));
+    s.stop();
+    assert.equal(count, 1, `expected exactly 1 call, got ${count} (pre-fix this was thousands)`);
+  });
+
+  it('runs a non-immediate repeat:false task exactly once after intervalMs', async () => {
+    const s = new Scheduler();
+    let count = 0;
+    s.register('delayed-once', 20, async () => { count += 1; }, {
+      runImmediately: false,
+      repeat: false,
+      unref: true,
+    });
+    s.start();
+    await new Promise((r) => setTimeout(r, 80));
+    s.stop();
+    assert.equal(count, 1, `expected exactly 1 call after delay, got ${count}`);
+  });
+
+  it('repeat:true (default) still fires multiple times — no regression', async () => {
+    const s = new Scheduler();
+    let count = 0;
+    s.register('interval-job', 10, async () => { count += 1; }, {
+      runImmediately: true,
+      unref: true,
+    });
+    s.start();
+    await new Promise((r) => setTimeout(r, 50));
+    s.stop();
+    assert.ok(count >= 3, `expected at least 3 calls for repeating task, got ${count}`);
+  });
+
+  it('status() reports the repeat flag', () => {
+    const s = new Scheduler();
+    s.register('one-shot', 0, async () => {}, { repeat: false, unref: true });
+    s.register('repeating', 100, async () => {}, { unref: true });
+    const status = s.status();
+    assert.equal(status.find((t) => t.label === 'one-shot').repeat, false);
+    assert.equal(status.find((t) => t.label === 'repeating').repeat, true);
+  });
+
+  it('stop() clears both intervals and timeouts cleanly', async () => {
+    const s = new Scheduler();
+    let count = 0;
+    s.register('interval-job', 5, async () => { count += 1; }, { unref: true });
+    s.register('one-shot', 5, async () => { count += 100; }, { repeat: false, unref: true });
+    s.start();
+    s.stop();
+    const before = count;
+    await new Promise((r) => setTimeout(r, 50));
+    assert.equal(count, before, 'stop() must clear both interval and timeout');
+  });
+});
