@@ -3,15 +3,6 @@ title: Distill and infer from documents
 description: Pull citation-ready chunks from a corpus and infer structured field schemas.
 ---
 
-<!--
-docs/how-to/how-to-distill-infer.md: How to use construct distill and construct infer.
-
-Covers distilling a directory of documents with query-focused chunk selection
-and inferring structured field schemas from one or more documents.
--->
-
-# How to Use Distill and Infer
-
 ## Distill a directory
 
 `construct distill` reads a directory of markdown, code, or text files and returns a

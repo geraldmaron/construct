@@ -3,15 +3,6 @@ title: Query the knowledge base
 description: Hybrid file + SQL + semantic retrieval over your project state.
 ---
 
-<!--
-docs/how-to/how-to-knowledge.md: How to query and manage the knowledge base.
-
-Covers construct ask, construct search, construct knowledge, construct ingest,
-and construct storage.
--->
-
-# How to Query and Manage the Knowledge Base
-
 Construct's knowledge layer is a hybrid store: BM25 + cosine vector search over indexed
 markdown chunks stored in a local SQLite file and an optional vector index. All operations
 work offline.

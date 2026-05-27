@@ -1,0 +1,113 @@
+---
+title: Generate artifacts (PRDs, ADRs, RFCs)
+description: Create structured documents from templates, stamp intake provenance, and keep the record clean.
+---
+
+Construct produces four first-class artifact types: **PRD**, **ADR**, **RFC**, and **memo**.
+Each has a template under `docs/templates/` and a dedicated lane under `docs/`.
+
+<FlowPipeline steps={[
+  { label: 'docs/templates/', sub: 'PRD · ADR · RFC · memo' },
+  { label: 'draft artifact', sub: 'docs/prd/ · docs/adr/ · docs/rfc/' },
+  { label: 'intake packet', sub: '.cx/intake/pending/<id>.json' },
+  { label: 'construct intake done', sub: '--output=<path>' },
+  { label: 'construct docs:verify', sub: '+ lint:comments', highlight: true },
+]} />
+
+## Set up doc lanes for a new project
+
+```bash
+construct init-docs
+```
+
+Creates `docs/prd/`, `docs/adr/`, `docs/rfc/`, `docs/memos/`, `docs/runbooks/`, and `docs/how-to/`
+with `README.md` indices and `_template.md` starters. Safe to re-run on an existing repo.
+
+## Generate a new artifact from a template
+
+```bash
+# ADR
+cp docs/adr/_template.md docs/adr/adr-NNN-my-decision.md
+
+# PRD
+cp docs/prd/_template.md docs/prd/my-feature.md
+```
+
+Fill in the template. Each template includes a required frontmatter block with `status`, `date`, and `deciders`. If this artifact traces to an intake packet, see "Stamp intake provenance" below.
+
+## Stamp intake provenance
+
+When an artifact was produced in response to an intake signal, stamp it before closing the intake:
+
+```bash
+construct intake done <id> --output=docs/prd/my-feature.md
+```
+
+This writes three fields into the artifact's YAML frontmatter:
+
+```yaml
+---
+intake_id: construct-<id>
+intake_confidence: 0.82
+intake_rationale: Matched keywords: user-signal, churn, dashboard
+---
+```
+
+The stamp is refused if the artifact already carries a different `intake_id`. For artifacts that are intentionally not intake-derived, declare it explicitly:
+
+```yaml
+---
+intake: none
+---
+```
+
+`construct docs:verify` warns on any artifact in `docs/prd/**`, `docs/research/**`, or `.cx/knowledge/internal/**` that lacks either field. This keeps the corpus auditable: every document either traces to a source packet or consciously opted out.
+
+## Verify artifact stamps
+
+```bash
+construct doc verify docs/adr/adr-001-storage-backend.md
+```
+
+Confirms the file has a valid auditability stamp (hash, agent, task reference). Exits non-zero if
+the stamp is missing or corrupted.
+
+```bash
+construct doc verify docs/
+```
+
+Recursively verifies all markdown files under `docs/`.
+
+## Lint artifact prose
+
+```bash
+construct lint:comments docs/prd/my-feature.md
+```
+
+Checks artifact prose for fabrication markers: unsupported confidence claims, unattributed numeric claims, customer mind-reading without citations, speculative projections without sources. See [Integrity and trust](/concepts/integrity-and-trust) for the full pattern bank.
+
+## Audit the mutation trail
+
+```bash
+construct audit trail
+```
+
+Shows every mutation logged by the system (agent, file, hash, timestamp). Useful for tracing which
+agent created or last modified an artifact. Supports `--agent`, `--since`, `--verify`, and `--json`.
+
+## List artifacts by type
+
+Artifacts are plain markdown files in their lanes:
+
+```bash
+ls docs/prd/
+ls docs/adr/
+ls docs/rfc/
+ls docs/memos/
+```
+
+## Reference
+
+- [Concepts → Integrity and trust](/concepts/integrity-and-trust): the full four-layer trust model.
+- [Concepts → Intake and triage](/concepts/intake-and-triage): triage packet schema and the `--output` flow.
+- [`docs/adr/_template.md`](https://github.com/geraldmaron/construct/blob/main/docs/adr/_template.md)
