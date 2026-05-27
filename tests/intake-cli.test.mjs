@@ -68,7 +68,7 @@ describe('construct intake list', () => {
   it('prints the empty-queue message on a fresh project', () => {
     const r = runCli(['list']);
     assert.equal(r.status, 0, r.stderr);
-    assert.match(r.stdout, /No pending intake packets\./);
+    assert.match(r.stdout, /No pending signals\./);
   });
 
   it('shows ID, type, stage, owner, action columns for pending packets', () => {
@@ -95,7 +95,7 @@ describe('construct intake show', () => {
   it('exits non-zero on unknown id with a clear error', () => {
     const r = runCli(['show', 'does-not-exist']);
     assert.notEqual(r.status, 0);
-    assert.match(r.stderr, /No intake packet with id/);
+    assert.match(r.stderr, /No signal with id/);
   });
 
   it('requires an id', () => {
@@ -178,6 +178,6 @@ describe('construct intake (no args)', () => {
     const r = runCli([]);
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /Construct intake/);
-    assert.match(r.stdout, /list\s+List pending intake/);
+    assert.match(r.stdout, /list\s+List pending signals/);
   });
 });

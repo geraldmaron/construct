@@ -1603,11 +1603,13 @@ function printActiveConfig() {
   println(`Persisted at: ${getUserEnvPath(HOME)} (${DEPLOYMENT_MODE_ENV_KEY})`);
 }
 
-function printIntakeHelp() {
-  println('Construct intake — inspect and process the R&D intake queue.');
+async function printIntakeHelp() {
+  const { getRebrand } = await import('../lib/profiles/rebrand.mjs');
+  const { intakeQueueLabel, signalNoun } = getRebrand(process.cwd());
+  println(`Construct intake — inspect and process the ${intakeQueueLabel}.`);
   println('');
   println('Usage:');
-  println('  construct intake list                List pending intake packets (ID, type, stage, owner, action).');
+  println(`  construct intake list                List pending ${signalNoun}s (ID, type, stage, owner, action).`);
   println('  construct intake show <id>           Show a single packet: triage, source, excerpt, related docs.');
   println('  construct intake done <id> [--notes=…] [--output=<path>] [--no-output=<rejected|deferred|merged>]');
   println('                                       Mark a pending packet processed. --output stamps intake_id + confidence into the artifact frontmatter (provenance).');
@@ -1634,11 +1636,12 @@ function parseKvFlags(args, keys) {
   return out;
 }
 
-function formatIntakeTable(rows) {
+function formatIntakeTable(rows, { intakeQueueLabel, signalNoun } = { intakeQueueLabel: 'Intake queue', signalNoun: 'signal' }) {
   if (rows.length === 0) {
-    println('No pending intake packets.');
+    println(`No pending ${signalNoun}s.`);
     return;
   }
+  println(`${intakeQueueLabel} (${rows.length} pending):`);
   const headers = ['ID', 'Type', 'Stage', 'Owner', 'Action'];
   const widths = headers.map((h, i) => Math.max(h.length, ...rows.map((r) => String(r[i] || '').length)));
   const fmt = (cells) => cells.map((c, i) => String(c || '').padEnd(widths[i])).join('  ');
@@ -1651,12 +1654,14 @@ async function cmdIntake(args) {
   const sub = args[0];
 
   if (!sub || sub === '--help' || sub === '-h') {
-    printIntakeHelp();
+    await printIntakeHelp();
     return;
   }
 
   const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
+  const { getRebrand } = await import('../lib/profiles/rebrand.mjs');
   const cwd = process.cwd();
+  const rebrand = getRebrand(cwd);
   const queue = createIntakeQueue(cwd, process.env);
 
   if (sub === 'list') {
@@ -1665,7 +1670,7 @@ async function cmdIntake(args) {
       const t = p.triage || {};
       return [p.id, t.intakeType || 'unknown', t.rdStage || 'unknown', t.primaryOwner || '—', t.recommendedAction || '—'];
     });
-    formatIntakeTable(rows);
+    formatIntakeTable(rows, rebrand);
     return;
   }
 
@@ -1673,8 +1678,9 @@ async function cmdIntake(args) {
   if (sub === 'show') {
     if (!id) { errorln('Usage: construct intake show <id>'); process.exit(1); }
     const entry = queue.read(id);
-    if (!entry) { errorln(`No intake packet with id: ${id}`); process.exit(1); }
+    if (!entry) { errorln(`No ${rebrand.signalNoun} with id: ${id}`); process.exit(1); }
     const t = entry.triage || {};
+    println(`${rebrand.signalNoun.charAt(0).toUpperCase() + rebrand.signalNoun.slice(1)} ${entry.id}`);
     println(`ID:        ${entry.id}`);
     println(`Status:    ${entry.status}`);
     println(`Source:    ${entry.intake?.sourcePath || '(none)'}`);
