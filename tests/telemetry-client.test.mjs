@@ -25,8 +25,9 @@ test('resolveTraceBackend defaults to local and preserves legacy remote alias', 
   }), 'http');
 });
 
-test('local backend writes JSONL without remote fetch', async () => {
+test('local backend writes JSONL without remote fetch', async (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-telemetry-local-'));
+  t.after(() => { try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {} });
   let fetchCalls = 0;
   const client = createTelemetryClient({
     rootDir,
@@ -46,8 +47,9 @@ test('local backend writes JSONL without remote fetch', async () => {
   assert.equal(fetchCalls, 0);
 });
 
-test('langfuse backend posts ingestion batch and keeps local JSONL', async () => {
+test('langfuse backend posts ingestion batch and keeps local JSONL', async (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-telemetry-langfuse-'));
+  t.after(() => { try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {} });
   const calls = [];
   const client = createTelemetryClient({
     rootDir,

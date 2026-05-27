@@ -13,8 +13,9 @@ import test from 'node:test';
 
 import { readContextState, writeContextState } from '../lib/context-state.mjs';
 
-test('context state prefers JSON and preserves markdown compatibility', () => {
+test('context state prefers JSON and preserves markdown compatibility', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-context-state-'));
+  t.after(() => { try { fs.rmSync(root, { recursive: true, force: true }); } catch {} });
   const payload = { source: 'test', activeWork: ['A'] };
   const markdown = '# Session Context\n\n## Active Work\n- A\n';
 
