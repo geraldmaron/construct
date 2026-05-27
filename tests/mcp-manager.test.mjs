@@ -12,8 +12,14 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-function tempDir(prefix) {
-  return fs.mkdtempSync(path.join('/tmp', prefix));
+function tempDir(prefix, t) {
+  const dir = fs.mkdtempSync(path.join('/tmp', prefix));
+  if (t && typeof t.after === "function") {
+    t.after(() => {
+      try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    });
+  }
+  return dir;
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -25,8 +31,8 @@ function hasPathSegment(relPath, segment) {
   return relPath.split(path.sep).includes(segment);
 }
 
-function makeRepoCopy() {
-  const dest = tempDir("construct-sync-repo-");
+function makeRepoCopy(t) {
+  const dest = tempDir("construct-sync-repo-", t);
   fs.cpSync(root, dest, {
     recursive: true,
     filter: (source) => {
@@ -85,8 +91,8 @@ function runMcpRemove(id, { home, cwd, env = {} }) {
   });
 }
 
-function runSync({ home, cwd, env = {} }) {
-  const repoRoot = makeRepoCopy();
+function runSync({ home, cwd, env = {}, t }) {
+  const repoRoot = makeRepoCopy(t);
   execFileSync(process.execPath, ["scripts/sync-agents.mjs"], {
     cwd: repoRoot,
     env: {
@@ -104,9 +110,9 @@ function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
 }
 
-test("memory MCP uses the configured port for Claude and memory for OpenCode", () => {
-  const home = tempDir("construct-mcp-home-");
-  const cwd = tempDir("construct-mcp-cwd-");
+test("memory MCP uses the configured port for Claude and memory for OpenCode", (t) => {
+  const home = tempDir("construct-mcp-home-", t);
+  const cwd = tempDir("construct-mcp-cwd-", t);
   const claudePath = path.join(home, ".claude", "settings.json");
 
   runMcpAdd("memory", {
@@ -137,9 +143,9 @@ test("memory MCP uses the configured port for Claude and memory for OpenCode", (
   );
 });
 
-test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP entry", () => {
-  const home = tempDir("construct-github-home-");
-  const cwd = tempDir("construct-github-cwd-");
+test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP entry", (t) => {
+  const home = tempDir("construct-github-home-", t);
+  const cwd = tempDir("construct-github-cwd-", t);
   const token = process.env.GITHUB_TOKEN || "github-token-placeholder";
 
   runMcpAdd("github", {
@@ -180,7 +186,7 @@ test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP
   }
 });
 
-test("catalog declares setup modes for auto/manual capable integrations", () => {
+test("catalog declares setup modes for auto/manual capable integrations", (t) => {
   const catalogPath = path.join(root, "lib", "mcp-catalog.json");
   const catalog = readJson(catalogPath);
   const byId = new Map(catalog.mcps.map((mcp) => [mcp.id, mcp]));
@@ -194,9 +200,9 @@ test("catalog declares setup modes for auto/manual capable integrations", () => 
   assert.equal(byId.get("atlassian").hostSupport.codex.mode, "managed");
 });
 
-test("external plugin manifest entries are available to mcp add without editing built-ins", () => {
-  const home = tempDir("construct-plugin-mcp-home-");
-  const cwd = tempDir("construct-plugin-mcp-cwd-");
+test("external plugin manifest entries are available to mcp add without editing built-ins", (t) => {
+  const home = tempDir("construct-plugin-mcp-home-", t);
+  const cwd = tempDir("construct-plugin-mcp-cwd-", t);
   const pluginDir = path.join(cwd, ".cx", "plugins");
   fs.mkdirSync(pluginDir, { recursive: true });
   fs.writeFileSync(path.join(pluginDir, "acme.json"), JSON.stringify({
@@ -248,9 +254,9 @@ test("external plugin manifest entries are available to mcp add without editing 
   assert.match(codex, /\[mcp_servers\."acme-search"\]/);
 });
 
-test("atlassian MCP uses official remote OAuth server across managed configs", () => {
-  const home = tempDir("construct-atlassian-home-");
-  const cwd = tempDir("construct-atlassian-cwd-");
+test("atlassian MCP uses official remote OAuth server across managed configs", (t) => {
+  const home = tempDir("construct-atlassian-home-", t);
+  const cwd = tempDir("construct-atlassian-cwd-", t);
 
   runMcpAdd("atlassian", { home, cwd });
 
@@ -272,9 +278,9 @@ test("atlassian MCP uses official remote OAuth server across managed configs", (
   assert.doesNotMatch(codex, /ATLASSIAN_API_TOKEN/);
 });
 
-test("user env config path can be written during setup-style flows", async () => {
+test("user env config path can be written during setup-style flows", async (t) => {
   const { getUserEnvPath, writeEnvValues, parseEnvFile } = await import(path.join(root, 'lib', 'env-config.mjs'));
-  const home = tempDir('construct-user-env-home-');
+  const home = tempDir('construct-user-env-home-', t);
   const envPath = getUserEnvPath(home);
   writeEnvValues(envPath, { CONSTRUCT_TELEMETRY_URL: 'https://telemetry.example.com', CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test' });
   const parsed = parseEnvFile(envPath);
@@ -282,9 +288,9 @@ test("user env config path can be written during setup-style flows", async () =>
   assert.equal(parsed.CONSTRUCT_TELEMETRY_PUBLIC_KEY, 'pk-lf-test');
 });
 
-test("user env config can persist hybrid backend settings", async () => {
+test("user env config can persist hybrid backend settings", async (t) => {
   const { getUserEnvPath, writeEnvValues, parseEnvFile } = await import(path.join(root, 'lib', 'env-config.mjs'));
-  const home = tempDir('construct-hybrid-env-home-');
+  const home = tempDir('construct-hybrid-env-home-', t);
   const envPath = getUserEnvPath(home);
   writeEnvValues(envPath, {
     DATABASE_URL: 'postgresql://user:pass@db.local:5432/construct',
@@ -297,8 +303,8 @@ test("user env config can persist hybrid backend settings", async () => {
   assert.equal(parsed.CONSTRUCT_VECTOR_MODEL, 'text-embedding-3-small');
 });
 
-test("sync wires managed OpenCode runtime plugin and construct-mcp telemetry env", () => {
-  const home = tempDir("construct-opencode-plugin-home-");
+test("sync wires managed OpenCode runtime plugin and construct-mcp telemetry env", (t) => {
+  const home = tempDir("construct-opencode-plugin-home-", t);
   const cwd = root;
   const opencodeDir = path.join(home, ".config", "opencode");
   const opencodePath = path.join(opencodeDir, "opencode.json");
@@ -319,6 +325,7 @@ test("sync wires managed OpenCode runtime plugin and construct-mcp telemetry env
   const repoCopy = runSync({
     home,
     cwd,
+    t,
     env: {
       CONSTRUCT_TELEMETRY_URL: "https://telemetry.example.com",
       CONSTRUCT_TELEMETRY_PUBLIC_KEY: "pk-lf-test",
@@ -332,8 +339,8 @@ test("sync wires managed OpenCode runtime plugin and construct-mcp telemetry env
   assert.equal(fs.existsSync(path.join(home, ".config", "opencode", "plugins", "construct-fallback.js")), true);
 });
 
-test("sync keeps OpenCode memory configured through memory", () => {
-  const home = tempDir("construct-sync-home-");
+test("sync keeps OpenCode memory configured through memory", (t) => {
+  const home = tempDir("construct-sync-home-", t);
   const cwd = root;
   const opencodeDir = path.join(home, ".config", "opencode");
   const opencodePath = path.join(opencodeDir, "opencode.json");
@@ -351,7 +358,7 @@ test("sync keeps OpenCode memory configured through memory", () => {
     }, null, 2)}\n`,
   );
 
-  runSync({ home, cwd });
+  runSync({ home, cwd, t });
 
   const config = readJson(opencodePath);
   assert.deepEqual(config.mcp.memory, {
@@ -360,8 +367,8 @@ test("sync keeps OpenCode memory configured through memory", () => {
   });
 });
 
-test("sync migrates legacy OpenCode cass memory config to memory", () => {
-  const home = tempDir("construct-sync-home-");
+test("sync migrates legacy OpenCode cass memory config to memory", (t) => {
+  const home = tempDir("construct-sync-home-", t);
   const cwd = root;
   const opencodeDir = path.join(home, ".config", "opencode");
   const opencodePath = path.join(opencodeDir, "opencode.json");
@@ -379,7 +386,7 @@ test("sync migrates legacy OpenCode cass memory config to memory", () => {
     }, null, 2)}\n`,
   );
 
-  runSync({ home, cwd });
+  runSync({ home, cwd, t });
 
   const config = readJson(opencodePath);
   assert.equal(config.mcp.cass, undefined);
@@ -389,9 +396,9 @@ test("sync migrates legacy OpenCode cass memory config to memory", () => {
   });
 });
 
-test("memory MCP recovers from malformed OpenCode config", () => {
-  const home = tempDir("construct-bad-opencode-home-");
-  const cwd = tempDir("construct-bad-opencode-cwd-");
+test("memory MCP recovers from malformed OpenCode config", (t) => {
+  const home = tempDir("construct-bad-opencode-home-", t);
+  const cwd = tempDir("construct-bad-opencode-cwd-", t);
   const opencodeDir = path.join(home, ".config", "opencode");
   const opencodePath = path.join(opencodeDir, "opencode.json");
   fs.mkdirSync(opencodeDir, { recursive: true });
@@ -415,9 +422,9 @@ test("memory MCP recovers from malformed OpenCode config", () => {
   );
 });
 
-test("removing a Claude-only MCP does not create a new OpenCode config", () => {
-  const home = tempDir("construct-remove-home-");
-  const cwd = tempDir("construct-remove-cwd-");
+test("removing a Claude-only MCP does not create a new OpenCode config", (t) => {
+  const home = tempDir("construct-remove-home-", t);
+  const cwd = tempDir("construct-remove-cwd-", t);
   const claudeDir = path.join(home, ".claude");
   const claudePath = path.join(claudeDir, "settings.json");
   const opencodePath = path.join(home, ".config", "opencode", "opencode.json");

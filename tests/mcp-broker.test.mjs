@@ -7,7 +7,7 @@
  * limiting throws RateLimited after the budget; the isBrokered helper
  * respects CONSTRUCT_MCP_BROKER override and the deployment mode.
  */
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -15,8 +15,17 @@ import path from 'node:path';
 
 import { Broker, PolicyDenied, ApprovalRequired, RateLimited, isBrokered } from '../lib/mcp/broker.mjs';
 
+const tmpDirs = [];
+after(() => {
+  for (const dir of tmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
+
 function fakeRoot() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'cx-broker-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-broker-'));
+  tmpDirs.push(dir);
+  return dir;
 }
 
 function allowingPolicy() {

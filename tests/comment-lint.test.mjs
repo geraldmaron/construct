@@ -9,12 +9,20 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 
 import { lintFile, lintRepo, formatResults } from '../lib/comment-lint.mjs';
 
+const tmpDirs = [];
+after(() => {
+  for (const dir of tmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
+
 function makeTempFile(relPath, content) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-clint-'));
+  tmpDirs.push(dir);
   const full = path.join(dir, relPath);
   fs.mkdirSync(path.dirname(full), { recursive: true });
   fs.writeFileSync(full, content);
@@ -98,6 +106,7 @@ test('formatResults: returns exit 0 for warnings only', () => {
 
 test('lintRepo: finds violations across multiple files', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-clint-repo-'));
+  tmpDirs.push(dir);
   fs.mkdirSync(path.join(dir, 'lib'));
   fs.writeFileSync(path.join(dir, 'lib/a.mjs'), 'export const a = 1;');
   fs.writeFileSync(path.join(dir, 'lib/b.mjs'), 'export const b = 2;');

@@ -12,9 +12,10 @@ import path from 'node:path';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 
-test('session-start hook remains non-blocking and emits resume context', () => {
+test('session-start hook remains non-blocking and emits resume context', (t) => {
   const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-session-start-'));
+  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(path.join(cwd, '.cx', 'context.json'), `${JSON.stringify({ format: 'json', savedAt: new Date().toISOString(), markdown: '# Session Context\n' }, null, 2)}\n`);
 

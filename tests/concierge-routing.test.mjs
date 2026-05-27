@@ -12,7 +12,7 @@
  * future prompt changes can be validated against them manually or via evals.
  */
 
-import { describe, it, beforeEach } from "node:test";
+import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -46,6 +46,7 @@ function withWorkflow(root, patch = {}) {
 describe("done-gate: implement-phase tasks", () => {
   let root;
   beforeEach(() => { root = tmpRoot(); });
+  afterEach(() => { try { rmSync(root, { recursive: true, force: true }); } catch {} });
 
   it("blocks marking implement task done without verification", () => {
     withWorkflow(root);
@@ -123,6 +124,7 @@ describe("done-gate: implement-phase tasks", () => {
 describe("alignment findings: verification evidence", () => {
   let root;
   beforeEach(() => { root = tmpRoot(); });
+  afterEach(() => { try { rmSync(root, { recursive: true, force: true }); } catch {} });
 
   it("done implement task with verification has no HIGH finding", () => {
     withWorkflow(root);
@@ -147,6 +149,7 @@ describe("alignment findings: verification evidence", () => {
 describe("dispatch plan persistence", () => {
   let root;
   beforeEach(() => { root = tmpRoot(); });
+  afterEach(() => { try { rmSync(root, { recursive: true, force: true }); } catch {} });
 
   it("dispatchPlan field round-trips through workflow state", () => {
     const wf = defaultWorkflow(root, "auth feature");
