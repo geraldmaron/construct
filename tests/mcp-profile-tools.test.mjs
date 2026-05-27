@@ -9,9 +9,9 @@
  * Operator-only surfaces (optimize_apply / optimize_rollback) intentionally
  * remain CLI-only and are not asserted here.
  */
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -28,8 +28,16 @@ import {
   learningStatus,
 } from '../lib/mcp/tools/profile.mjs';
 
+const tmpDirs = [];
+after(() => {
+  for (const dir of tmpDirs) {
+    try { rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
+
 function freshProject(profileId = 'rnd') {
   const dir = mkdtempSync(join(tmpdir(), 'cx-mcp-profile-'));
+  tmpDirs.push(dir);
   writeFileSync(join(dir, 'construct.config.json'), JSON.stringify({ version: 1, profile: profileId }, null, 2));
   return dir;
 }
@@ -46,6 +54,7 @@ test('profile_show returns the configured profile shape', () => {
 
 test('profile_show falls back to rnd when config is missing', () => {
   const cwd = mkdtempSync(join(tmpdir(), 'cx-mcp-profile-default-'));
+  tmpDirs.push(cwd);
   const res = profileShow({ cwd });
   assert.equal(res.id, 'rnd');
 });

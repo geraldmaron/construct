@@ -14,12 +14,20 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 
 import { validatePostconditions, validateHandoff } from '../lib/contracts/validate.mjs';
 
+const tmpDirs = [];
+after(() => {
+  for (const dir of tmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
+
 function makeArtifact(content) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-pc-'));
+  tmpDirs.push(dir);
   const file = path.join(dir, 'artifact.md');
   fs.writeFileSync(file, content, 'utf8');
   return { dir, file };

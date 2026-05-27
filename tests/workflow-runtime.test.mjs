@@ -23,12 +23,14 @@ import {
   validateWorkflowState,
 } from "../lib/workflow-state.mjs";
 
-function tempProject() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "construct-workflow-test-"));
+function tempProject(t) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-workflow-test-"));
+  if (t) t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} });
+  return dir;
 }
 
-test("workflow alignment requires Construct-native task packets", () => {
-  const root = tempProject();
+test("workflow alignment requires Construct-native task packets", (t) => {
+  const root = tempProject(t);
   initWorkflow(root, "Worker packet contract");
   const workflow = addTask(root, {
     title: "Implement task runtime",
@@ -42,8 +44,8 @@ test("workflow alignment requires Construct-native task packets", () => {
   assert.equal(findings.some((f) => f.issue.includes("doNotChange")), true);
 });
 
-test("done tasks require verification evidence", () => {
-  const root = tempProject();
+test("done tasks require verification evidence", (t) => {
+  const root = tempProject(t);
   initWorkflow(root, "Verification gate");
   let workflow = addTask(root, {
     title: "Verify before done",
@@ -67,8 +69,8 @@ test("done tasks require verification evidence", () => {
   assert.equal(findings.some((f) => f.issue.includes("verification evidence")), true);
 });
 
-test("blocked_needs_user is a first-class worker status", () => {
-  const root = tempProject();
+test("blocked_needs_user is a first-class worker status", (t) => {
+  const root = tempProject(t);
   initWorkflow(root, "Needs input");
   let workflow = addTask(root, {
     title: "Ask main session",
@@ -103,8 +105,8 @@ test("NEEDS_MAIN_INPUT packet is structured for primary persona resumption", () 
   assert.deepEqual(packet.context, ["api/routes/projects.ts"]);
 });
 
-test("workflow schema validator catches broken dependencies and phase drift", () => {
-  const root = tempProject();
+test("workflow schema validator catches broken dependencies and phase drift", (t) => {
+  const root = tempProject(t);
   initWorkflow(root, "Schema validation");
   let workflow = addTask(root, {
     title: "Blocked task",
@@ -124,8 +126,8 @@ test("workflow schema validator catches broken dependencies and phase drift", ()
   assert.equal(result.errors.some((error) => error.includes("does not match workflow phase")), true);
 });
 
-test("plans can be imported into workflow task packets", () => {
-  const root = tempProject();
+test("plans can be imported into workflow task packets", (t) => {
+  const root = tempProject(t);
   const plan = [
     "- [ ] Update contracts",
     "- [ ] Add lifecycle hooks",

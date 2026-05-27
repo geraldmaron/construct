@@ -5,11 +5,19 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import { extractDocumentMetadata } from '../lib/document-extract.mjs';
+
+const tmpDirs = [];
+after(() => {
+  for (const dir of tmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
 
 function tmpFile(name, content) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-docmeta-'));
+  tmpDirs.push(dir);
   const full = path.join(dir, name);
   fs.writeFileSync(full, content);
   return full;
@@ -60,6 +68,7 @@ test('extracts multiple authors from array frontmatter', () => {
 
 test('returns file dates for non-text files', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-docmeta-'));
+  tmpDirs.push(dir);
   const f = path.join(dir, 'data.pdf');
   fs.writeFileSync(f, 'fake pdf content');
   const meta = extractDocumentMetadata(f);
