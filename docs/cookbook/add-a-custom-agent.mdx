@@ -1,27 +1,19 @@
 ---
-title: Add a custom agent
-description: "Add a new specialist (or persona) to your Construct team: registry entry, prompt file, sync, test."
+title: Add a custom specialist
+description: "Add a new specialist to your Construct team: registry entry, prompt file, sync to every editor, smoke test."
 ---
 
 You want a `cx-performance-auditor` for your project (or any other specialist that doesn't ship in the default 28). This walks the full flow: registry entry, prompt, model tier, contract wiring, sync to every editor, smoke test.
 
 ## The shape of a specialist
 
-```mermaid
-flowchart LR
-    Registry["agents/registry.json<br/>name · tier · platforms<br/>(required)"]
-    Prompt["agents/prompts/cx-&lt;name&gt;.md<br/>voice · authority · boundaries<br/>(required)"]
-    Contracts["agents/contracts.json<br/>typed handoffs<br/>(optional)"]
-    Manifest["agents/role-manifests.json<br/>fence · events · approvals<br/>(optional, for role framework)"]
-    Sync["construct sync"]
-    Editors["Claude · OpenCode · Codex · Copilot"]
-
-    Registry --> Sync
-    Prompt --> Sync
-    Contracts -.-> Sync
-    Manifest -.-> Sync
-    Sync --> Editors
-```
+<FlowPipeline steps={[
+  { label: 'agents/registry.json', badge: 'required', sub: 'name · tier · platforms' },
+  { label: 'agents/prompts/cx-<name>.md', badge: 'required', sub: 'voice · authority · boundaries' },
+  { label: 'agents/contracts.json', badge: 'optional', sub: 'typed handoffs' },
+  { label: 'construct sync', highlight: true },
+  { label: 'Claude · OpenCode · Codex · Copilot', sub: 'editor adapters written' },
+]} />
 
 Every specialist has four pieces:
 

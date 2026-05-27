@@ -3,10 +3,7 @@ title: Knowledge layout
 description: How .cx/, beads, the vector index, and SQL fit together to make context durable across sessions.
 ---
 
-# Knowledge Layout: `.cx/` Directory Structure
-
-> Canonical reference for how Construct organises knowledge inside `.cx/`.
-> Agents and operators must treat this as the authoritative layout spec.
+`.cx/` is Construct's knowledge store. It's a directory in your project root that persists everything Construct learns: ingested documents, architectural decisions, session history, and observations from past work.
 
 ## Overview
 

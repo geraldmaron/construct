@@ -3,24 +3,6 @@ title: Your first task
 description: Initialize a project, sync agents, and dispatch one task end-to-end.
 ---
 
-```mermaid
-flowchart TD
-    Init["construct init<br/>scaffolds .cx/ · .beads/ · docs/"]
-    Sync["construct sync<br/>writes editor adapters"]
-    Up["construct up<br/>dashboard · MCP · trace capture"]
-    Editor{"editor"}
-    Direct["@construct &lt;ask&gt;<br/>persona answers directly"]
-    Chain["specialist chain<br/>architect → researcher → reviewer → security"]
-    Inbox[".cx/inbox/&lt;file&gt;<br/>signal"]
-    Triage["intake triage<br/>type · owner · chain"]
-    Graph["construct graph from-intake<br/>nodes · edges · evidence"]
-
-    Init --> Sync --> Up --> Editor
-    Editor -->|simple ask| Direct
-    Editor -->|involved work| Chain
-    Inbox --> Triage --> Graph
-```
-
 ## Pick a project
 
 ```bash
@@ -31,11 +13,11 @@ It needs to be a git repo (Construct uses `.git/` to wire pre-commit hooks). Bra
 
 ## Initialize Construct in the project
 
-```bash
-construct init
-```
+<Steps>
+<Step>
+### `construct init`
 
-This scaffolds:
+Scaffolds the project:
 
 - `.cx/context.md` and `.cx/context.json` — durable per-project state Construct reads at session start.
 - `.cx/handoffs/` — gitignored directory where session handoffs land.
@@ -43,14 +25,11 @@ This scaffolds:
 - A `.beads/` directory if your project doesn't already track issues.
 
 Re-running `construct init` on an existing project is safe; it's idempotent.
+</Step>
+<Step>
+### `construct sync`
 
-## Sync the agents
-
-```bash
-construct sync
-```
-
-This writes the agent definitions to whichever editor configs it finds on disk:
+Writes the agent definitions to whichever editor configs it finds on disk:
 
 - `~/.claude/agents/*.md` for Claude Code
 - `~/.config/opencode/opencode.json` for OpenCode
@@ -58,34 +37,42 @@ This writes the agent definitions to whichever editor configs it finds on disk:
 - `~/.github/prompts/*.prompt.md` for Copilot prompt profiles
 - `~/.cursor/mcp.json` for Cursor MCP registrations if Cursor is already configured
 - VS Code user `settings.json` for GitHub Copilot MCP registrations if VS Code is already configured
-
-You should see parity output across whichever managed surfaces are installed on the machine.
-
-## Start the services
-
-```bash
-construct up
-```
+</Step>
+<Step>
+### `construct up`
 
 Brings up:
 
 - Local dashboard at `http://localhost:<port>` (port auto-selected)
 - Memory MCP server at `127.0.0.1:8765`
-- Local trace capture in `.cx/traces/*.jsonl`; remote telemetry export only when configured
+- Local trace capture in `.cx/traces/*.jsonl`
+</Step>
+</Steps>
 
 ## Dispatch a task
 
-Open your editor. Address `construct` directly:
+Open your editor. Two modes depending on the request:
 
-> @construct read the README and summarize what this project is.
+<Cards>
+<Card title="Simple ask" href="/concepts/agents-and-personas">
+Address `@construct` directly. The persona answers without a full specialist chain.
 
-Construct's persona kicks in, decides whether to do the work directly or route through specialists, and returns the result. For a "read and summarize" request it'll usually skip the full chain and answer directly.
+```
+@construct read the README and summarize what this project is.
+```
 
-For a more involved task:
+Good for: questions, summaries, small lookups, one-file changes.
+</Card>
+<Card title="Involved work" href="/concepts/architecture">
+Construct routes through the specialist chain: architect → researcher → reviewer → security.
 
-> @construct review the auth flow in `src/auth/` and flag risks.
+```
+@construct review the auth flow in src/auth/ and flag risks.
+```
 
-Now you'll see the specialist chain: architect frames, researcher gathers context, reviewer + security weigh in, and construct synthesizes. Hard gates fire on any code edits (no secrets, comments lint clean, etc.).
+Good for: code review, architectural decisions, security-sensitive changes, PRDs.
+</Card>
+</Cards>
 
 ## Drop a signal into the intake queue
 
@@ -95,7 +82,14 @@ For work that arrives as a file — a bug report, a customer comment, a competit
 echo "Stack trace on login redirect — reproduce at /auth. authMiddleware crash." > .cx/inbox/login-bug.md
 ```
 
-The embed daemon picks it up within a second or two, classifies it deterministically (no LLM in the daemon), and writes a triage packet under `.cx/intake/pending/<id>.json`. Inspect via:
+<FlowPipeline steps={[
+  { label: '.cx/inbox/', sub: 'drop any file' },
+  { label: 'embed daemon', sub: 'classifies in ~1s\nno LLM call' },
+  { label: '.cx/intake/pending/', sub: 'triage packet\ntype · owner · chain' },
+  { label: 'your editor', sub: 'read packet · dispatch', highlight: true },
+]} />
+
+Inspect via:
 
 ```bash
 construct intake list           # tabular: id, type, stage, owner, action
@@ -109,7 +103,7 @@ construct graph from-intake <id>   # writes .cx/task-graphs/<graph-id>.json
 construct graph show <graph-id>    # nodes, edges, owners, evidence
 ```
 
-The graph mirrors the triage's `recommendedChain` one-to-one (e.g. a bug becomes `debugger → engineer → qa → reviewer`). Node status updates carry evidence:
+The graph mirrors the triage's `recommendedChain` one-to-one. Node status updates carry evidence:
 
 ```bash
 construct graph status <graph-id> <node-id> done --evidence="npm test green, 1192 pass"

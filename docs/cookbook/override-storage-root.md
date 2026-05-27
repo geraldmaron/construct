@@ -3,8 +3,6 @@ title: Override storage root
 description: Point Construct at a custom .cx/ location for sandboxing or multi-profile setups.
 ---
 
-# How to Override the Storage Root (CX_DATA_DIR)
-
 By default, Construct stores all persistent data under `~/.cx/`. This includes snapshots, observations, sessions, the knowledge base, roadmap, and approval queue.
 
 You can override this root with the `CX_DATA_DIR` environment variable.

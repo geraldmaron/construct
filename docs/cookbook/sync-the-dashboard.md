@@ -3,8 +3,6 @@ title: Sync the dashboard
 description: Rebuild the static dashboard bundle and serve it from lib/server/.
 ---
 
-# How to sync the dashboard static bundle
-
 Use `construct dashboard:sync` when `dashboard/src/` changes and you need the HTTP server bundle in `lib/server/static/` to match.
 
 ## Common commands

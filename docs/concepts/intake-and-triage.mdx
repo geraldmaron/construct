@@ -7,21 +7,16 @@ Construct treats every file that lands in `.cx/inbox/` as a candidate signal: a 
 
 This page explains the pipeline once, then walks the taxonomy under each curated profile.
 
-```mermaid
-flowchart LR
-    Inbox[".cx/inbox/&lt;file&gt;<br/>any signal"]
-    Watcher["inbox-live-watcher<br/>(reactive, ~1s)"]
-    Ingest["ingester<br/>normalize to markdown<br/>+ index for retrieval"]
-    Prep["prepareIntake<br/>lane · related · excerpt · triage"]
-    Classify["classifyRdIntake<br/>deterministic, keyword<br/>(active profile table)"]
-    Pending[".cx/intake/pending/&lt;id&gt;.json<br/>triage block"]
-    SessionStart["session start hook<br/>surface pending packets"]
-    Agent["agent in editor<br/>reads packet · does analysis"]
-    Done["done · skip · reopen<br/>(processed / skipped)"]
-
-    Inbox --> Watcher --> Ingest --> Prep --> Classify --> Pending
-    Pending --> SessionStart --> Agent --> Done
-```
+<FlowPipeline steps={[
+  { label: '.cx/inbox/', sub: 'any file' },
+  { label: 'inbox watcher', sub: 'reactive, ~1s' },
+  { label: 'ingester', sub: 'normalize to markdown\n+ index for retrieval' },
+  { label: 'prepareIntake', sub: 'lane · related\nexcerpt · triage' },
+  { label: 'classifyRdIntake', sub: 'deterministic\nno LLM' },
+  { label: '.cx/intake/pending/', sub: 'triage block' },
+  { label: 'session start', sub: 'surfaces pending\npackets' },
+  { label: 'agent', sub: 'reads packet\ndoes analysis', highlight: true },
+]} />
 
 The daemon path (watcher through classification) never calls an LLM. The agent in your editor does the analysis. The triage block is a routing hint, not a verdict.
 
@@ -138,13 +133,17 @@ Each `<id>.json` carries: `id`, `createdAt`, `status`, `intake` (sourcePath, out
 ## CLI
 
 ```bash
-construct intake list                  # ID, type, stage, owner, action
-construct intake show <id>             # full packet: triage, excerpt, related artifacts
-construct intake done <id> [--notes=…] # move pending → processed
-construct intake skip <id> [--reason=…] # move pending → skipped, audit trail preserved
-construct intake reopen <id>           # processed or skipped → pending
-construct profile show                 # which taxonomy is currently active
+construct intake list                          # ID, type, stage, owner, action
+construct intake show <id>                     # full packet: triage, excerpt, related artifacts
+construct intake done <id>                     # move pending → processed
+construct intake done <id> --output=<path>     # stamp intake_id + confidence into artifact frontmatter
+construct intake done <id> --no-output=rejected|deferred|merged  # close without an artifact
+construct intake skip <id> [--reason=…]        # move pending → skipped, audit trail preserved
+construct intake reopen <id>                   # processed or skipped → pending
+construct profile show                         # which taxonomy is currently active
 ```
+
+`--output=<path>` stamps the artifact at `<path>` with `intake_id`, `intake_confidence`, and `intake_rationale` in its YAML frontmatter. Every intake-derived artifact carries verifiable provenance back to the source packet. The stamp is refused if the artifact already has a different `intake_id`. Use `intake: none` frontmatter in an artifact that intentionally has no intake source.
 
 In `solo` mode the queue is the filesystem (`.cx/intake/`). In `team` and `enterprise` modes the same CLI talks to a Postgres-backed queue with row-locked worker claims; the contract is identical.
 

@@ -5,11 +5,13 @@
     "architecture",
     "agents-and-personas",
     "gates-and-enforcement",
+    "integrity-and-trust",
     "beads-and-state",
     "prompt-surfaces",
     "knowledge-layout",
     "embedding-boundary",
     "deployment-model",
-    "intake-and-triage"
+    "intake-and-triage",
+    "learning-loops"
   ]
 }

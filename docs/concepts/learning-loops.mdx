@@ -1,4 +1,7 @@
-# Learning loops
+---
+title: Learning loops
+description: How Construct gets better the more you use it — every loop that captures session outcomes, research findings, and specialist performance, and feeds them back into the next session.
+---
 
 Construct should get better the more you use it. This page lists every learning loop, what state it's actually in, where the data lives, and how to turn pieces off if you need to.
 
@@ -13,20 +16,12 @@ A loop is closed when:
 
 Anything less is a stub, not a loop.
 
-```mermaid
-flowchart LR
-    Session["session N<br/>agent does work"]
-    Observe["observe<br/>session-reflect · outcomes · research"]
-    Persist[".cx/observations/<br/>.cx/outcomes/<br/>.cx/knowledge/"]
-    Index["index<br/>BM25 + pgvector or<br/>local hashing-bow"]
-    Retrieve["session N+1 start<br/>searchObservations · listObservations"]
-    Inject["inject 'Prior observations'<br/>into next session context"]
-    Next["session N+1<br/>same agent, sharper"]
-
-    Session --> Observe --> Persist --> Index
-    Index --> Retrieve --> Inject --> Next
-    Next -.->|next loop| Session
-```
+<FlowPipeline steps={[
+  { label: 'Session N', sub: 'agent does work' },
+  { label: 'Observe', sub: 'reflect · outcomes · research' },
+  { label: '.cx/observations/', sub: 'durable storage\nvectorized' },
+  { label: 'Session N+1', sub: 'retrieves observations\nvia hybrid search', highlight: true },
+]} />
 
 Each loop below either closes this cycle end to end or is honestly labeled a stub.
 

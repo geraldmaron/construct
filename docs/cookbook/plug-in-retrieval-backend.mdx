@@ -7,18 +7,15 @@ Construct's retrieval pipeline is a six-layer plugin contract. Any layer can be 
 
 ## The six layers
 
-```mermaid
-flowchart LR
-    Doc[Document] --> Chunker
-    Chunker --> Embedder
-    Embedder --> Indexer
-    Query[Query] --> EmbedderQ[Embedder]
-    EmbedderQ --> Fuser
-    Indexer --> Fuser
-    Fuser --> Reranker
-    Reranker --> Compressor
-    Compressor --> Result[Result]
-```
+<FlowPipeline steps={[
+  { label: 'Document', sub: 'any text source' },
+  { label: 'Chunker', sub: 'splits into segments' },
+  { label: 'Embedder', sub: 'vector representation' },
+  { label: 'Indexer', sub: 'stores chunks + vectors' },
+  { label: 'Fuser', sub: 'merges BM25 + cosine' },
+  { label: 'Reranker', sub: 'cross-encoder rescore' },
+  { label: 'Compressor', sub: 'trims to token budget', highlight: true },
+]} />
 
 | Layer | Default | What it does |
 |---|---|---|

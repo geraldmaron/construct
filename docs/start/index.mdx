@@ -11,15 +11,12 @@ By the end of this section you will have:
 
 If anything goes wrong, jump to [troubleshooting](/operations/troubleshooting).
 
-```mermaid
-flowchart LR
-    Install["1. Install<br/>npm or brew"]
-    First["2. First task<br/>construct init · sync · up"]
-    Editor["3. Connect editor<br/>Claude · OpenCode · Codex · Copilot"]
-    Next["4. What next<br/>intake · concepts · cookbook"]
-
-    Install --> First --> Editor --> Next
-```
+<FlowPipeline steps={[
+  { label: 'Install', badge: '5 min', sub: 'npm or brew' },
+  { label: 'First task', sub: 'construct init · sync · up' },
+  { label: 'Connect editor', sub: 'Claude · OpenCode · Codex · Copilot' },
+  { label: 'What next', sub: 'intake · concepts · cookbook' },
+]} />
 
 ## The four steps
 

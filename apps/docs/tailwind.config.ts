@@ -4,10 +4,10 @@ import { createPreset } from 'fumadocs-ui/tailwind-plugin';
 const config: Config = {
   content: [
     './app/**/*.{ts,tsx}',
-    './content/**/*.{md,mdx}',
+    './components/**/*.{ts,tsx}',
+    './mdx-components.{ts,tsx}',
     '../../docs/**/*.{md,mdx}',
     './node_modules/fumadocs-ui/dist/**/*.js',
-    './mdx-components.{ts,tsx}',
   ],
   presets: [createPreset()],
 };
