@@ -55,21 +55,25 @@
       "id": "memory",
       "name": "Memory",
       "category": "optional",
-      "description": "cass-memory over HTTP. Persistent cross-session and cross-agent memory for decisions, findings, and handoffs.",
-      "type": "url",
-      "url": "http://127.0.0.1:8765/",
-      "env": {},
+      "description": "cass-memory persistent cross-session and cross-agent memory, fronted by the Construct stdio MCP bridge so editors get a full MCP handshake.",
+      "command": "node",
+      "args": [
+        "__CX_TOOLKIT_DIR__/lib/mcp/memory-bridge.mjs"
+      ],
+      "env": {
+        "CONSTRUCT_MEMORY_BRIDGE_URL": "http://127.0.0.1:__MEMORY_PORT__/"
+      },
       "requiredEnv": [],
       "setupModes": [
         "auto",
         "manual"
       ],
       "hostSupport": {
-        "claude": { "mode": "unsupported", "label": "construct-mcp (project .mcp.json)" },
-        "opencode": { "mode": "unsupported", "label": "construct-mcp (stdio)" },
-        "codex": { "mode": "unsupported", "label": "construct-mcp / local observation tools" }
+        "claude": { "mode": "managed" },
+        "opencode": { "mode": "managed" },
+        "codex": { "mode": "managed" }
       },
-      "setupNote": "Claude Code and Codex reject the cass-memory HTTP endpoint because `cm serve` skips the MCP `initialize` handshake. On Claude, memory tools (memory_search, memory_add_observations, memory_recent, memory_create_entities) are exposed through the project-local construct-mcp stdio server in .mcp.json. OpenCode does not support the cass-memory HTTP endpoint (SSE transport fails with 405) — use construct-mcp stdio server instead, which wraps memory tools correctly.",
+      "setupNote": "Memory is wired as a stdio MCP bridge (lib/mcp/memory-bridge.mjs). The bridge answers the MCP handshake locally (initialize, ping, notifications/initialized) and forwards tools/list, tools/call, resources/list, resources/read to cm at CONSTRUCT_MEMORY_BRIDGE_URL. cm itself never sees the handshake calls that v0.2.x cannot answer.",
       "usedBy": [
         "construct",
         "cx-docs-keeper",
