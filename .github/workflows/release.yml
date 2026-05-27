@@ -87,6 +87,9 @@ jobs:
             --format=esm \
             --outfile=dist/construct-bundle.mjs \
             --external:@huggingface/transformers \
+            --external:@xenova/transformers \
+            --external:onnxruntime-node \
+            --external:sharp \
             --external:postgres
 
       - name: Build SEA blob
