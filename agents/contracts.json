@@ -404,6 +404,599 @@
       "postconditions": [
         "Blameless postmortem; no tickets in Problem statement"
       ]
+    },
+    {
+      "id": "construct-to-rd-lead",
+      "producer": "construct",
+      "consumer": "cx-rd-lead",
+      "trigger": { "framingChallenge.required": true },
+      "input": {
+        "shape": "framing-request",
+        "mustContain": ["goal", "uncertainty", "assumptions"]
+      },
+      "output": {
+        "shape": "framing-brief",
+        "mustContain": ["problemStatement", "hypothesis", "keyUnknowns", "evidenceThreshold", "recommendation"]
+      },
+      "preconditions": [
+        "Framing gate fires before architecture work begins",
+        "Strategy bets and non-bets reviewed in `.cx/knowledge/decisions/strategy/`"
+      ],
+      "postconditions": [
+        "Hypothesis is falsifiable and stated as 'We believe [X] will result in [Y] because [Z].'",
+        "Evidence threshold names a specific result that would confirm or disconfirm",
+        {
+          "id": "rd-framing-has-problem-section",
+          "description": "Framing artifact must contain a Problem section",
+          "check": "artifact-has-section",
+          "section": "Problem"
+        },
+        {
+          "id": "rd-framing-has-constraints-section",
+          "description": "Framing artifact must contain a Constraints section",
+          "check": "artifact-has-section",
+          "section": "Constraints"
+        },
+        {
+          "id": "rd-framing-has-open-questions-section",
+          "description": "Framing artifact must contain an Open Questions section",
+          "check": "artifact-has-section",
+          "section": "Open Questions"
+        }
+      ]
+    },
+    {
+      "id": "rd-lead-to-architect",
+      "producer": "cx-rd-lead",
+      "consumer": "cx-architect",
+      "trigger": { "framingChallenge.required": true, "rdLead.verdict": "frame-approved" },
+      "input": {
+        "shape": "framing-brief",
+        "mustContain": ["problemStatement", "hypothesis", "keyUnknowns", "evidenceThreshold", "recommendation"]
+      },
+      "output": {
+        "schema": "lib/schemas/decision.json",
+        "type": "decision"
+      },
+      "preconditions": [
+        "Framing artifact exists at `.cx/framing/<slug>.md`",
+        "Hypothesis cleared of unverified assumptions"
+      ],
+      "postconditions": [
+        "ADR cites the framing brief as the upstream source for its Problem statement",
+        "Architect does not productionize components listed under 'WHAT NOT TO PRODUCTIONIZE YET'"
+      ]
+    },
+    {
+      "id": "product-manager-to-ux-researcher",
+      "producer": "cx-product-manager",
+      "consumer": "cx-ux-researcher",
+      "trigger": { "docAuthoring.docType": ["prd", "meta-prd", "prfaq"], "riskFlags": ["ux"] },
+      "input": {
+        "shape": "ux-research-request",
+        "mustContain": ["surface", "userQuestion", "decisionPending"]
+      },
+      "output": {
+        "shape": "ux-brief",
+        "mustContain": ["userProfiles", "jobsToBeDone", "frictionMap", "assumptionsLog"]
+      },
+      "preconditions": [
+        "PRD has an open user-research question; PRD not finalized"
+      ],
+      "postconditions": [
+        "Every friction-map entry cites the observation or session it came from",
+        "Stated preferences are labeled distinctly from observed behaviors",
+        {
+          "id": "ux-research-has-sources-section",
+          "description": "UX research artifact must contain a Sources section",
+          "check": "artifact-has-section",
+          "section": "Sources"
+        },
+        {
+          "id": "ux-research-claims-cited",
+          "description": "Every numeric or generalization claim in the UX brief cites the research source",
+          "check": "artifact-claims-cited"
+        }
+      ]
+    },
+    {
+      "id": "architect-to-operations",
+      "producer": "cx-architect",
+      "consumer": "cx-operations",
+      "trigger": { "intent": ["implementation"], "workCategory": "deep" },
+      "input": {
+        "schema": "lib/schemas/decision.json",
+        "mustContain": ["goal", "approach", "tasks", "acceptanceCriteria"]
+      },
+      "output": {
+        "shape": "ops-plan",
+        "mustContain": ["sequencedTasks", "dependencyGraph", "ownershipMatrix", "verificationGates"]
+      },
+      "preconditions": [
+        "Architect plan and devil-advocate feedback resolved",
+        "Tasks are atomic and individually verifiable"
+      ],
+      "postconditions": [
+        "Every task names a single owner",
+        "Every task names a verification gate and definition-of-done",
+        "Dependency graph identifies blockers; no task lies on a hidden critical path"
+      ]
+    },
+    {
+      "id": "any-to-business-strategist",
+      "producer": "*",
+      "consumer": "cx-business-strategist",
+      "trigger": { "strategy.required": true },
+      "input": {
+        "shape": "strategy-request",
+        "mustContain": ["goal", "marketContext", "decisionPending"]
+      },
+      "output": {
+        "shape": "strategic-memo",
+        "mustContain": ["strategicContext", "options", "recommendation", "evidence", "decisionDeadline"]
+      },
+      "preconditions": [
+        "Strategy documents in `.cx/knowledge/decisions/strategy/` reviewed for declared Bets and Non-bets"
+      ],
+      "postconditions": [
+        "Options section contains 2-4 genuinely distinct strategic paths, not implementation variants",
+        "Any recommendation that contradicts a declared Non-bet is surfaced explicitly with a user-decision marker",
+        {
+          "id": "strategic-memo-has-market-context",
+          "description": "Strategic memo must contain a Market Context section",
+          "check": "artifact-has-section",
+          "section": "Market Context"
+        },
+        {
+          "id": "strategic-memo-has-strategic-risks",
+          "description": "Strategic memo must contain a Strategic Risks section",
+          "check": "artifact-has-section",
+          "section": "Strategic Risks"
+        },
+        {
+          "id": "strategic-memo-claims-cited",
+          "description": "Every market/competitive numeric claim cites a primary source with a date",
+          "check": "artifact-claims-cited"
+        }
+      ]
+    },
+    {
+      "id": "business-strategist-to-product-manager",
+      "producer": "cx-business-strategist",
+      "consumer": "cx-product-manager",
+      "trigger": { "strategy.required": true },
+      "input": {
+        "shape": "strategic-memo",
+        "mustContain": ["strategicContext", "recommendation", "evidence"]
+      },
+      "output": {
+        "shape": "prd-handoff",
+        "mustContain": ["problem", "users", "functionalRequirements", "acceptanceCriteria"]
+      },
+      "preconditions": [
+        "Strategic memo signed off; recommended option carried into PRD framing"
+      ],
+      "postconditions": [
+        "PRD Problem statement traces to the strategic memo's market context, not to internal roadmap items",
+        "PRD acknowledges the competitive dynamic named in the strategic memo"
+      ]
+    },
+    {
+      "id": "product-manager-to-data-analyst",
+      "producer": "cx-product-manager",
+      "consumer": "cx-data-analyst",
+      "trigger": { "docAuthoring.docType": ["prd", "meta-prd"], "riskFlags": ["metrics"] },
+      "input": {
+        "shape": "metrics-request",
+        "mustContain": ["successDefinition", "decisionPending"]
+      },
+      "output": {
+        "shape": "metrics-analysis",
+        "mustContain": ["metricDefinition", "baseline", "successThreshold", "dataQualityCaveats"]
+      },
+      "preconditions": [
+        "Success definition stated in writing before metric design begins"
+      ],
+      "postconditions": [
+        "Every percentage, multiplier, or magnitude cites the query, dashboard, or run that produced it",
+        "Baseline is a measured value or names the plan to establish one",
+        {
+          "id": "metrics-analysis-claims-cited",
+          "description": "Every numeric claim in the analysis cites the query or dashboard",
+          "check": "artifact-claims-cited"
+        }
+      ]
+    },
+    {
+      "id": "data-analyst-to-product-manager",
+      "producer": "cx-data-analyst",
+      "consumer": "cx-product-manager",
+      "trigger": { "docAuthoring.docType": ["prd", "meta-prd"], "riskFlags": ["metrics"] },
+      "input": {
+        "shape": "metrics-analysis",
+        "mustContain": ["metricDefinition", "baseline", "successThreshold"]
+      },
+      "output": {
+        "shape": "prd-handoff",
+        "mustContain": ["acceptanceCriteria", "successMetrics"]
+      },
+      "preconditions": [
+        "Metric definition reviewed for vanity-metric risk and for hit-without-solving-the-problem risk"
+      ],
+      "postconditions": [
+        "PRD success metrics carry the cited baseline and threshold from the analysis",
+        "Metrics that can be hit without solving the problem are flagged and replaced"
+      ]
+    },
+    {
+      "id": "architect-to-evaluator",
+      "producer": "cx-architect",
+      "consumer": "cx-evaluator",
+      "trigger": { "riskFlags": ["ai", "quality"], "intent": ["implementation"] },
+      "input": {
+        "schema": "lib/schemas/decision.json",
+        "mustContain": ["goal", "approach", "evalCriteria"]
+      },
+      "output": {
+        "shape": "eval-spec",
+        "mustContain": ["evaluationCriteria", "scoringRubric", "testCases", "comparisonProtocol", "passFailThreshold"]
+      },
+      "preconditions": [
+        "What 'better' means is defined in writing before the work is done",
+        "Baseline run identified or scheduled before proposed change runs"
+      ],
+      "postconditions": [
+        "Failing case is defined before results are seen",
+        "Regression checks enumerated; not just success-path test cases",
+        {
+          "id": "eval-spec-has-success-criteria",
+          "description": "Eval spec must contain a Success Criteria section",
+          "check": "artifact-has-section",
+          "section": "Success Criteria"
+        },
+        {
+          "id": "eval-spec-has-baseline",
+          "description": "Eval spec must contain a Baseline section",
+          "check": "artifact-has-section",
+          "section": "Baseline"
+        }
+      ]
+    },
+    {
+      "id": "architect-to-platform-engineer",
+      "producer": "cx-architect",
+      "consumer": "cx-platform-engineer",
+      "trigger": { "riskFlags": ["platform", "infrastructure"], "intent": ["implementation"] },
+      "input": {
+        "schema": "lib/schemas/decision.json",
+        "mustContain": ["goal", "approach", "platformDependencies"]
+      },
+      "output": {
+        "shape": "platform-plan",
+        "mustContain": ["problem", "solution", "impact", "migration", "rollback"]
+      },
+      "preconditions": [
+        "Observed friction quantified; not hypothetical future problems",
+        "Existing CI/CD and tooling surveyed before proposing new tooling"
+      ],
+      "postconditions": [
+        "Migration path described for existing workflows",
+        "Rollback procedure exists in case the change makes things worse",
+        "Improvement removes more configuration than it adds, or the added config is justified"
+      ]
+    },
+    {
+      "id": "platform-engineer-to-engineer",
+      "producer": "cx-platform-engineer",
+      "consumer": "cx-engineer",
+      "trigger": { "riskFlags": ["platform"] },
+      "input": {
+        "shape": "platform-plan",
+        "mustContain": ["solution", "migration", "rollback"]
+      },
+      "output": {
+        "schema": "lib/schemas/implementation.json",
+        "type": "implementation"
+      },
+      "preconditions": [
+        "Platform deps available in CI; lockfile updates reviewed",
+        "Secrets confirmed absent from build logs"
+      ],
+      "postconditions": [
+        "Implementation cites the platform plan and applies the migration steps in order",
+        "Rollback procedure verified once on a non-production environment"
+      ]
+    },
+    {
+      "id": "architect-to-legal-compliance",
+      "producer": "cx-architect",
+      "consumer": "cx-legal-compliance",
+      "trigger": { "riskFlags": ["compliance", "privacy", "licensing"] },
+      "input": {
+        "schema": "lib/schemas/decision.json",
+        "mustContain": ["goal", "approach", "dataFlows"]
+      },
+      "output": {
+        "shape": "compliance-memo",
+        "mustContain": ["risks", "severity", "remediation"]
+      },
+      "preconditions": [
+        "Data flows enumerated: what is collected, stored, processed, and exported",
+        "Dependency tree surfaced past the first layer for licensing review"
+      ],
+      "postconditions": [
+        "Every assertion cites the regulation, standard, or contract clause it rests on",
+        "AI-generated user-facing content has a disclosure strategy noted, or is marked not-applicable with reason",
+        {
+          "id": "compliance-memo-has-regulatory-citations",
+          "description": "Compliance memo must contain a Regulatory Citations section",
+          "check": "artifact-has-section",
+          "section": "Regulatory Citations"
+        },
+        {
+          "id": "compliance-memo-has-remediation-plan",
+          "description": "Compliance memo must contain a Remediation Plan section",
+          "check": "artifact-has-section",
+          "section": "Remediation Plan"
+        }
+      ]
+    },
+    {
+      "id": "legal-compliance-to-release-manager",
+      "producer": "cx-legal-compliance",
+      "consumer": "cx-release-manager",
+      "trigger": { "riskFlags": ["compliance"], "intent": ["implementation"] },
+      "input": {
+        "shape": "compliance-memo",
+        "mustContain": ["risks", "severity", "remediation"]
+      },
+      "output": {
+        "shape": "release-decision",
+        "mustContain": ["decision", "rolloutPlan", "rollbackPlan"]
+      },
+      "preconditions": [
+        "All must-fix compliance items closed or accepted in writing by the release owner"
+      ],
+      "postconditions": [
+        "Release blocks if any must-fix item is unresolved",
+        "Should-fix items carry a tracking issue and an owner"
+      ]
+    },
+    {
+      "id": "designer-to-accessibility",
+      "producer": "cx-designer",
+      "consumer": "cx-accessibility",
+      "trigger": { "riskFlags": ["ui", "accessibility"] },
+      "input": {
+        "shape": "design-deliverable",
+        "mustContain": ["surface", "deliverable", "accessibilityCheckRan"]
+      },
+      "output": {
+        "shape": "a11y-findings",
+        "mustContain": ["findings", "wcagCriterion", "userImpact", "fix"]
+      },
+      "preconditions": [
+        "Flow exercised with a keyboard and a screen reader; not just spec-read"
+      ],
+      "postconditions": [
+        "Every finding cites a WCAG criterion and a concrete repro step",
+        "Findings that weren't exercised with the assistive technology are labeled 'unverified'"
+      ]
+    },
+    {
+      "id": "accessibility-to-qa",
+      "producer": "cx-accessibility",
+      "consumer": "cx-qa",
+      "trigger": { "riskFlags": ["ui", "accessibility"] },
+      "input": {
+        "shape": "a11y-findings",
+        "mustContain": ["findings", "wcagCriterion", "userImpact"]
+      },
+      "output": {
+        "schema": "lib/schemas/test-report.json",
+        "type": "test-report"
+      },
+      "preconditions": [
+        "A11y findings filed against specific elements (file:line) before QA verification"
+      ],
+      "postconditions": [
+        "QA test plan covers keyboard-only and screen-reader paths for each finding",
+        "Findings flagged 'unverified' by accessibility get a verified test in QA before close"
+      ]
+    },
+    {
+      "id": "any-to-explorer",
+      "producer": "*",
+      "consumer": "cx-explorer",
+      "trigger": { "intent": "investigation", "category": "exploration" },
+      "input": {
+        "shape": "exploration-request",
+        "mustContain": ["question", "scope"]
+      },
+      "output": {
+        "shape": "exploration-findings",
+        "mustContain": ["entryPoints", "executionPath", "keyFiles", "dataFlow", "gaps"]
+      },
+      "preconditions": [
+        "Scope tagged; investigation does not follow imports past two hops from named entry points"
+      ],
+      "postconditions": [
+        "Every claim about existing code cites file:line from a read actually performed",
+        "One match is not called a pattern; multi-callsite patterns cite each call site",
+        {
+          "id": "exploration-findings-claims-cited",
+          "description": "Every load-bearing claim cites file:line or a primary external reference",
+          "check": "artifact-claims-cited"
+        }
+      ]
+    },
+    {
+      "id": "explorer-to-engineer",
+      "producer": "cx-explorer",
+      "consumer": "cx-engineer",
+      "trigger": { "intent": ["implementation", "fix"], "explorer.findingsReady": true },
+      "input": {
+        "shape": "exploration-findings",
+        "mustContain": ["entryPoints", "keyFiles", "gaps"]
+      },
+      "output": {
+        "schema": "lib/schemas/implementation.json",
+        "type": "implementation"
+      },
+      "preconditions": [
+        "Exploration findings reviewed; gaps and surprising dependencies surfaced"
+      ],
+      "postconditions": [
+        "Implementation reads the files cited in keyFiles before edits",
+        "Gaps named by explorer (missing tests, missing error handling) are addressed or filed"
+      ]
+    },
+    {
+      "id": "any-to-trace-reviewer",
+      "producer": "*",
+      "consumer": "cx-trace-reviewer",
+      "trigger": { "trace.anomaly": true },
+      "input": {
+        "shape": "trace-analysis-request",
+        "mustContain": ["scope", "window"]
+      },
+      "output": {
+        "shape": "trace-analysis",
+        "mustContain": ["flaggedAgents", "evidence", "recommendation"]
+      },
+      "preconditions": [
+        "Trace backend reachable via the configured `CONSTRUCT_TRACE_BACKEND` adapter"
+      ],
+      "postconditions": [
+        "Every performance claim cites the trace id and span",
+        "Promotion verdicts cite the staging-vs-production score delta, not a vibe",
+        "Variance and trend reported alongside median; stable medians that hide tail variance are surfaced"
+      ]
+    },
+    {
+      "id": "trace-reviewer-to-sre",
+      "producer": "cx-trace-reviewer",
+      "consumer": "cx-sre",
+      "trigger": { "trace.anomaly": true, "riskFlags": ["performance", "reliability"] },
+      "input": {
+        "shape": "trace-analysis",
+        "mustContain": ["flaggedAgents", "evidence"]
+      },
+      "output": {
+        "shape": "sre-readiness",
+        "mustContain": ["slos", "runbooks", "alerts"]
+      },
+      "preconditions": [
+        "Flagged agents meet the minimum trace threshold (20+); insufficient-trace agents deferred"
+      ],
+      "postconditions": [
+        "SRE adjusts alert thresholds or SLOs based on the cited trace evidence",
+        "Runbook updated for the failure pattern identified at fleet level"
+      ]
+    },
+    {
+      "id": "architect-to-data-engineer",
+      "producer": "cx-architect",
+      "consumer": "cx-data-engineer",
+      "trigger": { "riskFlags": ["data", "pipeline"], "intent": ["implementation"] },
+      "input": {
+        "schema": "lib/schemas/decision.json",
+        "mustContain": ["goal", "approach", "dataContracts"]
+      },
+      "output": {
+        "shape": "pipeline-spec",
+        "mustContain": ["dataContract", "schema", "qualityGates", "retryPolicy"]
+      },
+      "preconditions": [
+        "Data volume, latency requirements, and existing stack clarified before architecture proposed",
+        "Existing schema inspected; column names and table relationships not invented"
+      ],
+      "postconditions": [
+        "Pipeline is idempotent and observable; not running on faith",
+        "Data contract is written down; quality gates defined as part of the design",
+        {
+          "id": "pipeline-spec-has-idempotency-plan",
+          "description": "Pipeline spec must contain an Idempotency Plan section",
+          "check": "artifact-has-section",
+          "section": "Idempotency Plan"
+        },
+        {
+          "id": "pipeline-spec-has-observability",
+          "description": "Pipeline spec must contain an Observability section",
+          "check": "artifact-has-section",
+          "section": "Observability"
+        }
+      ]
+    },
+    {
+      "id": "data-engineer-to-platform-engineer",
+      "producer": "cx-data-engineer",
+      "consumer": "cx-platform-engineer",
+      "trigger": { "riskFlags": ["data", "pipeline", "infrastructure"] },
+      "input": {
+        "shape": "pipeline-spec",
+        "mustContain": ["dataContract", "qualityGates"]
+      },
+      "output": {
+        "shape": "platform-plan",
+        "mustContain": ["problem", "solution", "migration", "rollback"]
+      },
+      "preconditions": [
+        "Pipeline operational requirements (alerts, retries, backfills) stated in pipeline spec"
+      ],
+      "postconditions": [
+        "Operational burden (who maintains, how to debug) accepted by platform owner",
+        "Pipeline observability surfaces appear on a named dashboard, not just in logs"
+      ]
+    },
+    {
+      "id": "qa-to-test-automation",
+      "producer": "cx-qa",
+      "consumer": "cx-test-automation",
+      "trigger": { "intent": ["implementation"], "automation.required": true },
+      "input": {
+        "schema": "lib/schemas/test-report.json",
+        "mustContain": ["testStrategy", "verdict"]
+      },
+      "output": {
+        "shape": "automation-plan",
+        "mustContain": ["framework", "coverageTargets", "flakeBudget", "deterministicWaits"]
+      },
+      "preconditions": [
+        "Existing test infrastructure surveyed before proposing new frameworks",
+        "Flaky-test signal collected over N runs before calling a test flaky"
+      ],
+      "postconditions": [
+        "Tests use deterministic waits and stable selectors; not arbitrary sleeps",
+        "Coverage targets aim at behaviors that matter, not at line counts that pad the number",
+        {
+          "id": "automation-plan-has-flake-budget",
+          "description": "Automation plan must contain a Flake Budget section",
+          "check": "artifact-has-section",
+          "section": "Flake Budget"
+        }
+      ]
+    },
+    {
+      "id": "test-automation-to-engineer",
+      "producer": "cx-test-automation",
+      "consumer": "cx-engineer",
+      "trigger": { "automation.required": true },
+      "input": {
+        "shape": "automation-plan",
+        "mustContain": ["framework", "coverageTargets", "flakeBudget"]
+      },
+      "output": {
+        "schema": "lib/schemas/implementation.json",
+        "type": "implementation"
+      },
+      "preconditions": [
+        "Test scaffolding lands before behavioral edits so the test fails for the right reason first"
+      ],
+      "postconditions": [
+        "Engineer adds at least one failing test that demonstrates the bug or missing behavior before implementing the fix",
+        "Quarantined flaky tests carry an owner and a remediation date"
+      ]
     }
   ]
 }
