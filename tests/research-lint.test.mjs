@@ -5,12 +5,20 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 
 import { formatResearchLintResults, lintResearchFile, lintResearchRepo } from '../lib/research-lint.mjs';
 
+const tmpDirs = [];
+after(() => {
+  for (const dir of tmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
+
 function makeTempFile(relPath, content) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-rlint-'));
+  tmpDirs.push(dir);
   const full = path.join(dir, relPath);
   fs.mkdirSync(path.dirname(full), { recursive: true });
   fs.writeFileSync(full, content);
@@ -70,6 +78,7 @@ test('lintResearchFile passes a minimally structured research brief', () => {
 
 test('lintResearchRepo scans evidence and signal briefs', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-rlint-repo-'));
+  tmpDirs.push(dir);
   fs.mkdirSync(path.join(dir, '.cx', 'knowledge', 'reference', 'evidence-briefs'), { recursive: true });
   fs.mkdirSync(path.join(dir, '.cx', 'knowledge', 'external', 'signals'), { recursive: true });
   fs.writeFileSync(path.join(dir, '.cx', 'knowledge', 'reference', 'evidence-briefs', 'brief.md'), [
