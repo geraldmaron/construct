@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-05-27
+
 ### Fixed
 
 - **`ensureGitHooksPath` now rewires when `core.hooksPath` is the git default.** The setup helper previously treated any non-empty `core.hooksPath` as a user-set value and refused to wire `.beads/hooks` on top of it. But `.git/hooks` (or an absolute path to it) is the *default* git stores when an unset user accepts the implicit value: not an active choice, just the absence of one. With the old logic, an install that landed while `core.hooksPath` happened to be the default left Construct's pre-commit policy gates inactive forever, and `construct doctor` reported "Git hooks unwired" with no path to recovery short of manual `git config`. The fix recognizes both forms of the default (`.git/hooks` relative and absolute) as equivalent to unset and proceeds to wire `.beads/hooks`. A custom non-default `core.hooksPath` (e.g. `tools/git-hooks/`) is still left alone with a warning. Regression coverage in `tests/setup-git-hooks-path.test.mjs`.
