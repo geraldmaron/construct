@@ -2843,27 +2843,55 @@ async function cmdSeedTraces(args) {
 async function cmdCleanup() {
   const force = restArgsCache.includes('--pressure-release');
   const quiet = restArgsCache.includes('--quiet');
-  const report = runPressureRelease({ env: process.env, force });
+  const dryRun = restArgsCache.includes('--dry-run');
+  const pressureOnly = restArgsCache.includes('--pressure-only');
+  const diskOnly = restArgsCache.includes('--disk-only');
 
-  if (!quiet) {
-    const swap = report.swapUsage
-      ? `${(report.swapUsage.usedBytes / (1024 ** 3)).toFixed(1)} GiB used`
-      : 'swap unavailable';
-    println(`Pressure guard: ${report.pressureTriggered ? 'triggered' : 'standby'} · ${swap}`);
-    for (const entry of report.warnings ?? []) {
-      const grace = entry.graceMinutes ? `; will terminate after ${entry.graceMinutes}m if still matched` : '';
-      println(`Warning pid ${entry.pid} (${entry.reason})${grace}`);
+  // Process pressure release: kill stale dev-agent processes.
+  if (!diskOnly) {
+    const report = runPressureRelease({ env: process.env, force });
+    if (!quiet) {
+      const swap = report.swapUsage
+        ? `${(report.swapUsage.usedBytes / (1024 ** 3)).toFixed(1)} GiB used`
+        : 'swap unavailable';
+      println(`Pressure guard: ${report.pressureTriggered ? 'triggered' : 'standby'} · ${swap}`);
+      for (const entry of report.warnings ?? []) {
+        const grace = entry.graceMinutes ? `; will terminate after ${entry.graceMinutes}m if still matched` : '';
+        println(`Warning pid ${entry.pid} (${entry.reason})${grace}`);
+      }
+      if (report.killed.length) {
+        for (const entry of report.killed) {
+          println(`Stopped pid ${entry.pid} (${entry.reason})`);
+        }
+      } else {
+        println('No stale dev-agent processes needed cleanup.');
+      }
     }
   }
 
-  if (!report.killed.length) {
-    if (!quiet) println('No stale dev-agent processes needed cleanup.');
-    return;
-  }
-
-  if (!quiet) {
-    for (const entry of report.killed) {
-      println(`Stopped pid ${entry.pid} (${entry.reason})`);
+  // Disk maintenance: rotate oversized logs, prune stale cache entries.
+  if (!pressureOnly) {
+    const { runFullCleanup, formatBytes } = await import('../lib/maintenance/cleanup.mjs');
+    const summary = runFullCleanup({ homeDir: HOME, env: process.env, dryRun });
+    if (!quiet) {
+      const verb = dryRun ? 'Would free' : 'Freed';
+      println(`Disk maintenance${dryRun ? ' (dry-run)' : ''}: ${verb} ${formatBytes(summary.freedBytes)} in ${summary.durationMs}ms`);
+      const log = summary.embedLog;
+      if (log?.truncated?.length) {
+        for (const t of log.truncated) println(`  truncated ${path.relative(HOME, t.path)} (was ${formatBytes(t.sizeWas)})`);
+      }
+      if (log?.removed?.length) {
+        for (const r of log.removed) println(`  removed   ${path.relative(HOME, r.path)} (${formatBytes(r.size)})`);
+      }
+      if (summary.jsonlLogs?.truncated?.length) {
+        for (const t of summary.jsonlLogs.truncated) println(`  truncated ${path.relative(HOME, t.path)} (was ${formatBytes(t.sizeWas)} → ${formatBytes(t.sizeNow)})`);
+      }
+      if (summary.cacheDir?.removed?.length) {
+        println(`  pruned    ${summary.cacheDir.removed.length} stale cache file(s)`);
+      }
+      for (const err of summary.errors ?? []) {
+        println(`  ! ${err.step}: ${err.error}`);
+      }
     }
   }
 }
@@ -4451,6 +4479,27 @@ if (!handler) {
   println('');
   println(`${COLORS.dim}Run 'construct --help' for available commands${COLORS.reset}`);
   process.exit(1);
+}
+
+// Self-maintenance on version change. Skipped for high-frequency hook calls
+// (the harness invokes `construct hook <name>` many times per session and
+// must stay fast). When the installed version differs from the stamp at
+// ~/.construct/.cleanup-stamp, we run a single bounded cleanup pass and
+// update the stamp. Subsequent invocations are a single file read.
+if (command !== 'hook') {
+  try {
+    const { maybeRunCleanupOnUpgrade, formatBytes } = await import('../lib/maintenance/cleanup.mjs');
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
+    const result = maybeRunCleanupOnUpgrade({ homeDir: HOME, env: process.env, currentVersion: pkg.version });
+    if (result.ran && result.summary?.freedBytes > 1024 * 1024) {
+      const previous = result.previousVersion ? ` from v${result.previousVersion}` : '';
+      process.stderr.write(`[construct] Maintenance after upgrade${previous} to v${pkg.version}: freed ${formatBytes(result.summary.freedBytes)}.\n`);
+    }
+  } catch (err) {
+    // Maintenance must never block the actual command. Surface the failure
+    // but continue. The next invocation will retry.
+    process.stderr.write(`[construct] startup maintenance skipped: ${err.message}\n`);
+  }
 }
 
 // First-invocation resource probe — skipped for hooks, setup, uninstall,
