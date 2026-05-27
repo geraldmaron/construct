@@ -7,30 +7,18 @@ Construct treats policy enforcement as defense in depth. Every meaningful rule l
 
 Every blocking gate ships with an explicit env-var bypass. Bypasses are auditable because they're explicit in command history; silent bypasses are not allowed.
 
-```mermaid
-flowchart TD
-    Edit["agent edits a file"]
-    L1{"Layer 1<br/>real-time hooks<br/>comment-lint · doc-coupling · ci-status"}
-    Commit["git commit"]
-    L2a{"Layer 2<br/>pre-commit<br/>secret scan · lint:comments · docs:verify"}
-    Push["git push"]
-    L2b{"Layer 2<br/>pre-push<br/>tests · build · evals · docs · red-CI check"}
-    PR["gh pr create"]
-    L25{"Layer 2.5<br/>template policy"}
-    L3{"Layer 3<br/>CI required checks<br/>+ session-end Stop handler"}
-    Land["merged to main"]
-    Block(["blocked<br/>(explicit bypass or fix)"])
-
-    Edit --> L1 -->|pass| Commit
-    L1 -->|fail| Block
-    Commit --> L2a -->|pass| Push
-    L2a -->|fail| Block
-    Push --> L2b -->|pass| PR
-    L2b -->|fail| Block
-    PR --> L25 -->|pass| L3 -->|pass| Land
-    L25 -->|fail| Block
-    L3 -->|fail| Block
-```
+<RequestFlow nodes={[
+  { label: 'agent edits a file' },
+  { label: 'Layer 1: real-time hooks', sub: 'comment-lint · doc-coupling · ci-status', decision: true, exitLabel: 'pass' },
+  { label: 'git commit' },
+  { label: 'Layer 2a: pre-commit', sub: 'secret scan · lint:comments · docs:verify', decision: true, exitLabel: 'pass' },
+  { label: 'git push' },
+  { label: 'Layer 2b: pre-push', sub: 'tests · build · evals · docs · red-CI check', decision: true, exitLabel: 'pass' },
+  { label: 'gh pr create' },
+  { label: 'Layer 2.5: template policy', sub: 'PR body lint', decision: true, exitLabel: 'pass' },
+  { label: 'Layer 3: CI required checks + session Stop', decision: true, exitLabel: 'pass' },
+  { label: 'merged to main', highlight: true },
+]} />
 
 In team and enterprise modes a fourth gate (the MCP broker) sits inline with every tool call. See "Layer 4" below.
 

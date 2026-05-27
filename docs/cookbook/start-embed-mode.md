@@ -3,8 +3,6 @@ title: Start embed mode
 description: Continuous monitoring + snapshot production while you work.
 ---
 
-# How to Start Embed Mode
-
 Embed mode is a background daemon that watches what you feed Construct and does what needs doing: polling providers, maintaining docs, updating the roadmap, and routing work through the right approval gates. You configure targets and roles; Construct handles the rest.
 
 ## Before you start

@@ -3,17 +3,11 @@ title: Install Construct
 description: Add Construct to your project like any other dev dependency, then run setup once per machine. ~2 minutes with Docker running.
 ---
 
-```mermaid
-flowchart LR
-    Machine["one time per machine<br/>~/.construct/config.env<br/>completions · Postgres consent"]
-    Project["one time per project<br/>.construct/ · .claude/<br/>.cx/ · .beads/ · AGENTS.md"]
-    Editor["editor adapters<br/>~/.claude/ · ~/.config/opencode/<br/>~/.codex/ · ~/.github/prompts/"]
-
-    NPM["npm install -D<br/>@geraldmaron/construct"] --> Project
-    Init["construct init"] --> Machine
-    Init --> Project
-    Sync["construct sync"] --> Editor
-```
+<FlowPipeline steps={[
+  { label: 'npm install', badge: 'project', sub: '@geraldmaron/construct' },
+  { label: 'construct init', badge: 'machine', sub: 'config · Postgres · completions' },
+  { label: 'construct sync', badge: 'editors', sub: 'Claude · OpenCode · Codex · Copilot' },
+]} />
 
 ## Prerequisites
 

@@ -7,36 +7,47 @@ Construct is a deployable AI R&D operating system. It runs locally for individua
 
 The deployment posture is explicit. One config field (`CONSTRUCT_DEPLOYMENT_MODE`) selects the topology, and the rest of the system reads from there. The three modes are listed below.
 
-```mermaid
-flowchart LR
-    subgraph solo["solo (default)"]
-        S_Q["filesystem queue<br/>.cx/intake/"]
-        S_M["local memory<br/>.cx/observations/"]
-        S_DB["optional Postgres<br/>(degrades to JSON index)"]
-        S_T["local JSONL traces"]
-        S_W["in-process worker"]
-        S_MCP["direct MCP"]
-    end
-    subgraph team["team"]
-        T_Q["Postgres queue<br/>FOR UPDATE SKIP LOCKED"]
-        T_M["shared memory<br/>per-user scope"]
-        T_DB["shared Postgres + pgvector"]
-        T_T["central telemetry<br/>Langfuse / HTTP / OTel"]
-        T_W["Docker worker pool"]
-        T_MCP["brokered MCP<br/>role policy"]
-    end
-    subgraph ent["enterprise"]
-        E_Q["Postgres queue<br/>tenant-scoped"]
-        E_M["shared memory<br/>RBAC + ABAC"]
-        E_DB["shared Postgres + pgvector"]
-        E_T["mandatory audit events"]
-        E_W["isolated containers<br/>path policy"]
-        E_MCP["signed allowlist<br/>brokered MCP"]
-    end
-    Mode["CONSTRUCT_DEPLOYMENT_MODE"] -->|solo| solo
-    Mode -->|team| team
-    Mode -->|enterprise| ent
-```
+<DeployModes modes={[
+  {
+    name: 'Solo',
+    tag: 'default',
+    description: 'For individual work. State lives in the repo and ~/.construct/. Postgres and Docker are optional accelerators.',
+    rows: [
+      { label: 'Queue', value: 'filesystem .cx/intake/' },
+      { label: 'Memory', value: 'local .cx/observations/' },
+      { label: 'Database', value: 'optional Postgres' },
+      { label: 'Telemetry', value: 'local JSONL traces' },
+      { label: 'Workers', value: 'in-process' },
+      { label: 'MCP', value: 'direct' },
+    ],
+  },
+  {
+    name: 'Team',
+    tag: 'shared',
+    description: 'For a development team. Postgres-backed queue with row-locked workers. Centralized telemetry and brokered MCP.',
+    rows: [
+      { label: 'Queue', value: 'Postgres FOR UPDATE SKIP LOCKED' },
+      { label: 'Memory', value: 'shared per-user scope' },
+      { label: 'Database', value: 'shared Postgres + pgvector' },
+      { label: 'Telemetry', value: 'Langfuse / HTTP / OTel' },
+      { label: 'Workers', value: 'Docker worker pool' },
+      { label: 'MCP', value: 'brokered, role policy' },
+    ],
+  },
+  {
+    name: 'Enterprise',
+    tag: 'hardened',
+    description: 'Team mode plus tenant isolation, RBAC/ABAC auth, signed MCP allowlists, and mandatory audit events.',
+    rows: [
+      { label: 'Queue', value: 'Postgres, tenant-scoped' },
+      { label: 'Memory', value: 'shared, RBAC + ABAC' },
+      { label: 'Database', value: 'shared Postgres + pgvector' },
+      { label: 'Telemetry', value: 'mandatory audit events' },
+      { label: 'Workers', value: 'isolated containers' },
+      { label: 'MCP', value: 'signed allowlist + brokered' },
+    ],
+  },
+]} />
 
 The agent loop (persona, specialists, contracts, gates) is the same across all three. Only the backend topology changes.
 
