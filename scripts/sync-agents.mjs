@@ -683,9 +683,13 @@ ${agentList || "(all specialists are internal — routed through Construct)"}`;
       if (!settings.mcpServers) settings.mcpServers = {};
       const registryMcp = registry.mcpServers ?? {};
       for (const [id, mcpDef] of Object.entries(registryMcp)) {
-        const existing = JSON.stringify(settings.mcpServers[id] ?? "");
+        const existingEntry = settings.mcpServers[id];
+        const existing = JSON.stringify(existingEntry ?? "");
         const hasPlaceholder = existing.includes("__");
-        if (settings.mcpServers[id] && !hasPlaceholder) continue;
+        const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
+        const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
+        const transportMismatch = registryWantsCommand && existingIsRemote;
+        if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
         settings.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
       }
       if (!DRY_RUN) fs.writeFileSync(claudeSettingsPath, JSON.stringify(settings, null, 2) + "\n");
@@ -723,8 +727,8 @@ function hasCodexMcpTable(text, id) {
   return new RegExp(`^\\[mcp_servers\\.(?:${escapeRegExp(id)}|${escapeRegExp(tomlString(id))})\\]`, "m").test(text);
 }
 
-function isCodexMcpSupported(id) {
-  return id !== "memory";
+function isCodexMcpSupported() {
+  return true;
 }
 
 function syncCodex(entries) {
@@ -846,9 +850,13 @@ function syncVSCode() {
       if (!settings["github.copilot.mcpServers"]) settings["github.copilot.mcpServers"] = {};
       const mcpServers = settings["github.copilot.mcpServers"];
       for (const [id, mcpDef] of Object.entries(registryMcp)) {
-        const existing = JSON.stringify(mcpServers[id] ?? "");
+        const existingEntry = mcpServers[id];
+        const existing = JSON.stringify(existingEntry ?? "");
         const hasPlaceholder = existing.includes("__");
-        if (mcpServers[id] && !hasPlaceholder) continue;
+        const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
+        const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
+        const transportMismatch = registryWantsCommand && existingIsRemote;
+        if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
         mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
       }
       settings["github.copilot.mcpServers"] = mcpServers;
@@ -874,9 +882,13 @@ function syncCursor() {
     const config = JSON.parse(fs.readFileSync(cursorMcpPath, "utf8"));
     if (!config.mcpServers) config.mcpServers = {};
     for (const [id, mcpDef] of Object.entries(registryMcp)) {
-      const existing = JSON.stringify(config.mcpServers[id] ?? "");
+      const existingEntry = config.mcpServers[id];
+      const existing = JSON.stringify(existingEntry ?? "");
       const hasPlaceholder = existing.includes("__");
-      if (config.mcpServers[id] && !hasPlaceholder) continue;
+      const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
+      const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
+      const transportMismatch = registryWantsCommand && existingIsRemote;
+      if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
       config.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
     }
     if (!DRY_RUN) fs.writeFileSync(cursorMcpPath, JSON.stringify(config, null, 2) + "\n");
@@ -975,14 +987,21 @@ function syncOpencode(entries) {
     for (const [id, mcpDef] of Object.entries(registryMcp)) {
       const openCodeId = getOpenCodeMcpId(id);
       if (openCodeId !== id) delete config.mcp[id];
-      if (id === 'memory' && config.mcp.cass && !config.mcp[openCodeId]) {
-        config.mcp[openCodeId] = config.mcp.cass;
-      }
       if (id === 'memory') delete config.mcp.cass;
-      const existing = JSON.stringify(config.mcp[openCodeId] ?? "");
-      const hasPlaceholder = existing.includes("__") && existing.includes("__");
+
+      // Migrate the legacy cass-memory HTTP entry to the stdio bridge. cm v0.2.x
+      // rejects the MCP handshake (OpenCode surfaces 405 on the SSE GET), so
+      // any remote/http memory entry must be rewritten when the registry
+      // defines a command-based bridge.
+      const existingEntry = config.mcp[openCodeId];
+      const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
+      const existingIsRemote = existingEntry && (existingEntry.type === 'remote' || existingEntry.type === 'http');
+      const transportMismatch = registryWantsCommand && existingIsRemote;
+
+      const existing = JSON.stringify(existingEntry ?? "");
+      const hasPlaceholder = existing.includes("__");
       const argsHaveTemplates = (mcpDef.args ?? []).some((a) => typeof a === 'string' && a.includes('__'));
-      if (!config.mcp[openCodeId] || hasPlaceholder || argsHaveTemplates) {
+      if (!existingEntry || hasPlaceholder || argsHaveTemplates || transportMismatch) {
         config.mcp[openCodeId] = buildOpenCodeMcpEntry(id, mcpDef, process.env).entry;
       }
     }

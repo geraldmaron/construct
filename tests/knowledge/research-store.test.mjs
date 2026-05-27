@@ -13,8 +13,9 @@ import test from 'node:test';
 
 import { addResearchFinding } from '../../lib/knowledge/research-store.mjs';
 
-test('addResearchFinding writes a frontmatter-stamped markdown file', async () => {
+test('addResearchFinding writes a frontmatter-stamped markdown file', async (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-research-'));
+  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
 
   const { path: outPath, bytes } = await addResearchFinding({
@@ -37,8 +38,9 @@ test('addResearchFinding writes a frontmatter-stamped markdown file', async () =
   assert.match(content, /profile: rnd/);
 });
 
-test('addResearchFinding rejects confidence=confirmed without sources', async () => {
+test('addResearchFinding rejects confidence=confirmed without sources', async (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-research-noSources-'));
+  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
   await assert.rejects(
     () => addResearchFinding({
       cwd,
@@ -52,8 +54,9 @@ test('addResearchFinding rejects confidence=confirmed without sources', async ()
   );
 });
 
-test('addResearchFinding rejects invalid slug', async () => {
+test('addResearchFinding rejects invalid slug', async (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-research-slug-'));
+  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
   await assert.rejects(
     () => addResearchFinding({
       cwd, slug: 'Invalid Slug!', topic: 'x', body: 'body',
@@ -62,8 +65,9 @@ test('addResearchFinding rejects invalid slug', async () => {
   );
 });
 
-test('addResearchFinding rejects invalid confidence value', async () => {
+test('addResearchFinding rejects invalid confidence value', async (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-research-conf-'));
+  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
   await assert.rejects(
     () => addResearchFinding({
       cwd, slug: 'ok', topic: 'x', body: 'body', confidence: 'medium',
@@ -72,8 +76,9 @@ test('addResearchFinding rejects invalid confidence value', async () => {
   );
 });
 
-test('addResearchFinding stamps active profile id', async () => {
+test('addResearchFinding stamps active profile id', async (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-research-profile-'));
+  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(path.join(cwd, '.cx', 'profile.json'), JSON.stringify({
     id: 'marketing',

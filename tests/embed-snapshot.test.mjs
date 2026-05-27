@@ -4,7 +4,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SnapshotEngine, renderMarkdown } from '../lib/embed/snapshot.mjs';
@@ -28,8 +28,9 @@ describe('SnapshotEngine', () => {
     assert.ok(snap.operatingGaps.some((gap) => gap.kind === 'missing-sources'));
   });
 
-  it('includes operating profile and detects missing focal resources', async () => {
+  it('includes operating profile and detects missing focal resources', async (t) => {
     const rootDir = mkdtempSync(join(tmpdir(), 'construct-snapshot-profile-'));
+    t.after(() => { try { rmSync(rootDir, { recursive: true, force: true }); } catch {} });
     mkdirSync(join(rootDir, '.cx', 'knowledge'), { recursive: true });
     writeFileSync(join(rootDir, 'plan.md'), '# Plan\n');
     const engine = new SnapshotEngine(makeRegistry(), {

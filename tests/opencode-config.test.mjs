@@ -12,8 +12,10 @@ import test from "node:test";
 
 import { getCanonicalOpenCodeConfigPath, sanitizeOpenCodeConfig, writeOpenCodeConfig } from "../lib/opencode-config.mjs";
 
-function tempHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "construct-opencode-home-"));
+function tempHome(t) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-opencode-home-"));
+  if (t) t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} });
+  return dir;
 }
 
 test("sanitizeOpenCodeConfig removes legacy top-level construct metadata", () => {
@@ -31,9 +33,9 @@ test("sanitizeOpenCodeConfig removes legacy top-level construct metadata", () =>
   });
 });
 
-test("writeOpenCodeConfig does not persist legacy construct metadata", () => {
+test("writeOpenCodeConfig does not persist legacy construct metadata", (t) => {
   const originalHome = process.env.HOME;
-  const home = tempHome();
+  const home = tempHome(t);
   process.env.HOME = home;
 
   try {

@@ -3,8 +3,6 @@ title: Configure Slack
 description: "Wire Slack as a Construct provider: bot tokens, channels, capability scopes."
 ---
 
-# How to Configure Slack
-
 Construct can post snapshots and roadmap summaries to Slack channels, and receive slash commands from Slack.
 
 ## Step 1: Create a Slack app

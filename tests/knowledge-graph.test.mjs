@@ -8,7 +8,7 @@
  *   - askGlobal returns structured communities scored by BM25, gracefully
  *     handles an empty graph, and skips singletons.
  */
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -16,8 +16,16 @@ import path from 'node:path';
 
 import { buildGraph, detectCommunities, summarizeCommunity, askGlobal } from '../lib/knowledge/graph.mjs';
 
+const tmpDirs = [];
+after(() => {
+  for (const dir of tmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
+
 function freshRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'graphrag-'));
+  tmpDirs.push(root);
   fs.mkdirSync(path.join(root, '.cx', 'observations'), { recursive: true });
   return root;
 }

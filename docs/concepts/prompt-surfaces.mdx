@@ -3,11 +3,16 @@ title: Prompt surfaces
 description: "The persona, the specialists, what each sees at every stage: the public-facing prompt boundary."
 ---
 
-# Prompt Surface Architecture
-
 Construct has one public prompt surface and several internal prompt-adjacent layers.
 
-This document is the canonical reference for that split.
+Understanding the split tells you where to look when something behaves unexpectedly and where to customize when you want to change Construct's voice or behavior.
+
+<FlowPipeline steps={[
+  { label: 'You', sub: 'chat in Claude Code\nor OpenCode' },
+  { label: 'construct', badge: 'persona', sub: 'personas/construct.md\nthe only public surface', highlight: true },
+  { label: 'Orchestration', sub: 'classifies intent\ndispatches internally' },
+  { label: 'cx-specialist', badge: 'internal', sub: 'agents/prompts/cx-*.md\nnever addressed directly' },
+]} />
 
 ## Public vs internal
 
@@ -62,28 +67,14 @@ The routing contract lives in code and prompt policy, not in the examples corpus
 
 ## Visual deliverables
 
-Construct should treat visual artifacts as real deliverables, not as prose-only placeholders.
-
-Primary owners and outputs:
+Construct treats visual artifacts as real deliverables, not prose-only placeholders.
 
 - `construct` routes the request and keeps the user-facing contract coherent
-- `cx-designer` owns wireframes, low-fi layouts, product-facing diagrams, slide decks, and presentation-grade visual packaging
+- `cx-designer` owns wireframes, low-fi layouts, product-facing diagrams, and presentation-grade packaging
 - `cx-architect` joins when a diagram expresses system boundaries, contracts, sequencing, or dependency structure
-- `cx-product-manager` or `cx-docs-keeper` may own the underlying written content, but a visual deck remains a visual deliverable when the user explicitly asks for one
+- `cx-product-manager` or `cx-docs-keeper` may own the underlying written content, but a visual deck remains a visual deliverable when explicitly requested
 
-Tools and skills to prefer when available:
-
-- `construct wireframe` for low-fi Mermaid and HTML wireframes
-- host visual skills for presentation and polished design work
-- Playwright/browser tooling for demo capture and walkthrough recording
-- document ingest before deck generation when the source material arrives as `.pptx`, PDF, spreadsheet, or export
-
-Preferred artifact forms:
-
-- Mermaid for flow, sequence, state, ER, and journey diagrams
-- low-fi HTML for layout wireframes
-- viewport-safe HTML presentations for decks and slide work
-- recorded browser demos for walkthrough requests
+Request visual work the same way you request any task: describe what you want and `construct` routes to the right specialist.
 
 ## Why this split exists
 
@@ -103,25 +94,3 @@ Use these terms consistently:
 - `example fixture`: offline regression/eval case under `examples/**`
 
 Avoid calling internal specialist prompts and role overlays "core public surfaces".
-
-## Coverage policy
-
-Required public fixture coverage:
-
-- `construct` must have at least one `golden`, one `bad`, one `boundary`, and one `adversarial` fixture
-
-Required internal fixture coverage:
-
-- high-leverage internal role layers must have at least one `golden` and one `bad` fixture
-- current required internal roles: `architect`, `engineer`, `reviewer`, `qa`, `orchestrator`
-
-Optional internal fixture coverage:
-
-- narrower or specialized internal roles may add fixtures as they become behaviorally important or historically failure-prone
-
-## Authoring guidance
-
-- Put policy in prompts and overlays.
-- Put examples in fixtures.
-- Put failure explanations on bad fixtures.
-- Add in-prompt examples only when a behavior is hard to specify precisely with rules alone.

@@ -3,15 +3,6 @@ title: Wireframe and drop assets
 description: Generate Mermaid diagrams or sketch-style HTML from a description; drop assets into the inbox.
 ---
 
-<!--
-docs/how-to/how-to-wireframe-drop.md: How to use construct wireframe and construct drop.
-
-Covers generating low-fi wireframes from descriptions and ingesting recently
-dropped files from Downloads/Desktop/iCloud Drive.
--->
-
-# How to Use Wireframe and Drop
-
 ## Generate a wireframe
 
 ```bash

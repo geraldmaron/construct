@@ -1,16 +1,18 @@
 # Construct
 
-> Heads up. Construct is an open source project I started. I am not a developer. This is a side project. There may be bugs, there may be defects, but I'm building it to learn in public. If you'd like to contribute, please do.
+**One AI interface. A team of specialists behind it. Hard gates. Runs locally, or deploys for teams.**
 
-One AI interface. A team of specialists behind it. Hard gates. Runs locally, or deploys for teams.
+📖 **[Read the docs →](https://geraldmaron.github.io/construct/)** · 🚀 **[5-minute quickstart →](https://geraldmaron.github.io/construct/docs/start)** · 📦 `npm install -g @geraldmaron/construct`
+
+---
+
+> Heads up. Construct is an open source project I started. I am not a developer. This is a side project. There may be bugs, there may be defects, but I'm building it to learn in public. If you'd like to contribute, please do.
 
 Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. You talk to one persona called `construct`. Behind it is a team of specialists shaped by your **org profile**: software R&D by default, with curated profiles for operations, creative, and research orgs, plus a schema-validated escape hatch for custom profiles. Each profile organizes its specialists by department (Product, Engineering, Operations, etc.) and carries its own intake taxonomy, doc templates, and role set. Sessions survive boundary changes via durable state in `.cx/`, beads, and a local vector index. Solo by default. Can deploy centrally for teams that want shared memory, telemetry, queues, and policy.
 
-`construct profile show|list|set <id>` to switch. See [`docs/concepts/profile-lifecycle.md`](./docs/concepts/profile-lifecycle.md) for how new profiles are built (it's a research process, not a JSON exercise).
+`construct profile show|list|set <id>` to switch. See [Profile lifecycle](https://geraldmaron.github.io/construct/docs/concepts/profile-lifecycle) for how new profiles are built (it's a research process, not a JSON exercise).
 
 The team and enterprise modes exist because I wanted to learn what shipping a real multi-tenant tool would look like. The project is still open source, the code is still public, and the bar is still "does this help me learn." Run it solo if that's all you need.
-
-Full docs: [`geraldmaron.github.io/construct/`](https://geraldmaron.github.io/construct/).
 
 ## Getting started
 

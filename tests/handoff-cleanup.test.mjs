@@ -5,12 +5,20 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import { planHandoffCleanup, executeHandoffCleanup } from '../lib/handoffs/cleanup.mjs';
 import { formatHandoff } from '../lib/handoffs/contract.mjs';
 
+const tmpDirs = [];
+after(() => {
+  for (const dir of tmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
+
 function makeTmpProject() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-cleanup-'));
+  tmpDirs.push(root);
   const handoffsDir = path.join(root, '.cx', 'handoffs');
   const archiveDir = path.join(handoffsDir, 'archive');
   fs.mkdirSync(archiveDir, { recursive: true });

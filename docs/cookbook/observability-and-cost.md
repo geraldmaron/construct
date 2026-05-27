@@ -3,15 +3,6 @@ title: Observability and cost
 description: Trace agent runs locally or through a configured exporter, see token spend per agent, identify hotspots.
 ---
 
-<!--
-docs/how-to/how-to-observability.md: How to use Construct's observability commands.
-
-Covers construct review, construct optimize, construct cost, construct efficiency,
-and construct eval-datasets. Remote review/optimize/eval-datasets require a configured telemetry exporter.
--->
-
-# How to Use Observability Commands
-
 Construct's observability commands read from two sources:
 - **Trace adapter**: local JSONL by default; Langfuse-compatible, generic HTTP, or OTLP export when configured
 - **Local cost log**: file-backed token ledger read by `cost` and `efficiency` (no external dependency)

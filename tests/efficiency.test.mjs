@@ -12,8 +12,10 @@ import test from 'node:test';
 
 import { formatEfficiencyReport, readEfficiencyLog, summarizeEfficiencyData } from '../lib/efficiency.mjs';
 
-function tempHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'construct-efficiency-'));
+function tempHome(t) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-efficiency-'));
+  if (t) t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} });
+  return dir;
 }
 
 function writeStats(homeDir, stats) {
@@ -72,8 +74,8 @@ test('high byte budgets recommend distillation or compaction', () => {
   assert.match(report, /distill|compact/i);
 });
 
-test('readEfficiencyLog loads session-efficiency.json', () => {
-  const homeDir = tempHome();
+test('readEfficiencyLog loads session-efficiency.json', (t) => {
+  const homeDir = tempHome(t);
   writeStats(homeDir, { readCount: 1, uniqueFileCount: 1, files: {} });
 
   assert.equal(readEfficiencyLog(homeDir).readCount, 1);
