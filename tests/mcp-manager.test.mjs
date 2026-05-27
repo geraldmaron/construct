@@ -110,7 +110,7 @@ function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
 }
 
-test("memory MCP uses the configured port for Claude and memory for OpenCode", (t) => {
+test("memory MCP wires the stdio bridge into Claude and OpenCode with the configured port", (t) => {
   const home = tempDir("construct-mcp-home-", t);
   const cwd = tempDir("construct-mcp-cwd-", t);
   const claudePath = path.join(home, ".claude", "settings.json");
@@ -129,17 +129,26 @@ test("memory MCP uses the configured port for Claude and memory for OpenCode", (
 
   const claude = readJson(claudePath);
   const config = readJson(opencodePath);
-  assert.equal(
-    claude.mcpServers?.memory,
-    undefined,
-    "Claude does not get the cass-memory HTTP entry: cm serve omits the MCP `initialize` handshake, so Claude's MCP client cannot connect. Memory tools are surfaced through construct-mcp (project .mcp.json) instead.",
+  const bridgePath = path.join(root, "lib", "mcp", "memory-bridge.mjs");
+
+  assert.deepEqual(
+    claude.mcpServers.memory,
+    {
+      command: "node",
+      args: [bridgePath],
+      env: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:9901/" },
+    },
+    "Claude memory wires the stdio MCP bridge, not the broken HTTP endpoint",
   );
-  // OpenCode does not get cass-memory HTTP endpoint either: SSE transport fails with 405
-  // Memory tools are available through construct-mcp stdio server instead
-  assert.equal(
-    config.mcp?.memory,
-    undefined,
-    "OpenCode does not get cass-memory HTTP entry: SSE transport incompatible with cm serve",
+
+  assert.deepEqual(
+    config.mcp.memory,
+    {
+      type: "local",
+      command: ["node", bridgePath],
+      environment: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:9901/" },
+    },
+    "OpenCode memory wires the stdio MCP bridge, not the broken remote/SSE endpoint",
   );
 });
 
@@ -339,7 +348,7 @@ test("sync wires managed OpenCode runtime plugin and construct-mcp telemetry env
   assert.equal(fs.existsSync(path.join(home, ".config", "opencode", "plugins", "construct-fallback.js")), true);
 });
 
-test("sync keeps OpenCode memory configured through memory", (t) => {
+test("sync rewrites a stale OpenCode HTTP memory entry to the stdio bridge", (t) => {
   const home = tempDir("construct-sync-home-", t);
   const cwd = root;
   const opencodeDir = path.join(home, ".config", "opencode");
@@ -358,16 +367,17 @@ test("sync keeps OpenCode memory configured through memory", (t) => {
     }, null, 2)}\n`,
   );
 
-  runSync({ home, cwd, t });
+  const repoCopy = runSync({ home, cwd, t });
 
   const config = readJson(opencodePath);
   assert.deepEqual(config.mcp.memory, {
-    type: "remote",
-    url: "http://127.0.0.1:8765/",
+    type: "local",
+    command: ["node", path.join(repoCopy, "lib", "mcp", "memory-bridge.mjs")],
+    environment: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:8765/" },
   });
 });
 
-test("sync migrates legacy OpenCode cass memory config to memory", (t) => {
+test("sync drops the legacy OpenCode cass entry and writes the stdio bridge", (t) => {
   const home = tempDir("construct-sync-home-", t);
   const cwd = root;
   const opencodeDir = path.join(home, ".config", "opencode");
@@ -386,13 +396,14 @@ test("sync migrates legacy OpenCode cass memory config to memory", (t) => {
     }, null, 2)}\n`,
   );
 
-  runSync({ home, cwd, t });
+  const repoCopy = runSync({ home, cwd, t });
 
   const config = readJson(opencodePath);
   assert.equal(config.mcp.cass, undefined);
   assert.deepEqual(config.mcp.memory, {
-    type: "remote",
-    url: "http://127.0.0.1:8765/",
+    type: "local",
+    command: ["node", path.join(repoCopy, "lib", "mcp", "memory-bridge.mjs")],
+    environment: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:8765/" },
   });
 });
 
@@ -412,13 +423,16 @@ test("memory MCP recovers from malformed OpenCode config", (t) => {
     },
   });
 
-  // OpenCode does not get cass-memory HTTP endpoint: SSE transport incompatible with cm serve
-  // Memory tools are available through construct-mcp stdio server instead
+  const bridgePath = path.join(root, "lib", "mcp", "memory-bridge.mjs");
   const config = readJson(opencodePath);
-  assert.equal(
-    config.mcp?.memory,
-    undefined,
-    "OpenCode does not get cass-memory HTTP entry: SSE transport incompatible with cm serve",
+  assert.deepEqual(
+    config.mcp.memory,
+    {
+      type: "local",
+      command: ["node", bridgePath],
+      environment: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:9902/" },
+    },
+    "OpenCode memory wires the stdio MCP bridge after recovering from malformed config",
   );
 });
 

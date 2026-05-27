@@ -62,9 +62,14 @@
   },
   "mcpServers": {
     "memory": {
-      "type": "url",
-      "url": "http://127.0.0.1:8765/",
-      "description": "Persistent cross-session knowledge graph for agent memory and handoffs"
+      "command": "node",
+      "args": [
+        "__CX_TOOLKIT_DIR__/lib/mcp/memory-bridge.mjs"
+      ],
+      "env": {
+        "CONSTRUCT_MEMORY_BRIDGE_URL": "http://127.0.0.1:__MEMORY_PORT__/"
+      },
+      "description": "Stdio MCP bridge for cass-memory: persistent cross-session knowledge graph for agent memory and handoffs"
     },
     "context7": {
       "command": "npx",
