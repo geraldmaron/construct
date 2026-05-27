@@ -3,8 +3,6 @@ title: Inspect running agents
 description: Capture chat-session feedback and trace which specialists ran for a task.
 ---
 
-# How to Use construct reflect
-
 `construct reflect` captures a session insight or learning and writes it to your knowledge base. Use it after any session where you discovered something worth preserving.
 
 ## Basic usage

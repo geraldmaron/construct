@@ -7,6 +7,14 @@ Sessions end. Editor windows close. Networks drop. Construct treats this as the 
 
 Four stores carry the load. Each has a clear job; nothing important lives in only one place.
 
+<FlowPipeline steps={[
+  { label: 'beads', badge: '.beads/', sub: 'work items · tasks · blockers' },
+  { label: '.cx/', badge: 'context', sub: 'decisions · handoffs · observations' },
+  { label: 'git', badge: 'code', sub: 'commits · branches · history' },
+  { label: 'Postgres', badge: 'pgvector', sub: 'embeddings · hybrid search' },
+  { label: 'Intake queue', badge: '.cx/intake/', sub: 'signals · task graphs · traces', highlight: true },
+]} />
+
 ## beads: durable work tracking
 
 `bd` (beads) is an embedded SQL issue tracker. It runs as a Dolt server backed by `.beads/`. Construct uses it as the canonical source for work items: every plan task, every blocker, every closed-with-notes outcome lives in beads.
@@ -65,10 +73,12 @@ These two are distinct from `bd` issues. Beads is the project-wide task tracker.
 | Evidence for a task graph node | nested inside `.cx/task-graphs/<id>.json` + linked via traceId | session end + clone | yes |
 | Trace events | `.cx/traces/<YYYY-MM-DD>.jsonl` | session end (rotated) | append-only, audit-grade |
 | Work item: "Implement X, blocked on Y" | beads (`.beads/`) | session end + clone | yes |
-| Decision: "We chose Postgres over SQLite because…" | `.cx/context.md` (read), `docs/adr/` (formal) | session end + clone | yes |
+| Decision: "We chose Postgres over SQLite because..." | `.cx/context.md` (read), `docs/adr/` (formal) | session end + clone | yes |
 | Mid-task scratch: "I'm halfway through. Tomorrow I'll do Z" | `.cx/handoffs/{date}.md` | session end (gitignored) | working note only |
 | Semantic recall: "What did we decide about retrieval?" | Postgres pgvector or `.cx/observations/` | session end | derived, regenerable |
 | Code itself | git | forever | yes |
+
+The stores are independent by design. When Postgres is unavailable, search falls back to `.cx/observations/`. When Docker is not running, beads still works from the local Dolt file. Nothing critical depends on a single store being healthy.
 
 ## Failure modes Construct guards against
 

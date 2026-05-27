@@ -131,7 +131,7 @@ test('examples README states the public-vs-internal fixture split and lean-promp
 });
 
 test('Construct remains the sole public persona surface in docs and fixtures', () => {
-  const promptSurfaces = fs.readFileSync(path.join(root, 'docs', 'concepts', 'prompt-surfaces.md'), 'utf8');
+  const promptSurfaces = fs.readFileSync(path.join(root, 'docs', 'concepts', 'prompt-surfaces.mdx'), 'utf8');
   assert.match(promptSurfaces, /sole public persona/);
   assert.match(promptSurfaces, /personas\/construct\.md/);
 
