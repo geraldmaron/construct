@@ -12,8 +12,9 @@ import test from 'node:test';
 
 import { applyFreePreferenceToTierSet, applyFreeSameFamilyPreferenceToTierSet, classifyProviderFailure, getProviderModelCatalog, inferTierModelsFromSelection, isProviderOnCooldown, readCurrentModels, readProviderCooldowns, resolveExecutionContractModelMetadata, resolveFallbackAction, resolveModelOperatingProfile, selectFallbackModel, selectModelTierForWorkCategory, setModelWithTierInference, writeProviderCooldown } from '../lib/model-router.mjs';
 
-function tempFile(prefix) {
+function tempFile(prefix, t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  if (t) t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} });
   return path.join(dir, 'config.env');
 }
 
@@ -24,8 +25,8 @@ test('inferTierModelsFromSelection derives anthropic family tiers', () => {
   assert.equal(inferred.fast, 'anthropic/claude-haiku-4-5-20251001');
 });
 
-test('setModelWithTierInference writes sibling tiers for same provider family', () => {
-  const envPath = tempFile('construct-model-router-');
+test('setModelWithTierInference writes sibling tiers for same provider family', (t) => {
+  const envPath = tempFile('construct-model-router-', t);
   const resolved = setModelWithTierInference(envPath, 'standard', 'openrouter/anthropic/claude-sonnet-4-6', {});
   assert.equal(resolved.reasoning, 'openrouter/anthropic/claude-opus-4-6');
   assert.equal(resolved.standard, 'openrouter/anthropic/claude-sonnet-4-6');
@@ -37,8 +38,8 @@ test('setModelWithTierInference writes sibling tiers for same provider family', 
   assert.match(text, /CX_MODEL_FAST=openrouter\/anthropic\/claude-haiku-4-5-20251001/);
 });
 
-test('readCurrentModels still respects explicit env overrides first', () => {
-  const envPath = tempFile('construct-model-router-read-');
+test('readCurrentModels still respects explicit env overrides first', (t) => {
+  const envPath = tempFile('construct-model-router-read-', t);
   fs.writeFileSync(envPath, 'CX_MODEL_REASONING=custom/reasoning\nCX_MODEL_STANDARD=custom/standard\n');
 
   const models = readCurrentModels(envPath, {
@@ -54,8 +55,8 @@ test('readCurrentModels still respects explicit env overrides first', () => {
   assert.equal(models.sources.fast, 'registry');
 });
 
-test('readCurrentModels accepts process-style overrides in addition to env file values', () => {
-  const envPath = tempFile('construct-model-router-process-');
+test('readCurrentModels accepts process-style overrides in addition to env file values', (t) => {
+  const envPath = tempFile('construct-model-router-process-', t);
   fs.writeFileSync(envPath, 'CX_MODEL_REASONING=file/reasoning\n');
 
   const models = readCurrentModels(envPath, {
@@ -93,8 +94,8 @@ test('applyFreePreferenceToTierSet prefers free models where available', () => {
   assert.equal(resolved.fast, 'openrouter/qwen/qwen3-coder:free');
 });
 
-test('setModelWithTierInference preserves chosen tier while preferring free siblings', () => {
-  const envPath = tempFile('construct-model-router-free-');
+test('setModelWithTierInference preserves chosen tier while preferring free siblings', (t) => {
+  const envPath = tempFile('construct-model-router-free-', t);
   const resolved = setModelWithTierInference(envPath, 'standard', 'openrouter/qwen/qwen3-coder:free', {
     reasoning: { primary: 'openrouter/deepseek/deepseek-r1' },
     standard: { primary: 'openrouter/qwen/qwen3-coder:free' },
@@ -118,8 +119,8 @@ test('applyFreeSameFamilyPreferenceToTierSet only swaps to free siblings in the 
   assert.equal(resolved.fast, 'openrouter/qwen/qwen2.5-coder-32b-instruct');
 });
 
-test('setModelWithTierInference supports prefer-free-same-family mode', () => {
-  const envPath = tempFile('construct-model-router-same-family-');
+test('setModelWithTierInference supports prefer-free-same-family mode', (t) => {
+  const envPath = tempFile('construct-model-router-same-family-', t);
   const resolved = setModelWithTierInference(envPath, 'standard', 'openrouter/qwen/qwen3-coder:free', {
     reasoning: { primary: 'openrouter/deepseek/deepseek-r1' },
     standard: { primary: 'openrouter/qwen/qwen3-coder:free' },
@@ -243,8 +244,9 @@ test('readProviderCooldowns returns empty object for missing file', () => {
   assert.deepEqual(result, {});
 });
 
-test('writeProviderCooldown persists expiry; isProviderOnCooldown reflects it', () => {
+test('writeProviderCooldown persists expiry; isProviderOnCooldown reflects it', (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-cooldown-'));
+  t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} });
   const cooldownPath = path.join(dir, 'provider-cooldowns.json');
   const now = Date.now();
 
@@ -259,8 +261,9 @@ test('isProviderOnCooldown returns false for missing file', () => {
   assert.ok(!isProviderOnCooldown('/nonexistent/path/cooldowns.json', 'anthropic'));
 });
 
-test('selectFallbackModel resolves candidate and skips cooldown-blocked providers', () => {
+test('selectFallbackModel resolves candidate and skips cooldown-blocked providers', (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-fallback-'));
+  t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} });
   const envPath = path.join(dir, '.env');
   const cooldownPath = path.join(dir, 'provider-cooldowns.json');
   const now = Date.now();
@@ -280,8 +283,9 @@ test('selectFallbackModel resolves candidate and skips cooldown-blocked provider
   assert.equal(result.reason, 'rate_limit');
 });
 
-test('selectFallbackModel returns null when failing provider is on cooldown', () => {
+test('selectFallbackModel returns null when failing provider is on cooldown', (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-fallback-cd-'));
+  t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} });
   const envPath = path.join(dir, '.env');
   const cooldownPath = path.join(dir, 'provider-cooldowns.json');
   const now = Date.now();
@@ -294,8 +298,9 @@ test('selectFallbackModel returns null when failing provider is on cooldown', ()
   assert.equal(result, null);
 });
 
-test('selectFallbackModel returns null for non-retryable failures', () => {
+test('selectFallbackModel returns null for non-retryable failures', (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-fallback-auth-'));
+  t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} });
   const envPath = path.join(dir, '.env');
   const cooldownPath = path.join(dir, 'provider-cooldowns.json');
 

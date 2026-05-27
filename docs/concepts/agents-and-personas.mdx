@@ -5,7 +5,14 @@ description: One public persona, 28 specialists, why we made that split.
 
 Construct presents *one* interface to you: a persona named `construct`. Behind it lives a team of 28 specialists that operate as that persona's domain experts.
 
-The split is deliberate. You don't pick which agent to call. You ask Construct for an outcome, and Construct decides what specialist authority is needed.
+The split is deliberate. You ask Construct for an outcome. Construct decides which specialist authority is needed and routes internally.
+
+<FlowPipeline steps={[
+  { label: 'You', sub: '@construct fix the login redirect' },
+  { label: 'construct persona', sub: 'classifies intent\ndispatches to specialists', highlight: true },
+  { label: 'Specialist chain', sub: 'typed contracts\ngate checks' },
+  { label: 'Result', sub: 'single voice response\nback to you' },
+]} />
 
 ## The public persona
 
@@ -32,6 +39,67 @@ You never see the specialist chain unless you ask for it. The persona returns th
 
 Specialists ship pre-wired but you can [add custom ones](/cookbook/add-a-custom-agent).
 
+<AgentGrid groups={[
+  {
+    label: 'R&D & Research',
+    accent: 'emerald',
+    agents: [
+      { name: 'Orchestrator', tag: 'assembles the right chain' },
+      { name: 'R&D Lead', tag: 'slows down at the right moment' },
+      { name: 'Researcher', tag: 'sources every claim' },
+      { name: 'Explorer', tag: 'reads before concluding' },
+      { name: 'Evaluator', tag: 'defines what better means' },
+      { name: 'Data Analyst', tag: 'measures before deciding' },
+    ],
+  },
+  {
+    label: 'Strategy & Product',
+    accent: 'sky',
+    agents: [
+      { name: 'Product Manager', tag: 'user reality to deliverables' },
+      { name: 'UX Researcher', tag: 'guards against assumptions' },
+      { name: 'Business Strategist', tag: 'asks if we\'re building the right thing' },
+      { name: 'Devil\'s Advocate', tag: 'surfaces the argument against' },
+    ],
+  },
+  {
+    label: 'Engineering',
+    accent: 'violet',
+    agents: [
+      { name: 'Architect', tag: 'makes trade-offs explicit' },
+      { name: 'Engineer', tag: 'reads before writing' },
+      { name: 'AI Engineer', tag: 'designs for failure' },
+      { name: 'Data Engineer', tag: 'builds trustworthy pipelines' },
+      { name: 'Platform Engineer', tag: 'reduces team friction' },
+      { name: 'Test Automation', tag: 'bad automation is worse than none' },
+      { name: 'Operations', tag: 'maps dependencies and sequences' },
+    ],
+  },
+  {
+    label: 'Quality & Safety',
+    accent: 'amber',
+    agents: [
+      { name: 'Reviewer', tag: 'pushes back before it ships' },
+      { name: 'QA', tag: 'tests what matters' },
+      { name: 'Debugger', tag: 'traces to root cause' },
+      { name: 'Security', tag: 'thinks like an attacker' },
+      { name: 'SRE', tag: 'plans for failure first' },
+      { name: 'Release Manager', tag: 'guards the verified to safe gap' },
+      { name: 'Legal & Compliance', tag: 'catches risk before architecture locks' },
+      { name: 'Accessibility', tag: 'tests with screen reader and keyboard' },
+    ],
+  },
+  {
+    label: 'Craft & Records',
+    accent: 'rose',
+    agents: [
+      { name: 'Designer', tag: 'visual decisions are interaction decisions' },
+      { name: 'Docs Keeper', tag: 'owns the record of why' },
+      { name: 'Trace Reviewer', tag: 'fleet-level performance patterns' },
+    ],
+  },
+]} />
+
 ## How the chain runs
 
 When you ask Construct for an outcome:
@@ -54,7 +122,7 @@ You install the SAME team across Construct's supported hosts via `construct sync
 
 The agent-picker pattern (where the user types `@architect` or `@reviewer`) puts cognitive load on the user. They have to know which specialist to call, what each specialist does, when to escalate. That's the wrong model for everyday use.
 
-One persona means you ask for outcomes, not assignments. Construct routes. If you want to talk to a specific specialist for a focused conversation, you still can — `@cx-security` works — but it's the exception, not the entry point.
+One persona means you ask for outcomes, not assignments. Construct routes. Directly addressing a specific specialist (`@cx-security`) is possible for focused one-off conversations, but the entry point is always `@construct`.
 
 ## Reference
 

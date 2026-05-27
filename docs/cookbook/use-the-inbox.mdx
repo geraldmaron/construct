@@ -1,11 +1,17 @@
 ---
 title: Use the inbox
-description: Triage incoming intake items into the right docs lane.
+description: Drop a file, watch the daemon classify it into R&D triage, drive the queue.
 ---
 
-# How to Configure the Inbox Watcher
+The inbox watcher monitors one or more directories and automatically ingests new files into your knowledge base. It runs every two minutes as part of the embed daemon.
 
-The inbox watcher monitors one or more directories and automatically ingests any new files into your knowledge base. It runs every two minutes as part of the embed daemon.
+<FlowPipeline steps={[
+  { label: 'Drop a file', sub: '.cx/inbox/\nany supported format' },
+  { label: 'Embed daemon', sub: 'detects within ~1s\nextracts text' },
+  { label: 'Classify', sub: 'filename routing rules\n+ R&D triage', via: 'classifyRdIntake' },
+  { label: 'Knowledge store', sub: '.cx/knowledge/<subdir>/' },
+  { label: 'Triage packet', badge: '.cx/intake/', sub: 'owner · chain · confidence', highlight: true },
+]} />
 
 ## Default inbox directory
 
@@ -69,7 +75,7 @@ The watcher tracks which files it has already seen by recording a content hash. 
 construct knowledge index
 ```
 
-Or use the dashboard Knowledge → Index tab.
+Or use the dashboard Knowledge tab.
 
 ## Docs lane promotion
 
@@ -79,4 +85,4 @@ When a file lands in `docs/intake/`, Construct ingests it into `.cx/knowledge/` 
 
 After ingestion, the daemon classifies each file via `classifyRdIntake` and writes a triage packet to `.cx/intake/pending/<id>.json`. Inspect and drive the queue with `construct intake list / show / done / skip / reopen`. For non-trivial signals, generate a task graph with `construct graph from-intake <id>`.
 
-A full walkthrough of the triage taxonomy (intake types, R&D stages, recommended chains, recommended actions) lives in [Concepts → Intake and triage](/concepts/intake-and-triage). Session-start surfaces the most recent pending packets with a one-line triage summary per entry.
+A full walkthrough of the triage taxonomy (intake types, R&D stages, recommended chains, recommended actions) lives in [Concepts: Intake and triage](/concepts/intake-and-triage). Session-start surfaces the most recent pending packets with a one-line triage summary per entry.

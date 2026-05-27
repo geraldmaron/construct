@@ -12,9 +12,13 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-test('cxTrace includes execution-contract model metadata parity', async () => {
+test('cxTrace includes execution-contract model metadata parity', async (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-root-'));
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-home-'));
+  t.after(() => {
+    try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(homeDir, { recursive: true, force: true }); } catch {}
+  });
 
   fs.mkdirSync(path.join(rootDir, 'agents', 'prompts'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({
@@ -90,9 +94,13 @@ test('cxTrace includes execution-contract model metadata parity', async () => {
   }
 });
 
-test('projectContext exposes tracker-plus-plan public-health fields', async () => {
+test('projectContext exposes tracker-plus-plan public-health fields', async (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-health-root-'));
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-health-home-'));
+  t.after(() => {
+    try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(homeDir, { recursive: true, force: true }); } catch {}
+  });
 
   fs.mkdirSync(path.join(rootDir, '.cx'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, 'agents', 'prompts'), { recursive: true });
@@ -135,9 +143,13 @@ test('projectContext exposes tracker-plus-plan public-health fields', async () =
   }
 });
 
-test('status and MCP surfaces agree on public-health metadata presence semantics', async () => {
+test('status and MCP surfaces agree on public-health metadata presence semantics', async (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-health-parity-root-'));
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-health-parity-home-'));
+  t.after(() => {
+    try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(homeDir, { recursive: true, force: true }); } catch {}
+  });
 
   fs.mkdirSync(path.join(rootDir, '.cx'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, 'agents'), { recursive: true });
@@ -173,8 +185,9 @@ test('status and MCP surfaces agree on public-health metadata presence semantics
   }
 });
 
-test('extractDocumentText reads local text documents through the MCP helper', async () => {
+test('extractDocumentText reads local text documents through the MCP helper', async (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-doc-root-'));
+  t.after(() => { try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {} });
   const filePath = path.join(rootDir, 'notes.md');
   fs.writeFileSync(filePath, '# Notes\n\nPDF fallback should not be required here.\n');
 
@@ -188,8 +201,9 @@ test('extractDocumentText reads local text documents through the MCP helper', as
   assert.match(result.text, /PDF fallback should not be required here/);
 });
 
-test('extractDocumentText reads csv content through the shared document path', async () => {
+test('extractDocumentText reads csv content through the shared document path', async (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-csv-root-'));
+  t.after(() => { try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {} });
   const filePath = path.join(rootDir, 'metrics.csv');
   fs.writeFileSync(filePath, 'service,availability\napi,99.95\nworker,99.90\n');
 
@@ -202,8 +216,9 @@ test('extractDocumentText reads csv content through the shared document path', a
   assert.match(result.text, /worker,99.90/);
 });
 
-test('ingestDocument writes a markdown artifact through the MCP helper', async () => {
+test('ingestDocument writes a markdown artifact through the MCP helper', async (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-ingest-root-'));
+  t.after(() => { try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {} });
   const filePath = path.join(rootDir, 'deck.csv');
   fs.writeFileSync(filePath, 'topic,status\nreliability,green\n');
 
@@ -216,8 +231,9 @@ test('ingestDocument writes a markdown artifact through the MCP helper', async (
   assert.equal(fs.existsSync(result.files[0].outputPath), true);
 });
 
-test('storage MCP helpers require explicit confirmation for destructive actions', async () => {
+test('storage MCP helpers require explicit confirmation for destructive actions', async (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-storage-root-'));
+  t.after(() => { try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {} });
   fs.mkdirSync(path.join(rootDir, '.cx', 'knowledge', 'internal'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, '.cx', 'knowledge', 'internal', 'brief.md'), '# Brief\n');
 

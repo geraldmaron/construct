@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 
 import {
   DEFAULT_PROFILE_ID,
@@ -17,6 +17,14 @@ import {
   loadProfile,
   resolveActiveProfile,
 } from '../../lib/profiles/loader.mjs';
+
+const tmpDirs = [];
+after(() => {
+  for (const dir of tmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
+function track(dir) { tmpDirs.push(dir); return dir; }
 
 const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const SCHEMA = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'schemas', 'profile.schema.json'), 'utf8'));
@@ -48,13 +56,13 @@ test('loadProfile reads the curated rnd profile', () => {
 });
 
 test('resolveActiveProfile defaults to rnd when nothing is configured', () => {
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-default-'));
+  const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-default-')));
   const p = resolveActiveProfile(cwd);
   assert.equal(p.id, DEFAULT_PROFILE_ID);
 });
 
 test('resolveActiveProfile reads construct.config.json profile field', () => {
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-from-config-'));
+  const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-from-config-')));
   fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({
     version: 1,
     profile: 'creative',
@@ -64,7 +72,7 @@ test('resolveActiveProfile reads construct.config.json profile field', () => {
 });
 
 test('resolveActiveProfile precedence: custom .cx/profile.json beats construct.config.json', () => {
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-precedence-'));
+  const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-precedence-')));
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({
     version: 1,
@@ -82,7 +90,7 @@ test('resolveActiveProfile precedence: custom .cx/profile.json beats construct.c
 });
 
 test('resolveActiveProfile precedence: explicit id beats both files', () => {
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-explicit-'));
+  const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-explicit-')));
   fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({
     version: 1,
     profile: 'creative',
@@ -92,13 +100,13 @@ test('resolveActiveProfile precedence: explicit id beats both files', () => {
 });
 
 test('resolveActiveProfile honors construct.config profile id', () => {
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-config-'));
+  const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-config-')));
   const p = resolveActiveProfile(cwd, 'creative');
   assert.equal(p.id, 'creative');
 });
 
 test('resolveActiveProfile picks up custom profile from .cx/profile.json', () => {
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-custom-'));
+  const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-custom-')));
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(
     path.join(cwd, '.cx', 'profile.json'),
@@ -116,7 +124,7 @@ test('resolveActiveProfile picks up custom profile from .cx/profile.json', () =>
 });
 
 test('resolveActiveProfile ignores .cx/profile.json without custom: true', () => {
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-not-custom-'));
+  const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-not-custom-')));
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(
     path.join(cwd, '.cx', 'profile.json'),
@@ -127,7 +135,7 @@ test('resolveActiveProfile ignores .cx/profile.json without custom: true', () =>
 });
 
 test('loadCustomProfile returns null for missing / malformed file', () => {
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-bad-'));
+  const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-bad-')));
   assert.equal(loadCustomProfile(cwd), null);
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(path.join(cwd, '.cx', 'profile.json'), '{ this is not json');

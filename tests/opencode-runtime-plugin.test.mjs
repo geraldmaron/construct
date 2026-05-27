@@ -139,9 +139,13 @@ test("buildRuntimeTracePayload returns structured assistant output when no plain
   assert.deepEqual(payload.output.partSummary.toolNames, ["read"]);
 });
 
-test("buildRuntimeTracePayload includes runtime-composed prompt and route metadata", () => {
+test("buildRuntimeTracePayload includes runtime-composed prompt and route metadata", (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-runtime-meta-home-"));
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-runtime-meta-root-"));
+  t.after(() => {
+    try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {}
+  });
   fs.mkdirSync(path.join(rootDir, ".cx"), { recursive: true });
   fs.mkdirSync(path.join(rootDir, "agents", "prompts"), { recursive: true });
   fs.writeFileSync(path.join(rootDir, "agents", "registry.json"), JSON.stringify({
@@ -206,9 +210,13 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
   assert.equal(payload.metadata.composedPromptVersion.length, 12);
 });
 
-test("buildRuntimeTracePayload honors process env model overrides in execution-contract metadata", () => {
+test("buildRuntimeTracePayload honors process env model overrides in execution-contract metadata", (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-runtime-meta-override-home-"));
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-runtime-meta-override-root-"));
+  t.after(() => {
+    try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {}
+  });
   fs.mkdirSync(path.join(rootDir, ".cx"), { recursive: true });
   fs.mkdirSync(path.join(rootDir, "agents", "prompts"), { recursive: true });
   fs.writeFileSync(path.join(rootDir, "agents", "registry.json"), JSON.stringify({
@@ -294,9 +302,13 @@ test("buildRuntimeTracePayload skips message.updated for user role or incomplete
   assert.equal(buildRuntimeTracePayload({ type: "message.updated", properties: { info: { ...baseInfo, role: "assistant", tokens: { input: 0, output: 0 } } } }), null);
 });
 
-test("plugin applies model fallback and logs warning when rate limit error hits", async () => {
+test("plugin applies model fallback and logs warning when rate limit error hits", async (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-plugin-home-"));
   const toolkitDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-toolkit-"));
+  t.after(() => {
+    try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(toolkitDir, { recursive: true, force: true }); } catch {}
+  });
   const binDir = path.join(toolkitDir, "bin");
 
   fs.mkdirSync(binDir, { recursive: true });
@@ -349,9 +361,13 @@ test("plugin applies model fallback and logs warning when rate limit error hits"
   assert.ok(logs.some((entry) => entry.message.includes("applying model fallback toward")));
 });
 
-test("plugin falls back to a new target model when the current provider is unavailable", async () => {
+test("plugin falls back to a new target model when the current provider is unavailable", async (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-plugin-home-fallback-"));
   const toolkitDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-toolkit-fallback-"));
+  t.after(() => {
+    try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(toolkitDir, { recursive: true, force: true }); } catch {}
+  });
   const binDir = path.join(toolkitDir, "bin");
 
   fs.mkdirSync(binDir, { recursive: true });
@@ -408,9 +424,13 @@ test("plugin falls back to a new target model when the current provider is unava
   assert.ok(logs.some((entry) => entry.message.includes("openrouter/qwen/qwen3-coder:free")));
 });
 
-test("plugin no-ops when no safe fallback target exists", async () => {
+test("plugin no-ops when no safe fallback target exists", async (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-plugin-home-nosafe-"));
   const toolkitDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-toolkit-nosafe-"));
+  t.after(() => {
+    try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(toolkitDir, { recursive: true, force: true }); } catch {}
+  });
   const binDir = path.join(toolkitDir, "bin");
 
   fs.mkdirSync(binDir, { recursive: true });
@@ -458,9 +478,13 @@ test("plugin no-ops when no safe fallback target exists", async () => {
   assert.ok(logs.some((entry) => entry.message.includes("no safe fallback target")));
 });
 
-test("plugin continues fallback even when telemetry logging fails", async () => {
+test("plugin continues fallback even when telemetry logging fails", async (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-plugin-home-telemetry-"));
   const toolkitDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-toolkit-telemetry-"));
+  t.after(() => {
+    try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(toolkitDir, { recursive: true, force: true }); } catch {}
+  });
   const binDir = path.join(toolkitDir, "bin");
 
   fs.mkdirSync(binDir, { recursive: true });
@@ -508,9 +532,13 @@ test("plugin continues fallback even when telemetry logging fails", async () => 
   assert.equal(state.targetModel, "openrouter/qwen/qwen3-coder:free");
 });
 
-test("plugin does not crash when telemetry is not configured", async () => {
+test("plugin does not crash when telemetry is not configured", async (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-plugin-notelemetry-"));
   const toolkitDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-toolkit-notelemetry-"));
+  t.after(() => {
+    try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(toolkitDir, { recursive: true, force: true }); } catch {}
+  });
   const configPath = path.join(os.tmpdir(), "opencode-notelemetry.json");
   fs.writeFileSync(configPath, JSON.stringify({}));
 
@@ -555,8 +583,9 @@ test("extractReadToolCalls handles tool and tool-invocation part shapes", () => 
   assert.equal(calls[1].limit, 500);
 });
 
-test("trackReadEfficiencyFromMessage updates shared session-efficiency store and warns on repeats", () => {
+test("trackReadEfficiencyFromMessage updates shared session-efficiency store and warns on repeats", (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-opencode-eff-"));
+  t.after(() => { try { fs.rmSync(home, { recursive: true, force: true }); } catch {} });
   const env = { HOME: home };
   const makeEvent = (callId, filePath) => ({
     type: "message.updated",
@@ -583,8 +612,9 @@ test("trackReadEfficiencyFromMessage updates shared session-efficiency store and
   assert.ok(combined.includes("repeated reads") || stats.warnings.repeatedReads);
 });
 
-test("trackReadEfficiencyFromMessage deduplicates by tool call id across message.updated events", () => {
+test("trackReadEfficiencyFromMessage deduplicates by tool call id across message.updated events", (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "construct-opencode-eff-dedup-"));
+  t.after(() => { try { fs.rmSync(home, { recursive: true, force: true }); } catch {} });
   const env = { HOME: home };
   const event = {
     type: "message.updated",

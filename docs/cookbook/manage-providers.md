@@ -3,15 +3,6 @@ title: Manage providers
 description: "GitHub, Jira, Confluence, Slack, Salesforce: credentials, contracts, and the capability matrix."
 ---
 
-<!--
-docs/how-to/how-to-providers.md: How to manage model providers and external data sources.
-
-Covers listing current model tier assignments, changing a tier,
-applying configuration via construct models, and adding/scoping external sources.
--->
-
-# How to Manage Providers
-
 Construct routes LLM calls across three tiers: **reasoning**, **standard**, and **fast**.
 Each tier maps to a single model ID drawn from your configured provider (OpenRouter by default).
 

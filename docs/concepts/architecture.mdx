@@ -3,13 +3,9 @@ title: Architecture
 description: Diagrams + the request lifecycle + where things live. Read once when you want to understand the bones.
 ---
 
-# Construct Architecture
+## How to read this page
 
-> Required project state. All LLMs working in this repo, including Construct, should treat this as canonical architecture context and keep it current.
-
-## A note before the diagrams
-
-If you're walking in cold. including future me. this page is the bridge between *what Construct is supposed to do* and *how it's actually wired up*. The diagrams come first because they're the cheapest way to orient. The text after explains the same thing twice on purpose: once in plain language, once in code-base terms. Pick whichever flavor lands faster, then read the other to lock it in.
+Start with the diagrams. They're the fastest way to build a mental model of the wiring. The text after explains the same thing twice on purpose: once in plain language, once in codebase terms. Pick whichever flavor lands faster, then read the other to lock it in.
 
 ## The 30-second version
 
@@ -17,97 +13,52 @@ Construct is one front door (a persona) that you talk to in Claude Code or OpenC
 
 ## Intake loop
 
-```mermaid
-flowchart LR
-    Signal[".cx/inbox/<file>"]
-    Daemon["embed daemon<br/>+ classifyRdIntake"]
-    Intake[".cx/intake/pending/<id>.json<br/>triage block: type, stage, owner, chain"]
-    Graph[".cx/task-graphs/<id>.json<br/>node per persona in chain"]
-    Router["context router<br/>per-role artifact bundle"]
-    Worker["worker plane<br/>bounded exec + timeout + path policy"]
-    Evidence["evidence record<br/>linked to graph node"]
-    Trace[".cx/traces/<YYYY-MM-DD>.jsonl<br/>typed event log"]
-    Memory["durable state<br/>bd · .cx/context.md · vector index"]
-
-    Signal --> Daemon --> Intake
-    Intake -->|construct intake show / done / skip| Graph
-    Graph -->|per node| Router --> Worker --> Evidence
-    Worker --> Trace
-    Evidence --> Graph
-    Evidence --> Memory
-```
+<FlowPipeline steps={[
+  { label: '.cx/inbox/', sub: 'any signal' },
+  { label: 'embed daemon', sub: 'classifyRdIntake\ndeterministic, no LLM' },
+  { label: '.cx/intake/pending/', sub: 'triage block\ntype · stage · owner · chain' },
+  { label: '.cx/task-graphs/', sub: 'node per persona\nin recommendedChain', via: 'intake done' },
+  { label: 'context router', sub: 'per-role artifact bundle' },
+  { label: 'worker plane', sub: 'bounded exec + timeout\n+ path policy' },
+  { label: 'evidence + memory', sub: 'linked to graph node\n+ durable state', highlight: true },
+]} />
 
 The signal-to-memory path is deterministic where it should be (classification, routing, evidence) and LLM-driven where it must be (the agent in the user's editor does the actual analysis). Daemon code never calls an LLM.
 
 ## How a request moves through Construct
 
-```mermaid
-flowchart TD
-    User["User<br/>@construct fix the login redirect"]
-    Persona["Persona<br/>(personas/construct.md)<br/>the only public surface"]
-    Policy["Orchestration policy<br/>(lib/orchestration-policy.mjs)<br/>classifies intent + execution track"]
-    Gates{"Gates<br/>framing · external research · doc owner"}
-    Contracts["Contract chain<br/>(agents/contracts.json)<br/>typed handoffs with pre/post conditions"]
-    Specialists["Specialist sequence<br/>architect → engineer → reviewer → qa → security<br/>(agents/prompts/cx-*.md)"]
-    Verification{"Verification gates<br/>npm test · lint:comments · docs:verify · contract postconditions"}
-    Result["Result<br/>back through the persona, in one voice"]
-
-    User --> Persona
-    Persona --> Policy
-    Policy --> Gates
-    Gates -->|preconditions met| Contracts
-    Gates -->|preconditions missing| Persona
-    Contracts --> Specialists
-    Specialists --> Verification
-    Verification -->|pass| Result
-    Verification -->|fail| Specialists
-    Result --> User
-```
+<RequestFlow nodes={[
+  { label: 'User', sub: '@construct fix the login redirect' },
+  { label: 'Persona', sub: 'personas/construct.md — the only public surface' },
+  { label: 'Orchestration policy', sub: 'classifies intent + execution track' },
+  { label: 'Gates', sub: 'framing · external research · doc owner', decision: true, exitLabel: 'preconditions met' },
+  { label: 'Contract chain', sub: 'agents/contracts.json — typed handoffs with pre/post conditions' },
+  { label: 'Specialist sequence', sub: 'architect → engineer → reviewer → qa → security' },
+  { label: 'Verification gates', sub: 'npm test · lint:comments · docs:verify · contract postconditions', decision: true, exitLabel: 'pass' },
+  { label: 'Result', sub: 'back through the persona, in one voice', highlight: true },
+]} />
 
 The loop is the differentiator. Other agent tools dispatch to specialists; Construct dispatches *and* gates *and* re-runs until verification passes or a real blocker surfaces.
 
 ## Where things live
 
-```mermaid
-graph LR
-    subgraph core["core/. orchestration brain"]
-        CLI["bin/construct<br/>+ lib/cli-commands.mjs"]
-        MCP["lib/mcp/<br/>MCP server + tools"]
-        PolicyMod["lib/orchestration-policy.mjs<br/>routing"]
-        Storage["lib/storage/<br/>file + SQL + vector"]
-        Hooks["lib/hooks/<br/>session-start, audit, guards"]
-    end
-    subgraph providers["providers/. external systems"]
-        GitHub["GitHub"]
-        Jira["Atlassian Jira"]
-        Confluence["Atlassian Confluence"]
-        Slack["Slack"]
-        Salesforce["Salesforce"]
-        Plugins["Custom plugins"]
-    end
-    subgraph runtime["runtime/. keeps the lights on"]
-        Embed["embed daemon<br/>+ supervisor"]
-        Sched["scheduler"]
-        Backup["backup<br/>(lib/storage/backup.mjs)"]
-    end
-    subgraph dashboard["dashboard/. the web app"]
-        Chat["chat (SSE)"]
-        Approvals["approval queue"]
-        Knowledge["knowledge panel"]
-    end
-    subgraph deploy["deploy/. ship it"]
-        Docker["multi-stage Dockerfile"]
-        Terraform["Terraform modules<br/>(ECS, ALB, RDS+pgvector)"]
-        Release["release.yml<br/>(SEA binaries, GHCR, npm)"]
-    end
-
-    core --> providers
-    core --> runtime
-    core --> dashboard
-    runtime --> providers
-    deploy --> dashboard
-    deploy --> runtime
-```
+<Cards>
+  <Card title="core/ — orchestration brain">
+    `bin/construct` + `lib/cli-commands.mjs` · `lib/mcp/` MCP server + tools · `lib/orchestration-policy.mjs` routing · `lib/storage/` file + SQL + vector · `lib/hooks/` session-start, audit, guards
+  </Card>
+  <Card title="providers/ — external systems">
+    Transport-agnostic adapters for GitHub, Atlassian Jira, Confluence, Slack, and Salesforce. Core dispatches through the interface; it never knows the transport.
+  </Card>
+  <Card title="runtime/ — keeps the lights on">
+    Embed daemon + supervisor · scheduler · `lib/storage/backup.mjs` timestamped archives with SHA-256 manifest
+  </Card>
+  <Card title="dashboard/ — the web app">
+    Chat (SSE streaming) · approval queue · knowledge panel · snapshot viewer · infrastructure tab
+  </Card>
+  <Card title="deploy/ — ship it">
+    Multi-stage hardened Dockerfile · Terraform modules (ECS, ALB, RDS+pgvector) · `release.yml` SEA binaries, GHCR, npm publish
+  </Card>
+</Cards>
 
 ## In human terms
 
@@ -123,11 +74,8 @@ A user request hits the Construct persona (`personas/construct.md`). The orchest
 - **Stateless providers.** Providers never own durable state. Swapping GitHub for a custom Git provider, or adding Salesforce, doesn't migrate any data. Construct's stores stay put.
 - **Mode-driven topology.** Deployment mode (`solo` | `team` | `enterprise`) selects the backends for the intake queue, memory, telemetry, and workers. Solo runs everything locally and degrades gracefully when an optional resource is missing. Team and enterprise promote the same primitives to shared Postgres, brokered MCP, and Docker worker pools. See [deployment model](/concepts/deployment-model).
 - **Hard gates over soft hooks.** Comment policy, doc verification, template policy, and contract postconditions fail the build. They are not advisory. The default is "stop and fix"; CI is a backstop, not the primary check.
+- **No fabrication, enforced.** Every load-bearing claim in every artifact traces to a source. Lint blocks unsupported assertions in real time. Intake traceability stamps every artifact's origin packet into its frontmatter. Contract postconditions verify structural requirements before a handoff crosses a phase boundary. See [Integrity and trust](/concepts/integrity-and-trust).
 - **Specialists challenge each other.** Devil's advocate, reviewer, QA, security are peers, not rubber stamps. Agreement at every step is treated as a smell. if everyone always says yes, the gates aren't doing their job.
-
-## System overview
-
-Construct is an org-in-a-box: an AI orchestration system that can be pointed at external systems (repos, project trackers, messaging, knowledge bases), embedded as a continuous monitor, and deployed locally or to the cloud. It produces organizational intelligence. PRDs, RFCs, ADRs, health snapshots, recommendations. and manages work across connected systems through a transport-agnostic provider abstraction.
 
 ## Architecture layers
 
@@ -236,7 +184,7 @@ The goal is for Construct to run itself like a real organization. a department-s
 
 Three layers:
 
-1. **L0. Deterministic agents (non-LLM, always-on).** The `construct-doctor` daemon (`lib/doctor/`) runs alongside the dashboard, holding four watchers: process-pressure (extends `lib/runtime-pressure.mjs`), service-health (probes Postgres / dashboard / cm; auto-restarts docker services), disk (rotates `~/.cx/*.jsonl`, prunes `~/.construct/.runtime/`), and cost (per-persona daily token ledger; the gateway hard-stops invocations at the cap). Recoverable actions are auto-taken and audit-logged to `~/.cx/doctor-log.jsonl`. L0 escalates a `service.down` role event when deterministic rules can't resolve the problem (e.g., 2 failed restarts or repeated pressure churn).
+1. **L0. Deterministic agents (non-LLM, always-on).** The `construct-doctor` daemon (`lib/doctor/`) runs alongside the dashboard, holding watchers for process-pressure (extends `lib/runtime-pressure.mjs`), service-health (probes Postgres / dashboard / cm; auto-restarts docker services), disk (rotates `~/.cx/*.jsonl`, prunes `~/.construct/.runtime/`), cost (per-persona daily token ledger; the gateway hard-stops invocations at the cap), and `mcp-protocol` (performs a real MCP handshake against every configured MCP server in Claude Code and OpenCode configs, surfaces servers that fail `initialize` or `tools/list`). Recoverable actions are auto-taken and audit-logged to `~/.cx/doctor-log.jsonl`. L0 escalates a `service.down` role event when deterministic rules can't resolve the problem (e.g., 2 failed restarts or repeated pressure churn).
 2. **L1. LLM personas (event-driven, fenced, rate-limited).** The role framework in `lib/roles/`. Events published by hooks or L0 are routed via `EVENT_OWNERSHIP` (in `lib/orchestration-policy.mjs` next to `DOC_OWNERSHIP`) to the owning persona declared in `agents/role-manifests.json`. The gateway applies threshold + cooldown + rate-ceiling, creates a bd issue, queues a pending invocation in `~/.cx/role-pending.jsonl`, and emits an SSE toast. Session-start drains the backlog (cap 5 per session) and surfaces invocations to Construct, which dispatches the persona via the existing Task path. Personas act inside a fence. allowed paths, allowed bd labels, `approvalRequired` list per role. Handoffs are recorded as `next:cx-<role>` bd labels.
 3. **L2. User.** Commits, pushes, novel decisions, budget overrides, kill switches. Approval-required actions per `rules/common/commit-approval.md` are always L2. The goal is to make L2 rare. not zero.
 
@@ -367,37 +315,9 @@ body_hash:   sha256:<hex>          # SHA-256 of trimmed body
 - Task graph nodes cannot transition to `done` without an evidence record.
 - Every brokered tool call emits a `tool.called` trace event; denials are typed errors.
 
-## Agent registry
+## Specialist roster
 
-<!-- AUTO:agents -->
-| Agent | Tier | Purpose |
-|---|---|---|
-| `orchestrator` | n/a | Sees the whole board. orchestrates by assembling the right perspectives in the  |
-| `rd-lead` | n/a | Slows the team down at the right moment. before architecture locks in assumptio |
-| `product-manager` | n/a | Translates user reality into technical deliverables. skeptical of any requireme |
-| `ux-researcher` | n/a | Brings user reality into the room. guards against assumptions built on internal |
-| `operations` | n/a | The logistics mind who maps dependencies, sequences, and ownership. because hid |
-| `researcher` | n/a | Never trusts recall alone. sources every claim with a primary reference and a d |
-| `business-strategist` | n/a | Asks whether we're building the right thing for the right market at the right ti |
-| `data-analyst` | n/a | Measures carefully because measurement shapes behavior. suspicious of metrics t |
-| `evaluator` | n/a | Defines what 'better' means before the work is done. evaluations designed after |
-| `ai-engineer` | n/a | Designs for failure before designing for success. 'it works in the demo' is the |
-| `architect` | n/a | Makes trade-offs explicit before implementation locks them in. permanently susp |
-| `engineer` | n/a | Reads before writing. understanding the existing pattern matters more than havi |
-| `devil-advocate` | n/a | Makes the plan survive contact with reality. the person who was right about the |
-| `reviewer` | n/a | Finds bugs by looking at the conditions the author didn't test for. happy path  |
-| `security` | n/a | Thinks like an attacker. sees the attack surface the developer didn't know exis |
-| `qa` | n/a | Asks whether the tests test what matters. coverage numbers are hypotheses about |
-| `debugger` | n/a | Traces to root cause before proposing a fix. the real bug is always one layer d |
-| `sre` | n/a | Plans for failure before it happens. reliability problems are designed in, not  |
-| `platform-engineer` | n/a | Reduces the tax on the people doing the work. friction compounds, and platform  |
-| `legal-compliance` | n/a | Catches compliance risk before the architecture locks. legal remediation after  |
-| `release-manager` | n/a | Guards the gap between 'verified' and 'safe to ship'. rollback procedures that  |
-| `docs-keeper` | n/a | Owns the record of why, not just what. undocumented decisions become tribal kno |
-| `designer` | n/a | Treats visual decisions as interaction decisions. a design that only exists in  |
-| `accessibility` | n/a | Tests with a screen reader and keyboard. accessibility is measured by using the |
-| `explorer` | n/a | Reads before concluding. assumptions about code are wrong more often than assum |
-| `trace-reviewer` | n/a | Tracks fleet-level performance patterns. stable median scores can hide high-var |
-| `data-engineer` | n/a | Builds pipelines that can be trusted. trust requires idempotency, observability |
-| `test-automation` | n/a | Knows that bad automation is worse than no automation. flaky tests teach teams  |
-<!-- /AUTO:agents -->
+28 specialists ship in the default profile. Each has a role, model tier (reasoning / standard / fast), and a prompt file in `agents/prompts/`. The canonical source is `agents/registry.json`.
+
+Full roster with domain groupings: [Agents and personas](/concepts/agents-and-personas).
+Full reference with tier and purpose per specialist: [Specialist reference](/reference/agents).

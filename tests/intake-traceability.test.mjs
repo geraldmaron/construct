@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 
 import {
   stampIntakeProvenance,
@@ -19,8 +19,16 @@ import {
   hasIntakeReference,
 } from '../lib/intake/traceability.mjs';
 
+const tmpDirs = [];
+after(() => {
+  for (const dir of tmpDirs) {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+});
+
 function makeTempArtifact(content) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-intake-trace-'));
+  tmpDirs.push(dir);
   const file = path.join(dir, 'fixture.md');
   fs.writeFileSync(file, content, 'utf8');
   return file;

@@ -86,8 +86,9 @@ test('extractor caps content at 5KB', () => {
   assert.ok(obs.content.length <= 5 * 1024);
 });
 
-test('hook exits 0 within budget on valid Stop payload and writes an observation', () => {
+test('hook exits 0 within budget on valid Stop payload and writes an observation', (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-reflect-'));
+  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   const transcriptPath = path.join(cwd, 'transcript.jsonl');
   fs.writeFileSync(
@@ -140,8 +141,9 @@ test('hook exits 0 within budget on valid Stop payload and writes an observation
     'embedding missing from vector entry');
 });
 
-test('hook skips trivial sessions with no tool calls and short final text', () => {
+test('hook skips trivial sessions with no tool calls and short final text', (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-reflect-trivial-'));
+  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   const transcriptPath = path.join(cwd, 'transcript.jsonl');
   const trivial = [
@@ -162,8 +164,9 @@ test('hook skips trivial sessions with no tool calls and short final text', () =
   assert.equal(fs.existsSync(indexPath), false, 'trivial session should not be recorded');
 });
 
-test('hook is a no-op when CONSTRUCT_REFLECT_AUTO=off', () => {
+test('hook is a no-op when CONSTRUCT_REFLECT_AUTO=off', (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-reflect-off-'));
+  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   const transcriptPath = path.join(cwd, 'transcript.jsonl');
   fs.writeFileSync(transcriptPath, JSON.stringify(SAMPLE_TRANSCRIPT[0]) + '\n');
@@ -181,8 +184,9 @@ test('hook is a no-op when CONSTRUCT_REFLECT_AUTO=off', () => {
   assert.equal(fs.existsSync(obsDir), false, 'opt-out should not create observations dir');
 });
 
-test('hook skips when cwd is not a Construct project', () => {
+test('hook skips when cwd is not a Construct project', (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'not-construct-'));
+  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
   const transcriptPath = path.join(cwd, 'transcript.jsonl');
   fs.writeFileSync(transcriptPath, JSON.stringify(SAMPLE_TRANSCRIPT[0]) + '\n');
 
