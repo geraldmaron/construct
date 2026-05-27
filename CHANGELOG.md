@@ -4,6 +4,12 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- **Embed daemon log no longer grows unbounded.** Two compounding bugs caused `~/.cx/runtime/embed-daemon.log` to reach 34 GB on a single local install:
+  1. The scheduler in `lib/embed/scheduler.mjs` silently dropped the `repeat: false` option, so a one-shot startup job registered with `intervalMs: 0` became `setInterval(fn, 0)` and fired on every event-loop tick (~thousands per second). The job ran `runTelemetrySetup`, returned the "keys required" error, and (via stderr) wrote a log line each time. Scheduler now honors `repeat: false` and routes the task through a single `setTimeout` (or no timer at all when paired with `runImmediately: true`). Regression test in `tests/embed-scheduler.test.mjs`.
+  2. The daemon log had no rotation policy. The parent process opens an append-mode FD at spawn time and the worker holds it for its full lifetime, so rotation has to happen before the spawn opens the FD. `lib/embed/cli.mjs` now calls a new `rotateEmbedLogIfNeeded(log, env)` at each spawn site (both `cmdEmbedStart` and `autoStartEmbedIfNeeded`). Cap defaults to 50 MB with 3 retained segments (worst-case 200 MB on disk). Override with `CONSTRUCT_EMBED_LOG_MAX_MB` and `CONSTRUCT_EMBED_LOG_KEEP`; both clamped to a sane hard cap. Regression tests in `tests/embed-log-rotation.test.mjs`.
+
 ### Added
 
 - **`STRATEGY.md` at the repo root.** Northstar, bets, non-bets, time horizon, phased path, and open bets for Construct itself. Sits above [`docs/prd/0001-construct-org-in-a-box.md`](docs/prd/0001-construct-org-in-a-box.md), which remains the spec layer.
