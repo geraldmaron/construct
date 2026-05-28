@@ -147,22 +147,25 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
     try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {}
   });
   fs.mkdirSync(path.join(rootDir, ".cx"), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, "agents", "prompts"), { recursive: true });
-  fs.writeFileSync(path.join(rootDir, "agents", "registry.json"), JSON.stringify({
+  fs.mkdirSync(path.join(rootDir, "specialists", "prompts"), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, "specialists", "registry.json"), JSON.stringify({
     models: {
       reasoning: { primary: "openrouter/deepseek/deepseek-r1" },
       standard: { primary: "openrouter/qwen/qwen3-coder:free" },
       fast: { primary: "openrouter/meta-llama/llama-3.3-70b-instruct:free" },
     },
-    personas: [],
-    agents: [
+    orchestrator: { name: "construct", description: "orchestrator", role: "orchestrator", promptFile: "specialists/prompts/construct.md", modelTier: "standard" },
+    specialists: [
       {
         name: "engineer",
-        promptFile: "agents/prompts/cx-engineer.md",
+        promptFile: "specialists/prompts/cx-engineer.md",
+        description: "engineer",
+        modelTier: "standard",
       },
     ],
   }, null, 2));
-  fs.writeFileSync(path.join(rootDir, "agents", "prompts", "cx-engineer.md"), "# Engineer\n\nExecute implementation work.\n");
+  fs.writeFileSync(path.join(rootDir, "specialists", "prompts", "cx-engineer.md"), "# Engineer\n\nExecute implementation work.\n");
+  fs.writeFileSync(path.join(rootDir, "specialists", "prompts", "construct.md"), "# Construct\n\nExecute implementation work.\n");
   fs.writeFileSync(path.join(rootDir, ".cx", "context.json"), JSON.stringify({
     format: "json",
     savedAt: "2026-04-19T00:00:00.000Z",
@@ -218,17 +221,17 @@ test("buildRuntimeTracePayload honors process env model overrides in execution-c
     try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {}
   });
   fs.mkdirSync(path.join(rootDir, ".cx"), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, "agents", "prompts"), { recursive: true });
-  fs.writeFileSync(path.join(rootDir, "agents", "registry.json"), JSON.stringify({
+  fs.mkdirSync(path.join(rootDir, "specialists", "prompts"), { recursive: true });
+  fs.writeFileSync(path.join(rootDir, "specialists", "registry.json"), JSON.stringify({
     models: {
       reasoning: { primary: "registry/reasoning" },
       standard: { primary: "registry/standard" },
       fast: { primary: "registry/fast" },
     },
-    personas: [],
-    agents: [{ name: "engineer", promptFile: "agents/prompts/cx-engineer.md" }],
+    orchestrator: { name: "construct", description: "orchestrator", role: "orchestrator", promptFile: "personas/construct.md", modelTier: "standard" },
+    specialists: [{ name: "engineer", promptFile: "specialists/prompts/cx-engineer.md", description: "engineer", modelTier: "standard" }],
   }, null, 2));
-  fs.writeFileSync(path.join(rootDir, "agents", "prompts", "cx-engineer.md"), "# Engineer\n");
+  fs.writeFileSync(path.join(rootDir, "specialists", "prompts", "cx-engineer.md"), "# Engineer\n");
   fs.writeFileSync(path.join(rootDir, ".env"), "");
 
   const payload = buildRuntimeTracePayload(
@@ -315,14 +318,14 @@ test("plugin applies model fallback and logs warning when rate limit error hits"
   fs.writeFileSync(path.join(binDir, "construct"), "#!/usr/bin/env bash\nexit 0\n");
   fs.chmodSync(path.join(binDir, "construct"), 0o755);
   fs.mkdirSync(path.join(toolkitDir, ".cx"), { recursive: true });
-  fs.mkdirSync(path.join(toolkitDir, "agents"), { recursive: true });
+  fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
-  fs.writeFileSync(path.join(toolkitDir, "agents", "registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(toolkitDir, "specialists", "registry.json"), JSON.stringify({
     models: {
       standard: { primary: "openrouter/qwen/qwen3-coder:free", fallback: ["anthropic/claude-sonnet-4-6"] },
     },
-    personas: [],
-    agents: [],
+    orchestrator: { name: "construct", description: "orchestrator", role: "orchestrator", promptFile: "", modelTier: "standard" },
+    specialists: [],
   }, null, 2));
 
   const configPath = path.join(os.tmpdir(), "opencode-empty.json");
@@ -374,16 +377,16 @@ test("plugin falls back to a new target model when the current provider is unava
   fs.writeFileSync(path.join(binDir, "construct"), "#!/usr/bin/env bash\nexit 0\n");
   fs.chmodSync(path.join(binDir, "construct"), 0o755);
   fs.mkdirSync(path.join(toolkitDir, ".cx"), { recursive: true });
-  fs.mkdirSync(path.join(toolkitDir, "agents"), { recursive: true });
+  fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
-  fs.writeFileSync(path.join(toolkitDir, "agents", "registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(toolkitDir, "specialists", "registry.json"), JSON.stringify({
     models: {
       reasoning: { primary: "anthropic/claude-opus-4-6", fallback: ["openrouter/deepseek/deepseek-r1"] },
       standard: { primary: "openrouter/qwen/qwen3-coder:free", fallback: ["anthropic/claude-sonnet-4-6"] },
       fast: { primary: "openrouter/meta-llama/llama-3.3-70b-instruct:free" },
     },
-    personas: [],
-    agents: [],
+    orchestrator: { name: "construct", description: "orchestrator", role: "orchestrator", promptFile: "", modelTier: "standard" },
+    specialists: [],
   }, null, 2));
 
   const configPath = path.join(os.tmpdir(), "opencode-empty-fallback.json");
@@ -437,14 +440,14 @@ test("plugin no-ops when no safe fallback target exists", async (t) => {
   fs.writeFileSync(path.join(binDir, "construct"), "#!/usr/bin/env bash\nexit 0\n");
   fs.chmodSync(path.join(binDir, "construct"), 0o755);
   fs.mkdirSync(path.join(toolkitDir, ".cx"), { recursive: true });
-  fs.mkdirSync(path.join(toolkitDir, "agents"), { recursive: true });
+  fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
-  fs.writeFileSync(path.join(toolkitDir, "agents", "registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(toolkitDir, "specialists", "registry.json"), JSON.stringify({
     models: {
-      standard: { primary: "anthropic/claude-sonnet-4-6", fallback: ["anthropic/claude-opus-4-6"] },
+      standard: { primary: "anthropic/claude-sonnet-5-1", fallback: [] },
     },
-    personas: [],
-    agents: [],
+    orchestrator: { name: "construct", description: "orchestrator", role: "orchestrator", promptFile: "", modelTier: "standard" },
+    specialists: [],
   }, null, 2));
 
   const logs = [];
@@ -491,14 +494,14 @@ test("plugin continues fallback even when telemetry logging fails", async (t) =>
   fs.writeFileSync(path.join(binDir, "construct"), "#!/usr/bin/env bash\nexit 0\n");
   fs.chmodSync(path.join(binDir, "construct"), 0o755);
   fs.mkdirSync(path.join(toolkitDir, ".cx"), { recursive: true });
-  fs.mkdirSync(path.join(toolkitDir, "agents"), { recursive: true });
+  fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
-  fs.writeFileSync(path.join(toolkitDir, "agents", "registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(toolkitDir, "specialists", "registry.json"), JSON.stringify({
     models: {
       standard: { primary: "openrouter/qwen/qwen3-coder:free", fallback: ["anthropic/claude-sonnet-4-6"] },
     },
-    personas: [],
-    agents: [],
+    orchestrator: { name: "construct", description: "orchestrator", role: "orchestrator", promptFile: "", modelTier: "standard" },
+    specialists: [],
   }, null, 2));
 
   const pluginFactory = createConstructOpenCodePlugin({

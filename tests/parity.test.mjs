@@ -30,20 +30,18 @@ const FIXTURE_REGISTRY = {
     standard: { primary: 'anthropic/claude-sonnet-4-6', fallback: [] },
     fast: { primary: 'anthropic/claude-haiku-4-5', fallback: [] },
   },
-  agents: [
+  specialists: [
     { name: 'engineer', description: 'engineer', prompt: 'p', model: 'anthropic/claude-sonnet-4-6' },
     { name: 'security', description: 'sec', prompt: 'p', model: 'anthropic/claude-sonnet-4-6' },
   ],
-  personas: [
-    {
-      name: 'construct',
-      displayName: 'Construct',
-      description: 'd',
-      role: 'r',
-      promptFile: 'personas/construct.md',
-      model: 'anthropic/claude-opus-4-7',
-    },
-  ],
+  orchestrator: {
+    name: 'construct',
+    displayName: 'Construct',
+    description: 'd',
+    role: 'r',
+    promptFile: 'personas/construct.md',
+    model: 'anthropic/claude-opus-4-7',
+  },
   mcpServers: {
     github: { type: 'url', url: 'https://example.test/github' },
     context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp@latest'] },
@@ -53,9 +51,9 @@ const FIXTURE_REGISTRY = {
 before(async () => {
   tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-parity-root-'));
   tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-parity-home-'));
-  fs.mkdirSync(path.join(tmpRoot, 'agents'), { recursive: true });
+  fs.mkdirSync(path.join(tmpRoot, 'specialists'), { recursive: true });
   fs.mkdirSync(path.join(tmpRoot, 'personas'), { recursive: true });
-  fs.writeFileSync(path.join(tmpRoot, 'agents', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
+  fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
   fs.writeFileSync(path.join(tmpRoot, 'personas', 'construct.md'), '# stub\n');
   ({ checkParity } = await import('../lib/parity.mjs'));
 });
@@ -239,27 +237,27 @@ describe('checkParity', () => {
     resetSurfaces();
     const registryWithInternal = {
       ...FIXTURE_REGISTRY,
-      agents: [
-        { ...FIXTURE_REGISTRY.agents[0], internal: true },
-        { ...FIXTURE_REGISTRY.agents[1], internal: true },
+      specialists: [
+        { ...FIXTURE_REGISTRY.specialists[0], internal: true },
+        { ...FIXTURE_REGISTRY.specialists[1], internal: true },
       ],
     };
-    fs.writeFileSync(path.join(tmpRoot, 'agents', 'registry.json'), JSON.stringify(registryWithInternal, null, 2));
+    fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(registryWithInternal, null, 2));
     writeAllSurfaces();
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     const copilot = report.surfaces.find((s) => s.surface === 'copilot');
     assert.equal(copilot.status, 'ok', `copilot drift: missing=${copilot.missing}, extra=${copilot.extra}`);
-    fs.writeFileSync(path.join(tmpRoot, 'agents', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
+    fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
   });
 
   it('respects entry.platforms allowlist when set', () => {
     resetSurfaces();
     fs.writeFileSync(
-      path.join(tmpRoot, 'agents', 'registry.json'),
+      path.join(tmpRoot, 'specialists', 'registry.json'),
       JSON.stringify({
         ...FIXTURE_REGISTRY,
-        agents: [
-          ...FIXTURE_REGISTRY.agents,
+        specialists: [
+          ...FIXTURE_REGISTRY.specialists,
           { name: 'claude-only', description: 'd', prompt: 'p', model: 'anthropic/claude-sonnet-4-6', platforms: ['claude'] },
         ],
       })
@@ -281,6 +279,6 @@ describe('checkParity', () => {
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     assert.equal(report.ok, true, `parity should be ok; got ${JSON.stringify(report.summary)}`);
 
-    fs.writeFileSync(path.join(tmpRoot, 'agents', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
+    fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
   });
 });

@@ -19,8 +19,8 @@ Layer 3: Hooks              — enforcement at runtime events
 
 Two files own the behavioral contract:
 
-- **`agents/registry.json`** — every specialist's allowed tools, skills, model tier, and collaborator set. Consumed by every platform sync (Claude Code, Codex, Copilot, OpenCode).
-- **`agents/role-manifests.json`** — file-path fences and action allowlists per role. If a specialist is not in the allowlist, the action is blocked.
+- **`specialists/registry.json`** — every specialist's allowed tools, skills, model tier, and collaborator set. Consumed by every platform sync (Claude Code, Codex, Copilot, OpenCode).
+- **`specialists/role-manifests.json`** — file-path fences and action allowlists per role. If a specialist is not in the allowlist, the action is blocked.
 
 JSON manifests are the single source of truth. When CI runs `construct lint:agents`, it validates the registry against its schema. Platform files are generated from the registry, not the reverse.
 
@@ -57,11 +57,11 @@ Hooks can only warn (exit 0) or block (exit 2). They never modify the tool's out
 
 | Policy | Source file | Enforcement file | Mode |
 |---|---|---|---|
-| File-path fence | `agents/role-manifests.json` | `lib/roles/fence.mjs#checkAction` | Deterministic (100%) |
-| Action approval | `agents/role-manifests.json` | `lib/roles/fence.mjs#checkAction` | Deterministic (100%) |
+| File-path fence | `specialists/role-manifests.json` | `lib/roles/fence.mjs#checkAction` | Deterministic (100%) |
+| Action approval | `specialists/role-manifests.json` | `lib/roles/fence.mjs#checkAction` | Deterministic (100%) |
 | Anti-fabrication | `rules/common/no-fabrication.md` | `lib/comment-lint.mjs` | Deterministic (~85%) |
 | Release gates | `rules/common/release-gates.md` | `lib/hooks/pre-push-gate.mjs` | Deterministic (95%) |
-| Contract postconditions | `agents/contracts.json` | `lib/contracts/validate.mjs` | Deterministic (100%) |
+| Contract postconditions | `specialists/contracts.json` | `lib/contracts/validate.mjs` | Deterministic (100%) |
 | Bash safety | built-in | `lib/hooks/guard-bash.mjs` | Deterministic (100%) |
 | Bootstrap state | built-in | `lib/hooks/policy-engine.mjs` | Deterministic (100%) |
 | Secret scan | built-in | `lib/hooks/scan-secrets.mjs` | Deterministic (100%) |

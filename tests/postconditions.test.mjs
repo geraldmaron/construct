@@ -14,7 +14,7 @@ import {
   POSTCONDITIONS,
   validatePostconditions,
   describePostconditions,
-} from '../lib/agents/postconditions.mjs';
+} from '../lib/specialists/postconditions.mjs';
 
 describe('validatePostconditions', () => {
   it('returns ok for producers without registered rules', () => {

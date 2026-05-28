@@ -10,7 +10,7 @@
     "bin/construct",
     "bin/construct-postinstall.mjs",
     "lib/**",
-    "agents/**",
+    "specialists/**",
     "examples/**",
     "personas/**",
     "commands/**",
@@ -20,7 +20,7 @@
     "templates/**",
     "templates/distribution/**",
     "db/**",
-    "scripts/sync-agents.mjs",
+    "scripts/sync-specialists.mjs",
     "README.md",
     ".env.example"
   ],
