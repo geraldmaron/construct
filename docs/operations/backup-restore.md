@@ -78,12 +78,12 @@ construct backup restore ~/.construct/backups/postgres/construct-2026-05-08T10-3
 
 Restore steps performed:
 
-1. Stop Construct services (`construct down`)
+1. Stop Construct services (`construct stop`)
 2. Drop and recreate the Postgres schema
 3. Load the Postgres dump
 4. Restore session index files
 5. Restore audit trail
-6. Start services (`construct up`)
+6. Start services (`construct dev`)
 7. Run `construct doctor` to verify health
 
 ## Purge old backups

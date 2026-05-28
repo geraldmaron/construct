@@ -92,7 +92,7 @@ The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.construct/config.env
 | Vector retrieval | Postgres + pgvector when present; `.cx/observations/` JSON index otherwise | shared Postgres + pgvector |
 | Trace observability | local `.cx/traces/*.jsonl`; optional Langfuse/HTTP/OTLP export | central Langfuse-compatible backend, HTTP ingestion endpoint, or OTel collector |
 | Issue tracking | `bd` (beads), Dolt-backed | `bd` against shared Dolt remote |
-| Dashboard | `construct serve` on localhost | dashboard server in the shared deployment |
+| Dashboard | `construct dev` starts the local dashboard | dashboard server in the shared deployment |
 | MCP | local processes | brokered through `mcp-broker` |
 | Intake queue | `.cx/intake/` files | `construct_intake_items` table in Postgres |
 | Session state | `.cx/context.md`, `.cx/handoffs/`, beads | shared state with per-user scoping |

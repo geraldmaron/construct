@@ -17,10 +17,10 @@ Each has a template under `docs/templates/` and a dedicated lane under `docs/`.
 ## Set up doc lanes for a new project
 
 ```bash
-construct init-docs
+construct init --with-all-docs
 ```
 
-Creates `docs/prd/`, `docs/adr/`, `docs/rfc/`, `docs/memos/`, `docs/runbooks/`, and `docs/how-to/`
+Creates the requested documentation lanes such as `docs/prd/`, `docs/adr/`, `docs/rfc/`, `docs/memos/`, and `docs/runbooks/`. For a narrower setup, use flags such as `--with-adrs`, `--with-rfcs`, `--with-runbooks`, or `--with-docs=adrs,rfcs`.
 with `README.md` indices and `_template.md` starters. Safe to re-run on an existing repo.
 
 ## Generate a new artifact from a template

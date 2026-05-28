@@ -106,7 +106,7 @@ export default function HomePage() {
               construct init && construct sync
               {'\n'}
               <span className="text-fd-muted-foreground">$ </span>
-              construct up
+              construct dev
               {'\n'}
               <span className="text-fd-muted-foreground"># Open your editor and address @construct</span>
             </code>

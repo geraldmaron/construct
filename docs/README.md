@@ -23,11 +23,16 @@ All LLMs working in the repo, including Construct, must read these as project st
 
 ## Contents
 
-- [Architecture](./architecture.md)
-- [Prompt surface architecture](./prompt-surfaces.md)
-- [Knowledge layout](./knowledge-layout.md). `.cx/` directory structure, inbox routing, Slack intent → category
+- [Start](./start/). Install, initialize a project, connect an editor, and run the first task
+- [Architecture](./concepts/architecture.mdx). Runtime shape, boundaries, and system map
+- [Agents and personas](./concepts/agents-and-personas.mdx). One public persona with specialists behind it
+- [Deployment model](./concepts/deployment-model.mdx). Solo, team, and enterprise topology
+- [Prompt surface architecture](./concepts/prompt-surfaces.mdx). Persona, specialist, skill, rule, and fixture surfaces
+- [Knowledge layout](./concepts/knowledge-layout.md). `.cx/` directory structure, inbox routing, and durable knowledge lanes
+- [Intake and triage](./concepts/intake-and-triage.mdx). How dropped signals become owner-assigned work
+- [Gates and enforcement](./concepts/gates-and-enforcement.mdx). Write-time, commit-time, and CI guardrails
 - [Style](./STYLE.md). Voice, punctuation, structure rules (canonical reference for prose lint)
-- [Learning loops](./concepts/learning-loops.md). What is wired vs aspirational across A1-A4
+- [Learning loops](./concepts/learning-loops.mdx). What is wired vs aspirational across A1-A4
 - [Profile lifecycle](./concepts/profile-lifecycle.md). Draft → promote → archive flow for org-type profiles
 - [Persona and skill research](./concepts/persona-research.md). Methodology grounded in Goodwin, Cooper, Galbraith STAR, Bloom
 - [Release policy](./maintenance/release-policy.md). When to tag
@@ -35,7 +40,6 @@ All LLMs working in the repo, including Construct, must read these as project st
 - [Templates and role anti-patterns](./templates/README.md)
 - [Runbooks](./runbooks/)
 - [ADRs](../.cx/decisions/). Session-context decisions (longer ADRs live in `docs/adr/`)
-- [Plans](../.cx/plans/). Plan artifacts and supporting specs for tracker-linked work
 - [Skills](../skills/). Domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
 - [Tests audit](../tests/AUDIT.md). Category-by-category survey of the 188 test files
 - [Functional tests pattern](../tests/functional/README.md). When and how to add an end-to-end test
@@ -44,22 +48,34 @@ All LLMs working in the repo, including Construct, must read these as project st
 
 Step-by-step operator guides for common tasks:
 
-- [Start embed mode](./how-to/how-to-embed-start.md)
-- [Configure the inbox watcher](./how-to/how-to-inbox.md)
-- [Configure Slack](./how-to/how-to-slack-setup.md)
-- [Override the storage root (CX_DATA_DIR)](./how-to/how-to-cx-data-dir.md)
-- [Use construct reflect](./how-to/how-to-reflect.md)
-- [Manage providers](./how-to/how-to-providers.md)
-- [Generate and list artifacts (PRD, ADR, RFC)](./how-to/how-to-artifact.md)
-- [Query the knowledge base (ask, trends, index)](./how-to/how-to-knowledge.md)
-- [Observability: review, optimize, cost, efficiency](./how-to/how-to-observability.md)
-- [Wireframe and drop commands](./how-to/how-to-wireframe-drop.md)
-- [Distill and infer commands](./how-to/how-to-distill-infer.md)
-- [Sync the dashboard static bundle](./how-to/how-to-dashboard-sync.md)
+- [Quick start](./cookbook/quick-start.md)
+- [Use the inbox](./cookbook/use-the-inbox.mdx)
+- [Configure Slack](./cookbook/configure-slack.md)
+- [Configure GitHub](./cookbook/configure-github.md)
+- [Configure Jira and Confluence](./cookbook/configure-jira-confluence.md)
+- [Override the storage root (`CX_DATA_DIR`)](./cookbook/override-storage-root.md)
+- [Manage providers](./cookbook/manage-providers.md)
+- [Plug in your own LLM](./cookbook/plug-in-your-own-llm.mdx)
+- [Generate artifacts](./cookbook/generate-artifacts.mdx)
+- [Query the knowledge base](./cookbook/query-the-knowledge-base.md)
+- [Observability and cost](./cookbook/observability-and-cost.md)
+- [Wireframe and drop commands](./cookbook/wireframe-and-drop.md)
+- [Distill and infer commands](./cookbook/distill-and-infer.md)
+- [Sync the dashboard static bundle](./cookbook/sync-the-dashboard.md)
+
+## Command Coverage
+
+Use the generated [CLI reference](./reference/cli/) for exact flags and subcommands. The docs index intentionally points advanced commands to the reference when a dedicated tutorial would add little beyond the command help.
+
+- Core: `construct docs`, `construct recommendations`, `construct sandbox`
+- Workflows and knowledge: `construct customer`, `construct graph`, `construct integrations`, `construct reflect`, `construct tags`, `construct workflow`, `construct workspace`
+- Models and integrations: `construct claude:allow`, `construct creds`, `construct ollama`
+- Observability and diagnostics: `construct llm-judge`, `construct telemetry`, `construct cleanup`
+- Administration: `construct auth:status`, `construct backup`, `construct beads`, `construct completions`, `construct gates:audit`, `construct hooks:health`, `construct role`, `construct scheduler`, `construct uninstall`, `construct upgrade`
 
 ## Prompt surfaces
 
-`docs/prompt-surfaces.md` is the canonical reference for the prompt architecture.
+`docs/concepts/prompt-surfaces.mdx` is the canonical reference for the prompt architecture.
 
 It defines:
 
@@ -89,4 +105,4 @@ Parallel work rule: one writer per file. If multiple agent or harness sessions a
 ## Ownership
 
 Maintained by: Construct contributors
-Last updated: 2026-04-23
+Last updated: 2026-05-28

@@ -2,7 +2,7 @@
 
 **One AI interface. A team of specialists behind it. Hard gates. Runs locally, or deploys for teams.**
 
-📖 **[Read the docs →](https://geraldmaron.github.io/construct/)** · 🚀 **[5-minute quickstart →](https://geraldmaron.github.io/construct/docs/start)** · 📦 `npm install -g @geraldmaron/construct`
+📖 **[Read the docs →](https://geraldmaron.github.io/construct/)** · 🚀 **[5-minute quickstart →](https://geraldmaron.github.io/construct/start)** · 📦 `npm install -g @geraldmaron/construct`
 
 ---
 
@@ -10,7 +10,7 @@
 
 Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. You talk to one persona called `construct`. Behind it is a team of specialists shaped by your **org profile**: software R&D by default, with curated profiles for operations, creative, and research orgs, plus a schema-validated escape hatch for custom profiles. Each profile organizes its specialists by department (Product, Engineering, Operations, etc.) and carries its own intake taxonomy, doc templates, and role set. Sessions survive boundary changes via durable state in `.cx/`, beads, and a local vector index. Solo by default. Can deploy centrally for teams that want shared memory, telemetry, queues, and policy.
 
-`construct profile show|list|set <id>` to switch. See [Profile lifecycle](https://geraldmaron.github.io/construct/docs/concepts/profile-lifecycle) for how new profiles are built (it's a research process, not a JSON exercise).
+`construct profile show|list|set <id>` to switch. See [Profile lifecycle](https://geraldmaron.github.io/construct/concepts/profile-lifecycle) for how new profiles are built (it's a research process, not a JSON exercise).
 
 The team and enterprise modes exist because I wanted to learn what shipping a real multi-tenant tool would look like. The project is still open source, the code is still public, and the bar is still "does this help me learn." Run it solo if that's all you need.
 
@@ -39,20 +39,33 @@ Open your editor and talk to `@construct`. A walkthrough lives in `construct_gui
 
 No Node? Try `brew install geraldmaron/construct/construct`. Cloning a project that already uses Construct? `npx -y @geraldmaron/construct init` wires it up.
 
-[Five minute walkthrough](https://geraldmaron.github.io/construct/docs/start).
+[Five minute walkthrough](https://geraldmaron.github.io/construct/start).
+
+## Usage
+
+Most days, the loop is:
+
+```bash
+construct status          # confirm services and editor adapters are healthy
+construct sync            # refresh host adapters after registry, prompt, or config changes
+construct intake list     # review new signals, if your project uses the inbox
+construct doctor          # diagnose install, service, MCP, and adapter drift
+```
+
+In your editor, start with `@construct`. Ask for the outcome, not the specialist. Construct routes to the right specialist chain, keeps durable state in `.cx/` and Beads, and blocks risky mutations until the configured gates pass.
 
 ## What you can do
 
 | If you want to... | Read |
 |---|---|
-| Install and run a first task | [Start](https://geraldmaron.github.io/construct/docs/start) |
-| Understand how it works | [Architecture](https://geraldmaron.github.io/construct/docs/concepts/architecture) |
-| Pick a deployment mode | [Deployment model](https://geraldmaron.github.io/construct/docs/concepts/deployment-model) |
-| Drop a signal and triage it | [Intake and triage](https://geraldmaron.github.io/construct/docs/concepts/intake-and-triage) |
-| Add a custom specialist | [Add a custom agent](https://geraldmaron.github.io/construct/docs/cookbook/add-a-custom-agent) |
-| Fix a blocked commit or red CI | [Fix a policy violation](https://geraldmaron.github.io/construct/docs/cookbook/fix-a-policy-violation) |
-| Plug in your own LLM | [Plug in your own LLM](https://geraldmaron.github.io/construct/docs/cookbook/plug-in-your-own-llm) |
-| Look up a CLI command | [CLI reference](https://geraldmaron.github.io/construct/docs/reference/cli) |
+| Install and run a first task | [Start](https://geraldmaron.github.io/construct/start) |
+| Understand how it works | [Architecture](https://geraldmaron.github.io/construct/concepts/architecture) |
+| Pick a deployment mode | [Deployment model](https://geraldmaron.github.io/construct/concepts/deployment-model) |
+| Drop a signal and triage it | [Intake and triage](https://geraldmaron.github.io/construct/concepts/intake-and-triage) |
+| Add a custom specialist | [Add a custom specialist](https://geraldmaron.github.io/construct/cookbook/add-a-custom-agent) |
+| Fix a blocked commit or red CI | [Fix a policy violation](https://geraldmaron.github.io/construct/cookbook/fix-a-policy-violation) |
+| Plug in your own LLM | [Plug in your own LLM](https://geraldmaron.github.io/construct/cookbook/plug-in-your-own-llm) |
+| Look up a CLI command | [CLI reference](https://geraldmaron.github.io/construct/reference/cli) |
 
 Works with Anthropic, OpenRouter, Ollama, and other OpenAI-compatible providers.
 
@@ -64,21 +77,21 @@ Three modes. `solo` is the default and runs everything locally. Filesystem queue
 
 `enterprise` adds tenant isolation, RBAC and ABAC scaffolding, isolated worker containers, signed MCP allowlists, and mandatory audit.
 
-Pick or change modes with `construct config mode [solo|team|enterprise]`. [Deployment model](https://geraldmaron.github.io/construct/docs/concepts/deployment-model).
+Pick or change modes with `construct config mode [solo|team|enterprise]`. [Deployment model](https://geraldmaron.github.io/construct/concepts/deployment-model).
 
 ## Intake
 
 Anything dropped into `.cx/inbox/` (a bug report, a customer comment, a competitor PDF, a postmortem draft) is classified by the active profile's intake taxonomy. The default `rnd` profile uses bug, user-signal, experiment, architecture, incident, security, requirement, research, ops, eval-finding, launch-asset, legal-compliance. The `operations` profile uses request, incident, ops, security, docs. The `creative` profile uses brief, content-request, asset, experiment, report. The `research` profile uses question, study, synthesis, report.
 
-Each signal gets a primary owner and a recommended handoff chain. Inspect with `construct intake list` and `construct intake show <id>`. Generate a task graph with `construct graph from-intake <id>`. The classifier runs in the daemon and is deterministic. The agent in your editor does the actual analysis. [Intake and triage](https://geraldmaron.github.io/construct/docs/concepts/intake-and-triage).
+Each signal gets a primary owner and a recommended handoff chain. Inspect with `construct intake list` and `construct intake show <id>`. Generate a task graph with `construct graph from-intake <id>`. The classifier runs in the daemon and is deterministic. The agent in your editor does the actual analysis. [Intake and triage](https://geraldmaron.github.io/construct/concepts/intake-and-triage).
 
 ## Hard gates
 
-Every code mutation runs through enforcement. No secrets committed, tests green, docs current, comments lint-clean, CI passes. Gates live in three places: write-time, commit-time, CI safety net. They can only be bypassed with explicit env vars so every exception leaves an audit trail. [Gates and enforcement](https://geraldmaron.github.io/construct/docs/concepts/gates-and-enforcement).
+Every code mutation runs through enforcement. No secrets committed, tests green, docs current, comments lint-clean, CI passes. Gates live in three places: write-time, commit-time, CI safety net. They can only be bypassed with explicit env vars so every exception leaves an audit trail. [Gates and enforcement](https://geraldmaron.github.io/construct/concepts/gates-and-enforcement).
 
 ## Learning loops
 
-Construct gets smarter on its own. Every session ends with an automatic capture: tools used, files touched, what the final reply said. That goes into `.cx/observations/` and is searchable from the next session. See [`docs/concepts/learning-loops.md`](./docs/concepts/learning-loops.md) for what's wired, what's coming, and how to turn pieces off.
+Construct gets smarter on its own. Every session ends with an automatic capture: tools used, files touched, what the final reply said. That goes into `.cx/observations/` and is searchable from the next session. See [`docs/concepts/learning-loops.mdx`](./docs/concepts/learning-loops.mdx) for what's wired, what's coming, and how to turn pieces off.
 
 ## Core commands
 
@@ -124,6 +137,16 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
 
+### Models & Integrations
+
+| Command | What it does |
+|---|---|
+| `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
+| `construct hosts` | Show host support for Construct orchestration |
+| `construct mcp` | Manage MCP integrations |
+| `construct models` | Show or update model tier assignments |
+| `construct plugin` | Manage external Construct plugin manifests |
+
 ### Integrations
 
 | Command | What it does |
@@ -144,6 +167,14 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct review` | Generate agent performance review from Langfuse trace backend |
 | `construct telemetry` | Query telemetry traces and latency data |
 | `construct telemetry-backfill` | Backfill sparse traces with observations (trace backend) |
+
+### Diagnostics
+
+| Command | What it does |
+|---|---|
+| `construct audit` | Audit Construct internals and review the mutation trail |
+| `construct cleanup` | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
+| `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 
 ### Advanced
 
@@ -176,7 +207,7 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md). Branch workflow, gates, review expectations.
 - [`CHANGELOG.md`](./CHANGELOG.md). Release history.
-- [`docs/concepts/architecture.md`](./docs/concepts/architecture.md). Canonical architecture.
+- [`docs/concepts/architecture.mdx`](./docs/concepts/architecture.mdx). Canonical architecture.
 - [`AGENTS.md`](./AGENTS.md). Agent operating contract.
 
 ## Project structure

@@ -50,20 +50,10 @@ agent's system prompt slice in `registry.json`.
 ## Check token cost
 
 ```bash
-construct cost
-construct cost --days=7
-construct cost --agent=construct
+construct status --json | jq .sessionUsage
 ```
 
-Reads the local cost log. Reports total interactions, provider token breakdown (in/out/reasoning),
-cache read rate, and estimated cost. Works fully offline.
-
-| Flag | Effect |
-|---|---|
-| `--days=N` | Limit to last N days |
-| `--agent=NAME` | Filter to one agent |
-| `--reset` | Clear the cost log |
-| `--json` | Raw JSON output |
+Reads the local session usage ledger. Reports token counts, cache read and creation tokens, the latest interaction, and estimated cost. Works fully offline.
 
 ## Check context efficiency
 

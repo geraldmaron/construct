@@ -7,7 +7,7 @@ description: Work commands for Construct.
 
 | Command | What it does |
 |---|---|
-| `construct bootstrap` | Import seed observations |
+| `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
@@ -18,22 +18,30 @@ description: Work commands for Construct.
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
-| `construct reflect` | Capture improvement feedback |
+| `construct reflect` | Capture improvement feedback from chat session and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
-| `construct team` | Team review and templates |
+| `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
+| `construct team` | Team review and template listing |
 | `construct wireframe` | Generate wireframes from description |
+| `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
 
 ## construct bootstrap
 
-Import seed observations
+Import seed observation corpus into local memory store for cold-start acceleration
 
 **Usage**
 
 ```bash
-construct bootstrap
+construct bootstrap [--verbose]
 ```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--verbose` | Print each observation imported or skipped |
 
 ## construct customer
 
@@ -154,13 +162,20 @@ construct memory stats|consolidate
 
 ## construct reflect
 
-Capture improvement feedback
+Capture improvement feedback from chat session and update Construct core
 
 **Usage**
 
 ```bash
-construct reflect [--summary=<text>]
+construct reflect [--target=<internal|how-tos|decisions>] [--summary=<text>]
 ```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--target=<internal|how-tos|decisions>` | Knowledge subdir to store feedback (default: internal) |
+| `--summary=<text>` | Brief summary of the improvement feedback |
 
 ## construct search
 
@@ -182,15 +197,30 @@ Manage storage backend
 construct storage sync|status|reset
 ```
 
-## construct team
+## construct tags
 
-Team review and templates
+Manage the controlled tag vocabulary (propose, add, deprecate, audit)
 
 **Usage**
 
 ```bash
-construct team review|templates
+construct tags <audit|propose|add|deprecate|archive|list|proposed>
 ```
+
+## construct team
+
+Team review and template listing
+
+**Usage**
+
+```bash
+construct team <review|templates>
+```
+
+**Subcommands**
+
+- `[object Object]`
+- `[object Object]`
 
 ## construct wireframe
 
@@ -200,6 +230,16 @@ Generate wireframes from description
 
 ```bash
 construct wireframe "<description>"
+```
+
+## construct workflow
+
+Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs)
+
+**Usage**
+
+```bash
+construct workflow <list|show|new>
 ```
 
 ## construct workspace

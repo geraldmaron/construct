@@ -85,7 +85,7 @@ provider auth failures, and dashboard unreachable.
    docker ps | grep construct-postgres
    ```
 
-   If the container is not listed, start it: `construct up`.
+   If the container is not listed, start the managed services: `construct dev`.
 
 2. Confirm `DATABASE_URL` is set in `~/.construct/config.env`:
 
@@ -150,7 +150,7 @@ construct provider test <id>
 
 ## Dashboard unreachable
 
-**Symptoms:** `construct serve` starts but the browser shows "connection refused" or "page not found".
+**Symptoms:** the dashboard URL in `construct status` shows "connection refused" or "page not found".
 
 **Checks:**
 
@@ -160,10 +160,10 @@ construct provider test <id>
    construct status --json | jq .dashboard
    ```
 
-2. Check the port (auto-selected; shown in `construct serve` output):
+2. Check the configured dashboard URL and port:
 
    ```bash
-   construct show
+   construct status
    ```
 
 3. If running inside a devcontainer or remote SSH, confirm port forwarding is active. The default port is 4242.
@@ -174,10 +174,10 @@ construct provider test <id>
    lsof -i :4242
    ```
 
-5. Restart the dashboard:
+5. Restart the managed services:
 
    ```bash
-   construct down && construct up && construct serve
+   construct stop && construct dev
    ```
 
 ## `construct sync` fails with registry errors

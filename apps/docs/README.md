@@ -15,7 +15,7 @@ Site runs at http://localhost:3000/.
 ## How it works
 
 - **Source of truth:** the repo-root `docs/` directory. `apps/docs/source.config.ts` points Fumadocs at `../../docs` so MDX/MD files in `docs/` render directly. No double-write.
-- **Auto-generated pages:** `construct docs:site` (in `bin/construct`) emits MDX into `docs/reference/cli/`, `docs/reference/specialists.mdx`, and `docs/reference/hooks.mdx` from canonical sources (`lib/cli-commands.mjs`, `specialists/registry.json`, `lib/hooks/`). Re-run after CLI catalog changes.
+- **Auto-generated pages:** `construct docs:site` (in `bin/construct`) emits Markdown into `docs/reference/cli/`, `docs/reference/specialists.md`, and `docs/reference/hooks.md` from canonical sources (`lib/cli-commands.mjs`, `specialists/registry.json`, `lib/hooks/`). Re-run after CLI catalog, specialist registry, or hook changes.
 - **AUTO regions in markdown:** `construct docs:update` still regenerates `<!-- AUTO:* -->` regions inside the README and a handful of other files. Independent of the docs site build.
 - **Build:** `next build` produces a static export to `apps/docs/out/`. Deployed by `.github/workflows/pages.yml` to GitHub Pages.
 
