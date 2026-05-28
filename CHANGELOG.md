@@ -4,6 +4,17 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.10] - 2026-05-28
+
+### Changed
+
+- **`pre-push-gate` PR-body template policy now degrades to a warning when no specialist sub-agent is active.** Previously the hook hard-blocked every `gh pr create` / `gh pr edit` whose body failed the template lint, including sessions where a human was driving the editorial decisions through Claude Code. The hook now checks whether a Construct specialist is active (via the same `CONSTRUCT_AGENT_ID` env flag and `~/.cx/last-agent*.json` fence window that `guard-bash.mjs` uses): if yes, hard-block (exit 2) as before; if no, print a `[pre-push-gate] PR body fails template policy (no specialist agent active — warning only)` notice and let the command through. CI's `template policy` step still enforces the same rules on the resulting PR — this only changes pre-flight ergonomics, not the actual gate. Shared detector extracted to `lib/hooks/_lib/specialist-agent.mjs` with seven unit tests in `tests/hooks/specialist-agent.test.mjs` covering env flag, fresh per-agent file, fresh shared file, stale file, missing file, malformed JSON, and missing timestamp.
+
+### Fixed
+
+- **Workflow path filters point at `specialists/` after the rename.** `.github/workflows/ci.yml` (the `code`, `retrieval`, and `agents` filters), `pages.yml`, and `docs.yml` still referenced `agents/**`, `agents/registry.json`, `agents/contracts.json`, `lib/agents/**`, and `lib/agent-contracts*.mjs` after the v1.0.8 rename moved those files to `specialists/` and `lib/specialist-contracts*.mjs`. The stale globs never matched, so doc/page rebuilds and `retrieval` evals stopped firing on specialist or contracts edits. All references updated. Filters that match the current layout. Bead: construct-qgsm.
+- **Branch protection required-status-checks list aligned with what PRs actually emit.** The v1.0.7→1.0.8 CI refactor (a) shrank the PR test matrix to a single `test (ubuntu-latest / node 22)` runner and (b) collapsed nine independent lint contexts (`comment policy`, `template policy`, `gates audit`, `docs drift check`, plus five others) into a single `lint suite` job whose steps are no longer separate check contexts. Branch protection still required all of the old contexts plus the macOS + node-20 matrix variants that only fire on push-to-main, so every PR was BLOCKED and required admin override. Required contexts updated via `PATCH /repos/.../branches/main/protection/required_status_checks` to: `test (ubuntu-latest / node 22)`, `lint suite`, `retrieval evals`, `dependency CVE audit`, `secret scanning`, `postgres + pgvector integration`, `review`. PRs can merge cleanly again. Bead: construct-qgsm.
+
 ## [1.0.9] - 2026-05-28
 
 ### Fixed

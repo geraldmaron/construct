@@ -8,7 +8,7 @@ on:
       - 'docs/**'
       - 'apps/docs/**'
       - 'CONTRIBUTING.md'
-      - 'agents/registry.json'
+      - 'specialists/registry.json'
       - 'lib/cli-commands.mjs'
       - 'lib/auto-docs.mjs'
       - 'lib/hooks/**'

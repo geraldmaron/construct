@@ -6,7 +6,7 @@ on:
     paths:
       - 'lib/cli-commands.mjs'
       - 'lib/hooks/**'
-      - 'agents/registry.json'
+      - 'specialists/registry.json'
       - 'README.md'
       - 'docs/**'
 
