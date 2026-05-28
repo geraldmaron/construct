@@ -31,7 +31,7 @@ const HANDLER_ONLY_ALLOWLIST = new Set([
   'prune',                 // sub-tool for cleanup paths
   'resources', 'costs',    // sub-namespaces under config/observability
   'handoffs',              // namespace under role framework
-  'docs:verify', 'docs:update', 'docs:check', 'docs:site',   // operational doc gates
+  'docs:verify', 'docs:update', 'docs:check', 'docs:site', 'docs:reconcile',  // operational doc gates
   'init:update',           // partial-update path for upgrade flows
   'beads:stats',           // internal beads telemetry
   'policy:list',           // operational policy-engine inspector

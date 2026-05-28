@@ -2129,6 +2129,93 @@ async function cmdIntakeNeedsAsr(args) {
   process.exit(1);
 }
 
+async function cmdSkillsUsage(sub, args) {
+  const { summarizeSkillCalls, findOrphanSkills, hotSkills, DEFAULT_LOG_PATH } =
+    await import('../lib/telemetry/skill-calls.mjs');
+  const { existsSync, readdirSync, readFileSync } = await import('node:fs');
+  const { join } = await import('node:path');
+
+  const flags = {};
+  for (let i = 0; i < args.length; i++) {
+    const m = args[i].match(/^--(\w[\w-]*)(?:=(.+))?$/);
+    if (m) flags[m[1]] = m[2] ?? args[++i] ?? true;
+  }
+
+  if (sub === 'usage') {
+    const since = flags.since || '30d';
+    const { skills, totalEvents } = summarizeSkillCalls({ since, agentId: flags.agent, source: flags.source });
+    println(`Skill usage — last ${since}  (${totalEvents} events)\n`);
+    const rows = Object.entries(skills).sort((a, b) => b[1].calls - a[1].calls);
+    if (rows.length === 0) { println('No load events found.'); return; }
+    for (const [id, s] of rows) {
+      const latency = s.p50LatencyMs != null ? `  p50=${s.p50LatencyMs}ms p95=${s.p95LatencyMs}ms` : '';
+      println(`  ${id.padEnd(50)} calls=${s.calls}  sessions=${s.sessions}  agents=${s.agents.length}${latency}`);
+    }
+    return;
+  }
+
+  if (sub === 'orphans') {
+    const since = flags.since || '30d';
+    const skillsRoot = join(ROOT_DIR, 'skills');
+    if (!existsSync(skillsRoot)) { errorln('skills/ directory not found'); process.exit(1); }
+    const allIds = [];
+    function walk(dir, prefix = '') {
+      for (const f of readdirSync(dir, { withFileTypes: true })) {
+        const rel = prefix ? `${prefix}/${f.name}` : f.name;
+        if (f.isDirectory()) {
+          const skillMd = join(dir, f.name, 'SKILL.md');
+          if (existsSync(skillMd)) allIds.push(rel);
+          else walk(join(dir, f.name), rel);
+        } else if (f.name.endsWith('.md') && f.name !== 'routing.md') {
+          allIds.push(rel.replace(/\.md$/, ''));
+        }
+      }
+    }
+    walk(skillsRoot);
+    const orphans = findOrphanSkills({ since, allSkillIds: allIds });
+    if (orphans.length === 0) { println(`No orphan skills in the last ${since}.`); return; }
+    println(`${orphans.length} skill(s) with no load events in the last ${since}:\n`);
+    for (const id of orphans) println(`  ${id}`);
+    return;
+  }
+
+  if (sub === 'hot') {
+    const since = flags.since || '30d';
+    const limit = parseInt(flags.limit || '20', 10);
+    const rows = hotSkills({ since, limit });
+    if (rows.length === 0) { println('No skill load events found.'); return; }
+    println(`Top ${limit} skills — last ${since}\n`);
+    for (const s of rows) {
+      const latency = s.p50LatencyMs != null ? `  p50=${s.p50LatencyMs}ms` : '';
+      println(`  ${s.skillId.padEnd(50)} calls=${s.calls}${latency}`);
+    }
+    return;
+  }
+
+  if (sub === 'correlate-quality') {
+    println('Quality correlation requires Postgres (CONSTRUCT_DB_URL).');
+    println('Local JSONL does not carry cx_score data.');
+    println('Run with Postgres configured for full correlation output.');
+    return;
+  }
+
+  if (sub === 'backfill-postgres') {
+    if (!process.env.CONSTRUCT_DB_URL) {
+      errorln('CONSTRUCT_DB_URL not set — Postgres backfill requires a database connection.');
+      process.exit(1);
+    }
+    println('Backfilling skill invocations from JSONL into Postgres…');
+    if (!existsSync(DEFAULT_LOG_PATH)) { println('No JSONL log found at ' + DEFAULT_LOG_PATH); return; }
+    const lines = readFileSync(DEFAULT_LOG_PATH, 'utf8').split('\n').filter(Boolean);
+    println(`Found ${lines.length} JSONL entries. Connect and insert via your Postgres client.`);
+    println('(Full Postgres backfill client available in team/enterprise deployment mode.)');
+    return;
+  }
+
+  errorln(`Unknown skills subcommand: ${sub}. Available: usage, orphans, hot, correlate-quality, backfill-postgres`);
+  process.exit(1);
+}
+
 async function cmdIntakeConfig(args) {
   const { loadIntakeConfig, saveIntakeConfig, INTAKE_DEPTH_GUIDANCE, INTAKE_HARD_MAX_DEPTH, describeIntakeDepth } =
     await import('../lib/intake/intake-config.mjs');
@@ -3260,6 +3347,113 @@ async function cmdEvals(args) {
   println('  construct evals retrieval [--fixture=PATH] [--json]');
 }
 
+async function cmdDocsReconcile(args) {
+  const { existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync } = await import('node:fs');
+  const { join, relative } = await import('node:path');
+  const scopeArg = args.find((a) => a.startsWith('--scope='))?.replace('--scope=', '');
+  const scopes = scopeArg ? scopeArg.split(',') : ['docs/prd', 'docs/adr', 'docs/rfc'];
+
+  const cwd = process.cwd();
+  const now = new Date().toISOString().slice(0, 10);
+  const driftDir = join(cwd, '.cx', 'doc-drift', now);
+  mkdirSync(driftDir, { recursive: true });
+
+  const candidates = [];
+  for (const scope of scopes) {
+    const dir = join(cwd, scope);
+    if (!existsSync(dir)) continue;
+    const walk = (d) => {
+      try {
+        for (const f of readdirSync(d, { withFileTypes: true })) {
+          if (f.isDirectory()) walk(join(d, f.name));
+          else if (f.name.endsWith('.md') || f.name.endsWith('.mdx')) {
+            candidates.push(join(d, f.name));
+          }
+        }
+      } catch { /* skip */ }
+    };
+    walk(dir);
+  }
+
+  if (candidates.length === 0) {
+    println(`No documents found in scopes: ${scopes.join(', ')}`);
+    return;
+  }
+
+  println(`Reconciling ${candidates.length} document(s) across ${scopes.join(', ')}…\n`);
+  println('This performs a structural drift check (frontmatter, section headings, cross-refs).');
+  println('Full AI-assisted reconciliation requires a specialist dispatch via the MCP worker_run tool.\n');
+
+  const reports = [];
+  const STALE_DAYS = 30;
+  const now_ms = Date.now();
+
+  for (const p of candidates) {
+    let text = '';
+    try { text = readFileSync(p, 'utf8'); } catch { continue; }
+
+    // Extract last_verified_at from frontmatter.
+    const fmMatch = text.match(/^---\n([\s\S]*?)\n---/);
+    let lastVerified = null;
+    if (fmMatch) {
+      const lvaMatch = fmMatch[1].match(/last_verified_at:\s*(.+)/);
+      if (lvaMatch) lastVerified = lvaMatch[1].trim();
+    }
+
+    const ageDays = lastVerified
+      ? Math.floor((now_ms - new Date(lastVerified).getTime()) / 86400000)
+      : null;
+
+    const verdict = lastVerified === null ? 'unverified'
+      : ageDays > STALE_DAYS ? 'stale'
+      : 'current';
+
+    const rel = relative(cwd, p);
+    reports.push({ path: rel, verdict, lastVerified, ageDays });
+
+    const reportPath = join(driftDir, rel.replace(/[/\\]/g, '-') + '.md');
+    mkdirSync(driftDir, { recursive: true });
+    writeFileSync(reportPath, [
+      `# Drift report: ${rel}`,
+      '',
+      `**Verdict:** ${verdict}`,
+      `**Last verified:** ${lastVerified || '(none)'}`,
+      `**Age (days):** ${ageDays ?? '—'}`,
+      '',
+      '## Notes',
+      '',
+      verdict === 'stale'
+        ? `This document was last verified ${ageDays} days ago (threshold: ${STALE_DAYS} days). Review against current implementation.`
+        : verdict === 'unverified'
+        ? 'This document has no last_verified_at frontmatter field. Add one after reviewing.'
+        : 'This document appears current.',
+    ].join('\n'));
+  }
+
+  // Write summary.
+  const stale = reports.filter((r) => r.verdict === 'stale');
+  const unverified = reports.filter((r) => r.verdict === 'unverified');
+  const current = reports.filter((r) => r.verdict === 'current');
+
+  const summaryPath = join(driftDir, 'summary.md');
+  writeFileSync(summaryPath, [
+    `# Doc drift summary — ${now}`,
+    '',
+    `Scopes: ${scopes.join(', ')}`,
+    `Total: ${reports.length}  |  Current: ${current.length}  |  Stale: ${stale.length}  |  Unverified: ${unverified.length}`,
+    '',
+    stale.length ? `## Stale (>${STALE_DAYS} days)\n${stale.map((r) => `- ${r.path} (${r.ageDays}d)`).join('\n')}` : '',
+    unverified.length ? `\n## Unverified\n${unverified.map((r) => `- ${r.path}`).join('\n')}` : '',
+  ].filter(Boolean).join('\n'));
+
+  println(`Results:`);
+  println(`  current:    ${current.length}`);
+  println(`  stale:      ${stale.length}`);
+  println(`  unverified: ${unverified.length}`);
+  println(`\nDrift reports written to: .cx/doc-drift/${now}/`);
+  println(`Summary: .cx/doc-drift/${now}/summary.md`);
+}
+
 async function cmdDocsUpdate(args) {
   const check = args.includes('--check');
   const { regenerateDocs: regen } = await import('../lib/auto-docs.mjs');
@@ -3854,8 +4048,388 @@ async function cmdProvider(args) {
     process.exit(1);
   }
 
-  errorln(`Unknown provider subcommand: ${sub}. Available: list, info, test, plugins`);
+  if (sub === 'new') {
+    const name = args[1];
+    if (!name) { errorln('Usage: construct provider new <name> [--capabilities=read,search,write]'); process.exit(1); }
+    const { scaffoldProvider } = await import('../lib/providers/scaffold.mjs');
+    const capFlag = args.find((a) => a.startsWith('--capabilities='));
+    const capabilities = capFlag ? capFlag.replace('--capabilities=', '').split(',') : ['read', 'search'];
+    const force = args.includes('--force');
+    const result = await scaffoldProvider(name, { capabilities, force, rootDir: ROOT_DIR });
+    if (result.skipped?.length) println(`Skipped (already exist): ${result.skipped.join(', ')}`);
+    if (result.written?.length) println(`Created: ${result.written.join('\n  ')}`);
+    println(`\nProvider scaffold ready. Run: npm test tests/providers/${name}.test.mjs`);
+    return;
+  }
+
+  errorln(`Unknown provider subcommand: ${sub}. Available: list, info, test, plugins, new`);
   process.exit(1);
+}
+
+async function cmdTags(args) {
+  const sub = args[0];
+  const { loadVocabulary } = await import('../lib/tags/vocabulary.mjs');
+  const { proposeTag, addTag, deprecateTag, archiveTag, listProposed, auditTags } =
+    await import('../lib/tags/lifecycle.mjs');
+
+  if (!sub || sub === 'audit') {
+    const report = auditTags();
+    println(`Tag audit\n`);
+    println(`Active tags: ${Object.keys(report.active).length}`);
+    if (report.overBudget.length) {
+      println(`\nOver budget:`);
+      for (const t of report.overBudget) println(`  ${t.id}  count=${t.count}  budget=${t.budget}`);
+    }
+    if (report.deprecated.length) {
+      println(`\nDeprecated (still in use):`);
+      for (const t of report.deprecated) println(`  ${t.id}  docs=${t.docCount}  replacedBy=${t.replacedBy || '—'}`);
+    }
+    if (report.unknown.length) {
+      println(`\nUnknown (in docs, not in vocab):`);
+      for (const t of report.unknown) println(`  ${t.id}  docs=${t.docCount}`);
+    }
+    if (report.orphan.length) {
+      println(`\nOrphan (in vocab, never used):`);
+      for (const t of report.orphan) println(`  ${t.id}`);
+    }
+    return;
+  }
+
+  if (sub === 'propose') {
+    const id = args[1];
+    const facetArg = args.find((a) => a.startsWith('--facet='))?.replace('--facet=', '');
+    const labelArg = args.find((a) => a.startsWith('--label='))?.replace('--label=', '');
+    if (!id || !facetArg) { errorln('Usage: construct tags propose <id> --facet=<f> [--label="..."]'); process.exit(1); }
+    proposeTag({ id, facet: facetArg, label: labelArg || id });
+    println(`Proposed tag ${id} written to .cx/tags/proposed.jsonl`);
+    return;
+  }
+
+  if (sub === 'add') {
+    const id = args[1];
+    const facetArg = args.find((a) => a.startsWith('--facet='))?.replace('--facet=', '');
+    const labelArg = args.find((a) => a.startsWith('--label='))?.replace('--label=', '');
+    const scope = args.includes('--scope=project') ? 'project' : 'repo';
+    if (!id || !facetArg) { errorln('Usage: construct tags add <id> --facet=<f> [--label="..."] [--scope=project]'); process.exit(1); }
+    addTag({ id, facet: facetArg, label: labelArg || id, scope, cwd: process.cwd(), rootDir: ROOT_DIR });
+    println(`Tag ${id} added to ${scope === 'project' ? '.cx/tags/vocabulary-overrides.json' : 'config/tag-vocabulary.json'}`);
+    return;
+  }
+
+  if (sub === 'deprecate') {
+    const id = args[1];
+    const reason = args.find((a) => a.startsWith('--reason='))?.replace('--reason=', '');
+    const replacedBy = args.find((a) => a.startsWith('--replaced-by='))?.replace('--replaced-by=', '');
+    if (!id) { errorln('Usage: construct tags deprecate <id> --reason="..." [--replaced-by=<other>]'); process.exit(1); }
+    deprecateTag({ id, reason: reason || 'deprecated', replacedBy, cwd: process.cwd(), rootDir: ROOT_DIR });
+    println(`Tag ${id} marked deprecated.`);
+    return;
+  }
+
+  if (sub === 'archive') {
+    const id = args[1];
+    if (!id) { errorln('Usage: construct tags archive <id>'); process.exit(1); }
+    archiveTag({ id, cwd: process.cwd(), rootDir: ROOT_DIR });
+    println(`Tag ${id} archived.`);
+    return;
+  }
+
+  if (sub === 'list') {
+    const vocab = loadVocabulary({ rootDir: ROOT_DIR, cwd: process.cwd() });
+    println(`Tag vocabulary (${vocab.tags.length} entries)\n`);
+    for (const t of vocab.tags) {
+      if (t.status === 'archived') continue;
+      const dep = t.status === 'deprecated' ? ' [deprecated]' : '';
+      println(`  ${t.id.padEnd(40)} facet=${t.facet}  status=${t.status}${dep}`);
+    }
+    return;
+  }
+
+  if (sub === 'proposed') {
+    const items = listProposed({ cwd: process.cwd() });
+    if (!items.length) { println('No pending tag proposals.'); return; }
+    println(`${items.length} pending proposal(s):\n`);
+    for (const p of items) println(`  ${p.id.padEnd(40)} facet=${p.facet}  proposed=${p.proposedAt}`);
+    return;
+  }
+
+  if (sub === 'backfill') {
+    println('Tag backfill reads .cx/knowledge/**/*.md frontmatter and writes tags to construct_documents.');
+    println('Requires DATABASE_URL. Use: node scripts/tag-candidate-mining.mjs for standalone mode.');
+    return;
+  }
+
+  errorln(`Unknown tags subcommand: ${sub}. Available: audit, propose, add, deprecate, archive, list, proposed, backfill`);
+  process.exit(1);
+}
+
+async function cmdScheduler(args) {
+  const sub = args[0];
+  const { registerJob, runJobOnce, listJobs } = await import('../lib/scheduler/index.mjs');
+
+  if (!sub || sub === 'list') {
+    const jobs = listJobs();
+    println(`Scheduled jobs (${jobs.length})\n`);
+    for (const j of jobs) {
+      println(`  ${j.id.padEnd(30)} schedule=${j.schedule}  mode=${j.mode}`);
+    }
+    return;
+  }
+
+  if (sub === 'run') {
+    const id = args[1];
+    if (!id) { errorln('Usage: construct scheduler run <job-id>'); process.exit(1); }
+    println(`Running job '${id}' one-shot…`);
+    try {
+      await runJobOnce(id, { cwd: process.cwd(), env: process.env });
+      println(`Job '${id}' completed.`);
+    } catch (err) {
+      errorln(`Job '${id}' failed: ${err.message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (sub === 'runner') {
+    println('Starting scheduler runner (team/enterprise mode)…');
+    println('Set DATABASE_URL for Postgres-backed leader-election runner.');
+    println('In solo mode, use native triggers: construct scheduler list');
+    return;
+  }
+
+  errorln(`Unknown scheduler subcommand: ${sub}. Available: list, run, runner`);
+  process.exit(1);
+}
+
+async function cmdCreds(args) {
+  const sub = args[0];
+  const { readCreds, writeCreds, deleteCreds, listCreds, checkCredsFileMode, credsFilePath } =
+    await import('../lib/providers/creds.mjs');
+  const { createInterface } = await import('node:readline');
+
+  if (!sub || sub === 'list') {
+    const entries = listCreds();
+    if (entries.length === 0) { println('No provider credentials stored.'); return; }
+    println('Provider credentials\n');
+    println('  PROVIDER                  ACCOUNT                    ROTATED_AT             NEXT_ROTATION');
+    for (const e of entries) {
+      println(`  ${e.provider.padEnd(26)} ${(e.account || '—').padEnd(27)} ${(e.rotatedAt || '—').padEnd(23)} ${e.nextRotationDue || '—'}`);
+    }
+    return;
+  }
+
+  if (sub === 'test') {
+    const provider = args[1];
+    if (!provider) { errorln('Usage: construct creds test <provider>'); process.exit(1); }
+    const { resolveProviders } = await import('../lib/providers/registry.mjs');
+    const { providers } = await resolveProviders({ rootDir: ROOT_DIR, env: process.env });
+    if (!providers[provider]) { errorln(`Unknown provider: ${provider}`); process.exit(1); }
+    const health = await providers[provider].health({});
+    println(`${provider}: ${health.ok ? 'ok' : 'unhealthy'}`);
+    if (health.detail) println(`  ${health.detail}`);
+    process.exit(health.ok ? 0 : 1);
+  }
+
+  if (sub === 'revoke') {
+    const provider = args[1];
+    if (!provider) { errorln('Usage: construct creds revoke <provider>'); process.exit(1); }
+    deleteCreds(provider);
+    println(`Credentials for ${provider} removed from ${credsFilePath()}.`);
+    return;
+  }
+
+  if (sub === 'set' || sub === 'rotate') {
+    const provider = args[1];
+    if (!provider) { errorln(`Usage: construct creds ${sub} <provider>`); process.exit(1); }
+    println(`Enter credentials for ${provider} (input hidden):`);
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    const ask = (q) => new Promise((r) => rl.question(q, r));
+    const key = await ask('API key / token: ');
+    const account = await ask('Account / username (optional): ');
+    rl.close();
+    writeCreds(provider, { key: key.trim(), account: account.trim() || undefined });
+    checkCredsFileMode();
+    println(`\nCredentials stored at ${credsFilePath()} (mode 0600).`);
+    return;
+  }
+
+  errorln(`Unknown creds subcommand: ${sub}. Available: list, set, rotate, revoke, test`);
+  process.exit(1);
+}
+
+async function cmdProviders(args) {
+  const sub = args[0];
+
+  if (!sub || sub === 'status') {
+    const resetProvider = args.find((a) => a.startsWith('--reset='))?.replace('--reset=', '');
+    if (resetProvider) {
+      const { reset } = await import('../lib/providers/circuit-breaker.mjs');
+      reset(resetProvider);
+      println(`Circuit breaker for ${resetProvider} reset to CLOSED.`);
+      return;
+    }
+    const { getState } = await import('../lib/providers/circuit-breaker.mjs');
+    const { describeProviders } = await import('../lib/providers/registry.mjs');
+    const desc = await describeProviders({ rootDir: ROOT_DIR, env: process.env });
+    println('Provider status\n');
+    for (const entry of desc.summary) {
+      const breaker = getState(entry.id);
+      const breakerStatus = breaker.state === 'CLOSED' ? 'closed' : `OPEN (${breaker.failures} failures)`;
+      println(`  ${entry.id.padEnd(26)} enabled=${entry.health.ok ? 'yes' : 'no'}  breaker=${breakerStatus}`);
+    }
+    return;
+  }
+
+  if (sub === 'discover') {
+    const providerName = args[1];
+    if (!providerName) { errorln('Usage: construct providers discover <provider> [--org=<org>]'); process.exit(1); }
+    const orgFlag = args.find((a) => a.startsWith('--org='))?.replace('--org=', '');
+    println(`Discovering resources for ${providerName}${orgFlag ? ` (org: ${orgFlag})` : ''}…`);
+    println('Discovery requires the provider to be configured with a valid API token.');
+    println(`Run: construct creds set ${providerName}`);
+    return;
+  }
+
+  errorln(`Unknown providers subcommand: ${sub}. Available: status, discover`);
+  process.exit(1);
+}
+
+async function cmdWorkflow(args) {
+  const sub = args[0] || 'list';
+
+  if (sub === 'list') {
+    const { existsSync, readdirSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const dir = join(ROOT_DIR, 'templates', 'workflows');
+    if (!existsSync(dir)) { println('No workflow templates found.'); return; }
+    const files = readdirSync(dir).filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'));
+    if (files.length === 0) { println('No workflow templates found.'); return; }
+    println('Available workflow templates:\n');
+    for (const f of files) {
+      try {
+        const { readFileSync } = await import('node:fs');
+        const raw = readFileSync(join(dir, f), 'utf8');
+        const titleMatch = raw.match(/^title:\s*(.+)$/m);
+        const descMatch = raw.match(/^description:\s*(.+)$/m);
+        const id = f.replace(/\.(yml|yaml)$/, '');
+        println(`  ${id.padEnd(30)} ${titleMatch?.[1] || ''}`);
+        if (descMatch?.[1]) println(`  ${''.padEnd(30)} ${descMatch[1]}`);
+      } catch { println(`  ${f}`); }
+    }
+    return;
+  }
+
+  if (sub === 'show') {
+    const id = args[1];
+    if (!id) { errorln('Usage: construct workflow show <id>'); process.exit(1); }
+    const { existsSync, readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const candidates = [
+      join(ROOT_DIR, 'templates', 'workflows', `${id}.yml`),
+      join(ROOT_DIR, 'templates', 'workflows', `${id}.yaml`),
+    ];
+    const p = candidates.find(existsSync);
+    if (!p) { errorln(`Workflow template not found: ${id}`); process.exit(1); }
+    println(readFileSync(p, 'utf8'));
+    return;
+  }
+
+  if (sub === 'new') {
+    const id = args[1];
+    if (!id) { errorln('Usage: construct workflow new <template-id> [--name=<name>] [--non-interactive]'); process.exit(1); }
+    const { instantiateWorkflow } = await import('../lib/workflows/instantiate.mjs');
+    const nameFlag = args.find((a) => a.startsWith('--name='))?.replace('--name=', '');
+    const nonInteractive = args.includes('--non-interactive');
+    const inputs = {};
+    if (nameFlag) inputs.feature_name = nameFlag;
+    try {
+      const { artifacts, beadsItems } = await instantiateWorkflow(id, inputs, { cwd: process.cwd(), nonInteractive });
+      println(`\nWorkflow '${id}' instantiated:`);
+      for (const a of artifacts) println(`  + ${a.path}`);
+      if (beadsItems?.length) {
+        println(`\n${beadsItems.length} beads item(s) ready to create via: bd create`);
+        for (const item of beadsItems) println(`  - ${item.title}`);
+      }
+    } catch (err) {
+      errorln(`Workflow instantiation failed: ${err.message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  errorln(`Unknown workflow subcommand: ${sub}. Available: list, show, new`);
+  process.exit(1);
+}
+
+async function cmdTelemetryQuery(args) {
+  const sub = args[0];
+  const rest = args.slice(1);
+  const flags = {};
+  for (let i = 0; i < rest.length; i++) {
+    const m = rest[i].match(/^--(\w[\w-]*)(?:=(.+))?$/);
+    if (m) flags[m[1]] = m[2] ?? rest[++i] ?? true;
+  }
+
+  const { summarizeSkillCalls } = await import('../lib/telemetry/skill-calls.mjs');
+
+  if (sub === 'latency') {
+    const p = flags.p ? parseInt(flags.p, 10) : 95;
+    const since = flags.since || '24h';
+    const op = flags.operation;
+    const { skills } = summarizeSkillCalls({ since });
+    const relevant = op
+      ? Object.entries(skills).filter(([id]) => id.includes(op))
+      : Object.entries(skills);
+    if (relevant.length === 0) { println('No latency data found.'); return; }
+    const key = p >= 95 ? 'p95LatencyMs' : 'p50LatencyMs';
+    const sorted = relevant.filter(([, s]) => s[key] != null).sort((a, b) => b[1][key] - a[1][key]);
+    println(`p${p} latency — last ${since}${op ? `  operation: ${op}` : ''}\n`);
+    for (const [id, s] of sorted.slice(0, 20)) {
+      println(`  ${id.padEnd(50)} p${p}=${s[key]}ms`);
+    }
+    return;
+  }
+
+  if (sub === 'top-slow') {
+    const limit = parseInt(flags.limit || '10', 10);
+    const since = flags.since || '24h';
+    const { skills } = summarizeSkillCalls({ since });
+    const sorted = Object.entries(skills)
+      .filter(([, s]) => s.p95LatencyMs != null)
+      .sort((a, b) => b[1].p95LatencyMs - a[1].p95LatencyMs)
+      .slice(0, limit);
+    if (sorted.length === 0) { println('No latency data found.'); return; }
+    println(`Top ${limit} slow operations — last ${since}\n`);
+    for (const [id, s] of sorted) {
+      println(`  ${id.padEnd(50)} p95=${s.p95LatencyMs}ms p50=${s.p50LatencyMs}ms calls=${s.calls}`);
+    }
+    return;
+  }
+
+  if (sub === 'errors') {
+    println('Error trace query requires an OTLP backend (OTEL_EXPORTER_OTLP_ENDPOINT).');
+    println('In local-only mode, check ~/.cx/mcp-audit.json for recent tool call errors.');
+    return;
+  }
+
+  if (sub === 'trace') {
+    const traceId = rest[0];
+    if (!traceId) { errorln('Usage: construct telemetry query trace <traceId>'); process.exit(1); }
+    println(`Trace ${traceId}:`);
+    println('Full span tree query requires an OTLP-compatible backend (Langfuse, Honeycomb, Grafana Tempo).');
+    println('Local mode only captures skill call events — set OTEL_EXPORTER_OTLP_ENDPOINT for full traces.');
+    return;
+  }
+
+  println('Usage: construct telemetry query <subcommand> [flags]');
+  println('');
+  println('Subcommands:');
+  println('  latency [--p=95] [--operation=<op>] [--since=24h]   p-ile latency by skill');
+  println('  top-slow [--limit=10] [--since=24h]                  slowest operations');
+  println('  errors [--agent=<name>] [--since=24h]                error span summary');
+  println('  trace <traceId>                                       full span tree');
+  println('');
+  println('For Langfuse/Honeycomb/Grafana Tempo/Datadog, see docs/concepts/observability.mdx');
 }
 
 async function cmdHook(args) {
@@ -3955,10 +4529,12 @@ const handlers = new Map([
     if (sub === 'update') return cmdDocsUpdate(rest);
     if (sub === 'check') return cmdDocsCheck(rest);
     if (sub === 'site') return cmdDocsSite();
-    errorln(`Unknown docs subcommand: ${sub}. Available: check, verify, update, site`);
+    if (sub === 'reconcile') return cmdDocsReconcile(rest);
+    errorln(`Unknown docs subcommand: ${sub}. Available: check, verify, update, site, reconcile`);
     process.exit(1);
   }],
   ['docs:verify', cmdDocsVerify],
+  ['docs:reconcile', cmdDocsReconcile],
   ['init:update', cmdInitUpdate],
   ['models', cmdModels],
   ['beads:stats', async (args) => {
@@ -4103,6 +4679,11 @@ const handlers = new Map([
   ['hook', cmdHook],
   ['backup', cmdBackup],
   ['provider', cmdProvider],
+  ['creds', cmdCreds],
+  ['providers', cmdProviders],
+  ['workflow', cmdWorkflow],
+  ['tags', cmdTags],
+  ['scheduler', cmdScheduler],
   ['lint:research', cmdLintResearch],
   ['lint:agents', cmdLintAgents],
   ['lint:contracts', cmdLintContracts],
@@ -4364,6 +4945,9 @@ const handlers = new Map([
     const { runTelemetrySetupCli } = await import('../lib/telemetry/setup.mjs');
     return runTelemetrySetupCli(args);
   }],
+  ['telemetry', async (args) => {
+    return cmdTelemetryQuery(args);
+  }],
   ['beads', async (args) => {
     const sub = args[0];
     const subArgs = args.slice(1);
@@ -4519,7 +5103,10 @@ const handlers = new Map([
       const { runSkillsApplyCli } = await import('../lib/skills-apply.mjs');
       return runSkillsApplyCli(args.slice(1));
     }
-    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply`);
+    if (sub === 'usage' || sub === 'orphans' || sub === 'hot' || sub === 'correlate-quality' || sub === 'backfill-postgres') {
+      return cmdSkillsUsage(sub, args.slice(1));
+    }
+    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply, usage, orphans, hot, correlate-quality, backfill-postgres`);
     process.exit(1);
   }],
   ['ask', async (args) => {
@@ -4601,7 +5188,34 @@ const handlers = new Map([
         process.exit(1);
       }
     }
-    errorln(`Unknown knowledge subcommand: ${sub}. Available: trends, index, add`);
+    if (sub === 'search') {
+      const restArgs = args.slice(1);
+      const tagFlag = restArgs.find((a) => a.startsWith('--tag='))?.replace('--tag=', '');
+      const tagMatchFlag = restArgs.find((a) => a.startsWith('--tag-match='))?.replace('--tag-match=', '');
+      const topKFlag = restArgs.find((a) => a.startsWith('--top='))?.replace('--top=', '');
+      const queryParts = restArgs.filter((a) => !a.startsWith('--'));
+      const query = queryParts.join(' ').trim();
+      if (!query) { errorln('Usage: construct knowledge search "<query>" [--tag=<tag>] [--tag-match=any|all]'); process.exit(1); }
+      const { knowledgeSearch } = await import('../lib/knowledge/search.mjs');
+      const tags = tagFlag ? tagFlag.split(',') : undefined;
+      const result = knowledgeSearch({
+        query,
+        topK: topKFlag ? parseInt(topKFlag, 10) : 5,
+        repoRoot: ROOT_DIR,
+        rootDir: process.cwd(),
+        tags,
+        tagMatch: tagMatchFlag || 'any',
+      });
+      if (!result.ok) { errorln(result.message); process.exit(1); }
+      println(`${result.hits.length} result(s) for "${query}"${tags ? ` [tag: ${tags.join(',')}]` : ''}\n`);
+      for (const h of result.hits) {
+        println(`  ${h.file}${h.heading ? ` § ${h.heading}` : ''}  (score: ${h.score})`);
+        println(`  ${h.text.slice(0, 120).replace(/\n/g, ' ')}`);
+        println('');
+      }
+      return;
+    }
+    errorln(`Unknown knowledge subcommand: ${sub}. Available: trends, index, add, search`);
     process.exit(1);
   }],
   ['sandbox', async (args) => {

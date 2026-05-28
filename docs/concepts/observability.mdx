@@ -1,0 +1,91 @@
+---
+title: Observability
+description: OpenTelemetry GenAI traces, span instrumentation, and consumer integration.
+---
+
+# Observability
+
+Construct emits OpenTelemetry spans for every LLM call, embedding operation, and MCP tool invocation when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Without an endpoint configured, telemetry is zero-cost (no-op tracer, no network calls).
+
+## Local-only mode (default)
+
+No setup required. Skill load events land in `~/.cx/skill-calls.jsonl`. Query them:
+
+```bash
+construct skills usage --since=30d
+construct skills hot --limit=20
+construct telemetry query latency --p=95 --since=24h
+```
+
+## Enabling OTel traces
+
+Set `OTEL_EXPORTER_OTLP_ENDPOINT` in your environment or `.env`:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=https://your-endpoint/v1/traces
+```
+
+Construct defaults to `gen_ai_latest_experimental` semconv. Override with `OTEL_SEMCONV_STABILITY_OPT_IN`.
+
+## Consumer integrations
+
+### Langfuse
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com/api/public/otel/v1/traces
+OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic <base64-public:secret>"
+```
+
+### Honeycomb
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=https://api.honeycomb.io/v1/traces
+OTEL_EXPORTER_OTLP_HEADERS="x-honeycomb-team=<api-key>"
+```
+
+### Grafana Tempo
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=https://<your-tempo-instance>/otlp/v1/traces
+OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic <base64-user:token>"
+```
+
+### Datadog AI Observability
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=https://trace.agent.datadoghq.com/api/v0.2/traces
+DD_API_KEY=<your-key>
+```
+
+## Span attributes
+
+Every LLM and embedding span carries the stable OTel GenAI attributes:
+
+| Attribute | Example value |
+|-----------|---------------|
+| `gen_ai.system` | `anthropic` |
+| `gen_ai.operation.name` | `chat`, `embeddings` |
+| `gen_ai.request.model` | `claude-3-5-sonnet` |
+| `gen_ai.usage.input_tokens` | `1250` |
+| `gen_ai.usage.output_tokens` | `340` |
+| `gen_ai.response.finish_reasons` | `["stop"]` |
+
+MCP tool call spans also carry:
+
+| Attribute | Example value |
+|-----------|---------------|
+| `gen_ai.tool.name` | `get_skill` |
+| `mcp.method.name` | `mcp__construct__get_skill` |
+| `mcp.transport` | `stdio` |
+
+## W3C trace propagation across MCP
+
+Persona-to-specialist dispatches inject `traceparent` into `params._meta` per SEP-414. The specialist MCP handler extracts it and creates a child span, so the full persona-to-tool chain appears as one connected trace tree in your backend.
+
+## Disabling
+
+```bash
+CONSTRUCT_OTEL=off
+```
+
+Or simply leave `OTEL_EXPORTER_OTLP_ENDPOINT` unset.
