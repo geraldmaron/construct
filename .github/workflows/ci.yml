@@ -1,7 +1,13 @@
 name: ci
 
+# Trigger model:
+#   - PR opened/updated: single-runner test + consolidated lint suite.
+#   - Push to main:      full OS x Node matrix + same lint suite.
+#   - Weekly schedule:   secret rescan.
+# Push to feature branches does NOT fire CI; the PR event covers them.
 on:
   push:
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened, edited]
   schedule:
@@ -79,6 +85,9 @@ jobs:
             workflow:
               - '.github/workflows/**'
 
+  # Single-runner on PR, full matrix on main push. macOS + Node 20 only run
+  # when merging to main; Windows correctness is covered by the SEA binary
+  # build in release.yml. Cuts ~75% of test-runner minutes from PR runs.
   test:
     name: test (${{ matrix.os }} / node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
@@ -87,13 +96,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Windows is excluded from the unit-test matrix: a portion of the test
-        # suite uses Unix-style paths, executable bits, and shell assumptions
-        # that don't translate cleanly. Windows correctness is validated at
-        # release time via the SEA binary build in release.yml. Cross-platform
-        # support for the test fixtures is tracked as future work.
-        os: [ubuntu-latest, macos-latest]
-        node: [20, 22]
+        os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest","macos-latest"]') }}
+        node: ${{ github.event_name == 'pull_request' && fromJSON('["22"]') || fromJSON('["20","22"]') }}
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
@@ -107,6 +111,67 @@ jobs:
       - run: node bin/construct doctor
       - run: node bin/construct docs:verify
 
+  # One job that runs every quick lint/check under a single npm ci. Replaces
+  # the prior nine independent jobs (lint-comments, lint-prose, lint-profiles,
+  # lint-agents, lint-contracts, lint-templates, docs drift, gates-audit) each
+  # of which paid the ~45s npm-ci tax. Each step still appears in the GitHub
+  # UI so failure surface stays granular; only the runner setup is shared.
+  lint:
+    name: lint suite
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.docs == 'true' || needs.changes.outputs.agents == 'true' || needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: comment policy
+        if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+        run: node ./bin/construct lint:comments
+      - name: prose policy
+        if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.workflow == 'true'
+        run: npm run lint:prose
+      - name: profile + flavor schema
+        if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+        run: npm run lint:profiles -- --quiet
+      - name: agents registry schema
+        if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.workflow == 'true'
+        run: node ./bin/construct lint:agents
+      - name: agent contracts schema
+        if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.workflow == 'true'
+        run: node ./bin/construct lint:contracts
+      - name: docs drift check
+        if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+        run: node ./bin/construct docs:update --check
+      - name: dashboard bundle drift
+        if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+        run: node ./bin/construct dashboard:sync --check
+      - name: gates audit
+        if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node ./bin/construct gates:audit
+      # Advisory gate: PR-body shape has no local-pre-flight equivalent (the
+      # body doesn't exist until `gh pr create` runs), so a hard failure forces
+      # a close+reopen to retrigger CI after a body fix. Step `continue-on-error`
+      # surfaces violations in the logs without failing the job; a follow-up
+      # adds a local `construct lint:pr` pre-flight so devs catch this pre-push.
+      - name: template policy
+        if: needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
+        continue-on-error: true
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref || github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/lint-commits-pr.mjs
+
   evals:
     name: retrieval evals
     runs-on: ubuntu-latest
@@ -119,6 +184,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
+          cache: npm
       - run: npm ci --ignore-scripts
       - name: Retrieval-quality regression
         run: node bin/construct evals retrieval
@@ -148,138 +214,3 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  docs:
-    name: docs drift check
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-      - run: npm ci --ignore-scripts
-      - name: Check managed doc regions are up to date
-        run: node ./bin/construct docs:update --check
-      - name: Check dashboard static bundle is up to date
-        run: node ./bin/construct dashboard:sync --check
-
-  lint-comments:
-    name: comment policy
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-      - run: npm ci --ignore-scripts
-      - name: Enforce comment policy
-        run: node ./bin/construct lint:comments
-
-  lint-prose:
-    name: prose policy (em-dash + voice)
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.workflow == 'true'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-      - run: npm ci --ignore-scripts
-      - name: Enforce prose policy on changed markdown
-        run: npm run lint:prose
-
-  lint-profiles:
-    name: profile + flavor schema
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-      - run: npm ci --ignore-scripts
-      - name: Validate profiles and flavor overlays
-        run: npm run lint:profiles -- --quiet
-
-  lint-agents:
-    name: agents registry schema
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.workflow == 'true'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-      - run: npm ci --ignore-scripts
-      - name: Validate agents/registry.json against schema
-        run: node ./bin/construct lint:agents
-
-  lint-contracts:
-    name: agent contracts schema
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.workflow == 'true'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-      - run: npm ci --ignore-scripts
-      - name: Validate agents/contracts.json against schema and refs
-        run: node ./bin/construct lint:contracts
-
-  lint-templates:
-    name: template policy
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-      # Advisory gate: PR-body shape has no local-pre-flight equivalent (the
-      # body doesn't exist until `gh pr create` runs), so a hard failure forces
-      # a close+reopen to retrigger CI after a body fix. Step `continue-on-error`
-      # surfaces violations in the logs without failing the job; a follow-up
-      # adds a local `construct lint:pr` pre-flight so devs catch this pre-push.
-      - name: Enforce commit + PR templates
-        continue-on-error: true
-        env:
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_BASE_REF: ${{ github.event.pull_request.base.ref || github.base_ref }}
-          PR_BODY: ${{ github.event.pull_request.body }}
-        run: node scripts/lint-commits-pr.mjs
-
-  gates-audit:
-    name: gates audit
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.workflow == 'true' || needs.changes.outputs.code == 'true'
-    # Default GITHUB_TOKEN cannot read branch protection (requires admin
-    # scope). The audit gracefully treats it as `unfetchable` in CI and
-    # skips protection-dependent gap detection; local runs by the repo
-    # owner still validate branch protection.
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-      - run: npm ci --ignore-scripts
-      - name: Audit cross-surface enforcement (CI / pre-push / pre-commit / branch protection)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node ./bin/construct gates:audit
