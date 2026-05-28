@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- **`construct sync` no longer emits double-frontmatter on host-platform adapter files.** Every `.md` write went through a doc-stamp wrapper (`stampFrontmatter`) that prepended `cx_doc_id` / `body_hash` YAML, which was intended for content artifacts (research findings, knowledge files) but was being applied to host-platform adapters that have their own frontmatter contract. Result: (a) `~/.agents/skills/*/SKILL.md` and `~/.claude/skills/*/SKILL.md` carried only the doc-stamp block (no `name` / `description`), so the Anthropic Agent Skills loader silently dropped all 141 files; (b) `~/.claude/agents/*.md` and `~/.github/prompts/*.prompt.md` had a doc-stamp block on top of their real frontmatter, producing two `---...---` blocks and leaving the parser to pick one — usually the wrong one. `writeFile` now accepts `{ stamp: false }`; every host-adapter write opts out. Skill writes use a new `buildSkillFrontmatter()` (in `lib/sync/skill-frontmatter.mjs`) that extracts the description from the source skill's HTML-comment header and emits proper Anthropic Skills `name` + `description` YAML. The user-managed `~/.claude/CLAUDE.md` and `~/.github/copilot-instructions.md` also stop being doc-stamped. Coverage: 9 unit tests for the new helpers plus 4 functional tests that run the real sync against an isolated tmp HOME and assert no double-frontmatter on any output (Claude agents, Copilot prompts, both skill trees) and that ≥200 SKILL.md files emerge with valid Anthropic Skills frontmatter.
+
 ## [1.0.11] - 2026-05-28
 
 ### Added
