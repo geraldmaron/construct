@@ -4,11 +4,13 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `construct claude:allow` CLI for managing `~/.claude/settings.json` `permissions.allow` from outside the agent. Claude Code's auto-classifier denies the agent from editing its own permission allowlist — correctly, but that leaves users hand-editing JSON every time the classifier flags a new pattern. The CLI provides `list`, `add <pattern...>` (idempotent), `remove <pattern...>`, and `check [--apply]` which scans local branch prefixes (`feat/`, `fix/`, `chore/`, `docs/`, `refactor/`, `perf/`, `cleanup/`, `test/`, `build/`, `ci/`, `style/` — never `main`/`master`/`dev`/`claude`/`agent`) against the current allowlist and proposes the missing force-push entries. Implementation in `lib/claude-allow.mjs` with 11 tests. Atomic JSON writes, preserves unrelated fields. Session-start hook reads the same module and appends a one-line "Permission posture" section to the session banner when gaps exist, so the agent sees the missing entries up front and asks the user to close them via `construct claude:allow check --apply` instead of stumbling into classifier denials mid-task.
+
 ### Fixed
 
 - **Fence-gate deadlock eliminated: engineer allowedCommands broadened, per-agent timestamps, docs auto-fix.** Three systemic anti-patterns were compounding into a hard deadlock on push: the guard-bash fence restricted engineer to `bd *` commands only (blocking `node`, `npm`), the pre-push gate required `node` to run quality checks (tests, docs verify, lint), and the shared `~/.cx/last-agent.json` timestamp was reset by any background agent dispatch, keeping the fence window open indefinitely. `specialists/role-manifests.json` now includes `node`, `npm`, `git status`, `git diff`, and `git log` in engineer's `allowedCommands`. `lib/hooks/guard-bash.mjs` reads per-agent timestamp files (`~/.cx/last-agent-{id}.json`) with fallback to the shared file, and prints the actual allowed list plus bypass hint on denial. `lib/hooks/agent-tracker.mjs` writes both shared and per-agent timestamp files. `lib/hooks/pre-push-gate.mjs` now shows full test output on failure (not just the first 3 lines), and auto-runs `docs:update` when `docs:update --check` detects drift, with a follow-up re-check before blocking. Resolves errors 1-3 from the `feat/platform-capabilities` branch. Tests verified in isolated sandbox: 2021/2021 pass, 14/14 release gates pass, all construct doctor/lint checks clean.
-
-## [1.0.8] - 2026-05-28
 
 ### Fixed
 

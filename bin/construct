@@ -4769,7 +4769,6 @@ const handlers = new Map([
     const correctedIdx = args.indexOf('--corrected');
     
     if (intakeIdIdx === -1) {
-      // Show stats instead
       const stats = getAccuracyStats(process.cwd());
       if (json) {
         println(JSON.stringify(stats, null, 2));
@@ -4794,7 +4793,7 @@ const handlers = new Map([
     
     const feedback = createClassificationFeedback({
       intakeId,
-      original: { intakeType: 'unknown', primaryOwner: 'unknown' }, // Would load from intake
+      original: { intakeType: 'unknown', primaryOwner: 'unknown' },
       corrected,
       reason,
     });

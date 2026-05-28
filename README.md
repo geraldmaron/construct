@@ -105,7 +105,7 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 
 | Command | What it does |
 |---|---|
-| `construct bootstrap` | Import seed observations |
+| `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
@@ -116,11 +116,11 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
-| `construct reflect` | Capture improvement feedback |
+| `construct reflect` | Capture improvement feedback from chat session and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
-| `construct team` | Team review and templates |
+| `construct team` | Team review and template listing |
 | `construct wireframe` | Generate wireframes from description |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
@@ -129,24 +129,23 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 
 | Command | What it does |
 |---|---|
-| `construct claude:allow` | Manage Claude Code permissions |
 | `construct creds` | Manage provider credentials (set, rotate, revoke, list) |
-| `construct hosts` | Check host capabilities (use --json for machine-readable) |
-| `construct mcp` | Manage MCP integrations |
 | `construct ollama` | Manage local Ollama models |
-| `construct plugin` | Manage plugin manifests |
 | `construct providers` | Provider status, circuit-breaker reset, and resource discovery |
 
 ### Observability
 
 | Command | What it does |
 |---|---|
-| `construct efficiency` | Read efficiency metrics |
-| `construct evals` | Evaluator catalog |
-| `construct llm-judge` | LLM-as-judge evaluations |
-| `construct optimize` | Prompt optimization |
-| `construct review` | Agent performance review |
+| `construct cost` | Show token usage, cost, cache read rate, and per-agent breakdown |
+| `construct efficiency` | Show read efficiency, repeated files, and context-budget guidance |
+| `construct eval-datasets` | Sync scored Langfuse traces into eval datasets for prompt regression testing |
+| `construct evals` | Show evaluator catalog for prompt and agent experiments |
+| `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
+| `construct optimize` | Prompt optimization using Langfuse trace quality scores |
+| `construct review` | Generate agent performance review from Langfuse trace backend |
 | `construct telemetry` | Query telemetry traces and latency data |
+| `construct telemetry-backfill` | Backfill sparse traces with observations (trace backend) |
 
 ### Advanced
 
