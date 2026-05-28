@@ -1,16 +1,35 @@
 #!/usr/bin/env node
 
 /**
- * Simple test for the embedding boundary API
- * Run with: node test-embed-boundary.mjs
+ * scripts/embed-boundary-manual.mjs — Manual probe for the embedding boundary API.
+ *
+ * Not a unit test. Renamed from test-embed-boundary.mjs so it does not match
+ * node --test's auto-discovery glob; the file relied on a hardcoded port and
+ * a server-output match string that would routinely fail when the dashboard
+ * was already running.
+ *
+ * Run with: node scripts/embed-boundary-manual.mjs
  */
 
 import { spawn } from 'child_process';
+import net from 'node:net';
 import { join } from 'path';
 import { homedir } from 'os';
 
+async function findFreePort() {
+  return new Promise((resolve, reject) => {
+    const s = net.createServer();
+    s.unref();
+    s.on('error', reject);
+    s.listen(0, '127.0.0.1', () => {
+      const { port } = s.address();
+      s.close(() => resolve(port));
+    });
+  });
+}
+
 const HOME = homedir();
-const PORT = 4242;
+const PORT = await findFreePort();
 const BIND_HOST = '127.0.0.1';
 
 // Start a simple test server
@@ -28,7 +47,7 @@ async function startTestServer() {
     server.stdout.on('data', (data) => {
       const output = data.toString();
       console.log('Server:', output);
-      if (output.includes('Listening on')) {
+      if (output.includes('Construct dashboard running') || output.includes('Listening on')) {
         started = true;
         resolve(server);
       }
