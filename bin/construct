@@ -19,7 +19,7 @@ import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, 
 import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
 import { cmdOllama } from '../lib/ollama-manager.mjs';
-import { printHostCapabilities, formatHostCapabilitiesJson } from '../lib/host-capabilities.mjs';
+import { printHostCapabilities } from '../lib/host-capabilities.mjs';
 import { getPluginById, initPluginManifest, loadPluginRegistry } from '../lib/plugin-registry.mjs';
 import { runSetup } from '../lib/setup.mjs';
 import { runUpdate } from '../lib/update.mjs';
@@ -249,7 +249,7 @@ async function cmdShow() {
 
 async function cmdSync(args) {
   generateCompletions();
-  runNodeScript(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), args);
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs'), args);
   if (args.includes('--no-docs')) return;
   const { regenerateDocs } = await import('../lib/auto-docs.mjs');
   const { changed } = await regenerateDocs({ rootDir: ROOT_DIR });
@@ -277,7 +277,7 @@ async function cmdCompletions(args) {
 }
 
 async function cmdList() {
-  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
+  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
   println('Construct Agents\n');
   println('Personas:');
   for (const persona of registry.personas ?? []) {
@@ -418,8 +418,8 @@ async function cmdDoctor() {
 
   const checks = [];
   const add = (label, pass, optional = false) => checks.push({ label, pass, optional });
-  add('registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'registry.json')));
-  add('sync-specialists.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs')));
+  add('registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'agents', 'registry.json')));
+  add('sync-agents.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs')));
 
   // Tier model selection. Construct ships with no default — at least
   // one tier must be configured (registry.json primary OR CX_MODEL_*
@@ -456,14 +456,7 @@ async function cmdDoctor() {
   add('Claude Code agents dir', fs.existsSync(path.join(HOME, '.claude', 'agents')), true);
   add('Codex agents dir', fs.existsSync(path.join(HOME, '.codex', 'agents')), true);
   add('Copilot prompts dir', fs.existsSync(path.join(HOME, '.github', 'prompts')), true);
-  // Only check Cursor MCP config when Cursor is actually installed (its home
-  // directory exists). Absent Cursor, no warning — the adapter parity check
-  // already surfaces 'cursor: not installed' for informational purposes.
-  const cursorHomeDir = path.join(HOME, '.cursor');
-  if (fs.existsSync(cursorHomeDir)) {
-    add('Cursor MCP config', fs.existsSync(path.join(cursorHomeDir, 'mcp.json')), true);
-  }
-
+  add('Cursor MCP config', fs.existsSync(path.join(HOME, '.cursor', 'mcp.json')), true);
   const vscodeSettingsPaths = process.platform === 'darwin'
     ? [
         path.join(HOME, 'Library', 'Application Support', 'Code', 'User', 'settings.json'),
@@ -478,35 +471,11 @@ async function cmdDoctor() {
           path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code', 'User', 'settings.json'),
           path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code - Insiders', 'User', 'settings.json'),
         ];
-  // Only check VS Code settings when VS Code is actually installed. On macOS,
-  // Code's Application Support directory is the installation signal.
-  const vscodeAppSupportRoots = process.platform === 'darwin'
-    ? [
-        path.join(HOME, 'Library', 'Application Support', 'Code'),
-        path.join(HOME, 'Library', 'Application Support', 'Code - Insiders'),
-      ]
-    : process.platform === 'linux'
-      ? [path.join(HOME, '.config', 'Code'), path.join(HOME, '.config', 'Code - Insiders')]
-      : [
-          path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code'),
-          path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code - Insiders'),
-        ];
-  if (vscodeAppSupportRoots.some((r) => fs.existsSync(r))) {
-    // VS Code is installed but has no settings.json — the user needs to create
-    // one manually or run `construct sync` after VS Code sync support lands.
-    const vscodeSettingsOk = vscodeSettingsPaths.some((candidate) => fs.existsSync(candidate));
-    add(
-      vscodeSettingsOk
-        ? 'VS Code settings file'
-        : 'VS Code settings missing — create settings.json or wait for `construct sync` VS Code support',
-      vscodeSettingsOk,
-      true,
-    );
-  }
+  add('VS Code settings file', vscodeSettingsPaths.some((candidate) => fs.existsSync(candidate)), true);
   add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(path.join(HOME, '.construct')), true);
   add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
   add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));
-  add('specialists/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'prompts')));
+  add('agents/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'agents', 'prompts')));
   add('Hybrid storage env keys documented', fs.existsSync(path.join(ROOT_DIR, '.env.example')));
   fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
   add('~/.cx/performance-reviews/ ready', true);
@@ -608,20 +577,45 @@ async function cmdDoctor() {
     add(`Resource budget check failed: ${err.message}`, false, true);
   }
 
-  // Pricing-catalog freshness + divergence are not surfaced in doctor output.
-  // The underlying ledger writes and catalog refresh continue; consumer
-  // surfaces land with the OTel + dashboard wiring (plan Workstream J).
+  // Pricing-catalog freshness + divergence. Cost ceilings (Phase 7b)
+  // are only as trustworthy as the catalog underneath. Stale catalog →
+  // drift between computed cost and actual provider bill. Divergence
+  // (>25%) → LiteLLM and static disagree on a known model, surface so
+  // the operator can verify which is current. Both advisory: degraded
+  // pricing still falls back to a usable source.
+  try {
+    const { describePricingCatalogFreshness, checkPricingDivergence } = await import('../lib/telemetry/model-pricing-catalog.mjs');
+    const freshness = describePricingCatalogFreshness();
+    if (freshness.stale) {
+      add(`Pricing catalog: ${freshness.message}`, false, true);
+    } else {
+      add(`Pricing catalog fresh (${freshness.ageHours?.toFixed(1) || '0.0'}h old)`, true, true);
+    }
+    if (freshness.present) {
+      try {
+        const cached = JSON.parse(fs.readFileSync(path.join(HOME, '.cx', 'pricing-cache.json'), 'utf8'));
+        const divergences = checkPricingDivergence(cached.models || []);
+        if (divergences.length === 0) {
+          add('Pricing matches static fallback (no >25% divergence)', true, true);
+        } else {
+          add(`Pricing divergence on ${divergences.length} model(s) — run \`construct pricing check\``, false, true);
+        }
+      } catch { /* divergence is advisory */ }
+    }
+  } catch (err) {
+    add(`Pricing catalog check failed: ${err.message}`, false, true);
+  }
 
   // Validate promptFile references and skill bindings
   try {
-    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
-    const brokenPromptFiles = (registry.specialists ?? []).filter((s) => {
-      if (!s.promptFile) return false;
-      return !fs.existsSync(path.join(ROOT_DIR, s.promptFile));
+    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+    const brokenPromptFiles = (registry.agents ?? []).filter((a) => {
+      if (!a.promptFile) return false;
+      return !fs.existsSync(path.join(ROOT_DIR, a.promptFile));
     });
-    add('All specialist promptFiles resolve', brokenPromptFiles.length === 0);
+    add('All agent promptFiles resolve', brokenPromptFiles.length === 0);
     const headhuntClassifierAgents = ['cx-docs-keeper', 'cx-researcher', 'cx-architect', 'cx-security', 'cx-engineer'];
-    const registryNames = new Set((registry.specialists ?? []).map((s) => `cx-${s.name}`));
+    const registryNames = new Set((registry.agents ?? []).map((a) => `cx-${a.name}`));
     const classifierOrphans = headhuntClassifierAgents.filter((n) => !registryNames.has(n));
     add('Headhunt classifier agents exist in registry', classifierOrphans.length === 0);
     const skillAudit = auditSkills({ rootDir: ROOT_DIR, silent: true });
@@ -632,24 +626,12 @@ async function cmdDoctor() {
 
     const sqlConfig = describeSqlStore(process.env);
     const sqlClient = createSqlClient(process.env);
-    // Track SQL reachability so the schema-migration check can cascade correctly
-    // rather than emitting a redundant second warning for the same offline server.
-    let sqlReachable = false;
     if (sqlConfig.configured && sqlClient) {
       try {
         await sqlClient`select 1 as ok`;
-        sqlReachable = true;
         add('SQL backend reachable', true);
       } catch {
-        // In solo mode the local vector index is the active storage path, so an
-        // unreachable Postgres is expected unless the user has started it. Emit a
-        // contextual message rather than a bare ⚠ so the fix is obvious.
-        const { getDeploymentMode } = await import('../lib/deployment-mode.mjs');
-        const mode = getDeploymentMode(process.env) ?? 'solo';
-        const hint = mode === 'solo'
-          ? ' (solo mode — run `construct dev` to start Postgres)'
-          : ' — check DATABASE_URL and that the server is running';
-        add(`SQL backend unreachable${hint}`, false, true);
+        add('SQL backend reachable', false, true);
       } finally {
         await closeSqlClient(sqlClient);
       }
@@ -734,7 +716,7 @@ async function cmdDoctor() {
     }
 
     try {
-      const { recentViolations } = await import('../lib/specialist-contracts-enforce.mjs');
+      const { recentViolations } = await import('../lib/agent-contracts-enforce.mjs');
       const violations = recentViolations({ windowMs: 24 * 60 * 60 * 1000 });
       const label = violations.length === 0
         ? 'Contract violations (none in last 24h)'
@@ -779,11 +761,7 @@ async function cmdDoctor() {
       add('Observation size', false, true);
     }
 
-    // Only run the schema migration check when SQL is both configured AND
-    // currently reachable. If the SQL check above already failed (sqlReachable
-    // is false) this check will also fail with the same ECONNREFUSED and would
-    // produce a redundant second warning about the same offline server.
-    if (sqlConfig.configured && sqlReachable) {
+    if (sqlConfig.configured) {
       try {
         const migClient = createSqlClient(process.env);
         if (migClient) {
@@ -872,7 +850,7 @@ async function cmdDoctor() {
     }
 
     // Agent contracts integrity
-    const { getAllContracts, summarize } = await import('../lib/specialist-contracts.mjs');
+    const { getAllContracts, summarize } = await import('../lib/agent-contracts.mjs');
     const contracts = getAllContracts();
     add('Agent contracts loaded', contracts.length > 0);
     if (contracts.length > 0) {
@@ -1084,9 +1062,9 @@ async function cmdMigrate(args) {
   const candidates = pathArg
     ? [pathArg]
     : [
-        path.join(ROOT_DIR, 'specialists', 'registry.json'),
-        path.join(ROOT_DIR, 'specialists', 'contracts.json'),
-        path.join(ROOT_DIR, 'specialists', 'role-manifests.json'),
+        path.join(ROOT_DIR, 'agents', 'registry.json'),
+        path.join(ROOT_DIR, 'agents', 'contracts.json'),
+        path.join(ROOT_DIR, 'agents', 'role-manifests.json'),
         path.join(process.cwd(), '.cx', 'config.json'),
       ];
 
@@ -1589,14 +1567,7 @@ async function cmdPricing(args) {
 }
 
 async function cmdHeadhunt(args) { await runHeadhunt({ args, cwd: process.cwd(), homeDir: HOME }); }
-async function cmdHosts() {
-  const args = new Set(process.argv.slice(3));
-  if (args.has('--json')) {
-    process.stdout.write(formatHostCapabilitiesJson());
-  } else {
-    printHostCapabilities();
-  }
-}
+async function cmdHosts() { printHostCapabilities(); }
 async function cmdSetup(args) { await runSetup({ rootDir: ROOT_DIR, args, homeDir: HOME }); }
 
 function printConfigModeHelp() {
@@ -1644,19 +1615,11 @@ async function printIntakeHelp() {
   println('                                       Mark a pending packet processed. --output stamps intake_id + confidence into the artifact frontmatter (provenance).');
   println('  construct intake skip <id> [--reason=…]   Mark a pending packet skipped (preserves audit trail).');
   println('  construct intake reopen <id>         Move a processed or skipped packet back to pending.');
-  println('  construct intake quarantine list             List packets held for human review (low confidence or close margin).');
-  println('  construct intake quarantine show <id>        Show a quarantined packet with top-3 candidate types and margins.');
-  println('  construct intake reroute <id> --type=<t>      Move a quarantined packet to pending with manual classification.');
-  println('                                                Writes tests/fixtures/intake/learned/<hash>.json so CI guards against repeats.');
   println('  construct intake metrics               Show pipeline volume, velocity, and processing stats.');
   println('  construct intake integrate <id> <system>    Push intake to external system (github, jira, confluence).');
   println('  construct intake integrate <id> <system> --create-issue  Create an issue from the intake packet.');
   println('  construct intake config               Show current watch dirs + scan depth.');
   println('  construct intake config set --depth=N [--add-dir=PATH] [--remove-dir=PATH]');
-  println('  construct intake extraction-warnings [--since=7d] [--kind=table] [--limit=50]');
-  println('                                       Summarize ~/.cx/intake/extraction-warnings.jsonl (dropped content log).');
-  println('  construct intake needs-asr list       List audio/video files awaiting ASR transcription.');
-  println('  construct intake needs-asr show <id>  Show a specific ASR-pending packet.');
   println('                                       Update intake config. --depth caps at the hard limit.');
   println('  construct intake config set --include-project-inbox=on|off');
   println('  construct intake config set --include-docs-intake=on|off');
@@ -1898,14 +1861,6 @@ async function cmdIntake(args) {
     return await cmdIntakeMetrics();
   }
 
-  if (sub === 'quarantine') {
-    return await cmdIntakeQuarantine(args.slice(1), cwd);
-  }
-
-  if (sub === 'reroute') {
-    return await cmdIntakeReroute(args.slice(1), cwd);
-  }
-
   if (sub === 'integrate') {
     return await cmdIntakeIntegrate(id, args.slice(2), cwd);
   }
@@ -1914,312 +1869,7 @@ async function cmdIntake(args) {
     return await cmdIntakeConfig(args.slice(1));
   }
 
-  if (sub === 'extraction-warnings') {
-    return await cmdIntakeExtractionWarnings(args.slice(1));
-  }
-
-  if (sub === 'needs-asr') {
-    return await cmdIntakeNeedsAsr(args.slice(1));
-  }
-
-  errorln(`Unknown intake subcommand: ${sub}. Available: list, show, done, skip, reopen, quarantine, reroute, integrate, config, extraction-warnings, needs-asr`);
-  process.exit(1);
-}
-
-async function cmdIntakeQuarantine(args, cwd) {
-  const action = args[0];
-  const { listQuarantine, readQuarantine } = await import('../lib/intake/quarantine.mjs');
-
-  if (!action || action === 'list') {
-    const packets = listQuarantine(cwd);
-    if (packets.length === 0) {
-      println('Quarantine is empty. Classifier had no low-confidence packets to hold.');
-      return;
-    }
-    println(`Quarantine (${packets.length} packet${packets.length === 1 ? '' : 's'} awaiting review):`);
-    const headers = ['ID', 'Type', 'Confidence', 'Reason'];
-    const rows = packets.map((p) => {
-      const t = p.triage || {};
-      const conf = typeof t.confidence === 'number' ? t.confidence.toFixed(2) : '—';
-      return [p.id, t.intakeType || 'unknown', conf, p.quarantineReason || 'n/a'];
-    });
-    const widths = headers.map((h, i) => Math.max(h.length, ...rows.map((r) => String(r[i] || '').length)));
-    const fmt = (cells) => cells.map((c, i) => String(c || '').padEnd(widths[i])).join('  ');
-    println(fmt(headers));
-    println(widths.map((w) => '─'.repeat(w)).join('  '));
-    for (const row of rows) println(fmt(row));
-    println('');
-    println('Review options:');
-    println('  construct intake quarantine show <id>           See full triage + candidates');
-    println('  construct intake reroute <id> --type=<correct>  Reclassify and promote to pending');
-    println('  construct intake skip <id> --reason="..."        Drop without action');
-    return;
-  }
-
-  if (action === 'show') {
-    const id = args[1];
-    if (!id) { errorln('Usage: construct intake quarantine show <id>'); process.exit(1); }
-    const packet = readQuarantine(cwd, id);
-    if (!packet) { errorln(`No quarantined packet with id: ${id}`); process.exit(1); }
-    const t = packet.triage || {};
-    println(`Quarantined packet ${packet.id}`);
-    println(`Status:     quarantined`);
-    println(`Reason:     ${packet.quarantineReason || 'n/a'}`);
-    println(`Source:     ${packet.intake?.sourcePath || '(none)'}`);
-    println(`Held since: ${packet.quarantinedAt || packet.createdAt}`);
-    println('');
-    println('Triage (current best guess):');
-    println(`  intakeType:        ${t.intakeType || 'unknown'}`);
-    println(`  primaryOwner:      ${t.primaryOwner || '—'}`);
-    println(`  recommendedAction: ${t.recommendedAction || '—'}`);
-    println(`  confidence:        ${typeof t.confidence === 'number' ? t.confidence.toFixed(2) : '—'}`);
-    if (t.rationale) println(`  rationale:         ${t.rationale}`);
-    if (Array.isArray(t.candidates) && t.candidates.length > 0) {
-      println('');
-      println('Candidates (top 3):');
-      for (const c of t.candidates) {
-        const score = typeof c.score === 'number' ? c.score.toFixed(2) : '—';
-        const margin = typeof c.margin === 'number' ? c.margin.toFixed(2) : '—';
-        println(`  ${c.intakeType.padEnd(20)} score=${score}  margin=${margin}  hits=${c.hits ?? 0}`);
-      }
-    }
-    if (packet.excerpt) {
-      println('');
-      println('Excerpt:');
-      for (const line of String(packet.excerpt).split('\n').slice(0, 10)) println(`  ${line}`);
-    }
-    println('');
-    println('Next steps:');
-    println(`  construct intake reroute ${packet.id} --type=<correct-type>     Reclassify + write learned fixture`);
-    println(`  construct intake skip ${packet.id} --reason="..."                 Drop the packet`);
-    return;
-  }
-
-  errorln(`Unknown quarantine subcommand: ${action}. Available: list, show`);
-  process.exit(1);
-}
-
-async function cmdIntakeReroute(args, cwd) {
-  const id = args[0];
-  if (!id || id.startsWith('--')) {
-    errorln('Usage: construct intake reroute <id> --type=<intakeType> [--reason="..."]');
-    process.exit(1);
-  }
-  const flags = parseKvFlags(args.slice(1), ['type', 'reason']);
-  if (!flags.type) {
-    errorln('--type is required. See INTAKE_TYPES in lib/intake/tables/rnd.mjs for valid values.');
-    process.exit(1);
-  }
-  const { INTAKE_TYPES } = await import('../lib/intake/classify.mjs');
-  if (!INTAKE_TYPES.includes(flags.type)) {
-    errorln(`Invalid --type=${flags.type}. Valid: ${INTAKE_TYPES.join(', ')}`);
-    process.exit(1);
-  }
-  const { rerouteQuarantined } = await import('../lib/intake/quarantine.mjs');
-  try {
-    const result = rerouteQuarantined(cwd, id, flags.type, {
-      reroutedBy: 'construct-intake-cli',
-      reason: flags.reason || '',
-    });
-    info(`Rerouted ${result.id} to intakeType=${flags.type}. Learned fixture: ${result.fixturePath}`);
-    info(`Packet promoted to pending: ${result.filePath}`);
-  } catch (err) {
-    errorln(err.message || 'reroute failed');
-    process.exit(1);
-  }
-}
-
-async function cmdIntakeExtractionWarnings(args) {
-  const { createReadStream, existsSync } = await import('node:fs');
-  const { homedir } = await import('node:os');
-  const { join } = await import('node:path');
-  const { createInterface } = await import('node:readline');
-
-  const flags = parseKvFlags(args, ['since', 'kind', 'limit']);
-  const limitN = flags.limit ? parseInt(flags.limit, 10) : 50;
-  const filterKind = flags.kind || null;
-
-  // Parse --since flag (e.g. 7d, 24h, 30m)
-  let sinceMs = null;
-  if (flags.since) {
-    const m = flags.since.match(/^(\d+)([dhm])$/);
-    if (m) {
-      const n = parseInt(m[1], 10);
-      sinceMs = Date.now() - n * ({ d: 86_400_000, h: 3_600_000, m: 60_000 }[m[2]] ?? 0);
-    }
-  }
-
-  const logPath = join(homedir(), '.cx', 'intake', 'extraction-warnings.jsonl');
-  if (!existsSync(logPath)) {
-    println('No extraction warnings recorded yet.');
-    return;
-  }
-
-  const lines = [];
-  const rl = createInterface({ input: createReadStream(logPath), crlfDelay: Infinity });
-  await new Promise((res) => {
-    rl.on('line', (line) => {
-      try {
-        const entry = JSON.parse(line);
-        if (sinceMs && new Date(entry.ts).getTime() < sinceMs) return;
-        if (filterKind && !entry.droppedInfo?.some((d) => d.kind === filterKind)) return;
-        lines.push(entry);
-      } catch { /* ignore malformed lines */ }
-    });
-    rl.on('close', res);
-  });
-
-  if (lines.length === 0) {
-    println('No extraction warnings match the given filters.');
-    return;
-  }
-
-  const shown = lines.slice(-limitN);
-  println(`Showing ${shown.length} of ${lines.length} extraction warning(s) (newest last):\n`);
-  for (const entry of shown) {
-    println(`  ${entry.ts}  ${entry.sourcePath}`);
-    for (const d of entry.droppedInfo || []) {
-      println(`    [${d.kind}] count=${d.count}  recoverable=${d.recoverable}  ${d.reason}`);
-    }
-  }
-
-  // Summary by kind
-  const kindCounts = {};
-  for (const entry of lines) {
-    for (const d of entry.droppedInfo || []) {
-      kindCounts[d.kind] = (kindCounts[d.kind] ?? 0) + d.count;
-    }
-  }
-  if (Object.keys(kindCounts).length > 0) {
-    println('\nTotals by kind (all time):');
-    for (const [kind, count] of Object.entries(kindCounts).sort(([, a], [, b]) => b - a)) {
-      println(`  ${kind.padEnd(20)} ${count}`);
-    }
-  }
-}
-
-async function cmdIntakeNeedsAsr(args) {
-  const { existsSync, readdirSync, readFileSync } = await import('node:fs');
-  const { homedir } = await import('node:os');
-  const { join } = await import('node:path');
-
-  const sub = args[0] || 'list';
-  const asrDir = join(homedir(), '.cx', 'intake', 'needs-asr');
-
-  if (sub === 'list') {
-    if (!existsSync(asrDir)) { println('No audio/video files awaiting ASR.'); return; }
-    const files = readdirSync(asrDir).filter((f) => f.endsWith('.json'));
-    if (files.length === 0) { println('No audio/video files awaiting ASR.'); return; }
-    println(`${files.length} file(s) awaiting ASR:\n`);
-    for (const f of files) {
-      try {
-        const p = JSON.parse(readFileSync(join(asrDir, f), 'utf8'));
-        println(`  ${p.id}  ${p.extension}  ${p.sourcePath}`);
-      } catch { println(`  ${f} (malformed packet)`); }
-    }
-    println('\nTo process: set CONSTRUCT_ASR_BACKEND=whisper|assemblyai and re-run construct embed start.');
-    return;
-  }
-
-  if (sub === 'show') {
-    const id = args[1];
-    if (!id) { errorln('Usage: construct intake needs-asr show <id>'); process.exit(1); }
-    if (!existsSync(asrDir)) { errorln('needs-asr queue is empty.'); process.exit(1); }
-    const files = readdirSync(asrDir).filter((f) => f.startsWith(id) && f.endsWith('.json'));
-    if (files.length === 0) { errorln(`No packet found for id: ${id}`); process.exit(1); }
-    const p = JSON.parse(readFileSync(join(asrDir, files[0]), 'utf8'));
-    println(JSON.stringify(p, null, 2));
-    return;
-  }
-
-  errorln(`Unknown needs-asr subcommand: ${sub}. Available: list, show`);
-  process.exit(1);
-}
-
-async function cmdSkillsUsage(sub, args) {
-  const { summarizeSkillCalls, findOrphanSkills, hotSkills, DEFAULT_LOG_PATH } =
-    await import('../lib/telemetry/skill-calls.mjs');
-  const { existsSync, readdirSync, readFileSync } = await import('node:fs');
-  const { join } = await import('node:path');
-
-  const flags = {};
-  for (let i = 0; i < args.length; i++) {
-    const m = args[i].match(/^--(\w[\w-]*)(?:=(.+))?$/);
-    if (m) flags[m[1]] = m[2] ?? args[++i] ?? true;
-  }
-
-  if (sub === 'usage') {
-    const since = flags.since || '30d';
-    const { skills, totalEvents } = summarizeSkillCalls({ since, agentId: flags.agent, source: flags.source });
-    println(`Skill usage — last ${since}  (${totalEvents} events)\n`);
-    const rows = Object.entries(skills).sort((a, b) => b[1].calls - a[1].calls);
-    if (rows.length === 0) { println('No load events found.'); return; }
-    for (const [id, s] of rows) {
-      const latency = s.p50LatencyMs != null ? `  p50=${s.p50LatencyMs}ms p95=${s.p95LatencyMs}ms` : '';
-      println(`  ${id.padEnd(50)} calls=${s.calls}  sessions=${s.sessions}  agents=${s.agents.length}${latency}`);
-    }
-    return;
-  }
-
-  if (sub === 'orphans') {
-    const since = flags.since || '30d';
-    const skillsRoot = join(ROOT_DIR, 'skills');
-    if (!existsSync(skillsRoot)) { errorln('skills/ directory not found'); process.exit(1); }
-    const allIds = [];
-    function walk(dir, prefix = '') {
-      for (const f of readdirSync(dir, { withFileTypes: true })) {
-        const rel = prefix ? `${prefix}/${f.name}` : f.name;
-        if (f.isDirectory()) {
-          const skillMd = join(dir, f.name, 'SKILL.md');
-          if (existsSync(skillMd)) allIds.push(rel);
-          else walk(join(dir, f.name), rel);
-        } else if (f.name.endsWith('.md') && f.name !== 'routing.md') {
-          allIds.push(rel.replace(/\.md$/, ''));
-        }
-      }
-    }
-    walk(skillsRoot);
-    const orphans = findOrphanSkills({ since, allSkillIds: allIds });
-    if (orphans.length === 0) { println(`No orphan skills in the last ${since}.`); return; }
-    println(`${orphans.length} skill(s) with no load events in the last ${since}:\n`);
-    for (const id of orphans) println(`  ${id}`);
-    return;
-  }
-
-  if (sub === 'hot') {
-    const since = flags.since || '30d';
-    const limit = parseInt(flags.limit || '20', 10);
-    const rows = hotSkills({ since, limit });
-    if (rows.length === 0) { println('No skill load events found.'); return; }
-    println(`Top ${limit} skills — last ${since}\n`);
-    for (const s of rows) {
-      const latency = s.p50LatencyMs != null ? `  p50=${s.p50LatencyMs}ms` : '';
-      println(`  ${s.skillId.padEnd(50)} calls=${s.calls}${latency}`);
-    }
-    return;
-  }
-
-  if (sub === 'correlate-quality') {
-    println('Quality correlation requires Postgres (CONSTRUCT_DB_URL).');
-    println('Local JSONL does not carry cx_score data.');
-    println('Run with Postgres configured for full correlation output.');
-    return;
-  }
-
-  if (sub === 'backfill-postgres') {
-    if (!process.env.CONSTRUCT_DB_URL) {
-      errorln('CONSTRUCT_DB_URL not set — Postgres backfill requires a database connection.');
-      process.exit(1);
-    }
-    println('Backfilling skill invocations from JSONL into Postgres…');
-    if (!existsSync(DEFAULT_LOG_PATH)) { println('No JSONL log found at ' + DEFAULT_LOG_PATH); return; }
-    const lines = readFileSync(DEFAULT_LOG_PATH, 'utf8').split('\n').filter(Boolean);
-    println(`Found ${lines.length} JSONL entries. Connect and insert via your Postgres client.`);
-    println('(Full Postgres backfill client available in team/enterprise deployment mode.)');
-    return;
-  }
-
-  errorln(`Unknown skills subcommand: ${sub}. Available: usage, orphans, hot, correlate-quality, backfill-postgres`);
+  errorln(`Unknown intake subcommand: ${sub}. Available: list, show, done, skip, reopen, integrate, config`);
   process.exit(1);
 }
 
@@ -2893,7 +2543,7 @@ async function cmdUpgrade(args) {
   }
 }
 async function cmdValidate() {
-  const reg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
+  const reg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
   const result = validateRegistry(reg, { rootDir: ROOT_DIR });
   if (result.valid) {
     println(`✓ Registry valid (${result.summary})`);
@@ -2946,7 +2596,7 @@ async function cmdModels(args) {
   if (args.includes('--apply')) {
     const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
     const models = await pollFreeModels(apiKey);
-    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
+    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
     const selections = {};
     for (const currentTier of ['reasoning', 'standard', 'fast']) {
       const fallbacks = registry.models?.[currentTier]?.fallback ?? [];
@@ -2996,7 +2646,7 @@ async function cmdModels(args) {
     await cmdSync([]);
     return;
   }
-  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
+  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
   const result = readCurrentModels(envPath, registry.models ?? {});
   const nothingSelected = ['reasoning', 'standard', 'fast'].every((t) => !result[t]);
   println('Current model assignments:');
@@ -3354,113 +3004,6 @@ async function cmdEvals(args) {
   println('  construct evals retrieval [--fixture=PATH] [--json]');
 }
 
-async function cmdDocsReconcile(args) {
-  const { existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync } = await import('node:fs');
-  const { join, relative } = await import('node:path');
-  const scopeArg = args.find((a) => a.startsWith('--scope='))?.replace('--scope=', '');
-  const scopes = scopeArg ? scopeArg.split(',') : ['docs/prd', 'docs/adr', 'docs/rfc'];
-
-  const cwd = process.cwd();
-  const now = new Date().toISOString().slice(0, 10);
-  const driftDir = join(cwd, '.cx', 'doc-drift', now);
-  mkdirSync(driftDir, { recursive: true });
-
-  const candidates = [];
-  for (const scope of scopes) {
-    const dir = join(cwd, scope);
-    if (!existsSync(dir)) continue;
-    const walk = (d) => {
-      try {
-        for (const f of readdirSync(d, { withFileTypes: true })) {
-          if (f.isDirectory()) walk(join(d, f.name));
-          else if (f.name.endsWith('.md') || f.name.endsWith('.mdx')) {
-            candidates.push(join(d, f.name));
-          }
-        }
-      } catch { /* skip */ }
-    };
-    walk(dir);
-  }
-
-  if (candidates.length === 0) {
-    println(`No documents found in scopes: ${scopes.join(', ')}`);
-    return;
-  }
-
-  println(`Reconciling ${candidates.length} document(s) across ${scopes.join(', ')}…\n`);
-  println('This performs a structural drift check (frontmatter, section headings, cross-refs).');
-  println('Full AI-assisted reconciliation requires a specialist dispatch via the MCP worker_run tool.\n');
-
-  const reports = [];
-  const STALE_DAYS = 30;
-  const now_ms = Date.now();
-
-  for (const p of candidates) {
-    let text = '';
-    try { text = readFileSync(p, 'utf8'); } catch { continue; }
-
-    // Extract last_verified_at from frontmatter.
-    const fmMatch = text.match(/^---\n([\s\S]*?)\n---/);
-    let lastVerified = null;
-    if (fmMatch) {
-      const lvaMatch = fmMatch[1].match(/last_verified_at:\s*(.+)/);
-      if (lvaMatch) lastVerified = lvaMatch[1].trim();
-    }
-
-    const ageDays = lastVerified
-      ? Math.floor((now_ms - new Date(lastVerified).getTime()) / 86400000)
-      : null;
-
-    const verdict = lastVerified === null ? 'unverified'
-      : ageDays > STALE_DAYS ? 'stale'
-      : 'current';
-
-    const rel = relative(cwd, p);
-    reports.push({ path: rel, verdict, lastVerified, ageDays });
-
-    const reportPath = join(driftDir, rel.replace(/[/\\]/g, '-') + '.md');
-    mkdirSync(driftDir, { recursive: true });
-    writeFileSync(reportPath, [
-      `# Drift report: ${rel}`,
-      '',
-      `**Verdict:** ${verdict}`,
-      `**Last verified:** ${lastVerified || '(none)'}`,
-      `**Age (days):** ${ageDays ?? '—'}`,
-      '',
-      '## Notes',
-      '',
-      verdict === 'stale'
-        ? `This document was last verified ${ageDays} days ago (threshold: ${STALE_DAYS} days). Review against current implementation.`
-        : verdict === 'unverified'
-        ? 'This document has no last_verified_at frontmatter field. Add one after reviewing.'
-        : 'This document appears current.',
-    ].join('\n'));
-  }
-
-  // Write summary.
-  const stale = reports.filter((r) => r.verdict === 'stale');
-  const unverified = reports.filter((r) => r.verdict === 'unverified');
-  const current = reports.filter((r) => r.verdict === 'current');
-
-  const summaryPath = join(driftDir, 'summary.md');
-  writeFileSync(summaryPath, [
-    `# Doc drift summary — ${now}`,
-    '',
-    `Scopes: ${scopes.join(', ')}`,
-    `Total: ${reports.length}  |  Current: ${current.length}  |  Stale: ${stale.length}  |  Unverified: ${unverified.length}`,
-    '',
-    stale.length ? `## Stale (>${STALE_DAYS} days)\n${stale.map((r) => `- ${r.path} (${r.ageDays}d)`).join('\n')}` : '',
-    unverified.length ? `\n## Unverified\n${unverified.map((r) => `- ${r.path}`).join('\n')}` : '',
-  ].filter(Boolean).join('\n'));
-
-  println(`Results:`);
-  println(`  current:    ${current.length}`);
-  println(`  stale:      ${stale.length}`);
-  println(`  unverified: ${unverified.length}`);
-  println(`\nDrift reports written to: .cx/doc-drift/${now}/`);
-  println(`Summary: .cx/doc-drift/${now}/summary.md`);
-}
-
 async function cmdDocsUpdate(args) {
   const check = args.includes('--check');
   const { regenerateDocs: regen } = await import('../lib/auto-docs.mjs');
@@ -3615,209 +3158,6 @@ async function cmdGatesAudit(args) {
   if (!report.ok) process.exit(1);
 }
 
-async function cmdCi(args) {
-  const sub = args[0];
-
-  if (!sub || sub === '--help' || sub === '-h') {
-    println('Usage: construct ci <preview|status|list>');
-    println('  preview [--job=<name>] [--list] [--full]  Run CI jobs locally using the same commands CI uses');
-    println('  status                                     Show recent CI run results for the current branch');
-    println('  list                                       Alias for: ci preview --list');
-    return;
-  }
-
-  if (sub === 'list') return cmdCiPreview(['--list']);
-  if (sub === 'preview') return cmdCiPreview(args.slice(1));
-  if (sub === 'status') return cmdCiStatus(args.slice(1));
-
-  errorln(`Unknown ci subcommand: ${sub}. Available: preview, status, list`);
-  process.exit(1);
-}
-
-async function cmdCiPreview(args) {
-  const { readFileSync, existsSync } = await import('node:fs');
-  const { join } = await import('node:path');
-  const { spawnSync: spSync } = await import('node:child_process');
-  const YAML = await import('node:fs');
-
-  const listOnly = args.includes('--list');
-  const fullMode = args.includes('--full');
-  const jobFilter = args.find((a) => a.startsWith('--job='))?.split('=').slice(1).join('=');
-
-  const ciPath = join(ROOT_DIR, '.github', 'workflows', 'ci.yml');
-  if (!existsSync(ciPath)) {
-    errorln('No .github/workflows/ci.yml found');
-    process.exit(1);
-  }
-
-  const yml = readFileSync(ciPath, 'utf8');
-
-  // Extract jobs under the `jobs:` top-level key only.
-  // Split on the `jobs:` line, then slice job blocks between consecutive 2-space-indent keys.
-  const jobsStart = yml.indexOf('\njobs:\n');
-  const jobsSection = jobsStart >= 0 ? yml.slice(jobsStart + 1) : '';
-
-  // Find all top-level job keys (2-space indent) and slice blocks between them.
-  const jobKeyPattern = /^  (\w[\w-]*):\s*$/gm;
-  const jobPositions = [];
-  let km;
-  while ((km = jobKeyPattern.exec(jobsSection)) !== null) {
-    if (km[1] === 'jobs') continue;
-    jobPositions.push({ id: km[1], start: km.index });
-  }
-
-  const jobBlocks = [];
-  for (let i = 0; i < jobPositions.length; i++) {
-    const { id, start } = jobPositions[i];
-    const end = jobPositions[i + 1]?.start ?? jobsSection.length;
-    const block = jobsSection.slice(start, end);
-
-    const nameMatch = block.match(/^    name:\s*(.+)\s*$/m);
-    const displayName = nameMatch
-      ? nameMatch[1].replace(/\$\{\{[^}]+\}\}/g, '<matrix>').trim()
-      : id;
-
-    const runSteps = [];
-    let sm;
-
-    // Named steps: `- name: ...\n  (optional: if/env lines)\n  run: cmd`
-    const namedRunPattern = /- name:\s*([^\n]+)\n(?:[ \t]+[^\n]+\n)*?[ \t]+run:\s*([^\n]+)/g;
-    while ((sm = namedRunPattern.exec(block)) !== null) {
-      const cmd = sm[2].trim();
-      if (cmd && !cmd.startsWith('#')) {
-        runSteps.push({ name: sm[1].trim(), cmd });
-      }
-    }
-
-    // Unnamed run steps: `- run: cmd` — skip `npm ci` (CI setup, not needed locally).
-    const unnamedRunPattern = /^[ \t]+-\s+run:\s*([^\n|]+)$/gm;
-    while ((sm = unnamedRunPattern.exec(block)) !== null) {
-      const cmd = sm[1].trim();
-      if (!cmd || cmd.startsWith('#')) continue;
-      if (/^npm ci\b/.test(cmd)) continue;
-      if (runSteps.some((s) => s.cmd === cmd)) continue;
-      runSteps.push({ name: cmd.slice(0, 50), cmd });
-    }
-
-    if (runSteps.length > 0 || listOnly) {
-      jobBlocks.push({ id, name: displayName, steps: runSteps });
-    }
-  }
-
-  if (listOnly) {
-    println('CI jobs from .github/workflows/ci.yml:');
-    for (const job of jobBlocks) {
-      println(`  ${job.id.padEnd(20)} ${job.name}`);
-      for (const step of job.steps) {
-        println(`    → ${step.name}`);
-      }
-    }
-    return;
-  }
-
-  const targetJobs = jobFilter
-    ? jobBlocks.filter((j) => j.id === jobFilter || j.name.toLowerCase().includes(jobFilter.toLowerCase()))
-    : jobBlocks.filter((j) => !['changes'].includes(j.id));
-
-  if (targetJobs.length === 0) {
-    errorln(`No jobs matched: ${jobFilter}`);
-    process.exit(1);
-  }
-
-  println(`Running ${targetJobs.length} CI job(s) locally...`);
-  let failed = 0;
-
-  for (const job of targetJobs) {
-    println(`\n▶ ${job.name} (${job.id})`);
-    for (const step of job.steps) {
-      const cmd = step.cmd;
-
-      // Docker/Trivy steps require --full.
-      const isHeavy = /docker|trivy/i.test(cmd);
-      if (isHeavy && !fullMode) {
-        println(`  ⊘ skipped (heavy — pass --full to run): ${step.name}`);
-        println(`    equivalent: ${cmd}`);
-        continue;
-      }
-
-      // Parse the command into executable form.
-      const parts = cmd.split(/\s+/);
-      const executable = parts[0];
-      const cmdArgs = parts.slice(1);
-
-      println(`  ▷ ${step.name}`);
-
-      const result = spSync(executable, cmdArgs, {
-        cwd: ROOT_DIR,
-        stdio: 'inherit',
-        env: { ...process.env, CI: '1' },
-      });
-
-      if (result.status !== 0) {
-        errorln(`  ✗ ${step.name} failed (exit ${result.status})`);
-        failed++;
-      } else {
-        println(`  ✓ ${step.name}`);
-      }
-    }
-  }
-
-  if (failed > 0) {
-    errorln(`\n${failed} step(s) failed.`);
-    process.exit(1);
-  } else {
-    println('\nAll CI steps passed locally.');
-  }
-}
-
-async function cmdCiStatus(args) {
-  const { execSync: exec } = await import('node:child_process');
-  const jsonOutput = args.includes('--json');
-
-  let branch = '';
-  try {
-    branch = exec('git branch --show-current', { cwd: process.cwd(), stdio: 'pipe', encoding: 'utf8', timeout: 2000 }).trim();
-  } catch { /* not in a git repo */ }
-
-  try {
-    const limit = args.find((a) => a.startsWith('--limit='))?.split('=')[1] || '5';
-    const branchFlag = branch ? `--branch=${branch}` : '';
-    const raw = exec(
-      `gh run list ${branchFlag} --limit=${limit} --json conclusion,name,workflowName,createdAt,databaseId,url,status`,
-      { cwd: process.cwd(), stdio: 'pipe', encoding: 'utf8', timeout: 10_000 },
-    );
-    const runs = JSON.parse(raw);
-    if (jsonOutput) {
-      println(JSON.stringify(runs, null, 2));
-      return;
-    }
-
-    if (runs.length === 0) {
-      println(`No CI runs found${branch ? ` for branch '${branch}'` : ''}.`);
-      return;
-    }
-
-    println(`CI runs${branch ? ` on '${branch}'` : ''} (${runs.length}):`);
-    for (const run of runs) {
-      const icon = run.conclusion === 'success' ? '✓'
-        : run.conclusion === 'failure' ? '✗'
-        : run.status === 'in_progress' ? '⏳'
-        : '○';
-      const age = run.createdAt ? new Date(run.createdAt).toLocaleString() : '';
-      println(`  ${icon} ${(run.workflowName || run.name).padEnd(35)} ${age}`);
-      if (run.conclusion === 'failure') println(`    ${run.url}`);
-    }
-  } catch (err) {
-    const msg = err?.message || String(err);
-    if (/gh/.test(msg) || /command not found/.test(msg)) {
-      errorln('gh CLI not available. Install from https://cli.github.com/');
-    } else {
-      errorln(`ci status failed: ${msg.slice(0, 200)}`);
-    }
-    process.exit(1);
-  }
-}
-
 async function cmdLintTemplates(args) {
   const bodyFileArg = args.find((a) => a.startsWith('--body-file='))?.split('=').slice(1).join('=');
   const bodyArgIdx = args.indexOf('--body-file');
@@ -3843,14 +3183,14 @@ async function cmdLintResearch() {
 }
 
 async function cmdLintAgents() {
-  const { validateRegistryFile } = await import('../lib/specialists/schema.mjs');
-  const registryPath = path.join(ROOT_DIR, 'specialists', 'registry.json');
+  const { validateRegistryFile } = await import('../lib/agents/schema.mjs');
+  const registryPath = path.join(ROOT_DIR, 'agents', 'registry.json');
   const { errors, agentCount } = validateRegistryFile({ registryPath, rootDir: ROOT_DIR });
   if (errors.length === 0) {
-    console.log(`specialists/registry.json: ${agentCount} agents, 0 errors`);
+    console.log(`agents/registry.json: ${agentCount} agents, 0 errors`);
     return;
   }
-  console.error(`specialists/registry.json: ${errors.length} error(s) across ${agentCount} agents`);
+  console.error(`agents/registry.json: ${errors.length} error(s) across ${agentCount} agents`);
   for (const err of errors) console.error(`  ${err}`);
   process.exit(1);
 }
@@ -3859,10 +3199,10 @@ async function cmdLintContracts() {
   const { validateContractsFile } = await import('../lib/contracts/validate.mjs');
   const result = validateContractsFile({ repoRoot: ROOT_DIR });
   if (result.ok) {
-    console.log('specialists/contracts.json: 0 errors');
+    console.log('agents/contracts.json: 0 errors');
     return;
   }
-  console.error(`specialists/contracts.json: ${result.errors.length} error(s)`);
+  console.error(`agents/contracts.json: ${result.errors.length} error(s)`);
   for (const err of result.errors) console.error(`  ${err}`);
   process.exit(1);
 }
@@ -4055,388 +3395,8 @@ async function cmdProvider(args) {
     process.exit(1);
   }
 
-  if (sub === 'new') {
-    const name = args[1];
-    if (!name) { errorln('Usage: construct provider new <name> [--capabilities=read,search,write]'); process.exit(1); }
-    const { scaffoldProvider } = await import('../lib/providers/scaffold.mjs');
-    const capFlag = args.find((a) => a.startsWith('--capabilities='));
-    const capabilities = capFlag ? capFlag.replace('--capabilities=', '').split(',') : ['read', 'search'];
-    const force = args.includes('--force');
-    const result = await scaffoldProvider(name, { capabilities, force, rootDir: ROOT_DIR });
-    if (result.skipped?.length) println(`Skipped (already exist): ${result.skipped.join(', ')}`);
-    if (result.written?.length) println(`Created: ${result.written.join('\n  ')}`);
-    println(`\nProvider scaffold ready. Run: npm test tests/providers/${name}.test.mjs`);
-    return;
-  }
-
-  errorln(`Unknown provider subcommand: ${sub}. Available: list, info, test, plugins, new`);
+  errorln(`Unknown provider subcommand: ${sub}. Available: list, info, test, plugins`);
   process.exit(1);
-}
-
-async function cmdTags(args) {
-  const sub = args[0];
-  const { loadVocabulary } = await import('../lib/tags/vocabulary.mjs');
-  const { proposeTag, addTag, deprecateTag, archiveTag, listProposed, auditTags } =
-    await import('../lib/tags/lifecycle.mjs');
-
-  if (!sub || sub === 'audit') {
-    const report = auditTags();
-    println(`Tag audit\n`);
-    println(`Active tags: ${Object.keys(report.active).length}`);
-    if (report.overBudget.length) {
-      println(`\nOver budget:`);
-      for (const t of report.overBudget) println(`  ${t.id}  count=${t.count}  budget=${t.budget}`);
-    }
-    if (report.deprecated.length) {
-      println(`\nDeprecated (still in use):`);
-      for (const t of report.deprecated) println(`  ${t.id}  docs=${t.docCount}  replacedBy=${t.replacedBy || '—'}`);
-    }
-    if (report.unknown.length) {
-      println(`\nUnknown (in docs, not in vocab):`);
-      for (const t of report.unknown) println(`  ${t.id}  docs=${t.docCount}`);
-    }
-    if (report.orphan.length) {
-      println(`\nOrphan (in vocab, never used):`);
-      for (const t of report.orphan) println(`  ${t.id}`);
-    }
-    return;
-  }
-
-  if (sub === 'propose') {
-    const id = args[1];
-    const facetArg = args.find((a) => a.startsWith('--facet='))?.replace('--facet=', '');
-    const labelArg = args.find((a) => a.startsWith('--label='))?.replace('--label=', '');
-    if (!id || !facetArg) { errorln('Usage: construct tags propose <id> --facet=<f> [--label="..."]'); process.exit(1); }
-    proposeTag({ id, facet: facetArg, label: labelArg || id });
-    println(`Proposed tag ${id} written to .cx/tags/proposed.jsonl`);
-    return;
-  }
-
-  if (sub === 'add') {
-    const id = args[1];
-    const facetArg = args.find((a) => a.startsWith('--facet='))?.replace('--facet=', '');
-    const labelArg = args.find((a) => a.startsWith('--label='))?.replace('--label=', '');
-    const scope = args.includes('--scope=project') ? 'project' : 'repo';
-    if (!id || !facetArg) { errorln('Usage: construct tags add <id> --facet=<f> [--label="..."] [--scope=project]'); process.exit(1); }
-    addTag({ id, facet: facetArg, label: labelArg || id, scope, cwd: process.cwd(), rootDir: ROOT_DIR });
-    println(`Tag ${id} added to ${scope === 'project' ? '.cx/tags/vocabulary-overrides.json' : 'config/tag-vocabulary.json'}`);
-    return;
-  }
-
-  if (sub === 'deprecate') {
-    const id = args[1];
-    const reason = args.find((a) => a.startsWith('--reason='))?.replace('--reason=', '');
-    const replacedBy = args.find((a) => a.startsWith('--replaced-by='))?.replace('--replaced-by=', '');
-    if (!id) { errorln('Usage: construct tags deprecate <id> --reason="..." [--replaced-by=<other>]'); process.exit(1); }
-    deprecateTag({ id, reason: reason || 'deprecated', replacedBy, cwd: process.cwd(), rootDir: ROOT_DIR });
-    println(`Tag ${id} marked deprecated.`);
-    return;
-  }
-
-  if (sub === 'archive') {
-    const id = args[1];
-    if (!id) { errorln('Usage: construct tags archive <id>'); process.exit(1); }
-    archiveTag({ id, cwd: process.cwd(), rootDir: ROOT_DIR });
-    println(`Tag ${id} archived.`);
-    return;
-  }
-
-  if (sub === 'list') {
-    const vocab = loadVocabulary({ rootDir: ROOT_DIR, cwd: process.cwd() });
-    println(`Tag vocabulary (${vocab.tags.length} entries)\n`);
-    for (const t of vocab.tags) {
-      if (t.status === 'archived') continue;
-      const dep = t.status === 'deprecated' ? ' [deprecated]' : '';
-      println(`  ${t.id.padEnd(40)} facet=${t.facet}  status=${t.status}${dep}`);
-    }
-    return;
-  }
-
-  if (sub === 'proposed') {
-    const items = listProposed({ cwd: process.cwd() });
-    if (!items.length) { println('No pending tag proposals.'); return; }
-    println(`${items.length} pending proposal(s):\n`);
-    for (const p of items) println(`  ${p.id.padEnd(40)} facet=${p.facet}  proposed=${p.proposedAt}`);
-    return;
-  }
-
-  if (sub === 'backfill') {
-    println('Tag backfill reads .cx/knowledge/**/*.md frontmatter and writes tags to construct_documents.');
-    println('Requires DATABASE_URL. Use: node scripts/tag-candidate-mining.mjs for standalone mode.');
-    return;
-  }
-
-  errorln(`Unknown tags subcommand: ${sub}. Available: audit, propose, add, deprecate, archive, list, proposed, backfill`);
-  process.exit(1);
-}
-
-async function cmdScheduler(args) {
-  const sub = args[0];
-  const { registerJob, runJobOnce, listJobs } = await import('../lib/scheduler/index.mjs');
-
-  if (!sub || sub === 'list') {
-    const jobs = listJobs();
-    println(`Scheduled jobs (${jobs.length})\n`);
-    for (const j of jobs) {
-      println(`  ${j.id.padEnd(30)} schedule=${j.schedule}  mode=${j.mode}`);
-    }
-    return;
-  }
-
-  if (sub === 'run') {
-    const id = args[1];
-    if (!id) { errorln('Usage: construct scheduler run <job-id>'); process.exit(1); }
-    println(`Running job '${id}' one-shot…`);
-    try {
-      await runJobOnce(id, { cwd: process.cwd(), env: process.env });
-      println(`Job '${id}' completed.`);
-    } catch (err) {
-      errorln(`Job '${id}' failed: ${err.message}`);
-      process.exit(1);
-    }
-    return;
-  }
-
-  if (sub === 'runner') {
-    println('Starting scheduler runner (team/enterprise mode)…');
-    println('Set DATABASE_URL for Postgres-backed leader-election runner.');
-    println('In solo mode, use native triggers: construct scheduler list');
-    return;
-  }
-
-  errorln(`Unknown scheduler subcommand: ${sub}. Available: list, run, runner`);
-  process.exit(1);
-}
-
-async function cmdCreds(args) {
-  const sub = args[0];
-  const { readCreds, writeCreds, deleteCreds, listCreds, checkCredsFileMode, credsFilePath } =
-    await import('../lib/providers/creds.mjs');
-  const { createInterface } = await import('node:readline');
-
-  if (!sub || sub === 'list') {
-    const entries = listCreds();
-    if (entries.length === 0) { println('No provider credentials stored.'); return; }
-    println('Provider credentials\n');
-    println('  PROVIDER                  ACCOUNT                    ROTATED_AT             NEXT_ROTATION');
-    for (const e of entries) {
-      println(`  ${e.provider.padEnd(26)} ${(e.account || '—').padEnd(27)} ${(e.rotatedAt || '—').padEnd(23)} ${e.nextRotationDue || '—'}`);
-    }
-    return;
-  }
-
-  if (sub === 'test') {
-    const provider = args[1];
-    if (!provider) { errorln('Usage: construct creds test <provider>'); process.exit(1); }
-    const { resolveProviders } = await import('../lib/providers/registry.mjs');
-    const { providers } = await resolveProviders({ rootDir: ROOT_DIR, env: process.env });
-    if (!providers[provider]) { errorln(`Unknown provider: ${provider}`); process.exit(1); }
-    const health = await providers[provider].health({});
-    println(`${provider}: ${health.ok ? 'ok' : 'unhealthy'}`);
-    if (health.detail) println(`  ${health.detail}`);
-    process.exit(health.ok ? 0 : 1);
-  }
-
-  if (sub === 'revoke') {
-    const provider = args[1];
-    if (!provider) { errorln('Usage: construct creds revoke <provider>'); process.exit(1); }
-    deleteCreds(provider);
-    println(`Credentials for ${provider} removed from ${credsFilePath()}.`);
-    return;
-  }
-
-  if (sub === 'set' || sub === 'rotate') {
-    const provider = args[1];
-    if (!provider) { errorln(`Usage: construct creds ${sub} <provider>`); process.exit(1); }
-    println(`Enter credentials for ${provider} (input hidden):`);
-    const rl = createInterface({ input: process.stdin, output: process.stdout });
-    const ask = (q) => new Promise((r) => rl.question(q, r));
-    const key = await ask('API key / token: ');
-    const account = await ask('Account / username (optional): ');
-    rl.close();
-    writeCreds(provider, { key: key.trim(), account: account.trim() || undefined });
-    checkCredsFileMode();
-    println(`\nCredentials stored at ${credsFilePath()} (mode 0600).`);
-    return;
-  }
-
-  errorln(`Unknown creds subcommand: ${sub}. Available: list, set, rotate, revoke, test`);
-  process.exit(1);
-}
-
-async function cmdProviders(args) {
-  const sub = args[0];
-
-  if (!sub || sub === 'status') {
-    const resetProvider = args.find((a) => a.startsWith('--reset='))?.replace('--reset=', '');
-    if (resetProvider) {
-      const { reset } = await import('../lib/providers/circuit-breaker.mjs');
-      reset(resetProvider);
-      println(`Circuit breaker for ${resetProvider} reset to CLOSED.`);
-      return;
-    }
-    const { getState } = await import('../lib/providers/circuit-breaker.mjs');
-    const { describeProviders } = await import('../lib/providers/registry.mjs');
-    const desc = await describeProviders({ rootDir: ROOT_DIR, env: process.env });
-    println('Provider status\n');
-    for (const entry of desc.summary) {
-      const breaker = getState(entry.id);
-      const breakerStatus = breaker.state === 'CLOSED' ? 'closed' : `OPEN (${breaker.failures} failures)`;
-      println(`  ${entry.id.padEnd(26)} enabled=${entry.health.ok ? 'yes' : 'no'}  breaker=${breakerStatus}`);
-    }
-    return;
-  }
-
-  if (sub === 'discover') {
-    const providerName = args[1];
-    if (!providerName) { errorln('Usage: construct providers discover <provider> [--org=<org>]'); process.exit(1); }
-    const orgFlag = args.find((a) => a.startsWith('--org='))?.replace('--org=', '');
-    println(`Discovering resources for ${providerName}${orgFlag ? ` (org: ${orgFlag})` : ''}…`);
-    println('Discovery requires the provider to be configured with a valid API token.');
-    println(`Run: construct creds set ${providerName}`);
-    return;
-  }
-
-  errorln(`Unknown providers subcommand: ${sub}. Available: status, discover`);
-  process.exit(1);
-}
-
-async function cmdWorkflow(args) {
-  const sub = args[0] || 'list';
-
-  if (sub === 'list') {
-    const { existsSync, readdirSync } = await import('node:fs');
-    const { join } = await import('node:path');
-    const dir = join(ROOT_DIR, 'templates', 'workflows');
-    if (!existsSync(dir)) { println('No workflow templates found.'); return; }
-    const files = readdirSync(dir).filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'));
-    if (files.length === 0) { println('No workflow templates found.'); return; }
-    println('Available workflow templates:\n');
-    for (const f of files) {
-      try {
-        const { readFileSync } = await import('node:fs');
-        const raw = readFileSync(join(dir, f), 'utf8');
-        const titleMatch = raw.match(/^title:\s*(.+)$/m);
-        const descMatch = raw.match(/^description:\s*(.+)$/m);
-        const id = f.replace(/\.(yml|yaml)$/, '');
-        println(`  ${id.padEnd(30)} ${titleMatch?.[1] || ''}`);
-        if (descMatch?.[1]) println(`  ${''.padEnd(30)} ${descMatch[1]}`);
-      } catch { println(`  ${f}`); }
-    }
-    return;
-  }
-
-  if (sub === 'show') {
-    const id = args[1];
-    if (!id) { errorln('Usage: construct workflow show <id>'); process.exit(1); }
-    const { existsSync, readFileSync } = await import('node:fs');
-    const { join } = await import('node:path');
-    const candidates = [
-      join(ROOT_DIR, 'templates', 'workflows', `${id}.yml`),
-      join(ROOT_DIR, 'templates', 'workflows', `${id}.yaml`),
-    ];
-    const p = candidates.find(existsSync);
-    if (!p) { errorln(`Workflow template not found: ${id}`); process.exit(1); }
-    println(readFileSync(p, 'utf8'));
-    return;
-  }
-
-  if (sub === 'new') {
-    const id = args[1];
-    if (!id) { errorln('Usage: construct workflow new <template-id> [--name=<name>] [--non-interactive]'); process.exit(1); }
-    const { instantiateWorkflow } = await import('../lib/workflows/instantiate.mjs');
-    const nameFlag = args.find((a) => a.startsWith('--name='))?.replace('--name=', '');
-    const nonInteractive = args.includes('--non-interactive');
-    const inputs = {};
-    if (nameFlag) inputs.feature_name = nameFlag;
-    try {
-      const { artifacts, beadsItems } = await instantiateWorkflow(id, inputs, { cwd: process.cwd(), nonInteractive });
-      println(`\nWorkflow '${id}' instantiated:`);
-      for (const a of artifacts) println(`  + ${a.path}`);
-      if (beadsItems?.length) {
-        println(`\n${beadsItems.length} beads item(s) ready to create via: bd create`);
-        for (const item of beadsItems) println(`  - ${item.title}`);
-      }
-    } catch (err) {
-      errorln(`Workflow instantiation failed: ${err.message}`);
-      process.exit(1);
-    }
-    return;
-  }
-
-  errorln(`Unknown workflow subcommand: ${sub}. Available: list, show, new`);
-  process.exit(1);
-}
-
-async function cmdTelemetryQuery(args) {
-  const sub = args[0];
-  const rest = args.slice(1);
-  const flags = {};
-  for (let i = 0; i < rest.length; i++) {
-    const m = rest[i].match(/^--(\w[\w-]*)(?:=(.+))?$/);
-    if (m) flags[m[1]] = m[2] ?? rest[++i] ?? true;
-  }
-
-  const { summarizeSkillCalls } = await import('../lib/telemetry/skill-calls.mjs');
-
-  if (sub === 'latency') {
-    const p = flags.p ? parseInt(flags.p, 10) : 95;
-    const since = flags.since || '24h';
-    const op = flags.operation;
-    const { skills } = summarizeSkillCalls({ since });
-    const relevant = op
-      ? Object.entries(skills).filter(([id]) => id.includes(op))
-      : Object.entries(skills);
-    if (relevant.length === 0) { println('No latency data found.'); return; }
-    const key = p >= 95 ? 'p95LatencyMs' : 'p50LatencyMs';
-    const sorted = relevant.filter(([, s]) => s[key] != null).sort((a, b) => b[1][key] - a[1][key]);
-    println(`p${p} latency — last ${since}${op ? `  operation: ${op}` : ''}\n`);
-    for (const [id, s] of sorted.slice(0, 20)) {
-      println(`  ${id.padEnd(50)} p${p}=${s[key]}ms`);
-    }
-    return;
-  }
-
-  if (sub === 'top-slow') {
-    const limit = parseInt(flags.limit || '10', 10);
-    const since = flags.since || '24h';
-    const { skills } = summarizeSkillCalls({ since });
-    const sorted = Object.entries(skills)
-      .filter(([, s]) => s.p95LatencyMs != null)
-      .sort((a, b) => b[1].p95LatencyMs - a[1].p95LatencyMs)
-      .slice(0, limit);
-    if (sorted.length === 0) { println('No latency data found.'); return; }
-    println(`Top ${limit} slow operations — last ${since}\n`);
-    for (const [id, s] of sorted) {
-      println(`  ${id.padEnd(50)} p95=${s.p95LatencyMs}ms p50=${s.p50LatencyMs}ms calls=${s.calls}`);
-    }
-    return;
-  }
-
-  if (sub === 'errors') {
-    println('Error trace query requires an OTLP backend (OTEL_EXPORTER_OTLP_ENDPOINT).');
-    println('In local-only mode, check ~/.cx/mcp-audit.json for recent tool call errors.');
-    return;
-  }
-
-  if (sub === 'trace') {
-    const traceId = rest[0];
-    if (!traceId) { errorln('Usage: construct telemetry query trace <traceId>'); process.exit(1); }
-    println(`Trace ${traceId}:`);
-    println('Full span tree query requires an OTLP-compatible backend (Langfuse, Honeycomb, Grafana Tempo).');
-    println('Local mode only captures skill call events — set OTEL_EXPORTER_OTLP_ENDPOINT for full traces.');
-    return;
-  }
-
-  println('Usage: construct telemetry query <subcommand> [flags]');
-  println('');
-  println('Subcommands:');
-  println('  latency [--p=95] [--operation=<op>] [--since=24h]   p-ile latency by skill');
-  println('  top-slow [--limit=10] [--since=24h]                  slowest operations');
-  println('  errors [--agent=<name>] [--since=24h]                error span summary');
-  println('  trace <traceId>                                       full span tree');
-  println('');
-  println('For Langfuse/Honeycomb/Grafana Tempo/Datadog, see docs/concepts/observability.mdx');
 }
 
 async function cmdHook(args) {
@@ -4510,14 +3470,11 @@ const handlers = new Map([
   ['infer', cmdInfer],
   ['search', cmdSearch],
   ['storage', cmdStorage],
-  // Pricing / cost readouts are stubbed out: the ledger writes, model-pricing
-  // catalog, and per-turn accounting still run, but no CLI surface exposes
-  // them to the user. Handlers (cmdPricing, cmdCosts, cmdCost) remain in this
-  // file so the OTel + dashboard wiring (planned in Workstream J) can rewire
-  // the surface without re-implementing the logic.
+  ['pricing', cmdPricing],
   ['overrides', cmdOverrides],
   ['prune', cmdPrune],
   ['resources', cmdResources],
+  ['costs', cmdCosts],
   ['handoffs', cmdHandoffs],
   ['headhunt', cmdHeadhunt],
   ['init', cmdInit],
@@ -4536,12 +3493,10 @@ const handlers = new Map([
     if (sub === 'update') return cmdDocsUpdate(rest);
     if (sub === 'check') return cmdDocsCheck(rest);
     if (sub === 'site') return cmdDocsSite();
-    if (sub === 'reconcile') return cmdDocsReconcile(rest);
-    errorln(`Unknown docs subcommand: ${sub}. Available: check, verify, update, site, reconcile`);
+    errorln(`Unknown docs subcommand: ${sub}. Available: check, verify, update, site`);
     process.exit(1);
   }],
   ['docs:verify', cmdDocsVerify],
-  ['docs:reconcile', cmdDocsReconcile],
   ['init:update', cmdInitUpdate],
   ['models', cmdModels],
   ['beads:stats', async (args) => {
@@ -4592,54 +3547,6 @@ const handlers = new Map([
       process.stdout.write(formatPolicyList());
     }
   }],
-  ['policy', async (args) => {
-    const sub = args[0];
-    if (!sub || sub === '--help' || sub === '-h') {
-      println('Usage: construct policy <show>');
-      println('  show [--json]   List all active policies with enforcement details');
-      return;
-    }
-    if (sub === 'show') {
-      const { readFileSync, existsSync } = await import('node:fs');
-      const { join } = await import('node:path');
-      const inventoryPath = join(ROOT_DIR, 'agents', 'policy-inventory.json');
-      if (!existsSync(inventoryPath)) {
-        errorln('specialists/policy-inventory.json not found');
-        process.exit(1);
-      }
-      const { policies } = JSON.parse(readFileSync(inventoryPath, 'utf8'));
-      if (args.includes('--json')) {
-        println(JSON.stringify(policies, null, 2));
-        return;
-      }
-      // Table output
-      const ID_W = 25;
-      const SRC_W = 40;
-      const ENF_W = 45;
-      const MODE_W = 18;
-      println(
-        'ID'.padEnd(ID_W) + 'SOURCE'.padEnd(SRC_W) + 'ENFORCEMENT'.padEnd(ENF_W) + 'MODE',
-      );
-      println('-'.repeat(ID_W + SRC_W + ENF_W + MODE_W));
-      for (const p of policies) {
-        const id = (p.id || '').slice(0, ID_W - 1).padEnd(ID_W);
-        const src = (p.source || '').slice(0, SRC_W - 1).padEnd(SRC_W);
-        const enf = (p.enforcement || '').slice(0, ENF_W - 1).padEnd(ENF_W);
-        const mode = (p.mode || '').slice(0, MODE_W - 1);
-        println(`${id}${src}${enf}${mode}`);
-        if (p.description) println(`  ${p.description}`);
-      }
-      println('');
-      const counts = {};
-      for (const p of policies) { counts[p.mode] = (counts[p.mode] || 0) + 1; }
-      for (const [mode, count] of Object.entries(counts)) {
-        println(`  ${mode}: ${count}`);
-      }
-      return;
-    }
-    errorln(`Unknown policy subcommand: ${sub}. Available: show`);
-    process.exit(1);
-  }],
   ['auth:status', async (args) => {
     const { getTokenStatus } = await import('../lib/providers/auth-manager.mjs');
     const providers = ['github', 'slack', 'jira', 'salesforce', 'linear'];
@@ -4668,6 +3575,7 @@ const handlers = new Map([
   ['review', cmdReview],
   ['optimize', cmdOptimize],
   ['seed-traces', cmdSeedTraces],
+  ['cost', cmdCost],
   ['efficiency', cmdEfficiency],
   ['evals', cmdEvals],
   ['cleanup', cmdCleanup],
@@ -4680,17 +3588,11 @@ const handlers = new Map([
   ['lint:comments', cmdLintComments],
   ['lint:templates', cmdLintTemplates],
   ['gates:audit', cmdGatesAudit],
-  ['ci', cmdCi],
   ['bootstrap', cmdBootstrap],
   ['memory', cmdMemory],
   ['hook', cmdHook],
   ['backup', cmdBackup],
   ['provider', cmdProvider],
-  ['creds', cmdCreds],
-  ['providers', cmdProviders],
-  ['workflow', cmdWorkflow],
-  ['tags', cmdTags],
-  ['scheduler', cmdScheduler],
   ['lint:research', cmdLintResearch],
   ['lint:agents', cmdLintAgents],
   ['lint:contracts', cmdLintContracts],
@@ -4769,6 +3671,7 @@ const handlers = new Map([
     const correctedIdx = args.indexOf('--corrected');
     
     if (intakeIdIdx === -1) {
+      // Show stats instead
       const stats = getAccuracyStats(process.cwd());
       if (json) {
         println(JSON.stringify(stats, null, 2));
@@ -4793,7 +3696,7 @@ const handlers = new Map([
     
     const feedback = createClassificationFeedback({
       intakeId,
-      original: { intakeType: 'unknown', primaryOwner: 'unknown' },
+      original: { intakeType: 'unknown', primaryOwner: 'unknown' }, // Would load from intake
       corrected,
       reason,
     });
@@ -4951,9 +3854,6 @@ const handlers = new Map([
     const { runTelemetrySetupCli } = await import('../lib/telemetry/setup.mjs');
     return runTelemetrySetupCli(args);
   }],
-  ['telemetry', async (args) => {
-    return cmdTelemetryQuery(args);
-  }],
   ['beads', async (args) => {
     const sub = args[0];
     const subArgs = args.slice(1);
@@ -5109,10 +4009,7 @@ const handlers = new Map([
       const { runSkillsApplyCli } = await import('../lib/skills-apply.mjs');
       return runSkillsApplyCli(args.slice(1));
     }
-    if (sub === 'usage' || sub === 'orphans' || sub === 'hot' || sub === 'correlate-quality' || sub === 'backfill-postgres') {
-      return cmdSkillsUsage(sub, args.slice(1));
-    }
-    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply, usage, orphans, hot, correlate-quality, backfill-postgres`);
+    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply`);
     process.exit(1);
   }],
   ['ask', async (args) => {
@@ -5194,34 +4091,7 @@ const handlers = new Map([
         process.exit(1);
       }
     }
-    if (sub === 'search') {
-      const restArgs = args.slice(1);
-      const tagFlag = restArgs.find((a) => a.startsWith('--tag='))?.replace('--tag=', '');
-      const tagMatchFlag = restArgs.find((a) => a.startsWith('--tag-match='))?.replace('--tag-match=', '');
-      const topKFlag = restArgs.find((a) => a.startsWith('--top='))?.replace('--top=', '');
-      const queryParts = restArgs.filter((a) => !a.startsWith('--'));
-      const query = queryParts.join(' ').trim();
-      if (!query) { errorln('Usage: construct knowledge search "<query>" [--tag=<tag>] [--tag-match=any|all]'); process.exit(1); }
-      const { knowledgeSearch } = await import('../lib/knowledge/search.mjs');
-      const tags = tagFlag ? tagFlag.split(',') : undefined;
-      const result = knowledgeSearch({
-        query,
-        topK: topKFlag ? parseInt(topKFlag, 10) : 5,
-        repoRoot: ROOT_DIR,
-        rootDir: process.cwd(),
-        tags,
-        tagMatch: tagMatchFlag || 'any',
-      });
-      if (!result.ok) { errorln(result.message); process.exit(1); }
-      println(`${result.hits.length} result(s) for "${query}"${tags ? ` [tag: ${tags.join(',')}]` : ''}\n`);
-      for (const h of result.hits) {
-        println(`  ${h.file}${h.heading ? ` § ${h.heading}` : ''}  (score: ${h.score})`);
-        println(`  ${h.text.slice(0, 120).replace(/\n/g, ' ')}`);
-        println('');
-      }
-      return;
-    }
-    errorln(`Unknown knowledge subcommand: ${sub}. Available: trends, index, add, search`);
+    errorln(`Unknown knowledge subcommand: ${sub}. Available: trends, index, add`);
     process.exit(1);
   }],
   ['sandbox', async (args) => {

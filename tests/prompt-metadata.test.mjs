@@ -17,7 +17,7 @@ test('resolvePromptMetadata maps cx-prefixed agent names to prompt file fingerpr
   const metadata = resolvePromptMetadata('cx-engineer', { rootDir: root });
 
   assert.equal(metadata.promptName, 'engineer');
-  assert.equal(metadata.promptFile, 'specialists/prompts/cx-engineer.md');
+  assert.equal(metadata.promptFile, 'agents/prompts/cx-engineer.md');
   assert.equal(metadata.promptSource, 'git');
   assert.equal(metadata.promptHash.length, 64);
   assert.equal(metadata.promptVersion, metadata.promptHash.slice(0, 12));
@@ -38,5 +38,5 @@ test('enrichMetadataWithPrompt preserves caller metadata over derived prompt ide
 test('resolvePromptEntry returns registry entry for persona or agent', () => {
   const entry = resolvePromptEntry('cx-engineer', { rootDir: root });
   assert.equal(entry.name, 'engineer');
-  assert.equal(entry.promptFile, 'specialists/prompts/cx-engineer.md');
+  assert.equal(entry.promptFile, 'agents/prompts/cx-engineer.md');
 });

@@ -1,3 +1,9 @@
+<!--
+docs/providers/github.md: GitHub provider setup and usage guide.
+
+Covers token configuration, capabilities (read/search/webhook), and example queries.
+-->
+
 # GitHub Provider
 
 Connects Construct to GitHub repositories, issues, pull requests, and code search.
@@ -73,48 +79,6 @@ request.body = <raw bytes>
 ```
 
 The provider verifies the HMAC-SHA256 signature using timing-safe comparison and returns `{ ok: true, event, delivery }` on success.
-
-## Scope modes
-
-### Per-repo mode (default)
-
-Configure with `repo: 'owner/name'` to target a single repository. All read and search operations are scoped to that repository automatically.
-
-```
-config.repo = "acme/backend"
-```
-
-### Per-org mode
-
-Configure with `org: 'owner'` to operate across an organization. Use `repoAllowlist` or `repoAllowGlob` to restrict which repositories within the org are accessible.
-
-```
-config.org = "acme"
-config.repoAllowlist = ["backend", "frontend", "shared-libs"]
-```
-
-Or use a glob pattern to match by naming convention:
-
-```
-config.org = "acme"
-config.repoAllowGlob = "frontend-*"
-```
-
-### How the validator blocks out-of-scope I/O
-
-When a `repoAllowlist` or `repoAllowGlob` is set, every call to `read(resource, config)` passes the resource name through `validateAllowlist`. If the resource does not match, an `OUT_OF_SCOPE` error is thrown and the call is aborted before any network request is made. This prevents agents from accidentally reading repositories outside the configured scope.
-
-When no allowlist fields are set, all repositories are accessible (default permissive behavior matches current single-repo usage).
-
-### Discovery
-
-List repositories available in an org, filtered by the current allowlist:
-
-```bash
-construct providers discover github --org=acme
-```
-
-This command respects `repoAllowlist` and `repoAllowGlob` if they are configured, so the output matches exactly what the agent can access.
 
 ## Environment variables
 

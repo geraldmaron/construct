@@ -7,7 +7,7 @@ verdict: fail
 summary: Treats a green suite or coverage number as proof that the behavior is safe.
 references:
   - skills/roles/qa.md
-  - specialists/prompts/cx-qa.md
+  - agents/prompts/cx-qa.md
 tags:
   - coverage-theater
   - false-confidence

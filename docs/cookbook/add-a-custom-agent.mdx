@@ -8,25 +8,25 @@ You want a `cx-performance-auditor` for your project (or any other specialist th
 ## The shape of a specialist
 
 <FlowPipeline steps={[
-  { label: 'specialists/registry.json', badge: 'required', sub: 'name · tier · platforms' },
-  { label: 'specialists/prompts/cx-<name>.md', badge: 'required', sub: 'voice · authority · boundaries' },
-  { label: 'specialists/contracts.json', badge: 'optional', sub: 'typed handoffs' },
+  { label: 'agents/registry.json', badge: 'required', sub: 'name · tier · platforms' },
+  { label: 'agents/prompts/cx-<name>.md', badge: 'required', sub: 'voice · authority · boundaries' },
+  { label: 'agents/contracts.json', badge: 'optional', sub: 'typed handoffs' },
   { label: 'construct sync', highlight: true },
   { label: 'Claude · OpenCode · Codex · Copilot', sub: 'editor adapters written' },
 ]} />
 
 Every specialist has four pieces:
 
-1. **An entry in `specialists/registry.json`**: declares name, role, model tier, capability list, and (optionally) skills allowlist.
-2. **A prompt file at `specialists/prompts/cx-<name>.md`**: defines the specialist's voice, decision authority, and operating boundaries.
-3. **(Optional) An entry in `specialists/contracts.json`**: typed input/output for handoffs from other specialists.
-4. **(Optional) A role manifest entry in `specialists/role-manifests.json`**: for personas that should also operate as an organizational role (with fences, allowed bd labels, event ownership).
+1. **An entry in `agents/registry.json`**: declares name, role, model tier, capability list, and (optionally) skills allowlist.
+2. **A prompt file at `agents/prompts/cx-<name>.md`**: defines the specialist's voice, decision authority, and operating boundaries.
+3. **(Optional) An entry in `agents/contracts.json`**: typed input/output for handoffs from other specialists.
+4. **(Optional) A role manifest entry in `agents/role-manifests.json`**: for personas that should also operate as an organizational role (with fences, allowed bd labels, event ownership).
 
 For a basic specialist, only the first two are required.
 
 ## Step 1: Add the registry entry
 
-Open `specialists/registry.json` and add an object to the `agents` array:
+Open `agents/registry.json` and add an object to the `agents` array:
 
 ```json
 {
@@ -34,7 +34,7 @@ Open `specialists/registry.json` and add an object to the `agents` array:
   "role": "Performance and resource-efficiency specialist",
   "model_tier": "reasoning",
   "description": "Identifies hotspots, suggests optimizations, validates with measurements. Pushes back when an apparent fix masks a real cost.",
-  "promptFile": "specialists/prompts/cx-performance-auditor.md",
+  "promptFile": "agents/prompts/cx-performance-auditor.md",
   "platforms": ["claude", "opencode", "codex"]
 }
 ```
@@ -48,7 +48,7 @@ Field notes:
 
 ## Step 2: Write the prompt
 
-Create `specialists/prompts/cx-performance-auditor.md`. The prompt is the specialist's full operating instructions. Look at `specialists/prompts/cx-engineer.md` or `cx-security.md` for shape.
+Create `agents/prompts/cx-performance-auditor.md`. The prompt is the specialist's full operating instructions. Look at `agents/prompts/cx-engineer.md` or `cx-security.md` for shape.
 
 Minimum structure:
 
@@ -119,8 +119,8 @@ For the routing test: ask `construct` (the persona) something performance-shaped
 
 If your specialist needs to receive structured handoffs from other specialists, add entries to:
 
-- **`specialists/contracts.json`**: declares `producer → consumer` contracts with required input fields and postconditions. See existing contracts for shape.
-- **`specialists/role-manifests.json`**: declares the role's fence (allowed paths, allowed bd labels), event ownership (which events route to this role), and approval-required actions.
+- **`agents/contracts.json`**: declares `producer → consumer` contracts with required input fields and postconditions. See existing contracts for shape.
+- **`agents/role-manifests.json`**: declares the role's fence (allowed paths, allowed bd labels), event ownership (which events route to this role), and approval-required actions.
 
 These are required for the role framework to dispatch your specialist on event-driven triggers (e.g., a `perf.regression` event auto-routing to `cx-performance-auditor`). For a specialist that's only addressed by name, you can skip.
 
@@ -133,7 +133,7 @@ These are required for the role framework to dispatch your specialist on event-d
 
 ## Reference
 
-- [Specialist registry source: `specialists/registry.json`](https://github.com/geraldmaron/construct/blob/main/specialists/registry.json)
-- [Prompt examples: `specialists/prompts/`](https://github.com/geraldmaron/construct/tree/main/agents/prompts)
-- [Contract definitions: `specialists/contracts.json`](https://github.com/geraldmaron/construct/blob/main/specialists/contracts.json)
+- [Specialist registry source: `agents/registry.json`](https://github.com/geraldmaron/construct/blob/main/agents/registry.json)
+- [Prompt examples: `agents/prompts/`](https://github.com/geraldmaron/construct/tree/main/agents/prompts)
+- [Contract definitions: `agents/contracts.json`](https://github.com/geraldmaron/construct/blob/main/agents/contracts.json)
 - [Concepts → Agents and personas](/concepts/agents-and-personas): the model behind one-persona, many-specialists.

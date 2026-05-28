@@ -1,5 +1,5 @@
 /**
- * tests/sync-contract.test.mjs — contract tests for sync-specialists.mjs platform output shapes.
+ * tests/sync-contract.test.mjs — contract tests for sync-agents.mjs platform output shapes.
  *
  * Verifies that each platform generator produces correctly shaped output files
  * from a fixture registry. Catches platform format drift on CI before it reaches
@@ -52,11 +52,11 @@ after(() => {
   fs.rmSync(tmpProject, { recursive: true, force: true });
 });
 
-/** Run sync-specialists.mjs with the given extra args and env, return result. */
+/** Run sync-agents.mjs with the given extra args and env, return result. */
 function runSync(args = [], env = {}) {
   return spawnSync(
     process.execPath,
-    [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), ...args],
+    [path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs'), ...args],
     {
       encoding: 'utf8',
       env: {
@@ -71,7 +71,7 @@ function runSync(args = [], env = {}) {
   );
 }
 
-describe('sync-specialists contract tests', () => {
+describe('sync-agents contract tests', () => {
   describe('--dry-run flag', () => {
     it('exits 0 and prints diff summary without writing any files', () => {
       const before = countFiles(path.join(tmpHome, '.claude'));
@@ -205,7 +205,7 @@ describe('sync-specialists contract tests', () => {
     it('writes a self-contained .claude/settings.json with portable hook commands', () => {
       const result = spawnSync(
         process.execPath,
-        [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), '--project'],
+        [path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs'), '--project'],
         {
           encoding: 'utf8',
           cwd: projectDir,

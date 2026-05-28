@@ -28,7 +28,7 @@ test('cxTrace includes execution-contract model metadata parity', async (t) => {
       fast: { primary: 'registry/fast' },
     },
     personas: [],
-    agents: [{ name: 'engineer', promptFile: 'specialists/prompts/cx-engineer.md' }],
+    agents: [{ name: 'engineer', promptFile: 'agents/prompts/cx-engineer.md' }],
   }, null, 2));
   fs.writeFileSync(path.join(rootDir, 'agents', 'prompts', 'cx-engineer.md'), '# Engineer\n');
   fs.writeFileSync(path.join(rootDir, '.env'), 'CX_MODEL_REASONING=env/reasoning\nCX_MODEL_STANDARD=env/standard\nCX_MODEL_FAST=env/fast\n');

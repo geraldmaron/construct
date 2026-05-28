@@ -167,9 +167,9 @@ describe("registry: internal agent isolation", () => {
   it("all agents in registry have internal:true", async () => {
     const { createRequire } = await import("node:module");
     const require = createRequire(import.meta.url);
-    const registry = require("../specialists/registry.json");
+    const registry = require("../agents/registry.json");
 
-    const exposed = registry.specialists.filter((a) => !a.internal);
+    const exposed = registry.agents.filter((a) => !a.internal);
     assert.deepEqual(
       exposed,
       [],
@@ -180,11 +180,11 @@ describe("registry: internal agent isolation", () => {
   it("only construct persona exists and is not internal", async () => {
     const { createRequire } = await import("node:module");
     const require = createRequire(import.meta.url);
-    const registry = require("../specialists/registry.json");
+    const registry = require("../agents/registry.json");
 
-    assert.ok(registry.orchestrator, "Expected orchestrator (construct)");
-    assert.equal(registry.orchestrator.name, "construct");
-    assert.equal(registry.orchestrator.internal, undefined, "Construct orchestrator must not be marked internal");
+    assert.equal(registry.personas.length, 1, "Expected exactly one persona (construct)");
+    assert.equal(registry.personas[0].name, "construct");
+    assert.equal(registry.personas[0].internal, undefined, "Construct persona must not be marked internal");
   });
 });
 

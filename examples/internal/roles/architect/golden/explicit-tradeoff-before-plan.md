@@ -7,7 +7,7 @@ verdict: pass
 summary: Makes interface and dependency tradeoffs explicit before locking in a plan.
 references:
   - skills/roles/architect.md
-  - specialists/prompts/cx-architect.md
+  - agents/prompts/cx-architect.md
 tags:
   - tradeoffs
   - contracts

@@ -43,7 +43,7 @@ export function SyncGrid({ targets }: SyncGridProps) {
         <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-fd-muted-foreground">
           canonical source
         </p>
-        <p className="font-mono text-sm font-bold text-fd-foreground">specialists/registry.json</p>
+        <p className="font-mono text-sm font-bold text-fd-foreground">agents/registry.json</p>
         <p className="mt-0.5 text-xs text-fd-muted-foreground">one source of truth for all 28 specialists</p>
       </div>
 
