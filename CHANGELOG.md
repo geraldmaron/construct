@@ -4,6 +4,17 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.9] - 2026-05-28
+
+### Fixed
+
+- **`construct init` no longer concatenates the npm install prefix onto project paths.** In `scripts/sync-specialists.mjs`, the `lockPath` and `stagingDir` constants were computed against `root` (the construct install directory at `/usr/local/lib/node_modules/@geraldmaron/construct`) before `projectDir` was declared, so `path.relative(root, file)` produced `../../../../../../Users/<user>/<project>/.claude/...` segments that `path.join(stagingDir, rel)` collapsed lexically into `/usr/local/Users/<user>/<project>/.claude/...` — an invalid path that failed with `EACCES` against `/usr/local`. `projectDir` is now declared above the constants and used as `projectDir || root` for the staging base path and inside `writeFile()`'s `path.relative()` call. Global mode (no `--project` flag) is unchanged via the `|| root` fallback. Credit: Sara Kay (#90).
+- **Restored `npm ci` on `main` after the v1.0.8 merge.** Commit 66f031b added `node-webvtt` and OpenTelemetry `optionalDependencies` to `package.json` without regenerating `package-lock.json`, breaking every workflow that ran `npm ci` (ci, docs auto-update, GitHub Pages). Lockfile regenerated and committed (#91).
+- **`.github/workflows/pr-review.yml` reads from `specialists/role-manifests.json`.** The path was missed in the `agents/` → `specialists/` rename, causing every PR review job to fail with `ENOENT` (#91).
+- **Dropped the dangling `construct_skill_quality_correlation` view from `db/schema/008_skill_usage.sql`.** The view referenced `construct_cx_scores`, a table never created in any migration, and was not consumed by any code path. Removing it lets the postgres + pgvector integration test apply the migration set cleanly. The view can return when the planned `construct skills correlate-quality` CLI ships alongside the underlying table (#91).
+
+## [1.0.8] - 2026-05-28
+
 ### Added
 
 - `construct claude:allow` CLI for managing `~/.claude/settings.json` `permissions.allow` from outside the agent. Claude Code's auto-classifier denies the agent from editing its own permission allowlist — correctly, but that leaves users hand-editing JSON every time the classifier flags a new pattern. The CLI provides `list`, `add <pattern...>` (idempotent), `remove <pattern...>`, and `check [--apply]` which scans local branch prefixes (`feat/`, `fix/`, `chore/`, `docs/`, `refactor/`, `perf/`, `cleanup/`, `test/`, `build/`, `ci/`, `style/` — never `main`/`master`/`dev`/`claude`/`agent`) against the current allowlist and proposes the missing force-push entries. Implementation in `lib/claude-allow.mjs` with 11 tests. Atomic JSON writes, preserves unrelated fields. Session-start hook reads the same module and appends a one-line "Permission posture" section to the session banner when gaps exist, so the agent sees the missing entries up front and asks the user to close them via `construct claude:allow check --apply` instead of stumbling into classifier denials mid-task.
