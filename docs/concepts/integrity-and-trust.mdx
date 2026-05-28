@@ -11,7 +11,7 @@ This page explains the four-layer system that enforces it.
   { label: 'Canonical rule', badge: 'Layer 1', sub: 'rules/common/no-fabrication.md' },
   { label: 'Artifact-prose lint', badge: 'Layer 2', sub: 'lib/comment-lint.mjs' },
   { label: 'Intake traceability', badge: 'Layer 3', sub: 'intake_id in frontmatter' },
-  { label: 'Contract postconditions', badge: 'Layer 4', sub: 'agents/contracts.json' },
+  { label: 'Contract postconditions', badge: 'Layer 4', sub: 'specialists/contracts.json' },
 ]} />
 
 ## Layer 1: The canonical rule
@@ -70,7 +70,7 @@ intake: none
 
 ## Layer 4: Contract postconditions
 
-`agents/contracts.json` carries machine-checkable postconditions on the researcher-to-product-manager and product-manager-to-architect handoffs. These are the highest-leverage points: they're where intake-derived signals become committed artifacts.
+`specialists/contracts.json` carries machine-checkable postconditions on the researcher-to-product-manager and product-manager-to-architect handoffs. These are the highest-leverage points: they're where intake-derived signals become committed artifacts.
 
 Three check kinds:
 
