@@ -137,7 +137,6 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 
 | Command | What it does |
 |---|---|
-| `construct cost` | Token usage and cost breakdown |
 | `construct efficiency` | Read efficiency metrics |
 | `construct evals` | Evaluator catalog |
 | `construct llm-judge` | LLM-as-judge evaluations |
