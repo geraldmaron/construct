@@ -411,7 +411,7 @@ async function runOptimize(agentName) {
   }
 
   // Auto-trigger sync to propagate updated skill to all hosts
-  const syncScript = path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs');
+  const syncScript = path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs');
   if (fs.existsSync(syncScript)) {
     println('Running `construct sync` to propagate updated skill…');
     const result = spawnSync(process.execPath, [syncScript], {
@@ -420,7 +420,7 @@ async function runOptimize(agentName) {
       stdio: 'inherit',
     });
     if (result.status !== 0) {
-      warn(`sync-agents exited with code ${result.status} — run 'construct sync' manually if needed.`);
+      warn(`sync-specialists exited with code ${result.status} — run 'construct sync' manually if needed.`);
     }
   } else {
     println('Run `construct sync` to propagate the updated skill to all hosts.');

@@ -27,14 +27,14 @@ test('prompt surface architecture states Construct is the sole public persona', 
 });
 
 test('designer prompt covers visual deliverables beyond implemented UI', () => {
-  const text = fs.readFileSync(path.join(root, 'agents/prompts/cx-designer.md'), 'utf8');
+  const text = fs.readFileSync(path.join(root, 'specialists/prompts/cx-designer.md'), 'utf8');
   assert.match(text, /slide decks and presentations/);
   assert.match(text, /walkthroughs and demo videos/);
   assert.match(text, /construct wireframe/);
 });
 
 test('orchestrator prompt no longer embeds a dispatch map', () => {
-  const text = fs.readFileSync(path.join(root, 'agents/prompts/cx-orchestrator.md'), 'utf8');
+  const text = fs.readFileSync(path.join(root, 'specialists/prompts/cx-orchestrator.md'), 'utf8');
   assert.match(text, /code-backed orchestration policy/);
   assert.doesNotMatch(text, /Dispatch map/);
 });

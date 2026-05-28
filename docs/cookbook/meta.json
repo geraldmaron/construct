@@ -2,6 +2,7 @@
   "title": "Cookbook",
   "pages": [
     "index",
+    "slash-command-index",
     "add-a-custom-agent",
     "inspect-running-agents",
     "fix-a-policy-violation",

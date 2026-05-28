@@ -1,7 +1,7 @@
 /**
  * tests/functional/w2-contract-enforcement.functional.test.mjs —
  *
- * Three tiers of contract validation: shape (agents/contracts.json conforms),
+ * Three tiers of contract validation: shape (specialists/contracts.json conforms),
  * cross-file (output.schema paths exist, producer/consumer names resolve),
  * and runtime handoff (artifacts validated against the referenced schema,
  * with warn vs block enforcement modes).
@@ -41,7 +41,7 @@ function freshRepo() {
   };
 }
 
-test('the shipped agents/contracts.json validates cleanly against its schema and the real registry', async () => {
+test('the shipped specialists/contracts.json validates cleanly against its schema and the real registry', async () => {
   const result = validateContractsFile();
   assert.equal(result.ok, true, `expected ok, got errors: ${(result.errors || []).join('\n  ')}`);
 });

@@ -35,52 +35,52 @@ function baseRegistry() {
       standard: { primary: 'anthropic/claude-sonnet-4-6', fallback: [] },
       fast: { primary: 'anthropic/claude-haiku-4-5', fallback: [] },
     },
-    agents: [{ name: 'a', description: 'short', prompt: 'hello world', model: 'anthropic/claude-sonnet-4-6' }],
-    personas: [{
+    specialists: [{ name: 'a', description: 'short', prompt: 'hello world', model: 'anthropic/claude-sonnet-4-6' }],
+    orchestrator: {
       name: 'construct', displayName: 'Construct', description: 'short', role: 'r',
       promptFile: 'personas/construct.md', model: 'anthropic/claude-opus-4-7',
-    }],
+    },
   };
 }
 
 describe('validator length caps', () => {
-  it('rejects an agent description over 240 chars', () => {
+  it('rejects a specialist description over 240 chars', () => {
     fs.writeFileSync(path.join(tmpRoot, 'personas', 'construct.md'), '# stub\n');
     const reg = baseRegistry();
-    reg.agents[0].description = 'x'.repeat(300);
+    reg.specialists[0].description = 'x'.repeat(300);
     const r = validateRegistry(reg, { rootDir: tmpRoot });
     assert.equal(r.valid, false);
     assert.ok(r.errors.some((e) => /description exceeds 240 chars/.test(e)));
   });
 
-  it('rejects a persona displayName over 60 chars', () => {
+  it('rejects an orchestrator displayName over 60 chars', () => {
     fs.writeFileSync(path.join(tmpRoot, 'personas', 'construct.md'), '# stub\n');
     const reg = baseRegistry();
-    reg.personas[0].displayName = 'X'.repeat(80);
+    reg.orchestrator.displayName = 'X'.repeat(80);
     const r = validateRegistry(reg, { rootDir: tmpRoot });
     assert.equal(r.valid, false);
     assert.ok(r.errors.some((e) => /displayName exceeds 60 chars/.test(e)));
   });
 
-  it('rejects an inline agent prompt over 4000 words by default', () => {
+  it('rejects an inline specialist prompt over 4000 words by default', () => {
     fs.writeFileSync(path.join(tmpRoot, 'personas', 'construct.md'), '# stub\n');
     const reg = baseRegistry();
-    reg.agents[0].prompt = 'word '.repeat(5000).trim();
+    reg.specialists[0].prompt = 'word '.repeat(5000).trim();
     const r = validateRegistry(reg, { rootDir: tmpRoot });
     assert.equal(r.valid, false);
     assert.ok(r.errors.some((e) => /exceeds cap of 4000/.test(e)), JSON.stringify(r.errors));
   });
 
-  it('respects wordCapOverride to lift the limit for a specific agent', () => {
+  it('respects wordCapOverride to lift the limit for a specific specialist', () => {
     fs.writeFileSync(path.join(tmpRoot, 'personas', 'construct.md'), '# stub\n');
     const reg = baseRegistry();
-    reg.agents[0].prompt = 'word '.repeat(5000).trim();
-    reg.agents[0].wordCapOverride = 6000;
+    reg.specialists[0].prompt = 'word '.repeat(5000).trim();
+    reg.specialists[0].wordCapOverride = 6000;
     const r = validateRegistry(reg, { rootDir: tmpRoot });
     assert.equal(r.valid, true, JSON.stringify(r.errors));
   });
 
-  it('rejects when persona promptFile contents exceed the cap', () => {
+  it('rejects when orchestrator promptFile contents exceed the cap', () => {
     const longPrompt = 'word '.repeat(5000).trim();
     fs.writeFileSync(path.join(tmpRoot, 'personas', 'construct.md'), longPrompt);
     const reg = baseRegistry();

@@ -7,7 +7,7 @@ verdict: pass
 summary: Reads the touched files and surrounding pattern before proposing code changes.
 references:
   - skills/roles/engineer.md
-  - agents/prompts/cx-engineer.md
+  - specialists/prompts/cx-engineer.md
 tags:
   - read-before-write
   - local-conventions

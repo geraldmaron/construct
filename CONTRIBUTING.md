@@ -70,8 +70,8 @@ Do not edit these without reading the constraints in CLAUDE.md first:
 
 | File | Why |
 |---|---|
-| `agents/registry.json` | Source of truth for all agents on all platforms |
-| `scripts/sync-agents.mjs` | Regenerates every platform config |
+| `specialists/registry.json` | Source of truth for all agents on all platforms |
+| `scripts/sync-specialists.mjs` | Regenerates every platform config |
 | `lib/hooks/*.mjs` | Run in every Claude Code session |
 | `platforms/claude/settings.template.json` | Controls all Claude Code hook config |
 
@@ -100,7 +100,7 @@ node ./bin/construct doctor
 node ./bin/construct sync
 ```
 
-`doctor` verifies the system is healthy. `sync` regenerates all platform adapters from `agents/registry.json`.
+`doctor` verifies the system is healthy. `sync` regenerates all platform adapters from `specialists/registry.json`.
 
 ## Tone
 

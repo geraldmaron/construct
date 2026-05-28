@@ -6,7 +6,7 @@ and the agent registry + construct sync as the deployment layer.
 -->
 # Prompt Auto-Optimization Loop
 
-Construct's prompt improvement system uses telemetry traces and quality scores as the feedback signal, Claude as the optimizer, and the agent registry (`agents/registry.json`) as the deployment layer. This is a closed loop: production data → failure analysis → improved prompt → staging → promotion.
+Construct's prompt improvement system uses telemetry traces and quality scores as the feedback signal, Claude as the optimizer, and the agent registry (`specialists/registry.json`) as the deployment layer. This is a closed loop: production data → failure analysis → improved prompt → staging → promotion.
 
 ## Running the optimizer
 
@@ -34,7 +34,7 @@ The optimizer requires Python 3.12+ (`pip3` must be available). It will auto-ins
 
 ## Step 1: Gather signal
 
-Retrieve the current production prompt for the target agent from `agents/registry.json` (or the corresponding `promptFile` if using extracted prompts).
+Retrieve the current production prompt for the target agent from `specialists/registry.json` (or the corresponding `promptFile` if using extracted prompts).
 
 Then retrieve recent traces via the telemetry backend REST API:
 
@@ -76,7 +76,7 @@ Write an improved prompt that directly addresses the diagnosed failures. Rules:
 
 ## Step 4: Push to staging
 
-Update the agent's prompt in `agents/registry.json` (or the corresponding `promptFile`) with a staging marker comment. Tag the version by writing to `.cx/decisions/prompt-staging-{agent}-{date}.md`.
+Update the agent's prompt in `specialists/registry.json` (or the corresponding `promptFile`) with a staging marker comment. Tag the version by writing to `.cx/decisions/prompt-staging-{agent}-{date}.md`.
 
 Log the candidate prompt as a span attribute on a test run batch using `cx_trace`. Tag spans with `promptVersion: staging-{timestamp}` and score them with `cx_score` as traces complete.
 
