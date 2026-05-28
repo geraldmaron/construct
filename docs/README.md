@@ -11,7 +11,7 @@
 | `.cx/context.md` | Human-readable resumable project context | Active work, decisions, architecture assumptions, or open questions change |
 | `.cx/context.json` | Machine-readable resumable context | Context state needs to stay in sync with `.cx/context.md` |
 | `docs/README.md` | Docs index and maintenance contract | Core docs set or maintenance expectations change |
-| `docs/concepts/architecture.md` | Canonical architecture and invariants | Runtime shape, contracts, boundaries, or major dependencies change |
+| `docs/concepts/architecture.mdx` | Canonical architecture and invariants | Runtime shape, contracts, boundaries, or major dependencies change |
 
 `plan.md` is a local working document. `construct init` creates it for the active session, but it is gitignored and not committed; durable work belongs in the tracker (Beads or external).
 
