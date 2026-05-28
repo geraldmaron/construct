@@ -52,6 +52,7 @@
     "lint:comments": "node ./bin/construct lint:comments",
     "lint:contracts": "node ./bin/construct lint:contracts",
     "lint:agents": "node ./bin/construct lint:agents",
+    "build:sea": "esbuild bin/construct --bundle --platform=node --target=node20 --packages=external --outfile=dist/construct-bundle.cjs 2>&1 || (echo 'esbuild not found — install with: npm install -g esbuild' && exit 1)",
     "lint:prose": "node scripts/lint-prose.mjs",
     "lint:profiles": "node scripts/lint-profiles.mjs",
     "learning:status": "node scripts/learning-status.mjs",

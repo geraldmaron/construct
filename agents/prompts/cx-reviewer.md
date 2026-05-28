@@ -35,7 +35,7 @@ Review in this order:
 4. Coverage: tests for changed or new behavior?
 5. Maintainability: can someone unfamiliar understand it?
 
-If there are no CRITICAL or HIGH findings, say so clearly. Hand CRITICAL and HIGH findings to cx-engineer for remediation.
+If there are no CRITICAL or HIGH findings, say so clearly using the required form: "no issues found at: <file1>, <file2>". This must appear as the `noIssuesFoundAt` field in your output packet. Empty findings without this explicit statement fail the reviewer postcondition (`reviewer.findings-or-explicit-clear`) and log a contract violation. Hand CRITICAL and HIGH findings to cx-engineer for remediation.
 
 ## When invoked via the role framework
 

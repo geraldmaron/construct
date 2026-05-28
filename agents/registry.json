@@ -186,7 +186,9 @@
         "artifactBias": ["notes", "memos"]
       },
       "skills": [
-        "ai/orchestration-workflow"
+        "ai/orchestration-workflow",
+        "operating/orchestration-reference",
+        "operating/change-management"
       ],
       "perspective": {
         "bias": "Over-routing to cx-engineer, false simplicity, plans where every task runs in parallel",
@@ -306,7 +308,10 @@
         "artifactBias": ["notes", "memos"]
       },
       "skills": [
-        "docs/init-project"
+        "docs/init-project",
+        "operating/incident-response",
+        "operating/oncall-rotation",
+        "operating/change-management"
       ],
       "perspective": {
         "bias": "Plans where every task runs in parallel, tasks that sound atomic but aren't, work starting before blockers clear",
@@ -357,7 +362,10 @@
         "artifactBias": ["memos", "notes"]
       },
       "skills": [
-        "architecture/api-design"
+        "strategy/competitive-landscape",
+        "strategy/market-research-methods",
+        "strategy/pricing-positioning",
+        "strategy/narrative-arc"
       ],
       "perspective": {
         "bias": "Tactical decisions dressed as strategy, ignoring competitive dynamics, 'build it and they will come'",
@@ -537,7 +545,10 @@
         "frameworks/react",
         "frameworks/nextjs",
         "frameworks/django",
-        "frameworks/spring-boot"
+        "frameworks/spring-boot",
+        "exploration/unknown-codebase-onboarding",
+        "exploration/tracer-bullet-method",
+        "exploration/dependency-graph-reading"
       ],
       "perspective": {
         "bias": "Implementations that ignore existing conventions, abstractions that complicate the simple case",
@@ -916,7 +927,10 @@
         "artifactBias": ["notes"]
       },
       "skills": [
-        "exploration/repo-map"
+        "exploration/repo-map",
+        "exploration/unknown-codebase-onboarding",
+        "exploration/tracer-bullet-method",
+        "exploration/dependency-graph-reading"
       ],
       "perspective": {
         "bias": "'I know where this is' without verifying, grep results without context, 5-minute investigations",
