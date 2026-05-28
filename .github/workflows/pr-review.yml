@@ -35,7 +35,7 @@ jobs:
         run: |
           node -e "
             const fs = require('fs');
-            const manifests = JSON.parse(fs.readFileSync('agents/role-manifests.json', 'utf8'));
+            const manifests = JSON.parse(fs.readFileSync('specialists/role-manifests.json', 'utf8'));
             const fence = (manifests.reviewer || manifests['cx-reviewer'])?.fence || {};
             console.log('::notice::cx-reviewer fence: ' + JSON.stringify(fence));
           "
