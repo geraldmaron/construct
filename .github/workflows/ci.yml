@@ -256,3 +256,30 @@ jobs:
             console.log('migrations skipped:', result.skipped);
           } finally { await sql.end(); }
           "
+
+  # Aggregator job. Branch protection requires `ci-required` instead of the
+  # individual conditional jobs above. This always runs, sees the result of
+  # every needed job (success / skipped / failure / cancelled), and fails only
+  # when any need actually failed or was cancelled. Skipped is treated as a
+  # pass because path filters intentionally skip work that isn't relevant
+  # (e.g. test job skips on doc-only PRs).
+  ci-required:
+    name: ci-required
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [changes, test, lint, evals, audit, secret-scan, postgres-integration]
+    steps:
+      - name: Verify required jobs passed or skipped
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS_JSON"
+          failed=$(echo "$NEEDS_JSON" | jq -r 'to_entries
+            | map(select(.value.result == "failure" or .value.result == "cancelled"))
+            | map(.key)
+            | join(", ")')
+          if [ -n "$failed" ]; then
+            echo "Failed or cancelled required jobs: $failed"
+            exit 1
+          fi
+          echo "All required jobs passed or skipped cleanly."

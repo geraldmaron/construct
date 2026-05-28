@@ -6,7 +6,7 @@
 
 ---
 
-> Heads up. Construct is an open source project I started. I am not a developer. This is a side project. There may be bugs, there may be defects, but I'm building it to learn in public. If you'd like to contribute, please do.
+> Heads up. I'm not a developer. Construct is a side project I'm vibe-coding to learn in public. There will be bugs, rough edges, and things that change without warning. The code is open source, the issues queue is real, and contributions are welcome. If you need production-grade tooling today, this isn't it yet.
 
 Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. You talk to one persona called `construct`. Behind it is a team of specialists shaped by your **org profile**: software R&D by default, with curated profiles for operations, creative, and research orgs, plus a schema-validated escape hatch for custom profiles. Each profile organizes its specialists by department (Product, Engineering, Operations, etc.) and carries its own intake taxonomy, doc templates, and role set. Sessions survive boundary changes via durable state in `.cx/`, beads, and a local vector index. Solo by default. Can deploy centrally for teams that want shared memory, telemetry, queues, and policy.
 

@@ -49,6 +49,13 @@ function makeRepoCopy(t) {
       // when process.kill(N, 0) happens to find a live PID on the runner.
       if (hasPathSegment(rel, ".cx")) return false;
 
+      // `.claude/` is host-local Claude Code state that post-commit hooks mutate
+      // (sync-specialists writes ~/.claude/CLAUDE.md and the project .claude/agents
+      // catalog on every commit). cpSync's readdir → lstat is not atomic, so a
+      // racing write between those calls produces ENOENT mid-walk. The test sets
+      // HOME to a tmpdir and lets the harness rebuild .claude/ there.
+      if (hasPathSegment(rel, ".claude")) return false;
+
       return true;
     },
   });
