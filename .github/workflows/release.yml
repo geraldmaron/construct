@@ -245,6 +245,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist/
+          pattern: binary-*
           merge-multiple: true
 
       - name: Detect pre-release channel
