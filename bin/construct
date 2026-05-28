@@ -19,7 +19,7 @@ import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, 
 import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
 import { cmdOllama } from '../lib/ollama-manager.mjs';
-import { printHostCapabilities } from '../lib/host-capabilities.mjs';
+import { printHostCapabilities, formatHostCapabilitiesJson } from '../lib/host-capabilities.mjs';
 import { getPluginById, initPluginManifest, loadPluginRegistry } from '../lib/plugin-registry.mjs';
 import { runSetup } from '../lib/setup.mjs';
 import { runUpdate } from '../lib/update.mjs';
@@ -249,7 +249,7 @@ async function cmdShow() {
 
 async function cmdSync(args) {
   generateCompletions();
-  runNodeScript(path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs'), args);
+  runNodeScript(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), args);
   if (args.includes('--no-docs')) return;
   const { regenerateDocs } = await import('../lib/auto-docs.mjs');
   const { changed } = await regenerateDocs({ rootDir: ROOT_DIR });
@@ -277,7 +277,7 @@ async function cmdCompletions(args) {
 }
 
 async function cmdList() {
-  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
   println('Construct Agents\n');
   println('Personas:');
   for (const persona of registry.personas ?? []) {
@@ -418,8 +418,8 @@ async function cmdDoctor() {
 
   const checks = [];
   const add = (label, pass, optional = false) => checks.push({ label, pass, optional });
-  add('registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'agents', 'registry.json')));
-  add('sync-agents.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-agents.mjs')));
+  add('registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'registry.json')));
+  add('sync-specialists.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs')));
 
   // Tier model selection. Construct ships with no default — at least
   // one tier must be configured (registry.json primary OR CX_MODEL_*
@@ -506,7 +506,7 @@ async function cmdDoctor() {
   add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(path.join(HOME, '.construct')), true);
   add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
   add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));
-  add('agents/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'agents', 'prompts')));
+  add('specialists/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'prompts')));
   add('Hybrid storage env keys documented', fs.existsSync(path.join(ROOT_DIR, '.env.example')));
   fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
   add('~/.cx/performance-reviews/ ready', true);
@@ -614,14 +614,14 @@ async function cmdDoctor() {
 
   // Validate promptFile references and skill bindings
   try {
-    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
-    const brokenPromptFiles = (registry.agents ?? []).filter((a) => {
-      if (!a.promptFile) return false;
-      return !fs.existsSync(path.join(ROOT_DIR, a.promptFile));
+    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
+    const brokenPromptFiles = (registry.specialists ?? []).filter((s) => {
+      if (!s.promptFile) return false;
+      return !fs.existsSync(path.join(ROOT_DIR, s.promptFile));
     });
-    add('All agent promptFiles resolve', brokenPromptFiles.length === 0);
+    add('All specialist promptFiles resolve', brokenPromptFiles.length === 0);
     const headhuntClassifierAgents = ['cx-docs-keeper', 'cx-researcher', 'cx-architect', 'cx-security', 'cx-engineer'];
-    const registryNames = new Set((registry.agents ?? []).map((a) => `cx-${a.name}`));
+    const registryNames = new Set((registry.specialists ?? []).map((s) => `cx-${s.name}`));
     const classifierOrphans = headhuntClassifierAgents.filter((n) => !registryNames.has(n));
     add('Headhunt classifier agents exist in registry', classifierOrphans.length === 0);
     const skillAudit = auditSkills({ rootDir: ROOT_DIR, silent: true });
@@ -734,7 +734,7 @@ async function cmdDoctor() {
     }
 
     try {
-      const { recentViolations } = await import('../lib/agent-contracts-enforce.mjs');
+      const { recentViolations } = await import('../lib/specialist-contracts-enforce.mjs');
       const violations = recentViolations({ windowMs: 24 * 60 * 60 * 1000 });
       const label = violations.length === 0
         ? 'Contract violations (none in last 24h)'
@@ -872,7 +872,7 @@ async function cmdDoctor() {
     }
 
     // Agent contracts integrity
-    const { getAllContracts, summarize } = await import('../lib/agent-contracts.mjs');
+    const { getAllContracts, summarize } = await import('../lib/specialist-contracts.mjs');
     const contracts = getAllContracts();
     add('Agent contracts loaded', contracts.length > 0);
     if (contracts.length > 0) {
@@ -1084,9 +1084,9 @@ async function cmdMigrate(args) {
   const candidates = pathArg
     ? [pathArg]
     : [
-        path.join(ROOT_DIR, 'agents', 'registry.json'),
-        path.join(ROOT_DIR, 'agents', 'contracts.json'),
-        path.join(ROOT_DIR, 'agents', 'role-manifests.json'),
+        path.join(ROOT_DIR, 'specialists', 'registry.json'),
+        path.join(ROOT_DIR, 'specialists', 'contracts.json'),
+        path.join(ROOT_DIR, 'specialists', 'role-manifests.json'),
         path.join(process.cwd(), '.cx', 'config.json'),
       ];
 
@@ -1589,7 +1589,14 @@ async function cmdPricing(args) {
 }
 
 async function cmdHeadhunt(args) { await runHeadhunt({ args, cwd: process.cwd(), homeDir: HOME }); }
-async function cmdHosts() { printHostCapabilities(); }
+async function cmdHosts() {
+  const args = new Set(process.argv.slice(3));
+  if (args.has('--json')) {
+    process.stdout.write(formatHostCapabilitiesJson());
+  } else {
+    printHostCapabilities();
+  }
+}
 async function cmdSetup(args) { await runSetup({ rootDir: ROOT_DIR, args, homeDir: HOME }); }
 
 function printConfigModeHelp() {
@@ -2886,7 +2893,7 @@ async function cmdUpgrade(args) {
   }
 }
 async function cmdValidate() {
-  const reg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+  const reg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
   const result = validateRegistry(reg, { rootDir: ROOT_DIR });
   if (result.valid) {
     println(`✓ Registry valid (${result.summary})`);
@@ -2939,7 +2946,7 @@ async function cmdModels(args) {
   if (args.includes('--apply')) {
     const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
     const models = await pollFreeModels(apiKey);
-    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
     const selections = {};
     for (const currentTier of ['reasoning', 'standard', 'fast']) {
       const fallbacks = registry.models?.[currentTier]?.fallback ?? [];
@@ -2989,7 +2996,7 @@ async function cmdModels(args) {
     await cmdSync([]);
     return;
   }
-  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'agents', 'registry.json'), 'utf8'));
+  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
   const result = readCurrentModels(envPath, registry.models ?? {});
   const nothingSelected = ['reasoning', 'standard', 'fast'].every((t) => !result[t]);
   println('Current model assignments:');
@@ -3836,14 +3843,14 @@ async function cmdLintResearch() {
 }
 
 async function cmdLintAgents() {
-  const { validateRegistryFile } = await import('../lib/agents/schema.mjs');
-  const registryPath = path.join(ROOT_DIR, 'agents', 'registry.json');
+  const { validateRegistryFile } = await import('../lib/specialists/schema.mjs');
+  const registryPath = path.join(ROOT_DIR, 'specialists', 'registry.json');
   const { errors, agentCount } = validateRegistryFile({ registryPath, rootDir: ROOT_DIR });
   if (errors.length === 0) {
-    console.log(`agents/registry.json: ${agentCount} agents, 0 errors`);
+    console.log(`specialists/registry.json: ${agentCount} agents, 0 errors`);
     return;
   }
-  console.error(`agents/registry.json: ${errors.length} error(s) across ${agentCount} agents`);
+  console.error(`specialists/registry.json: ${errors.length} error(s) across ${agentCount} agents`);
   for (const err of errors) console.error(`  ${err}`);
   process.exit(1);
 }
@@ -3852,10 +3859,10 @@ async function cmdLintContracts() {
   const { validateContractsFile } = await import('../lib/contracts/validate.mjs');
   const result = validateContractsFile({ repoRoot: ROOT_DIR });
   if (result.ok) {
-    console.log('agents/contracts.json: 0 errors');
+    console.log('specialists/contracts.json: 0 errors');
     return;
   }
-  console.error(`agents/contracts.json: ${result.errors.length} error(s)`);
+  console.error(`specialists/contracts.json: ${result.errors.length} error(s)`);
   for (const err of result.errors) console.error(`  ${err}`);
   process.exit(1);
 }
@@ -4597,7 +4604,7 @@ const handlers = new Map([
       const { join } = await import('node:path');
       const inventoryPath = join(ROOT_DIR, 'agents', 'policy-inventory.json');
       if (!existsSync(inventoryPath)) {
-        errorln('agents/policy-inventory.json not found');
+        errorln('specialists/policy-inventory.json not found');
         process.exit(1);
       }
       const { policies } = JSON.parse(readFileSync(inventoryPath, 'utf8'));

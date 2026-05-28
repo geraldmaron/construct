@@ -131,7 +131,7 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 |---|---|
 | `construct claude:allow` | Manage Claude Code permissions |
 | `construct creds` | Manage provider credentials (set, rotate, revoke, list) |
-| `construct hosts` | Check host capabilities |
+| `construct hosts` | Check host capabilities (use --json for machine-readable) |
 | `construct mcp` | Manage MCP integrations |
 | `construct ollama` | Manage local Ollama models |
 | `construct plugin` | Manage plugin manifests |
@@ -189,10 +189,10 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 <!-- AUTO:structure -->
 ```text
 construct/
-├── agents           Registry and generated platform adapter chains
 ├── apps             User-facing apps shipped from this repo (e.g. apps/docs/, the Fumadocs docs site)
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
+├── config
 ├── dashboard
 ├── db
 ├── deploy
@@ -208,6 +208,7 @@ construct/
 ├── scripts
 ├── services
 ├── skills           Reusable domain knowledge files
+├── specialists
 ├── templates
 ├── tests            Test suite
 ```

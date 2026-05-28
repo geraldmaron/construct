@@ -250,7 +250,7 @@ export default function Config() {
         <h2 id="models-heading" className="text-sm uppercase tracking-wider text-text-dim">Models</h2>
         <p className="text-xs text-text-muted">
           Model tiers are configured on the <a href="#/models" className="underline hover:no-underline">Models page</a>.
-          That page is the single source of truth — selections persist to <code className="px-1 bg-bg-muted rounded">agents/registry.json</code> and
+          That page is the single source of truth — selections persist to <code className="px-1 bg-bg-muted rounded">specialists/registry.json</code> and
           stay there. Env vars <code className="px-1 bg-bg-muted rounded">CX_MODEL_REASONING|STANDARD|FAST</code> still
           override at runtime for CI and ops; they are not editable from the dashboard.
         </p>
