@@ -22,7 +22,7 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 function freshRepoSlice() {
   const root = mkdtempSync(join(tmpdir(), 'construct-consistency-'));
-  for (const dir of ['platforms/claude', 'lib/hooks', 'lib/mcp/tools', 'lib/schemas', 'agents']) {
+  for (const dir of ['platforms/claude', 'lib/hooks', 'lib/mcp/tools', 'lib/schemas', 'specialists']) {
     mkdirSync(join(root, dir), { recursive: true });
   }
   // W2's contract validator + schema are optional dependencies for the
@@ -32,7 +32,7 @@ function freshRepoSlice() {
     mkdirSync(join(root, 'lib', 'contracts'), { recursive: true });
     cpSync(validatorSrc, join(root, 'lib', 'contracts', 'validate.mjs'));
   }
-  const contractsSchemaSrc = join(REPO_ROOT, 'agents', 'contracts.schema.json');
+  const contractsSchemaSrc = join(REPO_ROOT, 'specialists', 'contracts.schema.json');
   if (existsSync(contractsSchemaSrc)) cpSync(contractsSchemaSrc, join(root, 'agents', 'contracts.schema.json'));
   cpSync(join(REPO_ROOT, 'lib', 'schemas'), join(root, 'lib', 'schemas'), { recursive: true });
   return {
@@ -58,14 +58,14 @@ test('hooks-drift fires when a hook command points at a missing .mjs file', asyn
         SessionStart: [{ hooks: [{ type: 'command', command: 'node "/abs/path/to/lib/hooks/nonexistent-hook.mjs"' }] }],
       },
     });
-    slice.writeJson('agents/registry.json', { agents: [], personas: [] });
-    slice.writeJson('agents/contracts.json', {
+    slice.writeJson('specialists/registry.json', { specialists: [], orchestrator: null });
+    slice.writeJson('specialists/contracts.json', {
       version: 1,
       terminalStates: ['DONE'],
       severities: { blocking: [], warning: [], info: [] },
       contracts: [],
     });
-    slice.writeJson('agents/role-manifests.json', {});
+    slice.writeJson('specialists/role-manifests.json', {});
 
     const result = await runAllChecks({ repoRoot: slice.root });
     assert.ok(
@@ -79,14 +79,14 @@ test('roles-drift fires when role-manifests references a persona not in registry
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('agents/registry.json', {
-      personas: [{ name: 'construct' }],
-      agents: [{ name: 'architect' }],
+    slice.writeJson('specialists/registry.json', {
+      orchestrator: { name: 'construct' },
+      specialists: [{ name: 'architect' }],
     });
-    slice.writeJson('agents/role-manifests.json', {
+    slice.writeJson('specialists/role-manifests.json', {
       'cx-imaginary': { events: [] },
     });
-    slice.writeJson('agents/contracts.json', {
+    slice.writeJson('specialists/contracts.json', {
       version: 1, terminalStates: ['DONE'],
       severities: { blocking: [], warning: [], info: [] }, contracts: [],
     });
@@ -103,12 +103,12 @@ test('prompt-files fires when a persona promptFile is missing on disk', async ()
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('agents/registry.json', {
-      personas: [{ name: 'fake', promptFile: 'agents/prompts/never-existed.md' }],
-      agents: [],
+    slice.writeJson('specialists/registry.json', {
+      orchestrator: { name: 'fake', promptFile: 'specialists/prompts/never-existed.md' },
+      specialists: [],
     });
-    slice.writeJson('agents/role-manifests.json', {});
-    slice.writeJson('agents/contracts.json', {
+    slice.writeJson('specialists/role-manifests.json', {});
+    slice.writeJson('specialists/contracts.json', {
       version: 1, terminalStates: ['DONE'],
       severities: { blocking: [], warning: [], info: [] }, contracts: [],
     });
@@ -128,12 +128,12 @@ test('contracts-drift fires when contracts reference an unresolvable producer', 
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('agents/registry.json', {
-      personas: [{ name: 'construct' }],
-      agents: [{ name: 'architect' }],
+    slice.writeJson('specialists/registry.json', {
+      orchestrator: { name: 'construct' },
+      specialists: [{ name: 'architect' }],
     });
-    slice.writeJson('agents/role-manifests.json', {});
-    slice.writeJson('agents/contracts.json', {
+    slice.writeJson('specialists/role-manifests.json', {});
+    slice.writeJson('specialists/contracts.json', {
       version: 1, terminalStates: ['DONE'],
       severities: { blocking: [], warning: [], info: [] },
       contracts: [{

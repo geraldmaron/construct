@@ -167,7 +167,7 @@ Reads a doc template by name. Resolves `.cx/templates/docs/{name}.md` first, the
 Lists shipped and project-override doc templates.
 
 ### `agent_contract`
-Looks up agent-to-agent service contracts from `agents/contracts.json`.
+Looks up agent-to-agent service contracts from `specialists/contracts.json`.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -200,7 +200,7 @@ Queries the MCP broker's policy gate for a pending action without executing it. 
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `role` | string | Yes | Persona name (e.g. `engineer`, `security`): must match a key in `agents/role-manifests.json` for team / enterprise mode |
+| `role` | string | Yes | Persona name (e.g. `engineer`, `security`): must match a key in `specialists/role-manifests.json` for team / enterprise mode |
 | `tool` | string | Yes | Tool the agent wants to invoke (e.g. `github`, `fs`) |
 | `action` | string | Yes | Action on that tool (e.g. `create_pr`, `edit:lib/foo.mjs`) |
 | `project` | string (optional) | | Project scope for the decision |

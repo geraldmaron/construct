@@ -93,7 +93,6 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct init` | Initialize project and start services |
 | `construct install` | Machine setup: install Docker, cm, and bootstrap config |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
-| `construct models` | Manage AI model assignments |
 | `construct profile` | Manage the active org profile and its lifecycle (draft, promote, archive, health) |
 | `construct recommendations` | View and manage artifact recommendations |
 | `construct sandbox` | Isolated tmpdir-based environment for QA / specialist dry-runs |
@@ -105,7 +104,7 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 
 | Command | What it does |
 |---|---|
-| `construct bootstrap` | Import seed observations |
+| `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
@@ -116,43 +115,44 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
-| `construct reflect` | Capture improvement feedback |
+| `construct reflect` | Capture improvement feedback from chat session and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
-| `construct team` | Team review and templates |
+| `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
+| `construct team` | Team review and template listing |
 | `construct wireframe` | Generate wireframes from description |
+| `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
 
 ### Integrations
 
 | Command | What it does |
 |---|---|
-| `construct claude:allow` | Manage Claude Code permissions |
-| `construct hosts` | Check host capabilities |
-| `construct mcp` | Manage MCP integrations |
+| `construct creds` | Manage provider credentials (set, rotate, revoke, list) |
 | `construct ollama` | Manage local Ollama models |
-| `construct plugin` | Manage plugin manifests |
+| `construct providers` | Provider status, circuit-breaker reset, and resource discovery |
 
 ### Observability
 
 | Command | What it does |
 |---|---|
-| `construct cost` | Token usage and cost breakdown |
-| `construct efficiency` | Read efficiency metrics |
-| `construct evals` | Evaluator catalog |
-| `construct llm-judge` | LLM-as-judge evaluations |
-| `construct optimize` | Prompt optimization |
-| `construct review` | Agent performance review |
+| `construct efficiency` | Show read efficiency, repeated files, and context-budget guidance |
+| `construct eval-datasets` | Sync scored Langfuse traces into eval datasets for prompt regression testing |
+| `construct evals` | Show evaluator catalog for prompt and agent experiments |
+| `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
+| `construct optimize` | Prompt optimization using Langfuse trace quality scores |
+| `construct review` | Generate agent performance review from Langfuse trace backend |
+| `construct telemetry` | Query telemetry traces and latency data |
+| `construct telemetry-backfill` | Backfill sparse traces with observations (trace backend) |
 
 ### Advanced
 
 | Command | What it does |
 |---|---|
-| `construct audit` | Audit Construct internals |
 | `construct auth:status` | Check auth status |
 | `construct backup` | System backups |
 | `construct beads` | Task queue management |
-| `construct cleanup` | Clean stale processes |
+| `construct ci` | Local CI mirror: run CI jobs locally or view recent run status |
 | `construct completions` | Shell completion scripts |
 | `construct config` | Deployment mode configuration |
 | `construct diff` | Show agent changes since HEAD |
@@ -160,8 +160,10 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct gates:audit` | Audit policy gates |
 | `construct hooks:health` | Check hook health |
 | `construct list` | List all agents |
+| `construct policy` | Show active policy gates with enforcement details |
 | `construct provider` | Provider management |
 | `construct role` | Role framework management |
+| `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |
 | `construct skills` | Skill relevance detection |
 | `construct uninstall` | Remove Construct state |
 | `construct update` | Reinstall this checkout |
@@ -182,10 +184,10 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 <!-- AUTO:structure -->
 ```text
 construct/
-├── agents           Registry and generated platform adapter chains
 ├── apps             User-facing apps shipped from this repo (e.g. apps/docs/, the Fumadocs docs site)
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
+├── config
 ├── dashboard
 ├── db
 ├── deploy
@@ -201,6 +203,7 @@ construct/
 ├── scripts
 ├── services
 ├── skills           Reusable domain knowledge files
+├── specialists
 ├── templates
 ├── tests            Test suite
 ```

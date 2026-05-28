@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Construct Agent Contracts",
+  "description": "Schema for specialists/contracts.json — every producer→consumer handoff is a typed contract with explicit pre/post conditions.",
+  "type": "object",
+  "required": ["version", "terminalStates", "severities", "contracts"],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+    "terminalStates": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["DONE", "BLOCKED", "NEEDS_MAIN_INPUT"] },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "severities": {
+      "type": "object",
+      "required": ["blocking", "warning", "info"],
+      "properties": {
+        "blocking": { "type": "array", "items": { "type": "string" } },
+        "warning":  { "type": "array", "items": { "type": "string" } },
+        "info":     { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "contracts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "producer", "consumer", "input"],
+        "additionalProperties": true,
+        "properties": {
+          "id":       { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "producer": { "type": "string", "minLength": 1 },
+          "consumer": { "type": "string", "minLength": 1 },
+          "trigger":  { "type": "object" },
+          "input": {
+            "type": "object",
+            "properties": {
+              "shape":       { "type": "string" },
+              "schema":      { "type": "string" },
+              "mustContain": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "output": {
+            "type": "object",
+            "properties": {
+              "shape":       { "type": "string" },
+              "schema":      { "type": "string" },
+              "type":        { "type": "string" },
+              "mustContain": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "preconditions":  { "type": "array", "items": { "type": "string" } },
+          "postconditions": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                { "type": "string", "description": "Descriptive postcondition (honor-based, documentation only)." },
+                {
+                  "type": "object",
+                  "required": ["id", "check"],
+                  "properties": {
+                    "id":          { "type": "string", "minLength": 1 },
+                    "description": { "type": "string" },
+                    "check": {
+                      "type": "string",
+                      "enum": ["artifact-has-frontmatter-field", "artifact-has-section", "artifact-claims-cited"]
+                    },
+                    "field":   { "type": "string" },
+                    "section": { "type": "string" }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

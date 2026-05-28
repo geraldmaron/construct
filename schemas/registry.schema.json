@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/geraldmaron/construct/schemas/registry.schema.json",
   "title": "Construct Agent Registry",
-  "description": "Schema for agents/registry.json — the source of truth for all Construct agent adapters.",
+  "description": "Schema for specialists/registry.json — the source of truth for all Construct agent adapters.",
   "type": "object",
   "required": ["version", "system", "prefix", "models", "agents", "personas"],
   "additionalProperties": true,
