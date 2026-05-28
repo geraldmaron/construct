@@ -214,3 +214,45 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  postgres-integration:
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+    name: postgres + pgvector integration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: construct
+          POSTGRES_USER: construct
+          POSTGRES_DB: construct
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Run migrations runner end-to-end
+        env:
+          DATABASE_URL: postgres://construct:construct@127.0.0.1:5432/construct
+          CONSTRUCT_EMBEDDING_MODEL: hashing
+        run: |
+          node -e "
+          const { runMigrations } = await import('./lib/storage/migrations.mjs');
+          const postgres = (await import('postgres')).default;
+          const sql = postgres(process.env.DATABASE_URL);
+          try {
+            const result = await runMigrations(sql);
+            console.log('migrations applied:', result.applied);
+            console.log('migrations skipped:', result.skipped);
+          } finally { await sql.end(); }
+          "
