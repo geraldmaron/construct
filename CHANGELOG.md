@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- **`construct init` defers to existing project content instead of scaffolding parallel `docs/`/`.cx/inbox/`/`templates/` trees (#97).** A new shared detector at `lib/init/detect-existing-structure.mjs` scans the project root (up to depth 3, skipping `.git`, `node_modules`, `.cx`, `.construct`, `.claude`, `dist`, `build`, etc.) for: (a) populated directories whose basename matches a known lane alias (`internal/meetings/`, `operational/incidents/`, `team/minutes/`, …), (b) custom intake scripts at root (`ingest`, `ingest.sh`, `ingest.mjs`, `ingest.py`) or directories (`data/customers/notes/raw`, `data/intake`, `ingestion`, `intake-pipeline`, `raw`), and (c) root `templates/` files. Both `lib/init-unified.mjs` and the standalone `lib/init-docs.mjs` now consult the detector before scaffolding. When a lane is already covered, init skips that `docs/<lane>/` with a per-skip log line and a final "Deferred to existing project structure" summary. When custom intake is detected, `.cx/inbox/` is not created and `intake-config.json` defaults `includeProjectInbox: false`. A new `--force` flag on `construct init` bypasses every check for the rare case where a parallel scaffold is genuinely wanted. Coverage: 18 unit tests in `tests/init/detect-existing-structure.test.mjs` plus three functional cases in `tests/functional/init-respects-existing-structure.functional.test.mjs` (pre-existing layout deferred, `--force` overrides, clean-project regression guard).
+
 ## [1.0.10] - 2026-05-28
 
 ### Changed
