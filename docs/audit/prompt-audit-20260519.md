@@ -105,7 +105,7 @@ The following updates were applied to all specialist prompts:
    - Feedback loop integrated
 
 4. **Telemetry Backend Configured**
-   - Runs on `http://localhost:54330` (Docker via `construct up`)
+   - Runs on `http://localhost:54330` (Docker via `construct dev`)
    - Traces stay local in `.cx/traces/` and local Postgres
    - Dashboard at `http://localhost:54330` for trace visibility
 
@@ -243,7 +243,7 @@ memory_add_observations([{
 
 **COMPLETED 2026-05-19** ✅
 
-- [x] `embed.yaml` exists and daemon runs on `construct up`
+- [x] `embed.yaml` exists and daemon runs on `construct dev`
 - [x] Telemetry traces visible in dashboard (http://localhost:54330)
 - [x] All 28 prompts updated with tool contracts
 - [x] Evaluator-optimizer loop integrated for doc roles
@@ -257,7 +257,7 @@ memory_add_observations([{
 ### Status: DOGFOODING COMPLETE ✅
 
 **Construct is now fully dogfooding itself:**
-- ✅ embed.yaml exists and daemon runs on `construct up`
+- ✅ embed.yaml exists and daemon runs on `construct dev`
 - ✅ Telemetry backend configured
 - ✅ All 8 specialist prompts updated with 2026 best practices
 - ✅ Tool contracts defined for all specialists
@@ -266,4 +266,4 @@ memory_add_observations([{
 - ✅ Feedback loops integrated (memory + classification)
 - ✅ Learning capture enabled (patterns, decisions, anti-patterns)
 
-**Next:** Run `construct up` and verify all services start correctly.
+**Next:** Run `construct dev` and verify all services start correctly.

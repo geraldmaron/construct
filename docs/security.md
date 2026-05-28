@@ -68,13 +68,13 @@ construct audit trail --json | jq 'select(.tool == "Bash")'
 
 ### Authentication
 
-The dashboard requires a bearer token on all API requests. Generate a token:
+The dashboard requires a bearer token on all API requests. `construct install` and `construct init` create the local config file when needed. Confirm the active dashboard URL and credential state with:
 
 ```bash
-construct serve --token
+construct status --json
 ```
 
-The token is stored in `DASHBOARD_TOKEN` in `config.env`. Rotate it by running `construct serve --token` again and updating any clients that use the old token.
+The token is stored in `CONSTRUCT_DASHBOARD_TOKEN` in `~/.construct/config.env`. Rotate it by updating that value, restarting services with `construct stop` then `construct dev`, and updating any clients that use the old token.
 
 ### CSRF protection
 

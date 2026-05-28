@@ -4,9 +4,18 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.12] - 2026-05-28
+
 ### Fixed
 
 - **`construct sync` no longer emits double-frontmatter on host-platform adapter files.** Every `.md` write went through a doc-stamp wrapper (`stampFrontmatter`) that prepended `cx_doc_id` / `body_hash` YAML, which was intended for content artifacts (research findings, knowledge files) but was being applied to host-platform adapters that have their own frontmatter contract. Result: (a) `~/.agents/skills/*/SKILL.md` and `~/.claude/skills/*/SKILL.md` carried only the doc-stamp block (no `name` / `description`), so the Anthropic Agent Skills loader silently dropped all 141 files; (b) `~/.claude/agents/*.md` and `~/.github/prompts/*.prompt.md` had a doc-stamp block on top of their real frontmatter, producing two `---...---` blocks and leaving the parser to pick one — usually the wrong one. `writeFile` now accepts `{ stamp: false }`; every host-adapter write opts out. Skill writes use a new `buildSkillFrontmatter()` (in `lib/sync/skill-frontmatter.mjs`) that extracts the description from the source skill's HTML-comment header and emits proper Anthropic Skills `name` + `description` YAML. The user-managed `~/.claude/CLAUDE.md` and `~/.github/copilot-instructions.md` also stop being doc-stamped. Coverage: 9 unit tests for the new helpers plus 4 functional tests that run the real sync against an isolated tmp HOME and assert no double-frontmatter on any output (Claude agents, Copilot prompts, both skill trees) and that ≥200 SKILL.md files emerge with valid Anthropic Skills frontmatter.
+- **Stale docs references cleaned up across the docs site.** Replaced retired `agents/` paths with `specialists/` (including the `lib/hooks/registry-sync.mjs` docstring), updated old `construct up/down/serve/cost/init-docs` instructions to the current `construct dev` / `construct stop` / `construct status` / `construct init --with-*` flows, repaired broken Markdown links in the README and `docs/README.md`, and replaced removed `docs/how-to/*` pointers with the current concept and cookbook pages.
+
+### Changed
+
+- **README and docs-site guidance audited for current Construct behavior.** Public links now match the Fumadocs root routes, the README carries a concise usage loop, `docs/README.md` points to current concept/cookbook pages, and the docs surface a coverage map that matches every user-facing CLI command.
+- **Generated CLI reference aligned with the current command registry.** `lib/cli-commands.mjs` adds two new categories (`Models & Integrations`, `Diagnostics`) so `CATEGORY_ORDER` is `[Core, Work, Models & Integrations, Integrations, Observability, Diagnostics, Advanced]`. `docs:site` now emits new reference pages (`core.md`, `advanced.md`, `integrations.md`) under `docs/reference/cli/` and retires the stale `services.md`, `embed.md`, `providers.md`, `docs.md`, and `agents-and-sync.md` pages that no longer match a category.
+- **`lib/auto-docs.mjs` retargets `buildSite()` for Fumadocs.** The public site now renders `docs/` directly through Fumadocs and `buildFumadocsReference()` emits the generated reference pages; the legacy MkDocs-style `site/docs/` builder is retained as a compatibility shim only.
 
 ## [1.0.11] - 2026-05-28
 

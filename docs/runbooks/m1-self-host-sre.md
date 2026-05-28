@@ -14,7 +14,7 @@ unset CONSTRUCT_ROLES
 # $10/persona/day, $50/total/day. Override via CONSTRUCT_BUDGET_<NAME>=N.
 
 # Start the daemon stack (spawns doctor next to dashboard/cm/opencode).
-node bin/construct up
+node bin/construct dev
 ```
 
 Verify the daemon is up:
@@ -74,7 +74,7 @@ The test passes if **all** of these hold:
 
 ## Failure modes: what to do
 
-- **Doctor died unexpectedly**: read `~/.construct/.runtime/doctor.log`. If memory pressure, raise `CONSTRUCT_PRESSURE_GUARD_SWAP_GB`. If exception, file a bd bug + restart with `node bin/construct up`.
+- **Doctor died unexpectedly**: read `~/.construct/.runtime/doctor.log`. If memory pressure, raise `CONSTRUCT_PRESSURE_GUARD_SWAP_GB`. If exception, file a bd bug + restart with `node bin/construct dev`.
 - **Watcher errors in audit log** (`kind: error`): inspect the watcher source; reproduce with `node bin/construct doctor tick`.
 - **cx-sre dispatch failed**: check `~/.cx/role-pending.jsonl`: entry should have a `bdIssueId`. If null, bd was unreachable when the gateway tried to create the issue; the audit log will say `bd-create-failed`.
 - **Budget exhausted**: increase the relevant `CONSTRUCT_BUDGET_*` env var or wait for the day to roll over. Gateway returns `budget-exhausted` reason but events still record to the bus.
@@ -82,7 +82,7 @@ The test passes if **all** of these hold:
 ## Stopping the test
 
 ```
-node bin/construct down   # stops doctor + dashboard + services
+node bin/construct stop   # stops doctor + dashboard + services
 node bin/construct doctor report --since=7d > docs/incidents/$(date +%Y-%m-%d)-m1-report.md
 ```
 

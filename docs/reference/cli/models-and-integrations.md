@@ -7,10 +7,28 @@ description: Models & Integrations commands for Construct.
 
 | Command | What it does |
 |---|---|
+| `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
 | `construct models` | Show or update model tier assignments |
 | `construct plugin` | Manage external Construct plugin manifests |
+
+## construct claude:allow
+
+Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it)
+
+**Usage**
+
+```bash
+construct claude:allow <list|add|remove|check> [pattern...] [--apply]
+```
+
+**Subcommands**
+
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
 
 ## construct hosts
 
