@@ -93,7 +93,6 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct init` | Initialize project and start services |
 | `construct install` | Machine setup: install Docker, cm, and bootstrap config |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
-| `construct models` | Manage AI model assignments |
 | `construct profile` | Manage the active org profile and its lifecycle (draft, promote, archive, health) |
 | `construct recommendations` | View and manage artifact recommendations |
 | `construct sandbox` | Isolated tmpdir-based environment for QA / specialist dry-runs |
@@ -137,7 +136,6 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 
 | Command | What it does |
 |---|---|
-| `construct cost` | Show token usage, cost, cache read rate, and per-agent breakdown |
 | `construct efficiency` | Show read efficiency, repeated files, and context-budget guidance |
 | `construct eval-datasets` | Sync scored Langfuse traces into eval datasets for prompt regression testing |
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
@@ -151,12 +149,10 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 
 | Command | What it does |
 |---|---|
-| `construct audit` | Audit Construct internals |
 | `construct auth:status` | Check auth status |
 | `construct backup` | System backups |
 | `construct beads` | Task queue management |
 | `construct ci` | Local CI mirror: run CI jobs locally or view recent run status |
-| `construct cleanup` | Clean stale processes |
 | `construct completions` | Shell completion scripts |
 | `construct config` | Deployment mode configuration |
 | `construct diff` | Show agent changes since HEAD |
