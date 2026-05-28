@@ -456,7 +456,14 @@ async function cmdDoctor() {
   add('Claude Code agents dir', fs.existsSync(path.join(HOME, '.claude', 'agents')), true);
   add('Codex agents dir', fs.existsSync(path.join(HOME, '.codex', 'agents')), true);
   add('Copilot prompts dir', fs.existsSync(path.join(HOME, '.github', 'prompts')), true);
-  add('Cursor MCP config', fs.existsSync(path.join(HOME, '.cursor', 'mcp.json')), true);
+  // Only check Cursor MCP config when Cursor is actually installed (its home
+  // directory exists). Absent Cursor, no warning — the adapter parity check
+  // already surfaces 'cursor: not installed' for informational purposes.
+  const cursorHomeDir = path.join(HOME, '.cursor');
+  if (fs.existsSync(cursorHomeDir)) {
+    add('Cursor MCP config', fs.existsSync(path.join(cursorHomeDir, 'mcp.json')), true);
+  }
+
   const vscodeSettingsPaths = process.platform === 'darwin'
     ? [
         path.join(HOME, 'Library', 'Application Support', 'Code', 'User', 'settings.json'),
@@ -471,7 +478,31 @@ async function cmdDoctor() {
           path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code', 'User', 'settings.json'),
           path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code - Insiders', 'User', 'settings.json'),
         ];
-  add('VS Code settings file', vscodeSettingsPaths.some((candidate) => fs.existsSync(candidate)), true);
+  // Only check VS Code settings when VS Code is actually installed. On macOS,
+  // Code's Application Support directory is the installation signal.
+  const vscodeAppSupportRoots = process.platform === 'darwin'
+    ? [
+        path.join(HOME, 'Library', 'Application Support', 'Code'),
+        path.join(HOME, 'Library', 'Application Support', 'Code - Insiders'),
+      ]
+    : process.platform === 'linux'
+      ? [path.join(HOME, '.config', 'Code'), path.join(HOME, '.config', 'Code - Insiders')]
+      : [
+          path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code'),
+          path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code - Insiders'),
+        ];
+  if (vscodeAppSupportRoots.some((r) => fs.existsSync(r))) {
+    // VS Code is installed but has no settings.json — the user needs to create
+    // one manually or run `construct sync` after VS Code sync support lands.
+    const vscodeSettingsOk = vscodeSettingsPaths.some((candidate) => fs.existsSync(candidate));
+    add(
+      vscodeSettingsOk
+        ? 'VS Code settings file'
+        : 'VS Code settings missing — create settings.json or wait for `construct sync` VS Code support',
+      vscodeSettingsOk,
+      true,
+    );
+  }
   add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(path.join(HOME, '.construct')), true);
   add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
   add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));
@@ -601,12 +632,24 @@ async function cmdDoctor() {
 
     const sqlConfig = describeSqlStore(process.env);
     const sqlClient = createSqlClient(process.env);
+    // Track SQL reachability so the schema-migration check can cascade correctly
+    // rather than emitting a redundant second warning for the same offline server.
+    let sqlReachable = false;
     if (sqlConfig.configured && sqlClient) {
       try {
         await sqlClient`select 1 as ok`;
+        sqlReachable = true;
         add('SQL backend reachable', true);
       } catch {
-        add('SQL backend reachable', false, true);
+        // In solo mode the local vector index is the active storage path, so an
+        // unreachable Postgres is expected unless the user has started it. Emit a
+        // contextual message rather than a bare ⚠ so the fix is obvious.
+        const { getDeploymentMode } = await import('../lib/deployment-mode.mjs');
+        const mode = getDeploymentMode(process.env) ?? 'solo';
+        const hint = mode === 'solo'
+          ? ' (solo mode — run `construct dev` to start Postgres)'
+          : ' — check DATABASE_URL and that the server is running';
+        add(`SQL backend unreachable${hint}`, false, true);
       } finally {
         await closeSqlClient(sqlClient);
       }
@@ -736,7 +779,11 @@ async function cmdDoctor() {
       add('Observation size', false, true);
     }
 
-    if (sqlConfig.configured) {
+    // Only run the schema migration check when SQL is both configured AND
+    // currently reachable. If the SQL check above already failed (sqlReachable
+    // is false) this check will also fail with the same ECONNREFUSED and would
+    // produce a redundant second warning about the same offline server.
+    if (sqlConfig.configured && sqlReachable) {
       try {
         const migClient = createSqlClient(process.env);
         if (migClient) {
@@ -3248,6 +3295,209 @@ async function cmdGatesAudit(args) {
   if (!report.ok) process.exit(1);
 }
 
+async function cmdCi(args) {
+  const sub = args[0];
+
+  if (!sub || sub === '--help' || sub === '-h') {
+    println('Usage: construct ci <preview|status|list>');
+    println('  preview [--job=<name>] [--list] [--full]  Run CI jobs locally using the same commands CI uses');
+    println('  status                                     Show recent CI run results for the current branch');
+    println('  list                                       Alias for: ci preview --list');
+    return;
+  }
+
+  if (sub === 'list') return cmdCiPreview(['--list']);
+  if (sub === 'preview') return cmdCiPreview(args.slice(1));
+  if (sub === 'status') return cmdCiStatus(args.slice(1));
+
+  errorln(`Unknown ci subcommand: ${sub}. Available: preview, status, list`);
+  process.exit(1);
+}
+
+async function cmdCiPreview(args) {
+  const { readFileSync, existsSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { spawnSync: spSync } = await import('node:child_process');
+  const YAML = await import('node:fs');
+
+  const listOnly = args.includes('--list');
+  const fullMode = args.includes('--full');
+  const jobFilter = args.find((a) => a.startsWith('--job='))?.split('=').slice(1).join('=');
+
+  const ciPath = join(ROOT_DIR, '.github', 'workflows', 'ci.yml');
+  if (!existsSync(ciPath)) {
+    errorln('No .github/workflows/ci.yml found');
+    process.exit(1);
+  }
+
+  const yml = readFileSync(ciPath, 'utf8');
+
+  // Extract jobs under the `jobs:` top-level key only.
+  // Split on the `jobs:` line, then slice job blocks between consecutive 2-space-indent keys.
+  const jobsStart = yml.indexOf('\njobs:\n');
+  const jobsSection = jobsStart >= 0 ? yml.slice(jobsStart + 1) : '';
+
+  // Find all top-level job keys (2-space indent) and slice blocks between them.
+  const jobKeyPattern = /^  (\w[\w-]*):\s*$/gm;
+  const jobPositions = [];
+  let km;
+  while ((km = jobKeyPattern.exec(jobsSection)) !== null) {
+    if (km[1] === 'jobs') continue;
+    jobPositions.push({ id: km[1], start: km.index });
+  }
+
+  const jobBlocks = [];
+  for (let i = 0; i < jobPositions.length; i++) {
+    const { id, start } = jobPositions[i];
+    const end = jobPositions[i + 1]?.start ?? jobsSection.length;
+    const block = jobsSection.slice(start, end);
+
+    const nameMatch = block.match(/^    name:\s*(.+)\s*$/m);
+    const displayName = nameMatch
+      ? nameMatch[1].replace(/\$\{\{[^}]+\}\}/g, '<matrix>').trim()
+      : id;
+
+    const runSteps = [];
+    let sm;
+
+    // Named steps: `- name: ...\n  (optional: if/env lines)\n  run: cmd`
+    const namedRunPattern = /- name:\s*([^\n]+)\n(?:[ \t]+[^\n]+\n)*?[ \t]+run:\s*([^\n]+)/g;
+    while ((sm = namedRunPattern.exec(block)) !== null) {
+      const cmd = sm[2].trim();
+      if (cmd && !cmd.startsWith('#')) {
+        runSteps.push({ name: sm[1].trim(), cmd });
+      }
+    }
+
+    // Unnamed run steps: `- run: cmd` — skip `npm ci` (CI setup, not needed locally).
+    const unnamedRunPattern = /^[ \t]+-\s+run:\s*([^\n|]+)$/gm;
+    while ((sm = unnamedRunPattern.exec(block)) !== null) {
+      const cmd = sm[1].trim();
+      if (!cmd || cmd.startsWith('#')) continue;
+      if (/^npm ci\b/.test(cmd)) continue;
+      if (runSteps.some((s) => s.cmd === cmd)) continue;
+      runSteps.push({ name: cmd.slice(0, 50), cmd });
+    }
+
+    if (runSteps.length > 0 || listOnly) {
+      jobBlocks.push({ id, name: displayName, steps: runSteps });
+    }
+  }
+
+  if (listOnly) {
+    println('CI jobs from .github/workflows/ci.yml:');
+    for (const job of jobBlocks) {
+      println(`  ${job.id.padEnd(20)} ${job.name}`);
+      for (const step of job.steps) {
+        println(`    → ${step.name}`);
+      }
+    }
+    return;
+  }
+
+  const targetJobs = jobFilter
+    ? jobBlocks.filter((j) => j.id === jobFilter || j.name.toLowerCase().includes(jobFilter.toLowerCase()))
+    : jobBlocks.filter((j) => !['changes'].includes(j.id));
+
+  if (targetJobs.length === 0) {
+    errorln(`No jobs matched: ${jobFilter}`);
+    process.exit(1);
+  }
+
+  println(`Running ${targetJobs.length} CI job(s) locally...`);
+  let failed = 0;
+
+  for (const job of targetJobs) {
+    println(`\n▶ ${job.name} (${job.id})`);
+    for (const step of job.steps) {
+      const cmd = step.cmd;
+
+      // Docker/Trivy steps require --full.
+      const isHeavy = /docker|trivy/i.test(cmd);
+      if (isHeavy && !fullMode) {
+        println(`  ⊘ skipped (heavy — pass --full to run): ${step.name}`);
+        println(`    equivalent: ${cmd}`);
+        continue;
+      }
+
+      // Parse the command into executable form.
+      const parts = cmd.split(/\s+/);
+      const executable = parts[0];
+      const cmdArgs = parts.slice(1);
+
+      println(`  ▷ ${step.name}`);
+
+      const result = spSync(executable, cmdArgs, {
+        cwd: ROOT_DIR,
+        stdio: 'inherit',
+        env: { ...process.env, CI: '1' },
+      });
+
+      if (result.status !== 0) {
+        errorln(`  ✗ ${step.name} failed (exit ${result.status})`);
+        failed++;
+      } else {
+        println(`  ✓ ${step.name}`);
+      }
+    }
+  }
+
+  if (failed > 0) {
+    errorln(`\n${failed} step(s) failed.`);
+    process.exit(1);
+  } else {
+    println('\nAll CI steps passed locally.');
+  }
+}
+
+async function cmdCiStatus(args) {
+  const { execSync: exec } = await import('node:child_process');
+  const jsonOutput = args.includes('--json');
+
+  let branch = '';
+  try {
+    branch = exec('git branch --show-current', { cwd: process.cwd(), stdio: 'pipe', encoding: 'utf8', timeout: 2000 }).trim();
+  } catch { /* not in a git repo */ }
+
+  try {
+    const limit = args.find((a) => a.startsWith('--limit='))?.split('=')[1] || '5';
+    const branchFlag = branch ? `--branch=${branch}` : '';
+    const raw = exec(
+      `gh run list ${branchFlag} --limit=${limit} --json conclusion,name,workflowName,createdAt,databaseId,url,status`,
+      { cwd: process.cwd(), stdio: 'pipe', encoding: 'utf8', timeout: 10_000 },
+    );
+    const runs = JSON.parse(raw);
+    if (jsonOutput) {
+      println(JSON.stringify(runs, null, 2));
+      return;
+    }
+
+    if (runs.length === 0) {
+      println(`No CI runs found${branch ? ` for branch '${branch}'` : ''}.`);
+      return;
+    }
+
+    println(`CI runs${branch ? ` on '${branch}'` : ''} (${runs.length}):`);
+    for (const run of runs) {
+      const icon = run.conclusion === 'success' ? '✓'
+        : run.conclusion === 'failure' ? '✗'
+        : run.status === 'in_progress' ? '⏳'
+        : '○';
+      const age = run.createdAt ? new Date(run.createdAt).toLocaleString() : '';
+      println(`  ${icon} ${(run.workflowName || run.name).padEnd(35)} ${age}`);
+      if (run.conclusion === 'failure') println(`    ${run.url}`);
+    }
+  } catch (err) {
+    const msg = err?.message || String(err);
+    if (/gh/.test(msg) || /command not found/.test(msg)) {
+      errorln('gh CLI not available. Install from https://cli.github.com/');
+    } else {
+      errorln(`ci status failed: ${msg.slice(0, 200)}`);
+    }
+    process.exit(1);
+  }
+}
+
 async function cmdLintTemplates(args) {
   const bodyFileArg = args.find((a) => a.startsWith('--body-file='))?.split('=').slice(1).join('=');
   const bodyArgIdx = args.indexOf('--body-file');
@@ -3640,6 +3890,54 @@ const handlers = new Map([
       process.stdout.write(formatPolicyList());
     }
   }],
+  ['policy', async (args) => {
+    const sub = args[0];
+    if (!sub || sub === '--help' || sub === '-h') {
+      println('Usage: construct policy <show>');
+      println('  show [--json]   List all active policies with enforcement details');
+      return;
+    }
+    if (sub === 'show') {
+      const { readFileSync, existsSync } = await import('node:fs');
+      const { join } = await import('node:path');
+      const inventoryPath = join(ROOT_DIR, 'agents', 'policy-inventory.json');
+      if (!existsSync(inventoryPath)) {
+        errorln('agents/policy-inventory.json not found');
+        process.exit(1);
+      }
+      const { policies } = JSON.parse(readFileSync(inventoryPath, 'utf8'));
+      if (args.includes('--json')) {
+        println(JSON.stringify(policies, null, 2));
+        return;
+      }
+      // Table output
+      const ID_W = 25;
+      const SRC_W = 40;
+      const ENF_W = 45;
+      const MODE_W = 18;
+      println(
+        'ID'.padEnd(ID_W) + 'SOURCE'.padEnd(SRC_W) + 'ENFORCEMENT'.padEnd(ENF_W) + 'MODE',
+      );
+      println('-'.repeat(ID_W + SRC_W + ENF_W + MODE_W));
+      for (const p of policies) {
+        const id = (p.id || '').slice(0, ID_W - 1).padEnd(ID_W);
+        const src = (p.source || '').slice(0, SRC_W - 1).padEnd(SRC_W);
+        const enf = (p.enforcement || '').slice(0, ENF_W - 1).padEnd(ENF_W);
+        const mode = (p.mode || '').slice(0, MODE_W - 1);
+        println(`${id}${src}${enf}${mode}`);
+        if (p.description) println(`  ${p.description}`);
+      }
+      println('');
+      const counts = {};
+      for (const p of policies) { counts[p.mode] = (counts[p.mode] || 0) + 1; }
+      for (const [mode, count] of Object.entries(counts)) {
+        println(`  ${mode}: ${count}`);
+      }
+      return;
+    }
+    errorln(`Unknown policy subcommand: ${sub}. Available: show`);
+    process.exit(1);
+  }],
   ['auth:status', async (args) => {
     const { getTokenStatus } = await import('../lib/providers/auth-manager.mjs');
     const providers = ['github', 'slack', 'jira', 'salesforce', 'linear'];
@@ -3680,6 +3978,7 @@ const handlers = new Map([
   ['lint:comments', cmdLintComments],
   ['lint:templates', cmdLintTemplates],
   ['gates:audit', cmdGatesAudit],
+  ['ci', cmdCi],
   ['bootstrap', cmdBootstrap],
   ['memory', cmdMemory],
   ['hook', cmdHook],

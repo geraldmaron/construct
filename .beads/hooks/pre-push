@@ -86,11 +86,46 @@ if [[ -f "package.json" ]]; then
     fi
   done
 
-  # Construct-specific: verify AUTO docs are up to date before push
-  if [[ -x "bin/construct" ]]; then
-    log "Checking AUTO docs are up to date"
+  # Construct-specific gates — runs when bin/construct is present.
+  # Override: CONSTRUCT_SKIP_PREPUSH=1 or BEADS_SKIP_PREPUSH=1.
+  if [[ -x "bin/construct" && "${CONSTRUCT_SKIP_PREPUSH:-0}" != "1" && "${BEADS_SKIP_PREPUSH:-0}" != "1" ]]; then
+    ran_any_check=1
+
+    log "Construct: checking AUTO docs drift"
     if ! node ./bin/construct docs:update --check >/dev/null 2>&1; then
-      fail "AUTO docs are out of date. Run 'construct docs:update' and commit before pushing"
+      fail "AUTO docs are out of date. Run 'construct docs:update' then commit"
+    fi
+
+    log "Construct: docs:verify"
+    if ! node ./bin/construct docs:verify >/dev/null 2>&1; then
+      fail "construct docs:verify failed. Fix docs issues before pushing"
+    fi
+
+    log "Construct: dashboard:sync --check"
+    if ! node ./bin/construct dashboard:sync --check >/dev/null 2>&1; then
+      fail "Dashboard bundle is out of sync. Run 'construct dashboard:sync' then commit"
+    fi
+
+    log "Construct: lint:comments"
+    if ! node ./bin/construct lint:comments 2>&1; then
+      fail "construct lint:comments failed. Fix comment policy violations before pushing"
+    fi
+
+    log "Construct: lint:agents"
+    if ! node ./bin/construct lint:agents >/dev/null 2>&1; then
+      fail "construct lint:agents failed. Fix agent registry errors before pushing"
+    fi
+
+    log "Construct: lint:contracts"
+    if ! node ./bin/construct lint:contracts >/dev/null 2>&1; then
+      fail "construct lint:contracts failed. Fix contract schema errors before pushing"
+    fi
+
+    if [[ "${CONSTRUCT_PREPUSH_FULL:-0}" == "1" ]]; then
+      log "Construct: build:sea (CONSTRUCT_PREPUSH_FULL=1)"
+      if ! npm run build:sea >/dev/null 2>&1; then
+        fail "SEA bundle build failed. Run 'npm run build:sea' locally to diagnose"
+      fi
     fi
   fi
 

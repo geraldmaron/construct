@@ -151,6 +151,7 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct auth:status` | Check auth status |
 | `construct backup` | System backups |
 | `construct beads` | Task queue management |
+| `construct ci` | Local CI mirror: run CI jobs locally or view recent run status |
 | `construct cleanup` | Clean stale processes |
 | `construct completions` | Shell completion scripts |
 | `construct config` | Deployment mode configuration |
@@ -159,6 +160,7 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct gates:audit` | Audit policy gates |
 | `construct hooks:health` | Check hook health |
 | `construct list` | List all agents |
+| `construct policy` | Show active policy gates with enforcement details |
 | `construct provider` | Provider management |
 | `construct role` | Role framework management |
 | `construct skills` | Skill relevance detection |
