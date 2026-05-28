@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "type": "module",
   "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
   "bin": {
@@ -69,7 +69,16 @@
     "@huggingface/transformers": "^4.2.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
     "@xenova/transformers": "^2.0.1",
+    "node-webvtt": "^1.9.3",
     "postgres": "^3.4.9"
+  },
+  "optionalDependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-trace-node": "^1.25.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.52.0",
+    "@opentelemetry/resources": "^1.25.0",
+    "@opentelemetry/semantic-conventions": "^1.25.0",
+    "@opentelemetry/core": "^1.25.0"
   },
   "overrides": {
     "express-rate-limit": "8.5.1",

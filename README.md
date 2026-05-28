@@ -119,8 +119,10 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct reflect` | Capture improvement feedback |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
+| `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
 | `construct team` | Team review and templates |
 | `construct wireframe` | Generate wireframes from description |
+| `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
 
 ### Integrations
@@ -128,10 +130,12 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | Command | What it does |
 |---|---|
 | `construct claude:allow` | Manage Claude Code permissions |
+| `construct creds` | Manage provider credentials (set, rotate, revoke, list) |
 | `construct hosts` | Check host capabilities |
 | `construct mcp` | Manage MCP integrations |
 | `construct ollama` | Manage local Ollama models |
 | `construct plugin` | Manage plugin manifests |
+| `construct providers` | Provider status, circuit-breaker reset, and resource discovery |
 
 ### Observability
 
@@ -142,6 +146,7 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct llm-judge` | LLM-as-judge evaluations |
 | `construct optimize` | Prompt optimization |
 | `construct review` | Agent performance review |
+| `construct telemetry` | Query telemetry traces and latency data |
 
 ### Advanced
 
@@ -163,6 +168,7 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 | `construct policy` | Show active policy gates with enforcement details |
 | `construct provider` | Provider management |
 | `construct role` | Role framework management |
+| `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |
 | `construct skills` | Skill relevance detection |
 | `construct uninstall` | Remove Construct state |
 | `construct update` | Reinstall this checkout |
