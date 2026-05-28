@@ -182,7 +182,7 @@ construct provider test <id>
 
 ## `construct sync` fails with registry errors
 
-**Symptoms:** `construct sync` exits non-zero; errors reference `agents/registry.json`.
+**Symptoms:** `construct sync` exits non-zero; errors reference `specialists/registry.json`.
 
 **Check:**
 
@@ -190,7 +190,7 @@ construct provider test <id>
 construct validate
 ```
 
-This validates `agents/registry.json` and prints specific field constraint violations. Fix the errors, then re-run `construct sync`.
+This validates `specialists/registry.json` and prints specific field constraint violations. Fix the errors, then re-run `construct sync`.
 
 ## Memory search returns nothing
 

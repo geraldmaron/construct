@@ -66,11 +66,11 @@ describe('resolveOverride', () => {
   });
 
   it('handles singleFile categories (contracts, role-manifests)', () => {
-    fs.mkdirSync(path.join(projectRoot, 'agents'));
-    fs.writeFileSync(path.join(projectRoot, 'agents', 'contracts.json'), '{}');
+    fs.mkdirSync(path.join(projectRoot, 'specialists'));
+    fs.writeFileSync(path.join(projectRoot, 'specialists', 'contracts.json'), '{}');
     const r = resolveOverride(projectRoot, 'contracts', 'ignored-name');
     assert.equal(r.source, 'original');
-    assert.ok(r.path.endsWith('agents/contracts.json'));
+    assert.ok(r.path.endsWith('specialists/contracts.json'));
   });
 
   it('throws on unknown category', () => {

@@ -6,7 +6,7 @@
  * Follows the RFC 9562 / git-interpret-trailers convention.
  *
  * Trailers added (when env vars are present):
- *   AI-Generator: construct/sync-agents
+ *   AI-Generator: construct/sync-specialists
  *   AI-Model:     claude-sonnet-4-6
  *   AI-Session:   019dbb90-5885-...
  *

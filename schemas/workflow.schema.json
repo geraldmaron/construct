@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geraldmaron.github.io/construct/schemas/workflow.schema.json",
+  "title": "Construct workflow template",
+  "description": "Shape validator for YAML workflow templates in templates/workflows/. A workflow template declares the artifact chain, input variables, and beads task items that are scaffolded together in one command.",
+  "type": "object",
+  "required": ["id", "title", "artifacts"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Lowercase identifier used in the CLI and file lookups."
+    },
+    "version": {
+      "type": "integer",
+      "default": 1,
+      "description": "Schema version. Increment when the template shape changes in a breaking way."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 400
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Variable declarations. Values are substituted into all ${variable_name} placeholders in string fields.",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Human-readable prompt shown when the CLI collects this input interactively."
+          },
+          "required": {
+            "type": "boolean",
+            "default": false
+          },
+          "default": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered list of document artifacts to scaffold. Each artifact references a doc template by filename and specifies the output path.",
+      "items": {
+        "type": "object",
+        "required": ["template", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "template": {
+            "type": "string",
+            "description": "Filename of a template in templates/docs/ (e.g. prd.md). If not found, a stub markdown file is created instead."
+          },
+          "path": {
+            "type": "string",
+            "description": "Output path relative to the project root. May contain ${variable_name} placeholders."
+          },
+          "title": {
+            "type": "string",
+            "description": "Document title written into the artifact frontmatter. May contain ${variable_name} placeholders."
+          },
+          "depends_on": {
+            "type": "array",
+            "description": "Paths of artifacts that must exist before this one is created. Used for ordering and dependency checks.",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "beads_items": {
+      "type": "array",
+      "description": "Beads task items to create alongside the artifacts. The CLI creates these; the instantiation engine only returns what would be created.",
+      "items": {
+        "type": "object",
+        "required": ["type", "title"],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Beads item type (e.g. feature, task, chore, bug)."
+          },
+          "title": {
+            "type": "string",
+            "description": "Beads item title. May contain ${variable_name} placeholders."
+          },
+          "link_to": {
+            "type": "string",
+            "description": "Path of the artifact this item is linked to. May contain ${variable_name} placeholders."
+          },
+          "depends_on_prior": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, this item should only start after the previous beads_items entry is complete."
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "description": "Lightweight correctness checks run after instantiation. Each check names a kind and the file targets to evaluate.",
+      "items": {
+        "type": "object",
+        "required": ["name", "kind"],
+        "additionalProperties": true,
+        "properties": {
+          "name": { "type": "string" },
+          "kind": {
+            "type": "string",
+            "description": "Check kind. 'file-order' verifies the listed files exist in the declared sequence."
+          }
+        }
+      }
+    }
+  }
+}
