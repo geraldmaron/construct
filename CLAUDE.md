@@ -4,7 +4,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 
 ## Critical rules
 
-- **Never fabricate.** Every load-bearing claim in any artifact (PRD, ADR, RFC, brief, knowledge note, handoff, review, summary, classification rationale) must trace to a source the reader can re-verify. Don't invent quotes, ticket IDs, customer names, percentages, dates, or file paths. When a fact isn't in the source, write `unknown` or `[unverified]`. See `rules/common/no-fabrication.md`. Enforced by `lib/comment-lint.mjs` on artifact paths and by `specialists/contracts.json` postconditions on specialist handoffs.
+- **Never fabricate.** Every load-bearing claim in any artifact (PRD, ADR, RFC, brief, knowledge note, handoff, review, summary, classification rationale) must trace to a source the reader can re-verify. Don't invent quotes, ticket IDs, customer names, percentages, dates, or file paths. When a fact isn't in the source, write `unknown` or `[unverified]`. See `rules/common/no-fabrication.md`. Enforced by `lib/comment-lint.mjs` on artifact paths and by `agents/contracts.json` postconditions on specialist handoffs.
 - **Confirm the working branch every session.** Session-start surfaces `## Working branch: <name>` at the top of the injected context. Restate it before any mutating operation.
 - **Never commit, push, or merge without asking first.** Before `git commit`, `git push`, or `gh pr merge`: state the branch, state what's about to happen, ask for confirmation, wait for yes. A yes in chat is the approval — no separate command or marker. See `rules/common/commit-approval.md`.
 - **Never edit running hook files** (`lib/hooks/*.mjs`) without testing them in isolation first. A broken hook blocks all tool use.
@@ -18,7 +18,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 
 | File | Why |
 |---|---|
-| `specialists/registry.json` | Source of truth for all agents on all platforms |
+| `agents/registry.json` | Source of truth for all agents on all platforms |
 | `install.sh` | Runs on user machines — a bug affects all installs |
 | `lib/hooks/*.mjs` | Run in every Claude Code session |
 | `claude/settings.template.json` | Controls all Claude Code hook config |

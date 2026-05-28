@@ -25,7 +25,7 @@ test('composePrompt assembles prompt from core prompt, task packet, and context 
       owner: 'cx-engineer',
       acceptanceCriteria: ['tests pass', 'policy is code-backed'],
       readFirst: ['lib/orchestration-policy.mjs'],
-      doNotChange: ['specialists/registry.json'],
+      doNotChange: ['agents/registry.json'],
     },
     contextState: {
       source: 'test',
@@ -51,7 +51,7 @@ test('composePrompt returns empty prompt for unknown agent', () => {
 });
 
 test('resolveBasePrompt uses prompt composition for promptFile-backed entries', () => {
-  const prompt = resolveBasePrompt({ name: 'engineer', promptFile: 'specialists/prompts/cx-engineer.md' }, { rootDir: root });
+  const prompt = resolveBasePrompt({ name: 'engineer', promptFile: 'agents/prompts/cx-engineer.md' }, { rootDir: root });
   assert.match(prompt, /You read before you write/);
 });
 
@@ -71,7 +71,7 @@ test('resolveBasePrompt normalizes cx-prefixed names through composed resolution
 });
 
 test('resolveBasePrompt returns fallback for unresolved prompt sources', () => {
-  const prompt = resolveBasePrompt({ name: 'missing', promptFile: 'specialists/prompts/nope.md' }, {
+  const prompt = resolveBasePrompt({ name: 'missing', promptFile: 'agents/prompts/nope.md' }, {
     rootDir: root,
     fallback: 'fallback prompt',
   });
@@ -83,7 +83,7 @@ test('resolvePromptContract returns prompt text and runtime-aligned prompt metad
 
   assert.match(result.prompt, /You read before you write/);
   assert.equal(result.metadata.promptName, 'engineer');
-  assert.equal(result.metadata.promptFile, 'specialists/prompts/cx-engineer.md');
+  assert.equal(result.metadata.promptFile, 'agents/prompts/cx-engineer.md');
   assert.equal(result.metadata.promptVersion, result.metadata.promptHash.slice(0, 12));
 });
 
@@ -155,7 +155,7 @@ test('resolveRuntimePromptMetadata includes explicit task packet and routing sum
       status: 'in-progress',
       acceptanceCriteria: ['Critical orchestration rules exist in code'],
       readFirst: ['lib/orchestration-policy.mjs'],
-      doNotChange: ['specialists/registry.json'],
+      doNotChange: ['agents/registry.json'],
     },
     contextState: {
       source: 'test',

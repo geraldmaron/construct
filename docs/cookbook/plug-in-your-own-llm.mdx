@@ -19,7 +19,7 @@ Three tiers. Every specialist uses one of them.
 - **`standard`**: everyday work. Defaults to Claude Sonnet.
 - **`fast`**: quick lookups, low-stakes responses. Defaults to Claude Haiku.
 
-Specialists declare their tier in `specialists/registry.json`. Changing the tier→model mapping changes the model for every specialist on that tier.
+Specialists declare their tier in `agents/registry.json`. Changing the tier→model mapping changes the model for every specialist on that tier.
 
 ## Inspect current assignments
 
@@ -46,7 +46,7 @@ Fallbacks (used on rate-limit or model-unavailable):
 construct models --apply --tier=reasoning --model=openrouter/anthropic/claude-opus-4-7
 ```
 
-This writes to `specialists/registry.json` under the `models` block. The change takes effect on the next session-start. No `construct sync` needed.
+This writes to `agents/registry.json` under the `models` block. The change takes effect on the next session-start. No `construct sync` needed.
 
 For a temporary swap (single session), set the env var instead:
 
@@ -146,5 +146,5 @@ Embedding model is separate from LLM model. See [Plug in a retrieval backend](/c
 ## Reference
 
 - [`construct models`](/reference/cli/models-and-integrations): every flag.
-- [`specialists/registry.json`](https://github.com/geraldmaron/construct/blob/main/specialists/registry.json): the `models` block + per-specialist overrides.
+- [`agents/registry.json`](https://github.com/geraldmaron/construct/blob/main/agents/registry.json): the `models` block + per-specialist overrides.
 - [Concepts → Deployment model](/concepts/deployment-model): solo/team/enterprise topology and model-swap implications for the offline story.

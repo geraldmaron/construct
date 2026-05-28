@@ -21,7 +21,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const promptsDir = path.join(root, 'specialists', 'prompts');
+const promptsDir = path.join(root, 'agents', 'prompts');
 const policyPath = path.join(root, 'rules', 'common', 'no-fabrication.md');
 const personaPath = path.join(root, 'personas', 'construct.md');
 

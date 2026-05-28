@@ -61,7 +61,7 @@ Fabrication is the single largest threat to trust in an agent system. A persona 
 ## Enforcement
 
 - `lib/comment-lint.mjs` enforces a subset of these patterns on artifact paths (`docs/prd/**`, `docs/adr/**`, `docs/rfc/**`, `docs/research/**`, `.cx/knowledge/**`, `.cx/handoffs/**`, `.cx/research/**`). PostToolUse warns; `npm run lint:comments`, `construct lint:comments`, and the release gate block.
-- `specialists/contracts.json` postconditions check structural requirements (mandatory sections, intake traceability, citation density). `lib/contracts/validate.mjs#validateHandoff` blocks handoffs that fail validation when `CONSTRUCT_CONTRACT_ENFORCEMENT=block`.
+- `agents/contracts.json` postconditions check structural requirements (mandatory sections, intake traceability, citation density). `lib/contracts/validate.mjs#validateHandoff` blocks handoffs that fail validation when `CONSTRUCT_CONTRACT_ENFORCEMENT=block`.
 - `construct intake done <id> --output=<path>` stamps `intake_id`, `intake_confidence`, and `intake_rationale` into the artifact's frontmatter so every intake-derived artifact carries verifiable provenance.
 
 ## Bypass

@@ -1,6 +1,6 @@
 # Construct: Claude Code Integration
 
-This project uses Construct. Personas and specialists are defined in `specialists/registry.json` and synced to Claude Code via `construct sync`.
+This project uses Construct. Personas and specialists are defined in `agents/registry.json` and synced to Claude Code via `construct sync`.
 
 ## Workflow roles
 

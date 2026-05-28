@@ -5,7 +5,7 @@
  * pre-action queries. Solo mode short-circuits to `brokerActive: false`
  * (no manifest read, no policy enforcement) so agents don't waste
  * tokens consulting an inactive gate. Team / enterprise mode reads
- * specialists/role-manifests.json. Every call emits a `tool.called` trace
+ * agents/role-manifests.json. Every call emits a `tool.called` trace
  * event for audit-trail parity.
  */
 import { describe, it, beforeEach, afterEach } from 'node:test';
