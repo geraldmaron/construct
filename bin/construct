@@ -577,34 +577,9 @@ async function cmdDoctor() {
     add(`Resource budget check failed: ${err.message}`, false, true);
   }
 
-  // Pricing-catalog freshness + divergence. Cost ceilings (Phase 7b)
-  // are only as trustworthy as the catalog underneath. Stale catalog →
-  // drift between computed cost and actual provider bill. Divergence
-  // (>25%) → LiteLLM and static disagree on a known model, surface so
-  // the operator can verify which is current. Both advisory: degraded
-  // pricing still falls back to a usable source.
-  try {
-    const { describePricingCatalogFreshness, checkPricingDivergence } = await import('../lib/telemetry/model-pricing-catalog.mjs');
-    const freshness = describePricingCatalogFreshness();
-    if (freshness.stale) {
-      add(`Pricing catalog: ${freshness.message}`, false, true);
-    } else {
-      add(`Pricing catalog fresh (${freshness.ageHours?.toFixed(1) || '0.0'}h old)`, true, true);
-    }
-    if (freshness.present) {
-      try {
-        const cached = JSON.parse(fs.readFileSync(path.join(HOME, '.cx', 'pricing-cache.json'), 'utf8'));
-        const divergences = checkPricingDivergence(cached.models || []);
-        if (divergences.length === 0) {
-          add('Pricing matches static fallback (no >25% divergence)', true, true);
-        } else {
-          add(`Pricing divergence on ${divergences.length} model(s) — run \`construct pricing check\``, false, true);
-        }
-      } catch { /* divergence is advisory */ }
-    }
-  } catch (err) {
-    add(`Pricing catalog check failed: ${err.message}`, false, true);
-  }
+  // Pricing-catalog freshness + divergence are not surfaced in doctor output.
+  // The underlying ledger writes and catalog refresh continue; consumer
+  // surfaces land with the OTel + dashboard wiring (plan Workstream J).
 
   // Validate promptFile references and skill bindings
   try {
@@ -3585,11 +3560,14 @@ const handlers = new Map([
   ['infer', cmdInfer],
   ['search', cmdSearch],
   ['storage', cmdStorage],
-  ['pricing', cmdPricing],
+  // Pricing / cost readouts are stubbed out: the ledger writes, model-pricing
+  // catalog, and per-turn accounting still run, but no CLI surface exposes
+  // them to the user. Handlers (cmdPricing, cmdCosts, cmdCost) remain in this
+  // file so the OTel + dashboard wiring (planned in Workstream J) can rewire
+  // the surface without re-implementing the logic.
   ['overrides', cmdOverrides],
   ['prune', cmdPrune],
   ['resources', cmdResources],
-  ['costs', cmdCosts],
   ['handoffs', cmdHandoffs],
   ['headhunt', cmdHeadhunt],
   ['init', cmdInit],
@@ -3690,7 +3668,6 @@ const handlers = new Map([
   ['review', cmdReview],
   ['optimize', cmdOptimize],
   ['seed-traces', cmdSeedTraces],
-  ['cost', cmdCost],
   ['efficiency', cmdEfficiency],
   ['evals', cmdEvals],
   ['cleanup', cmdCleanup],
