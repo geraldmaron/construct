@@ -56,6 +56,12 @@ function makeRepoCopy(t) {
       // HOME to a tmpdir and lets the harness rebuild .claude/ there.
       if (hasPathSegment(rel, ".claude")) return false;
 
+      // `.beads/` carries an embedded dolt database that rotates internal
+      // manifest files (.beads/embeddeddolt/beads/.dolt/noms/nbs_manifest_*)
+      // whenever beads writes — same readdir → lstat race as above. The test
+      // does not need the beads DB; sync paths it exercises don't touch it.
+      if (hasPathSegment(rel, ".beads")) return false;
+
       return true;
     },
   });
