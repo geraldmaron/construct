@@ -1646,6 +1646,10 @@ async function printIntakeHelp() {
   println('  construct intake integrate <id> <system> --create-issue  Create an issue from the intake packet.');
   println('  construct intake config               Show current watch dirs + scan depth.');
   println('  construct intake config set --depth=N [--add-dir=PATH] [--remove-dir=PATH]');
+  println('  construct intake extraction-warnings [--since=7d] [--kind=table] [--limit=50]');
+  println('                                       Summarize ~/.cx/intake/extraction-warnings.jsonl (dropped content log).');
+  println('  construct intake needs-asr list       List audio/video files awaiting ASR transcription.');
+  println('  construct intake needs-asr show <id>  Show a specific ASR-pending packet.');
   println('                                       Update intake config. --depth caps at the hard limit.');
   println('  construct intake config set --include-project-inbox=on|off');
   println('  construct intake config set --include-docs-intake=on|off');
@@ -1903,7 +1907,15 @@ async function cmdIntake(args) {
     return await cmdIntakeConfig(args.slice(1));
   }
 
-  errorln(`Unknown intake subcommand: ${sub}. Available: list, show, done, skip, reopen, quarantine, reroute, integrate, config`);
+  if (sub === 'extraction-warnings') {
+    return await cmdIntakeExtractionWarnings(args.slice(1));
+  }
+
+  if (sub === 'needs-asr') {
+    return await cmdIntakeNeedsAsr(args.slice(1));
+  }
+
+  errorln(`Unknown intake subcommand: ${sub}. Available: list, show, done, skip, reopen, quarantine, reroute, integrate, config, extraction-warnings, needs-asr`);
   process.exit(1);
 }
 
@@ -2008,6 +2020,113 @@ async function cmdIntakeReroute(args, cwd) {
     errorln(err.message || 'reroute failed');
     process.exit(1);
   }
+}
+
+async function cmdIntakeExtractionWarnings(args) {
+  const { createReadStream, existsSync } = await import('node:fs');
+  const { homedir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { createInterface } = await import('node:readline');
+
+  const flags = parseKvFlags(args, ['since', 'kind', 'limit']);
+  const limitN = flags.limit ? parseInt(flags.limit, 10) : 50;
+  const filterKind = flags.kind || null;
+
+  // Parse --since flag (e.g. 7d, 24h, 30m)
+  let sinceMs = null;
+  if (flags.since) {
+    const m = flags.since.match(/^(\d+)([dhm])$/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      sinceMs = Date.now() - n * ({ d: 86_400_000, h: 3_600_000, m: 60_000 }[m[2]] ?? 0);
+    }
+  }
+
+  const logPath = join(homedir(), '.cx', 'intake', 'extraction-warnings.jsonl');
+  if (!existsSync(logPath)) {
+    println('No extraction warnings recorded yet.');
+    return;
+  }
+
+  const lines = [];
+  const rl = createInterface({ input: createReadStream(logPath), crlfDelay: Infinity });
+  await new Promise((res) => {
+    rl.on('line', (line) => {
+      try {
+        const entry = JSON.parse(line);
+        if (sinceMs && new Date(entry.ts).getTime() < sinceMs) return;
+        if (filterKind && !entry.droppedInfo?.some((d) => d.kind === filterKind)) return;
+        lines.push(entry);
+      } catch { /* ignore malformed lines */ }
+    });
+    rl.on('close', res);
+  });
+
+  if (lines.length === 0) {
+    println('No extraction warnings match the given filters.');
+    return;
+  }
+
+  const shown = lines.slice(-limitN);
+  println(`Showing ${shown.length} of ${lines.length} extraction warning(s) (newest last):\n`);
+  for (const entry of shown) {
+    println(`  ${entry.ts}  ${entry.sourcePath}`);
+    for (const d of entry.droppedInfo || []) {
+      println(`    [${d.kind}] count=${d.count}  recoverable=${d.recoverable}  ${d.reason}`);
+    }
+  }
+
+  // Summary by kind
+  const kindCounts = {};
+  for (const entry of lines) {
+    for (const d of entry.droppedInfo || []) {
+      kindCounts[d.kind] = (kindCounts[d.kind] ?? 0) + d.count;
+    }
+  }
+  if (Object.keys(kindCounts).length > 0) {
+    println('\nTotals by kind (all time):');
+    for (const [kind, count] of Object.entries(kindCounts).sort(([, a], [, b]) => b - a)) {
+      println(`  ${kind.padEnd(20)} ${count}`);
+    }
+  }
+}
+
+async function cmdIntakeNeedsAsr(args) {
+  const { existsSync, readdirSync, readFileSync } = await import('node:fs');
+  const { homedir } = await import('node:os');
+  const { join } = await import('node:path');
+
+  const sub = args[0] || 'list';
+  const asrDir = join(homedir(), '.cx', 'intake', 'needs-asr');
+
+  if (sub === 'list') {
+    if (!existsSync(asrDir)) { println('No audio/video files awaiting ASR.'); return; }
+    const files = readdirSync(asrDir).filter((f) => f.endsWith('.json'));
+    if (files.length === 0) { println('No audio/video files awaiting ASR.'); return; }
+    println(`${files.length} file(s) awaiting ASR:\n`);
+    for (const f of files) {
+      try {
+        const p = JSON.parse(readFileSync(join(asrDir, f), 'utf8'));
+        println(`  ${p.id}  ${p.extension}  ${p.sourcePath}`);
+      } catch { println(`  ${f} (malformed packet)`); }
+    }
+    println('\nTo process: set CONSTRUCT_ASR_BACKEND=whisper|assemblyai and re-run construct embed start.');
+    return;
+  }
+
+  if (sub === 'show') {
+    const id = args[1];
+    if (!id) { errorln('Usage: construct intake needs-asr show <id>'); process.exit(1); }
+    if (!existsSync(asrDir)) { errorln('needs-asr queue is empty.'); process.exit(1); }
+    const files = readdirSync(asrDir).filter((f) => f.startsWith(id) && f.endsWith('.json'));
+    if (files.length === 0) { errorln(`No packet found for id: ${id}`); process.exit(1); }
+    const p = JSON.parse(readFileSync(join(asrDir, files[0]), 'utf8'));
+    println(JSON.stringify(p, null, 2));
+    return;
+  }
+
+  errorln(`Unknown needs-asr subcommand: ${sub}. Available: list, show`);
+  process.exit(1);
 }
 
 async function cmdIntakeConfig(args) {
