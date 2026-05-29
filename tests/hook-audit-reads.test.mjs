@@ -40,6 +40,13 @@ beforeEach(() => {
 
 function runHook(input, { auditReads = '1' } = {}) {
   return spawnSync(process.execPath, [HOOK], {
+    // cwd=tmpHome (which is also HOME for this test) so the project-root
+    // walker stops at $HOME and the writer falls back to ~/.cx — the
+    // legacy user-scope path this test asserts against. Without this, the
+    // spawned hook inherits the construct repo cwd and routes its audit
+    // record into the construct repo's own .cx/.
+
+    cwd: tmpHome,
     encoding: 'utf8',
     input: JSON.stringify(input),
     env: {

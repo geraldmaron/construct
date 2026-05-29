@@ -2,13 +2,27 @@
 /**
  * sync-specialists.mjs — regenerate agent adapters for all platforms from specialists/registry.json.
  *
- * Reads registry.json, resolves env vars and model tiers, then writes Claude Code,
- * OpenCode, Codex, Copilot, VS Code, and Cursor adapters. Called by 'construct sync'.
+ * Two scopes, modelled on every host's own convention (global = personal default,
+ * project = team-shared):
+ *
+ *   Global / user scope (`~/.claude/`, `~/.codex/`, `~/.github/`, …)
+ *     - Only the `construct` front-door agent (the registry's top-level
+ *       `orchestrator` entry). Specialists, slash commands, and skills do NOT
+ *       land at global scope — they are project content.
+ *     - Plus the hook installer in `~/.claude/settings.json`, which has to be
+ *       global so hooks fire in every Claude Code session.
+ *
+ *   Project scope (`<project>/.claude/`, `<project>/.codex/`, `<project>/.github/`, …)
+ *     - `construct` + all 28 `cx-*` specialists, slash commands, skills, MCP
+ *       wiring. Files version with the repo and travel with teammates via git.
  *
  * Flags:
  *   --dry-run             Print a diff of what would change without writing anything.
  *   --force               Bypass prompt word-cap hard stop (still warns).
- *   --project             Write to the current project's .claude/ directory only.
+ *   --project             Write only the project tier (cwd's `.claude/`, `.codex/`, etc.).
+ *   --global              Write only the global tier (orchestrator + hooks at `~/`).
+ *   (no scope flag)       Write the global tier. If cwd is inside a Construct
+ *                         project, also write the project tier.
  *   --compress-personas   Run the engine's Compressor on every persona prompt
  *                         before writing platform adapters. The source persona
  *                         file is unchanged; only the runtime adapter is shorter.
@@ -41,6 +55,7 @@ import { inlineRoleAntiPatterns, PROMPT_WORD_CAP } from "../lib/role-preload.mjs
 import { resolveActiveProfile } from "../lib/profiles/loader.mjs";
 import { resolveTiersForPrimary } from "../lib/model-router.mjs";
 import { stampFrontmatter } from "../lib/doc-stamp.mjs";
+import { buildSkillFrontmatter, stripLeadingFrontmatter } from "../lib/sync/skill-frontmatter.mjs";
 
 const home = os.homedir();
 const root = path.resolve(import.meta.dirname, "..");
@@ -138,8 +153,35 @@ if (validationErrors.length > 0) {
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const COMPRESS_PERSONAS = process.argv.includes("--compress-personas");
-const lockPath = path.join(root, ".cx", "sync.lock");
-const stagingDir = path.join(root, ".cx", "sync-staging");
+const PROJECT_FLAG = process.argv.includes("--project");
+const GLOBAL_FLAG = process.argv.includes("--global");
+
+/**
+ * A Construct project carries `.construct/` (the launcher staged by
+ * `stage-project.mjs`) or `.cx/` (state). When `construct sync` runs inside
+ * one without an explicit scope flag, default to project mode so specialists
+ * land with the repo rather than leaking into the user's home directory.
+ * `--global` overrides this for the front-door refresh path.
+ */
+function detectConstructProject(cwd) {
+  if (fs.existsSync(path.join(cwd, ".construct")) || fs.existsSync(path.join(cwd, ".cx"))) {
+    return cwd;
+  }
+  return null;
+}
+
+const detectedProject = (!PROJECT_FLAG && !GLOBAL_FLAG) ? detectConstructProject(process.cwd()) : null;
+const projectDir = PROJECT_FLAG ? process.cwd() : detectedProject;
+const lockPath = path.join(projectDir || root, ".cx", "sync.lock");
+const stagingDir = path.join(projectDir || root, ".cx", "sync-staging");
+
+// Project-tier writes carry every registry entry. Global-tier writes carry only
+// the `construct` front-door agent — specialists live with the project, not the
+// user's home directory, per each host's documented best-practice scope.
+
+function globalEntries(allEntries) {
+  return allEntries.filter((e) => e.isOrchestrator);
+}
 
 /** Acquire an exclusive lockfile. Aborts if already held by a live process. */
 function acquireLock() {
@@ -179,9 +221,18 @@ function releaseLock() {
  */
 const _stagedPairs = []; // [{ staging, real, content }]
 
-function writeFile(file, content) {
+function writeFile(file, content, { stamp = true } = {}) {
   mkdirp(path.dirname(file));
-  const stamped = file.endsWith('.md') ? stampFrontmatter(content, { generator: 'construct/sync-specialists' }) : content;
+  // Doc-stamp wraps content with cx_doc_id + body_hash YAML frontmatter for
+  // tamper detection. That's right for content artifacts (research findings,
+  // knowledge files), wrong for host-platform adapter files that have their
+  // own frontmatter contract (Claude Code agents, Copilot prompts, Anthropic
+  // Agent Skills) or are user-managed (CLAUDE.md, copilot-instructions.md).
+  // Stamping those produces double-frontmatter that breaks the host loader.
+  // Callers writing those files pass { stamp: false }.
+
+  const shouldStamp = stamp && file.endsWith('.md');
+  const stamped = shouldStamp ? stampFrontmatter(content, { generator: 'construct/sync-specialists' }) : content;
 
   if (DRY_RUN) {
     // Stage in memory only — compare against current on-disk content.
@@ -192,7 +243,7 @@ function writeFile(file, content) {
   }
 
   // Two-phase: write to staging, commit later.
-  const rel = path.relative(root, file);
+  const rel = path.relative(projectDir || root, file);
   const stagingPath = path.join(stagingDir, rel);
   mkdirp(path.dirname(stagingPath));
   fs.writeFileSync(stagingPath, stamped);
@@ -487,6 +538,7 @@ function removeStaleAdapters(dir, ext, entries) {
   }
 
   // Stale manifest entries — delete files not in the current expected set.
+
   const previouslyWritten = readManifest(dir);
   for (const file of previouslyWritten) {
     if (!expected.has(file) && fs.existsSync(path.join(dir, file))) {
@@ -495,6 +547,28 @@ function removeStaleAdapters(dir, ext, entries) {
   }
 
   writeManifest(dir, expected);
+}
+
+/**
+ * Sweep registry-managed `${prefix}-<specialist>${ext}` files in a global-scope
+ * adapter directory. Global scope only ever emits the `construct` front-door
+ * agent, so any file whose name matches a registered specialist is out of
+ * contract for global scope and gets removed. User-authored files that happen
+ * to share the `${prefix}-` prefix but a name outside the registry (e.g. a
+ * personal `cx-mytool.md`) are preserved. Idempotent: a second call finds
+ * nothing to delete. Anything in `expectedNames` is preserved so an in-mode
+ * write isn't undone.
+ */
+function sweepLegacyPrefixedFiles(dir, ext, expectedNames) {
+  if (!fs.existsSync(dir)) return;
+  const keep = new Set(expectedNames);
+  const managed = new Set((registry.specialists ?? []).map((s) => `${agentPrefix}${s.name}${ext}`));
+  for (const file of fs.readdirSync(dir)) {
+    if (!file.endsWith(ext)) continue;
+    if (!managed.has(file)) continue;
+    if (keep.has(file)) continue;
+    try { fs.unlinkSync(path.join(dir, file)); } catch { /* already gone */ }
+  }
 }
 
 // --- Unified entry list: personas + agents ---
@@ -637,12 +711,21 @@ function syncClaude(entries, targetDir = null) {
     : path.join(home, ".claude", "agents");
   if (!DRY_RUN) mkdirp(claudeAgentsDir);
 
-  for (const entry of entries) {
+  // Global scope ships only the `construct` front-door agent; specialists are
+  // project content. removeStaleAdapters will sweep any cx-* files left over
+  // from previous syncs because they fall out of the manifest set.
+
+  const writeEntries = targetDir ? entries : globalEntries(entries);
+
+  for (const entry of writeEntries) {
     const name = adapterName(entry);
     const md = claudeAgentMarkdown(entry, entries);
-    writeFile(path.join(claudeAgentsDir, `${name}.md`), md);
+    writeFile(path.join(claudeAgentsDir, `${name}.md`), md, { stamp: false });
   }
-  removeStaleAdapters(claudeAgentsDir, ".md", entries);
+  removeStaleAdapters(claudeAgentsDir, ".md", writeEntries);
+  if (!targetDir) {
+    sweepLegacyPrefixedFiles(claudeAgentsDir, ".md", writeEntries.map((e) => `${adapterName(e)}.md`));
+  }
 
   if (targetDir) {
     writeProjectClaudeSettings(targetDir);
@@ -653,16 +736,15 @@ function syncClaude(entries, targetDir = null) {
     const claudeMdPath = path.join(home, ".claude", "CLAUDE.md");
     const existing = fs.existsSync(claudeMdPath) ? fs.readFileSync(claudeMdPath, "utf8") : "# Claude Global Instructions\n";
     const personaList = entries.filter((e) => e.isOrchestrator).map((e) => `- \`${adapterName(e)}\`: ${e.role} — ${e.description}`).join("\n");
-    // Only surface non-internal specialists in CLAUDE.md — internal specialists are dispatched by Construct, not invoked by users
-    const specialistList = entries.filter((e) => !e.isOrchestrator && !e.internal).map((e) => `- \`${adapterName(e)}\`: ${e.description}`).join("\n");
     const note = `## ${systemName.charAt(0).toUpperCase() + systemName.slice(1)} Personas
 
 ${personaList}
 
 ## Internal Specialists
 
-${specialistList || "(all specialists are internal — routed through Construct)"}`;
-    writeFile(claudeMdPath, replaceManagedBlock(existing, note, mdManagedStart, mdManagedEnd));
+(all specialists are internal — routed through Construct, available inside a Construct-initialized project)`;
+    // User-managed file with our managed-block carved out — never doc-stamp.
+    writeFile(claudeMdPath, replaceManagedBlock(existing, note, mdManagedStart, mdManagedEnd), { stamp: false });
 
     // Sync MCP servers into ~/.claude/settings.json if it exists
     const claudeSettingsPath = path.join(home, ".claude", "settings.json");
@@ -733,19 +815,28 @@ function isCodexMcpSupported() {
   return true;
 }
 
-function syncCodex(entries) {
-  const codexDir = path.join(home, ".codex");
+function syncCodex(entries, targetDir = null) {
+  const codexDir = targetDir
+    ? path.join(targetDir, ".codex")
+    : path.join(home, ".codex");
   const codexAgentsDir = path.join(codexDir, "agents");
   if (!DRY_RUN) mkdirp(codexAgentsDir);
 
-  for (const entry of entries) {
+  const writeEntries = targetDir ? entries : globalEntries(entries);
+
+  for (const entry of writeEntries) {
     writeFile(path.join(codexAgentsDir, `${adapterName(entry)}.toml`), codexAgentToml(entry, entries));
   }
-  removeStaleAdapters(codexAgentsDir, ".toml", entries);
+  removeStaleAdapters(codexAgentsDir, ".toml", writeEntries);
+  if (!targetDir) {
+    sweepLegacyPrefixedFiles(codexAgentsDir, ".toml", writeEntries.map((e) => `${adapterName(e)}.toml`));
+  }
 
-  const configPath = getCodexConfigPath(home);
+  const configPath = targetDir
+    ? path.join(codexDir, "config.toml")
+    : getCodexConfigPath(home);
   const existing = removeDanglingConstructMcpMarkers(removeDanglingConstructMcpTimeouts(readCodexConfig(configPath)));
-  const entryNames = entries.map(adapterName);
+  const entryNames = writeEntries.map(adapterName);
   const registryMcp = registry.mcpServers ?? {};
   const existingMcpIds = Object.keys(registryMcp).filter((id) => hasCodexMcpTable(existing, id));
   const mcpIds = existingMcpIds.filter(isCodexMcpSupported);
@@ -755,8 +846,13 @@ function syncCodex(entries) {
   ));
   const hasAgentsRoot = /^\[agents\]\s*$/m.test(withoutManagedTables);
   const rootBlock = hasAgentsRoot ? "" : "[agents]\nmax_threads = 6\nmax_depth = 1\n\n";
-  // Only expose non-internal agents in Codex config; internal agents are dispatched by Construct
-  const blocks = entries.filter((e) => !e.internal).map((e) => `[agents.${adapterName(e)}]
+
+  // In project scope every entry is reachable from the user (Construct dispatches
+  // internal specialists itself, but project teammates may want to address them).
+  // In global scope only the `construct` front-door agent is registered.
+
+  const exposed = targetDir ? writeEntries : writeEntries.filter((e) => !e.internal);
+  const blocks = exposed.map((e) => `[agents.${adapterName(e)}]
 description = ${tomlString(e.description)}
 config_file = ${tomlString(`agents/${adapterName(e)}.toml`)}
 `).join("\n");
@@ -792,25 +888,44 @@ When using this prompt, stay within the role above and adapt to the current repo
 `;
 }
 
-function syncCopilot(entries) {
-  const promptsDir = path.join(home, ".github", "prompts");
+function syncCopilot(entries, targetDir = null) {
+  const promptsDir = targetDir
+    ? path.join(targetDir, ".github", "prompts")
+    : path.join(home, ".github", "prompts");
   if (!DRY_RUN) mkdirp(promptsDir);
-  for (const entry of entries) {
-    writeFile(path.join(promptsDir, `${adapterName(entry)}.prompt.md`), copilotPrompt(entry, entries));
-  }
-  removeStaleAdapters(promptsDir, ".prompt.md", entries);
 
-  const instructionsPath = path.join(home, ".github", "copilot-instructions.md");
+  const writeEntries = targetDir ? entries : globalEntries(entries);
+
+  for (const entry of writeEntries) {
+    writeFile(path.join(promptsDir, `${adapterName(entry)}.prompt.md`), copilotPrompt(entry, entries), { stamp: false });
+  }
+  removeStaleAdapters(promptsDir, ".prompt.md", writeEntries);
+  if (!targetDir) {
+    sweepLegacyPrefixedFiles(promptsDir, ".prompt.md", writeEntries.map((e) => `${adapterName(e)}.prompt.md`));
+  }
+
+  const instructionsPath = targetDir
+    ? path.join(targetDir, ".github", "copilot-instructions.md")
+    : path.join(home, ".github", "copilot-instructions.md");
   const existing = fs.existsSync(instructionsPath)
     ? fs.readFileSync(instructionsPath, "utf8")
     : "# GitHub Copilot Instructions\n";
-  const list = entries.filter((e) => !e.internal).map((e) => `- \`${adapterName(e)}\`: use \`~/.github/prompts/${adapterName(e)}.prompt.md\`.`).join("\n");
+
+  // Project-scope instructions list every entry; global instructions list only
+  // `construct` so user-scope Copilot exposes a single front door.
+
+  const listEntries = targetDir ? entries.filter((e) => !e.internal) : writeEntries;
+  const promptPathPrefix = targetDir ? ".github/prompts" : "~/.github/prompts";
+  const list = listEntries.map((e) => `- \`${adapterName(e)}\`: use \`${promptPathPrefix}/${adapterName(e)}.prompt.md\`.`).join("\n");
   const note = `## ${systemName.charAt(0).toUpperCase() + systemName.slice(1)} Agent Prompts
 
 Copilot does not expose true spawnable subagents. Use these reusable prompt profiles for role-specific passes:
 
-${list || "(all specialists are internal — use construct for all tasks)"}`;
-  writeFile(instructionsPath, replaceManagedBlock(existing, note, mdManagedStart, mdManagedEnd));
+${list || "(no front-door prompts to surface)"}`;
+
+  // User-managed file with the managed block carved out — never doc-stamp.
+
+  writeFile(instructionsPath, replaceManagedBlock(existing, note, mdManagedStart, mdManagedEnd), { stamp: false });
 }
 
 // --- VS Code adapter ---
@@ -838,13 +953,41 @@ function getVSCodeSettingsPaths() {
   return candidates.filter(fs.existsSync);
 }
 
-function syncVSCode() {
-  const settingsPaths = getVSCodeSettingsPaths();
-  if (settingsPaths.length === 0) return false;
-
+function syncVSCode(targetDir = null) {
   const registryMcp = registry.mcpServers ?? {};
   if (Object.keys(registryMcp).length === 0) return false;
 
+  // Project scope writes a dedicated `.vscode/mcp.json` (VS Code's documented
+  // workspace MCP config). Global scope mutates the user's `settings.json`
+  // under `github.copilot.mcpServers`, preserving any non-Construct entries.
+
+  if (targetDir) {
+    const mcpPath = path.join(targetDir, ".vscode", "mcp.json");
+    let config = { servers: {} };
+    if (fs.existsSync(mcpPath)) {
+      try { config = JSON.parse(fs.readFileSync(mcpPath, "utf8")) || { servers: {} }; }
+      catch { config = { servers: {} }; }
+    }
+    if (!config.servers) config.servers = {};
+    for (const [id, mcpDef] of Object.entries(registryMcp)) {
+      const existingEntry = config.servers[id];
+      const existing = JSON.stringify(existingEntry ?? "");
+      const hasPlaceholder = existing.includes("__");
+      const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
+      const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
+      const transportMismatch = registryWantsCommand && existingIsRemote;
+      if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
+      config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
+    }
+    if (!DRY_RUN) {
+      mkdirp(path.dirname(mcpPath));
+      fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
+    }
+    return true;
+  }
+
+  const settingsPaths = getVSCodeSettingsPaths();
+  if (settingsPaths.length === 0) return false;
   let synced = false;
   for (const settingsPath of settingsPaths) {
     try {
@@ -864,40 +1007,64 @@ function syncVSCode() {
       settings["github.copilot.mcpServers"] = mcpServers;
       if (!DRY_RUN) fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
       synced = true;
-    } catch {
-      // Skip unreadable settings files
-    }
+    } catch { /* unreadable settings file */ }
   }
   return synced;
 }
 
 // --- Cursor adapter ---
 
-function syncCursor() {
-  const cursorMcpPath = path.join(home, ".cursor", "mcp.json");
-  if (!fs.existsSync(cursorMcpPath)) return false;
-
+function syncCursor(targetDir = null) {
   const registryMcp = registry.mcpServers ?? {};
   if (Object.keys(registryMcp).length === 0) return false;
 
-  try {
-    const config = JSON.parse(fs.readFileSync(cursorMcpPath, "utf8"));
-    if (!config.mcpServers) config.mcpServers = {};
-    for (const [id, mcpDef] of Object.entries(registryMcp)) {
-      const existingEntry = config.mcpServers[id];
-      const existing = JSON.stringify(existingEntry ?? "");
-      const hasPlaceholder = existing.includes("__");
-      const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
-      const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
-      const transportMismatch = registryWantsCommand && existingIsRemote;
-      if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
-      config.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
-    }
-    if (!DRY_RUN) fs.writeFileSync(cursorMcpPath, JSON.stringify(config, null, 2) + "\n");
-    return true;
-  } catch {
-    return false;
+  const cursorMcpPath = targetDir
+    ? path.join(targetDir, ".cursor", "mcp.json")
+    : path.join(home, ".cursor", "mcp.json");
+
+  // Global scope only updates Cursor's MCP config when the user has already
+  // initialized `~/.cursor/mcp.json`; we don't conjure user-scope config out
+  // of thin air. Project scope always writes — `.cursor/mcp.json` is the
+  // documented per-project mechanism and travels with the repo.
+
+  if (!targetDir && !fs.existsSync(cursorMcpPath)) return false;
+
+  let config = { mcpServers: {} };
+  if (fs.existsSync(cursorMcpPath)) {
+    try { config = JSON.parse(fs.readFileSync(cursorMcpPath, "utf8")) || { mcpServers: {} }; }
+    catch { return false; }
   }
+  if (!config.mcpServers) config.mcpServers = {};
+  for (const [id, mcpDef] of Object.entries(registryMcp)) {
+    const existingEntry = config.mcpServers[id];
+    const existing = JSON.stringify(existingEntry ?? "");
+    const hasPlaceholder = existing.includes("__");
+    const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
+    const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
+    const transportMismatch = registryWantsCommand && existingIsRemote;
+    if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
+    config.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
+  }
+  if (!DRY_RUN) {
+    mkdirp(path.dirname(cursorMcpPath));
+    fs.writeFileSync(cursorMcpPath, JSON.stringify(config, null, 2) + "\n");
+  }
+
+  // Project scope also emits a minimal `.cursor/rules/construct.mdc` so Cursor
+  // surfaces a rules entry describing Construct without polluting global rules
+  // (Cursor rules are always per-project by design).
+
+  if (targetDir) {
+    const rulesPath = path.join(targetDir, ".cursor", "rules", "construct.mdc");
+    if (!fs.existsSync(rulesPath)) {
+      const body = `---\ndescription: Construct front-door — invoke \`construct\` for orchestration\nalwaysApply: false\n---\n\nThis project uses Construct (\`@geraldmaron/construct\`) as the single agent\nentry point. Route work through the \`construct\` persona; specialists are\ninternal and dispatched by Construct itself.\n\nSee \`.claude/agents/\` for the registered agents in this project.\n`;
+      if (!DRY_RUN) {
+        mkdirp(path.dirname(rulesPath));
+        fs.writeFileSync(rulesPath, body);
+      }
+    }
+  }
+  return true;
 }
 
 // --- OpenCode adapter ---
@@ -918,14 +1085,28 @@ function opencodeTaskPermissions(entry) {
   };
 }
 
-function syncOpencode(entries) {
-  const configPath = findOpenCodeConfigPath();
-  if (!fs.existsSync(configPath)) return false;
-  const pluginsDir = path.join(home, ".config", "opencode", "plugins");
+function syncOpencode(entries, targetDir = null) {
+  // Project scope writes `.opencode/config.json` (OpenCode's documented
+  // per-project config layer, which shadows `~/.config/opencode/`). Global
+  // scope writes the user-level config and only when it already exists.
+
+  const configPath = targetDir
+    ? path.join(targetDir, ".opencode", "config.json")
+    : findOpenCodeConfigPath();
+  if (!targetDir && !fs.existsSync(configPath)) return false;
+  if (targetDir) mkdirp(path.dirname(configPath));
+
+  const pluginsDir = targetDir
+    ? path.join(targetDir, ".opencode", "plugins")
+    : path.join(home, ".config", "opencode", "plugins");
   const managedPluginPath = path.join(pluginsDir, "construct-fallback.js");
   const toolkitPluginPath = path.join(root, "platforms", "opencode", "plugins", "construct-fallback.js");
 
-  const { config } = readOpenCodeConfig();
+  const writeEntries = targetDir ? entries : globalEntries(entries);
+
+  const { config } = targetDir
+    ? { config: fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath, "utf8")) : {} }
+    : readOpenCodeConfig();
   if (!config.agent) config.agent = {};
   if (!Array.isArray(config.plugin)) config.plugin = [];
   config.plugin = config.plugin.filter((entry) => {
@@ -1009,18 +1190,21 @@ function syncOpencode(entries) {
     }
   }
 
-  // Remove stale agents that Construct manages.
+  // Sweep cx-* / orchestrator agents that fall outside the current write set.
+  // In global scope this also removes any `cx-*` left over from prior syncs.
+
   const prefixes = [agentPrefix];
   for (const key of Object.keys(config.agent)) {
     const isManaged = prefixes.some((p) => key.startsWith(p));
     const isOrchestrator = registry.orchestrator?.name === key;
-    if ((isManaged || isOrchestrator) && !entries.find((e) => adapterName(e) === key)) {
+    if ((isManaged || isOrchestrator) && !writeEntries.find((e) => adapterName(e) === key)) {
       delete config.agent[key];
     }
   }
 
-  // Write agents — no model/modelFallback set; agents inherit the global model
-  for (const entry of entries) {
+  // Write agents — no model/modelFallback set; agents inherit the global model.
+
+  for (const entry of writeEntries) {
     const name = adapterName(entry);
     const perms = opencodePermissions(entry);
     config.agent[name] = {
@@ -1059,12 +1243,16 @@ function syncOpencode(entries) {
 // --- Slash commands adapter ---
 
 function syncCommands(targetDir = null) {
+  // Slash commands describe project-shaped workflows (release, init, sync …)
+  // and belong with the repo so teammates pick them up via git. Project scope
+  // only — global scope is a no-op.
+
+  if (!targetDir) return 0;
+
   const sourceCommandsDir = path.join(root, "commands");
   if (!fs.existsSync(sourceCommandsDir)) return 0;
 
-  const claudeCommandsDir = targetDir
-    ? path.join(targetDir, ".claude", "commands")
-    : path.join(home, ".claude", "commands");
+  const claudeCommandsDir = path.join(targetDir, ".claude", "commands");
 
   let count = 0;
   for (const domain of fs.readdirSync(sourceCommandsDir, { withFileTypes: true })) {
@@ -1143,31 +1331,34 @@ function collectSkills() {
 }
 
 /**
- * Prefix prepended to every generated SKILL.md. The comment must survive
- * round-trips — it is the canonical signal that a file was produced by sync
- * and must not be hand-edited.
- */
-const SKILL_GENERATED_PREFIX = "# Generated by construct sync\n\n";
-
-/**
  * Write collected skills to both .claude/skills/ and .agents/skills/ in
- * SKILL.md directory format.
- *
- * Idempotency: content written is deterministic; writing the same content
- * twice is a no-op because writeFile skips unchanged files in dry-run mode
- * and two-phase staging in normal mode produces identical results.
+ * SKILL.md directory format. Each file gets Anthropic Agent Skills frontmatter
+ * (name + description) so the loader can index it. Doc-stamping is opted out
+ * — a doc-stamp YAML block before the real frontmatter produces double-
+ * frontmatter the loader can't parse.
  */
-function syncSkills() {
+function syncSkills(targetDir = null) {
+  // Skills are project content — they describe domain knowledge a team shares,
+  // not a user's personal default. Global scope writes nothing; project scope
+  // writes to `<project>/.claude/skills/` (the documented Anthropic Agent
+  // Skills path).
+
+  if (!targetDir) return 0;
+
   const skills = collectSkills();
   if (skills.length === 0) return 0;
 
-  const claudeSkillsDir = path.join(home, ".claude", "skills");
-  const agentsSkillsDir = path.join(home, ".agents", "skills");
+  const claudeSkillsDir = path.join(targetDir, ".claude", "skills");
 
   for (const { name, content } of skills) {
-    const generated = `${SKILL_GENERATED_PREFIX}${content}`;
-    writeFile(path.join(claudeSkillsDir, name, "SKILL.md"), generated);
-    writeFile(path.join(agentsSkillsDir, name, "SKILL.md"), generated);
+    const frontmatter = buildSkillFrontmatter(name, content);
+
+    // Strip any existing frontmatter from the source body so we don't emit two
+    // blocks if a hand-authored skill already carries one.
+
+    const body = stripLeadingFrontmatter(content);
+    const generated = `${frontmatter}\n${body}`;
+    writeFile(path.join(claudeSkillsDir, name, "SKILL.md"), generated, { stamp: false });
   }
 
   return skills.length;
@@ -1175,7 +1366,6 @@ function syncSkills() {
 
 // --- Main ---
 
-const projectDir = process.argv.includes("--project") ? process.cwd() : null;
 const entries = buildEntries();
 
 if (COMPRESS_PERSONAS) {
@@ -1211,16 +1401,30 @@ acquireLock();
 try {
   if (projectDir) {
     syncClaude(entries, projectDir);
+    syncCodex(entries, projectDir);
+    syncCopilot(entries, projectDir);
+    const opencodeOk = syncOpencode(entries, projectDir);
+    const vscodeOk = syncVSCode(projectDir);
+    const cursorOk = syncCursor(projectDir);
     const cmdCount = syncCommands(projectDir);
+    const skillCount = syncSkills(projectDir);
+
     if (DRY_RUN) {
       printDryRunDiff();
     } else {
       commitStaging();
-      console.log(`Synced ${entries.length} agents + ${cmdCount} commands to ${path.join(projectDir, ".claude/")} (project mode).`);
+      const targets = [
+        "Claude Code",
+        "Codex",
+        "Copilot",
+        opencodeOk && "OpenCode",
+        vscodeOk && "VS Code",
+        cursorOk && "Cursor",
+      ].filter(Boolean).join(", ");
+      console.log(`Synced ${entries.length} agents + ${cmdCount} commands + ${skillCount} skills to ${path.relative(process.cwd(), projectDir) || "."} (project mode → ${targets}).`);
     }
   } else {
     const personaCount = entries.filter((e) => e.isOrchestrator).length;
-    const specialistCount = entries.filter((e) => !e.isOrchestrator).length;
 
     syncCodex(entries);
     syncClaude(entries);
@@ -1228,14 +1432,13 @@ try {
     const opencodeOk = syncOpencode(entries);
     const vscodeOk = syncVSCode();
     const cursorOk = syncCursor();
-    const cmdCount = syncCommands();
-    const skillCount = syncSkills();
+    syncCommands();
+    syncSkills();
 
     if (DRY_RUN) {
       printDryRunDiff();
     } else {
       commitStaging();
-
       const targets = [
         "Codex",
         "Claude Code",
@@ -1244,9 +1447,8 @@ try {
         vscodeOk && "VS Code",
         cursorOk && "Cursor",
       ].filter(Boolean).join(", ");
-      console.log(`Synced ${personaCount} orchestrator + ${specialistCount} specialists + ${cmdCount} commands + ${skillCount} skills to ${targets}.`);
+      console.log(`Synced ${personaCount} front-door agent to global scope (${targets}). Specialists, commands, and skills are project-only — run \`construct init\` inside a project to scaffold them.`);
 
-      // Regenerate shell completions so new commands are immediately tab-completable
       const completionsDir = generateCompletions();
       if (completionsDir) {
         console.log(`Completions updated → ${completionsDir}`);

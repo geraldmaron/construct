@@ -2,7 +2,12 @@
   "title": "CLI",
   "pages": [
     "index",
+    "core",
     "work",
-    "observability"
+    "models-and-integrations",
+    "integrations",
+    "observability",
+    "diagnostics",
+    "advanced"
   ]
 }

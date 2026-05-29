@@ -133,7 +133,11 @@ test('release gate (W1): no misleading "future implementation" wording in source
 
   // rg exit 0 means it found matches; 1 means clean.
   if (result.status === 0) {
-    const lines = result.stdout.split('\n').filter((line) => line && !line.includes('static/assets') && !line.includes('lib/comment-lint.mjs'));
+    const lines = result.stdout.split('\n').filter((line) => line
+      && !line.includes('static/assets')
+      && !line.includes('static/_next/')
+      && !line.includes('lib/comment-lint.mjs')
+    );
     assert.equal(lines.length, 0, `expected zero misleading-wording matches in source, got:\n${lines.join('\n')}`);
   }
 });

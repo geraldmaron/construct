@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -35,7 +35,7 @@ jobs:
         run: |
           node -e "
             const fs = require('fs');
-            const manifests = JSON.parse(fs.readFileSync('agents/role-manifests.json', 'utf8'));
+            const manifests = JSON.parse(fs.readFileSync('specialists/role-manifests.json', 'utf8'));
             const fence = (manifests.reviewer || manifests['cx-reviewer'])?.fence || {};
             console.log('::notice::cx-reviewer fence: ' + JSON.stringify(fence));
           "

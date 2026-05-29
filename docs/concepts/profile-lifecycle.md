@@ -50,7 +50,7 @@ Define the role set and how it connects to the existing cx-* registry.
 - Identify ambiguous handoffs. Name the orchestrator role.
 - Validate against the per-role flavor cap of 6.
 
-Acceptance: every declared role either exists in `agents/registry.json` or has a written scope statement.
+Acceptance: every declared role either exists in `specialists/registry.json` or has a written scope statement.
 
 ## Stage 4: validation (cx-evaluator)
 

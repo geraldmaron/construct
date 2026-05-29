@@ -49,6 +49,28 @@ function makeRepoCopy(t) {
       // when process.kill(N, 0) happens to find a live PID on the runner.
       if (hasPathSegment(rel, ".cx")) return false;
 
+      // `.claude/` is host-local Claude Code state that post-commit hooks mutate
+      // (sync-specialists writes ~/.claude/CLAUDE.md and the project .claude/agents
+      // catalog on every commit). cpSync's readdir → lstat is not atomic, so a
+      // racing write between those calls produces ENOENT mid-walk. The test sets
+      // HOME to a tmpdir and lets the harness rebuild .claude/ there.
+      if (hasPathSegment(rel, ".claude")) return false;
+
+      // `.beads/` carries an embedded dolt database that rotates internal
+      // manifest files (.beads/embeddeddolt/beads/.dolt/noms/nbs_manifest_*)
+      // whenever beads writes — same readdir → lstat race as above. The test
+      // does not need the beads DB; sync paths it exercises don't touch it.
+      if (hasPathSegment(rel, ".beads")) return false;
+
+      // apps/*/.next and apps/*/out are Next.js build output. The
+      // dashboard-build functional test runs `next build` in parallel and
+      // overwrites these trees, so cpSync's readdir → lstat races and
+      // throws ENOENT on apps/dashboard/.next/export-detail.json mid-walk.
+      // Sync paths under test don't read Next build artifacts.
+
+      if (hasPathSegment(rel, ".next")) return false;
+      if (hasPathSegment(rel, "out") && rel.startsWith("apps/")) return false;
+
       return true;
     },
   });
@@ -93,7 +115,11 @@ function runMcpRemove(id, { home, cwd, env = {} }) {
 
 function runSync({ home, cwd, env = {}, t }) {
   const repoRoot = makeRepoCopy(t);
-  execFileSync(process.execPath, ["scripts/sync-specialists.mjs"], {
+  // Tests in this file assert on user-scope OpenCode/Claude config, so opt
+  // into global mode explicitly. The repo copy carries a `.cx/` marker which
+  // would otherwise trigger auto-detected project mode.
+
+  execFileSync(process.execPath, ["scripts/sync-specialists.mjs", "--global"], {
     cwd: repoRoot,
     env: {
       ...process.env,

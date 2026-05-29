@@ -137,7 +137,7 @@ When `model` is set, it overrides the tier mapping for this specialist only. Use
 
 ## Track cost across providers
 
-`construct cost` aggregates token spend across all configured providers. The dashboard's Doctor page shows live per-persona burn. If you swap to a new provider, `construct optimize` can rebalance specialists to the new cost curve.
+`construct status --json | jq .sessionUsage` shows the local token and estimated-cost ledger across configured providers. The dashboard's Doctor page shows live per-persona burn. If you swap to a new provider, `construct optimize` can rebalance specialists to the new cost curve.
 
 ## What about embeddings?
 

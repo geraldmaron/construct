@@ -73,6 +73,13 @@ function resetSurfaces() {
   fs.rmSync(path.join(tmpHome, 'AppData'), { recursive: true, force: true });
 }
 
+/**
+ * Two-tier sync contract: user-scope holds only the `construct` front-door
+ * agent. cx-* specialists live with each project (`.claude/agents/cx-*.md`
+ * inside the repo), not under `~/.claude/agents/`. The parity check
+ * mirrors that contract — `writeAllSurfaces` therefore writes only
+ * `construct` plus any explicit extras passed in for drift testing.
+ */
 function writeAllSurfaces(extraAgents = []) {
   const claudeDir = path.join(tmpHome, '.claude', 'agents');
   fs.mkdirSync(claudeDir, { recursive: true });
@@ -87,7 +94,7 @@ function writeAllSurfaces(extraAgents = []) {
   const vscodeDir = getVsCodeUserDir(tmpHome);
   fs.mkdirSync(vscodeDir, { recursive: true });
 
-  const agentNames = ['cx-engineer', 'cx-security', 'construct', ...extraAgents];
+  const agentNames = ['construct', ...extraAgents];
   const agentObj = {};
   for (const name of agentNames) {
     fs.writeFileSync(path.join(claudeDir, `${name}.md`), 'stub');
@@ -128,47 +135,48 @@ describe('checkParity', () => {
     assert.equal(report.surfaces.find((s) => s.surface === 'cursor').status, 'ok');
   });
 
-  it('reports drift when an agent is missing from claude', () => {
+  it('reports drift when the construct front-door agent is missing from claude', () => {
     resetSurfaces();
     const claudeDir = path.join(tmpHome, '.claude', 'agents');
     fs.mkdirSync(claudeDir, { recursive: true });
-    fs.writeFileSync(path.join(claudeDir, 'cx-engineer.md'), 'stub');
-    fs.writeFileSync(path.join(claudeDir, 'construct.md'), 'stub');
+    // Empty user-scope agents dir — construct missing is drift.
 
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     const claude = report.surfaces.find((s) => s.surface === 'claude');
     assert.equal(claude.status, 'drift');
-    assert.deepEqual(claude.missing, ['cx-security']);
+    assert.deepEqual(claude.missing, ['construct']);
     assert.equal(report.ok, false);
   });
 
-  it('reports drift when opencode has an extra agent not in registry', () => {
+  it('reports drift when opencode has an extra cx-* agent at user scope', () => {
     resetSurfaces();
     const opencodeDir = path.join(tmpHome, '.config', 'opencode');
     fs.mkdirSync(opencodeDir, { recursive: true });
     fs.writeFileSync(
       path.join(opencodeDir, 'opencode.json'),
       JSON.stringify({
-        agent: { 'cx-engineer': {}, 'cx-security': {}, construct: {}, 'cx-orphan': {} },
+        // cx-engineer at user scope is now drift — it belongs in a project's
+        // .opencode/config.json, not the global one.
+
+        agent: { construct: {}, 'cx-engineer': {} },
       })
     );
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     const opencode = report.surfaces.find((s) => s.surface === 'opencode');
     assert.equal(opencode.status, 'drift');
-    assert.deepEqual(opencode.extra, ['cx-orphan']);
+    assert.deepEqual(opencode.extra, ['cx-engineer']);
   });
 
-  it('reports drift when copilot is missing a prompt', () => {
+  it('reports drift when copilot user-scope prompts are missing the construct front-door', () => {
     resetSurfaces();
     const promptsDir = path.join(tmpHome, '.github', 'prompts');
     fs.mkdirSync(promptsDir, { recursive: true });
-    fs.writeFileSync(path.join(promptsDir, 'cx-engineer.prompt.md'), 'stub');
-    fs.writeFileSync(path.join(promptsDir, 'construct.prompt.md'), 'stub');
+    // No construct.prompt.md — that's drift under the new contract.
 
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     const copilot = report.surfaces.find((s) => s.surface === 'copilot');
     assert.equal(copilot.status, 'drift');
-    assert.deepEqual(copilot.missing, ['cx-security']);
+    assert.deepEqual(copilot.missing, ['construct']);
   });
 
   it('reports drift when vscode mcp settings are missing a managed server', () => {
@@ -201,25 +209,24 @@ describe('checkParity', () => {
     assert.deepEqual(cursor.extra, ['orphan']);
   });
 
-  it('reports drift when codex is missing an agent', () => {
+  it('reports drift when codex user-scope is missing the construct front-door', () => {
     resetSurfaces();
     const codexDir = path.join(tmpHome, '.codex', 'agents');
     fs.mkdirSync(codexDir, { recursive: true });
-    fs.writeFileSync(path.join(codexDir, 'cx-engineer.toml'), 'name = "cx-engineer"\n');
-    fs.writeFileSync(path.join(codexDir, 'construct.toml'), 'name = "construct"\n');
+    // No construct.toml — drift under the two-tier contract.
 
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     const codex = report.surfaces.find((s) => s.surface === 'codex');
     assert.equal(codex.status, 'drift');
-    assert.deepEqual(codex.missing, ['cx-security']);
+    assert.deepEqual(codex.missing, ['construct']);
     assert.equal(report.ok, false);
   });
 
-  it('reports drift when codex has an extra agent not in registry', () => {
+  it('reports drift when codex user-scope has an extra cx-* agent', () => {
     resetSurfaces();
     const codexDir = path.join(tmpHome, '.codex', 'agents');
     fs.mkdirSync(codexDir, { recursive: true });
-    for (const f of ['cx-engineer.toml', 'cx-security.toml', 'construct.toml', 'cx-orphan.toml']) {
+    for (const f of ['construct.toml', 'cx-orphan.toml']) {
       fs.writeFileSync(path.join(codexDir, f), `name = "${f.replace('.toml', '')}"\n`);
     }
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
@@ -228,12 +235,11 @@ describe('checkParity', () => {
     assert.deepEqual(codex.extra, ['cx-orphan']);
   });
 
-  it('copilot parity uses the same internal-flag rule as Claude/OpenCode/Codex (regression for false-drift)', () => {
-    // Pre-fix bug: checkCopilot uniquely dropped entries with internal:true
-    // from its expected set while sync writes all 29 to disk. That produced
-    // "extra: cx-*" drift for every internal specialist. The fix routes
-    // copilot through entriesForSurface, the same helper the other surfaces
-    // use. This test would have failed under the old code.
+  it('copilot user-scope parity expects only the construct prompt (two-tier contract)', () => {
+    // Under the new contract, internal:true on a specialist has no effect at
+    // user scope — cx-* prompts never land at ~/.github/prompts/ regardless
+    // of the internal flag. The orchestrator alone is expected.
+
     resetSurfaces();
     const registryWithInternal = {
       ...FIXTURE_REGISTRY,
@@ -250,7 +256,12 @@ describe('checkParity', () => {
     fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
   });
 
-  it('respects entry.platforms allowlist when set', () => {
+  it('entry.platforms allowlist still excludes a specialist from off-list surfaces', () => {
+    // Even at project scope (not exercised here), a `platforms: ['claude']`
+    // specialist must not land in opencode/codex/copilot. At user scope only
+    // the construct front-door is expected — adding cx-* of any kind is
+    // drift regardless of platform allowlist.
+
     resetSurfaces();
     fs.writeFileSync(
       path.join(tmpRoot, 'specialists', 'registry.json'),
@@ -262,22 +273,10 @@ describe('checkParity', () => {
         ],
       })
     );
-    const claudeDir = path.join(tmpHome, '.claude', 'agents');
-    fs.mkdirSync(claudeDir, { recursive: true });
-    for (const f of ['cx-engineer.md', 'cx-security.md', 'cx-claude-only.md', 'construct.md']) {
-      fs.writeFileSync(path.join(claudeDir, f), 'stub');
-    }
-    const opencodeDir = path.join(tmpHome, '.config', 'opencode');
-    fs.mkdirSync(opencodeDir, { recursive: true });
-    fs.writeFileSync(
-      path.join(opencodeDir, 'opencode.json'),
-      JSON.stringify({
-        agent: { 'cx-engineer': {}, 'cx-security': {}, construct: {} },
-      })
-    );
+    writeAllSurfaces();
 
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
-    assert.equal(report.ok, true, `parity should be ok; got ${JSON.stringify(report.summary)}`);
+    assert.equal(report.ok, true, `parity should be ok with only construct at user scope; got ${JSON.stringify(report.summary)}`);
 
     fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
   });

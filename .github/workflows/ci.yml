@@ -30,7 +30,7 @@ jobs:
       templates: ${{ steps.filter.outputs.templates }}
       workflow: ${{ steps.filter.outputs.workflow }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -44,7 +44,7 @@ jobs:
               - 'lib/**'
               - 'tests/**'
               - 'scripts/**'
-              - 'agents/**'
+              - 'specialists/**'
               - 'profiles/**'
               - 'schemas/**'
               - 'package.json'
@@ -52,9 +52,9 @@ jobs:
               - 'db/schema/**'
             retrieval:
               - 'lib/storage/**'
-              - 'lib/agent-contracts.mjs'
-              - 'lib/agent-contracts-enforce.mjs'
-              - 'agents/contracts.json'
+              - 'lib/specialist-contracts.mjs'
+              - 'lib/specialist-contracts-enforce.mjs'
+              - 'specialists/contracts.json'
               - 'db/schema/**'
               - 'tests/retrieval*.test.mjs'
               - 'tests/engine-eval-retrieval.test.mjs'
@@ -64,8 +64,8 @@ jobs:
               - 'package.json'
               - 'package-lock.json'
             agents:
-              - 'agents/**'
-              - 'lib/agents/**'
+              - 'specialists/**'
+              - 'lib/specialists/**'
               - 'skills/**'
               - 'rules/**'
               - 'templates/**'
@@ -101,7 +101,7 @@ jobs:
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
@@ -124,7 +124,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v6
@@ -152,7 +152,13 @@ jobs:
         run: node ./bin/construct docs:update --check
       - name: dashboard bundle drift
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
-        run: node ./bin/construct dashboard:sync --check
+        # Build + copy + parity check in one shot via the construct CLI.
+        # Same command runs in .beads/hooks/pre-push and the Claude Code
+        # pre-push-gate.mjs hook locally — tests/ci-parity.test.mjs asserts
+        # the three invocations stay identical. Earlier the step ran
+        # `build:next` (next build only, no copy to lib/server/static/)
+        # which always tripped --check on fresh CI checkouts.
+        run: node ./bin/construct dashboard:sync --build
       - name: gates audit
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         env:
@@ -180,7 +186,7 @@ jobs:
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -195,19 +201,24 @@ jobs:
     needs: changes
     if: needs.changes.outputs.deps == 'true' || needs.changes.outputs.workflow == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: 22
       - run: npm ci --ignore-scripts
       - name: npm audit (high+ only)
-        run: npm audit --omit=dev --audit-level=high
+        # Scope to root deps only. Workspace packages (apps/docs, apps/dashboard,
+        # packages/cx-ui) are build-time tooling for the docs site and dashboard,
+        # not runtime deps of the published @geraldmaron/construct CLI. Their
+        # advisories are tracked separately; this gate guards the npm-published
+        # surface. Mirrors the pre-push gate in lib/hooks/pre-push-gate.mjs.
+        run: npm audit --omit=dev --audit-level=high --workspaces=false
 
   secret-scan:
     name: secret scanning
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: gitleaks
@@ -235,7 +246,7 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -256,3 +267,71 @@ jobs:
             console.log('migrations skipped:', result.skipped);
           } finally { await sql.end(); }
           "
+      - name: Postgres + vector roundtrip tests
+        run: node --test --test-timeout=120000 tests/functional/postgres-roundtrip.functional.test.mjs tests/functional/vector-roundtrip.functional.test.mjs
+
+  dashboard-integration:
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+    name: dashboard server + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Dashboard build
+        run: node --test --test-timeout=180000 tests/functional/dashboard-build.functional.test.mjs
+      - name: Dashboard server endpoint + auth + SSE tests
+        run: node --test --test-timeout=60000 tests/functional/dashboard/*.functional.test.mjs
+
+  live-llm-tests:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    name: live LLM via OpenRouter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Specialist + tier tests against OpenRouter
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "OPENROUTER_API_KEY not set; skipping live-LLM job"
+            exit 0
+          fi
+          node --test --test-timeout=180000 tests/functional/llm/*.functional.test.mjs
+
+  # Aggregator job. Branch protection requires `ci-required` instead of the
+  # individual conditional jobs above. This always runs, sees the result of
+  # every needed job (success / skipped / failure / cancelled), and fails only
+  # when any need actually failed or was cancelled. Skipped is treated as a
+  # pass because path filters intentionally skip work that isn't relevant
+  # (e.g. test job skips on doc-only PRs).
+  ci-required:
+    name: ci-required
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [changes, test, lint, evals, audit, secret-scan, postgres-integration, dashboard-integration]
+    steps:
+      - name: Verify required jobs passed or skipped
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS_JSON"
+          failed=$(echo "$NEEDS_JSON" | jq -r 'to_entries
+            | map(select(.value.result == "failure" or .value.result == "cancelled"))
+            | map(.key)
+            | join(", ")')
+          if [ -n "$failed" ]; then
+            echo "Failed or cancelled required jobs: $failed"
+            exit 1
+          fi
+          echo "All required jobs passed or skipped cleanly."

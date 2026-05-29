@@ -77,7 +77,7 @@ construct embed approvals
 
 ## Dashboard notifications
 
-Every job action emits a toast notification in the dashboard (`construct serve`). Notifications are typed: `info`, `success`, `warning`, `error`.
+Every job action emits a toast notification in the dashboard started by `construct dev`. Notifications are typed: `info`, `success`, `warning`, `error`.
 
 To also receive embed notifications in Slack, set a webhook URL in `~/.construct/config.env`:
 
@@ -116,4 +116,4 @@ export CX_DATA_DIR=/mnt/construct-data
 construct embed start
 ```
 
-See [how-to-cx-data-dir.md](how-to-cx-data-dir.md) for details.
+See [Override the storage root](./override-storage-root.md) for details.
