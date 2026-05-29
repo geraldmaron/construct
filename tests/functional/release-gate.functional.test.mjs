@@ -8,7 +8,8 @@
  * workstream PRs merge and progressively activate as each lands.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
@@ -34,10 +35,20 @@ test('release gate: construct --version exits 0 and reports the package version'
 });
 
 test('release gate: construct doctor exits 0 (warnings allowed, no failures)', () => {
-  const result = run(['doctor']);
-  assert.equal(result.status, 0, `doctor exited ${result.status}; stderr: ${result.stderr}`);
-  const failedMatch = result.stdout.match(/(\d+)\s+failed/);
-  assert.ok(!failedMatch || failedMatch[1] === '0', `expected 0 failed checks, got: ${failedMatch?.[0]}`);
+  // Doctor reads real user-scope state (~/.claude, ~/.codex, ~/.github, ~/.cx).
+  // Without HOME isolation the test inherits whatever the dev box happens to
+  // have — including legacy v1.0.10 cx-* files left by an older installed
+  // Construct that the test suite itself regenerates via mid-run sync. Same
+  // isolation pattern as tests/sync-contract.test.mjs:43-78.
+  const tmpHome = mkdtempSync(join(tmpdir(), 'release-gate-doctor-'));
+  try {
+    const result = run(['doctor'], { env: { HOME: tmpHome } });
+    assert.equal(result.status, 0, `doctor exited ${result.status}; stderr: ${result.stderr}`);
+    const failedMatch = result.stdout.match(/(\d+)\s+failed/);
+    assert.ok(!failedMatch || failedMatch[1] === '0', `expected 0 failed checks, got: ${failedMatch?.[0]}`);
+  } finally {
+    rmSync(tmpHome, { recursive: true, force: true });
+  }
 });
 
 test('release gate: construct docs:verify is clean', () => {

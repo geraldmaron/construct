@@ -148,23 +148,24 @@ describe('checkParity', () => {
     assert.equal(report.ok, false);
   });
 
-  it('reports drift when opencode has an extra cx-* agent at user scope', () => {
+  it('reports drift when opencode has a non-registry cx-* agent at user scope', () => {
     resetSurfaces();
     const opencodeDir = path.join(tmpHome, '.config', 'opencode');
     fs.mkdirSync(opencodeDir, { recursive: true });
     fs.writeFileSync(
       path.join(opencodeDir, 'opencode.json'),
       JSON.stringify({
-        // cx-engineer at user scope is now drift — it belongs in a project's
-        // .opencode/config.json, not the global one.
+        // cx-orphan isn't in the fixture registry — it's genuine drift, not a
+        // legacy v1.0.10 install. (Registry-known cx-* extras are soft-warned
+        // as legacy-install; see the dedicated test further down.)
 
-        agent: { construct: {}, 'cx-engineer': {} },
+        agent: { construct: {}, 'cx-orphan': {} },
       })
     );
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     const opencode = report.surfaces.find((s) => s.surface === 'opencode');
     assert.equal(opencode.status, 'drift');
-    assert.deepEqual(opencode.extra, ['cx-engineer']);
+    assert.deepEqual(opencode.extra, ['cx-orphan']);
   });
 
   it('reports drift when copilot user-scope prompts are missing the construct front-door', () => {
@@ -279,5 +280,35 @@ describe('checkParity', () => {
     assert.equal(report.ok, true, `parity should be ok with only construct at user scope; got ${JSON.stringify(report.summary)}`);
 
     fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
+  });
+
+  it('reclassifies drift to legacy-install when all extras are known cx-* specialists', () => {
+    // Simulates a dev box mid-upgrade from v1.0.10 (which populated cx-*
+    // specialists at user scope) to v1.0.13+ (project scope only). Extras
+    // are all from the registry's specialist roster — soft-warn, not drift,
+    // and overall parity stays ok so the gate doesn't hard-fail.
+
+    resetSurfaces();
+    writeAllSurfaces(['cx-engineer', 'cx-security']);
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    assert.equal(report.ok, true, `legacy install should not hard-fail; got ${JSON.stringify(report.summary)}`);
+    const claude = report.surfaces.find((s) => s.surface === 'claude');
+    assert.equal(claude.status, 'legacy-install');
+    assert.deepEqual(claude.extra.sort(), ['cx-engineer', 'cx-security']);
+    assert.match(report.summary.join('\n'), /legacy v1\.0\.10 install/);
+    assert.match(report.summary.join('\n'), /--fix-legacy-agents/);
+  });
+
+  it('keeps real drift hard-failing when an extra is not in the legacy roster', () => {
+    // The soft-warn fires only when *every* extra matches a registry cx-*
+    // name. A single unknown name (typo, user-authored extension) flips
+    // back to hard fail.
+
+    resetSurfaces();
+    writeAllSurfaces(['cx-engineer', 'cx-unknown-thing']);
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    assert.equal(report.ok, false, `mixed legacy + unknown should still hard-fail; got ${JSON.stringify(report.summary)}`);
+    const claude = report.surfaces.find((s) => s.surface === 'claude');
+    assert.equal(claude.status, 'drift');
   });
 });
