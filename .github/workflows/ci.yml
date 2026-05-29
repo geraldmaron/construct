@@ -14,6 +14,13 @@ on:
     # Weekly secret scan on Monday 08:00 UTC — catches regressions in merged code
     - cron: '0 8 * * 1'
 
+# Cancel superseded runs on PR pushes (saves runner minutes when a contributor
+# force-pushes several times in a minute). Pushes to main are never cancelled —
+# every merged commit gets its own complete run for audit + release purposes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # Compute per-target outputs so each downstream job only runs when files
   # in its scope changed. Saves CI minutes for doc-only PRs and avoids
