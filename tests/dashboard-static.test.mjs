@@ -20,10 +20,10 @@ function writeFile(rootDir, relPath, content) {
   fs.writeFileSync(fullPath, content);
 }
 
-test('syncDashboardStatic copies dashboard dist into server static and removes stale files', () => {
+test('syncDashboardStatic copies apps/dashboard/out into server static and removes stale files', () => {
   const rootDir = tempDir('construct-dashboard-static-');
-  writeFile(rootDir, 'dashboard/dist/index.html', '<html>ok</html>');
-  writeFile(rootDir, 'dashboard/dist/assets/app.js', 'console.log("ok");');
+  writeFile(rootDir, 'apps/dashboard/out/index.html', '<html>ok</html>');
+  writeFile(rootDir, 'apps/dashboard/out/assets/app.js', 'console.log("ok");');
   writeFile(rootDir, 'lib/server/static/stale.txt', 'old');
 
   const result = syncDashboardStatic({ rootDir });
@@ -37,7 +37,7 @@ test('syncDashboardStatic copies dashboard dist into server static and removes s
 
 test('syncDashboardStatic --check reports drift without writing files', () => {
   const rootDir = tempDir('construct-dashboard-check-');
-  writeFile(rootDir, 'dashboard/dist/index.html', '<html>new</html>');
+  writeFile(rootDir, 'apps/dashboard/out/index.html', '<html>new</html>');
   writeFile(rootDir, 'lib/server/static/index.html', '<html>old</html>');
 
   const before = fs.readFileSync(path.join(rootDir, 'lib/server/static/index.html'), 'utf8');
@@ -49,9 +49,9 @@ test('syncDashboardStatic --check reports drift without writing files', () => {
   assert.equal(before, after);
 });
 
-test('getDashboardStaticStatus reports aligned trees when dist matches static', () => {
+test('getDashboardStaticStatus reports aligned trees when source matches static', () => {
   const rootDir = tempDir('construct-dashboard-status-');
-  writeFile(rootDir, 'dashboard/dist/index.html', '<html>ok</html>');
+  writeFile(rootDir, 'apps/dashboard/out/index.html', '<html>ok</html>');
   writeFile(rootDir, 'lib/server/static/index.html', '<html>ok</html>');
 
   const status = getDashboardStaticStatus({ rootDir });

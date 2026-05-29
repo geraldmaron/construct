@@ -93,6 +93,12 @@ Every code mutation runs through enforcement. No secrets committed, tests green,
 
 Construct gets smarter on its own. Every session ends with an automatic capture: tools used, files touched, what the final reply said. That goes into `.cx/observations/` and is searchable from the next session. See [`docs/concepts/learning-loops.mdx`](./docs/concepts/learning-loops.mdx) for what's wired, what's coming, and how to turn pieces off.
 
+## `.cx/` is local-only runtime state
+
+`construct init` writes a runtime state tree at `.cx/` inside the project root: observations, sessions, vector index, intake packets, task graphs, and traces. **It's local-only and must never be committed.** `construct init` adds `.cx/` to your project's `.gitignore` automatically (idempotent: it won't double-add if you already have it). Daily trace shards (`.cx/traces/<date>.jsonl`) cap at 100 MB and rotate to `<date>.<n>.jsonl` so a stray commit never crosses GitHub's single-file limit. Override the cap with `CONSTRUCT_TRACE_MAX_MB`.
+
+The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon.log`. That log rotates every minute at 50 MB and keeps 5 gzipped segments by default; override via `CONSTRUCT_EMBED_LOG_MAX_MB` and `CONSTRUCT_EMBED_LOG_MAX_SEGMENTS`.
+
 ## Core commands
 
 <!-- AUTO:commands -->
@@ -215,16 +221,16 @@ Construct gets smarter on its own. Every session ends with an automatic capture:
 <!-- AUTO:structure -->
 ```text
 construct/
-├── apps             User-facing apps shipped from this repo (e.g. apps/docs/, the Fumadocs docs site)
+├── apps             User-facing apps shipped from this repo (e.g. apps/docs/, the Next.js docs site)
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
 ├── config
-├── dashboard
 ├── db
 ├── deploy
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples
 ├── lib              Core runtime: CLI, hooks, MCP, status, sync, workflow
+├── packages
 ├── personas         Persona prompt definitions
 ├── platforms
 ├── profiles

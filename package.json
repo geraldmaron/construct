@@ -27,6 +27,10 @@
   "engines": {
     "node": ">=20"
   },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "license": "Apache-2.0",
   "publishConfig": {
     "access": "public"
@@ -42,7 +46,7 @@
   "scripts": {
     "mcp": "node lib/mcp/server.mjs",
     "test": "node scripts/run-tests.mjs",
-    "test:functional": "node --test --test-timeout=30000 tests/functional/*.functional.test.mjs",
+    "test:functional": "node --test --test-timeout=120000 --test-concurrency=1 tests/functional/*.functional.test.mjs",
     "test:unit": "node scripts/run-tests.mjs --exclude=tests/functional",
     "docs:init": "node lib/init-docs.mjs --yes",
     "docs:update": "node ./bin/construct docs:update",

@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   build:
-    name: build docs (Fumadocs)
+    name: build docs (Next.js)
     runs-on: ubuntu-latest
     if: vars.PAGES_ENABLED == 'true'
     steps:

@@ -19,15 +19,26 @@ import { traceDir } from '../lib/worker/trace.mjs';
 
 let projectRoot;
 let originalCwd;
+let originalHome;
 
 beforeEach(() => {
   projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-graph-'));
   originalCwd = process.cwd();
+  originalHome = process.env.HOME;
+  // Mark the tmpdir as a Construct project so intent-verifications,
+  // skill-calls, and friends write into <projectRoot>/.cx/ instead of
+  // leaking into the dev box's real ~/.cx/. Set HOME too so any cross-
+  // project writer fallback also lands in the sandbox.
+
+  fs.mkdirSync(path.join(projectRoot, '.cx'), { recursive: true });
+  process.env.HOME = projectRoot;
   process.chdir(projectRoot);
 });
 
 afterEach(() => {
   process.chdir(originalCwd);
+  if (originalHome === undefined) delete process.env.HOME;
+  else process.env.HOME = originalHome;
   fs.rmSync(projectRoot, { recursive: true, force: true });
 });
 

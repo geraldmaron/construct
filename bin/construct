@@ -416,10 +416,153 @@ async function cmdDoctor() {
     return;
   }
 
+  // --fix-* flags drive auto-remediation for legacy state left behind by
+  // pre-2.0 installs. Layer-2 update triggers (npm i -g postinstall, brew
+  // upgrade) normally handle this; --fix-* is the manual recovery path.
+  // --fix-all runs every available fix.
+
+  const wantsFixAll = args.includes('--fix-all') || args.includes('--fix');
+  const wantsFixGitignore = wantsFixAll || args.includes('--fix-gitignore');
+  const wantsFixLegacyAgents = wantsFixAll || args.includes('--fix-legacy-agents');
+  const wantsFixEmbedLog = wantsFixAll || args.includes('--fix-embed-log');
+  const wantsFixMigrateState = wantsFixAll || args.includes('--fix-migrate-state');
+
   const checks = [];
   const add = (label, pass, optional = false) => checks.push({ label, pass, optional });
   add('registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'registry.json')));
   add('sync-specialists.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs')));
+
+  // Dashboard static build output. The Next.js app under apps/dashboard
+  // emits a static export into lib/server/static/ via its postbuild script;
+  // an empty static dir means lib/server/index.mjs will serve 404s.
+
+  const dashboardIndex = path.join(ROOT_DIR, 'lib', 'server', 'static', 'index.html');
+  add('Dashboard built (lib/server/static/index.html)', fs.existsSync(dashboardIndex));
+
+  // Project .gitignore must cover .cx/. Auto-fix via --fix-gitignore.
+  // Only checks when cwd looks like a Construct project (has .cx/ or
+  // .construct/); non-project cwds get no warning.
+
+  const cwd = process.cwd();
+  const isProject = fs.existsSync(path.join(cwd, '.cx')) || fs.existsSync(path.join(cwd, '.construct'));
+  if (isProject) {
+    const giPath = path.join(cwd, '.gitignore');
+    const giContent = fs.existsSync(giPath) ? fs.readFileSync(giPath, 'utf8') : '';
+    const lines = giContent.split('\n').map((l) => l.trim());
+    const cxIgnored = lines.some((l) => l === '.cx' || l === '.cx/' || l === '.cx/**' || l === '*' || l === '**');
+    if (!cxIgnored && wantsFixGitignore) {
+      const prefix = giContent.length === 0 || giContent.endsWith('\n') ? '' : '\n';
+      fs.writeFileSync(giPath, giContent + `${prefix}\n# Construct runtime state — local-only, never source\n.cx/\n`, 'utf8');
+      println(`  fix: appended .cx/ to ${path.relative(cwd, giPath)}`);
+      add('Project .gitignore covers .cx/', true);
+    } else {
+      add('Project .gitignore covers .cx/' + (cxIgnored ? '' : ' (run `construct doctor --fix-gitignore` to add)'), cxIgnored);
+    }
+  }
+
+  // Legacy cx-* files at user scope. Layer-2 (npm postinstall, brew
+  // upgrade) sweeps these via `construct sync --global`; this check is
+  // the manual safety net. Counts files matching a registered specialist
+  // name across Claude / Codex / Copilot user-scope dirs.
+
+  const userHome = HOME;
+  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
+  const specialistSet = new Set((registry.specialists ?? []).map((s) => `cx-${s.name}`));
+  const legacyTargets = [
+    { dir: path.join(userHome, '.claude', 'agents'), ext: '.md' },
+    { dir: path.join(userHome, '.codex', 'agents'), ext: '.toml' },
+    { dir: path.join(userHome, '.github', 'prompts'), ext: '.prompt.md' },
+  ];
+  let legacyCount = 0;
+  for (const t of legacyTargets) {
+    if (!fs.existsSync(t.dir)) continue;
+    for (const f of fs.readdirSync(t.dir)) {
+      if (!f.endsWith(t.ext)) continue;
+      const base = f.slice(0, -t.ext.length);
+      if (specialistSet.has(base)) legacyCount++;
+    }
+  }
+  if (legacyCount > 0 && wantsFixLegacyAgents) {
+    const syncScript = path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs');
+    const result = spawnSync(process.execPath, [syncScript, '--global'], { stdio: 'pipe', encoding: 'utf8' });
+    if (result.status === 0) {
+      println(`  fix: swept ${legacyCount} legacy cx-* file(s) from user scope via construct sync --global`);
+      add('No legacy cx-* files at user scope', true);
+    } else {
+      add(`Legacy cx-* sweep failed: ${result.stderr?.substring(0, 200)}`, false);
+    }
+  } else {
+    add(
+      legacyCount === 0
+        ? 'No legacy cx-* files at user scope'
+        : `Legacy cx-* files at user scope: ${legacyCount} (run \`construct doctor --fix-legacy-agents\` to sweep)`,
+      legacyCount === 0,
+    );
+  }
+
+  // Embed daemon log size. The daemon's own scheduler rotates every
+  // minute at 50MB, but a freshly-upgraded install with a 34GB legacy
+  // log shouldn't wait 60s. --fix-embed-log forces rotation now.
+
+  const embedLogPath = path.join(userHome, '.cx', 'runtime', 'embed-daemon.log');
+  if (fs.existsSync(embedLogPath)) {
+    const sizeMb = fs.statSync(embedLogPath).size / 1024 / 1024;
+    const FORCE_THRESHOLD_MB = Number(process.env.CONSTRUCT_DOCTOR_EMBED_LOG_FORCE_MB) || 500;
+    if (sizeMb > FORCE_THRESHOLD_MB && wantsFixEmbedLog) {
+      const { rotateIfOversized } = await import('../lib/logging/rotate.mjs');
+      println(`  fix: rotating ${sizeMb.toFixed(0)}MB embed-daemon.log (gzipping may take a moment)…`);
+      const start = Date.now();
+      const seg = await rotateIfOversized(embedLogPath, { maxBytes: 1, maxSegments: 5, gzip: true });
+      const elapsed = ((Date.now() - start) / 1000).toFixed(0);
+      println(`  fix: rotated to ${path.basename(seg)} in ${elapsed}s`);
+      add('Embed daemon log size sane', true);
+    } else {
+      const label = sizeMb > FORCE_THRESHOLD_MB
+        ? `Embed daemon log oversized: ${sizeMb.toFixed(0)}MB (run \`construct doctor --fix-embed-log\` to rotate now)`
+        : `Embed daemon log size: ${sizeMb.toFixed(1)}MB`;
+      add(label, sizeMb <= FORCE_THRESHOLD_MB);
+    }
+  }
+
+  // Legacy ~/.cx/<project-scoped>.jsonl files left over from before the
+  // cross-project state isolation refactor. Four files moved from user
+  // scope to <project>/.cx/: contract-violations, audit-reads, agent-log,
+  // intent-verifications. Pre-refactor data still sits at ~/.cx/ where it
+  // mixed every project together. --fix-migrate-state archives them to
+  // ~/.cx/legacy/<name>.<ts>.jsonl so the new writers start fresh; the
+  // legacy data stays readable for forensics.
+
+  const projectScopedNames = [
+    'contract-violations.jsonl',
+    'audit-reads.jsonl',
+    'agent-log.jsonl',
+    'intent-verifications.jsonl',
+  ];
+  const legacyState = projectScopedNames
+    .map((name) => ({ name, path: path.join(userHome, '.cx', name) }))
+    .filter((p) => fs.existsSync(p.path) && fs.statSync(p.path).size > 0);
+
+  if (legacyState.length > 0 && wantsFixMigrateState) {
+    const archiveDir = path.join(userHome, '.cx', 'legacy');
+    fs.mkdirSync(archiveDir, { recursive: true });
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const moved = [];
+    for (const { name, path: src } of legacyState) {
+      const dest = path.join(archiveDir, `${name.replace('.jsonl', '')}.${ts}.jsonl`);
+      fs.renameSync(src, dest);
+      moved.push(path.basename(dest));
+    }
+    println(`  fix: archived ${moved.length} legacy user-scope file(s) to ~/.cx/legacy/`);
+    for (const m of moved) println(`         → ${m}`);
+    add('No legacy user-scope project-state files', true);
+  } else {
+    add(
+      legacyState.length === 0
+        ? 'No legacy user-scope project-state files'
+        : `Legacy user-scope project-state files: ${legacyState.length} (run \`construct doctor --fix-migrate-state\` to archive)`,
+      legacyState.length === 0,
+    );
+  }
 
   // Tier model selection. Construct ships with no default — at least
   // one tier must be configured (registry.json primary OR CX_MODEL_*
