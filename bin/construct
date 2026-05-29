@@ -1826,6 +1826,10 @@ async function printIntakeHelp() {
   println('  construct intake done <id> [--notes=…] [--output=<path>] [--no-output=<rejected|deferred|merged>]');
   println('                                       Mark a pending packet processed. --output stamps intake_id + confidence into the artifact frontmatter (provenance).');
   println('  construct intake skip <id> [--reason=…]   Mark a pending packet skipped (preserves audit trail).');
+  println('  construct intake process [--dry-run] [--wait[=<sec>]]');
+  println('                                       One-shot inbox sweep — same logic the daemon runs, exits when the queue is empty.');
+  println('                                       Concurrency is controlled by a poll lock — fail-fast by default, --wait[=<sec>] blocks for up to N seconds.');
+  println('                                       --dry-run lists candidate inboxes without ingesting.');
   println('  construct intake reopen <id>         Move a processed or skipped packet back to pending.');
   println('  construct intake quarantine list             List packets held for human review (low confidence or close margin).');
   println('  construct intake quarantine show <id>        Show a quarantined packet with top-3 candidate types and margins.');
@@ -2093,6 +2097,10 @@ async function cmdIntake(args) {
     return await cmdIntakeIntegrate(id, args.slice(2), cwd);
   }
 
+  if (sub === 'process') {
+    return await cmdIntakeProcess(args.slice(1), cwd);
+  }
+
   if (sub === 'config') {
     return await cmdIntakeConfig(args.slice(1));
   }
@@ -2105,8 +2113,73 @@ async function cmdIntake(args) {
     return await cmdIntakeNeedsAsr(args.slice(1));
   }
 
-  errorln(`Unknown intake subcommand: ${sub}. Available: list, show, done, skip, reopen, quarantine, reroute, integrate, config, extraction-warnings, needs-asr`);
+  errorln(`Unknown intake subcommand: ${sub}. Available: list, show, done, skip, reopen, process, quarantine, reroute, integrate, config, extraction-warnings, needs-asr`);
   process.exit(1);
+}
+
+async function cmdIntakeProcess(args, cwd) {
+  const dryRun = args.includes('--dry-run');
+  const waitFlag = args.find((a) => a === '--wait' || a.startsWith('--wait='));
+  const { InboxWatcher, resolveInboxDirs } = await import('../lib/embed/inbox.mjs');
+
+  if (dryRun) {
+    const dirs = resolveInboxDirs(cwd, process.env);
+    if (dirs.length === 0) {
+      println('No inbox directories configured. Run `construct intake config` to add one.');
+      return;
+    }
+    println('Would scan:');
+    for (const d of dirs) println(`  ${d}`);
+    println('');
+    println('(dry-run — no files processed; re-run without --dry-run to actually ingest.)');
+    return;
+  }
+
+  // Concurrency is controlled by the intake poll lock inside
+  // InboxWatcher.poll. Default behavior is fail-fast: if the daemon (or
+  // another CLI invocation) is mid-poll, raise an actionable error rather
+  // than serializing silently. --wait[=<seconds>] opts into blocking for
+  // up to N seconds (default 30s when --wait is bare).
+
+  let waitMs = 0;
+  if (waitFlag) {
+    const m = /^--wait(?:=(\d+))?$/.exec(waitFlag);
+    const seconds = m && m[1] ? Number(m[1]) : 30;
+    waitMs = Math.max(0, seconds) * 1000;
+  }
+
+  const watcher = new InboxWatcher({ rootDir: cwd, env: process.env, cwd });
+  let result;
+  try {
+    result = await watcher.poll({ waitMs, actor: 'construct intake process' });
+  } catch (err) {
+    const { POLL_LOCK_BUSY } = await import('../lib/intake/poll-lock.mjs');
+    if (err && err.code === POLL_LOCK_BUSY) {
+      const holder = err.holder || {};
+      errorln('Another intake poll is in progress.');
+      errorln(`  holder: ${holder.actor || 'unknown'} (pid ${holder.pid})`);
+      errorln(`  started: ${holder.startedAt || 'unknown'}`);
+      errorln('');
+      errorln('Choose one:');
+      errorln('  construct intake process --wait        Block until the holder finishes (default 30s).');
+      errorln('  construct intake process --wait=<sec>  Block for a custom window.');
+      errorln('  construct down                          Stop background services, then retry.');
+      process.exit(2);
+    }
+    throw err;
+  }
+
+  println(`Processed: ${result.processed.length}`);
+  println(`Skipped (unchanged): ${result.skipped}`);
+  if (result.errors.length) {
+    println(`Errors: ${result.errors.length}`);
+    for (const e of result.errors) println(`  ${e.path}: ${e.error}`);
+  }
+  for (const item of result.processed) {
+    const note = item.needsAsr ? ' (queued for ASR)' : '';
+    println(`  + ${item.path}${note}`);
+  }
+  if (result.errors.length) process.exitCode = 1;
 }
 
 async function cmdIntakeQuarantine(args, cwd) {
