@@ -32,6 +32,7 @@ const EXPECTED_EVENTS = {
   'config.protection.violation': 'cx-security',
   'pr.merged.no-docs': 'cx-docs-keeper',
   'changelog.missing': 'cx-docs-keeper',
+  'document.stale': 'cx-docs-keeper',
   'readme.stale': 'cx-docs-keeper',
   'adr.requested': 'cx-architect',
   'arch.boundary.violated': 'cx-architect',
