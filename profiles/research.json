@@ -67,5 +67,12 @@
   "rebrand": {
     "intakeQueueLabel": "Research queue",
     "signalNoun": "question"
+  },
+  "capabilities": {
+    "intake": {
+      "inbox": true,
+      "dedup": "sha256",
+      "attribution": true
+    }
   }
 }

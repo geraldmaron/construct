@@ -126,5 +126,12 @@
   "rebrand": {
     "intakeQueueLabel": "R&D intake queue",
     "signalNoun": "signal"
+  },
+  "capabilities": {
+    "intake": {
+      "inbox": true,
+      "dedup": "sha256",
+      "attribution": true
+    }
   }
 }
