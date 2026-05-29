@@ -51,7 +51,7 @@ Example output:
 Pipe the service's stderr into any log aggregator that understands JSONL:
 
 ```bash
-construct up 2>&1 | tee /var/log/construct.log
+construct dev 2>&1 | tee /var/log/construct.log
 ```
 
 For structured queries (e.g. finding all `auth.fail` events):

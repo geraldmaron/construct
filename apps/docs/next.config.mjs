@@ -1,6 +1,8 @@
-import { createMDX } from 'fumadocs-mdx/next';
+import createMDX from '@next/mdx';
 
-const withMDX = createMDX();
+const withMDX = createMDX({
+  extension: /\.mdx?$/,
+});
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -9,6 +11,7 @@ const config = {
   basePath: process.env.DOCS_BASE_PATH || '',
   images: { unoptimized: true },
   trailingSlash: true,
+  pageExtensions: ['ts', 'tsx', 'md', 'mdx'],
 };
 
 export default withMDX(config);

@@ -53,7 +53,7 @@ Look for the Postgres check. If it fails:
 
 - Confirm Docker is running (for managed Postgres): `docker ps`
 - Confirm `DATABASE_URL` is set correctly in `~/.construct/config.env`
-- Start the managed database if it is not running: `construct up`
+- Start the managed services if they are not running: `construct dev`
 
 ## Step 5: Re-sync platform adapters
 

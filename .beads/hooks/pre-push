@@ -101,10 +101,12 @@ if [[ -f "package.json" ]]; then
       fail "construct docs:verify failed. Fix docs issues before pushing"
     fi
 
-    log "Construct: dashboard:sync --check"
-    if ! node ./bin/construct dashboard:sync --check >/dev/null 2>&1; then
-      fail "Dashboard bundle is out of sync. Run 'construct dashboard:sync' then commit"
-    fi
+    # Skip a dedicated dashboard build here: `npm test` (above) already runs
+    # tests/functional/dashboard-build.functional.test.mjs, which builds the
+    # dashboard end-to-end. Running a second `next build` races the first on
+    # apps/dashboard/.next/. CI runs `dashboard:sync --build` standalone
+    # (no shared test runner), so fresh checkouts still gate on the build.
+    # See tests/ci-parity.test.mjs for the asymmetry contract. # noparity
 
     log "Construct: lint:comments"
     if ! node ./bin/construct lint:comments 2>&1; then

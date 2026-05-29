@@ -17,17 +17,36 @@ import { describe, it, before, after, beforeEach } from 'node:test';
 
 let tmpHome;
 let logPath;
+let savedCwd;
+let savedHome;
 let enforcePacket, ContractViolationError, recentViolations;
+let _resetProjectRootCache;
 
 before(async () => {
-  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-enforce-'));
+  tmpHome = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'cx-enforce-')));
+  // chdir into tmpHome (which equals HOME) so the project-root walker
+  // returns null (it stops at $HOME) and the writer falls back to
+  // ~/.cx/contract-violations.jsonl — the legacy user-scope path this
+  // test asserts against. Without the chdir, the walker would find the
+  // construct repo's own .cx/ and route writes there.
+
+  savedCwd = process.cwd();
+  savedHome = process.env.HOME;
   process.env.HOME = tmpHome;
+  process.chdir(tmpHome);
   ({ enforcePacket, ContractViolationError, recentViolations } =
     await import('../lib/specialist-contracts-enforce.mjs'));
+  ({ _resetCache: _resetProjectRootCache } =
+    await import('../lib/project-root.mjs'));
+  _resetProjectRootCache();
   logPath = path.join(tmpHome, '.cx', 'contract-violations.jsonl');
 });
 
 after(() => {
+  process.chdir(savedCwd);
+  if (savedHome === undefined) delete process.env.HOME;
+  else process.env.HOME = savedHome;
+  _resetProjectRootCache?.();
   fs.rmSync(tmpHome, { recursive: true, force: true });
 });
 

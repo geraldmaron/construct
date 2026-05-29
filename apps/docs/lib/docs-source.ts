@@ -1,0 +1,237 @@
+/**
+ * docs-source.ts — single source of truth for the docs catalog.
+ *
+ * Walks repo-root `docs/` at build time, returns one record per .md / .mdx
+ * file: its slug path under the site root, its frontmatter (title +
+ * description), and the raw markdown content. The catch-all
+ * `app/[...slug]/page.tsx` uses this list to generate static params and
+ * resolve a given URL → MDX file. The sidebar builder uses it to assemble
+ * the editorial nav from `meta.json` files inside `docs/`.
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import matter from 'gray-matter';
+
+export const DOCS_ROOT = path.resolve(process.cwd(), '..', '..', 'docs');
+
+export type DocPage = {
+  slug: string[];
+  url: string;
+  filePath: string;
+  ext: 'md' | 'mdx';
+  title: string;
+  description?: string;
+  body: string;
+};
+
+export type DocMeta = {
+  dir: string;
+  title?: string;
+  pages?: string[];
+};
+
+const SKIP_DIRS = new Set([
+  'templates',
+  '_template',
+  'archive',
+  'meetings',
+  'memos',
+  'notes',
+  'incidents',
+  'prd',
+  'prds',
+  'audit',
+  'intake',
+  'rfc',
+  'rfcs',
+]);
+
+const SKIP_FILE_PATTERNS = [
+  /^_template/i,
+  /\.template\./i,
+];
+
+function shouldSkipFile(name: string): boolean {
+  return SKIP_FILE_PATTERNS.some((p) => p.test(name));
+}
+
+/**
+ * Plain Markdown allows constructs MDX rejects: HTML comments, autolinks
+ * (`<https://…>`), and placeholder syntax inside tables / inline text
+ * (`--target=<value>`). `.md` files were authored against CommonMark and
+ * shouldn't carry JSX, so we walk the body, leave fenced code blocks alone,
+ * and escape every `<` outside them. `.mdx` files are left untouched — their
+ * authors opted into MDX rules already.
+ */
+function sanitizePlainMarkdown(content: string): string {
+  let out = content.replace(/<!--[\s\S]*?-->/g, '');
+
+  const FENCE = /(^|\n)(```[^\n]*\n[\s\S]*?\n```)/g;
+  const segments: { text: string; isCode: boolean }[] = [];
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+  while ((match = FENCE.exec(out)) !== null) {
+    const start = match.index + match[1].length;
+    if (start > cursor) segments.push({ text: out.slice(cursor, start), isCode: false });
+    segments.push({ text: match[2], isCode: true });
+    cursor = start + match[2].length;
+  }
+  if (cursor < out.length) segments.push({ text: out.slice(cursor), isCode: false });
+
+  return segments.map((s) => (s.isCode ? s.text : s.text.replace(/</g, '\\<'))).join('');
+}
+
+function walk(dir: string, relParts: string[] = []): DocPage[] {
+  if (!fs.existsSync(dir)) return [];
+  const out: DocPage[] = [];
+
+  // Inventory entries first so we can prefer index.mdx > index.md > README.md
+  // when multiple candidates exist for the same URL.
+
+  const files: string[] = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name.startsWith('.') || SKIP_DIRS.has(entry.name)) continue;
+      out.push(...walk(fullPath, [...relParts, entry.name]));
+      continue;
+    }
+    if (!entry.isFile()) continue;
+    if (shouldSkipFile(entry.name)) continue;
+    const ext = path.extname(entry.name).slice(1);
+    if (ext !== 'md' && ext !== 'mdx') continue;
+    files.push(entry.name);
+  }
+
+  // Pick the lane-index file (if any). Preference: index.mdx > index.md >
+  // README.md. The losers are dropped — they would otherwise collide on the
+  // same URL and produce duplicate sidebar entries / React-key warnings.
+
+  const indexCandidates = ['index.mdx', 'index.md', 'README.md', 'readme.md'];
+  const chosenIndex = indexCandidates.find((c) => files.includes(c));
+  const droppedIndexes = indexCandidates.filter((c) => files.includes(c) && c !== chosenIndex);
+  const keep = files.filter((f) => !droppedIndexes.includes(f));
+
+  for (const name of keep) {
+    const fullPath = path.join(dir, name);
+    const ext = path.extname(name).slice(1) as 'md' | 'mdx';
+    const raw = fs.readFileSync(fullPath, 'utf8');
+    const { data, content } = matter(raw);
+
+    const base = name.replace(/\.mdx?$/, '');
+    const isLaneIndex = /^(readme|index)$/i.test(base);
+    const slug = isLaneIndex ? [...relParts] : [...relParts, base];
+
+    const title = (data.title as string)
+      || base.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    const description = (data.description as string) || undefined;
+
+    out.push({
+      slug,
+      url: slug.length === 0 ? '/' : '/' + slug.join('/'),
+      filePath: fullPath,
+      ext,
+      title,
+      description,
+      body: ext === 'md' ? sanitizePlainMarkdown(content) : content,
+    });
+  }
+  return out;
+}
+
+let cached: DocPage[] | null = null;
+
+export function listDocs(): DocPage[] {
+  if (cached) return cached;
+  cached = walk(DOCS_ROOT);
+  return cached;
+}
+
+export function getDocBySlug(slug: string[]): DocPage | undefined {
+  const target = '/' + slug.join('/');
+  return listDocs().find((d) => d.url === target);
+}
+
+/** Read the meta.json sidecar for a directory under docs/, if present. */
+export function readMeta(dir: string): DocMeta | null {
+  const metaPath = path.join(DOCS_ROOT, dir, 'meta.json');
+  if (!fs.existsSync(metaPath)) return null;
+  try {
+    const json = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+    return { dir, title: json.title, pages: Array.isArray(json.pages) ? json.pages : undefined };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build the sidebar nav from the docs tree + meta.json hints. The shape
+ * matches NavGroup so AppShell can render it without translation.
+ */
+export type SidebarItem = {
+  id: string;
+  title: string;
+  href: string;
+  external?: boolean;
+};
+
+export type SidebarSection = {
+  label: string;
+  href?: string;
+  items: SidebarItem[];
+};
+
+const SIDEBAR_LAYOUT: { label: string; dir: string }[] = [
+  { label: 'Start', dir: 'start' },
+  { label: 'Concepts', dir: 'concepts' },
+  { label: 'Cookbook', dir: 'cookbook' },
+  { label: 'Reference', dir: 'reference' },
+];
+
+export function buildSidebar(): SidebarSection[] {
+  const docs = listDocs();
+  const home: SidebarSection = {
+    label: 'Overview',
+    items: [{ id: 'home', title: 'Home', href: '/' }],
+  };
+
+  const sections: SidebarSection[] = [home];
+  for (const layout of SIDEBAR_LAYOUT) {
+    const laneRoot = '/' + layout.dir;
+
+    // Sidebar items = direct children of the lane only. Sub-pages nested
+    // more than one level under the lane (e.g. /reference/cli/advanced)
+    // live inside their parent's body, not the sidebar. The lane-index
+    // page itself becomes the group's clickable label, not a sibling item.
+
+    const inLane = docs.filter((d) => d.slug.length === 2 && d.slug[0] === layout.dir);
+    if (inLane.length === 0) continue;
+
+    const meta = readMeta(layout.dir);
+    const orderHint = meta?.pages ?? [];
+    const sorted = [...inLane].sort((a, b) => {
+      const aKey = a.slug[a.slug.length - 1] || 'index';
+      const bKey = b.slug[b.slug.length - 1] || 'index';
+      const aIdx = orderHint.indexOf(aKey);
+      const bIdx = orderHint.indexOf(bKey);
+      if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+      if (aIdx !== -1) return -1;
+      if (bIdx !== -1) return 1;
+      return a.title.localeCompare(b.title);
+    });
+
+    const laneIndex = docs.find((d) => d.url === laneRoot);
+
+    sections.push({
+      label: laneIndex?.title || meta?.title || layout.label,
+      href: laneIndex ? laneRoot : undefined,
+      items: sorted.map((d) => ({
+        id: d.slug.join('/'),
+        title: d.title,
+        href: d.url,
+      })),
+    });
+  }
+  return sections;
+}

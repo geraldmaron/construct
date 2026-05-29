@@ -127,7 +127,7 @@ function findSkillFile(agentName) {
     path.join(SKILLS_DIR, `${bare}.md`),
     path.join(SKILLS_DIR, `${agentName}.md`),
     path.join(ROOT_DIR, 'skills', 'roles', `${bare}.md`),
-    path.join(ROOT_DIR, 'agents', 'personas', `${agentName}.md`),
+    path.join(ROOT_DIR, 'specialists', 'prompts', `${agentName}.md`),
   ];
   return candidates.find((p) => fs.existsSync(p)) ?? null;
 }

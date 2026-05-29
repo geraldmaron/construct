@@ -28,7 +28,7 @@ status, and host adapter files. Exits non-zero on any failure.
 
 If `doctor` reports a failing check:
 - Missing config keys → edit `~/.construct/config.env`
-- Services not running → `construct up`
+- Services not running → `construct dev`
 - Host adapter stale → `construct sync`
 
 ---
@@ -87,11 +87,10 @@ corrupted stamps. Useful after bulk edits or merges.
 ## 5. Review costs
 
 ```bash
-construct cost --days=7
+construct status --json | jq .sessionUsage
 ```
 
-Check the cache read rate (target: >90%), per-agent cost share, and total estimated spend.
-If cache read rate is low, check that prompt caching is enabled for the active provider.
+Check token usage, cache read tokens, and total estimated spend. If cache read rate is low, check that prompt caching is enabled for the active provider.
 
 ```bash
 construct efficiency
@@ -146,7 +145,7 @@ audit stamps. Add `--json` for machine-readable output.
 
 ## References
 
-- `docs/architecture.md`: system overview, provider table, dashboard design
-- `docs/how-to/how-to-observability.md`: detail on review/optimize/cost/efficiency
-- `docs/how-to/how-to-providers.md`: model tier management
+- `docs/concepts/architecture.mdx`: system overview and runtime boundaries
+- `docs/cookbook/observability-and-cost.md`: detail on review/optimize/cost/efficiency
+- `docs/cookbook/manage-providers.md`: provider and model tier management
 - `rules/common/development-workflow.md`: docs update step (3.5)

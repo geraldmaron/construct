@@ -1,15 +1,22 @@
 import type { Config } from 'tailwindcss';
-import { createPreset } from 'fumadocs-ui/tailwind-plugin';
 
 const config: Config = {
   content: [
-    './app/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx,md,mdx}',
     './components/**/*.{ts,tsx}',
-    './mdx-components.{ts,tsx}',
-    '../../docs/**/*.{md,mdx}',
-    './node_modules/fumadocs-ui/dist/**/*.js',
+    './content/**/*.{ts,tsx,md,mdx}',
+    '../../packages/cx-ui/**/*.{ts,tsx,css}',
   ],
-  presets: [createPreset()],
+  darkMode: ['class', '[data-theme="dark"]'],
+  theme: {
+    extend: {
+      fontFamily: {
+        display: ['var(--font-display)', 'Newsreader', 'Georgia', 'serif'],
+        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
+    },
+  },
 };
 
 export default config;
