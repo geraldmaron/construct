@@ -39,8 +39,6 @@ jobs:
       - run: npm ci
       - name: Regenerate reference MDX from canonical sources
         run: node ./bin/construct docs:site
-      - name: Install docs site deps
-        run: npm --prefix apps/docs install
       - name: Build static site
         env:
           DOCS_BASE_PATH: /construct

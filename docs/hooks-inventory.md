@@ -43,7 +43,7 @@ Hook count target: ≤ 30 (see projection below).
 | `scan-secrets.mjs` | PostToolUse | 30 | Blocks edits containing real secret patterns (API keys, PEM, tokens) |
 | `config-protection.mjs` | PreToolUse | 5 | Blocks edits to protected config and meta-system files |
 | `edit-guard.mjs` | PreToolUse | 20 | Blocks Edit when old_string not found; warns on stale file hash |
-| `pre-push-gate.mjs` | PreToolUse | 30000 | Runs tests and build before git push |
+| `pre-push-gate.mjs` | PreToolUse | 5000 | Refuses claude/* pushes, blocks re-pushing a SHA CI just failed on, lints PR body on gh pr create/edit. CI runs tests/build/lint/audit. |
 | `mcp-health-check.mjs` | PreToolUse | 51 | Warns on calls to recently-failed MCP servers |
 | `dep-audit.mjs` | PostToolUse | 5000 | Runs vulnerability audit after dependency manifest edits |
 

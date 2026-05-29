@@ -492,12 +492,48 @@ async function cmdDoctor() {
       add(`Legacy cx-* sweep failed: ${result.stderr?.substring(0, 200)}`, false);
     }
   } else {
+    // Soft-warn instead of hard-fail: legacy v1.0.10 cx-* files are an
+    // expected upgrade-state, not real drift. The hint is what matters;
+    // the fix is one --fix-legacy-agents run away and CI never sees this.
+    // Mirrors the parity check's legacy-install reclassification.
+
     add(
       legacyCount === 0
         ? 'No legacy cx-* files at user scope'
         : `Legacy cx-* files at user scope: ${legacyCount} (run \`construct doctor --fix-legacy-agents\` to sweep)`,
-      legacyCount === 0,
+      true,
+      legacyCount !== 0,
     );
+  }
+
+  // Pre-push bypass frequency. Every honored CONSTRUCT_SKIP_PREPUSH /
+  // CONSTRUCT_ALLOW_CLAUDE_PUSH / CONSTRUCT_SKIP_PR_LINT writes a JSONL
+  // entry to ~/.construct/audit/prepush-bypass.log. Surfacing frequent
+  // usage here is the early warning that the gate is the wrong shape —
+  // the alternative is letting the bypass quietly become the default.
+
+  const bypassLogPath = path.join(userHome, '.construct', 'audit', 'prepush-bypass.log');
+  if (fs.existsSync(bypassLogPath)) {
+    try {
+      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const recent = fs.readFileSync(bypassLogPath, 'utf8')
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => { try { return JSON.parse(line); } catch { return null; } })
+        .filter((e) => e && Date.parse(e.ts) >= cutoff);
+      const BYPASS_WARN_THRESHOLD = Number(process.env.CONSTRUCT_DOCTOR_BYPASS_WARN) || 3;
+      if (recent.length >= BYPASS_WARN_THRESHOLD) {
+        add(
+          `Pre-push bypasses in last 7 days: ${recent.length} (gate may be wrong-sized — see ${bypassLogPath})`,
+          false,
+          true,
+        );
+      } else {
+        add(`Pre-push bypasses in last 7 days: ${recent.length}`, true);
+      }
+    } catch { /* audit log read is best-effort */ }
+  } else {
+    add('Pre-push bypass log not present (no bypasses honored yet)', true);
   }
 
   // Embed daemon log size. The daemon's own scheduler rotates every
@@ -847,7 +883,11 @@ async function cmdDoctor() {
     try {
       const { checkParity } = await import('../lib/parity.mjs');
       const parity = checkParity({ rootDir: ROOT_DIR, homeDir: HOME });
-      add(`Cross-surface adapter parity (${parity.summary.join(' · ')})`, parity.ok);
+      // Legacy-install rolls up to ok (so the gate doesn't hard-fail during
+      // a v1.0.10 → v1.0.13+ upgrade) but renders as a warning so the
+      // --fix-legacy-agents hint stays visible.
+      const hasLegacy = parity.surfaces.some((s) => s.status === 'legacy-install');
+      add(`Cross-surface adapter parity (${parity.summary.join(' · ')})`, parity.ok, hasLegacy);
     } catch {
       add('Cross-surface adapter parity', false);
     }
