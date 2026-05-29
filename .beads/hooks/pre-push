@@ -2,9 +2,32 @@
 set -euo pipefail
 
 # ECC Codex Git Hook: pre-push
-# Runs a lightweight verification flow before pushes.
+#
+# Local pre-push hook, shrunk to fast checks. CI is the source of truth
+# (see .github/workflows/ci.yml). Earlier revisions re-ran the entire CI
+# matrix locally (npm test, build, audit, every lint) on every push, which
+# made `ECC_SKIP_PREPUSH=1` a daily escape hatch and trained the team to
+# ignore the gate. Heavy work has moved to CI; this hook now does:
+#
+#   - skip branch-deletion pushes (zero OID)
+#   - block re-pushing the exact SHA CI just failed on (gh-aware; soft if
+#     gh CLI is missing)
+#   - delegate everything else (test, build, lint, docs drift) to CI
+#
+# Escape hatches:
+#   ECC_SKIP_GIT_HOOKS=1   skip all ECC hooks
+#   ECC_SKIP_PREPUSH=1     skip just pre-push (alias: CONSTRUCT_SKIP_PREPUSH=1)
+# Bypasses on protected branches (main, staging, master) are refused
+# unconditionally — those go through PR + CI.
 
-if [[ "${ECC_SKIP_GIT_HOOKS:-0}" == "1" || "${ECC_SKIP_PREPUSH:-0}" == "1" ]]; then
+if [[ "${ECC_SKIP_GIT_HOOKS:-0}" == "1" || "${ECC_SKIP_PREPUSH:-0}" == "1" || "${CONSTRUCT_SKIP_PREPUSH:-0}" == "1" ]]; then
+  current_branch="$(git branch --show-current 2>/dev/null || echo '')"
+  case "$current_branch" in
+    main|staging|master)
+      printf '[ECC pre-push] SKIP refused on protected branch %s. Open a PR.\n' "$current_branch" >&2
+      exit 1
+      ;;
+  esac
   exit 0
 fi
 
@@ -16,9 +39,8 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 0
 fi
 
-# Skip checks for branch deletion pushes (e.g., git push origin --delete <branch>).
-# The pre-push hook receives lines on stdin: <local ref> <local sha> <remote ref> <remote sha>.
-# For deletions, the local sha is the zero OID.
+# Branch-deletion pushes carry zero OIDs and do not need verification.
+
 is_delete_only=true
 while read -r _local_ref local_sha _remote_ref _remote_sha; do
   if [[ "$local_sha" != "0000000000000000000000000000000000000000" ]]; then
@@ -30,143 +52,43 @@ if [[ "$is_delete_only" == "true" ]]; then
   exit 0
 fi
 
-ran_any_check=0
+# Prior remote CI red-check. Block only when HEAD == the SHA that failed
+# (i.e. the developer is about to re-push the exact broken commit). If
+# HEAD has moved past it, those new commits may be the fix — print a
+# notice and allow. Skipped silently when gh is unavailable.
 
-log() {
-  printf '[ECC pre-push] %s\n' "$*"
-}
+if command -v gh >/dev/null 2>&1; then
+  current_branch="$(git branch --show-current 2>/dev/null || echo '')"
+  case "$current_branch" in
+    main|master|staging|dev|'') ;;
+    *)
+      # Use gh's built-in --jq instead of piping through node — keeps the
+      # hook portable and avoids shell/JS quoting interactions. Format:
+      # "<conclusion> <headSha> <url>" so a single read parses all three.
 
-fail() {
-  printf '[ECC pre-push] FAILED: %s\n' "$*" >&2
-  exit 1
-}
-
-detect_pm() {
-  if [[ -f "pnpm-lock.yaml" ]]; then
-    echo "pnpm"
-  elif [[ -f "bun.lockb" ]]; then
-    echo "bun"
-  elif [[ -f "yarn.lock" ]]; then
-    echo "yarn"
-  elif [[ -f "package-lock.json" ]]; then
-    echo "npm"
-  else
-    echo "npm"
-  fi
-}
-
-has_node_script() {
-  local script_name="$1"
-  node -e 'const fs=require("fs"); const p=JSON.parse(fs.readFileSync("package.json","utf8")); process.exit(p.scripts && p.scripts[process.argv[1]] ? 0 : 1)' "$script_name" >/dev/null 2>&1
-}
-
-run_node_script() {
-  local pm="$1"
-  local script_name="$2"
-  case "$pm" in
-    pnpm) pnpm run "$script_name" ;;
-    bun) bun run "$script_name" ;;
-    yarn) yarn "$script_name" ;;
-    npm) npm run "$script_name" ;;
-    *) npm run "$script_name" ;;
-  esac
-}
-
-if [[ -f "package.json" ]]; then
-  pm="$(detect_pm)"
-  log "Node project detected (package manager: $pm)"
-
-  for script_name in lint typecheck test build; do
-    if has_node_script "$script_name"; then
-      ran_any_check=1
-      log "Running: $script_name"
-      run_node_script "$pm" "$script_name" || fail "$script_name failed"
-    else
-      log "Skipping missing script: $script_name"
-    fi
-  done
-
-  # Construct-specific gates — runs when bin/construct is present.
-  # Override: CONSTRUCT_SKIP_PREPUSH=1 or BEADS_SKIP_PREPUSH=1.
-  if [[ -x "bin/construct" && "${CONSTRUCT_SKIP_PREPUSH:-0}" != "1" && "${BEADS_SKIP_PREPUSH:-0}" != "1" ]]; then
-    ran_any_check=1
-
-    log "Construct: checking AUTO docs drift"
-    if ! node ./bin/construct docs:update --check >/dev/null 2>&1; then
-      fail "AUTO docs are out of date. Run 'construct docs:update' then commit"
-    fi
-
-    log "Construct: docs:verify"
-    if ! node ./bin/construct docs:verify >/dev/null 2>&1; then
-      fail "construct docs:verify failed. Fix docs issues before pushing"
-    fi
-
-    # Skip a dedicated dashboard build here: `npm test` (above) already runs
-    # tests/functional/dashboard-build.functional.test.mjs, which builds the
-    # dashboard end-to-end. Running a second `next build` races the first on
-    # apps/dashboard/.next/. CI runs `dashboard:sync --build` standalone
-    # (no shared test runner), so fresh checkouts still gate on the build.
-    # See tests/ci-parity.test.mjs for the asymmetry contract. # noparity
-
-    log "Construct: lint:comments"
-    if ! node ./bin/construct lint:comments 2>&1; then
-      fail "construct lint:comments failed. Fix comment policy violations before pushing"
-    fi
-
-    log "Construct: lint:agents"
-    if ! node ./bin/construct lint:agents >/dev/null 2>&1; then
-      fail "construct lint:agents failed. Fix agent registry errors before pushing"
-    fi
-
-    log "Construct: lint:contracts"
-    if ! node ./bin/construct lint:contracts >/dev/null 2>&1; then
-      fail "construct lint:contracts failed. Fix contract schema errors before pushing"
-    fi
-
-    if [[ "${CONSTRUCT_PREPUSH_FULL:-0}" == "1" ]]; then
-      log "Construct: build:sea (CONSTRUCT_PREPUSH_FULL=1)"
-      if ! npm run build:sea >/dev/null 2>&1; then
-        fail "SEA bundle build failed. Run 'npm run build:sea' locally to diagnose"
+      run_line="$(gh run list --branch="$current_branch" --limit=1 \
+        --json conclusion,headSha,url \
+        --jq '.[0] | "\(.conclusion // "") \(.headSha // "") \(.url // "")"' \
+        2>/dev/null || echo '')"
+      if [[ -n "$run_line" ]]; then
+        read -r conclusion run_sha run_url <<<"$run_line"
+        if [[ "$conclusion" == "failure" ]]; then
+          head_sha="$(git rev-parse HEAD)"
+          if [[ -n "$run_sha" && "$head_sha" == "$run_sha" ]]; then
+            printf '[ECC pre-push] HEAD (%s) is the commit that failed CI on %s.\n' "${head_sha:0:7}" "$current_branch" >&2
+            printf '  Re-pushing the same SHA will fail again. Add a fix commit before pushing.\n' >&2
+            printf '  Failed run: %s\n' "$run_url" >&2
+            printf '  Override: ECC_SKIP_PREPUSH=1 git push ...\n' >&2
+            exit 1
+          fi
+        fi
       fi
-    fi
-  fi
-
-  if [[ "${ECC_PREPUSH_AUDIT:-0}" == "1" ]]; then
-    ran_any_check=1
-    log "Running dependency audit (ECC_PREPUSH_AUDIT=1)"
-    case "$pm" in
-      pnpm) pnpm audit --prod || fail "pnpm audit failed" ;;
-      bun) bun audit || fail "bun audit failed" ;;
-      yarn) yarn npm audit --recursive || fail "yarn audit failed" ;;
-      npm) npm audit --omit=dev || fail "npm audit failed" ;;
-      *) npm audit --omit=dev || fail "npm audit failed" ;;
-    esac
-  fi
+      ;;
+  esac
 fi
 
-if [[ -f "go.mod" ]] && command -v go >/dev/null 2>&1; then
-  ran_any_check=1
-  log "Go project detected. Running: go test ./..."
-  go test ./... || fail "go test failed"
-fi
-
-if [[ -f "pyproject.toml" || -f "requirements.txt" ]]; then
-  if command -v pytest >/dev/null 2>&1; then
-    ran_any_check=1
-    log "Python project detected. Running: pytest -q"
-    pytest -q || fail "pytest failed"
-  else
-    log "Python project detected but pytest is not installed. Skipping."
-  fi
-fi
-
-if [[ "$ran_any_check" -eq 0 ]]; then
-  log "No supported checks found in this repository. Skipping."
-else
-  log "Verification checks passed."
-fi
-
-exit 0
+# Everything else (tests, build, lint, docs drift) runs in CI. See
+# .github/workflows/ci.yml for the authoritative set.
 
 # --- BEGIN BEADS INTEGRATION v1.0.0 ---
 # This section is managed by beads. Do not remove these markers.
@@ -191,3 +113,5 @@ if command -v bd >/dev/null 2>&1; then
   if [ $_bd_exit -ne 0 ]; then exit $_bd_exit; fi
 fi
 # --- END BEADS INTEGRATION v1.0.0 ---
+
+exit 0

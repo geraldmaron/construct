@@ -1,25 +1,24 @@
 /**
- * tests/ci-parity.test.mjs — local pre-push gate must run the same checks
- * as the CI lint suite, with the same flags.
+ * tests/ci-parity.test.mjs — local pre-push hooks must NOT duplicate the CI
+ * lint suite. CI is the source of truth.
  *
- * The failure class this guards against: a developer edits ONE of
- *   - .github/workflows/ci.yml (CI surface)
- *   - .beads/hooks/pre-push (git pre-push hook)
- *   - lib/hooks/pre-push-gate.mjs (Claude Code PreToolUse Bash hook)
- * and forgets the other two. Result: local gates go green, the CI lint
- * suite goes red after every push, and the team trains itself to ignore
- * red CI because "it'll fix itself on the next try."
+ * Earlier revisions of this test enforced the opposite contract: every
+ * `bin/construct lint:*` invocation in CI also had to appear in both
+ * pre-push hooks (lib/hooks/pre-push-gate.mjs and .beads/hooks/pre-push).
+ * That symmetry was the anti-pattern. Running the full CI matrix locally
+ * on every push made `CONSTRUCT_SKIP_PREPUSH=1` a daily escape hatch,
+ * which trained the team to ignore the gate. A gate that gets skipped
+ * is not a gate.
  *
- * The dashboard-bundle drift step in particular bit us twice in one
- * branch: once when the local check ran without a build prerequisite
- * (false-clean locally, real-fail in CI) and once when CI was edited to
- * build with the wrong script (`build:next` instead of `build`). Both
- * would have been caught here.
+ * The inverted contract: pre-push hooks stay narrow and fast (claude/*
+ * refusal, prior-CI SHA re-push check, PR body lint). Test/build/audit/
+ * evals/lint live exclusively in CI, which runs in a clean container
+ * and is the merge gate of record. This test guards the narrow shape
+ * by failing if any `bin/construct lint:*` / `evals` / `docs:verify` /
+ * `docs:update --check` invocation creeps back into either local hook.
  *
- * Add new parity assertions to this file every time a new lint check is
- * wired into the CI lint suite. Escape hatch for legitimate divergence: a
- * `# noparity` marker on the same line lets a particular invocation opt
- * out (e.g. a CI-only doctor check that can't run pre-push).
+ * Escape hatch for legitimate exceptions: `# noparity` marker on the
+ * invocation line (matches the prior contract's escape).
  */
 
 import test from 'node:test';
@@ -35,12 +34,8 @@ const CI_YAML = readFileSync(resolve(ROOT, '.github/workflows/ci.yml'), 'utf8');
 const BEADS_HOOK = readFileSync(resolve(ROOT, '.beads/hooks/pre-push'), 'utf8');
 const CLAUDE_HOOK = readFileSync(resolve(ROOT, 'lib/hooks/pre-push-gate.mjs'), 'utf8');
 
-// Extract every `bin/construct <subcommand> <--flag ...>` invocation
-// from a source blob. Requires the `bin/construct` prefix so error-message
-// references like 'Run construct docs:update' (no flags, inside a string)
-// don't get counted as invocations. Strips quotes and commas so the YAML
-// `'--check'`, shell `--check`, and JS array `'--check'` forms all
-// normalize to the same string. Drops lines marked `# noparity`.
+// Match invocations of `bin/construct <subcommand>` in any source flavor
+// (YAML, shell, JS array). Drops lines flagged `# noparity`.
 
 function extractInvocations(source, subcommand) {
   const out = [];
@@ -65,47 +60,72 @@ function extractInvocations(source, subcommand) {
 }
 
 test('CI lint suite invokes bin/construct dashboard:sync --build', () => {
-  // The asymmetry contract: CI runs `dashboard:sync --build` standalone
-  // because it has no shared test runner that builds the dashboard for it.
-  // Local gates intentionally do NOT invoke dashboard:sync directly —
-  // `npm test` (which both local gates run) includes
-  // tests/functional/dashboard-build.functional.test.mjs, which already
-  // does the same build end-to-end. Running it twice in the same gate
-  // races on apps/dashboard/.next/. This test enforces:
-  //   - CI invocation is exactly `dashboard:sync --build` (not --check)
-  //   - dashboard-build.functional.test.mjs exists (the load-bearing
-  //     coverage that lets local gates skip the standalone invocation)
+  // CI rebuilds the gitignored dashboard bundle so a fresh checkout has it.
+  // tests/functional/dashboard-build.functional.test.mjs already covers the
+  // equivalent build in the unit suite, so local hooks don't need a
+  // standalone invocation.
 
   const ci = extractInvocations(CI_YAML, 'dashboard:sync');
   assert.ok(ci.length > 0, 'CI lint suite must invoke bin/construct dashboard:sync at least once');
   assert.deepEqual(ci, ['dashboard:sync --build'],
     `CI must invoke 'dashboard:sync --build' (found: ${ci.join(' | ')}). ` +
     `Using --check alone fails on fresh checkouts because lib/server/static/ is gitignored.`);
-
-  const dashboardBuildTest = resolve(ROOT, 'tests/functional/dashboard-build.functional.test.mjs');
-  assert.ok(
-    readFileSync(dashboardBuildTest, 'utf8').includes('next build'),
-    'tests/functional/dashboard-build.functional.test.mjs must exist and run next build — ' +
-    'it is the load-bearing local-gate coverage that lets `npm test` substitute for ' +
-    'an explicit dashboard:sync invocation in the pre-push gates.',
-  );
 });
 
-test('docs:update --check is wired into CI lint suite and both local pre-push gates', () => {
-  // Weaker assertion than dashboard:sync because lib/hooks/pre-push-gate.mjs
-  // has an auto-fix path that re-runs `docs:update` (no flag) on drift then
-  // `docs:update --check` again — a legitimate divergence from CI. We only
-  // assert that the gating `--check` invocation appears in all three.
+// Subcommands that MUST NOT appear in either local pre-push hook. Each is
+// heavyweight, deterministic, and fully covered by a CI job. Adding one of
+// these to a local hook re-creates the doom-loop that the gate-shrinking
+// work removed.
 
-  const wanted = 'docs:update --check';
-  const sources = {
-    ci: CI_YAML,
-    beads: BEADS_HOOK,
-    claude: CLAUDE_HOOK,
+const CI_ONLY_SUBCOMMANDS = [
+  'docs:update',
+  'docs:verify',
+  'lint:comments',
+  'lint:agents',
+  'lint:contracts',
+  'lint:prose',
+  'lint:profiles',
+  'lint:templates',
+  'evals',
+  'gates:audit',
+  'doctor',
+];
+
+for (const sub of CI_ONLY_SUBCOMMANDS) {
+  test(`${sub} stays in CI only — never in local pre-push hooks`, () => {
+    const claude = extractInvocations(CLAUDE_HOOK, sub);
+    const beads = extractInvocations(BEADS_HOOK, sub);
+    assert.equal(claude.length, 0,
+      `lib/hooks/pre-push-gate.mjs invokes 'bin/construct ${sub}': ${claude.join(' | ')}. ` +
+      `CI is the source of truth for this check — remove it from the local hook or add # noparity.`);
+    assert.equal(beads.length, 0,
+      `.beads/hooks/pre-push invokes 'bin/construct ${sub}': ${beads.join(' | ')}. ` +
+      `CI is the source of truth for this check — remove it from the local hook or add # noparity.`);
+  });
+}
+
+test('every check stripped from local hooks is still covered by some CI job', () => {
+  // Sanity check that we didn't drop a check from CI when we stripped it
+  // from the local hooks. Each gated subcommand should appear in
+  // .github/workflows/ci.yml in one of:
+  //   - `bin/construct <sub>`   — most construct subcommands
+  //   - `npm run <sub>`         — lint:prose, lint:profiles (script aliases)
+  //   - `scripts/<file>.mjs`    — lint:templates (CI runs the underlying
+  //                               script directly via lint-commits-pr.mjs)
+  // Exceptions: doctor (developer-facing diagnostic, not a CI gate).
+
+  const directScriptCoverage = {
+    'lint:templates': /scripts\/lint-commits-pr\.mjs/,
   };
-  for (const [name, source] of Object.entries(sources)) {
-    const invocations = extractInvocations(source, 'docs:update');
-    assert.ok(invocations.includes(wanted),
-      `${name} must invoke 'bin/construct ${wanted}' (found: ${invocations.join(' | ') || 'none'})`);
+  const ciGated = CI_ONLY_SUBCOMMANDS.filter((s) => s !== 'doctor');
+  for (const sub of ciGated) {
+    const binInvocations = extractInvocations(CI_YAML, sub).length;
+    const npmRunPattern = new RegExp(`npm run ${sub}\\b`);
+    const npmRun = npmRunPattern.test(CI_YAML);
+    const direct = directScriptCoverage[sub]?.test(CI_YAML) ?? false;
+    assert.ok(binInvocations > 0 || npmRun || direct,
+      `CI has no invocation of '${sub}' — the local hook stopped running it ` +
+      `but CI doesn't either. Add 'bin/construct ${sub}', 'npm run ${sub}', or the ` +
+      `equivalent script call to .github/workflows/ci.yml.`);
   }
 });
