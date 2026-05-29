@@ -1105,6 +1105,7 @@
       "canEdit": true,
       "subscriptions": [
         "changelog.missing",
+        "document.stale",
         "pr.merged.no-docs",
         "readme.stale"
       ],
