@@ -159,12 +159,39 @@ test('LIMITS registry has documented caps for every active channel', () => {
   const expected = [
     'trace', 'embed-daemon-log', 'audit-reads', 'skill-calls', 'agent-log',
     'role-pending', 'intent-verifications', 'contract-violations',
+    'bash-warn-flags', 'session-cost', 'audit-trail', 'edit-accumulator',
   ];
   for (const name of expected) {
     assert.ok(LIMITS[name], `channel "${name}" must be registered in LIMITS`);
     assert.ok(LIMITS[name].maxBytes > 0, `channel "${name}" must have maxBytes > 0`);
     assert.ok(typeof LIMITS[name].envOverride === 'string', `channel "${name}" must have an env override`);
   }
+});
+
+test('audit-trail channel rotates within its registered cap', () => {
+  const { dir, cleanup } = makeTmp();
+  try {
+    const file = join(dir, 'audit-trail.jsonl');
+    const override = LIMITS['audit-trail'].envOverride;
+    for (let i = 0; i < 30; i++) {
+      appendBounded('audit-trail', file, JSON.stringify({ i, x: 'y'.repeat(50_000) }) + '\n', { [override]: '1' });
+    }
+    const segments = readdirSync(dir).filter((f) => /audit-trail\.\d+\.jsonl(\.gz)?$/.test(f));
+    assert.ok(segments.length > 0, 'expected rotation under a 1 MB cap');
+  } finally { cleanup(); }
+});
+
+test('edit-accumulator channel rotates within its registered cap', () => {
+  const { dir, cleanup } = makeTmp();
+  try {
+    const file = join(dir, 'pending-typecheck.txt');
+    const override = LIMITS['edit-accumulator'].envOverride;
+    for (let i = 0; i < 30; i++) {
+      appendBounded('edit-accumulator', file, 'x'.repeat(50_000) + '\n', { [override]: '1' });
+    }
+    const segments = readdirSync(dir).filter((f) => /pending-typecheck\.\d+\.txt$/.test(f));
+    assert.ok(segments.length > 0, 'expected rotation under a 1 MB cap');
+  } finally { cleanup(); }
 });
 
 test('resolveCap honors env-var override interpreted as megabytes', () => {
