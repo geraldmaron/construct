@@ -1,24 +1,54 @@
-import { RootProvider } from 'fumadocs-ui/provider';
-import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
+/**
+ * Root layout for the Construct docs site.
+ *
+ * Loads Geist (sans + display) and JetBrains Mono via next/font/google so
+ * they're inlined as CSS variables that theme.css consumes. AppShell renders
+ * the topbar + sidebar + main grid and owns runtime theme/density/motion
+ * state.
+ */
+
 import type { ReactNode } from 'react';
-import 'fumadocs-ui/style.css';
+import { Geist, JetBrains_Mono } from 'next/font/google';
 import './theme.css';
+import { AppShell } from '@/components/app-shell';
+
+const sans = Geist({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const display = Geist({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+});
+
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const metadata = {
-  title: { default: 'Construct', template: '%s | Construct' },
-  description: 'One AI interface. 28 specialists. Hard gates. Runs locally or deploys for teams.',
+  title: { default: 'Construct — Docs', template: '%s | Construct' },
+  description:
+    'Construct is the orchestration layer behind an agentic software org. One AI interface, a team of specialists behind it.',
 };
 
-export default function Layout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      data-theme="dark"
+      data-density="comfortable"
+      data-motion="normal"
       suppressHydrationWarning
+      className={`${display.variable} ${sans.variable} ${mono.variable}`}
     >
       <body>
-        <RootProvider>{children}</RootProvider>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

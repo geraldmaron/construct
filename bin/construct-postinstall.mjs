@@ -58,8 +58,29 @@ try {
   }
 } catch { /* fall through */ }
 
-// Require a package.json at the install target so monorepo nested installs
-// don't accidentally trigger staging in the wrong directory.
+// `npm i -g @geraldmaron/construct` runs the postinstall with
+// npm_config_global=true. Wire the `construct` front-door agent into the
+// user's home directories so it's reachable from every host (Claude Code,
+// Codex, Copilot, OpenCode) immediately after a global install. Specialists
+// stay project-only and land when the user runs `construct init` in a repo.
+
+if (process.env.npm_config_global === 'true' || process.env.npm_config_global === true) {
+  const syncScript = path.join(PKG_ROOT, 'scripts', 'sync-specialists.mjs');
+  if (existsSync(syncScript)) {
+    log('global install detected; syncing front-door agent into ~/');
+    const result = spawnSync(process.execPath, [syncScript, '--global'], {
+      stdio: 'inherit',
+    });
+    if (result.status !== 0) {
+      log(`global sync failed (exit ${result.status}); run \`construct sync --global\` manually`);
+    }
+  }
+  process.exit(0);
+}
+
+// Project install path: require a package.json at the install target so
+// monorepo nested installs don't accidentally trigger staging in the wrong
+// directory.
 
 const consumerPkgPath = path.join(initCwd, 'package.json');
 if (!existsSync(consumerPkgPath)) {

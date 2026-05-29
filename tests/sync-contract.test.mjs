@@ -52,11 +52,18 @@ after(() => {
   fs.rmSync(tmpProject, { recursive: true, force: true });
 });
 
-/** Run sync-specialists.mjs with the given extra args and env, return result. */
+/** Run sync-specialists.mjs with the given extra args and env, return result.
+ *  Defaults to --global because every assertion in this suite checks user-scope
+ *  output (`tmpHome/.claude/`, `tmpHome/.github/`, etc.). Callers wanting
+ *  project-scope output (--project mode) pass that flag explicitly.
+ */
 function runSync(args = [], env = {}) {
+  const finalArgs = args.includes('--project') || args.includes('--global')
+    ? args
+    : [...args, '--global'];
   return spawnSync(
     process.execPath,
-    [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), ...args],
+    [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), ...finalArgs],
     {
       encoding: 'utf8',
       env: {
