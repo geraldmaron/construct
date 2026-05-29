@@ -14,6 +14,13 @@ on:
     # Weekly secret scan on Monday 08:00 UTC — catches regressions in merged code
     - cron: '0 8 * * 1'
 
+# Cancel superseded runs on PR pushes (saves runner minutes when a contributor
+# force-pushes several times in a minute). Pushes to main are never cancelled —
+# every merged commit gets its own complete run for audit + release purposes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # Compute per-target outputs so each downstream job only runs when files
   # in its scope changed. Saves CI minutes for doc-only PRs and avoids
@@ -25,6 +32,7 @@ jobs:
       code: ${{ steps.filter.outputs.code }}
       retrieval: ${{ steps.filter.outputs.retrieval }}
       deps: ${{ steps.filter.outputs.deps }}
+      docssite: ${{ steps.filter.outputs.docssite }}
       agents: ${{ steps.filter.outputs.agents }}
       docs: ${{ steps.filter.outputs.docs }}
       templates: ${{ steps.filter.outputs.templates }}
@@ -82,6 +90,11 @@ jobs:
               - '.gitmessage'
               - '.github/pull_request_template.md'
               - 'scripts/lint-commits-pr.mjs'
+            docssite:
+              - 'apps/docs/**'
+              - 'packages/cx-ui/**'
+              - 'docs/**'
+              - '.github/workflows/pages.yml'
             workflow:
               - '.github/workflows/**'
 
@@ -159,6 +172,17 @@ jobs:
         # `build:next` (next build only, no copy to lib/server/static/)
         # which always tripped --check on fresh CI checkouts.
         run: node ./bin/construct dashboard:sync --build
+      - name: docs site build
+        if: needs.changes.outputs.docssite == 'true' || needs.changes.outputs.workflow == 'true'
+        # PR-time guard for the Pages deploy. apps/docs depends on the
+        # workspace package @cx/ui (packages/cx-ui); root `npm ci` resolves
+        # it via the workspaces config. Building from root here matches
+        # what pages.yml does on main — catches workspace-resolution drift
+        # before the Pages deploy fails post-merge with a 404 from the
+        # public npm registry.
+        env:
+          DOCS_BASE_PATH: /construct
+        run: npm --prefix apps/docs run build
       - name: gates audit
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         env:

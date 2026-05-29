@@ -13,7 +13,7 @@ Every blocking gate ships with an explicit env-var bypass. Bypasses are auditabl
   { label: 'git commit' },
   { label: 'Layer 2a: pre-commit', sub: 'secret scan · lint:comments · docs:verify', decision: true, exitLabel: 'pass' },
   { label: 'git push' },
-  { label: 'Layer 2b: pre-push', sub: 'tests · build · evals · docs · red-CI check', decision: true, exitLabel: 'pass' },
+  { label: 'Layer 2b: pre-push', sub: 'claude/* refusal · SHA-aware red-CI re-push check · PR body lint', decision: true, exitLabel: 'pass' },
   { label: 'gh pr create' },
   { label: 'Layer 2.5: template policy', sub: 'PR body lint', decision: true, exitLabel: 'pass' },
   { label: 'Layer 3: CI required checks + session Stop', decision: true, exitLabel: 'pass' },
@@ -42,13 +42,13 @@ Fires when you try to land changes.
 
 Bypasses: `CONSTRUCT_SKIP_GATES=1` (whole layer), `CONSTRUCT_SKIP_DOCS=1` (docs-coupling only), `ECC_SKIP_PRECOMMIT=1` (secret scan only).
 
-**Push-time (`lib/hooks/pre-push-gate.mjs`):**
+**Push-time (`lib/hooks/pre-push-gate.mjs` + `.beads/hooks/pre-push`):**
 
 - Refuses `claude/*` branch pushes. Bypass: `CONSTRUCT_ALLOW_CLAUDE_PUSH=1`.
-- Refuses push if the last remote CI run on the current branch failed. This is intentionally a local-only guardrail; CI itself does not mirror it because CI cannot know the operator's "stop and fix before pushing more" intent.
-- Runs `npm test`, `npm run build`, `construct evals retrieval`, `construct docs:verify`, `npm audit --omit=dev --audit-level=high` locally before allowing the push.
+- Blocks re-pushing the *exact SHA* that CI most recently failed on (SHA-aware; if HEAD has advanced past the failed commit, the new commits may be the fix — they go through with a non-blocking notice). This is intentionally a local-only guardrail; CI itself does not mirror it because CI cannot know the operator's "stop and fix before pushing more" intent.
+- That's it. Tests, build, audit, evals, every `lint:*`, docs drift — all live in `.github/workflows/ci.yml`. Earlier revisions of the hook re-ran the entire CI matrix locally on every push (~65s wall time); the duplication made `CONSTRUCT_SKIP_PREPUSH=1` a daily escape hatch, which is the gate-skipped-by-default failure mode. The pre-push gate is now narrow enough to be trustworthy, and CI is the merge gate of record.
 
-Bypass: `CONSTRUCT_SKIP_PREPUSH=1`.
+Bypass: `CONSTRUCT_SKIP_PREPUSH=1` (refused on `main` / `staging` / `master` — those branches go through PR + CI). Every honored bypass is appended to `~/.construct/audit/prepush-bypass.log`; `construct doctor` surfaces frequent usage as a signal that the gate is wrong-sized.
 
 **`gh pr create` / `gh pr edit` (Layer 2.5):**
 

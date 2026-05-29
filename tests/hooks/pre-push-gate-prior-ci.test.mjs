@@ -48,7 +48,7 @@ function writeShim(name, body) {
   fs.writeFileSync(p, `#!/usr/bin/env bash\n${body}\n`, { mode: 0o755 });
 }
 
-function runHook({ headSha, runSha, conclusion = 'failure', branch = 'fix/example' }) {
+function runHook({ headSha, runSha, conclusion = 'failure', branch = 'fix/example', command = 'git push origin HEAD' }) {
   // The hook calls: git branch --show-current, git rev-parse HEAD,
   // gh run list. Route each to a deterministic stubbed response.
 
@@ -68,7 +68,7 @@ fi
 `);
   const input = {
     tool_name: 'Bash',
-    tool_input: { command: 'git push origin HEAD' },
+    tool_input: { command },
   };
   return spawnSync(process.execPath, [HOOK], {
     cwd: repoDir,
@@ -79,6 +79,7 @@ fi
       PATH: `${shimDir}:${process.env.PATH}`,
       HOME: tmpDir,
       CONSTRUCT_SKIP_PREPUSH: '',
+      CONSTRUCT_ALLOW_CLAUDE_PUSH: '',
     },
     timeout: 10_000,
   });
@@ -107,5 +108,59 @@ describe('pre-push-gate prior-CI check', () => {
     const r = runHook({ headSha: sha, runSha: sha, conclusion: 'success' });
     assert.equal(r.status, 0, `expected exit 0 (allowed); got ${r.status}. stderr:\n${r.stderr}`);
     assert.doesNotMatch(r.stderr, /failed CI/);
+  });
+});
+
+describe('pre-push-gate inline env-var bypass', () => {
+  // Inline prefixes on the bash command (CONSTRUCT_SKIP_PREPUSH=1 git push ...)
+  // are unreachable via process.env because Claude Code's PreToolUse hook runs
+  // before bash parses the command. The hook re-parses the command string so
+  // the documented escape hatch actually works inside Claude Code.
+
+  it('CONSTRUCT_SKIP_PREPUSH=1 inline prefix bypasses the same-SHA block', () => {
+    const sha = 'd'.repeat(40);
+    const r = runHook({
+      headSha: sha,
+      runSha: sha,
+      command: 'CONSTRUCT_SKIP_PREPUSH=1 git push origin HEAD',
+    });
+    assert.equal(r.status, 0, `expected exit 0 (bypassed); got ${r.status}. stderr:\n${r.stderr}`);
+    assert.doesNotMatch(r.stderr, /HEAD .* is the commit that failed CI/);
+  });
+
+  it('CONSTRUCT_ALLOW_CLAUDE_PUSH=1 inline prefix allows a claude/* push', () => {
+    const sha = 'e'.repeat(40);
+    const r = runHook({
+      headSha: sha,
+      runSha: sha,
+      branch: 'claude/foo',
+      conclusion: 'success',
+      command: 'CONSTRUCT_ALLOW_CLAUDE_PUSH=1 git push origin claude/foo',
+    });
+    assert.equal(r.status, 0, `expected exit 0 (allowed); got ${r.status}. stderr:\n${r.stderr}`);
+    assert.doesNotMatch(r.stderr, /Refusing to push a claude/);
+  });
+
+  it('non-allowlist env-var prefix is ignored — gate still runs', () => {
+    const sha = 'f'.repeat(40);
+    const r = runHook({
+      headSha: sha,
+      runSha: sha,
+      command: 'RANDOM=1 git push origin HEAD',
+    });
+    assert.equal(r.status, 2, `expected exit 2 (still blocked); got ${r.status}. stderr:\n${r.stderr}`);
+    assert.match(r.stderr, /HEAD .* is the commit that failed CI/);
+  });
+
+  it('env-var appearing AFTER the executable is not treated as a prefix', () => {
+    // `git push HEAD CONSTRUCT_SKIP_PREPUSH=1` is just a positional arg to git,
+    // not an env-var prefix — the parser must stop at the first non-assignment token.
+    const sha = '0'.repeat(40);
+    const r = runHook({
+      headSha: sha,
+      runSha: sha,
+      command: 'git push origin HEAD CONSTRUCT_SKIP_PREPUSH=1',
+    });
+    assert.equal(r.status, 2, `expected exit 2 (still blocked — prefix-only); got ${r.status}. stderr:\n${r.stderr}`);
   });
 });
