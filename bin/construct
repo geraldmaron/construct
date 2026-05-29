@@ -492,11 +492,17 @@ async function cmdDoctor() {
       add(`Legacy cx-* sweep failed: ${result.stderr?.substring(0, 200)}`, false);
     }
   } else {
+    // Soft-warn instead of hard-fail: legacy v1.0.10 cx-* files are an
+    // expected upgrade-state, not real drift. The hint is what matters;
+    // the fix is one --fix-legacy-agents run away and CI never sees this.
+    // Mirrors the parity check's legacy-install reclassification.
+
     add(
       legacyCount === 0
         ? 'No legacy cx-* files at user scope'
         : `Legacy cx-* files at user scope: ${legacyCount} (run \`construct doctor --fix-legacy-agents\` to sweep)`,
-      legacyCount === 0,
+      true,
+      legacyCount !== 0,
     );
   }
 
@@ -847,7 +853,11 @@ async function cmdDoctor() {
     try {
       const { checkParity } = await import('../lib/parity.mjs');
       const parity = checkParity({ rootDir: ROOT_DIR, homeDir: HOME });
-      add(`Cross-surface adapter parity (${parity.summary.join(' · ')})`, parity.ok);
+      // Legacy-install rolls up to ok (so the gate doesn't hard-fail during
+      // a v1.0.10 → v1.0.13+ upgrade) but renders as a warning so the
+      // --fix-legacy-agents hint stays visible.
+      const hasLegacy = parity.surfaces.some((s) => s.status === 'legacy-install');
+      add(`Cross-surface adapter parity (${parity.summary.join(' · ')})`, parity.ok, hasLegacy);
     } catch {
       add('Cross-surface adapter parity', false);
     }
