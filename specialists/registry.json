@@ -98,7 +98,10 @@
         "openingQuestion": "What are we trying to learn, and how will we know when we've learned it?",
         "failureMode": "If you can't write a falsifiable hypothesis, this is a planning task, not R&D."
       },
-      "canEdit": false
+      "canEdit": false,
+      "subscriptions": [
+        "research.gate.required"
+      ]
     },
     {
       "internal": true,
@@ -147,6 +150,26 @@
       "canEdit": false,
       "collaborators": [
         "ux-researcher"
+      ],
+      "subscriptions": [
+        "backlog.stale",
+        "prd.requested"
+      ],
+      "docArtifacts": [
+        "backlog-proposal",
+        "customer-profile",
+        "meta-prd",
+        "one-pager",
+        "prd",
+        "prd-business",
+        "prd-platform",
+        "prfaq"
+      ],
+      "watchConditions": [
+        {
+          "watcher": "high-ambiguity-deep-work",
+          "reason": "clarify acceptance criteria (high ambiguity)"
+        }
       ]
     },
     {
@@ -234,7 +257,10 @@
         "openingQuestion": "What must be done first, what blocks what, and who owns each deliverable?",
         "failureMode": "If every task can run in parallel, the dependency graph wasn't drawn."
       },
-      "canEdit": false
+      "canEdit": false,
+      "subscriptions": [
+        "plan.requested"
+      ]
     },
     {
       "internal": true,
@@ -273,7 +299,17 @@
         "openingQuestion": "What is the version, the publication date, and the primary source?",
         "failureMode": "If all sources are secondhand or undated, the research isn't done."
       },
-      "canEdit": false
+      "canEdit": false,
+      "subscriptions": [
+        "evidence.requested",
+        "research.requested"
+      ],
+      "docArtifacts": [
+        "evidence-brief",
+        "product-intelligence-report",
+        "research-brief",
+        "signal-brief"
+      ]
     },
     {
       "internal": true,
@@ -319,6 +355,9 @@
         "data-analyst",
         "product-manager",
         "researcher"
+      ],
+      "subscriptions": [
+        "strategy.required"
       ]
     },
     {
@@ -409,6 +448,9 @@
         "product-manager",
         "qa",
         "rd-lead"
+      ],
+      "subscriptions": [
+        "eval.regression"
       ]
     },
     {
@@ -506,6 +548,17 @@
         "ai-engineer",
         "designer",
         "engineer"
+      ],
+      "subscriptions": [
+        "adr.requested",
+        "arch.boundary.violated"
+      ],
+      "docArtifacts": [
+        "adr",
+        "architecture-overview",
+        "rfc",
+        "rfc-platform",
+        "system-design"
       ]
     },
     {
@@ -600,7 +653,13 @@
         "openingQuestion": "What's the simplest reason this fails?",
         "failureMode": "If you find no CRITICAL challenges, you looked at the happy path. Dig into the error paths."
       },
-      "canEdit": false
+      "canEdit": false,
+      "watchConditions": [
+        {
+          "watcher": "architecture-without-metric",
+          "reason": "architecture change without stated success metric"
+        }
+      ]
     },
     {
       "internal": true,
@@ -639,7 +698,11 @@
         "openingQuestion": "Does this do what it's supposed to do under the conditions it wasn't designed for?",
         "failureMode": "If your review only covered the happy path, you haven't reviewed."
       },
-      "canEdit": true
+      "canEdit": true,
+      "subscriptions": [
+        "pr.opened",
+        "pr.ready-for-review"
+      ]
     },
     {
       "internal": true,
@@ -684,7 +747,22 @@
         "openingQuestion": "What does an attacker see when they look at this?",
         "failureMode": "If the only finding is 'no hardcoded secrets,' you checked one category out of eight."
       },
-      "canEdit": true
+      "canEdit": true,
+      "subscriptions": [
+        "config.protection.violation",
+        "dep.cve",
+        "secrets.detected"
+      ],
+      "docArtifacts": [
+        "security-review",
+        "threat-model"
+      ],
+      "watchConditions": [
+        {
+          "watcher": "auth-payments-non-narrow",
+          "reason": "pre-dispatch threat model (auth/payments/PII + non-narrow blast radius)"
+        }
+      ]
     },
     {
       "internal": true,
@@ -723,7 +801,16 @@
         "openingQuestion": "For each acceptance criterion — how does the test fail when the criterion is violated?",
         "failureMode": "If every test passes on the first run with no debugging, the tests weren't hard enough."
       },
-      "canEdit": true
+      "canEdit": true,
+      "subscriptions": [
+        "coverage.drop",
+        "test.fail",
+        "test.flake"
+      ],
+      "docArtifacts": [
+        "qa-strategy",
+        "test-plan"
+      ]
     },
     {
       "internal": true,
@@ -762,7 +849,11 @@
         "openingQuestion": "Can I reproduce this deterministically, and what is the exact state at the point of failure?",
         "failureMode": "If you can't state the invariant that was violated, you haven't found root cause."
       },
-      "canEdit": true
+      "canEdit": true,
+      "subscriptions": [
+        "hang.detected",
+        "regression.detected"
+      ]
     },
     {
       "internal": true,
@@ -811,6 +902,23 @@
         "engineer",
         "qa",
         "security"
+      ],
+      "subscriptions": [
+        "edit_loop.stuck",
+        "mcp.unhealthy.persistent",
+        "push_gate.fail",
+        "service.down"
+      ],
+      "docArtifacts": [
+        "incident-report",
+        "postmortem",
+        "runbook"
+      ],
+      "watchConditions": [
+        {
+          "watcher": "wide-blast-radius",
+          "reason": "wide blast radius — operational readiness review"
+        }
       ]
     },
     {
@@ -861,6 +969,10 @@
         "qa",
         "security",
         "sre"
+      ],
+      "subscriptions": [
+        "infra.change.requested",
+        "service.scale.event"
       ]
     },
     {
@@ -902,7 +1014,11 @@
         "openingQuestion": "What data is being collected, stored, or processed, and do we have documented legal basis for each?",
         "failureMode": "If the risk list is empty, you didn't check AI processing obligations or dependency licenses past layer one."
       },
-      "canEdit": false
+      "canEdit": false,
+      "subscriptions": [
+        "dep.license",
+        "privacy-policy.review"
+      ]
     },
     {
       "internal": true,
@@ -941,7 +1057,11 @@
         "openingQuestion": "If this goes wrong 30 minutes after full rollout, what exactly do we do?",
         "failureMode": "If the rollback procedure isn't tested, it doesn't exist. You'll find out during an incident."
       },
-      "canEdit": true
+      "canEdit": true,
+      "subscriptions": [
+        "release.candidate",
+        "version.bump.needed"
+      ]
     },
     {
       "internal": true,
@@ -982,7 +1102,16 @@
         "openingQuestion": "What did we decide, why did we decide it, and where will the next person find it?",
         "failureMode": "If the project context file hasn't been updated since the work started, something important wasn't captured."
       },
-      "canEdit": true
+      "canEdit": true,
+      "subscriptions": [
+        "changelog.missing",
+        "pr.merged.no-docs",
+        "readme.stale"
+      ],
+      "docArtifacts": [
+        "changelog",
+        "memo"
+      ]
     },
     {
       "internal": true,
@@ -1025,7 +1154,16 @@
         "openingQuestion": "What is the user doing, what are they feeling, and what should the interface show them?",
         "failureMode": "If you don't have designed error and empty states, you have an incomplete design."
       },
-      "canEdit": true
+      "canEdit": true,
+      "subscriptions": [
+        "design.requested"
+      ],
+      "watchConditions": [
+        {
+          "watcher": "visual-or-ui-risk",
+          "reason": "visual deliverable / UI risk surface"
+        }
+      ]
     },
     {
       "internal": true,
@@ -1069,6 +1207,9 @@
         "legal-compliance",
         "qa",
         "ux-researcher"
+      ],
+      "subscriptions": [
+        "a11y.violation"
       ]
     },
     {
@@ -1146,7 +1287,10 @@
         "openingQuestion": "Which agents have degraded since the last cycle, and what does the trace evidence say about why?",
         "failureMode": "If all agents look stable, you haven't checked variance and trend. Median hides deterioration."
       },
-      "canEdit": true
+      "canEdit": true,
+      "subscriptions": [
+        "trace.anomaly"
+      ]
     },
     {
       "internal": true,
