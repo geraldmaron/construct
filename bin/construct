@@ -506,36 +506,6 @@ async function cmdDoctor() {
     );
   }
 
-  // Pre-push bypass frequency. Every honored CONSTRUCT_SKIP_PREPUSH /
-  // CONSTRUCT_ALLOW_CLAUDE_PUSH / CONSTRUCT_SKIP_PR_LINT writes a JSONL
-  // entry to ~/.construct/audit/prepush-bypass.log. Surfacing frequent
-  // usage here is the early warning that the gate is the wrong shape —
-  // the alternative is letting the bypass quietly become the default.
-
-  const bypassLogPath = path.join(userHome, '.construct', 'audit', 'prepush-bypass.log');
-  if (fs.existsSync(bypassLogPath)) {
-    try {
-      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const recent = fs.readFileSync(bypassLogPath, 'utf8')
-        .split('\n')
-        .filter(Boolean)
-        .map((line) => { try { return JSON.parse(line); } catch { return null; } })
-        .filter((e) => e && Date.parse(e.ts) >= cutoff);
-      const BYPASS_WARN_THRESHOLD = Number(process.env.CONSTRUCT_DOCTOR_BYPASS_WARN) || 3;
-      if (recent.length >= BYPASS_WARN_THRESHOLD) {
-        add(
-          `Pre-push bypasses in last 7 days: ${recent.length} (gate may be wrong-sized — see ${bypassLogPath})`,
-          false,
-          true,
-        );
-      } else {
-        add(`Pre-push bypasses in last 7 days: ${recent.length}`, true);
-      }
-    } catch { /* audit log read is best-effort */ }
-  } else {
-    add('Pre-push bypass log not present (no bypasses honored yet)', true);
-  }
-
   // Embed daemon log size. The daemon's own scheduler rotates every
   // minute at 50MB, but a freshly-upgraded install with a 34GB legacy
   // log shouldn't wait 60s. --fix-embed-log forces rotation now.
@@ -4840,14 +4810,6 @@ const handlers = new Map([
       process.exit(1);
     }
   }],
-  ['policy:list', async (args) => {
-    const { listPolicies, formatPolicyList } = await import('../lib/policy/unified-gates.mjs');
-    if (args.includes('--json')) {
-      println(JSON.stringify(listPolicies(), null, 2));
-    } else {
-      process.stdout.write(formatPolicyList());
-    }
-  }],
   ['policy', async (args) => {
     const sub = args[0];
     if (!sub || sub === '--help' || sub === '-h') {
@@ -4858,7 +4820,7 @@ const handlers = new Map([
     if (sub === 'show') {
       const { readFileSync, existsSync } = await import('node:fs');
       const { join } = await import('node:path');
-      const inventoryPath = join(ROOT_DIR, 'agents', 'policy-inventory.json');
+      const inventoryPath = join(ROOT_DIR, 'specialists', 'policy-inventory.json');
       if (!existsSync(inventoryPath)) {
         errorln('specialists/policy-inventory.json not found');
         process.exit(1);
