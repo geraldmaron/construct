@@ -14,19 +14,7 @@
           }
         ],
         "id": "session:start",
-        "description": "Load prior project context and git status at session start"
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/env-check.mjs\"",
-            "timeout": 5
-          }
-        ],
-        "id": "session:env-check",
-        "description": "Warn about missing required env vars at session open"
+        "description": "Load prior project context, git status, and missing-env-var notice at session start"
       }
     ],
     "PreToolUse": [
@@ -220,26 +208,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/read-tracker.mjs\"",
-            "timeout": 3,
-            "async": true
-          }
-        ],
-        "id": "post:read-tracker",
-        "description": "Record file content hash after Read for staleness detection in edit-guard"
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
             "command": "node \"$HOME/.construct/lib/hooks/audit-reads.mjs\"",
             "timeout": 3,
             "async": true
           }
         ],
         "id": "post:audit-reads",
-        "description": "Tamper-evident chain log of every Read tool call. Off by default — enable with CONSTRUCT_AUDIT_READS=1."
+        "description": "Update file-hashes.json for edit-guard staleness detection on every Read; optionally write a tamper-evident audit chain when CONSTRUCT_AUDIT_READS=1."
       },
       {
         "matcher": "mcp__.*",

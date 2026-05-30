@@ -41,6 +41,16 @@ is a policy violation: `construct doctor` checks this ledger against the hooks m
 - **Original behavior:** Detected `console.log` / `console.debug` / `debugger` statements in edited files.
 - **Now:** `lib/hooks/adaptive-lint.mjs:130`: `[adaptive-lint] console.log/debug in <file>:<loc>` advisory.
 
+### read-tracker.mjs
+- **Original event:** PostToolUse (Read)
+- **Original behavior:** SHA-16 file-hash store at `~/.cx/file-hashes.json` for edit-guard staleness detection; recorded read deltas via `lib/read-tracker-store.mjs`.
+- **Now:** `lib/hooks/audit-reads.mjs` stage 1 (always-on, runs regardless of `CONSTRUCT_AUDIT_READS`): same hash-store upsert + read-tracker delta + retention pruning. Folding into audit-reads fixed a quiet correctness bug: the prior split meant edit-guard's staleness check broke when audit-reads was off, because nothing else maintained the hash store.
+
+### env-check.mjs
+- **Original event:** SessionStart
+- **Original behavior:** Compared `.env.example` vs `.env` and `process.env`; surfaced placeholder/missing required vars at session open.
+- **Now:** `lib/hooks/session-start.mjs` `buildEnvCheckNote(cwd)` helper, appended to the existing session-start output as part of the unified tier-2 emission. One fewer SessionStart process spawn.
+
 ## Stalled-mid-consolidation hooks
 
 These hooks were removed but the consolidated replacement is **not yet implemented** in `policy-engine.mjs`. Their behaviors are currently absent. Treat as known gaps:

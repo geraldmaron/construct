@@ -107,6 +107,34 @@
           "members": { "type": "array", "items": { "type": "string" } }
         }
       }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional capability flags. Each one toggles a generic Construct subsystem on for the profile. Adding a capability never changes the role set; it changes which scaffolding init applies and which runtime helpers are exposed.",
+      "properties": {
+        "intake": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "The project ingests raw files into structured artifacts. Init scaffolds inbox/, the dedup manifest, and stamps attribution metadata when this is on.",
+          "properties": {
+            "inbox": {
+              "type": "boolean",
+              "description": "Scaffold inbox/ at the project root with a permissive .gitignore (everything except the .gitignore itself) so raw drops never end up in source."
+            },
+            "dedup": {
+              "type": "string",
+              "enum": ["sha256", "none"],
+              "default": "sha256",
+              "description": "Content-hash dedup for processed files. sha256 is the default; none disables the manifest."
+            },
+            "attribution": {
+              "type": "boolean",
+              "description": "Stamp createdBy / createdByAgent / createdAt on every intake-produced artifact."
+            }
+          }
+        }
+      }
     }
   }
 }
