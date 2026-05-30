@@ -242,14 +242,14 @@ Policy rules (comment convention, doc-update requirement, CI green before walk-a
 
 **Layer 1. Real-time (write/edit time).** Catches at the source.
 
-- `comment-lint.mjs`. PostToolUse Write/Edit/MultiEdit, **blocking**. Banned patterns and missing required headers exit 2. Bypass: `CONSTRUCT_SKIP_COMMENT_LINT=1`.
+- `comment-lint.mjs`. PostToolUse Write/Edit/MultiEdit, **blocking**. Banned patterns and missing required headers exit 2. No bypass — fix the comment or fix the policy in `lib/comment-lint.mjs`.
 - `doc-coupling-check.mjs`. PostToolUse, advisory. Counts code-file edits per session, prints stderr nudge at 3/5/10 when no doc files touched. Soft predecessor to the commit gate.
 - `ci-status-check.mjs`. UserPromptSubmit. Queries `gh run list` (60s cache) and injects red-CI status into agent observation.
 
 **Layer 2. Gate (commit/push time).** Catches at the boundary.
 
-- `.beads/hooks/pre-commit` Construct policy section. calls `construct lint:comments` and `construct docs:verify` across the current worktree. Refuses commits with banned-pattern violations or code-without-docs. Bypasses: `CONSTRUCT_SKIP_GATES=1`, `CONSTRUCT_SKIP_DOCS=1`.
-- `pre-push-gate.mjs`. refuses `claude/*` branch pushes (bypass `CONSTRUCT_ALLOW_CLAUDE_PUSH=1`); refuses push on red remote CI (bypass `CONSTRUCT_SKIP_PREPUSH=1`); runs `evals retrieval` and `docs:verify` in addition to project tests/build.
+- `.beads/hooks/pre-commit` Construct policy section. calls `construct lint:comments` and `construct docs:verify` across the current worktree. Refuses commits with banned-pattern violations or code-without-docs.
+- `pre-push-gate.mjs`. refuses `claude/*` branch pushes unconditionally; blocks re-pushing the exact SHA CI most recently rejected (SHA-aware: if HEAD has advanced past the failed commit, push goes through with a non-blocking notice); lints PR body on `gh pr create` / `gh pr edit` against template policy. Tests, build, audit, evals, and every `lint:*` live in `.github/workflows/ci.yml`, not in this hook.
 
 **Layer 3. Safety net (CI + session end).** Catches escapees.
 
