@@ -10,8 +10,8 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 | Hook | Description |
 |---|---|
 | `adaptive-lint` | PostToolUse auto-formatter and debug-log detector. |
-| `agent-tracker` | Agent task lifecycle hook — tracks task start, completion, and handoffs. |
-| `audit-reads` | opt-in tamper-evident log of every Read tool call. |
+| `agent-tracker` | Task tool lifecycle hook: records dispatch + |
+| `audit-reads` | post-Read state tracker. |
 | `audit-trail` | append-only audit log of every mutation Construct |
 | `bash-output-logger` | persists long Bash outputs to disk and nudges |
 | `block-no-verify` | refuse `git commit/push/merge --no-verify`. |
@@ -22,10 +22,9 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 | `context-window-recovery` | Context window recovery hook — detects near-limit context and suggests compaction. |
 | `dep-audit` | PostToolUse / Write|Edit (async) |
 | `doc-coupling-check` | PostToolUse hook: nudge when code edits aren't paired with doc updates. |
-| `edit-accumulator` | Edit accumulator hook — batches and summarizes recent file edits for context. |
+| `edit-accumulator` | accumulates edited paths for the next |
 | `edit-error-recovery` | Edit error recovery hook — recovers from failed edit attempts and suggests fixes. |
 | `edit-guard` | Edit guard hook — validates old_string exists in target file before allowing edits. |
-| `env-check` | SessionStart |
 | `guard-bash` | Guard bash hook — blocks dangerous shell commands from running unreviewed. |
 | `mcp-audit` | MCP audit hook — logs all MCP tool calls for observability and review. |
 | `mcp-health-check` | MCP health check hook — verifies MCP servers are reachable before tool use. |
@@ -35,9 +34,8 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 | `pre-compact` | Pre-compact hook — prepares context summary before compaction runs. |
 | `pre-push-gate` | PreToolUse / Bash |
 | `proactive-activation` | Event-driven specialist activation. |
-| `read-tracker` | Read tracker hook — tracks file reads for efficiency analysis. |
 | `readme-age-check` | Stop hook (async) |
-| `registry-sync` | Registry sync hook — reminds to run construct sync after registry changes. |
+| `registry-sync` | Registry-change reminder hook. |
 | `rule-verifier` | Stop hook that audits the session for |
 | `scan-secrets` | Scan secrets hook — detects potential secrets in files before they are committed. |
 | `session-optimize` | Session end optimization hook — triggers agent optimization for low-performers. |
