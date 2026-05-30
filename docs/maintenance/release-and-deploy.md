@@ -184,7 +184,7 @@ One-time setup on npmjs.com: package → Settings → Trusted Publishers → add
 - `npm run lint:prose` (changed files only)
 - `npm run lint:profiles --quiet`
 
-Failures here block the push. Bypass only with `CONSTRUCT_SKIP_PREPUSH=1` (audit log preserved).
+Failures here block the push. There is no bypass env var: fix the underlying issue (or, for the SHA-aware re-push check, add a fix commit so HEAD advances past the rejected SHA).
 
 ## When something fails
 
