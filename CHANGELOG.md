@@ -4,6 +4,12 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.14] - 2026-05-31
+
+### Fixed
+
+- **Release gate `npm audit` scope aligned with CI.** v1.0.13's release workflow (run `26722200292`) failed at `release:check / npm audit` because the gate ran `npm audit --audit-level=high` against the entire monorepo, including the `apps/docs` workspace, which carries a HIGH advisory in `next-mdx-remote@5` (GHSA-g4xw-jxrg-5f6m). The npm-published package's `files` list excludes `apps/docs`, so this gate was over-broad: it refused a clean CLI release on a vulnerability that ships exclusively to the docs site. Release gate now runs `npm audit --omit=dev --audit-level=high --workspaces=false` — exactly the audit invocation that already gates every CI run. Apps/docs migration to `next-mdx-remote` v6 tracks as `construct-jymn`; a follow-up will add an audit step to `.github/workflows/pages.yml` so the docs-site deploy gates on its own audit. v1.0.13's tag remains on the remote without published artifacts; v1.0.14 ships the same content of v1.0.13 plus this gate fix.
+
 ## [1.0.13] - 2026-05-31
 
 ### Added
