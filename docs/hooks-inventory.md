@@ -23,12 +23,14 @@ Hook count target: ≤ 30 (see projection below).
 
 | Hook | Event | p95ms | What it does |
 |---|---|---|---|
-| `audit-trail.mjs` | PostToolUse | 15 | Append-only JSONL audit log for every mutation |
+| `audit-trail.mjs` | PostToolUse | 15 | Append-only JSONL audit log for every mutation (project-scoped) |
 | `bash-output-logger.mjs` | PostToolUse | 20 | Saves long Bash stdout to `~/.cx/bash-logs/` |
 | `mcp-audit.mjs` | PostToolUse | 10 | Logs every `mcp__*` call to `.cx/mcp-audit.json` |
-| `read-tracker.mjs` | PostToolUse | 10 | SHA-256 file-read tracking and per-session efficiency stats |
-| `agent-tracker.mjs` | PostToolUse | 10 | Records last dispatched subagent to `~/.cx/last-agent.json` |
+| `audit-reads.mjs` | PostToolUse | 8 | Always-on: file-hash store for edit-guard staleness detection + read-tracker delta. Opt-in (`CONSTRUCT_AUDIT_READS=1`): tamper-evident audit chain to `.cx/audit-reads.jsonl`. |
+| `agent-tracker.mjs` | PostToolUse | 10 | Records last dispatched subagent + emits `handoff.received` events on `next:cx-<role>` results |
 | `stop-notify.mjs` | Stop | 500 | Session summary: cost, TS results, macOS notification |
+| `session-tracking-refresh.mjs` | Stop | 2000 | Refreshes `.cx/context.{md,json}` from observations/commits/beads; syncs plan.md bead-status table; archives plan.md to `.cx/handoffs/` when all referenced beads are closed |
+| `post-merge-tracking.mjs` | PostToolUse | 3000 | After `gh pr merge` succeeds, closes `construct-XXX` beads named in the PR body's `Refs:` / `Closes:` / `Fixes:` lines |
 | `context-watch.mjs` | UserPromptSubmit | 20 | Token usage monitoring and compaction recommendation |
 | `edit-accumulator.mjs` | PostToolUse | 10 | Tracks files-changed count; queues TS files for end-of-session typecheck |
 
@@ -53,8 +55,7 @@ Hook count target: ≤ 30 (see projection below).
 
 | Hook | Event | p95ms | What it does |
 |---|---|---|---|
-| `session-start.mjs` | SessionStart | 300 | Tiered context injection at session open |
-| `env-check.mjs` | SessionStart | 20 | `.env.example` vs `.env` comparison |
+| `session-start.mjs` | SessionStart | 300 | Tiered context injection at session open + `.env.example` vs `.env` comparison notice |
 | `pre-compact.mjs` | PreCompact | 100 | Context summary before compaction |
 | `adaptive-lint.mjs` | PostToolUse | 800 | Auto-runs linter/formatter on edited file; flags debug logging |
 | `comment-lint.mjs` | PostToolUse | 50 | Warns on missing headers and banned comment patterns |

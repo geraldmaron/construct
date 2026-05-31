@@ -18,7 +18,9 @@ import { mkdtempSync, writeFileSync, readFileSync, statSync, existsSync, readdir
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { appendWithRotationSync, rotateIfOversized, pruneSegments, appendBounded, LIMITS, __test } from '../lib/logging/rotate.mjs';
+import { gzipSync } from 'node:zlib';
+
+import { appendWithRotationSync, rotateIfOversized, pruneSegments, appendBounded, readLastLineAcrossSegments, LIMITS, __test } from '../lib/logging/rotate.mjs';
 
 function makeTmp() {
   const dir = mkdtempSync(join(tmpdir(), 'cx-rotate-test-'));
@@ -159,12 +161,39 @@ test('LIMITS registry has documented caps for every active channel', () => {
   const expected = [
     'trace', 'embed-daemon-log', 'audit-reads', 'skill-calls', 'agent-log',
     'role-pending', 'intent-verifications', 'contract-violations',
+    'bash-warn-flags', 'session-cost', 'audit-trail', 'edit-accumulator',
   ];
   for (const name of expected) {
     assert.ok(LIMITS[name], `channel "${name}" must be registered in LIMITS`);
     assert.ok(LIMITS[name].maxBytes > 0, `channel "${name}" must have maxBytes > 0`);
     assert.ok(typeof LIMITS[name].envOverride === 'string', `channel "${name}" must have an env override`);
   }
+});
+
+test('audit-trail channel rotates within its registered cap', () => {
+  const { dir, cleanup } = makeTmp();
+  try {
+    const file = join(dir, 'audit-trail.jsonl');
+    const override = LIMITS['audit-trail'].envOverride;
+    for (let i = 0; i < 30; i++) {
+      appendBounded('audit-trail', file, JSON.stringify({ i, x: 'y'.repeat(50_000) }) + '\n', { [override]: '1' });
+    }
+    const segments = readdirSync(dir).filter((f) => /audit-trail\.\d+\.jsonl(\.gz)?$/.test(f));
+    assert.ok(segments.length > 0, 'expected rotation under a 1 MB cap');
+  } finally { cleanup(); }
+});
+
+test('edit-accumulator channel rotates within its registered cap', () => {
+  const { dir, cleanup } = makeTmp();
+  try {
+    const file = join(dir, 'pending-typecheck.txt');
+    const override = LIMITS['edit-accumulator'].envOverride;
+    for (let i = 0; i < 30; i++) {
+      appendBounded('edit-accumulator', file, 'x'.repeat(50_000) + '\n', { [override]: '1' });
+    }
+    const segments = readdirSync(dir).filter((f) => /pending-typecheck\.\d+\.txt$/.test(f));
+    assert.ok(segments.length > 0, 'expected rotation under a 1 MB cap');
+  } finally { cleanup(); }
 });
 
 test('resolveCap honors env-var override interpreted as megabytes', () => {
@@ -184,5 +213,80 @@ test('pruneSegments drops oldest first and respects active file', () => {
     assert.equal(removed.length, 2);
     const surviving = readdirSync(dir).sort();
     assert.deepEqual(surviving, ['svc.3.log', 'svc.4.log', 'svc.5.log', 'svc.log']);
+  } finally { cleanup(); }
+});
+
+test('readLastLineAcrossSegments returns the tail of the active file when populated', () => {
+  const { dir, cleanup } = makeTmp();
+  try {
+    const file = join(dir, 'chain.jsonl');
+    writeFileSync(file, 'first\nsecond\nthird\n');
+    assert.equal(readLastLineAcrossSegments(file), 'third');
+  } finally { cleanup(); }
+});
+
+test('readLastLineAcrossSegments falls back to the most recent rotated segment when active is empty', () => {
+  const { dir, cleanup } = makeTmp();
+  try {
+    const file = join(dir, 'chain.jsonl');
+    writeFileSync(join(dir, 'chain.1.jsonl'), 'old-1\nold-2\n');
+    writeFileSync(join(dir, 'chain.2.jsonl'), 'newer-1\nnewer-2\n');
+    writeFileSync(file, '');
+    assert.equal(readLastLineAcrossSegments(file), 'newer-2');
+  } finally { cleanup(); }
+});
+
+test('readLastLineAcrossSegments decompresses gzipped segments to recover the chain head', () => {
+  const { dir, cleanup } = makeTmp();
+  try {
+    const file = join(dir, 'chain.jsonl');
+    const payload = 'plain-1\nplain-2\n';
+    writeFileSync(join(dir, 'chain.1.jsonl.gz'), gzipSync(Buffer.from(payload, 'utf8')));
+    writeFileSync(file, '');
+    assert.equal(readLastLineAcrossSegments(file), 'plain-2');
+  } finally { cleanup(); }
+});
+
+test('readLastLineAcrossSegments returns null when neither active file nor any segment exists', () => {
+  const { dir, cleanup } = makeTmp();
+  try {
+    const file = join(dir, 'chain.jsonl');
+    assert.equal(readLastLineAcrossSegments(file), null);
+  } finally { cleanup(); }
+});
+
+test('readLastLineAcrossSegments prefers the highest-numbered segment over older ones', () => {
+  const { dir, cleanup } = makeTmp();
+  try {
+    const file = join(dir, 'chain.jsonl');
+    writeFileSync(join(dir, 'chain.1.jsonl'), 'oldest\n');
+    writeFileSync(join(dir, 'chain.2.jsonl'), 'middle\n');
+    writeFileSync(join(dir, 'chain.3.jsonl.gz'), gzipSync(Buffer.from('newest\n', 'utf8')));
+    writeFileSync(file, '');
+    assert.equal(readLastLineAcrossSegments(file), 'newest');
+  } finally { cleanup(); }
+});
+
+test('appendBounded keeps the prev_line_hash chain unbroken across a rotation boundary', () => {
+  const { dir, cleanup } = makeTmp();
+  try {
+    const file = join(dir, 'audit-trail.jsonl');
+    const override = LIMITS['audit-trail'].envOverride;
+    const env = { [override]: '1' };
+
+    const lines = Array.from({ length: 25 }, (_, i) => JSON.stringify({ i, x: 'y'.repeat(50_000) }));
+    for (const line of lines) {
+      const prev = readLastLineAcrossSegments(file);
+      appendBounded('audit-trail', file, line + '\n', env);
+      const written = readLastLineAcrossSegments(file);
+      if (prev !== null) assert.ok(written !== prev, 'each append must advance the chain head');
+    }
+
+    const segments = readdirSync(dir).filter((f) => /audit-trail\.\d+\.jsonl(\.gz)?$/.test(f));
+    assert.ok(segments.length > 0, 'rotation must have fired under the 1 MB cap');
+
+    const head = readLastLineAcrossSegments(file);
+    assert.ok(head, 'chain head must be resolvable post-rotation');
+    assert.deepEqual(JSON.parse(head), { i: lines.length - 1, x: 'y'.repeat(50_000) });
   } finally { cleanup(); }
 });

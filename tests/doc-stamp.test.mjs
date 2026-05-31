@@ -191,3 +191,36 @@ describe('doc-stamp: verifyStamp', () => {
     assert.equal(verifyStamp(restamped).valid, true);
   });
 });
+
+describe('doc-stamp: attribution', () => {
+  const doc = '# Example\n\nbody text';
+
+  it('writes created_by and created_by_agent when attribution is provided', () => {
+    const stamped = stampFrontmatter(doc, {
+      attribution: { createdBy: 'Alice <a@example.com>', createdByAgent: 'claude-opus-4-7' },
+    });
+    const fields = parseStamp(stamped);
+    assert.equal(fields.created_by, 'Alice <a@example.com>');
+    assert.equal(fields.created_by_agent, 'claude-opus-4-7');
+  });
+
+  it('preserves the original created_by on re-stamp by a different agent', () => {
+    const first = stampFrontmatter(doc, {
+      attribution: { createdBy: 'Alice', createdByAgent: 'claude' },
+    });
+    const second = stampFrontmatter(first, {
+      attribution: { createdBy: 'Bob', createdByAgent: 'codex' },
+    });
+    const fields = parseStamp(second);
+    assert.equal(fields.created_by, 'Alice', 'created_by must survive a re-stamp');
+    assert.equal(fields.last_modified_by, 'Bob');
+    assert.equal(fields.last_modified_by_agent, 'codex');
+  });
+
+  it('omits attribution fields when no attribution is provided and none exist', () => {
+    const stamped = stampFrontmatter(doc);
+    const fields = parseStamp(stamped);
+    assert.equal(fields.created_by, undefined);
+    assert.equal(fields.created_by_agent, undefined);
+  });
+});
