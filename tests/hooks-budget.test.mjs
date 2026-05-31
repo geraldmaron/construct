@@ -164,6 +164,23 @@ describe('hooks budget', () => {
     );
   });
 
+  it('Stop hooks that maintain tracking surfaces are non-blocking', () => {
+    const TRACKING_REFRESH_HOOKS = ['session-tracking-refresh.mjs'];
+    const violations = [];
+    for (const name of TRACKING_REFRESH_HOOKS) {
+      const src = fs.readFileSync(path.join(HOOKS_DIR, name), 'utf8');
+      const blockScope = src.match(/@maxBlockingScope\s+(\S+)/);
+      if (!blockScope) {
+        violations.push(`${name}: missing @maxBlockingScope`);
+        continue;
+      }
+      if (blockScope[1] !== 'none') {
+        violations.push(`${name}: tracking-refresh hooks must be @maxBlockingScope none, got "${blockScope[1]}"`);
+      }
+    }
+    assert.deepEqual(violations, [], `Tracking-refresh hook blocking-scope drift:\n  ${violations.join('\n  ')}`);
+  });
+
   it('no banned comment patterns in hooks', () => {
     const BANNED = [
       /\bReplaces\b/,

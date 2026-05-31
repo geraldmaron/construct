@@ -29,6 +29,8 @@ Hook count target: ≤ 30 (see projection below).
 | `audit-reads.mjs` | PostToolUse | 8 | Always-on: file-hash store for edit-guard staleness detection + read-tracker delta. Opt-in (`CONSTRUCT_AUDIT_READS=1`): tamper-evident audit chain to `.cx/audit-reads.jsonl`. |
 | `agent-tracker.mjs` | PostToolUse | 10 | Records last dispatched subagent + emits `handoff.received` events on `next:cx-<role>` results |
 | `stop-notify.mjs` | Stop | 500 | Session summary: cost, TS results, macOS notification |
+| `session-tracking-refresh.mjs` | Stop | 2000 | Refreshes `.cx/context.{md,json}` from observations/commits/beads; syncs plan.md bead-status table; archives plan.md to `.cx/handoffs/` when all referenced beads are closed |
+| `post-merge-tracking.mjs` | PostToolUse | 3000 | After `gh pr merge` succeeds, closes `construct-XXX` beads named in the PR body's `Refs:` / `Closes:` / `Fixes:` lines |
 | `context-watch.mjs` | UserPromptSubmit | 20 | Token usage monitoring and compaction recommendation |
 | `edit-accumulator.mjs` | PostToolUse | 10 | Tracks files-changed count; queues TS files for end-of-session typecheck |
 
