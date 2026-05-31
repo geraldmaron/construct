@@ -31,8 +31,13 @@ jobs:
         run: npm run lint:profiles -- --quiet
       - name: Functional tests
         run: npm run test:functional
-      - name: npm audit
-        run: npm audit --audit-level=high
+      - name: npm audit (high+ only, production deps of published package)
+        # Scoped to match ci.yml's audit: the published npm package's
+        # production graph. `--omit=dev` drops devDependencies; `--workspaces=false`
+        # excludes apps/* and packages/* which are not in the published `files`
+        # list of the root package.json. Workspace-scoped vulns (docs site,
+        # dashboard) have their own remediation track and don't gate the CLI release.
+        run: npm audit --omit=dev --audit-level=high --workspaces=false
 
   # ── Build single-file binaries ────────────────────────────────────────────
   build-binary:
