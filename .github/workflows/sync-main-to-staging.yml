@@ -1,10 +1,11 @@
 name: Sync main → staging
 
 # Every push to main opens a sync PR against staging so the integration
-# branch never falls behind a release. Use peter-evans/create-pull-request
-# (not direct push) so branch protection on staging stays intact and the
-# merge is auditable. Manual workflow_dispatch is supported for one-shot
-# alignment after a hand-merge.
+# branch never falls behind a release. The sync branch is pushed by the
+# workflow itself (using GITHUB_TOKEN) and the PR is opened via gh CLI so
+# branch protection on staging stays intact and the merge is auditable.
+# Manual workflow_dispatch is supported for one-shot alignment after a
+# hand-merge.
 
 on:
   push:
@@ -47,60 +48,87 @@ jobs:
             echo "main_sha=${MAIN_SHA}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Merge main into a sync branch
+      - name: Merge main into a sync branch and push
         if: steps.check.outputs.already_synced == 'false'
         id: merge
         run: |
+          set -euo pipefail
           SYNC_BRANCH="chore/sync-main-to-staging-${{ steps.check.outputs.main_sha }}"
           echo "sync_branch=${SYNC_BRANCH}" >> "$GITHUB_OUTPUT"
+
+          # If a prior failed run left a remote branch, reuse it so we don't
+          # collide. Force-update happens below via push --force-with-lease.
+          if git ls-remote --exit-code --heads origin "${SYNC_BRANCH}" >/dev/null 2>&1; then
+            echo "sync branch already exists on origin — will overwrite with --force-with-lease"
+            git fetch origin "${SYNC_BRANCH}":"refs/remotes/origin/${SYNC_BRANCH}"
+            EXISTING_REMOTE_REF="origin/${SYNC_BRANCH}"
+          else
+            EXISTING_REMOTE_REF=""
+          fi
+
           git checkout -b "${SYNC_BRANCH}"
-          # Allow unrelated histories in case of a release squash that re-rooted main.
-          # Use --no-ff so the merge commit is explicit in the staging history.
-          if git merge --no-ff --no-edit origin/main; then
+
+          # --no-ff so the merge commit is explicit; --allow-unrelated-histories
+          # in case a release squash re-rooted main relative to staging.
+          if git merge --no-ff --no-edit --allow-unrelated-histories origin/main; then
             echo "merge_status=clean" >> "$GITHUB_OUTPUT"
           else
-            # Conflicts: stop the merge, open the PR anyway so a human resolves.
-            git merge --abort
+            git merge --abort || true
             echo "merge_status=conflict" >> "$GITHUB_OUTPUT"
             exit 1
           fi
 
+          if [ -n "${EXISTING_REMOTE_REF}" ]; then
+            git push --force-with-lease=refs/heads/"${SYNC_BRANCH}":"${EXISTING_REMOTE_REF}" origin "${SYNC_BRANCH}"
+          else
+            git push -u origin "${SYNC_BRANCH}"
+          fi
+
       - name: Open sync PR against staging
         if: steps.check.outputs.already_synced == 'false' && steps.merge.outputs.merge_status == 'clean'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          base: staging
-          branch: ${{ steps.merge.outputs.sync_branch }}
-          title: 'chore: sync main (${{ steps.check.outputs.main_sha }}) → staging'
-          body: |
-            Automated sync from `main` to keep `staging` from drifting after a release squash-merge.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SYNC_BRANCH: ${{ steps.merge.outputs.sync_branch }}
+          MAIN_SHA: ${{ steps.check.outputs.main_sha }}
+        run: |
+          set -euo pipefail
+          # If a PR for this branch already exists (re-run of the same workflow
+          # against the same main SHA), don't open a duplicate — exit cleanly.
+          EXISTING_PR=$(gh pr list --head "${SYNC_BRANCH}" --base staging --json number --jq '.[0].number // empty')
+          if [ -n "${EXISTING_PR}" ]; then
+            echo "PR #${EXISTING_PR} already open for ${SYNC_BRANCH}; nothing to do."
+            exit 0
+          fi
+          gh pr create \
+            --base staging \
+            --head "${SYNC_BRANCH}" \
+            --title "chore: sync main (${MAIN_SHA}) → staging" \
+            --label automated \
+            --label sync \
+            --body "Automated sync from \`main\` to keep \`staging\` from drifting after a release squash-merge.
 
-            ## What this does
+          ## What this does
 
-            Merges `origin/main` (HEAD: `${{ steps.check.outputs.main_sha }}`) into `staging` as an explicit merge commit. The diff against current staging is the set of commits landed on main since the last sync — typically a single squash from a release PR.
+          Merges \`origin/main\` (HEAD: \`${MAIN_SHA}\`) into \`staging\` as an explicit merge commit. The diff against current staging is the set of commits landed on main since the last sync - typically a single squash from a release PR.
 
-            ## How to handle
+          ## How to handle
 
-            - **Tree-only sync (no real diff)**: squash-merge with default message. The squash collapses the merge commit and keeps staging's history clean.
-            - **New work landed on main bypass-style**: review the diff, then merge with a merge commit (preserves attribution).
+          - **Tree-only sync (no real diff)**: squash-merge with default message. The squash collapses the merge commit and keeps staging's history clean.
+          - **New work landed on main bypass-style**: review the diff, then merge with a merge commit (preserves attribution).
 
-            ## If this PR shows conflicts
+          ## If this PR shows conflicts
 
-            The workflow failed to auto-merge. Resolve locally:
-            ```
-            git fetch origin
-            git checkout staging
-            git merge origin/main
-            # resolve, commit, push to staging
-            ```
-            Then close this PR.
+          The workflow failed to auto-merge. Resolve locally:
+          \`\`\`
+          git fetch origin
+          git checkout staging
+          git merge origin/main
+          # resolve, commit, push to staging
+          \`\`\`
+          Then close this PR.
 
-            ---
-            Generated by `.github/workflows/sync-main-to-staging.yml`.
-          delete-branch: true
-          labels: |
-            automated
-            sync
+          ---
+          Generated by \`.github/workflows/sync-main-to-staging.yml\`."
 
       - name: Notify on conflict
         if: steps.merge.outputs.merge_status == 'conflict'
