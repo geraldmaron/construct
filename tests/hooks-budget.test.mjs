@@ -101,11 +101,84 @@ describe('hooks budget', () => {
     );
   });
 
+  it('every hook has @lifecycle or @unwired annotation', () => {
+    const missing = [];
+    for (const name of hookFiles()) {
+      const src = fs.readFileSync(path.join(HOOKS_DIR, name), 'utf8');
+      const hasLifecycle = /@lifecycle\s+(SessionStart|PreToolUse|PostToolUse|PostToolUseFailure|PreCompact|Stop|UserPromptSubmit)\b/.test(src);
+      const hasUnwired = /@unwired\b/.test(src);
+      if (!hasLifecycle && !hasUnwired) missing.push(name);
+    }
+    assert.deepEqual(missing, [], `Hooks missing @lifecycle/@unwired:\n  ${missing.join('\n  ')}`);
+  });
+
+  it('every hook has @matcher (or @unwired)', () => {
+    const missing = [];
+    for (const name of hookFiles()) {
+      const src = fs.readFileSync(path.join(HOOKS_DIR, name), 'utf8');
+      const hasMatcher = /@matcher\s+\S/.test(src);
+      const hasUnwired = /@unwired\b/.test(src);
+      if (!hasMatcher && !hasUnwired) missing.push(name);
+    }
+    assert.deepEqual(missing, [], `Hooks missing @matcher:\n  ${missing.join('\n  ')}`);
+  });
+
+  it('every hook has @exits annotation that matches process.exit() calls', () => {
+    const violations = [];
+    for (const name of hookFiles()) {
+      const src = fs.readFileSync(path.join(HOOKS_DIR, name), 'utf8');
+      const exitsMatch = src.match(/@exits\s+([^\n]+)/);
+      if (!exitsMatch) { violations.push(`${name}: missing @exits`); continue; }
+      const declaresBlock = /\b2\s*=\s*block/i.test(exitsMatch[1]);
+      const usesExitTwo = /process\.exit\(\s*2\s*\)/.test(src);
+      if (usesExitTwo && !declaresBlock) violations.push(`${name}: process.exit(2) used but @exits omits "2 = block"`);
+      if (!usesExitTwo && declaresBlock) violations.push(`${name}: @exits declares "2 = block" but no process.exit(2) in source`);
+    }
+    assert.deepEqual(violations, [], `Hook @exits drift:\n  ${violations.join('\n  ')}`);
+  });
+
+  it('every settings.template.json hook command resolves to a present .mjs file', () => {
+    const text = fs.readFileSync(SETTINGS_TEMPLATE, 'utf8');
+    const matches = [...text.matchAll(/lib\/hooks\/([a-z0-9_/-]+\.mjs)/g)].map((m) => m[1]);
+    const unique = [...new Set(matches)];
+    const missing = unique.filter((rel) => !fs.existsSync(path.join(HOOKS_DIR, rel)));
+    assert.deepEqual(missing, [], `Settings entries pointing at missing files:\n  ${missing.join('\n  ')}`);
+  });
+
+  it('every wired hook .mjs is referenced from settings (or carries @unwired)', () => {
+    const text = fs.readFileSync(SETTINGS_TEMPLATE, 'utf8');
+    const referenced = new Set([...text.matchAll(/lib\/hooks\/([a-z0-9_-]+\.mjs)/g)].map((m) => m[1]));
+    const orphans = [];
+    for (const name of hookFiles()) {
+      if (referenced.has(name)) continue;
+      const src = fs.readFileSync(path.join(HOOKS_DIR, name), 'utf8');
+      if (!/@unwired\b/.test(src)) orphans.push(name);
+    }
+    assert.deepEqual(orphans, [], `Hooks present on disk, missing from settings, and not marked @unwired:\n  ${orphans.join('\n  ')}`);
+  });
+
   it('deprecated ledger exists', () => {
     assert.ok(
       fs.existsSync(DEPRECATED_LEDGER),
       'docs/hooks-deprecated.md is missing — create it before removing hooks'
     );
+  });
+
+  it('Stop hooks that maintain tracking surfaces are non-blocking', () => {
+    const TRACKING_REFRESH_HOOKS = ['session-tracking-refresh.mjs'];
+    const violations = [];
+    for (const name of TRACKING_REFRESH_HOOKS) {
+      const src = fs.readFileSync(path.join(HOOKS_DIR, name), 'utf8');
+      const blockScope = src.match(/@maxBlockingScope\s+(\S+)/);
+      if (!blockScope) {
+        violations.push(`${name}: missing @maxBlockingScope`);
+        continue;
+      }
+      if (blockScope[1] !== 'none') {
+        violations.push(`${name}: tracking-refresh hooks must be @maxBlockingScope none, got "${blockScope[1]}"`);
+      }
+    }
+    assert.deepEqual(violations, [], `Tracking-refresh hook blocking-scope drift:\n  ${violations.join('\n  ')}`);
   });
 
   it('no banned comment patterns in hooks', () => {

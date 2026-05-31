@@ -1,12 +1,13 @@
 /**
  * tests/hooks/pre-push-gate-prior-ci.test.mjs — SHA-aware prior-CI check.
  *
- * The pre-push gate consults `gh run list` for the current branch. Older
- * logic blocked on any prior failure, which created a doom loop: the very
- * commit that fixes CI couldn't push without an env-var override, training
- * everyone to ignore the gate. The fix compares HEAD to the failed run's
- * headSha and only blocks when they match (i.e. a re-push of the broken
- * SHA). These tests pin both branches of that behavior in place.
+ * The pre-push gate consults `gh run list` for the current branch. The
+ * gate blocks only when HEAD equals the failed run's headSha (a re-push
+ * of the same broken commit) and lets HEAD-past-failure through with a
+ * non-blocking notice. A second describe block pins that no bypass
+ * mechanism exists: inline env-var prefixes on the bash command are not
+ * special-cased, and parent-process env vars named for bypasses are not
+ * honored.
  *
  * Stubs `gh` and `git` via a PATH shim so the hook reads scripted output
  * instead of hitting the real CLIs.
@@ -48,7 +49,7 @@ function writeShim(name, body) {
   fs.writeFileSync(p, `#!/usr/bin/env bash\n${body}\n`, { mode: 0o755 });
 }
 
-function runHook({ headSha, runSha, conclusion = 'failure', branch = 'fix/example', command = 'git push origin HEAD' }) {
+function runHook({ headSha, runSha, conclusion = 'failure', branch = 'fix/example', command = 'git push origin HEAD', extraEnv = {} }) {
   // The hook calls: git branch --show-current, git rev-parse HEAD,
   // gh run list. Route each to a deterministic stubbed response.
 
@@ -78,8 +79,7 @@ fi
       ...process.env,
       PATH: `${shimDir}:${process.env.PATH}`,
       HOME: tmpDir,
-      CONSTRUCT_SKIP_PREPUSH: '',
-      CONSTRUCT_ALLOW_CLAUDE_PUSH: '',
+      ...extraEnv,
     },
     timeout: 10_000,
   });
@@ -111,56 +111,63 @@ describe('pre-push-gate prior-CI check', () => {
   });
 });
 
-describe('pre-push-gate inline env-var bypass', () => {
-  // Inline prefixes on the bash command (CONSTRUCT_SKIP_PREPUSH=1 git push ...)
-  // are unreachable via process.env because Claude Code's PreToolUse hook runs
-  // before bash parses the command. The hook re-parses the command string so
-  // the documented escape hatch actually works inside Claude Code.
+describe('pre-push-gate has no bypass mechanism', () => {
+  // Pins the principle: hooks fire unconditionally. If a check is wrong,
+  // fix the check — do not re-introduce skip env vars.
 
-  it('CONSTRUCT_SKIP_PREPUSH=1 inline prefix bypasses the same-SHA block', () => {
+  it('CONSTRUCT_SKIP_PREPUSH=1 parent env is ignored — gate still blocks the same SHA', () => {
     const sha = 'd'.repeat(40);
+    const r = runHook({
+      headSha: sha,
+      runSha: sha,
+      extraEnv: { CONSTRUCT_SKIP_PREPUSH: '1' },
+    });
+    assert.equal(r.status, 2, `expected exit 2 (skip env ignored); got ${r.status}. stderr:\n${r.stderr}`);
+    assert.match(r.stderr, /HEAD .* is the commit that failed CI/);
+  });
+
+  it('CONSTRUCT_SKIP_PREPUSH=1 inline prefix is treated as part of the command, not an override', () => {
+    const sha = 'e'.repeat(40);
     const r = runHook({
       headSha: sha,
       runSha: sha,
       command: 'CONSTRUCT_SKIP_PREPUSH=1 git push origin HEAD',
     });
-    assert.equal(r.status, 0, `expected exit 0 (bypassed); got ${r.status}. stderr:\n${r.stderr}`);
-    assert.doesNotMatch(r.stderr, /HEAD .* is the commit that failed CI/);
+    assert.equal(r.status, 2, `expected exit 2 (inline prefix ignored); got ${r.status}. stderr:\n${r.stderr}`);
+    assert.match(r.stderr, /HEAD .* is the commit that failed CI/);
   });
 
-  it('CONSTRUCT_ALLOW_CLAUDE_PUSH=1 inline prefix allows a claude/* push', () => {
-    const sha = 'e'.repeat(40);
+  it('CONSTRUCT_ALLOW_CLAUDE_PUSH=1 parent env does not unlock a claude/* push', () => {
+    const sha = 'f'.repeat(40);
     const r = runHook({
       headSha: sha,
       runSha: sha,
       branch: 'claude/foo',
       conclusion: 'success',
-      command: 'CONSTRUCT_ALLOW_CLAUDE_PUSH=1 git push origin claude/foo',
+      command: 'git push origin claude/foo',
+      extraEnv: { CONSTRUCT_ALLOW_CLAUDE_PUSH: '1' },
     });
-    assert.equal(r.status, 0, `expected exit 0 (allowed); got ${r.status}. stderr:\n${r.stderr}`);
-    assert.doesNotMatch(r.stderr, /Refusing to push a claude/);
+    assert.equal(r.status, 2, `expected exit 2 (claude/* refused regardless of env); got ${r.status}. stderr:\n${r.stderr}`);
+    assert.match(r.stderr, /Refusing to push a claude/);
   });
 
-  it('non-allowlist env-var prefix is ignored — gate still runs', () => {
-    const sha = 'f'.repeat(40);
+  it('CONSTRUCT_SKIP_PR_LINT=1 parent env does not short-circuit the PR-body path', () => {
+    // The hook tries findRepoFile(cwd, 'scripts/lint-commits-pr.mjs') for
+    // gh pr create/edit. From an empty tmpdir the script is not present, so
+    // the hook writes a deterministic "could not locate" notice to stderr
+    // before passing through. The notice's presence proves the hook reached
+    // the PR-body path; its absence would prove a short-circuit.
     const r = runHook({
-      headSha: sha,
-      runSha: sha,
-      command: 'RANDOM=1 git push origin HEAD',
+      headSha: 'g'.repeat(40),
+      runSha: 'g'.repeat(40),
+      conclusion: 'success',
+      command: 'gh pr create --title x --body "body text"',
+      extraEnv: { CONSTRUCT_SKIP_PR_LINT: '1' },
     });
-    assert.equal(r.status, 2, `expected exit 2 (still blocked); got ${r.status}. stderr:\n${r.stderr}`);
-    assert.match(r.stderr, /HEAD .* is the commit that failed CI/);
-  });
-
-  it('env-var appearing AFTER the executable is not treated as a prefix', () => {
-    // `git push HEAD CONSTRUCT_SKIP_PREPUSH=1` is just a positional arg to git,
-    // not an env-var prefix — the parser must stop at the first non-assignment token.
-    const sha = '0'.repeat(40);
-    const r = runHook({
-      headSha: sha,
-      runSha: sha,
-      command: 'git push origin HEAD CONSTRUCT_SKIP_PREPUSH=1',
-    });
-    assert.equal(r.status, 2, `expected exit 2 (still blocked — prefix-only); got ${r.status}. stderr:\n${r.stderr}`);
+    assert.match(
+      r.stderr,
+      /could not locate scripts\/lint-commits-pr\.mjs/,
+      `gate must engage the PR-body path; stderr:\n${r.stderr}`,
+    );
   });
 });

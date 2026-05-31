@@ -1,11 +1,11 @@
 ---
 title: Gates and enforcement
-description: "Three layers of policy enforcement: real-time, commit/push, CI safety net. Every blocking gate has an explicit bypass."
+description: "Three layers of policy enforcement: real-time, commit/push, CI safety net. Gates fire unconditionally; correctness is repaired at the policy, not bypassed at the call site."
 ---
 
 Construct treats policy enforcement as defense in depth. Every meaningful rule lives in three places: a real-time gate that catches violations at the source, a commit/push gate that blocks them before they leave your machine, and a CI gate that catches anything that escaped the first two. The architecture is deliberately redundant: the failure mode you want to avoid is "the rule existed but never fired."
 
-Every blocking gate ships with an explicit env-var bypass. Bypasses are auditable because they're explicit in command history; silent bypasses are not allowed.
+Gates fire unconditionally. No `CONSTRUCT_SKIP_*` env var sits inline with any quality check. The principle: a skip env var on a quality gate is an admission that the policy is wrong, the gate is over-scoped, or the team will route around it. If a check fires wrong, the check is wrong — repair the policy at its source, do not re-add the bypass at the call site.
 
 <RequestFlow nodes={[
   { label: 'agent edits a file' },
@@ -26,7 +26,7 @@ In team and enterprise modes a fourth gate (the MCP broker) sits inline with eve
 
 Fires during write, while the agent is composing code or running commands.
 
-- **`comment-lint` (PostToolUse)**: blocks Write/Edit/MultiEdit if the edit introduces a banned comment pattern (narrative voice, point-in-time notes, noise sentinels) or a missing required header. Bypass: `CONSTRUCT_SKIP_COMMENT_LINT=1`.
+- **`comment-lint` (PostToolUse)**: blocks Write/Edit/MultiEdit if the edit introduces a banned comment pattern (narrative voice, point-in-time notes, noise sentinels) or a missing required header. If the policy fires on a legitimate comment, the rule in `lib/comment-lint.mjs` is what needs to change.
 - **`doc-coupling-check` (PostToolUse, advisory)**: counts code-file edits per session and emits stderr advisories at thresholds (3, 5, 10) when no doc files have been touched. Doesn't block; just nudges. The commit-time gate is the real enforcement.
 - **`ci-status-check` (UserPromptSubmit)**: injects the most recent CI run status for the current branch into the agent's context every prompt. Cached 60s. The agent literally cannot claim "I didn't know CI was red."
 
@@ -40,21 +40,15 @@ Fires when you try to land changes.
 - `construct lint:comments`: same banned-pattern check as Layer 1, across the full worktree so local commit behavior matches CI.
 - `construct docs:verify`: blocks a commit that changes `lib/`, `bin/`, `src/`, or `app/` without a matching `CHANGELOG.md` / `docs/` / `.cx/context.*` update.
 
-Bypasses: `CONSTRUCT_SKIP_GATES=1` (whole layer), `CONSTRUCT_SKIP_DOCS=1` (docs-coupling only), `ECC_SKIP_PRECOMMIT=1` (secret scan only).
-
 **Push-time (`lib/hooks/pre-push-gate.mjs` + `.beads/hooks/pre-push`):**
 
-- Refuses `claude/*` branch pushes. Bypass: `CONSTRUCT_ALLOW_CLAUDE_PUSH=1`.
-- Blocks re-pushing the *exact SHA* that CI most recently failed on (SHA-aware; if HEAD has advanced past the failed commit, the new commits may be the fix — they go through with a non-blocking notice). This is intentionally a local-only guardrail; CI itself does not mirror it because CI cannot know the operator's "stop and fix before pushing more" intent.
-- That's it. Tests, build, audit, evals, every `lint:*`, docs drift — all live in `.github/workflows/ci.yml`. Earlier revisions of the hook re-ran the entire CI matrix locally on every push (~65s wall time); the duplication made `CONSTRUCT_SKIP_PREPUSH=1` a daily escape hatch, which is the gate-skipped-by-default failure mode. The pre-push gate is now narrow enough to be trustworthy, and CI is the merge gate of record.
-
-Bypass: `CONSTRUCT_SKIP_PREPUSH=1` (refused on `main` / `staging` / `master` — those branches go through PR + CI). Every honored bypass is appended to `~/.construct/audit/prepush-bypass.log`; `construct doctor` surfaces frequent usage as a signal that the gate is wrong-sized.
+- Refuses `claude/*` branch pushes unconditionally.
+- Blocks re-pushing the *exact SHA* that CI most recently failed on (SHA-aware; if HEAD has advanced past the failed commit, the new commits may be the fix — they go through with a non-blocking notice). The legitimate "fix-forward past a failed SHA" case is already handled by the SHA comparison: amend or add a fix commit and the gate stops blocking.
+- That's it. Tests, build, audit, evals, every `lint:*`, docs drift — all live in `.github/workflows/ci.yml`. The pre-push gate is narrow enough to be trustworthy on every push, and CI is the merge gate of record.
 
 **`gh pr create` / `gh pr edit` (Layer 2.5):**
 
-- The pre-push hook also intercepts these commands and runs `construct lint:templates` on the body to catch PR-template policy violations before the PR even opens.
-
-Bypass: `CONSTRUCT_SKIP_PR_LINT=1`.
+- The pre-push hook also intercepts these commands and runs `construct lint:templates` on the body to catch PR-template policy violations before the PR even opens. Severity is conditional: hard-block (exit 2) when a specialist sub-agent is active; warning-only otherwise so a human driving the session can override editorial nits.
 
 ## Layer 3: CI + session end
 
@@ -66,9 +60,8 @@ Catches escapees from Layers 1 and 2.
 
 **Session-end checks (`policy-engine.mjs` Stop handler):**
 
-- **Red-CI block**: refuses to end the session if CI is red on the current branch and the agent edited code this session. Bypass: `CONSTRUCT_STOP_OK_RED_CI=1`.
-- **Red-CI block** is also intentionally local-only. It protects session discipline, not merge safety; branch protection remains the actual merge gate.
-- **Open-beads block**: refuses to end the session if beads issues are in `in_progress` status. Bypass: `CONSTRUCT_STOP_OK_OPEN_BD=1`.
+- **Red-CI block**: refuses to end the session if CI is red on the current branch and the agent edited code this session. Protects session discipline, not merge safety; branch protection remains the actual merge gate.
+- **Open-beads block**: refuses to end the session if beads issues are in `in_progress` status.
 - **Drive-mode criteria**: refuses to end a `drive` autonomous session if acceptance criteria are unmet.
 
 **Self-validation:** `construct gates:audit` walks all four enforcement surfaces (CI workflows, pre-push, pre-commit, branch protection) and reports gaps. Runs in CI on every PR; failures block merge.
@@ -84,20 +77,22 @@ In team and enterprise deployments, MCP tool calls run through `lib/mcp/broker.m
 
 Solo mode leaves the broker off by default: set `CONSTRUCT_MCP_BROKER=on` to engage it for testing. Solo's policy posture is "agent decides"; the broker becomes the enforcer when the deployment is shared.
 
-## Bypass philosophy
+## No-skip-vars principle
 
-Every blocking gate has an env-var bypass for one reason: emergencies happen, and silent-bypass is worse than explicit-bypass. When you set `CONSTRUCT_SKIP_*` in your shell history, the override is visible to future-you, reviewers, and audit logs.
+A skip env var on a quality gate is an admission that the gate is wrong, the policy is over-scoped, or the team will route around it. Auditing the skip tells you who skipped; it doesn't address why a check fires when it shouldn't. The principle:
 
-The gate authors trust the override system because they trust the bypass *is* the audit trail. Never patch around a gate by editing the gate itself.
+- Quality gates have no env-var override. If a check fires wrong, repair the check.
+- Advisory notices auto-detect non-interactive contexts (`CI=true`, `NODE_ENV=test`) and stay silent. The wrong-context detection is the right mechanism, not an opt-out flag.
+- Pinned by `tests/hooks/no-skip-vars.test.mjs`: any `CONSTRUCT_SKIP_*` / `CONSTRUCT_ALLOW_*` / `CONSTRUCT_QUIET_*` reference introduced into `lib/hooks/*.mjs` fails the test.
 
 ## Where to look when something is blocking
 
 | Symptom | Likely gate | Where to start |
 |---|---|---|
-| Edit got rejected with "banned pattern" | Layer 1 comment-lint | [`rules/common/comments.md`](https://github.com/geraldmaron/construct/blob/main/rules/common/comments.md) |
-| `git commit` refuses with "comment policy violations" | Layer 2 comment-lint | run `construct lint:comments` locally |
-| `git commit` refuses with "code changed but docs unchanged" | Layer 2 doc-coupling | update `CHANGELOG.md` or pass `CONSTRUCT_SKIP_DOCS=1` |
-| `git push` refuses | Layer 2 pre-push | local test/build/evals/docs failed, OR remote CI was red |
+| Edit got rejected with "banned pattern" | Layer 1 comment-lint | [`rules/common/comments.md`](https://github.com/geraldmaron/construct/blob/main/rules/common/comments.md) — repair the comment or the policy |
+| `git commit` refuses with "comment policy violations" | Layer 2 comment-lint | run `construct lint:comments` locally; remove the violation |
+| `git commit` refuses with "code changed but docs unchanged" | Layer 2 doc-coupling | update `CHANGELOG.md`, `docs/`, or `.cx/context.*` to match the code change |
+| `git push` refuses | Layer 2 pre-push | check whether HEAD is the SHA CI rejected; fix-forward with a new commit |
 | `gh pr create` refuses | Layer 2.5 template policy | `construct lint:templates --body-file=path/to/draft` |
 | CI green but PR can't merge | Layer 3 branch protection | required status check missing or pending |
 | Session won't end | Layer 3 policy-engine Stop | red CI, open beads, or drive criteria: output tells you which |

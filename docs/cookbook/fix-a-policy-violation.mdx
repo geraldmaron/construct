@@ -29,7 +29,7 @@ For the full enforcement model, see [Concepts → Gates and enforcement](/concep
 - Common patterns: `// We do X` (narrative voice), `// Previously this was Y` (point-in-time), `// best effort` (noise sentinel).
 - For new files in scoped paths (`bin/`, `lib/**/*.mjs`, `lib/hooks/`, `tests/`, etc.), add the file-header `/** */` block first.
 
-**Emergency bypass:** `CONSTRUCT_SKIP_COMMENT_LINT=1` in the env. Use only when the failing check is the bug and the lint policy itself needs updating.
+**When the policy is wrong:** there is no `CONSTRUCT_SKIP_*` for this gate. If the lint fires on a legitimate comment, fix `lib/comment-lint.mjs` (the rule source) and `rules/common/comments.md` (the documented policy) — do not re-introduce a skip env var. The principle: gates fire unconditionally; a skip env var on a quality gate is an admission the policy is wrong, the gate is over-scoped, or the team will route around it.
 
 ## "Commit blocked: code changed but docs unchanged"
 
@@ -43,7 +43,7 @@ For the full enforcement model, see [Concepts → Gates and enforcement](/concep
 - If the change is genuinely operational (a build script tweak, a config file update) and doesn't warrant a CHANGELOG entry, update `.cx/context.md` or relevant `docs/**` to reflect the work.
 - The gate scope is `lib/`, `bin/`, `src/`, `app/`. Tweaks to `tests/`, `scripts/`, and `agents/` don't trip the gate.
 
-**Emergency bypass:** `CONSTRUCT_SKIP_DOCS=1 git commit ...`. Use rarely; "I'll update docs later" is exactly the failure mode this gate exists to prevent.
+**When the gate is wrong:** there is no `CONSTRUCT_SKIP_*` for this gate. If the doc-coupling check fires on a change that legitimately doesn't need docs, fix the scope in `lib/docs-verify.mjs` instead of bypassing.
 
 ## "Push blocked: last CI run failed"
 
@@ -66,7 +66,7 @@ Read the failure. Usually one of:
 
 Fix the underlying cause, then push. The gate clears as soon as a new CI run goes green.
 
-**Emergency bypass:** `CONSTRUCT_SKIP_PREPUSH=1 git push`. Use when the CI failure is a known false-positive that you've already fixed in the push you're attempting to make.
+**There is no `CONSTRUCT_SKIP_*` for the pre-push gate.** The legitimate "I already fixed the CI failure in this push" case is handled by the SHA-aware check: the gate only blocks when `HEAD` equals the SHA CI rejected. Add a fix commit (or amend), and the gate clears automatically once HEAD advances past the failed SHA.
 
 ## "PR can't merge: required status checks pending or failed"
 

@@ -14,19 +14,7 @@
           }
         ],
         "id": "session:start",
-        "description": "Load prior project context and git status at session start"
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/env-check.mjs\"",
-            "timeout": 5
-          }
-        ],
-        "id": "session:env-check",
-        "description": "Warn about missing required env vars at session open"
+        "description": "Load prior project context, git status, and missing-env-var notice at session start"
       }
     ],
     "PreToolUse": [
@@ -220,26 +208,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/read-tracker.mjs\"",
-            "timeout": 3,
-            "async": true
-          }
-        ],
-        "id": "post:read-tracker",
-        "description": "Record file content hash after Read for staleness detection in edit-guard"
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
             "command": "node \"$HOME/.construct/lib/hooks/audit-reads.mjs\"",
             "timeout": 3,
             "async": true
           }
         ],
         "id": "post:audit-reads",
-        "description": "Tamper-evident chain log of every Read tool call. Off by default — enable with CONSTRUCT_AUDIT_READS=1."
+        "description": "Update file-hashes.json for edit-guard staleness detection on every Read; optionally write a tamper-evident audit chain when CONSTRUCT_AUDIT_READS=1."
       },
       {
         "matcher": "mcp__.*",
@@ -304,6 +279,19 @@
         ],
         "id": "post:bash:post-merge-docs-check",
         "description": "Emit doc-drift events when a merge lands without matching docs/CHANGELOG updates"
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/post-merge-tracking.mjs\"",
+            "timeout": 5,
+            "async": true
+          }
+        ],
+        "id": "post:bash:post-merge-tracking",
+        "description": "After `gh pr merge` succeeds, parse the PR body's Refs/Closes/Fixes lines and close every referenced construct-XXX bead so plan.md and .cx/context.md don't drift behind merged work"
       },
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
@@ -473,6 +461,19 @@
         ],
         "id": "stop:auto-reflect",
         "description": "Deterministic session-end reflect: extracts a transcript summary into .cx/observations (500ms hard budget; CONSTRUCT_REFLECT_AUTO=off to disable)"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/session-tracking-refresh.mjs\"",
+            "timeout": 5,
+            "async": true
+          }
+        ],
+        "id": "stop:tracking-refresh",
+        "description": "Auto-refresh .cx/context.{md,json} from recent observations + commits + closed beads; sync plan.md bead-status table; archive plan.md to .cx/handoffs/ when all referenced beads are closed"
       }
     ],
     "UserPromptSubmit": [
