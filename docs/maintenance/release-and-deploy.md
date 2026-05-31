@@ -173,6 +173,35 @@ One-time setup on npmjs.com: package → Settings → Trusted Publishers → add
 - Requires `HOMEBREW_TAP_TOKEN` secret with push access to the tap repo.
 - Gated on `vars.HOMEBREW_TAP_ENABLED == 'true'`.
 
+## Sync main → staging (post-merge automation)
+
+`.github/workflows/sync-main-to-staging.yml` opens a sync PR from `main` to `staging` after every push to `main`. The integration branch never falls behind a release that landed via squash.
+
+### Required repo policy
+
+**Settings → Actions → General → Workflow permissions → "Allow GitHub Actions to create and approve pull requests" must be enabled.** Without it, `gh pr create` from the workflow fails with `GitHub Actions is not permitted to create or approve pull requests`. The workflow's `Report token mode` and `Open sync PR against staging` steps surface this error directly with a link to the setting. Verify via:
+
+```bash
+gh api /repos/geraldmaron/construct/actions/permissions/workflow
+# expect: "can_approve_pull_request_reviews": true
+```
+
+### Recommended: PAT (`SYNC_PR_TOKEN`)
+
+Workflows triggered by pushes from `GITHUB_TOKEN` do not fire downstream workflows (GitHub's anti-loop guard), so the auto-opened sync PR sits without CI checks and cannot satisfy branch protection on `staging` without an admin-merge. Set a fine-grained PAT as a repo secret named `SYNC_PR_TOKEN` to bypass this:
+
+1. Generate a PAT with `contents:write` + `pull-requests:write` scoped to this repo (https://github.com/settings/personal-access-tokens).
+2. Add it as a repo secret: `gh secret set SYNC_PR_TOKEN`.
+3. The workflow picks it up automatically (`secrets.SYNC_PR_TOKEN || secrets.GITHUB_TOKEN` fallback chain).
+
+Without `SYNC_PR_TOKEN`: the sync workflow still runs, opens a PR, and emits a workflow warning that the PR will not auto-trigger CI. Maintainer can admin-merge or push an empty commit to the sync branch to trigger CI.
+
+### Manual re-trigger
+
+```bash
+gh workflow run "Sync main → staging" --ref main
+```
+
 ## Pre-push gate (local, runs before every push)
 
 `lib/hooks/pre-push-gate.mjs` runs before any `git push`:
@@ -195,6 +224,9 @@ Failures here block the push. There is no bypass env var: fix the underlying iss
 | `release:check` fails on `docs:verify` | New code without doc update | Update the affected doc, regenerate AUTO regions, recommit |
 | Docker CVE scan blocks release | New high/critical CVE | Bump the affected dep or wait for an upstream patch; do not lower the severity threshold |
 | Trivy `@master` warning | Action drifted off pinned version | The action is intentionally pinned to a specific `v0.x.y` release; ignore the prompt to use `@master` |
+| `Sync main → staging` fails with `not permitted to create or approve pull requests` | Repo policy "Allow GitHub Actions to create and approve pull requests" is off | Enable in Settings → Actions → General → Workflow permissions (or `gh api -X PUT /repos/<owner>/<repo>/actions/permissions/workflow -F can_approve_pull_request_reviews=true`); re-run via `gh workflow run "Sync main → staging" --ref main` |
+| Sync PR has no CI checks; branch protection blocks merge | Sync workflow pushed via `GITHUB_TOKEN` (anti-loop guard); downstream CI never fires | Set the `SYNC_PR_TOKEN` repo secret (fine-grained PAT) so future syncs trigger CI. For the current PR, admin-merge OR push an empty commit to the sync branch |
+| `npm audit` fails the release gate on a workspace-scoped dep | Release gate is mis-scoped (was running with no `--workspaces=false`) | Confirm `release.yml` uses `--omit=dev --audit-level=high --workspaces=false` to match `ci.yml`. Workspace-scoped vulns (apps/docs, dashboard) belong on their own remediation track, not the CLI release gate |
 
 ## Patterns codified (so we do not redo this manually)
 
