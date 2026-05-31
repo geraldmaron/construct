@@ -103,8 +103,6 @@ jobs:
             --base staging \
             --head "${SYNC_BRANCH}" \
             --title "chore: sync main (${MAIN_SHA}) → staging" \
-            --label automated \
-            --label sync \
             --body "Automated sync from \`main\` to keep \`staging\` from drifting after a release squash-merge.
 
           ## What this does
