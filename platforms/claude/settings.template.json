@@ -281,6 +281,19 @@
         "description": "Emit doc-drift events when a merge lands without matching docs/CHANGELOG updates"
       },
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/post-merge-tracking.mjs\"",
+            "timeout": 5,
+            "async": true
+          }
+        ],
+        "id": "post:bash:post-merge-tracking",
+        "description": "After `gh pr merge` succeeds, parse the PR body's Refs/Closes/Fixes lines and close every referenced construct-XXX bead so plan.md and .cx/context.md don't drift behind merged work"
+      },
+      {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
         "hooks": [
           {
@@ -448,6 +461,19 @@
         ],
         "id": "stop:auto-reflect",
         "description": "Deterministic session-end reflect: extracts a transcript summary into .cx/observations (500ms hard budget; CONSTRUCT_REFLECT_AUTO=off to disable)"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/session-tracking-refresh.mjs\"",
+            "timeout": 5,
+            "async": true
+          }
+        ],
+        "id": "stop:tracking-refresh",
+        "description": "Auto-refresh .cx/context.{md,json} from recent observations + commits + closed beads; sync plan.md bead-status table; archive plan.md to .cx/handoffs/ when all referenced beads are closed"
       }
     ],
     "UserPromptSubmit": [
