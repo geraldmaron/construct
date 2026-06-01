@@ -10,6 +10,7 @@ description: Advanced commands for Construct.
 | `construct auth:status` | Check auth status |
 | `construct backup` | System backups |
 | `construct beads` | Task queue management |
+| `construct beads:stats` | Show beads counters and drift summary |
 | `construct ci` | Local CI mirror: run CI jobs locally or view recent run status |
 | `construct completions` | Shell completion scripts |
 | `construct config` | Deployment mode configuration |
@@ -21,6 +22,8 @@ description: Advanced commands for Construct.
 | `construct policy` | Show active policy gates with enforcement details |
 | `construct provider` | Provider management |
 | `construct role` | Role framework management |
+| `construct roles:list` | List installed role contracts |
+| `construct roles:set` | Activate a role contract |
 | `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |
 | `construct skills` | Skill relevance detection |
 | `construct uninstall` | Remove Construct state |
@@ -56,7 +59,17 @@ Task queue management
 **Usage**
 
 ```bash
-construct beads status|cleanup
+construct beads <list|show|create|update|close|drift|stats>
+```
+
+## construct beads:stats
+
+Show beads counters and drift summary
+
+**Usage**
+
+```bash
+construct beads:stats
 ```
 
 ## construct ci
@@ -84,7 +97,7 @@ Shell completion scripts
 **Usage**
 
 ```bash
-construct completions
+construct completions <bash|zsh|install>
 ```
 
 ## construct config
@@ -94,7 +107,7 @@ Deployment mode configuration
 **Usage**
 
 ```bash
-construct config mode
+construct config <get|set>
 ```
 
 ## construct diff
@@ -180,7 +193,27 @@ Role framework management
 **Usage**
 
 ```bash
-construct role list|status
+construct role <list|set|latest>
+```
+
+## construct roles:list
+
+List installed role contracts
+
+**Usage**
+
+```bash
+construct roles:list
+```
+
+## construct roles:set
+
+Activate a role contract
+
+**Usage**
+
+```bash
+construct roles:set <role>
 ```
 
 ## construct scheduler
@@ -210,8 +243,15 @@ Remove Construct state
 **Usage**
 
 ```bash
-construct uninstall
+construct uninstall [--yes] [--all]
 ```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--yes` | Remove auto-risk categories without prompting |
+| `--all` | Combined with --yes: also remove ask-risk categories (project data, machine config) |
 
 ## construct update
 

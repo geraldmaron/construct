@@ -10,8 +10,8 @@ description: Core commands for Construct.
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
-| `construct init` | Initialize project and start services |
-| `construct install` | Machine setup: install Docker, cm, and bootstrap config |
+| `construct init` | Project setup (once per repo): scaffold .cx/, AGENTS.md, plan.md, adapters |
+| `construct install` | Machine setup (once per machine): Docker, cm/cass, config, embeddings |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
 | `construct profile` | Manage the active org profile and its lifecycle (draft, promote, archive, health) |
 | `construct recommendations` | View and manage artifact recommendations |
@@ -53,12 +53,18 @@ Check installation health
 **Usage**
 
 ```bash
-construct doctor
+construct doctor [--fix-legacy-agents]
 ```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--fix-legacy-agents` | Sweep legacy cx-*.md agents at user scope and re-sync |
 
 ## construct init
 
-Initialize project and start services
+Project setup (once per repo): scaffold .cx/, AGENTS.md, plan.md, adapters
 
 **Usage**
 
@@ -85,12 +91,12 @@ construct init [path] [options]
 
 ## construct install
 
-Machine setup: install Docker, cm, and bootstrap config
+Machine setup (once per machine): Docker, cm/cass, config, embeddings
 
 **Usage**
 
 ```bash
-construct install [--yes]
+construct install [--yes] [--no-docker]
 ```
 
 **Options**
@@ -98,6 +104,7 @@ construct install [--yes]
 | Flag | Description |
 |---|---|
 | `--yes` | Apply defaults without prompts |
+| `--no-docker` | Skip Docker-based service setup (local Postgres) |
 
 ## construct intake
 
