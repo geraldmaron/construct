@@ -4,6 +4,8 @@ created_at: "2026-04-29T00:00:00.000Z"
 updated_at: "2026-04-29T00:00:00.000Z"
 generator: construct/Construct·Architect
 body_hash: "sha256:placeholder"
+last_verified_at: 2026-06-01
+verified_by: cx-docs-keeper · PR-D baseline stamp
 ---
 
 # ADR-0003: Transport-Agnostic Provider Interface

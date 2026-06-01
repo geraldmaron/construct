@@ -115,8 +115,8 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
-| `construct init` | Initialize project and start services |
-| `construct install` | Machine setup: install Docker, cm, and bootstrap config |
+| `construct init` | Project setup (once per repo): scaffold .cx/, AGENTS.md, plan.md, adapters |
+| `construct install` | Machine setup (once per machine): Docker, cm/cass, config, embeddings |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
 | `construct profile` | Manage the active org profile and its lifecycle (draft, promote, archive, health) |
 | `construct recommendations` | View and manage artifact recommendations |
@@ -129,11 +129,13 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 | Command | What it does |
 |---|---|
+| `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
 | `construct graph` | Task graph management |
+| `construct handoffs` | List and inspect session handoff files in .cx/handoffs/ |
 | `construct headhunt` | Create domain expertise overlays |
 | `construct infer` | Infer schema from documents |
 | `construct ingest` | Convert documents to indexed markdown |
@@ -174,11 +176,14 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct efficiency` | Show read efficiency, repeated files, and context-budget guidance |
 | `construct eval-datasets` | Sync scored Langfuse traces into eval datasets for prompt regression testing |
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
+| `construct feedback:history` | Show recorded outcome ratings |
+| `construct feedback:record` | Record an outcome rating for a recent specialist invocation |
 | `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
 | `construct optimize` | Prompt optimization using Langfuse trace quality scores |
 | `construct review` | Generate agent performance review from Langfuse trace backend |
 | `construct telemetry` | Query telemetry traces and latency data |
 | `construct telemetry-backfill` | Backfill sparse traces with observations (trace backend) |
+| `construct telemetry-setup` | Configure Langfuse credentials and trace export |
 
 ### Diagnostics
 
@@ -187,6 +192,11 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct audit` | Audit Construct internals and review the mutation trail |
 | `construct cleanup` | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
+| `construct docs:check` | Check for missing how-to guides (alias for `docs check`) |
+| `construct docs:reconcile` | Reconcile docs against the registry |
+| `construct docs:site` | Manage the docs static site build |
+| `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
+| `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
 
 ### Advanced
 
@@ -195,6 +205,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct auth:status` | Check auth status |
 | `construct backup` | System backups |
 | `construct beads` | Task queue management |
+| `construct beads:stats` | Show beads counters and drift summary |
 | `construct ci` | Local CI mirror: run CI jobs locally or view recent run status |
 | `construct completions` | Shell completion scripts |
 | `construct config` | Deployment mode configuration |
@@ -206,6 +217,8 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct policy` | Show active policy gates with enforcement details |
 | `construct provider` | Provider management |
 | `construct role` | Role framework management |
+| `construct roles:list` | List installed role contracts |
+| `construct roles:set` | Activate a role contract |
 | `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |
 | `construct skills` | Skill relevance detection |
 | `construct uninstall` | Remove Construct state |

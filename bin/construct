@@ -12,7 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { CLI_COMMANDS, CLI_COMMANDS_BY_CATEGORY, CATEGORY_ORDER } from '../lib/cli-commands.mjs';
+import { CLI_COMMANDS, CLI_COMMANDS_BY_CATEGORY, CATEGORY_ORDER, formatCommandHelp, isInternalCommand } from '../lib/cli-commands.mjs';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { validateRegistry } from '../lib/validator.mjs';
 import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setTierModel, setModelWithTierInference } from '../lib/model-router.mjs';
@@ -104,73 +104,63 @@ function iconColumn(emoji) {
   return emoji + trailingSpaces;
 }
 
-function usage() {
-  const showAll = restArgsCache.includes('--all') || restArgsCache.includes('-a');
-  const commands = showAll ? CLI_COMMANDS : CLI_COMMANDS.filter(c => c.core);
-  
+function usage(opts = {}) {
+  const showAll = opts.all ?? (restArgsCache.includes('--all') || restArgsCache.includes('-a'));
+  // Always filter out internal commands; users can still run them directly,
+  // but --all is for "everything humans use" not "every handler in the map".
+  const visible = CLI_COMMANDS.filter((c) => !c.internal);
+  const commands = showAll ? visible : visible.filter((c) => c.core);
+
   if (showAll) {
     println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness (all commands)`);
   } else {
     println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
-    println(`${COLORS.dim}Tip: Run ${COLORS.reset}construct --all${COLORS.dim} to see all commands${COLORS.reset}`);
+    println(`${COLORS.dim}Tip: Run ${COLORS.reset}construct --all${COLORS.dim} to see all commands · ${COLORS.reset}construct <cmd> --help${COLORS.dim} for details${COLORS.reset}`);
   }
-  
+
   println(`\n${COLORS.dim}Usage:${COLORS.reset} construct <command> [options]\n`);
-  
+
   for (const category of CATEGORY_ORDER) {
-    const categoryCommands = commands.filter(c => c.category === category);
+    const categoryCommands = commands.filter((c) => c.category === category);
     if (!categoryCommands.length) continue;
     println(`${COLORS.bold}${category}${COLORS.reset}`);
     for (const command of categoryCommands) {
-      println(`  ${iconColumn(command.emoji)}${command.name.padEnd(14)} ${command.description}`);
+      const emoji = command.emoji ?? '  ';
+      println(`  ${iconColumn(emoji)}${command.name.padEnd(14)} ${command.description}`);
     }
     println('');
   }
 }
 
-/** Show interactive context-aware menu when construct is run without arguments. */
+// Bare-command landing — show the same core-command listing as `construct
+// --help`, prefixed with a context line so users know where they are, and
+// suffixed with the one next-step suggestion that applies to their state.
+
 async function showInteractiveMenu() {
-  const { loadProjectConfig } = await import('../lib/config/project-config.mjs');
   const { existsSync } = await import('node:fs');
   const { join } = await import('node:path');
-  
+
   const projectRoot = process.cwd();
   const isConstructProject = existsSync(join(projectRoot, 'construct.config.json')) ||
                              existsSync(join(projectRoot, '.cx'));
-  
-  println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
-  println('');
-  
+
   if (isConstructProject) {
     const projectName = process.env.CX_PROJECT_NAME || path.basename(projectRoot);
     println(`${COLORS.dim}Project:${COLORS.reset} ${projectName}`);
     println('');
   }
-  
-  println(`${COLORS.bold}Core Commands:${COLORS.reset}`);
-  println(`  ${COLORS.green}🚀 dev${COLORS.reset}              Start services for development`);
-  println(`  ${COLORS.green}⏹ stop${COLORS.reset}              Stop all running services`);
-  println(`  ${COLORS.green}📡 status${COLORS.reset}           Show system health and credentials`);
-  println(`  ${COLORS.green}🏗️  init${COLORS.reset}             Initialize project and start services`);
-  println(`  ${COLORS.green}🔄 sync${COLORS.reset}             Sync agent adapters to AI tools`);
-  println('');
-  println(`${COLORS.dim}Run 'construct <command> --help' for command details${COLORS.reset}`);
-  println(`${COLORS.dim}Run 'construct --all' to see all commands${COLORS.reset}`);
-  println('');
-  
-  // Show context-aware suggestions
+
+  usage({ all: false });
+
   if (isConstructProject) {
     const { readDashboardState } = await import('../lib/service-manager.mjs');
     const dashboard = readDashboardState(HOME);
-    
     if (!dashboard) {
-      println(`${COLORS.yellow}💡 Services not running. Start with:${COLORS.reset}`);
-      println(`   ${COLORS.green}construct dev${COLORS.reset}`);
+      println(`${COLORS.yellow}💡 Services not running. Start with:${COLORS.reset} ${COLORS.green}construct dev${COLORS.reset}`);
       println('');
     }
   } else {
-    println(`${COLORS.yellow}💡 Not a Construct project. Initialize with:${COLORS.reset}`);
-    println(`   ${COLORS.green}construct init${COLORS.reset}`);
+    println(`${COLORS.yellow}💡 Not a Construct project. Initialize with:${COLORS.reset} ${COLORS.green}construct init${COLORS.reset}`);
     println('');
   }
 }
@@ -506,35 +496,12 @@ async function cmdDoctor() {
     );
   }
 
-  // Pre-push bypass frequency. Every honored CONSTRUCT_SKIP_PREPUSH /
-  // CONSTRUCT_ALLOW_CLAUDE_PUSH / CONSTRUCT_SKIP_PR_LINT writes a JSONL
-  // entry to ~/.construct/audit/prepush-bypass.log. Surfacing frequent
-  // usage here is the early warning that the gate is the wrong shape —
-  // the alternative is letting the bypass quietly become the default.
-
-  const bypassLogPath = path.join(userHome, '.construct', 'audit', 'prepush-bypass.log');
-  if (fs.existsSync(bypassLogPath)) {
-    try {
-      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const recent = fs.readFileSync(bypassLogPath, 'utf8')
-        .split('\n')
-        .filter(Boolean)
-        .map((line) => { try { return JSON.parse(line); } catch { return null; } })
-        .filter((e) => e && Date.parse(e.ts) >= cutoff);
-      const BYPASS_WARN_THRESHOLD = Number(process.env.CONSTRUCT_DOCTOR_BYPASS_WARN) || 3;
-      if (recent.length >= BYPASS_WARN_THRESHOLD) {
-        add(
-          `Pre-push bypasses in last 7 days: ${recent.length} (gate may be wrong-sized — see ${bypassLogPath})`,
-          false,
-          true,
-        );
-      } else {
-        add(`Pre-push bypasses in last 7 days: ${recent.length}`, true);
-      }
-    } catch { /* audit log read is best-effort */ }
-  } else {
-    add('Pre-push bypass log not present (no bypasses honored yet)', true);
-  }
+  // (Pre-push bypass doctor check removed in v1.0.16.) v1.0.15 deleted the
+  // entire skip-var infrastructure (CONSTRUCT_SKIP_PREPUSH, _COMMENT_LINT,
+  // _PR_LINT, _DOCS, CONSTRUCT_ALLOW_CLAUDE_PUSH). There is no longer any
+  // writer to ~/.construct/audit/prepush-bypass.log, so any historical
+  // entries are stale and the warning surfaced forever. The file itself
+  // is harmless — next cleanup tick may sweep it.
 
   // Embed daemon log size. The daemon's own scheduler rotates every
   // minute at 50MB, but a freshly-upgraded install with a 34GB legacy
@@ -671,16 +638,12 @@ async function cmdDoctor() {
           path.join(process.env.APPDATA ?? path.join(HOME, 'AppData', 'Roaming'), 'Code - Insiders'),
         ];
   if (vscodeAppSupportRoots.some((r) => fs.existsSync(r))) {
-    // VS Code is installed but has no settings.json — the user needs to create
-    // one manually or run `construct sync` after VS Code sync support lands.
+    // VS Code installed → check settings.json presence as a green/info signal.
+    // Absence is not a doctor finding — VS Code adapter support hasn't landed
+    // yet, so "create one or wait for support" isn't actionable. The line is
+    // suppressed entirely when missing; doctor surfaces facts, not roadmap.
     const vscodeSettingsOk = vscodeSettingsPaths.some((candidate) => fs.existsSync(candidate));
-    add(
-      vscodeSettingsOk
-        ? 'VS Code settings file'
-        : 'VS Code settings missing — create settings.json or wait for `construct sync` VS Code support',
-      vscodeSettingsOk,
-      true,
-    );
+    if (vscodeSettingsOk) add('VS Code settings file', true, true);
   }
   add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(path.join(HOME, '.construct')), true);
   add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
@@ -917,11 +880,15 @@ async function cmdDoctor() {
     }
 
     try {
-      const { recentViolations } = await import('../lib/contracts/violation-log.mjs');
+      const { recentViolations, violationLogPath } = await import('../lib/contracts/violation-log.mjs');
       const violations = recentViolations({ windowMs: 24 * 60 * 60 * 1000 });
+      // Path is project-scoped (.cx/contract-violations.jsonl in cwd when
+      // inside a project, ~/.cx/ otherwise). Print the resolved one so
+      // users find the real file, not a stale ~/.cx/ reference.
+      const violationPath = violationLogPath();
       const label = violations.length === 0
         ? 'Contract violations (none in last 24h)'
-        : `Contract violations (${violations.length} in last 24h — see ~/.cx/contract-violations.jsonl)`;
+        : `Contract violations (${violations.length} in last 24h — see ${violationPath})`;
       add(label, violations.length === 0, true);
     } catch {
       add('Contract violations', false, true);
@@ -2456,9 +2423,49 @@ async function cmdSkillsUsage(sub, args) {
   }
 
   if (sub === 'correlate-quality') {
-    println('Quality correlation requires Postgres (CONSTRUCT_DB_URL).');
-    println('Local JSONL does not carry cx_score data.');
-    println('Run with Postgres configured for full correlation output.');
+    // Queries the construct_skill_quality_correlation view (db/schema/010_cx_scores.sql)
+    // which aggregates cx_score values by session_id × skill_id over the past 90 days.
+    // Falls back to a clear "no data" message when the DB is unreachable or the
+    // view is empty rather than printing an empty table.
+
+    const sqlClient = createSqlClient(process.env);
+    if (!sqlClient) {
+      println('Quality correlation requires Postgres (DATABASE_URL or CONSTRUCT_DB_URL).');
+      println('Local JSONL does not carry cx_score data.');
+      println('Run with Postgres configured for full correlation output.');
+      return;
+    }
+    try {
+      const rows = await sqlClient`
+        select skill_id, sessions, score_count, mean_score, median_score, p10_score, p90_score, last_scored_at
+        from construct_skill_quality_correlation
+        order by sessions desc, mean_score desc nulls last
+        limit 50
+      `;
+      if (!rows || rows.length === 0) {
+        println('No correlation data yet. The view aggregates cx_score values from the past 90 days against');
+        println('skill invocations from the same sessions. Once cxScore() runs in a session that also invoked');
+        println('a skill, rows appear here. Verify scoring with: construct telemetry query latency --limit=5');
+        return;
+      }
+      const w = Math.max(15, ...rows.map((r) => String(r.skill_id || '').length));
+      println(`${'skill_id'.padEnd(w)}  sessions  scores   mean   median   p10    p90    last_scored_at`);
+      println('-'.repeat(w + 70));
+      for (const r of rows) {
+        const pad = (v, n) => String(v ?? '').padStart(n);
+        println(
+          `${String(r.skill_id || '').padEnd(w)}  ${pad(r.sessions, 8)}  ${pad(r.score_count, 6)}  ` +
+          `${pad(r.mean_score, 5)}  ${pad(r.median_score, 6)}  ${pad(r.p10_score, 5)}  ${pad(r.p90_score, 5)}  ` +
+          `${r.last_scored_at ? new Date(r.last_scored_at).toISOString().slice(0, 19) : ''}`,
+        );
+      }
+    } catch (err) {
+      errorln(`Quality correlation query failed: ${err.message}`);
+      errorln('If the construct_skill_quality_correlation view is missing, apply db/schema/010_cx_scores.sql.');
+      process.exit(1);
+    } finally {
+      await closeSqlClient(sqlClient);
+    }
     return;
   }
 
@@ -2594,14 +2601,18 @@ async function cmdIntakeMetrics() {
 }
 
 async function cmdIntakeIntegrate(id, args, cwd) {
-  if (!id) { errorln('Usage: construct intake integrate <id> <github|jira|confluence>'); process.exit(1); }
+  if (!id) { errorln('Usage: construct intake integrate <id> <github|jira|confluence> [--publish-issues]'); process.exit(1); }
 
   const system = args[0];
   if (!system || !['github', 'jira', 'confluence'].includes(system)) {
-    errorln('Usage: construct intake integrate <id> <github|jira|confluence>');
+    errorln('Usage: construct intake integrate <id> <github|jira|confluence> [--publish-issues]');
     errorln('Available systems: github, jira, confluence');
     process.exit(1);
   }
+  // --publish-issues unlocks the demo-source gate (CONSTRUCT_DEMO env or
+  // packet sourcePath under tests/fixtures/ or .cx/intake/demo/). Required
+  // before any demo/fixture intake can publish a real external ticket.
+  const publishDemo = args.includes('--publish-issues');
 
   const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
   const queue = createIntakeQueue(cwd, process.env);
@@ -2613,10 +2624,13 @@ async function cmdIntakeIntegrate(id, args, cwd) {
   if (system === 'github') {
     const { createGitHubIssue, tagIntakeWithExternalRef } = await import('../lib/integrations/intake-integrations.mjs');
     info(`Creating GitHub issue from intake ${id}...`);
-    result = await createGitHubIssue(entry);
+    result = await createGitHubIssue(entry, { publishDemo });
     if (result.ok) {
       ok(`GitHub issue created: ${result.externalUrl}`);
       tagIntakeWithExternalRef(cwd, id, 'github', result.externalUrl, result.externalId);
+    } else if (result.skipped === 'demo-source') {
+      warn(`Skipped: ${result.error}`);
+      process.exit(0);
     } else {
       errorln(`Failed: ${result.error}`);
       process.exit(1);
@@ -5850,6 +5864,13 @@ if (command === '--help' || command === '-h' || command === 'help') {
   process.exit(0);
 }
 
+// --all / -a as a standalone flag — equivalent to `help --all`. Without
+// this, `construct --all` (which the help footer advertises) 404s.
+if (command === '--all' || command === '-a') {
+  usage({ all: true });
+  process.exit(0);
+}
+
 // Version flags → print version and exit
 if (command === '--version' || command === '-V') {
   const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
@@ -5860,9 +5881,51 @@ if (command === '--version' || command === '-V') {
 const handler = handlers.get(command);
 if (!handler) {
   errorln(`Unknown command: ${command}`);
+  // Three-tier suggestion: prefix match → substring match → Levenshtein
+  // distance ≤ 2. Catches single-letter typos, missing-letter typos, and
+  // transpositions ('sycn' → 'sync') without dragging in a full fuzzy lib.
+  const known = CLI_COMMANDS.filter((c) => !c.internal).map((c) => c.name);
+  const editDistance = (a, b) => {
+    if (a === b) return 0;
+    if (!a.length || !b.length) return Math.max(a.length, b.length);
+    const row = Array(b.length + 1).fill(0).map((_, i) => i);
+    for (let i = 1; i <= a.length; i++) {
+      let prev = i;
+      for (let j = 1; j <= b.length; j++) {
+        const cur = a[i - 1] === b[j - 1]
+          ? row[j - 1]
+          : 1 + Math.min(row[j - 1], row[j], prev);
+        row[j - 1] = prev;
+        prev = cur;
+      }
+      row[b.length] = prev;
+    }
+    return row[b.length];
+  };
+  let suggestion = known.find((n) => n.startsWith(command)) ||
+                   known.find((n) => n.includes(command));
+  if (!suggestion) {
+    let bestDist = 3;
+    for (const name of known) {
+      const d = editDistance(command, name);
+      if (d < bestDist) { bestDist = d; suggestion = name; }
+    }
+  }
+  if (suggestion) errorln(`Did you mean: construct ${suggestion}?`);
   println('');
   println(`${COLORS.dim}Run 'construct --help' for available commands${COLORS.reset}`);
   process.exit(1);
+}
+
+// Per-command --help / -h intercept. Critical safety: without this guard,
+// commands like `dev`, `stop`, `init`, `uninstall` silently ignore --help
+// and execute (running `construct stop --help` actually stops services).
+// Every command — including internal ones — gets the same shape via
+// formatCommandHelp(); per-command handlers no longer need to opt in.
+
+if (rest.includes('--help') || rest.includes('-h')) {
+  process.stdout.write(formatCommandHelp(command, { colors: true }));
+  process.exit(0);
 }
 
 // Self-maintenance on version change. Skipped for high-frequency hook calls
