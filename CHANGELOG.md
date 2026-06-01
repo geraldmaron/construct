@@ -4,6 +4,12 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.16] - 2026-06-01
+
+### Highlights
+
+CLI hygiene and follow-up cleanup across two phases. Phase 1 (PRs #140–#143): `construct <cmd> --help` is safe everywhere, `construct install --yes` no longer crashes, role-gateway no longer files beads for test-fixture events, doctor's stale warnings cleaned up, next-mdx-remote HIGH CVE closed. Phase 2 (PRs #144–#148): cookbook playbooks for the shipped workflow templates, doc-hygiene baseline stamps, `platforms/claude/CLAUDE.md` realigned with canonical structure, tag auto-attribution producer wired into intake, team-mode hourly doc-hygiene cadence, and the `construct_cx_scores` schema + `construct_skill_quality_correlation` view + producer + CLI consumer landed end-to-end. **88 beads resolved this cycle** (15 shipped across the 9 PRs, 73 closed as resolved-already / wont-do / superseded / test-fixture-noise — including 58 noise beads now prevented by the new tmpdir-path gateway filter).
+
 ### Added
 
 - **`construct_cx_scores` table and `construct_skill_quality_correlation` view (bead `construct-0xkx`).** New migration `db/schema/010_cx_scores.sql` creates a per-trace quality-score log and a 90-day-window aggregate view that joins it against `construct_skill_invocations` (from 008) by `session_id`. The view exposes `sessions`, `score_count`, `mean_score`, `median_score`, `p10_score`, `p90_score`, `last_scored_at` per `skill_id`. Producer wired in: `cxScore` in `lib/mcp/tools/telemetry.mjs` now writes to `construct_cx_scores` when `DATABASE_URL` is set (best-effort; never blocks the remote-telemetry or observation-store writes). Consumer wired in: `construct skills correlate-quality` (`bin/construct:2425-2470`) replaces its prior "Run with Postgres configured" stub with a real `select … from construct_skill_quality_correlation` and prints a formatted rollup. Closes the user-visible false-advertisement gap the CLI had since the skill-usage observability work landed without its correlation half. CI: the new `tests/functional/skills-correlate-quality.functional.test.mjs` is added to the `postgres-integration` job in `.github/workflows/ci.yml` (5 cases — schema parse, migration order, producer-writes, view-aggregates, end-to-end CLI rollup).
