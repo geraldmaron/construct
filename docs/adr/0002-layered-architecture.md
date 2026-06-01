@@ -1,3 +1,10 @@
+---
+intake: none
+intake_rationale: foundational artifact authored before intake traceability was wired; intake-independent by construction.
+last_verified_at: 2026-06-01
+verified_by: cx-docs-keeper · PR-D baseline stamp
+---
+
 # ADR-0002: Layered Architecture with Transport-Agnostic Provider Abstraction
 
 - **Date**: 2026-04-28
