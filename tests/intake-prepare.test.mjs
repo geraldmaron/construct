@@ -97,4 +97,37 @@ describe('prepareIntakeForIngestedFile', () => {
       /sourcePath is required/,
     );
   });
+
+  it('stamps tag suggestions onto the packet when triage confidence crosses the auto-threshold', async () => {
+    const result = await prepareIntakeForIngestedFile({
+      rootDir: projectRoot,
+      ingestedFile: ingestedFile(),
+      hybridSearchFn: async () => [
+        { id: 'docs/a.md', path: 'docs/a.md', tags: ['intake/incident', 'severity/p0'], score: 0.9 },
+        { id: 'docs/b.md', path: 'docs/b.md', tags: ['intake/incident', 'severity/p0'], score: 0.85 },
+      ],
+    });
+    const entry = new FilesystemIntakeQueue(projectRoot).read(result.id);
+    assert.ok(Array.isArray(entry.tags) && entry.tags.length > 0, 'expected tag suggestions on packet');
+    const tagIds = entry.tags.map((t) => t.tag);
+    // Two related docs carry 'severity/p0' → eligible for inheritance.
+    assert.ok(tagIds.includes('severity/p0'), `expected severity/p0 from related-inherit, got ${JSON.stringify(tagIds)}`);
+    // Every suggestion carries a source attribution that downstream
+    // consumers can use to render the "why this tag" trail.
+    for (const t of entry.tags) {
+      assert.ok(t.source, `each tag suggestion has a source attribution: ${JSON.stringify(t)}`);
+      assert.ok(typeof t.confidence === 'number', `each tag suggestion has a numeric confidence: ${JSON.stringify(t)}`);
+    }
+  });
+
+  it('omits the tags field when nothing is suggested (no fabrication)', async () => {
+    const result = await prepareIntakeForIngestedFile({
+      rootDir: projectRoot,
+      ingestedFile: ingestedFile(),
+      hybridSearchFn: async () => [],
+      classifyFn: () => ({ intakeType: 'unknown', confidence: 0, primaryOwner: 'unknown', recommendedChain: [] }),
+    });
+    const entry = new FilesystemIntakeQueue(projectRoot).read(result.id);
+    assert.equal(entry.tags, undefined, 'tags must be absent when no suggestions, not [] (avoid empty-field noise)');
+  });
 });
