@@ -192,3 +192,54 @@ test("dockerInstallHint returns platform-specific guidance", () => {
   assert.match(linuxHint, /Docker Engine/);
   assert.match(linuxHint, /apt|dnf|pacman/, "Linux hint mentions the package managers users will reach for");
 });
+
+test("ensureLibSymlink creates ~/.construct/lib pointing at the install lib/", () => {
+  const home = tempDir("construct-libsymlink-");
+  const fakeRoot = tempDir("construct-libsymlink-root-");
+  fs.mkdirSync(path.join(fakeRoot, 'lib'), { recursive: true });
+
+  const result = setup.ensureLibSymlink({ homeDir: home, rootDir: fakeRoot });
+
+  assert.equal(result.status, "created");
+  const target = path.join(home, '.construct', 'lib');
+  assert.ok(fs.lstatSync(target).isSymbolicLink());
+  assert.equal(fs.readlinkSync(target), path.join(fakeRoot, 'lib'));
+});
+
+test("ensureLibSymlink is idempotent: matching symlink is kept", () => {
+  const home = tempDir("construct-libsymlink-keep-");
+  const fakeRoot = tempDir("construct-libsymlink-keep-root-");
+  fs.mkdirSync(path.join(fakeRoot, 'lib'), { recursive: true });
+
+  setup.ensureLibSymlink({ homeDir: home, rootDir: fakeRoot });
+  const second = setup.ensureLibSymlink({ homeDir: home, rootDir: fakeRoot });
+
+  assert.equal(second.status, "kept");
+});
+
+test("ensureLibSymlink replaces a stale symlink pointing elsewhere", () => {
+  const home = tempDir("construct-libsymlink-stale-");
+  const fakeRoot = tempDir("construct-libsymlink-stale-root-");
+  const stalePoint = tempDir("construct-libsymlink-stale-point-");
+  fs.mkdirSync(path.join(fakeRoot, 'lib'), { recursive: true });
+  fs.mkdirSync(path.join(home, '.construct'), { recursive: true });
+  fs.symlinkSync(stalePoint, path.join(home, '.construct', 'lib'), 'dir');
+
+  const result = setup.ensureLibSymlink({ homeDir: home, rootDir: fakeRoot });
+
+  assert.equal(result.status, "replaced");
+  assert.equal(fs.readlinkSync(path.join(home, '.construct', 'lib')), path.join(fakeRoot, 'lib'));
+});
+
+test("ensureLibSymlink refuses to overwrite a real directory at the target", () => {
+  const home = tempDir("construct-libsymlink-conflict-");
+  const fakeRoot = tempDir("construct-libsymlink-conflict-root-");
+  fs.mkdirSync(path.join(fakeRoot, 'lib'), { recursive: true });
+  fs.mkdirSync(path.join(home, '.construct', 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(home, '.construct', 'lib', 'sentinel.txt'), 'do not delete');
+
+  const result = setup.ensureLibSymlink({ homeDir: home, rootDir: fakeRoot });
+
+  assert.equal(result.status, "conflict");
+  assert.ok(fs.existsSync(path.join(home, '.construct', 'lib', 'sentinel.txt')));
+});

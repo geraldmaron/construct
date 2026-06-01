@@ -6,6 +6,8 @@
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
 import { tempDir } from '../helpers.mjs';
@@ -99,4 +101,30 @@ test('unrouted events are recorded but not escalated', async () => {
   assert.equal(r.recorded, true);
   assert.equal(r.escalated, false);
   assert.equal(r.reason, 'no-owner');
+});
+
+test('events from OS tmpdir paths are not escalated (test-fixture filter)', () => {
+  const m = loadManifest('security');
+  const tmpProject = path.join(os.tmpdir(), 'cx-secrets-fixture-test', 'fixture.env');
+
+  const e = bus.emit('secrets.detected', {
+    project: tmpProject,
+    cwd: path.dirname(tmpProject),
+    summary: 'Secret(s) detected in fixture.env: Stripe live secret',
+    context: { filePath: tmpProject },
+  });
+
+  const d = gw.shouldEscalate(e, m);
+  assert.equal(d.escalate, false, 'tmpdir path should not escalate');
+  assert.equal(d.reason, 'test-fixture-path');
+});
+
+test('isTestFixturePath catches macOS /private/var prefix and /tmp/ paths', () => {
+  // macOS user tmpdir: /private/var/folders/<2chars>/<long>/T/<run>
+  assert.equal(gw.isTestFixturePath('/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/cx-secrets-xyz/fixture.env'), true);
+  assert.equal(gw.isTestFixturePath('/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/init-cxignore-Abc/postgres.yml'), true);
+  assert.equal(gw.isTestFixturePath('/tmp/init-cxignore-Abc/postgres.yml'), true);
+  assert.equal(gw.isTestFixturePath('/Users/me/Git/myproject/src/secrets.env'), false);
+  assert.equal(gw.isTestFixturePath(null), false);
+  assert.equal(gw.isTestFixturePath(''), false);
 });
