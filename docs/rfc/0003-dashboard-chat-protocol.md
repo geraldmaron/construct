@@ -4,6 +4,8 @@ created_at: "2026-04-29T00:00:00.000Z"
 updated_at: "2026-04-29T00:00:00.000Z"
 generator: construct/Construct-Engineer
 status: accepted
+last_verified_at: 2026-06-01
+verified_by: cx-docs-keeper · PR-D baseline stamp
 ---
 # RFC-0003: Dashboard Chat Protocol
 
