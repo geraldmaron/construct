@@ -113,8 +113,17 @@ View and process the active profile's intake queue (queue label varies by profil
 **Usage**
 
 ```bash
-construct intake list|show|done|skip
+construct intake list|show|done|skip|reopen|integrate
 ```
+
+**Subcommands**
+
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
 
 ## construct profile
 
