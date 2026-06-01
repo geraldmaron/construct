@@ -43,6 +43,70 @@ describe('intake integrations', () => {
       assert.equal(result.ok, false);
       assert.ok(result.error.includes('401'));
     });
+
+    it('refuses to publish a packet whose sourcePath is under tests/fixtures/', async () => {
+      const mockFetch = async () => { throw new Error('fetch should not be called'); };
+      const packet = {
+        id: 'demo-1',
+        intake: { sourcePath: '/Users/me/repo/tests/fixtures/intake/sample.md' },
+        triage: { intakeType: 'bug' },
+      };
+      const result = await integ.createGitHubIssue(packet, { fetchImpl: mockFetch });
+      assert.equal(result.ok, false);
+      assert.equal(result.skipped, 'demo-source');
+      assert.ok(result.error.includes('demo'));
+    });
+
+    it('refuses to publish when CONSTRUCT_DEMO=1 is set', async () => {
+      const prev = process.env.CONSTRUCT_DEMO;
+      process.env.CONSTRUCT_DEMO = '1';
+      try {
+        const mockFetch = async () => { throw new Error('fetch should not be called'); };
+        const packet = { id: 'real-1', intake: { sourcePath: '/real/path.md' }, triage: { intakeType: 'bug' } };
+        const result = await integ.createGitHubIssue(packet, { fetchImpl: mockFetch });
+        assert.equal(result.ok, false);
+        assert.equal(result.skipped, 'demo-source');
+      } finally {
+        if (prev === undefined) delete process.env.CONSTRUCT_DEMO;
+        else process.env.CONSTRUCT_DEMO = prev;
+      }
+    });
+
+    it('publishDemo:true overrides the demo-source gate', async () => {
+      const mockFetch = async () => ({
+        ok: true,
+        json: async () => ({ html_url: 'https://github.com/test/repo/issues/1', number: 1 }),
+      });
+      const packet = {
+        id: 'demo-2',
+        intake: { sourcePath: '/repo/tests/fixtures/intake/sample.md' },
+        triage: { intakeType: 'bug' },
+      };
+      const result = await integ.createGitHubIssue(packet, {
+        repo: 'test/repo',
+        token: 'fake-token',
+        fetchImpl: mockFetch,
+        publishDemo: true,
+      });
+      assert.equal(result.ok, true);
+      assert.equal(result.externalUrl, 'https://github.com/test/repo/issues/1');
+    });
+  });
+
+  describe('isDemoIntakePacket', () => {
+    it('detects tests/fixtures/ in sourcePath', () => {
+      assert.equal(integ.isDemoIntakePacket({ intake: { sourcePath: '/x/tests/fixtures/y.md' } }), true);
+    });
+    it('detects .cx/intake/demo/ in sourcePath', () => {
+      assert.equal(integ.isDemoIntakePacket({ intake: { sourcePath: '/x/.cx/intake/demo/y.md' } }), true);
+    });
+    it('returns false for a real-looking sourcePath', () => {
+      assert.equal(integ.isDemoIntakePacket({ intake: { sourcePath: '/work/inbox/feedback.md' } }), false);
+    });
+    it('returns false for a packet with no source', () => {
+      assert.equal(integ.isDemoIntakePacket({}), false);
+      assert.equal(integ.isDemoIntakePacket(null), false);
+    });
   });
 
   describe('createJiraTicket', () => {
