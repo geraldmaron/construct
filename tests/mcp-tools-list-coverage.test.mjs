@@ -1,0 +1,75 @@
+/**
+ * tests/mcp-tools-list-coverage.test.mjs
+ *
+ * Pins the rule: every name dispatched by the MCP server's CallTool handler
+ * must be advertised in its ListTools handler with a well-formed input
+ * schema. Closes the discovery gap surfaced by `construct-efwp`: tools
+ * registered only in the dispatcher are invokable if a caller knows the
+ * name but invisible to LLMs that introspect via tools/list.
+ *
+ * The rule is enforced by static parse of `lib/mcp/server.mjs`. Both
+ * handlers are co-located in that file; the test reads it, extracts both
+ * sets of names, and asserts symmetric coverage plus shape requirements
+ * on each ListTools entry.
+ */
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const SERVER_PATH = join(HERE, '..', 'lib', 'mcp', 'server.mjs');
+const SOURCE = readFileSync(SERVER_PATH, 'utf8');
+
+function extractDispatchedNames(src) {
+  const names = new Set();
+  const re = /name === '([a-z_]+)'/g;
+  let m;
+  while ((m = re.exec(src)) !== null) names.add(m[1]);
+  return names;
+}
+
+function extractAdvertisedNames(src) {
+  const names = new Set();
+  const re = /name: '([a-z_]+)'/g;
+  let m;
+  while ((m = re.exec(src)) !== null) names.add(m[1]);
+  return names;
+}
+
+function extractAdvertisedToolBlocks(src) {
+  const blocks = [];
+  const re = /\{\s*name: '([a-z_]+)',\s*description: ('[^']+'|"[^"]+"|`[^`]+`)[\s\S]*?inputSchema: \{([\s\S]*?)\n\s{6}\},\n\s{4}\}/g;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    blocks.push({ name: m[1], description: m[2], schemaBody: m[3] });
+  }
+  return blocks;
+}
+
+test('every dispatched MCP tool is advertised in ListTools', () => {
+  const dispatched = extractDispatchedNames(SOURCE);
+  const advertised = extractAdvertisedNames(SOURCE);
+  const missing = [...dispatched].filter((n) => !advertised.has(n)).sort();
+  assert.deepEqual(missing, [], `Tools dispatched in CallToolRequestSchema but missing from ListToolsRequestSchema: ${missing.join(', ')}. Add a registration entry with description + inputSchema to lib/mcp/server.mjs.`);
+});
+
+test('no ListTools entry advertises a name the dispatcher does not handle', () => {
+  const dispatched = extractDispatchedNames(SOURCE);
+  const advertised = extractAdvertisedNames(SOURCE);
+  const orphaned = [...advertised].filter((n) => !dispatched.has(n)).sort();
+  assert.deepEqual(orphaned, [], `Tools advertised in ListToolsRequestSchema but not dispatched: ${orphaned.join(', ')}. Either add a dispatch branch or remove the registration.`);
+});
+
+test('every advertised tool has type: object inputSchema with at least a description', () => {
+  const blocks = extractAdvertisedToolBlocks(SOURCE);
+  assert.ok(blocks.length > 0, 'no tool blocks extracted — the source-shape parser may have drifted');
+  const malformed = [];
+  for (const b of blocks) {
+    if (!/type:\s*'object'/.test(b.schemaBody)) malformed.push(`${b.name}: inputSchema must declare type: 'object'`);
+    if (!b.description || b.description.length < 3) malformed.push(`${b.name}: missing or empty description`);
+  }
+  assert.deepEqual(malformed, [], `malformed tool blocks:\n  ${malformed.join('\n  ')}`);
+});

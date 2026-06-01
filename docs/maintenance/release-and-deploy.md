@@ -210,7 +210,6 @@ gh workflow run "Sync main → staging" --ref main
 - `npm audit --omit=dev --audit-level=high`
 - `node bin/construct evals retrieval`
 - `node bin/construct docs:verify`
-- `npm run lint:prose` (changed files only)
 - `npm run lint:profiles --quiet`
 
 Failures here block the push. There is no bypass env var: fix the underlying issue (or, for the SHA-aware re-push check, add a fix commit so HEAD advances past the rejected SHA).
@@ -234,11 +233,10 @@ Failures here block the push. There is no bypass env var: fix the underlying iss
 - **Preflight before push.** `npm run release:preflight` is the contract; CI is the backstop.
 - **OIDC, no stored tokens.** Trusted Publishers settings are documented; no secret rotation needed.
 - **Doctor as a release gate.** `construct doctor` runs in CI before artifacts ship. Adding a check to doctor automatically gates the next release.
-- **lint:prose + lint:profiles + functional tests** all run in CI; new categories of gate (e.g. when a B4 ships) follow the same wiring pattern.
+- **lint:profiles + functional tests** all run in CI; new categories of gate (e.g. when a B4 ships) follow the same wiring pattern.
 - **All artifacts on a tag push.** Tagging is the one action that ships everything; no separate "release the docker image" step exists.
 - **Tests/AUDIT.md is refreshed when the suite passes 2000 tests or a new top-level test category lands**, not every PR.
 - **Release-policy** in `docs/maintenance/release-policy.md` captures what counts as a release (vs a doc tweak that does not need a version bump).
-- **construct-fj0 / construct-ze6** are the one bead pair tracking the historical em-dash sweep. Until that PR lands, the prose lint runs PR-level only.
 
 ## When this doc itself is out of date
 

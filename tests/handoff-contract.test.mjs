@@ -3,7 +3,7 @@
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseHandoff, validateHandoff, formatHandoff, HANDOFF_SCHEMA_VERSION } from '../lib/handoffs/contract.mjs';
+import { parseHandoff, validateHandoffFile, formatHandoff, HANDOFF_SCHEMA_VERSION } from '../lib/handoffs/contract.mjs';
 
 test('parseHandoff extracts frontmatter and sections from v1 handoff', () => {
   const text = [
@@ -40,16 +40,16 @@ test('parseHandoff returns legacy status for pre-contract handoffs', () => {
   assert.deepEqual(parsed.frontmatter, {});
 });
 
-test('validateHandoff rejects missing required fields', () => {
+test('validateHandoffFile rejects missing required fields', () => {
   const parsed = parseHandoff('---\nschema: cx-handoff/v1\n---\n\nNo sections.\n');
-  const { valid, errors } = validateHandoff(parsed);
+  const { valid, errors } = validateHandoffFile(parsed);
   assert.equal(valid, false);
   assert.ok(errors.some((e) => e.includes('id required')));
   assert.ok(errors.some((e) => e.includes('title required')));
   assert.ok(errors.some((e) => e.includes('What was done')));
 });
 
-test('validateHandoff accepts well-formed handoff', () => {
+test('validateHandoffFile accepts well-formed handoff', () => {
   const text = formatHandoff({
     id: '2026-05-18-complete',
     title: 'Complete handoff',
@@ -58,7 +58,7 @@ test('validateHandoff accepts well-formed handoff', () => {
     whatsLeft: 'Nothing.',
   });
   const parsed = parseHandoff(text);
-  const { valid, errors } = validateHandoff(parsed);
+  const { valid, errors } = validateHandoffFile(parsed);
   assert.equal(valid, true, `Unexpected errors: ${errors.join(', ')}`);
 });
 

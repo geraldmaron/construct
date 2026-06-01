@@ -12,54 +12,54 @@ import assert from 'node:assert/strict';
 
 import {
   POSTCONDITIONS,
-  validatePostconditions,
+  validateBinaryPostconditions,
   describePostconditions,
 } from '../lib/specialists/postconditions.mjs';
 
-describe('validatePostconditions', () => {
+describe('validateBinaryPostconditions', () => {
   it('returns ok for producers without registered rules', () => {
-    const r = validatePostconditions('cx-engineer', {});
+    const r = validateBinaryPostconditions('cx-engineer', {});
     assert.equal(r.ok, true);
     assert.deepEqual(r.failures, []);
   });
 
   it('returns ok for an unknown producer (no rules apply)', () => {
-    const r = validatePostconditions('imaginary', {});
+    const r = validateBinaryPostconditions('imaginary', {});
     assert.equal(r.ok, true);
   });
 
   describe('cx-reviewer', () => {
     it('flags an empty review (rubber stamp)', () => {
-      const r = validatePostconditions('cx-reviewer', { findings: [] });
+      const r = validateBinaryPostconditions('cx-reviewer', { findings: [] });
       assert.equal(r.ok, false);
       assert.equal(r.failures[0].id, 'reviewer.findings-or-explicit-clear');
     });
 
     it('passes when at least one finding is present', () => {
-      const r = validatePostconditions('cx-reviewer', { findings: [{ severity: 'high', summary: 'auth bypass' }] });
+      const r = validateBinaryPostconditions('cx-reviewer', { findings: [{ severity: 'high', summary: 'auth bypass' }] });
       assert.equal(r.ok, true);
     });
 
     it('passes when reviewer explicitly states "no issues found at <paths>"', () => {
-      const r = validatePostconditions('cx-reviewer', { findings: [], noIssuesFoundAt: ['lib/auth.mjs', 'tests/auth.test.mjs'] });
+      const r = validateBinaryPostconditions('cx-reviewer', { findings: [], noIssuesFoundAt: ['lib/auth.mjs', 'tests/auth.test.mjs'] });
       assert.equal(r.ok, true);
     });
 
     it('accepts the no-issues-found string form too', () => {
-      const r = validatePostconditions('cx-reviewer', { noIssuesFoundStatement: 'no issues found in lib/auth.mjs' });
+      const r = validateBinaryPostconditions('cx-reviewer', { noIssuesFoundStatement: 'no issues found in lib/auth.mjs' });
       assert.equal(r.ok, true);
     });
   });
 
   describe('cx-security', () => {
     it('flags a missing threat-model timestamp', () => {
-      const r = validatePostconditions('cx-security', { contractStart: '2026-05-14T00:00:00Z' });
+      const r = validateBinaryPostconditions('cx-security', { contractStart: '2026-05-14T00:00:00Z' });
       assert.equal(r.ok, false);
       assert.equal(r.failures[0].id, 'security.threat-model-not-post-hoc');
     });
 
     it('flags a threat model older than the contract start (retrofitted)', () => {
-      const r = validatePostconditions('cx-security', {
+      const r = validateBinaryPostconditions('cx-security', {
         contractStart: '2026-05-14T12:00:00Z',
         threatModelUpdatedAt: '2026-05-13T08:00:00Z',
       });
@@ -67,7 +67,7 @@ describe('validatePostconditions', () => {
     });
 
     it('passes when threat model updated at or after contract start', () => {
-      const r = validatePostconditions('cx-security', {
+      const r = validateBinaryPostconditions('cx-security', {
         contractStart: '2026-05-14T00:00:00Z',
         threatModelUpdatedAt: '2026-05-14T05:00:00Z',
       });
@@ -77,19 +77,19 @@ describe('validatePostconditions', () => {
 
   describe('cx-debugger', () => {
     it('flags a missing root-cause source', () => {
-      const r = validatePostconditions('cx-debugger', { summary: 'fixed the symptom' });
+      const r = validateBinaryPostconditions('cx-debugger', { summary: 'fixed the symptom' });
       assert.equal(r.ok, false);
       assert.equal(r.failures[0].id, 'debugger.root-cause-confirmed-via');
     });
 
     it('flags an unrecognized source (e.g. "intuition")', () => {
-      const r = validatePostconditions('cx-debugger', { rootCauseConfirmedVia: 'intuition' });
+      const r = validateBinaryPostconditions('cx-debugger', { rootCauseConfirmedVia: 'intuition' });
       assert.equal(r.ok, false);
     });
 
     it('passes for each of reproduction / trace / test', () => {
       for (const src of ['reproduction', 'trace', 'test']) {
-        const r = validatePostconditions('cx-debugger', { rootCauseConfirmedVia: src });
+        const r = validateBinaryPostconditions('cx-debugger', { rootCauseConfirmedVia: src });
         assert.equal(r.ok, true, `${src} should satisfy the rule`);
       }
     });
@@ -97,18 +97,18 @@ describe('validatePostconditions', () => {
 
   describe('cx-docs-keeper', () => {
     it('flags missing coherence check', () => {
-      const r = validatePostconditions('cx-docs-keeper', {});
+      const r = validateBinaryPostconditions('cx-docs-keeper', {});
       assert.equal(r.ok, false);
       assert.equal(r.failures[0].id, 'docs-keeper.cross-doc-coherence-check-ran');
     });
 
     it('flags a true flag without a named diff', () => {
-      const r = validatePostconditions('cx-docs-keeper', { crossDocCoherenceCheckRan: true });
+      const r = validateBinaryPostconditions('cx-docs-keeper', { crossDocCoherenceCheckRan: true });
       assert.equal(r.ok, false);
     });
 
     it('passes when both flag and named diff are present', () => {
-      const r = validatePostconditions('cx-docs-keeper', {
+      const r = validateBinaryPostconditions('cx-docs-keeper', {
         crossDocCoherenceCheckRan: true,
         coherenceDiff: 'docs/concepts/architecture.md vs docs/README.md — 4 sections reconciled',
       });
@@ -118,13 +118,13 @@ describe('validatePostconditions', () => {
 
   describe('cx-designer', () => {
     it('flags missing accessibility flag', () => {
-      const r = validatePostconditions('cx-designer', { mockup: 'wireframe.html' });
+      const r = validateBinaryPostconditions('cx-designer', { mockup: 'wireframe.html' });
       assert.equal(r.ok, false);
       assert.equal(r.failures[0].id, 'designer.accessibility-check-ran');
     });
 
     it('passes when accessibilityCheckRan is true', () => {
-      const r = validatePostconditions('cx-designer', { accessibilityCheckRan: true });
+      const r = validateBinaryPostconditions('cx-designer', { accessibilityCheckRan: true });
       assert.equal(r.ok, true);
     });
   });
