@@ -151,7 +151,7 @@
           }
         ],
         "id": "post:edit:comment-lint",
-        "description": "Block edits that violate comment policy (banned patterns, missing required header). Bypass: CONSTRUCT_SKIP_COMMENT_LINT=1"
+        "description": "Block edits that violate comment policy (banned patterns, missing required header). No bypass — repair the policy if it fires wrong."
       },
       {
         "matcher": "Write|Edit|MultiEdit",
