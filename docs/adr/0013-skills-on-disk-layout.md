@@ -1,3 +1,10 @@
+---
+intake: none
+intake_rationale: foundational artifact authored before intake traceability was wired; intake-independent by construction.
+last_verified_at: 2026-06-01
+verified_by: cx-docs-keeper · PR-D baseline stamp
+---
+
 # ADR 0013: Skills on-disk layout
 
 **Date:** 2026-05-27
