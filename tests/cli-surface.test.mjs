@@ -57,7 +57,7 @@ test('construct help includes core commands by default', () => {
   // Core commands should be visible
   assert.match(out, /dev\s+Start services for development/);
   assert.match(out, /stop\s+Stop all running services/);
-  assert.match(out, /init\s+Initialize project/);
+  assert.match(out, /init\s+Project setup/);
 });
 
 test('construct help --all includes advanced commands', () => {
