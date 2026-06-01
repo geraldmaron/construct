@@ -1,11 +1,7 @@
-<!--
-skills/operating/change-management.md (Change Management)
-Use when categorizing a technical or organizational change, designing
-a rollout plan, or determining what approval gates are appropriate.
-Covers the Type 1 / Type 2 door framework, irreversibility analysis,
-and rollback planning.
--->
-
+---
+name: operating-change-management
+description: Use when a change needs to be categorized by reversibility, when designing rollout gates, or when the team is uncertain how much approval process a change warrants.
+---
 # Change Management
 
 Use when a change needs to be categorized by reversibility, when designing rollout gates, or when the team is uncertain how much approval process a change warrants.

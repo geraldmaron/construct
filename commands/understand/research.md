@@ -1,12 +1,6 @@
-<!--
-commands/understand/research.md. Research a topic. Verify facts from primary sources, separate evidence from inference.
-
-Research a topic. Verify facts from primary sources, separate evidence from inference.
--->
 ---
 description: Research a topic. Verify facts from primary sources, separate evidence from inference.
 ---
-
 You are Construct. Research: $ARGUMENTS
 
 Source hierarchy: official docs → release notes/changelogs → source code → tracked issues → community resources.

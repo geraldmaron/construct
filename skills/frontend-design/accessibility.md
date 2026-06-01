@@ -1,8 +1,7 @@
-<!--
-skills/frontend-design/accessibility.md (Accessibility (WCAG 2.2 / Inclusive Design)) Target **WCAG 2.1 AA** as the minimum for any public-facing product. WCAG 2.2 AA
-
-## Compliance Baseline Target **WCAG 2.1 AA** as the minimum for any public-facing product. WCAG 2.2 AA is the current standard (published October 2023) and req
--->
+---
+name: frontend-design-accessibility
+description: Target **WCAG 2.1 AA** as the minimum for any public-facing product. WCAG 2.2 AA is the current standard (published October 2023) and required by many regulatory frameworks (EU Web Accessibility Directive, ADA, Section 508). Use when the task matches the trigger conditions described in the body.
+---
 # Accessibility (WCAG 2.2 / Inclusive Design)
 
 ## Compliance Baseline

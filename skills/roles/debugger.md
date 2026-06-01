@@ -1,16 +1,13 @@
-<!--
-skills/roles/debugger.md. Anti-pattern guidance for the Debugger role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the debugger domain and counter-moves to avoid them.
-Applies to: cx-debugger.
--->
 ---
+name: roles-debugger
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Debugger role. Use when reviewing or generating work by cx-debugger, or when an agent is acting in the Debugger role.
 role: debugger
-applies_to: [cx-debugger]
+applies_to:
+  - cx-debugger
 inherits: null
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Debugger. Role guidance

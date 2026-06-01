@@ -1,8 +1,7 @@
-<!--
-skills/docs/strategy-workflow.md: Read, update, and reason about the product strategy.
-Canonical store: ~/.cx/strategy.md (user-global) or .cx/strategy.md (project-local, committed).
-Template: templates/docs/strategy.md.
--->
+---
+name: docs-strategy-workflow
+description: "Use when: the user asks about product direction, strategic bets, what to prioritize, whether a signal aligns with strategy, or wants to update the strategy."
+---
 # Strategy Workflow
 
 Use when: the user asks about product direction, strategic bets, what to prioritize, whether a signal aligns with strategy, or wants to update the strategy.

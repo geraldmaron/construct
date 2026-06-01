@@ -1,16 +1,13 @@
-<!--
-skills/roles/engineer.platform.md. Anti-pattern guidance for the Engineer.platform (platform) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the engineer.platform (platform) domain and counter-moves to avoid them.
-Applies to: cx-platform-engineer.
--->
 ---
+name: roles-engineer-platform
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Platform role. Use when reviewing or generating work by cx-platform-engineer, or when an agent is acting in the Engineer — Platform role.
 role: engineer.platform
-applies_to: [cx-platform-engineer]
+applies_to:
+  - cx-platform-engineer
 inherits: engineer
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Platform Engineer Overlay

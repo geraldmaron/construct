@@ -1,8 +1,7 @@
-<!--
-skills/devops/testing.md (Testing Strategy) Use this skill when planning test coverage, selecting test types, or establishin
-
-Use this skill when planning test coverage, selecting test types, or establishing testing practices. ## Test Pyramid
--->
+---
+name: devops-testing
+description: Use this skill when planning test coverage, selecting test types, or establishing testing practices.
+---
 # Testing Strategy
 
 Use this skill when planning test coverage, selecting test types, or establishing testing practices.

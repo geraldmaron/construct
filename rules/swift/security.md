@@ -1,9 +1,5 @@
-<!--
-rules/swift/security.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct swift security rule. Applies to files matching **/*.swift, **/Package.swift. Use when writing or reviewing swift code that involves security.
 paths:
   - "**/*.swift"
   - "**/Package.swift"

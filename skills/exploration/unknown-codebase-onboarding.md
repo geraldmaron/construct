@@ -1,10 +1,7 @@
-<!--
-skills/exploration/unknown-codebase-onboarding.md (Unknown Codebase Onboarding)
-Use when a specialist is operating in a new or unfamiliar codebase and
-needs a systematic path from zero context to productive contribution.
-Covers first-hour, first-day, and first-week checkpoints.
--->
-
+---
+name: exploration-unknown-codebase-onboarding
+description: Use when entering an unfamiliar codebase for the first time, or when the task requires understanding a system you haven't touched before.
+---
 # Unknown Codebase Onboarding
 
 Use when entering an unfamiliar codebase for the first time, or when the task requires understanding a system you haven't touched before.

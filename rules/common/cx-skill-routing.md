@@ -1,6 +1,6 @@
-<!--
-rules/common/cx-skill-routing.md: Redirect to canonical skill routing table.
--->
+---
+description: Redirect to canonical skill routing table.
+---
 # cx-* Skill Routing
 
 > **Canonical file:** [`skills/routing.md`](../../skills/routing.md)

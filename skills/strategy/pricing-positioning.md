@@ -1,11 +1,7 @@
-<!--
-skills/strategy/pricing-positioning.md (Pricing and Positioning)
-Use when setting or revisiting price, defining positioning vs. competitors,
-or preparing a go-to-market argument. Covers value-based vs. cost-plus
-pricing, willingness-to-pay research techniques, and positioning statement
-construction.
--->
-
+---
+name: strategy-pricing-positioning
+description: Use when the team needs to set price, adjust positioning, or defend either to stakeholders.
+---
 # Pricing and Positioning
 
 Use when the team needs to set price, adjust positioning, or defend either to stakeholders.

@@ -1,9 +1,5 @@
-<!--
-rules/python/hooks.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct python hooks rule. Applies to files matching **/*.py, **/*.pyi. Use when writing or reviewing python code that involves hooks.
 paths:
   - "**/*.py"
   - "**/*.pyi"

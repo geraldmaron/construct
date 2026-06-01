@@ -1,14 +1,6 @@
-<!--
-rules/common/no-fabrication.md: canonical anti-fabrication policy for Construct.
-
-Defines the trust contract between operators and the system: outputs stick to
-source, gaps stay visible, and confidence reflects evidence. Applies to every
-specialist, every artifact, and every summary — intake processing, document
-evaluation, knowledge writing, plan drafting, review verdicts, handoffs.
-
-Sibling rules: research.md (evidence hierarchy), framing.md (execution
-artifacts are not sources), comments.md (banned voice patterns).
--->
+---
+description: canonical anti-fabrication policy for Construct.
+---
 # No-Fabrication Policy
 
 Fabrication is the single largest threat to trust in an agent system. A persona that invents a customer quote, sharpens a vague signal into a confident assertion, or papers over a gap with plausible-sounding prose corrupts every artifact downstream. This rule applies to **every output** Construct produces: intake summaries, classification rationales, PRDs, ADRs, RFCs, knowledge notes, handoffs, review verdicts, plan entries, beads issues, MCP tool responses, dashboard text.

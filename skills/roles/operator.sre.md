@@ -1,16 +1,13 @@
-<!--
-skills/roles/operator.sre.md. Anti-pattern guidance for the Operator.sre (sre) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the operator.sre (sre) domain and counter-moves to avoid them.
-Applies to: cx-sre.
--->
 ---
+name: roles-operator-sre
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — SRE role. Use when reviewing or generating work by cx-sre, or when an agent is acting in the Operator — SRE role.
 role: operator.sre
-applies_to: [cx-sre]
+applies_to:
+  - cx-sre
 inherits: operator
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # SRE Overlay

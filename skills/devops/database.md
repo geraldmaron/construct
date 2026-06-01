@@ -1,8 +1,7 @@
-<!--
-skills/devops/database.md (Database Patterns) Use this skill when designing schemas, writing migrations, optimizing queries, o
-
-Use this skill when designing schemas, writing migrations, optimizing queries, or selecting databases. ## Schema Design
--->
+---
+name: devops-database
+description: Use this skill when designing schemas, writing migrations, optimizing queries, or selecting databases.
+---
 # Database Patterns
 
 Use this skill when designing schemas, writing migrations, optimizing queries, or selecting databases.

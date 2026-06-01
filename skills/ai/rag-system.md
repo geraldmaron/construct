@@ -1,8 +1,7 @@
-<!--
-skills/ai/rag-system.md (RAG System Design) Use this skill when building retrieval-augmented generation pipelines, vector se
-
-Use this skill when building retrieval-augmented generation pipelines, vector search, or knowledge-grounded AI systems. ## Document Processing
--->
+---
+name: ai-rag-system
+description: Use this skill when building retrieval-augmented generation pipelines, vector search, or knowledge-grounded AI systems.
+---
 # RAG System Design
 
 Use this skill when building retrieval-augmented generation pipelines, vector search, or knowledge-grounded AI systems.

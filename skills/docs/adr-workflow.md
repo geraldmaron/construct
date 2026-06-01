@@ -1,10 +1,7 @@
-<!--
-skills/docs/adr-workflow.md: Workflow for recording an architectural decision as an ADR.
-
-Triggered when cx-architect finalizes a design or a technology choice is made. Writes a
-full ADR to docs/adr/ using the shipped template (user-overridable via .cx/templates/docs/adr.md)
-and a shorter entry to .cx/decisions/ for session context.
--->
+---
+name: docs-adr-workflow
+description: "Use when: an architectural decision is made that affects the system structure, data model, API contracts, or technology choices."
+---
 # ADR Workflow
 
 Use when: an architectural decision is made that affects the system structure, data model, API contracts, or technology choices.

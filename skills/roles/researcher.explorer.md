@@ -1,16 +1,13 @@
-<!--
-skills/roles/researcher.explorer.md. Anti-pattern guidance for the Researcher.explorer (explorer) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the researcher.explorer (explorer) domain and counter-moves to avoid them.
-Applies to: cx-explorer.
--->
 ---
+name: roles-researcher-explorer
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — Explorer role. Use when reviewing or generating work by cx-explorer, or when an agent is acting in the Researcher — Explorer role.
 role: researcher.explorer
-applies_to: [cx-explorer]
+applies_to:
+  - cx-explorer
 inherits: researcher
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Codebase Explorer Overlay

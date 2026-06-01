@@ -1,8 +1,7 @@
-<!--
-skills/security/red-team.md (Red Team) Use this skill when planning or executing offensive security assessments, advers
-
-Use this skill when planning or executing offensive security assessments, adversary emulation, or attack simulations. ## Reconnaissance
--->
+---
+name: security-red-team
+description: Use this skill when planning or executing offensive security assessments, adversary emulation, or attack simulations.
+---
 # Red Team
 
 Use this skill when planning or executing offensive security assessments, adversary emulation, or attack simulations.

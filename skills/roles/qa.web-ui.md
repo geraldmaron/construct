@@ -1,16 +1,14 @@
-<!--
-skills/roles/qa.web-ui.md. Anti-pattern guidance for the Qa.web-ui (web ui) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the qa.web-ui (web ui) domain and counter-moves to avoid them.
-Applies to: cx-qa, cx-test-automation.
--->
 ---
+name: roles-qa-web-ui
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Web UI role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — Web UI role.
 role: qa.web-ui
-applies_to: [cx-qa, cx-test-automation]
+applies_to:
+  - cx-qa
+  - cx-test-automation
 inherits: qa
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Web UI QA Overlay

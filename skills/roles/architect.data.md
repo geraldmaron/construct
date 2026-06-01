@@ -1,16 +1,13 @@
-<!--
-skills/roles/architect.data.md. Anti-pattern guidance for the Architect.data (data) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the architect.data (data) domain and counter-moves to avoid them.
-Applies to: cx-architect.
--->
 ---
+name: roles-architect-data
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Data role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Data role.
 role: architect.data
-applies_to: [cx-architect]
+applies_to:
+  - cx-architect
 inherits: architect
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Data Architect Overlay

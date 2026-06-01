@@ -1,8 +1,7 @@
-<!--
-skills/frontend-design/state-management.md (Frontend State Management) Use this skill when choosing state management tools, structuring application sta
-
-Use this skill when choosing state management tools, structuring application state, or debugging state issues. ## State Categories
--->
+---
+name: frontend-design-state-management
+description: Use this skill when choosing state management tools, structuring application state, or debugging state issues.
+---
 # Frontend State Management
 
 Use this skill when choosing state management tools, structuring application state, or debugging state issues.

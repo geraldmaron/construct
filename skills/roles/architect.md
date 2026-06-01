@@ -1,21 +1,14 @@
-<!--
-skills/roles/architect.md. Anti-pattern guidance for the Architect role.
-
-## Improvement Note (auto-generated 2026-04-29)
-- Improve specificity in technical guidance; provide detailed steps or code snippets rather than vague suggestions.
-- Ensure that responses directly address the user's request; avoid unrelated topics or general advice that doesn't pertain to the task.
-- Incorporate thorough explanations for any proposed solutions or changes to clarify their importance and methodology.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the architect domain and counter-moves to avoid them.
-Applies to: cx-architect, cx-rd-lead.
--->
 ---
+name: roles-architect
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect role. Use when reviewing or generating work by cx-architect, cx-rd-lead, or when an agent is acting in the Architect role.
 role: architect
-applies_to: [cx-architect, cx-rd-lead]
+applies_to:
+  - cx-architect
+  - cx-rd-lead
 inherits: null
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Architect. Role guidance

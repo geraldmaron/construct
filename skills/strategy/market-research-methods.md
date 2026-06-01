@@ -1,11 +1,7 @@
-<!--
-skills/strategy/market-research-methods.md (Market Research Methods)
-Use when planning customer discovery, validating product direction, or
-sizing a market. Covers qualitative and quantitative methods, JTBD
-interview technique, survey design traps, and research-to-decision
-handoff.
--->
-
+---
+name: strategy-market-research-methods
+description: Use when the team needs to validate assumptions before committing resources, or when a decision is being made on vibes rather than signal.
+---
 # Market Research Methods
 
 Use when the team needs to validate assumptions before committing resources, or when a decision is being made on vibes rather than signal.

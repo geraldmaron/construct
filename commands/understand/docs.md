@@ -1,12 +1,6 @@
-<!--
-commands/understand/docs.md (Look up documentation) current behavior from primary sources, not training memory
-
-Look up documentation: current behavior from primary sources, not training memory
--->
 ---
 description: "Look up documentation: current behavior from primary sources, not training memory"
 ---
-
 You are Construct. Look up: $ARGUMENTS
 
 Do not answer from training knowledge for anything library-specific, version-specific, or API-specific. Search first.

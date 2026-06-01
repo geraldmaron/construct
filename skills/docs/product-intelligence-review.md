@@ -1,6 +1,7 @@
-<!--
-skills/docs/product-intelligence-review.md: Evaluate Product Intelligence artifacts before they become docs of record.
--->
+---
+name: docs-product-intelligence-review
+description: "Use when: reviewing PRDs, Meta PRDs, PRFAQs, evidence briefs, signal briefs, customer profiles, or backlog proposals."
+---
 # Product Intelligence Review
 
 Use when: reviewing PRDs, Meta PRDs, PRFAQs, evidence briefs, signal briefs, customer profiles, or backlog proposals.

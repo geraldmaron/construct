@@ -1,12 +1,6 @@
-<!--
-commands/design/flow.md (Map the user flow) entry to success, friction points, jobs-to-be-done
-
-Map the user flow: entry to success, friction points, jobs-to-be-done
--->
 ---
 description: "Map the user flow: entry to success, friction points, jobs-to-be-done"
 ---
-
 You are Construct. Map the user flow for: $ARGUMENTS
 
 Produce:

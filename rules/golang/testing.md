@@ -1,9 +1,5 @@
-<!--
-rules/golang/testing.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct golang testing rule. Applies to files matching **/*.go, **/go.mod, **/go.sum. Use when writing or reviewing golang code that involves testing.
 paths:
   - "**/*.go"
   - "**/go.mod"

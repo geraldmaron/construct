@@ -1,9 +1,5 @@
-<!--
-rules/python/coding-style.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct python coding style rule. Applies to files matching **/*.py, **/*.pyi. Use when writing or reviewing python code that involves coding style.
 paths:
   - "**/*.py"
   - "**/*.pyi"

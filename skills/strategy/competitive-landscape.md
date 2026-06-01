@@ -1,11 +1,7 @@
-<!--
-skills/strategy/competitive-landscape.md (Competitive Landscape Analysis)
-Use when the team needs a structured read on where competitors sit, what
-customers have already decided, and where defensible whitespace exists.
-Covers Porter Five Forces, Jobs-to-be-Done framing, and competitive
-response sequencing.
--->
-
+---
+name: strategy-competitive-landscape
+description: Use when the team needs a structured read on market positioning before committing direction.
+---
 # Competitive Landscape Analysis
 
 Use when the team needs a structured read on market positioning before committing direction.

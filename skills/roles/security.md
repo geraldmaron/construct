@@ -1,16 +1,14 @@
-<!--
-skills/roles/security.md. Anti-pattern guidance for the Security role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the security domain and counter-moves to avoid them.
-Applies to: cx-security, cx-legal-compliance.
--->
 ---
+name: roles-security
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Security role. Use when reviewing or generating work by cx-security, cx-legal-compliance, or when an agent is acting in the Security role.
 role: security
-applies_to: [cx-security, cx-legal-compliance]
+applies_to:
+  - cx-security
+  - cx-legal-compliance
 inherits: null
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Security. Role guidance

@@ -1,16 +1,14 @@
-<!--
-skills/roles/product-manager.growth.md. Anti-pattern guidance for the Product-manager.growth (growth) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the product-manager.growth (growth) domain and counter-moves to avoid them.
-Applies to: cx-product-manager, cx-business-strategist.
--->
 ---
+name: roles-product-manager-growth
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Growth role. Use when reviewing or generating work by cx-product-manager, cx-business-strategist, or when an agent is acting in the Product Manager — Growth role.
 role: product-manager.growth
-applies_to: [cx-product-manager, cx-business-strategist]
+applies_to:
+  - cx-product-manager
+  - cx-business-strategist
 inherits: product-manager
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Growth PM Overlay

@@ -1,6 +1,7 @@
-<!--
-skills/docs/prfaq-workflow.md: Working-backwards PRFAQ generation from PRDs or evidence.
--->
+---
+name: docs-prfaq-workflow
+description: "Use when: the user asks for a PRFAQ, working-backwards doc, launch narrative, or FAQ grounded in product evidence."
+---
 # PRFAQ Workflow
 
 Use when: the user asks for a PRFAQ, working-backwards doc, launch narrative, or FAQ grounded in product evidence.

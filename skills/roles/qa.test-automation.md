@@ -1,16 +1,13 @@
-<!--
-skills/roles/qa.test-automation.md. Anti-pattern guidance for the Qa.test-automation (test automation) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the qa.test-automation (test automation) domain and counter-moves to avoid them.
-Applies to: cx-test-automation.
--->
 ---
+name: roles-qa-test-automation
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Test Automation role. Use when reviewing or generating work by cx-test-automation, or when an agent is acting in the QA — Test Automation role.
 role: qa.test-automation
-applies_to: [cx-test-automation]
+applies_to:
+  - cx-test-automation
 inherits: qa
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Test Automation Overlay

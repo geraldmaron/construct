@@ -1,8 +1,7 @@
-<!--
-skills/docs/research-workflow.md (Research Workflow) Use when: the user asks to research a topic, investigate a question, or gather e
-
-Use when: the user asks to research a topic, investigate a question, or gather evidence for a decision. ## Steps
--->
+---
+name: docs-research-workflow
+description: "Use when: the user asks to research a topic, investigate a question, or gather evidence for a decision."
+---
 # Research Workflow
 
 Use when: the user asks to research a topic, investigate a question, or gather evidence for a decision.

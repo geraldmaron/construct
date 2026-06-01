@@ -1,11 +1,7 @@
-<!--
-skills/operating/incident-response.md (Incident Response)
-Use when a production issue is active, when drafting incident process,
-or when running a postmortem. Covers severity tiers, war-room roles,
-communication cadence, blameless postmortem structure, and MTTR
-discipline.
--->
-
+---
+name: operating-incident-response
+description: Use when an issue is active in production, when building incident process from scratch, or when reviewing postmortems for quality.
+---
 # Incident Response
 
 Use when an issue is active in production, when building incident process from scratch, or when reviewing postmortems for quality.

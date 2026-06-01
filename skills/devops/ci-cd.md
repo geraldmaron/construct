@@ -1,8 +1,7 @@
-<!--
-skills/devops/ci-cd.md (CI/CD) Use this skill when designing, debugging, or optimizing CI/CD pipelines.
-
-Use this skill when designing, debugging, or optimizing CI/CD pipelines. ## Pipeline Stages
--->
+---
+name: devops-ci-cd
+description: Use this skill when designing, debugging, or optimizing CI/CD pipelines.
+---
 # CI/CD
 
 Use this skill when designing, debugging, or optimizing CI/CD pipelines.

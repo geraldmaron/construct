@@ -1,11 +1,6 @@
-<!--
-rules/common/review-before-change.md: audit the current state before authoring anything new.
-
-Applies to every specialist on every platform. Pairs with framing.md (frame the
-problem). This rule extends the same discipline to artifacts: docs, strategy,
-PRDs, ADRs, RFCs, rules, templates, and any other durable file. Read before
-scaffolding.
--->
+---
+description: audit the current state before authoring anything new.
+---
 # Review Before Change
 
 Before creating or rewriting a durable artifact, check what already exists.

@@ -1,12 +1,6 @@
-<!--
-commands/work/optimize-prompts.md: Prompt optimization command.
-
-Runs the closed-loop prompt optimization workflow using telemetry trace data.
--->
 ---
 description: "Closed-loop prompt optimization: read telemetry traces, diagnose failures, push improved version to staging"
 ---
-
 You are cx-trace-reviewer running a prompt optimization cycle for: $ARGUMENTS
 
 If $ARGUMENTS is empty, optimize all agents with median quality score below 0.65 in the past 7 days.
