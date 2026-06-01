@@ -4,6 +4,34 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Security
+
+- **Eliminate shell command injection in `lib/ollama-manager.mjs` (bead `construct-w5kv`).** Every shell-out (`ollama pull/rm`, `curl GET/POST` to the Ollama HTTP API, `brew install/services`, `sleep`) was rewritten from `execSync(template-string)` to `execFileSync(bin, [...args])` array form. JSON bodies are piped via `--data-binary @-` over stdin instead of embedded in a shell-quoted argument. User-supplied model names from argv (e.g. `args[0]` in `pull`, `rm`, `show`, `test` subcommands) can no longer break out of the command.
+
+- **Eliminate shell injection in MCP `searchSkills` tool (bead `construct-z64u`).** `lib/mcp/tools/skills.mjs` previously called `execSync(\`rg -i "${pattern.replace(/"/g, '\\"')}" "${skillsDir}"\`)` where `pattern` is a model-controlled MCP tool argument and the double-quote escape left `$(...)`, backticks, and backslash sequences exploitable. Rewritten to `execFileSync('rg', ['-i', pattern, skillsDir])` (and the same for the `grep` fallback) — pattern is a discrete argv entry, no shell intermediary.
+
+- **Dashboard refuses non-loopback bind without configured auth (bead `construct-qrrh`).** `lib/server/index.mjs` previously flipped `BIND_HOST` to `0.0.0.0` whenever `NODE_ENV=production` was set, silently disabling the localhost-trust path used by the credentials and config endpoints. Default is now `127.0.0.1` regardless of `NODE_ENV`. New `assertSafeBind()` writes a startup error and exits 1 if `BIND_HOST` is non-loopback and `isAuthConfigured()` is false — operators have to make the exposure decision explicitly.
+
+- **Bead IDs validated before reaching the `bd` shell boundary (bead `construct-gpa4`).** New `assertBeadId(id)` exported from `lib/beads-client.mjs` enforces `/^[a-z]+-[a-z0-9]+$/` on every ID. Applied in `showIssue`, `claimIssue`, `closeIssue`. `lib/tracking-surfaces.mjs:closeBeadsFromPrRefs` validates per-ID before `spawnSync('bd', ['close', id, ...])`; malformed IDs (from a crafted PR body) bail to a structured `invalid-bead-id` error instead of corrupting the beads log.
+
+- **`session-start` no longer logs `JIRA_BASE_URL` value to session output (bead `construct-qqre`).** `lib/hooks/session-start.mjs:274` now logs `"Jira: configured"` instead of the literal URL. The audit-trail captures session output verbatim; the URL is non-secret in most setups but defense-in-depth says log presence, not value.
+
+### Fixed
+
+- **Dead queue-timeout check in `lib/beads-client.mjs` (bead `construct-myxv`).** The condition `if (Date.now() - startWait + maxQueueWaitMs > maxQueueWaitMs)` simplified algebraically to `if (Date.now() > startWait)` — always true on first call. Effect: every entry to the queue path returned a fake `"Timeout waiting for lock"` instantly without ever queuing or polling, and callers could not distinguish lock-failed from queue-full. Corrected to `if (Date.now() - startWait > maxQueueWaitMs)`. The polling loop at `lib/beads-client.mjs:277` is now reachable.
+
+- **Stale `CONSTRUCT_SKIP_COMMENT_LINT` bypass advertisement removed from settings template (bead `construct-a2rl`).** `platforms/claude/settings.template.json:154` described a bypass env var that the hook (`lib/hooks/comment-lint.mjs:10`) explicitly does not implement, and that CLAUDE.md's "no `CONSTRUCT_SKIP_*` on enforcement gates" rule forbids. Replaced with `"No bypass — repair the policy if it fires wrong."` `rg 'CONSTRUCT_SKIP_|CONSTRUCT_ALLOW_|CONSTRUCT_QUIET_' platforms/claude/settings.template.json` now returns zero hits.
+
+- **`writeContextState` is now atomic across concurrent writers (bead `construct-uiva`).** `lib/context-state.mjs` previously used plain `writeFileSync` for both `.cx/context.json` and `.cx/context.md`; four hooks plus `lib/sandbox.mjs` could race and leave half-written files. New `atomicWrite(target, content)` writes to `<target>.<pid>.<timestamp>.tmp` and `renameSync`s into place — POSIX `rename(2)` is atomic on the same filesystem, so observers either see the prior content or the new content, never an interleaved write.
+
+- **`embed/daemon.mjs` probe failures surfaced to daemon log (bead `construct-ly0i`).** The inner `catch { /* probe call failed */ }` around Anthropic/OpenRouter probe `fetch` calls now writes `"[embed] Probe call failed: <message>"` to stderr. Operators can distinguish a 0ms success from a hard failure via the daemon log without changing the no-crash behavior.
+
+- **`observation-store` surfaces cap-eviction to the caller (bead `construct-1pyl`).** `lib/observation-store.mjs:writeIndex` and `writeVectors` now return `{ dropped }`; `addObservation` propagates it as `record.capDropped` and emits a one-line stderr warning when the cap is reached. The `cap-drops.jsonl` cumulative log and the `construct doctor` "no recent drops" surface are unchanged.
+
+### Changed
+
+- **End-to-end best-practice audit (audit-2026-06-01 batch).** Three Explore agents in parallel surveyed every CLI subcommand, every `lib/hooks/*.mjs`, the specialist handoff chain, and the runtime/data surfaces (session-start, audit, embed, beads, observations, dashboard, providers). Twenty-one raw findings, ten verified, eleven false positives (one false-positive on `await emitEvent` ordering in `config-protection.mjs`; one mis-scoped skip-env-var claim covering bootstrap helpers outside the hook surface; two unit-confusion findings on `@p95ms` timeouts; remainder duplicates or already-fixed in v1.0.13). The verified ten are listed under Security / Fixed above. Audit summary in `.claude/plans/begin-crawling-the-non-radiant-harp.md`; one follow-up bead (`construct-an0s`) for the specialist-contracts postcondition asymmetry left open for a deeper trace.
+
 ### Removed
 
 - **Em-dash prose rule and `lint:prose` gate retired.** The rule never enforced anything actionable; the script's `BANNED` array contained exactly one regex and its CI step only fired on diffs touching `docs/**`, so most em-dash drift was grandfathered. Removing the rule removes a gate that under-fired and surfaces no real correctness signal. Deleted: `scripts/lint-prose.mjs`, `.proseignore`, the `lint:prose` entry in `package.json`, the "prose policy" step in `.github/workflows/ci.yml`, and the `lint:prose` entry in `tests/ci-parity.test.mjs`'s `CI_ONLY_SUBCOMMANDS` array. Rule text removed from `CLAUDE.md` ("Critical rules"), `docs/STYLE.md` (Punctuation, Tooling, Exceptions sections), and `CONTRIBUTING.md` (eight-check list collapsed to seven; "No em-dashes" line dropped from the Tone section). Stale references cleaned up in `docs/maintenance/release-and-deploy.md` (three lines), `tests/AUDIT.md` (the lint-prose unit-test gap), and the file-header comment in `lib/flavors/loader.mjs`. Existing em-dashes in committed docs are left in place.
