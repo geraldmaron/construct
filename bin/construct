@@ -917,7 +917,7 @@ async function cmdDoctor() {
     }
 
     try {
-      const { recentViolations } = await import('../lib/specialist-contracts-enforce.mjs');
+      const { recentViolations } = await import('../lib/contracts/violation-log.mjs');
       const violations = recentViolations({ windowMs: 24 * 60 * 60 * 1000 });
       const label = violations.length === 0
         ? 'Contract violations (none in last 24h)'

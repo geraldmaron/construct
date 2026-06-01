@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Changed
+
+- **Contract violation log moved to `lib/contracts/violation-log.mjs`; dead `specialist-contracts-enforce.mjs` module removed.** The append-only tamper-evident log was previously owned by `enforcePacket` in a parallel contract module that had zero production callers (only tests + the read-side `recentViolations` surface for `construct doctor`). The chain-hashed JSONL writer + reader port over verbatim — existing `.cx/contract-violations.jsonl` chains keep reading without migration. Each record now also carries a monotonic `sequence` field so whole-tail truncation is detectable on `verifyChain()`, not just modification (sequence-number gap detection per current tamper-evident audit log practice). The dead module and its two test files are removed; CI path filter updated.
+
 ### Security
 
 - **Eliminate shell command injection in `lib/ollama-manager.mjs` (bead `construct-w5kv`).** Every shell-out (`ollama pull/rm`, `curl GET/POST` to the Ollama HTTP API, `brew install/services`, `sleep`) was rewritten from `execSync(template-string)` to `execFileSync(bin, [...args])` array form. JSON bodies are piped via `--data-binary @-` over stdin instead of embedded in a shell-quoted argument. User-supplied model names from argv (e.g. `args[0]` in `pull`, `rm`, `show`, `test` subcommands) can no longer break out of the command.
