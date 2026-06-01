@@ -1,8 +1,7 @@
-<!--
-skills/compliance/data-privacy.md (Data Privacy) GDPR, CCPA, and data protection compliance patterns.
-
-Use this skill when reviewing data collection, storage, processing, or retention for privacy regulation compliance.
--->
+---
+name: compliance-data-privacy
+description: Use this skill when reviewing data collection, storage, processing, or retention for privacy regulation compliance.
+---
 # Data Privacy
 
 Use this skill when reviewing data collection, storage, processing, or retention for privacy regulation compliance.

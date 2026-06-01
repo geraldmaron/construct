@@ -1,8 +1,7 @@
-<!--
-skills/development/mobile-crossplatform.md (Mobile Cross-Platform Development) Before choosing a framework, answer:
-
-## Decision Framework: Native vs Cross-Platform Before choosing a framework, answer:
--->
+---
+name: development-mobile-crossplatform
+description: Before choosing a framework, answer:. Use when the task matches the trigger conditions described in the body.
+---
 # Mobile Cross-Platform Development
 
 ## Decision Framework: Native vs Cross-Platform

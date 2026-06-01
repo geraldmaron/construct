@@ -1,8 +1,7 @@
-<!--
-skills/frameworks/react.md (React) By default, components are **Server Components**: they run on the server, have
-
-## Component Design ### Server vs Client Components (React 19 / Next.js App Router)
--->
+---
+name: frameworks-react
+description: "By default, components are **Server Components**: they run on the server, have no state, and can fetch data directly. Add `'use client'` only when you need interactivity, browser APIs, or hooks. Use when the task matches the trigger conditions described in the body."
+---
 # React
 
 ## Component Design

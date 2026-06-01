@@ -1,16 +1,14 @@
-<!--
-skills/roles/product-manager.md. Anti-pattern guidance for the Product-manager role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the product-manager domain and counter-moves to avoid them.
-Applies to: cx-product-manager, cx-business-strategist.
--->
 ---
+name: roles-product-manager
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager role. Use when reviewing or generating work by cx-product-manager, cx-business-strategist, or when an agent is acting in the Product Manager role.
 role: product-manager
-applies_to: [cx-product-manager, cx-business-strategist]
+applies_to:
+  - cx-product-manager
+  - cx-business-strategist
 inherits: null
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Product Manager. Role guidance

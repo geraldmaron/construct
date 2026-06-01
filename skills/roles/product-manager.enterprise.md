@@ -1,16 +1,13 @@
-<!--
-skills/roles/product-manager.enterprise.md. Anti-pattern guidance for the Product-manager.enterprise (enterprise) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the product-manager.enterprise (enterprise) domain and counter-moves to avoid them.
-Applies to: cx-product-manager.
--->
 ---
+name: roles-product-manager-enterprise
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Enterprise role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Enterprise role.
 role: product-manager.enterprise
-applies_to: [cx-product-manager]
+applies_to:
+  - cx-product-manager
 inherits: product-manager
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Enterprise PM Overlay

@@ -1,8 +1,6 @@
-<!--
-rules/web/design-quality.md: <one-line purpose>
-
-<2–6 line summary.>
--->
+---
+description: Construct web design quality rule. Use when writing or reviewing web code that involves design quality.
+---
 > This file extends [common/patterns.md](../common/patterns.md) with web-specific design-quality guidance.
 
 # Web Design Quality Standards

@@ -1,8 +1,7 @@
-<!--
-skills/frameworks/nextjs.md (Next.js (App Router)) ```
-
-## App Router Mental Model ```
--->
+---
+name: frameworks-nextjs
+description: Patterns, anti-patterns, and reference guidance for Next.js (App Router). Use when the task involves next.js (app router).
+---
 # Next.js (App Router)
 
 ## App Router Mental Model

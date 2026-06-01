@@ -1,8 +1,7 @@
-<!--
-skills/development/swift.md (Swift / iOS Development) Swift 6 enforces data-race safety at compile time. Annotate isolation boundary e
-
-## Concurrency (Swift 6 Strict Concurrency) Swift 6 enforces data-race safety at compile time. Annotate isolation boundary explicitly:
--->
+---
+name: development-swift
+description: Swift 6 enforces data-race safety at compile time. Annotate isolation boundary explicitly:. Use when the task matches the trigger conditions described in the body.
+---
 # Swift / iOS Development
 
 ## Concurrency (Swift 6 Strict Concurrency)

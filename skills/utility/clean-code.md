@@ -1,8 +1,7 @@
-<!--
-skills/utility/clean-code.md (AI Slop Removal) Patterns and heuristics for identifying and removing AI-generated code smells. U
-
-Patterns and heuristics for identifying and removing AI-generated code smells. Use when cleaning up output from AI coding tools. ## Decision Tree
--->
+---
+name: utility-clean-code
+description: Patterns and heuristics for identifying and removing AI-generated code smells. Use when cleaning up output from AI coding tools.
+---
 # AI Slop Removal
 
 Patterns and heuristics for identifying and removing AI-generated code smells. Use when cleaning up output from AI coding tools.

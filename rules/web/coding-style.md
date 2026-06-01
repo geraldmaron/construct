@@ -1,8 +1,6 @@
-<!--
-rules/web/coding-style.md: <one-line purpose>
-
-<2–6 line summary.>
--->
+---
+description: Construct web coding style rule. Use when writing or reviewing web code that involves coding style.
+---
 > This file extends [common/coding-style.md](../common/coding-style.md) with web-specific frontend content.
 
 # Web Coding Style

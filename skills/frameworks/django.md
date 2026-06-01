@@ -1,8 +1,7 @@
-<!--
-skills/frameworks/django.md (Django) ```
-
-## Project Structure ```
--->
+---
+name: frameworks-django
+description: Patterns, anti-patterns, and reference guidance for Django. Use when the task involves django.
+---
 # Django
 
 ## Project Structure

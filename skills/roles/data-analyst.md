@@ -1,16 +1,13 @@
-<!--
-skills/roles/data-analyst.md. Anti-pattern guidance for the Data-analyst role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the data-analyst domain and counter-moves to avoid them.
-Applies to: cx-data-analyst.
--->
 ---
+name: roles-data-analyst
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst role.
 role: data-analyst
-applies_to: [cx-data-analyst]
+applies_to:
+  - cx-data-analyst
 inherits: null
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Data Analyst. Role guidance

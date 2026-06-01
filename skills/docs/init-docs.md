@@ -1,8 +1,7 @@
-<!--
-skills/docs/init-docs.md (Skill: init-docs) Initialize Project Documentation Structure: `init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`
-
-## Trigger keywords `init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`
--->
+---
+name: docs-init-docs
+description: "`init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`. Use when the task matches the trigger conditions described in the body."
+---
 # Skill: init-docs: Initialize Project Documentation Structure
 
 ## Trigger keywords

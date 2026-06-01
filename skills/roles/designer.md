@@ -1,16 +1,14 @@
-<!--
-skills/roles/designer.md. Anti-pattern guidance for the Designer role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the designer domain and counter-moves to avoid them.
-Applies to: cx-designer, cx-accessibility.
--->
 ---
+name: roles-designer
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Designer role. Use when reviewing or generating work by cx-designer, cx-accessibility, or when an agent is acting in the Designer role.
 role: designer
-applies_to: [cx-designer, cx-accessibility]
+applies_to:
+  - cx-designer
+  - cx-accessibility
 inherits: null
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Designer. Role guidance

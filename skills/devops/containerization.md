@@ -1,8 +1,7 @@
-<!--
-skills/devops/containerization.md (Containerization) Use this skill when writing Dockerfiles, optimizing image size, or securing cont
-
-Use this skill when writing Dockerfiles, optimizing image size, or securing container builds. ## Multi-Stage Builds
--->
+---
+name: devops-containerization
+description: Use this skill when writing Dockerfiles, optimizing image size, or securing container builds.
+---
 # Containerization
 
 Use this skill when writing Dockerfiles, optimizing image size, or securing container builds.

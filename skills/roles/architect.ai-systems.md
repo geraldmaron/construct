@@ -1,16 +1,13 @@
-<!--
-skills/roles/architect.ai-systems.md. Anti-pattern guidance for the Architect.ai-systems (ai systems) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the architect.ai-systems (ai systems) domain and counter-moves to avoid them.
-Applies to: cx-architect.
--->
 ---
+name: roles-architect-ai-systems
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — AI Systems role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — AI Systems role.
 role: architect.ai-systems
-applies_to: [cx-architect]
+applies_to:
+  - cx-architect
 inherits: architect
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # AI Systems Architect Overlay

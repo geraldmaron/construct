@@ -1,11 +1,6 @@
-<!--
-rules/common/research.md: canonical research and evidence policy for Construct.
-
-Defines how research starts, which sources to prefer, how claims are verified,
-and what must be recorded so findings are reproducible. Applies to research,
-product evidence synthesis, document ingest follow-up, and any recommendation
-that depends on external facts or evolving internal evidence.
--->
+---
+description: canonical research and evidence policy for Construct.
+---
 # Research Policy
 
 Construct treats research as a reproducible evidence-gathering process, not free-form browsing. If a claim could change decisions, scope, architecture, or roadmap, it must be tied to verifiable evidence.

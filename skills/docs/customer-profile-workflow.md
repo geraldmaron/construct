@@ -1,6 +1,7 @@
-<!--
-skills/docs/customer-profile-workflow.md: Maintain durable customer/account memory for Product Intelligence.
--->
+---
+name: docs-customer-profile-workflow
+description: "Use when: customer evidence should update durable product memory."
+---
 # Customer Profile Workflow
 
 Use when: customer evidence should update durable product memory.

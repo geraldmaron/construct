@@ -1,16 +1,14 @@
-<!--
-skills/roles/data-analyst.telemetry.md. Anti-pattern guidance for the Data-analyst.telemetry (telemetry) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the data-analyst.telemetry (telemetry) domain and counter-moves to avoid them.
-Applies to: cx-data-analyst, cx-sre.
--->
 ---
+name: roles-data-analyst-telemetry
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Telemetry role. Use when reviewing or generating work by cx-data-analyst, cx-sre, or when an agent is acting in the Data Analyst — Telemetry role.
 role: data-analyst.telemetry
-applies_to: [cx-data-analyst, cx-sre]
+applies_to:
+  - cx-data-analyst
+  - cx-sre
 inherits: data-analyst
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Telemetry Analyst Overlay

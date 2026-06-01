@@ -1,8 +1,7 @@
-<!--
-skills/security/vuln-research.md (Vulnerability Research) Use this skill when analyzing binaries, fuzzing software, or developing exploits
-
-Use this skill when analyzing binaries, fuzzing software, or developing exploits for security research. ## Binary Analysis
--->
+---
+name: security-vuln-research
+description: Use this skill when analyzing binaries, fuzzing software, or developing exploits for security research.
+---
 # Vulnerability Research
 
 Use this skill when analyzing binaries, fuzzing software, or developing exploits for security research.

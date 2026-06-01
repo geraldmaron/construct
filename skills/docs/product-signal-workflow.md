@@ -1,8 +1,7 @@
-<!--
-skills/docs/product-signal-workflow.md: Synthesize product signals from evidence into the right artifact.
-Confidence rubric, contradiction resolution, artifact decision tree, and storage are all defined here.
-Follow rules/common/research.md for source-handling policy.
--->
+---
+name: docs-product-signal-workflow
+description: "Use when: the user asks what customers are asking for, what themes are emerging, whether evidence is strong enough, or what should become a PRD."
+---
 # Product Signal Workflow
 
 Use when: the user asks what customers are asking for, what themes are emerging, whether evidence is strong enough, or what should become a PRD.

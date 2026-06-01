@@ -1,16 +1,13 @@
-<!--
-skills/roles/data-engineer.pipeline.md. Anti-pattern guidance for the Data-engineer.pipeline (pipeline) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the data-engineer.pipeline (pipeline) domain and counter-moves to avoid them.
-Applies to: cx-data-engineer.
--->
 ---
+name: roles-data-engineer-pipeline
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Pipeline role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Pipeline role.
 role: data-engineer.pipeline
-applies_to: [cx-data-engineer]
+applies_to:
+  - cx-data-engineer
 inherits: engineer.data
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Data Pipeline Engineer Overlay

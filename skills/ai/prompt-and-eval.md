@@ -1,8 +1,7 @@
-<!--
-skills/ai/prompt-and-eval.md (Prompt Engineering and Evaluation) Use this skill when designing prompts, evaluating model performance, or optimizi
-
-Use this skill when designing prompts, evaluating model performance, or optimizing LLM behavior. ## Prompt Structure
--->
+---
+name: ai-prompt-and-eval
+description: Use this skill when designing prompts, evaluating model performance, or optimizing LLM behavior.
+---
 # Prompt Engineering and Evaluation
 
 Use this skill when designing prompts, evaluating model performance, or optimizing LLM behavior.

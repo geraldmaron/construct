@@ -1,16 +1,13 @@
-<!--
-skills/roles/researcher.ux.md. Anti-pattern guidance for the Researcher.ux (ux) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the researcher.ux (ux) domain and counter-moves to avoid them.
-Applies to: cx-ux-researcher.
--->
 ---
+name: roles-researcher-ux
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — UX role. Use when reviewing or generating work by cx-ux-researcher, or when an agent is acting in the Researcher — UX role.
 role: researcher.ux
-applies_to: [cx-ux-researcher]
+applies_to:
+  - cx-ux-researcher
 inherits: researcher
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # UX Researcher Overlay

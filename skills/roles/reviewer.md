@@ -1,16 +1,16 @@
-<!--
-skills/roles/reviewer.md. Anti-pattern guidance for the Reviewer role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the reviewer domain and counter-moves to avoid them.
-Applies to: cx-reviewer, cx-devil-advocate, cx-evaluator, cx-trace-reviewer.
--->
 ---
+name: roles-reviewer
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer role. Use when reviewing or generating work by cx-reviewer, cx-devil-advocate, cx-evaluator, cx-trace-reviewer, or when an agent is acting in the Reviewer role.
 role: reviewer
-applies_to: [cx-reviewer, cx-devil-advocate, cx-evaluator, cx-trace-reviewer]
+applies_to:
+  - cx-reviewer
+  - cx-devil-advocate
+  - cx-evaluator
+  - cx-trace-reviewer
 inherits: null
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Reviewer. Role guidance

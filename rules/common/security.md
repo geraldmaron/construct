@@ -1,9 +1,6 @@
-<!--
-rules/common/security.md: mandatory security checks and secret management.
-
-Defines pre-commit security checklist, secret management rules,
-and response protocol for discovered vulnerabilities.
--->
+---
+description: mandatory security checks and secret management.
+---
 # Security Guidelines
 
 ## Mandatory Security Checks

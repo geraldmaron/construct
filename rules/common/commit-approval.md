@@ -1,9 +1,6 @@
-<!--
-rules/common/commit-approval.md: conversational approval rule for mutating git operations.
-
-Behavioral rule, not a hook. The agent asks and waits for a yes; the user
-replies in chat. Infrastructure stays out of the way.
--->
+---
+description: conversational approval rule for mutating git operations.
+---
 # Commit Approval
 
 Construct does not commit, push, or merge without the user explicitly saying yes in the current conversation.

@@ -1,8 +1,7 @@
-<!--
-skills/compliance/license-audit.md (License Audit) Dependency license review and open-source compliance.
-
-Use this skill when auditing dependency licenses, evaluating OSS compliance risk, or preparing license inventories for legal review.
--->
+---
+name: compliance-license-audit
+description: Use this skill when auditing dependency licenses, evaluating OSS compliance risk, or preparing license inventories for legal review.
+---
 # License Audit
 
 Use this skill when auditing dependency licenses, evaluating OSS compliance risk, or preparing license inventories for legal review.

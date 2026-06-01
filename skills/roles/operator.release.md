@@ -1,16 +1,13 @@
-<!--
-skills/roles/operator.release.md. Anti-pattern guidance for the Operator.release (release) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the operator.release (release) domain and counter-moves to avoid them.
-Applies to: cx-release-manager.
--->
 ---
+name: roles-operator-release
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Release role. Use when reviewing or generating work by cx-release-manager, or when an agent is acting in the Operator — Release role.
 role: operator.release
-applies_to: [cx-release-manager]
+applies_to:
+  - cx-release-manager
 inherits: operator
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Release Manager Overlay

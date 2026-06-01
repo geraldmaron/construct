@@ -1,8 +1,6 @@
-<!--
-rules/web/performance.md: <one-line purpose>
-
-<2–6 line summary.>
--->
+---
+description: Construct web performance rule. Use when writing or reviewing web code that involves performance.
+---
 > This file extends [common/performance.md](../common/performance.md) with web-specific performance content.
 
 # Web Performance Rules

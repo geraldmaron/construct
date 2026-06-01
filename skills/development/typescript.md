@@ -1,8 +1,7 @@
-<!--
-skills/development/typescript.md (TypeScript Best Practices) Use this skill when writing, reviewing, or debugging TypeScript or JavaScript co
-
-Use this skill when writing, reviewing, or debugging TypeScript or JavaScript code. ## Project Structure
--->
+---
+name: development-typescript
+description: Use this skill when writing, reviewing, or debugging TypeScript or JavaScript code.
+---
 # TypeScript Best Practices
 
 Use this skill when writing, reviewing, or debugging TypeScript or JavaScript code.

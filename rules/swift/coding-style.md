@@ -1,9 +1,5 @@
-<!--
-rules/swift/coding-style.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct swift coding style rule. Applies to files matching **/*.swift, **/Package.swift. Use when writing or reviewing swift code that involves coding style.
 paths:
   - "**/*.swift"
   - "**/Package.swift"

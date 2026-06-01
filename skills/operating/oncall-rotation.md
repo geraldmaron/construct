@@ -1,10 +1,7 @@
-<!--
-skills/operating/oncall-rotation.md (On-Call Rotation)
-Use when designing an on-call schedule, reviewing runbook quality, or
-handling escalation protocols. Covers handoff structure, runbook quality
-bar, escalation chains, and on-call health indicators.
--->
-
+---
+name: operating-oncall-rotation
+description: Use when setting up on-call, reviewing its health, or handling an escalation during a rotation.
+---
 # On-Call Rotation
 
 Use when setting up on-call, reviewing its health, or handling an escalation during a rotation.
