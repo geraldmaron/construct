@@ -1598,12 +1598,12 @@ async function cmdHandoffs(args) {
   }
 
   if (sub === 'validate') {
-    const { parseHandoffFile, validateHandoff } = await import('../lib/handoffs/contract.mjs');
+    const { parseHandoffFile, validateHandoffFile } = await import('../lib/handoffs/contract.mjs');
     if (summary.state === 'empty') { info('No handoffs to validate.'); return; }
     let hasErrors = false;
     for (const f of summary.files) {
       const parsed = parseHandoffFile(f.path);
-      const { valid, errors } = validateHandoff(parsed);
+      const { valid, errors } = validateHandoffFile(parsed);
       if (valid) {
         println(`✓ ${f.filename}`);
       } else {
