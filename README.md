@@ -85,6 +85,12 @@ Anything dropped into `.cx/inbox/` (a bug report, a customer comment, a competit
 
 Each signal gets a primary owner and a recommended handoff chain. Inspect with `construct intake list` and `construct intake show <id>`. Generate a task graph with `construct graph from-intake <id>`. The classifier runs in the daemon and is deterministic. The agent in your editor does the actual analysis. [Intake and triage](https://geraldmaron.github.io/construct/concepts/intake-and-triage).
 
+### Document ingestion fidelity
+
+`construct ingest <file>` extracts text from PDF, DOCX, XLSX, PPTX, HTML, plain text, email, and audio/video. High-fidelity extraction is the default and routes through a [docling](https://github.com/docling-project/docling) Python sidecar (MIT, IBM, donated to LF AI & Data) provisioned via [`uv`](https://github.com/astral-sh/uv); audio and video route through [`whisper.cpp`](https://github.com/ggml-org/whisper.cpp) (Metal-accelerated on macOS).
+
+First run downloads `uv` and creates `.cx/runtime/docling/.venv` (~1.5 GB including PyTorch). Audio requires a system `whisper-cli` binary — `brew install whisper-cpp` on macOS. Pass `--strict` to fail on any extraction info loss; pass `--legacy-extractor` to use the pre-docling regex path. Any silent drops (image-heavy PDFs, scanned pages with low OCR yield) are surfaced as `droppedInfo` in the CLI output.
+
 ## Hard gates
 
 Every code mutation runs through enforcement. No secrets committed, tests green, docs current, comments lint-clean, CI passes. Gates live in three places: write-time, commit-time, CI safety net. They can only be bypassed with explicit env vars so every exception leaves an audit trail. [Gates and enforcement](https://geraldmaron.github.io/construct/concepts/gates-and-enforcement).
