@@ -17,3 +17,19 @@ paths = [
   '''.*\.test\.mjs''',
   '''examples/.*''',
 ]
+
+# Per-rule allowlist: the `atlassian-api-token` rule over-triggers on routine
+# Jira/Confluence integration code in bin/construct (calls like
+# `createJiraTicket`, `publishArtifactToConfluence`). Earlier gitleaks
+# versions flagged these as token leaks in historical commits 272de2e2
+# (v1.0.1) and e4a50803 across lines 1862, 1875, 1890, 1903. Newer gitleaks
+# releases dropped the false positives upstream, but the CI action bundles
+# an older binary, so the nightly scheduled scan still emails on noise.
+# Scope is per-rule + per-file — all other secret-detection rules remain
+# active on bin/construct.
+
+[[rules]]
+id = "atlassian-api-token"
+[[rules.allowlists]]
+description = "atlassian-api-token false positives on CLI integration code"
+paths = ['''^bin/construct$''']
