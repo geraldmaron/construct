@@ -10,11 +10,14 @@ description: Observability commands for Construct.
 | `construct efficiency` | Show read efficiency, repeated files, and context-budget guidance |
 | `construct eval-datasets` | Sync scored Langfuse traces into eval datasets for prompt regression testing |
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
+| `construct feedback:history` | Show recorded outcome ratings |
+| `construct feedback:record` | Record an outcome rating for a recent specialist invocation |
 | `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
 | `construct optimize` | Prompt optimization using Langfuse trace quality scores |
 | `construct review` | Generate agent performance review from Langfuse trace backend |
 | `construct telemetry` | Query telemetry traces and latency data |
 | `construct telemetry-backfill` | Backfill sparse traces with observations (trace backend) |
+| `construct telemetry-setup` | Configure Langfuse credentials and trace export |
 
 ## construct efficiency
 
@@ -26,12 +29,6 @@ Show read efficiency, repeated files, and context-budget guidance
 construct efficiency [--json]
 ```
 
-**Options**
-
-| Flag | Description |
-|---|---|
-| `--json` | Output raw JSON |
-
 ## construct eval-datasets
 
 Sync scored Langfuse traces into eval datasets for prompt regression testing
@@ -39,14 +36,8 @@ Sync scored Langfuse traces into eval datasets for prompt regression testing
 **Usage**
 
 ```bash
-construct eval-datasets [--limit=N]
+construct eval-datasets
 ```
-
-**Options**
-
-| Flag | Description |
-|---|---|
-| `--limit=N` | Maximum scored traces to sync (default: 100) |
 
 ## construct evals
 
@@ -55,14 +46,28 @@ Show evaluator catalog for prompt and agent experiments
 **Usage**
 
 ```bash
-construct evals [--json]
+construct evals <list|run>
 ```
 
-**Options**
+## construct feedback:history
 
-| Flag | Description |
-|---|---|
-| `--json` | Output raw JSON |
+Show recorded outcome ratings
+
+**Usage**
+
+```bash
+construct feedback:history [--days=N]
+```
+
+## construct feedback:record
+
+Record an outcome rating for a recent specialist invocation
+
+**Usage**
+
+```bash
+construct feedback:record <id> --score=<0-1> [--note="..."]
+```
 
 ## construct llm-judge
 
@@ -71,15 +76,8 @@ Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedbac
 **Usage**
 
 ```bash
-construct llm-judge [--limit=N] [--model=NAME]
+construct llm-judge
 ```
-
-**Options**
-
-| Flag | Description |
-|---|---|
-| `--limit=N` | Maximum traces to evaluate (default: 10) |
-| `--model=NAME` | LLM model to use for evaluation (default: claude-3-5-sonnet-20241022) |
 
 ## construct optimize
 
@@ -88,18 +86,8 @@ Prompt optimization using Langfuse trace quality scores
 **Usage**
 
 ```bash
-construct optimize <agent> [--dry-run] [--list]
+construct optimize <agent>
 ```
-
-**Options**
-
-| Flag | Description |
-|---|---|
-| `--dry-run` | Preview changes without applying |
-| `--list` | Show all agents with quality scores |
-| `--threshold=N` | Quality threshold to trigger optimization (default: 0.7) |
-| `--days=N` | Trace window in days (default: 7) |
-| `--min-traces=N` | Minimum traces required (default: 20) |
 
 ## construct review
 
@@ -108,19 +96,8 @@ Generate agent performance review from Langfuse trace backend
 **Usage**
 
 ```bash
-construct review [--days=N] [--agent=NAME] [--schedule]
+construct review [--agent=<id>] [--days=N]
 ```
-
-**Options**
-
-| Flag | Description |
-|---|---|
-| `--days=N` | Review window in days (default: 30) |
-| `--agent=NAME` | Filter to a specific agent |
-| `--out=PATH` | Output directory |
-| `--json-only` | Write raw JSON only, skip markdown report |
-| `--schedule` | Schedule automatic weekly reviews |
-| `--cadence=CRON` | Cron expression for --schedule (default: Monday 9am) |
 
 ## construct telemetry
 
@@ -139,12 +116,15 @@ Backfill sparse traces with observations (trace backend)
 **Usage**
 
 ```bash
-construct telemetry-backfill [--limit=N]
+construct telemetry-backfill
 ```
 
-**Options**
+## construct telemetry-setup
 
-| Flag | Description |
-|---|---|
-| `--limit=N` | Maximum sparse traces to backfill (default: 10) |
-| `--best-effort` | Skip failures instead of exiting non-zero |
+Configure Langfuse credentials and trace export
+
+**Usage**
+
+```bash
+construct telemetry-setup
+```
