@@ -40,8 +40,10 @@ jobs:
       - name: CVE audit on apps/docs dependencies
         # high/critical advisories gate the docs build; moderate findings
         # surface in the audit output but do not block. Catches a future
-        # MDX or Next.js CVE before a Pages deploy carries it.
-        run: npm --prefix apps/docs audit --audit-level=high
+        # MDX or Next.js CVE before a Pages deploy carries it. Uses the
+        # workspace selector — apps/docs has no local lockfile because
+        # the repo root owns the hoisted shrinkwrap.
+        run: npm audit --workspace=construct-docs --audit-level=high
       - name: Regenerate reference MDX from canonical sources
         run: node ./bin/construct docs:site
       - name: Build static site
