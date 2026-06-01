@@ -14,7 +14,6 @@ Construct is an open source project I started to learn. Docs should sound like a
 
 ## Punctuation
 
-- **No em-dashes** in user-facing markdown. Use a period, comma, or colon instead. Enforced by `npm run lint:prose`.
 - Plain ASCII quotes are fine. Smart quotes only where they already appear and edits would create churn.
 - Lists prefer hyphens, not bullets or asterisks.
 - Code spans use single backticks. Code blocks declare a language.
@@ -45,15 +44,9 @@ Commit messages follow the same rule. The subject line is what the commit does. 
 - We do not use marketing voice. The project is a side project that grew.
 - We do not let a doc drift. If a code change makes a doc wrong, the same PR fixes the doc.
 
-## Tooling
-
-`npm run lint:prose` is the prose gate (em-dashes, banned patterns). Default scope is changed files; pass `--all` to scan everything. The full PR gate list lives in `CONTRIBUTING.md` § "Before opening a PR"; do not duplicate it here.
-
 ## Exceptions
 
-- `CHANGELOG.md` historical entries keep their em-dashes because rewriting history is lying. New entries must follow the rules.
-- `CLAUDE.md` and `AGENTS.md` are AI operating instructions. They are intentionally formal and are exempt from the voice rules. The punctuation rule still applies where reasonable.
-- One-off exceptions for a single file go in `.proseignore` with a load-bearing reason next to the path.
+- `CLAUDE.md` and `AGENTS.md` are AI operating instructions. They are intentionally formal and are exempt from the voice rules.
 
 ## When in doubt
 

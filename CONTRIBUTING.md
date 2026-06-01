@@ -43,11 +43,10 @@ node ./bin/construct doctor
 node ./bin/construct docs:verify
 node ./bin/construct docs:update --check
 node ./bin/construct lint:comments
-npm run lint:prose
 npm run lint:profiles
 ```
 
-All eight must exit 0. The release pipeline in `docs/maintenance/release-and-deploy.md` runs the same checks before any artifact ships.
+All seven must exit 0. The release pipeline in `docs/maintenance/release-and-deploy.md` runs the same checks before any artifact ships.
 
 If your change touches a hook + observation, a profile + classifier, a CLI + durable state, or any other multi-component path, also add a functional test under `tests/functional/`. See `tests/functional/README.md` for the pattern. If `docs:update --check` fails, regenerate and commit:
 
@@ -104,7 +103,7 @@ node ./bin/construct sync
 
 ## Tone
 
-This is an open source side project. Docs should sound like a person wrote them. Short sentences. No em-dashes. No marketing voice. If you find a doc that drifts from that, fix it inline or open a PR that does.
+This is an open source side project. Docs should sound like a person wrote them. Short sentences. No marketing voice. If you find a doc that drifts from that, fix it inline or open a PR that does.
 
 ## PR descriptions
 

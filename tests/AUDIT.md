@@ -81,7 +81,6 @@ These showed up while categorizing:
 - **`lib/sandbox.mjs`**: new module, no dedicated test file. Smoke-tested via the CLI but should grow a unit test for `pruneSandboxes` time-window logic.
 - **`lib/profiles/validate-custom.mjs`**: validator has no direct test. The lifecycle functional test exercises the happy path through it; the cap and shape error branches are not regression-locked.
 - **`lib/profiles/lifecycle.mjs::archiveProfile`**: file-move path is only tested for the empty-reason rejection. The success path (moving + writing archive-note) is not asserted because it would mutate the real `profiles/` directory; a tmpdir fork of the function would let this be tested cleanly.
-- **`scripts/lint-prose.mjs`**: em-dash detection logic has no unit test. Manual smoke shows it works; a fixture test would close the regression risk.
 
 These are gaps, not bugs. Future PRs that touch these surfaces should close their corresponding gap before merge.
 
