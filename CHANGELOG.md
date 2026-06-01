@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- **`platforms/claude/CLAUDE.md` realigned with canonical `/CLAUDE.md` structure (bead `construct-cr6` D2).** The shipped reference template at `platforms/claude/CLAUDE.md` was a stale generic stub that didn't mention any of the critical rules from the canonical project file. Diagnostic note: the file is actually orphaned in the live sync path — `scripts/sync-specialists.mjs:738` composes the user-scope `~/.claude/CLAUDE.md` managed block inline from persona data, not from this platform file — so the "drift to users" the bead described was theoretical. The fix is still worth landing because the platform file ships as guidance in the npm package; users reading it for the shape of their own `/CLAUDE.md` were getting outdated guidance. Rewrote the file as a project-agnostic mirror of the canonical structure (critical rules, workflow roles, beads tracker, session completion). New regression test `tests/platforms-claude-md-parity.test.mjs` (3 assertions) asserts the platform file references every critical rule the canonical file does, has matching section headings, and breaks loudly if the canonical file removes a rule without the template catching up.
+
 ### Documentation
 
 - **Three workflow-template cookbook pages added (bead `construct-432h`).** [`docs/cookbook/onboard-a-new-engineer.mdx`](docs/cookbook/onboard-a-new-engineer.mdx), [`track-research-findings.mdx`](docs/cookbook/track-research-findings.mdx), [`cross-team-handoff.mdx`](docs/cookbook/cross-team-handoff.mdx) each maps 1:1 to a shipped `templates/workflows/*.yml`. CHANGELOG line 298 (v1.0.8 entry) had claimed these landed but they didn't — closes a no-fabrication gap. `docs/cookbook/meta.json` and `docs/cookbook/index.mdx` updated to surface them under a new "Workflow templates" section.
