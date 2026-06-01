@@ -26,7 +26,8 @@ from pathlib import Path
 
 try:
     from docling.document_converter import DocumentConverter
-    from docling import __version__ as DOCLING_VERSION
+    from importlib.metadata import version as _pkg_version
+    DOCLING_VERSION = _pkg_version("docling")
 except ImportError as exc:
     sys.stderr.write(json.dumps({"fatal": "docling-import-failed", "detail": str(exc)}) + "\n")
     sys.exit(2)
