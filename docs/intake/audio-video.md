@@ -1,37 +1,52 @@
 # Audio and Video Intake
 
-Construct can accept audio and video files in the intake inbox (`.mp3`, `.wav`, `.m4a`, `.mp4`, `.mov`, `.avi`, `.mkv`, `.flac`, `.ogg`, `.webm`, `.m4v`) but cannot extract text from them without an ASR (Automatic Speech Recognition) backend.
+Construct accepts audio and video files (`.mp3`, `.wav`, `.m4a`, `.mp4`, `.mov`, `.avi`, `.mkv`, `.flac`, `.ogg`, `.webm`, `.m4v`) and transcribes them on demand via [whisper.cpp](https://github.com/ggml-org/whisper.cpp) — local, offline, Metal-accelerated on macOS.
 
-When an audio or video file is dropped into `.cx/inbox/`, the embed daemon routes it to `.cx/intake/needs-asr/` instead of the normal pipeline. The original file signal is preserved there until an ASR backend is configured.
+## Requirements
 
-## Viewing the backlog
+`whisper-cli` must be on `PATH`. On macOS, install via Homebrew:
 
 ```bash
-construct intake needs-asr list
-construct intake needs-asr show <id>
+brew install whisper-cpp
 ```
 
-## Enabling ASR
+On Linux, build from source per the [whisper.cpp quick-start](https://github.com/ggml-org/whisper.cpp#quick-start) or install via your distro package manager.
 
-Set `CONSTRUCT_ASR_BACKEND` in your `.env` file:
+If the binary is missing, audio extraction throws `WHISPER_BINARY_MISSING` with an actionable install hint instead of silently failing.
 
-| Value | Notes |
-|---|---|
-| `whisper` | Local OpenAI Whisper via Python. Privacy-safe; runs offline. Install with `pip install openai-whisper`. |
-| `assemblyai` | AssemblyAI cloud API. Fast; requires `ASSEMBLYAI_API_KEY`. |
+## Model
 
-Once configured, re-run `construct embed start` (or `construct init --auto-start`). The daemon will pick up files from the `needs-asr/` queue and route them through the selected backend.
+The `base.en` GGML model (~150 MB) auto-downloads on first use to `<project>/.cx/runtime/whisper/models/ggml-base.en.bin`. Subsequent runs reuse the cached model.
 
-## Privacy considerations
+Override the default model via environment:
 
-- **whisper**: all transcription happens locally. No audio leaves your machine.
-- **assemblyai**: audio is uploaded to AssemblyAI's servers. Review their data processing policy before use with sensitive content.
+```bash
+export CONSTRUCT_WHISPER_MODEL=small.en   # better accuracy, ~466MB
+export CONSTRUCT_WHISPER_MODEL=large-v3   # multilingual, ~3GB
+```
 
-## Cost
+Supported model names: `tiny`, `tiny.en`, `base`, `base.en`, `small`, `small.en`, `medium`, `medium.en`, `large-v3`, `large-v3-turbo`.
 
-- **whisper**: no API cost. CPU/GPU compute on your machine.
-- **assemblyai**: metered by audio-hour. Check current pricing at assemblyai.com.
+## Ingestion
+
+```bash
+construct ingest <audio-or-video-file>
+```
+
+The pipeline produces a `## Transcript` markdown section, stores the result at `.cx/ingest/<sha256>/markdown.md`, and indexes it into `knowledge_search`. The same idempotent re-ingest behavior applies — re-running on the same content is a no-op.
+
+## Performance
+
+On Apple Silicon with Metal, whisper.cpp hits roughly 10× real-time on the `base.en` model. A 1-minute clip transcribes in ~6 s after the model is loaded.
+
+## Privacy
+
+All transcription happens locally. No audio leaves the machine. The model files are downloaded once from Hugging Face (`huggingface.co/ggerganov/whisper.cpp`) and cached locally.
 
 ## Supported formats
 
-All formats listed above are routed to the ASR queue. Unsupported video containers (e.g. `.wmv`) should be converted first with `ffmpeg -i input.wmv output.mp4`.
+All formats listed above route through whisper.cpp. Unsupported containers (e.g. `.wmv`) should be converted first:
+
+```bash
+ffmpeg -i input.wmv output.mp4
+```
