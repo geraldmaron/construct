@@ -148,4 +148,4 @@ audit stamps. Add `--json` for machine-readable output.
 - `docs/concepts/architecture.mdx`: system overview and runtime boundaries
 - `docs/cookbook/observability-and-cost.md`: detail on review/optimize/cost/efficiency
 - `docs/cookbook/manage-providers.md`: provider and model tier management
-- `rules/common/development-workflow.md`: docs update step (3.5)
+- `CLAUDE.md` § "Documentation is mandatory": docs update step before commit
