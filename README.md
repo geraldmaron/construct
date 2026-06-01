@@ -32,8 +32,10 @@ Initialize a project:
 
 ```bash
 cd ~/your-project
-construct init --auto-start
+construct init --yes
 ```
+
+`construct init` scaffolds the project (`.cx/`, `AGENTS.md`, `plan.md`, adapters) and starts the local services by default. Pass `--no-start` to skip service startup, or `--interactive` for the guided flow.
 
 Open your editor and talk to `@construct`. A walkthrough lives in `construct_guide.md` at your project root.
 
