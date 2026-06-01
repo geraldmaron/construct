@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "type": "module",
   "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
   "bin": {

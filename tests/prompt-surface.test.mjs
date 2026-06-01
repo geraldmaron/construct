@@ -50,3 +50,16 @@ test('context command treats context.json as canonical', () => {
   const text = fs.readFileSync(path.join(root, 'commands/remember/context.md'), 'utf8');
   assert.match(text, /context\.json/);
 });
+
+test('construct persona enumerates every field the construct-to-orchestrator contract requires', () => {
+  const persona = fs.readFileSync(path.join(root, 'personas/construct.md'), 'utf8');
+  const contracts = JSON.parse(fs.readFileSync(path.join(root, 'specialists/contracts.json'), 'utf8'));
+  const c2o = contracts.contracts.find((c) => c.id === 'construct-to-orchestrator');
+  assert.ok(c2o, 'construct-to-orchestrator contract must exist');
+  // Persona must reference every mustContain field by name. Without this,
+  // dispatched packets would fail validateHandoff and the orchestrator's
+  // input check would BLOCKED_CONTRACT.
+  for (const field of c2o.input.mustContain) {
+    assert.match(persona, new RegExp(`\\b${field}\\b`), `persona must reference field '${field}'`);
+  }
+});

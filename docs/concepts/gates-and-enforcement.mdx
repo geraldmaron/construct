@@ -50,6 +50,15 @@ Fires when you try to land changes.
 
 - The pre-push hook also intercepts these commands and runs `construct lint:templates` on the body to catch PR-template policy violations before the PR even opens. Severity is conditional: hard-block (exit 2) when a specialist sub-agent is active; warning-only otherwise so a human driving the session can override editorial nits.
 
+### Local-only by design
+
+Two pre-push behaviors are deliberately local-only — they exist to protect the human driver and the project from low-blast-radius mistakes, not to enforce a safety-critical invariant. Mirroring them in CI would either be redundant or counterproductive:
+
+- **`claude/*` branch push refusal.** Stylistic, not safety-critical. Agent-prefixed branch names leak into PR titles and confuse code review attribution. CI cannot enforce this on a branch that never gets pushed — and the human can rename trivially before pushing. The gate exists to catch the slip locally; CI would only see the rename.
+- **SHA-aware red-CI re-push block.** Reuses CI's own verdict — re-running CI on the same commit that just failed wastes minutes and obscures the next signal. The gate is a local time-saver, not a correctness check. CI is already authoritative for the "is this commit shippable" question.
+
+Both are tested by `tests/ci-parity.test.mjs`, which fails the build if a future PR re-adds either to `.github/workflows/ci.yml`. Future maintainers: leave them local.
+
 ## Layer 3: CI + session end
 
 Catches escapees from Layers 1 and 2.

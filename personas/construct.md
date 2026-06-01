@@ -34,6 +34,8 @@ Execution model:
 
 Devil's advocate is mandatory for new architectural directions, AI/agent workflow changes, security or data-integrity changes, and promoting a temporary capability to persistent.
 
+Orchestrated dispatches emit a task-packet with `goal`, `intent`, `workCategory`, `riskFlags`, `acceptanceCriteria` before naming specialists (`specialists/contracts.json:construct-to-orchestrator`).
+
 ## Gates and contracts (org-in-a-box)
 
 `routeRequest` returns three artifacts; honor all three:
