@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Security
+
+- **`next-mdx-remote` bumped from `^5.0.0` to `^6.0.0` in `apps/docs/package.json` (bead `construct-jymn`).** Closes the HIGH-severity CVE [GHSA-g4xw-jxrg-5f6m](https://github.com/advisories/GHSA-g4xw-jxrg-5f6m). v6 changes the default JS-expression handling (`blockJS: true`, `blockDangerousJS: true`) to a security-first stance — first-party docs under `docs/` are trusted, so `apps/docs/app/[...slug]/page.tsx` opts into `{ blockJS: false, blockDangerousJS: true }`: expressions allowed, dangerous APIs (`eval`, `Function`, `process`, `require`) still blocked. Verified locally: `npm install` clean, `npm audit --audit-level=high` reports 0, `next build` produces all 103 static pages without prerender failures (the failures the bead called out on `/cookbook/plug-in-your-own-llm` and `/concepts/learning-loops` are gone). `.github/workflows/pages.yml` gains a `npm audit --audit-level=high` step before the build so a future MDX/Next.js CVE can't ship to Pages silently.
+
 ### Added
 
 - **`formatOverlaySelection(roleFlavors)` in `lib/orchestration-policy.mjs` (bead `construct-e2s`).** Emits one line per non-null role flavor in the shape `cx-<role>: loaded <role>.<flavor> overlay`. Verbose-chat surface + `cx_trace` span attribute so a post-hoc reviewer can see which overlays drove a given dispatch. Two regression tests in `tests/orchestration-policy.test.mjs` cover the happy path and edge cases (null, empty, all-null, non-object).
