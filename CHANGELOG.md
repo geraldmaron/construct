@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- **`construct_cx_scores` table and `construct_skill_quality_correlation` view (bead `construct-0xkx`).** New migration `db/schema/010_cx_scores.sql` creates a per-trace quality-score log and a 90-day-window aggregate view that joins it against `construct_skill_invocations` (from 008) by `session_id`. The view exposes `sessions`, `score_count`, `mean_score`, `median_score`, `p10_score`, `p90_score`, `last_scored_at` per `skill_id`. Producer wired in: `cxScore` in `lib/mcp/tools/telemetry.mjs` now writes to `construct_cx_scores` when `DATABASE_URL` is set (best-effort; never blocks the remote-telemetry or observation-store writes). Consumer wired in: `construct skills correlate-quality` (`bin/construct:2425-2470`) replaces its prior "Run with Postgres configured" stub with a real `select … from construct_skill_quality_correlation` and prints a formatted rollup. Closes the user-visible false-advertisement gap the CLI had since the skill-usage observability work landed without its correlation half. CI: the new `tests/functional/skills-correlate-quality.functional.test.mjs` is added to the `postgres-integration` job in `.github/workflows/ci.yml` (5 cases — schema parse, migration order, producer-writes, view-aggregates, end-to-end CLI rollup).
+
 ### Fixed
 
 - **`doc-hygiene-scan` scheduler job is now deployment-mode-aware (bead `construct-9egp`).** Single contributor solo deployments run nightly at 02:00 with limit 25 — doc drift accumulates slowly. Team and enterprise run at the top of every hour with limit 50 — multiple writers shift the doc surface within a workday and the higher cadence + headroom keeps the reconcile worker from falling behind. New exported `resolveDocHygieneSchedule(env)` in `lib/scheduler/index.mjs` is the single source of truth and resolves at both registration time (for the cron string) and handler-invocation time (for the limit). Five test cases in `tests/scheduler-doc-hygiene.test.mjs` pin the matrix (solo, team, enterprise, unknown-mode fallback, empty-env fallback).
