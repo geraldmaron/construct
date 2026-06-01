@@ -155,6 +155,20 @@
       "enforcement": "(persona prompt)",
       "mode": "honor-system",
       "description": "Architectural pattern guidance (module boundaries, error handling, async contracts) applied at authoring time."
+    },
+    {
+      "id": "review-before-change",
+      "source": "rules/common/review-before-change.md",
+      "enforcement": "(persona prompt)",
+      "mode": "honor-system",
+      "description": "Requires an existing-artifact audit before authoring or rewriting any durable doc, rule, template, or PRD/ADR/RFC. Extend or supersede; do not duplicate."
+    },
+    {
+      "id": "session-efficiency",
+      "source": "rules/common/efficiency.md",
+      "enforcement": "lib/read-tracker-store.mjs + session-start digest",
+      "mode": "deterministic",
+      "description": "Read discipline, probe-before-bulk-read, and tool parallelism rules. Read counts tracked per-file; the session-start efficiency digest surfaces files crossing the re-read threshold."
     }
   ]
 }

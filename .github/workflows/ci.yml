@@ -148,9 +148,6 @@ jobs:
       - name: comment policy
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         run: node ./bin/construct lint:comments
-      - name: prose policy
-        if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.workflow == 'true'
-        run: npm run lint:prose
       - name: profile + flavor schema
         if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         run: npm run lint:profiles -- --quiet

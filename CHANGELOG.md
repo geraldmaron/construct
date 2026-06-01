@@ -4,6 +4,18 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Removed
+
+- **Em-dash prose rule and `lint:prose` gate retired.** The rule never enforced anything actionable; the script's `BANNED` array contained exactly one regex and its CI step only fired on diffs touching `docs/**`, so most em-dash drift was grandfathered. Removing the rule removes a gate that under-fired and surfaces no real correctness signal. Deleted: `scripts/lint-prose.mjs`, `.proseignore`, the `lint:prose` entry in `package.json`, the "prose policy" step in `.github/workflows/ci.yml`, and the `lint:prose` entry in `tests/ci-parity.test.mjs`'s `CI_ONLY_SUBCOMMANDS` array. Rule text removed from `CLAUDE.md` ("Critical rules"), `docs/STYLE.md` (Punctuation, Tooling, Exceptions sections), and `CONTRIBUTING.md` (eight-check list collapsed to seven; "No em-dashes" line dropped from the Tone section). Stale references cleaned up in `docs/maintenance/release-and-deploy.md` (three lines), `tests/AUDIT.md` (the lint-prose unit-test gap), and the file-header comment in `lib/flavors/loader.mjs`. Existing em-dashes in committed docs are left in place.
+
+- **Three unused JSON schemas removed: `schemas/{flavor,registry,workflow}.schema.json`.** Zero consumers anywhere in `lib/`, `scripts/`, `commands/`, `apps/`, `tests/`, or `specialists/`. `lint:profiles` validates flavors via the hand-rolled `validateFlavor()` in `lib/flavors/loader.mjs`, not the schema; the registry and workflow schemas were never wired to a validator. `schemas/profile.schema.json` stays — it is consumed by `lib/profiles/validate-custom.mjs` and `lib/profiles/lifecycle.mjs`.
+
+- **Three orphaned rule files removed: `rules/common/{agents,performance,development-workflow}.md`.** None were in `specialists/policy-inventory.json`; none were referenced from any specialist prompt or runtime code. `agents.md` and `performance.md` were generic guidance not specific to Construct; `development-workflow.md` enumerated TDD/commit steps already covered by `rules/common/{testing,code-review,git-workflow}.md` and the `CLAUDE.md` "Documentation is mandatory" section. The cross-reference in `docs/runbooks/day-2-operations.md` re-pointed at CLAUDE.md; the cross-reference in `rules/common/review-before-change.md` dropped.
+
+### Changed
+
+- **Two surviving rules wired into `specialists/policy-inventory.json`.** `rules/common/review-before-change.md` registered as `review-before-change` (honor-system, persona prompt) — it is the artifact-audit discipline cited from `STRATEGY.md` and pairs with `framing.md`. `rules/common/efficiency.md` registered as `session-efficiency` (deterministic, `lib/read-tracker-store.mjs` + session-start digest) — the file already declares its enforcement machinery in the header comment; the inventory entry catches it up. `construct policy show` now lists 24 policies (was 22).
+
 ## [1.0.14] - 2026-05-31
 
 ### Fixed

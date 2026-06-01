@@ -2,9 +2,9 @@
 rules/common/review-before-change.md: audit the current state before authoring anything new.
 
 Applies to every specialist on every platform. Pairs with framing.md (frame the
-problem) and development-workflow.md step 0 (research and reuse before code).
-This rule extends the same discipline to artifacts: docs, strategy, PRDs, ADRs,
-RFCs, rules, templates, and any other durable file. Read before scaffolding.
+problem). This rule extends the same discipline to artifacts: docs, strategy,
+PRDs, ADRs, RFCs, rules, templates, and any other durable file. Read before
+scaffolding.
 -->
 # Review Before Change
 
@@ -54,5 +54,4 @@ For artifacts that go through a review cycle (strategy, PRD, ADR, RFC), the fram
 ## Related
 
 - `rules/common/framing.md`: frame the underlying problem before reaching for inputs.
-- `rules/common/development-workflow.md`: step 0 covers the same discipline for code.
 - `rules/common/doc-ownership.md`: which specialist owns which artifact type.
