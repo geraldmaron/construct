@@ -1,7 +1,7 @@
 /**
  * tests/contracts-postconditions.test.mjs — coverage for structured postcondition checks.
  *
- * Covers the three check kinds exposed by validatePostconditions:
+ * Covers the three check kinds exposed by validateArtifactPostconditions:
  *   - artifact-has-frontmatter-field
  *   - artifact-has-section
  *   - artifact-claims-cited
@@ -16,7 +16,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test, { after } from 'node:test';
 
-import { validatePostconditions, validateHandoff } from '../lib/contracts/validate.mjs';
+import { validateArtifactPostconditions, validateHandoff } from '../lib/contracts/validate.mjs';
 
 const tmpDirs = [];
 after(() => {
@@ -35,7 +35,7 @@ function makeArtifact(content) {
 
 test('artifact-has-frontmatter-field: passes when field present', () => {
   const { file } = makeArtifact('---\nintake_id: construct-foo\n---\n\n# body\n');
-  const errors = validatePostconditions({
+  const errors = validateArtifactPostconditions({
     contract: {
       postconditions: [
         { id: 'requires-intake', check: 'artifact-has-frontmatter-field', field: 'intake_id' },
@@ -48,7 +48,7 @@ test('artifact-has-frontmatter-field: passes when field present', () => {
 
 test('artifact-has-frontmatter-field: fails when field missing', () => {
   const { file } = makeArtifact('---\ntitle: PRD\n---\n\nbody\n');
-  const errors = validatePostconditions({
+  const errors = validateArtifactPostconditions({
     contract: {
       postconditions: [
         { id: 'requires-intake', check: 'artifact-has-frontmatter-field', field: 'intake_id' },
@@ -63,7 +63,7 @@ test('artifact-has-frontmatter-field: fails when field missing', () => {
 
 test('artifact-has-section: passes when section present', () => {
   const { file } = makeArtifact('# Title\n\n## Problem\n\nlorem\n\n## Rejected Alternatives\n\nfoo\n');
-  const errors = validatePostconditions({
+  const errors = validateArtifactPostconditions({
     contract: {
       postconditions: [
         { id: 'has-rejected', check: 'artifact-has-section', section: 'Rejected Alternatives' },
@@ -76,7 +76,7 @@ test('artifact-has-section: passes when section present', () => {
 
 test('artifact-has-section: fails when section absent', () => {
   const { file } = makeArtifact('# Title\n\n## Problem\n\nlorem\n');
-  const errors = validatePostconditions({
+  const errors = validateArtifactPostconditions({
     contract: {
       postconditions: [
         { id: 'has-rejected', check: 'artifact-has-section', section: 'Rejected Alternatives' },
@@ -90,7 +90,7 @@ test('artifact-has-section: fails when section absent', () => {
 
 test('artifact-claims-cited: passes when percentages are cited', () => {
   const { file } = makeArtifact('# Body\n\nLatency dropped 30% under load [source: bench-042].\n');
-  const errors = validatePostconditions({
+  const errors = validateArtifactPostconditions({
     contract: {
       postconditions: [
         { id: 'numeric-cited', check: 'artifact-claims-cited' },
@@ -103,7 +103,7 @@ test('artifact-claims-cited: passes when percentages are cited', () => {
 
 test('artifact-claims-cited: fails on uncited percentages', () => {
   const { file } = makeArtifact('# Body\n\nLatency dropped 30% under load.\n');
-  const errors = validatePostconditions({
+  const errors = validateArtifactPostconditions({
     contract: {
       postconditions: [
         { id: 'numeric-cited', check: 'artifact-claims-cited' },
@@ -131,7 +131,7 @@ test('artifact-claims-cited: skips numbers in tables and code blocks', () => {
     'Outside table or code: latency dropped 30% [source: foo].',
   ].join('\n');
   const { file } = makeArtifact(body);
-  const errors = validatePostconditions({
+  const errors = validateArtifactPostconditions({
     contract: {
       postconditions: [{ id: 'numeric-cited', check: 'artifact-claims-cited' }],
     },
@@ -142,7 +142,7 @@ test('artifact-claims-cited: skips numbers in tables and code blocks', () => {
 
 test('descriptive (string) postconditions are ignored by the validator', () => {
   const { file } = makeArtifact('# body\n');
-  const errors = validatePostconditions({
+  const errors = validateArtifactPostconditions({
     contract: {
       postconditions: [
         'PRD Problem section traces to PRD Problem, not to tickets',
