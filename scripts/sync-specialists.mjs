@@ -950,7 +950,16 @@ function getVSCodeSettingsPaths() {
       path.join(appData, "Code - Insiders", "User", "settings.json"),
     );
   }
-  return candidates.filter(fs.existsSync);
+  // settings.json present → ready to merge. settings.json absent but the
+  // VS Code User dir exists → installed without ever opening Preferences,
+  // and global sync still needs to write the MCP block. The User dir is
+  // the installation signal; bootstrap a minimal settings.json there.
+
+  return candidates.filter((candidate) => {
+    if (fs.existsSync(candidate)) return true;
+    const userDir = path.dirname(candidate);
+    return fs.existsSync(userDir);
+  });
 }
 
 function syncVSCode(targetDir = null) {
@@ -991,7 +1000,16 @@ function syncVSCode(targetDir = null) {
   let synced = false;
   for (const settingsPath of settingsPaths) {
     try {
-      const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+      let settings;
+      if (fs.existsSync(settingsPath)) {
+        settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+      } else {
+        // VS Code installed (User dir present) but never opened → seed an
+        // empty settings.json. Single object literal, no other keys, so
+        // a later launch of VS Code finds it valid and writes user prefs
+        // alongside.
+        settings = {};
+      }
       if (!settings["github.copilot.mcpServers"]) settings["github.copilot.mcpServers"] = {};
       const mcpServers = settings["github.copilot.mcpServers"];
       for (const [id, mcpDef] of Object.entries(registryMcp)) {
