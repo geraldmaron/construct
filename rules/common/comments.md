@@ -1,10 +1,6 @@
-<!--
-rules/common/comments.md: Construct comment convention for JS/TS/MJS source files.
-
-Defines the two allowed comment forms (file header, section context block) and
-what is never allowed (inline narration, trailing comments, mid-function notes).
-Enforced by lib/hooks/comment-lint.mjs and tests/hooks-budget.test.mjs.
--->
+---
+description: Construct comment convention for JS/TS/MJS source files.
+---
 # Comment Convention
 
 Two forms are allowed. Everything else is deleted.

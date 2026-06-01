@@ -1,8 +1,6 @@
-<!--
-rules/web/testing.md: <one-line purpose>
-
-<2–6 line summary.>
--->
+---
+description: Construct web testing rule. Use when writing or reviewing web code that involves testing.
+---
 > This file extends [common/testing.md](../common/testing.md) with web-specific testing content.
 
 # Web Testing Rules

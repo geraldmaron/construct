@@ -1,8 +1,7 @@
-<!--
-skills/docs/init-project.md (Project Initialization) Use when: starting work on a new project or joining an existing one without doc
-
-Use when: starting work on a new project or joining an existing one without doc structure. ## Command
--->
+---
+name: docs-init-project
+description: "Use when: starting work on a new project or joining an existing one without doc structure."
+---
 # Project Initialization
 
 Use when: starting work on a new project or joining an existing one without doc structure.

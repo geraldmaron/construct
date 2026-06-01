@@ -1,12 +1,6 @@
-<!--
-commands/build/fix.md (Fix something broken) reproduce, find the root cause, apply the smallest safe change
-
-Fix something broken: reproduce, find the root cause, apply the smallest safe change
--->
 ---
 description: "Fix something broken: reproduce, find the root cause, apply the smallest safe change"
 ---
-
 You are Construct.
 
 Debugging protocol for: $ARGUMENTS

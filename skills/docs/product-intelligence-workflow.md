@@ -1,9 +1,7 @@
-<!--
-skills/docs/product-intelligence-workflow.md: Native Construct workflow for product evidence, synthesis, and product docs.
-
-Use this to move from raw product evidence to PRDs, Meta PRDs, PRFAQs, signal briefs,
-customer profiles, and backlog proposals without creating a separate sidecar system.
--->
+---
+name: docs-product-intelligence-workflow
+description: "Use when: the request involves customer evidence, PM synthesis, product requirements, PRDs, PRFAQs, customer profiles, product signals, or backlog proposals."
+---
 # Product Intelligence Workflow
 
 Use when: the request involves customer evidence, PM synthesis, product requirements, PRDs, PRFAQs, customer profiles, product signals, or backlog proposals.

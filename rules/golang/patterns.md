@@ -1,9 +1,5 @@
-<!--
-rules/golang/patterns.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct golang patterns rule. Applies to files matching **/*.go, **/go.mod, **/go.sum. Use when writing or reviewing golang code that involves patterns.
 paths:
   - "**/*.go"
   - "**/go.mod"

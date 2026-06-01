@@ -1,8 +1,7 @@
-<!--
-skills/frameworks/spring-boot.md (Spring Boot) ```
-
-## Project Structure ```
--->
+---
+name: frameworks-spring-boot
+description: Patterns, anti-patterns, and reference guidance for Spring Boot. Use when the task involves spring boot.
+---
 # Spring Boot
 
 ## Project Structure

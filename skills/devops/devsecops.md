@@ -1,8 +1,7 @@
-<!--
-skills/devops/devsecops.md (DevSecOps) Use this skill when integrating security into CI/CD pipelines, managing supply c
-
-Use this skill when integrating security into CI/CD pipelines, managing supply chain risk, or automating security scanning. ## Pipeline Security Stages
--->
+---
+name: devops-devsecops
+description: Use this skill when integrating security into CI/CD pipelines, managing supply chain risk, or automating security scanning.
+---
 # DevSecOps
 
 Use this skill when integrating security into CI/CD pipelines, managing supply chain risk, or automating security scanning.

@@ -1,8 +1,7 @@
-<!--
-skills/quality-gates/review-work.md (Parallel Adversarial Review) Use this methodology when a change needs rigorous pre-merge validation. Five ind
-
-Use this methodology when a change needs rigorous pre-merge validation. Five independent review roles run concurrently. All must pass. ## When to use
--->
+---
+name: quality-gates-review-work
+description: Use this methodology when a change needs rigorous pre-merge validation. Five independent review roles run concurrently. All must pass.
+---
 # Parallel Adversarial Review
 
 Use this methodology when a change needs rigorous pre-merge validation. Five independent review roles run concurrently. All must pass.

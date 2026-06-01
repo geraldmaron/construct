@@ -1,10 +1,7 @@
-<!--
-skills/exploration/dependency-graph-reading.md (Dependency Graph Reading)
-Use when auditing a project's supply chain risk, evaluating upgrade paths,
-or assessing the risk surface of a new codebase. Covers npm/cargo/maven
-lockfile interpretation, transitive dependency patterns, and risk signals.
--->
-
+---
+name: exploration-dependency-graph-reading
+description: Use when assessing the risk surface of a project's dependencies, planning upgrades, or evaluating a new codebase's supply chain posture.
+---
 # Dependency Graph Reading
 
 Use when assessing the risk surface of a project's dependencies, planning upgrades, or evaluating a new codebase's supply chain posture.

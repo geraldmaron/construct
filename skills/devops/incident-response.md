@@ -1,8 +1,7 @@
-<!--
-skills/devops/incident-response.md (Incident Response) | Sev | User impact | Response time | Example |
-
-## Severity Levels | Sev | User impact | Response time | Example |
--->
+---
+name: devops-incident-response
+description: "Define severity in your runbook and assign it early: it determines escalation and comms cadence. Use when the task matches the trigger conditions described in the body."
+---
 # Incident Response
 
 ## Severity Levels

@@ -1,16 +1,13 @@
-<!--
-skills/roles/product-manager.product.md. Anti-pattern guidance for the Product-manager.product (product) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the product-manager.product (product) domain and counter-moves to avoid them.
-Applies to: cx-product-manager.
--->
 ---
+name: roles-product-manager-product
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Product role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Product role.
 role: product-manager.product
-applies_to: [cx-product-manager]
+applies_to:
+  - cx-product-manager
 inherits: product-manager
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Product PM Overlay

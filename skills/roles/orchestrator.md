@@ -1,16 +1,13 @@
-<!--
-skills/roles/orchestrator.md. Anti-pattern guidance for the Orchestrator role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the orchestrator domain and counter-moves to avoid them.
-Applies to: cx-orchestrator.
--->
 ---
+name: roles-orchestrator
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Orchestrator role. Use when reviewing or generating work by cx-orchestrator, or when an agent is acting in the Orchestrator role.
 role: orchestrator
-applies_to: [cx-orchestrator]
+applies_to:
+  - cx-orchestrator
 inherits: null
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Orchestrator. Role guidance

@@ -1,9 +1,6 @@
-<!--
-rules/common/code-review.md: when and how to conduct code reviews.
-
-Defines mandatory review triggers, severity levels, approval criteria,
-and references coding-style.md and security.md for checklists.
--->
+---
+description: when and how to conduct code reviews.
+---
 # Code Review Standards
 
 ## When to Review

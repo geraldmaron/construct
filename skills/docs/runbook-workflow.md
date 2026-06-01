@@ -1,8 +1,7 @@
-<!--
-skills/docs/runbook-workflow.md (Runbook Workflow) Use when: creating operational procedures for services, alerts, or recurring ope
-
-Use when: creating operational procedures for services, alerts, or recurring operations. ## Steps
--->
+---
+name: docs-runbook-workflow
+description: "Use when: creating operational procedures for services, alerts, or recurring operations."
+---
 # Runbook Workflow
 
 Use when: creating operational procedures for services, alerts, or recurring operations.

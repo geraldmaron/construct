@@ -80,10 +80,15 @@ Drop any supported file into `.cx/inbox/` and the embed daemon will:
 Supported formats:
 - **Plain text / Code**: `.md`, `.txt`, `.rst`, `.adoc`, `.json`, `.yaml`, `.yml`, `.toml`, `.js`, `.mjs`, `.ts`, `.tsx`, `.jsx`, `.py`, `.go`, `.rs`, `.sh`, `.bash`, `.html`, `.css`, `.csv`, `.tsv`, `.xml`, `.env`, `.conf`, `.ini`, `.sql`, `.log`
 - **Transcripts**: `.vtt` (WebVTT), `.srt` (SubRip), `.lrc` (lyrics), `.transcript`: Zoom, Teams, meeting recordings
-- **Office documents**: `.docx`, `.xlsx`, `.pptx`, `.odt`, `.ods`
-- **Rich text**: `.doc`, `.rtf`
-- **macOS-only** (via `mdls`): `.xls`, `.ppt`, `.pages`, `.numbers`, `.key`
-- **PDF**: `.pdf`
+- **Office documents** (via [docling](https://github.com/docling-project/docling) Python sidecar): `.docx`, `.xlsx`, `.pptx`, `.odt`, `.ods`
+- **Rich text** (via docling): `.doc`, `.rtf`
+- **Legacy iWork/Office** (via docling): `.xls`, `.ppt`, `.pages`, `.numbers`, `.key`
+- **PDF** (via docling, layout-aware with built-in OCR): `.pdf`
+- **Audio / Video** (via [whisper.cpp](https://github.com/ggml-org/whisper.cpp), Metal-accelerated on macOS): `.mp3`, `.wav`, `.m4a`, `.mp4`, `.mov`, `.avi`, `.mkv`, `.flac`, `.ogg`, `.webm`, `.m4v`
+
+High-fidelity extraction runs through the docling Python sidecar (provisioned automatically via [uv](https://github.com/astral-sh/uv) on first use into `.cx/runtime/docling/.venv`). Pass `--legacy-extractor` to `construct ingest` to fall back to the pre-docling regex path. Audio/video transcription requires `whisper-cli` (`brew install whisper-cpp` on macOS); see [Audio and Video Intake](/intake/audio-video).
+
+Ingested documents are also stored content-addressed at `.cx/ingest/<sha256>/{source,markdown,meta}.json` for idempotent re-ingest, and indexed into `knowledge_search` so dropped documents become retrievable from any agent session.
 
 Full list in `lib/document-extract.mjs`.
 

@@ -1,9 +1,5 @@
-<!--
-rules/typescript/hooks.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct typescript hooks rule. Applies to files matching **/*.ts, **/*.tsx, **/*.js, **/*.jsx. Use when writing or reviewing typescript code that involves hooks.
 paths:
   - "**/*.ts"
   - "**/*.tsx"

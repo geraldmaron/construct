@@ -1,8 +1,7 @@
-<!--
-skills/development/java.md (Java Best Practices) Use this skill when writing, reviewing, or debugging Java or Kotlin code on the
-
-Use this skill when writing, reviewing, or debugging Java or Kotlin code on the JVM. ## Project Structure
--->
+---
+name: development-java
+description: Use this skill when writing, reviewing, or debugging Java or Kotlin code on the JVM.
+---
 # Java Best Practices
 
 Use this skill when writing, reviewing, or debugging Java or Kotlin code on the JVM.

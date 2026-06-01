@@ -1,8 +1,7 @@
-<!--
-skills/development/kotlin.md (Kotlin / Android Development) | Scope | Use when |
-
-## Coroutines & Flows ### Coroutine scope discipline
--->
+---
+name: development-kotlin
+description: Patterns, anti-patterns, and reference guidance for Kotlin / Android Development. Use when the task involves kotlin / android development.
+---
 # Kotlin / Android Development
 
 ## Coroutines & Flows

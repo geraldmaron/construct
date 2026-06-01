@@ -1,9 +1,7 @@
-<!--
-skills/ai/prompt-optimizer.md: Closed-loop prompt auto-optimization guide.
-
-Uses telemetry traces and quality scores as the feedback signal, Claude as the optimizer,
-and the agent registry + construct sync as the deployment layer.
--->
+---
+name: ai-prompt-optimizer
+description: Closed-loop prompt auto-optimization guide. Use when the task matches the trigger conditions described in the body.
+---
 # Prompt Auto-Optimization Loop
 
 Construct's prompt improvement system uses telemetry traces and quality scores as the feedback signal, Claude as the optimizer, and the agent registry (`specialists/registry.json`) as the deployment layer. This is a closed loop: production data → failure analysis → improved prompt → staging → promotion.

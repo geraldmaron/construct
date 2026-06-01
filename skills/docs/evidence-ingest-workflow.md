@@ -1,6 +1,7 @@
-<!--
-skills/docs/evidence-ingest-workflow.md: Normalize raw product evidence into Construct knowledge artifacts.
--->
+---
+name: docs-evidence-ingest-workflow
+description: "Use when: the user pastes customer notes, Slack threads, support tickets, sales notes, research snippets, RFCs, analytics summaries, or competitor signals."
+---
 # Evidence Ingest Workflow
 
 Use when: the user pastes customer notes, Slack threads, support tickets, sales notes, research snippets, RFCs, analytics summaries, or competitor signals.

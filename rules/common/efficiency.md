@@ -1,11 +1,6 @@
-<!--
-rules/common/efficiency.md: session context and tool-use efficiency standards.
-
-Applies to all agents operating in a Construct session. Violations compound context
-cost and reduce throughput. These rules are enforced by read-tracker.mjs and surfaced
-in the session-start efficiency digest.
--->
-
+---
+description: session context and tool-use efficiency standards.
+---
 # Session Efficiency
 
 ## Read discipline

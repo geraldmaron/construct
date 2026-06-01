@@ -1,8 +1,7 @@
-<!--
-skills/exploration/repo-map.md (Repo Exploration) Codebase Mapping Playbook: Use this skill when entering an unfamiliar codebase, doing deep investigation wo
-
-Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.cx/codebase-map.md` artifact for future sessions. Agents: `
--->
+---
+name: exploration-repo-map
+description: Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.cx/codebase-map.md` artifact for future sessions.
+---
 # Repo Exploration: Codebase Mapping Playbook
 
 Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.cx/codebase-map.md` artifact for future sessions.

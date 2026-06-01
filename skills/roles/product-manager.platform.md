@@ -1,16 +1,13 @@
-<!--
-skills/roles/product-manager.platform.md. Anti-pattern guidance for the Product-manager.platform (platform) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the product-manager.platform (platform) domain and counter-moves to avoid them.
-Applies to: cx-product-manager.
--->
 ---
+name: roles-product-manager-platform
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Platform role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Platform role.
 role: product-manager.platform
-applies_to: [cx-product-manager]
+applies_to:
+  - cx-product-manager
 inherits: product-manager
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Platform PM Overlay

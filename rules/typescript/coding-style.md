@@ -1,9 +1,5 @@
-<!--
-rules/typescript/coding-style.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct typescript coding style rule. Applies to files matching **/*.ts, **/*.tsx, **/*.js, **/*.jsx. Use when writing or reviewing typescript code that involves coding style.
 paths:
   - "**/*.ts"
   - "**/*.tsx"

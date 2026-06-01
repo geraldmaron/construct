@@ -1,16 +1,14 @@
-<!--
-skills/roles/qa.md. Anti-pattern guidance for the Qa role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the qa domain and counter-moves to avoid them.
-Applies to: cx-qa, cx-test-automation.
--->
 ---
+name: roles-qa
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the QA role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA role.
 role: qa
-applies_to: [cx-qa, cx-test-automation]
+applies_to:
+  - cx-qa
+  - cx-test-automation
 inherits: null
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # QA. Role guidance

@@ -1,8 +1,7 @@
-<!--
-skills/devops/performance.md (Performance Engineering) Use this skill when profiling, load testing, or optimizing application and infra
-
-Use this skill when profiling, load testing, or optimizing application and infrastructure performance. ## Performance Targets
--->
+---
+name: devops-performance
+description: Use this skill when profiling, load testing, or optimizing application and infrastructure performance.
+---
 # Performance Engineering
 
 Use this skill when profiling, load testing, or optimizing application and infrastructure performance.

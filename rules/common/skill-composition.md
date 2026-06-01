@@ -1,10 +1,6 @@
-<!--
-rules/common/skill-composition.md: how specialist prompts compose with skill files.
-
-Defines the default boundary between what lives in the agent's base prompt and
-what is fetched via `get_skill` at runtime. Aims to keep prompts lean while
-keeping domain knowledge reliably available when needed.
--->
+---
+description: how specialist prompts compose with skill files.
+---
 # Skill Composition Policy
 
 Specialist agent prompts are lean on purpose. Domain depth lives in skill files and is pulled in on demand, not pre-inlined.

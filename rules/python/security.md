@@ -1,9 +1,5 @@
-<!--
-rules/python/security.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct python security rule. Applies to files matching **/*.py, **/*.pyi. Use when writing or reviewing python code that involves security.
 paths:
   - "**/*.py"
   - "**/*.pyi"

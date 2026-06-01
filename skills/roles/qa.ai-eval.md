@@ -1,16 +1,15 @@
-<!--
-skills/roles/qa.ai-eval.md. Anti-pattern guidance for the Qa.ai-eval (ai eval) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the qa.ai-eval (ai eval) domain and counter-moves to avoid them.
-Applies to: cx-qa, cx-test-automation, cx-evaluator.
--->
 ---
+name: roles-qa-ai-eval
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — AI Eval role. Use when reviewing or generating work by cx-qa, cx-test-automation, cx-evaluator, or when an agent is acting in the QA — AI Eval role.
 role: qa.ai-eval
-applies_to: [cx-qa, cx-test-automation, cx-evaluator]
+applies_to:
+  - cx-qa
+  - cx-test-automation
+  - cx-evaluator
 inherits: qa
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # AI Eval QA Overlay

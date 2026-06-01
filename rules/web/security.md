@@ -1,8 +1,6 @@
-<!--
-rules/web/security.md: <one-line purpose>
-
-<2–6 line summary.>
--->
+---
+description: Construct web security rule. Use when writing or reviewing web code that involves security.
+---
 > This file extends [common/security.md](../common/security.md) with web-specific security content.
 
 # Web Security Rules

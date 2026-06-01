@@ -1,8 +1,7 @@
-<!--
-skills/devops/monorepo.md (Monorepo) Use this skill when selecting monorepo tooling, structuring packages, or optimiz
-
-Use this skill when selecting monorepo tooling, structuring packages, or optimizing affected-only builds. ## Tool Selection
--->
+---
+name: devops-monorepo
+description: Use this skill when selecting monorepo tooling, structuring packages, or optimizing affected-only builds.
+---
 # Monorepo
 
 Use this skill when selecting monorepo tooling, structuring packages, or optimizing affected-only builds.

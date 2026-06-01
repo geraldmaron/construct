@@ -1,8 +1,7 @@
-<!--
-skills/quality-gates/verify-change.md (Verify Change) Use this skill to analyze the impact of code changes and verify documentation an
-
-Use this skill to analyze the impact of code changes and verify documentation and tests are in sync. ## Change Inventory
--->
+---
+name: quality-gates-verify-change
+description: Use this skill to analyze the impact of code changes and verify documentation and tests are in sync.
+---
 # Verify Change
 
 Use this skill to analyze the impact of code changes and verify documentation and tests are in sync.

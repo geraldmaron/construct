@@ -1,8 +1,7 @@
-<!--
-skills/architecture/security-arch.md (Security Architecture) Use this skill when designing authentication, authorization, network security, o
-
-Use this skill when designing authentication, authorization, network security, or zero-trust architectures. ## Zero Trust Principles
--->
+---
+name: architecture-security-arch
+description: Use this skill when designing authentication, authorization, network security, or zero-trust architectures.
+---
 # Security Architecture
 
 Use this skill when designing authentication, authorization, network security, or zero-trust architectures.

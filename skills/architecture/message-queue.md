@@ -1,8 +1,7 @@
-<!--
-skills/architecture/message-queue.md (Message Queues and Event-Driven Architecture) Use this skill when designing asynchronous communication, event-driven systems,
-
-Use this skill when designing asynchronous communication, event-driven systems, or message-based integrations. ## When to Use Message Queues
--->
+---
+name: architecture-message-queue
+description: Use this skill when designing asynchronous communication, event-driven systems, or message-based integrations.
+---
 # Message Queues and Event-Driven Architecture
 
 Use this skill when designing asynchronous communication, event-driven systems, or message-based integrations.

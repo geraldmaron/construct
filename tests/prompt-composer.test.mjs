@@ -122,7 +122,8 @@ test('composePrompt injects engineer flavor overlays for the general engineer', 
   const flavorFragment = result.fragments.find((f) => f.type === 'role-flavor');
   assert.ok(flavorFragment, 'should include engineer flavor guidance');
   assert.match(flavorFragment.label, /engineer\.platform/);
-  assert.match(flavorFragment.content, /platform engineer overlay/i);
+  assert.match(flavorFragment.content, /platform domain guidance/i);
+  assert.match(flavorFragment.content, /failure modes on top of the engineer core/i);
 });
 
 test('composePrompt switches to compact small-model mode when requested by execution contract', () => {

@@ -1,16 +1,13 @@
-<!--
-skills/roles/reviewer.devil-advocate.md. Anti-pattern guidance for the Reviewer.devil-advocate (devil advocate) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the reviewer.devil-advocate (devil advocate) domain and counter-moves to avoid them.
-Applies to: cx-devil-advocate.
--->
 ---
+name: roles-reviewer-devil-advocate
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Devil Advocate role. Use when reviewing or generating work by cx-devil-advocate, or when an agent is acting in the Reviewer — Devil Advocate role.
 role: reviewer.devil-advocate
-applies_to: [cx-devil-advocate]
+applies_to:
+  - cx-devil-advocate
 inherits: reviewer
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Devil's Advocate Overlay

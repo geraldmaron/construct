@@ -1,8 +1,7 @@
-<!--
-skills/ai/agent-dev.md (AI Agent Development) Use this skill when building AI agents, tool-use systems, or multi-agent workflo
-
-Use this skill when building AI agents, tool-use systems, or multi-agent workflows. ## Agent Architecture
--->
+---
+name: ai-agent-dev
+description: Use this skill when building AI agents, tool-use systems, or multi-agent workflows.
+---
 # AI Agent Development
 
 Use this skill when building AI agents, tool-use systems, or multi-agent workflows.

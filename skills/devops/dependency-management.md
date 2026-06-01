@@ -1,8 +1,7 @@
-<!--
-skills/devops/dependency-management.md (Dependency Management) Use this skill when managing package upgrades, resolving CVEs, or establishing l
-
-Use this skill when managing package upgrades, resolving CVEs, or establishing lock file and versioning policy. ## Lock File Hygiene
--->
+---
+name: devops-dependency-management
+description: Use this skill when managing package upgrades, resolving CVEs, or establishing lock file and versioning policy.
+---
 # Dependency Management
 
 Use this skill when managing package upgrades, resolving CVEs, or establishing lock file and versioning policy.

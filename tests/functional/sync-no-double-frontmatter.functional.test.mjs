@@ -98,7 +98,7 @@ test('sync emits Anthropic Agent Skills frontmatter on every SKILL.md (regressio
   for (const file of files) {
     const content = readFileSync(file, 'utf8');
     assert.match(content, /^---\nname:\s*\S+/, `${file}: must start with name frontmatter`);
-    assert.match(content, /^description:\s*"/m, `${file}: must have description frontmatter`);
+    assert.match(content, /^description:\s*\S/m, `${file}: must have description frontmatter`);
     assertNoDocStamp(file, 'SKILL.md');
   }
   assert.ok(files.length >= 100, `expected ≥100 SKILL.md files in project, got ${files.length}`);

@@ -20,7 +20,8 @@ cache/
 .github/copilot-instructions.md
 config.env
 embed.yaml
-runtime/
+/runtime/
+.cx/runtime/
 
 # plan.md is a working session document, not durable repo state. The Construct
 # init flow still creates it locally for downstream projects; this rule keeps
