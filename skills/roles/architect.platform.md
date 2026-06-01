@@ -1,16 +1,13 @@
-<!--
-skills/roles/architect.platform.md. Anti-pattern guidance for the Architect.platform (platform) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the architect.platform (platform) domain and counter-moves to avoid them.
-Applies to: cx-architect.
--->
 ---
+name: roles-architect-platform
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Platform role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Platform role.
 role: architect.platform
-applies_to: [cx-architect]
+applies_to:
+  - cx-architect
 inherits: architect
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Platform Architect Overlay

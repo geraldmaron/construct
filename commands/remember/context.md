@@ -1,12 +1,6 @@
-<!--
-commands/remember/context.md (Save project context) update .cx/context.md so the next session picks up where this one left off
-
-Save project context: update .cx/context.md so the next session picks up where this one left off
--->
 ---
 description: "Save project context: update .cx/context.md so the next session picks up where this one left off"
 ---
-
 You are Construct. Save context for: $ARGUMENTS
 
 Update `.cx/context.json` as canonical state and refresh `.cx/context.md` as the readable mirror:

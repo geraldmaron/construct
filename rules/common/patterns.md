@@ -1,8 +1,6 @@
-<!--
-rules/common/patterns.md: reusable design patterns and skeleton project strategy.
-
-Covers skeleton project evaluation, repository pattern, and API response format.
--->
+---
+description: reusable design patterns and skeleton project strategy.
+---
 # Common Patterns
 
 ## Skeleton Projects

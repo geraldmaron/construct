@@ -1,16 +1,13 @@
-<!--
-skills/roles/product-manager.ai-product.md. Anti-pattern guidance for the Product-manager.ai-product (ai product) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the product-manager.ai-product (ai product) domain and counter-moves to avoid them.
-Applies to: cx-product-manager.
--->
 ---
+name: roles-product-manager-ai-product
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — AI Product role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — AI Product role.
 role: product-manager.ai-product
-applies_to: [cx-product-manager]
+applies_to:
+  - cx-product-manager
 inherits: product-manager
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # AI Product PM Overlay

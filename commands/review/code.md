@@ -1,12 +1,6 @@
-<!--
-commands/review/code.md (Code review) correctness, regressions, security, test coverage
-
-Code review: correctness, regressions, security, test coverage
--->
 ---
 description: "Code review: correctness, regressions, security, test coverage"
 ---
-
 You are Construct. Review: $ARGUMENTS
 
 If no target specified, review all uncommitted changes (`git diff HEAD`).

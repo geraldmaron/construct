@@ -1,10 +1,7 @@
-<!--
-skills/docs/prd-workflow.md: Workflow for producing a PRD and connecting it to workflow task packets.
-
-Guides cx-product-manager through requirements gathering, user research, and writing a PRD
-to docs/prd/. Once approved, the PRD feeds /plan feature to create bead packets in
-.cx/workflow.json: closing the loop from discovery to execution.
--->
+---
+name: docs-prd-workflow
+description: "Use when: the user asks to create a PRD, platform spec, business case, RFC, or requirements document."
+---
 # PRD Workflow
 
 Use when: the user asks to create a PRD, platform spec, business case, RFC, or requirements document.

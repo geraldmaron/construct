@@ -1,12 +1,6 @@
-<!--
-rules/common/beads-hygiene.md: Beads issue tracker hygiene contract.
-
-Beads is the system of record for durable work in this project. Status drifts
-when issues are not updated alongside the code, so every agent and persona
-operating in Construct treats hygiene as part of the work, not as cleanup.
-Loaded by AGENTS.md, CLAUDE.md, the construct persona, and the engineer /
-operator / planner role overlays.
--->
+---
+description: Beads issue tracker hygiene contract.
+---
 # Beads Hygiene: Project Contract
 
 Beads (`bd`) is the canonical durable tracker for Construct. Beads only earn their keep when their state matches the world. Stale "open" issues pollute `bd ready`, hide real work, and let agents propose work that already shipped. Every agent (human or AI, on any platform) is responsible for keeping the tracker honest.

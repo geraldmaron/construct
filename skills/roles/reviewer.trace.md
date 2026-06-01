@@ -1,16 +1,13 @@
-<!--
-skills/roles/reviewer.trace.md. Anti-pattern guidance for the Reviewer.trace (trace) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the reviewer.trace (trace) domain and counter-moves to avoid them.
-Applies to: cx-trace-reviewer.
--->
 ---
+name: roles-reviewer-trace
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Trace role. Use when reviewing or generating work by cx-trace-reviewer, or when an agent is acting in the Reviewer — Trace role.
 role: reviewer.trace
-applies_to: [cx-trace-reviewer]
+applies_to:
+  - cx-trace-reviewer
 inherits: reviewer
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Trace Reviewer Overlay

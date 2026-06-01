@@ -1,12 +1,6 @@
-<!--
-commands/understand/why.md (Investigate a failure) why is this broken, what is the root cause
-
-Investigate a failure: why is this broken, what is the root cause
--->
 ---
 description: "Investigate a failure: why is this broken, what is the root cause"
 ---
-
 You are Construct. Investigate: $ARGUMENTS
 
 1. Capture: exact error, stack trace, reproduction steps

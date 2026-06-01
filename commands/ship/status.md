@@ -1,12 +1,6 @@
-<!--
-commands/ship/status.md (Status) current project state, workflow, uncommitted changes, recent activity
-
-Status: current project state, workflow, uncommitted changes, recent activity
--->
 ---
 description: "Status: current project state, workflow, uncommitted changes, recent activity"
 ---
-
 You are Construct. Report status for: $ARGUMENTS
 
 Check and report:

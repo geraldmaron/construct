@@ -1,8 +1,7 @@
-<!--
-skills/quality-gates/verify-quality.md (Verify Quality) Use this skill to check code quality, complexity, and maintainability after chan
-
-Use this skill to check code quality, complexity, and maintainability after changes. ## Complexity
--->
+---
+name: quality-gates-verify-quality
+description: Use this skill to check code quality, complexity, and maintainability after changes.
+---
 # Verify Quality
 
 Use this skill to check code quality, complexity, and maintainability after changes.

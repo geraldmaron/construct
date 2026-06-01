@@ -1,16 +1,13 @@
-<!--
-skills/roles/engineer.data.md. Anti-pattern guidance for the Engineer.data (data) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the engineer.data (data) domain and counter-moves to avoid them.
-Applies to: cx-data-engineer.
--->
 ---
+name: roles-engineer-data
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Data role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Engineer — Data role.
 role: engineer.data
-applies_to: [cx-data-engineer]
+applies_to:
+  - cx-data-engineer
 inherits: engineer
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Data Engineer Overlay

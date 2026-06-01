@@ -1,11 +1,6 @@
-<!--
-rules/common/framing.md: how to frame a problem before acting on it.
-
-Establishes the hard separation between execution artifacts (tickets, chat
-transcripts, existing docs) and sources of truth (the underlying problem).
-Applies to every specialist working on architecture, documentation, research,
-product, or strategy work. Read before scaffolding anything.
--->
+---
+description: how to frame a problem before acting on it.
+---
 # Framing Policy
 
 Most agent failures on ambiguous work trace to a single mistake: anchoring on the most concrete input available (usually a ticket or a prior doc) and building the output around its structure instead of around the actual problem.

@@ -1,8 +1,7 @@
-<!--
-skills/ai/ml-ops.md (ML Operations (MLOps)) ```
-
-## The MLOps Lifecycle ```
--->
+---
+name: ai-ml-ops
+description: Patterns, anti-patterns, and reference guidance for ML Operations (MLOps). Use when the task involves ml operations (mlops).
+---
 # ML Operations (MLOps)
 
 ## The MLOps Lifecycle

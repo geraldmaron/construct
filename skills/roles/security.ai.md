@@ -1,16 +1,14 @@
-<!--
-skills/roles/security.ai.md. Anti-pattern guidance for the Security.ai (ai) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the security.ai (ai) domain and counter-moves to avoid them.
-Applies to: cx-security, cx-ai-engineer.
--->
 ---
+name: roles-security-ai
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — AI role. Use when reviewing or generating work by cx-security, cx-ai-engineer, or when an agent is acting in the Security — AI role.
 role: security.ai
-applies_to: [cx-security, cx-ai-engineer]
+applies_to:
+  - cx-security
+  - cx-ai-engineer
 inherits: security
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # AI Security Overlay

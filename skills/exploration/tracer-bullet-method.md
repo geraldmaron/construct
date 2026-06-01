@@ -1,10 +1,7 @@
-<!--
-skills/exploration/tracer-bullet-method.md (Tracer Bullet Method)
-Use when starting implementation in an unfamiliar or complex system.
-A tracer bullet is a minimal end-to-end path through the system,
-real code, real infrastructure, real calls, before any deep work begins.
--->
-
+---
+name: exploration-tracer-bullet-method
+description: Use when beginning implementation in a new system, new integration, or new architectural layer. A tracer bullet is not a prototype; it is the thinnest possible complete path through the real system.
+---
 # Tracer Bullet Method
 
 Use when beginning implementation in a new system, new integration, or new architectural layer. A tracer bullet is not a prototype; it is the thinnest possible complete path through the real system.

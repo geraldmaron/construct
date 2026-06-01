@@ -1,11 +1,6 @@
-<!--
-rules/common/release-gates.md: Hard release gates for Construct work.
-
-Defines the blocking contracts every agent and persona must satisfy locally
-before any commit, push, or "done" claim. Loaded by the construct persona,
-AGENTS.md, and the engineer/reviewer/operator role overlays. Enforcement is at
-the prompt level: CI is a backstop, not the primary gate.
--->
+---
+description: Hard release gates for Construct work.
+---
 # Release Gates: Hard Contracts
 
 These are blocking gates. Every agent, persona, and harness session working in or shipping Construct must satisfy them locally **before** any commit, push, or "done" claim. CI is a backstop, not the primary check.

@@ -1,8 +1,7 @@
-<!--
-skills/frontend-design/engineering.md (Frontend Engineering) Use this skill when working on build tooling, bundling, rendering strategies, or
-
-Use this skill when working on build tooling, bundling, rendering strategies, or frontend infrastructure. ## Build Tools
--->
+---
+name: frontend-design-engineering
+description: Use this skill when working on build tooling, bundling, rendering strategies, or frontend infrastructure.
+---
 # Frontend Engineering
 
 Use this skill when working on build tooling, bundling, rendering strategies, or frontend infrastructure.

@@ -1,8 +1,6 @@
-<!--
-rules/web/hooks.md: <one-line purpose>
-
-<2–6 line summary.>
--->
+---
+description: Prefer project-local tooling.
+---
 # Web Hooks
 
 ## Recommended PostToolUse Hooks

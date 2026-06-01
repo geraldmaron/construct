@@ -1,8 +1,6 @@
-<!--
-rules/web/patterns.md: <one-line purpose>
-
-<2–6 line summary.>
--->
+---
+description: Construct web patterns rule. Use when writing or reviewing web code that involves patterns.
+---
 > This file extends [common/patterns.md](../common/patterns.md) with web-specific patterns.
 
 # Web Patterns

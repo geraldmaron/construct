@@ -1,6 +1,7 @@
-<!--
-skills/docs/backlog-proposal-workflow.md: Approval-gated issue tracker proposals.
--->
+---
+name: docs-backlog-proposal-workflow
+description: "Use when: product evidence should create or update Jira, Linear, GitHub Issues, or another tracker."
+---
 # Backlog Proposal Workflow
 
 Use when: product evidence should create or update Jira, Linear, GitHub Issues, or another tracker.

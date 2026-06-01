@@ -1,16 +1,16 @@
-<!--
-skills/roles/engineer.md. Anti-pattern guidance for the Engineer role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the engineer domain and counter-moves to avoid them.
-Applies to: cx-engineer, cx-ai-engineer, cx-data-engineer, cx-platform-engineer.
--->
 ---
+name: roles-engineer
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer role. Use when reviewing or generating work by cx-engineer, cx-ai-engineer, cx-data-engineer, cx-platform-engineer, or when an agent is acting in the Engineer role.
 role: engineer
-applies_to: [cx-engineer, cx-ai-engineer, cx-data-engineer, cx-platform-engineer]
+applies_to:
+  - cx-engineer
+  - cx-ai-engineer
+  - cx-data-engineer
+  - cx-platform-engineer
 inherits: null
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Engineer. Role guidance

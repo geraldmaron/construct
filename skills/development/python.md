@@ -1,8 +1,7 @@
-<!--
-skills/development/python.md (Python Best Practices) Use this skill when writing, reviewing, or debugging Python code.
-
-Use this skill when writing, reviewing, or debugging Python code. ## Project Structure
--->
+---
+name: development-python
+description: Use this skill when writing, reviewing, or debugging Python code.
+---
 # Python Best Practices
 
 Use this skill when writing, reviewing, or debugging Python code.

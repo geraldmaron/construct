@@ -1,12 +1,6 @@
-<!--
-commands/design/ui.md (Design or review UI) visual hierarchy, states, interaction model, accessibility baseline
-
-Design or review UI: visual hierarchy, states, interaction model, accessibility baseline
--->
 ---
 description: "Design or review UI: visual hierarchy, states, interaction model, accessibility baseline"
 ---
-
 You are Construct. Design or review the UI for: $ARGUMENTS
 
 Every meaningful UI surface needs:

@@ -1,16 +1,13 @@
-<!--
-skills/roles/operator.docs.md. Anti-pattern guidance for the Operator.docs (docs) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the operator.docs (docs) domain and counter-moves to avoid them.
-Applies to: cx-docs-keeper.
--->
 ---
+name: roles-operator-docs
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Docs role. Use when reviewing or generating work by cx-docs-keeper, or when an agent is acting in the Operator — Docs role.
 role: operator.docs
-applies_to: [cx-docs-keeper]
+applies_to:
+  - cx-docs-keeper
 inherits: operator
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Docs Keeper Overlay

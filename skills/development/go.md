@@ -1,8 +1,7 @@
-<!--
-skills/development/go.md (Go Best Practices) Use this skill when writing, reviewing, or debugging Go code.
-
-Use this skill when writing, reviewing, or debugging Go code. ## Project Structure
--->
+---
+name: development-go
+description: Use this skill when writing, reviewing, or debugging Go code.
+---
 # Go Best Practices
 
 Use this skill when writing, reviewing, or debugging Go code.

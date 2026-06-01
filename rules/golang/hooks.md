@@ -1,9 +1,5 @@
-<!--
-rules/golang/hooks.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct golang hooks rule. Applies to files matching **/*.go, **/go.mod, **/go.sum. Use when writing or reviewing golang code that involves hooks.
 paths:
   - "**/*.go"
   - "**/go.mod"

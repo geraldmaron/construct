@@ -1,9 +1,5 @@
-<!--
-rules/swift/testing.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct swift testing rule. Applies to files matching **/*.swift, **/Package.swift. Use when writing or reviewing swift code that involves testing.
 paths:
   - "**/*.swift"
   - "**/Package.swift"

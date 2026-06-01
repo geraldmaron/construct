@@ -1,9 +1,5 @@
-<!--
-rules/python/testing.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct python testing rule. Applies to files matching **/*.py, **/*.pyi. Use when writing or reviewing python code that involves testing.
 paths:
   - "**/*.py"
   - "**/*.pyi"

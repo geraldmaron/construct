@@ -1,16 +1,16 @@
-<!--
-skills/roles/operator.md. Anti-pattern guidance for the Operator role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the operator domain and counter-moves to avoid them.
-Applies to: cx-sre, cx-operations, cx-release-manager, cx-docs-keeper.
--->
 ---
+name: roles-operator
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator role. Use when reviewing or generating work by cx-sre, cx-operations, cx-release-manager, cx-docs-keeper, or when an agent is acting in the Operator role.
 role: operator
-applies_to: [cx-sre, cx-operations, cx-release-manager, cx-docs-keeper]
+applies_to:
+  - cx-sre
+  - cx-operations
+  - cx-release-manager
+  - cx-docs-keeper
 inherits: null
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Operator. Role guidance

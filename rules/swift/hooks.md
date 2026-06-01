@@ -1,9 +1,5 @@
-<!--
-rules/swift/hooks.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: "Flag `print()` statements: use `os.Logger` or structured logging instead for production code."
 paths:
   - "**/*.swift"
   - "**/Package.swift"

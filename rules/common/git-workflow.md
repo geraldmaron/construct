@@ -1,8 +1,6 @@
-<!--
-rules/common/git-workflow.md: commit message format and PR workflow.
-
-Defines conventional commit types and pull request creation steps.
--->
+---
+description: commit message format and PR workflow.
+---
 # Git Workflow
 
 ## Commit Message Format

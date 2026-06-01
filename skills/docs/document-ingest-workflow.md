@@ -1,6 +1,7 @@
-<!--
-skills/docs/document-ingest-workflow.md: Convert source documents into retrieval-ready markdown artifacts.
--->
+---
+name: docs-document-ingest-workflow
+description: "Use when: the user points at a PDF, Word doc, spreadsheet, slide deck, export, or mixed document folder and wants a markdown version that Construct can search efficiently later."
+---
 # Document Ingest Workflow
 
 Use when: the user points at a PDF, Word doc, spreadsheet, slide deck, export, or mixed document folder and wants a markdown version that Construct can search efficiently later.

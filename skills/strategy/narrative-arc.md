@@ -1,11 +1,7 @@
-<!--
-skills/strategy/narrative-arc.md (Strategic Narrative Construction)
-Use when drafting a strategy memo, PRD positioning section, board update,
-or fundraising narrative. Covers Andy Raskin's strategic narrative
-structure, the five components of a compelling story, and common failure
-modes in executive communication.
--->
-
+---
+name: strategy-narrative-arc
+description: Use when the argument must move people, not just inform them. Strategic narrative is the difference between a document that gets read and one that changes what people do.
+---
 # Strategic Narrative Construction
 
 Use when the argument must move people, not just inform them. Strategic narrative is the difference between a document that gets read and one that changes what people do.

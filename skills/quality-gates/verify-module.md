@@ -1,8 +1,7 @@
-<!--
-skills/quality-gates/verify-module.md (Verify Module) Use this skill to check that a module or package is structurally complete and re
-
-Use this skill to check that a module or package is structurally complete and ready for use. ## Exports
--->
+---
+name: quality-gates-verify-module
+description: Use this skill to check that a module or package is structurally complete and ready for use.
+---
 # Verify Module
 
 Use this skill to check that a module or package is structurally complete and ready for use.

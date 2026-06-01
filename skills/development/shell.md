@@ -1,8 +1,7 @@
-<!--
-skills/development/shell.md (Shell Scripting Best Practices) Use this skill when writing, reviewing, or debugging Bash, Zsh, or POSIX shell s
-
-Use this skill when writing, reviewing, or debugging Bash, Zsh, or POSIX shell scripts. ## Script Header
--->
+---
+name: development-shell
+description: Use this skill when writing, reviewing, or debugging Bash, Zsh, or POSIX shell scripts.
+---
 # Shell Scripting Best Practices
 
 Use this skill when writing, reviewing, or debugging Bash, Zsh, or POSIX shell scripts.

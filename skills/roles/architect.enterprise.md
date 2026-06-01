@@ -1,16 +1,13 @@
-<!--
-skills/roles/architect.enterprise.md. Anti-pattern guidance for the Architect.enterprise (enterprise) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the architect.enterprise (enterprise) domain and counter-moves to avoid them.
-Applies to: cx-architect.
--->
 ---
+name: roles-architect-enterprise
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Enterprise role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Enterprise role.
 role: architect.enterprise
-applies_to: [cx-architect]
+applies_to:
+  - cx-architect
 inherits: architect
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Enterprise Architect Overlay

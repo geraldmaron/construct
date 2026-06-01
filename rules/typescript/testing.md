@@ -1,9 +1,5 @@
-<!--
-rules/typescript/testing.md: <one-line purpose>
-
-<2–6 line summary.>
--->
 ---
+description: Construct typescript testing rule. Applies to files matching **/*.ts, **/*.tsx, **/*.js, **/*.jsx. Use when writing or reviewing typescript code that involves testing.
 paths:
   - "**/*.ts"
   - "**/*.tsx"

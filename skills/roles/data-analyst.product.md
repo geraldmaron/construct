@@ -1,16 +1,13 @@
-<!--
-skills/roles/data-analyst.product.md. Anti-pattern guidance for the Data-analyst.product (product) role.
-
-Loaded at sync time to inline role-specific failure modes into specialist agent prompts.
-Covers common failure modes for the data-analyst.product (product) domain and counter-moves to avoid them.
-Applies to: cx-data-analyst.
--->
 ---
+name: roles-data-analyst-product
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst — Product role.
 role: data-analyst.product
-applies_to: [cx-data-analyst]
+applies_to:
+  - cx-data-analyst
 inherits: data-analyst
 version: 2
-profiles: [rnd]
+profiles:
+  - rnd
 cap: 1
 ---
 # Product Analytics Overlay
