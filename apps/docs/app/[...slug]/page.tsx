@@ -69,6 +69,12 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
           options={{
             mdxOptions: { remarkPlugins: [remarkGfm] },
             parseFrontmatter: false,
+            // v6 blocks JS expressions in MDX by default. First-party docs
+            // under docs/ are trusted; allow expressions but keep the
+            // dangerous-API block (eval, Function, process, require) so
+            // a misauthored MDX still can't reach for the host.
+            blockJS: false,
+            blockDangerousJS: true,
           }}
         />
       </div>
