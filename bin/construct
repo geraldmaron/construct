@@ -2423,9 +2423,49 @@ async function cmdSkillsUsage(sub, args) {
   }
 
   if (sub === 'correlate-quality') {
-    println('Quality correlation requires Postgres (CONSTRUCT_DB_URL).');
-    println('Local JSONL does not carry cx_score data.');
-    println('Run with Postgres configured for full correlation output.');
+    // Queries the construct_skill_quality_correlation view (db/schema/010_cx_scores.sql)
+    // which aggregates cx_score values by session_id × skill_id over the past 90 days.
+    // Falls back to a clear "no data" message when the DB is unreachable or the
+    // view is empty rather than printing an empty table.
+
+    const sqlClient = createSqlClient(process.env);
+    if (!sqlClient) {
+      println('Quality correlation requires Postgres (DATABASE_URL or CONSTRUCT_DB_URL).');
+      println('Local JSONL does not carry cx_score data.');
+      println('Run with Postgres configured for full correlation output.');
+      return;
+    }
+    try {
+      const rows = await sqlClient`
+        select skill_id, sessions, score_count, mean_score, median_score, p10_score, p90_score, last_scored_at
+        from construct_skill_quality_correlation
+        order by sessions desc, mean_score desc nulls last
+        limit 50
+      `;
+      if (!rows || rows.length === 0) {
+        println('No correlation data yet. The view aggregates cx_score values from the past 90 days against');
+        println('skill invocations from the same sessions. Once cxScore() runs in a session that also invoked');
+        println('a skill, rows appear here. Verify scoring with: construct telemetry query latency --limit=5');
+        return;
+      }
+      const w = Math.max(15, ...rows.map((r) => String(r.skill_id || '').length));
+      println(`${'skill_id'.padEnd(w)}  sessions  scores   mean   median   p10    p90    last_scored_at`);
+      println('-'.repeat(w + 70));
+      for (const r of rows) {
+        const pad = (v, n) => String(v ?? '').padStart(n);
+        println(
+          `${String(r.skill_id || '').padEnd(w)}  ${pad(r.sessions, 8)}  ${pad(r.score_count, 6)}  ` +
+          `${pad(r.mean_score, 5)}  ${pad(r.median_score, 6)}  ${pad(r.p10_score, 5)}  ${pad(r.p90_score, 5)}  ` +
+          `${r.last_scored_at ? new Date(r.last_scored_at).toISOString().slice(0, 19) : ''}`,
+        );
+      }
+    } catch (err) {
+      errorln(`Quality correlation query failed: ${err.message}`);
+      errorln('If the construct_skill_quality_correlation view is missing, apply db/schema/010_cx_scores.sql.');
+      process.exit(1);
+    } finally {
+      await closeSqlClient(sqlClient);
+    }
     return;
   }
 
