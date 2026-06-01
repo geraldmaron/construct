@@ -238,3 +238,29 @@ test('routeRequest surfaces dispatchSummary with reasons for proactive triggers'
   assert.ok(route.specialists.includes('cx-security'));
   assert.match(route.dispatchReasons['cx-security'] || '', /auth|payments|threat/i);
 });
+
+test('formatOverlaySelection emits one line per non-null flavor with the cx-<role>: loaded <role>.<flavor> overlay shape', async () => {
+  const { formatOverlaySelection } = await import('../lib/orchestration-policy.mjs');
+  const lines = formatOverlaySelection({
+    engineer: 'platform',
+    architect: 'ai-systems',
+    productManager: null,
+    dataAnalyst: 'experiment',
+    qa: null,
+    security: null,
+    dataEngineer: null,
+  });
+  assert.deepEqual(lines, [
+    'cx-engineer: loaded engineer.platform overlay',
+    'cx-architect: loaded architect.ai-systems overlay',
+    'cx-data-analyst: loaded dataAnalyst.experiment overlay',
+  ]);
+});
+
+test('formatOverlaySelection returns an empty list when no flavors match or input is malformed', async () => {
+  const { formatOverlaySelection } = await import('../lib/orchestration-policy.mjs');
+  assert.deepEqual(formatOverlaySelection(null), []);
+  assert.deepEqual(formatOverlaySelection({}), []);
+  assert.deepEqual(formatOverlaySelection({ engineer: null, architect: null }), []);
+  assert.deepEqual(formatOverlaySelection('not-an-object'), []);
+});

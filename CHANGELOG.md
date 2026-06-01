@@ -4,7 +4,15 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- **`formatOverlaySelection(roleFlavors)` in `lib/orchestration-policy.mjs` (bead `construct-e2s`).** Emits one line per non-null role flavor in the shape `cx-<role>: loaded <role>.<flavor> overlay`. Verbose-chat surface + `cx_trace` span attribute so a post-hoc reviewer can see which overlays drove a given dispatch. Two regression tests in `tests/orchestration-policy.test.mjs` cover the happy path and edge cases (null, empty, all-null, non-object).
+
 ### Fixed
+
+- **`construct sync --global` bootstraps `~/.../Code/User/settings.json` when missing (bead `construct-9r6c`).** Previously, when VS Code was installed but the user had never opened Preferences, `getVSCodeSettingsPaths()` filtered out the candidate via `fs.existsSync`, and `syncVSCode` silently skipped — leaving the MCP block unwritten and the doctor unable to fix it. The candidate filter now also accepts paths whose parent User dir exists (the installation signal); `syncVSCode` writes a minimal seed `{}` when the file is absent and merges the MCP block in.
+
+- **Dashboard intake queue summary carries profile-aware `label` and `itemNoun` (bead `construct-f6v`).** `summarizeIntakeQueue` in `lib/server/insights.mjs` now calls `getRebrand(cwd)` and returns `{ label, itemNoun }` alongside the count fields so the Mission Control panel can render the active profile's rebrand text (e.g. `rnd` → "Intake queue"/"signal"; future `sales-ops` → "Lead inbox"/"lead") instead of hardcoding "intake"/"signal". CLI (`construct intake list|show`) and session-prelude already honor the rebrand; dashboard now closes the gap.
 
 - **Construct persona enumerates the task-packet shape it owes the orchestrator (bead `construct-bp7u`).** `personas/construct.md` now references `goal`, `intent`, `workCategory`, `riskFlags`, `acceptanceCriteria` by name — the five fields `specialists/contracts.json:construct-to-orchestrator.input.mustContain` requires. Without the persona surface, dispatched packets failed `validateHandoff` and the orchestrator's input check emitted `BLOCKED_CONTRACT` four times in the last 24h on this project (the warning that surfaced through doctor after PR #140). New regression test in `tests/prompt-surface.test.mjs` asserts every contract `mustContain` field is named in the persona.
 
