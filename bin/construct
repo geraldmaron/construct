@@ -2561,14 +2561,18 @@ async function cmdIntakeMetrics() {
 }
 
 async function cmdIntakeIntegrate(id, args, cwd) {
-  if (!id) { errorln('Usage: construct intake integrate <id> <github|jira|confluence>'); process.exit(1); }
+  if (!id) { errorln('Usage: construct intake integrate <id> <github|jira|confluence> [--publish-issues]'); process.exit(1); }
 
   const system = args[0];
   if (!system || !['github', 'jira', 'confluence'].includes(system)) {
-    errorln('Usage: construct intake integrate <id> <github|jira|confluence>');
+    errorln('Usage: construct intake integrate <id> <github|jira|confluence> [--publish-issues]');
     errorln('Available systems: github, jira, confluence');
     process.exit(1);
   }
+  // --publish-issues unlocks the demo-source gate (CONSTRUCT_DEMO env or
+  // packet sourcePath under tests/fixtures/ or .cx/intake/demo/). Required
+  // before any demo/fixture intake can publish a real external ticket.
+  const publishDemo = args.includes('--publish-issues');
 
   const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
   const queue = createIntakeQueue(cwd, process.env);
@@ -2580,10 +2584,13 @@ async function cmdIntakeIntegrate(id, args, cwd) {
   if (system === 'github') {
     const { createGitHubIssue, tagIntakeWithExternalRef } = await import('../lib/integrations/intake-integrations.mjs');
     info(`Creating GitHub issue from intake ${id}...`);
-    result = await createGitHubIssue(entry);
+    result = await createGitHubIssue(entry, { publishDemo });
     if (result.ok) {
       ok(`GitHub issue created: ${result.externalUrl}`);
       tagIntakeWithExternalRef(cwd, id, 'github', result.externalUrl, result.externalId);
+    } else if (result.skipped === 'demo-source') {
+      warn(`Skipped: ${result.error}`);
+      process.exit(0);
     } else {
       errorln(`Failed: ${result.error}`);
       process.exit(1);
