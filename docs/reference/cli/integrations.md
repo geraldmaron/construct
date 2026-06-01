@@ -28,7 +28,7 @@ Manage local Ollama models
 **Usage**
 
 ```bash
-construct ollama status|pull|test
+construct ollama <list|pull|run>
 ```
 
 ## construct providers
