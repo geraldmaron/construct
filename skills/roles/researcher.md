@@ -1,6 +1,8 @@
 ---
 name: roles-researcher
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher role. Use when reviewing or generating work by cx-researcher, cx-ux-researcher, cx-explorer, or when an agent is acting in the Researcher role.
+inputs: [research-question, sources]
+artifactType: guidance
 role: researcher
 applies_to:
   - cx-researcher

@@ -1,6 +1,8 @@
 ---
 name: devops-ci-cd
 description: Use this skill when designing, debugging, or optimizing CI/CD pipelines.
+inputs: [pipeline-config, repo]
+artifactType: ci-pipeline
 ---
 # CI/CD
 

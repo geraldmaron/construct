@@ -1,6 +1,8 @@
 ---
 name: docs-runbook-workflow
 description: "Use when: creating operational procedures for services, alerts, or recurring operations."
+inputs: [service, incident]
+artifactType: runbook
 ---
 # Runbook Workflow
 

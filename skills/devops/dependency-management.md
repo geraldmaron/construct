@@ -1,6 +1,8 @@
 ---
 name: devops-dependency-management
 description: Use this skill when managing package upgrades, resolving CVEs, or establishing lock file and versioning policy.
+inputs: [dependency-manifest, repo]
+artifactType: dependency-report
 ---
 # Dependency Management
 

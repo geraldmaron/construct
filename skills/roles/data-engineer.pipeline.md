@@ -1,6 +1,8 @@
 ---
 name: roles-data-engineer-pipeline
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Pipeline role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Pipeline role.
+inputs: [pipeline-design, data-contract]
+artifactType: role-guidance
 role: data-engineer.pipeline
 applies_to:
   - cx-data-engineer

@@ -50,7 +50,8 @@
       "skills": [
         "ai/orchestration-workflow",
         "operating/orchestration-reference",
-        "operating/change-management"
+        "operating/change-management",
+        "operating/unstructured-triage"
       ],
       "perspective": {
         "bias": "Over-routing to cx-engineer, false simplicity, plans where every task runs in parallel",
@@ -200,7 +201,8 @@
         ]
       },
       "skills": [
-        "docs/research-workflow"
+        "docs/research-workflow",
+        "strategy/jobs-to-be-done"
       ],
       "perspective": {
         "bias": "Ideal-user personas, invisible friction, 'users will figure it out'",
@@ -291,7 +293,8 @@
       },
       "skills": [
         "docs/research-workflow",
-        "devops/dependency-management"
+        "devops/dependency-management",
+        "docs/transcript-synthesis"
       ],
       "perspective": {
         "bias": "Undated sources, version-specific claims without citation, blog posts treated as authoritative",
@@ -389,7 +392,8 @@
       },
       "skills": [
         "devops/observability",
-        "devops/database"
+        "devops/database",
+        "operating/raw-data-structuring"
       ],
       "perspective": {
         "bias": "Vanity metrics, post-hoc success definitions, averages that hide distributions",
@@ -645,7 +649,8 @@
         ]
       },
       "skills": [
-        "quality-gates/review-work"
+        "quality-gates/review-work",
+        "quality-gates/premortem"
       ],
       "perspective": {
         "bias": "Plans that are too elegant, 'unlikely' failure modes, scope drift with stable acceptance criteria",
@@ -1094,7 +1099,8 @@
       "skills": [
         "docs/adr-workflow",
         "docs/runbook-workflow",
-        "docs/init-docs"
+        "docs/init-docs",
+        "docs/memo-and-decision-capture"
       ],
       "perspective": {
         "bias": "Completed work with no context update, decisions 'everyone understands' but nobody wrote down",
@@ -1193,7 +1199,8 @@
         ]
       },
       "skills": [
-        "frontend-design/accessibility"
+        "frontend-design/accessibility",
+        "frontend-design/screen-reader-testing"
       ],
       "perspective": {
         "bias": "ARIA added to pass audits, keyboard navigation never tested, contrast that 'looks fine' but fails the spec",
@@ -1280,7 +1287,8 @@
         ]
       },
       "skills": [
-        "ai/prompt-optimizer"
+        "ai/prompt-optimizer",
+        "ai/trace-triage"
       ],
       "perspective": {
         "bias": "Stable-looking medians hiding variance, trace analyses looking only at successes, promotions on too few traces",
@@ -1322,7 +1330,8 @@
       "skills": [
         "devops/data-engineering",
         "devops/database",
-        "devops/observability"
+        "devops/observability",
+        "operating/raw-data-structuring"
       ],
       "perspective": {
         "bias": "Non-idempotent pipelines, unwritten data contracts, quality gates added after the first corruption incident",

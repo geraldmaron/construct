@@ -1,6 +1,8 @@
 ---
 name: architecture-cloud-native
 description: Use this skill when designing containerized, orchestrated, or microservice-based systems.
+inputs: [system-design, requirements]
+artifactType: guidance
 ---
 # Cloud-Native Architecture
 

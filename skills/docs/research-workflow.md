@@ -1,6 +1,8 @@
 ---
 name: docs-research-workflow
 description: "Use when: the user asks to research a topic, investigate a question, or gather evidence for a decision."
+inputs: [research-question]
+artifactType: research-brief
 ---
 # Research Workflow
 

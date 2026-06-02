@@ -1,6 +1,8 @@
 ---
 name: roles-architect
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect role. Use when reviewing or generating work by cx-architect, cx-rd-lead, or when an agent is acting in the Architect role.
+inputs: [architecture-design, requirements]
+artifactType: role-guidance
 role: architect
 applies_to:
   - cx-architect

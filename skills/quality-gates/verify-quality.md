@@ -1,6 +1,8 @@
 ---
 name: quality-gates-verify-quality
 description: Use this skill to check code quality, complexity, and maintainability after changes.
+inputs: [change-or-diff]
+artifactType: review-report
 ---
 # Verify Quality
 

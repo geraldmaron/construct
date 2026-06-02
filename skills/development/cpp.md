@@ -1,6 +1,8 @@
 ---
 name: development-cpp
 description: Use this skill when writing, reviewing, or debugging C or C++ code.
+inputs: [code, repo]
+artifactType: code
 ---
 # C/C++ Best Practices
 

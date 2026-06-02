@@ -1,6 +1,8 @@
 ---
 name: roles-security-ai
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — AI role. Use when reviewing or generating work by cx-security, cx-ai-engineer, or when an agent is acting in the Security — AI role.
+inputs: [ai-system, task-context]
+artifactType: guidance
 role: security.ai
 applies_to:
   - cx-security

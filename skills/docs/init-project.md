@@ -1,6 +1,8 @@
 ---
 name: docs-init-project
 description: "Use when: starting work on a new project or joining an existing one without doc structure."
+inputs: [repo]
+artifactType: docs-scaffold
 ---
 # Project Initialization
 

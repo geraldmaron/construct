@@ -1,6 +1,8 @@
 ---
 name: docs-init-docs
 description: "`init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`. Use when the task matches the trigger conditions described in the body."
+inputs: [task-context]
+artifactType: docs-scaffold
 ---
 # Skill: init-docs: Initialize Project Documentation Structure
 

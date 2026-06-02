@@ -1,6 +1,8 @@
 ---
 name: utility-clean-code
 description: Patterns and heuristics for identifying and removing AI-generated code smells. Use when cleaning up output from AI coding tools.
+inputs: [code]
+artifactType: refactor
 ---
 # AI Slop Removal
 

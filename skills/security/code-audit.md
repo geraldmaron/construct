@@ -1,6 +1,8 @@
 ---
 name: security-code-audit
 description: Use this skill when reviewing source code for security vulnerabilities through static analysis.
+inputs: [code]
+artifactType: vulnerability-report
 ---
 # Code Audit
 

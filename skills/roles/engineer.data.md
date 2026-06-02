@@ -1,6 +1,8 @@
 ---
 name: roles-engineer-data
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Data role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Engineer — Data role.
+inputs: [code-diff, data-pipeline]
+artifactType: role-guidance
 role: engineer.data
 applies_to:
   - cx-data-engineer

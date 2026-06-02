@@ -1,6 +1,8 @@
 ---
 name: development-swift
 description: Swift 6 enforces data-race safety at compile time. Annotate isolation boundary explicitly:. Use when the task matches the trigger conditions described in the body.
+inputs: [code, repo]
+artifactType: code
 ---
 # Swift / iOS Development
 

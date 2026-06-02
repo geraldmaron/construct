@@ -1,6 +1,8 @@
 ---
 name: docs-prfaq-workflow
 description: "Use when: the user asks for a PRFAQ, working-backwards doc, launch narrative, or FAQ grounded in product evidence."
+inputs: [prd, evidence-brief]
+artifactType: prfaq
 ---
 # PRFAQ Workflow
 

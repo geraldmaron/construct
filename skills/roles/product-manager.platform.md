@@ -1,6 +1,8 @@
 ---
 name: roles-product-manager-platform
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Platform role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Platform role.
+inputs: [prd, api-spec]
+artifactType: guidance
 role: product-manager.platform
 applies_to:
   - cx-product-manager

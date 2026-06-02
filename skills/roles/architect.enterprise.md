@@ -1,6 +1,8 @@
 ---
 name: roles-architect-enterprise
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Enterprise role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Enterprise role.
+inputs: [architecture-design, compliance-requirements]
+artifactType: role-guidance
 role: architect.enterprise
 applies_to:
   - cx-architect

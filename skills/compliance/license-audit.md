@@ -1,6 +1,8 @@
 ---
 name: compliance-license-audit
 description: Use this skill when auditing dependency licenses, evaluating OSS compliance risk, or preparing license inventories for legal review.
+inputs: [dependency-manifest]
+artifactType: license-report
 ---
 # License Audit
 

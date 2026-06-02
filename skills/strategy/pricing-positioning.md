@@ -1,6 +1,8 @@
 ---
 name: strategy-pricing-positioning
 description: Use when the team needs to set price, adjust positioning, or defend either to stakeholders.
+inputs: [market-signals, competitor-data]
+artifactType: positioning
 ---
 # Pricing and Positioning
 
