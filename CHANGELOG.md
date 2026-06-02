@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.17] - 2026-06-02
+
 ### Added
 
 - **All 149 skills carry structured `inputs`/`artifactType` metadata (bead `construct-c7a8.2`).** Completed the capability-discovery skill metadata: the remaining 139 skills were annotated by reading each file's actual content (purpose, steps, output shape) and deriving `inputs` (what the skill consumes) and `artifactType` (what it produces) — never folder- or title-stamped, per the no-fabrication rule. The distribution is content-derived, not uniform (e.g. security skills split across `vulnerability-report`/`pentest-report`/`threat-model`/`guidance`; role anti-pattern overlays correctly resolve to `role-guidance`/`guidance` rather than a fabricated document type). Capability discovery now reports zero un-annotated skills and drops its coverage warning; `tests/embedded-contract-capability.test.mjs` asserts full coverage so the metadata cannot silently regress.
