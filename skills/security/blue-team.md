@@ -1,6 +1,8 @@
 ---
 name: security-blue-team
 description: Use this skill when defending systems, responding to incidents, or building detection and monitoring capabilities.
+inputs: [system-design]
+artifactType: guidance
 ---
 # Blue Team
 

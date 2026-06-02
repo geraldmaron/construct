@@ -1,6 +1,8 @@
 ---
 name: security-red-team
 description: Use this skill when planning or executing offensive security assessments, adversary emulation, or attack simulations.
+inputs: [system-design, binary]
+artifactType: pentest-report
 ---
 # Red Team
 

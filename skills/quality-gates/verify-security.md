@@ -1,6 +1,8 @@
 ---
 name: quality-gates-verify-security
 description: Use this skill to scan code for security vulnerabilities before commits or releases.
+inputs: [change-or-diff]
+artifactType: vulnerability-report
 ---
 # Verify Security
 

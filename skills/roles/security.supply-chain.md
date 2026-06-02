@@ -1,6 +1,8 @@
 ---
 name: roles-security-supply-chain
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Supply Chain role. Use when reviewing or generating work by cx-security, cx-platform-engineer, or when an agent is acting in the Security — Supply Chain role.
+inputs: [dependencies, ci-config]
+artifactType: guidance
 role: security.supply-chain
 applies_to:
   - cx-security

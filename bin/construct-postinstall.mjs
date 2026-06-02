@@ -34,6 +34,18 @@ const PKG_VERSION = (() => {
 
 const log = (msg) => process.stdout.write(`[construct-postinstall] ${msg}\n`);
 
+// Failures go to stderr as a prominent, actionable block so they are visible in
+// npm output instead of scrolling past as a benign-looking line. The script
+// stays exit-0 by design (see the staging catch): best-effort adapter staging
+// must not hard-fail a consumer's `npm install` — the package is installed and
+// usable, and `construct init` completes staging on demand.
+
+const fail = (msg, hint) => {
+  process.stderr.write(`\n[construct-postinstall] WARNING: ${msg}\n`);
+  if (hint) process.stderr.write(`[construct-postinstall]   -> ${hint}\n`);
+  process.stderr.write('\n');
+};
+
 if (process.env.CONSTRUCT_SKIP_POSTINSTALL === '1') {
   log('skipping (CONSTRUCT_SKIP_POSTINSTALL=1)');
   process.exit(0);
@@ -72,7 +84,7 @@ if (process.env.npm_config_global === 'true' || process.env.npm_config_global ==
       stdio: 'inherit',
     });
     if (result.status !== 0) {
-      log(`global sync failed (exit ${result.status}); run \`construct sync --global\` manually`);
+      fail(`Global front-door sync failed (exit ${result.status}).`, 'Run `construct sync --global` to complete it.');
     }
   }
   process.exit(0);
@@ -103,6 +115,9 @@ try {
     log,
   });
 } catch (err) {
-  log(`staging failed: ${err.message}; leaving project in a clean state`);
+  fail(`Adapter staging failed: ${err.message}`, 'The package is installed; run `npx construct init` in this project to complete setup.');
+  // Intentionally exit 0: staging is best-effort completion, and a non-zero exit
+  // here would fail the consumer's entire `npm install`. The failure is loud on
+  // stderr above and recoverable via `construct init`.
   process.exit(0);
 }

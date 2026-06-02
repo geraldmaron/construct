@@ -1,6 +1,8 @@
 ---
 name: architecture-caching
 description: Use this skill when designing caching strategies for applications, APIs, or infrastructure.
+inputs: [system-design, requirements]
+artifactType: guidance
 ---
 # Caching
 

@@ -1,6 +1,8 @@
 ---
 name: devops-performance
 description: Use this skill when profiling, load testing, or optimizing application and infrastructure performance.
+inputs: [service, metrics]
+artifactType: performance-plan
 ---
 # Performance Engineering
 

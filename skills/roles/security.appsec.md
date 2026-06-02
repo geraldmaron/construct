@@ -1,6 +1,8 @@
 ---
 name: roles-security-appsec
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Appsec role. Use when reviewing or generating work by cx-security, or when an agent is acting in the Security — Appsec role.
+inputs: [code-diff, task-context]
+artifactType: guidance
 role: security.appsec
 applies_to:
   - cx-security

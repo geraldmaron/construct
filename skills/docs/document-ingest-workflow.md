@@ -1,6 +1,8 @@
 ---
 name: docs-document-ingest-workflow
 description: "Use when: the user points at a PDF, Word doc, spreadsheet, slide deck, export, or mixed document folder and wants a markdown version that Construct can search efficiently later."
+inputs: [document]
+artifactType: ingested-markdown
 ---
 # Document Ingest Workflow
 

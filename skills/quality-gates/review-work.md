@@ -1,6 +1,8 @@
 ---
 name: quality-gates-review-work
 description: Use this methodology when a change needs rigorous pre-merge validation. Five independent review roles run concurrently. All must pass.
+inputs: [change-or-diff, acceptance-criteria]
+artifactType: review-report
 ---
 # Parallel Adversarial Review
 

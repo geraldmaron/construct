@@ -1,6 +1,8 @@
 ---
 name: roles-security-legal-compliance
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Legal Compliance role. Use when reviewing or generating work by cx-legal-compliance, or when an agent is acting in the Security — Legal Compliance role.
+inputs: [policy, task-context]
+artifactType: guidance
 role: security.legal-compliance
 applies_to:
   - cx-legal-compliance

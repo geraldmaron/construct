@@ -1,6 +1,8 @@
 ---
 name: compliance-regulatory-review
 description: Use this skill when conducting a compliance review before shipping features that handle user data, financial transactions, AI decisions, or regulated content.
+inputs: [artifact, data-flow, dependency-manifest]
+artifactType: compliance-review
 ---
 # Regulatory Review
 

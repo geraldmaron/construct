@@ -1,6 +1,8 @@
 ---
 name: frontend-design-component-patterns
 description: Use this skill when designing component architecture, building design systems, or structuring reusable UI.
+inputs: [ui-or-component, design-spec]
+artifactType: ui-implementation
 ---
 # Component Patterns
 

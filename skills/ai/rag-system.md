@@ -1,6 +1,8 @@
 ---
 name: ai-rag-system
 description: Use this skill when building retrieval-augmented generation pipelines, vector search, or knowledge-grounded AI systems.
+inputs: [eval-dataset, prompt]
+artifactType: guidance
 ---
 # RAG System Design
 

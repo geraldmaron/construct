@@ -1,6 +1,8 @@
 ---
 name: roles-qa-test-automation
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Test Automation role. Use when reviewing or generating work by cx-test-automation, or when an agent is acting in the QA — Test Automation role.
+inputs: [test-suite, task-context]
+artifactType: guidance
 role: qa.test-automation
 applies_to:
   - cx-test-automation

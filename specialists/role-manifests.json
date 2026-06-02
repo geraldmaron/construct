@@ -73,7 +73,7 @@
         "allowedPaths": ["lib/**", "bin/**", "src/**", "app/**", "tests/**", "docs/**"],
         "allowedBdLabels": ["bug", "feature", "task", "engineering", "fix"],
         "allowedCommands": ["bd create", "bd note", "bd update", "bd link", "bd label", "bd close", "node", "npm", "git status", "git diff", "git log"],
-        "approvalRequired": ["commit", "push", "edit:specialists/registry.json", "edit:install.sh", "edit:claude/settings.template.json"]
+        "approvalRequired": ["commit", "push", "edit:specialists/registry.json", "edit:lib/setup.mjs", "edit:claude/settings.template.json"]
       },
       "outputs": {
         "bdLabels": ["engineering", "fix"],

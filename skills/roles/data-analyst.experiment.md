@@ -1,6 +1,8 @@
 ---
 name: roles-data-analyst-experiment
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Experiment role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst — Experiment role.
+inputs: [experiment-plan, metrics]
+artifactType: role-guidance
 role: data-analyst.experiment
 applies_to:
   - cx-data-analyst

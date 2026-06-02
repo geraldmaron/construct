@@ -1,6 +1,8 @@
 ---
 name: frameworks-spring-boot
 description: Patterns, anti-patterns, and reference guidance for Spring Boot. Use when the task involves spring boot.
+inputs: [code, feature-spec, repo]
+artifactType: code
 ---
 # Spring Boot
 

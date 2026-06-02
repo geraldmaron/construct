@@ -1,6 +1,8 @@
 ---
 name: devops-git-workflow
 description: Use this skill when establishing branching strategies, commit conventions, or code integration practices.
+inputs: [repo, task-context]
+artifactType: guidance
 ---
 # Git Workflow
 

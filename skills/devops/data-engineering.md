@@ -1,6 +1,8 @@
 ---
 name: devops-data-engineering
 description: "1. **Idempotency**: pipelines can run multiple times without duplicating data 2. **Observability**: every pipeline run logs row counts, latency, and anomalies 3. **Data contracts**: producers and consumers agree on schema and SLAs 4. **Lineage**: know where every column came from and what it feeds. Use when the task matches the trigger conditions described in the body."
+inputs: [pipeline-config, data-contract]
+artifactType: data-pipeline
 ---
 # Data Engineering
 

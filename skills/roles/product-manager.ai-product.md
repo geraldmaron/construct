@@ -1,6 +1,8 @@
 ---
 name: roles-product-manager-ai-product
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — AI Product role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — AI Product role.
+inputs: [prd, eval-criteria]
+artifactType: role-guidance
 role: product-manager.ai-product
 applies_to:
   - cx-product-manager

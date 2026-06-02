@@ -1,6 +1,8 @@
 ---
 name: development-rust
 description: Use this skill when writing, reviewing, or debugging Rust code.
+inputs: [code, repo]
+artifactType: code
 ---
 # Rust Best Practices
 

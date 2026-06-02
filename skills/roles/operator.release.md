@@ -1,6 +1,8 @@
 ---
 name: roles-operator-release
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Release role. Use when reviewing or generating work by cx-release-manager, or when an agent is acting in the Operator — Release role.
+inputs: [release-plan, changelog]
+artifactType: role-guidance
 role: operator.release
 applies_to:
   - cx-release-manager

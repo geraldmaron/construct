@@ -1,6 +1,8 @@
 ---
 name: exploration-dependency-graph-reading
 description: Use when assessing the risk surface of a project's dependencies, planning upgrades, or evaluating a new codebase's supply chain posture.
+inputs: [dependency-manifest, repo]
+artifactType: dependency-graph
 ---
 # Dependency Graph Reading
 
