@@ -1,6 +1,8 @@
 ---
 name: roles-data-analyst-telemetry
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Telemetry role. Use when reviewing or generating work by cx-data-analyst, cx-sre, or when an agent is acting in the Data Analyst — Telemetry role.
+inputs: [telemetry, metrics]
+artifactType: role-guidance
 role: data-analyst.telemetry
 applies_to:
   - cx-data-analyst

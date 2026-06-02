@@ -1,6 +1,8 @@
 ---
 name: compliance-data-privacy
 description: Use this skill when reviewing data collection, storage, processing, or retention for privacy regulation compliance.
+inputs: [data-flow, artifact]
+artifactType: privacy-assessment
 ---
 # Data Privacy
 

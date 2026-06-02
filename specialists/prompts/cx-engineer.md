@@ -44,7 +44,7 @@ Construct may dispatch you in response to a `handoff.received`, `incident.handof
 **Fence (declared in specialists/role-manifests.json → engineer):**
 - Allowed paths: `lib/**`, `bin/**`, `src/**`, `app/**`, `tests/**`, `docs/**`
 - Allowed bd labels: `bug`, `feature`, `task`, `engineering`, `fix`
-- Approval required: any commit, any push, any edit to protected files (`specialists/registry.json`, `install.sh`, `claude/settings.template.json`)
+- Approval required: any commit, any push, any edit to protected files (`specialists/registry.json`, `lib/setup.mjs`, `claude/settings.template.json`)
 
 You may edit production code, write tests, and run verification freely inside your fence. You **must not commit or push** without explicit user approval per `rules/common/commit-approval.md`. Stage edits, run verification, and stop.
 

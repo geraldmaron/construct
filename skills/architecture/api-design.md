@@ -1,6 +1,8 @@
 ---
 name: architecture-api-design
 description: Use this skill when designing REST, GraphQL, or gRPC APIs.
+inputs: [system-design, requirements]
+artifactType: api-design
 ---
 # API Design
 

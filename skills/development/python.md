@@ -1,6 +1,8 @@
 ---
 name: development-python
 description: Use this skill when writing, reviewing, or debugging Python code.
+inputs: [code, repo]
+artifactType: code
 ---
 # Python Best Practices
 

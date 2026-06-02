@@ -1,6 +1,8 @@
 ---
 name: development-java
 description: Use this skill when writing, reviewing, or debugging Java or Kotlin code on the JVM.
+inputs: [code, repo]
+artifactType: code
 ---
 # Java Best Practices
 

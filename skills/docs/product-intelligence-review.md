@@ -1,6 +1,8 @@
 ---
 name: docs-product-intelligence-review
 description: "Use when: reviewing PRDs, Meta PRDs, PRFAQs, evidence briefs, signal briefs, customer profiles, or backlog proposals."
+inputs: [prd, evidence-brief]
+artifactType: review
 ---
 # Product Intelligence Review
 

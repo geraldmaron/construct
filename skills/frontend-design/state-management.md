@@ -1,6 +1,8 @@
 ---
 name: frontend-design-state-management
 description: Use this skill when choosing state management tools, structuring application state, or debugging state issues.
+inputs: [ui-or-component, code]
+artifactType: guidance
 ---
 # Frontend State Management
 

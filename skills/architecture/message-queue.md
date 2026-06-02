@@ -1,6 +1,8 @@
 ---
 name: architecture-message-queue
 description: Use this skill when designing asynchronous communication, event-driven systems, or message-based integrations.
+inputs: [system-design, requirements]
+artifactType: guidance
 ---
 # Message Queues and Event-Driven Architecture
 

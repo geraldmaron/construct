@@ -1,6 +1,8 @@
 ---
 name: roles-operator-sre
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — SRE role. Use when reviewing or generating work by cx-sre, or when an agent is acting in the Operator — SRE role.
+inputs: [alert-config, slo]
+artifactType: role-guidance
 role: operator.sre
 applies_to:
   - cx-sre

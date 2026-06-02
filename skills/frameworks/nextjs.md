@@ -1,6 +1,8 @@
 ---
 name: frameworks-nextjs
 description: Patterns, anti-patterns, and reference guidance for Next.js (App Router). Use when the task involves next.js (app router).
+inputs: [code, feature-spec, repo]
+artifactType: code
 ---
 # Next.js (App Router)
 

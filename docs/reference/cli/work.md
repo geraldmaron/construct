@@ -7,11 +7,13 @@ description: Work commands for Construct.
 
 | Command | What it does |
 |---|---|
+| `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
 | `construct graph` | Task graph management |
+| `construct handoffs` | List and inspect session handoff files in .cx/handoffs/ |
 | `construct headhunt` | Create domain expertise overlays |
 | `construct infer` | Infer schema from documents |
 | `construct ingest` | Convert documents to indexed markdown |
@@ -27,6 +29,16 @@ description: Work commands for Construct.
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
 
+## construct ask
+
+One-shot ask against the active knowledge index
+
+**Usage**
+
+```bash
+construct ask <query>
+```
+
 ## construct bootstrap
 
 Import seed observation corpus into local memory store for cold-start acceleration
@@ -34,14 +46,8 @@ Import seed observation corpus into local memory store for cold-start accelerati
 **Usage**
 
 ```bash
-construct bootstrap [--verbose]
+construct bootstrap
 ```
-
-**Options**
-
-| Flag | Description |
-|---|---|
-| `--verbose` | Print each observation imported or skipped |
 
 ## construct customer
 
@@ -67,7 +73,7 @@ Distill documents with query-focused chunking
 **Usage**
 
 ```bash
-construct distill <dir> [--format=summary|decisions|full]
+construct distill <file>
 ```
 
 ## construct drop
@@ -77,7 +83,7 @@ Ingest file from Downloads/Desktop
 **Usage**
 
 ```bash
-construct drop [--list]
+construct drop <file>
 ```
 
 ## construct graph
@@ -87,7 +93,17 @@ Task graph management
 **Usage**
 
 ```bash
-construct graph list|show|from-intake
+construct graph <show|update>
+```
+
+## construct handoffs
+
+List and inspect session handoff files in .cx/handoffs/
+
+**Usage**
+
+```bash
+construct handoffs <list|show>
 ```
 
 ## construct headhunt
@@ -97,7 +113,7 @@ Create domain expertise overlays
 **Usage**
 
 ```bash
-construct headhunt <domain>
+construct headhunt <create|list>
 ```
 
 ## construct infer
@@ -107,7 +123,7 @@ Infer schema from documents
 **Usage**
 
 ```bash
-construct infer <file> [--unified]
+construct infer <file>
 ```
 
 ## construct ingest
@@ -117,7 +133,7 @@ Convert documents to indexed markdown
 **Usage**
 
 ```bash
-construct ingest <file> [--sync]
+construct ingest <file> [--strict] [--legacy-extractor]
 ```
 
 ## construct integrations
@@ -157,7 +173,7 @@ Inspect memory layer
 **Usage**
 
 ```bash
-construct memory stats|consolidate
+construct memory <status|search>
 ```
 
 ## construct reflect
@@ -167,15 +183,8 @@ Capture improvement feedback from chat session and update Construct core
 **Usage**
 
 ```bash
-construct reflect [--target=<internal|how-tos|decisions>] [--summary=<text>]
+construct reflect
 ```
-
-**Options**
-
-| Flag | Description |
-|---|---|
-| `--target=<internal|how-tos|decisions>` | Knowledge subdir to store feedback (default: internal) |
-| `--summary=<text>` | Brief summary of the improvement feedback |
 
 ## construct search
 
@@ -194,7 +203,7 @@ Manage storage backend
 **Usage**
 
 ```bash
-construct storage sync|status|reset
+construct storage <status|reset>
 ```
 
 ## construct tags
@@ -214,13 +223,8 @@ Team review and template listing
 **Usage**
 
 ```bash
-construct team <review|templates>
+construct team <list|review>
 ```
-
-**Subcommands**
-
-- `[object Object]`
-- `[object Object]`
 
 ## construct wireframe
 
@@ -229,7 +233,7 @@ Generate wireframes from description
 **Usage**
 
 ```bash
-construct wireframe "<description>"
+construct wireframe <description>
 ```
 
 ## construct workflow

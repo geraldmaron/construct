@@ -1,6 +1,8 @@
 ---
 name: exploration-tracer-bullet-method
 description: Use when beginning implementation in a new system, new integration, or new architectural layer. A tracer bullet is not a prototype; it is the thinnest possible complete path through the real system.
+inputs: [codebase, system-design]
+artifactType: guidance
 ---
 # Tracer Bullet Method
 

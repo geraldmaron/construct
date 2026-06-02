@@ -1,6 +1,8 @@
 ---
 name: roles-reviewer
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer role. Use when reviewing or generating work by cx-reviewer, cx-devil-advocate, cx-evaluator, cx-trace-reviewer, or when an agent is acting in the Reviewer role.
+inputs: [code-diff, pull-request]
+artifactType: review-report
 role: reviewer
 applies_to:
   - cx-reviewer

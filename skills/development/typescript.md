@@ -1,6 +1,8 @@
 ---
 name: development-typescript
 description: Use this skill when writing, reviewing, or debugging TypeScript or JavaScript code.
+inputs: [code, repo]
+artifactType: code
 ---
 # TypeScript Best Practices
 

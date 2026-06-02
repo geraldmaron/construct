@@ -1,6 +1,8 @@
 ---
 name: frontend-design-accessibility
 description: Target **WCAG 2.1 AA** as the minimum for any public-facing product. WCAG 2.2 AA is the current standard (published October 2023) and required by many regulatory frameworks (EU Web Accessibility Directive, ADA, Section 508). Use when the task matches the trigger conditions described in the body.
+inputs: [ui-or-component]
+artifactType: accessibility-findings
 ---
 # Accessibility (WCAG 2.2 / Inclusive Design)
 

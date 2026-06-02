@@ -1,6 +1,8 @@
 ---
 name: roles-data-analyst-product-intelligence
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product Intelligence role. Use when reviewing or generating work by cx-data-analyst, cx-product-manager, or when an agent is acting in the Data Analyst — Product Intelligence role.
+inputs: [customer-signals, telemetry]
+artifactType: role-guidance
 role: data-analyst.product-intelligence
 applies_to:
   - cx-data-analyst

@@ -1,6 +1,8 @@
 ---
 name: roles-architect-data
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Data role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Data role.
+inputs: [data-model, architecture-design]
+artifactType: role-guidance
 role: architect.data
 applies_to:
   - cx-architect

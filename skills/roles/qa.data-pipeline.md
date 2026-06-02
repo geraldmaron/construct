@@ -1,6 +1,8 @@
 ---
 name: roles-qa-data-pipeline
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Data Pipeline role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — Data Pipeline role.
+inputs: [pipeline, test-suite]
+artifactType: guidance
 role: qa.data-pipeline
 applies_to:
   - cx-qa

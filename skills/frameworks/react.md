@@ -1,6 +1,8 @@
 ---
 name: frameworks-react
 description: "By default, components are **Server Components**: they run on the server, have no state, and can fetch data directly. Add `'use client'` only when you need interactivity, browser APIs, or hooks. Use when the task matches the trigger conditions described in the body."
+inputs: [code, feature-spec, repo]
+artifactType: code
 ---
 # React
 

@@ -1,6 +1,8 @@
 ---
 name: roles-operator-docs
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Docs role. Use when reviewing or generating work by cx-docs-keeper, or when an agent is acting in the Operator — Docs role.
+inputs: [docs, runbook]
+artifactType: role-guidance
 role: operator.docs
 applies_to:
   - cx-docs-keeper

@@ -1,6 +1,8 @@
 ---
 name: devops-incident-response
 description: "Define severity in your runbook and assign it early: it determines escalation and comms cadence. Use when the task matches the trigger conditions described in the body."
+inputs: [incident, alert]
+artifactType: incident-runbook
 ---
 # Incident Response
 

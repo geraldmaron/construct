@@ -1,6 +1,8 @@
 ---
 name: roles-data-analyst-product
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst — Product role.
+inputs: [product-metrics, funnel-data]
+artifactType: role-guidance
 role: data-analyst.product
 applies_to:
   - cx-data-analyst

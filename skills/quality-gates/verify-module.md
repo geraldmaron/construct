@@ -1,6 +1,8 @@
 ---
 name: quality-gates-verify-module
 description: Use this skill to check that a module or package is structurally complete and ready for use.
+inputs: [change-or-diff]
+artifactType: review-report
 ---
 # Verify Module
 

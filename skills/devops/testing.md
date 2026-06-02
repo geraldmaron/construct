@@ -1,6 +1,8 @@
 ---
 name: devops-testing
 description: Use this skill when planning test coverage, selecting test types, or establishing testing practices.
+inputs: [repo, task-context]
+artifactType: test-plan
 ---
 # Testing Strategy
 

@@ -1,6 +1,8 @@
 ---
 name: devops-cost-optimization
 description: Use this skill when reducing cloud spend, right-sizing resources, or implementing FinOps practices.
+inputs: [service, cost-data]
+artifactType: cost-optimization-plan
 ---
 # Cloud Cost Optimization
 

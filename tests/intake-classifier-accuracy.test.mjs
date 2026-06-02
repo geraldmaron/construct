@@ -117,3 +117,41 @@ test('unrelated text falls through to unknown', () => {
   });
   assert.equal(triage.intakeType, 'unknown');
 });
+
+test('decision memo classifies as memo, routed to docs-keeper', () => {
+  const triage = classifyRdIntake({
+    sourcePath: 'inbox/memo-q3-direction.md',
+    extractedText: '# Memo: Q3 direction\nFYI team — we decided to consolidate the tiers. Action items: update pricing page; notify support.',
+  });
+  assert.equal(triage.intakeType, 'memo');
+  assert.equal(triage.primaryOwner, 'docs-keeper');
+});
+
+test('meeting transcript classifies as transcript, routed to researcher', () => {
+  const triage = classifyRdIntake({
+    sourcePath: 'inbox/standup-2026-06-01.vtt',
+    extractedText: '# Meeting notes\nAttendees: Alice, Bob, Carol.\nSpeaker 1: we shipped the cache. Speaker 2: action item to monitor latency.',
+  });
+  assert.equal(triage.intakeType, 'transcript');
+  assert.equal(triage.primaryOwner, 'researcher');
+});
+
+test('raw data export classifies as raw-data, routed to data-analyst', () => {
+  const triage = classifyRdIntake({
+    sourcePath: 'inbox/metrics-export.csv',
+    extractedText: 'Raw data export. Column names: timestamp, region, value. Telemetry export of 40000 records.',
+  });
+  assert.equal(triage.intakeType, 'raw-data');
+  assert.equal(triage.primaryOwner, 'data-analyst');
+});
+
+test('new types do not false-positive on unrelated prose', () => {
+  const triage = classifyRdIntake({
+    sourcePath: 'inbox/reflection.md',
+    extractedText: 'A short reflection on team morale and culture this quarter.',
+  });
+  assert.ok(
+    !['memo', 'transcript', 'raw-data'].includes(triage.intakeType) || triage.confidence <= 0.5,
+    `unrelated prose should not confidently classify as a new type, got ${triage.intakeType} @ ${triage.confidence}`,
+  );
+});
