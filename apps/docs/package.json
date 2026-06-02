@@ -15,7 +15,7 @@
     "geist": "^1.7.0",
     "gray-matter": "^4.0.3",
     "mermaid": "^10.9.1",
-    "next": "^15.0.0",
+    "next": "^16.2.7",
     "next-mdx-remote": "^6.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
