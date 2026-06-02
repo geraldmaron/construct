@@ -15,8 +15,25 @@ import { spawnSync } from 'node:child_process';
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
 
-test('A2 end-to-end: construct knowledge add writes a frontmatter-stamped research finding', () => {
+// Each spawn gets a private HOME so construct's startup side effects (embed
+// daemon, telemetry, session state under ~/.cx and ~/.claude) can never race
+// or bleed across the test files the runner executes in parallel. CX_TOOLKIT_DIR
+// is dropped so an operator's non-default install layout can't leak in either.
+// BOOTSTRAP_CHECKED + CONSTRUCT_DISABLE_AUTO_CLEANUP keep the fresh HOME from
+// triggering first-run bootstrap and upgrade-cleanup on every spawn — without
+// them an empty HOME does seconds of one-time setup work and times out under
+// the full suite's parallel CPU contention. These are state/maintenance
+// toggles the production code already honors, not quality-gate skips.
+
+function isolatedEnv(home) {
+  const env = { ...process.env, HOME: home, BOOTSTRAP_CHECKED: '1', CONSTRUCT_DISABLE_AUTO_CLEANUP: '1' };
+  delete env.CX_TOOLKIT_DIR;
+  return env;
+}
+
+test('A2 end-to-end: construct knowledge add writes a frontmatter-stamped research finding', { timeout: 90_000 }, () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-functional-'));
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-home-'));
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
 
   const body = [
@@ -40,7 +57,7 @@ test('A2 end-to-end: construct knowledge add writes a frontmatter-stamped resear
     '--topic=npm OIDC Trusted Publishers',
     '--confidence=confirmed',
     '--source-url=https://docs.npmjs.com/trusted-publishers',
-  ], { cwd, input: body, encoding: 'utf8', timeout: 15_000 });
+  ], { cwd, input: body, encoding: 'utf8', timeout: 60_000, env: isolatedEnv(home) });
 
   assert.equal(result.status, 0, `CLI failed: ${result.stderr}`);
   assert.match(result.stdout, /wrote .* bytes/);
@@ -57,10 +74,12 @@ test('A2 end-to-end: construct knowledge add writes a frontmatter-stamped resear
   assert.match(content, /expiresAt: \d{4}-\d{2}-\d{2}/);
 
   fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(home, { recursive: true, force: true });
 });
 
-test('A2 end-to-end: confidence=confirmed without --source-url is rejected', () => {
+test('A2 end-to-end: confidence=confirmed without --source-url is rejected', { timeout: 90_000 }, () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-functional-noSources-'));
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-home-noSources-'));
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
 
   const result = spawnSync('node', [BIN, 'knowledge', 'add',
@@ -68,10 +87,11 @@ test('A2 end-to-end: confidence=confirmed without --source-url is rejected', () 
     '--slug=missing-source',
     '--topic=Something',
     '--confidence=confirmed',
-  ], { cwd, input: 'body content here for the test', encoding: 'utf8', timeout: 10_000 });
+  ], { cwd, input: 'body content here for the test', encoding: 'utf8', timeout: 30_000, env: isolatedEnv(home) });
 
   assert.notEqual(result.status, 0, 'expected non-zero exit for missing sources');
   assert.match(result.stderr + result.stdout, /confirmed requires at least one source/);
 
   fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(home, { recursive: true, force: true });
 });

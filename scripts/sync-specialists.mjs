@@ -172,8 +172,17 @@ function detectConstructProject(cwd) {
 
 const detectedProject = (!PROJECT_FLAG && !GLOBAL_FLAG) ? detectConstructProject(process.cwd()) : null;
 const projectDir = PROJECT_FLAG ? process.cwd() : detectedProject;
-const lockPath = path.join(projectDir || root, ".cx", "sync.lock");
-const stagingDir = path.join(projectDir || root, ".cx", "sync-staging");
+
+// Lock and staging are scoped to the tier we actually mutate: a project dir for
+// project-tier writes, the user's HOME for global-tier writes (which land in
+// ~/.claude, ~/.codex, …). Keying the global tier to HOME — not the repo root —
+// means two --global syncs against different HOMEs (e.g. parallel test files in
+// isolated sandboxes) never collide on a shared repo-root lock, and staging
+// renames stay on the same filesystem as their destinations.
+
+const stateBase = projectDir || home;
+const lockPath = path.join(stateBase, ".cx", "sync.lock");
+const stagingDir = path.join(stateBase, ".cx", "sync-staging");
 
 // Project-tier writes carry every registry entry. Global-tier writes carry only
 // the `construct` front-door agent — specialists live with the project, not the
@@ -243,7 +252,7 @@ function writeFile(file, content, { stamp = true } = {}) {
   }
 
   // Two-phase: write to staging, commit later.
-  const rel = path.relative(projectDir || root, file);
+  const rel = path.relative(stateBase, file);
   const stagingPath = path.join(stagingDir, rel);
   mkdirp(path.dirname(stagingPath));
   fs.writeFileSync(stagingPath, stamped);
