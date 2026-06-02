@@ -1,6 +1,8 @@
 ---
 name: roles-data-engineer-warehouse
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Warehouse role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Warehouse role.
+inputs: [warehouse-model, metrics]
+artifactType: role-guidance
 role: data-engineer.warehouse
 applies_to:
   - cx-data-engineer

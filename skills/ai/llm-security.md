@@ -1,6 +1,8 @@
 ---
 name: ai-llm-security
 description: Use this skill when securing LLM-powered applications against prompt injection, data leakage, and misuse.
+inputs: [prompt, model-output, agent-spec]
+artifactType: guidance
 ---
 # LLM Security
 

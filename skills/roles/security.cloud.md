@@ -1,6 +1,8 @@
 ---
 name: roles-security-cloud
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Cloud role. Use when reviewing or generating work by cx-security, or when an agent is acting in the Security — Cloud role.
+inputs: [cloud-config, iam-policy]
+artifactType: guidance
 role: security.cloud
 applies_to:
   - cx-security

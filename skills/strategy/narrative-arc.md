@@ -1,6 +1,8 @@
 ---
 name: strategy-narrative-arc
 description: Use when the argument must move people, not just inform them. Strategic narrative is the difference between a document that gets read and one that changes what people do.
+inputs: [market-signals, user-signals]
+artifactType: positioning
 ---
 # Strategic Narrative Construction
 

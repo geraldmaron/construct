@@ -1,6 +1,8 @@
 ---
 name: operating-incident-response
 description: Use when an issue is active in production, when building incident process from scratch, or when reviewing postmortems for quality.
+inputs: [task-context]
+artifactType: guidance
 ---
 # Incident Response
 

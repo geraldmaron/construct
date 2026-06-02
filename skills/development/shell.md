@@ -1,6 +1,8 @@
 ---
 name: development-shell
 description: Use this skill when writing, reviewing, or debugging Bash, Zsh, or POSIX shell scripts.
+inputs: [code, repo]
+artifactType: code
 ---
 # Shell Scripting Best Practices
 

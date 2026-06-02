@@ -1,6 +1,8 @@
 ---
 name: roles-architect-platform
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Platform role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Platform role.
+inputs: [platform-design, adr]
+artifactType: role-guidance
 role: architect.platform
 applies_to:
   - cx-architect

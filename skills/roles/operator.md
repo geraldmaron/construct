@@ -1,6 +1,8 @@
 ---
 name: roles-operator
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator role. Use when reviewing or generating work by cx-sre, cx-operations, cx-release-manager, cx-docs-keeper, or when an agent is acting in the Operator role.
+inputs: [runbook, deployment-plan]
+artifactType: role-guidance
 role: operator
 applies_to:
   - cx-sre

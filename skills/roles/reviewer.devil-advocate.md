@@ -1,6 +1,8 @@
 ---
 name: roles-reviewer-devil-advocate
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Devil Advocate role. Use when reviewing or generating work by cx-devil-advocate, or when an agent is acting in the Reviewer — Devil Advocate role.
+inputs: [plan, proposal]
+artifactType: guidance
 role: reviewer.devil-advocate
 applies_to:
   - cx-devil-advocate

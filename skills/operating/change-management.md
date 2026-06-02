@@ -1,6 +1,8 @@
 ---
 name: operating-change-management
 description: Use when a change needs to be categorized by reversibility, when designing rollout gates, or when the team is uncertain how much approval process a change warrants.
+inputs: [change-or-diff]
+artifactType: guidance
 ---
 # Change Management
 

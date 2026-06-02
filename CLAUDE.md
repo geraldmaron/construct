@@ -19,7 +19,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 | File | Why |
 |---|---|
 | `specialists/registry.json` | Source of truth for all agents on all platforms |
-| `install.sh` | Runs on user machines — a bug affects all installs |
+| `lib/setup.mjs` / `bin/construct-postinstall.mjs` | Install/setup path — runs on user machines, a bug affects all installs |
 | `lib/hooks/*.mjs` | Run in every Claude Code session |
 | `claude/settings.template.json` | Controls all Claude Code hook config |
 

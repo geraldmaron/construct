@@ -1,6 +1,8 @@
 ---
 name: operating-oncall-rotation
 description: Use when setting up on-call, reviewing its health, or handling an escalation during a rotation.
+inputs: [task-context]
+artifactType: guidance
 ---
 # On-Call Rotation
 

@@ -1,6 +1,8 @@
 ---
 name: devops-monorepo
 description: Use this skill when selecting monorepo tooling, structuring packages, or optimizing affected-only builds.
+inputs: [repo, pipeline-config]
+artifactType: guidance
 ---
 # Monorepo
 

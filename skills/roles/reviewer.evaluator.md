@@ -1,6 +1,8 @@
 ---
 name: roles-reviewer-evaluator
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Evaluator role. Use when reviewing or generating work by cx-evaluator, or when an agent is acting in the Reviewer — Evaluator role.
+inputs: [model-output, eval-set]
+artifactType: guidance
 role: reviewer.evaluator
 applies_to:
   - cx-evaluator

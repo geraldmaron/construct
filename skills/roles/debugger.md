@@ -1,6 +1,8 @@
 ---
 name: roles-debugger
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Debugger role. Use when reviewing or generating work by cx-debugger, or when an agent is acting in the Debugger role.
+inputs: [bug-report, failure-signal]
+artifactType: role-guidance
 role: debugger
 applies_to:
   - cx-debugger

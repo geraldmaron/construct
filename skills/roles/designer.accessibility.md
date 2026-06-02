@@ -1,6 +1,8 @@
 ---
 name: roles-designer-accessibility
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Designer — Accessibility role. Use when reviewing or generating work by cx-accessibility, or when an agent is acting in the Designer — Accessibility role.
+inputs: [ui-design, component]
+artifactType: role-guidance
 role: designer.accessibility
 applies_to:
   - cx-accessibility

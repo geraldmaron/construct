@@ -31,6 +31,7 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 | `model-fallback` | Provider-aware model fallback hook. |
 | `policy-engine` | consolidated session policy enforcement hook. |
 | `post-merge-docs-check` | PostToolUse / Bash (async) |
+| `post-merge-tracking` | close beads referenced by a merged PR. |
 | `pre-compact` | Pre-compact hook — prepares context summary before compaction runs. |
 | `pre-push-gate` | PreToolUse / Bash |
 | `proactive-activation` | Event-driven specialist activation. |
@@ -41,6 +42,7 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 | `session-optimize` | Session end optimization hook — triggers agent optimization for low-performers. |
 | `session-reflect` | Session end auto-reflect hook. |
 | `session-start` | Session start hook — emits resumable project context at the start of each session. |
+| `session-tracking-refresh` | keep the project's tracking |
 | `stop-notify` | Stop notify hook — emits a session summary notification when Claude stops. |
 | `stop-typecheck` | Stop typecheck hook — runs TypeScript type-check at session end and records result. |
 | `test-watch` | PostToolUse / Bash (async) |

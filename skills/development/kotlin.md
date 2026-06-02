@@ -1,6 +1,8 @@
 ---
 name: development-kotlin
 description: Patterns, anti-patterns, and reference guidance for Kotlin / Android Development. Use when the task involves kotlin / android development.
+inputs: [code, repo]
+artifactType: code
 ---
 # Kotlin / Android Development
 

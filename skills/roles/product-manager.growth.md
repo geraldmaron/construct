@@ -1,6 +1,8 @@
 ---
 name: roles-product-manager-growth
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Growth role. Use when reviewing or generating work by cx-product-manager, cx-business-strategist, or when an agent is acting in the Product Manager — Growth role.
+inputs: [prd, growth-metrics]
+artifactType: guidance
 role: product-manager.growth
 applies_to:
   - cx-product-manager

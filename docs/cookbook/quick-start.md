@@ -60,11 +60,14 @@ Local services:
 ```bash
 cd ~/your-project
 
-# Initialize + start services in one command
-construct init --auto-start
+# Initialize and start services (services start by default)
+construct init --yes
 
-# Or interactively (asks if you want to start services)
-construct init
+# Scaffold only — don't start services
+construct init --yes --no-start
+
+# Interactive flow with project detection
+construct init --interactive
 ```
 
 **What this does:**

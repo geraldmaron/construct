@@ -1,6 +1,8 @@
 ---
 name: compliance-ai-disclosure
 description: Use this skill when reviewing AI features for disclosure requirements, transparency obligations, or emerging AI regulation compliance.
+inputs: [artifact, data-flow]
+artifactType: privacy-assessment
 ---
 # AI Disclosure
 

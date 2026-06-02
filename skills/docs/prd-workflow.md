@@ -1,6 +1,8 @@
 ---
 name: docs-prd-workflow
 description: "Use when: the user asks to create a PRD, platform spec, business case, RFC, or requirements document."
+inputs: [research-question, evidence-brief]
+artifactType: prd
 ---
 # PRD Workflow
 

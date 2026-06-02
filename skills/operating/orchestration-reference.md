@@ -1,6 +1,8 @@
 ---
 name: operating-orchestration-reference
 description: detailed orchestration reference loaded on demand. Use when the task matches the trigger conditions described in the body.
+inputs: [task-context]
+artifactType: guidance
 ---
 # Orchestration Reference
 

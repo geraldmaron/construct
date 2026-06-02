@@ -32,8 +32,10 @@ Initialize a project:
 
 ```bash
 cd ~/your-project
-construct init --auto-start
+construct init --yes
 ```
+
+`construct init` scaffolds the project (`.cx/`, `AGENTS.md`, `plan.md`, adapters) and starts the local services by default. Pass `--no-start` to skip service startup, or `--interactive` for the guided flow.
 
 Open your editor and talk to `@construct`. A walkthrough lives in `construct_guide.md` at your project root.
 
@@ -155,6 +157,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 | Command | What it does |
 |---|---|
+| `construct capability` | Describe what this Construct install can do (embedded contract; read-only, secret-free) |
 | `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
