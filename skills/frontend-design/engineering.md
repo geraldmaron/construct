@@ -1,6 +1,8 @@
 ---
 name: frontend-design-engineering
 description: Use this skill when working on build tooling, bundling, rendering strategies, or frontend infrastructure.
+inputs: [code, repo]
+artifactType: guidance
 ---
 # Frontend Engineering
 

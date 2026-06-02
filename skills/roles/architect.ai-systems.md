@@ -1,6 +1,8 @@
 ---
 name: roles-architect-ai-systems
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — AI Systems role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — AI Systems role.
+inputs: [architecture-design, adr]
+artifactType: role-guidance
 role: architect.ai-systems
 applies_to:
   - cx-architect

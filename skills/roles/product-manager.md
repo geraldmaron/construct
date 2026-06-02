@@ -1,6 +1,8 @@
 ---
 name: roles-product-manager
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager role. Use when reviewing or generating work by cx-product-manager, cx-business-strategist, or when an agent is acting in the Product Manager role.
+inputs: [prd, user-evidence]
+artifactType: guidance
 role: product-manager
 applies_to:
   - cx-product-manager

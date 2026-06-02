@@ -1,6 +1,8 @@
 ---
 name: frontend-design-ui-aesthetics
 description: "Use this skill when making visual design decisions: color, typography, layout, spacing, and visual hierarchy."
+inputs: [ui-or-component, design-spec]
+artifactType: ui-implementation
 ---
 # UI Aesthetics
 

@@ -6,6 +6,12 @@
   "bin": {
     "construct": "bin/construct"
   },
+  "exports": {
+    ".": "./lib/embedded-contract/index.mjs",
+    "./embedded-contract": "./lib/embedded-contract/index.mjs",
+    "./lib/*": "./lib/*",
+    "./package.json": "./package.json"
+  },
   "files": [
     "bin/construct",
     "bin/construct-postinstall.mjs",

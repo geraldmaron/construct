@@ -1,6 +1,8 @@
 ---
 name: devops-observability
 description: Use this skill when designing logging, tracing, metrics, or alerting systems.
+inputs: [service, metrics]
+artifactType: observability-plan
 ---
 # Observability
 

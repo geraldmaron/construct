@@ -1,6 +1,8 @@
 ---
 name: roles-qa-api-contract
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — API Contract role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — API Contract role.
+inputs: [api-spec, test-suite]
+artifactType: guidance
 role: qa.api-contract
 applies_to:
   - cx-qa

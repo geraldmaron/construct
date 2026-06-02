@@ -1,6 +1,8 @@
 ---
 name: devops-database
 description: Use this skill when designing schemas, writing migrations, optimizing queries, or selecting databases.
+inputs: [schema, query]
+artifactType: schema-design
 ---
 # Database Patterns
 

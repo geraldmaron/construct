@@ -1,6 +1,8 @@
 ---
 name: ai-ml-ops
 description: Patterns, anti-patterns, and reference guidance for ML Operations (MLOps). Use when the task involves ml operations (mlops).
+inputs: [eval-dataset, model-output]
+artifactType: guidance
 ---
 # ML Operations (MLOps)
 

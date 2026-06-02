@@ -1,6 +1,8 @@
 ---
 name: roles-security
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Security role. Use when reviewing or generating work by cx-security, cx-legal-compliance, or when an agent is acting in the Security role.
+inputs: [code-diff, threat-model]
+artifactType: guidance
 role: security
 applies_to:
   - cx-security

@@ -1,6 +1,8 @@
 ---
 name: development-mobile-crossplatform
 description: Before choosing a framework, answer:. Use when the task matches the trigger conditions described in the body.
+inputs: [requirements, code]
+artifactType: guidance
 ---
 # Mobile Cross-Platform Development
 

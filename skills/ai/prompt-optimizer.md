@@ -1,6 +1,8 @@
 ---
 name: ai-prompt-optimizer
 description: Closed-loop prompt auto-optimization guide. Use when the task matches the trigger conditions described in the body.
+inputs: [prompt, model-output, eval-dataset]
+artifactType: prompt
 ---
 # Prompt Auto-Optimization Loop
 

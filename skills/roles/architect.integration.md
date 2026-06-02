@@ -1,6 +1,8 @@
 ---
 name: roles-architect-integration
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Integration role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Integration role.
+inputs: [integration-design, sequence-diagram]
+artifactType: role-guidance
 role: architect.integration
 applies_to:
   - cx-architect

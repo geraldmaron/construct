@@ -1,6 +1,8 @@
 ---
 name: strategy-market-research-methods
 description: Use when the team needs to validate assumptions before committing resources, or when a decision is being made on vibes rather than signal.
+inputs: [market-signals, user-signals]
+artifactType: market-brief
 ---
 # Market Research Methods
 

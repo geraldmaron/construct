@@ -1,6 +1,8 @@
 ---
 name: development-go
 description: Use this skill when writing, reviewing, or debugging Go code.
+inputs: [code, repo]
+artifactType: code
 ---
 # Go Best Practices
 

@@ -1,6 +1,8 @@
 ---
 name: roles-designer
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Designer role. Use when reviewing or generating work by cx-designer, cx-accessibility, or when an agent is acting in the Designer role.
+inputs: [ui-design]
+artifactType: role-guidance
 role: designer
 applies_to:
   - cx-designer

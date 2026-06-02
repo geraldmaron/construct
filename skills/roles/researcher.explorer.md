@@ -1,6 +1,8 @@
 ---
 name: roles-researcher-explorer
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — Explorer role. Use when reviewing or generating work by cx-explorer, or when an agent is acting in the Researcher — Explorer role.
+inputs: [repo, task-context]
+artifactType: guidance
 role: researcher.explorer
 applies_to:
   - cx-explorer

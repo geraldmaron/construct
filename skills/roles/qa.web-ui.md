@@ -1,6 +1,8 @@
 ---
 name: roles-qa-web-ui
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Web UI role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — Web UI role.
+inputs: [test-suite, ui]
+artifactType: guidance
 role: qa.web-ui
 applies_to:
   - cx-qa

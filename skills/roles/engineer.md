@@ -1,6 +1,8 @@
 ---
 name: roles-engineer
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer role. Use when reviewing or generating work by cx-engineer, cx-ai-engineer, cx-data-engineer, cx-platform-engineer, or when an agent is acting in the Engineer role.
+inputs: [code-diff, task-context]
+artifactType: role-guidance
 role: engineer
 applies_to:
   - cx-engineer
