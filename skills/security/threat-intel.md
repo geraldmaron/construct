@@ -1,6 +1,8 @@
 ---
 name: security-threat-intel
 description: Use this skill when performing OSINT, threat modeling, or building threat intelligence programs.
+inputs: [system-design]
+artifactType: threat-model
 ---
 # Threat Intelligence
 

@@ -20,15 +20,8 @@ Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks 
 **Usage**
 
 ```bash
-construct claude:allow <list|add|remove|check> [pattern...] [--apply]
+construct claude:allow <check|apply|add|remove>
 ```
-
-**Subcommands**
-
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
 
 ## construct hosts
 
@@ -37,7 +30,7 @@ Show host support for Construct orchestration
 **Usage**
 
 ```bash
-construct hosts
+construct hosts [--json]
 ```
 
 ## construct mcp
@@ -47,7 +40,7 @@ Manage MCP integrations
 **Usage**
 
 ```bash
-construct mcp <list|add|remove|info> [name]
+construct mcp <list|add|remove|info>
 ```
 
 **Subcommands**
@@ -64,29 +57,7 @@ Show or update model tier assignments
 **Usage**
 
 ```bash
-construct models [--poll|--apply|--reset|--tier=TIER|--set=MODEL|--prefer-free|--prefer-free-same-family]
-```
-
-**Options**
-
-| Flag | Description |
-|---|---|
-| `--poll` | Query OpenRouter for currently free models |
-| `--apply` | Auto-apply best free models and sync |
-| `--reset` | Remove model overrides, restore defaults |
-| `--tier=TIER` | Target tier: reasoning | standard | fast |
-| `--set=MODEL_ID` | Set specific model for the tier |
-| `--prefer-free` | When inferring sibling tiers, prefer free models where possible |
-| `--prefer-free-same-family` | Prefer free siblings only when they stay in the same provider family |
-
-## construct plugin
-
-Manage external Construct plugin manifests
-
-**Usage**
-
-```bash
-construct plugin <list|info|validate|init> [name]
+construct models <list|set|free|reset|usage|cost>
 ```
 
 **Subcommands**
@@ -95,3 +66,15 @@ construct plugin <list|info|validate|init> [name]
 - `[object Object]`
 - `[object Object]`
 - `[object Object]`
+- `[object Object]`
+- `[object Object]`
+
+## construct plugin
+
+Manage external Construct plugin manifests
+
+**Usage**
+
+```bash
+construct plugin <list|info|init>
+```

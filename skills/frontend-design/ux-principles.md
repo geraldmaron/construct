@@ -1,6 +1,8 @@
 ---
 name: frontend-design-ux-principles
 description: Use this skill when designing user flows, evaluating usability, or planning information architecture.
+inputs: [ui-or-component, design-spec]
+artifactType: guidance
 ---
 # UX Principles
 

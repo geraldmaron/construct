@@ -1,6 +1,8 @@
 ---
 name: roles-data-engineer-vector-retrieval
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Vector Retrieval role. Use when reviewing or generating work by cx-data-engineer, cx-ai-engineer, or when an agent is acting in the Data Engineer — Vector Retrieval role.
+inputs: [retrieval-design, embeddings]
+artifactType: role-guidance
 role: data-engineer.vector-retrieval
 applies_to:
   - cx-data-engineer

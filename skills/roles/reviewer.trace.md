@@ -1,6 +1,8 @@
 ---
 name: roles-reviewer-trace
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Trace role. Use when reviewing or generating work by cx-trace-reviewer, or when an agent is acting in the Reviewer — Trace role.
+inputs: [trace, task-context]
+artifactType: guidance
 role: reviewer.trace
 applies_to:
   - cx-trace-reviewer

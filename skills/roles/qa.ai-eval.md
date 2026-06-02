@@ -1,6 +1,8 @@
 ---
 name: roles-qa-ai-eval
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — AI Eval role. Use when reviewing or generating work by cx-qa, cx-test-automation, cx-evaluator, or when an agent is acting in the QA — AI Eval role.
+inputs: [eval-set, model-output]
+artifactType: guidance
 role: qa.ai-eval
 applies_to:
   - cx-qa

@@ -1,6 +1,8 @@
 ---
 name: ai-agent-dev
 description: Use this skill when building AI agents, tool-use systems, or multi-agent workflows.
+inputs: [agent-spec, task-context]
+artifactType: agent-implementation
 ---
 # AI Agent Development
 

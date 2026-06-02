@@ -1,6 +1,8 @@
 ---
 name: ai-prompt-and-eval
 description: Use this skill when designing prompts, evaluating model performance, or optimizing LLM behavior.
+inputs: [prompt, eval-dataset, model-output]
+artifactType: eval-report
 ---
 # Prompt Engineering and Evaluation
 

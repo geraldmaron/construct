@@ -1,10 +1,16 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "type": "module",
   "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
   "bin": {
     "construct": "bin/construct"
+  },
+  "exports": {
+    ".": "./lib/embedded-contract/index.mjs",
+    "./embedded-contract": "./lib/embedded-contract/index.mjs",
+    "./lib/*": "./lib/*",
+    "./package.json": "./package.json"
   },
   "files": [
     "bin/construct",
@@ -78,7 +84,7 @@
   },
   "optionalDependencies": {
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/core": "^1.25.0",
+    "@opentelemetry/core": "^2.7.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.52.0",
     "@opentelemetry/resources": "^1.25.0",
     "@opentelemetry/sdk-trace-node": "^1.25.0",

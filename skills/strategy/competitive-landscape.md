@@ -1,6 +1,8 @@
 ---
 name: strategy-competitive-landscape
 description: Use when the team needs a structured read on market positioning before committing direction.
+inputs: [competitor-data, market-signals]
+artifactType: competitive-analysis
 ---
 # Competitive Landscape Analysis
 

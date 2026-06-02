@@ -342,8 +342,8 @@ construct feedback:history --limit=20
 # View classification accuracy
 construct feedback:record --json
 
-# List roles and departments
-construct roles:list --departments
+# List available roles
+construct roles:list
 
 # View proactive activation status
 construct activation:status

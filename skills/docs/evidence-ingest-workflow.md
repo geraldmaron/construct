@@ -1,6 +1,8 @@
 ---
 name: docs-evidence-ingest-workflow
 description: "Use when: the user pastes customer notes, Slack threads, support tickets, sales notes, research snippets, RFCs, analytics summaries, or competitor signals."
+inputs: [signal, document]
+artifactType: evidence-brief
 ---
 # Evidence Ingest Workflow
 

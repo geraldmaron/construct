@@ -1,6 +1,8 @@
 ---
 name: devops-containerization
 description: Use this skill when writing Dockerfiles, optimizing image size, or securing container builds.
+inputs: [service, repo]
+artifactType: dockerfile
 ---
 # Containerization
 

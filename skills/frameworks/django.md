@@ -1,6 +1,8 @@
 ---
 name: frameworks-django
 description: Patterns, anti-patterns, and reference guidance for Django. Use when the task involves django.
+inputs: [code, feature-spec, repo]
+artifactType: code
 ---
 # Django
 

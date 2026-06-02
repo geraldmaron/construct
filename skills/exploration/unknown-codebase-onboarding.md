@@ -1,6 +1,8 @@
 ---
 name: exploration-unknown-codebase-onboarding
 description: Use when entering an unfamiliar codebase for the first time, or when the task requires understanding a system you haven't touched before.
+inputs: [codebase, repo]
+artifactType: guidance
 ---
 # Unknown Codebase Onboarding
 

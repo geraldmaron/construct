@@ -1,6 +1,8 @@
 ---
 name: security-vuln-research
 description: Use this skill when analyzing binaries, fuzzing software, or developing exploits for security research.
+inputs: [target-binary-or-software]
+artifactType: vulnerability-report
 ---
 # Vulnerability Research
 

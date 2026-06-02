@@ -10,7 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { buildRuntimeRecoverySummary, clearDashboardState, readDashboardState, isManagedConstructPostgresUrl, startServices, stopDashboard, stopServices, getRuntimePorts, _verifyTelemetryKeys } from '../lib/service-manager.mjs';
+import { buildRuntimeRecoverySummary, clearDashboardState, readDashboardState, isManagedConstructPostgresUrl, startServices, stopDashboard, stopServices, getRuntimePorts, SELECTABLE_SERVICES, _verifyTelemetryKeys } from '../lib/service-manager.mjs';
 import { writeEnvValues } from '../lib/env-config.mjs';
 
 import { tempDir } from './helpers.mjs';
@@ -74,6 +74,47 @@ test('startServices skips telemetry when CONSTRUCT_TELEMETRY_URL is not set', as
   const telemetryEntry = results.find((entry) => entry.name === 'Telemetry');
   // When no CONSTRUCT_TELEMETRY_URL is set, startManagedServices returns unavailable/skipped
   assert.ok(telemetryEntry);
+});
+
+test('startServices honors an explicit service selection (construct dev --select / --only)', async () => {
+  const homeDir = tempDir('construct-service-select-home-');
+  const rootDir = tempDir('construct-service-select-root-');
+  const spawnCalls = [];
+
+  // Everything is available, but only the dashboard is selected — the gate, not
+  // availability, must decide what starts.
+  const { results } = await startServices({
+    rootDir,
+    homeDir,
+    selected: new Set(['dashboard']),
+    describeRuntimeSupportFn: async () => ({ docker: true, cm: true, opencode: true, tmux: false }),
+    getRuntimePortsFn: async () => ({ dashboard: 4242, memory: 8765, bridge: 5173 }),
+    startDashboardFn: async () => ({ url: 'http://127.0.0.1:4242', reused: true }),
+    detectDockerComposeFn: () => ({ command: 'docker', argsPrefix: ['compose'] }),
+    loadConstructEnvFn: () => ({ CONSTRUCT_TELEMETRY_URL: 'https://example.test/ingest' }),
+    spawnDetachedFn: (command, args) => {
+      spawnCalls.push({ command, args });
+      return { child: { pid: 321, unref() {} }, logPath: path.join(homeDir, '.construct', 'runtime', 'fake.log') };
+    },
+    verifyTelemetryKeysFn: async () => ({ status: 'verified' }),
+    memoryProbeFn: async () => false,
+    openCodeProbeFn: async () => false,
+  });
+
+  const names = results.map((r) => r.name);
+  assert.ok(names.includes('Dashboard'), 'selected dashboard must start');
+  assert.equal(names.includes('Memory (cm)'), false, 'unselected memory must be skipped despite cm support');
+  assert.equal(names.includes('OpenCode'), false, 'unselected opencode must be skipped despite support');
+  assert.equal(names.includes('Telemetry'), false, 'unselected telemetry must be skipped');
+  assert.equal(spawnCalls.some((c) => c.command === 'cm' || c.command === 'opencode'), false, 'no unselected daemon may be spawned');
+});
+
+test('SELECTABLE_SERVICES exposes the documented selectable keys', () => {
+  const keys = SELECTABLE_SERVICES.map((s) => s.key);
+  assert.deepEqual(keys, ['postgres', 'dashboard', 'telemetry', 'memory', 'opencode']);
+  for (const svc of SELECTABLE_SERVICES) {
+    assert.ok(svc.label && svc.description, `${svc.key} needs a label + description for the picker`);
+  }
 });
 
 test('getRuntimePorts reuses configured memory port when MCP endpoint is already live', async () => {

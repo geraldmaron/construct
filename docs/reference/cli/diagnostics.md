@@ -10,6 +10,11 @@ description: Diagnostics commands for Construct.
 | `construct audit` | Audit Construct internals and review the mutation trail |
 | `construct cleanup` | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
+| `construct docs:check` | Check for missing how-to guides (alias for `docs check`) |
+| `construct docs:reconcile` | Reconcile docs against the registry |
+| `construct docs:site` | Manage the docs static site build |
+| `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
+| `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
 
 ## construct audit
 
@@ -18,13 +23,8 @@ Audit Construct internals and review the mutation trail
 **Usage**
 
 ```bash
-construct audit <skills|trail>
+construct audit <events|trail>
 ```
-
-**Subcommands**
-
-- `[object Object]`
-- `[object Object]`
 
 ## construct cleanup
 
@@ -33,15 +33,18 @@ Release dev-agent memory pressure by cleaning stale helper and bridge processes
 **Usage**
 
 ```bash
-construct cleanup [--pressure-release] [--quiet]
+construct cleanup [--dry-run] [--quiet] [--pressure-release] [--pressure-only] [--disk-only]
 ```
 
 **Options**
 
 | Flag | Description |
 |---|---|
-| `--pressure-release` | Also terminate stale cass index processes when swap is above threshold |
-| `--quiet` | Suppress per-process output and only act on the current policy |
+| `--dry-run` | Show what would be cleaned without changing anything |
+| `--quiet` | Minimal output |
+| `--pressure-release` | Also kill stale dev-agent processes |
+| `--pressure-only` | Pressure release only — skip disk cleanup |
+| `--disk-only` | Disk cleanup only — skip pressure release |
 
 ## construct doc
 
@@ -50,10 +53,55 @@ Verify or inspect auditability stamps on Construct-generated markdown files
 **Usage**
 
 ```bash
-construct doc <verify|install-hooks> [path] [--json]
+construct doc <verify|inspect>
 ```
 
-**Subcommands**
+## construct docs:check
 
-- `[object Object]`
-- `[object Object]`
+Check for missing how-to guides (alias for `docs check`)
+
+**Usage**
+
+```bash
+construct docs:check
+```
+
+## construct docs:reconcile
+
+Reconcile docs against the registry
+
+**Usage**
+
+```bash
+construct docs:reconcile
+```
+
+## construct docs:site
+
+Manage the docs static site build
+
+**Usage**
+
+```bash
+construct docs:site <build|serve>
+```
+
+## construct docs:update
+
+Regenerate AUTO-managed doc regions (alias for `docs update`)
+
+**Usage**
+
+```bash
+construct docs:update
+```
+
+## construct docs:verify
+
+Validate documentation quality (alias for `docs verify`)
+
+**Usage**
+
+```bash
+construct docs:verify
+```

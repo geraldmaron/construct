@@ -1,6 +1,8 @@
 ---
 name: roles-qa
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the QA role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA role.
+inputs: [test-suite, code-diff]
+artifactType: guidance
 role: qa
 applies_to:
   - cx-qa

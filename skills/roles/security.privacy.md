@@ -1,6 +1,8 @@
 ---
 name: roles-security-privacy
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Privacy role. Use when reviewing or generating work by cx-security, cx-legal-compliance, or when an agent is acting in the Security — Privacy role.
+inputs: [data-flow, task-context]
+artifactType: guidance
 role: security.privacy
 applies_to:
   - cx-security

@@ -1,6 +1,8 @@
 ---
 name: architecture-security-arch
 description: Use this skill when designing authentication, authorization, network security, or zero-trust architectures.
+inputs: [system-design, requirements]
+artifactType: guidance
 ---
 # Security Architecture
 

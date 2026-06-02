@@ -1,6 +1,8 @@
 ---
 name: roles-orchestrator
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Orchestrator role. Use when reviewing or generating work by cx-orchestrator, or when an agent is acting in the Orchestrator role.
+inputs: [task-context, request]
+artifactType: role-guidance
 role: orchestrator
 applies_to:
   - cx-orchestrator

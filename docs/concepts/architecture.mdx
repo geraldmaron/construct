@@ -218,6 +218,27 @@ Precedence is explicit: approval rules and tracker/doc ownership override profil
 
 Every snapshot discloses the active operating profile and any operating gaps, such as missing focal resources, missing sources, source read failures, or missing outputs. Roadmaps include the same profile obligations so operators can tell whether Construct is only observing or also missing responsibilities.
 
+## Embedded contract layer (app-facing)
+
+Distinct from Embed *mode* (the daemon above), the **Embedded Contract Layer (ECL)** is the stable, versioned surface another application uses to embed Construct as an orchestration layer. It lives in `lib/embedded-contract/` and exposes four read/execute contracts over one shared core, surfaced identically on three transports — CLI-JSON, MCP tools, and an SDK (`package.json` `exports` → `lib/embedded-contract/index.mjs`).
+
+| Contract | Question it answers | Core | Surfaces |
+|---|---|---|---|
+| Capability discovery | What can this Construct do? | `capability.mjs` | `construct capability describe --json` · `capability_describe` · `describeCapabilities` |
+| Triage / planning | What kind of work is this, who should own it? | `triage.mjs` | `construct intake classify --json` / `graph recommend --json` · `triage_recommend` · `recommendPlan` |
+| Model resolution | Which model should an embedded workflow use? | `model-resolve.mjs` | `construct models resolve --json` · `model_resolve` · `resolveEmbeddedModel` |
+| Workflow invocation | Run a role/skill workflow non-interactively | `workflow-invoke.mjs` + `workflow-defs.mjs` | `construct workflow invoke --json` · `workflow_invoke` · `invokeWorkflow` |
+
+Invariants that make it safe to embed, especially for teams where auditability is non-negotiable:
+
+- **One core, three surfaces.** CLI, MCP, and SDK are thin adapters; every response is built by the same core function and wrapped by `envelope.mjs`, so the surfaces return structurally identical envelopes (proven by `tests/embedded-contract-parity.test.mjs`).
+- **Versioned.** Every envelope carries `contractVersion` (`contract-version.mjs`, semver, independent of the package version) plus `constructVersion` and `deploymentMode`, so an embedder can negotiate compatibility.
+- **No secrets, structurally.** Every response passes `redaction.assertNoSecrets` before serialization; credential state is reported as a boolean (`requiresCredential`), never a value.
+- **No drift.** Capability discovery reads the live registries (roles, skills, workflow defs, policies, providers), so the published contract cannot diverge from what the install actually supports.
+- **Approval-gated writes.** Only workflow invocation can write, and only under `allow-durable-write`; `proposal-only` and `requires-human-approval` perform no durable writes. Team/enterprise durable writes are flagged as audited. Specialist reasoning is delegated to the host agent runtime — Construct returns the orchestration plan and provenance, never fabricated specialist output.
+
+See [Embedded contract layer](/concepts/embedded-contract) for the contract model and [Embedded contract API](/reference/embed-api) for request/response schemas.
+
 ## Project-state hierarchy
 
 One source of truth per concern:

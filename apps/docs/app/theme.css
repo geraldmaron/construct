@@ -1,9 +1,8 @@
 /* Construct Docs — editorial, B&W core, gradient accent.
    Ported from the design handoff bundle (Construct Docs.html / docs-styles.css). */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.ts";
 
 :root {
   --bg: #000;

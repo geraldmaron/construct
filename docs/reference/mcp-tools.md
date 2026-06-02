@@ -1,9 +1,12 @@
 <!--
 docs/reference/mcp-tools.md: Every MCP tool exposed by the Construct MCP server.
 
-Source: lib/mcp/server.mjs. Tools are registered across 7 modules:
-project, document, storage, skills, workflow, telemetry, memory.
-Total: ~40 tools.
+Source of truth: the tool registry in lib/mcp/server.mjs. Every registered tool
+must appear here as a `### tool_name` heading — enforced by
+tests/mcp-tools-doc-parity.test.mjs, which fails if a tool ships without a doc
+entry. Grouped by implementing module (project, document, storage, skills,
+R&D-loop, telemetry, memory, knowledge/provider, workflow-orchestration,
+profile/outcomes/learning, embedded-contract).
 -->
 
 # MCP Tools Reference
@@ -405,3 +408,277 @@ Looks up current data for a configured repo, project, or team. Resolves the righ
 |---|---|---|---|
 | `query` | string | Yes | User's question or project/repo name |
 | `root_dir` | string | No | Data root override |
+
+## Workflow orchestration tools
+
+### `workflow_init`
+Initialize a new workflow for the current project. Creates plan.md state if not already present and returns the initial workflow envelope.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `cwd` | string | Project root (default: server cwd). |
+| `title` | string | Workflow title shown in the plan header (default: "Untitled workflow"). |
+| `spec_ref` | string | Optional reference to a spec/PRD/ADR id this workflow implements. |
+
+### `workflow_add_task`
+Add a task to the current workflow. Pass `request` for intent-based routing (the classifier picks track + specialist) or pass explicit task fields (`key`, `title`, etc.) for manual entry.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `cwd` | string | Project root (default: server cwd). |
+| `request` | string | Natural-language task request; when present, intent-based routing is used and the explicit fields below act as overrides. |
+| `key` | string | Stable task key (e.g. T-001). Generated when omitted. |
+| `title` | string | Short task title. |
+| `phase` | string | Phase bucket (plan, build, validate, ship, etc.). |
+| `owner` | string | Specialist or persona that owns the task. |
+| `files` | array | File paths this task touches. |
+| `readFirst` | array | Files the owner should read before editing. |
+| `doNotChange` | array | Files/regions the owner must not modify. |
+| `acceptanceCriteria` | array | Acceptance criteria as a checklist. |
+| `verification` | string | Command(s) or description of how to verify the task is done. |
+| `dependsOn` | array | Task keys this task depends on. |
+| `overlays` | array | Role flavors that augment the owner persona for this task. |
+| `challengeRequired` | boolean | Force a cx-devil-advocate challenge before the task can complete. |
+| `challengeStatus` | string | Initial challenge status when seeded. |
+| `tokenBudget` | number | Per-task token budget for cost tracking. |
+| `status` | string | Initial status override. |
+
+### `workflow_update_task`
+Update fields on an existing workflow task. Requires the task `key`. Only fields supplied are changed.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `cwd` | string | Project root (default: server cwd). |
+| `key` | string | **required** — Task key to update. |
+| `status` | string | New status (pending, in_progress, blocked_needs_user, blocked_by_dep, done, etc.). |
+| `owner` | string | New owner persona. |
+| `phase` | string | New phase bucket. |
+| `note` | string | Append-only progress note. |
+| `verification` | string | Updated verification description. |
+| `overlays` | array | Replace the overlay list. |
+| `challengeRequired` | boolean | Toggle whether a challenge is required. |
+| `challengeStatus` | string | Update the challenge status (proposed, accepted, refused, etc.). |
+
+### `workflow_needs_main_input`
+Mark a workflow task as blocked pending user input. Sets status to blocked_needs_user and writes a packet describing the blocker for the orchestrator to surface.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `cwd` | string | Project root (default: server cwd). |
+| `taskKey` | string | **required** — Task key to mark blocked. |
+| `worker` | string | Specialist that needs input (default: current owner). |
+| `blocker` | string | **required** — One-line description of what is blocking progress. |
+| `question` | string | **required** — The specific question to put to the user. |
+
+### `workflow_validate`
+Validate the current workflow state against the schema and run consistency checks (no orphan tasks, no circular dependencies, every owner resolves to a known persona).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `cwd` | string | Project root (default: server cwd). |
+
+### `workflow_contract_validate`
+Validate a producer→consumer handoff against specialists/contracts.json. Required when a specialist hands off to another role: enforces input.mustContain, output schema, disk-artifact postconditions, and binary postconditions per producer (rubber-stamp prevention, post-hoc threat-model prevention, etc.). Self-enforcing: a producer with binary rules MUST pass `packet`, or the call itself is a contract violation.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `producer` | string | **required** — Producer agent or persona name (e.g. cx-reviewer, cx-security). |
+| `consumer` | string | **required** — Consumer agent or persona name receiving the handoff. |
+| `id` | string | Optional contract id; overrides producer/consumer lookup. |
+| `artifact` | object | The handoff payload to validate against the contract schema and disk-artifact postconditions. |
+| `packet` | object | The producer's in-memory output packet. REQUIRED when the producer has binary postconditions; omitting it is itself a contract violation. |
+| `enforcement` | string | Enforcement mode (default: block). Use warn only when explicitly advisory. |
+
+### `workflow_import_plan`
+Bulk-add tasks from a markdown plan to the current workflow. Parses headings and bullet structure to extract task titles, owners, and acceptance criteria.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `cwd` | string | Project root (default: server cwd). |
+| `markdown` | string | **required** — Plan markdown to parse. |
+| `phase` | string | Phase bucket applied to all imported tasks. |
+| `owner` | string | Default owner for tasks that do not specify one. |
+| `readFirst` | array | Default readFirst files applied to all imported tasks. |
+| `doNotChange` | array | Default doNotChange files applied to all imported tasks. |
+| `acceptanceCriteria` | array | Default acceptance criteria applied to all imported tasks. |
+| `title` | string | Workflow title to set if the workflow is newly created. |
+| `spec_ref` | string | Spec reference to associate with the workflow. |
+
+## Profile, outcomes & learning tools
+
+### `profile_show`
+Return the active Construct org profile (id, displayName, roles, departments, intake taxonomy, doc templates). Use when a specialist needs to know which role set, classification taxonomy, or doc templates apply before drafting work.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `cwd` | string | Project root (default: server cwd). |
+| `id` | string | Force a specific profile id instead of resolving from config. |
+
+### `profile_list`
+List the curated org profile catalog (rnd, operations, creative, research) with role/department counts. Use to discover which profiles are available before suggesting `construct profile set`.
+
+_No parameters._
+
+### `profile_drafts`
+List in-progress draft profiles under `.cx/profiles/draft-*` and any user-defined custom profile at `.cx/profile.json`. Use to see what profile work is pending before scaffolding another draft.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `cwd` | string | Project root (default: server cwd). |
+
+### `profile_health`
+Per-profile health rollup over a window: observation count, per-role outcome runs and success rates. Use to check whether a profile is producing data before recommending changes or archive.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `cwd` | string | Project root (default: server cwd). |
+| `id` | string | Profile id (default: active profile). |
+| `window_days` | number | Window in days (default 30). |
+
+### `profile_create`
+Scaffold a draft org profile under `.cx/profiles/draft-<id>/` (requirements.md + profile.json + persona stubs + department charters). Writes durable state — requires `confirm=true`. For curated catalog work, follow `docs/concepts/profile-lifecycle.md` after creation.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `confirm` | boolean | **required** — Must be true. |
+| `cwd` | string |  |
+| `id` | string | **required** — Profile id (^[a-z][a-z0-9-]{1,30}$). |
+| `display_name` | string |  |
+| `seed_roles` | array | Role ids to scaffold persona files for (cap 80). |
+| `seed_departments` | array | Departments to scaffold charters for (cap 12). |
+
+### `profile_archive`
+Archive a curated profile: moves `profiles/<id>.json` and its intake table into `archive/profiles/<id>/` with an archive note. Destructive — requires `confirm=true` and a substantive `reason` (>=8 chars). Observations and outcomes are preserved.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `confirm` | boolean | **required** — Must be true. |
+| `id` | string | **required** —  |
+| `reason` | string | **required** — Substantive reason (>= 8 chars). |
+
+### `outcomes_summary`
+Read `.cx/outcomes/_summary.json` (per-role success rate, 30-day trend). Pass `aggregate=true` to rebuild the summary from JSONL outcome files first. Use to ground tiebreakers and improvement suggestions in real specialist performance.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `cwd` | string | Project root (default: server cwd). |
+| `aggregate` | boolean | Rebuild `_summary.json` before reading (default false). |
+
+### `outcomes_record`
+Append a specialist outcome line to `.cx/outcomes/<role>.jsonl` (writes durable state — requires `confirm=true`). Use when a specialist wants to self-report success/failure outside the automatic agent-tracker path.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `confirm` | boolean | **required** — Must be true. |
+| `cwd` | string |  |
+| `role` | string | **required** — Specialist id (e.g. cx-engineer, product-manager). |
+| `success` | boolean | **required** —  |
+| `intake_id` | string |  |
+| `profile` | string | Override active profile id stamp. |
+| `escalated` | boolean |  |
+| `duration_ms` | number |  |
+| `notes` | string | Trimmed to 500 chars. |
+| `source` | string | Origin tag (default: "mcp"). |
+
+### `knowledge_add`
+Persist a research finding as `.cx/knowledge/external/research/<slug>.md` with research-specific frontmatter (topic, confidence, sources, expiresAt, profile). Writes durable state — requires `confirm=true`. `confidence=confirmed` requires at least one source.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `confirm` | boolean | **required** — Must be true. |
+| `cwd` | string |  |
+| `slug` | string | **required** — Lowercase hyphenated, max 60 chars. |
+| `topic` | string | **required** —  |
+| `body` | string | **required** — Findings / inferences / gaps / recommendation block. Capped at 50KB total file. |
+| `confidence` | string | Default: inferred. |
+| `sources` | array | Required when confidence=confirmed. |
+| `ttl_days` | number | Default 90. |
+
+### `knowledge_graph_ask`
+GraphRAG-style global query over the entity graph in `.cx/observations/`. Detects communities via label propagation, ranks them by BM25 against the query, and returns each top community with its central members and extractive summary. Use for "tell me about how X relates across the project" questions that pure semantic retrieval handles poorly.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `query` | string | **required** — Natural-language question. |
+| `cwd` | string | Project root (default: server cwd). |
+| `top_k` | number | Max communities to return (default 5). |
+| `min_size` | number | Skip communities smaller than this (default 2). |
+| `tags` | array | Restrict entity extraction to observations carrying these tags. |
+| `tag_match` | string | Tag match mode: any (default) or all. |
+
+### `learning_status`
+One-shot mirror of `npm run learning:status`: active profile, observation counts (last 24h + total), research finding count, per-role outcome rollup. Use to answer "is Construct learning?" without spawning a shell.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `cwd` | string | Project root (default: server cwd). |
+
+### `sandbox_list`
+List Construct sandboxes under `~/.cx/sandboxes/` (id, path, createdAt). Use to find an isolated environment for QA or dry-runs without polluting the active project.
+
+_No parameters._
+
+## Embedded contract tools
+
+### `model_resolve`
+Resolve which model an embedded Construct workflow should use given the host/IDE provider context. Precedence: host model → same-provider-family fallback → Construct tier default → structured config error. Never reads or returns credential values (requiresCredential is a boolean) and never claims unverified provider health. Read-only; performs no writes.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `workflow_type` | string | Workflow type hint (e.g. evidence-ingest, prd-draft, architecture-review). Selects a tier when requested_tier is absent. |
+| `requested_tier` | string | Desired tier; overrides the workflow-type hint. |
+| `host` | string | Host/IDE identifier (advisory). |
+| `host_model` | string | Model the host is currently using (e.g. anthropic/claude-sonnet-4-6). |
+| `host_provider` | string | Provider family the host uses, when no host_model is given. |
+| `capabilities` | array | Optional required capabilities; unverifiable ones are returned as warnings. |
+| `allow_cross_provider_fallback` | boolean | Permit falling back outside the host provider family (default false). |
+
+### `triage_recommend`
+Classify an artifact and return a role-aware plan (primary owner, role chain with rationale, suggested skills, evidence requirements, expected outputs, approval requirements, risks, next steps, canExecute) WITHOUT enqueuing or executing. Classification confidence is reported distinctly from any generation confidence. Read-only; performs no durable write.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `input` | string | Artifact text to classify (meeting notes, bug report, proposal, etc.). Provide this OR file_path. |
+| `file_path` | string | Path to a file to extract and classify (PDF/Office via docling, audio/video via whisper, transcripts, plain text). Used when input is absent. |
+| `source_path` | string | Optional filename/source hint to aid classification. |
+| `artifact_type` | string | Optional artifact-type hint (advisory). |
+| `domain` | string | Optional broad domain hint. |
+| `desired_outcome` | string | Optional desired outcome (advisory). |
+| `constraints` | array | Optional constraints (advisory). |
+| `available_roles` | array | Restrict the plan to these role ids; dropped roles are reported as warnings. |
+
+### `workflow_invoke`
+Invoke a named Construct workflow (roles/skills) non-interactively and return a provenanced execution plan: selected roles, rationale, applied skills, resolved model, evidence requirements, output contract, risks, and a traceId. Construct returns the orchestration plan; the host runtime performs specialist reasoning. Durable writes occur ONLY when approval_mode is allow-durable-write; proposal-only and requires-human-approval perform no durable writes.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `workflow_type` | string | **required** — One of: evidence-ingest, proposal-review, prd-draft, architecture-review, risk-review, research-synthesis. |
+| `input` | string | Artifact text the workflow operates on. Provide this OR file_path. |
+| `file_path` | string | Path to a file to extract (docling/whisper/transcript) and operate on, used when input is absent. |
+| `context` | object | Optional structured context; keys matching evidence requirements mark them satisfied. |
+| `role_strategy` | string | auto = default chain; explicit = use requested_roles; constrained = default chain intersected with requested_roles. |
+| `requested_roles` | array | Role ids for explicit/constrained strategies. |
+| `approval_mode` | string | Gate for durable writes (default: the workflow type default). |
+| `trace` | boolean | Emit a traceId for provenance correlation (default true). |
+| `host` | string | Host/IDE identifier (advisory). |
+| `host_model` | string | Model the host uses, for model resolution. |
+| `host_provider` | string | Provider family the host uses, for model resolution. |
+
+### `capability_describe`
+Describe what this Construct install can do: versions, contract interfaces (CLI/MCP/SDK), roles, skills, workflows, schemas, models/providers, policies, telemetry posture, and plugins. Read-only and secret-free — provider entries carry env-key names and a configured boolean only, never credential values. Reads live registries so the published contract cannot drift from reality.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `root_dir` | string | Optional Construct install root (default: server toolkit dir). |
+
+## Telemetry (additional)
+
+### `cx_trace_telemetry`
+Record a single CX telemetry trace for an agent invocation. Use to log start/end, model used, token cost, and outcome verdict for performance review.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `agent` | string | **required** — Agent or persona name being traced. |
+| `trace` | object | **required** — Trace record: start_ts, end_ts, model, tokens, verdict, notes, etc. |
+| `cwd` | string | Project root (default: server cwd). |
+

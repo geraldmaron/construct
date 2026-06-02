@@ -1,6 +1,8 @@
 ---
 name: roles-engineer-ai
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — AI role. Use when reviewing or generating work by cx-ai-engineer, or when an agent is acting in the Engineer — AI role.
+inputs: [code-diff, prompt]
+artifactType: role-guidance
 role: engineer.ai
 applies_to:
   - cx-ai-engineer

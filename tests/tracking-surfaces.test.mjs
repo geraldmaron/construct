@@ -190,10 +190,13 @@ test('archivePlanIfLanded archives + resets when every referenced bead is closed
   const planPath = join(rootDir, 'plan.md');
   const originalBody = '# active plan\n\nT1: construct-ddd ✓\nT2: construct-eee ✓\n';
   writeFileSync(planPath, originalBody);
-  const twoHoursAgo = (Date.now() - 2 * 60 * 60 * 1000) / 1000;
+  const now = new Date('2026-06-02T15:00:00.000Z');
+  // Base the plan's mtime on the fixed `now`, not real Date.now(): the idle
+  // check is `now - mtime < 1h`, so deriving mtime from wall-clock time made the
+  // test fail whenever real UTC time advanced past the fixed `now` window.
+  const twoHoursAgo = (now.getTime() - 2 * 60 * 60 * 1000) / 1000;
   utimesSync(planPath, twoHoursAgo, twoHoursAgo);
 
-  const now = new Date('2026-06-02T15:00:00.000Z');
   const result = await archivePlanIfLanded({ rootDir, now });
   assert.equal(result.ok, true);
   assert.equal(result.changed, true);

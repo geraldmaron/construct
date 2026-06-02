@@ -1,6 +1,8 @@
 ---
 name: roles-product-manager-business-strategy
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Business Strategy role. Use when reviewing or generating work by cx-business-strategist, or when an agent is acting in the Product Manager — Business Strategy role.
+inputs: [strategy-doc, competitive-analysis]
+artifactType: guidance
 role: product-manager.business-strategy
 applies_to:
   - cx-business-strategist

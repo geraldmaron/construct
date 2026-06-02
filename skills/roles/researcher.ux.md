@@ -1,6 +1,8 @@
 ---
 name: roles-researcher-ux
 description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — UX role. Use when reviewing or generating work by cx-ux-researcher, or when an agent is acting in the Researcher — UX role.
+inputs: [user-research, interview-data]
+artifactType: guidance
 role: researcher.ux
 applies_to:
   - cx-ux-researcher

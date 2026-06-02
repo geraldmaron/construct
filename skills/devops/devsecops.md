@@ -1,6 +1,8 @@
 ---
 name: devops-devsecops
 description: Use this skill when integrating security into CI/CD pipelines, managing supply chain risk, or automating security scanning.
+inputs: [pipeline-config, service]
+artifactType: security-plan
 ---
 # DevSecOps
 

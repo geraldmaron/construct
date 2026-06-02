@@ -165,12 +165,14 @@ async function showInteractiveMenu() {
   }
 }
 
-function runNodeScript(scriptPath, args = [], extraEnv = {}) {
+function runNodeScript(scriptPath, args = [], extraEnv = {}, { exitOnError = true } = {}) {
   const result = spawnSync(process.execPath, [scriptPath, ...args], {
     stdio: 'inherit',
     env: { ...process.env, ...extraEnv },
   });
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  const status = result.status ?? 1;
+  if (status !== 0 && exitOnError) process.exit(status);
+  return status;
 }
 
 async function cmdStatus() {
@@ -238,12 +240,24 @@ async function cmdShow() {
 }
 
 async function cmdSync(args) {
+  const { startOpLog } = await import('../lib/op-log.mjs');
+  const opLog = startOpLog('sync', { homeDir: HOME });
+  opLog.event('args', { args });
+
   generateCompletions();
-  runNodeScript(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), args);
-  if (args.includes('--no-docs')) return;
+  const syncStatus = runNodeScript(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), args, {}, { exitOnError: false });
+  if (syncStatus !== 0) {
+    opLog.close('failed', { stage: 'sync-specialists', status: syncStatus });
+    process.exit(syncStatus);
+  }
+  if (args.includes('--no-docs')) {
+    opLog.close('ok', { docs: 'skipped' });
+    return;
+  }
   const { regenerateDocs } = await import('../lib/auto-docs.mjs');
   const { changed } = await regenerateDocs({ rootDir: ROOT_DIR });
   for (const f of changed) ok(`Updated ${path.relative(ROOT_DIR, f)}`);
+  opLog.close('ok', { docsChanged: changed.length });
 }
 
 async function cmdCompletions(args) {
@@ -498,9 +512,9 @@ async function cmdDoctor() {
 
   // (Pre-push bypass doctor check removed in v1.0.16.) v1.0.15 deleted the
   // entire skip-var infrastructure (CONSTRUCT_SKIP_PREPUSH, _COMMENT_LINT,
-  // _PR_LINT, _DOCS, CONSTRUCT_ALLOW_CLAUDE_PUSH). There is no longer any
-  // writer to ~/.construct/audit/prepush-bypass.log, so any historical
-  // entries are stale and the warning surfaced forever. The file itself
+  // _PR_LINT, _DOCS, CONSTRUCT_ALLOW_CLAUDE_PUSH). Nothing writes to
+  // ~/.construct/audit/prepush-bypass.log, so any entries there are stale
+  // and would otherwise surface the warning indefinitely. The file itself
   // is harmless — next cleanup tick may sweep it.
 
   // Embed daemon log size. The daemon's own scheduler rotates every
@@ -1071,15 +1085,77 @@ async function cmdDoctor() {
   if (failCount > 0) process.exit(1);
 }
 
-async function cmdUp() {
+// Resolve which services `construct dev` should start. Returns null (start
+// everything) unless --only= or --select narrows it. Unknown --only keys fail
+// loud rather than silently starting the wrong set; --select on a non-TTY is an
+// error pointing at --only so scripts get a deterministic path.
+async function resolveServiceSelection(args, selectable) {
+  const validKeys = new Set(selectable.map((s) => s.key));
+  const onlyArg = args.find((a) => a.startsWith('--only='));
+
+  if (onlyArg) {
+    const keys = onlyArg.slice('--only='.length).split(',').map((k) => k.trim()).filter(Boolean);
+    const unknown = keys.filter((k) => !validKeys.has(k));
+    if (unknown.length) {
+      errorln(`Unknown service(s) for --only: ${unknown.join(', ')}`);
+      errorln(`Valid services: ${[...validKeys].join(', ')}`);
+      process.exit(1);
+    }
+    if (keys.length === 0) {
+      errorln('--only requires at least one service.');
+      process.exit(1);
+    }
+    return new Set(keys);
+  }
+
+  if (args.includes('--select')) {
+    if (!process.stdin.isTTY) {
+      errorln('--select needs an interactive terminal. Use --only=<a,b,c> in scripts.');
+      errorln(`Valid services: ${[...validKeys].join(', ')}`);
+      process.exit(1);
+    }
+    const { multiSelect } = await import('../lib/tty-prompts.mjs');
+    try {
+      const chosen = await multiSelect({
+        title: 'Start which services?',
+        instructions: 'Pressure Guard and Doctor always run. Space toggles, Enter confirms.',
+        options: selectable.map((s) => ({ label: s.label, value: s.key, description: s.description, checked: true })),
+      });
+      if (!chosen.length) {
+        errorln('No services selected — nothing to start.');
+        process.exit(1);
+      }
+      return new Set(chosen);
+    } catch {
+      errorln('Service selection canceled.');
+      process.exit(1);
+    }
+  }
+
+  return null;
+}
+
+async function cmdUp(args = []) {
+  const { SELECTABLE_SERVICES } = await import('../lib/service-manager.mjs');
+
+  // --only=a,b,c picks services non-interactively; --select opens a checklist.
+  // Both resolve to a Set of service keys (null = start everything).
+
+  const selected = await resolveServiceSelection(args, SELECTABLE_SERVICES);
+
+  const { startOpLog } = await import('../lib/op-log.mjs');
+  const opLog = startOpLog('dev', { homeDir: HOME });
+  opLog.event('selection', { services: selected ? [...selected] : 'all' });
+
   // Auto-magic health check — catch missing prerequisites before starting services
   const { quickHealthCheck, detectCredentials, resolveCredentials } = await import('../lib/health-check.mjs');
-  
+
   // Resolve credentials from env, .env files, and 1Password before starting services
   const resolvedCreds = await resolveCredentials({ homeDir: HOME });
-  
+
   const health = await quickHealthCheck({ homeDir: HOME, showCredentials: true });
-  
+  opLog.event('prereq', { ok: health.ok, missing: health.missing ?? [] });
+
   if (!health.ok) {
     errorln('Prerequisites missing for starting services:');
     for (const item of health.missing) {
@@ -1087,10 +1163,12 @@ async function cmdUp() {
     }
     println('');
     info('Run `construct install --yes` to install missing dependencies.');
+    opLog.close('failed', { reason: 'prerequisites-missing' });
     process.exit(1);
   }
-  
-  const { results, recovery } = await startServices({ rootDir: ROOT_DIR, homeDir: HOME });
+
+  const { results, recovery } = await startServices({ rootDir: ROOT_DIR, homeDir: HOME, selected });
+  opLog.event('services', { results: results.map((r) => ({ name: r.name, status: r.status })) });
   for (const svc of results) {
     const label = svc.url ? `${svc.name} → ${svc.url}` : svc.name;
     if (svc.status === 'started') ok(svc.note ? `${label} (${svc.note})` : label);
@@ -1128,8 +1206,10 @@ async function cmdUp() {
     try {
       const { runEmbedCli } = await import('../lib/embed/cli.mjs');
       await runEmbedCli(['start'], { rootDir: ROOT_DIR });
+      opLog.event('embed', { status: 'started' });
     } catch (err) {
       warn(`embed start failed: ${err.message} — check ~/.cx/runtime/embed-daemon.log`);
+      opLog.warn('embed', { status: 'failed', error: err.message });
     }
   }
 
@@ -1176,6 +1256,9 @@ async function cmdUp() {
   println('Dashboard: http://127.0.0.1:4242');
   println('Run \x1b[32mconstruct\x1b[0m for commands');
   println('');
+
+  const failed = results.filter((r) => r.status === 'error' || r.status === 'failed');
+  opLog.close(failed.length ? 'degraded' : 'ok', { failed: failed.map((r) => r.name) });
 }
 
 async function cmdDown() {
@@ -1304,7 +1387,14 @@ async function cmdReview(args) {
   process.exit(1);
 }
 
-async function cmdInit(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'init-unified.mjs'), args); }
+async function cmdInit(args) {
+  const { startOpLog } = await import('../lib/op-log.mjs');
+  const opLog = startOpLog('init', { homeDir: HOME });
+  opLog.event('args', { args });
+  const status = runNodeScript(path.join(ROOT_DIR, 'lib', 'init-unified.mjs'), args, {}, { exitOnError: false });
+  opLog.close(status === 0 ? 'ok' : 'failed', { status });
+  if (status !== 0) process.exit(status);
+}
 async function cmdDocsVerify(args) { runNodeScript(path.join(ROOT_DIR, 'lib', 'docs-verify.mjs'), args); }
 async function cmdInitUpdate(args) { 
   runNodeScript(path.join(ROOT_DIR, 'lib', 'init-update.mjs'), args);
@@ -1747,7 +1837,22 @@ async function cmdHosts() {
     printHostCapabilities();
   }
 }
-async function cmdSetup(args) { await runSetup({ rootDir: ROOT_DIR, args, homeDir: HOME }); }
+async function cmdSetup(args) {
+  const { startOpLog } = await import('../lib/op-log.mjs');
+  const opLog = startOpLog('install', { homeDir: HOME });
+  opLog.event('args', { args });
+  try {
+    await runSetup({ rootDir: ROOT_DIR, args, homeDir: HOME });
+    opLog.close('ok');
+  } catch (err) {
+    opLog.error('setup', { error: err.message });
+    opLog.close('failed');
+    errorln(`\nSetup did not complete: ${err.message}`);
+    errorln('  -> Diagnose with: construct doctor');
+    errorln('  -> Re-run setup:  construct install   (add --reconfigure to re-prompt for services)');
+    process.exit(1);
+  }
+}
 
 function printConfigModeHelp() {
   println('Construct config — inspect and set deployment posture.');
@@ -1841,12 +1946,55 @@ function formatIntakeTable(rows, { intakeQueueLabel, signalNoun } = { intakeQueu
   for (const row of rows) println(fmt(row));
 }
 
+// Embedded triage/planning surface — classifies an artifact and returns a
+// role-aware plan with no enqueue and no durable write. Shared by
+// `intake classify` and `graph recommend`. Input comes from --text, --file, or
+// stdin; --no-enqueue is accepted for explicitness (this path never enqueues).
+
+async function cmdEmbeddedTriage(args) {
+  const flag = (name) => { const i = args.indexOf(name); return i !== -1 ? args[i + 1] : undefined; };
+  const fileArg = flag('--file');
+  let input = flag('--text') || '';
+  let ingestion = null;
+  if (!input && fileArg) {
+    const { resolveInput } = await import('../lib/embedded-contract/ingest.mjs');
+    const resolved = await resolveInput({ filePath: fileArg });
+    input = resolved.text;
+    ingestion = resolved.error ? { ...(resolved.ingestion || {}), error: resolved.error } : resolved.ingestion;
+  }
+  if (!input && !process.stdin.isTTY) {
+    input = fs.readFileSync(0, 'utf8');
+  }
+  if (!input.trim() && !ingestion?.error) {
+    errorln('Usage: construct intake classify --json [--text "..." | --file <path> | <stdin>] [--source <path>] [--artifact-type <t>] [--available-roles a,b]');
+    process.exit(1);
+  }
+  const request = {
+    input,
+    sourcePath: flag('--source') || (fileArg || ''),
+    ingestion,
+    artifactType: flag('--artifact-type'),
+    domain: flag('--domain'),
+    desiredOutcome: flag('--desired-outcome'),
+    constraints: flag('--constraints')?.split(',').map((s) => s.trim()).filter(Boolean),
+    availableRoles: flag('--available-roles')?.split(',').map((s) => s.trim()).filter(Boolean),
+  };
+  const { recommendPlan } = await import('../lib/embedded-contract/triage.mjs');
+  const { wrapContractResult } = await import('../lib/embedded-contract/envelope.mjs');
+  const envelope = wrapContractResult(recommendPlan(request), { surface: 'cli' });
+  println(JSON.stringify(envelope, null, 2));
+}
+
 async function cmdIntake(args) {
   const sub = args[0];
 
   if (!sub || sub === '--help' || sub === '-h') {
     await printIntakeHelp();
     return;
+  }
+
+  if (sub === 'classify') {
+    return await cmdEmbeddedTriage(args.slice(1));
   }
 
   const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
@@ -2941,6 +3089,10 @@ async function cmdGraph(args) {
   const sub = args[0];
   if (!sub || sub === '--help' || sub === '-h') { printGraphHelp(); return; }
 
+  if (sub === 'recommend') {
+    return await cmdEmbeddedTriage(args.slice(1));
+  }
+
   const { FilesystemTaskGraphStore } = await import('../lib/task-graph/store.mjs');
   const { generateTaskGraphFromTriage } = await import('../lib/task-graph/generate.mjs');
   const cwd = process.cwd();
@@ -3174,6 +3326,23 @@ async function cmdValidate() {
 }
 
 async function cmdModels(args) {
+  if (args[0] === 'resolve') {
+    const flag = (name) => { const i = args.indexOf(name); return i !== -1 ? args[i + 1] : undefined; };
+    const { resolveEmbeddedModel } = await import('../lib/embedded-contract/model-resolve.mjs');
+    const { wrapContractResult } = await import('../lib/embedded-contract/envelope.mjs');
+    const request = {
+      workflowType: flag('--workflow-type'),
+      requestedTier: flag('--tier'),
+      host: flag('--host'),
+      hostModel: flag('--host-model'),
+      hostProvider: flag('--host-provider'),
+      capabilities: flag('--capabilities')?.split(',').map((s) => s.trim()).filter(Boolean),
+      allowCrossProviderFallback: args.includes('--allow-cross-provider'),
+    };
+    const envelope = wrapContractResult(resolveEmbeddedModel(request), { surface: 'cli' });
+    println(JSON.stringify(envelope, null, 2));
+    return;
+  }
   const tier = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1] ?? '';
   const setModel = args.find((arg) => arg.startsWith('--set='))?.split('=')[1] ?? '';
   const envPath = getUserEnvPath(HOME);
@@ -4571,8 +4740,55 @@ async function cmdProviders(args) {
   process.exit(1);
 }
 
+// Capability discovery surface — a read-only, secret-free description of the
+// installed Construct's capabilities, for embedding applications.
+
+async function cmdCapability(args) {
+  const sub = args[0];
+  if (sub && sub !== 'describe' && !sub.startsWith('--')) {
+    errorln(`Unknown capability subcommand: ${sub}. Available: describe`);
+    process.exit(1);
+  }
+  const { buildCapabilityContract } = await import('../lib/embedded-contract/capability.mjs');
+  const { wrapContractResult } = await import('../lib/embedded-contract/envelope.mjs');
+  const envelope = wrapContractResult(buildCapabilityContract({ rootDir: ROOT_DIR }), { surface: 'cli' });
+  println(JSON.stringify(envelope, null, 2));
+}
+
 async function cmdWorkflow(args) {
   const sub = args[0] || 'list';
+
+  if (sub === 'invoke') {
+    const rest = args.slice(1);
+    const flag = (name) => { const i = rest.indexOf(name); return i !== -1 ? rest[i + 1] : undefined; };
+    let input = flag('--text') || '';
+    const fileArg = flag('--file');
+    let ingestion = null;
+    if (!input && fileArg) {
+      const { resolveInput } = await import('../lib/embedded-contract/ingest.mjs');
+      const resolved = await resolveInput({ filePath: fileArg });
+      input = resolved.text;
+      ingestion = resolved.error ? { ...(resolved.ingestion || {}), error: resolved.error } : resolved.ingestion;
+    }
+    if (!input && !process.stdin.isTTY) input = fs.readFileSync(0, 'utf8');
+    const request = {
+      workflowType: flag('--workflow-type'),
+      input,
+      ingestion,
+      roleStrategy: flag('--role-strategy'),
+      requestedRoles: flag('--roles')?.split(',').map((s) => s.trim()).filter(Boolean),
+      approvalMode: flag('--approval-mode'),
+      trace: !rest.includes('--no-trace'),
+      host: flag('--host'),
+      hostModel: flag('--host-model'),
+      hostProvider: flag('--host-provider'),
+    };
+    const { invokeWorkflow } = await import('../lib/embedded-contract/workflow-invoke.mjs');
+    const { wrapContractResult } = await import('../lib/embedded-contract/envelope.mjs');
+    const envelope = wrapContractResult(await invokeWorkflow(request), { surface: 'cli' });
+    println(JSON.stringify(envelope, null, 2));
+    return;
+  }
 
   if (sub === 'list') {
     const { existsSync, readdirSync } = await import('node:fs');
@@ -4951,6 +5167,7 @@ const handlers = new Map([
   ['creds', cmdCreds],
   ['providers', cmdProviders],
   ['workflow', cmdWorkflow],
+  ['capability', cmdCapability],
   ['tags', cmdTags],
   ['scheduler', cmdScheduler],
   ['lint:research', cmdLintResearch],
@@ -4994,13 +5211,11 @@ const handlers = new Map([
   ['roles:list', async (args) => {
     const { listRoles, formatRoleList } = await import('../lib/roles/catalog.mjs');
     const json = args.includes('--json');
-    const departments = args.includes('--departments');
-    const consolidated = args.includes('--consolidated');
-    
+
     if (json) {
-      println(JSON.stringify(listRoles({ departments, consolidated }), null, 2));
+      println(JSON.stringify(listRoles(), null, 2));
     } else {
-      process.stdout.write(formatRoleList({ departments, consolidated }));
+      process.stdout.write(formatRoleList());
     }
   }],
   ['roles:set', async (args) => {
@@ -5921,7 +6136,7 @@ if (!handler) {
 // commands like `dev`, `stop`, `init`, `uninstall` silently ignore --help
 // and execute (running `construct stop --help` actually stops services).
 // Every command — including internal ones — gets the same shape via
-// formatCommandHelp(); per-command handlers no longer need to opt in.
+// formatCommandHelp(); per-command handlers need no opt-in.
 
 if (rest.includes('--help') || rest.includes('-h')) {
   process.stdout.write(formatCommandHelp(command, { colors: true }));
