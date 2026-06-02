@@ -247,7 +247,7 @@ jobs:
           echo "Trusted Publishers exchange will happen inside npm publish."
 
       - name: Download all binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dist/
           pattern: binary-*
