@@ -235,6 +235,13 @@ jobs:
         # surface. Mirrors the pre-push gate in lib/hooks/pre-push-gate.mjs.
         run: npm audit --omit=dev --audit-level=high --workspaces=false
 
+      - name: consumer-perspective audit (packed artifact, no overrides)
+        # The repo audit above applies this package.json's `overrides`, which a
+        # consumer never receives. This step packs the artifact and audits the
+        # tree a downstream `npm install` actually resolves — the only check that
+        # catches transitive CVEs a repo-local override would otherwise mask.
+        run: npm run audit:published
+
   secret-scan:
     name: secret scanning
     runs-on: ubuntu-latest
