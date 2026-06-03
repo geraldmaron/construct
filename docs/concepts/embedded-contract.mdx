@@ -90,7 +90,7 @@ Only workflow invocation can produce durable side effects, and only under the ap
 | `requires-human-approval` | none (records an approval request) | `awaiting-approval` |
 | `allow-durable-write` | records the invocation to the observation store | `recorded` |
 
-On `team`/`enterprise` deployments, durable writes are flagged as mandatorily audited. Each invocation carries a `traceId` for correlating downstream provenance. Construct returns the orchestration plan and the output contract; the host agent runtime performs the specialist reasoning, so the contract never fabricates specialist output.
+On `team`/`enterprise` deployments, durable writes are flagged as mandatorily audited. Each invocation carries a `traceId` for correlating downstream provenance. Construct returns the orchestration plan and the output contract; in the embedded layer the host agent runtime performs the specialist reasoning, so the contract never fabricates specialist output. (The standalone local orchestration runtime — see [Architecture](./architecture.mdx#local-orchestration-runtime-host-independent) — can additionally *execute* specialist tasks itself via the opt-in `provider` worker backend, recording real model output; the descriptive contract here is unchanged.)
 
 ## Safety invariants
 

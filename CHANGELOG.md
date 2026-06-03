@@ -5,6 +5,22 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Added
+- Local orchestration runtime — provider worker backend and pluggable run stores (GH #207, completing the runtime).
+  A new `provider` worker backend (`lib/orchestration/worker.mjs`, `runTaskViaProvider`) **executes** a specialist
+  task by calling the configured provider/model (Anthropic `/v1/messages` for Claude-family models, OpenRouter
+  `/v1/chat/completions` otherwise) with the specialist persona prompt as system context — recording real model
+  output as `task.output` and `executor='provider:<provider>:<model>'`, status `done`; a provider failure is recorded
+  (status `failed`, `task.error`) and the run completes `completed-with-failures` rather than crashing. The `inline`
+  backend stays the default and remains prepare-only (ADR-0020). Pluggable run stores behind one interface
+  (`lib/orchestration/store.mjs`, `resolveRunStore`): filesystem (Mode-A default), SQLite Mode-B
+  (`lib/orchestration/run-store-sqlite.mjs`, lazy `node:sqlite`, `sqliteAvailable()` — falls back on Node <22.5),
+  Postgres Mode-C (`lib/orchestration/run-store-postgres.mjs`, `PostgresRunStore` over `createSqlClient`). Store
+  selection follows `orchestration.store` config / `CONSTRUCT_ORCHESTRATION_STORE` env override, else deployment mode
+  (solo→filesystem, team/enterprise→postgres), degrading to filesystem with a warning when a backend is unavailable.
+  New config block `orchestration: { workerBackend, store }` (`lib/config/schema.mjs`). Filesystem + inline stays the
+  byte-for-byte-unchanged default. Decision recorded in ADR-0021 (refining ADR-0020 for the provider backend; extending
+  ADR-0019). Tests: `tests/orchestration-{worker,run-store-sqlite,run-store-postgres,store-resolver}.test.mjs`,
+  extended `tests/orchestration-runtime.test.mjs` (sqlite suite skips on Node <22.5; postgres suite skips with no DATABASE_URL).
 - Execution metadata on live embedded runs (GH #206, completing the cluster): `invokeWorkflow` now returns an
   `execution` block (`executionMode`, `effectiveStrategy`, `requestedStrategy`, `constructCapabilitiesActive`,
   `degraded`/`degradationReason`, `semantics`) reporting the **planned** execution mode for the run, and
