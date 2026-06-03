@@ -4,6 +4,28 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+- Observation embedding reconciliation — an idempotent pass (`lib/embed/reconcile.mjs`,
+  `construct storage reconcile`) that re-embeds Postgres observation rows that are missing (DB was down
+  at write) or stale (content edited, or embedding model changed), keyed on `(content_hash, model)`.
+  Schema migration `db/schema/003_observation_reconciliation.sql` adds the `content_hash`/`model` stamp to
+  `construct_observations`; the `construct embed` model-change re-embed now re-dimensions and reconciles
+  observations alongside documents, so both corpora stay in one vector space. Validated end-to-end against
+  pgvector 0.8.2.
+- `lib/storage/rrf.mjs` — Reciprocal Rank Fusion (rank-only, scale-independent) for hybrid retrieval.
+- `docs/research/vector-search-best-practices.md` — cited, adversarially-verified research note grounding
+  the reconciliation and hybrid-search decisions.
+
+### Changed
+- Consolidated hybrid search into one path (`lib/storage/hybrid-query.mjs`): file BM25 + native pgvector
+  HNSW ANN (`<=>`, with `hnsw.iterative_scan` enabled on pgvector ≥ 0.8) + keyword, fused by Reciprocal
+  Rank Fusion instead of a dedupe-union of incompatible score scales (BM25 vs cosine vs keyword). The
+  vector search now uses the HNSW index rather than a JS full scan. Validated against pgvector 0.8.2.
+
+### Removed
+- `lib/knowledge/postgres-search.mjs` — its tag-aware selectivity routing is subsumed by the native
+  `hnsw.iterative_scan` in the consolidated path; the module had zero callers.
+
 ## [1.0.18] - 2026-06-03
 
 ### Security
