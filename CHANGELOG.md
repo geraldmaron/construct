@@ -34,6 +34,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
   resource (version, deployment mode, broker, capabilities). Also fixed `getInstalledVersion()` being used as a
   string when it returns an object. Test: `tests/mcp-server-identity.test.mjs`; tools unchanged (65).
 
+## [1.0.19] - 2026-06-03
+
 ### Changed
 - Toolchain pinning (`construct-y3i5`): added `.tool-versions` (Node + Terraform) as the single source of
   truth read by `mise`/`asdf` locally and by `actions/setup-node` (`node-version-file`) across CI — replacing
