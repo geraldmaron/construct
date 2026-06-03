@@ -54,6 +54,8 @@
     "test": "node scripts/run-tests.mjs",
     "test:functional": "node --test --test-timeout=120000 --test-concurrency=1 tests/functional/*.functional.test.mjs",
     "test:unit": "node scripts/run-tests.mjs --exclude=tests/functional",
+    "lint:js": "eslint bin/construct \"lib/**/*.mjs\" \"scripts/**/*.mjs\" \"tests/**/*.mjs\"",
+    "coverage": "c8 --reporter=text-summary --reporter=lcov --src=lib --src=bin node scripts/run-tests.mjs --exclude=tests/functional",
     "docs:init": "node lib/init-docs.mjs --yes",
     "docs:update": "node ./bin/construct docs:update",
     "docs:site": "node ./bin/construct docs:site",
@@ -92,5 +94,11 @@
   },
   "overrides": {
     "express-rate-limit": "8.5.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "c8": "^11.0.0",
+    "eslint": "^9.39.4",
+    "globals": "^17.6.0"
   }
 }

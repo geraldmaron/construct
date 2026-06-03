@@ -5,6 +5,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Added
+- ESLint (flat config, `eslint.config.mjs`) for AST-level bug detection, complementing the custom comment
+  policy. Deliberately bug-focused (no style rules): `no-undef`, `no-unreachable`, `no-empty`, etc.;
+  `no-unused-vars` is a non-gating warning. Wired into the CI `lint` job (`npm run lint:js`).
+- `c8` code coverage (`npm run coverage`), report-only on `main` pushes.
 - Observation embedding reconciliation — an idempotent pass (`lib/embed/reconcile.mjs`,
   `construct storage reconcile`) that re-embeds Postgres observation rows that are missing (DB was down
   at write) or stale (content edited, or embedding model changed), keyed on `(content_hash, model)`.
@@ -21,6 +25,19 @@ All notable changes to Construct are documented here. The format follows [Keep a
   HNSW ANN (`<=>`, with `hnsw.iterative_scan` enabled on pgvector ≥ 0.8) + keyword, fused by Reciprocal
   Rank Fusion instead of a dedupe-union of incompatible score scales (BM25 vs cosine vs keyword). The
   vector search now uses the HNSW index rather than a JS full scan. Validated against pgvector 0.8.2.
+
+### Fixed
+- **`lib/hooks/guard-bash.mjs` had a `SyntaxError`** (`await` inside a non-async IIFE) — the command-fence
+  safety hook failed to parse and ran no protection. Now parses and enforces. Caught by ESLint.
+- Five `no-undef` runtime bugs surfaced by ESLint: undefined `INDEX_FILE` / `PROFILES_DIR` / `multiSelect`
+  / `selectOption` / `path` / `TRACES_DIR` references (`lib/embed/conflict-detection.mjs`,
+  `lib/embed/customer-profiles.mjs`, `lib/init-docs.mjs`, `lib/mode-commands.mjs`,
+  `lib/telemetry/backends/local.mjs`) — each would throw on its code path. Includes removing ESM-broken
+  `require()` calls in the same files.
+- `lib/hooks/config-protection.mjs` no longer blocks *introducing* a new code-quality config — it only
+  protects a config once it is git-tracked (an established contract). Previously first-time setup (e.g.
+  adding ESLint) was blocked the same as weakening an existing config. Guarded by
+  `tests/hooks/config-protection.test.mjs`.
 
 ### Removed
 - `lib/knowledge/postgres-search.mjs` — its tag-aware selectivity routing is subsumed by the native
