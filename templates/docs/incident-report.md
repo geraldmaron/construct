@@ -3,44 +3,60 @@
 - **Incident ID**: {INC-NNNN}
 - **Date**: {YYYY-MM-DD}
 - **Severity**: SEV-1 | SEV-2 | SEV-3
-- **Duration**: {start} → {end} ({total})
-- **Authors**: {names}
+- **Duration**: {detection} → {all-clear} ({total}; time-to-detect {ttd}, time-to-mitigate {ttm})
+- **Authors**: {names — include everyone who responded}
 - **Status**: draft | final
 
+<!--
+Blameless postmortem. Describe systems and decisions, not people. Neutral, factual
+language — no dramatic or animated descriptions. Publish within days while detail is
+fresh, and share widely. See Google SRE postmortem culture:
+https://sre.google/workbook/postmortem-culture/
+-->
+
 ## Summary
-<!-- Two to four sentences. What happened, who was affected, how it was resolved. Blameless tone. -->
+<!-- Two to four sentences: what happened, who was affected, how it was resolved. Blameless tone. -->
+
+## Severity rationale
+<!-- Why this severity and not one higher or lower? State the criteria (user impact, data integrity, duration, blast radius). If it was reclassified mid-incident, say when and why. -->
 
 ## Impact
-<!-- Users affected, requests failed, revenue lost, data integrity consequences. Quantify. -->
+<!-- Quantify: users affected, requests failed, error rate, revenue, data-integrity consequences. "Unknown" is acceptable; a guess is not. -->
 
 ## Timeline
-<!-- Times in UTC. Key events: detection, diagnosis, mitigation, resolution, all-clear. One line per event. -->
+<!-- Times in UTC, one line per event. Mark the key transitions explicitly: detection, diagnosis, mitigation start, resolution, all-clear. The gaps between them are the response story. -->
 
-| Time (UTC) | Event |
-|------------|-------|
-| {HH:MM}    | {what happened or what was done} |
+| Time (UTC) | Event | Phase |
+|------------|-------|-------|
+| {HH:MM}    | {what happened or was done} | detection / diagnosis / mitigation / resolution |
+
+## Trigger
+<!-- The proximate cause — the specific change, event, or input that set the incident off (a deploy, a traffic spike, a dependency failure). Distinct from the root cause. -->
 
 ## Root cause
-<!-- The underlying cause, not just the proximate trigger. The five-whys, condensed. -->
+<!-- The underlying system condition that let the trigger cause harm. The five-whys, condensed. A root cause is a system/design gap, never a person. -->
 
 ## Contributing factors
-<!-- Conditions that made the incident possible, worse, or harder to resolve. Include process gaps, not just code. -->
+<!-- Conditions that made the incident possible, worse, or harder to resolve: missing alerts, brittle dependencies, process gaps, absent runbook. Not the root cause, but they shaped the outcome. -->
 
-## What went well
-<!-- Detection, response, communication, tooling. Keep this honest. -->
+## Mitigators
+<!-- What went right and reduced blast radius — a circuit breaker that tripped, a canary that caught it, a fast rollback. These are as instructive as the failures; preserve them. -->
 
-## What went poorly
-<!-- Be specific. Blameless, not blameless-to-the-point-of-vague. -->
+## Detection and response
+<!-- How was it detected (alert, customer report, dashboard)? Was detection fast enough? What slowed diagnosis or mitigation? Be specific and blameless. -->
 
-## Corrective actions
-<!-- Each action: owner, deadline, ticket link. Prefer systemic fixes over "be more careful". -->
+## Action items
+<!-- Each action: systemic fix preferred over "be more careful". Owner, priority, and tracking ID required. Priority: P0 (prevents recurrence, do now) → P2 (hardening). -->
 
-| Action | Owner | Deadline | Ticket |
-|--------|-------|----------|--------|
-| {what} | {who} | {date}   | {link} |
+| Action | Type (prevent/detect/mitigate) | Owner | Priority | Tracking |
+|--------|--------------------------------|-------|----------|----------|
+| {what} | {prevent/detect/mitigate}      | {who} | P0/P1/P2 | {bd or ticket} |
 
 ## Lessons learned
-<!-- What this incident revealed about the system or the organization. -->
+<!-- Organized by theme. What did this reveal about the system or the organization that generalizes beyond this incident? -->
+
+## Glossary
+<!-- Define domain-specific terms, service names, and acronyms used above so a reader outside the team can follow the report. -->
 
 ## References
-<!-- Logs, dashboards, traces, related incidents, PRs that caused or fixed the issue. -->
+<!-- Logs, dashboards, traces (with IDs preserved), related incidents, the PRs that caused and that fixed the issue. -->

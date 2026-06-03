@@ -23,14 +23,16 @@
 
 ## Sources
 
-| Title / Path | Class | Date | URL | Verified | Relevance |
-|---|---|---|---|---|---|
-| {source title or file path} | primary / secondary / tertiary | {YYYY-MM-DD} | {URL or path} | yes / no / n/a | {one-line} |
+| Title / Path | Class | Reliability | Credibility | Date | URL | Verified | Relevance |
+|---|---|---|---|---|---|---|---|
+| {source title or file path} | primary / secondary / tertiary | A–F | 1–6 | {YYYY-MM-DD} | {URL or path} | yes / no / n/a | {one-line} |
 
-<!-- Class definitions:
-  - primary: peer-reviewed papers, official docs at exact version, raw source code, standards, company announcements, SEC filings
+<!-- Class is relative to the claim (rules/common/research.md §2): community/forum content is
+  primary for sentiment/experience claims, tertiary for factual ones.
+  - primary: peer-reviewed papers, official docs at exact version, raw source code, standards, company announcements, SEC filings; first-hand accounts for the attitude they express
   - secondary: changelogs, migration guides, tracked issues, maintainer posts, conference talks by authors
-  - tertiary: blog posts, forums, Q&A, analyst summaries: for discovery only, never as evidence
+  - tertiary: blog posts, forums, Q&A, analyst summaries: for factual claims, discovery only
+  Reliability (A–F) and Credibility (1–6) are the Admiralty grade (research.md §10); record both, e.g. B2.
   Mark Verified = yes only after fetching the URL and confirming content matches. -->
 
 ## Findings

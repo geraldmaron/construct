@@ -46,7 +46,9 @@ When querying search engines or paper indexes, always filter or sort by date: ne
 
 1. **Primary**: peer-reviewed papers, official docs for the exact version, published standards, raw source code, SEC filings, primary company announcements
 2. **Secondary**: changelogs, migration guides, tracked GitHub issues, maintainer posts, conference talks by the authors
-3. **Tertiary**: blog posts, forums, Q&A, analyst summaries, AI-generated overviews: used only to locate primaries, never as evidence
+3. **Tertiary**: blog posts, forums, Q&A, analyst summaries, AI-generated overviews: used only to locate primaries, never as evidence for factual claims
+
+Class is relative to the claim (`rules/common/research.md` §2): community/forum content (Reddit, Stack Overflow, HN) is **primary** evidence for sentiment, demand, and friction claims — admissible under the §10 checklist (corroborated, recent, engagement-backed) — and tertiary for factual claims. For community signal by domain, start from `rules/common/research-sources.md`. Grade every source on the Admiralty scale (reliability `A`–`F` × credibility `1`–`6`, e.g. `B2`) and map confidence accordingly: `high` only on `A1`/`A2`/`B1`.
 
 ### Step 4: Check internal evidence
 
@@ -76,7 +78,7 @@ Produce a research brief using the structure from `get_template("research-brief"
 
 **METHOD**: search terms, systems queried, date filters applied, domain starting points used, internal paths checked; enough detail to reproduce
 
-**SOURCES**: structured table: title/path | class (primary/secondary/tertiary) | date | URL | verified (yes/no) | relevance
+**SOURCES**: structured table: title/path | class (primary/secondary/tertiary) | reliability (A–F) | credibility (1–6) | date | URL | verified (yes/no) | relevance
 
 **FINDINGS**: each finding labeled: what the source says (observation) | what is inferred (inference) | confidence (high/medium/low) | supporting source(s)
 

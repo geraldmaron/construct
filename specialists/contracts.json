@@ -134,6 +134,18 @@
           "section": "Rejected Alternatives"
         },
         {
+          "id": "adr-reversibility-stated",
+          "description": "ADR Reversibility section is present and non-empty",
+          "check": "artifact-section-nonempty",
+          "section": "Reversibility"
+        },
+        {
+          "id": "adr-consequences-stated",
+          "description": "ADR Consequences section is present and non-empty",
+          "check": "artifact-section-nonempty",
+          "section": "Consequences"
+        },
+        {
           "id": "adr-numeric-claims-cited",
           "description": "Every numeric claim in the ADR body cites a source",
           "check": "artifact-claims-cited"
@@ -546,6 +558,12 @@
           "description": "Strategic memo must contain a Market Context section",
           "check": "artifact-has-section",
           "section": "Market Context"
+        },
+        {
+          "id": "strategic-memo-options-nonempty",
+          "description": "Strategic memo Options section is present and non-empty",
+          "check": "artifact-section-nonempty",
+          "section": "Options"
         },
         {
           "id": "strategic-memo-has-strategic-risks",

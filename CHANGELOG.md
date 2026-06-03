@@ -5,6 +5,95 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Added
+- Research-grade remediation (epic `construct-7zrh`), source taxonomy:
+  - `docs/adr/0017-source-credibility-taxonomy.md` + `rules/common/research.md` — **claim-relative source
+    classing** (community/forum content is *primary* evidence for sentiment/demand/friction claims, tertiary
+    for factual ones), a community-source admissibility checklist, and the **Admiralty grade** (source
+    reliability `A`–`F` × information credibility `1`–`6`, mapped onto `high/medium/low` confidence).
+  - `rules/common/research-sources.md` — per-domain community starting-points catalog (which subreddits / SO
+    tags / HN by domain) for sentiment research.
+  - Research templates (`research-brief`, `evidence-brief`) gain `Reliability`/`Credibility` columns; the
+    cx-researcher prompt teaches the rule. ADR-0017 enforced via `tests/source-taxonomy.test.mjs`.
+  - Document quality standard (`docs/adr/0018-document-quality-standard.md`, `docs/concepts/doc-quality-rubric.md`):
+    a seven-dimension definition of "research-grade" with an enforced structural floor — `STRUCTURE_REQUIREMENTS`
+    in `lib/templates/visual-requirements.mjs` declares the required sections per doc type, and
+    `tests/structure-requirements.test.mjs` fails if a template drops one. ADR-0018 enforced.
+
+### Changed
+- Thin templates raised to research-grade (epic `construct-7zrh`): `templates/docs/incident-report.md` (trigger
+  vs root cause vs contributing factors, severity rationale, mitigators, timeline phases, action items with
+  owner/priority/tracking, glossary — Google SRE postmortem culture), `skill-artifact.md` (competency rubric,
+  prerequisites, failure modes, worked example), `research-finding.md` (sources table with Admiralty grade,
+  observation/inference split, confidence reasoning, refresh trigger). Each is now enforced by
+  `STRUCTURE_REQUIREMENTS`.
+- Evaluator and orchestrator role overlays deepened with positive methodology: `skills/roles/reviewer.evaluator.md`
+  gains rubric design, ground-truth/inter-rater reliability, false-positive-vs-false-negative cost asymmetry, and
+  statistical-significance discipline; `skills/roles/orchestrator.md` gains dependency-graph/wave sequencing,
+  critical-path focus, and fan-out bounding.
+- `docs/concepts/template-prompt-audit.md` — quality audit of every template and specialist prompt against the
+  rubric (strong/adequate/thin + sourced gaps); the backlog source of truth for Phases C/D.
+- Enforcement & Decision-Durability program (epic `construct-wvbf`), first slice — the anti-drift spine:
+  - `docs/adr/0015-affirm-hybrid-architecture.md` — affirms the hybrid markdown + deterministic-enforcement
+    architecture (do not migrate to a pure policy engine), with a completeness audit and a gap register.
+  - `lib/decisions/registry.mjs` + `construct decisions` — a machine-readable registry computed from source
+    (not a committed snapshot) that indexes every load-bearing decision (ADRs, contracts, rules) and binds
+    each to its enforcement via an `@enforces <decision-id>` annotation. `list` / `validate` / `json` /
+    `check` / `baseline` subcommands.
+  - Decision-durability ratchet (`lib/decisions/enforced-baseline.json`): `construct decisions check` fails
+    on a dangling `@enforces` marker or on any baseline decision that loses its enforcement (e.g. its test
+    was deleted) — turning silent decision reversal into a loud, attributable CI failure. Enforcement is
+    added only by consciously regenerating the baseline. Tests: `tests/decisions-registry.test.mjs`,
+    `tests/decisions-bindings.test.mjs` (incl. tmpdir failure-path coverage).
+  - Citation validity in artifact lint (`lib/comment-lint.mjs#findDanglingCitations`): a `[^n]` footnote
+    reference with no definition, or a `[source: <repo-path>]` pointing at a missing file, now fails the
+    artifact lint (block at the release gate, warn at write-time). URLs, free-text sources, inline code, and
+    fenced/table content are deliberately untouched. Strengthens no-fabrication from "a marker is nearby" to
+    "the marker resolves." Test `tests/citation-validity.test.mjs` (`@enforces rule:common/no-fabrication`).
+  - Capability parity contract (`docs/adr/0016-capability-parity-contract.md`, `lib/deployment/parity-contract.mjs`,
+    `construct deployment parity`): classifies every `RESOURCE_TOPOLOGY` dimension as `parity` (present in
+    every mode, backend may differ — queue, memory, database, telemetry) or `mode-specific` (workers, policy,
+    mcp), and a validator fails when the contract and the live topology drift apart — so a divergence across
+    deployment surfaces must be declared, never silent. Test `tests/deployment-parity.test.mjs`
+    (`@enforces ADR-0016`). A live solo-vs-team dual-run harness remains a follow-up (needs a provisioned DB).
+  - Supersede-validation gate (`lib/decisions/registry.mjs#checkSupersessionOn`, folded into
+    `construct decisions check`): fails on a `Supersedes` pointing at an unknown decision, a superseding edge
+    whose target is not marked `superseded`, a `superseded` decision that nothing supersedes, or a cycle —
+    so a decision is replaced consciously, not silently reversed. Test `tests/decisions-supersede.test.mjs`.
+  - Rule → enforcer linkage: rules may declare `enforced_by` / `adr_reference` in frontmatter (seeded on
+    `rules/common/no-fabrication.md`, `rules/common/comments.md`); `construct decisions check` fails if a
+    declared enforcer path is missing or the ADR reference does not resolve (a rule cannot claim enforcement
+    that is not there). ADR body-hash drift is now gated in the suite (`tests/adr-stamp-integrity.test.mjs`,
+    via the existing `construct doc verify` stamp check). Test `tests/decisions-rule-linkage.test.mjs`.
+  - Extended executable postcondition vocabulary (`lib/contracts/validate.mjs`): `artifact-has-mermaid`
+    (optionally by diagram kind), `artifact-has-table`, and `artifact-section-nonempty`, plus conversion of
+    structural prose postconditions in `specialists/contracts.json` (ADR Reversibility/Consequences,
+    strategic-memo Options) into executable checks. Test `tests/postcondition-checks.test.mjs`. The
+    mermaid/table checks are the enforcement primitive the template-visual work builds on.
+  - Prompt-optimize loop is now scheduled (`lib/scheduler/index.mjs`, job `optimize-loop`, weekly in solo):
+    a cadence surfaces proposed prompt patches for review and, by construction, never passes `--apply` — the
+    existing apply gate remains the only path that writes. Test `tests/scheduler-optimize-job.test.mjs`.
+  - Table schema postcondition `artifact-table-has-columns` (`lib/contracts/validate.mjs`): a declared table
+    must carry the required column headers and at least one data row. Test `tests/table-schema.test.mjs`.
+  - Rule precedence (`lib/decisions/precedence.mjs`, `rules/common/precedence.md`): a canonical tier order
+    (safety > security > correctness > durability > performance > style) resolves conflicting guidance
+    deterministically; rules declare `precedence_tier` in frontmatter and `construct decisions check` fails on
+    an unknown tier. Tier-based precedence, not NLP contradiction detection. Test `tests/precedence.test.mjs`.
+  - Core-surface golden snapshot (`lib/decisions/golden.mjs`, `construct decisions golden`,
+    `tests/fixtures/golden/surface.json`): pins the CLI command set, specialist roster, and hook execution
+    order; a change fails the suite until the snapshot is regenerated on purpose. Test
+    `tests/golden-surface.test.mjs`.
+  - Document visual matrix + enforced template visuals (`docs/concepts/doc-visual-matrix.md`,
+    `lib/templates/visual-requirements.mjs`): each doc type's required visual (runbook → diagnostic
+    `flowchart`, incident-report → `Time (UTC) | Event` timeline table, rfc → `sequenceDiagram`) is encoded as
+    a postcondition and the shipped templates carry the scaffolding, so `tests/template-visuals.test.mjs`
+    fails if a template drops its required visual. Runbook and RFC templates gained Mermaid scaffolds. Matrix
+    rationale is sourced to current Mermaid/diagram best practice.
+  - Azure and GCP deployment parity with AWS: Terraform scaffolds (`deploy/terraform/azure` — Container Apps +
+    PostgreSQL Flexible Server + pgvector + Key Vault + Log Analytics; `deploy/terraform/gcp` — Cloud Run +
+    Cloud SQL Postgres + pgvector + Secret Manager + Cloud Logging) plus guides (`docs/deploy/azure.md`,
+    `docs/deploy/gcp.md`) and a service-equivalence table in `docs/deploy/README.md`. Both modules pass
+    `terraform fmt` and `terraform validate` against the provider schemas; live-apply validation is tracked by
+    `construct-1fdp` (Azure) and `construct-30z8` (GCP), mirroring `construct-49j` for AWS.
 - ESLint (flat config, `eslint.config.mjs`) for AST-level bug detection, complementing the custom comment
   policy. Deliberately bug-focused (no style rules): `no-undef`, `no-unreachable`, `no-empty`, etc.;
   `no-unused-vars` is a non-gating warning. Wired into the CI `lint` job (`npm run lint:js`).
