@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.19] - 2026-06-03
+
 ### Changed
 - Research-grade remediation Phase C — adequate templates raised to expert-grade (epic `construct-7zrh.7`):
   `runbook.md` (severity→response/error-budget mapping atop the diagnostic flowchart), `strategy.md`
