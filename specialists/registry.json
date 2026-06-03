@@ -271,7 +271,7 @@
       "modelTier": "standard",
       "reasoningEffort": "medium",
       "codexSandbox": "read-only",
-      "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+      "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
       "promptFile": "specialists/prompts/cx-researcher.md",
       "embedOrientation": {
         "focusAreas": [
@@ -1075,7 +1075,7 @@
       "modelTier": "standard",
       "reasoningEffort": "medium",
       "codexSandbox": "workspace-write",
-      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
       "promptFile": "specialists/prompts/cx-docs-keeper.md",
       "embedOrientation": {
         "focusAreas": [
