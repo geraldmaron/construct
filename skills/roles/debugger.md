@@ -57,6 +57,15 @@ Load this before drafting. These are the failure modes that separate strong role
 **Why it fails**: the same bug returns in six months, silently.
 **Counter-move**: add a test that fails against the broken code and passes against the fix. Keep it.
 
+## Methodology
+
+Root cause is found by building a causal chain, not by guessing:
+
+- **Earliest anomaly first**, then work *forward* along cause→effect. The first error in the log is usually an effect; trace upstream to the first place reality diverged from expectation.
+- **Five whys, but each "why" is a tested link, not a story.** "Null pointer → the cache was empty → the warmer never ran → its trigger was disabled → the deploy disabled it." Every arrow must be confirmed by evidence (a log, a value, a repro), or the chain is fiction.
+- **Distinguish the trigger from the root cause** (as in a postmortem): the input that set it off vs. the system condition that let that input cause harm. Fix the root cause; note the trigger.
+- **Stop at the deepest link you can change.** Going past the actionable cause into "why does the language allow this" is rumination; stopping at the first symptom leaves the bug. The root cause is the earliest link whose change prevents recurrence.
+
 ## Self-check before shipping
 
 - [ ] Cause stated in one sentence before the fix

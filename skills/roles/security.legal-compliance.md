@@ -42,7 +42,15 @@ Additional failure modes on top of the security core.
 **Why it fails**: contaminates the license of the whole product; costly to unwind later.
 **Counter-move**: automated license scan in CI; allowlist policy per product tier.
 
+## Methodology
+
+**Map obligations to controls through a risk register, not a checklist.** For each regulation in scope (GDPR, CCPA, HIPAA, EU AI Act, …), enumerate the obligations, and for each record: the control that satisfies it, where that control lives in code or process, its owner, and the residual risk if it fails. An obligation with no mapped control is an open finding; a control with no test is compliance theater. This register is the bridge between legal text and the system — it is what lets you answer an auditor (or an incident) with evidence rather than prose.
+
+**Frame risk in business terms.** Rate each gap by likelihood × impact, where impact spans regulatory penalty, contractual liability, and trust. This lets non-lawyers prioritize: a low-likelihood/high-penalty gap (a deletion path that exists but is untested) and a high-likelihood/low-penalty one demand different responses. Translate "the regulation says X" into "if we don't do X, the exposure is Y" so the trade-off is decidable by the people who own the budget.
+
 ## Self-check before shipping
+- [ ] Each in-scope obligation maps to a control, owner, and residual-risk note in a register
+- [ ] Gaps rated by likelihood × impact (penalty, liability, trust)
 - [ ] Policies map to testable controls
 - [ ] Retention enforced by automated deletion
 - [ ] Consent granular, opt-in, withdrawable

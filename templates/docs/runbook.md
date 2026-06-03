@@ -14,6 +14,15 @@
 ## Impact
 <!-- Who is affected and how badly. Data loss? Degraded performance? Complete outage? -->
 
+## Severity and response
+<!-- Map each severity to the response it triggers: page urgency, comms cadence, and error-budget consequence. A SEV-1 pages immediately and freezes related releases per the error-budget policy (https://sre.google/workbook/error-budget-policy/); a SEV-3 is handled in business hours. -->
+
+| Severity | Trigger condition | Page within | Comms | Error budget |
+|----------|-------------------|-------------|-------|--------------|
+| SEV-1 | {full outage / data loss / SLO breach} | 5 min | exec + status page | breach → freeze releases |
+| SEV-2 | {major degradation, workaround exists} | 15 min | team + stakeholders | partial spend |
+| SEV-3 | {minor / single-tenant / cosmetic} | business hours | team channel | none |
+
 ## Diagnostic steps
 <!-- Ordered checks from cheapest to most expensive. Each step: what to check, how to check it, what the answer means. Keep the decision tree below in sync with the steps. -->
 

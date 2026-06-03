@@ -4,6 +4,27 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.19] - 2026-06-03
+
+### Changed
+- Research-grade remediation Phase C — adequate templates raised to expert-grade (epic `construct-7zrh.7`):
+  `runbook.md` (severity→response/error-budget mapping atop the diagnostic flowchart), `strategy.md`
+  (per-bet kill criteria + leading indicators, leading/lagging metrics, milestones, risk register),
+  `signal-brief.md` (Admiralty-graded evidence + counter-signal), `prfaq.md` (spokesperson/customer quote,
+  launch metrics), `customer-profile.md` (evidence-graded pain points), `product-intelligence-report.md` and
+  `backlog-proposal.md` (Admiralty-graded evidence base). `one-pager`, `persona-artifact`, and the above are
+  now structure-enforced by `STRUCTURE_REQUIREMENTS`.
+- Research-grade remediation Phase D — adequate specialist prompts deepened with named methodology, in their
+  `skills/roles/*` overlays (epic `construct-7zrh.8`): ux-researcher (validity types, sampling, inter-rater
+  reliability), devil-advocate (FMEA / risk priority number), trace-reviewer (statistical process control),
+  debugger (causal-chain RCA), business-strategist (Porter's Five Forces, scenario planning), data-engineer
+  (lineage, data SLAs, observability maturity), platform-engineer (IaC maturity, SBOM/supply-chain),
+  release-manager (progressive delivery, SLI-threshold rollback rules), operations (critical-path method,
+  slack, resource leveling), legal-compliance (obligation→control risk register), security (STRIDE/PASTA
+  threat-modeling process), SRE (error-budget burn-rate policy), designer (atomic design / design-system
+  maturity), accessibility (screen-reader + POUR + cognitive load). Also fixed a garbled token in
+  `skills/roles/operator.md`.
+
 ### Added
 - Research-grade remediation (epic `construct-7zrh`), source taxonomy:
   - `docs/adr/0017-source-credibility-taxonomy.md` + `rules/common/research.md` — **claim-relative source

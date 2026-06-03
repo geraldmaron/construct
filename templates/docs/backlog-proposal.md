@@ -11,7 +11,7 @@ autonomously; applying it requires explicit approval.
 -->
 
 ## Source evidence
-<!-- Evidence brief, PRD, customer notes, tickets, or research supporting the proposal. -->
+<!-- Evidence brief, PRD, customer notes, tickets, or research supporting the proposal, each with its evidence grade (rules/common/research.md §10). A proposal resting only on low-graded or uncorroborated evidence should be a signal brief, not a backlog item. -->
 
 ## Proposed changes
 <!-- Table: create/update, target issue if any, title, rationale, evidence, acceptance criteria. -->
