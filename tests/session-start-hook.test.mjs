@@ -2,7 +2,9 @@
  * tests/session-start-hook.test.mjs — Integration test for the session-start hook.
  *
  * Spawns lib/hooks/session-start.mjs as a child process with a temporary .cx/context.json
- * and verifies it exits 0 and emits a "Resuming" context block to stdout.
+ * and verifies it exits 0 and emits a "Resuming" context block to stdout. The output
+ * mode is pinned to stdout so the emission contract is exercised regardless of an
+ * ambient non-interactive signal (e.g. CI=true), which `auto` would route to silent.
  * Run via npm test.
  */
 import assert from 'node:assert/strict';
@@ -24,6 +26,7 @@ test('session-start hook remains non-blocking and emits resume context', (t) => 
     input: JSON.stringify({ cwd }),
     encoding: 'utf8',
     timeout: 15000,
+    env: { ...process.env, CONSTRUCT_HOOK_OUTPUT_MODE: 'stdout' },
   });
 
   assert.equal(result.status, 0);
