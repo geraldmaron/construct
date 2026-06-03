@@ -4,6 +4,22 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+- Explicit ingest strategy (issues #201, #203): `construct ingest` now resolves an extraction strategy
+  through config and an optional `--strategy=adapter|provider` flag instead of silently using local binary
+  adapters. New `ingest.strategy` (`adapter` default — current local-extractor behavior, unchanged — or
+  `provider`) and `ingest.fallback` (`none` default, or `provider`/`adapter`) config keys in
+  `construct.config.json`, resolved with the standard env > config > default precedence
+  (`CONSTRUCT_INGEST_STRATEGY`, `CONSTRUCT_INGEST_FALLBACK`). The ingestion result now carries an
+  `ingestion` block (`strategy`, `fallback`, `model`, `provider`, `fallbackApplied`) so the selected
+  strategy and provider/model are visible in CLI output and the embedded-contract surfaces. Provider-mode
+  extraction resolves and records the configured provider/model via the embedded model-resolution contract;
+  a concrete provider extraction call is deferred, so `provider` either falls back per the explicit policy
+  (recording the fallback) or fails with `PROVIDER_EXTRACTION_UNWIRED` — it never silently uses the adapter
+  when the caller asked for `provider`. New module `lib/ingest/strategy.mjs`. Tests:
+  `tests/ingest-strategy.test.mjs`, extended `tests/embedded-contract-ingest.test.mjs`,
+  `tests/functional/ingest-strategy.functional.test.mjs`.
+
 ### Fixed
 - construct-mcp MCP server identity (`construct-dwfv`): the server reported a hardcoded stale `version: "1.0.0"`
   and advertised no `instructions` or resources, so MCP hosts (Claude Code, VS Code, OpenCode, Cursor) rendered
