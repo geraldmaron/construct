@@ -16,7 +16,7 @@ asks for cleanup. Keep facts tied to source evidence.
 <!-- Stack, tools, integrations, scale, constraints, and relevant operating model. -->
 
 ## Active pain points
-<!-- Current friction, with source links or dates. Distinguish severe blockers from preferences. -->
+<!-- Current friction, each with a source link, a date, and its evidence grade (rules/common/research.md §10). Distinguish severe blockers from preferences, and a one-off mention from a corroborated pattern. -->
 
 ## Open asks
 <!-- Table: ask, first raised, times mentioned, source, linked issue, status. -->
