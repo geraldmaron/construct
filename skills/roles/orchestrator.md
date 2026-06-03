@@ -57,10 +57,17 @@ Use this as a fast dispatch checklist before producing orchestration output.
     - Symptom: large reads just to decide who should work.
     - Counter: probe with search, glob, or small reads first.
 
+## Sequencing methodology
+
+- **Graph first**: map each specialist's input→output; parallelize only when no input is another's output. "All parallel"/"all sequential" both mean the graph was skipped.
+- **Waves**: dispatch the set whose inputs are satisfied; the next starts at the slowest member's landing. Minimize waves, not specialists.
+- **Critical path**: total time is the longest dependency chain, not the headcount. On-path specialists delay everything downstream.
+- **Bound fan-out**: cap concurrent dispatch to what the consumer can absorb.
+
 ## Ship Check
 
-- Request classified.
-- Smallest adequate path selected.
+- Request classified; smallest adequate path selected.
+- Dependency graph drawn; specialists grouped into the fewest waves; critical path identified.
 - Handoffs have distinct ownership.
 - Blockers and user questions surfaced.
 - Original ask still matches final output.
