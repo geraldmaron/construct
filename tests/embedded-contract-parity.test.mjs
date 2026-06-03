@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import * as sdk from '../lib/embedded-contract/index.mjs';
-import { modelResolve, triageRecommend, workflowInvoke, capabilityDescribe } from '../lib/mcp/tools/embedded-contract.mjs';
+import { modelResolve, triageRecommend, workflowInvoke, capabilityDescribe, executionResolve } from '../lib/mcp/tools/embedded-contract.mjs';
 import { CONTRACT_VERSION } from '../lib/embedded-contract/contract-version.mjs';
 
 const VOLATILE_ENVELOPE = new Set(['generatedAt', 'surface']);
@@ -64,12 +64,23 @@ test('workflow invocation: MCP and SDK return identical envelopes (volatile ids 
   assert.deepEqual(normalize(s), normalize(m));
 });
 
+test('execution resolution: MCP and SDK return identical envelopes (one core)', () => {
+  const req = { workflowType: 'architecture-review', requestedStrategy: 'orchestrated', hostModel: 'anthropic/claude-sonnet-4-6' };
+  const s = sdk.resolveExecution(req);
+  const m = executionResolve({ workflow_type: 'architecture-review', requested_strategy: 'orchestrated', host_model: 'anthropic/claude-sonnet-4-6' });
+  assert.equal(s.surface, 'sdk');
+  assert.equal(m.surface, 'mcp');
+  assert.deepEqual(normalize(s), normalize(m));
+});
+
 test('every surface stamps the same valid contract version', async () => {
   const envelopes = [
     sdk.resolveEmbeddedModel({ requestedTier: 'fast' }),
     modelResolve({ requested_tier: 'fast' }),
     sdk.recommendPlan({ input: 'x' }),
     sdk.describeCapabilities(),
+    sdk.resolveExecution({ workflowType: 'evidence-ingest', requestedStrategy: 'auto' }),
+    executionResolve({ workflow_type: 'evidence-ingest', requested_strategy: 'auto' }),
     await sdk.invokeWorkflow({ workflowType: 'evidence-ingest', approvalMode: 'proposal-only' }),
   ];
   for (const env of envelopes) {
@@ -87,6 +98,7 @@ test('no contract leaks a credential value present in the environment', async ()
     sdk.resolveEmbeddedModel({ hostModel: 'anthropic/claude-sonnet-4-6' }, { env }),
     sdk.recommendPlan({ input: 'Bug: throws an error' }, { env }),
     sdk.describeCapabilities({ env }),
+    sdk.resolveExecution({ workflowType: 'evidence-ingest', requestedStrategy: 'orchestrated', hostModel: 'anthropic/claude-sonnet-4-6' }, { env }),
     await sdk.invokeWorkflow({ workflowType: 'evidence-ingest', approvalMode: 'proposal-only' }, { env }),
   ];
   for (const envelope of envelopes) {

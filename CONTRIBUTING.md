@@ -15,12 +15,19 @@ Read [CLAUDE.md](CLAUDE.md). It lists the protected files, the critical rules, a
 
 ## Required tools
 
-- Node 18 or later
-- npm 9 or later
+The toolchain is pinned in [`.tool-versions`](.tool-versions) — the single source of truth read by `mise`, `asdf`, and CI (`actions/setup-node` via `node-version-file`). Install [mise](https://mise.jdx.dev) (or asdf) and let it provision the pinned Node and Terraform:
 
 ```bash
-npm install
+mise install        # installs Node + Terraform pinned in .tool-versions
+corepack enable      # activates the npm pinned by package.json "packageManager"
+npm ci               # deterministic install from the committed lockfile
 ```
+
+- **Node**: pinned in `.tool-versions`; the published CLI supports Node `>=20` (`engines`), and CI tests against Node 20 and 22.
+- **npm**: pinned via `package.json` `packageManager` (Corepack); `npm ci` for reproducible installs.
+- **Terraform**: pinned in `.tool-versions` for the deploy modules under `deploy/terraform/`.
+
+Without mise/asdf, install Node matching `.tool-versions` manually and run `npm ci`.
 
 ## Commit messages
 
