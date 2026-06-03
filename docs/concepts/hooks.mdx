@@ -50,6 +50,19 @@ Two codes are used. Both are documented in every header via `@exits`.
 
 Hooks that document `@exits 0 = pass | 2 = block tool call` must actually have a `process.exit(2)` in their source. Hooks that document `@exits 0 = pass` must not. Drift is rejected by `tests/hooks-budget.test.mjs`.
 
+## Capability-aware SessionStart output
+
+A SessionStart hook's stdout is injected into the model's context. In a non-interactive / SDK / `claude -p` one-shot that verbose payload pollutes the caller's machine-oriented stdout and can spill into editors and logs. `session-start.mjs` resolves an output mode and routes its payload accordingly:
+
+| Mode | Behavior |
+|---|---|
+| `stdout` | Inject as context (interactive default) |
+| `stderr` | Write to stderr (visible, not injected) |
+| `silent` | Write only to `~/.cx/session-start-last.log` — stdout/stderr stay clean |
+| `auto` | `stdout` when interactive, `silent` when non-interactive |
+
+Precedence is env (`CONSTRUCT_HOOK_OUTPUT_MODE`) > config (`hooks.outputMode` in `construct.config.json`) > default `auto`. Because Claude Code exposes no reliable in-hook signal for interactive vs print/SDK mode (`CLAUDECODE=1` is set in both; a hook's `isTTY` is `false` even interactively), `auto` detects non-interactive only from signals that ARE reliable — `CI=true`, `NODE_ENV=test`, and an explicit `CONSTRUCT_NONINTERACTIVE=1`. SDK and host-adapter callers set `CONSTRUCT_HOOK_OUTPUT_MODE=silent` (or `CONSTRUCT_NONINTERACTIVE=1`) when they invoke Construct non-interactively; `auto` never suppresses on an ambiguous signal, so interactive sessions keep their rich startup context. Resolver + router live in `lib/hooks/_lib/output-mode.mjs`.
+
 ## Bounded-write channels
 
 Every hook that appends to a long-lived JSONL or log file routes through `appendBounded(channel, path, line)`. Channels are registered in `lib/logging/rotate.mjs` `LIMITS` with `maxBytes`, `maxSegments`, `gzip`, and an env-var override for the cap.
@@ -60,7 +73,7 @@ Hooks that own audit-shaped data (audit-trail, audit-reads, mcp-audit) write via
 
 | Hook | Lifecycle | Matcher | Purpose |
 |---|---|---|---|
-| `session-start.mjs` | SessionStart | * | Tiered context injection + `.env.example` ↔ `.env` notice |
+| `session-start.mjs` | SessionStart | * | Tiered context injection (capability-aware output mode) + `.env.example` ↔ `.env` notice |
 | `comment-lint.mjs` | PostToolUse | Write\|Edit\|MultiEdit | Block banned comment patterns and missing required headers |
 | `audit-trail.mjs` | PostToolUse | Edit\|Write\|MultiEdit\|NotebookEdit\|Bash | Tamper-evident JSONL audit chain (project-scoped) |
 | `audit-reads.mjs` | PostToolUse | Read | Always-on file-hash store for edit-guard staleness; opt-in tamper-evident read audit |
