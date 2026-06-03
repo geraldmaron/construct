@@ -27,6 +27,21 @@ OTEL_EXPORTER_OTLP_ENDPOINT=https://your-endpoint/v1/traces
 
 Construct defaults to `gen_ai_latest_experimental` semconv. Override with `OTEL_SEMCONV_STABILITY_OPT_IN`.
 
+## Two telemetry layers, one agnostic stance
+
+Construct is **vendor-agnostic by design** — no backend is hard-wired into the data plane.
+
+- **Live spans** (above): the OTel SDK tracer (`lib/telemetry/otel-tracer.mjs`) exports GenAI spans over
+  OTLP to any endpoint set via `OTEL_EXPORTER_OTLP_ENDPOINT`.
+- **Trace capture/export** (`lib/telemetry/client.mjs`): local JSONL by default; the remote backend is
+  chosen with `CONSTRUCT_TRACE_BACKEND` — `local` (default), `otel`, `http`, `langfuse`, or `none`. For
+  OTLP batch export set `CONSTRUCT_TRACE_BACKEND=otel` and `CONSTRUCT_OTEL_EXPORTER_OTLP_ENDPOINT`.
+
+Langfuse is **one OTLP consumer among many**, selected only when Langfuse-style keys
+(`CONSTRUCT_TELEMETRY_PUBLIC_KEY` / `_SECRET_KEY`) are present; a bare `CONSTRUCT_TELEMETRY_URL` uses the
+generic `http` backend. The bundled local Langfuse stack is a convenience, not a dependency — point either
+layer at Tempo, Honeycomb, Jaeger, Datadog, or any OTLP collector instead.
+
 ## Consumer integrations
 
 ### Langfuse

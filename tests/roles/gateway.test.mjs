@@ -128,3 +128,38 @@ test('isTestFixturePath catches macOS /private/var prefix and /tmp/ paths', () =
   assert.equal(gw.isTestFixturePath(null), false);
   assert.equal(gw.isTestFixturePath(''), false);
 });
+
+function writePending(entries) {
+  fs.writeFileSync(gw._gatewayPaths.pendingPath(), entries.map((e) => JSON.stringify(e)).join('\n') + '\n');
+}
+
+test('listPending filters out unresolved entries older than the TTL', () => {
+  const now = Date.now();
+  const fresh = { ts: now - 1000, personaId: 'sre', cxId: 'cx-sre', fingerprint: 'fresh', eventType: 'service.down', summary: 'recent' };
+  const stale = { ts: now - 15 * 24 * 60 * 60 * 1000, personaId: 'security', cxId: 'cx-security', fingerprint: 'stale', eventType: 'secrets.detected', summary: 'old fixture' };
+  writePending([fresh, stale]);
+
+  const pending = gw.listPending({ unresolved: true });
+  assert.deepEqual(pending.map((p) => p.fingerprint), ['fresh'], 'only the within-TTL entry surfaces');
+
+  // unresolved:false bypasses the TTL/resolved filter (raw view for `show`)
+  assert.equal(gw.listPending({ unresolved: false }).length, 2);
+});
+
+test('prunePending compacts resolved, expired, and fixture entries, keeps the rest', () => {
+  const now = Date.now();
+  const fresh = { ts: now - 1000, fingerprint: 'fresh', eventType: 'x', summary: 'real handoff' };
+  const resolved = { ts: now - 1000, fingerprint: 'resolved', resolvedAt: now - 500, eventType: 'x', summary: 's' };
+  const expired = { ts: now - 30 * 24 * 60 * 60 * 1000, fingerprint: 'expired', eventType: 'x', summary: 's' };
+  const fixture = { ts: now - 1000, fingerprint: 'fixture', eventType: 'secrets.detected', summary: 'Secret(s) detected in /private/var/folders/b6/x/T/cx-secrets-Q/fixture.env: Stripe live secret' };
+  writePending([fresh, resolved, expired, fixture]);
+
+  const result = gw.prunePending({ now });
+  assert.deepEqual(result, { removed: 3, resolved: 1, expired: 1, fixtures: 1, kept: 1 });
+
+  const remaining = gw.listPending({ unresolved: false });
+  assert.deepEqual(remaining.map((e) => e.fingerprint), ['fresh'], 'only the real entry persists on disk');
+
+  // Idempotent: a second prune removes nothing.
+  assert.deepEqual(gw.prunePending({ now }), { removed: 0, resolved: 0, expired: 0, fixtures: 0, kept: 1 });
+});
