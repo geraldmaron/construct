@@ -3335,6 +3335,29 @@ async function cmdValidate() {
   process.exit(1);
 }
 
+async function cmdExecution(args) {
+  if (args[0] === 'resolve') {
+    const flag = (name) => { const i = args.indexOf(name); return i !== -1 ? args[i + 1] : undefined; };
+    const { resolveExecution } = await import('../lib/embedded-contract/execution.mjs');
+    const { wrapContractResult } = await import('../lib/embedded-contract/envelope.mjs');
+    const request = {
+      workflowType: flag('--workflow-type'),
+      requestedStrategy: flag('--strategy'),
+      useConstruct: !args.includes('--no-construct'),
+      host: flag('--host'),
+      hostModel: flag('--host-model'),
+      hostProvider: flag('--host-provider'),
+      requestedTier: flag('--tier'),
+      capabilities: flag('--capabilities')?.split(',').map((s) => s.trim()).filter(Boolean),
+      allowCrossProviderFallback: args.includes('--allow-cross-provider'),
+    };
+    const envelope = wrapContractResult(resolveExecution(request), { surface: 'cli' });
+    println(JSON.stringify(envelope, null, 2));
+    return;
+  }
+  println('Usage: construct execution resolve [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--host-model M] [--host-provider P] [--tier reasoning|standard|fast] [--no-construct] [--allow-cross-provider] [--json]');
+}
+
 async function cmdModels(args) {
   if (args[0] === 'resolve') {
     const flag = (name) => { const i = args.indexOf(name); return i !== -1 ? args[i + 1] : undefined; };
@@ -5040,6 +5063,7 @@ const handlers = new Map([
   ['docs:reconcile', cmdDocsReconcile],
   ['init:update', cmdInitUpdate],
   ['models', cmdModels],
+  ['execution', cmdExecution],
   ['beads:stats', async (args) => {
     const { getContentionStats, getHumanStatus } = await import('../lib/beads-optimistic.mjs');
     const jsonOutput = args.includes('--json');
