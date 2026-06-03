@@ -5,6 +5,11 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Changed
+- Toolchain pinning (`construct-y3i5`): added `.tool-versions` (Node + Terraform) as the single source of
+  truth read by `mise`/`asdf` locally and by `actions/setup-node` (`node-version-file`) across CI — replacing
+  ~12 hardcoded `node-version: 22` entries. npm pinned via `package.json` `packageManager` (Corepack).
+  The cross-version test matrix (Node 20/22) and the publish job (Node 24 for npm 11 / Trusted Publishers OIDC)
+  remain intentionally explicit. CONTRIBUTING "Required tools" updated (was the stale "Node 18 or later").
 - Research-grade remediation Phase C — adequate templates raised to expert-grade (epic `construct-7zrh.7`):
   `runbook.md` (severity→response/error-budget mapping atop the diagnostic flowchart), `strategy.md`
   (per-bet kill criteria + leading indicators, leading/lagging metrics, milestones, risk register),
