@@ -4,6 +4,12 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+- doctor: VS Code / Cursor adapter parity no longer reports `unreadable` on a valid JSONC `settings.json`
+  (GH #214). `lib/parity.mjs` now parses editor settings with a string-aware JSONC reader (line/block
+  comments and trailing commas tolerated; `//` inside a `"https://…"` value preserved); the canonical
+  `specialists/registry.json` is still parsed strictly. Test: `tests/parity.test.mjs`.
+
 ## [1.0.20] - 2026-06-03
 
 ### Added
