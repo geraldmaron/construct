@@ -273,6 +273,10 @@
       "core": false
     },
     {
+      "name": "resolve --json",
+      "core": false
+    },
+    {
       "name": "resources",
       "core": false
     },

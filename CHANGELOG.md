@@ -5,6 +5,20 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Added
+- Execution-capability contract for embedded workflows (`construct-1txt`, GH #206): a fifth Embedded
+  Contract Layer surface — `resolveExecution` (SDK) / `construct execution resolve --json` (CLI) /
+  `construct_execution_resolve` (MCP) — that reports, before or at workflow start, whether a run will engage
+  Construct orchestration or degrade to a prompt-only envelope, and why. Returns `executionMode`
+  (`construct-orchestrated` | `construct-prompt-only` | `host-direct` | `same-family-fallback`),
+  `constructCapabilitiesActive` (subset of `personas`/`skills`/`workflow-routing`/`prompt-envelope`),
+  `degraded` + machine-readable `degradationReason`, `requestedStrategy` vs `effectiveStrategy`, and the
+  resolved provider/model (reusing `resolveEmbeddedModel`). The contract is **descriptive, not enforced**
+  (ADR-0019): Construct returns a plan and the host runtime executes it, so every response carries a
+  `semantics` disclaimer and never claims observed host execution — asserting personas ran would violate the
+  no-fabrication rule. Same-family fallback and config-error both surface as `degraded`. Additive: Embedded
+  Contract `CONTRACT_VERSION` bumped `1.0.0 → 1.1.0` (old clients remain compatible). New module
+  `lib/embedded-contract/execution.mjs`; ADR-0019 registered + bound (`enforced-baseline.json`). Tests:
+  `tests/embedded-contract-execution.test.mjs`, extended `tests/embedded-contract-parity.test.mjs`.
 - Explicit ingest strategy (issues #201, #203): `construct ingest` now resolves an extraction strategy
   through config and an optional `--strategy=adapter|provider` flag instead of silently using local binary
   adapters. New `ingest.strategy` (`adapter` default — current local-extractor behavior, unchanged — or
