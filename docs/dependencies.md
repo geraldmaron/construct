@@ -35,6 +35,21 @@ Any in-tree implementation that accumulates **3 or more defects in a 6-month win
 
 See `docs/in-tree-implementations.md` for the full list of hand-rolled components, their LOC, test coverage, known limitations, and nearest library alternatives.
 
+## Transitive vulnerability remediation
+
+When `npm audit` reports a vulnerability in a transitive dependency of the published CLI, follow this ladder. Higher rungs are preferred — they fix the tree consumers actually install.
+
+**The load-bearing rule:** an `overrides`/`resolutions` pin in this `package.json` protects only this repo's own audit. npm applies `overrides` solely for the top-level project doing an install, so a published library's overrides are ignored by everyone who depends on it. Never rely on `overrides` as the consumer remedy, and never treat a green repo audit as proof the published artifact is clean — that is what `npm run audit:published` checks (it packs the artifact and audits a clean downstream install with no overrides in scope).
+
+Remediation ladder:
+
+1. **Bump the offending direct dependency** to a release line whose transitive graph is already patched.
+2. **Replace or remove the direct dependency** when the maintained successor resolves a clean tree (e.g. `@xenova/transformers` → `@huggingface/transformers`).
+3. **Demote to `optionalDependencies` or a peer** so a non-essential heavy dependency leaves the default install surface — only when an in-tree or hosted fallback exists (see [ADR 0014](adr/0014-local-embeddings-optional.md)). Optional deps are still installed and audited by default, so this complements but does not substitute for rungs 1–2.
+4. **Accept with a documented ADR** only when no upstream fix exists, recording the residual risk and the revisit condition.
+
+A repo-local `overrides` pin is acceptable as defense-in-depth for this repo's own tree, but it is never the line item that closes a consumer-facing advisory.
+
 ## Rationale
 
 See `docs/adr/0001-zero-npm-core.md` for the original decision record.

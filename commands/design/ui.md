@@ -10,3 +10,5 @@ Every meaningful UI surface needs:
 - WCAG AA baseline: keyboard-navigable, 4.5:1 contrast, visible focus, ARIA labels
 
 Does it look intentional, or like a default template? Flag experience drift.
+
+For a layout sketch, run `construct wireframe "<screen description>" --type=layout` to produce a committed low-fi HTML/Mermaid artifact under `.cx/wireframes/`, then refine it. Stay text-first (no new diagramming dependency). Valid `--type` values: layout, flow, state, sequence, er, user-journey.

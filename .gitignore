@@ -74,3 +74,6 @@ skills/roles/*.bak
 # Next.js build cache (apps/*/.next) and static export output (apps/*/out)
 apps/*/.next/
 apps/*/out/
+
+# npm pack output (produced by the consumer-perspective audit gate)
+*.tgz

@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "type": "module",
   "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
   "bin": {
@@ -69,20 +69,20 @@
     "eval:routing": "node scripts/eval/score-intent-classifier.mjs",
     "release:check": "node ./bin/construct doctor && npm test && node ./bin/construct docs:update --check && node ./bin/construct dashboard:sync --check && node ./bin/construct lint:comments && node scripts/lint-commits-pr.mjs",
     "release:gate": "node --test tests/functional/release-gate.functional.test.mjs",
+    "audit:published": "node scripts/audit-published-artifact.mjs",
     "release:preflight": "node scripts/pre-release-check.mjs",
     "release:preflight:no-auth": "node scripts/pre-release-check.mjs --skip-auth",
     "npm:publish": "npm run release:check && npm publish --access public",
     "postinstall": "node ./bin/construct-postinstall.mjs"
   },
   "dependencies": {
-    "@huggingface/transformers": "^4.2.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "@xenova/transformers": "^2.0.1",
     "js-yaml": "^4.2.0",
     "node-webvtt": "^1.9.3",
     "postgres": "^3.4.9"
   },
   "optionalDependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/core": "^2.7.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.218.0",
@@ -91,7 +91,6 @@
     "@opentelemetry/semantic-conventions": "^1.25.0"
   },
   "overrides": {
-    "express-rate-limit": "8.5.1",
-    "protobufjs": "^8.4.2"
+    "express-rate-limit": "8.5.1"
   }
 }

@@ -140,6 +140,7 @@ Exit 0 means safe to tag. Anything else: fix locally, do not push the tag and ho
 - `npm run lint:profiles -- --quiet`
 - `npm run test:functional`
 - `npm audit --audit-level=high`
+- `npm run audit:published` — packs the artifact and audits a clean downstream install with no `overrides` in scope, catching transitive advisories a repo-local override would mask
 
 If any of these fail, no artifacts ship. The prose lint is enforced at PR time only (changed-files scope) and is intentionally not in the release gate; running it `--all` on the current historical baseline would always fail until the cleanup PR (`construct-fj0`, `construct-ze6`) lands.
 
