@@ -296,7 +296,7 @@ jobs:
           } finally { await sql.end(); }
           "
       - name: Postgres + vector roundtrip tests
-        run: node --test --test-timeout=120000 tests/functional/postgres-roundtrip.functional.test.mjs tests/functional/vector-roundtrip.functional.test.mjs tests/functional/skills-correlate-quality.functional.test.mjs
+        run: node --test --test-timeout=120000 tests/functional/postgres-roundtrip.functional.test.mjs tests/functional/vector-roundtrip.functional.test.mjs tests/functional/skills-correlate-quality.functional.test.mjs tests/functional/observation-reconcile.functional.test.mjs tests/functional/hybrid-search-consolidated.functional.test.mjs
 
   dashboard-integration:
     needs: changes
