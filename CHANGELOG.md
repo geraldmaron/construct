@@ -4,6 +4,14 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+- construct-mcp MCP server identity (`construct-dwfv`): the server reported a hardcoded stale `version: "1.0.0"`
+  and advertised no `instructions` or resources, so MCP hosts (Claude Code, VS Code, OpenCode, Cursor) rendered
+  the "Construct" entry as a bare name + OK badge with an empty detail panel. It now sources the real version
+  from `lib/version.mjs`, returns a descriptive `instructions` string, and exposes a `construct://status`
+  resource (version, deployment mode, broker, capabilities). Also fixed `getInstalledVersion()` being used as a
+  string when it returns an object. Test: `tests/mcp-server-identity.test.mjs`; tools unchanged (65).
+
 ### Changed
 - Toolchain pinning (`construct-y3i5`): added `.tool-versions` (Node + Terraform) as the single source of
   truth read by `mise`/`asdf` locally and by `actions/setup-node` (`node-version-file`) across CI — replacing
