@@ -67,3 +67,35 @@ test('empty request yields empty text', async () => {
   assert.equal(r.text, '');
   assert.equal(r.ingestion, null);
 });
+
+test('ingestion metadata records the resolved strategy (default adapter)', async () => {
+  const r = await resolveInput({ filePath: fixture('s.txt', 'content'), env: {}, config: null });
+  assert.equal(r.ingestion.strategy, 'adapter');
+  assert.equal(r.ingestion.model, null);
+  assert.equal(r.error, null);
+});
+
+test('provider strategy with fallback=none surfaces a structured error, no silent adapter use', async () => {
+  const r = await resolveInput({
+    filePath: fixture('s.txt', 'content'),
+    config: { ingest: { strategy: 'provider', fallback: 'none' } },
+    env: { CX_MODEL_FAST: 'test-fast-model' },
+  });
+  assert.equal(r.text, '');
+  assert.equal(r.error.code, 'PROVIDER_EXTRACTION_UNWIRED');
+  assert.equal(r.ingestion.strategy, 'provider');
+  assert.equal(r.ingestion.model, 'test-fast-model');
+});
+
+test('provider strategy with fallback=adapter extracts and records the fallback', async () => {
+  const r = await resolveInput({
+    filePath: fixture('s.txt', 'fallback content'),
+    config: { ingest: { strategy: 'provider', fallback: 'adapter' } },
+    env: { CX_MODEL_FAST: 'test-fast-model' },
+  });
+  assert.match(r.text, /fallback content/);
+  assert.equal(r.ingestion.strategy, 'provider');
+  assert.equal(r.ingestion.model, 'test-fast-model');
+  assert.equal(r.ingestion.fallbackApplied.to, 'adapter');
+  assert.equal(r.error, null);
+});
