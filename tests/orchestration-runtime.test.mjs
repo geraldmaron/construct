@@ -39,9 +39,9 @@ function project() {
 }
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
-test('orchestrated request plans a specialist chain and prepares every task', () => {
+test('orchestrated request plans a specialist chain and prepares every task', async () => {
   const cwd = project();
-  const run = runOrchestration(
+  const run = await runOrchestration(
     { request: 'Refactor the auth module and add a migration; review for security', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4, moduleCount: 2 },
     { env: ENV, cwd },
   );
@@ -54,44 +54,44 @@ test('orchestrated request plans a specialist chain and prepares every task', ()
   assert.ok(run.tasks.every((t, i) => t.seq === i), 'tasks carry a deterministic sequence');
 });
 
-test('a planned run persists durably and round-trips through the store', () => {
+test('a planned run persists durably and round-trips through the store', async () => {
   const cwd = project();
-  const planned = planRun({ request: 'design a system', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 3 }, { env: ENV, cwd });
+  const planned = await planRun({ request: 'design a system', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 3 }, { env: ENV, cwd });
   assert.equal(planned.status, 'planned');
-  const reloaded = getRun(cwd, planned.runId);
+  const reloaded = await getRun(cwd, planned.runId);
   assert.equal(reloaded.runId, planned.runId);
   assert.equal(reloaded.status, 'planned');
-  const completed = executeRun(cwd, planned.runId, { env: ENV });
+  const completed = await executeRun(cwd, planned.runId, { env: ENV });
   assert.equal(completed.status, 'completed');
-  assert.equal(getRun(cwd, planned.runId).status, 'completed', 'execution is persisted');
+  assert.equal((await getRun(cwd, planned.runId)).status, 'completed', 'execution is persisted');
 });
 
-test('prompt-only request owns no specialist sequence', () => {
+test('prompt-only request owns no specialist sequence', async () => {
   const cwd = project();
-  const run = runOrchestration({ request: 'summarize this note', requestedStrategy: 'prompt-only', hostModel: MODEL }, { env: ENV, cwd });
+  const run = await runOrchestration({ request: 'summarize this note', requestedStrategy: 'prompt-only', hostModel: MODEL }, { env: ENV, cwd });
   assert.equal(run.execution.executionMode, 'construct-prompt-only');
   assert.deepEqual(run.tasks, []);
   assert.equal(run.status, 'completed');
 });
 
-test('host-direct request owns no specialist sequence and no Construct capabilities', () => {
+test('host-direct request owns no specialist sequence and no Construct capabilities', async () => {
   const cwd = project();
-  const run = runOrchestration({ request: 'do it your way', requestedStrategy: 'orchestrated', useConstruct: false, hostModel: MODEL }, { env: ENV, cwd });
+  const run = await runOrchestration({ request: 'do it your way', requestedStrategy: 'orchestrated', useConstruct: false, hostModel: MODEL }, { env: ENV, cwd });
   assert.equal(run.execution.executionMode, 'host-direct');
   assert.deepEqual(run.tasks, []);
 });
 
-test('hostRole reflects the calling host; cli-direct when none', () => {
+test('hostRole reflects the calling host; cli-direct when none', async () => {
   const cwd = project();
-  const viaVscode = planRun({ request: 'x', requestedStrategy: 'orchestrated', hostModel: MODEL, host: 'VS Code', fileCount: 3 }, { env: ENV, cwd });
+  const viaVscode = await planRun({ request: 'x', requestedStrategy: 'orchestrated', hostModel: MODEL, host: 'VS Code', fileCount: 3 }, { env: ENV, cwd });
   assert.equal(viaVscode.hostRole, 'copilot-mcp');
-  const direct = planRun({ request: 'x', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 3 }, { env: ENV, cwd });
+  const direct = await planRun({ request: 'x', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 3 }, { env: ENV, cwd });
   assert.equal(direct.hostRole, 'cli-direct');
 });
 
-test('host-adapter metadata carries the runtime-backed fields and the semantics disclaimer', () => {
+test('host-adapter metadata carries the runtime-backed fields and the semantics disclaimer', async () => {
   const cwd = project();
-  const run = runOrchestration({ request: 'refactor and review', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 }, { env: ENV, cwd });
+  const run = await runOrchestration({ request: 'refactor and review', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 }, { env: ENV, cwd });
   const meta = hostAdapterMetadata(run);
   for (const k of ['runId', 'traceId', 'requestedStrategy', 'effectiveStrategy', 'executionMode', 'constructCapabilitiesActive', 'workerBackend', 'hostRole', 'degraded', 'selectedProvider', 'selectedModel', 'tasks', 'warnings', 'semantics']) {
     assert.ok(k in meta, `metadata has ${k}`);
@@ -100,10 +100,49 @@ test('host-adapter metadata carries the runtime-backed fields and the semantics 
   assert.ok(WORKER_BACKENDS.includes(meta.workerBackend));
 });
 
-test('a credential value in env never leaks into a run record', () => {
+test('a credential value in env never leaks into a run record', async () => {
   const cwd = project();
   const canary = 'sk-orch-CANARY-7777';
-  const run = runOrchestration({ request: 'refactor', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 3 }, { env: { ...ENV, ANTHROPIC_API_KEY: canary }, cwd });
+  const run = await runOrchestration({ request: 'refactor', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 3 }, { env: { ...ENV, ANTHROPIC_API_KEY: canary }, cwd });
   assert.ok(!JSON.stringify(run).includes(canary));
-  assert.ok(!JSON.stringify(getRuns(cwd)).includes(canary));
+  assert.ok(!JSON.stringify(await getRuns(cwd, { env: ENV })).includes(canary));
+});
+
+test('inline backend stays the default and prepares, byte-for-byte', async () => {
+  const cwd = project();
+  const run = await runOrchestration({ request: 'refactor and review', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 }, { env: ENV, cwd });
+  assert.equal(run.workerBackend, 'inline');
+  assert.equal(run.status, 'completed');
+  assert.ok(run.tasks.every((t) => t.status === 'prepared' && t.executor === 'inline:prepared'));
+  assert.ok(run.tasks.every((t) => t.output === null), 'inline records no model output');
+});
+
+test('provider backend executes tasks via the model and records real output', async () => {
+  const cwd = project();
+  let calls = 0;
+  const fetchImpl = async () => {
+    calls += 1;
+    return { ok: true, json: async () => ({ content: [{ type: 'text', text: `specialist-output-${calls}` }] }) };
+  };
+  const run = await runOrchestration(
+    { request: 'refactor the auth module and review for security', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4, moduleCount: 2 },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
+  );
+  assert.equal(run.status, 'completed');
+  assert.ok(run.tasks.length >= 2);
+  assert.ok(run.tasks.every((t) => t.status === 'done'), 'every provider task done');
+  assert.ok(run.tasks.every((t) => /^provider:anthropic:/.test(t.executor)), 'executor records provider+model');
+  assert.ok(run.tasks.every((t) => /^specialist-output-/.test(t.output)), 'real model output recorded');
+});
+
+test('provider backend records a failed task and completes-with-failures, no crash', async () => {
+  const cwd = project();
+  const fetchImpl = async () => ({ ok: false, status: 500, text: async () => 'boom' });
+  const run = await runOrchestration(
+    { request: 'refactor and review', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
+  );
+  assert.equal(run.status, 'completed-with-failures');
+  assert.ok(run.tasks.every((t) => t.status === 'failed'));
+  assert.ok(run.tasks.every((t) => t.error?.code === 'PROVIDER_EXECUTION_FAILED'));
 });
