@@ -42,8 +42,16 @@ Additional failure modes on top of the engineer core.
 **Why it fails**: platform surface area compounds blast radius. one leaked token touches every repo.
 **Counter-move**: treat platform secrets as production secrets. Rotate, scope-minimize, and audit.
 
+## Methodology
+
+**IaC maturity.** Infrastructure should climb a ladder: manual → scripted → declarative (Terraform/Pulumi) → declarative + policy-as-code + drift detection. The rung that matters is the last: state is reconciled (no manual console changes survive) and drift between declared and actual is detected and alerted, not discovered during an incident. Name the current rung honestly; "we have some Terraform" alongside hand-edited resources is rung two, not four.
+
+**Supply chain.** Every build emits an SBOM (software bill of materials) so a new CVE can be answered with "are we affected, where" in minutes, not a manual audit. Pin and verify dependencies (lockfiles, checksums, ideally signed provenance), and run the dependency/CVE audit in CI as a gate, not a report. The platform's blast radius is every repo it serves — a compromised build step is the highest-leverage attack.
+
 ## Self-check before shipping
 - [ ] First consumer migrated and measured
+- [ ] Infra is declarative with drift detection; no surviving manual changes
+- [ ] Build emits an SBOM; dependencies pinned/verified; CVE audit gates CI
 - [ ] Deprecation window respected for any breaking change
 - [ ] Failure diagnostics and artifacts preserved
 - [ ] Build-time and cost deltas measured

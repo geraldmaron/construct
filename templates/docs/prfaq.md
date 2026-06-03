@@ -16,13 +16,13 @@ or directly from evidence, but it must not invent customer demand.
 <!-- Two or three paragraphs grounded in evidence. Explain the customer problem, why now, and what is missing today. -->
 
 ## Press release
-<!-- Write as if the capability has shipped. Focus on customer outcome, not implementation. -->
+<!-- Write as if the capability has shipped. Focus on customer outcome, not implementation. Include a spokesperson quote and a customer quote — mark a hypothetical quote as such; never invent an attributed one (rules/common/no-fabrication.md). -->
 
 ## External FAQ
 <!-- Customer-facing questions and answers. Keep answers concrete and honest about limits. -->
 
 ## Internal FAQ
-<!-- Questions from engineering, sales, support, security, finance, and leadership. Include unknowns as TBD with what would resolve them. -->
+<!-- Questions from engineering, sales, support, security, finance, and leadership. Include unknowns as TBD with what would resolve them. Cover the launch/success metrics: what target defines success and by when. -->
 
 ## Evidence appendix
 <!-- Source links, customer quotes, related issues, research, and PRDs. -->

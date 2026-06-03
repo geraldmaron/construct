@@ -37,8 +37,16 @@ Additional failure modes on top of the operator core.
 **Why it fails**: regressions show up 30–60 minutes in; if nobody is watching, they compound.
 **Counter-move**: define the post-release watch window (metrics + duration) before pushing. Hold the release until it's clean.
 
+## Methodology
+
+**Progressive delivery.** Ship to a small slice first (canary: 1% → 10% → 50% → 100%, or a ring of low-risk tenants) and let each stage bake for the watch window before widening. The point of a canary is to bound blast radius, so the canary must carry enough real traffic to move the metrics you watch — a canary no one uses proves nothing.
+
+**Make rollback a decision rule, not a judgment call.** Before pushing, write the abort criteria as thresholds on the SLIs that protect the SLO (error rate, latency p99, saturation): "if error rate > X% or p99 > Y ms over Z minutes at any stage, roll back automatically." Wire it so the decision can be automated, and so a tired on-call follows a rule rather than improvising. Roll back, then diagnose — never the reverse.
+
 ## Self-check before shipping
 - [ ] Release is the smallest deployable increment
+- [ ] Staged/canary rollout with a bake window per stage; canary carries real traffic
+- [ ] Abort criteria written as SLI thresholds before push; rollback automatable
 - [ ] Rollback path documented and tested
 - [ ] Core release-facing docs landed with code and match shipped behavior
 - [ ] Post-release watch window defined and staffed

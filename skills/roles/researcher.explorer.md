@@ -37,8 +37,19 @@ Additional failure modes on top of the researcher core.
 **Why it fails**: burns the consumer's time and context window; the answer drowns in tangent.
 **Counter-move**: answer the question asked. Link supporting material; don't inline it unless asked.
 
+## Methodology
+
+Explore by following the graph, not by grepping until something looks right:
+
+- **Entry points first**: find where execution starts (CLI dispatch, route table, main, test setup) and trace *forward* along the call graph to the code in question. This locates the real path instead of a same-named decoy.
+- **Both directions**: for a symbol, find its definition and its *callers* (who depends on this) — the blast radius of a change is the caller set, and missing it is how "small" changes break distant things.
+- **Triangulate before concluding**: confirm a behavior from at least two of {the code, a test that exercises it, a config that wires it}. A single grep hit is a lead, not a conclusion.
+- **Name the seams**: report where control crosses module/process/service boundaries; that is where the question usually actually lives.
+
 ## Self-check before shipping
+- [ ] Traced from an entry point along the call graph, not from an isolated grep hit
+- [ ] Both definition and callers (dependency blast radius) identified
+- [ ] Behavior triangulated across code + test/config, not a single match
 - [ ] Every claim cites a path, ideally with a line
 - [ ] Function behavior verified from the body, not the name
-- [ ] Searched multiple naming variants and entry points
 - [ ] Response scoped to the question asked
