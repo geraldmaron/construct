@@ -5,6 +5,19 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Added
+- Capability-aware SessionStart output mode (`construct-oqzk`, GH #209): the SessionStart hook no longer
+  unconditionally writes its verbose context payload to stdout, which polluted machine-oriented output in
+  non-interactive / SDK / `claude -p` one-shot invocations. New policy `hookOutputMode` — `auto` (default) |
+  `silent` | `stderr` | `stdout` — resolved env (`CONSTRUCT_HOOK_OUTPUT_MODE`) > config (`hooks.outputMode`
+  in `construct.config.json`) > default. `auto` keeps the rich payload on stdout for interactive sessions and
+  routes it to a debug log (`~/.cx/session-start-last.log`) for non-interactive ones, so a one-shot command's
+  stdout stays reserved for its own output while diagnostics stay recoverable. Claude Code exposes no reliable
+  in-hook interactive/print signal (`CLAUDECODE=1` is set in both modes; a hook's `isTTY` is `false` even
+  interactively), so `auto` detects non-interactive only from reliable signals (`CI=true`, `NODE_ENV=test`,
+  `CONSTRUCT_NONINTERACTIVE=1`) and SDK / host-adapter callers set the knob explicitly; `auto` never suppresses
+  on an ambiguous signal, so interactive sessions keep their full startup context. New module
+  `lib/hooks/_lib/output-mode.mjs`. Tests: `tests/hook-output-mode.test.mjs`,
+  `tests/functional/session-start-output-mode.functional.test.mjs`.
 - Explicit ingest strategy (issues #201, #203): `construct ingest` now resolves an extraction strategy
   through config and an optional `--strategy=adapter|provider` flag instead of silently using local binary
   adapters. New `ingest.strategy` (`adapter` default — current local-extractor behavior, unchanged — or
