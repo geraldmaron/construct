@@ -30,7 +30,7 @@ const yaml = readFileSync(resolve(root, '.github/workflows/release.yml'), 'utf8'
 function jobSection(raw, jobName) {
   const start = raw.indexOf(`\n  ${jobName}:`);
   if (start === -1) return '';
-  const nextJob = raw.slice(start + 1).search(/\n  [a-z][a-z0-9-]*:/);
+  const nextJob = raw.slice(start + 1).search(/\n {2}[a-z][a-z0-9-]*:/);
   return nextJob === -1 ? raw.slice(start) : raw.slice(start, start + 1 + nextJob);
 }
 
@@ -46,7 +46,7 @@ test('publish job uses Node 24+ so npm CLI satisfies the 11.5.1+ OIDC requiremen
   // npm CLI 11.5.1+ is required for Trusted Publishers OIDC. Node 22 ships with
   // npm 10.x which doesn't support OIDC-first auth. Node 24 ships with npm 11+.
   // https://docs.npmjs.com/trusted-publishers
-  const setupNodeBlock = publishSection.match(/uses:\s*actions\/setup-node[\s\S]*?(?=\n      -|\n  \w)/)?.[0] ?? '';
+  const setupNodeBlock = publishSection.match(/uses:\s*actions\/setup-node[\s\S]*?(?=\n {6}-|\n {2}\w)/)?.[0] ?? '';
   assert.match(
     setupNodeBlock,
     /node-version.*'?2[4-9]|node-version.*'?[3-9]\d/,
@@ -77,7 +77,7 @@ test('publish job uses --access public for scoped package', () => {
 test('publish job does not set NODE_AUTH_TOKEN to a secret', () => {
   // NODE_AUTH_TOKEN must not be set to any secret in the publish step —
   // Trusted Publishers OIDC handles auth without a stored token.
-  const publishStep = publishSection.match(/name:\s*Publish to npm[\s\S]*?(?=\n      -\s*name:|\n  \w|$)/)?.[0] ?? '';
+  const publishStep = publishSection.match(/name:\s*Publish to npm[\s\S]*?(?=\n {6}-\s*name:|\n {2}\w|$)/)?.[0] ?? '';
   assert.doesNotMatch(
     publishStep,
     /NODE_AUTH_TOKEN:\s*\$\{\{\s*secrets\./,

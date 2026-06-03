@@ -4,6 +4,73 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+- ESLint (flat config, `eslint.config.mjs`) for AST-level bug detection, complementing the custom comment
+  policy. Deliberately bug-focused (no style rules): `no-undef`, `no-unreachable`, `no-empty`, etc.;
+  `no-unused-vars` is a non-gating warning. Wired into the CI `lint` job (`npm run lint:js`).
+- `c8` code coverage (`npm run coverage`), report-only on `main` pushes.
+- Observation embedding reconciliation — an idempotent pass (`lib/embed/reconcile.mjs`,
+  `construct storage reconcile`) that re-embeds Postgres observation rows that are missing (DB was down
+  at write) or stale (content edited, or embedding model changed), keyed on `(content_hash, model)`.
+  Schema migration `db/schema/003_observation_reconciliation.sql` adds the `content_hash`/`model` stamp to
+  `construct_observations`; the `construct embed` model-change re-embed now re-dimensions and reconciles
+  observations alongside documents, so both corpora stay in one vector space. Validated end-to-end against
+  pgvector 0.8.2.
+- `lib/storage/rrf.mjs` — Reciprocal Rank Fusion (rank-only, scale-independent) for hybrid retrieval.
+- `docs/research/vector-search-best-practices.md` — cited, adversarially-verified research note grounding
+  the reconciliation and hybrid-search decisions.
+- Role-pending queue auto-resolution: unresolved invocations now expire from listings after a 14-day TTL
+  (`lib/roles/gateway.mjs`), and a new `construct role prune` compacts the queue on disk — dropping
+  resolved, TTL-expired, and pre-guard test-fixture entries so it can't accrue noise forever.
+- `tests/functional/loop-closure.functional.test.mjs` — hermetic, offline-deterministic regression
+  guards for the learning loop (observation capture/search/consume, outcome record/read-back, role-queue
+  fixture-guard + manual-resolve, deterministic intake classification).
+- `tests/functional/telemetry-backend-agnostic.functional.test.mjs` — pins the trace data plane as
+  vendor-agnostic (local default, OTel/OTLP first-class, Langfuse only with Langfuse-style keys) and
+  guards the vendor-neutral login bridge.
+
+### Changed
+- Consolidated hybrid search into one path (`lib/storage/hybrid-query.mjs`): file BM25 + native pgvector
+  HNSW ANN (`<=>`, with `hnsw.iterative_scan` enabled on pgvector ≥ 0.8) + keyword, fused by Reciprocal
+  Rank Fusion instead of a dedupe-union of incompatible score scales (BM25 vs cosine vs keyword). The
+  vector search now uses the HNSW index rather than a JS full scan. Validated against pgvector 0.8.2.
+- Telemetry is now vendor-agnostic at the wiring level: the dashboard telemetry-UI sign-in route is
+  provider-aware (`/api/services/telemetry/login`, with `/langfuse/login` kept as a back-compat alias) —
+  an external `CONSTRUCT_TELEMETRY_URL` backend uses the neutral bridge, local Langfuse keeps zero-touch.
+  CLI/observability strings relabeled from "Langfuse" to backend-neutral wording; `docs/concepts/observability.mdx`
+  documents the `CONSTRUCT_TRACE_BACKEND=otel` path and the two-layer agnostic stance.
+- `docs/audit/implementation-audit-20260601.md` — added §8–§12: empirical validation of the loop on a
+  clean isolated instance (which refuted the earlier "loop is open" / "70:1 synthesis" inferences), a
+  conservative prune log, the telemetry-agnosticism finding, and evidence-based priority recommendations.
+
+### Fixed
+- `construct install` now runs the global front-door sync (`sync --global`) so a fresh machine populates
+  every user-scope surface (opencode/claude/codex/copilot) and passes cross-surface adapter parity.
+  Previously install wrote an empty opencode agent table that immediately failed `doctor` (exit 1).
+  Guarded by `tests/functional/install-parity.functional.test.mjs`.
+- **`lib/hooks/guard-bash.mjs` had a `SyntaxError`** (`await` inside a non-async IIFE) — the command-fence
+  safety hook failed to parse and ran no protection. Now parses and enforces. Caught by ESLint.
+- Five `no-undef` runtime bugs surfaced by ESLint: undefined `INDEX_FILE` / `PROFILES_DIR` / `multiSelect`
+  / `selectOption` / `path` / `TRACES_DIR` references (`lib/embed/conflict-detection.mjs`,
+  `lib/embed/customer-profiles.mjs`, `lib/init-docs.mjs`, `lib/mode-commands.mjs`,
+  `lib/telemetry/backends/local.mjs`) — each would throw on its code path. Includes removing ESM-broken
+  `require()` calls in the same files.
+- `lib/hooks/config-protection.mjs` no longer blocks *introducing* a new code-quality config — it only
+  protects a config once it is git-tracked (an established contract). Previously first-time setup (e.g.
+  adding ESLint) was blocked the same as weakening an existing config. Guarded by
+  `tests/hooks/config-protection.test.mjs`.
+
+### Removed
+- `lib/knowledge/postgres-search.mjs` — its tag-aware selectivity routing is subsumed by the native
+  `hnsw.iterative_scan` in the consolidated path; the module had zero callers.
+- `lib/storage/unified-storage.mjs` — provably-dead module (zero references, abandoned since 1.0.1,
+  wired to nothing). Verified: `construct doctor` green, `construct sync` clean, storage/sync tests pass.
+- `lib/services/pattern-promotion-service.mjs`, `lib/embed/jobs/vector-sync.mjs`, and
+  `lib/bootstrap/lazy-install.mjs` — unwired modules with zero export consumers (verified by export-name
+  cross-check). `proactive-activation.mjs` was kept (live CLI consumer `construct activation:status`);
+  `postgres-search.mjs` was removed by the hybrid-search consolidation above. Stale doc/comment
+  references to the removed modules were corrected.
+
 ## [1.0.18] - 2026-06-03
 
 ### Security
