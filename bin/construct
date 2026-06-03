@@ -4107,7 +4107,7 @@ async function cmdCiPreview(args) {
   const jobsSection = jobsStart >= 0 ? yml.slice(jobsStart + 1) : '';
 
   // Find all top-level job keys (2-space indent) and slice blocks between them.
-  const jobKeyPattern = /^  (\w[\w-]*):\s*$/gm;
+  const jobKeyPattern = /^ {2}(\w[\w-]*):\s*$/gm;
   const jobPositions = [];
   let km;
   while ((km = jobKeyPattern.exec(jobsSection)) !== null) {
@@ -4121,7 +4121,7 @@ async function cmdCiPreview(args) {
     const end = jobPositions[i + 1]?.start ?? jobsSection.length;
     const block = jobsSection.slice(start, end);
 
-    const nameMatch = block.match(/^    name:\s*(.+)\s*$/m);
+    const nameMatch = block.match(/^ {4}name:\s*(.+)\s*$/m);
     const displayName = nameMatch
       ? nameMatch[1].replace(/\$\{\{[^}]+\}\}/g, '<matrix>').trim()
       : id;
