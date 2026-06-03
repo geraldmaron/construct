@@ -118,6 +118,8 @@ Config is loaded in this order (last write wins): repo `.env` → `~/.construct/
 | Variable | Default | Description |
 |---|---|---|
 | `CONSTRUCT_DROP_DIRS` | `~/Downloads:~/Desktop:~/Documents` | Colon-separated dirs watched by `construct drop` |
+| `CONSTRUCT_HOOK_OUTPUT_MODE` | `auto` | SessionStart context routing: `auto` \| `silent` \| `stderr` \| `stdout`. `auto` keeps the rich payload on stdout for interactive sessions and suppresses it (to `~/.cx/session-start-last.log`) for non-interactive ones. Mirrors `hooks.outputMode` in `construct.config.json` (env wins). Set to `silent`/`stderr` from SDK / `claude -p` / automation callers so a one-shot command's stdout stays reserved for its own output. |
+| `CONSTRUCT_NONINTERACTIVE` | : | Set truthy (`1`) by an SDK / automation caller to mark the invocation non-interactive, so `CONSTRUCT_HOOK_OUTPUT_MODE=auto` resolves to suppressed. Claude Code exposes no reliable in-hook interactive/print signal, so this flag (or `CI=true` / `NODE_ENV=test`) is how `auto` detects non-interactive mode. |
 
 ## Model router
 
