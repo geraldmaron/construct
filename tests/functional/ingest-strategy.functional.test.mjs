@@ -28,11 +28,15 @@ function makeProject() {
   return { cwd, doc };
 }
 
+// HOME is pinned to the project tmpdir and the provider key vars are blanked so
+// provider extraction is hermetic: no ambient ~/.env key on the dev machine can
+// turn a "no key" assertion into a live network call.
+
 function runIngest(cwd, args, env = {}) {
   const result = spawnSync('node', [BIN, 'ingest', ...args], {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, ...env },
+    env: { ...process.env, HOME: cwd, USERPROFILE: cwd, OPENROUTER_API_KEY: '', ANTHROPIC_API_KEY: '', ...env },
   });
   return result;
 }
