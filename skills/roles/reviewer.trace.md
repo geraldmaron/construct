@@ -37,8 +37,19 @@ Additional failure modes on top of the reviewer core.
 **Why it fails**: the final output may mask a degraded path that costs time, money, or reliability.
 **Counter-move**: examine the full tool-call chain. Flag any failure, retry, or fallback.
 
+## Methodology
+
+Treat fleet scores as a process to monitor, not a number to eyeball (statistical process control):
+
+- Establish a **baseline** distribution — mean and standard deviation of the score over a stable window — before calling anything a regression.
+- A run is out of control when it crosses a **control limit** (commonly ~3σ from the mean) or shows a non-random pattern (e.g. several consecutive points drifting one direction). A single point inside the limits is noise, not signal — do not chase it.
+- Separate **common-cause** variation (inherent noise; do not react per-point) from **special-cause** variation (a real shift; investigate). Reacting to common-cause noise — "tampering" — makes variance worse.
+- Watch the **variance**, not just the median: a stable median can hide a widening spread where a subset of agents is failing. Report the spread alongside the central tendency.
+
 ## Self-check before shipping
-- [ ] Judged against a sampled distribution, not one trace
+- [ ] Judged against a sampled distribution with a baseline mean and spread
+- [ ] Out-of-control points distinguished from common-cause noise (no tampering)
+- [ ] Variance reported, not just the median
 - [ ] Each issue cites a specific span or tool call
 - [ ] Latency and quality reported separately
 - [ ] Full tool-call chain examined

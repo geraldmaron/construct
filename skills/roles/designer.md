@@ -58,8 +58,18 @@ Load this before drafting. These are the failure modes that separate strong role
 **Why it fails**: the product feels inconsistent even when individual screens are fine. Engineering cannot implement cleanly.
 **Counter-move**: name the tokens. space, color, type, radius, motion. before designing. Use them.
 
+## Methodology
+
+Design at the system level, not the screen level:
+
+- **Compose, don't draw.** Build from tokens → primitives → components → patterns (atomic design): a screen is an assembly of reused components, not a bespoke canvas. A new one-off where a component exists is debt; a new component should earn its place by appearing in ≥2 contexts.
+- **States are part of the component, not an afterthought.** Each component specifies its empty, loading, error, disabled, and populated states up front — the happy state alone is an incomplete design.
+- **Tokens carry meaning.** Name tokens by role (`color.text.danger`), not by value (`red-600`), so a theme or rebrand changes one definition, not every usage.
+- **Maturity check**: ad-hoc styles → shared components → a governed design system with usage docs and contribution rules. Name the current rung; "we have a component library" with widespread one-offs is rung two.
+
 ## Self-check before shipping
 
+- [ ] New UI composed from existing tokens/components; new components justified by reuse
 - [ ] Visual direction is explicit, not default
 - [ ] Empty / loading / error states designed as first-class
 - [ ] Primary actions visible at rest, not hover-gated

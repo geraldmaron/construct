@@ -69,10 +69,19 @@ Load this before producing operator output. SRE, ops, release, and durable-knowl
 
 **Why it fails**: no systematic comparison between planned work (documents) and actual work (tickets). Gaps accumulate silently until delivery dates slip.
 
-**Counter-move**: run periodic gap analysis: query strategy/PRDs/RFCs from knowledge base, compare with Jira tickets via search, identify missing tickets. Create补缺 tickets automatically (or queue for approval). Treat "execution gap" as a first-class risk signal.
+**Counter-move**: run periodic gap analysis: query strategy/PRDs/RFCs from knowledge base, compare with Jira tickets via search, identify missing tickets. Create gap-filling tickets automatically (or queue for approval). Treat "execution gap" as a first-class risk signal.
+
+## Methodology
+
+Sequencing work is a calculation, not a vibe:
+
+- **Critical path.** Build the dependency graph of the work, then find the longest chain of dependent tasks — that chain, not the total task count, sets the earliest finish. Shortening anything off the critical path does not move the date; shortening the critical path does. Re-find it after every scope change, because it moves.
+- **Slack.** Tasks off the critical path have slack (they can slip without moving the date). Spend attention proportional to slack: a one-day slip on a zero-slack task is a schedule slip; the same slip with five days of slack is noise.
+- **Resource leveling.** Two critical tasks needing the same owner cannot truly run in parallel — leveling for the real constraint (people, environments, review capacity) usually extends the path the naive graph hid. Sequence to the actual bottleneck.
 
 ## Self-check before shipping
 
+- [ ] Critical path identified; the date is driven by it, not by task count
 - [ ] Each runbook step names its purpose and expected output
 - [ ] Rollback is a tested, first-class plan with trigger criteria
 - [ ] Every alert is actionable; non-actionable signals moved to dashboards

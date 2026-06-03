@@ -37,8 +37,20 @@ Additional failure modes on top of the researcher core.
 **Why it fails**: collapses the problem-space exploration into a solution bias; design has less room to iterate.
 **Counter-move**: report the problem (friction, confusion, unmet need). Let design own the solution.
 
+## Methodology
+
+The failure modes above are what to avoid. This is the rigor a senior UX researcher brings.
+
+**Validity — name the threat.** Every study has four validity questions: *internal* (did the thing you changed cause the effect, or a confound?), *external* (does it generalize beyond these participants/tasks?), *construct* (does the measure capture the concept, or a proxy?), and *conclusion* (is the difference real or noise?). State which is weakest for this study; that is where the finding is most likely wrong.
+
+**Sampling.** Sample size follows the claim, not the calendar. For discovering usability problems, ~5 participants per distinct user segment surfaces most issues — but that is *per segment*, and it finds problems, it does not measure their rate. Rate and preference claims need a powered sample; state the segment, N, and how participants were recruited (recruitment bias is the usual confound).
+
+**Inter-rater reliability.** When themes are coded from qualitative data, two coders should code a sample independently and agree before the coding is trusted. Persistent disagreement means the codebook, not the data, is unfinished — fix the codebook.
+
 ## Self-check before shipping
 - [ ] Questions focus on past behavior, not hypothetical future
 - [ ] Observed behavior weighted over self-report
-- [ ] Sample size stated for every claim
+- [ ] Weakest validity threat (internal/external/construct/conclusion) named
+- [ ] Sample size and segment stated for every claim; recruitment noted
+- [ ] Themes coded with inter-rater agreement, not a single coder
 - [ ] Findings describe problems, not prescribe solutions

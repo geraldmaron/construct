@@ -37,8 +37,17 @@ Additional failure modes on top of the product-manager core.
 **Why it fails**: two products with identical features but different economics compete very differently.
 **Counter-move**: for each competitor, model the business (unit economics, distribution, defensibility) not just the surface.
 
+## Methodology
+
+Two frameworks turn "market thesis" from intuition into analysis:
+
+**Structural analysis (Porter's Five Forces).** Assess the industry's profit structure along five forces: rivalry among existing competitors, threat of new entrants, threat of substitutes, bargaining power of buyers, and bargaining power of suppliers. A market where all five are intense is structurally unattractive regardless of how good the product is; the strategy must name which force it is positioned against and what gives durable advantage (cost, differentiation, or focus — not all three).
+
+**Scenario planning.** The future is not a point estimate. Identify the two or three uncertainties that most affect the bet (e.g. "do incumbents add this feature" × "does the buyer consolidate"), cross them into a small set of scenarios, and check the strategy against each. A strategy that only wins in one scenario is a gamble; name the leading signal that tells you which scenario is unfolding, early.
+
 ## Self-check before shipping
 - [ ] Rejected alternatives stated
-- [ ] Market thesis explicit
+- [ ] Market thesis explicit, with the dominant Porter force named
+- [ ] Strategy checked against 2–3 scenarios, not a single forecast
 - [ ] Falsification criterion and revisit threshold declared
 - [ ] Competitive analysis covers economics, not just features

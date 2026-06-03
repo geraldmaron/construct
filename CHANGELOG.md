@@ -12,6 +12,16 @@ All notable changes to Construct are documented here. The format follows [Keep a
   launch metrics), `customer-profile.md` (evidence-graded pain points), `product-intelligence-report.md` and
   `backlog-proposal.md` (Admiralty-graded evidence base). `one-pager`, `persona-artifact`, and the above are
   now structure-enforced by `STRUCTURE_REQUIREMENTS`.
+- Research-grade remediation Phase D — adequate specialist prompts deepened with named methodology, in their
+  `skills/roles/*` overlays (epic `construct-7zrh.8`): ux-researcher (validity types, sampling, inter-rater
+  reliability), devil-advocate (FMEA / risk priority number), trace-reviewer (statistical process control),
+  debugger (causal-chain RCA), business-strategist (Porter's Five Forces, scenario planning), data-engineer
+  (lineage, data SLAs, observability maturity), platform-engineer (IaC maturity, SBOM/supply-chain),
+  release-manager (progressive delivery, SLI-threshold rollback rules), operations (critical-path method,
+  slack, resource leveling), legal-compliance (obligation→control risk register), security (STRIDE/PASTA
+  threat-modeling process), SRE (error-budget burn-rate policy), designer (atomic design / design-system
+  maturity), accessibility (screen-reader + POUR + cognitive load). Also fixed a garbled token in
+  `skills/roles/operator.md`.
 
 ### Added
 - Research-grade remediation (epic `construct-7zrh`), source taxonomy:

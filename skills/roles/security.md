@@ -58,8 +58,19 @@ Load this before drafting. These are the failure modes that separate strong role
 **Why it fails**: gives an attacker a map of the system; turns a reconnaissance step into a freebie.
 **Counter-move**: user-facing errors are generic. Detailed context goes to logs with appropriate access controls.
 
+## Methodology
+
+Threat modeling is a process, not an instinct. Run it explicitly:
+
+- **Decompose**: draw the data-flow — trust boundaries, entry points, assets, and where data crosses from less-trusted to more-trusted.
+- **Enumerate with STRIDE** per element: **S**poofing, **T**ampering, **R**epudiation, **I**nformation disclosure, **D**enial of service, **E**levation of privilege. STRIDE forces coverage of categories an ad-hoc review skips (repudiation and tampering are the usual blind spots).
+- **Rate and rank**: score each threat by likelihood × impact (or DREAD/CVSS where a number is needed), and treat the highest first. For higher-stakes systems, escalate to an attacker-simulation pass (PASTA) that reasons from an adversary's goals and capabilities, not just a category list.
+- **Decide per threat**: mitigate, accept (with rationale), or transfer. An unrated threat is an unmade decision.
+
 ## Self-check before shipping
 
+- [ ] Threat model decomposes data flow and enumerates STRIDE per trust boundary
+- [ ] Threats rated and ranked; highest-risk handled first
 - [ ] No single control is the only line of defense
 - [ ] Secrets live in a secret manager, not in the repo
 - [ ] User input is validated and escaped at every boundary
