@@ -12,13 +12,19 @@ All notable changes to Construct are documented here. The format follows [Keep a
   `construct.config.json`, resolved with the standard env > config > default precedence
   (`CONSTRUCT_INGEST_STRATEGY`, `CONSTRUCT_INGEST_FALLBACK`). The ingestion result now carries an
   `ingestion` block (`strategy`, `fallback`, `model`, `provider`, `fallbackApplied`) so the selected
-  strategy and provider/model are visible in CLI output and the embedded-contract surfaces. Provider-mode
-  extraction resolves and records the configured provider/model via the embedded model-resolution contract;
-  a concrete provider extraction call is deferred, so `provider` either falls back per the explicit policy
-  (recording the fallback) or fails with `PROVIDER_EXTRACTION_UNWIRED` — it never silently uses the adapter
-  when the caller asked for `provider`. New module `lib/ingest/strategy.mjs`. Tests:
-  `tests/ingest-strategy.test.mjs`, extended `tests/embedded-contract-ingest.test.mjs`,
-  `tests/functional/ingest-strategy.functional.test.mjs`.
+  strategy and provider/model are visible in CLI output and the embedded-contract surfaces.
+  New module `lib/ingest/strategy.mjs`. Tests: `tests/ingest-strategy.test.mjs`, extended
+  `tests/embedded-contract-ingest.test.mjs`, `tests/functional/ingest-strategy.functional.test.mjs`.
+- Concrete provider-backed extraction (`construct-3z9u`, closing #201): the `provider` ingest strategy now
+  performs a real provider call instead of deferring. New `lib/ingest/provider-extract.mjs` sends text-class
+  files inline and images/PDFs as multimodal blocks, selecting the Anthropic Messages API for Claude-family
+  models and OpenRouter chat-completions otherwise. Capability is honest — audio/video and Office/zip raise a
+  specific `PROVIDER_MEDIA_UNSUPPORTED`, a missing key raises `PROVIDER_KEY_MISSING`, and an unresolved model
+  raises `PROVIDER_MODEL_UNRESOLVED`; on any failure the `ingest.fallback` policy decides (route to the local
+  adapter and record the fallback, or surface the structured error) — `provider` never silently uses the
+  adapter. The old blanket `PROVIDER_EXTRACTION_UNWIRED` placeholder is removed. Key discovery is hermetic
+  when an explicit `env` is injected; `fetchImpl` is injectable for tests. Tests:
+  `tests/ingest-provider-extract.test.mjs` (12 cases) and updated `tests/embedded-contract-ingest.test.mjs`.
 
 ### Fixed
 - construct-mcp MCP server identity (`construct-dwfv`): the server reported a hardcoded stale `version: "1.0.0"`

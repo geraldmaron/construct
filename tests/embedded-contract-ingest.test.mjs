@@ -75,19 +75,35 @@ test('ingestion metadata records the resolved strategy (default adapter)', async
   assert.equal(r.error, null);
 });
 
-test('provider strategy with fallback=none surfaces a structured error, no silent adapter use', async () => {
+test('provider strategy runs a real provider call and surfaces provider-extracted text', async () => {
+  const mockFetch = async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: 'PROVIDER EXTRACTED TEXT' } }] }) });
+  const r = await resolveInput({
+    filePath: fixture('s.txt', 'raw content'),
+    config: { ingest: { strategy: 'provider', fallback: 'none' } },
+    env: { CX_MODEL_FAST: 'test-fast-model', OPENROUTER_API_KEY: 'sk-test' },
+    fetchImpl: mockFetch,
+  });
+  assert.equal(r.error, null);
+  assert.equal(r.text, 'PROVIDER EXTRACTED TEXT');
+  assert.equal(r.ingestion.strategy, 'provider');
+  assert.match(r.ingestion.extractionMethod, /^provider:openrouter:/);
+  assert.equal(r.ingestion.fallbackApplied, null);
+});
+
+test('provider strategy with fallback=none and no key surfaces a structured error, no silent adapter use', async () => {
   const r = await resolveInput({
     filePath: fixture('s.txt', 'content'),
     config: { ingest: { strategy: 'provider', fallback: 'none' } },
     env: { CX_MODEL_FAST: 'test-fast-model' },
   });
   assert.equal(r.text, '');
-  assert.equal(r.error.code, 'PROVIDER_EXTRACTION_UNWIRED');
+  assert.equal(r.error.code, 'PROVIDER_KEY_MISSING');
+  assert.ok(r.error.remediation);
   assert.equal(r.ingestion.strategy, 'provider');
   assert.equal(r.ingestion.model, 'test-fast-model');
 });
 
-test('provider strategy with fallback=adapter extracts and records the fallback', async () => {
+test('provider strategy with fallback=adapter extracts via adapter and records the fallback', async () => {
   const r = await resolveInput({
     filePath: fixture('s.txt', 'fallback content'),
     config: { ingest: { strategy: 'provider', fallback: 'adapter' } },
@@ -97,5 +113,6 @@ test('provider strategy with fallback=adapter extracts and records the fallback'
   assert.equal(r.ingestion.strategy, 'provider');
   assert.equal(r.ingestion.model, 'test-fast-model');
   assert.equal(r.ingestion.fallbackApplied.to, 'adapter');
+  assert.equal(r.ingestion.fallbackApplied.code, 'PROVIDER_KEY_MISSING');
   assert.equal(r.error, null);
 });
