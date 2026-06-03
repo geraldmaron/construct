@@ -9,7 +9,7 @@ SDK import:
 
 ```js
 import {
-  describeCapabilities, recommendPlan, resolveEmbeddedModel, invokeWorkflow,
+  describeCapabilities, recommendPlan, resolveEmbeddedModel, resolveExecution, invokeWorkflow,
 } from '@geraldmaron/construct/embedded-contract';
 ```
 
@@ -34,6 +34,14 @@ CLI `construct models resolve --json` · MCP `model_resolve` · SDK `resolveEmbe
 Request: `workflowType?`, `requestedTier?` (`reasoning|standard|fast`), `host?`, `hostModel?`, `hostProvider?`, `capabilities?`, `allowCrossProviderFallback?` (default `false`).
 
 Response `data`: `selectedModel`, `selectedProvider`, `providerFamily`, `resolutionSource` (`host-model|same-family-fallback|tier-default|config-error`), `requestedTier`, `fallbackReason`, `tierSource`, `capabilitiesMatched`, `healthStatus` (`healthy|unknown|cooldown`), `estimatedLimits`, `requiresCredential` (boolean, never a value), `error` (`{ code, reason, remediation }` or `null`).
+
+## Execution-capability resolution
+
+CLI `construct execution resolve --json` · MCP `construct_execution_resolve` · SDK `resolveExecution(request)`. Read-only; reports before/at workflow start whether a run will engage Construct orchestration or degrade to prompt-only, and why. **Descriptive, not enforced** (ADR-0019): reports what Construct planned and can resolve a model for, never observed host execution — see the `semantics` field.
+
+Request: `workflowType?`, `requestedStrategy?` (`orchestrated|prompt-only|auto`, default `auto`), `useConstruct?` (default `true`; `false` ⇒ host-direct), `host?`, `hostModel?`, `hostProvider?`, `requestedTier?`, `capabilities?`, `allowCrossProviderFallback?`.
+
+Response `data`: `executionMode` (`construct-orchestrated|construct-prompt-only|host-direct|same-family-fallback`), `constructCapabilitiesActive` (subset of `personas|skills|workflow-routing|prompt-envelope`), `degraded`, `degradationReason` (machine-readable or `null`), `requestedStrategy`, `effectiveStrategy`, `selectedProvider`, `selectedModel`, `resolutionSource`, `orchestrationPlanned`, `orchestrationAvailable`, `deploymentMode`, `modelResolution` (nested), `semantics` (the descriptive-boundary disclaimer).
 
 ## Workflow invocation
 

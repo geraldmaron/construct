@@ -273,6 +273,10 @@
       "core": false
     },
     {
+      "name": "resolve --json",
+      "core": false
+    },
+    {
       "name": "resources",
       "core": false
     },
@@ -290,6 +294,10 @@
     },
     {
       "name": "roles:set",
+      "core": false
+    },
+    {
+      "name": "run \"<request>\" [--strategy S] [--host H] [--no-construct] [--no-execute] [--json]",
       "core": false
     },
     {
