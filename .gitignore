@@ -1,5 +1,7 @@
 node_modules/
 cache/
+coverage/
+.nyc_output/
 .env
 .env.local
 *.log
