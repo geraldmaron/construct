@@ -1,0 +1,452 @@
+{
+  "commands": [
+    {
+      "name": "activation:status",
+      "core": false
+    },
+    {
+      "name": "ask",
+      "core": false
+    },
+    {
+      "name": "audit",
+      "core": false
+    },
+    {
+      "name": "auth:status",
+      "core": false
+    },
+    {
+      "name": "backup",
+      "core": false
+    },
+    {
+      "name": "beads",
+      "core": false
+    },
+    {
+      "name": "beads:stats",
+      "core": false
+    },
+    {
+      "name": "bootstrap",
+      "core": false
+    },
+    {
+      "name": "check",
+      "core": true
+    },
+    {
+      "name": "ci",
+      "core": false
+    },
+    {
+      "name": "claude:allow",
+      "core": false
+    },
+    {
+      "name": "cleanup",
+      "core": false
+    },
+    {
+      "name": "completions",
+      "core": false
+    },
+    {
+      "name": "config",
+      "core": false
+    },
+    {
+      "name": "create [--profile=<id>]",
+      "core": true
+    },
+    {
+      "name": "creds",
+      "core": false
+    },
+    {
+      "name": "dashboard:sync",
+      "core": false
+    },
+    {
+      "name": "decisions",
+      "core": false
+    },
+    {
+      "name": "deployment",
+      "core": false
+    },
+    {
+      "name": "describe --json",
+      "core": false
+    },
+    {
+      "name": "dev",
+      "core": true
+    },
+    {
+      "name": "diff",
+      "core": false
+    },
+    {
+      "name": "doc",
+      "core": false
+    },
+    {
+      "name": "docs:check",
+      "core": false
+    },
+    {
+      "name": "docs:reconcile",
+      "core": false
+    },
+    {
+      "name": "docs:site",
+      "core": false
+    },
+    {
+      "name": "docs:update",
+      "core": false
+    },
+    {
+      "name": "docs:verify",
+      "core": false
+    },
+    {
+      "name": "drop",
+      "core": false
+    },
+    {
+      "name": "efficiency",
+      "core": false
+    },
+    {
+      "name": "embed",
+      "core": false
+    },
+    {
+      "name": "eval-datasets",
+      "core": false
+    },
+    {
+      "name": "evals",
+      "core": false
+    },
+    {
+      "name": "evaluator:rubrics",
+      "core": false
+    },
+    {
+      "name": "feedback:history",
+      "core": false
+    },
+    {
+      "name": "feedback:record",
+      "core": false
+    },
+    {
+      "name": "gates:audit",
+      "core": false
+    },
+    {
+      "name": "graph",
+      "core": false
+    },
+    {
+      "name": "handoffs",
+      "core": false
+    },
+    {
+      "name": "headhunt",
+      "core": false
+    },
+    {
+      "name": "hook",
+      "core": false
+    },
+    {
+      "name": "hooks:health",
+      "core": false
+    },
+    {
+      "name": "infer",
+      "core": false
+    },
+    {
+      "name": "ingest",
+      "core": false
+    },
+    {
+      "name": "init",
+      "core": true
+    },
+    {
+      "name": "init:update",
+      "core": false
+    },
+    {
+      "name": "install",
+      "core": true
+    },
+    {
+      "name": "intake",
+      "core": true
+    },
+    {
+      "name": "integrations",
+      "core": false
+    },
+    {
+      "name": "invoke --json --workflow-type <t> [--text|--file|<stdin>]",
+      "core": false
+    },
+    {
+      "name": "lint:agents",
+      "core": false
+    },
+    {
+      "name": "lint:comments",
+      "core": false
+    },
+    {
+      "name": "lint:contracts",
+      "core": false
+    },
+    {
+      "name": "lint:research",
+      "core": false
+    },
+    {
+      "name": "lint:templates",
+      "core": false
+    },
+    {
+      "name": "list",
+      "core": true
+    },
+    {
+      "name": "llm-judge",
+      "core": false
+    },
+    {
+      "name": "memory",
+      "core": false
+    },
+    {
+      "name": "migrate",
+      "core": false
+    },
+    {
+      "name": "ollama",
+      "core": false
+    },
+    {
+      "name": "optimize",
+      "core": false
+    },
+    {
+      "name": "overrides",
+      "core": false
+    },
+    {
+      "name": "policy",
+      "core": false
+    },
+    {
+      "name": "provider",
+      "core": false
+    },
+    {
+      "name": "providers",
+      "core": false
+    },
+    {
+      "name": "prune",
+      "core": false
+    },
+    {
+      "name": "recommend --json [--text|--file|<stdin>]",
+      "core": false
+    },
+    {
+      "name": "reflect",
+      "core": false
+    },
+    {
+      "name": "resources",
+      "core": false
+    },
+    {
+      "name": "review",
+      "core": false
+    },
+    {
+      "name": "role",
+      "core": false
+    },
+    {
+      "name": "roles:list",
+      "core": false
+    },
+    {
+      "name": "roles:set",
+      "core": false
+    },
+    {
+      "name": "scheduler",
+      "core": false
+    },
+    {
+      "name": "search",
+      "core": false
+    },
+    {
+      "name": "seed-traces",
+      "core": false
+    },
+    {
+      "name": "show",
+      "core": false
+    },
+    {
+      "name": "skills",
+      "core": false
+    },
+    {
+      "name": "status",
+      "core": true
+    },
+    {
+      "name": "stop",
+      "core": true
+    },
+    {
+      "name": "storage",
+      "core": false
+    },
+    {
+      "name": "sync",
+      "core": true
+    },
+    {
+      "name": "tags",
+      "core": false
+    },
+    {
+      "name": "team",
+      "core": false
+    },
+    {
+      "name": "telemetry-backfill",
+      "core": false
+    },
+    {
+      "name": "telemetry-setup",
+      "core": false
+    },
+    {
+      "name": "trends",
+      "core": true
+    },
+    {
+      "name": "uninstall",
+      "core": false
+    },
+    {
+      "name": "update",
+      "core": false
+    },
+    {
+      "name": "upgrade",
+      "core": false
+    },
+    {
+      "name": "validate",
+      "core": false
+    },
+    {
+      "name": "version",
+      "core": false
+    },
+    {
+      "name": "wireframe",
+      "core": false
+    },
+    {
+      "name": "workflow",
+      "core": false
+    }
+  ],
+  "agents": [
+    "accessibility",
+    "ai-engineer",
+    "architect",
+    "business-strategist",
+    "data-analyst",
+    "data-engineer",
+    "debugger",
+    "designer",
+    "devil-advocate",
+    "docs-keeper",
+    "engineer",
+    "evaluator",
+    "explorer",
+    "legal-compliance",
+    "operations",
+    "orchestrator",
+    "platform-engineer",
+    "product-manager",
+    "qa",
+    "rd-lead",
+    "release-manager",
+    "researcher",
+    "reviewer",
+    "security",
+    "sre",
+    "test-automation",
+    "trace-reviewer",
+    "ux-researcher"
+  ],
+  "hooks": {
+    "SessionStart": [
+      "session-start"
+    ],
+    "PreToolUse": [
+      "policy-engine",
+      "block-no-verify",
+      "pre-push-gate",
+      "guard-bash",
+      "config-protection",
+      "mcp-health-check",
+      "edit-guard"
+    ],
+    "PostToolUse": [
+      "inline",
+      "scan-secrets",
+      "adaptive-lint",
+      "comment-lint",
+      "doc-coupling-check",
+      "edit-accumulator",
+      "registry-sync",
+      "dep-audit",
+      "audit-reads",
+      "mcp-audit",
+      "agent-tracker",
+      "bash-output-logger",
+      "test-watch",
+      "post-merge-docs-check",
+      "post-merge-tracking",
+      "audit-trail"
+    ],
+    "Stop": [
+      "policy-engine",
+      "stop-typecheck",
+      "readme-age-check",
+      "stop-notify",
+      "pre-compact",
+      "session-optimize",
+      "session-reflect",
+      "session-tracking-refresh"
+    ]
+  }
+}

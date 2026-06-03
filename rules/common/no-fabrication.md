@@ -1,5 +1,8 @@
 ---
 description: canonical anti-fabrication policy for Construct.
+enforced_by: lib/comment-lint.mjs, lib/contracts/validate.mjs
+adr_reference: ADR-0015
+precedence_tier: correctness
 ---
 # No-Fabrication Policy
 

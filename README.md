@@ -212,6 +212,8 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct ci` | Local CI mirror: run CI jobs locally or view recent run status |
 | `construct completions` | Shell completion scripts |
 | `construct config` | Deployment mode configuration |
+| `construct decisions` | Index load-bearing decisions and their enforcement bindings |
+| `construct deployment` | Deployment posture tools (capability parity contract) |
 | `construct diff` | Show agent changes since HEAD |
 | `construct embed` | Embed mode management |
 | `construct gates:audit` | Audit policy gates |

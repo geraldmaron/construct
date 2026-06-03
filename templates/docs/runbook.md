@@ -15,7 +15,17 @@
 <!-- Who is affected and how badly. Data loss? Degraded performance? Complete outage? -->
 
 ## Diagnostic steps
-<!-- Ordered checks from cheapest to most expensive. Each step: what to check, how to check it, what the answer means. -->
+<!-- Ordered checks from cheapest to most expensive. Each step: what to check, how to check it, what the answer means. Keep the decision tree below in sync with the steps. -->
+
+```mermaid
+flowchart TD
+  A[Alert fires] --> B{Error rate elevated?}
+  B -->|Yes| C[Check upstream dependency health]
+  B -->|No| D{User-visible impact?}
+  C --> E[Apply remediation]
+  D -->|Yes| C
+  D -->|No| F[Monitor and stand down]
+```
 
 ## Remediation
 <!-- The fix. Step-by-step, with exact commands or UI paths. Include expected output for each step. -->

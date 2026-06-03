@@ -1,0 +1,20 @@
+{
+  "enforced": [
+    "ADR-0015",
+    "ADR-0016",
+    "any-to-business-strategist",
+    "any-to-explorer",
+    "architect-to-data-engineer",
+    "architect-to-evaluator",
+    "architect-to-legal-compliance",
+    "construct-to-rd-lead",
+    "product-manager-to-architect",
+    "product-manager-to-data-analyst",
+    "product-manager-to-ux-researcher",
+    "qa-to-test-automation",
+    "researcher-to-product-manager",
+    "rule:common/comments",
+    "rule:common/no-fabrication",
+    "rule:common/precedence"
+  ]
+}
