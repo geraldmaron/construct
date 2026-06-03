@@ -5,6 +5,15 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Added
+- Execution metadata on live embedded runs (GH #206, completing the cluster): `invokeWorkflow` now returns an
+  `execution` block (`executionMode`, `effectiveStrategy`, `requestedStrategy`, `constructCapabilitiesActive`,
+  `degraded`/`degradationReason`, `semantics`) reporting the **planned** execution mode for the run, and
+  accepts a `constructStrategy` request field (`auto`|`orchestrated`|`prompt-only`). `recommendPlan` gains an
+  optional `execution` preview, populated only when host context (`hostModel`/`hostProvider`/`constructStrategy`)
+  is supplied so triage never forces a model resolution. Both reuse `resolveExecution` and stay descriptive,
+  not enforced (ADR-0019) — the planned mode, never observed host execution. Parity-safe (deterministic).
+  `lib/embedded-contract/{workflow-invoke,triage}.mjs`. Tests: extended
+  `tests/embedded-contract-{workflow-invoke,triage}.test.mjs`.
 - Explicit ingest orchestration axis (GH #203): `construct ingest` gains an orchestration strategy
   (`prompt-only` default | `orchestrated`) independent of the existing extraction strategy
   (`adapter`|`provider`). `prompt-only` runs ingest as a deterministic extraction pass; `orchestrated`
