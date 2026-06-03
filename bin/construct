@@ -3335,6 +3335,83 @@ async function cmdValidate() {
   process.exit(1);
 }
 
+async function cmdExecution(args) {
+  if (args[0] === 'resolve') {
+    const flag = (name) => { const i = args.indexOf(name); return i !== -1 ? args[i + 1] : undefined; };
+    const { resolveExecution } = await import('../lib/embedded-contract/execution.mjs');
+    const { wrapContractResult } = await import('../lib/embedded-contract/envelope.mjs');
+    const request = {
+      workflowType: flag('--workflow-type'),
+      requestedStrategy: flag('--strategy'),
+      useConstruct: !args.includes('--no-construct'),
+      host: flag('--host'),
+      hostModel: flag('--host-model'),
+      hostProvider: flag('--host-provider'),
+      requestedTier: flag('--tier'),
+      capabilities: flag('--capabilities')?.split(',').map((s) => s.trim()).filter(Boolean),
+      allowCrossProviderFallback: args.includes('--allow-cross-provider'),
+    };
+    const envelope = wrapContractResult(resolveExecution(request), { surface: 'cli' });
+    println(JSON.stringify(envelope, null, 2));
+    return;
+  }
+  println('Usage: construct execution resolve [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--host-model M] [--host-provider P] [--tier reasoning|standard|fast] [--no-construct] [--allow-cross-provider] [--json]');
+}
+
+async function cmdOrchestrate(args) {
+  const sub = args[0];
+  const rest = args.slice(1);
+  const flag = (name) => { const i = rest.indexOf(name); return i !== -1 ? rest[i + 1] : undefined; };
+  const wantsJson = rest.includes('--json') || args.includes('--json');
+
+  if (sub === 'run') {
+    const { runOrchestration, planRun, hostAdapterMetadata } = await import('../lib/orchestration/runtime.mjs');
+    const positional = rest.filter((a, i) => !a.startsWith('--') && !(i > 0 && rest[i - 1].startsWith('--') && !['--no-construct', '--no-execute', '--json'].includes(rest[i - 1])));
+    const text = flag('--text') || positional.join(' ').trim();
+    if (!text) { errorln('Usage: construct orchestrate run "<request>" [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]'); process.exit(1); }
+    const request = {
+      request: text,
+      workflowType: flag('--workflow-type'),
+      requestedStrategy: flag('--strategy') || 'auto',
+      useConstruct: !rest.includes('--no-construct'),
+      host: flag('--host'),
+      hostModel: flag('--host-model'),
+      hostProvider: flag('--host-provider'),
+      fileCount: Number(flag('--file-count') || 0),
+      moduleCount: Number(flag('--module-count') || 0),
+    };
+    const run = rest.includes('--no-execute') ? planRun(request, {}) : runOrchestration(request, {});
+    if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
+    println(`Run ${run.runId} — ${run.status} · executionMode=${run.execution.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
+    if (run.execution.degraded) println(`  degraded: ${run.execution.degradationReason}`);
+    if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
+    else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
+    return;
+  }
+
+  if (sub === 'status') {
+    const { getRun, getRuns, hostAdapterMetadata } = await import('../lib/orchestration/runtime.mjs');
+    const runId = rest.find((a) => !a.startsWith('--'));
+    if (runId) {
+      const run = getRun(process.cwd(), runId);
+      if (!run) { errorln(`Run not found: ${runId}`); process.exit(1); }
+      if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
+      println(`Run ${run.runId} — ${run.status} · executionMode=${run.execution.executionMode}`);
+      for (const t of run.tasks) println(`  ${t.id} ${t.role} — ${t.status}`);
+      return;
+    }
+    const runs = getRuns(process.cwd());
+    if (wantsJson) { println(JSON.stringify(runs, null, 2)); return; }
+    if (!runs.length) { println('No orchestration runs recorded.'); return; }
+    for (const r of runs) println(`  ${r.runId} — ${r.status} · ${r.executionMode || ''} · ${r.createdAt}`);
+    return;
+  }
+
+  println('Usage: construct orchestrate <run|status> [options]');
+  println('  run "<request>" [--workflow-type T] [--strategy S] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]');
+  println('  status [run-id] [--json]');
+}
+
 async function cmdModels(args) {
   if (args[0] === 'resolve') {
     const flag = (name) => { const i = args.indexOf(name); return i !== -1 ? args[i + 1] : undefined; };
@@ -5040,6 +5117,8 @@ const handlers = new Map([
   ['docs:reconcile', cmdDocsReconcile],
   ['init:update', cmdInitUpdate],
   ['models', cmdModels],
+  ['execution', cmdExecution],
+  ['orchestrate', cmdOrchestrate],
   ['beads:stats', async (args) => {
     const { getContentionStats, getHumanStatus } = await import('../lib/beads-optimistic.mjs');
     const jsonOutput = args.includes('--json');

@@ -4,9 +4,88 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.20] - 2026-06-03
+
+### Added
+- Host-independent local orchestration runtime — Mode-A vertical slice (`construct-d6pf`, GH #207): a
+  Construct-owned runtime so non-Claude hosts reach equivalent orchestration outcomes instead of depending on
+  whichever editor exposes native multi-agent execution. New `construct orchestrate run|status [--json]`
+  (modules `lib/orchestration/runtime.mjs` + `run-store.mjs`). Mode-A is zero-dependency: single-process,
+  filesystem-backed run/task store under `.cx/runtime/orchestration/`, no Docker. A run intakes a request,
+  plans a sequenced specialist chain (reusing the `orchestration-policy` planner), resolves the
+  execution-capability contract (reusing `resolveExecution`), persists a durable, resumable task lifecycle
+  (`queued → running → prepared`), and emits lifecycle traces. Host adapters receive structured metadata —
+  `executionMode`, `constructCapabilitiesActive`, `workerBackend`, `hostRole`, `degraded`/`degradationReason`,
+  `selectedProvider`/`selectedModel`, `traceId`. **Honest boundary** (ADR-0020): the Mode-A `inline` backend
+  owns planning/sequencing/handoff-state/persistence/observability and *prepares* each specialist task for a
+  downstream executor — it does not itself perform specialist LLM reasoning (a provider-backed worker backend
+  is a later increment), and prompt-only/host-direct runs own no specialist sequence rather than implying
+  orchestration. ADR-0020 registered + bound. Tests: `tests/orchestration-runtime.test.mjs`,
+  `tests/functional/orchestration-mode-a.functional.test.mjs`.
+- Execution-capability contract for embedded workflows (`construct-1txt`, GH #206): a fifth Embedded
+  Contract Layer surface — `resolveExecution` (SDK) / `construct execution resolve --json` (CLI) /
+  `construct_execution_resolve` (MCP) — that reports, before or at workflow start, whether a run will engage
+  Construct orchestration or degrade to a prompt-only envelope, and why. Returns `executionMode`
+  (`construct-orchestrated` | `construct-prompt-only` | `host-direct` | `same-family-fallback`),
+  `constructCapabilitiesActive` (subset of `personas`/`skills`/`workflow-routing`/`prompt-envelope`),
+  `degraded` + machine-readable `degradationReason`, `requestedStrategy` vs `effectiveStrategy`, and the
+  resolved provider/model (reusing `resolveEmbeddedModel`). The contract is **descriptive, not enforced**
+  (ADR-0019): Construct returns a plan and the host runtime executes it, so every response carries a
+  `semantics` disclaimer and never claims observed host execution — asserting personas ran would violate the
+  no-fabrication rule. Same-family fallback and config-error both surface as `degraded`. Additive: Embedded
+  Contract `CONTRACT_VERSION` bumped `1.0.0 → 1.1.0` (old clients remain compatible). New module
+  `lib/embedded-contract/execution.mjs`; ADR-0019 registered + bound (`enforced-baseline.json`). Tests:
+  `tests/embedded-contract-execution.test.mjs`, extended `tests/embedded-contract-parity.test.mjs`.
+- Capability-aware SessionStart output mode (`construct-oqzk`, GH #209): the SessionStart hook no longer
+  unconditionally writes its verbose context payload to stdout, which polluted machine-oriented output in
+  non-interactive / SDK / `claude -p` one-shot invocations. New policy `hookOutputMode` — `auto` (default) |
+  `silent` | `stderr` | `stdout` — resolved env (`CONSTRUCT_HOOK_OUTPUT_MODE`) > config (`hooks.outputMode`
+  in `construct.config.json`) > default. `auto` keeps the rich payload on stdout for interactive sessions and
+  routes it to a debug log (`~/.cx/session-start-last.log`) for non-interactive ones, so a one-shot command's
+  stdout stays reserved for its own output while diagnostics stay recoverable. Claude Code exposes no reliable
+  in-hook interactive/print signal (`CLAUDECODE=1` is set in both modes; a hook's `isTTY` is `false` even
+  interactively), so `auto` detects non-interactive only from reliable signals (`CI=true`, `NODE_ENV=test`,
+  `CONSTRUCT_NONINTERACTIVE=1`) and SDK / host-adapter callers set the knob explicitly; `auto` never suppresses
+  on an ambiguous signal, so interactive sessions keep their full startup context. New module
+  `lib/hooks/_lib/output-mode.mjs`. Tests: `tests/hook-output-mode.test.mjs`,
+  `tests/functional/session-start-output-mode.functional.test.mjs`.
+- Explicit ingest strategy (issues #201, #203): `construct ingest` now resolves an extraction strategy
+  through config and an optional `--strategy=adapter|provider` flag instead of silently using local binary
+  adapters. New `ingest.strategy` (`adapter` default — current local-extractor behavior, unchanged — or
+  `provider`) and `ingest.fallback` (`none` default, or `provider`/`adapter`) config keys in
+  `construct.config.json`, resolved with the standard env > config > default precedence
+  (`CONSTRUCT_INGEST_STRATEGY`, `CONSTRUCT_INGEST_FALLBACK`). The ingestion result now carries an
+  `ingestion` block (`strategy`, `fallback`, `model`, `provider`, `fallbackApplied`) so the selected
+  strategy and provider/model are visible in CLI output and the embedded-contract surfaces.
+  New module `lib/ingest/strategy.mjs`. Tests: `tests/ingest-strategy.test.mjs`, extended
+  `tests/embedded-contract-ingest.test.mjs`, `tests/functional/ingest-strategy.functional.test.mjs`.
+- Concrete provider-backed extraction (`construct-3z9u`, closing #201): the `provider` ingest strategy now
+  performs a real provider call instead of deferring. New `lib/ingest/provider-extract.mjs` sends text-class
+  files inline and images/PDFs as multimodal blocks, selecting the Anthropic Messages API for Claude-family
+  models and OpenRouter chat-completions otherwise. Capability is honest — audio/video and Office/zip raise a
+  specific `PROVIDER_MEDIA_UNSUPPORTED`, a missing key raises `PROVIDER_KEY_MISSING`, and an unresolved model
+  raises `PROVIDER_MODEL_UNRESOLVED`; on any failure the `ingest.fallback` policy decides (route to the local
+  adapter and record the fallback, or surface the structured error) — `provider` never silently uses the
+  adapter. The old blanket `PROVIDER_EXTRACTION_UNWIRED` placeholder is removed. Key discovery is hermetic
+  when an explicit `env` is injected; `fetchImpl` is injectable for tests. Tests:
+  `tests/ingest-provider-extract.test.mjs` (12 cases) and updated `tests/embedded-contract-ingest.test.mjs`.
+
+### Fixed
+- construct-mcp MCP server identity (`construct-dwfv`): the server reported a hardcoded stale `version: "1.0.0"`
+  and advertised no `instructions` or resources, so MCP hosts (Claude Code, VS Code, OpenCode, Cursor) rendered
+  the "Construct" entry as a bare name + OK badge with an empty detail panel. It now sources the real version
+  from `lib/version.mjs`, returns a descriptive `instructions` string, and exposes a `construct://status`
+  resource (version, deployment mode, broker, capabilities). Also fixed `getInstalledVersion()` being used as a
+  string when it returns an object. Test: `tests/mcp-server-identity.test.mjs`; tools unchanged (65).
+
 ## [1.0.19] - 2026-06-03
 
 ### Changed
+- Toolchain pinning (`construct-y3i5`): added `.tool-versions` (Node + Terraform) as the single source of
+  truth read by `mise`/`asdf` locally and by `actions/setup-node` (`node-version-file`) across CI — replacing
+  ~12 hardcoded `node-version: 22` entries. npm pinned via `package.json` `packageManager` (Corepack).
+  The cross-version test matrix (Node 20/22) and the publish job (Node 24 for npm 11 / Trusted Publishers OIDC)
+  remain intentionally explicit. CONTRIBUTING "Required tools" updated (was the stale "Node 18 or later").
 - Research-grade remediation Phase C — adequate templates raised to expert-grade (epic `construct-7zrh.7`):
   `runbook.md` (severity→response/error-budget mapping atop the diagnostic flowchart), `strategy.md`
   (per-bet kill criteria + leading indicators, leading/lagging metrics, milestones, risk register),
