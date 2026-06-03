@@ -5,6 +5,33 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Added
+- Research-grade remediation (epic `construct-7zrh`), source taxonomy:
+  - `docs/adr/0017-source-credibility-taxonomy.md` + `rules/common/research.md` — **claim-relative source
+    classing** (community/forum content is *primary* evidence for sentiment/demand/friction claims, tertiary
+    for factual ones), a community-source admissibility checklist, and the **Admiralty grade** (source
+    reliability `A`–`F` × information credibility `1`–`6`, mapped onto `high/medium/low` confidence).
+  - `rules/common/research-sources.md` — per-domain community starting-points catalog (which subreddits / SO
+    tags / HN by domain) for sentiment research.
+  - Research templates (`research-brief`, `evidence-brief`) gain `Reliability`/`Credibility` columns; the
+    cx-researcher prompt teaches the rule. ADR-0017 enforced via `tests/source-taxonomy.test.mjs`.
+  - Document quality standard (`docs/adr/0018-document-quality-standard.md`, `docs/concepts/doc-quality-rubric.md`):
+    a seven-dimension definition of "research-grade" with an enforced structural floor — `STRUCTURE_REQUIREMENTS`
+    in `lib/templates/visual-requirements.mjs` declares the required sections per doc type, and
+    `tests/structure-requirements.test.mjs` fails if a template drops one. ADR-0018 enforced.
+
+### Changed
+- Thin templates raised to research-grade (epic `construct-7zrh`): `templates/docs/incident-report.md` (trigger
+  vs root cause vs contributing factors, severity rationale, mitigators, timeline phases, action items with
+  owner/priority/tracking, glossary — Google SRE postmortem culture), `skill-artifact.md` (competency rubric,
+  prerequisites, failure modes, worked example), `research-finding.md` (sources table with Admiralty grade,
+  observation/inference split, confidence reasoning, refresh trigger). Each is now enforced by
+  `STRUCTURE_REQUIREMENTS`.
+- Evaluator and orchestrator role overlays deepened with positive methodology: `skills/roles/reviewer.evaluator.md`
+  gains rubric design, ground-truth/inter-rater reliability, false-positive-vs-false-negative cost asymmetry, and
+  statistical-significance discipline; `skills/roles/orchestrator.md` gains dependency-graph/wave sequencing,
+  critical-path focus, and fan-out bounding.
+- `docs/concepts/template-prompt-audit.md` — quality audit of every template and specialist prompt against the
+  rubric (strong/adequate/thin + sourced gaps); the backlog source of truth for Phases C/D.
 - Enforcement & Decision-Durability program (epic `construct-wvbf`), first slice — the anti-drift spine:
   - `docs/adr/0015-affirm-hybrid-architecture.md` — affirms the hybrid markdown + deterministic-enforcement
     architecture (do not migrate to a pure policy engine), with a completeness audit and a gap register.

@@ -29,6 +29,17 @@ Use the narrowest, most authoritative starting point for the research domain:
 
 Tertiary sources (blogs, forums, Q&A, AI-generated summaries) may help locate primaries. They are not sufficient evidence for load-bearing claims.
 
+For where to look for community signal by domain, see [research-sources.md](research-sources.md).
+
+### Source class is relative to the claim
+
+A source's class is not fixed — it depends on what the claim is about. The same artifact can be primary for one claim and tertiary for another.
+
+- A Reddit thread is **tertiary** for "what does API X do" (the spec is primary), but **primary** for "developers report friction with API X's DX" — a first-hand account is primary evidence of the attitude it expresses.
+- A vendor blog post is **secondary** for a feature's behavior (the docs/source are primary), but **primary** for "the vendor publicly committed to X on date Y."
+
+Classify by the claim. For sentiment, demand, adoption-experience, and friction claims, community and forum content is admissible primary evidence under the conditions in §10. For factual, version, security, pricing, and compatibility claims, community content stays tertiary — locate the primary.
+
 ## 3. Start order
 
 Start with the narrowest authoritative source that can answer the question:
@@ -52,7 +63,8 @@ Start with the narrowest authoritative source that can answer the question:
 Record:
 
 - source title or path
-- source class: internal, primary, secondary, or tertiary
+- source class: internal, primary, secondary, or tertiary (for the specific claim — see §2)
+- Admiralty grade: source reliability `A`–`F` and information credibility `1`–`6` (see §10), recorded together, e.g. `B2`
 - version or revision when applicable
 - publication date, release date, or access date
 - why this source is relevant
@@ -119,7 +131,52 @@ Research outputs should include:
 
 Every substantive finding should point to a verified source path, URL, or document reference.
 
-## 10. Anti-patterns
+## 10. Community sources, credibility grading, and signal
+
+Community sources (Reddit, Stack Overflow, Hacker News, Discord, GitHub Discussions) are admissible as **primary evidence of sentiment, demand, friction, and adoption experience** (§2) — never as evidence for factual, version, security, pricing, or compatibility claims, where the primary must be located.
+
+### Admissibility checklist
+
+A community source supports a load-bearing sentiment/demand claim only when:
+
+- the venue is identified (which subreddit/tag/thread) and the post date is recorded;
+- the signal is corroborated — multiple independent threads/posts, or one high-engagement thread (substantial upvotes and a comment consensus), not a single low-engagement post;
+- it is recent enough for the topic's pace (§1);
+- the claim is about expressed experience or opinion, not a fact the poster is merely repeating.
+
+A single anonymous low-engagement post is noise. Cross-thread agreement, repeated independently-raised pain points, and high-engagement consensus are signal. State which you have.
+
+### Admiralty grade
+
+Grade every source on two independent axes, adapted from the NATO Admiralty Code, and record them together (e.g. `A1`, `B2`, `D4`). The axes are independent: a usually-reliable source can carry improbable information (`B5`), and an unreliable source can report something independently confirmed (`E1`).
+
+Source reliability:
+
+| Grade | Meaning |
+|---|---|
+| A | Completely reliable — authoritative primary, history of reliability (official docs, standards, peer-reviewed) |
+| B | Usually reliable — minor doubt (reputable vendor docs, established maintainers) |
+| C | Fairly reliable — some doubt, valid in the past (reputable secondary reporting) |
+| D | Not usually reliable — significant doubt (unvetted blogs, single-author claims) |
+| E | Unreliable — history of invalid information |
+| F | Cannot be judged — no basis to evaluate (anonymous, no track record) |
+
+Information credibility:
+
+| Grade | Meaning |
+|---|---|
+| 1 | Confirmed by other independent sources; consistent with known information |
+| 2 | Probably true — not confirmed, but logical and consistent |
+| 3 | Possibly true — not confirmed, reasonably logical, partial agreement |
+| 4 | Doubtful — not confirmed, possible but not logical, uncorroborated |
+| 5 | Improbable — contradicted by other information |
+| 6 | Cannot be judged — insufficient basis |
+
+Confidence mapping: a load-bearing claim may be stated `high` only on `A1`/`A2`/`B1`; `medium` on `B2`/`C2`/`C3`; otherwise `low`. Community sentiment sources are typically `D`–`F` on reliability but can reach `1`–`2` on credibility when cross-corroborated — record both honestly rather than inflating the claim.
+
+References: [NATO Admiralty Code](https://en.wikipedia.org/wiki/Admiralty_code), [primary-source definition](https://en.wikipedia.org/wiki/Primary_source).
+
+## 11. Anti-patterns
 
 Do not:
 

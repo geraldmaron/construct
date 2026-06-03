@@ -19,7 +19,11 @@ source lists or grouped findings. Keep em dashes rare.
 <!-- State the minimum signal needed to proceed. Example: two independent customers, three repeated mentions, or one severe enterprise blocker. -->
 
 ## Sources
-<!-- Table: source, source class, date/access date, customer or actor, link/path, confidence, and whether it is direct evidence or secondhand summary. -->
+<!-- Class is relative to the claim (rules/common/research.md §2); Reliability (A–F) and Credibility (1–6) are the Admiralty grade (§10). Direct = first-hand evidence vs secondhand summary. -->
+
+| Source | Class | Reliability | Credibility | Date | Actor | Link / Path | Direct? |
+|---|---|---|---|---|---|---|---|
+| {title} | primary / secondary / tertiary | A–F | 1–6 | {YYYY-MM-DD} | {customer or actor} | {url or path} | direct / secondhand |
 
 ## What we observed
 <!-- Factual observations only. Separate direct evidence from interpretation. -->

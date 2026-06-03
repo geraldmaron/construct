@@ -2,6 +2,8 @@
   "enforced": [
     "ADR-0015",
     "ADR-0016",
+    "ADR-0017",
+    "ADR-0018",
     "any-to-business-strategist",
     "any-to-explorer",
     "architect-to-data-engineer",
@@ -15,6 +17,7 @@
     "researcher-to-product-manager",
     "rule:common/comments",
     "rule:common/no-fabrication",
-    "rule:common/precedence"
+    "rule:common/precedence",
+    "rule:common/research-sources"
   ]
 }
