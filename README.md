@@ -163,6 +163,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
 | `construct models` | Show or update model tier assignments |
+| `construct orchestrate` | Construct-owned local orchestration runtime (Mode-A: single-process, filesystem-backed, no Docker) |
 | `construct plugin` | Manage external Construct plugin manifests |
 
 ### Integrations
