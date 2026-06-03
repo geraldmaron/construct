@@ -195,6 +195,32 @@ describe('checkParity', () => {
     assert.deepEqual(vscode.missing, ['context7']);
   });
 
+  it('parses JSONC vscode settings (comments + trailing comma) without a false unreadable failure', () => {
+    resetSurfaces();
+    const vscodeDir = getVsCodeUserDir(tmpHome);
+    fs.mkdirSync(vscodeDir, { recursive: true });
+    // Valid VS Code settings: line + block comments, a // inside a URL value,
+    // and a trailing comma — all rejected by strict JSON.parse.
+    fs.writeFileSync(
+      path.join(vscodeDir, 'settings.json'),
+      [
+        '{',
+        '  // editor prefs',
+        '  "editor.fontSize": 13,',
+        '  /* managed by construct */',
+        '  "github.copilot.mcpServers": {',
+        '    "github": { "url": "https://example.test/github" },',
+        '    "context7": {},',
+        '  },',
+        '}',
+      ].join('\n'),
+    );
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    const vscode = report.surfaces.find((s) => s.surface === 'vscode');
+    assert.notEqual(vscode.status, 'unreadable', `vscode JSONC must parse, got ${JSON.stringify(vscode)}`);
+    assert.equal(vscode.status, 'ok', JSON.stringify(vscode));
+  });
+
   it('reports drift when cursor mcp config has an extra server', () => {
     resetSurfaces();
     const cursorDir = path.join(tmpHome, '.cursor');
