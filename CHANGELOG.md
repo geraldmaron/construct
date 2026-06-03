@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.21] - 2026-06-03
+
 ### Added
 - Local orchestration runtime — provider worker backend and pluggable run stores (GH #207, completing the runtime).
   A new `provider` worker backend (`lib/orchestration/worker.mjs`, `runTaskViaProvider`) **executes** a specialist
