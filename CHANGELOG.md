@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.20] - 2026-06-03
+
 ### Added
 - Host-independent local orchestration runtime — Mode-A vertical slice (`construct-d6pf`, GH #207): a
   Construct-owned runtime so non-Claude hosts reach equivalent orchestration outcomes instead of depending on
