@@ -5183,6 +5183,19 @@ const handlers = new Map([
   ['lint:research', cmdLintResearch],
   ['lint:agents', cmdLintAgents],
   ['lint:contracts', cmdLintContracts],
+  ['decisions', async (args) => {
+    const { runDecisionsCli } = await import('../lib/decisions/registry.mjs');
+    return runDecisionsCli(args);
+  }],
+  ['deployment', async (args) => {
+    const sub = args[0];
+    if (sub === 'parity') {
+      const { runDeploymentParityCli } = await import('../lib/deployment/parity-contract.mjs');
+      return runDeploymentParityCli(args.slice(1));
+    }
+    errorln(`Unknown deployment subcommand: ${sub || '(none)'}. Available: parity`);
+    process.exit(1);
+  }],
   ['audit', async (args) => {
     const sub = args[0];
     if (sub === 'skills') return runAuditSkillsCli(args.slice(1));

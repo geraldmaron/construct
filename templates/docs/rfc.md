@@ -22,7 +22,19 @@ contract, API, schema, or protocol consumed by other systems.
 <!-- What problem or limitation drives this proposal? Include evidence: incidents, performance data, support tickets, developer friction. Explain why the status quo is not acceptable. -->
 
 ## Proposed design
-<!-- The concrete proposal. Enough detail for reviewers to evaluate feasibility and tradeoffs. Diagrams, code sketches, and data models are appropriate here. -->
+<!-- The concrete proposal. Enough detail for reviewers to evaluate feasibility and tradeoffs. The sequence below shows the proposed behavior in context — include the happy path and at least one error path. -->
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant Service
+  participant Store
+  Client->>Service: request
+  Service->>Store: read or write
+  Store-->>Service: result
+  Service-->>Client: response
+  Note over Service,Store: error path — Store unavailable → Service returns degraded response
+```
 
 ## Tradeoffs and alternatives
 <!-- The other credible designs considered. For each: what it is, why it was not chosen, and under what conditions it would be preferred. No strawmen. -->

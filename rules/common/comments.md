@@ -1,5 +1,8 @@
 ---
 description: Construct comment convention for JS/TS/MJS source files.
+enforced_by: lib/comment-lint.mjs
+adr_reference: ADR-0015
+precedence_tier: style
 ---
 # Comment Convention
 
