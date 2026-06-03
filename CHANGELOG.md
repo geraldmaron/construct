@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.18] - 2026-06-03
+
 ### Security
 
 - **Removed the vulnerable `@xenova/transformers` → onnx → `protobufjs@6` chain from consumer installs (bead `construct-yvxf`, GitHub #184).** A downstream `npm install` of the published CLI inherited high/critical `protobufjs` advisories via the deprecated `@xenova/transformers`, and `npm audit fix` could not remediate them. Root cause was two-layered: (1) npm `overrides` in a *published* package are ignored by consumers — they apply only to the top-level project doing the install — so the repo's `protobufjs` override kept the in-repo audit green while every consumer stayed vulnerable; and (2) the heavy ML stack sat in runtime `dependencies` in violation of [ADR 0001](docs/adr/0001-zero-npm-core.md). Fixed by migrating the sole `@xenova` caller (`lib/embed/semantic.mjs`) to the already-present `@huggingface/transformers`, removing `@xenova/transformers` entirely, and dropping the now-unneeded `protobufjs` override. A clean downstream install now resolves `protobufjs@7.6.2` (patched) and `npm audit --omit=dev` reports zero findings.
