@@ -79,3 +79,14 @@ test('plan carries suggestedWorkflowType bridging triage to workflow invocation'
   const r = recommendPlan({ input: BUG }, { env: {} });
   assert.equal('suggestedWorkflowType' in r, true);
 });
+
+test('execution preview is gated on host context', () => {
+  const env = { CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6', CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6', CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6' };
+  // No host context → never a forced model resolution / preview.
+  assert.equal(recommendPlan({ input: BUG }, { env }).execution, null);
+  // Host context + a suggested workflow (unknown → structure-notes) → preview present.
+  const withHost = recommendPlan({ input: 'zzzz qqqq', constructStrategy: 'orchestrated', hostModel: 'anthropic/claude-sonnet-4-6' }, { env });
+  assert.ok(withHost.suggestedWorkflowType, 'unknown classification maps to a workflow');
+  assert.ok(withHost.execution, 'host context → execution preview');
+  assert.ok(['construct-orchestrated', 'construct-prompt-only', 'same-family-fallback'].includes(withHost.execution.executionMode));
+});
