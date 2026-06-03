@@ -4,6 +4,17 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+- Explicit ingest orchestration axis (GH #203): `construct ingest` gains an orchestration strategy
+  (`prompt-only` default | `orchestrated`) independent of the existing extraction strategy
+  (`adapter`|`provider`). `prompt-only` runs ingest as a deterministic extraction pass; `orchestrated`
+  engages the Construct specialist chain for the `evidence-ingest` workflow. Resolved env
+  (`CONSTRUCT_INGEST_ORCHESTRATION`) > config (`ingest.orchestration`) > `--orchestration=` flag > default,
+  and surfaced in ingest run metadata as `orchestration` plus a full `execution` block (reusing the
+  execution-capability contract, so the runtime logs the selected strategy and effective execution path).
+  `lib/ingest/strategy.mjs`, `lib/config/schema.mjs`, `lib/document-ingest.mjs`. Tests:
+  `tests/ingest-strategy.test.mjs`.
+
 ### Fixed
 - doctor: VS Code / Cursor adapter parity no longer reports `unreadable` on a valid JSONC `settings.json`
   (GH #214). `lib/parity.mjs` now parses editor settings with a string-aware JSONC reader (line/block
