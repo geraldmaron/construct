@@ -101,3 +101,26 @@ test('requires-human-approval gates writes and records an approval request', asy
     if (prev === undefined) delete process.env.CONSTRUCT_ROLES; else process.env.CONSTRUCT_ROLES = prev;
   }
 });
+
+const EXEC_ENV = { CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6', CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6', CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6' };
+
+test('invocation reports a planned execution block (descriptive, not enforced)', async () => {
+  const r = await invokeWorkflow(
+    { workflowType: 'architecture-review', approvalMode: 'proposal-only', constructStrategy: 'orchestrated', hostModel: 'anthropic/claude-sonnet-4-6' },
+    { env: EXEC_ENV, cwd: freshCwd() },
+  );
+  assert.ok(r.execution, 'execution block present');
+  assert.equal(r.execution.executionMode, 'construct-orchestrated');
+  assert.equal(r.execution.effectiveStrategy, 'orchestrated');
+  assert.ok(r.execution.constructCapabilitiesActive.includes('personas'));
+  assert.match(r.execution.semantics, /does not observe host execution/i);
+});
+
+test('constructStrategy=prompt-only yields a prompt-only execution block', async () => {
+  const r = await invokeWorkflow(
+    { workflowType: 'evidence-ingest', approvalMode: 'proposal-only', constructStrategy: 'prompt-only' },
+    { env: EXEC_ENV, cwd: freshCwd() },
+  );
+  assert.equal(r.execution.executionMode, 'construct-prompt-only');
+  assert.deepEqual(r.execution.constructCapabilitiesActive, ['prompt-envelope']);
+});
