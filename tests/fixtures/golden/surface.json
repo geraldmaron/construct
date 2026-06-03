@@ -297,6 +297,10 @@
       "core": false
     },
     {
+      "name": "run \"<request>\" [--strategy S] [--host H] [--no-construct] [--no-execute] [--json]",
+      "core": false
+    },
+    {
       "name": "scheduler",
       "core": false
     },

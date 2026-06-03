@@ -5,6 +5,21 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Added
+- Host-independent local orchestration runtime — Mode-A vertical slice (`construct-d6pf`, GH #207): a
+  Construct-owned runtime so non-Claude hosts reach equivalent orchestration outcomes instead of depending on
+  whichever editor exposes native multi-agent execution. New `construct orchestrate run|status [--json]`
+  (modules `lib/orchestration/runtime.mjs` + `run-store.mjs`). Mode-A is zero-dependency: single-process,
+  filesystem-backed run/task store under `.cx/runtime/orchestration/`, no Docker. A run intakes a request,
+  plans a sequenced specialist chain (reusing the `orchestration-policy` planner), resolves the
+  execution-capability contract (reusing `resolveExecution`), persists a durable, resumable task lifecycle
+  (`queued → running → prepared`), and emits lifecycle traces. Host adapters receive structured metadata —
+  `executionMode`, `constructCapabilitiesActive`, `workerBackend`, `hostRole`, `degraded`/`degradationReason`,
+  `selectedProvider`/`selectedModel`, `traceId`. **Honest boundary** (ADR-0020): the Mode-A `inline` backend
+  owns planning/sequencing/handoff-state/persistence/observability and *prepares* each specialist task for a
+  downstream executor — it does not itself perform specialist LLM reasoning (a provider-backed worker backend
+  is a later increment), and prompt-only/host-direct runs own no specialist sequence rather than implying
+  orchestration. ADR-0020 registered + bound. Tests: `tests/orchestration-runtime.test.mjs`,
+  `tests/functional/orchestration-mode-a.functional.test.mjs`.
 - Execution-capability contract for embedded workflows (`construct-1txt`, GH #206): a fifth Embedded
   Contract Layer surface — `resolveExecution` (SDK) / `construct execution resolve --json` (CLI) /
   `construct_execution_resolve` (MCP) — that reports, before or at workflow start, whether a run will engage
