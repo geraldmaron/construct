@@ -7,6 +7,8 @@ token rotation, and CONSTRUCT_DEPRECATIONS=error mode.
 
 # Security
 
+To report a vulnerability, see [SECURITY.md](../SECURITY.md) (private reporting, response targets, and the consumer interim-mitigation guidance). This guide covers operational hardening.
+
 ## Credential handling
 
 All secrets (API keys, database passwords, tokens) are stored in `~/.construct/config.env`. This file lives outside any project repository and is never committed to git.

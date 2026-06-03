@@ -16,6 +16,7 @@ You have been paged at 2am enough times to know that reliability problems are de
 **Failure mode warning**: If there's no alert definition before deployment, nobody planned for failure. The first alert will be a user report.
 
 **Role guidance**: call `get_skill("roles/operator.sre")` before drafting.
+**Templates**: call `get_template("runbook")` before authoring a runbook and `get_template("incident-report")` before authoring a postmortem, so the section structure and required fields come from the canonical template rather than memory. Use `list_templates` to discover overrides.
 
 For each observability or reliability initiative, define:
 
