@@ -123,6 +123,10 @@ jobs:
       - run: npm test
       - run: node bin/construct doctor
       - run: node bin/construct docs:verify
+      - name: coverage (report-only, main pushes)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: npm run coverage
 
   # One job that runs every quick lint/check under a single npm ci. Replaces
   # the prior nine independent jobs (lint-comments, lint-prose, lint-profiles,
@@ -148,6 +152,9 @@ jobs:
       - name: comment policy
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         run: node ./bin/construct lint:comments
+      - name: eslint (real-bug rules)
+        if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+        run: npm run lint:js
       - name: profile + flavor schema
         if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         run: npm run lint:profiles -- --quiet
@@ -296,7 +303,7 @@ jobs:
           } finally { await sql.end(); }
           "
       - name: Postgres + vector roundtrip tests
-        run: node --test --test-timeout=120000 tests/functional/postgres-roundtrip.functional.test.mjs tests/functional/vector-roundtrip.functional.test.mjs tests/functional/skills-correlate-quality.functional.test.mjs
+        run: node --test --test-timeout=120000 tests/functional/postgres-roundtrip.functional.test.mjs tests/functional/vector-roundtrip.functional.test.mjs tests/functional/skills-correlate-quality.functional.test.mjs tests/functional/observation-reconcile.functional.test.mjs tests/functional/hybrid-search-consolidated.functional.test.mjs
 
   dashboard-integration:
     needs: changes

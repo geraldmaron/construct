@@ -43,6 +43,7 @@ node ./bin/construct doctor
 node ./bin/construct docs:verify
 node ./bin/construct docs:update --check
 node ./bin/construct lint:comments
+npm run lint:js
 npm run lint:profiles
 ```
 
