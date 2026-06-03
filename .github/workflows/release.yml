@@ -38,6 +38,11 @@ jobs:
         # list of the root package.json. Workspace-scoped vulns (docs site,
         # dashboard) have their own remediation track and don't gate the CLI release.
         run: npm audit --omit=dev --audit-level=high --workspaces=false
+      - name: consumer-perspective audit (packed artifact, no overrides)
+        # Audits the tree a downstream `npm install` resolves, where this
+        # package.json's `overrides` do not apply. Blocks publishing a release
+        # whose transitive graph is only clean because of a repo-local override.
+        run: npm run audit:published
 
   # ── Build single-file binaries ────────────────────────────────────────────
   build-binary:

@@ -132,7 +132,20 @@ if (targetTag) {
   }
 }
 
-// ── 9. npm pack dry-run ──────────────────────────────────────────────────────
+// ── 9. consumer-perspective audit ────────────────────────────────────────────
+// The audit above applies this repo's `overrides`, which consumers never get.
+// Packing the artifact and auditing the resolved tree catches what a downstream
+// install would surface.
+{
+  const r = run('node scripts/audit-published-artifact.mjs 2>&1');
+  if (r.ok) {
+    ok('consumer audit — packed artifact clean (no overrides relied upon)');
+  } else {
+    fail('consumer audit', r.stdout.split('\n').slice(-5).join('\n     '));
+  }
+}
+
+// ── 10. npm pack dry-run ─────────────────────────────────────────────────────
 {
   const r = run('npm pack --dry-run 2>&1');
   if (r.ok) {
@@ -145,7 +158,7 @@ if (targetTag) {
   }
 }
 
-// ── 10. npm auth ─────────────────────────────────────────────────────────────
+// ── 11. npm auth ─────────────────────────────────────────────────────────────
 // In CI, npm uses OIDC Trusted Publishers (no stored secret). Locally, you
 // need to be logged in via `npm login` or have NODE_AUTH_TOKEN set.
 // Use --skip-auth if running without npm credentials.

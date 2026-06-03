@@ -4,6 +4,28 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.18] - 2026-06-03
+
+### Security
+
+- **Removed the vulnerable `@xenova/transformers` → onnx → `protobufjs@6` chain from consumer installs (bead `construct-yvxf`, GitHub #184).** A downstream `npm install` of the published CLI inherited high/critical `protobufjs` advisories via the deprecated `@xenova/transformers`, and `npm audit fix` could not remediate them. Root cause was two-layered: (1) npm `overrides` in a *published* package are ignored by consumers — they apply only to the top-level project doing the install — so the repo's `protobufjs` override kept the in-repo audit green while every consumer stayed vulnerable; and (2) the heavy ML stack sat in runtime `dependencies` in violation of [ADR 0001](docs/adr/0001-zero-npm-core.md). Fixed by migrating the sole `@xenova` caller (`lib/embed/semantic.mjs`) to the already-present `@huggingface/transformers`, removing `@xenova/transformers` entirely, and dropping the now-unneeded `protobufjs` override. A clean downstream install now resolves `protobufjs@7.6.2` (patched) and `npm audit --omit=dev` reports zero findings.
+
+### Added
+
+- **Consumer-perspective audit gate (`npm run audit:published`).** New `scripts/audit-published-artifact.mjs` packs the artifact, installs the tarball into a throwaway project with no `overrides` in scope, and audits the dependency tree a consumer actually resolves — the check that would have caught #184 before publish. Wired into the CI `audit` job, the `release.yml` gate, and `scripts/pre-release-check.mjs`. Documents the remediation ladder in `docs/dependencies.md` (bump → replace → demote-to-optional → ADR-accept) with the load-bearing rule that a published package's `overrides` never reach consumers.
+- **ADR-0001 enforcement (`tests/core-dependency-policy.test.mjs`).** A ratchet test that fails on any new runtime dependency outside the sanctioned set, freezing the known pre-existing drift (`js-yaml`, `node-webvtt`) into a tracked allowlist pending their own replace-or-ADR decisions (beads `construct-7vj6`, `construct-bh2y`), and locking in that `@xenova/transformers` is never reintroduced and the ML stack stays optional.
+- **`SECURITY.md`** with a private vulnerability-reporting channel, response targets, and the interim mitigation that *does* work for consumers (a pin in their own top-level `overrides`, or `CONSTRUCT_EMBEDDING_MODEL=hashing` to skip the ONNX stack). New [ADR 0014](docs/adr/0014-local-embeddings-optional.md) records that local ONNX embeddings are an optional capability, not a core dependency.
+
+### Changed
+
+- **`@huggingface/transformers` moved from `dependencies` to `optionalDependencies`.** Local ONNX embedding is now an opt-in enhancement over the zero-dependency in-tree hashing embedder, so a default install is lighter and cannot fail on native ONNX binary resolution in constrained environments — aligning with ADR 0001's reliability goal.
+
+- **Wired the template-authoring personas to `get_template`.** `cx-architect` now fetches `adr`, `cx-operations` and `cx-sre` fetch `runbook`/`incident-report`, and `cx-rd-lead` fetches `research-brief` before authoring, so their artifact structure comes from the canonical template rather than from memory. The design surfaces (`commands/design/ui.md`, `commands/design/flow.md`, `cx-designer`) now name the exact `construct wireframe "<desc>" --type=<…>` invocation that emits a diffable artifact to `.cx/wireframes/` — text-first, no new diagramming dependency (ADR 0001).
+
+### Fixed
+
+- **Personas instructed to call template tools they were never granted.** `cx-docs-keeper` and `cx-researcher` prompts called `get_template`/`list_templates`, but `specialists/registry.json` omitted those tools from their `claudeTools` grant, so the documented call would fail at runtime. Added the grants. New `tests/workflows/template-resolution.test.mjs` fails on any `templates/workflows/*.yml` `template:` reference that does not resolve to a `templates/docs/<name>` file, closing the silent-stub gap that left `new-feature.yml`'s `test-plan.md` reference dangling; added the missing `templates/docs/test-plan.md`.
+
 ## [1.0.17] - 2026-06-02
 
 ### Added
