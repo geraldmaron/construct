@@ -220,13 +220,14 @@ Every snapshot discloses the active operating profile and any operating gaps, su
 
 ## Embedded contract layer (app-facing)
 
-Distinct from Embed *mode* (the daemon above), the **Embedded Contract Layer (ECL)** is the stable, versioned surface another application uses to embed Construct as an orchestration layer. It lives in `lib/embedded-contract/` and exposes four read/execute contracts over one shared core, surfaced identically on three transports — CLI-JSON, MCP tools, and an SDK (`package.json` `exports` → `lib/embedded-contract/index.mjs`).
+Distinct from Embed *mode* (the daemon above), the **Embedded Contract Layer (ECL)** is the stable, versioned surface another application uses to embed Construct as an orchestration layer. It lives in `lib/embedded-contract/` and exposes five read/execute contracts over one shared core, surfaced identically on three transports — CLI-JSON, MCP tools, and an SDK (`package.json` `exports` → `lib/embedded-contract/index.mjs`).
 
 | Contract | Question it answers | Core | Surfaces |
 |---|---|---|---|
 | Capability discovery | What can this Construct do? | `capability.mjs` | `construct capability describe --json` · `capability_describe` · `describeCapabilities` |
 | Triage / planning | What kind of work is this, who should own it? | `triage.mjs` | `construct intake classify --json` / `graph recommend --json` · `triage_recommend` · `recommendPlan` |
 | Model resolution | Which model should an embedded workflow use? | `model-resolve.mjs` | `construct models resolve --json` · `model_resolve` · `resolveEmbeddedModel` |
+| Execution capability | Will this run orchestrate or degrade to prompt-only, and why? | `execution.mjs` | `construct execution resolve --json` · `construct_execution_resolve` · `resolveExecution` |
 | Workflow invocation | Run a role/skill workflow non-interactively | `workflow-invoke.mjs` + `workflow-defs.mjs` | `construct workflow invoke --json` · `workflow_invoke` · `invokeWorkflow` |
 
 Invariants that make it safe to embed, especially for teams where auditability is non-negotiable:
@@ -238,6 +239,12 @@ Invariants that make it safe to embed, especially for teams where auditability i
 - **Approval-gated writes.** Only workflow invocation can write, and only under `allow-durable-write`; `proposal-only` and `requires-human-approval` perform no durable writes. Team/enterprise durable writes are flagged as audited. Specialist reasoning is delegated to the host agent runtime — Construct returns the orchestration plan and provenance, never fabricated specialist output.
 
 See [Embedded contract layer](/concepts/embedded-contract) for the contract model and [Embedded contract API](/reference/embed-api) for request/response schemas.
+
+## Local orchestration runtime (host-independent)
+
+Hosts are front doors; Construct is the system. To stop the best orchestration experience from being coupled to whichever editor exposes native multi-agent execution, Construct owns a local orchestration runtime (`lib/orchestration/runtime.mjs` + `run-store.mjs`), surfaced as `construct orchestrate run|status [--json]`. A run intakes a request, plans a sequenced specialist chain (reusing `orchestration-policy.routeRequest`), resolves the execution-capability contract (`resolveExecution`), persists a durable, resumable run + task lifecycle, and emits lifecycle traces — returning the host-adapter metadata a thin host integration consumes (`executionMode`, `constructCapabilitiesActive`, `workerBackend`, `hostRole`, `degraded`, `selectedProvider`/`selectedModel`, `traceId`).
+
+**Mode-A** is the zero-dependency tier: single-process, filesystem-backed run store under `.cx/runtime/orchestration/`, no Docker — the same load/save and worker-backend surfaces leave room for Mode-B (SQLite daemon) and Mode-C (Postgres/containers). The Mode-A `inline` worker backend owns planning, sequencing, handoff state, persistence, and observability and *prepares* each specialist task; it does not itself perform specialist LLM reasoning (a provider-backed backend is a later increment), and prompt-only/host-direct runs own no specialist sequence rather than implying orchestration. Decision recorded in ADR-0020 (extending ADR-0019).
 
 ## Project-state hierarchy
 

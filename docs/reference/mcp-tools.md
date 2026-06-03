@@ -671,6 +671,21 @@ Describe what this Construct install can do: versions, contract interfaces (CLI/
 |---|---|---|
 | `root_dir` | string | Optional Construct install root (default: server toolkit dir). |
 
+### `construct_execution_resolve`
+Resolve the execution-capability contract for an embedded workflow before/at workflow start: `executionMode` (construct-orchestrated | construct-prompt-only | host-direct | same-family-fallback), `constructCapabilitiesActive` (subset of personas/skills/workflow-routing/prompt-envelope), `degraded` + machine-readable `degradationReason`, `requestedStrategy` vs `effectiveStrategy`, and the resolved provider/model. Descriptive, not enforced (ADR-0019): reports what Construct planned and can resolve a model for, never an observation that the host ran personas (see the `semantics` field). Read-only and secret-free.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `workflow_type` | string | Workflow whose orchestration plan is weighed (e.g. evidence-ingest, architecture-review). Absent ⇒ generic orchestration availability. |
+| `requested_strategy` | string | `orchestrated` \| `prompt-only` \| `auto` (default auto). |
+| `use_construct` | boolean | `false` ⇒ host-direct (host runs without Construct capabilities). Default true. |
+| `host` | string | Host/IDE identifier (advisory). |
+| `host_model` | string | Model the host is currently using, for model resolution. |
+| `host_provider` | string | Provider family the host uses, when no host_model is given. |
+| `requested_tier` | string | `reasoning` \| `standard` \| `fast`; overrides the workflow-type hint. |
+| `capabilities` | string[] | Optional required capabilities; unverifiable ones are returned as warnings. |
+| `allow_cross_provider_fallback` | boolean | Permit model fallback outside the host provider family (default false). |
+
 ## Telemetry (additional)
 
 ### `cx_trace_telemetry`
