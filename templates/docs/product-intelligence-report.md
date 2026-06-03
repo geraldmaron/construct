@@ -13,7 +13,7 @@ without becoming a backlog dump.
 <!-- Two or three paragraphs. What changed, what matters, and what decision should follow. -->
 
 ## Evidence base
-<!-- Summary of source types, coverage, recency, and known gaps. -->
+<!-- Source types, coverage, recency, and known gaps. Grade the evidence (rules/common/research.md §10); for community/sentiment sources note corroboration. Each theme below inherits the strength of the evidence under it — do not report a strong theme on weakly-graded sources. -->
 
 ## Themes
 <!-- Each theme should include evidence strength, affected personas, representative sources, and counter-signal. -->

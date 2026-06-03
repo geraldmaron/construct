@@ -13,7 +13,10 @@ without pretending the requirements are ready.
 <!-- One or two paragraphs. What appears to be happening, and where the signal came from. -->
 
 ## Evidence
-<!-- Cite the concrete notes, tickets, customer quotes, traces, or analytics that support the signal. -->
+<!-- Cite the concrete notes, tickets, customer quotes, traces, or analytics. Grade each source with its Admiralty reliability/credibility (rules/common/research.md §10); for community sources note corroboration and engagement. The signal strength above should follow from the grades, not precede them. -->
+
+## Counter-signal
+<!-- The strongest evidence against the signal, or its absence. A signal no one tried to disconfirm is weaker than it looks. -->
 
 ## Why it matters
 <!-- What product, customer, or business decision this could affect if the signal strengthens. -->

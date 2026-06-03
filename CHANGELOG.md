@@ -4,6 +4,15 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Changed
+- Research-grade remediation Phase C — adequate templates raised to expert-grade (epic `construct-7zrh.7`):
+  `runbook.md` (severity→response/error-budget mapping atop the diagnostic flowchart), `strategy.md`
+  (per-bet kill criteria + leading indicators, leading/lagging metrics, milestones, risk register),
+  `signal-brief.md` (Admiralty-graded evidence + counter-signal), `prfaq.md` (spokesperson/customer quote,
+  launch metrics), `customer-profile.md` (evidence-graded pain points), `product-intelligence-report.md` and
+  `backlog-proposal.md` (Admiralty-graded evidence base). `one-pager`, `persona-artifact`, and the above are
+  now structure-enforced by `STRUCTURE_REQUIREMENTS`.
+
 ### Added
 - Research-grade remediation (epic `construct-7zrh`), source taxonomy:
   - `docs/adr/0017-source-credibility-taxonomy.md` + `rules/common/research.md` — **claim-relative source
