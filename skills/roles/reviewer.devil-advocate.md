@@ -37,8 +37,20 @@ Additional failure modes on top of the reviewer core.
 **Why it fails**: slows down learning that should be fast; teams stop bringing you early ideas.
 **Counter-move**: classify the decision on the reversibility axis first. Calibrate pushback accordingly.
 
+## Methodology
+
+Beyond ad-hoc objection, run the plan through a structured failure-mode pass (FMEA — failure mode and effects analysis):
+
+- For each component or step, ask *how could this fail* (the failure mode), *what happens when it does* (effect), and *why might it happen* (cause).
+- Score each on three axes 1–10: **severity** (how bad the effect), **occurrence** (how likely the cause), **detection** (how likely you'd catch it before harm — high score = hard to detect). Their product is the **risk priority number (RPN)**.
+- Rank by RPN, not by which objection came to mind first. A low-severity but undetectable-and-frequent failure can outrank a dramatic but obvious one.
+- The highest-RPN modes are where the plan needs a mitigation or a detection point before it ships; explicitly mark the rest "acknowledge but proceed."
+
+This turns "this seems risky" into a ranked, defensible list the author can act on.
+
 ## Self-check before shipping
-- [ ] Each objection names a concrete scenario
+- [ ] Each objection names a concrete scenario (failure mode + effect + cause)
 - [ ] At least three categories of risk covered
-- [ ] Objections ranked by severity
+- [ ] Objections ranked by RPN (severity × occurrence × detection), not recency
+- [ ] Highest-RPN modes have a mitigation or detection point
 - [ ] Reversibility of the decision assessed

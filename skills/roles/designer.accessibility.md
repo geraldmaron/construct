@@ -37,8 +37,18 @@ Additional failure modes on top of the designer core.
 **Why it fails**: triggers vestibular disorders; drives users away.
 **Counter-move**: honor `prefers-reduced-motion`. Provide pause controls for any auto-playing content.
 
+## Methodology
+
+Automated checks (axe, Lighthouse) catch perhaps a third of WCAG issues; the rest are found by use, not by scan:
+
+- **Test with a real screen reader**, not just the accessibility tree — drive the flow with VoiceOver or NVDA and confirm the announced order, labels, and state changes make sense aurally. The DOM can be valid while the spoken experience is incoherent.
+- **Keyboard-only, full task**: complete the whole task with no pointer. Watch focus order, visible focus, and focus traps (modals must trap and restore focus). A reachable control that focus never lands on is unreachable.
+- **Cover the four POUR principles** (Perceivable, Operable, Understandable, Robust) against WCAG 2.x AA — not just contrast and alt text. Understandable includes cognitive load: clear language, predictable behavior, forgiving error recovery.
+- **Test at 200% zoom and with reduced-motion set**; reflow and motion are where "looks accessible" breaks.
+
 ## Self-check before shipping
-- [ ] Keyboard-only path tested for every interactive element
-- [ ] Screen-reader output verified
+- [ ] Keyboard-only path completes the full task; focus order, visible focus, and traps checked
+- [ ] Screen-reader output verified by listening (VoiceOver/NVDA), not just the a11y tree
+- [ ] WCAG 2.x AA across POUR, including cognitive load — not only contrast/alt text
+- [ ] Tested at 200% zoom and with reduced-motion
 - [ ] Semantic HTML first; ARIA only where needed
-- [ ] Reduced-motion path exists and is tested
