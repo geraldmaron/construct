@@ -16,7 +16,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-import { lintFile } from '../lib/comment-lint.mjs';
+import { lintFile, KNOWN_CX_ROLE_IDS } from '../lib/comment-lint.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -69,6 +69,26 @@ describe('comment-lint flags tool-identity leaks in consuming-project deliverabl
     assert.equal(artifactWarnings(lintFile(fp, { rootDir: dir })).length, 0);
   });
 
+  it('does NOT flag unrelated cx-* npm packages (cx-oracle, cx-ray, cx-pro)', () => {
+    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nThe driver is cx-oracle; tracing via cx-ray; cx-pro handles the rest.\n');
+    assert.equal(artifactWarnings(lintFile(fp, { rootDir: dir })).length, 0);
+  });
+
+  it('still flags a real role id when a lookalike package is on the same line', () => {
+    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nUses cx-oracle. Owner: cx-product-manager.\n');
+    assert.ok(artifactWarnings(lintFile(fp, { rootDir: dir })).length >= 1);
+  });
+
+  it('does NOT flag a role id inside a ~~~ tilde fence', () => {
+    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\n~~~\nrun cx-researcher here\n~~~\nClean prose.\n');
+    assert.equal(artifactWarnings(lintFile(fp, { rootDir: dir })).length, 0);
+  });
+
+  it('fails closed: a role id after an UNCLOSED fence is still flagged', () => {
+    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\n```\nopen fence never closed\n\nOwner: cx-product-manager runs this.\n');
+    assert.ok(artifactWarnings(lintFile(fp, { rootDir: dir })).length >= 1);
+  });
+
   it('routes leaks to errors[] under block mode', () => {
     const prev = process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
     process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
@@ -102,5 +122,11 @@ describe('tool-invisibility prevention is wired so it cannot be silently dropped
   it('the policy inventory registers the rule', () => {
     const inv = JSON.parse(fs.readFileSync(path.join(ROOT, 'specialists/policy-inventory.json'), 'utf8'));
     assert.ok(inv.policies.some((p) => p.id === 'tool-invisibility' && p.source === 'rules/common/tool-invisibility.md'));
+  });
+
+  it('KNOWN_CX_ROLE_IDS matches specialists/registry.json (drift guard for the anchored regex)', () => {
+    const registry = JSON.parse(fs.readFileSync(path.join(ROOT, 'specialists/registry.json'), 'utf8'));
+    const expected = registry.specialists.map((s) => s.name).sort();
+    assert.deepEqual([...KNOWN_CX_ROLE_IDS].sort(), expected);
   });
 });
