@@ -20,6 +20,17 @@ test("host capabilities classify full multi-agent support separately from OpenCo
   assert.equal(hosts.find((host) => host.host === "Codex").orchestration, "profile-and-mcp");
   assert.equal(hosts.find((host) => host.host === "Cursor").orchestration, "mcp-only");
   assert.equal(hosts.find((host) => host.host === "Copilot").orchestration, "prompt-profiles");
+
+  // Honest capability classification — every host is full-native or, via the
+  // orchestration_run MCP tool, mcp-orchestrated. None is prompt-only.
+  const cap = (name) => hosts.find((host) => host.host === name).capability;
+  assert.equal(cap("Claude Code"), "full-native");
+  assert.equal(cap("OpenCode"), "full-native");
+  assert.equal(cap("Codex"), "mcp-orchestrated");
+  assert.equal(cap("VS Code"), "mcp-orchestrated");
+  assert.equal(cap("Cursor"), "mcp-orchestrated");
+  assert.equal(cap("Copilot"), "mcp-orchestrated");
+  for (const host of hosts) assert.ok(["full-native", "mcp-orchestrated", "prompt-only"].includes(host.capability), `${host.host} capability is valid`);
 });
 
 test("findAvailablePort rejects invalid port ranges before calling net.listen", async () => {

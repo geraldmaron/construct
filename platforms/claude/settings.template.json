@@ -31,6 +31,18 @@
         "description": "Consolidated policy gating (bootstrap rule): block mutations until session is grounded via project_context+memory_search or 3+ exploratory reads"
       },
       {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/orchestration-dispatch-guard.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "pre:edit:dispatch-guard",
+        "description": "Block solo-authoring a substantial deliverable when orchestration_policy classified the request as orchestrated and no specialist dispatch has run yet"
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -304,6 +316,18 @@
         ],
         "id": "post:audit-trail",
         "description": "Append-only audit log of every mutation — attribution (agent/task) and tamper-evidence chain"
+      },
+      {
+        "matcher": "mcp__.*__orchestration_policy|mcp__.*__orchestration_run|mcp__.*__worker_run|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/orchestration-dispatch-guard.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "id": "post:orchestration:dispatch-guard",
+        "description": "Record orchestration_policy verdict and specialist dispatch so the PreToolUse guard can tell an orchestrated-but-undispatched deliverable write from legitimate post-dispatch synthesis"
       }
     ],
     "PostToolUseFailure": [

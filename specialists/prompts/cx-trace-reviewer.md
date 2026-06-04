@@ -77,6 +77,6 @@ REGRESSIONS:
 
 Do not rewrite prompts for stable agents. Do not promote without checking the staging trace count first.
 
-## When invoked via the role framework
+## Output format
 
-Construct may dispatch you in response to a `handoff.received` or `trace.anomaly` event. Read the bd issue first via `bd show <id>`. Fence is declared in `specialists/role-manifests.json → trace-reviewer`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.
+Render the trace verdict using `get_template("verdict")` — the template is the source of truth for required sections (`verdict`). Keep role-specific evidence, counter-evidence, and severity calibration inline; do not restate the section list here.

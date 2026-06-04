@@ -52,6 +52,7 @@ import {
 } from "../lib/mcp-platform-config.mjs";
 import { loadConstructEnv } from "../lib/env-config.mjs";
 import { inlineRoleAntiPatterns, PROMPT_WORD_CAP } from "../lib/role-preload.mjs";
+import { loadManifest } from "../lib/roles/manifest.mjs";
 import { resolveActiveProfile } from "../lib/profiles/loader.mjs";
 import { resolveTiersForPrimary } from "../lib/model-router.mjs";
 import { stampFrontmatter } from "../lib/doc-stamp.mjs";
@@ -469,6 +470,64 @@ function buildRoleFooter(entry) {
   return `\n\n${lines.join("\n")}`;
 }
 
+// Fence + handoff data is the source of truth in specialists/role-manifests.json
+// (events, fence.allowedPaths, fence.allowedBdLabels, fence.approvalRequired,
+// handoffCandidates, outputs.docTypes). Restating that JSON inside each
+// specialist prompt would invite drift across 28 files; the renderer below
+// emits the section from the manifest entry so the JSON is the only authority.
+//
+// Returns the empty string for an unonboarded persona (no manifest entry, or
+// an empty fence block). buildPrompt appends the result verbatim, so the
+// returned string carries its own leading separator.
+
+export function renderRoleFrameworkSection(entry) {
+  const personaName = String(entry?.name || "").replace(/^cx-/, "");
+  if (!personaName) return "";
+  const manifest = loadManifest(personaName);
+  if (!manifest) return "";
+
+  const events = Array.isArray(manifest.events) ? manifest.events : [];
+  const fence = manifest.fence || {};
+  const allowedPaths = Array.isArray(fence.allowedPaths) ? fence.allowedPaths : [];
+  const allowedBdLabels = Array.isArray(fence.allowedBdLabels) ? fence.allowedBdLabels : [];
+  const approvalRequired = Array.isArray(fence.approvalRequired) ? fence.approvalRequired : [];
+  const handoffCandidates = Array.isArray(manifest.handoffCandidates) ? manifest.handoffCandidates : [];
+  const docTypes = Array.isArray(manifest.outputs?.docTypes) ? manifest.outputs.docTypes : [];
+
+  // Empty fence + empty events means the persona is reserved but not wired —
+  // no section to render rather than emit a misleading stub.
+
+  if (!events.length && !allowedPaths.length) return "";
+
+  const fmt = (xs) => xs.map((x) => `\`${x}\``).join(", ");
+  const eventList = events.length ? fmt(events) : "_handoff events_";
+  const pathList = allowedPaths.length ? fmt(allowedPaths) : "_none declared_";
+  const labelList = allowedBdLabels.length ? fmt(allowedBdLabels) : "_none declared_";
+  const approvalList = approvalRequired.length ? fmt(approvalRequired) : "_no approval gate declared_";
+  const docTypeList = docTypes.length ? fmt(docTypes) : "role-specific artifacts";
+  const handoffList = handoffCandidates.length
+    ? handoffCandidates.map((c) => `\`next:cx-${c}\``).join(", ")
+    : "";
+
+  const lines = [
+    "",
+    "## When invoked via the role framework",
+    "",
+    `Construct may dispatch you in response to ${eventList} events. A bd issue with the event payload exists when dispatched: read it first via \`bd show <id>\`.`,
+    "",
+    `**Fence** (source of truth: \`specialists/role-manifests.json\` → \`${personaName}\`):`,
+    `- Allowed paths: ${pathList}`,
+    `- Allowed bd labels: ${labelList}`,
+    `- Approval required: ${approvalList}`,
+    "",
+    `You may freely create, edit, and verify within the fence (allowed paths and labels above). You produce ${docTypeList}. You **must not** commit, push, or operate outside the fence without explicit user approval per \`rules/common/commit-approval.md\`.`,
+  ];
+  if (handoffList) {
+    lines.push("", `**Handoff syntax**: append a bd label of the form \`next:cx-<role>\`. Candidates from this role: ${handoffList}.`);
+  }
+  return `\n\n${lines.join("\n")}`;
+}
+
 function buildPrompt(entry, allEntries, platform) {
   let prompt = resolvePromptContract(entry, {
     rootDir: root,
@@ -484,6 +543,8 @@ function buildPrompt(entry, allEntries, platform) {
   }
 
   prompt += buildRoleFooter(entry);
+
+  prompt += renderRoleFrameworkSection(entry);
 
   const platformItems = platformGuidance[platform] ?? [];
   const allGuidance = [...sharedGuidance, ...platformItems];
@@ -720,11 +781,14 @@ function syncClaude(entries, targetDir = null) {
     : path.join(home, ".claude", "agents");
   if (!DRY_RUN) mkdirp(claudeAgentsDir);
 
-  // Global scope ships only the `construct` front-door agent; specialists are
-  // project content. removeStaleAdapters will sweep any cx-* files left over
-  // from previous syncs because they fall out of the manifest set.
+  // Claude Code and VS Code both read the user-scope `~/.claude/agents/`, so a
+  // global front-door agent duplicates the project orchestrator in any editor
+  // that reads both scopes (the construct ×2 in the VS Code picker). Global
+  // scope therefore writes NO agent file — the project's own
+  // `.claude/agents/construct.md` is the front door; global hooks (settings.json)
+  // and CLAUDE.md still install. An empty write set sweeps any global agent.
 
-  const writeEntries = targetDir ? entries : globalEntries(entries);
+  const writeEntries = targetDir ? entries : [];
 
   for (const entry of writeEntries) {
     const name = adapterName(entry);
@@ -733,7 +797,7 @@ function syncClaude(entries, targetDir = null) {
   }
   removeStaleAdapters(claudeAgentsDir, ".md", writeEntries);
   if (!targetDir) {
-    sweepLegacyPrefixedFiles(claudeAgentsDir, ".md", writeEntries.map((e) => `${adapterName(e)}.md`));
+    sweepLegacyPrefixedFiles(claudeAgentsDir, ".md", []);
   }
 
   if (targetDir) {
@@ -847,14 +911,26 @@ function syncCodex(entries, targetDir = null) {
   const existing = removeDanglingConstructMcpMarkers(removeDanglingConstructMcpTimeouts(readCodexConfig(configPath)));
   const entryNames = writeEntries.map(adapterName);
   const registryMcp = registry.mcpServers ?? {};
+  // Seed every supported MCP server (parity with Claude/OpenCode/VS Code/Cursor),
+  // not just tables already present — otherwise Codex never receives `construct-mcp`
+  // and the orchestration tool is unreachable there. existingMcpIds still drives
+  // cleanup of any pre-existing standalone tables so the managed block stays canonical.
+  const mcpIds = Object.keys(registryMcp).filter(isCodexMcpSupported);
   const existingMcpIds = Object.keys(registryMcp).filter((id) => hasCodexMcpTable(existing, id));
-  const mcpIds = existingMcpIds.filter(isCodexMcpSupported);
   const withoutManagedTables = removeDanglingConstructMcpMarkers(removeTomlTables(
     removeCodexAgentTables(existing, entryNames),
     existingMcpIds.flatMap((id) => [`mcp_servers.${id}`, `mcp_servers.${tomlString(id)}`]),
   ));
   const hasAgentsRoot = /^\[agents\]\s*$/m.test(withoutManagedTables);
   const rootBlock = hasAgentsRoot ? "" : "[agents]\nmax_threads = 6\nmax_depth = 1\n\n";
+
+  // Workspace-write agents (the orchestrator + canEdit specialists) need network
+  // access for WebFetch/context7 — Codex's workspace-write sandbox blocks the
+  // network unless this is set. Skip when the user already manages the table so
+  // their own sandbox settings (e.g. writable_roots) are not clobbered.
+
+  const hasSandboxConfig = /^\[sandbox_workspace_write\]/m.test(withoutManagedTables);
+  const sandboxBlock = hasSandboxConfig ? "" : "[sandbox_workspace_write]\nnetwork_access = true\n\n";
 
   // In project scope every entry is reachable from the user (Construct dispatches
   // internal specialists itself, but project teammates may want to address them).
@@ -869,7 +945,7 @@ config_file = ${tomlString(`agents/${adapterName(e)}.toml`)}
   const mcpBlock = mcpIds
     .map((id) => serializeCodexMcpTable(id, buildCodexMcpEntry(id, registryMcp[id], process.env)))
     .join("\n\n");
-  const withAgents = replaceManagedBlock(withoutManagedTables, `${rootBlock}${blocks}`);
+  const withAgents = replaceManagedBlock(withoutManagedTables, `${sandboxBlock}${rootBlock}${blocks}`);
   writeCodexConfig(replaceManagedBlock(
     withAgents,
     mcpBlock,
@@ -913,6 +989,16 @@ function syncCopilot(entries, targetDir = null) {
     sweepLegacyPrefixedFiles(promptsDir, ".prompt.md", writeEntries.map((e) => `${adapterName(e)}.prompt.md`));
   }
 
+  // VS Code / Copilot agent mode reads the project's `.claude/agents/*.md`
+  // natively (Claude-format custom agents), so Construct does NOT write a
+  // separate `.github/agents/` set — doing so duplicated every agent in the
+  // picker. A pre-existing `.github/agents/` from an earlier sync is swept.
+
+  if (targetDir) {
+    const staleAgentsDir = path.join(targetDir, ".github", "agents");
+    if (!DRY_RUN && fs.existsSync(staleAgentsDir)) fs.rmSync(staleAgentsDir, { recursive: true, force: true });
+  }
+
   const instructionsPath = targetDir
     ? path.join(targetDir, ".github", "copilot-instructions.md")
     : path.join(home, ".github", "copilot-instructions.md");
@@ -928,7 +1014,7 @@ function syncCopilot(entries, targetDir = null) {
   const list = listEntries.map((e) => `- \`${adapterName(e)}\`: use \`${promptPathPrefix}/${adapterName(e)}.prompt.md\`.`).join("\n");
   const note = `## ${systemName.charAt(0).toUpperCase() + systemName.slice(1)} Agent Prompts
 
-Copilot does not expose true spawnable subagents. Use these reusable prompt profiles for role-specific passes:
+For a real multi-specialist run, Copilot agent mode calls the \`orchestration_run\` MCP tool (start the engine with \`construct dashboard\`). The prompts below are reusable role profiles for single-pass work:
 
 ${list || "(no front-door prompts to surface)"}`;
 
@@ -939,36 +1025,38 @@ ${list || "(no front-door prompts to surface)"}`;
 
 // --- VS Code adapter ---
 
-function getVSCodeSettingsPaths() {
+function getVSCodeUserDirs() {
   const platform = os.platform();
-  const candidates = [];
+  const dirs = [];
   if (platform === "darwin") {
-    candidates.push(
-      path.join(home, "Library", "Application Support", "Code", "User", "settings.json"),
-      path.join(home, "Library", "Application Support", "Code - Insiders", "User", "settings.json"),
+    dirs.push(
+      path.join(home, "Library", "Application Support", "Code", "User"),
+      path.join(home, "Library", "Application Support", "Code - Insiders", "User"),
     );
   } else if (platform === "linux") {
-    candidates.push(
-      path.join(home, ".config", "Code", "User", "settings.json"),
-      path.join(home, ".config", "Code - Insiders", "User", "settings.json"),
+    dirs.push(
+      path.join(home, ".config", "Code", "User"),
+      path.join(home, ".config", "Code - Insiders", "User"),
     );
   } else if (platform === "win32") {
     const appData = process.env.APPDATA ?? path.join(home, "AppData", "Roaming");
-    candidates.push(
-      path.join(appData, "Code", "User", "settings.json"),
-      path.join(appData, "Code - Insiders", "User", "settings.json"),
+    dirs.push(
+      path.join(appData, "Code", "User"),
+      path.join(appData, "Code - Insiders", "User"),
     );
   }
-  // settings.json present → ready to merge. settings.json absent but the
-  // VS Code User dir exists → installed without ever opening Preferences,
-  // and global sync still needs to write the MCP block. The User dir is
-  // the installation signal; bootstrap a minimal settings.json there.
+  return dirs;
+}
 
-  return candidates.filter((candidate) => {
-    if (fs.existsSync(candidate)) return true;
-    const userDir = path.dirname(candidate);
-    return fs.existsSync(userDir);
-  });
+function getVSCodeUserMcpPaths() {
+  // VS Code's "MCP: Open User Configuration" edits `<User>/mcp.json` (top-level
+  // `servers`). Global sync returns only files that already exist — per-window
+  // MCP config is never seeded, mirroring the non-polluting Cursor/OpenCode
+  // global behavior.
+
+  return getVSCodeUserDirs()
+    .map((dir) => path.join(dir, "mcp.json"))
+    .filter((file) => fs.existsSync(file));
 }
 
 function syncVSCode(targetDir = null) {
@@ -976,8 +1064,9 @@ function syncVSCode(targetDir = null) {
   if (Object.keys(registryMcp).length === 0) return false;
 
   // Project scope writes a dedicated `.vscode/mcp.json` (VS Code's documented
-  // workspace MCP config). Global scope mutates the user's `settings.json`
-  // under `github.copilot.mcpServers`, preserving any non-Construct entries.
+  // workspace MCP config, top-level `servers`). Global scope merges into the
+  // user-profile `mcp.json` (the file "MCP: Open User Configuration" edits), and
+  // only when it already exists — global sync never seeds per-window MCP config.
 
   if (targetDir) {
     const mcpPath = path.join(targetDir, ".vscode", "mcp.json");
@@ -1004,37 +1093,26 @@ function syncVSCode(targetDir = null) {
     return true;
   }
 
-  const settingsPaths = getVSCodeSettingsPaths();
-  if (settingsPaths.length === 0) return false;
+  const mcpPaths = getVSCodeUserMcpPaths();
+  if (mcpPaths.length === 0) return false;
   let synced = false;
-  for (const settingsPath of settingsPaths) {
+  for (const mcpPath of mcpPaths) {
     try {
-      let settings;
-      if (fs.existsSync(settingsPath)) {
-        settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
-      } else {
-        // VS Code installed (User dir present) but never opened → seed an
-        // empty settings.json. Single object literal, no other keys, so
-        // a later launch of VS Code finds it valid and writes user prefs
-        // alongside.
-        settings = {};
-      }
-      if (!settings["github.copilot.mcpServers"]) settings["github.copilot.mcpServers"] = {};
-      const mcpServers = settings["github.copilot.mcpServers"];
+      const config = JSON.parse(fs.readFileSync(mcpPath, "utf8")) || {};
+      if (!config.servers) config.servers = {};
       for (const [id, mcpDef] of Object.entries(registryMcp)) {
-        const existingEntry = mcpServers[id];
+        const existingEntry = config.servers[id];
         const existing = JSON.stringify(existingEntry ?? "");
         const hasPlaceholder = existing.includes("__");
         const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
         const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
         const transportMismatch = registryWantsCommand && existingIsRemote;
         if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
-        mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
+        config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
       }
-      settings["github.copilot.mcpServers"] = mcpServers;
-      if (!DRY_RUN) fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
+      if (!DRY_RUN) fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
       synced = true;
-    } catch { /* unreadable settings file */ }
+    } catch { /* unreadable mcp.json */ }
   }
   return synced;
 }
@@ -1102,7 +1180,10 @@ function opencodePermissions(entry) {
       Object.entries(entry.permissions).map(([k, v]) => [k, v])
     );
   }
-  return { edit: "allow", bash: "allow" };
+  // Review-only specialists (canEdit:false) must not modify files — honor the
+  // registry's canEdit contract here as Claude does, rather than defaulting every
+  // specialist to edit:allow.
+  return { edit: entry.canEdit === false ? "deny" : "allow", bash: "allow" };
 }
 
 function opencodeTaskPermissions(entry) {
@@ -1113,15 +1194,26 @@ function opencodeTaskPermissions(entry) {
 }
 
 function syncOpencode(entries, targetDir = null) {
-  // Project scope writes `.opencode/config.json` (OpenCode's documented
-  // per-project config layer, which shadows `~/.config/opencode/`). Global
-  // scope writes the user-level config and only when it already exists.
+  // OpenCode's resolver reads `<project>/opencode.json`, `opencode.jsonc`, or
+  // `<project>/.opencode/opencode.json` — never `.opencode/config.json`. Write the
+  // namespaced `.opencode/opencode.json` so project agents + MCP actually load; a
+  // prior `.opencode/config.json` was silently ignored by the host. Global scope
+  // writes the user-level config and only when it already exists.
 
   const configPath = targetDir
-    ? path.join(targetDir, ".opencode", "config.json")
+    ? path.join(targetDir, ".opencode", "opencode.json")
     : findOpenCodeConfigPath();
   if (!targetDir && !fs.existsSync(configPath)) return false;
-  if (targetDir) mkdirp(path.dirname(configPath));
+  if (targetDir) {
+    mkdirp(path.dirname(configPath));
+    // Converge a stale `.opencode/config.json` (a path OpenCode never read) onto
+    // the canonical name — rename to preserve content, or drop it if both exist.
+    const legacyPath = path.join(targetDir, ".opencode", "config.json");
+    if (!DRY_RUN && fs.existsSync(legacyPath)) {
+      if (!fs.existsSync(configPath)) fs.renameSync(legacyPath, configPath);
+      else fs.rmSync(legacyPath);
+    }
+  }
 
   const pluginsDir = targetDir
     ? path.join(targetDir, ".opencode", "plugins")

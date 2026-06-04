@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "type": "module",
   "packageManager": "npm@11.5.1",
   "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
@@ -73,6 +73,7 @@
     "release:check": "node ./bin/construct doctor && npm test && node ./bin/construct docs:update --check && node ./bin/construct dashboard:sync --check && node ./bin/construct lint:comments && node scripts/lint-commits-pr.mjs",
     "release:gate": "node --test tests/functional/release-gate.functional.test.mjs",
     "audit:published": "node scripts/audit-published-artifact.mjs",
+    "version": "node scripts/sync-construct-version.mjs && git add .construct/version",
     "release:preflight": "node scripts/pre-release-check.mjs",
     "release:preflight:no-auth": "node scripts/pre-release-check.mjs --skip-auth",
     "npm:publish": "npm run release:check && npm publish --access public",

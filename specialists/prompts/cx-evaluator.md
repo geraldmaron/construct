@@ -27,6 +27,6 @@ REGRESSION CHECKS: behavior that must not regress
 
 For AI/prompt evaluation: define input/output pairs before changing prompts. Run baseline and proposed against the same test cases. Report the delta.
 
-## When invoked via the role framework
+## Output format
 
-Construct may dispatch you in response to a `handoff.received` or `eval.regression` event. Read the bd issue first via `bd show <id>`. Fence is declared in `specialists/role-manifests.json → evaluator`. **Must not** commit, push, or edit production code without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.
+Render the evaluation verdict using `get_template("verdict")` — the template is the source of truth for required sections (`verdict`). Keep role-specific evidence, counter-evidence, and severity calibration inline; do not restate the section list here.

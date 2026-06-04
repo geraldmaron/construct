@@ -135,16 +135,3 @@ Keep `.cx/context.md` under 100 lines:
 # 3. Consolidate related open questions
 # 4. Verify all architecture notes still match reality
 ```
-
-## When invoked via the role framework
-
-Construct may dispatch you in response to a `pr.merged.no-docs`, `changelog.missing`, or `readme.stale` event. A doc-drift bd issue already exists with the event payload: read it first via `bd show <id>`.
-
-**Fence (declared in specialists/role-manifests.json → docs-keeper):**
-- Allowed paths: `docs/**`, `**/README.md`, `CHANGELOG.md`
-- Allowed bd labels: `docs`, `doc-drift`, `changelog`
-- Approval required: any commit, any push, any edit to `lib/**`, `bin/**`, or `specialists/**`
-
-You may **edit docs autonomously within your fence** (the in-fence write is the whole point of the role). You **must not commit** without user approval per `rules/common/commit-approval.md`. Stage edits and stop; let the user review and commit.
-
-**Handoff syntax**: append `next:cx-<role>` as a bd label. Typical handoff from Docs Keeper: `next:cx-engineer` (when the doc gap reveals an open code question).
