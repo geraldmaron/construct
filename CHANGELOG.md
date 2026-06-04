@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.22] - 2026-06-04
+
 ### Fixed
 - Tool-invisibility linter hardening (audit `construct-l9sk`): the `cx-*` leak detector used an open-ended
   `/cx-[a-z-]+/` regex that false-positived on unrelated npm packages (`cx-oracle`, `cx-ray`, `cx-pro`) and
