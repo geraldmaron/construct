@@ -22,6 +22,17 @@ All notable changes to Construct are documented here. The format follows [Keep a
   now structure-enforced by `STRUCTURE_REQUIREMENTS`.
 
 ### Added
+- Tool-invisibility guardrail (`rules/common/tool-invisibility.md`) — deliverable artifacts are about the
+  user's project, never about Construct or its internal machinery. Caught after a strategy authored through
+  the specialist chain came back saying "Construct's bet is…" and named `cx-product-manager` as a metric
+  owner — the tooling had written itself into a third-party project's deliverable. **Prevention:** a new
+  `sharedGuidance` entry (reaches every specialist) + a persona directive instruct agents never to name
+  Construct, the `cx-*` role ids, or internal orchestration mechanics in artifact content unless the subject
+  project is Construct itself. **Backstop:** `lib/comment-lint.mjs` flags `cx-*` role-id tokens in a consuming
+  project's deliverable markdown (full-content scan so a leak in a table cell is caught; HTML comments exempt
+  so provenance stays allowed), skipped on the Construct repo itself (package `@geraldmaron/construct`).
+  Severity follows `CONSTRUCT_ARTIFACT_LINT_MODE` (warn by default, block in the release gate). Covered by
+  `tests/tool-invisibility.test.mjs` (11 cases); registered in `specialists/policy-inventory.json`.
 - Orchestrator dispatch-guard hook (`construct-8ahq`) — `lib/hooks/orchestration-dispatch-guard.mjs` is a new
   Claude-only PreToolUse/PostToolUse backstop that blocks substantial deliverable writes when
   `orchestration_policy` classified the request as `orchestrated` but no specialist dispatch
