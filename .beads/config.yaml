@@ -39,8 +39,7 @@
 # Off-machine sync is git-native via the Dolt remote on refs/dolt/data
 # (see docs/adr/0026-beads-git-native-sync.md), not the legacy JSONL backup.
 # issues.jsonl is gitignored and is only an optional export, never the source of truth,
-# so the JSONL auto-backup is disabled here — it otherwise tries to git-add a gitignored
-# file and logs "auto-export: git add failed".
+# so the periodic JSONL auto-backup is disabled here as redundant with the Dolt remote.
 backup:
   enabled: false       # canonical sync is the Dolt remote (bd dolt push), not JSONL
 #   interval: 15m      # Minimum time between auto-exports
