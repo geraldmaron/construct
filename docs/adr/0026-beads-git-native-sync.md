@@ -45,7 +45,7 @@ The git-native path rides the repository Construct already pushes to, so issue h
 ## Consequences
 
 - Issue history is durable and shareable with zero new infrastructure; a fresh clone picks up the remote via `bd init`, and this session's closes and new issues are already on origin.
-- The legacy JSONL auto-backup is retired in `.beads/config.yaml` (`backup.enabled: false`); it was the source of the recurring `auto-export: git add failed` log, since `issues.jsonl` is gitignored.
+- The periodic JSONL auto-backup is disabled in `.beads/config.yaml` (`backup.enabled: false`) as redundant with the Dolt remote. A separate per-mutation export still logs a benign `auto-export: git add failed` (it attempts `git add` on the gitignored `issues.jsonl`); that log is harmless — the Dolt remote is the source of truth — and is out of scope for this decision.
 - Sync depends on the embedded Dolt supporting git remotes (Dolt ≥ v1.81.10) and on a non-interactive git credential path; an HTTPS origin without a credential helper, or an older embedded Dolt, would force the object-store fallback.
 - A `refs/dolt/data` ref now lives in the origin repository (single-digit MB for this issue count), invisible to normal git operations.
 
