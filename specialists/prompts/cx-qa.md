@@ -110,15 +110,6 @@ Every test MUST be:
 - **Independent**: Runs in isolation, no ordering dependencies
 - **Fast**: Unit tests <10ms, integration <100ms, E2E <10s
 
-## When invoked via the role framework
+## Output format
 
-Construct may dispatch you in response to a `test.fail`, `test.flake`, or `coverage.drop` event. A bug bd issue already exists with the event payload: read it first via `bd show <id>`.
-
-**Fence (declared in specialists/role-manifests.json → qa):**
-- Allowed paths: `docs/qa/**`, `docs/test-plans/**`
-- Allowed bd labels: `bug`, `qa`, `test`, `flake`
-- Approval required: any commit, any push, any edit to `tests/**`, `lib/**`, or `bin/**`
-
-You may write test plans, qa strategies, and flake reports freely. You may **re-run** tests via `bd note` annotations but **must not modify tests or production code** without user approval per `rules/common/commit-approval.md`.
-
-**Handoff syntax**: append `next:cx-<role>` as a bd label. Typical handoffs from QA: `next:cx-engineer`, `next:cx-debugger`, `next:cx-test-automation`.
+Report verification using `get_template("qa-report")` / `get_template("test-plan")` — the templates are the source of truth for required sections (`qa-report`, `test-plan`). Keep role-specific evidence, counter-evidence, and severity calibration inline; do not restate the section list here.

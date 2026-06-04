@@ -15,6 +15,7 @@ import {
   INTENT_CLASSES,
   WORK_CATEGORIES,
   buildDispatchPlan,
+  detectRiskFlags,
   requiresExecutiveApproval,
   routeRequest,
   routeRequestVerified,
@@ -38,6 +39,28 @@ test('routeRequest classifies feature build as orchestrated implementation', () 
   assert.ok(route.specialists.includes('cx-engineer'));
   assert.ok(route.specialists.includes('cx-reviewer'));
   assert.ok(route.specialists.includes('cx-qa'));
+});
+
+test('detectRiskFlags fires on infrastructure-as-code vocabulary', () => {
+  const flags = detectRiskFlags('design our terraform agent strategy with blast radius controls, OIDC credential handling, and a phased production rollout');
+  assert.equal(flags.architecture, true, 'terraform/blast radius/rollout must fire architecture');
+  assert.equal(flags.security, true, 'OIDC/credential must fire security');
+});
+
+test('routeRequest sends a loosely-scoped Terraform agent strategy to orchestrated with adversarial review', () => {
+  // Regression: this exact shape (new architectural direction + credential
+  // handling + phased rollout) was mis-classified as immediate and
+  // solo-authored. It must land orchestrated and pull the adversarial chain
+  // even when the file/module estimate is small.
+  const route = routeRequest({
+    request: 'design our terraform agent strategy with blast radius controls, OIDC credential handling, and a phased production rollout',
+    fileCount: 1,
+    moduleCount: 1,
+  });
+  assert.equal(route.track, EXECUTION_TRACKS.orchestrated);
+  assert.ok(route.specialists.includes('cx-architect'), 'architect owns the structure');
+  assert.ok(route.specialists.includes('cx-security'), 'security challenges the credential/state model');
+  assert.ok(route.specialists.includes('cx-devil-advocate'), 'devil-advocate pressure-tests the approach');
 });
 
 test('routeRequest classifies fix requests through debugger path', () => {
@@ -263,4 +286,40 @@ test('formatOverlaySelection returns an empty list when no flavors match or inpu
   assert.deepEqual(formatOverlaySelection({}), []);
   assert.deepEqual(formatOverlaySelection({ engineer: null, architect: null }), []);
   assert.deepEqual(formatOverlaySelection('not-an-object'), []);
+});
+
+test('requestSignals returns structured signals for a vague feature ask', async () => {
+  const { requestSignals } = await import('../lib/orchestration-policy.mjs');
+  const signals = requestSignals('build me some kind of notifications feature, not sure exactly what');
+  assert.ok(signals.ambiguityScore > 0);
+  assert.equal(signals.hasSuccessMetric, false);
+  assert.equal(signals.blastRadius, 'narrow');
+});
+
+test('requestSignals flags wide blast radius and auth surface', async () => {
+  const { requestSignals } = await import('../lib/orchestration-policy.mjs');
+  const signals = requestSignals('migrate all users to the new auth flow — destructive backfill');
+  assert.equal(signals.blastRadius, 'wide');
+  assert.equal(signals.authOrPayments, true);
+});
+
+test('proactiveTriggers fires cx-security pre-dispatch on auth + wide blast', async () => {
+  const { proactiveTriggers, requestSignals } = await import('../lib/orchestration-policy.mjs');
+  const signals = requestSignals('migrate all users to the new auth flow — destructive backfill');
+  const triggers = proactiveTriggers(signals);
+  const security = triggers.find((t) => t.specialist === 'cx-security');
+  assert.ok(security, 'expected cx-security in triggers');
+  assert.match(security.reason, /auth|threat|payments/i);
+});
+
+test('routeRequest surfaces dispatchSummary with reasons for proactive triggers', async () => {
+  const { routeRequest } = await import('../lib/orchestration-policy.mjs');
+  const route = routeRequest({
+    request: 'migrate all users to the new auth flow with a destructive backfill end to end',
+    fileCount: 4,
+    moduleCount: 2,
+  });
+  assert.ok(route.dispatchSummary.startsWith('Engaging:'));
+  assert.ok(route.specialists.includes('cx-security'));
+  assert.match(route.dispatchReasons['cx-security'] || '', /auth|payments|threat/i);
 });

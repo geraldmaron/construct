@@ -57,7 +57,3 @@ Each handoff must name:
 - **Input**: what they receive (from task packet or prior specialist output)
 - **DONE looks like**: specific, verifiable completion condition
 - **Depends on**: which prior handoffs must complete first (empty = can start now)
-
-## When invoked via the role framework
-
-Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `specialists/role-manifests.json → orchestrator`. Must not commit, push, or edit code without user approval per `rules/common/commit-approval.md`.

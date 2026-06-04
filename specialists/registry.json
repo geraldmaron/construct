@@ -12,7 +12,8 @@
     "permissions": {
       "edit": "allow",
       "bash": "allow",
-      "webfetch": "allow"
+      "webfetch": "allow",
+      "websearch": "allow"
     },
     "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,WebSearch,WebFetch,summarize_diff,scan_file,project_context,memory_create_entities,list_skills,get_skill,search_skills,list_teams,get_team,memory_search,memory_add_observations,cx_trace,cx_score",
     "promptFile": "personas/construct.md",
@@ -417,7 +418,7 @@
       "modelTier": "standard",
       "reasoningEffort": "medium",
       "codexSandbox": "read-only",
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
       "promptFile": "specialists/prompts/cx-evaluator.md",
       "embedOrientation": {
         "focusAreas": [
@@ -628,7 +629,7 @@
       "modelTier": "reasoning",
       "reasoningEffort": "high",
       "codexSandbox": "read-only",
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates",
       "promptFile": "specialists/prompts/cx-devil-advocate.md",
       "embedOrientation": {
         "focusAreas": [
@@ -673,7 +674,7 @@
       "modelTier": "reasoning",
       "reasoningEffort": "high",
       "codexSandbox": "read-only",
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
       "promptFile": "specialists/prompts/cx-reviewer.md",
       "embedOrientation": {
         "focusAreas": [
@@ -716,7 +717,7 @@
       "modelTier": "reasoning",
       "reasoningEffort": "high",
       "codexSandbox": "read-only",
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
       "promptFile": "specialists/prompts/cx-security.md",
       "embedOrientation": {
         "focusAreas": [
@@ -776,7 +777,7 @@
       "modelTier": "standard",
       "reasoningEffort": "medium",
       "codexSandbox": "workspace-write",
-      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
+      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
       "promptFile": "specialists/prompts/cx-qa.md",
       "embedOrientation": {
         "focusAreas": [
@@ -824,7 +825,7 @@
       "modelTier": "reasoning",
       "reasoningEffort": "high",
       "codexSandbox": "workspace-write",
-      "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
+      "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
       "promptFile": "specialists/prompts/cx-debugger.md",
       "embedOrientation": {
         "focusAreas": [
@@ -987,7 +988,7 @@
       "modelTier": "standard",
       "reasoningEffort": "medium",
       "codexSandbox": "read-only",
-      "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+      "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates",
       "promptFile": "specialists/prompts/cx-legal-compliance.md",
       "embedOrientation": {
         "focusAreas": [
@@ -1179,7 +1180,7 @@
       "modelTier": "standard",
       "reasoningEffort": "medium",
       "codexSandbox": "read-only",
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates",
       "promptFile": "specialists/prompts/cx-accessibility.md",
       "embedOrientation": {
         "focusAreas": [
@@ -1227,7 +1228,7 @@
       "modelTier": "fast",
       "reasoningEffort": "medium",
       "codexSandbox": "read-only",
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates",
       "promptFile": "specialists/prompts/cx-explorer.md",
       "embedOrientation": {
         "focusAreas": [
@@ -1266,7 +1267,7 @@
       "description": "Tracks fleet-level performance patterns — stable median scores can hide high-variance agents that are failing silently.",
       "modelTier": "reasoning",
       "reasoningEffort": "high",
-      "claudeTools": "Read,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
+      "claudeTools": "Read,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
       "promptFile": "specialists/prompts/cx-trace-reviewer.md",
       "embedOrientation": {
         "focusAreas": [
@@ -1500,17 +1501,17 @@
   },
   "sharedGuidance": [
     "Session Resumption: start every new chat by grounding in project_context, memory_search, AGENTS.md, plan.md, and the relevant repo docs. Apply results silently — never ask the user to repeat information that memory already holds.",
-    "Memory recording: after completing meaningful work, call memory_add_observations to record what you learned. Record: patterns discovered (category: pattern), decisions made with rationale (category: decision), anti-patterns found (category: anti-pattern), and open questions (category: insight). Summaries must be ≥30 characters and specific — avoid placeholders like 'task done' or 'completed'.",
-    "Project Identification: identify the current project from the workspace (basename of CWD) or memory MCP. Focus your expertise on the target repository you are currently in.",
-    "Loop guard: if you observe the same command or tool call being attempted more than 3 times with identical arguments and no state change, stop immediately and surface what blocked progress and what decision is needed.",
+    "Memory recording: after meaningful work, call memory_add_observations to record patterns, decisions with rationale, anti-patterns, and open questions. Summaries must be specific and ≥30 characters — avoid placeholders.",
+    "Project Identification: identify the current project from the workspace or memory MCP, and focus on that target repository.",
+    "Loop guard: if the same command or tool call is attempted 3+ times with identical arguments and no state change, stop and surface what blocked progress and what decision is needed.",
     "Circuit breaker: after 3 failed attempts at the same approach, stop all edits. Revert to last known working state. Document what was tried and escalate to the user with full context.",
-    "Worker task contract: specialists return exactly one terminal state: DONE (with files changed and verification evidence), BLOCKED (with concrete blocker and attempted steps), or NEEDS_MAIN_INPUT ({ taskKey, worker, blocker, question, safeDefault, context }). Never conduct user interviews from child sessions.",
-    "Tool naming contract: use the exact tool names exposed by the current host — never emit names from other vendors catalogs. Claude-trained models map edits→edit, writes→write, shell→bash. OpenAI-trained models map python/code interpreter→unavailable, shell→bash, apply_patch→edit/write. The bash tool requires both command and description string fields: {\"command\":\"...\",\"description\":\"why this command is needed\"}. Prefer rg over find/grep. If a needed tool is not listed, use the closest available primitive.",
-    "Observability: you MUST call cx_trace at the start of every new task using your agent name as the name field and the user goal as input. Construct attaches promptName/promptFile/promptHash automatically. If the tool is unavailable, log the failure and continue — telemetry must never block execution.",
-    "Quality scoring: after producing a significant deliverable, you MUST call cx_score with name=quality, value 0.0-1.0, and a brief comment explaining the score. Use the trace_id returned by cx_trace.",
-    "Model failover: if you hit a rate-limit error (HTTP 429), provider quota message, or model unavailability, the PostToolUseFailure hook may run construct models --apply. Surface whether fallback ran, then retry only after the model assignment changed.",
+    "Worker task contract: specialists return exactly one terminal state — DONE (files + verification), BLOCKED (blocker + attempts), or NEEDS_MAIN_INPUT (per the `construct-to-orchestrator` shape in specialists/contracts.json). Never interview the user from a child session.",
+    "Tool naming contract: use the exact tool names exposed by the current host; never emit names from other vendors' catalogs. The bash tool requires both command and description string fields. Prefer rg over find/grep. If a needed tool is missing, use the closest available primitive.",
+    "Observability: you MUST call cx_trace at the start of every new task with your agent name and the user goal. Construct attaches prompt provenance automatically. If the tool is unavailable, log and continue — telemetry must never block execution.",
+    "Quality scoring: after a significant deliverable, you MUST call cx_score with `name=quality`, a 0.0–1.0 value, a brief comment, and the `trace_id` returned by cx_trace.",
+    "Model failover: on rate-limit / quota / model-unavailability errors, the PostToolUseFailure hook may switch model assignments. Surface whether fallback ran; retry only after assignments changed.",
     "Detailed orchestration reference (execution contract, handoff template, intent/category classification, parallel dispatch, horizontal routing, efficiency discipline) is in skills/operating/orchestration-reference.md — call get_skill(\"operating/orchestration-reference\") when you need it.",
-    "Agent contracts: explicit producer→consumer service contracts live in specialists/contracts.json (loaded via lib/specialist-contracts.mjs). Call the agent_contract MCP tool at handoff time to look up input.mustContain, preconditions, output shape, and postconditions for the current pair. routeRequest returns contractChain alongside specialists."
+    "Agent contracts: typed producer→consumer contracts live in `specialists/contracts.json`. Call the `agent_contract` MCP tool at handoff to fetch the current shape; `routeRequest` returns `contractChain` alongside `specialists`."
   ],
   "platformGuidance": {
     "opencode": [
@@ -1519,9 +1520,7 @@
       "OpenCode subagents are not primary chat surfaces. If you are running as a subagent and you need user input, do not prompt the user from the child session. Return a concise NEEDS_MAIN_INPUT packet containing the blocker, exact question, safe default, and current task/session context so the primary persona can ask the user and resume.",
       "If a subagent returns NEEDS_MAIN_INPUT, the primary persona must ask the user in the main session, update the tracker or plan with the blocker, then resume or re-dispatch the specialist with the answer.",
       "Provider fallback is not guaranteed inside OpenCode provider/session failures. If you see a provider quota or usage-limit error, run or ask the main session to run `construct models --apply` after confirming an OpenRouter key is available, then retry after sync changes model assignments.",
-      "Use OpenCode's native plugin, agent, command, and hook surfaces as the orchestration substrate. Visible handoff blocks are fallback/debug artifacts, not the workflow itself.",
-      "Loop guard: if you observe the same command or tool call being attempted more than 3 times with identical arguments and no state change, stop immediately and surface what blocked progress.",
-      "If the memory MCP is available, call search_nodes with the current project name before starting work to retrieve prior session context."
+      "Use OpenCode's native plugin, agent, command, and hook surfaces as the orchestration substrate. Visible handoff blocks are fallback/debug artifacts, not the workflow itself."
     ],
     "claude": [
       "Follow workspace instructions, project-level CLAUDE.md, agent definitions in ~/.claude/specialists/, slash commands, and hooks. Project-level instructions override global ones.",

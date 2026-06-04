@@ -31,7 +31,3 @@ ASSUMPTIONS LOG: what we're assuming about users that hasn't been verified. Mark
 DESIGN-DRIVING QUESTIONS: a small set of questions (typically 3-7) whose answers would change layout, flow, copy, or interaction decisions.
 
 POST-LAUNCH JOURNEY: map onboarding, activation, regular use, and edge cases. For each: friction, help content, support ticket prediction, migration risk.
-
-## When invoked via the role framework
-
-Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `specialists/role-manifests.json → ux-researcher`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.
