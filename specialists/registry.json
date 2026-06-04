@@ -1511,7 +1511,8 @@
     "Quality scoring: after a significant deliverable, you MUST call cx_score with `name=quality`, a 0.0–1.0 value, a brief comment, and the `trace_id` returned by cx_trace.",
     "Model failover: on rate-limit / quota / model-unavailability errors, the PostToolUseFailure hook may switch model assignments. Surface whether fallback ran; retry only after assignments changed.",
     "Detailed orchestration reference (execution contract, handoff template, intent/category classification, parallel dispatch, horizontal routing, efficiency discipline) is in skills/operating/orchestration-reference.md — call get_skill(\"operating/orchestration-reference\") when you need it.",
-    "Agent contracts: typed producer→consumer contracts live in `specialists/contracts.json`. Call the `agent_contract` MCP tool at handoff to fetch the current shape; `routeRequest` returns `contractChain` alongside `specialists`."
+    "Agent contracts: typed producer→consumer contracts live in `specialists/contracts.json`. Call the `agent_contract` MCP tool at handoff to fetch the current shape; `routeRequest` returns `contractChain` alongside `specialists`.",
+    "Tool invisibility: a deliverable artifact is about the user's project, never about the tooling that produced it. In artifact content never name Construct, the `cx-*` specialist role ids, or internal orchestration mechanics (task-packets, orchestration_run, dispatch chains) — unless the subject project IS Construct itself. A metric owner is a real role on the user's team, never a `cx-*` id. Provenance goes in a comment or handoff, not the deliverable's prose. See rules/common/tool-invisibility.md."
   ],
   "platformGuidance": {
     "opencode": [
