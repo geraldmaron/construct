@@ -29,6 +29,13 @@ All notable changes to Construct are documented here. The format follows [Keep a
   now structure-enforced by `STRUCTURE_REQUIREMENTS`.
 
 ### Added
+- **ADR-0026** (`docs/adr/0026-beads-git-native-sync.md`, Accepted) — beads issue history now syncs
+  git-native via the existing origin (Dolt data on `refs/dolt/data`), not a hosted data SaaS. Resolves the
+  "issues stranded on one machine" gap; verified end-to-end (`bd dolt remote add origin <git-url>` +
+  `bd dolt push` → `refs/dolt/data` on origin, branches untouched). DoltHub/DoltLab/filesystem remotes
+  rejected for the touch-free, vendor-agnostic, local-first reasons in the ADR (research brief
+  `.cx/research/dolt-sync-options-for-beads.md`). The legacy JSONL auto-backup is disabled in
+  `.beads/config.yaml` (`backup.enabled: false`), retiring the recurring `auto-export: git add failed` log.
 - Architecture decisions for the document-I/O and activation initiative (research brief
   `.cx/research/doc-io-and-invocation-research.md`): **ADR-0024** (`docs/adr/0024-document-io-optional-capability.md`)
   records that document I/O is an optional, externally-bound capability — Docling for ingestion (sidecar),
