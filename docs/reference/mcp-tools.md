@@ -686,6 +686,31 @@ Resolve the execution-capability contract for an embedded workflow before/at wor
 | `capabilities` | string[] | Optional required capabilities; unverifiable ones are returned as warnings. |
 | `allow_cross_provider_fallback` | boolean | Permit model fallback outside the host provider family (default false). |
 
+### `orchestration_run`
+Execute a real multi-specialist orchestration run via the local Construct daemon and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Requires a running daemon (`construct dashboard`); an unreachable daemon fails fast with how to start it rather than silently degrading to a single-persona pass. Real specialist output requires the daemon's `provider` worker backend (a provider key configured); the default `inline` backend prepares tasks only.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `request` | string | **required** — Natural-language description of the work to orchestrate. |
+| `workflow_type` | string | Optional workflow type to shape the plan (e.g. architecture-review). |
+| `requested_strategy` | string | `orchestrated` \| `prompt-only` \| `auto` (default auto). |
+| `worker_backend` | string | `provider` executes specialists (needs a key); `inline` prepares only. Default: daemon config. |
+| `host` | string | Host/IDE identifier (advisory). |
+| `host_model` | string | Model the host uses, for model resolution. |
+| `host_provider` | string | Provider family the host uses, for model resolution. |
+| `file_count` | number | Optional planning hint: number of files in scope. |
+| `module_count` | number | Optional planning hint: number of modules in scope. |
+| `wait` | boolean | Wait for a terminal state and return task output (default true); `false` returns the runId to poll. |
+| `timeout_ms` | number | Max wait when `wait=true` (default 120000); on timeout the runId is returned to poll. |
+
+### `orchestration_status`
+Inspect orchestration runs on the local Construct daemon: pass `run_id` for the full record (status, per-task status/executor/output/error), or omit it for a list of recent runs. Fails fast if the daemon is unreachable.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `run_id` | string | Run id to fetch. Omit to list recent runs. |
+| `limit` | number | Max runs to list when `run_id` is omitted (default 20). |
+
 ## Telemetry (additional)
 
 ### `cx_trace_telemetry`

@@ -1,0 +1,57 @@
+{
+  "totalOperations": 10,
+  "conflicts": 0,
+  "retries": 0,
+  "operations": {
+    "close construct-1c2 --reason Duplicate test artifact — not a real security issue": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-2v2 --reason Duplicate test artifact — not a real security issue": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-3ch --reason Duplicate test artifact — not a real security issue": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-4ig --reason Duplicate test artifact — not a real security issue": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-62k --reason Duplicate test artifact — not a real security issue": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-c5d --reason Duplicate test artifact — not a real security issue": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-d4h --reason Duplicate test artifact — not a real security issue": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-ry0 --reason Duplicate test artifact — not a real security issue": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-urt --reason Duplicate test artifact — not a real security issue": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    },
+    "close construct-yo0 --reason Policy gate cleanup completed": {
+      "count": 1,
+      "conflicts": 0,
+      "avgAttempts": 1
+    }
+  }
+}

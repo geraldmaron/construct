@@ -169,6 +169,13 @@
       "enforcement": "lib/read-tracker-store.mjs + session-start digest",
       "mode": "deterministic",
       "description": "Read discipline, probe-before-bulk-read, and tool parallelism rules. Read counts tracked per-file; the session-start efficiency digest surfaces files crossing the re-read threshold."
+    },
+    {
+      "id": "neurodivergent-output",
+      "source": "rules/common/neurodivergent-output.md",
+      "enforcement": "(persona prompt) + tests/term-format.test.mjs",
+      "mode": "honor-system",
+      "description": "Human-facing output (terminal, agent prose, dashboard) is formatted for neurodivergent readers; presentation never reshapes machine-readable output."
     }
   ]
 }

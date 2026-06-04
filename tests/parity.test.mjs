@@ -97,16 +97,20 @@ function writeAllSurfaces(extraAgents = []) {
   const agentNames = ['construct', ...extraAgents];
   const agentObj = {};
   for (const name of agentNames) {
-    fs.writeFileSync(path.join(claudeDir, `${name}.md`), 'stub');
     fs.writeFileSync(path.join(codexDir, `${name}.toml`), `name = "${name}"\n`);
     fs.writeFileSync(path.join(copilotDir, `${name}.prompt.md`), 'stub');
     agentObj[name] = {};
   }
+  // User-scope `.claude/agents` ships no front-door agent (project-scoped); only
+  // legacy extras (cx-*) may linger there during an upgrade.
+  for (const name of extraAgents) {
+    fs.writeFileSync(path.join(claudeDir, `${name}.md`), 'stub');
+  }
   fs.writeFileSync(path.join(opencodeDir, 'opencode.json'), JSON.stringify({ agent: agentObj }));
   fs.writeFileSync(path.join(cursorDir, 'mcp.json'), JSON.stringify({ mcpServers: { github: {}, context7: {} } }));
   fs.writeFileSync(
-    path.join(vscodeDir, 'settings.json'),
-    JSON.stringify({ 'github.copilot.mcpServers': { github: {}, context7: {} } }),
+    path.join(vscodeDir, 'mcp.json'),
+    JSON.stringify({ servers: { github: {}, context7: {} } }),
   );
 }
 
@@ -135,17 +139,17 @@ describe('checkParity', () => {
     assert.equal(report.surfaces.find((s) => s.surface === 'cursor').status, 'ok');
   });
 
-  it('reports drift when the construct front-door agent is missing from claude', () => {
+  it('user-scope claude ships no front-door agent (the project orchestrator is the front door)', () => {
     resetSurfaces();
     const claudeDir = path.join(tmpHome, '.claude', 'agents');
     fs.mkdirSync(claudeDir, { recursive: true });
-    // Empty user-scope agents dir — construct missing is drift.
+    // Empty user-scope `.claude/agents` is the correct state — a global agent
+    // would double the project orchestrator in editors that read both scopes.
 
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     const claude = report.surfaces.find((s) => s.surface === 'claude');
-    assert.equal(claude.status, 'drift');
-    assert.deepEqual(claude.missing, ['construct']);
-    assert.equal(report.ok, false);
+    assert.equal(claude.status, 'ok');
+    assert.deepEqual(claude.missing, []);
   });
 
   it('reports drift when opencode has a non-registry cx-* agent at user scope', () => {
@@ -185,8 +189,8 @@ describe('checkParity', () => {
     const vscodeDir = getVsCodeUserDir(tmpHome);
     fs.mkdirSync(vscodeDir, { recursive: true });
     fs.writeFileSync(
-      path.join(vscodeDir, 'settings.json'),
-      JSON.stringify({ 'github.copilot.mcpServers': { github: {} } }),
+      path.join(vscodeDir, 'mcp.json'),
+      JSON.stringify({ servers: { github: {} } }),
     );
 
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
@@ -202,13 +206,12 @@ describe('checkParity', () => {
     // Valid VS Code settings: line + block comments, a // inside a URL value,
     // and a trailing comma — all rejected by strict JSON.parse.
     fs.writeFileSync(
-      path.join(vscodeDir, 'settings.json'),
+      path.join(vscodeDir, 'mcp.json'),
       [
         '{',
-        '  // editor prefs',
-        '  "editor.fontSize": 13,',
-        '  /* managed by construct */',
-        '  "github.copilot.mcpServers": {',
+        '  // managed by construct',
+        '  /* VS Code user MCP config */',
+        '  "servers": {',
         '    "github": { "url": "https://example.test/github" },',
         '    "context7": {},',
         '  },',

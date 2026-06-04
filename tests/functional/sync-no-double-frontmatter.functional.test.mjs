@@ -105,8 +105,9 @@ test('sync emits Anthropic Agent Skills frontmatter on every SKILL.md (regressio
 });
 
 test('sync produces exactly one frontmatter block per Claude Code agent and Copilot prompt (global + project)', () => {
+  // Global ~/.claude/agents ships no agent (front door is project-scoped), so
+  // the Claude agent check runs against the project scope only.
   const agentDirs = [
-    join(SHARED_HOME, '.claude', 'agents'),
     join(SHARED_PROJECT, '.claude', 'agents'),
   ];
   for (const dir of agentDirs) {

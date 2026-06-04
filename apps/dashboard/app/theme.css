@@ -30,6 +30,8 @@
   --page-max: 1180px;
   --side-w: 272px;
   --header-h: 56px;
+
+  --focus-ring: #7cc4ff;
 }
 
 [data-theme="light"] {
@@ -43,6 +45,7 @@
   --surface: rgba(0, 0, 0, 0.025);
   --surface-2: rgba(0, 0, 0, 0.05);
   --code-bg: #f7f7f5;
+  --focus-ring: #0b62d6;
 }
 
 [data-density="compact"] {
@@ -58,6 +61,20 @@
   transition-duration: 0.001ms !important;
 }
 
+/* Honor the OS reduced-motion preference even before the in-app toggle runs, so a
+   motion-sensitive visitor never sees the looping hero drift or slide-in on first paint. */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
 html { background: var(--bg); }
@@ -71,6 +88,49 @@ body {
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; }
 ::selection { background: var(--ink); color: var(--bg); }
+
+/* Keyboard focus must be visible (WCAG 2.4.7). One ring for every interactive element;
+   :focus-visible keeps it off mouse clicks. Inputs that clear their own outline rely on a
+   focus-within border on their wrapper instead. */
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Skip link: off-screen until focused, then it drops into view as the first tab stop so a
+   keyboard user can jump past the nav straight to the page body. */
+
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -56px;
+  z-index: 100;
+  padding: 8px 14px;
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  transition: top 120ms ease;
+}
+.skip-link:focus {
+  top: 8px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* ─── Layout shell ───────────────────────────────────────────── */
 .shell { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }

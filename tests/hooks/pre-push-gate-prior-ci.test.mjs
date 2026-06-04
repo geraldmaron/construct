@@ -148,7 +148,7 @@ describe('pre-push-gate has no bypass mechanism', () => {
       extraEnv: { CONSTRUCT_ALLOW_CLAUDE_PUSH: '1' },
     });
     assert.equal(r.status, 2, `expected exit 2 (claude/* refused regardless of env); got ${r.status}. stderr:\n${r.stderr}`);
-    assert.match(r.stderr, /Refusing to push a claude/);
+    assert.match(r.stderr, /Refusing to push an agent-prefixed branch/);
   });
 
   it('CONSTRUCT_SKIP_PR_LINT=1 parent env does not short-circuit the PR-body path', () => {

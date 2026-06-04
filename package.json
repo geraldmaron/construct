@@ -73,6 +73,7 @@
     "release:check": "node ./bin/construct doctor && npm test && node ./bin/construct docs:update --check && node ./bin/construct dashboard:sync --check && node ./bin/construct lint:comments && node scripts/lint-commits-pr.mjs",
     "release:gate": "node --test tests/functional/release-gate.functional.test.mjs",
     "audit:published": "node scripts/audit-published-artifact.mjs",
+    "version": "node scripts/sync-construct-version.mjs && git add .construct/version",
     "release:preflight": "node scripts/pre-release-check.mjs",
     "release:preflight:no-auth": "node scripts/pre-release-check.mjs --skip-auth",
     "npm:publish": "npm run release:check && npm publish --access public",

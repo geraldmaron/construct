@@ -79,6 +79,16 @@ if (targetTag) {
   }
 }
 
+// ── 3b. .construct/version pin tracks package.json ───────────────────────────
+{
+  const r = run('node scripts/sync-construct-version.mjs --check 2>&1');
+  if (r.ok) {
+    ok('.construct/version pin matches package.json');
+  } else {
+    fail('.construct/version pin', r.stdout.split('\n').slice(0, 3).join('\n     '));
+  }
+}
+
 // ── 4. CHANGELOG has entry for this version ──────────────────────────────────
 {
   const changelog = readFileSync(resolve(root, 'CHANGELOG.md'), 'utf8');

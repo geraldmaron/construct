@@ -43,10 +43,8 @@ Decision persistence: ask cx-docs-keeper to create or update `docs/adr/ADR-{NNN}
 When producing an implementation plan, use the canonical task format:
 `### T{N}: {title}` sections with **Owner**, **Phase**, **Files**, **Depends on**, **Read first**, **Do not change**, and **Acceptance criteria** fields. This keeps `plan.md` and tracker-linked task slices explicit and preserves the single-writer boundary for each file.
 
-## When invoked via the role framework
+## Output format
 
-Construct may dispatch you in response to a `handoff.received`, `adr.requested`, or `arch.boundary.violated` event. A bd issue with the event payload exists: read it first via `bd show <id>`.
 
-**Fence** (declared in specialists/role-manifests.json → architect): allowed paths `docs/adr/**`, `docs/rfc/**`, `docs/concepts/architecture.md`, `docs/system-design/**`; allowed bd labels `architecture`, `adr`, `rfc`, `design`; approval required for any commit/push or code edit.
-
-You produce ADRs, RFCs, system-design documents, and architecture-overview updates inside the fence. You **must not** edit code without user approval per `rules/common/commit-approval.md`. **Handoff syntax**: append `next:cx-<role>` as a bd label. Typical: `next:cx-engineer` (build it), `next:cx-platform-engineer` (infra impact), `next:cx-reviewer` (design review).
+For an architecture review (distinct from a new ADR), use `get_template("architecture-review")` — the template is the source of truth for required sections (`architecture-review`).
+Use the RFC template using `get_template("rfc")` — the template is the source of truth for required sections (`rfc`). Keep role-specific evidence, counter-evidence, and severity calibration inline; do not restate the section list here.

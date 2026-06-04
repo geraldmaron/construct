@@ -37,10 +37,6 @@ Review in this order:
 
 If there are no CRITICAL or HIGH findings, say so clearly using the required form: "no issues found at: <file1>, <file2>". This must appear as the `noIssuesFoundAt` field in your output packet. Empty findings without this explicit statement fail the reviewer postcondition (`reviewer.findings-or-explicit-clear`) and log a contract violation. Hand CRITICAL and HIGH findings to cx-engineer for remediation.
 
-## When invoked via the role framework
+## Output format
 
-Construct may dispatch you in response to a `handoff.received`, `pr.opened`, or `pr.ready-for-review` event. A bd issue with the event payload exists: read it first via `bd show <id>`.
-
-**Fence** (declared in specialists/role-manifests.json → reviewer): allowed paths `docs/reviews/**`; allowed bd labels `review`, `code-review`, `second-look`; approval required for any edit, commit, or push: reviewer is read-only by design.
-
-You write review findings to bd notes and to `docs/reviews/` if a durable artifact is needed. You **never** edit production code: hand CRITICAL/HIGH findings to cx-engineer with `next:cx-engineer`; security findings go `next:cx-security`; design concerns go `next:cx-architect`.
+Report the review using `get_template("code-review-report")` — the template is the source of truth for required sections (`code-review-report`). Keep role-specific evidence, counter-evidence, and severity calibration inline; do not restate the section list here.

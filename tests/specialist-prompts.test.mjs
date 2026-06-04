@@ -183,7 +183,13 @@ test("prompt source files stay within token-efficiency budgets", () => {
   for (const persona of [registry.orchestrator].filter(Boolean)) {
     const content = fs.readFileSync(path.join(root, persona.promptFile), "utf8");
     const count = wordCount(content);
-    assert.ok(count <= 900, `${persona.promptFile} too large: ${count} words`);
+    // Persona cap is 1000 words. Baseline rule-of-thumb is 900 for an
+    // always-on prompt; the extra 100 words are reserved for behavioral
+    // mandates the model cannot get from code (currently: the call-the-
+    // orchestration_policy mandate and the neurodivergent-output style
+    // rule). Anything restated from code belongs in the policy module,
+    // not here — see tests/prompt-surface.test.mjs anti-restatement gates.
+    assert.ok(count <= 1000, `${persona.promptFile} too large: ${count} words`);
   }
 
   const allowlist = new Map([

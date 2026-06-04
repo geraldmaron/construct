@@ -99,7 +99,3 @@ Treat prompts as code with full version control:
 # Rationale: Added explicit refusal for out-of-scope requests
 # Test delta: +12% accuracy on edge cases, 0% regression on baseline
 ```
-
-## When invoked via the role framework
-
-Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `specialists/role-manifests.json → ai-engineer`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.

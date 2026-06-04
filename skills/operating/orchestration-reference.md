@@ -29,23 +29,9 @@ Each specialist carries a distinct cognitive profile shaped by professional prio
 
 For every non-trivial task: classify intent, create or update `.cx/workflow.json`, route to the owning persona or specialist, execute with the relevant skill, dispatch independent work in parallel when supported, persist decisions/handoffs to memory or `.cx`, validate through the validation phase before release.
 
-### Intent classes
+### Intent classes and work categories
 
-- `research`: read-only investigation
-- `implementation`: code changes
-- `investigation`: debugging, tracing
-- `evaluation`: quality gates, review
-- `fix`: bug repair
-
-Tag every workflow task with its intent class. Let intent drive agent selection and depth of work.
-
-### Work categories
-
-- `visual` (UI/CSS/design) → standard tier
-- `deep` (complex reasoning, architecture) → reasoning tier
-- `quick` (single-file, trivial) → fast tier
-- `writing` (docs, prose) → fast tier
-- `analysis` (data, metrics, review) → standard tier
+The canonical lists live in `lib/orchestration-policy.mjs` (`INTENT_CLASSES`, `WORK_CATEGORIES`). Do not enumerate them here — this skill teaches *when* to classify and *how* the classification drives selection, not *what* the classes are. Fetch the live list with the `orchestration_policy` MCP tool or by calling `routeRequest` directly; intent drives agent selection and work category drives model tier.
 
 ## Workflow state
 

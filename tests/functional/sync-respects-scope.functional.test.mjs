@@ -67,14 +67,14 @@ function snapshotHome(HOME) {
   return out;
 }
 
-test('--global writes only the construct front-door agent', () => {
+test('--global writes the front-door for Codex/Copilot but no Claude agent (VS Code reads ~/.claude/agents and would double it)', () => {
   const env = makeIsolatedEnv();
   try {
     const result = runSync(env, ['--global']);
     assert.equal(result.status, 0, `sync --global failed: ${result.stderr}`);
 
     const claudeAgents = listFiles(join(env.HOME, '.claude/agents'), '.md');
-    assert.deepEqual(claudeAgents, ['construct.md'], 'global ~/.claude/agents must contain only construct.md');
+    assert.deepEqual(claudeAgents, [], 'global ~/.claude/agents writes no agent — the project orchestrator is the front door (avoids the VS Code construct ×2)');
 
     const codexAgents = listFiles(join(env.HOME, '.codex/agents'), '.toml');
     assert.deepEqual(codexAgents, ['construct.toml'], 'global ~/.codex/agents must contain only construct.toml');
@@ -110,7 +110,8 @@ test('--project writes every agent into the project and leaves HOME untouched', 
     assert.ok(projectCopilot.includes('construct.prompt.md'));
     assert.ok(projectCopilot.filter((f) => f.startsWith('cx-')).length >= 20);
 
-    assert.ok(existsSync(join(env.project, '.opencode/config.json')), 'project must write .opencode/config.json');
+    assert.ok(existsSync(join(env.project, '.opencode/opencode.json')), 'project must write .opencode/opencode.json (a path OpenCode reads)');
+    assert.ok(!existsSync(join(env.project, '.opencode/config.json')), 'project must NOT write .opencode/config.json (OpenCode never reads it)');
     assert.ok(existsSync(join(env.project, '.vscode/mcp.json')), 'project must write .vscode/mcp.json');
     assert.ok(existsSync(join(env.project, '.cursor/mcp.json')), 'project must write .cursor/mcp.json');
     assert.ok(existsSync(join(env.project, '.cursor/rules/construct.mdc')), 'project must write .cursor/rules/construct.mdc');
@@ -192,7 +193,7 @@ test('legacy cx-* files at HOME are swept by --global sync (idempotent)', () => 
     assert.equal(r1.status, 0, `first --global failed: ${r1.stderr}`);
 
     let claudeAgents = listFiles(join(env.HOME, '.claude/agents'), '.md');
-    assert.deepEqual(claudeAgents.sort(), ['construct.md'], 'legacy cx-* must be swept from ~/.claude/agents');
+    assert.deepEqual(claudeAgents.sort(), [], 'legacy cx-* and the front-door agent must be swept from ~/.claude/agents');
 
     let codexAgents = listFiles(join(env.HOME, '.codex/agents'), '.toml');
     assert.deepEqual(codexAgents.sort(), ['construct.toml']);
@@ -204,7 +205,7 @@ test('legacy cx-* files at HOME are swept by --global sync (idempotent)', () => 
     assert.equal(r2.status, 0, `second --global failed: ${r2.stderr}`);
 
     claudeAgents = listFiles(join(env.HOME, '.claude/agents'), '.md');
-    assert.deepEqual(claudeAgents.sort(), ['construct.md'], 'second sync must be a no-op for filename set');
+    assert.deepEqual(claudeAgents.sort(), [], 'second sync must be a no-op for filename set');
   } finally {
     env.cleanup();
   }
