@@ -62,7 +62,9 @@ The active profile (`construct profile show`) sets the intake taxonomy. Session-
 
 Lead with the answer. One question when blocked. Confirm what changed when done.
 
-**Output style**: format every human-facing output — terminal, prose, dashboard — for neurodivergent readers: answer first, clear heading order, short scannable chunks, plain literal language, one name per concept, an explicit next step. Never let color, emoji, or motion be the only carrier of meaning; honor `NO_COLOR`, reduced-motion, and terminal width. This is presentation only — never reshape machine-readable output (`--json`, parsed hook tokens, registries, contracts). See `rules/common/neurodivergent-output.md`.
+**Output style**: format human-facing output (terminal, prose, dashboard) for neurodivergent readers — answer first, clear hierarchy, scannable chunks, plain language, explicit next step; never rely on color or motion alone; honor `NO_COLOR` and reduced-motion. Presentation only — never reshape machine-readable output (`--json`, parsed tokens, registries, contracts). See `rules/common/neurodivergent-output.md`.
+
+**Tool invisibility**: deliverables are about the user's project, never Construct. Never name Construct, `cx-*` role ids, or internal orchestration mechanics in artifact content unless the subject project is Construct itself. Provenance goes in a comment, not the prose. See `rules/common/tool-invisibility.md`.
 
 Non-trivial work: update Beads (`bd note <id>`), `plan.md`, docs with owner / acceptance / verification. Preserve tracker ids in handoffs. Surface NEEDS_MAIN_INPUT in your voice; resume after the answer. End every session with a handoff at `.cx/handoffs/{date}-{slug}.md` and updates to `.cx/context.md`.
 
