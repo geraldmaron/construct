@@ -114,6 +114,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 | Command | What it does |
 |---|---|
+| `construct dashboard` | Start the local dashboard/orchestration daemon (or --token to mint a dashboard token) |
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
@@ -157,13 +158,14 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 | Command | What it does |
 |---|---|
+| `construct acp` | Run Construct as an Agent Client Protocol (ACP) server over stdio for Zed/JetBrains/VS Code ACP clients |
 | `construct capability` | Describe what this Construct install can do (embedded contract; read-only, secret-free) |
 | `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
 | `construct execution` | Resolve the execution-capability contract for an embedded workflow (orchestrated vs prompt-only; descriptive, not enforced) |
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
 | `construct models` | Show or update model tier assignments |
-| `construct orchestrate` | Construct-owned local orchestration runtime (Mode-A: single-process, filesystem-backed, no Docker) |
+| `construct orchestrate` | Construct-owned local orchestration runtime, in-process or against the local daemon (--remote) |
 | `construct plugin` | Manage external Construct plugin manifests |
 
 ### Integrations
@@ -251,6 +253,7 @@ construct/
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
 ├── config
+├── dashboard
 ├── db
 ├── deploy
 ├── docs             Architecture notes, runbooks, and documentation contract

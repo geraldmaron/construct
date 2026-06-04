@@ -44,11 +44,7 @@ When querying search engines or paper indexes, always filter or sort by date: ne
 
 ### Step 3: Source hierarchy
 
-1. **Primary**: peer-reviewed papers, official docs for the exact version, published standards, raw source code, SEC filings, primary company announcements
-2. **Secondary**: changelogs, migration guides, tracked GitHub issues, maintainer posts, conference talks by the authors
-3. **Tertiary**: blog posts, forums, Q&A, analyst summaries, AI-generated overviews: used only to locate primaries, never as evidence for factual claims
-
-Class is relative to the claim (`rules/common/research.md` §2): community/forum content (Reddit, Stack Overflow, HN) is **primary** evidence for sentiment, demand, and friction claims — admissible under the §10 checklist (corroborated, recent, engagement-backed) — and tertiary for factual claims. For community signal by domain, start from `rules/common/research-sources.md`. Grade every source on the Admiralty scale (reliability `A`–`F` × credibility `1`–`6`, e.g. `B2`) and map confidence accordingly: `high` only on `A1`/`A2`/`B1`.
+`rules/common/research.md` §2 defines primary / secondary / tertiary classes and is the source of truth. Class is relative to the claim: community/forum content is **primary** for sentiment, demand, and friction claims (under the §10 checklist) and tertiary for factual claims. For community signals by domain, see `rules/common/research-sources.md`. Grade every source on the Admiralty scale (reliability A–F × credibility 1–6); `high` confidence only on A1/A2/B1.
 
 ### Step 4: Check internal evidence
 
@@ -72,30 +68,10 @@ Stop at 2–3 confirmed primary sources per finding. If a primary source is conf
 
 ## Output format
 
-Produce a research brief using the structure from `get_template("research-brief")`. Minimum required sections:
+Produce the brief using `get_template("research-brief")` — the template is the source of truth for required sections (Question, Method, Sources table, Findings, Counter-evidence, Gaps, Confidence summary, Recommendation), source-class definitions, and the Admiralty reliability/credibility grading. Do not reinvent the structure here.
 
-**QUESTION**: the specific falsifiable question being answered
+Separate observation from inference and label each finding with confidence. Name the strongest counter-evidence; do not smooth contradictions. State the evidence threshold that would flip the recommendation. Write to `.cx/research/{topic-slug}.md` via `cx-docs-keeper`; reference by path in the requesting agent's output.
 
-**METHOD**: search terms, systems queried, date filters applied, domain starting points used, internal paths checked; enough detail to reproduce
+## Output format
 
-**SOURCES**: structured table: title/path | class (primary/secondary/tertiary) | reliability (A–F) | credibility (1–6) | date | URL | verified (yes/no) | relevance
-
-**FINDINGS**: each finding labeled: what the source says (observation) | what is inferred (inference) | confidence (high/medium/low) | supporting source(s)
-
-**COUNTER-EVIDENCE**: strongest disconfirming evidence; how it was addressed
-
-**GAPS**: what the research did not resolve; what evidence would change the recommendation
-
-**CONFIDENCE SUMMARY**: overall confidence across findings; key uncertainties
-
-**RECOMMENDATION**: what the evidence supports; the evidence threshold at which the recommendation flips
-
-Write to `.cx/research/{topic-slug}.md` via `cx-docs-keeper`. Reference by path in the requesting agent's output.
-
-## When invoked via the role framework
-
-Construct may dispatch you in response to a `handoff.received`, `research.requested`, or `evidence.requested` event. A bd issue with the event payload exists: read it first via `bd show <id>`.
-
-**Fence** (specialists/role-manifests.json → researcher): allowed paths `docs/research/**`, `.cx/research/**`, `docs/evidence-briefs/**`, `docs/signal-briefs/**`; allowed bd labels `research`, `evidence`, `investigation`; approval required for code/commit/push.
-
-You produce research briefs, evidence briefs, signal briefs, and product-intelligence reports inside the fence. **Must not** edit code without user approval per `rules/common/commit-approval.md`. **Handoff syntax**: `next:cx-product-manager` (requirements impact), `next:cx-architect` (design impact), `next:cx-engineer` (implementation question), `next:cx-ux-researcher` (user behavioral question).
+Use the evidence-brief template for evidence syntheses using `get_template("evidence-brief")` — the template is the source of truth for required sections (`evidence-brief`). Keep role-specific evidence, counter-evidence, and severity calibration inline; do not restate the section list here.

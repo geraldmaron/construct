@@ -86,7 +86,3 @@ If you receive work that was misclassified (e.g., assigned to you but actually r
      --reason="correct-classification"
    ```
 3. **Route correctly**: Add `next:cx-<correct-role>` label if handoff needed
-
-## When invoked via the role framework
-
-Construct may dispatch you in response to a `handoff.received` event. Read the bd issue first via `bd show <id>`. Fence is declared in `specialists/role-manifests.json → data-analyst`. **Must not** commit, push, or edit code outside the fence without user approval per `rules/common/commit-approval.md`. Handoff via `next:cx-<role>` bd label.

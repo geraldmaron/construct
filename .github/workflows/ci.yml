@@ -21,6 +21,10 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Heavy jobs (test matrix, evals, audit, postgres-integration) only run when code or
+# workflow files change. Doc-only PRs skip them and still get the cheap policy checks
+# (lint-comments, lint-templates, docs drift, gates audit, secret scan).
+
 jobs:
   # Compute per-target outputs so each downstream job only runs when files
   # in its scope changed. Saves CI minutes for doc-only PRs and avoids

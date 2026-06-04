@@ -71,7 +71,7 @@ export function StatusPill({ status, label }: { status: Status; label: string })
       borderRadius: 999,
       border: '1px solid var(--hairline-strong)',
     }}>
-      <span style={{
+      <span aria-hidden style={{
         width: 6,
         height: 6,
         borderRadius: '50%',
@@ -117,7 +117,7 @@ export function EmptyState({ label, hint }: { label: string; hint?: ReactNode })
 
 export function Spinner() {
   return (
-    <div style={{ padding: 24, textAlign: 'center', color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 12 }}>
+    <div role="status" aria-live="polite" style={{ padding: 24, textAlign: 'center', color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 12 }}>
       Loading…
     </div>
   );

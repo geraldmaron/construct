@@ -65,6 +65,7 @@ import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
 import { readDashboardState, startDashboard, startServices } from '../lib/service-manager.mjs';
 import { readCostLog, summarizeCostData, formatCostReport, clearCostLog } from '../lib/cost.mjs';
 import { readEfficiencyLog, summarizeEfficiencyData, formatEfficiencyReport } from '../lib/efficiency.mjs';
+import { resolveColors } from '../lib/term-format.mjs';
 import { buildHybridSearchResultsAsync } from '../lib/storage/hybrid-query.mjs';
 import { createSqlClient, closeSqlClient, readVectorConfig } from '../lib/storage/backend.mjs';
 import { describeVectorStore } from '../lib/storage/vector-store.mjs';
@@ -80,12 +81,7 @@ for (const [key, value] of Object.entries(ENV)) {
   if (!(key in process.env)) process.env[key] = value;
 }
 
-const COLORS = (!process.env.NO_COLOR && process.stdout.isTTY && process.env.TERM !== 'dumb')
-  ? {
-      bold: '\u001b[1m', dim: '\u001b[2m', reset: '\u001b[0m',
-      red: '\u001b[31m', green: '\u001b[32m', yellow: '\u001b[33m', cyan: '\u001b[36m',
-    }
-  : { bold: '', dim: '', reset: '', red: '', green: '', yellow: '', cyan: '' };
+const COLORS = resolveColors();
 
 function println(message = '') { process.stdout.write(`${message}\n`); }
 function errorln(message = '') { process.stderr.write(`${message}\n`); }
@@ -1176,6 +1172,16 @@ async function cmdUp(args = []) {
     else if (svc.status === 'configured') info(`${svc.name}: ${svc.note}`);
     else if (svc.status === 'failed') errorln(`${svc.name}: ${svc.note}`);
     else warn(`${svc.name}: ${svc.note}`);
+  }
+
+  // Show Langfuse credentials guidance after first start
+  const langfuseService = results.find(r => r.name === 'Langfuse');
+  if (langfuseService && langfuseService.status === 'started' && langfuseService.note?.includes('auto-configured')) {
+    println('');
+    info('Langfuse credentials:');
+    info('  Dashboard: http://localhost:54330 (login: admin@construct.local / construct-admin)');
+    info('  API keys auto-saved to ~/.construct/config.env');
+    info('  Run `construct status` anytime to view credentials');
   }
 
   if (recovery) {
@@ -3364,6 +3370,47 @@ async function cmdOrchestrate(args) {
   const flag = (name) => { const i = rest.indexOf(name); return i !== -1 ? rest[i + 1] : undefined; };
   const wantsJson = rest.includes('--json') || args.includes('--json');
 
+  // Thin-client mode: drive the local orchestration daemon over HTTP instead of
+  // running in-process, proving the engine-as-service contract editors/CI use.
+  if (rest.includes('--remote')) {
+    const remoteVal = flag('--remote');
+    const base = (remoteVal && /^https?:\/\//.test(remoteVal)) ? remoteVal.replace(/\/$/, '') : `http://${process.env.BIND_HOST || '127.0.0.1'}:${process.env.PORT || '4242'}`;
+    const { getDashboardToken } = await import('../lib/server/auth.mjs');
+    const token = getDashboardToken();
+    const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+    const positional = rest.filter((a) => !a.startsWith('--'));
+    try {
+      if (sub === 'run') {
+        const text = flag('--text') || positional.join(' ').trim();
+        if (!text) { errorln('Usage: construct orchestrate run "<request>" --remote [--strategy S] [--worker-backend provider] [--json]'); process.exit(1); }
+        const res = await fetch(`${base}/api/orchestration/runs`, { method: 'POST', headers, body: JSON.stringify({ request: text, workflowType: flag('--workflow-type'), requestedStrategy: flag('--strategy') || 'auto', host: flag('--host'), hostModel: flag('--host-model'), hostProvider: flag('--host-provider'), workerBackend: flag('--worker-backend'), fileCount: Number(flag('--file-count') || 0), moduleCount: Number(flag('--module-count') || 0) }) });
+        const env = await res.json();
+        if (!res.ok) { errorln(`Daemon error (${res.status}): ${env.error || 'unknown'}`); process.exit(1); }
+        if (wantsJson) { println(JSON.stringify(env.data, null, 2)); return; }
+        println(`Run ${env.data.runId} started on ${base} — ${env.data.status} · executionMode=${env.data.execution?.executionMode}. Poll: construct orchestrate status ${env.data.runId} --remote`);
+        return;
+      }
+      if (sub === 'status') {
+        const runId = positional[0];
+        const path = runId ? `/api/orchestration/runs/${encodeURIComponent(runId)}` : '/api/orchestration/runs';
+        const res = await fetch(`${base}${path}`, { headers });
+        const env = await res.json();
+        if (!res.ok) { errorln(`Daemon error (${res.status}): ${env.error || 'unknown'}`); process.exit(1); }
+        if (wantsJson) { println(JSON.stringify(env.data, null, 2)); return; }
+        if (runId) {
+          println(`Run ${env.data.runId} — ${env.data.status} · executionMode=${env.data.execution?.executionMode}`);
+          for (const t of env.data.tasks || []) println(`  ${t.id} ${t.role} — ${t.status}${t.output ? ` (${t.output.length} chars)` : ''}`);
+        } else {
+          for (const r of env.data.runs || []) println(`  ${r.runId} — ${r.status} · ${r.executionMode || ''} · ${r.createdAt}`);
+        }
+        return;
+      }
+    } catch (err) {
+      errorln(`Could not reach the orchestration daemon at ${base}: ${err.message}. Start it with \`construct dashboard\`.`);
+      process.exit(1);
+    }
+  }
+
   if (sub === 'run') {
     const { runOrchestration, planRun, hostAdapterMetadata } = await import('../lib/orchestration/runtime.mjs');
     const positional = rest.filter((a, i) => !a.startsWith('--') && !(i > 0 && rest[i - 1].startsWith('--') && !['--no-construct', '--no-execute', '--json'].includes(rest[i - 1])));
@@ -5059,6 +5106,7 @@ async function readStdin() {
 const handlers = new Map([
   // Core
   ['dev', cmdUp],
+  ['dashboard', cmdServe],
   ['stop', cmdDown],
   ['status', cmdStatus],
   ['install', cmdSetup],
@@ -5119,6 +5167,10 @@ const handlers = new Map([
   ['models', cmdModels],
   ['execution', cmdExecution],
   ['orchestrate', cmdOrchestrate],
+  ['acp', async () => {
+    const { runAcpServer } = await import('../lib/acp/server.mjs');
+    runAcpServer({ input: process.stdin, output: process.stdout, env: process.env, defaultCwd: process.cwd() });
+  }],
   ['beads:stats', async (args) => {
     const { getContentionStats, getHumanStatus } = await import('../lib/beads-optimistic.mjs');
     const jsonOutput = args.includes('--json');

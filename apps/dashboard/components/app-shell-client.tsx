@@ -115,6 +115,7 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
 
   return (
     <div className={'shell' + (prefs.calmMode ? ' calm' : '')}>
+      <a className="skip-link" href="#main">Skip to content</a>
       <header className="topbar">
         <Link href="/" className="brand">
           <div className="mark" />
@@ -126,19 +127,38 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
             <input
               readOnly
               placeholder="Search dashboard…"
+              aria-label="Search dashboard (Command-K)"
               onFocus={() => setPaletteOpen(true)}
             />
             <span className="kbd">⌘K</span>
           </label>
         </div>
         <div className="top-actions">
-          <button className="icon-btn" title="Toggle theme" onClick={toggleTheme} type="button">
+          <button
+            className="icon-btn"
+            type="button"
+            onClick={toggleTheme}
+            aria-label={prefs.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            title={prefs.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          >
             {prefs.theme === 'dark' ? <SunGlyph /> : <MoonGlyph />}
           </button>
-          <button className="icon-btn" title="Toggle density" onClick={toggleDensity} type="button">
+          <button
+            className="icon-btn"
+            type="button"
+            onClick={toggleDensity}
+            aria-label={prefs.density === 'compact' ? 'Switch to comfortable density' : 'Switch to compact density'}
+            title={prefs.density === 'compact' ? 'Switch to comfortable density' : 'Switch to compact density'}
+          >
             {prefs.density === 'compact' ? <DensityComfy /> : <DensityCompact />}
           </button>
-          <a className="icon-btn outlined" href="https://github.com/geraldmaron/construct" target="_blank" rel="noreferrer">
+          <a
+            className="icon-btn outlined"
+            href="https://github.com/geraldmaron/construct"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Construct repository on GitHub (opens in a new tab)"
+          >
             <GitHubIcon /> <span style={{ fontSize: 11 }}>repo</span>
           </a>
         </div>
@@ -146,7 +166,7 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
       </header>
 
       <div className="body-grid">
-        <aside className="sidebar">
+        <nav className="sidebar" aria-label="Dashboard sections">
           {nav.map((group) => (
             <div className="side-group" key={group.label}>
               <div className="side-label">{group.label}</div>
@@ -169,9 +189,9 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
           <div className="side-foot">
             Local dashboard for Construct. Theme + density preferences persist.
           </div>
-        </aside>
+        </nav>
 
-        <main className="main" ref={mainRef} onScroll={onScroll}>
+        <main className="main" id="main" tabIndex={-1} ref={mainRef} onScroll={onScroll}>
           {children}
         </main>
       </div>

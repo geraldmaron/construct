@@ -4,6 +4,241 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.22] - 2026-06-04
+
+### Fixed
+- Tool-invisibility linter hardening (audit `construct-l9sk`): the `cx-*` leak detector used an open-ended
+  `/cx-[a-z-]+/` regex that false-positived on unrelated npm packages (`cx-oracle`, `cx-ray`, `cx-pro`) and
+  would fail the release gate on legitimate user content. The pattern is now anchored to the 28 real role ids
+  from `specialists/registry.json` (exported `KNOWN_CX_ROLE_IDS`, drift-guarded by a registry-comparison test).
+  Fence handling fixed alongside: `~~~` fences are now skipped, and an unclosed fence no longer suppresses
+  scanning of the rest of the document — the leak backstop fails closed, not open.
+  `tests/tool-invisibility.test.mjs` grows to 16 cases (+5).
+- construct-mcp MCP server identity (`construct-dwfv`): the server reported a hardcoded stale `version: "1.0.0"`
+  and advertised no `instructions` or resources, so MCP hosts (Claude Code, VS Code, OpenCode, Cursor) rendered
+  the "Construct" entry as a bare name + OK badge with an empty detail panel. It now sources the real version
+  from `lib/version.mjs`, returns a descriptive `instructions` string, and exposes a `construct://status`
+  resource (version, deployment mode, broker, capabilities). Also fixed `getInstalledVersion()` being used as a
+  string when it returns an object. Test: `tests/mcp-server-identity.test.mjs`; tools unchanged (65).
+
+### Changed
+- Research-grade remediation Phase C — adequate templates raised to expert-grade (epic `construct-7zrh.7`):
+  `runbook.md` (severity→response/error-budget mapping atop the diagnostic flowchart), `strategy.md`
+  (per-bet kill criteria + leading indicators, leading/lagging metrics, milestones, risk register),
+  `signal-brief.md` (Admiralty-graded evidence + counter-signal), `prfaq.md` (spokesperson/customer quote,
+  launch metrics), `customer-profile.md` (evidence-graded pain points), `product-intelligence-report.md` and
+  `backlog-proposal.md` (Admiralty-graded evidence base). `one-pager`, `persona-artifact`, and the above are
+  now structure-enforced by `STRUCTURE_REQUIREMENTS`.
+
+### Added
+- **ADR-0026** (`docs/adr/0026-beads-git-native-sync.md`, Accepted) — beads issue history now syncs
+  git-native via the existing origin (Dolt data on `refs/dolt/data`), not a hosted data SaaS. Resolves the
+  "issues stranded on one machine" gap; verified end-to-end (`bd dolt remote add origin <git-url>` +
+  `bd dolt push` → `refs/dolt/data` on origin, branches untouched). DoltHub/DoltLab/filesystem remotes
+  rejected for the touch-free, vendor-agnostic, local-first reasons in the ADR (research brief
+  `.cx/research/dolt-sync-options-for-beads.md`). Also sets `export.git-add: false` in
+  `.beads/config.yaml`: beads' per-write auto-export was trying to `git add` the gitignored
+  `issues.jsonl`, logging `auto-export: git add failed` on every mutation — disabling the staging
+  step keeps the local export and removes the noise (verified: no warning on `bd create`/`bd delete`).
+- Architecture decisions for the document-I/O and activation initiative (research brief
+  `.cx/research/doc-io-and-invocation-research.md`): **ADR-0024** (`docs/adr/0024-document-io-optional-capability.md`)
+  records that document I/O is an optional, externally-bound capability — Docling for ingestion (sidecar),
+  Pandoc + Typst spawned binaries for export — never bundled in core, honoring ADR-0001/0014. **ADR-0025**
+  (`docs/adr/0025-explicit-activation-model.md`) records that Construct activation is explicit and
+  host-initiated via the `orchestration_run` MCP tool (aware but never ambient; selecting a non-Construct
+  agent never invokes Construct), closing the Copilot honor-system gap (`construct-f66u`). Both status
+  Proposed; refs `construct-yrdd`, `construct-6zqs`, `construct-i1mt`.
+- Tool-invisibility guardrail (`rules/common/tool-invisibility.md`) — deliverable artifacts are about the
+  user's project, never about Construct or its internal machinery. Caught after a strategy authored through
+  the specialist chain came back saying "Construct's bet is…" and named `cx-product-manager` as a metric
+  owner — the tooling had written itself into a third-party project's deliverable. **Prevention:** a new
+  `sharedGuidance` entry (reaches every specialist) + a persona directive instruct agents never to name
+  Construct, the `cx-*` role ids, or internal orchestration mechanics in artifact content unless the subject
+  project is Construct itself. **Backstop:** `lib/comment-lint.mjs` flags `cx-*` role-id tokens in a consuming
+  project's deliverable markdown (full-content scan so a leak in a table cell is caught; HTML comments exempt
+  so provenance stays allowed), skipped on the Construct repo itself (package `@geraldmaron/construct`).
+  Severity follows `CONSTRUCT_ARTIFACT_LINT_MODE` (warn by default, block in the release gate). Covered by
+  `tests/tool-invisibility.test.mjs`; registered in `specialists/policy-inventory.json`. (Detector later
+  hardened — see Fixed/`construct-l9sk` — to anchor the pattern to real role ids and fail closed on fences.)
+- Orchestrator dispatch-guard hook (`construct-8ahq`) — `lib/hooks/orchestration-dispatch-guard.mjs` is a new
+  Claude-only PreToolUse/PostToolUse backstop that blocks substantial deliverable writes when
+  `orchestration_policy` classified the request as `orchestrated` but no specialist dispatch
+  (`orchestration_run` / Task) has run. Isolation-tested at `tests/hooks/orchestration-dispatch-guard.test.mjs`
+  (12 cases: PostToolUse arm/disarm, PreToolUse block/allow, fail-open conditions). The persona now
+  *mandates* calling `orchestration_policy` MCP first ("do not classify from memory; when orchestrated, you
+  may not author the deliverable yourself") so non-Claude surfaces honor the same contract via instruction.
+- Prompt anti-restatement test gates (`construct-dgxj`, `construct-hpbp`) — `tests/prompt-surface.test.mjs`
+  now enforces (1) no skill or specialist enumerates ≥4 `INTENT_CLASSES` inline, (2) no prompt outside the
+  persona enumerates ≥3 `detectRiskFlags` keys, (3) every backticked MCP tool name in `sharedGuidance`
+  resolves in `lib/mcp/server.mjs` (catches renames), (4) every specialist prompt sits at ≤90% of the
+  1200-word cap, (5) no prompt restates fence JSON (the renderer reads from `specialists/role-manifests.json`),
+  (6) `renderRoleFrameworkSection` produces a manifest-backed block for onboarded personas and the empty
+  string for unonboarded ones. Each gate fails with an actionable message naming the code authority.
+- `renderRoleFrameworkSection` in `scripts/sync-specialists.mjs` (`construct-hpbp`) — emits the
+  `## When invoked via the role framework` section from `specialists/role-manifests.json` (events,
+  `fence.allowedPaths`, `fence.allowedBdLabels`, `fence.approvalRequired`, `handoffCandidates`,
+  `outputs.docTypes`). The inline section was stripped from 28 specialist prompts; the manifest is now the
+  sole source of truth, so a fence change ripples through every surface on next sync without touching prose.
+- Eight new artifact templates under `templates/docs/` (`construct-iqod`, `construct-h7wz`) —
+  `code-review-report`, `security-audit-report`, `qa-report`, `debug-investigation`, `verdict`,
+  `accessibility-audit`, `architecture-review`, `task-packet`. Each carries the canonical section list its
+  owning specialist used to restate inline; prompts now reference `get_template("<name>")` and trust the
+  template for structure. `lib/template-registry.mjs` is the owner→template map and is gate-enforced —
+  every wired pair, template file, and `claudeTools` grant is asserted at test time.
+- Neurodivergent-output rule (`rules/common/neurodivergent-output.md`) — every human-facing Construct output
+  (terminal prose, agent messages, dashboard, error wording) is formatted for neurodivergent readers without
+  ever reshaping machine-readable output. `lib/term-format.mjs` is the single tested presentation-layer
+  module (color enable/disable, palette completeness, width fallback/cap, wrap, ANSI strip); the rule's
+  `enforced_by` linkage in the decision registry resolves to a new `tests/term-format.test.mjs` (9 cases,
+  including no-color.org compliance and palette key-set parity).
+- Dashboard accessibility pass completing the neurodivergent-output rule's dashboard surface — keyboard focus
+  is now visible on every interactive element (`:focus-visible` ring with a theme-aware `--focus-ring` token,
+  WCAG 2.4.7); a skip-to-content link is the first tab stop; the sidebar is a labelled `<nav>` landmark and the
+  icon-only controls (theme toggle, density toggle, repo link, search) carry `aria-label`s; the async
+  "Loading…" state is a polite live region (`role="status"`) and the status-pill color dot is marked
+  decorative so its text label carries the meaning; and a `@media (prefers-reduced-motion: reduce)` block
+  honors the OS setting on first paint, independent of the in-app motion toggle. Source:
+  `apps/dashboard/app/theme.css` + `apps/dashboard/components/{app-shell-client,page}.tsx`; the served
+  `lib/server/static/` snapshot is rebuilt via `construct dashboard:sync --build` and gated by `--check`.
+- ACP (Agent Client Protocol) server — Construct is now a first-class native agent in ACP editors (Zed,
+  JetBrains, the VS Code ACP client) via `construct acp` (ADR-0023, GH #215). Speaks JSON-RPC 2.0 over stdio
+  (`initialize` / `session/new` / `session/prompt` / `session/cancel`); a prompt runs a real multi-specialist
+  orchestration through the same engine the daemon and MCP tool use, streaming progress as `session/update`
+  chunks and returning a terminal `stopReason`. New `lib/acp/server.mjs` (dependency-free, reuses
+  `planRun`/`executeRun` + the run event bus). Test: `tests/functional/acp-server.functional.test.mjs`.
+- Honest host capability model — `detectHostCapabilities()` (`lib/host-capabilities.mjs`) now tags each host
+  with a normalized `capability`: `full-native` (Claude Code, OpenCode run the chain themselves),
+  `mcp-orchestrated` (Codex, VS Code, Cursor, Copilot reach the same outcome via the `orchestration_run` MCP
+  tool + daemon), or `prompt-only` (no supported 2026 host). Surfaced in `construct hosts` and
+  `connect-your-editor`, and the stale notes ("VS Code is not a multi-agent runtime", "Copilot does not expose
+  dispatch") are replaced with how to actually run a chain on each host. No surface is described as functional
+  when it isn't.
+- Sterile cross-host config-parity gate — `tests/functional/host-config-parity.functional.test.mjs` spawns
+  the real sync into an isolated HOME + project and asserts every IDE surface lands at its **canonical path
+  with the host's canonical top-level key and entry shape** (VS Code `servers`, Cursor `mcpServers`, OpenCode
+  `mcp` with array `command`, Codex `[mcp_servers.*]`, Claude `mcpServers`), and that **global scope never
+  seeds a host config the user didn't already have**. Catches the "looks installed but the host ignores it"
+  class (the OpenCode and VS Code bugs below) before it reaches users. Schema sourced from each host's official
+  docs + the host binaries' own resolvers (2026-06-03); hosts are never executed.
+
+### Fixed
+- Orchestrator mis-routed a Terraform agent-strategy request to Immediate (solo-authored) instead of
+  Orchestrated (`construct-8ahq`). Three layers fixed: (1) `detectRiskFlags` in `lib/orchestration-policy.mjs`
+  was missing infrastructure-as-code and credential vocabulary — added `terraform`, `infrastructure`, `iac`,
+  `provisioning`, `blast radius`, `rollout`, `deployment strategy` to `architecture`; added `credential`,
+  `oidc`, `iam`, `access token` to `security`; added `tfstate`, `drift` to `dataIntegrity`. A new regression
+  test (`tests/orchestration-policy.test.mjs`) pins that the exact shape ("design our terraform agent
+  strategy with blast radius controls, OIDC credential handling, and a phased production rollout") classifies
+  as `orchestrated` and pulls cx-architect + cx-security + cx-devil-advocate. (2) The persona now mandates
+  calling `orchestration_policy` MCP rather than classifying from memory, on every surface (Claude, OpenCode,
+  Copilot, Codex). (3) The new dispatch-guard hook (above) is the Claude-only backstop against solo-authoring.
+- Agent permissions audit across surfaces (`construct-iel1`) — the `construct` agent had **no internet on
+  Codex**: `sandbox_mode = workspace-write` blocks the network by default, yet the persona tells the agent to
+  use `WebFetch`/`context7`. Sync now writes `[sandbox_workspace_write] network_access = true` (non-destructive
+  — skipped when the user already manages that table). On **OpenCode**, `construct` had `webfetch` but not
+  `websearch` (added `websearch: allow` to the registry), and `opencodePermissions` defaulted *every* specialist
+  to `edit: allow` — so review-only specialists (`canEdit:false`, e.g. cx-architect) could modify files; they
+  now map to `edit: deny`, matching Claude and the registry contract. Claude (WebSearch+WebFetch) and the
+  MCP/host-controlled editor surfaces were reviewed as already appropriate.
+- Pre-push gate false-refused any push command containing a `.claude/` path (`construct-7f4q`) —
+  `lib/hooks/pre-push-gate.mjs` tested the whole command string with `/\bclaude\//`, so a `git push` chained
+  with a `.claude/agents` path was blocked as a "claude/* branch." It now matches the agent-branch prefix
+  against the branch name(s) actually pushed (current branch + explicit refspecs), anchored at the start.
+  Tested in isolation. Also broadened to `cursor|copilot|codex|aider|devin` prefixes.
+- VS Code/Cursor parity flagged the `memory` MCP server as drift — sync writes the optional local cm bridge,
+  but parity excluded `memory` from the *expected* set, so a populated `mcp.json` reported `drift — extra:
+  memory`. `memory` is now treated as allowed-but-not-required (filtered from both sides of the diff), and an
+  empty/0-byte user `mcp.json` is treated as "not configured" rather than a hard `unreadable` failure
+  (`lib/parity.mjs`).
+- VS Code/Copilot agent picker showed every agent in triplicate (`construct-j6vv`) — Copilot agent mode reads
+  the project's `.claude/agents/*.md` natively, so a briefly-added `.github/agents/*.agent.md` writer duplicated
+  the whole set in the picker. That writer is removed (and a pre-existing `.github/agents/` is swept on sync);
+  agents come from the single `.claude/agents/` set VS Code already reads. The orchestrator itself stayed
+  doubled because global sync wrote `~/.claude/agents/construct.md` (the Claude front door) **and** VS Code reads
+  that user scope too — so the global Claude front-door **agent** is no longer written (Claude global keeps its
+  hooks + `CLAUDE.md`; the Codex/Copilot front doors stay since those hosts don't cross-read a sibling's agent
+  dir). The project orchestrator is the single front door; `@construct` in Claude Code now requires an
+  initialized project. Parity expects an empty global `~/.claude/agents/`, and a leftover `construct.md` there is
+  treated as a sweepable legacy state. Touches `scripts/sync-specialists.mjs`, `lib/parity.mjs`; legacy `cx-*` in
+  global scope clear with `construct sync --global`.
+- `construct init` output ND-UX cleanup (`construct-0uga`) — `bd init` ran with inherited stdio, leaking beads'
+  verbose output into the flow: a doubled "Claude Code integration installed", a Claude-only "Restart Claude
+  Code" line (the project syncs six hosts), and jumbled ordering. Construct now captures that output and prints
+  one clean line (`✓ Task tracker ready — issues prefixed \`<x>-\``). The "Local SQLite database" banner claim
+  was replaced (the backend is dolt). The services summary now shows the **real** dashboard URL (was a hardcoded
+  port that could mismatch), reports a failed service honestly instead of hiding it, and surfaces `construct stop`.
+- Orchestration API rejected every run on a no-token daemon (`construct-apd5`) — the default post-init daemon
+  has no dashboard token, so programmatic clients (the `--remote` CLI, the `orchestration_run` MCP tool, editor
+  adapters) sent no cookie and no `Authorization` header and hit `403 csrf_token_missing_or_invalid`. CSRF
+  defends a browser cookie session, not a loopback programmatic API, so `/api/orchestration/*` is now CSRF-exempt
+  (`lib/server/csrf.mjs` `defaultSkip`); the auth gate still protects it in token mode. Without this the headline
+  "orchestrated outcome on any host" path failed in the default setup.
+- `construct dashboard` was advertised everywhere but not a real command (`construct-lf2b`) — docs, ADR-0022,
+  `connect-your-editor`, and the MCP tool's fail-fast message all say to run `construct dashboard`, but `cmdServe`
+  was never registered in the handler map, so it printed "Unknown command". Now registered (`bin/construct`) with
+  a CLI catalog entry.
+- VS Code global sync polluted user config with a deprecated key (`construct-tkb3`) — it wrote
+  `settings.json → github.copilot.mcpServers` and *seeded an empty settings.json* in every VS Code install,
+  the exact every-window pollution the docs already claimed Construct had stopped. Global VS Code now merges
+  into the canonical user-profile `mcp.json` (top-level `servers`, the file "MCP: Open User Configuration"
+  edits) **only when it already exists** — never seeding — and the deprecated `github.copilot.mcpServers` key
+  is no longer written. The verify (`lib/parity.mjs`) and detect (`lib/features.mjs`) sides moved to the same
+  canonical location so write/verify stay consistent.
+- Codex never received Construct's MCP servers (`construct-otlv`) — `syncCodex` only *updated* pre-existing
+  `[mcp_servers.*]` tables and never *seeded* them, so a fresh Codex config got zero MCP servers, leaving
+  `construct-mcp` (hence `orchestration_run`) unreachable in Codex. It now seeds the registry MCP servers like
+  every other host.
+- OpenCode project install landed on a path the host never reads (`construct-09tf`) — `construct sync`
+  wrote `<project>/.opencode/config.json`, but OpenCode's resolver only reads `opencode.json`,
+  `opencode.jsonc`, or `.opencode/opencode.json`, so the orchestrator + 28 specialists + MCP servers
+  silently never loaded (confirmed against the v1.15.4 binary's embedded resolver). Project sync now writes
+  `<project>/.opencode/opencode.json` and migrates a stale `.opencode/config.json` from a prior install onto
+  the canonical name without losing content. `scripts/sync-specialists.mjs` (`syncOpencode`); docs corrected
+  in `connect-your-editor`. Tests: `tests/functional/opencode-config-path.functional.test.mjs`.
+- `construct init` advertised a dead dashboard (`construct-mzlo`) — service startup passed the **project**
+  dir as `rootDir`, but `startDashboard`/`startDoctor` resolved the install entrypoints (`lib/server/index.mjs`,
+  `lib/doctor/index.mjs`) against it, so the dashboard crashed on boot with `MODULE_NOT_FOUND` while init
+  still printed its URL and persisted a dead PID. `lib/service-manager.mjs` now resolves those entrypoints
+  against an `INSTALL_ROOT` derived from the module's own location, and `startDashboard` polls the port for
+  readiness before persisting state — a failed boot is reported honestly (with the log tail) instead of
+  advertised as running. Without this the daemon-backed `orchestration_run` MCP path had no engine to reach.
+  Test: `tests/functional/init-dashboard-rootdir.functional.test.mjs`.
+- `.construct/version` pin drift — the project-local launcher pin had been stuck at `0.1.0` since the
+  initial commit while the package shipped `1.0.21`, so any host falling through to resolution step 2
+  (`npx -p @geraldmaron/construct@<version>` — no `CONSTRUCT_DEV_PATH`, no `node_modules`) hit
+  `npm error code ETARGET / No matching version found for @geraldmaron/construct@0.1.0` and the hook
+  failed before any Construct code ran (observed during `/compact`'s PreCompact hook). The pin is now
+  `1.0.21`, and a new `version` npm lifecycle script (`scripts/sync-construct-version.mjs`) regenerates
+  it from `package.json` on every `npm version` bump and stages it into the release commit, so it can no
+  longer drift behind a published release. The release preflight re-asserts the pin with
+  `node scripts/sync-construct-version.mjs --check`.
+
+### Added
+- Local orchestration daemon — typed HTTP+SSE API (`construct-pdx0`, GH #215): Construct's orchestration
+  runtime is now reachable as a local service so any thin client (a VS Code/Copilot extension, OpenCode, CI,
+  the bundled `construct orchestrate … --remote` CLI) can trigger a real multi-specialist run and stream the
+  outcome — the engine owns orchestration; the editor is a thin client (the Claude Code / OpenCode pattern).
+  This is what makes orchestrated outcomes attainable on hosts with no native subagent primitive. New routes
+  on the existing server (`lib/server/index.mjs`): `POST /api/orchestration/runs` (starts a background run,
+  returns `runId` immediately), `GET /api/orchestration/runs[/:id]`, `GET /api/orchestration/runs/:id/events`
+  (SSE lifecycle stream), `POST /api/orchestration/runs/:id/cancel` (cooperative between-task stop). New
+  `lib/orchestration/events.mjs` run event bus + `startRun` (background execution). Responses use the
+  versioned, secret-free embedded-contract envelope; requests reuse the dashboard auth, and CSRF is now
+  exempted for `Authorization`-header (bearer) requests so programmatic clients don't need the browser CSRF
+  dance (CSRF defends cookie auth, not header tokens). The daemon — a long-lived, detached service not bound to
+  one project — persists runs under the user data root (`~/.cx/runtime/orchestration/`) rather than the install
+  directory, which can be shared or read-only across projects; HOME is always writable and survives reinstalls.
+  Decision: ADR-0022. Tests: `tests/functional/orchestration-server.functional.test.mjs`,
+  `tests/orchestration-events.test.mjs`.
+- MCP orchestration client — `orchestration_run` + `orchestration_status` tools (`construct-f66u`, GH #215):
+  the executing counterpart to `workflow_invoke` (which only plans). `orchestration_run` drives the local
+  daemon to run a real multi-specialist chain and returns per-specialist output, so MCP hosts with no
+  subagent primitive (VS Code/Copilot, Cursor) reach orchestrated outcomes through a tool they actually
+  expose — the engine owns orchestration, the tool is the thin client. Resolves the daemon URL from
+  dashboard state and the token from `~/.construct/config.env`; an unreachable daemon **fails fast** with
+  how to start it (`construct dashboard`) instead of silently degrading to a single-persona pass. New
+  `lib/mcp/tools/orchestration-run.mjs`. Test: `tests/functional/orchestration-mcp.functional.test.mjs`.
+
 ## [1.0.21] - 2026-06-03
 
 ### Added
@@ -929,6 +1164,32 @@ CLI hygiene and follow-up cleanup across two phases. Phase 1 (PRs #140–#143): 
 
 ## Unreleased
 
+### Changed
+
+- **Breaking: CLI command restructuring** — Complete overhaul of command structure for clarity and progressive disclosure.
+  - **Renamed commands:** `setup`→`install`, `up`→`dev`, `down`→`stop`
+  - **Removed commands:** `start`, `serve`, `show` (no backwards compatibility shims)
+  - **Progressive disclosure:** Default `--help` shows only 11 core commands; `construct --all` shows all 60+
+  - **Interactive mode:** Running `construct` with no args shows context-aware menu with smart suggestions
+  - **Auto-magic health checks:** `construct dev` automatically checks prerequisites (Docker, cm, Node.js) before starting services
+  - **Smart defaults:** `construct init` auto-starts services by default (use `--no-start` to opt out)
+  - **Categories consolidated:** Core, Work, Integrations, Observability, Advanced
+  - `lib/health-check.mjs` provides shared prerequisite checking across install/init/dev
+
+- **Production-grade `construct init`** — Silent, non-interactive by default with smart defaults.
+  - **Non-interactive default:** No prompts unless `--interactive` flag is used
+  - **Silent git checks:** Working tree status only shown with `--verbose`
+  - **Project type detection:** Auto-detects API, web app, CLI, platform, etc.
+  - **Workflow-based docs:** Asks about specific needs (ADRs? RFCs? Runbooks?) not bland presets
+  - **Granular flags:** `--with-adrs`, `--with-rfcs`, `--with-runbooks`, `--with-postmortems`, `--with-docs=adrs,rfcs`
+  - **Smart suggestions:** Recommends docs based on detected project type
+  - **Clean output:** Professional, emoji-free output suitable for CI
+  - **New flags:** `--quiet` (minimal output), `--verbose` (detailed), `--interactive` (enable prompts)
+  - **Auto-start:** Services start automatically without prompting (use `--no-start` to opt out)
+  - Removed: `lean`, `product`, `full` presets (too generic)
+  - Before: Noisy git status warnings, childish "lean/product/full" prompts
+  - After: Silent initialization with project-aware documentation suggestions
+
 ### Added
 
 - **Local-first telemetry adapter**: Added a shared telemetry client with `local`, `langfuse`, `http`, `otel`, and `none` backends. Local `.cx/traces/*.jsonl` capture is the default; Langfuse-compatible ingestion, generic HTTP ingestion, and OTLP-style export are opt-in via `CONSTRUCT_TRACE_BACKEND`. Legacy `remote` remains accepted and resolves from configured URL/key shape.
@@ -1173,6 +1434,11 @@ Version line reset to the 0.x series. The previously published 1.0.0 was a prema
 
 ### Changed
 
+- Default cloud Langfuse URL (`https://cloud.langfuse.com`) is no longer written to `~/.construct/config.env` on first run. Leaving it unset lets `construct up` pick the local-Docker path and write back the actual URL after Langfuse starts. The cloud default silently disabled local Langfuse, since the service-manager treats any non-localhost URL as a remote/configured backend.
+- Pre-commit hook now runs `construct lint:comments` and `construct docs:verify` on the full diff (without `--staged`), matching CI behaviour. The earlier `--staged` scope let commits pass locally while CI failed on the full diff.
+- CI workflow jobs now filter by changed paths via `dorny/paths-filter`. Doc-only PRs skip the test matrix, retrieval evals, dependency audit, and Postgres integration — they only run docs drift, comment lint, template lint, secret scan, and gates audit. Code PRs are unchanged.
+- `scripts/test-embed-boundary.mjs` renamed to `scripts/embed-boundary-manual.mjs` so it no longer matches `node --test`'s auto-discovery glob. The script is a manual probe, not a unit test; it now picks a free port automatically and matches the actual dashboard startup banner.
+- `lib/hooks/probe-before-read.js` renamed to `.mjs` to match the rest of the hook directory.
 - Documentation site moved from MkDocs to Fumadocs, with a redesigned landing page, Geist typography, and a restrained electric-blue accent palette in both light and dark themes. The new site is the canonical docs surface; the MkDocs source (`site/`, `mkdocs.yml`) has been removed. Old per-topic markdown files (`docs/how-to/`, `docs/getting-started.md`, `docs/installation/`, `docs/reference/cli.md`, `docs/reference/hooks.md`) are deleted now that their content lives in the new IA (`docs/start/`, `docs/cookbook/`, `docs/reference/cli/`).
 - Canonical architecture, prompt-surface, knowledge-layout, and embedding-boundary docs moved to `docs/concepts/` to match the docs-site information architecture. Tooling that operates on this repo's files (storage indexing, RAG, agent fences, doc-coupling checks, embed seed) updated. `construct init` still creates `docs/architecture.md` at the project root in downstream projects — the per-repo and per-downstream-project conventions are intentionally distinct.
 - Beads issue-tracking data (`.beads/issues.jsonl`, `.beads/metadata.json`) is no longer committed — it's local working state. Shared infrastructure (hooks, config, README) remains tracked. Revisit when the project moves to a multi-person setup.

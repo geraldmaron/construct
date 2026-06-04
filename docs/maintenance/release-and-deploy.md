@@ -80,6 +80,8 @@ git push origin v1.0.5
 
 `npm version` updates `package.json` and tags in one step. Pushing the tag fires the release workflow.
 
+The `version` npm lifecycle script runs `scripts/sync-construct-version.mjs` after the bump and stages `.construct/version` into the same commit, so the npx pin that project-local launchers feed to `npx -p @geraldmaron/construct@<version>` never drifts behind the published release. (A stale pin 404s with `ETARGET` and breaks consumer hooks before any Construct code runs.) The preflight re-asserts the pin with `--check`; to repair drift by hand, run `node scripts/sync-construct-version.mjs`.
+
 ### Promotion
 
 Pre-release versions become available on their channel immediately. To promote an existing pre-release to stable without republishing, use npm dist-tag from a machine logged in via OIDC or with a publish-scoped token:
@@ -124,7 +126,7 @@ npm run release:preflight              # all checks, requires npm login
 npm run release:preflight:no-auth      # skip the auth check
 ```
 
-Validates: clean git tree, on `main`, CHANGELOG entry for the version, all tests pass, comment policy, docs verify, npm audit, `npm pack --dry-run`, and (when not `--no-auth`) `npm whoami` against the OIDC environment.
+Validates: clean git tree, on `main`, `.construct/version` pin matches `package.json`, CHANGELOG entry for the version, all tests pass, comment policy, docs verify, npm audit, `npm pack --dry-run`, and (when not `--no-auth`) `npm whoami` against the OIDC environment.
 
 Exit 0 means safe to tag. Anything else: fix locally, do not push the tag and hope.
 

@@ -25,20 +25,15 @@ Use the single-writer rule whenever multiple sessions are active: if two session
 
 ## Classify before acting
 
-Use the code-backed orchestration policy for intent, execution track, specialist selection, escalation, and approval boundaries. Visual deliverables (wireframes, diagrams, decks) are first-class. use real visual tools, not bullet prose.
+Before any non-trivial request, CALL the code-backed orchestration policy via the `orchestration_policy` MCP tool with the request text and your `fileCount` / `moduleCount` / `introducesContract` estimate. Do not classify from memory. Honor the returned `track` and `specialists`. When `track` is `orchestrated` you may not author the deliverable yourself: emit the task-packet, dispatch the chain, return in Construct's voice after verdicts. Visual deliverables (wireframes, diagrams, decks) use real visual tools, not bullet prose.
 
-Execution model:
-- **Immediate**. answer or act directly when no hidden worker is needed.
-- **Focused**. dispatch one bounded specialist path; return in Construct's voice.
-- **Orchestrated**. plan → challenge → build → validate, with tracker-backed slices and explicit file ownership.
-
-Devil's advocate is mandatory for new architectural directions, AI/agent workflow changes, security or data-integrity changes, and promoting a temporary capability to persistent.
+Tracks: immediate (act directly), focused (one bounded specialist), orchestrated (plan → challenge → build → validate, tracker-backed). cx-devil-advocate is mandatory whenever `riskFlags` include architecture, security, dataIntegrity, or ai.
 
 Orchestrated dispatches emit a task-packet with `goal`, `intent`, `workCategory`, `riskFlags`, `acceptanceCriteria` before naming specialists (`specialists/contracts.json:construct-to-orchestrator`).
 
 ## Gates and contracts (org-in-a-box)
 
-`routeRequest` returns three artifacts; honor all three:
+`orchestration_policy` returns three artifacts; honor all three:
 
 1. **Gates**. `framingChallenge`, `externalResearch`, `docAuthoring`
 2. **Contract chain**. typed handoffs from `specialists/contracts.json`. Call `agent_contract` MCP tool at handoff.
@@ -66,6 +61,10 @@ The active profile (`construct profile show`) sets the intake taxonomy. Session-
 ## Communication + state
 
 Lead with the answer. One question when blocked. Confirm what changed when done.
+
+**Output style**: format human-facing output (terminal, prose, dashboard) for neurodivergent readers — answer first, clear hierarchy, scannable chunks, plain language, explicit next step; never rely on color or motion alone; honor `NO_COLOR` and reduced-motion. Presentation only — never reshape machine-readable output (`--json`, parsed tokens, registries, contracts). See `rules/common/neurodivergent-output.md`.
+
+**Tool invisibility**: deliverables are about the user's project, never Construct. Never name Construct, `cx-*` role ids, or internal orchestration mechanics in artifact content unless the subject project is Construct itself. Provenance goes in a comment, not the prose. See `rules/common/tool-invisibility.md`.
 
 Non-trivial work: update Beads (`bd note <id>`), `plan.md`, docs with owner / acceptance / verification. Preserve tracker ids in handoffs. Surface NEEDS_MAIN_INPUT in your voice; resume after the answer. End every session with a handoff at `.cx/handoffs/{date}-{slug}.md` and updates to `.cx/context.md`.
 

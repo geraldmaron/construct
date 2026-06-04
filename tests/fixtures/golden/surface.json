@@ -65,6 +65,10 @@
       "core": false
     },
     {
+      "name": "dashboard",
+      "core": true
+    },
+    {
       "name": "dashboard:sync",
       "core": false
     },
@@ -229,6 +233,10 @@
       "core": false
     },
     {
+      "name": "mcp",
+      "core": false
+    },
+    {
       "name": "memory",
       "core": false
     },
@@ -297,7 +305,7 @@
       "core": false
     },
     {
-      "name": "run \"<request>\" [--strategy S] [--host H] [--no-construct] [--no-execute] [--json]",
+      "name": "run \"<request>\" [--strategy S] [--host H] [--worker-backend provider] [--no-construct] [--no-execute] [--json] [--remote]",
       "core": false
     },
     {
@@ -421,6 +429,7 @@
     ],
     "PreToolUse": [
       "policy-engine",
+      "orchestration-dispatch-guard",
       "block-no-verify",
       "pre-push-gate",
       "guard-bash",
@@ -444,7 +453,8 @@
       "test-watch",
       "post-merge-docs-check",
       "post-merge-tracking",
-      "audit-trail"
+      "audit-trail",
+      "orchestration-dispatch-guard"
     ],
     "Stop": [
       "policy-engine",
