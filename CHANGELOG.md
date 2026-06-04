@@ -29,6 +29,14 @@ All notable changes to Construct are documented here. The format follows [Keep a
   now structure-enforced by `STRUCTURE_REQUIREMENTS`.
 
 ### Added
+- Architecture decisions for the document-I/O and activation initiative (research brief
+  `.cx/research/doc-io-and-invocation-research.md`): **ADR-0024** (`docs/adr/0024-document-io-optional-capability.md`)
+  records that document I/O is an optional, externally-bound capability — Docling for ingestion (sidecar),
+  Pandoc + Typst spawned binaries for export — never bundled in core, honoring ADR-0001/0014. **ADR-0025**
+  (`docs/adr/0025-explicit-activation-model.md`) records that Construct activation is explicit and
+  host-initiated via the `orchestration_run` MCP tool (aware but never ambient; selecting a non-Construct
+  agent never invokes Construct), closing the Copilot honor-system gap (`construct-f66u`). Both status
+  Proposed; refs `construct-yrdd`, `construct-6zqs`, `construct-i1mt`.
 - Tool-invisibility guardrail (`rules/common/tool-invisibility.md`) — deliverable artifacts are about the
   user's project, never about Construct or its internal machinery. Caught after a strategy authored through
   the specialist chain came back saying "Construct's bet is…" and named `cx-product-manager` as a metric
