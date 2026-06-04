@@ -253,6 +253,7 @@ construct/
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
 ├── config
+├── dashboard
 ├── db
 ├── deploy
 ├── docs             Architecture notes, runbooks, and documentation contract
