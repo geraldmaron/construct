@@ -5,6 +5,13 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Fixed
+- Tool-invisibility linter hardening (audit `construct-l9sk`): the `cx-*` leak detector used an open-ended
+  `/cx-[a-z-]+/` regex that false-positived on unrelated npm packages (`cx-oracle`, `cx-ray`, `cx-pro`) and
+  would fail the release gate on legitimate user content. The pattern is now anchored to the 28 real role ids
+  from `specialists/registry.json` (exported `KNOWN_CX_ROLE_IDS`, drift-guarded by a registry-comparison test).
+  Fence handling fixed alongside: `~~~` fences are now skipped, and an unclosed fence no longer suppresses
+  scanning of the rest of the document — the leak backstop fails closed, not open.
+  `tests/tool-invisibility.test.mjs` grows to 16 cases (+5).
 - construct-mcp MCP server identity (`construct-dwfv`): the server reported a hardcoded stale `version: "1.0.0"`
   and advertised no `instructions` or resources, so MCP hosts (Claude Code, VS Code, OpenCode, Cursor) rendered
   the "Construct" entry as a bare name + OK badge with an empty detail panel. It now sources the real version
@@ -32,7 +39,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
   project's deliverable markdown (full-content scan so a leak in a table cell is caught; HTML comments exempt
   so provenance stays allowed), skipped on the Construct repo itself (package `@geraldmaron/construct`).
   Severity follows `CONSTRUCT_ARTIFACT_LINT_MODE` (warn by default, block in the release gate). Covered by
-  `tests/tool-invisibility.test.mjs` (11 cases); registered in `specialists/policy-inventory.json`.
+  `tests/tool-invisibility.test.mjs`; registered in `specialists/policy-inventory.json`. (Detector later
+  hardened — see Fixed/`construct-l9sk` — to anchor the pattern to real role ids and fail closed on fences.)
 - Orchestrator dispatch-guard hook (`construct-8ahq`) — `lib/hooks/orchestration-dispatch-guard.mjs` is a new
   Claude-only PreToolUse/PostToolUse backstop that blocks substantial deliverable writes when
   `orchestration_policy` classified the request as `orchestrated` but no specialist dispatch
