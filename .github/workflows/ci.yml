@@ -106,8 +106,6 @@ jobs:
   # when merging to main; Windows correctness is covered by the SEA binary
   # build in release.yml. Cuts ~75% of test-runner minutes from PR runs.
   test:
-    needs: filter
-    if: needs.filter.outputs.code == 'true' || needs.filter.outputs.workflow == 'true'
     name: test (${{ matrix.os }} / node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
     needs: changes
@@ -213,8 +211,6 @@ jobs:
         run: node scripts/lint-commits-pr.mjs
 
   evals:
-    needs: filter
-    if: needs.filter.outputs.code == 'true' || needs.filter.outputs.workflow == 'true'
     name: retrieval evals
     runs-on: ubuntu-latest
     needs: changes
@@ -232,8 +228,6 @@ jobs:
         run: node bin/construct evals retrieval
 
   audit:
-    needs: filter
-    if: needs.filter.outputs.code == 'true' || needs.filter.outputs.workflow == 'true'
     name: dependency CVE audit
     runs-on: ubuntu-latest
     needs: changes
