@@ -34,8 +34,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
   "issues stranded on one machine" gap; verified end-to-end (`bd dolt remote add origin <git-url>` +
   `bd dolt push` → `refs/dolt/data` on origin, branches untouched). DoltHub/DoltLab/filesystem remotes
   rejected for the touch-free, vendor-agnostic, local-first reasons in the ADR (research brief
-  `.cx/research/dolt-sync-options-for-beads.md`). The periodic JSONL auto-backup is disabled in
-  `.beads/config.yaml` (`backup.enabled: false`) as redundant with the Dolt remote.
+  `.cx/research/dolt-sync-options-for-beads.md`). Also sets `export.git-add: false` in
+  `.beads/config.yaml`: beads' per-write auto-export was trying to `git add` the gitignored
+  `issues.jsonl`, logging `auto-export: git add failed` on every mutation — disabling the staging
+  step keeps the local export and removes the noise (verified: no warning on `bd create`/`bd delete`).
 - Architecture decisions for the document-I/O and activation initiative (research brief
   `.cx/research/doc-io-and-invocation-research.md`): **ADR-0024** (`docs/adr/0024-document-io-optional-capability.md`)
   records that document I/O is an optional, externally-bound capability — Docling for ingestion (sidecar),
