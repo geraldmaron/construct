@@ -23,6 +23,16 @@ All notable changes to Construct are documented here. The format follows [Keep a
 - `.beads/contention-stats.json` (per-machine bd telemetry) untracked: it was committed despite being listed in `.beads/.gitignore`, dirtying the working tree on every bd command.
 - Local-service identifiers are derived per home (`lib/home-namespace.mjs`): the Postgres container/port and memory port now hash from the resolved home directory, so isolated HOMEs — test sandboxes, multiple users on one machine, parallel CI — no longer collide on `construct-postgres`:54329 or memory :8765. Explicit `CONSTRUCT_PG_PORT` / `MEMORY_PORT` / `CONSTRUCT_PG_CONTAINER` overrides still win; the LaunchAgent label stays singular (a machine-level guard). `startManagedPostgres` now returns a database URL whose port reflects the target home rather than a fixed constant.
 - OpenCode global-config hygiene emitted by `syncOpencode` (`scripts/sync-specialists.mjs`): the `github` MCP `Authorization` header is now an env ref (`Bearer {env:GITHUB_TOKEN}`) instead of a resolved plaintext token (ADR-0027 problem #9 / `construct-n6h7`); the OpenRouter `HTTP-Referer`/`X-Title` attribution headers carry real values instead of unsubstituted `__OPENROUTER_REFERER__`/`__OPENROUTER_TITLE__` placeholders (reconciled to the verified origin remote across all 7 occurrences); the orchestrator `bash` permission is scoped via `opencodePermissions` to deny `rm -rf *` and prompt on `git push`/force/`reset --hard`; and `small_model` is seeded non-destructively (only when absent) as a cost lever. User-personal keys (`model`, `share`, `autoupdate`, user agents, user OpenRouter models, `tui.json`) are preserved on merge.
+- `construct uninstall` now reverses the four pieces of install/init state ADR-0027 §Consequences
+  enumerates and the empirical isolation test had to clean up by hand. New reversers in
+  `lib/uninstall/uninstall.mjs`: the `dev.construct.pressure-release` LaunchAgent
+  (`launchctl bootout` + unload, then plist removal; darwin-only, matching install); a Construct-set
+  git `core.hooksPath` (unset only when it equals `.beads/hooks`, never a user-customized value); the
+  memory MCP registration stripped from `~/.claude/settings.json`, `~/.config/opencode/opencode.json`,
+  and `~/.codex/config.toml` (preserving every other entry, including the legacy `cass` OpenCode key);
+  and opt-in removal of the shared `pgvector/pgvector:pg16` Docker image behind a new `--with-images`
+  flag (the image stays by default since other projects may share it). Each reverser is
+  detect-before-remove and idempotent. Test: `tests/functional/uninstall-coverage.functional.test.mjs`.
 
 ## [1.0.22] - 2026-06-04
 

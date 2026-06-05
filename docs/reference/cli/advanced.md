@@ -243,7 +243,7 @@ Remove Construct state
 **Usage**
 
 ```bash
-construct uninstall [--dry-run] [--yes] [--all] [--keep-state] [--scope=project|machine|all]
+construct uninstall [--dry-run] [--yes] [--all] [--keep-state] [--with-images] [--scope=project|machine|all]
 ```
 
 **Options**
@@ -254,7 +254,10 @@ construct uninstall [--dry-run] [--yes] [--all] [--keep-state] [--scope=project|
 | `--yes` | Remove auto-risk (✓) categories without prompting |
 | `--all` | Combined with --yes: also remove ask-risk (◐) categories (project data, machine config) |
 | `--keep-state` | Only remove the launcher + adapters; preserve .cx/, ~/.construct, Postgres |
-| `--scope=<...>` | Limit to project | machine | all (default: all) |
+| `--with-images` | Also remove the shared pgvector Docker image (kept by default; ADR-0027) |
+| `--scope=<...>` | Limit to project \| machine \| all (default: all) |
+
+Reversers cover the LaunchAgent (`dev.construct.pressure-release`: `launchctl bootout` + plist), a Construct-set git `core.hooksPath` (`.beads/hooks` only; a custom value is preserved), and the memory MCP registration across Claude, OpenCode, and Codex configs. The shared pgvector image stays unless `--with-images` is passed.
 
 ## construct update
 
