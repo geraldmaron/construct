@@ -77,6 +77,16 @@ Converts a local document into a normalized markdown file placed in an indexed p
 | `cwd` | string | No | Project root |
 | `sync` | boolean | No | Sync to SQL/vector storage after writing |
 
+### `document_export`
+Converts a markdown file into a distributable PDF, DOCX, or HTML document via Pandoc (DOCX/HTML) and Typst (PDF engine). Both engines are optional system binaries discovered at runtime (ADR-0024); when tooling is absent, returns a structured `{ok:false, missing:[...], message:"Install pandoc..."}` instead of crashing. Use `detect_only=true` to check availability without running an export.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `format` | `pdf` \| `docx` \| `html` | Yes | Target format |
+| `input_path` | string | No (yes unless `detect_only`) | Absolute path to the markdown source |
+| `output_path` | string | No | Absolute output path; defaults to `<input>.<format>` next to the source |
+| `detect_only` | boolean | No | Report binary availability without exporting (default `false`) |
+
 ### `infer_document_schema`
 Infers a structured field schema from a document (or reconciles across multiple documents).
 

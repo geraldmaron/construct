@@ -137,6 +137,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct customer` | Manage customer profiles for product intelligence |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
+| `construct export` | Export markdown to PDF/DOCX/HTML via Pandoc + Typst (optional system binaries; ADR-0024) |
 | `construct graph` | Task graph management |
 | `construct handoffs` | List and inspect session handoff files in .cx/handoffs/ |
 | `construct headhunt` | Create domain expertise overlays |
