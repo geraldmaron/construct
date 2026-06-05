@@ -4,6 +4,15 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+- ADR-0027 host project footprint & non-destructive scaffolding (`docs/adr/0027-...`): the disposition contract (tracked / ignored / asked-before-modify), the marker-block injection pattern for files Construct does not own, the install/init/sync boundary, the uninstall reversal guarantee, and the forward-fix-AND-backward-repair principle. Tracking epic `construct-jsut` with 13 work items.
+- State-reconciliation framework (`lib/reconcile/`): registry of versioned tasks with `safety: auto|ask`, an idempotent runner, and a stamp file at `~/.construct/reconcile.json`. Auto-safety tasks run silently from `construct sync`; ask-safety tasks surface via `construct doctor`. Distinct from `lib/migrations/` (artifact-JSON schema versioning) and `lib/storage/migrations.mjs` (Postgres schema). Tracking `construct-w9pp`.
+- First reconciliation task `legacy-skills-cleanup` (`construct-r9u3`): removes SKILL.md files at `~/.agents/skills/` whose frontmatter lacks the `name` and `description` fields required by the Anthropic Agent Skills loader, preserving any file whose mtime drifted past its declared `updated_at` (a user-edit signal). Verified against a local machine carrying 141 stale files left by an older sync: one `construct sync` removed all 141; the second sync is a no-op. Functional coverage in `tests/functional/reconcile-legacy-skills.functional.test.mjs` (5 cases: empty machine, stale-only, mixed with foreign and current files, user-edited stale preserved, stamp file landing under overridden `CX_HOME_OVERRIDE`).
+- OpenCode config ownership boundary (`docs/concepts/opencode-config-ownership.md`): documents which keys in the global `~/.config/opencode/opencode.json` Construct manages versus which belong to the user, and the non-destructive merge rules that keep the two from colliding. Extends ADR-0027's good-citizen doctrine from the project footprint to the user's daily-driver config. Functional coverage in `tests/functional/opencode-config-ownership.functional.test.mjs`.
+
+### Fixed
+- OpenCode global-config hygiene emitted by `syncOpencode` (`scripts/sync-specialists.mjs`): the `github` MCP `Authorization` header is now an env ref (`Bearer {env:GITHUB_TOKEN}`) instead of a resolved plaintext token (ADR-0027 problem #9 / `construct-n6h7`); the OpenRouter `HTTP-Referer`/`X-Title` attribution headers carry real values instead of unsubstituted `__OPENROUTER_REFERER__`/`__OPENROUTER_TITLE__` placeholders (reconciled to the verified origin remote across all 7 occurrences); the orchestrator `bash` permission is scoped via `opencodePermissions` to deny `rm -rf *` and prompt on `git push`/force/`reset --hard`; and `small_model` is seeded non-destructively (only when absent) as a cost lever. User-personal keys (`model`, `share`, `autoupdate`, user agents, user OpenRouter models, `tui.json`) are preserved on merge.
+
 ## [1.0.22] - 2026-06-04
 
 ### Fixed
