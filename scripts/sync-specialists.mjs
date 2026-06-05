@@ -888,6 +888,21 @@ function isCodexMcpSupported() {
   return true;
 }
 
+// Codex aborts at startup when an MCP server's bearer_token_env_var names an env
+// var that is unset ("Environment variable GITHUB_TOKEN for MCP server github is
+// not set"). Unlike OpenCode — which keeps the `{env:VAR}` ref and resolves it at
+// runtime — Codex must have the credential at sync time, so an entry whose token
+// env var is unresolved is omitted from the Codex config (construct-n6h7).
+// Entries with no credential requirement always pass.
+
+function codexMcpEnvResolves(id, def, env = process.env) {
+  const entry = buildCodexMcpEntry(id, def, env);
+  const tokenVar = entry?.bearer_token_env_var;
+  if (!tokenVar) return true;
+  const val = env[tokenVar];
+  return val !== undefined && val !== "";
+}
+
 function syncCodex(entries, targetDir = null) {
   const codexDir = targetDir
     ? path.join(targetDir, ".codex")
@@ -915,7 +930,7 @@ function syncCodex(entries, targetDir = null) {
   // not just tables already present — otherwise Codex never receives `construct-mcp`
   // and the orchestration tool is unreachable there. existingMcpIds still drives
   // cleanup of any pre-existing standalone tables so the managed block stays canonical.
-  const mcpIds = Object.keys(registryMcp).filter(isCodexMcpSupported);
+  const mcpIds = Object.keys(registryMcp).filter((id) => isCodexMcpSupported() && codexMcpEnvResolves(id, registryMcp[id], process.env));
   const existingMcpIds = Object.keys(registryMcp).filter((id) => hasCodexMcpTable(existing, id));
   const withoutManagedTables = removeDanglingConstructMcpMarkers(removeTomlTables(
     removeCodexAgentTables(existing, entryNames),
