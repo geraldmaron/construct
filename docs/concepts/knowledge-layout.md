@@ -15,7 +15,7 @@ description: How .cx/, beads, the vector index, and SQL fit together to make con
 | **R&D loop** | `.cx/inbox/`, `.cx/intake/{pending,processed,skipped}/`, `.cx/task-graphs/`, `.cx/traces/` | Per-signal triage queue, per-signal execution plans, append-only trace event log |
 | **Runtime** | `.cx/observations/`, `.cx/sessions/`, `.cx/runtime/` | Machine-written, high-churn, agent working memory |
 
-Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable and version-controlled. R&D-loop dirs are written by the daemon and the CLI; agents update them via `construct intake` / `construct graph`, not by editing files.
+Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable — but like the rest of `.cx/` they are local-only: `construct init` gitignores `.cx/` in full, so knowledge persists on the machine across sessions and is never committed to the repo (see the [README](../../README.md) section "`.cx/` is local-only runtime state"). R&D-loop dirs are written by the daemon and the CLI; agents update them via `construct intake` / `construct graph`, not by editing files.
 
 ---
 
