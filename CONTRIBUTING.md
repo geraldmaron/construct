@@ -94,6 +94,15 @@ git push -u origin feat/my-change
 
 Then open a PR using the provided template.
 
+### Multi-branch integration
+
+When integrating multiple branches (release rollups, batch staging promotion), the rules below apply on top of the regular feature-branch flow. These exist because the prior practice produced three CI-infra breakages in one round (commits `56ff8f4`, `00cb456`, `ce3a9dc`).
+
+- **Never use `git merge -X ours` on a protected branch** (`main`, `staging`). The `-X ours` strategy silently drops conflicting hunks from the other side without surfacing the loss — what looks like a clean merge can ship with regressions invisible to review. If a merge produces conflicts on a protected branch, resolve them explicitly, run the full gate, and have a second reviewer look at the resolved hunks.
+- **Keep integration branches off `staging`.** Build the rollup on a throwaway integration branch (e.g. `integrate/2026-06-04`), open it as a PR into `staging`, let the gate run, then merge that single PR. Merging individual feature branches directly into `staging` with `-X ours` recovery hides drift; merging one well-tested rollup PR exposes it to CI before it lands.
+- **The eight-check gate (see "Before opening a PR" above) gates entry to `staging`** — not post-hoc cleanup on `staging` itself. If a rollup PR fails any check, fix it on the integration branch and re-run; do not "fix it on staging."
+- **Rebase before merging long-lived integration branches** so the diff against `staging` reflects only the integration, not stale upstream noise.
+
 ## GitHub Pages
 
 The documentation site at `https://geraldmaron.github.io/construct/` is built automatically on every push to `main`. No manual step is needed.
