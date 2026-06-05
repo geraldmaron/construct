@@ -79,15 +79,22 @@ async function freshReconcileModule() {
   return import(`${pathToFileURL(RECONCILE_MOD).href}?ts=${ts}`);
 }
 
+// cwd is moved into the isolated (non-project) home so the project-scoped auto
+// reconciliations registered alongside legacy-skills-cleanup stay no-ops and
+// never mutate the real working tree during runAutoReconciliations().
+
 function withIsolatedHome(fn) {
   const home = mkdtempSync(join(tmpdir(), 'cx-reconcile-'));
   const prev = {
     HOME: process.env.HOME,
     CX_HOME_OVERRIDE: process.env.CX_HOME_OVERRIDE,
+    cwd: process.cwd(),
   };
   process.env.HOME = home;
   process.env.CX_HOME_OVERRIDE = home;
+  process.chdir(home);
   return Promise.resolve(fn(home)).finally(() => {
+    process.chdir(prev.cwd);
     process.env.HOME = prev.HOME;
     if (prev.CX_HOME_OVERRIDE === undefined) delete process.env.CX_HOME_OVERRIDE;
     else process.env.CX_HOME_OVERRIDE = prev.CX_HOME_OVERRIDE;

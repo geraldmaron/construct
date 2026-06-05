@@ -249,10 +249,31 @@ async function cmdSync(args) {
 
   // State reconciliation (ADR-0027): bring on-disk state in line with the
   // current disposition contract. Auto-safety tasks run silently; ask-safety
-  // tasks surface via construct doctor instead. --no-reconcile bypasses
-  // entirely for diagnostic runs.
+  // tasks surface via construct doctor instead. --reconcile=<id> runs one task
+  // on explicit consent (the path for ask-safety tasks). --no-reconcile
+  // bypasses the auto pass entirely for diagnostic runs.
 
-  if (!args.includes('--no-reconcile')) {
+  const reconcileArg = args.find((a) => a.startsWith('--reconcile='));
+  if (reconcileArg) {
+    const id = reconcileArg.slice('--reconcile='.length);
+    try {
+      const { runReconciliation } = await import('../lib/reconcile/index.mjs');
+      const result = await runReconciliation(id, {});
+      if (!result.ok) {
+        errorln(`Reconciliation failed (${id}): ${result.reason}`);
+        if (result.available) errorln(`Available: ${result.available.join(', ')}`);
+        opLog.close('failed', { stage: 'reconcile', id, reason: result.reason });
+        process.exit(1);
+      }
+      if (result.ran) ok(`Reconciled (${id}): ${result.summary}`);
+      else println(`Reconciliation (${id}): ${result.summary}`);
+      opLog.event('reconcile-explicit', { id, ran: !!result.ran });
+    } catch (err) {
+      errorln(`Reconciliation error (${id}): ${err.message}`);
+      opLog.close('failed', { stage: 'reconcile', id, reason: err.message });
+      process.exit(1);
+    }
+  } else if (!args.includes('--no-reconcile')) {
     try {
       const verbose = args.includes('--verbose') || args.includes('-v');
       const { runAutoReconciliations } = await import('../lib/reconcile/index.mjs');
@@ -1083,6 +1104,26 @@ async function cmdDoctor() {
     add('Registry integrity check', false);
   }
 
+  // Reconciliation drift (ADR-0027). Any task reporting needsRepair is surfaced
+  // with its summary and the exact `construct sync --reconcile=<id>` command.
+  // Auto tasks that still show drift (e.g. a run with --no-reconcile) and all
+  // ask tasks both land here, since ask tasks never run from the auto pass.
+  let reconcileDrift = [];
+  try {
+    const { listReconciliations } = await import('../lib/reconcile/index.mjs');
+    const tasks = await listReconciliations();
+    reconcileDrift = tasks.filter((t) => t.needsRepair);
+    add(
+      reconcileDrift.length === 0
+        ? 'Reconciliation drift: none'
+        : `Reconciliation drift: ${reconcileDrift.length} task${reconcileDrift.length === 1 ? '' : 's'} need repair (see below)`,
+      reconcileDrift.length === 0,
+      true,
+    );
+  } catch (err) {
+    add(`Reconciliation drift check failed: ${err.message}`, false, true);
+  }
+
   println('Construct Health Check');
   println('══════════════════════');
   println('');
@@ -1094,6 +1135,17 @@ async function cmdDoctor() {
     else if (check.optional) warnCount += 1;
     else failCount += 1;
   }
+
+  if (reconcileDrift.length > 0) {
+    println('');
+    println('Reconciliation drift:');
+    for (const task of reconcileDrift) {
+      println(`  ⚠ ${task.id} (${task.safety})`);
+      if (task.summary) println(`       ${task.summary}`);
+      println(`       fix: construct sync --reconcile=${task.id}`);
+    }
+  }
+
   println('');
   println(`Results: ${okCount} passed, ${warnCount} warnings, ${failCount} failed`);
   if (failCount > 0) process.exit(1);
