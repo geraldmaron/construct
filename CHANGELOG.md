@@ -35,6 +35,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
   and opt-in removal of the shared `pgvector/pgvector:pg16` Docker image behind a new `--with-images`
   flag (the image stays by default since other projects may share it). Each reverser is
   detect-before-remove and idempotent. Test: `tests/functional/uninstall-coverage.functional.test.mjs`.
+- Dashboard static export is reproducible and no longer churns the working tree. `apps/dashboard/next.config.mjs` pins `generateBuildId` to a version-derived value — the random per-build `buildId` (`_next/static/<buildId>/`) was the sole source of churn; every chunk is already content-hashed and stable. The built tree is treated as a build artifact: `lib/server/static/index.html` is untracked (the directory is gitignored), so a local `next build` no longer dirties git. `npm pack` still ships the full on-disk tree via the `files` allowlist; `construct dashboard:sync --build` regenerates it and `dashboard:sync --check` verifies `apps/dashboard/out` ↔ `lib/server/static` alignment.
 
 ## [1.0.22] - 2026-06-04
 
