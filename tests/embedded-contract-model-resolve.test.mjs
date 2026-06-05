@@ -39,12 +39,16 @@ test('same-family-fallback: provider context resolves the tier model in-family',
   assert.ok(r.fallbackReason);
 });
 
-test('tier-default: no host context uses the configured tier default', () => {
+test('no host context + no configured tier → config-error (ADR-0027 no-implicit-defaults)', () => {
+  // Construct ships no implicit model defaults. Without an env override or
+  // a registry primary, a tier request resolves to a structured config-error
+  // so callers can surface a clear remediation hint.
   const r = resolveEmbeddedModel({ requestedTier: 'fast' }, { env: NO_CREDS });
-  assert.equal(r.resolutionSource, 'tier-default');
+  assert.equal(r.resolutionSource, 'config-error');
+  assert.equal(r.selectedModel, null);
   assert.equal(r.requestedTier, 'fast');
-  assert.ok(r.selectedModel);
-  assert.equal(r.tierSource, 'default');
+  assert.equal(r.error.code, 'MODEL_UNRESOLVED');
+  assert.ok(r.error.remediation);
 });
 
 test('env tier override is reflected in tierSource', () => {
@@ -64,10 +68,23 @@ test('config-error: unrecognized host context without cross-provider opt-in', ()
   assert.ok(r.warnings.some((w) => w.includes('not a recognized provider family')));
 });
 
-test('cross-provider opt-in falls through to tier-default', () => {
+test('cross-provider opt-in cascades to config-error when no tier is configured (no implicit defaults)', () => {
+  // ADR-0027: Construct ships no implicit model defaults. With NO_CREDS and
+  // no env override, cross-provider opt-in cannot synthesize a model — the
+  // resolver returns a structured config-error so callers can surface a
+  // remediation hint rather than silently substituting a vendor default.
   const r = resolveEmbeddedModel({ hostModel: 'mystery/model-x', allowCrossProviderFallback: true }, { env: NO_CREDS });
+  assert.equal(r.resolutionSource, 'config-error');
+  assert.equal(r.selectedModel, null);
+});
+
+test('cross-provider opt-in reaches tier-default when an env override resolves the tier', () => {
+  const r = resolveEmbeddedModel(
+    { hostModel: 'mystery/model-x', allowCrossProviderFallback: true },
+    { env: { ...NO_CREDS, CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6' } },
+  );
   assert.equal(r.resolutionSource, 'tier-default');
-  assert.ok(r.selectedModel);
+  assert.equal(r.selectedModel, 'anthropic/claude-sonnet-4-6');
 });
 
 test('workflow-type hint selects a tier when none requested', () => {
