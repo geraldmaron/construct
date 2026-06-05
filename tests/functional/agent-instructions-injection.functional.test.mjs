@@ -1,0 +1,88 @@
+/**
+ * tests/functional/agent-instructions-injection.functional.test.mjs —
+ * non-destructive marker-block injection into agent-instruction files (ADR-0027 §2,
+ * construct-7e2o).
+ *
+ * Asserts the injector preserves user content byte-for-byte outside its markers,
+ * is idempotent on the same version+hash, replaces (never appends) on a body
+ * change, dedups against a sibling Beads Integration block, and creates a missing
+ * file from a header.
+ */
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+import {
+  injectConstructBlock,
+  injectIntoAgentFile,
+  buildConstructIntegrationBody,
+  CONSTRUCT_INTEGRATION_VERSION,
+} from '../../lib/agent-instructions/inject.mjs';
+
+function tmpFile(name, content) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-inject-'));
+  const file = path.join(dir, name);
+  if (content !== undefined) fs.writeFileSync(file, content, 'utf8');
+  return file;
+}
+
+test('appends a block while preserving user content verbatim', () => {
+  const user = '# My Project\n\nMy own notes.\n';
+  const body = buildConstructIntegrationBody();
+  const { content, action } = injectConstructBlock(user, body);
+  assert.equal(action, 'created');
+  assert.ok(content.startsWith(user), 'user content preserved at the top');
+  assert.match(content, /<!-- BEGIN CONSTRUCT INTEGRATION v:1 hash:[0-9a-f]{12} -->/);
+  assert.match(content, /<!-- END CONSTRUCT INTEGRATION -->\n$/);
+});
+
+test('is idempotent on the same body', () => {
+  const body = buildConstructIntegrationBody();
+  const once = injectConstructBlock('# x\n', body).content;
+  const twice = injectConstructBlock(once, body);
+  assert.equal(twice.action, 'unchanged');
+  assert.equal(twice.content, once);
+});
+
+test('replaces the block in place on a body change (no duplicate blocks)', () => {
+  const first = injectConstructBlock('# x\n', 'OLD BODY').content;
+  const second = injectConstructBlock(first, 'NEW BODY');
+  assert.equal(second.action, 'updated');
+  assert.equal((second.content.match(/BEGIN CONSTRUCT INTEGRATION/g) || []).length, 1);
+  assert.match(second.content, /NEW BODY/);
+  assert.doesNotMatch(second.content, /OLD BODY/);
+});
+
+test('dedups against a sibling Beads Integration block', () => {
+  const withBeads = buildConstructIntegrationBody({ hasBeadsBlock: true });
+  const without = buildConstructIntegrationBody({ hasBeadsBlock: false });
+  assert.match(withBeads, /see the Beads Integration block below/);
+  assert.match(without, /run `bd prime`/);
+});
+
+test('injectIntoAgentFile preserves an existing file with a beads block', () => {
+  const file = tmpFile('AGENTS.md', '# Existing\n\nuser line\n\n<!-- BEGIN BEADS INTEGRATION v:1 -->\nbd stuff\n<!-- END BEADS INTEGRATION -->\n');
+  const res = injectIntoAgentFile(file, { version: CONSTRUCT_INTEGRATION_VERSION });
+  assert.equal(res.existed, true);
+  assert.equal(res.action, 'created');
+  const out = fs.readFileSync(file, 'utf8');
+  assert.match(out, /# Existing/);
+  assert.match(out, /<!-- BEGIN BEADS INTEGRATION/, 'beads block preserved');
+  assert.match(out, /see the Beads Integration block below/, 'construct block dedups to beads');
+
+  const again = injectIntoAgentFile(file, { version: CONSTRUCT_INTEGRATION_VERSION });
+  assert.equal(again.action, 'unchanged');
+});
+
+test('injectIntoAgentFile creates a missing file from a header', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-inject-new-'));
+  const file = path.join(dir, 'CLAUDE.md');
+  const res = injectIntoAgentFile(file, { version: CONSTRUCT_INTEGRATION_VERSION, header: '# Proj\n' });
+  assert.equal(res.existed, false);
+  const out = fs.readFileSync(file, 'utf8');
+  assert.match(out, /^# Proj\n/);
+  assert.match(out, /BEGIN CONSTRUCT INTEGRATION/);
+});
