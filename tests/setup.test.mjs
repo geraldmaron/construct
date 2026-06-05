@@ -15,6 +15,7 @@ import { tempDir } from './helpers.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 const setup = await import(path.join(root, "lib", "setup.mjs"));
+const { postgresPort, postgresContainerName } = await import(path.join(root, "lib", "home-namespace.mjs"));
 
 test("managed setup values configure local vector and local trace defaults", async () => {
   const home = tempDir("construct-setup-values-");
@@ -74,16 +75,19 @@ test("managed setup values preserve caller-provided external services", async ()
   assert.equal(values.CONSTRUCT_PRESSURE_GUARD_ENABLED, "1");
 });
 
-test("local Postgres compose file is deterministic and scoped to localhost", () => {
+test("local Postgres compose file is per-home-namespaced and scoped to localhost", () => {
   const home = tempDir("construct-setup-compose-");
   const composePath = setup.writeLocalPostgresCompose(home);
   const content = fs.readFileSync(composePath, "utf8");
+  const container = postgresContainerName(process.env, home);
+  const port = postgresPort(process.env, home);
 
   assert.equal(composePath, path.join(home, ".construct", "services", "postgres", "docker-compose.yml"));
-   assert.match(content, /image: pgvector\/pgvector:pg16/);
-  assert.match(content, /container_name: construct-postgres/);
-  assert.match(content, /"127\.0\.0\.1:54329:5432"/);
-  assert.match(content, /construct-postgres-data/);
+  assert.match(content, /image: pgvector\/pgvector:pg16/);
+  assert.match(content, new RegExp(`container_name: ${container}`));
+  assert.match(content, new RegExp(`"127\\.0\\.0\\.1:${port}:5432"`));
+  assert.match(content, new RegExp(`${container}-data`));
+  assert.equal(content, fs.readFileSync(setup.writeLocalPostgresCompose(home), "utf8"), "deterministic for a given home");
 });
 
 test("managed Postgres startup skips cleanly when Docker is unavailable", () => {
@@ -113,7 +117,7 @@ test("managed Postgres startup writes compose and returns local database URL", (
   const result = setup.startManagedPostgres({ homeDir: home, env: {}, spawn: fakeSpawn });
 
   assert.equal(result.status, "ok");
-  assert.equal(result.databaseUrl, "postgresql://construct:construct@127.0.0.1:54329/construct");
+  assert.equal(result.databaseUrl, `postgresql://construct:construct@127.0.0.1:${postgresPort({}, home)}/construct`);
   assert.equal(fs.existsSync(result.composePath), true);
   assert.deepEqual(calls[0], ["docker", ["info"]]);
   assert.deepEqual(calls[1], ["docker", ["compose", "version"]]);
