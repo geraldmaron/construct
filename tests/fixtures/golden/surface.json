@@ -141,6 +141,10 @@
       "core": false
     },
     {
+      "name": "export",
+      "core": false
+    },
+    {
       "name": "feedback:history",
       "core": false
     },

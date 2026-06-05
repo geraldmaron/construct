@@ -1486,6 +1486,44 @@ async function cmdIngest(args) {
   }
 }
 
+async function cmdExport(args) {
+  // construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>]
+  // Optional capability per ADR-0024: requires pandoc on PATH (and typst for PDF).
+  // Absent tooling returns a structured "install X" error, not a crash.
+
+  const positional = args.filter((a) => !a.startsWith('--'));
+  const inputPath = positional[0];
+  const toFlag = args.find((a) => a.startsWith('--to='))?.split('=')[1];
+  const outFlag = args.find((a) => a.startsWith('--output='))?.split('=')[1];
+  const detectOnly = args.includes('--detect');
+
+  const { detect, exportMarkdown, EXPORT_FORMATS } = await import('../lib/document-export.mjs');
+
+  if (detectOnly) {
+    const format = toFlag || 'pdf';
+    println(JSON.stringify(detect(format), null, 2));
+    return;
+  }
+
+  if (!inputPath) {
+    errorln('Usage: construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>] [--detect]');
+    process.exit(1);
+  }
+  if (!toFlag) {
+    errorln(`--to is required. Supported formats: ${EXPORT_FORMATS.join(', ')}`);
+    process.exit(1);
+  }
+
+  const resolvedIn = path.resolve(process.cwd(), inputPath);
+  const resolvedOut = outFlag ? path.resolve(process.cwd(), outFlag) : null;
+  const result = exportMarkdown({ inputPath: resolvedIn, outputPath: resolvedOut, format: toFlag });
+  if (!result.ok) {
+    errorln(result.message);
+    process.exit(result.missing?.length ? 2 : 1);
+  }
+  ok(result.message);
+}
+
 async function cmdInfer(args) {
   try {
     const result = await runInferCli(args, { cwd: process.cwd() });
@@ -5198,6 +5236,7 @@ const handlers = new Map([
   ['diff', cmdDiff],
   ['distill', cmdDistill],
   ['ingest', cmdIngest],
+  ['export', cmdExport],
   ['infer', cmdInfer],
   ['search', cmdSearch],
   ['storage', cmdStorage],
