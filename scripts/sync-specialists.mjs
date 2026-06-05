@@ -1175,15 +1175,31 @@ function syncCursor(targetDir = null) {
 // --- OpenCode adapter ---
 
 function opencodePermissions(entry) {
-  if (entry.permissions) {
-    return Object.fromEntries(
-      Object.entries(entry.permissions).map(([k, v]) => [k, v])
-    );
-  }
   // Review-only specialists (canEdit:false) must not modify files — honor the
   // registry's canEdit contract here as Claude does, rather than defaulting every
   // specialist to edit:allow.
-  return { edit: entry.canEdit === false ? "deny" : "allow", bash: "allow" };
+
+  const perms = entry.permissions
+    ? Object.fromEntries(Object.entries(entry.permissions).map(([k, v]) => [k, v]))
+    : { edit: entry.canEdit === false ? "deny" : "allow", bash: "allow" };
+
+  // The orchestrator is the primary write surface; translate its abstract
+  // bash:allow into OpenCode's scoped permission map so destructive commands are
+  // denied and remote/history rewrites prompt — the commit-approval contract
+  // enforced at the tool layer, not just in the prompt. Subagents keep the
+  // abstract grant. This scoped shape is an OpenCode translation detail and stays
+  // out of the cross-adapter registry.
+
+  if (entry.isOrchestrator && perms.bash === "allow") {
+    perms.bash = {
+      "*": "allow",
+      "rm -rf *": "deny",
+      "git push *": "ask",
+      "git push --force*": "ask",
+      "git reset --hard *": "ask",
+    };
+  }
+  return perms;
 }
 
 function opencodeTaskPermissions(entry) {
@@ -1337,6 +1353,14 @@ function syncOpencode(entries, targetDir = null) {
         task: opencodeTaskPermissions(entry),
       },
     };
+  }
+
+  // Seed a cheap auxiliary model for titles and summaries when the user has not
+  // chosen one — a cost lever only. The primary `model` stays the user's choice
+  // and is never written. Global scope only; project configs inherit it.
+
+  if (!targetDir && config.small_model === undefined) {
+    config.small_model = "anthropic/claude-haiku-4-5-20251001";
   }
 
   writeOpenCodeConfig(config, configPath);
