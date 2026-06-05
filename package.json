@@ -82,7 +82,6 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
     "js-yaml": "^4.2.0",
-    "node-webvtt": "^1.9.3",
     "postgres": "^3.4.9"
   },
   "optionalDependencies": {
