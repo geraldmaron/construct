@@ -246,6 +246,24 @@ async function cmdSync(args) {
     opLog.close('failed', { stage: 'sync-specialists', status: syncStatus });
     process.exit(syncStatus);
   }
+
+  // State reconciliation (ADR-0027): bring on-disk state in line with the
+  // current disposition contract. Auto-safety tasks run silently; ask-safety
+  // tasks surface via construct doctor instead. --no-reconcile bypasses
+  // entirely for diagnostic runs.
+
+  if (!args.includes('--no-reconcile')) {
+    try {
+      const verbose = args.includes('--verbose') || args.includes('-v');
+      const { runAutoReconciliations } = await import('../lib/reconcile/index.mjs');
+      const { applied } = await runAutoReconciliations({ verbose });
+      for (const entry of applied) ok(`Reconciled (${entry.id}): ${entry.summary}`);
+      opLog.event('reconcile', { applied: applied.length });
+    } catch (err) {
+      opLog.event('reconcile-error', { message: err.message });
+    }
+  }
+
   if (args.includes('--no-docs')) {
     opLog.close('ok', { docs: 'skipped' });
     return;

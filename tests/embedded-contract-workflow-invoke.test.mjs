@@ -37,13 +37,35 @@ test('unknown workflowType returns a structured error', async () => {
 });
 
 test('auto strategy uses the workflow default chain and resolves a model', async () => {
-  const r = await invokeWorkflow({ workflowType: 'architecture-review', approvalMode: 'proposal-only' }, { env: {} });
+  // ADR-0027: Construct ships no implicit defaults. The architecture-review
+  // workflow hints toward the reasoning tier; configure it via env so model
+  // resolution surfaces a concrete selection (rather than the structured
+  // config-error path covered by tests/embedded-contract-model-resolve.test.mjs).
+  const r = await invokeWorkflow(
+    { workflowType: 'architecture-review', approvalMode: 'proposal-only' },
+    { env: { CX_MODEL_REASONING: 'anthropic/claude-opus-4-6' } },
+  );
   assert.equal(r.status, 'proposed');
   assert.deepEqual(r.selectedRoles, ['architect', 'security', 'devil-advocate']);
   assert.equal(r.roleStrategy, 'auto');
   assert.ok(r.modelResolution.selectedModel, 'model resolution surfaced');
   assert.equal(r.skillsApplied.length > 0, true);
   assert.equal(r.roleRationale.length, r.selectedRoles.length);
+});
+
+test('auto strategy surfaces a structured model-resolution error when no tier is configured', async () => {
+  // Companion to the above: with no env override and no registry primary, the
+  // workflow still produces a proposal (roles, skills, rationale) but the
+  // modelResolution field carries a config-error so callers can surface a
+  // remediation hint instead of seeing a silent null.
+  const r = await invokeWorkflow(
+    { workflowType: 'architecture-review', approvalMode: 'proposal-only' },
+    { env: {} },
+  );
+  assert.equal(r.status, 'proposed');
+  assert.equal(r.modelResolution.selectedModel, null);
+  assert.equal(r.modelResolution.resolutionSource, 'config-error');
+  assert.ok(r.modelResolution.error?.remediation, 'remediation hint surfaced');
 });
 
 test('explicit strategy uses requested roles; unknown roles are dropped with a warning', async () => {
