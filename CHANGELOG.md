@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Changed
+- Per-turn Stop-hook tax reduced: `stop:typecheck` (120s timeout) and `stop:snapshot` (15s) are now `async: true` in `platforms/claude/settings.template.json`. Both write status for the NEXT session to read (typecheck → `~/.cx/pending-typecheck.txt`, snapshot → `.cx/context.md`), so they never needed to gate the current turn. `stop:policy-engine` correctly stays synchronous (legitimately gates on red CI / in-progress beads / drive-mode). Worst-case blocking-timeout sum on Stop dropped from 150s to 15s; observed per-turn tax goes from ~3s (policy-engine + typecheck + snapshot) to ~2s (policy-engine only).
+- MCP server template versions pinned to remove per-session cold-start: `@upstash/context7-mcp@3.1.0`, `@playwright/mcp@0.0.75`, `@modelcontextprotocol/server-sequential-thinking@2025.12.18` (previously `@latest` / unspecified, which made `npx -y` resolve the registry on every cold start). Pins land in `specialists/registry.json` and propagate to every host adapter on `construct sync`.
+
 ### Added
 - ADR-0027 host project footprint & non-destructive scaffolding (`docs/adr/0027-...`): the disposition contract (tracked / ignored / asked-before-modify), the marker-block injection pattern for files Construct does not own, the install/init/sync boundary, the uninstall reversal guarantee, and the forward-fix-AND-backward-repair principle. Tracking epic `construct-jsut` with 13 work items.
 - State-reconciliation framework (`lib/reconcile/`): registry of versioned tasks with `safety: auto|ask`, an idempotent runner, and a stamp file at `~/.construct/reconcile.json`. Auto-safety tasks run silently from `construct sync`; ask-safety tasks surface via `construct doctor`. Distinct from `lib/migrations/` (artifact-JSON schema versioning) and `lib/storage/migrations.mjs` (Postgres schema). Tracking `construct-w9pp`.
