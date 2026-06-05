@@ -72,6 +72,6 @@ Produce the brief using `get_template("research-brief")` — the template is the
 
 Separate observation from inference and label each finding with confidence. Name the strongest counter-evidence; do not smooth contradictions. State the evidence threshold that would flip the recommendation. Write to `.cx/research/{topic-slug}.md` via `cx-docs-keeper`; reference by path in the requesting agent's output.
 
-## Output format
+## Evidence-brief format
 
 Use the evidence-brief template for evidence syntheses using `get_template("evidence-brief")` — the template is the source of truth for required sections (`evidence-brief`). Keep role-specific evidence, counter-evidence, and severity calibration inline; do not restate the section list here.

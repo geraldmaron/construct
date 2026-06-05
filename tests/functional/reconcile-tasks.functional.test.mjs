@@ -103,6 +103,21 @@ test('reconcile/gitignore-coverage: no .gitignore is left to init (no repair)', 
   });
 });
 
+test('reconcile/gitignore-coverage: skips the Construct package repo itself', async () => {
+  await withSandbox(async ({ project }) => {
+    markProject(project);
+    writeFileSync(join(project, '.gitignore'), 'node_modules/\n.cx/\n');
+    writeFileSync(join(project, 'package.json'), JSON.stringify({
+      name: '@geraldmaron/construct',
+      bin: { construct: 'bin/construct' },
+    }));
+    const task = await taskModule('gitignore-coverage.mjs');
+    const result = await task.detect();
+    assert.equal(result.needsRepair, false, 'reconcile must not fire on the Construct repo itself');
+    assert.match(result.summary, /Construct package repo/, 'summary names the skip reason');
+  });
+});
+
 test('reconcile/agent-instructions-rewrap: stale block refreshed, blockless file untouched', async () => {
   await withSandbox(async ({ project }) => {
     markProject(project);
