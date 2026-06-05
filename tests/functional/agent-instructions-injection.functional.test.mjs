@@ -9,7 +9,7 @@
  * file from a header.
  */
 
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -22,9 +22,20 @@ import {
   CONSTRUCT_INTEGRATION_VERSION,
 } from '../../lib/agent-instructions/inject.mjs';
 
+const tmpDirs = [];
+
+after(() => {
+  for (const dir of tmpDirs) fs.rmSync(dir, { recursive: true, force: true });
+});
+
+function tmpDir(prefix) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  tmpDirs.push(dir);
+  return dir;
+}
+
 function tmpFile(name, content) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-inject-'));
-  const file = path.join(dir, name);
+  const file = path.join(tmpDir('cx-inject-'), name);
   if (content !== undefined) fs.writeFileSync(file, content, 'utf8');
   return file;
 }
@@ -78,7 +89,7 @@ test('injectIntoAgentFile preserves an existing file with a beads block', () => 
 });
 
 test('injectIntoAgentFile creates a missing file from a header', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-inject-new-'));
+  const dir = tmpDir('cx-inject-new-');
   const file = path.join(dir, 'CLAUDE.md');
   const res = injectIntoAgentFile(file, { version: CONSTRUCT_INTEGRATION_VERSION, header: '# Proj\n' });
   assert.equal(res.existed, false);
