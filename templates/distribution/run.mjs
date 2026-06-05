@@ -21,7 +21,9 @@
  *   2. `npx -p @geraldmaron/construct@<version> construct …` — if Node ≥ 18
  *      is on PATH but the package isn't installed locally. npx caches the
  *      package after the first run. The version pin comes from
- *      `.construct/version` next to this file.
+ *      `.construct/version` next to this file. The pin is probed first; if it
+ *      cannot be resolved (offline, or the version is unpublished/yanked) the
+ *      launcher defers to the resolvers below instead of dead-ending here.
  *
  *   3. Globally installed `construct` on PATH — if neither of the above
  *      hit but the user has installed Construct globally.
@@ -112,6 +114,14 @@ function tryNodeModules() {
 function tryNpx(version) {
   if (!commandOnPath('npx')) return false;
   const spec = version ? `@geraldmaron/construct@${version}` : '@geraldmaron/construct';
+
+  // npx exits non-zero when the pinned version is unpublished/yanked or the registry
+  // is unreachable. runForeground hands the process to npx and exits with its status,
+  // so that failure can never fall through to the global/cache/Docker resolvers below.
+  // Confirm the spec resolves first; on a miss, defer instead of dead-ending the chain.
+
+  const probe = spawnSync('npm', ['view', spec, 'version'], { stdio: 'ignore', timeout: 8000 });
+  if (probe.status !== 0) return false;
   runForeground('npx', ['-p', spec, '--', 'construct', ...process.argv.slice(2)]);
   return true;
 }
