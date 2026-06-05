@@ -157,6 +157,24 @@ const COMPRESS_PERSONAS = process.argv.includes("--compress-personas");
 const PROJECT_FLAG = process.argv.includes("--project");
 const GLOBAL_FLAG = process.argv.includes("--global");
 
+// Project-tier host selection. `--hosts=claude,codex,…` (or CONSTRUCT_SYNC_HOSTS)
+// restricts which adapter sets the project tier writes, so `construct init` can
+// scaffold only the hosts the user actually has (construct-4xy6 / ADR-0027 §1).
+// Absent → null → write every host, preserving `construct sync` back-compat.
+
+const HOST_KEYS = ["claude", "codex", "copilot", "opencode", "vscode", "cursor"];
+
+function parseHostSelection() {
+  const arg = process.argv.find((a) => a.startsWith("--hosts="));
+  const raw = arg ? arg.slice("--hosts=".length) : process.env.CONSTRUCT_SYNC_HOSTS;
+  if (!raw) return null;
+  const wanted = new Set(raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
+  return new Set(HOST_KEYS.filter((k) => wanted.has(k)));
+}
+
+const HOST_SELECTION = parseHostSelection();
+const wantsHost = (key) => !HOST_SELECTION || HOST_SELECTION.has(key);
+
 /**
  * A Construct project carries `.construct/` (the launcher staged by
  * `stage-project.mjs`) or `.cx/` (state). When `construct sync` runs inside
@@ -1558,23 +1576,23 @@ if (COMPRESS_PERSONAS) {
 acquireLock();
 try {
   if (projectDir) {
-    syncClaude(entries, projectDir);
-    syncCodex(entries, projectDir);
-    syncCopilot(entries, projectDir);
-    const opencodeOk = syncOpencode(entries, projectDir);
-    const vscodeOk = syncVSCode(projectDir);
-    const cursorOk = syncCursor(projectDir);
-    const cmdCount = syncCommands(projectDir);
-    const skillCount = syncSkills(projectDir);
+    if (wantsHost("claude")) syncClaude(entries, projectDir);
+    if (wantsHost("codex")) syncCodex(entries, projectDir);
+    if (wantsHost("copilot")) syncCopilot(entries, projectDir);
+    const opencodeOk = wantsHost("opencode") && syncOpencode(entries, projectDir);
+    const vscodeOk = wantsHost("vscode") && syncVSCode(projectDir);
+    const cursorOk = wantsHost("cursor") && syncCursor(projectDir);
+    const cmdCount = wantsHost("claude") ? syncCommands(projectDir) : 0;
+    const skillCount = wantsHost("claude") ? syncSkills(projectDir) : 0;
 
     if (DRY_RUN) {
       printDryRunDiff();
     } else {
       commitStaging();
       const targets = [
-        "Claude Code",
-        "Codex",
-        "Copilot",
+        wantsHost("claude") && "Claude Code",
+        wantsHost("codex") && "Codex",
+        wantsHost("copilot") && "Copilot",
         opencodeOk && "OpenCode",
         vscodeOk && "VS Code",
         cursorOk && "Cursor",
