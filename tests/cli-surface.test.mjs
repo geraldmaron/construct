@@ -81,6 +81,41 @@ test('construct completions bash prints a bash completion script', () => {
   assert.match(out, /complete -F _construct_completions construct/);
 });
 
+// internal: true commands stay callable but must never be advertised as tab
+// candidates. The candidate set is the top-level command list (bash) and the
+// _describe block (zsh); a leak there breaks the cli-commands.mjs visibility
+// contract, which is how all 15 internals once surfaced in completions.
+test('completions hide internal commands and keep public ones', async () => {
+  const { CLI_COMMANDS } = await import('../lib/cli-commands.mjs');
+  const internal = CLI_COMMANDS.filter((c) => c.internal);
+  const pub = CLI_COMMANDS.filter((c) => !c.internal);
+  assert.ok(internal.length > 0 && pub.length > 0, 'fixture sanity: both sets non-empty');
+
+  // bash: candidates are the space-separated tokens in `commands="…"` — exact
+  // membership, colon-names like `claude:allow` are intact tokens.
+  const bash = execFileSync(process.execPath, [BIN, 'completions', 'bash'], { cwd: ROOT, encoding: 'utf8' });
+  const bashCandidates = new Set((bash.match(/commands="([^"]*)"/)?.[1] ?? '').split(/\s+/).filter(Boolean));
+  for (const cmd of internal) {
+    assert.ok(!bashCandidates.has(cmd.name), `bash: internal command "${cmd.name}" must not be a completion candidate`);
+  }
+  for (const cmd of pub) {
+    assert.ok(bashCandidates.has(cmd.name), `bash: public command "${cmd.name}" must be a completion candidate`);
+  }
+
+  // zsh: the top-level command list is the 4-space-indented `'<name>:<emoji> …'`
+  // _describe block; subcommand entries sit at deeper indent. Command names can
+  // contain colons, so test for the literal top-level entry rather than parsing
+  // the name back out of an ambiguous `name:desc` string.
+  const zsh = execFileSync(process.execPath, [BIN, 'completions', 'zsh'], { cwd: ROOT, encoding: 'utf8' });
+  const zshTopLevel = (name) => zsh.includes(`\n    '${name}:`);
+  for (const cmd of internal) {
+    assert.ok(!zshTopLevel(cmd.name), `zsh: internal command "${cmd.name}" must not be a completion candidate`);
+  }
+  for (const cmd of pub) {
+    assert.ok(zshTopLevel(cmd.name), `zsh: public command "${cmd.name}" must be a completion candidate`);
+  }
+});
+
 test('construct beads status reports lock state for a local beads directory', () => {
   const projectDir = tempDir('construct-cli-beads-');
   fs.mkdirSync(path.join(projectDir, '.beads', 'embeddeddolt'), { recursive: true });
