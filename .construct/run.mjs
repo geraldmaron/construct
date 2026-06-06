@@ -14,30 +14,38 @@
  *      and the launcher invokes its `bin/construct`. Used for development
  *      and smoke tests; not consulted in normal runs.
  *
- *   1. Workspace `node_modules/@geraldmaron/construct/bin/construct` — if a
+ *   1. Self-repo — if this launcher is staged inside the Construct source
+ *      checkout itself (the project's own `package.json` is
+ *      `@geraldmaron/construct` and `bin/construct` is present), invoke that
+ *      `bin/construct` directly. Without this, the Construct repo's own hooks
+ *      would dead-end at npx/global resolution and fail every session.
+ *
+ *   2. Workspace `node_modules/@geraldmaron/construct/bin/construct` — if a
  *      `npm install` has materialised Construct in this project's node_modules,
  *      use that. Fastest, no network.
  *
- *   2. `npx -p @geraldmaron/construct@<version> construct …` — if Node ≥ 18
+ *   3. `npx -p @geraldmaron/construct@<version> construct …` — if Node ≥ 18
  *      is on PATH but the package isn't installed locally. npx caches the
  *      package after the first run. The version pin comes from
- *      `.construct/version` next to this file.
+ *      `.construct/version` next to this file. The pin is probed first; if it
+ *      cannot be resolved (offline, or the version is unpublished/yanked) the
+ *      launcher defers to the resolvers below instead of dead-ending here.
  *
- *   3. Globally installed `construct` on PATH — if neither of the above
+ *   4. Globally installed `construct` on PATH — if neither of the above
  *      hit but the user has installed Construct globally.
  *
- *   4. Cached binary at `.construct/cache/bin/construct-<os>-<arch>` — if
+ *   5. Cached binary at `.construct/cache/bin/construct-<os>-<arch>` — if
  *      a previous bootstrap downloaded the matching single-file binary
  *      from GitHub Releases.
  *
- *   5. Docker container — if the docker daemon is reachable, invoke
+ *   6. Docker container — if the docker daemon is reachable, invoke
  *      `ghcr.io/geraldmaron/construct:<pinned-version>` with the project
  *      bind-mounted at /work. Lets language-agnostic projects (no Node,
  *      no global construct, no binary) still execute hooks. Disable with
  *      `CONSTRUCT_DISABLE_DOCKER=1` for environments where docker is
  *      reachable but undesirable (e.g. CI runners that prefer fail-fast).
  *
- *   6. Print a precise error with the exact install commands and exit
+ *   7. Print a precise error with the exact install commands and exit
  *      with the documented exit code (127 = command not found).
  *
  * The launcher is intentionally tiny and dependency-free so it never
@@ -99,6 +107,18 @@ function tryDevPath() {
   return true;
 }
 
+function trySelfRepo() {
+  const candidate = join(PROJECT_ROOT, 'bin', 'construct');
+  if (!isExecutable(candidate)) return false;
+  let pkgName = null;
+  try {
+    pkgName = JSON.parse(readFileSync(join(PROJECT_ROOT, 'package.json'), 'utf8')).name;
+  } catch { return false; }
+  if (pkgName !== '@geraldmaron/construct') return false;
+  runForeground(process.execPath, [candidate, ...process.argv.slice(2)]);
+  return true;
+}
+
 function tryNodeModules() {
   const candidate = join(
     PROJECT_ROOT,
@@ -112,6 +132,14 @@ function tryNodeModules() {
 function tryNpx(version) {
   if (!commandOnPath('npx')) return false;
   const spec = version ? `@geraldmaron/construct@${version}` : '@geraldmaron/construct';
+
+  // npx exits non-zero when the pinned version is unpublished/yanked or the registry
+  // is unreachable. runForeground hands the process to npx and exits with its status,
+  // so that failure can never fall through to the global/cache/Docker resolvers below.
+  // Confirm the spec resolves first; on a miss, defer instead of dead-ending the chain.
+
+  const probe = spawnSync('npm', ['view', spec, 'version'], { stdio: 'ignore', timeout: 8000 });
+  if (probe.status !== 0) return false;
   runForeground('npx', ['-p', spec, '--', 'construct', ...process.argv.slice(2)]);
   return true;
 }
@@ -179,6 +207,7 @@ function fail() {
 const version = readPinnedVersion();
 
 if (tryDevPath()) { /* spawned */ }
+else if (trySelfRepo()) { /* spawned */ }
 else if (tryNodeModules()) { /* spawned */ }
 else if (tryNpx(version)) { /* spawned */ }
 else if (tryGlobal()) { /* spawned */ }
