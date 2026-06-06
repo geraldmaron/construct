@@ -22,11 +22,13 @@ Install the CLI (once per machine):
 npm install -g @geraldmaron/construct
 ```
 
-Bootstrap local services (once per machine):
+Bootstrap local services (once per machine, opt-in to machine-scope writes):
 
 ```bash
-construct install --yes
+construct install --scope=user --yes
 ```
+
+`construct install` defaults to `--scope=project`, which writes nothing and prints scope guidance — see the [footprint contract](#footprint-contract) below or [ADR 0029](docs/adr/0029-install-scopes-and-hook-budgets.md). Use `--scope=user` for machine setup, `--scope=both` for both.
 
 Initialize a project:
 
@@ -96,6 +98,18 @@ First run downloads `uv` and creates `.cx/runtime/docling/.venv` (~1.5 GB includ
 ## Hard gates
 
 Every code mutation runs through enforcement. No secrets committed, tests green, docs current, comments lint-clean, CI passes. Gates live in three places: write-time, commit-time, CI safety net. They can only be bypassed with explicit env vars so every exception leaves an audit trail. [Gates and enforcement](https://geraldmaron.github.io/construct/concepts/gates-and-enforcement).
+
+## Footprint contract
+
+Construct's writes are scoped and disclosed up front. The default `construct install` (no flag) writes nothing — it prints scope guidance. Project writes happen only under `construct init` inside a project directory; machine writes happen only under `construct install --scope=user`, with an itemized interactive consent prompt for any global Claude Code config mutation.
+
+| Scope | Trigger | Paths |
+|---|---|---|
+| Project | `construct init` | `.construct/`, `.cx/`, `.claude/` adapter tree, host adapters (`.codex/`, `.opencode/`, `.cursor/`, `.vscode/`), `construct.config.json`, marker block in `CLAUDE.md` / `AGENTS.md`, `.gitignore` append, `.beads/` |
+| Machine | `construct install --scope=user` | `~/.construct/config.env`, `~/.construct/lib` (symlink), `~/.construct/services/`, MCP entries in `~/.config/opencode/opencode.json` and `~/.codex/config.toml`, marker block in `~/.claude/CLAUDE.md`, hook injection in `~/.claude/settings.json` (last two require interactive consent or `--yes`) |
+| Never touched | — | Shell rc files (`~/.bashrc`, `~/.zshrc`), npm global config, `git config --global` |
+
+Full table with file:line citations and the per-hook performance budget contract: [Architecture — Footprint contract](https://geraldmaron.github.io/construct/concepts/architecture#footprint-contract) and [ADR 0029](docs/adr/0029-install-scopes-and-hook-budgets.md).
 
 ## Learning loops
 
