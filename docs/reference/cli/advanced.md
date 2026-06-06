@@ -14,6 +14,8 @@ description: Advanced commands for Construct.
 | `construct ci` | Local CI mirror: run CI jobs locally or view recent run status |
 | `construct completions` | Shell completion scripts |
 | `construct config` | Deployment mode configuration |
+| `construct decisions` | Index load-bearing decisions and their enforcement bindings |
+| `construct deployment` | Deployment posture tools (capability parity contract) |
 | `construct diff` | Show agent changes since HEAD |
 | `construct embed` | Embed mode management |
 | `construct gates:audit` | Audit policy gates |
@@ -110,6 +112,44 @@ Deployment mode configuration
 construct config <get|set>
 ```
 
+## construct decisions
+
+Index load-bearing decisions and their enforcement bindings
+
+**Usage**
+
+```bash
+construct decisions [list|validate|json|check|baseline|golden]
+```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `list` | Show decisions with status and enforcement (default) |
+| `validate` | Validate registry structure; exit 1 on error |
+| `check` | Fail on dangling markers, enforcement/supersede/linkage/precedence drift |
+| `baseline` | Print the enforced baseline; --write to regenerate it |
+| `golden` | Check the CLI/agent/hook surface snapshot; --write to regenerate it |
+| `json` | Emit the full registry as JSON |
+
+## construct deployment
+
+Deployment posture tools (capability parity contract)
+
+**Usage**
+
+```bash
+construct deployment parity
+```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `parity` | Show and validate capability parity across solo/team/enterprise |
+| `--json` | Emit the parity contract as JSON |
+
 ## construct diff
 
 Show agent changes since HEAD
@@ -193,7 +233,7 @@ Role framework management
 **Usage**
 
 ```bash
-construct role <list|set|latest>
+construct role <list|latest|show|status|resolve|prune|reset>
 ```
 
 ## construct roles:list
@@ -243,7 +283,7 @@ Remove Construct state
 **Usage**
 
 ```bash
-construct uninstall [--dry-run] [--yes] [--all] [--keep-state] [--with-images] [--scope=project|machine|all]
+construct uninstall [--dry-run] [--yes] [--all] [--keep-state] [--scope=project|machine|all]
 ```
 
 **Options**
@@ -254,10 +294,7 @@ construct uninstall [--dry-run] [--yes] [--all] [--keep-state] [--with-images] [
 | `--yes` | Remove auto-risk (✓) categories without prompting |
 | `--all` | Combined with --yes: also remove ask-risk (◐) categories (project data, machine config) |
 | `--keep-state` | Only remove the launcher + adapters; preserve .cx/, ~/.construct, Postgres |
-| `--with-images` | Also remove the shared pgvector Docker image (kept by default; ADR-0027) |
-| `--scope=<...>` | Limit to project \| machine \| all (default: all) |
-
-Reversers cover the LaunchAgent (`dev.construct.pressure-release`: `launchctl bootout` + plist), a Construct-set git `core.hooksPath` (`.beads/hooks` only; a custom value is preserved), and the memory MCP registration across Claude, OpenCode, and Codex configs. The shared pgvector image stays unless `--with-images` is passed.
+| `--scope=<...>` | Limit to project | machine | all (default: all) |
 
 ## construct update
 

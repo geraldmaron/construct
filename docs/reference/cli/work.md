@@ -12,6 +12,7 @@ description: Work commands for Construct.
 | `construct customer` | Manage customer profiles for product intelligence |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
+| `construct export` | Export markdown to PDF/DOCX/HTML via Pandoc + Typst (optional system binaries; ADR-0024) |
 | `construct graph` | Task graph management |
 | `construct handoffs` | List and inspect session handoff files in .cx/handoffs/ |
 | `construct headhunt` | Create domain expertise overlays |
@@ -86,6 +87,16 @@ Ingest file from Downloads/Desktop
 construct drop <file>
 ```
 
+## construct export
+
+Export markdown to PDF/DOCX/HTML via Pandoc + Typst (optional system binaries; ADR-0024)
+
+**Usage**
+
+```bash
+construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>]
+```
+
 ## construct graph
 
 Task graph management
@@ -93,8 +104,12 @@ Task graph management
 **Usage**
 
 ```bash
-construct graph <show|update>
+construct graph <list|show|from-intake|recommend>
 ```
+
+**Subcommands**
+
+- `[object Object]`
 
 ## construct handoffs
 
@@ -133,7 +148,7 @@ Convert documents to indexed markdown
 **Usage**
 
 ```bash
-construct ingest <file> [--strict] [--legacy-extractor]
+construct ingest <file> [--strategy=adapter|provider] [--orchestration=prompt-only|orchestrated] [--strict] [--legacy-extractor]
 ```
 
 ## construct integrations
@@ -243,8 +258,12 @@ Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs)
 **Usage**
 
 ```bash
-construct workflow <list|show|new>
+construct workflow <list|show|new|invoke>
 ```
+
+**Subcommands**
+
+- `[object Object]`
 
 ## construct workspace
 
