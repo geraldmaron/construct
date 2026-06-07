@@ -116,6 +116,26 @@ test('completions hide internal commands and keep public ones', async () => {
   }
 });
 
+// `construct install` runs the global sync twice; in a non-project cwd both hit
+// the same global branch and would print the summary twice. --quiet on the first
+// call suppresses only the summary, not the work, so the canonical line prints
+// once. Guard: --quiet drops the summary, plain sync keeps it, both still write.
+test('sync --quiet suppresses the summary line but still does the work', () => {
+  const home = tempDir('construct-sync-home-');
+  const cwd = tempDir('construct-sync-cwd-');
+  const env = { ...process.env, HOME: home, CX_HOME_OVERRIDE: home, CONSTRUCT_DEV_PATH: ROOT };
+  const run = (args) => execFileSync(process.execPath, [BIN, 'sync', ...args], { cwd, env, encoding: 'utf8', timeout: 60_000 });
+
+  const plain = run([]);
+  assert.match(plain, /to global scope/, 'plain sync prints the global summary');
+
+  const quiet = run(['--quiet']);
+  assert.doesNotMatch(quiet, /to global scope/, '--quiet suppresses the global summary');
+  assert.doesNotMatch(quiet, /Completions updated/, '--quiet suppresses the completions line');
+  // Work still happened: completions are written under the isolated HOME.
+  assert.ok(fs.existsSync(path.join(home, '.local', 'share', 'construct', 'completions')), '--quiet still writes completions');
+});
+
 test('construct beads status reports lock state for a local beads directory', () => {
   const projectDir = tempDir('construct-cli-beads-');
   fs.mkdirSync(path.join(projectDir, '.beads', 'embeddeddolt'), { recursive: true });
