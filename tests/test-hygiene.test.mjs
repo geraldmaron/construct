@@ -20,6 +20,12 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ALLOWLIST = new Set([
   // helpers.mjs exposes tempDir(prefix, t) — caller passes t to register cleanup.
   'helpers.mjs',
+  // e2e/lib/sterile-env.mjs builds a scenario's sterile env; the tmpdir must
+  // outlive the builder so the runner can drive all tiers against it, and is
+  // intentionally preserved on failure for forensics. Lifecycle (cleanup on
+  // success, preserve + print path on failure) is the runner's responsibility,
+  // not this builder's — see tests/e2e/runner.mjs.
+  'e2e/lib/sterile-env.mjs',
 ]);
 
 function walk(dir) {
