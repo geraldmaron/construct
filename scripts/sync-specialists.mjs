@@ -798,6 +798,20 @@ function writeProjectClaudeSettings(targetDir) {
     }
   }
 
+  // The registry is the single source of truth for MCP servers; VS Code, Codex,
+  // and OpenCode all wire it. Project Claude must match — above all `construct-mcp`,
+  // the server exposing project_context/get_skill/get_template/orchestration_policy
+  // that the specialist loop depends on. The curated template omits it, which left
+  // Claude Code as the only selected tool without the construct config. Merge the
+  // registry on top of the template seed; existing entries win so user edits stick,
+  // and buildClaudeMcpEntry resolves each server's path/env.
+  const registryMcp = registry.mcpServers ?? {};
+  existing.mcpServers ??= {};
+  for (const [id, mcpDef] of Object.entries(registryMcp)) {
+    if (existing.mcpServers[id]) continue;
+    existing.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
+  }
+
   if (DRY_RUN) return;
   mkdirp(path.dirname(settingsPath));
   writeFile(settingsPath, JSON.stringify(existing, null, 2) + "\n");
