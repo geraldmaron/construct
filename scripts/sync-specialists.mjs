@@ -157,6 +157,16 @@ const COMPRESS_PERSONAS = process.argv.includes("--compress-personas");
 const PROJECT_FLAG = process.argv.includes("--project");
 const GLOBAL_FLAG = process.argv.includes("--global");
 
+// --quiet suppresses only the closing one-line summary, not the work or any
+// warning. `construct install` runs the global tier twice (plain `sync` then
+// `sync --global`); in a non-project cwd both land in the same global branch and
+// print the identical "Synced … to global scope" + "Completions updated" lines.
+// Passing --quiet to the first call lets the canonical summary print exactly once
+// from `sync --global`, with no change to what either call writes.
+
+const QUIET = process.argv.includes("--quiet") || process.argv.includes("-q");
+const summary = (msg) => { if (!QUIET) console.log(msg); };
+
 // Project-tier host selection. `--hosts=claude,codex,…` (or CONSTRUCT_SYNC_HOSTS)
 // restricts which adapter sets the project tier writes, so `construct init` can
 // scaffold only the hosts the user actually has (construct-4xy6 / ADR-0027 §1).
@@ -1597,7 +1607,7 @@ try {
         vscodeOk && "VS Code",
         cursorOk && "Cursor",
       ].filter(Boolean).join(", ");
-      console.log(`Synced ${entries.length} agents + ${cmdCount} commands + ${skillCount} skills to ${path.relative(process.cwd(), projectDir) || "."} (project mode → ${targets}).`);
+      summary(`Synced ${entries.length} agents + ${cmdCount} commands + ${skillCount} skills to ${path.relative(process.cwd(), projectDir) || "."} (project mode → ${targets}).`);
     }
   } else {
     const personaCount = entries.filter((e) => e.isOrchestrator).length;
@@ -1623,11 +1633,11 @@ try {
         vscodeOk && "VS Code",
         cursorOk && "Cursor",
       ].filter(Boolean).join(", ");
-      console.log(`Synced ${personaCount} front-door agent to global scope (${targets}). Specialists, commands, and skills are project-only — run \`construct init\` inside a project to scaffold them.`);
+      summary(`Synced ${personaCount} front-door agent to global scope (${targets}). Specialists, commands, and skills are project-only — run \`construct init\` inside a project to scaffold them.`);
 
       const completionsDir = generateCompletions();
       if (completionsDir) {
-        console.log(`Completions updated → ${completionsDir}`);
+        summary(`Completions updated → ${completionsDir}`);
       }
     }
   }

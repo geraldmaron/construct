@@ -1,0 +1,46 @@
+name: hook performance budgets
+
+on:
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: Runs per hook (default 20)
+        required: false
+        default: '20'
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CONSTRUCT_BENCH_HOOKS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Run hook budget gate
+        run: |
+          if [ -n "${{ inputs.runs }}" ]; then
+            node scripts/bench-hooks.mjs --runs=${{ inputs.runs }} --json > /tmp/bench-report.json
+          else
+            node scripts/bench-hooks.mjs --json > /tmp/bench-report.json
+          fi
+          node --test tests/perf/hook-budgets.test.mjs
+      - name: Upload bench report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hook-bench-report
+          path: |
+            /tmp/bench-report.json
+            .cx/bench/
+          if-no-files-found: ignore
+          retention-days: 14

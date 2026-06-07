@@ -205,6 +205,52 @@ Kill switches throughout: `CONSTRUCT_ROLES=off` (global L1), `CONSTRUCT_ROLE_<NA
 | **Embed** | Continuous monitoring, snapshot production, work item management | `construct embed start` |
 | **Self-host** | Construct manages its own development (this repo) | Always active in the construct repo |
 
+## Footprint contract
+
+Construct's install and init paths are governed by a per-scope opt-in contract codified in [ADR 0029](/concepts/adr/0029-install-scopes-and-hook-budgets). Two scopes; project is the default; the user scope is opt-in.
+
+### Project scope — `construct init` (per repository)
+
+Project scope writes are confined to the project root and the project's `.git/` config. Nothing in this list ever lands on a machine without an explicit `construct init` invocation inside the project directory.
+
+| Path | Purpose | Owner |
+|---|---|---|
+| `.construct/` | Project-local Construct runtime state | construct init |
+| `.cx/` | Observations, sessions, traces, intake, task graphs (gitignored) | construct init |
+| `.claude/agents/` · `.claude/commands/` · `.claude/settings.json` | Claude Code adapter tree (agents + hooks + slash commands) | construct sync |
+| `.codex/`, `.vscode/`, `.opencode/`, `.cursor/` | Per-host adapters when the host is detected | construct sync |
+| `construct.config.json` | Project config + active profile | construct init |
+| `plan.md` | Local-only current plan (gitignored) | construct init |
+| `CLAUDE.md` · `AGENTS.md` | Marker-block injection — Construct's section only, preserving surrounding content | construct sync |
+| `.gitignore` | Appends Construct's runtime paths (idempotent) | construct init |
+| `.beads/` | bd issue tracker init | construct init |
+| `.git/config` `core.hooksPath` | Project-scoped git hooks path | construct init |
+
+### Machine scope — `construct install --scope=user` (per machine)
+
+Machine scope writes are opt-in. The default `construct install` (no flag, or `--scope=project`) prints scope guidance and exits without touching the machine. `--scope=user` writes the paths below; the marker-block writes to `~/.claude/*` require an itemized interactive consent prompt (or `--yes` for non-interactive contexts).
+
+| Path | Purpose | Consent |
+|---|---|---|
+| `~/.construct/config.env` | Machine credentials (mode 0600) | `--scope=user` |
+| `~/.construct/lib` (symlink) | Pointer to the active Construct checkout | `--scope=user` |
+| `~/.construct/services/` | Docker compose for local Postgres | `--scope=user` |
+| `~/.config/opencode/opencode.json` | MCP entries — Construct's section merged | `--scope=user` |
+| `~/.codex/config.toml` | MCP entries — Construct's section merged | `--scope=user` |
+| `~/.claude/CLAUDE.md` | Marker block — Construct's section only | `--scope=user` + interactive consent |
+| `~/.claude/settings.json` | Global hook injection — Construct's section only | `--scope=user` + interactive consent |
+
+### Never touched
+
+- `~/.bashrc`, `~/.zshrc`, or any other shell rc — Construct never writes to shell init files.
+- `npm` global config or registries.
+- `git config --global core.hooksPath` — explicitly prohibited by [ADR 0027](/concepts/adr/0027-host-project-footprint-and-non-destructive-scaffolding) §3.
+- Any path outside the table above without first appearing in `construct doctor` drift output and prompting for consent.
+
+### Hook performance budgets
+
+Every `lib/hooks/*.mjs` file declares a `@p95ms <N>` budget in its header. The benchmark harness `scripts/bench-hooks.mjs` measures p95 over N=20 runs against a synthetic event payload; a nightly CI gate fails when measured p95 exceeds the declared budget by more than 2×. Defaults: `UserPromptSubmit` 200 ms, `PreToolUse` / `PostToolUse` 500 ms, sync `Stop` arm 500 ms, `SessionStart` 1000 ms. Gate hooks (user-invoked, deliberate quality gates) declare an explicit budget — e.g. `pre-push-gate.mjs` is `@p95ms 180000`.
+
 ### Embedded operating profile
 
 Embed mode is governed by a config-backed operating profile, not just a list of watched sources. The profile is the daemon's bearing: mission, strategy, focal resources, authority boundaries, artifact responsibilities, and risk model.
