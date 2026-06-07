@@ -2090,7 +2090,17 @@ async function cmdEmbeddedTriage(args) {
     input = fs.readFileSync(0, 'utf8');
   }
   if (!input.trim() && !ingestion?.error) {
-    errorln('Usage: construct intake classify --json [--text "..." | --file <path> | <stdin>] [--source <path>] [--artifact-type <t>] [--available-roles a,b]');
+    // This is an embedded-contract verb: an embedder that pipes empty/no input
+    // must still get a parseable, versioned envelope — not a bare exit. Emit a
+    // typed error envelope on stdout so the contract holds, and exit non-zero so
+    // shell callers still see failure.
+    const { wrapResponse } = await import('../lib/embedded-contract/envelope.mjs');
+    const envelope = wrapResponse({
+      surface: 'cli',
+      warnings: ['No artifact provided — pass --text "...", --file <path>, or pipe content on stdin.'],
+      data: { error: { code: 'missing_input', message: 'intake classify requires an artifact to classify; received empty input.' } },
+    });
+    println(JSON.stringify(envelope, null, 2));
     process.exit(1);
   }
   const request = {

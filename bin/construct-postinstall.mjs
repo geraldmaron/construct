@@ -70,23 +70,17 @@ try {
   }
 } catch { /* fall through */ }
 
-// `npm i -g @geraldmaron/construct` runs the postinstall with
-// npm_config_global=true. Wire the `construct` front-door agent into the
-// user's home directories so it's reachable from every host (Claude Code,
-// Codex, Copilot, OpenCode) immediately after a global install. Specialists
-// stay project-only and land when the user runs `construct init` in a repo.
+// ADR-0029: machine-scope writes are opt-in. The postinstall hook for a global
+// install prints scope guidance and exits; `~/.claude/CLAUDE.md`,
+// `~/.claude/settings.json`, and `~/.construct/*` land only when the user runs
+// `construct install --scope=user`, so the consent point is visible.
 
 if (process.env.npm_config_global === 'true' || process.env.npm_config_global === true) {
-  const syncScript = path.join(PKG_ROOT, 'scripts', 'sync-specialists.mjs');
-  if (existsSync(syncScript)) {
-    log('global install detected; syncing front-door agent into ~/');
-    const result = spawnSync(process.execPath, [syncScript, '--global'], {
-      stdio: 'inherit',
-    });
-    if (result.status !== 0) {
-      fail(`Global front-door sync failed (exit ${result.status}).`, 'Run `construct sync --global` to complete it.');
-    }
-  }
+  log('global install detected; machine-scope setup is opt-in (ADR-0029)');
+  log('to wire ~/.construct/* and the front-door agent, run:');
+  log('  construct install --scope=user');
+  log('to set up a project, cd into it and run:');
+  log('  construct init');
   process.exit(0);
 }
 

@@ -7,11 +7,12 @@ description: Core commands for Construct.
 
 | Command | What it does |
 |---|---|
+| `construct dashboard` | Start the local dashboard/orchestration daemon (or --token to mint a dashboard token) |
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
 | `construct init` | Project setup (once per repo): scaffold .cx/, AGENTS.md, plan.md, adapters |
-| `construct install` | Machine setup (once per machine): Docker, cm/cass, config, embeddings |
+| `construct install` | Machine setup (scoped per ADR-0029): --scope=project\|user\|both, default project |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
 | `construct profile` | Manage the active org profile and its lifecycle (draft, promote, archive, health) |
 | `construct recommendations` | View and manage artifact recommendations |
@@ -20,6 +21,16 @@ description: Core commands for Construct.
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
 
+## construct dashboard
+
+Start the local dashboard/orchestration daemon (or --token to mint a dashboard token)
+
+**Usage**
+
+```bash
+construct dashboard [--token]
+```
+
 ## construct dev
 
 Start services for development
@@ -27,8 +38,15 @@ Start services for development
 **Usage**
 
 ```bash
-construct dev
+construct dev [--select] [--only=postgres,dashboard,...]
 ```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--select` | Pick which services to start from an interactive checklist |
+| `--only=<a,b,c>` | Start only the named services (postgres, dashboard, telemetry, memory, opencode) |
 
 ## construct docs
 
@@ -53,8 +71,19 @@ Check installation health
 **Usage**
 
 ```bash
-construct doctor [--fix-legacy-agents]
+construct doctor [<status|logs|tick|report|consistency|watch|stop|credentials>] [--fix-legacy-agents]
 ```
+
+**Subcommands**
+
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
 
 **Options**
 
@@ -78,6 +107,9 @@ construct init [path] [options]
 |---|---|
 | `--yes` | Accept all defaults (non-interactive) |
 | `--no-start` | Do not start services after init |
+| `--commit-bootstrap` | Keep the beads bootstrap commit (default: leave files uncommitted) |
+| `--with-<host>` | Force an adapter set (claude|codex|opencode|vscode|cursor|copilot); default writes detected hosts only |
+| `--all-hosts` | Write every adapter set regardless of what is installed |
 | `--interactive, -i` | Enable interactive setup with project detection |
 | `--quiet, -q` | Minimal output |
 | `--verbose, -v` | Detailed output |
@@ -91,20 +123,22 @@ construct init [path] [options]
 
 ## construct install
 
-Machine setup (once per machine): Docker, cm/cass, config, embeddings
+Machine setup (scoped per ADR-0029): --scope=project|user|both, default project
 
 **Usage**
 
 ```bash
-construct install [--yes] [--no-docker]
+construct install [--scope=project|user|both] [--yes] [--no-docker] [--reconfigure]
 ```
 
 **Options**
 
 | Flag | Description |
 |---|---|
-| `--yes` | Apply defaults without prompts |
+| `--scope=<s>` | project (default, no-op + guidance) | user (writes ~/.construct/, MCP, ~/.claude/* via consent) | both |
+| `--yes` | Apply defaults without prompts (only meaningful with --scope=user|both) |
 | `--no-docker` | Skip Docker-based service setup (local Postgres) |
+| `--reconfigure` | Re-prompt for service consent, ignoring cached answers |
 
 ## construct intake
 
@@ -113,11 +147,12 @@ View and process the active profile's intake queue (queue label varies by profil
 **Usage**
 
 ```bash
-construct intake list|show|done|skip|reopen|integrate
+construct intake list|show|done|skip|reopen|integrate|classify
 ```
 
 **Subcommands**
 
+- `[object Object]`
 - `[object Object]`
 - `[object Object]`
 - `[object Object]`

@@ -29,6 +29,7 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 | `mcp-audit` | MCP audit hook — logs all MCP tool calls for observability and review. |
 | `mcp-health-check` | MCP health check hook — verifies MCP servers are reachable before tool use. |
 | `model-fallback` | Provider-aware model fallback hook. |
+| `orchestration-dispatch-guard` | backstop against solo-authoring an orchestrated deliverable. |
 | `policy-engine` | consolidated session policy enforcement hook. |
 | `post-merge-docs-check` | PostToolUse / Bash (async) |
 | `post-merge-tracking` | close beads referenced by a merged PR. |
