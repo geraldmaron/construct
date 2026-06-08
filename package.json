@@ -80,9 +80,10 @@
     "postinstall": "node ./bin/construct-postinstall.mjs"
   },
   "dependencies": {
+    "@lancedb/lancedb": "^0.30.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "js-yaml": "^4.2.0",
-    "postgres": "^3.4.9"
+    "apache-arrow": "^18.1.0",
+    "js-yaml": "^4.2.0"
   },
   "optionalDependencies": {
     "@huggingface/transformers": "^4.2.0",

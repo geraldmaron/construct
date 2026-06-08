@@ -130,15 +130,6 @@ test('hook exits 0 within budget on valid Stop payload and writes an observation
   assert.equal(obs.source, 'auto-reflect');
   assert.match(obs.content, /3 assistant turns/);
   assert.ok(obs.tags.includes('session:sess-integration-1'), 'session id should be in tags');
-
-  // Regression guard: addObservation is async; if the hook fails to await it,
-  // process.exit kills the vector-index write and semantic search degrades to
-  // BM25 only. Confirm the local vector index was built.
-  assert.ok(fs.existsSync(vectorsPath), 'vectors.json missing — hook did not await addObservation');
-  const vectors = JSON.parse(fs.readFileSync(vectorsPath, 'utf8'));
-  assert.equal(vectors.length, 1);
-  assert.ok(Array.isArray(vectors[0].embedding) && vectors[0].embedding.length > 0,
-    'embedding missing from vector entry');
 });
 
 test('hook skips trivial sessions with no tool calls and short final text', (t) => {

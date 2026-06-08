@@ -1,36 +1,28 @@
 /**
- * tests/embed/reconcile.test.mjs — offline guards for observation reconciliation:
- * a clean no-op without a Postgres backend, and a (content_hash) half of the
- * fingerprint computed identically by the writer and the reconciler.
+ * tests/embed/reconcile.test.mjs — observation index reconciliation tests.
  */
-
-import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync, mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import test from 'node:test';
 import { reconcileObservationEmbeddings } from '../../lib/embed/reconcile.mjs';
-import { observationSearchText, observationContentHash } from '../../lib/observation-store.mjs';
+import { addObservation } from '../../lib/observation-store.mjs';
 
-test('reconcile skips cleanly when no Postgres backend is configured', async () => {
-  const prev = process.env.DATABASE_URL;
-  delete process.env.DATABASE_URL;
-  try {
-    const r = await reconcileObservationEmbeddings('/tmp/does-not-matter');
-    assert.equal(r.skipped, 'no-pg');
-    assert.equal(r.reembedded, 0);
-    assert.equal(r.checked, 0);
-  } finally {
-    if (prev !== undefined) process.env.DATABASE_URL = prev;
-  }
-});
+test("reconcile is idempotent on a healthy index", async (t) => {
+  const tmpDir = mkdtempSync(join(tmpdir(), 'cx-reconcile-test-'));
+  t.after(() => rmSync(tmpDir, { recursive: true, force: true }));
+  mkdirSync(join(tmpDir, '.cx'), { recursive: true });
 
-test('search text and content hash are deterministic and order-stable', () => {
-  const obs = { summary: 'sum', content: 'body', tags: ['b', 'a'] };
-  assert.equal(observationSearchText(obs), 'sum body b a');
-  assert.equal(observationContentHash('sum body b a'), observationContentHash(observationSearchText(obs)));
-  // A content change changes the hash; identical content does not.
-  assert.notEqual(observationContentHash('sum body b a'), observationContentHash('sum body b a EDIT'));
-});
+  process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
+  process.env.CONSTRUCT_LANCEDB_PATH = join(tmpDir, '.cx', 'lancedb');
 
-test('content hash tolerates missing fields', () => {
-  assert.equal(observationSearchText({ summary: 'x' }), 'x');
-  assert.equal(typeof observationContentHash(observationSearchText({})), 'string');
+  await addObservation(tmpDir, { summary: 'test 1', project: 'p' });
+  
+  const result = await reconcileObservationEmbeddings(tmpDir);
+  assert.equal(result.checked, 1);
+  assert.equal(result.reembedded, 0, 'idempotent: already embedded with current model');
+
+  const result2 = await reconcileObservationEmbeddings(tmpDir);
+  assert.equal(result2.reembedded, 0);
 });
