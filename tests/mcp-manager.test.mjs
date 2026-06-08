@@ -221,6 +221,30 @@ test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP
   }
 });
 
+test("mcp remove clears the entry from VS Code (servers) and Cursor (mcpServers) too", (t) => {
+  const home = tempDir("construct-remove-editors-home-", t);
+  const cwd = tempDir("construct-remove-editors-cwd-", t);
+
+  const vscodeDir = os.platform() === "darwin"
+    ? path.join(home, "Library", "Application Support", "Code", "User")
+    : os.platform() === "win32"
+      ? path.join(home, "AppData", "Roaming", "Code", "User")
+      : path.join(home, ".config", "Code", "User");
+  const vscodePath = path.join(vscodeDir, "mcp.json");
+  const cursorPath = path.join(home, ".cursor", "mcp.json");
+  fs.mkdirSync(vscodeDir, { recursive: true });
+  fs.mkdirSync(path.dirname(cursorPath), { recursive: true });
+  fs.writeFileSync(vscodePath, JSON.stringify({ servers: { playwright: { command: "npx" }, context7: { command: "npx" } } }));
+  fs.writeFileSync(cursorPath, JSON.stringify({ mcpServers: { playwright: { command: "npx" }, github: {} } }));
+
+  runMcpRemove("playwright", { home, cwd });
+
+  const vscode = readJson(vscodePath);
+  assert.deepEqual(Object.keys(vscode.servers).sort(), ["context7"], "playwright cleared from VS Code, context7 kept");
+  const cursor = readJson(cursorPath);
+  assert.deepEqual(Object.keys(cursor.mcpServers).sort(), ["github"], "playwright cleared from Cursor, github kept");
+});
+
 test("catalog declares setup modes for auto/manual capable integrations", (t) => {
   const catalogPath = path.join(root, "lib", "mcp-catalog.json");
   const catalog = readJson(catalogPath);
