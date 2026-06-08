@@ -52,6 +52,16 @@ before(() => {
   tmpProject = makeTempDir('sync-contract-project-');
   // Create a minimal .claude dir so Claude Code sync has a target
   fs.mkdirSync(path.join(tmpHome, '.claude', 'agents'), { recursive: true });
+  fs.writeFileSync(path.join(tmpHome, '.claude', 'settings.json'), JSON.stringify({
+    mcpServers: {
+      context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp@latest'] },
+      'construct-mcp': { command: 'node', args: ['/tmp/construct/lib/mcp/server.mjs'] },
+      github: { type: 'http', url: 'https://api.githubcopilot.com/mcp/', headers: { Authorization: 'Bearer test-token' } },
+      memory: { command: 'node', args: ['/tmp/construct/lib/mcp/memory-bridge.mjs'] },
+      playwright: { command: 'npx', args: ['-y', '@playwright/mcp@latest'] },
+      'sequential-thinking': { command: 'npx', args: ['-y', '@modelcontextprotocol/server-sequential-thinking'] },
+    },
+  }, null, 2) + '\n');
 });
 
 after(() => {
@@ -164,6 +174,30 @@ describe('sync-specialists contract tests', () => {
         content.includes('BEGIN CONSTRUCT AGENTS') && content.includes('END CONSTRUCT AGENTS'),
         'CLAUDE.md must contain managed agents block'
       );
+    });
+
+    it('writes only safety hooks to global ~/.claude/settings.json', () => {
+      const settingsPath = path.join(tmpHome, '.claude', 'settings.json');
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      const ids = Object.values(settings.hooks ?? {})
+        .flat()
+        .map((group) => group.id)
+        .sort();
+      assert.deepEqual(ids, [
+        'post:edit:json-validate',
+        'post:edit:scan-secrets',
+        'pre:bash:block-no-verify',
+        'pre:bash:guard-dangerous',
+        'pre:edit-guard',
+        'pre:edit:config-protection',
+      ]);
+    });
+
+    it('keeps only broadly useful MCP servers in global ~/.claude/settings.json', () => {
+      const settingsPath = path.join(tmpHome, '.claude', 'settings.json');
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      assert.deepEqual(Object.keys(settings.mcpServers ?? {}).sort(), ['context7']);
+      assert.deepEqual(settings.mcpServers.context7.args, ['-y', '@upstash/context7-mcp@3.1.0']);
     });
   });
 

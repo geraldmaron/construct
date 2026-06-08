@@ -37,16 +37,16 @@ Construct classifies every host honestly — no surface is cosmetic. `construct 
 
 ## Claude Code
 
-**Global tier** writes the session-level hook installer and global instructions — but **no agent file** (the orchestrator is project-scoped, so it isn't duplicated in editors that read both scopes):
+**Global tier** writes safety hooks and global instructions — but **no agent file** (the orchestrator is project-scoped, so it isn't duplicated in editors that read both scopes):
 
-- `~/.claude/settings.json` — pre/post tool-use hooks, session-start, MCP server entry for `construct`. Hooks have to stay global because they fire in every Claude Code session, not just inside a Construct project.
+- `~/.claude/settings.json` — machine-wide safety hooks plus the low-risk `context7` documentation MCP. Workflow, memory, browser automation, GitHub, orchestration, and learning-loop hooks/MCPs are project-scoped.
 - `~/.claude/CLAUDE.md` — a Construct-managed block appended to your global Claude instructions
 - `~/.claude/agents/` — intentionally left without a `construct.md` (run `construct init` in a project to get `@construct` there)
 
 **Project tier** writes the full agent set + project-local Claude config:
 
 - `<project>/.claude/agents/construct.md` and `cx-*.md` — orchestrator + 28 specialists
-- `<project>/.claude/settings.json` — project-portable hooks (relative paths via `.construct/run.mjs`)
+- `<project>/.claude/settings.json` — full project-portable hook suite (relative paths via `.construct/run.mjs`)
 - `<project>/.claude/commands/*.md` — slash commands
 - `<project>/.claude/skills/<name>/SKILL.md` — Anthropic Agent Skills
 
