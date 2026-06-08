@@ -76,4 +76,28 @@ describe('VectorClient', () => {
     assert.equal(results[0].id, id);
     assert.ok(results[0].similarity > 0.9);
   });
+
+  it('serializes concurrent writes so every one persists and is searchable', async () => {
+    const N = 12;
+    await Promise.all(Array.from({ length: N }, (_, i) => {
+      const c = new VectorClient();
+      return c.storeObservation({
+        id: `cobs-${i}`,
+        project: 'test-project',
+        role: 'engineer',
+        category: 'pattern',
+        summary: `concurrent ${i}`,
+        content: 'body',
+        embedding: new Float32Array(384).fill(0.1 + i * 0.001),
+      }).then(() => c.close());
+    }));
+
+    const reader = new VectorClient();
+    const results = await reader.searchObservations({
+      project: 'test-project',
+      queryEmbedding: new Float32Array(384).fill(0.15),
+      limit: 50,
+    });
+    assert.equal(results.length, N, `all ${N} concurrent writes must persist (LanceDB write serialization)`);
+  });
 });
