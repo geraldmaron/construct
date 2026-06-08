@@ -21,11 +21,11 @@ Construct is a CLI tool installed directly on developer machines via `npm instal
 2. Adds a version-pinning and audit burden to every release
 3. Risks install failures in constrained environments due to optional native binaries, network restrictions, or incompatible engines
 
-The two existing exceptions (`@modelcontextprotocol/sdk`, `postgres`) were accepted because they provide protocol-level contracts with no viable built-in alternative.
+The declared exceptions (`@modelcontextprotocol/sdk`, `@lancedb/lancedb`, `apache-arrow`) were accepted because they provide protocol-level contracts or essential vector performance with no viable built-in alternative.
 
 ## Decision
 
-**Core zone (`lib/`, `bin/`) uses Node.js built-ins only**, plus the two declared exceptions. All other functionality is implemented in-tree.
+**Core zone (`lib/`, `bin/`) uses Node.js built-ins only**, plus the declared exceptions. All other functionality is implemented in-tree.
 
 Implementations affected by this decision: BM25 text search, cosine similarity, UUIDv7 generation, session management, observation/entity stores. See `docs/in-tree-implementations.md` for details.
 

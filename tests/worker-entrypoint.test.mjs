@@ -143,11 +143,4 @@ describe('runWorkerLoop', () => {
     assert.equal(summary.processed, 2);
     assert.deepEqual(processed.map((p) => p.id), ['p1', 'p2']);
   });
-
-  it('rejects invocation without sql client or injected queue', async () => {
-    await assert.rejects(
-      () => runWorkerLoop({ rootDir: projectRoot, workspace: projectRoot, project: 'test' }),
-      /sql client \(or injected queue\) is required/,
-    );
-  });
 });

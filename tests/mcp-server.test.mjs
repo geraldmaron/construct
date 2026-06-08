@@ -249,9 +249,9 @@ test('storage MCP helpers require explicit confirmation for destructive actions'
   const resetRejected = await storageReset({ cwd: rootDir });
   assert.equal(resetRejected.error, 'storage_reset requires confirm=true');
 
-  const deleteRejected = deleteIngestedArtifactsTool({ cwd: rootDir });
+  const deleteRejected = await deleteIngestedArtifactsTool({ cwd: rootDir });
   assert.equal(deleteRejected.error, 'delete_ingested_artifacts requires confirm=true');
 
-  const deleteAccepted = deleteIngestedArtifactsTool({ cwd: rootDir, confirm: true });
+  const deleteAccepted = await deleteIngestedArtifactsTool({ cwd: rootDir, confirm: true });
   assert.equal(deleteAccepted.deletedCount, 1);
 });

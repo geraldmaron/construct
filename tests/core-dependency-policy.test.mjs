@@ -25,7 +25,8 @@ const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
 
 const SANCTIONED = new Set([
   '@modelcontextprotocol/sdk',
-  'postgres',
+  '@lancedb/lancedb',
+  'apache-arrow',
   // js-yaml: frontmatter parse/emit only (ADR-0028). New YAML use cases need
   // a fresh ADR; the allowlist entry is narrow on purpose.
   'js-yaml',
