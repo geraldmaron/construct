@@ -4,6 +4,14 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+- Global Claude Code sync now installs only machine-wide safety hooks (`block-no-verify`, dangerous Bash guard, config protection, edit guard, JSON validation, and secret scan) instead of the full Construct workflow hook suite. Project-local `.claude/settings.json` still receives the full hook set. This keeps `construct install --scope=user` useful for baseline protection without making SessionStart, Stop learning loops, orchestration tracking, and per-read auditing ambient in every Claude session.
+- Green CI after the LanceDB/Postgres-removal refactor (`672e171`), which left five CI jobs red on `main`. (1) `lib/strategy-store.mjs` referenced `fs.promises.stat` with no `fs` import — a `no-undef` eslint error that failed the lint job; replaced with `statSync` (the file is otherwise sync-fs throughout). (2) `lib/observation-store.mjs` instantiated `new VectorClient()` with no env, so the LanceDB store resolved from `process.cwd()` instead of the `rootDir` argument — a writer (e.g. the `session-reflect` hook subprocess) and a reader in different cwds hit different databases and search returned nothing. Added `vectorClientFor(rootDir)`, which pins `CONSTRUCT_LANCEDB_PATH` to `rootDir/.cx/lancedb` only when unset (managed installs with a configured home-global path are untouched). (3) `searchObservations` dropped the `project` field when mapping vector results, so `filters by project` assertions saw `undefined`; restored it. (4) `tests/functional/a1-session-reflect.functional.test.mjs` pinned the `hashing` embedding model only in the hook subprocess, not the searching test process (default `local`, different vector dimension → empty search); it now pins `hashing` for both and polls the cross-process read to absorb LanceDB commit-visibility latency under parallel-test load.
+- Dashboard `next build` (Turbopack) failed on Linux CI with `Cannot find module '../lightningcss.linux-x64-gnu.node'`. The `672e171` lockfile carried only a metadata-less `darwin-arm64` stub for `lightningcss` and `@tailwindcss/oxide`, so `npm ci` on Linux had no native binary to install. `package-lock.json` now carries fully-resolved (URL + integrity + os/cpu) entries for every platform of both packages; no dependency versions changed.
+
+### Removed
+- Obsolete `postgres + pgvector integration` CI job and its four Postgres-era functional tests (`postgres-roundtrip`, `vector-roundtrip`, `observation-reconcile`, `hybrid-search-consolidated`) plus the `tests/functional/_lib/postgres-docker.mjs` helper. The job imported the deleted `lib/storage/migrations.mjs` and tested a storage layer removed in `672e171`; LanceDB equivalents are covered by `tests/vector-client.test.mjs`, `tests/embed/reconcile.test.mjs`, and `tests/retrieval-fusion.test.mjs`. Removed from the `ci-required` aggregator's `needs` list.
+
 ## [1.0.23] - 2026-06-08
 
 ### Changed
