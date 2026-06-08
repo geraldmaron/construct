@@ -820,35 +820,10 @@ async function cmdDoctor() {
     const researchLintResults = lintResearchRepo({ rootDir: process.cwd() });
     add('Research artifacts meet minimum evidence structure', researchLintResults.every((entry) => entry.errors.length === 0), true);
 
-    const sqlConfig = describeSqlStore(process.env);
-    const sqlClient = createSqlClient(process.env);
-    // Track SQL reachability so the schema-migration check can cascade correctly
-    // rather than emitting a redundant second warning for the same offline server.
-    let sqlReachable = false;
-    if (sqlConfig.configured && sqlClient) {
-      try {
-        await sqlClient`select 1 as ok`;
-        sqlReachable = true;
-        add('SQL backend reachable', true);
-      } catch {
-        // In solo mode the local vector index is the active storage path, so an
-        // unreachable Postgres is expected unless the user has started it. Emit a
-        // contextual message rather than a bare ⚠ so the fix is obvious.
-        const { getDeploymentMode } = await import('../lib/deployment-mode.mjs');
-        const mode = getDeploymentMode(process.env) ?? 'solo';
-        const hint = mode === 'solo'
-          ? ' (solo mode — run `construct dev` to start Postgres)'
-          : ' — check DATABASE_URL and that the server is running';
-        add(`SQL backend unreachable${hint}`, false, true);
-      } finally {
-        await closeSqlClient(sqlClient);
-      }
-    } else {
-      add('SQL backend configured', sqlConfig.fallbackAvailable, true);
-    }
-
-    const vectorConfig = describeVectorStore(process.env);
-    add('Vector backend configured', Boolean(vectorConfig.endpoint || vectorConfig.indexPath || vectorConfig.mode === 'file'));
+    const { VectorClient } = await import('../lib/storage/vector-client.mjs');
+    const vectorClient = new VectorClient({ env: process.env });
+    const vectorOk = await vectorClient.isHealthy();
+    add('Vector backend (LanceDB) reachable', vectorOk);
 
     const { regenerateDocs } = await import('../lib/auto-docs.mjs');
     const { changed: stale } = await regenerateDocs({ rootDir: ROOT_DIR, check: true });
@@ -977,35 +952,6 @@ async function cmdDoctor() {
       add('Observation size', false, true);
     }
 
-    // Only run the schema migration check when SQL is both configured AND
-    // currently reachable. If the SQL check above already failed (sqlReachable
-    // is false) this check will also fail with the same ECONNREFUSED and would
-    // produce a redundant second warning about the same offline server.
-    if (sqlConfig.configured && sqlReachable) {
-      try {
-        const migClient = createSqlClient(process.env);
-        if (migClient) {
-          const { describeMigrations } = await import('../lib/storage/migrations.mjs');
-          const m = await describeMigrations(migClient);
-          await closeSqlClient(migClient);
-          const ok = !!m.ok && m.drift.length === 0;
-          let label = 'Schema migrations applied + no drift';
-          if (!ok && m.drift && m.drift.length > 0) {
-            const repairable = m.drift.filter((d) => d.idempotent).length;
-            const notRepairable = m.drift.length - repairable;
-            if (notRepairable === 0) {
-              label = `Schema migrations: ${m.drift.length} drifted (all idempotent — run \`construct storage repair-migrations --yes\`)`;
-            } else {
-              label = `Schema migrations: ${m.drift.length} drifted (${notRepairable} non-idempotent — write a new migration file)`;
-            }
-          }
-          add(label, ok, true);
-        }
-      } catch {
-        add('Schema migrations applied + no drift', false, true);
-      }
-    }
-
     try {
       const { detectBeadsDrift } = await import('../lib/beads/drift.mjs');
       const drift = detectBeadsDrift();
@@ -1033,24 +979,6 @@ async function cmdDoctor() {
       add(cmAvailable ? 'cm available' : 'cm available (optional — memory MCP at 127.0.0.1:8765 needs it)', cmAvailable, true);
     } catch {
       add('cm available', false, true);
-    }
-
-    try {
-      const dockerCli = spawnSync(process.platform === 'win32' ? 'where' : 'which', ['docker'], { stdio: 'pipe' });
-      let dockerOk = false;
-      let dockerNote = 'Docker not installed (optional — managed Postgres needs it)';
-      if (dockerCli.status === 0) {
-        const dockerInfo = spawnSync('docker', ['info'], { stdio: 'pipe' });
-        if (dockerInfo.status === 0) {
-          dockerOk = true;
-          dockerNote = 'Docker daemon reachable';
-        } else {
-          dockerNote = 'Docker CLI installed but daemon not reachable — run `construct up` on macOS to auto-start, or start Docker manually';
-        }
-      }
-      add(dockerOk ? 'Docker daemon reachable' : `Docker daemon reachable (${dockerNote})`, dockerOk, true);
-    } catch {
-      add('Docker daemon reachable', false, true);
     }
 
     try {

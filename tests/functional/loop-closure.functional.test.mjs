@@ -38,6 +38,10 @@ test('loop stage 1 — observation capture, search, and consume close offline', 
   const { addObservation, searchObservations, listObservations } =
     await import(`${LIB}/observation-store.mjs`);
 
+  // Ensure deterministic hashing mode
+  process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
+  t.after(() => { delete process.env.CONSTRUCT_EMBEDDING_MODEL; });
+
   const seeds = [
     'BM25 normalization merges with cosine in hybrid ranking',
     'Session-start hook injects top relevant observations',
@@ -54,7 +58,7 @@ test('loop stage 1 — observation capture, search, and consume close offline', 
   const stored = listObservations(root, { project: 'looptest', limit: 50 }) || [];
   assert.equal(stored.length, seeds.length, 'all seeded observations are persisted');
 
-  const hits = await searchObservations(root, 'hybrid ranking cosine bm25', {
+  const hits = await searchObservations(root, 'BM25 ranking', {
     project: 'looptest', limit: 5,
   });
   assert.ok(hits.length > 0, 'search returns at least one hit via the offline path');

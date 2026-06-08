@@ -269,7 +269,6 @@ construct/
 ├── commands         Command prompt assets
 ├── config
 ├── dashboard
-├── db
 ├── deploy
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples
@@ -282,7 +281,6 @@ construct/
 ├── rules            Coding and quality standards
 ├── schemas
 ├── scripts
-├── services
 ├── skills           Reusable domain knowledge files
 ├── specialists
 ├── templates
