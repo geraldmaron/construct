@@ -67,9 +67,7 @@ import { readCostLog, summarizeCostData, formatCostReport, clearCostLog } from '
 import { readEfficiencyLog, summarizeEfficiencyData, formatEfficiencyReport } from '../lib/efficiency.mjs';
 import { resolveColors } from '../lib/term-format.mjs';
 import { buildHybridSearchResultsAsync } from '../lib/storage/hybrid-query.mjs';
-import { createSqlClient, closeSqlClient, readVectorConfig } from '../lib/storage/backend.mjs';
-import { describeVectorStore } from '../lib/storage/vector-store.mjs';
-import { describeSqlStore } from '../lib/storage/sql-store.mjs';
+import { createSqlClient, closeSqlClient } from '../lib/storage/backend.mjs';
 import { syncFileStateToSql } from '../lib/storage/sync.mjs';
 import { deleteIngestedArtifacts, getStorageStatus, inferProjectName, resetStorage } from '../lib/storage/admin.mjs';
 import { runPressureRelease } from '../lib/runtime-pressure.mjs';
@@ -3543,6 +3541,7 @@ async function cmdOrchestrate(args) {
       host: flag('--host'),
       hostModel: flag('--host-model'),
       hostProvider: flag('--host-provider'),
+      workerBackend: flag('--worker-backend'),
       fileCount: Number(flag('--file-count') || 0),
       moduleCount: Number(flag('--module-count') || 0),
     };
