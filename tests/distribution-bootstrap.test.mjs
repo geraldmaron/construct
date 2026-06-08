@@ -180,3 +180,49 @@ describe('run.mjs resolution', () => {
     assert.ok(finalDocker < finalFail, 'docker fallback must come before the fail() branch');
   });
 });
+
+// The staged launcher is a copy of templates/distribution/run.mjs. A hand-edited
+// or stale staged copy silently diverges from the template, and template fixes
+// never reach it — exactly the drift that left this repo's own hooks dead-ending
+// at npx. Byte-equality is the guard that keeps the two from proliferating apart.
+
+describe('launcher drift guard', () => {
+  it('this repo\'s staged .construct/run.mjs is byte-identical to the template', () => {
+    const staged = path.join(ROOT, '.construct', 'run.mjs');
+    const template = path.join(ROOT, 'templates', 'distribution', 'run.mjs');
+    assert.ok(fs.existsSync(staged), 'repo .construct/run.mjs must exist');
+    assert.equal(
+      fs.readFileSync(staged, 'utf8'),
+      fs.readFileSync(template, 'utf8'),
+      'staged launcher has drifted from the template — re-stage via stage-project'
+    );
+  });
+});
+
+describe('run.mjs self-repo resolution', () => {
+  it('invokes ./bin/construct when staged inside the @geraldmaron/construct checkout', () => {
+    // No CONSTRUCT_DEV_PATH, no global construct on PATH, no node_modules — the
+    // only resolver that may fire is trySelfRepo, keyed on the project's own
+    // package.json name. This is the construct repo's own session every day.
+    const cleanPath = [path.dirname(process.execPath), '/usr/bin', '/bin']
+      .filter((p) => fs.existsSync(p))
+      .join(':');
+    const result = spawnSync(
+      process.execPath,
+      [path.join(ROOT, '.construct', 'run.mjs'), 'version'],
+      {
+        encoding: 'utf8',
+        cwd: ROOT,
+        env: {
+          PATH: cleanPath,
+          HOME: process.env.HOME,
+          CONSTRUCT_DEV_PATH: '',
+          CONSTRUCT_DISABLE_DOCKER: '1',
+        },
+        timeout: 30_000,
+      }
+    );
+    assert.equal(result.status, 0, `expected exit 0, got ${result.status}\n${result.stderr}`);
+    assert.match(result.stdout, /construct/i);
+  });
+});

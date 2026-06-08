@@ -181,3 +181,30 @@ describe('construct intake (no args)', () => {
     assert.match(r.stdout, /list\s+List pending signals/);
   });
 });
+
+// intake classify is an embedded-contract verb: an embedder that pipes empty
+// input must still receive a parseable, versioned envelope on stdout — not a
+// bare exit with no JSON, which an integration cannot interpret.
+describe('construct intake classify (embedded contract)', () => {
+  it('returns a typed error envelope (not bare exit) on empty input', () => {
+    const r = spawnSync('node', [CONSTRUCT_BIN, 'intake', 'classify', '--json'], {
+      cwd: projectRoot, encoding: 'utf8', input: '', env: { ...process.env, HOME: process.env.HOME },
+    });
+    assert.notEqual(r.status, 0, 'empty input is still a failure exit');
+    let envelope;
+    assert.doesNotThrow(() => { envelope = JSON.parse(r.stdout); }, 'stdout must be parseable JSON');
+    assert.equal(typeof envelope.contractVersion, 'string', 'carries a contractVersion');
+    assert.equal(envelope.data?.error?.code, 'missing_input', 'typed error code');
+    assert.ok(Array.isArray(envelope.warnings) && envelope.warnings.length > 0, 'actionable warning present');
+  });
+
+  it('classifies real piped input into a contract envelope', () => {
+    const r = spawnSync('node', [CONSTRUCT_BIN, 'intake', 'classify', '--json'], {
+      cwd: projectRoot, encoding: 'utf8', input: '# Bug: login fails on expired token\nStack trace on refresh.', env: { ...process.env, HOME: process.env.HOME },
+    });
+    assert.equal(r.status, 0, r.stderr);
+    const envelope = JSON.parse(r.stdout);
+    assert.equal(typeof envelope.contractVersion, 'string');
+    assert.ok(envelope.data && !envelope.data.error, 'real input yields a plan, not an error');
+  });
+});

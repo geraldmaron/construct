@@ -31,6 +31,11 @@ import test from 'node:test';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
 
+// `construct sync` now defaults to detected hosts (ADR-0027 §1); a sterile HOME
+// detects none, so pin the full set to audit every IDE surface.
+
+const ALL_HOSTS = 'claude,codex,copilot,opencode,vscode,cursor';
+
 function makeEnv() {
   const sandbox = mkdtempSync(join(tmpdir(), 'host-config-'));
   const HOME = join(sandbox, 'HOME');
@@ -38,7 +43,7 @@ function makeEnv() {
   mkdirSync(HOME, { recursive: true });
   mkdirSync(project, { recursive: true });
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: project });
-  return { sandbox, HOME, project, cleanup() { rmSync(sandbox, { recursive: true, force: true }); } };
+  return { sandbox, HOME, project, cleanup() { rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
 }
 
 function runSync(env, scope) {
@@ -46,7 +51,7 @@ function runSync(env, scope) {
     cwd: env.project,
     encoding: 'utf8',
     timeout: 90_000,
-    env: { ...process.env, HOME: env.HOME, CONSTRUCT_SKIP_POSTINSTALL: '1' },
+    env: { ...process.env, HOME: env.HOME, CONSTRUCT_SKIP_POSTINSTALL: '1', CONSTRUCT_SYNC_HOSTS: ALL_HOSTS },
   });
 }
 
@@ -75,7 +80,7 @@ test('project sync writes each IDE surface at its canonical path + key + entry s
     assert.ok(!existsSync(p('.opencode/config.json')), 'OpenCode must not write the ignored config.json');
     const opencode = readJson(p('.opencode/opencode.json'));
     assert.ok(opencode.mcp && typeof opencode.mcp === 'object', 'OpenCode uses top-level `mcp`');
-    assert.ok(opencode.agent && Object.keys(opencode.agent).length >= 2, 'OpenCode agent table present');
+    assert.ok(opencode.agent && Object.keys(opencode.agent).length === 1, 'OpenCode agent table present with only the orchestrator');
     const localEntry = Object.values(opencode.mcp).find((e) => e.type === 'local');
     if (localEntry) assert.ok(Array.isArray(localEntry.command), 'OpenCode local `command` is an array');
 
@@ -94,6 +99,70 @@ test('project sync writes each IDE surface at its canonical path + key + entry s
     // .github/agents set (it duplicated every agent in the picker).
     assert.ok(existsSync(p('.github/prompts/construct.prompt.md')), 'Copilot orchestrator prompt present');
     assert.ok(!existsSync(p('.github/agents')), 'no duplicate .github/agents set (VS Code reads .claude/agents)');
+  } finally {
+    env.cleanup();
+  }
+});
+
+// The construct MCP server (lib/mcp/server.mjs) is the backbone of the specialist
+// loop (project_context/get_skill/get_template/orchestration_policy/agent_contract).
+// Every selected host that carries MCP config must wire it, or that host's agent
+// is mute. Detection keys off the server.mjs reference, not the entry id, so it
+// survives per-host id transforms (e.g. OpenCode getOpenCodeMcpId). Guards the
+// Claude project writer, which must source MCP from the registry (not only a
+// curated template) so construct-mcp is never dropped for one host.
+test('construct-mcp (the construct server) is wired for every selected host', () => {
+  const env = makeEnv();
+  try {
+    const r = runSync(env, '--project');
+    assert.equal(r.status, 0, r.stderr || r.stdout);
+    const p = (rel) => join(env.project, rel);
+
+    const wiresConstructServer = (file) => {
+      if (!existsSync(file)) return false;
+      return /lib[\\/]mcp[\\/]server\.mjs/.test(readFileSync(file, 'utf8'));
+    };
+
+    const hostConfigs = {
+      'Claude Code': p('.claude/settings.json'),
+      'VS Code': p('.vscode/mcp.json'),
+      Cursor: p('.cursor/mcp.json'),
+      OpenCode: p('.opencode/opencode.json'),
+      Codex: p('.codex/config.toml'),
+    };
+    for (const [host, file] of Object.entries(hostConfigs)) {
+      assert.ok(existsSync(file), `${host}: config ${file} must exist`);
+      assert.ok(wiresConstructServer(file), `${host}: config must wire the construct MCP server (lib/mcp/server.mjs)`);
+    }
+  } finally {
+    env.cleanup();
+  }
+});
+
+// Generated host configs are per-machine and gitignored, but must still never
+// inline a credential — tokens belong in env references, not config files (the
+// cross-tool norm; a community-documented secret-leak class). Asserts every MCP
+// config carries only env/header-style references, no raw key material.
+test('no generated host config inlines a plaintext secret', () => {
+  const env = makeEnv();
+  try {
+    const r = runSync(env, '--project');
+    assert.equal(r.status, 0, r.stderr || r.stdout);
+    const p = (rel) => join(env.project, rel);
+
+    const secretShaped = [
+      /\bsk-[A-Za-z0-9]{20,}\b/,
+      /\bgh[pousr]_[A-Za-z0-9]{20,}\b/,
+      /"(?:authorization|api[_-]?key|token|secret|password)"\s*:\s*"(?!\{env:|\{file:|Bearer \{)[^"]{12,}"/i,
+    ];
+    for (const rel of ['.claude/settings.json', '.vscode/mcp.json', '.cursor/mcp.json', '.opencode/opencode.json', '.codex/config.toml']) {
+      const file = p(rel);
+      if (!existsSync(file)) continue;
+      const text = readFileSync(file, 'utf8');
+      for (const re of secretShaped) {
+        assert.ok(!re.test(text), `${rel}: must not inline a secret (matched ${re}); use an env reference`);
+      }
+    }
   } finally {
     env.cleanup();
   }

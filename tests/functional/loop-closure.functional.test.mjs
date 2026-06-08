@@ -29,7 +29,7 @@ const LIB = join(REPO_ROOT, 'lib');
 
 function tmp(prefix, t) {
   const dir = mkdtempSync(join(tmpdir(), prefix));
-  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  t.after(() => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
   return dir;
 }
 

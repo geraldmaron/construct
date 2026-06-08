@@ -38,7 +38,7 @@ test('lifecycle: createDraftProfile scaffolds requirements brief + draft profile
   assert.equal(draft.id, 'media-agency');
   assert.equal(draft.custom, true);
 
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('lifecycle: createDraftProfile rejects id collisions with the curated catalog', () => {
@@ -47,7 +47,7 @@ test('lifecycle: createDraftProfile rejects id collisions with the curated catal
     () => createDraftProfile({ cwd, id: 'rnd' }),
     /already exists in the curated catalog/,
   );
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('lifecycle: createDraftProfile refuses to overwrite an existing draft', () => {
@@ -57,7 +57,7 @@ test('lifecycle: createDraftProfile refuses to overwrite an existing draft', () 
     () => createDraftProfile({ cwd, id: 'studio-x' }),
     /already exists/,
   );
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('lifecycle: listDrafts surfaces in-progress drafts under .cx/profiles/', () => {
@@ -71,7 +71,7 @@ test('lifecycle: listDrafts surfaces in-progress drafts under .cx/profiles/', ()
     assert.equal(d.hasBrief, true);
     assert.equal(d.hasProfile, true);
   }
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('lifecycle: profileHealth returns a zero-shaped report when no data exists', () => {
@@ -81,7 +81,7 @@ test('lifecycle: profileHealth returns a zero-shaped report when no data exists'
   assert.equal(report.profileExists, true);
   assert.equal(report.observationCount, 0);
   assert.deepEqual(report.roles, {});
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('lifecycle: profileHealth counts per-role outcomes filtered by profile', () => {
@@ -103,7 +103,7 @@ test('lifecycle: profileHealth counts per-role outcomes filtered by profile', ()
   assert.equal(creative.roles.engineer.runs, 1);
   assert.equal(creative.roles.engineer.successRate, 1);
 
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('lifecycle: archiveProfile refuses an empty or trivial reason', async () => {
@@ -153,5 +153,5 @@ test('lifecycle: createDraftProfile seeds persona + department artifacts when su
   assert.equal(draft.departments.length, 2);
   assert.equal(draft.departments[0].id, 'design');
 
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });

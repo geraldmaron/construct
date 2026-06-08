@@ -22,11 +22,13 @@ Install the CLI (once per machine):
 npm install -g @geraldmaron/construct
 ```
 
-Bootstrap local services (once per machine):
+Bootstrap local services (once per machine, opt-in to machine-scope writes):
 
 ```bash
-construct install --yes
+construct install --scope=user --yes
 ```
+
+`construct install` defaults to `--scope=project`, which writes nothing and prints scope guidance — see the [footprint contract](#footprint-contract) below or [ADR 0029](docs/adr/0029-install-scopes-and-hook-budgets.md). Use `--scope=user` for machine setup, `--scope=both` for both.
 
 Initialize a project:
 
@@ -37,7 +39,7 @@ construct init --yes
 
 `construct init` scaffolds the project (`.cx/`, `AGENTS.md`, `plan.md`, adapters) and starts the local services by default. Pass `--no-start` to skip service startup, or `--interactive` for the guided flow.
 
-Open your editor and talk to `@construct`. A walkthrough lives in `construct_guide.md` at your project root.
+Open your editor and talk to `@construct`. A walkthrough lives in `.cx/construct_guide.md` (gitignored — local reference only).
 
 No Node? Try `brew install geraldmaron/construct/construct`. Cloning a project that already uses Construct? `npx -y @geraldmaron/construct init` wires it up.
 
@@ -97,6 +99,18 @@ First run downloads `uv` and creates `.cx/runtime/docling/.venv` (~1.5 GB includ
 
 Every code mutation runs through enforcement. No secrets committed, tests green, docs current, comments lint-clean, CI passes. Gates live in three places: write-time, commit-time, CI safety net. They can only be bypassed with explicit env vars so every exception leaves an audit trail. [Gates and enforcement](https://geraldmaron.github.io/construct/concepts/gates-and-enforcement).
 
+## Footprint contract
+
+Construct's writes are scoped and disclosed up front. The default `construct install` (no flag) writes nothing — it prints scope guidance. Project writes happen only under `construct init` inside a project directory; machine writes happen only under `construct install --scope=user`, with an itemized interactive consent prompt for any global Claude Code config mutation.
+
+| Scope | Trigger | Paths |
+|---|---|---|
+| Project | `construct init` | `.construct/`, `.cx/`, `.claude/` adapter tree, host adapters (`.codex/`, `.opencode/`, `.cursor/`, `.vscode/`), `construct.config.json`, marker block in `CLAUDE.md` / `AGENTS.md`, `.gitignore` append, `.beads/` |
+| Machine | `construct install --scope=user` | `~/.construct/config.env`, `~/.construct/lib` (symlink), `~/.construct/services/`, `~/Library/LaunchAgents/` (macOS), MCP entries in `~/.config/opencode/opencode.json` and `~/.codex/config.toml`, marker block in `~/.claude/CLAUDE.md`, hook injection in `~/.claude/settings.json` (last two require interactive consent or `--yes`) |
+| Never touched | — | Shell rc files (`~/.bashrc`, `~/.zshrc`), npm global config, `git config --global` |
+
+Full table with file:line citations and the per-hook performance budget contract: [Architecture — Footprint contract](https://geraldmaron.github.io/construct/concepts/architecture#footprint-contract) and [ADR 0029](docs/adr/0029-install-scopes-and-hook-budgets.md).
+
 ## Learning loops
 
 Construct gets smarter on its own. Every session ends with an automatic capture: tools used, files touched, what the final reply said. That goes into `.cx/observations/` and is searchable from the next session. See [`docs/concepts/learning-loops.mdx`](./docs/concepts/learning-loops.mdx) for what's wired, what's coming, and how to turn pieces off.
@@ -119,7 +133,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
 | `construct init` | Project setup (once per repo): scaffold .cx/, AGENTS.md, plan.md, adapters |
-| `construct install` | Machine setup (once per machine): Docker, cm/cass, config, embeddings |
+| `construct install` | Machine setup (scoped per ADR-0029): --scope=project\|user\|both, default project |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
 | `construct profile` | Manage the active org profile and its lifecycle (draft, promote, archive, health) |
 | `construct recommendations` | View and manage artifact recommendations |
@@ -137,6 +151,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct customer` | Manage customer profiles for product intelligence |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
+| `construct export` | Export markdown to PDF/DOCX/HTML via Pandoc + Typst (optional system binaries; ADR-0024) |
 | `construct graph` | Task graph management |
 | `construct handoffs` | List and inspect session handoff files in .cx/handoffs/ |
 | `construct headhunt` | Create domain expertise overlays |

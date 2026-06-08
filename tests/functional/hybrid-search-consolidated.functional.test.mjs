@@ -51,7 +51,7 @@ test('consolidated hybrid search fuses BM25 + ANN + keyword via RRF over pgvecto
   t.after(() => { if (prev !== undefined) process.env.DATABASE_URL = prev; else delete process.env.DATABASE_URL; });
 
   const root = mkdtempSync(join(tmpdir(), 'hyb-fn-'));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
+  t.after(() => rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
 
   const { buildHybridSearchResultsAsync } = await import(join(REPO_ROOT, 'lib', 'storage', 'hybrid-query.mjs'));
   const res = await buildHybridSearchResultsAsync(root, 'alpha', {

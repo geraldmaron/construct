@@ -1,5 +1,10 @@
 /**
  * init-update.test.mjs — non-destructive update flow for construct init:update.
+ *
+ * Construct's AGENTS.md/CLAUDE.md guidance is owned by the versioned CONSTRUCT
+ * INTEGRATION marker block (kept current by `construct sync`, ADR-0027 §2/§4).
+ * init:update leaves AGENTS.md bodies untouched; its scope is opt-in standards a
+ * project owner merges by hand: CI checks and template conflicts.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -22,31 +27,50 @@ function runInitUpdate(cwd, args = []) {
   );
 }
 
-test("construct init:update writes proposals instead of overwriting AGENTS.md", () => {
+function writeCiWorkflow(projectDir) {
+  const wfDir = path.join(projectDir, ".github", "workflows");
+  fs.mkdirSync(wfDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(wfDir, "ci.yml"),
+    ["jobs:", "  docs:", "    steps:", "      - run: node bin/construct doctor", ""].join("\n"),
+  );
+}
+
+test("construct init:update proposes a CI docs:verify check without rewriting AGENTS.md", () => {
   const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-init-update-"));
   try {
     fs.writeFileSync(path.join(projectDir, "package.json"), JSON.stringify({ name: "demo-project" }, null, 2));
-    fs.writeFileSync(
-      path.join(projectDir, "AGENTS.md"),
-      [
-        "# Demo Agent Guide",
-        "",
-        "## Operating hierarchy",
-        "",
-        "- Keep work tracked.",
-      ].join("\n"),
-    );
+    const agents = "# Demo Agent Guide\n\nHouse rules go here.\n";
+    fs.writeFileSync(path.join(projectDir, "AGENTS.md"), agents);
+    writeCiWorkflow(projectDir);
 
-    const before = fs.readFileSync(path.join(projectDir, "AGENTS.md"), "utf8");
     const result = runInitUpdate(projectDir);
     assert.equal(result.status, 0, result.stderr || result.stdout);
 
-    const after = fs.readFileSync(path.join(projectDir, "AGENTS.md"), "utf8");
-    assert.equal(after, before, "AGENTS.md should not be overwritten in place");
+    assert.equal(fs.readFileSync(path.join(projectDir, "AGENTS.md"), "utf8"), agents, "AGENTS.md must not be rewritten");
+    assert.equal(
+      fs.existsSync(path.join(projectDir, ".cx", "proposals", "AGENTS.md.construct-update.md")),
+      false,
+      "init:update must not propose an AGENTS.md body rewrite",
+    );
 
-    const proposalPath = path.join(projectDir, ".cx", "proposals", "AGENTS.md.construct-update.md");
-    assert.equal(fs.existsSync(proposalPath), true);
-    assert.match(fs.readFileSync(proposalPath, "utf8"), /Proposed AGENTS\.md Update/);
+    const ciProposal = path.join(projectDir, ".cx", "proposals", "ci.yml.construct-update.md");
+    assert.equal(fs.existsSync(ciProposal), true, "a CI proposal should be written");
+    assert.match(fs.readFileSync(ciProposal, "utf8"), /docs:verify/);
+  } finally {
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  }
+});
+
+test("construct init:update reports no proposals when standards are already met", () => {
+  const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-init-update-clean-"));
+  try {
+    fs.writeFileSync(path.join(projectDir, "AGENTS.md"), "# Demo\n\nBody.\n");
+
+    const result = runInitUpdate(projectDir);
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stdout, /No proposals needed/);
+    assert.equal(fs.existsSync(path.join(projectDir, ".cx", "proposals")), false);
   } finally {
     fs.rmSync(projectDir, { recursive: true, force: true });
   }
@@ -55,8 +79,7 @@ test("construct init:update writes proposals instead of overwriting AGENTS.md", 
 test("construct init:update dry-run reports proposals without writing files", () => {
   const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-init-update-dry-"));
   try {
-    fs.writeFileSync(path.join(projectDir, "package.json"), JSON.stringify({ name: "demo-project" }, null, 2));
-    fs.writeFileSync(path.join(projectDir, "AGENTS.md"), "# Demo\n");
+    writeCiWorkflow(projectDir);
 
     const result = runInitUpdate(projectDir, ["--dry-run"]);
     assert.equal(result.status, 0, result.stderr || result.stdout);

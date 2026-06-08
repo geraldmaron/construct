@@ -7,17 +7,40 @@
  * harness exposes helpers to log in + reuse the session.
  */
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mkdtempSync } from 'node:fs';
+import { existsSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..', '..');
 const SERVER_PATH = join(REPO_ROOT, 'lib', 'server', 'index.mjs');
+const STATIC_INDEX = join(REPO_ROOT, 'lib', 'server', 'static', 'index.html');
 const READY_TIMEOUT_MS = 20_000;
+
+// The dashboard static export is a build artifact (gitignored, not tracked)
+// shipped via the npm package; a fresh dev checkout has no static tree until
+// `construct dashboard:sync --build` runs. Dashboard tests require the static
+// tree present, so the harness builds on first use and caches the promise
+// across concurrent suites sharing the dashboard server.
+
+let dashboardBuildPromise = null;
+
+function ensureDashboardBuilt() {
+  if (existsSync(STATIC_INDEX)) return Promise.resolve(true);
+  if (dashboardBuildPromise) return dashboardBuildPromise;
+  dashboardBuildPromise = new Promise((resolveBuild) => {
+    const result = spawnSync(
+      process.execPath,
+      [join(REPO_ROOT, 'bin', 'construct'), 'dashboard:sync', '--build'],
+      { cwd: REPO_ROOT, encoding: 'utf8', timeout: 240_000, stdio: 'pipe' },
+    );
+    resolveBuild(result.status === 0 && existsSync(STATIC_INDEX));
+  });
+  return dashboardBuildPromise;
+}
 
 function pickPort() {
   return 40_000 + Math.floor(Math.random() * 10_000);
@@ -42,6 +65,11 @@ async function waitForReady(url) {
  * isolated HOME the server will read.
  */
 export async function withDashboardServer(t, { extraEnv = {}, seedHome } = {}) {
+  const built = await ensureDashboardBuilt();
+  if (!built) {
+    if (t && t.skip) t.skip('Dashboard static build is unavailable — run `construct dashboard:sync --build`.');
+    return null;
+  }
   const port = pickPort();
   const home = mkdtempSync(join(tmpdir(), 'cx-dash-server-'));
   if (typeof seedHome === 'function') seedHome(home);

@@ -246,6 +246,45 @@ async function cmdSync(args) {
     opLog.close('failed', { stage: 'sync-specialists', status: syncStatus });
     process.exit(syncStatus);
   }
+
+  // State reconciliation (ADR-0027): bring on-disk state in line with the
+  // current disposition contract. Auto-safety tasks run silently; ask-safety
+  // tasks surface via construct doctor instead. --reconcile=<id> runs one task
+  // on explicit consent (the path for ask-safety tasks). --no-reconcile
+  // bypasses the auto pass entirely for diagnostic runs.
+
+  const reconcileArg = args.find((a) => a.startsWith('--reconcile='));
+  if (reconcileArg) {
+    const id = reconcileArg.slice('--reconcile='.length);
+    try {
+      const { runReconciliation } = await import('../lib/reconcile/index.mjs');
+      const result = await runReconciliation(id, {});
+      if (!result.ok) {
+        errorln(`Reconciliation failed (${id}): ${result.reason}`);
+        if (result.available) errorln(`Available: ${result.available.join(', ')}`);
+        opLog.close('failed', { stage: 'reconcile', id, reason: result.reason });
+        process.exit(1);
+      }
+      if (result.ran) ok(`Reconciled (${id}): ${result.summary}`);
+      else println(`Reconciliation (${id}): ${result.summary}`);
+      opLog.event('reconcile-explicit', { id, ran: !!result.ran });
+    } catch (err) {
+      errorln(`Reconciliation error (${id}): ${err.message}`);
+      opLog.close('failed', { stage: 'reconcile', id, reason: err.message });
+      process.exit(1);
+    }
+  } else if (!args.includes('--no-reconcile')) {
+    try {
+      const verbose = args.includes('--verbose') || args.includes('-v');
+      const { runAutoReconciliations } = await import('../lib/reconcile/index.mjs');
+      const { applied } = await runAutoReconciliations({ verbose });
+      for (const entry of applied) ok(`Reconciled (${entry.id}): ${entry.summary}`);
+      opLog.event('reconcile', { applied: applied.length });
+    } catch (err) {
+      opLog.event('reconcile-error', { message: err.message });
+    }
+  }
+
   if (args.includes('--no-docs')) {
     opLog.close('ok', { docs: 'skipped' });
     return;
@@ -580,23 +619,24 @@ async function cmdDoctor() {
   // Tier model selection. Construct ships with no default — at least
   // one tier must be configured (registry.json primary OR CX_MODEL_*
   // env override) before any LLM-backed workflow can run.
-  // Skip in CI — model tiers are user-specific, not repo-wide.
-  const inCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+  // A missing, partial, or unresolvable tier is advisory, not a repo defect:
+  // model tiers are user/machine-specific config, so doctor warns and never
+  // fails the gate on them.
   try {
     const { resolveModelTiers } = await import('../lib/model-registry.mjs');
     const resolved = resolveModelTiers({ env: process.env });
     if (resolved.complete && !resolved.errors) {
       add('Models — all tiers configured', true);
     } else if (resolved.configured === 0) {
-      add('Models — no tier configured (pick one in the dashboard or run `construct models --apply`)', inCI, inCI);
+      add('Models — no tier configured (pick one in the dashboard or run `construct models --apply`)', false, true);
     } else {
       const missing = Object.entries(resolved.models)
         .filter(([, v]) => !v)
         .map(([k]) => k);
-      add(`Models — only ${resolved.configured}/3 tiers configured (missing: ${missing.join(', ')})`, inCI, inCI);
+      add(`Models — only ${resolved.configured}/3 tiers configured (missing: ${missing.join(', ')})`, false, true);
     }
   } catch (err) {
-    add(`Models — check failed: ${err.message}`, inCI, inCI);
+    add(`Models — check failed: ${err.message}`, false, true);
   }
 
   add('Node.js 20+ (recommended)', Number.parseInt(process.versions.node.split('.')[0], 10) >= 20);
@@ -1065,6 +1105,26 @@ async function cmdDoctor() {
     add('Registry integrity check', false);
   }
 
+  // Reconciliation drift (ADR-0027). Any task reporting needsRepair is surfaced
+  // with its summary and the exact `construct sync --reconcile=<id>` command.
+  // Auto tasks that still show drift (e.g. a run with --no-reconcile) and all
+  // ask tasks both land here, since ask tasks never run from the auto pass.
+  let reconcileDrift = [];
+  try {
+    const { listReconciliations } = await import('../lib/reconcile/index.mjs');
+    const tasks = await listReconciliations();
+    reconcileDrift = tasks.filter((t) => t.needsRepair);
+    add(
+      reconcileDrift.length === 0
+        ? 'Reconciliation drift: none'
+        : `Reconciliation drift: ${reconcileDrift.length} task${reconcileDrift.length === 1 ? '' : 's'} need repair (see below)`,
+      reconcileDrift.length === 0,
+      true,
+    );
+  } catch (err) {
+    add(`Reconciliation drift check failed: ${err.message}`, false, true);
+  }
+
   println('Construct Health Check');
   println('══════════════════════');
   println('');
@@ -1076,6 +1136,17 @@ async function cmdDoctor() {
     else if (check.optional) warnCount += 1;
     else failCount += 1;
   }
+
+  if (reconcileDrift.length > 0) {
+    println('');
+    println('Reconciliation drift:');
+    for (const task of reconcileDrift) {
+      println(`  ⚠ ${task.id} (${task.safety})`);
+      if (task.summary) println(`       ${task.summary}`);
+      println(`       fix: construct sync --reconcile=${task.id}`);
+    }
+  }
+
   println('');
   println(`Results: ${okCount} passed, ${warnCount} warnings, ${failCount} failed`);
   if (failCount > 0) process.exit(1);
@@ -1414,6 +1485,44 @@ async function cmdIngest(args) {
     errorln(error?.message || 'document ingest failed');
     process.exit(1);
   }
+}
+
+async function cmdExport(args) {
+  // construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>]
+  // Optional capability per ADR-0024: requires pandoc on PATH (and typst for PDF).
+  // Absent tooling returns a structured "install X" error, not a crash.
+
+  const positional = args.filter((a) => !a.startsWith('--'));
+  const inputPath = positional[0];
+  const toFlag = args.find((a) => a.startsWith('--to='))?.split('=')[1];
+  const outFlag = args.find((a) => a.startsWith('--output='))?.split('=')[1];
+  const detectOnly = args.includes('--detect');
+
+  const { detect, exportMarkdown, EXPORT_FORMATS } = await import('../lib/document-export.mjs');
+
+  if (detectOnly) {
+    const format = toFlag || 'pdf';
+    println(JSON.stringify(detect(format), null, 2));
+    return;
+  }
+
+  if (!inputPath) {
+    errorln('Usage: construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>] [--detect]');
+    process.exit(1);
+  }
+  if (!toFlag) {
+    errorln(`--to is required. Supported formats: ${EXPORT_FORMATS.join(', ')}`);
+    process.exit(1);
+  }
+
+  const resolvedIn = path.resolve(process.cwd(), inputPath);
+  const resolvedOut = outFlag ? path.resolve(process.cwd(), outFlag) : null;
+  const result = exportMarkdown({ inputPath: resolvedIn, outputPath: resolvedOut, format: toFlag });
+  if (!result.ok) {
+    errorln(result.message);
+    process.exit(result.missing?.length ? 2 : 1);
+  }
+  ok(result.message);
 }
 
 async function cmdInfer(args) {
@@ -1982,7 +2091,17 @@ async function cmdEmbeddedTriage(args) {
     input = fs.readFileSync(0, 'utf8');
   }
   if (!input.trim() && !ingestion?.error) {
-    errorln('Usage: construct intake classify --json [--text "..." | --file <path> | <stdin>] [--source <path>] [--artifact-type <t>] [--available-roles a,b]');
+    // This is an embedded-contract verb: an embedder that pipes empty/no input
+    // must still get a parseable, versioned envelope — not a bare exit. Emit a
+    // typed error envelope on stdout so the contract holds, and exit non-zero so
+    // shell callers still see failure.
+    const { wrapResponse } = await import('../lib/embedded-contract/envelope.mjs');
+    const envelope = wrapResponse({
+      surface: 'cli',
+      warnings: ['No artifact provided — pass --text "...", --file <path>, or pipe content on stdin.'],
+      data: { error: { code: 'missing_input', message: 'intake classify requires an artifact to classify; received empty input.' } },
+    });
+    println(JSON.stringify(envelope, null, 2));
     process.exit(1);
   }
   const request = {
@@ -3433,6 +3552,9 @@ async function cmdOrchestrate(args) {
     if (run.execution.degraded) println(`  degraded: ${run.execution.degradationReason}`);
     if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
     else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
+    for (const t of run.tasks) {
+      if (t.reasoning) println(`  ↳ ${t.role} reasoning: ${t.reasoning.length > 300 ? `${t.reasoning.slice(0, 300)}…` : t.reasoning}`);
+    }
     return;
   }
 
@@ -3444,7 +3566,10 @@ async function cmdOrchestrate(args) {
       if (!run) { errorln(`Run not found: ${runId}`); process.exit(1); }
       if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
       println(`Run ${run.runId} — ${run.status} · executionMode=${run.execution.executionMode}`);
-      for (const t of run.tasks) println(`  ${t.id} ${t.role} — ${t.status}`);
+      for (const t of run.tasks) {
+        println(`  ${t.id} ${t.role} — ${t.status}`);
+        if (t.reasoning) println(`    reasoning: ${t.reasoning.length > 300 ? `${t.reasoning.slice(0, 300)}…` : t.reasoning}`);
+      }
       return;
     }
     const runs = await getRuns(process.cwd());
@@ -5128,6 +5253,7 @@ const handlers = new Map([
   ['diff', cmdDiff],
   ['distill', cmdDistill],
   ['ingest', cmdIngest],
+  ['export', cmdExport],
   ['infer', cmdInfer],
   ['search', cmdSearch],
   ['storage', cmdStorage],

@@ -416,11 +416,12 @@
           {
             "type": "command",
             "command": "node \"$HOME/.construct/lib/hooks/stop-typecheck.mjs\"",
-            "timeout": 120
+            "timeout": 120,
+            "async": true
           }
         ],
         "id": "stop:typecheck",
-        "description": "Batch TypeScript typecheck of edited files at end of response"
+        "description": "Batch TypeScript typecheck of edited files at end of response (async: writes ~/.cx/pending-typecheck.txt for the next session-start to surface; does not gate the current turn)"
       },
       {
         "matcher": "*",
@@ -454,11 +455,12 @@
           {
             "type": "command",
             "command": "node \"$HOME/.construct/lib/hooks/pre-compact.mjs\"",
-            "timeout": 15
+            "timeout": 15,
+            "async": true
           }
         ],
         "id": "stop:snapshot",
-        "description": "Snapshot .cx/context.md at session end so resume has real progress"
+        "description": "Snapshot .cx/context.md at session end so resume has real progress (async: written for the NEXT session to read; does not gate the current turn)"
       },
       {
         "matcher": "*",

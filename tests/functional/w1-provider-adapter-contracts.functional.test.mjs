@@ -110,7 +110,7 @@ test('auth-manager refresh dispatches to a registered adapter and persists the r
   } finally {
     if (realHOMEenv) process.env.HOME = realHOMEenv;
     else delete process.env.HOME;
-    try { rmSync(fakeHome, { recursive: true, force: true }); } catch { /* ignore */ }
+    try { rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
     void realHome;
   }
 });
@@ -138,7 +138,7 @@ test('auth-manager without a registered adapter returns the agnostic reauthentic
   } finally {
     if (realHOMEenv) process.env.HOME = realHOMEenv;
     else delete process.env.HOME;
-    try { rmSync(fakeHome, { recursive: true, force: true }); } catch { /* ignore */ }
+    try { rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
   }
 });
 

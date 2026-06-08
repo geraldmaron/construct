@@ -23,12 +23,18 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
 const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
 
-const SANCTIONED = new Set(['@modelcontextprotocol/sdk', 'postgres']);
-
-const PENDING_ADR = new Map([
-  ['js-yaml', 'construct-7vj6'],
-  ['node-webvtt', 'construct-bh2y'],
+const SANCTIONED = new Set([
+  '@modelcontextprotocol/sdk',
+  'postgres',
+  // js-yaml: frontmatter parse/emit only (ADR-0028). New YAML use cases need
+  // a fresh ADR; the allowlist entry is narrow on purpose.
+  'js-yaml',
 ]);
+
+// node-webvtt was removed (ADR-0028): zero in-tree usage. New deps may not
+// enter this map — the ratchet only releases via SANCTIONED.
+
+const PENDING_ADR = new Map();
 
 test('core dependencies obey ADR 0001 (sanctioned, or tracked pending an ADR)', () => {
   const deps = Object.keys(pkg.dependencies || {});

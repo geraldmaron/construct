@@ -26,6 +26,11 @@ import test from 'node:test';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
 
+// `construct sync` now defaults to detected hosts (ADR-0027 §1); a sterile HOME
+// detects none, so pin the full set to audit the cross-host scope model.
+
+const ALL_HOSTS = 'claude,codex,copilot,opencode,vscode,cursor';
+
 function makeIsolatedEnv() {
   const sandbox = mkdtempSync(join(tmpdir(), 'sync-scope-'));
   const HOME = join(sandbox, 'HOME');
@@ -37,7 +42,7 @@ function makeIsolatedEnv() {
   spawnSync('git', ['config', 'user.name', 'Test'], { cwd: project });
   return {
     sandbox, HOME, project,
-    cleanup() { rmSync(sandbox, { recursive: true, force: true }); },
+    cleanup() { rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); },
   };
 }
 
@@ -50,6 +55,7 @@ function runSync(env, args, cwd) {
       ...process.env,
       HOME: env.HOME,
       CONSTRUCT_SKIP_POSTINSTALL: '1',
+      CONSTRUCT_SYNC_HOSTS: ALL_HOSTS,
     },
   });
 }
@@ -98,17 +104,13 @@ test('--project writes every agent into the project and leaves HOME untouched', 
     assert.equal(result.status, 0, `sync --project failed: ${result.stderr}`);
 
     const projectAgents = listFiles(join(env.project, '.claude/agents'), '.md');
-    assert.ok(projectAgents.includes('construct.md'), 'project must include construct.md');
-    const cxAgents = projectAgents.filter((f) => f.startsWith('cx-'));
-    assert.ok(cxAgents.length >= 20, `expected >=20 cx-* agents in project, got ${cxAgents.length}`);
+    assert.deepEqual(projectAgents, ['construct.md'], 'project must include ONLY construct.md (Single Front Door)');
 
     const projectCodex = listFiles(join(env.project, '.codex/agents'), '.toml');
-    assert.ok(projectCodex.includes('construct.toml'), 'project must include construct.toml');
-    assert.ok(projectCodex.filter((f) => f.startsWith('cx-')).length >= 20, 'project must include cx-* codex agents');
+    assert.deepEqual(projectCodex, ['construct.toml'], 'project must include ONLY construct.toml');
 
     const projectCopilot = listFiles(join(env.project, '.github/prompts'), '.prompt.md');
-    assert.ok(projectCopilot.includes('construct.prompt.md'));
-    assert.ok(projectCopilot.filter((f) => f.startsWith('cx-')).length >= 20);
+    assert.deepEqual(projectCopilot, ['construct.prompt.md'], 'project must include ONLY construct.prompt.md');
 
     assert.ok(existsSync(join(env.project, '.opencode/opencode.json')), 'project must write .opencode/opencode.json (a path OpenCode reads)');
     assert.ok(!existsSync(join(env.project, '.opencode/config.json')), 'project must NOT write .opencode/config.json (OpenCode never reads it)');

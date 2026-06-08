@@ -30,7 +30,7 @@ function makeProject(seedGitignore = null) {
   spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir });
   spawnSync('git', ['config', 'user.name', 'Test'], { cwd: dir });
   if (seedGitignore != null) writeFileSync(join(dir, '.gitignore'), seedGitignore);
-  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) };
 }
 
 function runInit(cwd) {
@@ -52,8 +52,8 @@ test('init creates .gitignore with .cx/ when no .gitignore exists', () => {
     const result = runInit(p.dir);
     assert.equal(result.status, 0, `init failed:\n${result.stderr}`);
     const gi = readFileSync(join(p.dir, '.gitignore'), 'utf8');
-    assert.match(gi, /\.cx\/\s*$/m, `.gitignore must contain .cx/ entry; got:\n${gi}`);
-    assert.match(gi, /Construct runtime state/i, '.gitignore should explain why .cx/ is ignored');
+    assert.match(gi, /^\.cx\/?\s*$/m, `.gitignore must contain .cx/ entry; got:\n${gi}`);
+    assert.match(gi, /Construct.*generated.*runtime state|recreated by `construct sync`/i, '.gitignore should explain why generated artifacts (incl .cx/) are ignored');
   } finally { p.cleanup(); }
 });
 

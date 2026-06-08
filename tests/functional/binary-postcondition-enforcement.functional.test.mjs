@@ -39,7 +39,7 @@ beforeEach(async () => {
 afterEach(() => {
   process.chdir(priorCwd);
   process.env.HOME = priorHome;
-  rmSync(tmpRoot, { recursive: true, force: true });
+  rmSync(tmpRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 function readLog() {

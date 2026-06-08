@@ -71,8 +71,8 @@ Got: ${violationsLine}`,
 Got: ${violationsLine}`,
     );
   } finally {
-    fs.rmSync(fakeRoot, { recursive: true, force: true });
-    fs.rmSync(fakeHome, { recursive: true, force: true });
+    fs.rmSync(fakeRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -114,7 +114,7 @@ test('doctor no longer surfaces deleted pre-push bypass infrastructure', () => {
       `doctor must not surface the green pre-push bypass line either — the whole check is gone.\nstdout: ${result.stdout}`,
     );
   } finally {
-    fs.rmSync(fakeRoot, { recursive: true, force: true });
-    fs.rmSync(fakeHome, { recursive: true, force: true });
+    fs.rmSync(fakeRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
