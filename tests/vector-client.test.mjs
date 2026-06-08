@@ -41,6 +41,11 @@ describe('VectorClient', () => {
       embedding
     });
 
+    const _dbgT = await client._openTable('observations_v1');
+    const _dbgSchema = _dbgT ? (await _dbgT.schema()).fields.map((f) => `${f.name}:${String(f.type)}`).join(' | ') : 'NO_TABLE';
+    const _dbgRows = _dbgT ? await _dbgT.countRows() : -1;
+    console.log(`[DIAG] rows=${_dbgRows} schema=${_dbgSchema}`);
+
     const results = await client.searchObservations({
       project: 'test-project',
       queryEmbedding: embedding,
