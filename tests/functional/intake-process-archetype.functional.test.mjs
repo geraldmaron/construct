@@ -37,7 +37,7 @@ function makeProject() {
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: dir });
   spawnSync('git', ['config', 'user.email', 'process-test@example.com'], { cwd: dir });
   spawnSync('git', ['config', 'user.name', 'Process Test'], { cwd: dir });
-  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) };
 }
 
 function runConstruct(cwd, args, extraEnv = {}) {

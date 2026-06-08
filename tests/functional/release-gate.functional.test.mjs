@@ -47,7 +47,7 @@ test('release gate: construct doctor exits 0 (warnings allowed, no failures)', (
     const failedMatch = result.stdout.match(/(\d+)\s+failed/);
     assert.ok(!failedMatch || failedMatch[1] === '0', `expected 0 failed checks, got: ${failedMatch?.[0]}`);
   } finally {
-    rmSync(tmpHome, { recursive: true, force: true });
+    rmSync(tmpHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 

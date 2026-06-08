@@ -33,7 +33,7 @@ before(() => {
 });
 
 after(() => {
-  rmSync(TMP_ROOT, { recursive: true, force: true });
+  rmSync(TMP_ROOT, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 // ---------------------------------------------------------------------------

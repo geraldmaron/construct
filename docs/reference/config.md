@@ -7,9 +7,36 @@ project values go in .cx/env. Source: lib/env-config.mjs and individual modules.
 
 # Configuration Reference
 
-Construct is configured through environment variables. Sensitive values live in `~/.construct/config.env` (mode 0600); non-sensitive project values can go in `.cx/env`.
+Construct follows a strict **Secrets vs. State** boundary for configuration, aligned with the [12-Factor App](https://12factor.net/config) principles.
 
-Config is loaded in this order (last write wins): repo `.env` → `~/.construct/config.env`. The MCP server and hooks call `loadConstructEnv()` at startup so the values in `config.env` are authoritative even if the shell environment differs.
+## The Boundary: Env vs. Config
+
+| Storage | Purpose | Shared? | Examples |
+|---|---|---|---|
+| **`.env`** | Secrets, API keys, and machine-specific local overrides. | No (Gitignored) | `ANTHROPIC_API_KEY`, `PORT`, `DATABASE_URL` |
+| **`construct.config.json`** | Shared, versioned project state and orchestration strategy. | Yes (Committed) | `deployment.mode`, `telemetry.enabled`, `orchestration.chainOfThought` |
+
+### Secret Interpolation
+To keep secrets out of the committed configuration file while still maintaining a central control plane, `construct.config.json` supports **Environment Variable Interpolation**. Any string value starting with `$` is replaced with the corresponding environment variable at runtime.
+
+```json
+{
+  "providers": {
+    "anthropic": {
+      "apiKey": "$ANTHROPIC_API_KEY"
+    }
+  }
+}
+```
+
+## Discoverability & Schema
+
+The `construct.config.json` file is scaffolded with a `"$schema"` property. In supported editors (like VS Code or IntelliJ), this provides:
+*   **Auto-completion**: Suggestions for all valid configuration keys.
+*   **Documentation**: Hover over any key to see its purpose and available options.
+*   **Validation**: Immediate feedback if a value is invalid (e.g., a typo in `deployment.mode`).
+
+---
 
 ## Core
 
@@ -26,6 +53,16 @@ Config is loaded in this order (last write wins): repo `.env` → `~/.construct/
 | Variable | Default | Description |
 |---|---|---|
 | `CONSTRUCT_DEPLOYMENT_MODE` | `solo` | `solo` \| `team` \| `enterprise`: selects backends for the intake queue, memory, workers, and MCP broker. Read at runtime by `lib/deployment-mode.mjs`. Set via `construct config mode <m>`. |
+
+## Orchestration
+
+Keys under `orchestration` in `construct.config.json`. Read at runtime by `lib/orchestration/runtime.mjs`.
+
+| Key | Default | Description |
+|---|---|---|
+| `orchestration.workerBackend` | `inline` | `inline` (plan and prepare specialist tasks, no model call) \| `provider` (execute each task against the configured model). |
+| `orchestration.store` | `filesystem` | `filesystem` \| `sqlite` \| `postgres`: where run and task-graph state is persisted. |
+| `orchestration.chainOfThought` | `hidden` | Disclosure of a provider-executed specialist's reasoning. `hidden`: reasoning is not requested or shown. `surface`: reasoning is requested (Anthropic extended thinking / OpenRouter `reasoning`) and attached to each task, so `construct orchestrate run`/`status`, the `orchestration_run` MCP tool, and the dashboard event stream display it. `telemetry_only`: reasoning is requested and written to the run trace (`.cx/traces/*.jsonl` `worker.completed` metadata) but never displayed. Inline runs never produce reasoning. See ADR-0030. |
 
 ## Intake queue
 

@@ -36,7 +36,7 @@ function makeEnv() {
   mkdirSync(HOME, { recursive: true });
   mkdirSync(project, { recursive: true });
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: project });
-  return { sandbox, HOME, project, cleanup() { rmSync(sandbox, { recursive: true, force: true }); } };
+  return { sandbox, HOME, project, cleanup() { rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
 }
 
 function runSync(env) {
@@ -62,7 +62,7 @@ test('project sync writes .opencode/opencode.json (resolver-recognized) with age
     assert.ok(RESOLVER_PROJECT_PATHS.includes('.opencode/opencode.json'), 'written path is a resolver candidate');
 
     const config = JSON.parse(readFileSync(canonical, 'utf8'));
-    assert.ok(config.agent && Object.keys(config.agent).length >= 2, 'agent table present');
+    assert.ok(config.agent && Object.keys(config.agent).length === 1, 'agent table present with only the orchestrator');
     assert.ok(config.mcp && Object.keys(config.mcp).length >= 1, 'mcp servers present');
   } finally {
     env.cleanup();
@@ -89,7 +89,7 @@ test('a stale .opencode/config.json from a prior install is migrated to opencode
 
     const config = JSON.parse(readFileSync(canonical, 'utf8'));
     assert.equal(config.provider?.custom?.note, 'user-kept', 'pre-existing content preserved through migration');
-    assert.ok(config.agent && Object.keys(config.agent).length >= 2, 'construct agents merged in');
+    assert.ok(config.agent && Object.keys(config.agent).length === 1, 'only construct orchestrator merged in');
   } finally {
     env.cleanup();
   }

@@ -67,7 +67,7 @@ test('every visible command exits 0 with --help and does not run its action', ()
       );
     }
   } finally {
-    fs.rmSync(fakeHome, { recursive: true, force: true });
+    fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -83,7 +83,7 @@ test('-h is treated the same as --help for destructive commands', () => {
       );
     }
   } finally {
-    fs.rmSync(fakeHome, { recursive: true, force: true });
+    fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -104,7 +104,7 @@ test('destructive commands with --help do NOT touch the filesystem', () => {
       );
     }
   } finally {
-    fs.rmSync(fakeHome, { recursive: true, force: true });
+    fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -123,6 +123,6 @@ test('top-level --all lists more commands than default --help', () => {
     );
     assert.ok(allHelp.stdout.includes('all commands'));
   } finally {
-    fs.rmSync(fakeHome, { recursive: true, force: true });
+    fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });

@@ -43,7 +43,7 @@ function makeFixture(extraSetup) {
       mkdirSync(dirname(abs), { recursive: true });
       writeFileSync(abs, content);
     },
-    cleanup() { rmSync(dir, { recursive: true, force: true }); },
+    cleanup() { rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); },
   };
 }
 

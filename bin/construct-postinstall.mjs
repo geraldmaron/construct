@@ -24,6 +24,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { stageProjectAdapters } from '../lib/install/stage-project.mjs';
+import { missingIgnorePatterns } from '../lib/host-disposition.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = path.resolve(HERE, '..');
@@ -108,6 +109,21 @@ try {
     pkgVersion: PKG_VERSION,
     log,
   });
+
+  // ADR-0027: Ensure .gitignore covers the newly staged adapters (construct-f6l6).
+  // Idempotent: missingIgnorePatterns returns only patterns not already present.
+  const giPath = path.join(initCwd, '.gitignore');
+  const existing = existsSync(giPath) ? readFileSync(giPath, 'utf8') : '';
+  const missing = missingIgnorePatterns(existing);
+  if (missing.length > 0) {
+    const HEADER = '# Construct — generated adapters, launcher, and runtime state.';
+    const SUBHEADER = '# Machine-specific, recreated by `construct sync`; never source (ADR-0027).';
+    const prefix = existing.length === 0 || existing.endsWith('\n') ? '' : '\n';
+    const block = `${prefix}\n${HEADER}\n${SUBHEADER}\n${missing.join('\n')}\n`;
+    const { appendFileSync } = await import('node:fs');
+    appendFileSync(giPath, block, 'utf8');
+    log(`appended ${missing.length} Construct ignore pattern(s) to .gitignore`);
+  }
 } catch (err) {
   fail(`Adapter staging failed: ${err.message}`, 'The package is installed; run `npx construct init` in this project to complete setup.');
   // Intentionally exit 0: staging is best-effort completion, and a non-zero exit

@@ -619,23 +619,24 @@ async function cmdDoctor() {
   // Tier model selection. Construct ships with no default — at least
   // one tier must be configured (registry.json primary OR CX_MODEL_*
   // env override) before any LLM-backed workflow can run.
-  // Skip in CI — model tiers are user-specific, not repo-wide.
-  const inCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+  // A missing, partial, or unresolvable tier is advisory, not a repo defect:
+  // model tiers are user/machine-specific config, so doctor warns and never
+  // fails the gate on them.
   try {
     const { resolveModelTiers } = await import('../lib/model-registry.mjs');
     const resolved = resolveModelTiers({ env: process.env });
     if (resolved.complete && !resolved.errors) {
       add('Models — all tiers configured', true);
     } else if (resolved.configured === 0) {
-      add('Models — no tier configured (pick one in the dashboard or run `construct models --apply`)', inCI, inCI);
+      add('Models — no tier configured (pick one in the dashboard or run `construct models --apply`)', false, true);
     } else {
       const missing = Object.entries(resolved.models)
         .filter(([, v]) => !v)
         .map(([k]) => k);
-      add(`Models — only ${resolved.configured}/3 tiers configured (missing: ${missing.join(', ')})`, inCI, inCI);
+      add(`Models — only ${resolved.configured}/3 tiers configured (missing: ${missing.join(', ')})`, false, true);
     }
   } catch (err) {
-    add(`Models — check failed: ${err.message}`, inCI, inCI);
+    add(`Models — check failed: ${err.message}`, false, true);
   }
 
   add('Node.js 20+ (recommended)', Number.parseInt(process.versions.node.split('.')[0], 10) >= 20);
@@ -3551,6 +3552,9 @@ async function cmdOrchestrate(args) {
     if (run.execution.degraded) println(`  degraded: ${run.execution.degradationReason}`);
     if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
     else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
+    for (const t of run.tasks) {
+      if (t.reasoning) println(`  ↳ ${t.role} reasoning: ${t.reasoning.length > 300 ? `${t.reasoning.slice(0, 300)}…` : t.reasoning}`);
+    }
     return;
   }
 
@@ -3562,7 +3566,10 @@ async function cmdOrchestrate(args) {
       if (!run) { errorln(`Run not found: ${runId}`); process.exit(1); }
       if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
       println(`Run ${run.runId} — ${run.status} · executionMode=${run.execution.executionMode}`);
-      for (const t of run.tasks) println(`  ${t.id} ${t.role} — ${t.status}`);
+      for (const t of run.tasks) {
+        println(`  ${t.id} ${t.role} — ${t.status}`);
+        if (t.reasoning) println(`    reasoning: ${t.reasoning.length > 300 ? `${t.reasoning.slice(0, 300)}…` : t.reasoning}`);
+      }
       return;
     }
     const runs = await getRuns(process.cwd());

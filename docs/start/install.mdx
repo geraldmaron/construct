@@ -49,7 +49,7 @@ want the Homebrew-managed binary to win.
 ## Run setup (one time per machine)
 
 ```bash
-construct init
+construct install --scope=user
 ```
 
 What setup does, in order:
@@ -58,11 +58,21 @@ What setup does, in order:
 2. Detects Docker. If present, prompts to install local Postgres — accept the default (Y) to start it automatically. Use `--yes` to skip prompts and accept detected defaults non-interactively. Use `--no-docker` to skip Docker-managed services entirely.
 3. Generates shell completions (bash + zsh) so `construct <tab>` works.
 4. Installs optional CLIs (`cm`, `cass`) if Homebrew or cargo is available and you consent.
-5. Installs the Pressure Guard launch agent on macOS so Construct can manage helper processes.
+5. Installs the Pressure Guard background service (macOS LaunchAgent) so Construct can manage helper processes. Use `--no-launch-agent` to skip this.
 6. Wires `core.hooksPath` to `.beads/hooks/` if your repo has the beads hook directory — activates the local pre-commit policy gates.
 7. Prints a "Local services" summary block with local trace capture and the Postgres URL when Postgres is running.
 
-Postgres consent is cached in `~/.construct/config.env` as `BOOTSTRAP_POSTGRES=yes|no`. Re-running `construct init` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
+Service consent is cached in `~/.construct/config.env` as `BOOTSTRAP_<NAME>=yes|no`. Re-running `construct install --scope=user` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
+
+### Flags
+
+| Flag | Description |
+|---|---|
+| `--scope=project\|user\|both` | Define the installation scope (default: `project`). |
+| `--yes` | Accept all defaults without prompting. |
+| `--no-docker` | Skip local Postgres / Docker service setup. |
+| `--no-launch-agent` | Skip background macOS LaunchAgent registration. |
+| `--reconfigure` | Re-prompt for service consent, ignoring cached answers. |
 
 ## What you have when setup finishes
 

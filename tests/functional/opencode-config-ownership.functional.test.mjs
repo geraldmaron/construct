@@ -46,7 +46,7 @@ function seededHome(seedConfig = SEED) {
   const cfgPath = join(sandbox, ".config", "opencode", "opencode.json");
   mkdirSync(dirname(cfgPath), { recursive: true });
   writeFileSync(cfgPath, JSON.stringify(seedConfig, null, 2) + "\n");
-  return { sandbox, cfgPath, cleanup() { rmSync(sandbox, { recursive: true, force: true }); } };
+  return { sandbox, cfgPath, cleanup() { rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
 }
 
 function runGlobalSync(home) {

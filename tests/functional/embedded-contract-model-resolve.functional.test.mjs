@@ -26,7 +26,7 @@ function freshCwd() {
 }
 after(() => {
   for (const dir of tmpDirs) {
-    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {}
   }
 });
 
@@ -36,7 +36,12 @@ function resolveModel(args, env = {}) {
     cwd,
     encoding: 'utf8',
     timeout: 30_000,
-    env: { ...process.env, ...env },
+    env: {
+      ...process.env,
+      HOME: cwd, // Redirect HOME to isolation dir
+      USERPROFILE: cwd,
+      ...env
+    },
   });
   assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
   return JSON.parse(res.stdout);

@@ -85,3 +85,7 @@ The migration framework was chosen over per-item ad-hoc repair because the same 
 ## Implementation tracking
 
 Plan: `~/.claude/plans/when-contrite-he-knits-wondrous-pumpkin.md`. Epic: `construct-jsut`. Migration framework: `construct-w9pp` (lands first). All work items carry a "Repair (prior versions)" section that names the migration plug-in.
+
+### §2 conformance note (construct-83ik)
+
+The marker-block injector (`lib/agent-instructions/inject.mjs`) satisfied §2 for new guidance, but `construct init` still pre-wrote a full operating-doctrine body into `AGENTS.md` (via `buildAgentsGuide`) *outside* any marker — so a host repo carried un-fenced Construct content §2 forbids, and the same doctrine leaked into `docs/README.md`, the greenfield `README.md`, and a root-level `construct_guide.md`. The pre-write is removed: `bd init` creates the project skeleton and `injectIntoAgentFile` adds the fenced block as the sole Construct-owned region of `AGENTS.md`/`CLAUDE.md` (symmetric handling). `construct_guide.md` moves to the ignored `.cx/` tree; `docs/README.md` is lane-accurate and tool-command-free; `inbox/` is ignored via `host-disposition.mjs`. Backward-repair for repos written by the non-conformant path: reconcile tasks `legacy-doctrine-strip` and `legacy-guide-decommit` (both `ask`), surfaced by `construct doctor`.

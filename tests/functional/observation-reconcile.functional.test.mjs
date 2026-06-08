@@ -36,7 +36,7 @@ test('reconcile back-fills missing observations and is idempotent', async (t) =>
   if (!pg) return;
 
   const root = mkdtempSync(join(tmpdir(), 'recon-fn-'));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
+  t.after(() => rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
 
   const prev = process.env.DATABASE_URL;
   t.after(() => {

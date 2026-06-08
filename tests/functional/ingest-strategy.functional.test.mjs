@@ -50,7 +50,7 @@ test('adapter strategy: run metadata reports strategy=adapter and null model', (
   assert.equal(parsed.ingestion.model, null);
   assert.equal(parsed.ingestion.fallbackApplied, null);
   assert.ok(parsed.files.length >= 1);
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('default (no flag, no config) is the adapter path', () => {
@@ -60,7 +60,7 @@ test('default (no flag, no config) is the adapter path', () => {
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.ingestion.strategy, 'adapter');
   assert.equal(parsed.ingestion.model, null);
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('provider strategy with fallback=none fails explicitly, no silent adapter use', () => {
@@ -72,7 +72,7 @@ test('provider strategy with fallback=none fails explicitly, no silent adapter u
   const result = runIngest(cwd, [doc], { CX_MODEL_FAST: 'test-fast-model' });
   assert.notEqual(result.status, 0, 'provider+fallback=none should fail explicitly');
   assert.match(result.stderr, /provider/i);
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('provider strategy with fallback=adapter records model and the fallback that carried it', () => {
@@ -89,5 +89,5 @@ test('provider strategy with fallback=adapter records model and the fallback tha
   assert.ok(parsed.ingestion.fallbackApplied, 'expected a recorded fallback');
   assert.equal(parsed.ingestion.fallbackApplied.from, 'provider');
   assert.equal(parsed.ingestion.fallbackApplied.to, 'adapter');
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });

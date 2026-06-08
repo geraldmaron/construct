@@ -37,7 +37,7 @@ test('readCurrentModels still returns null tiers when nothing is configured', ()
       assert.equal(models.sources[tier], 'not configured');
     }
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -65,6 +65,8 @@ test('schema-infer throws a clear configuration error when fast tier is null and
   delete process.env.OPENROUTER_API_KEY;
   delete process.env.CX_MODEL_FAST;
   process.env.CX_USER_ENV_PATH = envPath;
+  const originalHome = process.env.HOME;
+  process.env.HOME = dir; // Redirect HOME to isolation dir
   try {
     const mod = await import(`../../lib/schema-infer.mjs?ts=${Date.now()}`);
     let caught;
@@ -77,11 +79,12 @@ test('schema-infer throws a clear configuration error when fast tier is null and
     assert.match(caught.message, /fast-tier|construct models --apply|CX_MODEL_FAST/);
     assert.equal(caught.name, 'Error', 'should be a clear Error, not TypeError');
   } finally {
+    process.env.HOME = originalHome;
     for (const [k, v] of Object.entries(prev)) {
       if (v === undefined) delete process.env[k];
       else process.env[k] = v;
     }
-    rmSync(dir, { recursive: true, force: true });
+    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 

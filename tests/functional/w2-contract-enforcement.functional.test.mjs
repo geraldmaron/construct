@@ -24,7 +24,7 @@ function freshRepo() {
   mkdirSync(join(root, 'lib', 'schemas'), { recursive: true });
   return {
     root,
-    cleanup() { try { rmSync(root, { recursive: true, force: true }); } catch { /* ignore */ } },
+    cleanup() { try { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } },
     writeContracts(obj) {
       writeFileSync(join(root, 'agents', 'contracts.json'), JSON.stringify(obj, null, 2));
     },

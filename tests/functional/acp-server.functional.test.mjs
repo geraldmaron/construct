@@ -76,6 +76,6 @@ test('ACP handshake: initialize → session/new → session/prompt runs an orche
     assert.ok(updates.some((u) => u.params.update?.sessionUpdate === 'agent_message_chunk'), 'agent message chunk streamed');
   } finally {
     try { proc.kill(); } catch { /* ignore */ }
-    try { fs.rmSync(project, { recursive: true, force: true }); } catch { /* ignore */ }
+    try { fs.rmSync(project, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
   }
 });

@@ -30,7 +30,7 @@ function makeProject(seedGitignore = null) {
   spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir });
   spawnSync('git', ['config', 'user.name', 'Test'], { cwd: dir });
   if (seedGitignore != null) writeFileSync(join(dir, '.gitignore'), seedGitignore);
-  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) };
 }
 
 function runInit(cwd) {
