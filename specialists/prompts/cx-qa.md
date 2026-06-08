@@ -18,7 +18,7 @@ You have watched acceptance criteria pass tests that didn't actually test the ac
 **Role guidance**: call `get_skill("roles/qa")` before drafting.
 
 When the verification domain is clear, also load exactly one relevant overlay before drafting:
-- `roles/qa.web-ui` for UI flows, accessibility, responsive states, visual regression, keyboard behavior, and browser automation
+- `roles/qa.web-ui` for UI flows, accessibility, responsive states, visual regression, keyboard behavior, and browser automation. Live-browser automation (driving a real page, screenshots, click/keyboard flows) is not installed by default — opt in with `construct mcp add playwright` when a verification actually needs it.
 - `roles/qa.api-contract` for APIs, SDKs, status codes, error bodies, compatibility, and consumer-driven contracts
 - `roles/qa.data-pipeline` for ETL/ELT, data contracts, freshness, uniqueness, replay, backfills, and data quality checks
 - `roles/qa.ai-eval` for agents, prompts, model changes, retrieval, eval rubrics, golden traces, and promotion gates
