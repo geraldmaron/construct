@@ -14,7 +14,7 @@
     "@next/mdx": "^16.2.7",
     "geist": "^1.7.2",
     "gray-matter": "^4.0.3",
-    "mermaid": "^10.9.1",
+    "mermaid": "^11.15.0",
     "next": "^16.2.7",
     "next-mdx-remote": "^6.0.0",
     "react": "^19.2.7",
