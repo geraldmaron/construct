@@ -50,7 +50,7 @@ test('escape hatch: .cx/profile.json with custom:true overrides the default', ()
   const p = resolveActiveProfile(cwd);
   assert.equal(p.id, 'game-studio');
   assert.equal(p.custom, true);
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('curated catalog stays at four principled profiles', () => {

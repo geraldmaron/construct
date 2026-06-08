@@ -34,8 +34,8 @@ function driveHook(extraEnv = {}) {
   });
   const log = path.join(home, '.cx', 'session-start-last.log');
   const result = { status: res.status, stdout: res.stdout || '', stderr: res.stderr || '', logExists: fs.existsSync(log) };
-  fs.rmSync(home, { recursive: true, force: true });
-  fs.rmSync(proj, { recursive: true, force: true });
+  fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  fs.rmSync(proj, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   return result;
 }
 

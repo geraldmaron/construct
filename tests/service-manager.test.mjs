@@ -12,6 +12,7 @@ import test from 'node:test';
 
 import { buildRuntimeRecoverySummary, clearDashboardState, readDashboardState, isManagedConstructPostgresUrl, startServices, stopDashboard, stopServices, getRuntimePorts, SELECTABLE_SERVICES, _verifyTelemetryKeys } from '../lib/service-manager.mjs';
 import { writeEnvValues } from '../lib/env-config.mjs';
+import { postgresPort, postgresContainerName } from '../lib/home-namespace.mjs';
 
 import { tempDir } from './helpers.mjs';
 
@@ -239,8 +240,10 @@ test('buildRuntimeRecoverySummary works with only file-state anchors', () => {
 });
 
 test('managed Postgres detection does not capture external databases named construct', () => {
-  assert.equal(isManagedConstructPostgresUrl('postgresql://construct:construct@127.0.0.1:54329/construct'), true);
-  assert.equal(isManagedConstructPostgresUrl('postgresql://construct:construct@localhost:54329/construct'), true);
+  const mp = postgresPort();
+  assert.equal(isManagedConstructPostgresUrl(`postgresql://construct:construct@127.0.0.1:${mp}/construct`), true);
+  assert.equal(isManagedConstructPostgresUrl(`postgresql://construct:construct@localhost:${mp}/construct`), true);
+  assert.equal(isManagedConstructPostgresUrl(`postgresql://construct:construct@${postgresContainerName()}/construct`), true);
   assert.equal(isManagedConstructPostgresUrl('postgresql://user:pass@db.example.com:5432/construct'), false);
   assert.equal(isManagedConstructPostgresUrl('postgresql://user:pass@127.0.0.1:5432/construct'), false);
 });
@@ -392,5 +395,5 @@ test('stopServices runs docker compose down when compose file exists', async () 
 
   const composeDown = calls.find((c) => c.args.includes('down'));
   assert.ok(composeDown, 'docker compose down was called');
-  assert.ok(composeDown.args.includes('construct-postgres'), 'project name passed');
+  assert.ok(composeDown.args.includes(postgresContainerName()), 'per-home project name passed');
 });

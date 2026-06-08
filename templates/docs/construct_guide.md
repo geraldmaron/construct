@@ -14,22 +14,22 @@ You added Construct as a dev dependency. That gave you:
 
 You don't need to manage any of that: it all runs locally.
 
-## Files Construct created in your project
+## Files Construct created or manages
 
-You'll see these in `git status`:
+Generated tooling (`.construct/`, `.claude/`, `.cx/`, `plan.md`) is gitignored; the user-owned files (`AGENTS.md`, `docs/`) are the ones committed as project content.
 
 | Path | What it is | Touch? |
 |---|---|---|
-| `.construct/` | Launcher for hooks. Don't edit. Regenerated on `npm install`. | No |
-| `.claude/agents/` | The 29 persona definitions. Regenerated on `npm install`. | No |
-| `.claude/commands/` | Slash commands. Regenerated on `npm install`. | No |
-| `.claude/settings.json` | Hooks + MCP server config. Construct keys are managed; your additions are preserved. | Carefully |
-| `.cx/` | Per-project session state (active work, recent decisions). Construct writes here. | Read-mostly |
+| `.construct/` | Launcher for hooks. Don't edit. Regenerated on `npm install`. Gitignored. | No |
+| `.claude/agents/` | The persona definitions. Regenerated on `npm install`. Gitignored. | No |
+| `.claude/commands/` | Slash commands. Regenerated on `npm install`. Gitignored. | No |
+| `.claude/settings.json` | Hooks + MCP server config. Construct keys are managed; your additions are preserved. Gitignored. | Carefully |
+| `.cx/` | Per-project session state (active work, decisions, this guide). Construct writes here. Gitignored. | Read-mostly |
 | `.beads/` | Issue tracker data. Use `bd <cmd>` to interact. | Via CLI |
-| `AGENTS.md` | Operating rules the agent reads at session start. | Yes: your house rules go here |
+| `AGENTS.md` | Agent guide. Construct owns only its fenced integration block; the rest is yours. | Yes: your house rules go here |
 | `plan.md` | Active work plan. Local-only (gitignored). | Yes: your current focus |
 | `docs/` | Documentation lanes (ADRs, PRDs, memos, …). | Yes: this is your team's docs |
-| `construct_guide.md` | This file. Friendly orientation. | Yes: adapt to your team |
+| `.cx/construct_guide.md` | This file. Friendly orientation. Gitignored. | Yes: adapt to your team |
 
 ## Where to drop information you want Construct to use
 
@@ -80,16 +80,15 @@ construct doctor             # verify everything's healthy
 
 ## Local services
 
-If you ran `construct init` and have Docker, you have three things running locally on Construct's reserved port block (`54329-54339`, chosen to avoid colliding with Next.js, Postgres, Redis, etc.):
+Once services are set up (`construct install`) and you have Docker, three things run locally. Ports are derived per home directory to avoid collisions, so run `construct status` for the live endpoints rather than assuming fixed numbers.
 
 **Telemetry backend** (LLM observability: see your traces, costs, and quality scores)
 
-- URL: <http://localhost:54330>
+- Dashboard URL: shown by `construct status`
 
 **Postgres + pgvector** (the database that backs hybrid retrieval)
 
-- URL: `postgresql://construct:construct@127.0.0.1:54329/construct`
-- Saved as `DATABASE_URL` in `~/.construct/config.env`
+- Connection string (`DATABASE_URL`): shown by `construct status`, saved in `~/.construct/config.env`
 
 **Vector storage** (semantic search over your project + ingested docs)
 
@@ -105,7 +104,8 @@ All ports bind to `127.0.0.1` only; nothing is reachable from other machines on 
 
 | Command | What it does |
 |---|---|
-| `construct init` | One-time per-machine: spins up local services, writes config |
+| `construct install` | Machine setup, once per machine: Docker, local services, `~/.construct` config |
+| `construct init` | Project setup, once per repo: scaffold `.cx/`, AGENTS.md, plan.md, adapters |
 | `construct config [mode <m>]` | Show active deployment mode (solo / team / enterprise) or set a new one |
 | `construct doctor` | Health check across config, services, agents, hooks |
 | `construct sync` | Regenerate platform adapters (Claude Code, OpenCode, Codex, Cursor) |

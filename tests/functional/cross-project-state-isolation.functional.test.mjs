@@ -42,7 +42,7 @@ function makeSandbox() {
   mkdirSync(home, { recursive: true });
   return {
     root, projectA, projectB, home,
-    cleanup: () => rmSync(root, { recursive: true, force: true }),
+    cleanup: () => rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }),
   };
 }
 

@@ -73,8 +73,8 @@ test('A2 end-to-end: construct knowledge add writes a frontmatter-stamped resear
   assert.match(content, /profile: rnd/);
   assert.match(content, /expiresAt: \d{4}-\d{2}-\d{2}/);
 
-  fs.rmSync(cwd, { recursive: true, force: true });
-  fs.rmSync(home, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('A2 end-to-end: confidence=confirmed without --source-url is rejected', { timeout: 90_000 }, () => {
@@ -92,6 +92,6 @@ test('A2 end-to-end: confidence=confirmed without --source-url is rejected', { t
   assert.notEqual(result.status, 0, 'expected non-zero exit for missing sources');
   assert.match(result.stderr + result.stdout, /confirmed requires at least one source/);
 
-  fs.rmSync(cwd, { recursive: true, force: true });
-  fs.rmSync(home, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });

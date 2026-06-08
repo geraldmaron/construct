@@ -30,6 +30,11 @@ import test, { before, after } from 'node:test';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
 
+// `construct sync` now defaults to detected hosts (ADR-0027 §1); a sterile HOME
+// detects none, so pin the full set to exercise every adapter writer.
+
+const ALL_HOSTS = 'claude,codex,copilot,opencode,vscode,cursor';
+
 const DOC_STAMP_KEYS = ['cx_doc_id', 'body_hash', 'generator: construct/sync-specialists'];
 
 let SHARED_HOME;
@@ -45,19 +50,19 @@ before(() => {
     cwd: REPO_ROOT,
     encoding: 'utf8',
     timeout: 120_000,
-    env: { ...process.env, HOME: SHARED_HOME },
+    env: { ...process.env, HOME: SHARED_HOME, CONSTRUCT_SYNC_HOSTS: ALL_HOSTS },
   });
   PROJECT_RESULT = spawnSync(process.execPath, [SYNC_SCRIPT, '--project'], {
     cwd: SHARED_PROJECT,
     encoding: 'utf8',
     timeout: 120_000,
-    env: { ...process.env, HOME: SHARED_HOME },
+    env: { ...process.env, HOME: SHARED_HOME, CONSTRUCT_SYNC_HOSTS: ALL_HOSTS },
   });
 });
 
 after(() => {
-  if (SHARED_HOME) rmSync(SHARED_HOME, { recursive: true, force: true });
-  if (SHARED_PROJECT) rmSync(SHARED_PROJECT, { recursive: true, force: true });
+  if (SHARED_HOME) rmSync(SHARED_HOME, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  if (SHARED_PROJECT) rmSync(SHARED_PROJECT, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 function walk(dir, predicate) {

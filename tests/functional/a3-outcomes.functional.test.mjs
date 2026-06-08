@@ -43,7 +43,7 @@ test('A3 end-to-end: record -> aggregate -> classifier tiebreaker, capped and no
   assert.equal(triage.intakeType, 'bug');
   assert.equal(triage.primaryOwner, 'debugger');
 
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('A3 production trigger: agent-tracker writes outcome JSONL on a Task SubagentStop event', () => {
@@ -83,6 +83,6 @@ test('A3 production trigger: agent-tracker writes outcome JSONL on a Task Subage
   assert.ok(fs.existsSync(path.join(fakeHome, '.cx', 'last-agent.json')),
     'last-agent.json should have been written to the fake HOME');
 
-  fs.rmSync(cwd, { recursive: true, force: true });
-  fs.rmSync(fakeHome, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });

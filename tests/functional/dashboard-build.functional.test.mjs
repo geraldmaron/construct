@@ -40,7 +40,7 @@ test('apps/dashboard builds via next build', { timeout: 360_000 }, async () => {
 
   let result;
   for (let attempt = 1; attempt <= 2; attempt += 1) {
-    rmSync(NEXT_CACHE, { recursive: true, force: true });
+    rmSync(NEXT_CACHE, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     result = spawnSync('npm', ['--prefix', APP, 'run', 'build'], {
       cwd: REPO_ROOT,
       encoding: 'utf8',

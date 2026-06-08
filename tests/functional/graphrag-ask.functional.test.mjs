@@ -113,7 +113,7 @@ test('knowledge_graph_ask routes an auth-cluster query to the auth community ove
     const overlap = ['oauth', 'session', 'jwt'].filter((n) => top.topMembers.includes(n));
     assert.ok(overlap.length >= 1, `top community ${top.topMembers.join(',')} should overlap with auth cluster`);
   });
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('knowledge_graph_ask returns empty result gracefully for a project with no entities', async () => {
@@ -127,5 +127,5 @@ test('knowledge_graph_ask returns empty result gracefully for a project with no 
     assert.equal(body.totalEntities, 0);
     assert.deepEqual(body.communities, []);
   });
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });

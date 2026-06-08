@@ -1,14 +1,14 @@
 ---
 intake: none
 intake_rationale: activation-model decision recorded from research brief construct-i1mt and the construct-f66u host gap; not routed through an intake packet.
-last_verified_at: 2026-06-04
-verified_by: construct · authored from .cx/research/doc-io-and-invocation-research.md
+last_verified_at: 2026-06-05
+verified_by: construct · implementation shipped (construct-f66u orchestration_run MCP tool, construct-hvms ACP server) and verified by tests/functional/orchestration-mcp.functional.test.mjs and acp-server.functional.test.mjs
 ---
 
 # ADR 0025: Construct activation is explicit and host-initiated — aware, never ambient
 
 **Date:** 2026-06-04
-**Status:** Proposed
+**Status:** Accepted
 **Deciders:** Construct·Architect
 **Supersedes:** none
 

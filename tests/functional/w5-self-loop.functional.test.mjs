@@ -17,7 +17,7 @@ import { verifyTranscript, classifyApproval, findConsequentialActions } from '..
 
 function freshCwd() {
   const cwd = mkdtempSync(join(tmpdir(), 'construct-w5-'));
-  return { cwd, cleanup() { try { rmSync(cwd, { recursive: true, force: true }); } catch { /* ignore */ } } };
+  return { cwd, cleanup() { try { rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } } };
 }
 
 // ── Daemon safeguard contract ───────────────────────────────────────────────

@@ -14,6 +14,8 @@ description: Advanced commands for Construct.
 | `construct ci` | Local CI mirror: run CI jobs locally or view recent run status |
 | `construct completions` | Shell completion scripts |
 | `construct config` | Deployment mode configuration |
+| `construct decisions` | Index load-bearing decisions and their enforcement bindings |
+| `construct deployment` | Deployment posture tools (capability parity contract) |
 | `construct diff` | Show agent changes since HEAD |
 | `construct embed` | Embed mode management |
 | `construct gates:audit` | Audit policy gates |
@@ -110,6 +112,44 @@ Deployment mode configuration
 construct config <get|set>
 ```
 
+## construct decisions
+
+Index load-bearing decisions and their enforcement bindings
+
+**Usage**
+
+```bash
+construct decisions [list|validate|json|check|baseline|golden]
+```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `list` | Show decisions with status and enforcement (default) |
+| `validate` | Validate registry structure; exit 1 on error |
+| `check` | Fail on dangling markers, enforcement/supersede/linkage/precedence drift |
+| `baseline` | Print the enforced baseline; --write to regenerate it |
+| `golden` | Check the CLI/agent/hook surface snapshot; --write to regenerate it |
+| `json` | Emit the full registry as JSON |
+
+## construct deployment
+
+Deployment posture tools (capability parity contract)
+
+**Usage**
+
+```bash
+construct deployment parity
+```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `parity` | Show and validate capability parity across solo/team/enterprise |
+| `--json` | Emit the parity contract as JSON |
+
 ## construct diff
 
 Show agent changes since HEAD
@@ -193,7 +233,7 @@ Role framework management
 **Usage**
 
 ```bash
-construct role <list|set|latest>
+construct role <list|latest|show|status|resolve|prune|reset>
 ```
 
 ## construct roles:list

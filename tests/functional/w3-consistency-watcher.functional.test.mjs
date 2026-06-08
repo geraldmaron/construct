@@ -37,7 +37,7 @@ function freshRepoSlice() {
   cpSync(join(REPO_ROOT, 'lib', 'schemas'), join(root, 'lib', 'schemas'), { recursive: true });
   return {
     root,
-    cleanup() { try { rmSync(root, { recursive: true, force: true }); } catch { /* ignore */ } },
+    cleanup() { try { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } },
     writeJson(rel, obj) { writeFileSync(join(root, rel), JSON.stringify(obj, null, 2)); },
     write(rel, body) { writeFileSync(join(root, rel), body); },
   };

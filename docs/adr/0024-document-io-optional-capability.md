@@ -1,14 +1,14 @@
 ---
 intake: none
 intake_rationale: capability decision recorded from research brief construct-i1mt; not routed through an intake packet.
-last_verified_at: 2026-06-04
-verified_by: construct · authored from .cx/research/doc-io-and-invocation-research.md
+last_verified_at: 2026-06-05
+verified_by: construct · export half shipped (lib/document-export.mjs + construct export CLI + document_export MCP tool); ingestion half present via lib/document-ingest.mjs + lib/runtime/uv-bootstrap.mjs; functional test tests/functional/document-export.functional.test.mjs covers detect/missing-binary/happy-path
 ---
 
 # ADR 0024: Document I/O is an optional, externally-bound capability
 
 **Date:** 2026-06-04
-**Status:** Proposed
+**Status:** Accepted
 **Deciders:** Construct·Architect
 **Supersedes:** none
 

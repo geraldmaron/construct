@@ -157,6 +157,67 @@ const COMPRESS_PERSONAS = process.argv.includes("--compress-personas");
 const PROJECT_FLAG = process.argv.includes("--project");
 const GLOBAL_FLAG = process.argv.includes("--global");
 
+// --quiet suppresses only the closing one-line summary, not the work or any
+// warning. `construct install` runs the global tier twice (plain `sync` then
+// `sync --global`); in a non-project cwd both land in the same global branch and
+// print the identical "Synced … to global scope" + "Completions updated" lines.
+// Passing --quiet to the first call lets the canonical summary print exactly once
+// from `sync --global`, with no change to what either call writes.
+
+const QUIET = process.argv.includes("--quiet") || process.argv.includes("-q");
+const summary = (msg) => { if (!QUIET) console.log(msg); };
+
+// Project-tier host selection. `--hosts=claude,codex,…` (or CONSTRUCT_SYNC_HOSTS)
+// restricts which adapter sets the project tier writes, so `construct init` can
+// scaffold only the hosts the user actually has (construct-4xy6 / ADR-0027 §1).
+// Absent → null → write every host, preserving `construct sync` back-compat.
+
+import { detectHostCapabilities } from "../lib/host-capabilities.mjs";
+
+const HOST_KEYS = ["claude", "codex", "copilot", "opencode", "vscode", "cursor"];
+
+function parseHostSelection() {
+  const arg = process.argv.find((a) => a.startsWith("--hosts="));
+  const raw = arg ? arg.slice("--hosts=".length) : process.env.CONSTRUCT_SYNC_HOSTS;
+  if (!raw) {
+    // Default to detected hosts if none are explicitly requested.
+    const detected = new Set();
+    const nameToKey = {
+      "Claude Code": "claude",
+      "OpenCode": "opencode",
+      "Codex": "codex",
+      "VS Code": "vscode",
+      "Cursor": "cursor",
+      "Copilot": "copilot",
+    };
+    try {
+      for (const cap of detectHostCapabilities()) {
+        if (cap.availability === "installed" && nameToKey[cap.host]) {
+          detected.add(nameToKey[cap.host]);
+        }
+      }
+    } catch { /* detection is advisory */ }
+
+    // Config file present means the user has (or had) OpenCode — include it
+    // so the sync writes to the existing config rather than pruning it.
+    // Binary-based detection misses non-PATH installs and CI-runner setups.
+    if (!detected.has("opencode")) {
+      try {
+        if (fs.existsSync(findOpenCodeConfigPath())) detected.add("opencode");
+      } catch { /* advisory */ }
+    }
+
+    // Always include Claude as the baseline if nothing else is detected.
+    if (detected.size === 0) detected.add("claude");
+    return detected;
+  }
+  const wanted = new Set(raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
+  return new Set(HOST_KEYS.filter((k) => wanted.has(k)));
+}
+
+const HOST_SELECTION = parseHostSelection();
+const wantsHost = (key) => HOST_SELECTION.has(key);
+
 /**
  * A Construct project carries `.construct/` (the launcher staged by
  * `stage-project.mjs`) or `.cx/` (state). When `construct sync` runs inside
@@ -770,16 +831,30 @@ function writeProjectClaudeSettings(targetDir) {
     }
   }
 
+  // The registry is the single source of truth for MCP servers; VS Code, Codex,
+  // and OpenCode all wire it. Project Claude must match — above all `construct-mcp`,
+  // the server exposing project_context/get_skill/get_template/orchestration_policy
+  // that the specialist loop depends on. The curated template omits it, which left
+  // Claude Code as the only selected tool without the construct config. Merge the
+  // registry on top of the template seed; existing entries win so user edits stick,
+  // and buildClaudeMcpEntry resolves each server's path/env.
+  const registryMcp = registry.mcpServers ?? {};
+  existing.mcpServers ??= {};
+  for (const [id, mcpDef] of Object.entries(registryMcp)) {
+    if (existing.mcpServers[id]) continue;
+    existing.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
+  }
+
   if (DRY_RUN) return;
   mkdirp(path.dirname(settingsPath));
   writeFile(settingsPath, JSON.stringify(existing, null, 2) + "\n");
 }
 
-function syncClaude(entries, targetDir = null) {
+function syncClaude(entries, targetDir = null, wants = true) {
   const claudeAgentsDir = targetDir
     ? path.join(targetDir, ".claude", "agents")
     : path.join(home, ".claude", "agents");
-  if (!DRY_RUN) mkdirp(claudeAgentsDir);
+  if (!DRY_RUN && wants) mkdirp(claudeAgentsDir);
 
   // Claude Code and VS Code both read the user-scope `~/.claude/agents/`, so a
   // global front-door agent duplicates the project orchestrator in any editor
@@ -787,8 +862,9 @@ function syncClaude(entries, targetDir = null) {
   // scope therefore writes NO agent file — the project's own
   // `.claude/agents/construct.md` is the front door; global hooks (settings.json)
   // and CLAUDE.md still install. An empty write set sweeps any global agent.
+  // Both global and project scope now emit only the front door (Single Front Door).
 
-  const writeEntries = targetDir ? entries : [];
+  const writeEntries = (targetDir && wants) ? globalEntries(entries) : [];
 
   for (const entry of writeEntries) {
     const name = adapterName(entry);
@@ -888,14 +964,29 @@ function isCodexMcpSupported() {
   return true;
 }
 
-function syncCodex(entries, targetDir = null) {
+// Codex aborts at startup when an MCP server's bearer_token_env_var names an env
+// var that is unset ("Environment variable GITHUB_TOKEN for MCP server github is
+// not set"). Unlike OpenCode — which keeps the `{env:VAR}` ref and resolves it at
+// runtime — Codex must have the credential at sync time, so an entry whose token
+// env var is unresolved is omitted from the Codex config (construct-n6h7).
+// Entries with no credential requirement always pass.
+
+function codexMcpEnvResolves(id, def, env = process.env) {
+  const entry = buildCodexMcpEntry(id, def, env);
+  const tokenVar = entry?.bearer_token_env_var;
+  if (!tokenVar) return true;
+  const val = env[tokenVar];
+  return val !== undefined && val !== "";
+}
+
+function syncCodex(entries, targetDir = null, wants = true) {
   const codexDir = targetDir
     ? path.join(targetDir, ".codex")
     : path.join(home, ".codex");
   const codexAgentsDir = path.join(codexDir, "agents");
-  if (!DRY_RUN) mkdirp(codexAgentsDir);
+  if (!DRY_RUN && wants) mkdirp(codexAgentsDir);
 
-  const writeEntries = targetDir ? entries : globalEntries(entries);
+  const writeEntries = wants ? globalEntries(entries) : [];
 
   for (const entry of writeEntries) {
     writeFile(path.join(codexAgentsDir, `${adapterName(entry)}.toml`), codexAgentToml(entry, entries));
@@ -915,7 +1006,7 @@ function syncCodex(entries, targetDir = null) {
   // not just tables already present — otherwise Codex never receives `construct-mcp`
   // and the orchestration tool is unreachable there. existingMcpIds still drives
   // cleanup of any pre-existing standalone tables so the managed block stays canonical.
-  const mcpIds = Object.keys(registryMcp).filter(isCodexMcpSupported);
+  const mcpIds = Object.keys(registryMcp).filter((id) => isCodexMcpSupported() && codexMcpEnvResolves(id, registryMcp[id], process.env));
   const existingMcpIds = Object.keys(registryMcp).filter((id) => hasCodexMcpTable(existing, id));
   const withoutManagedTables = removeDanglingConstructMcpMarkers(removeTomlTables(
     removeCodexAgentTables(existing, entryNames),
@@ -973,13 +1064,13 @@ When using this prompt, stay within the role above and adapt to the current repo
 `;
 }
 
-function syncCopilot(entries, targetDir = null) {
+function syncCopilot(entries, targetDir = null, wants = true) {
   const promptsDir = targetDir
     ? path.join(targetDir, ".github", "prompts")
     : path.join(home, ".github", "prompts");
-  if (!DRY_RUN) mkdirp(promptsDir);
+  if (!DRY_RUN && wants) mkdirp(promptsDir);
 
-  const writeEntries = targetDir ? entries : globalEntries(entries);
+  const writeEntries = wants ? globalEntries(entries) : [];
 
   for (const entry of writeEntries) {
     writeFile(path.join(promptsDir, `${adapterName(entry)}.prompt.md`), copilotPrompt(entry, entries), { stamp: false });
@@ -1059,7 +1150,7 @@ function getVSCodeUserMcpPaths() {
     .filter((file) => fs.existsSync(file));
 }
 
-function syncVSCode(targetDir = null) {
+function syncVSCode(targetDir = null, wants = true) {
   const registryMcp = registry.mcpServers ?? {};
   if (Object.keys(registryMcp).length === 0) return false;
 
@@ -1070,6 +1161,30 @@ function syncVSCode(targetDir = null) {
 
   if (targetDir) {
     const mcpPath = path.join(targetDir, ".vscode", "mcp.json");
+
+    if (!wants) {
+      if (!DRY_RUN && fs.existsSync(mcpPath)) {
+        // Only delete if it matches our managed block pattern or is a simple
+        // Construct-only file. For now, simple removal of the file if it
+        // matches our expected content.
+        try {
+          const config = JSON.parse(fs.readFileSync(mcpPath, "utf8"));
+          const keys = Object.keys(config?.servers ?? {});
+          const allManaged = keys.every(id => id in registryMcp);
+          if (allManaged) {
+          fs.rmSync(mcpPath, { force: true });
+          try {
+            const vscodeDir = path.dirname(mcpPath);
+            if (fs.existsSync(vscodeDir) && fs.readdirSync(vscodeDir).length === 0) {
+              fs.rmdirSync(vscodeDir);
+            }
+          } catch { /* ignore non-empty */ }
+        }
+        } catch { /* skip cleanup of unreadable file */ }
+      }
+      return false;
+    }
+
     let config = { servers: {} };
     if (fs.existsSync(mcpPath)) {
       try { config = JSON.parse(fs.readFileSync(mcpPath, "utf8")) || { servers: {} }; }
@@ -1119,13 +1234,14 @@ function syncVSCode(targetDir = null) {
 
 // --- Cursor adapter ---
 
-function syncCursor(targetDir = null) {
+function syncCursor(targetDir = null, wants = true) {
   const registryMcp = registry.mcpServers ?? {};
   if (Object.keys(registryMcp).length === 0) return false;
 
-  const cursorMcpPath = targetDir
-    ? path.join(targetDir, ".cursor", "mcp.json")
-    : path.join(home, ".cursor", "mcp.json");
+  const cursorDir = targetDir
+    ? path.join(targetDir, ".cursor")
+    : path.join(home, ".cursor");
+  const cursorMcpPath = path.join(cursorDir, "mcp.json");
 
   // Global scope only updates Cursor's MCP config when the user has already
   // initialized `~/.cursor/mcp.json`; we don't conjure user-scope config out
@@ -1133,6 +1249,35 @@ function syncCursor(targetDir = null) {
   // documented per-project mechanism and travels with the repo.
 
   if (!targetDir && !fs.existsSync(cursorMcpPath)) return false;
+
+  if (!wants) {
+    if (!DRY_RUN && fs.existsSync(cursorMcpPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(cursorMcpPath, "utf8"));
+        const keys = Object.keys(config?.mcpServers ?? {});
+        const allManaged = keys.every(id => id in registryMcp);
+        if (allManaged) {
+          fs.rmSync(cursorMcpPath, { force: true });
+          // Also clean up rules if this was a project sync
+          if (targetDir) {
+            const rulesPath = path.join(cursorDir, "rules", "construct.mdc");
+            if (fs.existsSync(rulesPath)) fs.rmSync(rulesPath, { force: true });
+            // Remove .cursor if empty
+            try {
+              const rulesDir = path.join(cursorDir, "rules");
+              if (fs.existsSync(rulesDir) && fs.readdirSync(rulesDir).length === 0) {
+                fs.rmdirSync(rulesDir);
+              }
+              if (fs.existsSync(cursorDir) && fs.readdirSync(cursorDir).length === 0) {
+                fs.rmdirSync(cursorDir);
+              }
+            } catch { /* ignore non-empty or access errors */ }
+          }
+        }
+      } catch { /* skip cleanup of unreadable file */ }
+    }
+    return false;
+  }
 
   let config = { mcpServers: {} };
   if (fs.existsSync(cursorMcpPath)) {
@@ -1175,15 +1320,31 @@ function syncCursor(targetDir = null) {
 // --- OpenCode adapter ---
 
 function opencodePermissions(entry) {
-  if (entry.permissions) {
-    return Object.fromEntries(
-      Object.entries(entry.permissions).map(([k, v]) => [k, v])
-    );
-  }
   // Review-only specialists (canEdit:false) must not modify files — honor the
   // registry's canEdit contract here as Claude does, rather than defaulting every
   // specialist to edit:allow.
-  return { edit: entry.canEdit === false ? "deny" : "allow", bash: "allow" };
+
+  const perms = entry.permissions
+    ? Object.fromEntries(Object.entries(entry.permissions).map(([k, v]) => [k, v]))
+    : { edit: entry.canEdit === false ? "deny" : "allow", bash: "allow" };
+
+  // The orchestrator is the primary write surface; translate its abstract
+  // bash:allow into OpenCode's scoped permission map so destructive commands are
+  // denied and remote/history rewrites prompt — the commit-approval contract
+  // enforced at the tool layer, not just in the prompt. Subagents keep the
+  // abstract grant. This scoped shape is an OpenCode translation detail and stays
+  // out of the cross-adapter registry.
+
+  if (entry.isOrchestrator && perms.bash === "allow") {
+    perms.bash = {
+      "*": "allow",
+      "rm -rf *": "deny",
+      "git push *": "ask",
+      "git push --force*": "ask",
+      "git reset --hard *": "ask",
+    };
+  }
+  return perms;
 }
 
 function opencodeTaskPermissions(entry) {
@@ -1193,7 +1354,7 @@ function opencodeTaskPermissions(entry) {
   };
 }
 
-function syncOpencode(entries, targetDir = null) {
+function syncOpencode(entries, targetDir = null, wants = true) {
   // OpenCode's resolver reads `<project>/opencode.json`, `opencode.jsonc`, or
   // `<project>/.opencode/opencode.json` — never `.opencode/config.json`. Write the
   // namespaced `.opencode/opencode.json` so project agents + MCP actually load; a
@@ -1203,7 +1364,32 @@ function syncOpencode(entries, targetDir = null) {
   const configPath = targetDir
     ? path.join(targetDir, ".opencode", "opencode.json")
     : findOpenCodeConfigPath();
+
   if (!targetDir && !fs.existsSync(configPath)) return false;
+
+  if (!wants) {
+    if (!DRY_RUN && fs.existsSync(configPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+        const agentKeys = Object.keys(config?.agent ?? {});
+        const allManaged = agentKeys.every(id => id === 'construct' || (registry.specialists || []).some(s => s.name === id.replace(/^cx-/, '')));
+        if (allManaged) {
+          fs.rmSync(configPath, { force: true });
+          if (targetDir) {
+            const pluginsDir = path.join(targetDir, ".opencode", "plugins");
+            if (fs.existsSync(pluginsDir)) fs.rmSync(pluginsDir, { recursive: true, force: true });
+            try {
+              if (fs.readdirSync(path.join(targetDir, ".opencode")).length === 0) {
+                fs.rmdirSync(path.join(targetDir, ".opencode"));
+              }
+            } catch { /* ignore non-empty */ }
+          }
+        }
+      } catch { /* skip cleanup */ }
+    }
+    return false;
+  }
+
   if (targetDir) {
     mkdirp(path.dirname(configPath));
     // Converge a stale `.opencode/config.json` (a path OpenCode never read) onto
@@ -1221,7 +1407,7 @@ function syncOpencode(entries, targetDir = null) {
   const managedPluginPath = path.join(pluginsDir, "construct-fallback.js");
   const toolkitPluginPath = path.join(root, "platforms", "opencode", "plugins", "construct-fallback.js");
 
-  const writeEntries = targetDir ? entries : globalEntries(entries);
+  const writeEntries = globalEntries(entries);
 
   const { config } = targetDir
     ? { config: fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath, "utf8")) : {} }
@@ -1337,6 +1523,14 @@ function syncOpencode(entries, targetDir = null) {
         task: opencodeTaskPermissions(entry),
       },
     };
+  }
+
+  // Seed a cheap auxiliary model for titles and summaries when the user has not
+  // chosen one — a cost lever only. The primary `model` stays the user's choice
+  // and is never written. Global scope only; project configs inherit it.
+
+  if (!targetDir && config.small_model === undefined) {
+    config.small_model = "anthropic/claude-haiku-4-5-20251001";
   }
 
   writeOpenCodeConfig(config, configPath);
@@ -1519,38 +1713,38 @@ if (COMPRESS_PERSONAS) {
 acquireLock();
 try {
   if (projectDir) {
-    syncClaude(entries, projectDir);
-    syncCodex(entries, projectDir);
-    syncCopilot(entries, projectDir);
-    const opencodeOk = syncOpencode(entries, projectDir);
-    const vscodeOk = syncVSCode(projectDir);
-    const cursorOk = syncCursor(projectDir);
-    const cmdCount = syncCommands(projectDir);
-    const skillCount = syncSkills(projectDir);
+    syncClaude(entries, projectDir, wantsHost("claude"));
+    syncCodex(entries, projectDir, wantsHost("codex"));
+    syncCopilot(entries, projectDir, wantsHost("copilot"));
+    const opencodeOk = syncOpencode(entries, projectDir, wantsHost("opencode"));
+    const vscodeOk = syncVSCode(projectDir, wantsHost("vscode"));
+    const cursorOk = syncCursor(projectDir, wantsHost("cursor"));
+    const cmdCount = wantsHost("claude") ? syncCommands(projectDir) : 0;
+    const skillCount = wantsHost("claude") ? syncSkills(projectDir) : 0;
 
     if (DRY_RUN) {
       printDryRunDiff();
     } else {
       commitStaging();
       const targets = [
-        "Claude Code",
-        "Codex",
-        "Copilot",
+        wantsHost("claude") && "Claude Code",
+        wantsHost("codex") && "Codex",
+        wantsHost("copilot") && "Copilot",
         opencodeOk && "OpenCode",
         vscodeOk && "VS Code",
         cursorOk && "Cursor",
       ].filter(Boolean).join(", ");
-      console.log(`Synced ${entries.length} agents + ${cmdCount} commands + ${skillCount} skills to ${path.relative(process.cwd(), projectDir) || "."} (project mode → ${targets}).`);
+      summary(`Synced ${entries.length} agents + ${cmdCount} commands + ${skillCount} skills to ${path.relative(process.cwd(), projectDir) || "."} (project mode → ${targets}).`);
     }
   } else {
     const personaCount = entries.filter((e) => e.isOrchestrator).length;
 
-    syncCodex(entries);
-    syncClaude(entries);
-    syncCopilot(entries);
-    const opencodeOk = syncOpencode(entries);
-    const vscodeOk = syncVSCode();
-    const cursorOk = syncCursor();
+    syncCodex(entries, null, wantsHost("codex"));
+    syncClaude(entries, null, wantsHost("claude"));
+    syncCopilot(entries, null, wantsHost("copilot"));
+    const opencodeOk = syncOpencode(entries, null, wantsHost("opencode"));
+    const vscodeOk = syncVSCode(null, wantsHost("vscode"));
+    const cursorOk = syncCursor(null, wantsHost("cursor"));
     syncCommands();
     syncSkills();
 
@@ -1566,11 +1760,11 @@ try {
         vscodeOk && "VS Code",
         cursorOk && "Cursor",
       ].filter(Boolean).join(", ");
-      console.log(`Synced ${personaCount} front-door agent to global scope (${targets}). Specialists, commands, and skills are project-only — run \`construct init\` inside a project to scaffold them.`);
+      summary(`Synced ${personaCount} front-door agent to global scope (${targets}). Specialists, commands, and skills are project-only — run \`construct init\` inside a project to scaffold them.`);
 
       const completionsDir = generateCompletions();
       if (completionsDir) {
-        console.log(`Completions updated → ${completionsDir}`);
+        summary(`Completions updated → ${completionsDir}`);
       }
     }
   }

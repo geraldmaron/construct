@@ -49,7 +49,7 @@ test('orchestrate run --json plans a specialist chain and persists a durable run
   const runFile = path.join(cwd, '.cx', 'runtime', 'orchestration', 'runs', `${meta.runId}.json`);
   assert.ok(fs.existsSync(runFile), 'run persisted to the filesystem store');
 
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('orchestrate status reads a run back across a separate process invocation', () => {
@@ -60,7 +60,7 @@ test('orchestrate status reads a run back across a separate process invocation',
   const meta = JSON.parse(res.stdout);
   assert.equal(meta.runId, created.runId);
   assert.equal(meta.status, 'completed');
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('prompt-only run honestly owns no specialist sequence', () => {
@@ -69,7 +69,7 @@ test('prompt-only run honestly owns no specialist sequence', () => {
   assert.equal(meta.executionMode, 'construct-prompt-only');
   assert.deepEqual(meta.tasks, []);
   assert.deepEqual(meta.constructCapabilitiesActive, ['prompt-envelope']);
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('status with no run id lists recent runs', () => {
@@ -80,5 +80,5 @@ test('status with no run id lists recent runs', () => {
   const list = JSON.parse(res.stdout);
   assert.ok(Array.isArray(list) && list.length >= 1);
   assert.ok(list[0].runId && list[0].status);
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });

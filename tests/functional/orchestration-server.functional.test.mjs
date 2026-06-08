@@ -67,7 +67,7 @@ test.before(async () => {
 
 test.after(() => {
   try { proc?.kill(); } catch {}
-  try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
+  try { fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {}
 });
 
 const authed = { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN}` };
@@ -163,6 +163,6 @@ test('a no-token daemon accepts the orchestration POST (CSRF-exempt programmatic
     assert.ok(env.data.runId, 'run started');
   } finally {
     try { proc2.kill(); } catch {}
-    try { fs.rmSync(home2, { recursive: true, force: true }); } catch {}
+    try { fs.rmSync(home2, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {}
   }
 });

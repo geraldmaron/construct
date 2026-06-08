@@ -58,7 +58,7 @@ test.before(async () => {
 
 test.after(() => {
   try { proc?.kill(); } catch {}
-  try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
+  try { fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {}
 });
 
 test('orchestration_run executes a real run via the daemon and returns task output', async () => {

@@ -39,7 +39,7 @@ function makeEnv(args, extraEnv = {}) {
       timeout: 90_000,
       env: { ...process.env, HOME: home, CONSTRUCT_SKIP_POSTINSTALL: '1', ...extraEnv },
     }),
-    cleanup: () => rmSync(sandbox, { recursive: true, force: true }),
+    cleanup: () => rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }),
   };
 }
 

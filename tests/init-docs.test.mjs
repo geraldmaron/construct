@@ -31,8 +31,8 @@ test('construct init bootstraps repo state without overwriting existing AGENTS.m
   assert.equal(fs.existsSync(path.join(cwd, 'plan.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, '.cx', 'context.json')), true);
   assert.equal(fs.existsSync(path.join(cwd, '.cx', 'context.md')), true);
-  assert.equal(fs.existsSync(path.join(cwd, '.cx', '.gitkeep')), true);
-  assert.equal(fs.existsSync(path.join(cwd, '.cx', 'inbox', '.gitkeep')), true);
+  assert.ok(fs.statSync(path.join(cwd, '.cx')).isDirectory());
+  assert.ok(fs.statSync(path.join(cwd, '.cx', 'inbox')).isDirectory());
 
   const plan = fs.readFileSync(path.join(cwd, 'plan.md'), 'utf8');
   const context = fs.readFileSync(path.join(cwd, '.cx', 'context.md'), 'utf8');
@@ -66,7 +66,7 @@ test('init-docs scaffolds selected doc lanes and preserves existing docs files',
   assert.equal(fs.readFileSync(path.join(cwd, 'docs', 'README.md'), 'utf8'), existingDocsReadme);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'architecture.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'intake', 'templates', '_template.md')), true);
-  assert.equal(fs.existsSync(path.join(cwd, '.cx', 'inbox', '.gitkeep')), true);
+  assert.ok(fs.statSync(path.join(cwd, '.cx', 'inbox')).isDirectory());
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'meetings', 'templates', '_template.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'notes', 'templates', '_template.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'prds', 'templates', '_template.md')), true);
@@ -110,7 +110,7 @@ test('init-docs treats "all of them" as defaults and "nope" as no custom lanes',
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'prds', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'adr', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'intake', 'README.md')), true);
-  assert.equal(fs.existsSync(path.join(cwd, '.cx', 'inbox', '.gitkeep')), true);
+  assert.ok(fs.statSync(path.join(cwd, '.cx', 'inbox')).isDirectory());
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'meetings', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'memos', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'notes', 'README.md')), true);

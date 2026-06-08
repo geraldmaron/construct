@@ -19,7 +19,7 @@ function freshCwd() {
   const cwd = mkdtempSync(join(tmpdir(), 'construct-reflect-'));
   return {
     cwd,
-    cleanup() { try { rmSync(cwd, { recursive: true, force: true }); } catch { /* ignore */ } },
+    cleanup() { try { rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } },
   };
 }
 

@@ -8,16 +8,16 @@ description: Observability commands for Construct.
 | Command | What it does |
 |---|---|
 | `construct efficiency` | Show read efficiency, repeated files, and context-budget guidance |
-| `construct eval-datasets` | Sync scored Langfuse traces into eval datasets for prompt regression testing |
+| `construct eval-datasets` | Sync scored traces from the telemetry backend into eval datasets for prompt regression testing |
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
 | `construct feedback:history` | Show recorded outcome ratings |
 | `construct feedback:record` | Record an outcome rating for a recent specialist invocation |
 | `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
-| `construct optimize` | Prompt optimization using Langfuse trace quality scores |
-| `construct review` | Generate agent performance review from Langfuse trace backend |
+| `construct optimize` | Prompt optimization using telemetry trace quality scores |
+| `construct review` | Generate agent performance review from the configured telemetry trace backend |
 | `construct telemetry` | Query telemetry traces and latency data |
 | `construct telemetry-backfill` | Backfill sparse traces with observations (trace backend) |
-| `construct telemetry-setup` | Configure Langfuse credentials and trace export |
+| `construct telemetry-setup` | Configure telemetry backend credentials and trace export (OTLP or Langfuse-compatible) |
 
 ## construct efficiency
 
@@ -31,7 +31,7 @@ construct efficiency [--json]
 
 ## construct eval-datasets
 
-Sync scored Langfuse traces into eval datasets for prompt regression testing
+Sync scored traces from the telemetry backend into eval datasets for prompt regression testing
 
 **Usage**
 
@@ -81,7 +81,7 @@ construct llm-judge
 
 ## construct optimize
 
-Prompt optimization using Langfuse trace quality scores
+Prompt optimization using telemetry trace quality scores
 
 **Usage**
 
@@ -91,7 +91,7 @@ construct optimize <agent>
 
 ## construct review
 
-Generate agent performance review from Langfuse trace backend
+Generate agent performance review from the configured telemetry trace backend
 
 **Usage**
 
@@ -121,7 +121,7 @@ construct telemetry-backfill
 
 ## construct telemetry-setup
 
-Configure Langfuse credentials and trace export
+Configure telemetry backend credentials and trace export (OTLP or Langfuse-compatible)
 
 **Usage**
 
