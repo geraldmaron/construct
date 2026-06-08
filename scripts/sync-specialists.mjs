@@ -197,7 +197,16 @@ function parseHostSelection() {
         }
       }
     } catch { /* detection is advisory */ }
-    
+
+    // Config file present means the user has (or had) OpenCode — include it
+    // so the sync writes to the existing config rather than pruning it.
+    // Binary-based detection misses non-PATH installs and CI-runner setups.
+    if (!detected.has("opencode")) {
+      try {
+        if (fs.existsSync(findOpenCodeConfigPath())) detected.add("opencode");
+      } catch { /* advisory */ }
+    }
+
     // Always include Claude as the baseline if nothing else is detected.
     if (detected.size === 0) detected.add("claude");
     return detected;
