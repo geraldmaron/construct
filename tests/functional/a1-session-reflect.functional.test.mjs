@@ -45,7 +45,7 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
     input: JSON.stringify({ cwd, transcript_path: t1, session_id: 'func-1', session_duration_ms: 8500 }),
     encoding: 'utf8',
     timeout: 15_000,
-    env: { ...process.env, CONSTRUCT_EMBEDDING_MODEL: 'hashing' }
+    env: { ...process.env, CONSTRUCT_EMBEDDING_MODEL: 'hashing', CONSTRUCT_REFLECT_BUDGET_MS: '15000' }
   });
   assert.equal(r1.status, 0, `hook failed: ${r1.stderr}`);
 
@@ -88,7 +88,7 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
     input: JSON.stringify({ cwd, transcript_path: t2, session_id: 'func-2', session_duration_ms: 3000 }),
     encoding: 'utf8',
     timeout: 15_000,
-    env: { ...process.env, CONSTRUCT_EMBEDDING_MODEL: 'hashing' }
+    env: { ...process.env, CONSTRUCT_EMBEDDING_MODEL: 'hashing', CONSTRUCT_REFLECT_BUDGET_MS: '15000' }
   });
   assert.equal(r2.status, 0);
   const index2 = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
