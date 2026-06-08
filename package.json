@@ -99,7 +99,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "c8": "^11.0.0",
-    "eslint": "^9.39.4",
+    "eslint": "^10.4.1",
     "globals": "^17.6.0"
   }
 }
