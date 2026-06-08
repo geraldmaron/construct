@@ -66,8 +66,8 @@ function withSandbox(fn) {
       if (prev[key] === undefined) delete process.env[key];
       else process.env[key] = prev[key];
     }
-    rmSync(home, { recursive: true, force: true });
-    rmSync(project, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmSync(project, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 }
 

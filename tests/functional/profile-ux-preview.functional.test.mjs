@@ -43,7 +43,7 @@ test('profile set --dry-run previews the structural diff without writing', () =>
   assert.ok(res.stdout.includes('[dry-run] No files were written.'));
   const after = fs.readFileSync(path.join(cwd, 'construct.config.json'), 'utf8');
   assert.equal(before, after, 'config.json must be unchanged after --dry-run');
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('profile set --yes writes the new profile without prompting', () => {
@@ -52,7 +52,7 @@ test('profile set --yes writes the new profile without prompting', () => {
   assert.equal(res.status, 0, `stderr: ${res.stderr}`);
   const after = JSON.parse(fs.readFileSync(path.join(cwd, 'construct.config.json'), 'utf8'));
   assert.equal(after.profile, 'operations');
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('profile set is a no-op when the target equals the current profile', () => {
@@ -63,7 +63,7 @@ test('profile set is a no-op when the target equals the current profile', () => 
   assert.ok(res.stdout.includes('already set'));
   const after = fs.readFileSync(path.join(cwd, 'construct.config.json'), 'utf8');
   assert.equal(before, after);
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('profile archive --dry-run shows what files would move without touching them', () => {
@@ -78,7 +78,7 @@ test('profile archive --dry-run shows what files would move without touching the
   assert.ok(res.stdout.includes('What stays'));
   assert.ok(res.stdout.includes('[dry-run] No files were moved.'));
   assert.equal(fs.statSync(profileFile).size, sizeBefore, 'profile file must not change under --dry-run');
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('profile archive fails fast when reason is too short', () => {
@@ -86,5 +86,5 @@ test('profile archive fails fast when reason is too short', () => {
   const res = run(['profile', 'archive', 'creative', '--reason=too', '--yes'], { cwd });
   assert.notEqual(res.status, 0);
   assert.ok(res.stderr.includes('substantive --reason'));
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });

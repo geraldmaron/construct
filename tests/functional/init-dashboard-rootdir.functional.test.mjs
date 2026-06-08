@@ -40,6 +40,6 @@ test('startDashboard binds a live server when called with a project rootDir', as
     assert.ok(state && state.url === result.url, 'state persisted only after readiness');
   } finally {
     try { stopDashboard(home); } catch { /* ignore */ }
-    try { fs.rmSync(work, { recursive: true, force: true }); } catch { /* ignore */ }
+    try { fs.rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
   }
 });

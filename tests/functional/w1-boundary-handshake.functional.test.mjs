@@ -26,7 +26,7 @@ function freshHome() {
   const home = mkdtempSync(join(tmpdir(), 'construct-boundary-'));
   return {
     home,
-    cleanup() { try { rmSync(home, { recursive: true, force: true }); } catch { /* ignore */ } },
+    cleanup() { try { rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } },
   };
 }
 

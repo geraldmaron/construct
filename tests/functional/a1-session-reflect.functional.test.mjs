@@ -92,7 +92,7 @@ test('A1 end-to-end: hook writes searchable observation, vector index built, acc
   assert.equal(index2.length, 2);
   assert.match(index2[0].summary, /git remote set-url|homebrew/i);
 
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('A1 opt-out: CONSTRUCT_REFLECT_AUTO=off produces zero artifacts', () => {
@@ -111,5 +111,5 @@ test('A1 opt-out: CONSTRUCT_REFLECT_AUTO=off produces zero artifacts', () => {
   });
   assert.equal(r.status, 0);
   assert.equal(fs.existsSync(path.join(cwd, '.cx', 'observations')), false);
-  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });

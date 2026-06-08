@@ -31,6 +31,11 @@ import test from 'node:test';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
 
+// `construct sync` now defaults to detected hosts (ADR-0027 §1); a sterile HOME
+// detects none, so pin the full set to audit every IDE surface.
+
+const ALL_HOSTS = 'claude,codex,copilot,opencode,vscode,cursor';
+
 function makeEnv() {
   const sandbox = mkdtempSync(join(tmpdir(), 'host-config-'));
   const HOME = join(sandbox, 'HOME');
@@ -38,7 +43,7 @@ function makeEnv() {
   mkdirSync(HOME, { recursive: true });
   mkdirSync(project, { recursive: true });
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: project });
-  return { sandbox, HOME, project, cleanup() { rmSync(sandbox, { recursive: true, force: true }); } };
+  return { sandbox, HOME, project, cleanup() { rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
 }
 
 function runSync(env, scope) {
@@ -46,7 +51,7 @@ function runSync(env, scope) {
     cwd: env.project,
     encoding: 'utf8',
     timeout: 90_000,
-    env: { ...process.env, HOME: env.HOME, CONSTRUCT_SKIP_POSTINSTALL: '1' },
+    env: { ...process.env, HOME: env.HOME, CONSTRUCT_SKIP_POSTINSTALL: '1', CONSTRUCT_SYNC_HOSTS: ALL_HOSTS },
   });
 }
 
@@ -75,7 +80,7 @@ test('project sync writes each IDE surface at its canonical path + key + entry s
     assert.ok(!existsSync(p('.opencode/config.json')), 'OpenCode must not write the ignored config.json');
     const opencode = readJson(p('.opencode/opencode.json'));
     assert.ok(opencode.mcp && typeof opencode.mcp === 'object', 'OpenCode uses top-level `mcp`');
-    assert.ok(opencode.agent && Object.keys(opencode.agent).length >= 2, 'OpenCode agent table present');
+    assert.ok(opencode.agent && Object.keys(opencode.agent).length === 1, 'OpenCode agent table present with only the orchestrator');
     const localEntry = Object.values(opencode.mcp).find((e) => e.type === 'local');
     if (localEntry) assert.ok(Array.isArray(localEntry.command), 'OpenCode local `command` is an array');
 

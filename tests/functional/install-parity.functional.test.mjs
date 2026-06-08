@@ -61,6 +61,6 @@ test('install skeleton is drift until the global front-door sync makes parity cl
       assert.notEqual(s.status, 'drift', `${s.surface} must not be in drift after the global sync`);
     }
   } finally {
-    rmSync(sandbox, { recursive: true, force: true });
+    rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });

@@ -25,7 +25,7 @@ import {
 const tmpDirs = [];
 
 after(() => {
-  for (const dir of tmpDirs) fs.rmSync(dir, { recursive: true, force: true });
+  for (const dir of tmpDirs) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 function tmpDir(prefix) {

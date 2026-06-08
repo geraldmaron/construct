@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geraldmaron.github.io/construct/schemas/project-config.schema.json",
+  "title": "Construct Project Configuration",
+  "description": "Schema for construct.config.json, the source of truth for project-level Construct settings. Shared and committed to the repo.",
+  "type": "object",
+  "required": ["version"],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to the JSON Schema for this file."
+    },
+    "version": {
+      "type": "number",
+      "description": "The configuration schema version.",
+      "default": 1
+    },
+    "alias": {
+      "type": "string",
+      "description": "The display name for this Construct project instance.",
+      "maxLength": 120,
+      "default": "Construct"
+    },
+    "profile": {
+      "type": "string",
+      "description": "The active organizational profile ID. Determines which specialists and capabilities are available.",
+      "enum": ["rnd", "operations", "creative", "research"],
+      "default": "rnd"
+    },
+    "deployment": {
+      "type": "object",
+      "description": "Deployment and infrastructure settings.",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "description": "The operational mode of the Construct instance.",
+          "enum": ["solo", "team", "enterprise"],
+          "default": "solo"
+        },
+        "mcpBroker": {
+          "type": "string",
+          "description": "Controls the engagement of the MCP (Model Context Protocol) broker.",
+          "enum": ["auto", "on", "off"],
+          "default": "auto"
+        },
+        "projectName": {
+          "type": ["string", "null"],
+          "description": "The unique name of the project. Used for multi-project telemetry and storage."
+        },
+        "tenantId": {
+          "type": ["string", "null"],
+          "description": "The tenant ID for enterprise deployments."
+        }
+      }
+    },
+    "orchestration": {
+      "type": "object",
+      "description": "Agent orchestration and workflow strategy.",
+      "properties": {
+        "workerBackend": {
+          "type": "string",
+          "description": "The execution environment for orchestrated workers.",
+          "enum": ["inline", "provider"],
+          "default": "inline"
+        },
+        "store": {
+          "type": "string",
+          "description": "The storage engine for orchestration state and task graphs.",
+          "enum": ["filesystem", "sqlite", "postgres"],
+          "default": "filesystem"
+        },
+        "chainOfThought": {
+          "type": "string",
+          "description": "Disclosure of a provider-executed specialist's reasoning during orchestration. 'hidden': reasoning is not requested or shown. 'surface': reasoning is requested and attached to each task so the CLI, MCP, and dashboard display it. 'telemetry_only': reasoning is requested and written to the run trace but never displayed.",
+          "enum": ["hidden", "surface", "telemetry_only"],
+          "default": "hidden",
+          "examples": ["hidden", "surface", "telemetry_only"]
+        }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "description": "Observability and usage tracking settings.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether to record session traces and token usage.",
+          "default": true
+        }
+      }
+    },
+    "ingest": {
+      "type": "object",
+      "description": "Strategy for ingesting and indexing project documents.",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "description": "The primary mechanism for extracting text from files.",
+          "enum": ["adapter", "provider"],
+          "default": "adapter"
+        },
+        "fallback": {
+          "type": "string",
+          "description": "The secondary mechanism if the primary strategy fails.",
+          "enum": ["none", "provider", "adapter"],
+          "default": "none"
+        },
+        "orchestration": {
+          "type": "string",
+          "description": "Determines if intake processing is a simple prompt or an orchestrated workflow.",
+          "enum": ["prompt-only", "orchestrated"],
+          "default": "prompt-only"
+        }
+      }
+    },
+    "hosts": {
+      "type": "object",
+      "description": "Granular control over editor and platform adapter sets.",
+      "properties": {
+        "claude": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
+        "opencode": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
+        "codex": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
+        "copilot": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
+        "vscode": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
+        "cursor": { "type": "object", "properties": { "enabled": { "type": "boolean" } } }
+      }
+    },
+    "providers": {
+      "type": "object",
+      "description": "Provider-specific settings (e.g., Anthropic, OpenAI, GitHub). Values starting with '$' are interpolated from environment variables.",
+      "additionalProperties": true
+    },
+    "resources": {
+      "type": "object",
+      "description": "Storage and runtime resource limits.",
+      "properties": {
+        "disk": {
+          "type": "object",
+          "properties": {
+            "totalCxMaxMb": { "type": "number", "description": "Maximum disk usage for the .cx/ directory (MB).", "default": 2000 }
+          }
+        }
+      }
+    }
+  }
+}

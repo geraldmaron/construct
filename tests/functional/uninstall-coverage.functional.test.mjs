@@ -29,7 +29,7 @@ function makeSandbox() {
   const project = join(sandbox, 'project');
   mkdirSync(home, { recursive: true });
   mkdirSync(project, { recursive: true });
-  return { sandbox, home, project, cleanup: () => rmSync(sandbox, { recursive: true, force: true }) };
+  return { sandbox, home, project, cleanup: () => rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) };
 }
 
 function gitInit(cwd) {

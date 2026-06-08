@@ -26,7 +26,7 @@ function freshTmp() {
   const root = mkdtempSync(join(tmpdir(), 'construct-migrate-'));
   return {
     root,
-    cleanup() { try { rmSync(root, { recursive: true, force: true }); } catch { /* ignore */ } },
+    cleanup() { try { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } },
   };
 }
 

@@ -64,8 +64,8 @@ function seed(opts = {}) {
     cwd,
     shimDir,
     cleanup: () => {
-      rmSync(cwd, { recursive: true, force: true });
-      rmSync(shimDir, { recursive: true, force: true });
+      rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      rmSync(shimDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     },
   };
 }

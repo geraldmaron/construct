@@ -137,7 +137,7 @@ test('audit-trail chain replays without breakage across a forced rotation', () =
     const firstRecordAfterRotation = JSON.parse(records[records.length - readdirSync(join(projectRoot, '.cx')).filter((f) => f === 'audit-trail.jsonl').length]);
     assert.ok(firstRecordAfterRotation.prev_line_hash, 'first record on a fresh segment must carry a non-null prev_line_hash sourced from the rotated tail');
   } finally {
-    rmSync(projectRoot, { recursive: true, force: true });
-    rmSync(fakeHome, { recursive: true, force: true });
+    rmSync(projectRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });

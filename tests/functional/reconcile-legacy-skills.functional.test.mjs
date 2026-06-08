@@ -98,7 +98,7 @@ function withIsolatedHome(fn) {
     process.env.HOME = prev.HOME;
     if (prev.CX_HOME_OVERRIDE === undefined) delete process.env.CX_HOME_OVERRIDE;
     else process.env.CX_HOME_OVERRIDE = prev.CX_HOME_OVERRIDE;
-    rmSync(home, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 }
 
