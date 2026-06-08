@@ -13,6 +13,13 @@ import { describe, it, before, after } from 'node:test';
 import { spawnSync } from 'node:child_process';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
+
+// Pin every host so the contract assertions are deterministic regardless of
+// which host binaries the runner has on PATH. Without this, the detected-only
+// default (ADR-0027 §1) writes just the Claude baseline on a host-less CI
+// runner, so the codex/opencode/project-agent assertions fail.
+const ALL_HOSTS = 'claude,codex,copilot,opencode,vscode,cursor';
+
 let tmpHome;
 let tmpProject;
 
@@ -71,6 +78,7 @@ function runSync(args = [], env = {}) {
         HOME: tmpHome,
         CX_TOOLKIT_DIR: ROOT_DIR,
         CONSTRUCT_SYNC_FORCE: '1',
+        CONSTRUCT_SYNC_HOSTS: ALL_HOSTS,
         ...env,
       },
       timeout: 60_000,
@@ -218,7 +226,7 @@ describe('sync-specialists contract tests', () => {
         {
           encoding: 'utf8',
           cwd: projectDir,
-          env: { ...process.env, HOME: tmpHome, CONSTRUCT_SYNC_FORCE: '1' },
+          env: { ...process.env, HOME: tmpHome, CONSTRUCT_SYNC_FORCE: '1', CONSTRUCT_SYNC_HOSTS: ALL_HOSTS },
           timeout: 60_000,
         }
       );

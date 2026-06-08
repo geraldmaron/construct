@@ -44,7 +44,10 @@ function runSync(env) {
     cwd: env.project,
     encoding: 'utf8',
     timeout: 90_000,
-    env: { ...process.env, HOME: env.HOME, CONSTRUCT_SKIP_POSTINSTALL: '1' },
+    // Pin opencode so the project sync writes its adapter regardless of whether
+    // the runner has the opencode binary — the detected-only default (ADR-0027
+    // §1) would otherwise skip it on a host-less CI runner.
+    env: { ...process.env, HOME: env.HOME, CONSTRUCT_SKIP_POSTINSTALL: '1', CONSTRUCT_SYNC_HOSTS: 'claude,opencode' },
   });
 }
 
