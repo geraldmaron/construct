@@ -54,6 +54,20 @@ test("probe classifies repetition collapse as COLLAPSED", async () => {
   }
 });
 
+test("probe catches space-less repetition collapse (e.g. 'time.time.time')", async () => {
+  // The real failure mode: qwen2.5-coder:7b emits "time.time.time…" with no
+  // spaces, which a whitespace split would miss. Word-character tokenization must
+  // still flag it as collapsed.
+  const stub = await stubV1({ content: "time.".repeat(40) });
+  try {
+    const r = await probeAgenticCoherence("any-model", { baseURL: stub.baseURL });
+    assert.equal(r.coherent, false, "space-less repetition => collapsed");
+    assert.ok(r.uniqueRatio <= 0.35, `uniqueRatio should be low, got ${r.uniqueRatio}`);
+  } finally {
+    await stub.close();
+  }
+});
+
 test("describeDoclingRuntime reports a fresh runtime dir as not provisioned", () => {
   const dir = mkdtempSync(join(tmpdir(), "docling-rt-"));
   try {
