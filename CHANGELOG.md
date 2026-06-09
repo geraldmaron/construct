@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.0.24] - 2026-06-09
+
 ### Changed
 - Browser automation (Playwright MCP) is now opt-in instead of a default-managed MCP (ADR-0031). `@playwright/mcp` was written into every project's Claude config but no agent prompt ever directed its use, it is redundant with `WebFetch`/`WebSearch`/`context7` for the common web-research case, and it downloads hundreds of MB of browser binaries on first use — the same footprint ADR-0024 rejected Puppeteer for. Removed `playwright` from `specialists/registry.json` and `platforms/claude/settings.template.json` `mcpServers` (the two sources project sync merges), so `construct sync`/`init` no longer install it. It remains in `lib/mcp-catalog.json` (`category: optional`, version-pinned to `@playwright/mcp@0.0.75`) and installs on demand via `construct mcp add playwright` — discoverable under `construct mcp list` "Enhancements". Because it is no longer in the registry, the global-scope prune leaves a user-added entry alone, so opt-in persists across sync. `specialists/prompts/cx-qa.md` documents the opt-in for live web-UI testing. Coverage in `tests/sync-contract.test.mjs` (project settings exclude playwright; global prune preserves an opt-in entry).
 
