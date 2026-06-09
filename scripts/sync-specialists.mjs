@@ -800,6 +800,50 @@ function makeHooksPortable(hooksJson) {
   return JSON.stringify(walk(hooksJson));
 }
 
+const GLOBAL_CLAUDE_HOOK_IDS = new Set([
+  'pre:bash:block-no-verify',
+  'pre:bash:guard-dangerous',
+  'pre:edit:config-protection',
+  'pre:edit-guard',
+  'post:edit:json-validate',
+  'post:edit:scan-secrets',
+]);
+
+const GLOBAL_CLAUDE_MCP_IDS = new Set([
+  'context7',
+]);
+
+function filterGlobalClaudeHooks(hooksJson) {
+  const filtered = {};
+  for (const [event, groups] of Object.entries(hooksJson ?? {})) {
+    const kept = groups.filter((group) => GLOBAL_CLAUDE_HOOK_IDS.has(group.id));
+    if (kept.length > 0) filtered[event] = kept;
+  }
+  return filtered;
+}
+
+function syncGlobalClaudeMcpServers(settings, registryMcp) {
+  settings.mcpServers ??= {};
+  for (const id of Object.keys(settings.mcpServers)) {
+    if (id in registryMcp && !GLOBAL_CLAUDE_MCP_IDS.has(id)) {
+      delete settings.mcpServers[id];
+    }
+  }
+
+  for (const [id, mcpDef] of Object.entries(registryMcp)) {
+    if (!GLOBAL_CLAUDE_MCP_IDS.has(id)) continue;
+    const existingEntry = settings.mcpServers[id];
+    const existing = JSON.stringify(existingEntry ?? "");
+    const hasPlaceholder = existing.includes("__");
+    const hasFloatingVersion = existing.includes("@latest");
+    const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
+    const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
+    const transportMismatch = registryWantsCommand && existingIsRemote;
+    if (existingEntry && !hasPlaceholder && !hasFloatingVersion && !transportMismatch) continue;
+    settings.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
+  }
+}
+
 /**
  * Materialise a project-local `.claude/settings.json` from the home template,
  * with hook commands rewritten to be path-relative to whatever Construct
@@ -908,23 +952,13 @@ ${personaList}
           const constructReal = (() => {
             try { return fs.realpathSync(path.join(home, ".construct")); } catch { return path.join(home, ".construct"); }
           })();
-          const hookStr = JSON.stringify(template.hooks)
+          const hookStr = JSON.stringify(filterGlobalClaudeHooks(template.hooks))
             .replace(/\$HOME\/\.construct/g, constructReal.replace(/\\/g, "/"));
           settings.hooks = JSON.parse(hookStr);
         }
       }
-      if (!settings.mcpServers) settings.mcpServers = {};
       const registryMcp = registry.mcpServers ?? {};
-      for (const [id, mcpDef] of Object.entries(registryMcp)) {
-        const existingEntry = settings.mcpServers[id];
-        const existing = JSON.stringify(existingEntry ?? "");
-        const hasPlaceholder = existing.includes("__");
-        const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
-        const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
-        const transportMismatch = registryWantsCommand && existingIsRemote;
-        if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
-        settings.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
-      }
+      syncGlobalClaudeMcpServers(settings, registryMcp);
       if (!DRY_RUN) fs.writeFileSync(claudeSettingsPath, JSON.stringify(settings, null, 2) + "\n");
     }
   }

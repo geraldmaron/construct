@@ -16,6 +16,11 @@ function buildTranscript(turns) {
 }
 
 test('A1 end-to-end: hook writes searchable observation, accumulation works', async () => {
+  // The hook writes embeddings with the hashing model; the search below runs
+  // in this process and must embed the query with the same model, or the
+  // vector dimensions mismatch and the search returns nothing.
+  process.env.CONSTRUCT_EMBEDDING_MODEL = 'hashing';
+
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a1-functional-'));
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
 
@@ -40,7 +45,7 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
     input: JSON.stringify({ cwd, transcript_path: t1, session_id: 'func-1', session_duration_ms: 8500 }),
     encoding: 'utf8',
     timeout: 15_000,
-    env: { ...process.env, CONSTRUCT_EMBEDDING_MODEL: 'hashing' }
+    env: { ...process.env, CONSTRUCT_EMBEDDING_MODEL: 'hashing', CONSTRUCT_REFLECT_BUDGET_MS: '15000' }
   });
   assert.equal(r1.status, 0, `hook failed: ${r1.stderr}`);
 
@@ -59,9 +64,15 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
   const list = listObservations(cwd, { limit: 10 });
   assert.equal(list.length, 1);
   
-  // Wait a moment for LanceDB lock if any
-  const search = await searchObservations(cwd, 'OIDC publish', { limit: 3, project: cwd.split('/').pop() });
-  assert.ok(search.length >= 1, 'search returned no results');
+  // The observation was committed to LanceDB by a separate process (the hook).
+  // Under parallel test load a fresh reader in this process can briefly race
+  // the writer's commit, so poll the search instead of asserting on one shot.
+  let search = [];
+  for (let attempt = 0; attempt < 20 && search.length === 0; attempt += 1) {
+    search = await searchObservations(cwd, 'OIDC publish', { limit: 3, project: cwd.split('/').pop() });
+    if (search.length === 0) await new Promise((r) => setTimeout(r, 100));
+  }
+  assert.ok(search.length >= 1, `search returned no results | hook stderr: ${r1.stderr}`);
 
   // Session 2
   const t2 = path.join(cwd, 'transcript-2.jsonl');
@@ -77,7 +88,7 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
     input: JSON.stringify({ cwd, transcript_path: t2, session_id: 'func-2', session_duration_ms: 3000 }),
     encoding: 'utf8',
     timeout: 15_000,
-    env: { ...process.env, CONSTRUCT_EMBEDDING_MODEL: 'hashing' }
+    env: { ...process.env, CONSTRUCT_EMBEDDING_MODEL: 'hashing', CONSTRUCT_REFLECT_BUDGET_MS: '15000' }
   });
   assert.equal(r2.status, 0);
   const index2 = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
