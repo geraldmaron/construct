@@ -74,7 +74,7 @@ describe('InboxWatcher', () => {
   it('returns empty processed list when inbox is empty', async () => {
     const root = makeTmpDir();
     try {
-      const watcher = new InboxWatcher({ rootDir: root, env: {}, cwd: root });
+      const watcher = new InboxWatcher({ rootDir: root, env: { CONSTRUCT_EMBEDDING_MODEL: 'hashing' }, cwd: root });
       const result = await watcher.poll();
       assert.equal(result.processed.length, 0);
       assert.equal(result.errors.length, 0);
@@ -90,7 +90,7 @@ describe('InboxWatcher', () => {
       mkdirSync(inboxDir, { recursive: true });
       writeFileSync(join(inboxDir, 'spec.md'), '# Test spec\n\nThis is a test specification for the inbox watcher.');
 
-      const watcher = new InboxWatcher({ rootDir: root, env: {}, cwd: root });
+      const watcher = new InboxWatcher({ rootDir: root, env: { CONSTRUCT_EMBEDDING_MODEL: 'hashing' }, cwd: root });
       const result = await watcher.poll();
 
       assert.equal(result.processed.length, 1);
@@ -108,7 +108,7 @@ describe('InboxWatcher', () => {
       mkdirSync(inboxDir, { recursive: true });
       writeFileSync(join(inboxDir, 'notes.txt'), 'Meeting notes: decided to use Postgres for session store.');
 
-      const watcher = new InboxWatcher({ rootDir: root, env: {}, cwd: root });
+      const watcher = new InboxWatcher({ rootDir: root, env: { CONSTRUCT_EMBEDDING_MODEL: 'hashing' }, cwd: root });
       const first = await watcher.poll();
       const second = await watcher.poll();
 
@@ -144,7 +144,7 @@ describe('InboxWatcher', () => {
       mkdirSync(meetingDir, { recursive: true });
       writeFileSync(join(meetingDir, 'retro.md'), '# Retro\n\nWe agreed to simplify intake UX.');
 
-      const watcher = new InboxWatcher({ rootDir: root, env: {}, cwd: root });
+      const watcher = new InboxWatcher({ rootDir: root, env: { CONSTRUCT_EMBEDDING_MODEL: 'hashing' }, cwd: root });
       const result = await watcher.poll();
 
       assert.equal(result.processed.length, 1);
@@ -163,7 +163,7 @@ describe('InboxWatcher', () => {
       mkdirSync(meetingsDir, { recursive: true });
       writeFileSync(join(intakeDir, 'weekly-sync.md'), '# Weekly sync\n\nMeeting notes\n\nAttendees: team\n\nAction items: simplify UX.');
 
-      const watcher = new InboxWatcher({ rootDir: root, env: {}, cwd: root });
+      const watcher = new InboxWatcher({ rootDir: root, env: { CONSTRUCT_EMBEDDING_MODEL: 'hashing' }, cwd: root });
       const result = await watcher.poll();
 
       assert.equal(result.processed.length, 1);
@@ -178,7 +178,7 @@ describe('InboxWatcher', () => {
   it('dirs() returns all configured watch directories', () => {
     const root = makeTmpDir();
     try {
-      const watcher = new InboxWatcher({ rootDir: root, env: {} });
+      const watcher = new InboxWatcher({ rootDir: root, env: { CONSTRUCT_EMBEDDING_MODEL: 'hashing' } });
       const dirs = watcher.dirs();
       assert.ok(Array.isArray(dirs));
       assert.ok(dirs.length >= 1);
@@ -196,7 +196,7 @@ describe('InboxWatcher', () => {
       writeFileSync(join(inboxDir, 'data.bin'), Buffer.from([0x00, 0x01, 0x02]));
       writeFileSync(join(inboxDir, 'valid.md'), '# Visible doc');
 
-      const watcher = new InboxWatcher({ rootDir: root, env: {}, cwd: root });
+      const watcher = new InboxWatcher({ rootDir: root, env: { CONSTRUCT_EMBEDDING_MODEL: 'hashing' }, cwd: root });
       const result = await watcher.poll();
 
       // Only valid.md should be processed (.hidden.txt skipped, .bin unsupported)
