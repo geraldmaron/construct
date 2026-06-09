@@ -36,7 +36,7 @@ describe('InboxWatcher maxDepth', () => {
 
     saveIntakeConfig(projectRoot, { parentDirs: [extra], maxDepth: 0 });
 
-    const watcher = new InboxWatcher({ rootDir: projectRoot, env: {}, cwd: projectRoot });
+    const watcher = new InboxWatcher({ rootDir: projectRoot, env: { CONSTRUCT_EMBEDDING_MODEL: 'hashing' }, cwd: projectRoot });
     const result = await watcher.poll();
     const paths = result.processed.map((p) => p.path);
     assert.equal(paths.length, 1);
@@ -51,7 +51,7 @@ describe('InboxWatcher maxDepth', () => {
 
     saveIntakeConfig(projectRoot, { parentDirs: [extra], maxDepth: 1 });
 
-    const watcher = new InboxWatcher({ rootDir: projectRoot, env: {}, cwd: projectRoot });
+    const watcher = new InboxWatcher({ rootDir: projectRoot, env: { CONSTRUCT_EMBEDDING_MODEL: 'hashing' }, cwd: projectRoot });
     const result = await watcher.poll();
     const paths = result.processed.map((p) => p.path).sort();
     assert.equal(paths.length, 2);

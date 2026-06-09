@@ -1495,49 +1495,11 @@ async function cmdStorage(args) {
     println(`Reconciled observations: re-embedded ${result.reembedded} of ${result.checked} (model ${result.model}).`);
     return;
   }
-  if (action === 'migrations') {
-    const { describeMigrations } = await import('../lib/storage/migrations.mjs');
-    const sqlClient = createSqlClient(process.env);
-    if (!sqlClient) { errorln('No DATABASE_URL configured.'); process.exit(1); }
-    try {
-      const report = await describeMigrations(sqlClient);
-      println(JSON.stringify(report, null, 2));
-      if (report.drift?.length > 0) process.exit(2);
-    } finally {
-      await closeSqlClient(sqlClient);
-    }
-    return;
-  }
-  if (action === 'repair-migrations') {
-    const confirm = rest.includes('--yes');
-    if (!confirm) {
-      errorln('This re-applies drifted migrations (idempotent only) and updates their recorded SHA.');
-      errorln('Destructive migrations (DROP / TRUNCATE / ALTER…DROP / DELETE) are refused.');
-      errorln('Re-run with --yes to proceed.');
-      process.exit(1);
-    }
-    const { runMigrations } = await import('../lib/storage/migrations.mjs');
-    const sqlClient = createSqlClient(process.env);
-    if (!sqlClient) { errorln('No DATABASE_URL configured.'); process.exit(1); }
-    try {
-      const result = await runMigrations(sqlClient, { repair: true });
-      println(JSON.stringify({
-        applied: result.applied,
-        repaired: result.repaired,
-        skipped: result.skipped,
-        drift: result.drift,
-      }, null, 2));
-      if (result.drift.length > 0) {
-        errorln('');
-        errorln('Refused to repair non-idempotent migrations:');
-        for (const d of result.drift) errorln(`  ${d.filename}`);
-        process.exit(2);
-      }
-      info(`Repaired ${result.repaired.length} migration(s); applied ${result.applied.length} new.`);
-    } finally {
-      await closeSqlClient(sqlClient);
-    }
-    return;
+  if (action === 'migrations' || action === 'repair-migrations') {
+    // Postgres schema migrations were removed with the SQL backend; LanceDB
+    // tables are created on demand and need no migration runner.
+    errorln('construct storage ' + action + ' is no longer supported: Postgres was removed.');
+    process.exit(1);
   }
   if (action === 'sync') {
     const result = await syncFileStateToSql(process.cwd(), { env: process.env, project: inferProjectName(process.cwd()) });
@@ -4493,99 +4455,10 @@ async function cmdLintContracts() {
 }
 
 async function cmdBackup(args) {
-  const sub = args[0];
-
-  if (!sub || sub === 'create') {
-    const includeSecrets = args.includes('--include-secrets');
-    const noPrune = args.includes('--no-prune');
-    const keepArg = args.find((a) => a.startsWith('--keep='));
-    const keep = keepArg
-      ? Number(keepArg.split('=')[1])
-      : Number(process.env.CONSTRUCT_BACKUP_RETAIN || 10);
-    const { createBackup, pruneBackups } = await import('../lib/storage/backup.mjs');
-    println('Creating backup…');
-    try {
-      const result = await createBackup({ includeSecrets });
-      ok(`Backup created: ${result.path}`);
-      println(`  Contents: ${result.manifest.contents.join(', ') || '(empty)'}`);
-      if (!includeSecrets) println('  Secrets redacted. Use --include-secrets to include them.');
-      if (!noPrune) {
-        const pruned = pruneBackups({ keep });
-        if (pruned.removed.length) {
-          println(`  Auto-pruned ${pruned.removed.length} old backup(s); kept ${pruned.kept}.`);
-        }
-      }
-    } catch (err) {
-      errorln(`Backup failed: ${err.message}`);
-      process.exit(1);
-    }
-    return;
-  }
-
-  if (sub === 'prune') {
-    const keepArg = args.find((a) => a.startsWith('--keep='));
-    const keep = keepArg
-      ? Number(keepArg.split('=')[1])
-      : Number(process.env.CONSTRUCT_BACKUP_RETAIN || 10);
-    const { pruneBackups } = await import('../lib/storage/backup.mjs');
-    const result = pruneBackups({ keep });
-    if (result.removed.length === 0) {
-      println(`Nothing to prune (have ${result.kept}, keeping ${keep}).`);
-    } else {
-      ok(`Pruned ${result.removed.length} backup(s); kept ${result.kept}.`);
-      for (const r of result.removed) println(`  removed ${r}`);
-    }
-    return;
-  }
-
-  if (sub === 'verify') {
-    const archivePath = args[1];
-    if (!archivePath) { errorln('Usage: construct backup verify <archive>'); process.exit(1); }
-    const { verifyBackup } = await import('../lib/storage/backup.mjs');
-    const result = await verifyBackup(archivePath);
-    if (result.ok) {
-      ok('Backup verified — all checksums match.');
-    } else {
-      errorln(`Backup verification failed:\n  ${result.errors.join('\n  ')}`);
-      process.exit(1);
-    }
-    return;
-  }
-
-  if (sub === 'restore') {
-    const archivePath = args[1];
-    const yes = args.includes('--yes');
-    if (!archivePath) { errorln('Usage: construct backup restore <archive> [--yes]'); process.exit(1); }
-    if (!yes) {
-      println(`About to restore from: ${archivePath}`);
-      println('This will overwrite observations, sessions, config.env, and registry.json.');
-      println('Press Ctrl+C to cancel, or re-run with --yes to proceed.');
-      await new Promise((r) => setTimeout(r, 3000));
-    }
-    const { restoreBackup } = await import('../lib/storage/backup.mjs');
-    const result = await restoreBackup(archivePath, { yes });
-    if (result.ok) {
-      ok(`Restored: ${result.restored.join(', ')}`);
-    } else {
-      if (result.restored.length) println(`Partially restored: ${result.restored.join(', ')}`);
-      errorln(`Errors:\n  ${result.errors.join('\n  ')}`);
-      process.exit(1);
-    }
-    return;
-  }
-
-  if (sub === 'list') {
-    const { listBackups } = await import('../lib/storage/backup.mjs');
-    const backups = listBackups();
-    if (!backups.length) { println('No backups found.'); return; }
-    for (const b of backups) {
-      const mb = (b.size / 1024 / 1024).toFixed(1);
-      println(`  ${b.name}  (${mb} MB)  ${b.mtime.toISOString().slice(0, 19)}`);
-    }
-    return;
-  }
-
-  errorln(`Unknown backup subcommand: ${sub}. Available: create, verify, restore, list, prune`);
+  // Postgres-era backups were removed with the SQL backend (lib/storage/backup.mjs).
+  // State is now Git-backed (.cx/) plus the local LanceDB index under .cx/lancedb.
+  void args;
+  errorln('construct backup is no longer supported: Postgres was removed. Commit .cx/ for Git-backed state; the LanceDB index lives under .cx/lancedb.');
   process.exit(1);
 }
 
