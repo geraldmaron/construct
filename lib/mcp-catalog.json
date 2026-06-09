@@ -85,12 +85,12 @@
       "id": "playwright",
       "name": "Playwright",
       "category": "optional",
-      "description": "Browser automation for E2E testing and web research.",
-      "package": "@playwright/mcp@latest",
+      "description": "Browser automation for E2E testing and web research. Opt-in via `construct mcp add playwright` — not synced by default (downloads browser binaries on first use).",
+      "package": "@playwright/mcp@0.0.75",
       "command": "npx",
       "args": [
         "-y",
-        "@playwright/mcp@latest"
+        "@playwright/mcp@0.0.75"
       ],
       "env": {},
       "requiredEnv": [],

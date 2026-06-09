@@ -67,7 +67,7 @@ The full list of personas lives in `.claude/agents/`. Run `construct list` to se
 
 Two scopes:
 
-**Per-project** (committed, shared with peers): edit `.claude/settings.json`. Construct owns the `hooks` block and a known set of `mcpServers` keys (memory, context7, playwright, github, sequential-thinking, construct-mcp); your additions are preserved on `npm install`. Other top-level keys are yours to control.
+**Per-project** (committed, shared with peers): edit `.claude/settings.json`. Construct owns the `hooks` block and a known set of `mcpServers` keys (memory, context7, github, sequential-thinking, construct-mcp); your additions — including opt-in MCPs like `playwright` (`construct mcp add playwright`) — are preserved on `npm install`. Other top-level keys are yours to control.
 
 **Per-machine** (private to you): edit `~/.construct/config.env`. This is where your API keys, consent flags, and local-service credentials live. Standard `KEY=value` format.
 

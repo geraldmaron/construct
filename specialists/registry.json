@@ -1467,14 +1467,6 @@
       ],
       "description": "Library and framework documentation lookup"
     },
-    "playwright": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@playwright/mcp@0.0.75"
-      ],
-      "description": "Browser automation and E2E testing"
-    },
     "github": {
       "type": "url",
       "url": "https://api.githubcopilot.com/mcp/",

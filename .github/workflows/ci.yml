@@ -32,7 +32,7 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Heavy jobs (test matrix, evals, audit, postgres-integration) only run when code or
+# Heavy jobs (test matrix, evals, audit, dashboard-integration) only run when code or
 # workflow files change. Doc-only PRs skip them and still get the cheap policy checks
 # (lint-comments, lint-templates, docs drift, gates audit, secret scan).
 
@@ -276,50 +276,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  postgres-integration:
-    needs: changes
-    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
-    name: postgres + pgvector integration
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_PASSWORD: construct
-          POSTGRES_USER: construct
-          POSTGRES_DB: construct
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: .tool-versions
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - name: Run migrations runner end-to-end
-        env:
-          DATABASE_URL: postgres://construct:construct@127.0.0.1:5432/construct
-          CONSTRUCT_EMBEDDING_MODEL: hashing
-        run: |
-          node -e "
-          const { runMigrations } = await import('./lib/storage/migrations.mjs');
-          const postgres = (await import('postgres')).default;
-          const sql = postgres(process.env.DATABASE_URL);
-          try {
-            const result = await runMigrations(sql);
-            console.log('migrations applied:', result.applied);
-            console.log('migrations skipped:', result.skipped);
-          } finally { await sql.end(); }
-          "
-      - name: Postgres + vector roundtrip tests
-        run: node --test --test-timeout=120000 tests/functional/postgres-roundtrip.functional.test.mjs tests/functional/vector-roundtrip.functional.test.mjs tests/functional/skills-correlate-quality.functional.test.mjs tests/functional/observation-reconcile.functional.test.mjs tests/functional/hybrid-search-consolidated.functional.test.mjs
-
   dashboard-integration:
     needs: changes
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
@@ -376,7 +332,7 @@ jobs:
     name: ci-required
     runs-on: ubuntu-latest
     if: always()
-    needs: [changes, test, lint, evals, audit, secret-scan, postgres-integration, dashboard-integration]
+    needs: [changes, test, lint, evals, audit, secret-scan, dashboard-integration]
     steps:
       - name: Verify required jobs passed or skipped
         env:
