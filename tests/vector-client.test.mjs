@@ -11,6 +11,11 @@ describe('VectorClient', () => {
   let VectorClient;
   let client;
   let tmpDir;
+  // The table's embedding column is sized to the active engine
+  // (CONSTRUCT_EMBEDDING_MODEL: local=384, hashing=256). Size fixtures to the
+  // same dimension or the query reports "No vector column found to match the
+  // query vector dimension".
+  let dim;
 
   beforeEach(async () => {
     const mod = await import('../lib/storage/vector-client.mjs');
@@ -18,6 +23,7 @@ describe('VectorClient', () => {
     tmpDir = path.join(os.tmpdir(), `construct-vector-test-${Math.random().toString(36).slice(2)}`);
     fs.mkdirSync(tmpDir, { recursive: true });
     process.env.CONSTRUCT_LANCEDB_PATH = tmpDir;
+    dim = await new VectorClient().getEngineDimensions();
   });
 
   it('isHealthy returns true when lancedb is reachable', async () => {
@@ -29,7 +35,7 @@ describe('VectorClient', () => {
   it('storeObservation and searchObservations work with local LanceDB', async () => {
     client = new VectorClient();
     const id = 'test-obs-1';
-    const embedding = new Float32Array(384).fill(0.1);
+    const embedding = new Float32Array(dim).fill(0.1);
     
     await client.storeObservation({
       id,
@@ -41,10 +47,6 @@ describe('VectorClient', () => {
       embedding
     });
 
-    const _dbgT = await client._openTable('observations_v1');
-    const _dbgSchema = _dbgT ? (await _dbgT.schema()).fields.map((f) => `${f.name}:${String(f.type)}`).join(' | ') : 'NO_TABLE';
-    const _dbgRows = _dbgT ? await _dbgT.countRows() : -1;
-    console.log(`[DIAG] rows=${_dbgRows} schema=${_dbgSchema}`);
 
     const results = await client.searchObservations({
       project: 'test-project',
@@ -60,7 +62,7 @@ describe('VectorClient', () => {
   it('storeDocument and searchDocuments work with local LanceDB', async () => {
     client = new VectorClient();
     const id = 'test-doc-1';
-    const embedding = new Float32Array(384).fill(0.2);
+    const embedding = new Float32Array(dim).fill(0.2);
     
     await client.storeDocument({
       id,
@@ -93,14 +95,14 @@ describe('VectorClient', () => {
         category: 'pattern',
         summary: `concurrent ${i}`,
         content: 'body',
-        embedding: new Float32Array(384).fill(0.1 + i * 0.001),
+        embedding: new Float32Array(dim).fill(0.1 + i * 0.001),
       }).then(() => c.close());
     }));
 
     const reader = new VectorClient();
     const results = await reader.searchObservations({
       project: 'test-project',
-      queryEmbedding: new Float32Array(384).fill(0.15),
+      queryEmbedding: new Float32Array(dim).fill(0.15),
       limit: 50,
     });
     assert.equal(results.length, N, `all ${N} concurrent writes must persist (LanceDB write serialization)`);
