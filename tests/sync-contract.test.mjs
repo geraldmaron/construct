@@ -89,6 +89,12 @@ function runSync(args = [], env = {}) {
         CX_TOOLKIT_DIR: ROOT_DIR,
         CONSTRUCT_SYNC_FORCE: '1',
         CONSTRUCT_SYNC_HOSTS: ALL_HOSTS,
+        // tmpHome has an empty embedding-model cache, so prompt composition
+        // would download the ~90MB Xenova model from HuggingFace and blow the
+        // timeout. The hashing backend is deterministic and never touches the
+        // model or the network; this suite asserts file shapes, not embeddings.
+        CONSTRUCT_EMBEDDING_MODEL: 'hashing',
+        CONSTRUCT_EMBEDDING_DISABLE_LOCAL: '1',
         ...env,
       },
       timeout: 60_000,

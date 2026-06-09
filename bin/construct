@@ -169,6 +169,44 @@ function runNodeScript(scriptPath, args = [], extraEnv = {}, { exitOnError = tru
   return status;
 }
 
+async function cmdRegistryStatus(args = []) {
+  const { readFileSync, existsSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const matrixPath = join(ROOT_DIR, 'tests', 'registry', 'capability-matrix.json');
+  
+  if (!existsSync(matrixPath)) {
+    errorln('Capability matrix not found. Run "construct sync" or ensure tests/registry/capability-matrix.json exists.');
+    process.exit(1);
+  }
+
+  const { capabilities } = JSON.parse(readFileSync(matrixPath, 'utf8'));
+  const jsonOutput = args.includes('--json');
+
+  if (jsonOutput) {
+    println(JSON.stringify(capabilities, null, 2));
+    return;
+  }
+
+  println(`${COLORS.bold}Workflow & Surface Capability Registry${COLORS.reset}`);
+  println('='.repeat(40));
+  println('');
+
+  for (const cap of capabilities) {
+    const tierColor = cap.criticality === 'P0' ? COLORS.red : cap.criticality === 'P1' ? COLORS.yellow : COLORS.blue;
+    println(`${tierColor}[${cap.criticality}]${COLORS.reset} ${COLORS.bold}${cap.name}${COLORS.reset} (${cap.id})`);
+    println(`  ${COLORS.dim}${cap.description}${COLORS.reset}`);
+    
+    const surfaces = Object.entries(cap.surfaces);
+    for (const [name, status] of surfaces) {
+      const icon = status.quality_score === null ? '⚪' : status.quality_score >= 0.9 ? '🟢' : status.quality_score >= 0.7 ? '🟡' : '🔴';
+      const score = status.quality_score !== null ? `${(status.quality_score * 100).toFixed(0)}%` : 'N/A';
+      const date = status.last_validated ? new Date(status.last_validated).toLocaleDateString() : 'never';
+      println(`    ${icon} ${name.padEnd(10)} | Score: ${score.padEnd(5)} | Validated: ${date}`);
+    }
+    println('');
+  }
+}
+
 async function cmdStatus() {
   const jsonOutput = restArgsCache.includes('--json');
   const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
@@ -1049,6 +1087,45 @@ async function cmdDoctor() {
     );
   } catch (err) {
     add(`Reconciliation drift check failed: ${err.message}`, false, true);
+  }
+
+  // Docling document-extraction runtime (Python venv via uv). Provisioned lazily
+  // on first document ingest, or eagerly via `construct install --with-docling`.
+  // Advisory: absence is fine until a document is ingested.
+  try {
+    const { describeDoclingRuntime } = await import('../lib/runtime/uv-bootstrap.mjs');
+    const docling = describeDoclingRuntime();
+    if (docling.available) {
+      add(`Docling runtime ready (docling ${docling.marker?.doclingVersion ?? '?'})`, true, true);
+    } else {
+      add('Docling runtime not provisioned (`construct install --with-docling`, or auto on first ingest)', false, true);
+    }
+  } catch (err) {
+    add(`Docling runtime check failed: ${err.message}`, false, true);
+  }
+
+  // Opt-in agentic-coherence probe for local models (`construct doctor --probe-local`).
+  // Loads each registered Ollama model and measures repetition collapse on an agentic
+  // prompt, so it is gated behind the flag. COLLAPSED models produce word salad no
+  // matter how context and tools are tuned (capability is not predictable from size).
+  if (args.includes('--probe-local')) {
+    try {
+      const { ollamaAvailable, listModels, probeAgenticCoherence } = await import('../lib/ollama/provision-context.mjs');
+      if (!ollamaAvailable()) {
+        add('Local-model probe: Ollama not available', false, true);
+      } else {
+        const models = listModels().filter((m) => !/embed/i.test(m));
+        for (const m of models) {
+          const r = await probeAgenticCoherence(m);
+          const verdict = r.ok ? (r.coherent ? `COHERENT (repeat ${r.repeatRatio})` : `COLLAPSED (repeat ${r.repeatRatio})`) : `error: ${r.reason}`;
+          add(`Local probe ${m}: ${verdict}`, r.ok && r.coherent, true);
+        }
+        add('Quantization: prefer Q4_K_M+ — low quants are a known word-salad source', true, true);
+        add('Verified agentic-capable locals: qwen3-coder:32k, devstral:24b', true, true);
+      }
+    } catch (err) {
+      add(`Local-model probe failed: ${err.message}`, false, true);
+    }
   }
 
   println('Construct Health Check');
@@ -5057,6 +5134,7 @@ const handlers = new Map([
   ['infer', cmdInfer],
   ['search', cmdSearch],
   ['storage', cmdStorage],
+  ['registry:status', cmdRegistryStatus],
   // Pricing / cost readouts are stubbed out: the ledger writes, model-pricing
   // catalog, and per-turn accounting still run, but no CLI surface exposes
   // them to the user. Handlers (cmdPricing, cmdCosts, cmdCost) remain in this

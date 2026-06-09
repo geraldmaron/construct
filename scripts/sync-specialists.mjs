@@ -589,6 +589,15 @@ export function renderRoleFrameworkSection(entry) {
   return `\n\n${lines.join("\n")}`;
 }
 
+// Platform capability matrix
+const platformCapabilities = {
+  opencode: { hasNativeSubagents: true },
+  vscode: { hasNativeSubagents: true },
+  cursor: { hasNativeSubagents: true },
+  claude: { hasNativeSubagents: false },
+  codex: { hasNativeSubagents: false },
+};
+
 function buildPrompt(entry, allEntries, platform) {
   let prompt = resolvePromptContract(entry, {
     rootDir: root,
@@ -598,9 +607,28 @@ function buildPrompt(entry, allEntries, platform) {
 
   prompt = inlineRoleAntiPatterns(prompt, root, entry.name, console.warn, { preload: entry.preloadRoleGuidance === true });
 
-  if (entry.injectAgentRoster && allEntries) {
+  const capabilities = platformCapabilities[platform] || { hasNativeSubagents: false };
+
+  // Platform-Native Orchestration Alignment (ADR-0002). Hosts with native subagent
+  // routing (OpenCode, VS Code, Cursor) do not get the static specialist roster
+  // injected — on a small-context local model the roster alone is ~3-4k tokens and,
+  // combined with MCP tool schemas, overruns the model's real context window and
+  // collapses output. Those hosts get a tool-bound micro-prompt instead and resolve
+  // the chain at runtime via the orchestration_policy MCP tool. Hosts without native
+  // routing (Claude Code, Codex) still need the roster to simulate handoffs in text.
+
+  if (entry.injectAgentRoster && allEntries && !capabilities.hasNativeSubagents) {
     const roster = buildAgentRoster(allEntries);
     prompt = `Available specialist agents:\n${roster}\n\n${prompt}`;
+  } else if (entry.injectAgentRoster && capabilities.hasNativeSubagents) {
+    // A worked tool-call example lifts small local models' tool-use reliability
+    // sharply (bead construct-c16l). Keep it to one compact turn so it stays within
+    // the prompt word cap; native-subagent hosts are exactly where local models run.
+
+    prompt = `You are the primary orchestrator. To discover available specialist agents, you MUST call the \`orchestration_policy\` MCP tool. Do not guess agent names.\n\n` +
+      `Example — the user says "add rate limiting to the API". Your first action is a tool call, not prose:\n` +
+      `  call orchestration_policy { "task": "add rate limiting to the API" }\n` +
+      `Then dispatch the specialists it returns. Always call the tool before answering.\n\n${prompt}`;
   }
 
   prompt += buildRoleFooter(entry);
@@ -1362,22 +1390,39 @@ function opencodePermissions(entry) {
     ? Object.fromEntries(Object.entries(entry.permissions).map(([k, v]) => [k, v]))
     : { edit: entry.canEdit === false ? "deny" : "allow", bash: "allow" };
 
-  // The orchestrator is the primary write surface; translate its abstract
-  // bash:allow into OpenCode's scoped permission map so destructive commands are
-  // denied and remote/history rewrites prompt — the commit-approval contract
-  // enforced at the tool layer, not just in the prompt. Subagents keep the
-  // abstract grant. This scoped shape is an OpenCode translation detail and stays
-  // out of the cross-adapter registry.
+  // Agentic Scope Reduction (ADR-0002). Serializing 100+ MCP tool schemas into a
+  // small local model's prompt overruns its context window and dilutes attention,
+  // collapsing output. OpenCode's per-agent permission map prunes the surface: the
+  // orchestrator keeps only orchestration + core tools and hands execution to
+  // subagents; subagents keep execution tools but not orchestration.
 
-  if (entry.isOrchestrator && perms.bash === "allow") {
-    perms.bash = {
-      "*": "allow",
-      "rm -rf *": "deny",
-      "git push *": "ask",
-      "git push --force*": "ask",
-      "git reset --hard *": "ask",
-    };
+  if (entry.isOrchestrator) {
+    if (perms.bash === "allow") {
+      perms.bash = {
+        "*": "allow",
+        "rm -rf *": "deny",
+        "git push *": "ask",
+        "git push --force*": "ask",
+        "git reset --hard *": "ask",
+      };
+    }
+    // Heavy execution and external-knowledge tools are denied to the orchestrator so
+    // its serialized tool schema stays small; orchestration_policy drives the handoff.
+
+    perms["mcp__construct-mcp__extract_document_text"] = "deny";
+    perms["mcp__construct-mcp__ingest_document"] = "deny";
+    perms["mcp__construct-mcp__scan_file"] = "deny";
+    perms["mcp__github__*"] = "deny";
+    perms["mcp__context7__*"] = "deny";
+    perms["mcp__sequential-thinking__*"] = "deny";
+    perms["mcp__memory__*"] = "deny";
+  } else {
+    // Subagents shouldn't be orchestrating
+    perms["mcp__construct-mcp__orchestration_policy"] = "deny";
+    perms["mcp__construct-mcp__agent_contract"] = "deny";
+    perms["mcp__construct-mcp__broker_check"] = "deny";
   }
+
   return perms;
 }
 
@@ -1527,6 +1572,22 @@ function syncOpencode(entries, targetDir = null, wants = true) {
         config.mcp[openCodeId] = buildOpenCodeMcpEntry(id, mcpDef, process.env).entry;
       }
     }
+
+    // When the default OpenCode model is local (ollama), the heavy external MCP
+    // servers serialize ~130 tool schemas into EVERY agent's request — including
+    // the built-in Build/Plan agents, which the per-agent `permission` prune on
+    // the construct orchestrator does not reach. Disabling the whole server is the
+    // only lever that drops its schemas from the payload, so trim the externals
+    // and keep construct-mcp. Cloud-model defaults keep the full surface.
+
+    const configuredModel = config.model || config.defaultModel || "";
+    const localDefault = typeof configuredModel === "string" && configuredModel.startsWith("ollama/");
+    for (const id of ["context7", "github", "memory", "sequential-thinking"]) {
+      const ocId = getOpenCodeMcpId(id);
+      if (!config.mcp[ocId]) continue;
+      if (localDefault) config.mcp[ocId].enabled = false;
+      else delete config.mcp[ocId].enabled;
+    }
   }
 
   // Sweep cx-* / orchestrator agents that fall outside the current write set.
@@ -1559,12 +1620,16 @@ function syncOpencode(entries, targetDir = null, wants = true) {
     };
   }
 
+  // Pass current Construct model tiers to OpenCode config for native routing.
+  config.construct = config.construct || {};
+  config.construct.models = { ...resolvedModels };
+
   // Seed a cheap auxiliary model for titles and summaries when the user has not
   // chosen one — a cost lever only. The primary `model` stays the user's choice
   // and is never written. Global scope only; project configs inherit it.
 
   if (!targetDir && config.small_model === undefined) {
-    config.small_model = "anthropic/claude-haiku-4-5-20251001";
+    config.small_model = resolvedModels.fast || "anthropic/claude-haiku-4-5-20251001";
   }
 
   writeOpenCodeConfig(config, configPath);
