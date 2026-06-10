@@ -1,7 +1,7 @@
 # ADR 0032: Small Model Context Methodology & Platform-Native Orchestration
 
 ## Status
-Accepted | revised 2026-06-09 after empirical validation — see `tests/e2e/reports/local-model-validation.md`
+Accepted | revised 2026-06-09 after empirical validation — see `tests/e2e/reports/local-model-validation.md` | revised 2026-06-10 after OpenCode config-semantics confirmation — see `docs/research/2026-06-construct-audit/20-opencode-ecosystem.md` and `80-synthesis.md`
 
 ## Context
 Running local Ollama models (e.g. Qwen 7B) inside OpenCode produced severe repetition
@@ -52,10 +52,19 @@ raw tag. Implemented in `lib/ollama/provision-context.mjs`, wired through
 `platforms/opencode/sync-config.mjs`.
 
 ### 3. Tool-Surface Reduction
-Prune the orchestrator's tool surface with OpenCode `permission` denies, and for
-local-first setups disable heavy external MCP servers (`mcp.<id>.enabled:false`) — the
-only lever that actually shrinks the serialized schema — so the surface fits a
-small-model window.
+Disable heavy external MCP servers (`mcp.<id>.enabled:false`) — confirmed against OpenCode
+source (remeda deep-merge; `mcp.enabled === false` gate at `mcp/index.ts`) as the only lever
+that actually shrinks the serialized schema, since OpenCode exposes no per-session tool filter
+(`chat.params` carries no `tools` field) and scoped `permission` denies keep the schema (only a
+blanket `"*": false` + allowlist removes it).
+
+**Trim must be scoped to the project, not the machine** (revised 2026-06-10). The original
+implementation disabled the heavy servers whenever Ollama models merely existed on the host
+(`ollamaHasModels`), which silently stripped context7/github from cloud-model sessions in *other*
+projects. Because a project `.opencode/opencode.json` can disable a globally-enabled server via
+deep-merge, the trim belongs in the project config and is gated on the project's *resolved default
+model* (intent), not on machine-wide Ollama presence. The decision is centralized in a pure
+`decideTrim({scope, defaultModel, probeData})` so it is unit-testable and consistent across hosts.
 
 ### 4. Sampler Hygiene in the Right Place
 `opencode.json` emits only boundary-surviving params (`temperature`, `stop`). The real
@@ -67,6 +76,14 @@ Some small models cannot do agentic tool use no matter how the context and tools
 tuned. Construct provides an empirical coherence probe
 (`provision-context.mjs --probe`) and steers users toward agentic-capable local models
 rather than silently registering a model that will collapse.
+
+The probe verdict must **persist and be consumed**, not just print (revised 2026-06-10).
+`construct doctor --probe-local` writes per-model results (verdict, ratios, model digest,
+timestamp) to a capability store; `construct sync` *reads* it (never re-probes — probing loads
+models and costs minutes) to skip Modelfile provisioning for COLLAPSED models, feed `decideTrim`'s
+`auto` mode, and warn when a configured default model is COLLAPSED. Verdicts are digest-keyed so a
+re-pulled model is re-probed, and consumers warn-and-allow-override rather than silently hiding a
+model — a false COLLAPSED verdict must never strand a working model.
 
 ## Consequences
 - **Positive:** Capable local models (qwen3-coder, devstral) run the full Construct loop

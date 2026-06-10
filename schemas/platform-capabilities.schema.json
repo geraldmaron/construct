@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://construct.dev/schemas/platform-capabilities.schema.json",
+  "title": "Platform Capability Registry",
+  "description": "Declarative source of truth for what each host platform (Claude Code, Codex, OpenCode, Cursor, VS Code, Copilot) can do. Consumed by the sync and init code so per-host behavior is declared data, not inline branches. See docs/adr/0033-platform-capability-registry.md.",
+  "type": "object",
+  "required": ["version", "hosts"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "const": 1 },
+    "hosts": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/definitions/host" }
+    }
+  },
+  "definitions": {
+    "host": {
+      "type": "object",
+      "required": [
+        "displayName",
+        "hasNativeSubagents",
+        "instructionsOnly",
+        "supportsMcp",
+        "configFormat",
+        "localModelProvisioning",
+        "hooks",
+        "globalMcpAllowlist"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "Human-facing host name as reported by host-capabilities detection; also the key in the displayName-to-id lookup."
+        },
+        "hasNativeSubagents": {
+          "type": "boolean",
+          "description": "True when the host routes subagents itself (OpenCode, Cursor, VS Code). When true, the static specialist roster is NOT injected into the system prompt; the host resolves the chain at runtime via orchestration_policy."
+        },
+        "instructionsOnly": {
+          "type": "boolean",
+          "description": "True when the host accepts only instruction text (no agents, no MCP) — Copilot."
+        },
+        "supportsMcp": {
+          "type": "boolean",
+          "description": "True when the host can register MCP servers."
+        },
+        "configFormat": {
+          "type": "string",
+          "enum": ["json", "toml", "markdown"],
+          "description": "Native config serialization for the host."
+        },
+        "localModelProvisioning": {
+          "type": "string",
+          "enum": ["modelfile", "none"],
+          "description": "How the host provisions local-model context windows. 'modelfile' = Ollama Modelfile variants (OpenCode). 'none' = not applicable."
+        },
+        "hooks": {
+          "type": "object",
+          "required": ["supported", "globalAllowlist"],
+          "additionalProperties": false,
+          "properties": {
+            "supported": {
+              "type": "boolean",
+              "description": "True when the host runs lifecycle hooks (Claude Code only today)."
+            },
+            "globalAllowlist": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Hook group ids permitted at user/global scope (safety-only subset). Empty unless hooks.supported is true."
+            }
+          }
+        },
+        "globalMcpAllowlist": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "MCP server ids permitted at user/global scope. Empty unless the host supports MCP at global scope."
+        }
+      }
+    }
+  }
+}

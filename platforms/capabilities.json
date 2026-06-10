@@ -1,0 +1,76 @@
+{
+  "$schema": "../schemas/platform-capabilities.schema.json",
+  "version": 1,
+  "hosts": {
+    "claude": {
+      "displayName": "Claude Code",
+      "hasNativeSubagents": false,
+      "instructionsOnly": false,
+      "supportsMcp": true,
+      "configFormat": "json",
+      "localModelProvisioning": "none",
+      "hooks": {
+        "supported": true,
+        "globalAllowlist": [
+          "pre:bash:block-no-verify",
+          "pre:bash:guard-dangerous",
+          "pre:edit:config-protection",
+          "pre:edit-guard",
+          "post:edit:json-validate",
+          "post:edit:scan-secrets"
+        ]
+      },
+      "globalMcpAllowlist": ["context7"]
+    },
+    "codex": {
+      "displayName": "Codex",
+      "hasNativeSubagents": false,
+      "instructionsOnly": false,
+      "supportsMcp": true,
+      "configFormat": "toml",
+      "localModelProvisioning": "none",
+      "hooks": { "supported": false, "globalAllowlist": [] },
+      "globalMcpAllowlist": []
+    },
+    "copilot": {
+      "displayName": "Copilot",
+      "hasNativeSubagents": false,
+      "instructionsOnly": true,
+      "supportsMcp": false,
+      "configFormat": "markdown",
+      "localModelProvisioning": "none",
+      "hooks": { "supported": false, "globalAllowlist": [] },
+      "globalMcpAllowlist": []
+    },
+    "opencode": {
+      "displayName": "OpenCode",
+      "hasNativeSubagents": true,
+      "instructionsOnly": false,
+      "supportsMcp": true,
+      "configFormat": "json",
+      "localModelProvisioning": "modelfile",
+      "hooks": { "supported": false, "globalAllowlist": [] },
+      "globalMcpAllowlist": []
+    },
+    "vscode": {
+      "displayName": "VS Code",
+      "hasNativeSubagents": true,
+      "instructionsOnly": false,
+      "supportsMcp": true,
+      "configFormat": "json",
+      "localModelProvisioning": "none",
+      "hooks": { "supported": false, "globalAllowlist": [] },
+      "globalMcpAllowlist": []
+    },
+    "cursor": {
+      "displayName": "Cursor",
+      "hasNativeSubagents": true,
+      "instructionsOnly": false,
+      "supportsMcp": true,
+      "configFormat": "json",
+      "localModelProvisioning": "none",
+      "hooks": { "supported": false, "globalAllowlist": [] },
+      "globalMcpAllowlist": []
+    }
+  }
+}
