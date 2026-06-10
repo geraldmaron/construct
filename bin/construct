@@ -5093,8 +5093,19 @@ async function cmdHook(args) {
     errorln(`Hook not found: ${hookPath}`);
     process.exit(1);
   }
+  const started = Date.now();
   const result = spawnSync(process.execPath, [hookPath, ...args.slice(1)], { stdio: 'inherit' });
-  process.exit(result.status ?? 0);
+  const exitCode = result.status ?? 0;
+
+  // Record fire + outcome so hooks can be judged on whether they ever gate
+  // anything, not just on latency. Dynamic import keeps non-hook commands from
+  // paying the load; a telemetry failure must never change the hook's exit code.
+  try {
+    const { logHookCall } = await import('../lib/telemetry/hook-calls.mjs');
+    logHookCall({ hookId: safe, exitCode, latencyMs: Date.now() - started });
+  } catch { /* telemetry is best-effort */ }
+
+  process.exit(exitCode);
 }
 
 const [command, ...rest] = process.argv.slice(2);
