@@ -35,6 +35,7 @@ const MODEL = arg("model", "qwen2.5-coder:7b");
 const PROFILE = arg("profile", "all");
 const PROMPT = arg("prompt", "what is this project? answer in one sentence.");
 const RUN_TIMEOUT_MS = Number(arg("timeout", "300000"));
+const MAX_ATTEMPTS = Math.max(1, Number(arg("attempts", "2")));
 const reportDir = join(process.cwd(), "tests", "e2e", "reports");
 
 const OFF = { enabled: false };
@@ -68,7 +69,7 @@ async function runProfile(profile, port) {
   };
   writeFileSync(join(project, "opencode.json"), JSON.stringify(cfg, null, 2));
 
-  const output = await new Promise((resolve) => {
+  const runOnce = () => new Promise((resolve) => {
     const child = spawn("opencode", ["run", PROMPT, "-m", `ollama/${MODEL}`, "--dir", project, "--format", "json"], { cwd: project });
     let out = "";
     const timer = setTimeout(() => { child.kill("SIGKILL"); resolve({ out, timedOut: true }); }, RUN_TIMEOUT_MS);
@@ -77,15 +78,31 @@ async function runProfile(profile, port) {
     child.on("error", () => { clearTimeout(timer); resolve({ out, timedOut: false }); });
   });
 
+  const parseText = (out) => {
+    let text = "";
+    for (const line of out.split("\n")) {
+      try { const ev = JSON.parse(line); if (ev?.type === "text") text += ev.part?.text || ""; } catch { /* non-json */ }
+    }
+    return text;
+  };
+
+  // Headless `opencode run --format json` returns empty output intermittently in
+  // some repos (host quirk, not a model verdict). Retry on empty-and-not-timed-out
+  // so a flaky empty run is recorded as FLAKY-SKIP rather than miscounted as an
+  // incoherent model. A timeout is a real signal and stops the retries.
+  let output = { out: "", timedOut: false };
+  let text = "";
+  let attempts = 0;
+  while (attempts < MAX_ATTEMPTS) {
+    attempts++;
+    output = await runOnce();
+    text = parseText(output.out);
+    if (text.length > 0 || output.timedOut) break;
+  }
+  const flakySkip = text.length === 0 && !output.timedOut;
+
   await proxy.close();
 
-  let text = "";
-  for (const line of output.out.split("\n")) {
-    try {
-      const ev = JSON.parse(line);
-      if (ev?.type === "text") text += ev.part?.text || "";
-    } catch { /* non-json line */ }
-  }
   const main = proxy.records.reduce((a, b) => ((b.toolCount || 0) > (a.toolCount || 0) ? b : a), {});
   rmSync(project, { recursive: true, force: true });
 
@@ -97,7 +114,9 @@ async function runProfile(profile, port) {
     totalInputTokensEst: main.totalInputTokensEst ?? null,
     samplerKeysPresent: main.samplerKeysPresent ?? [],
     repetition: repetitionScore(text),
-    coherent: text.length > 0 && repetitionScore(text).score < 0.25,
+    coherent: !flakySkip && text.length > 0 && repetitionScore(text).score < 0.25,
+    flakySkip,
+    attempts,
     timedOut: output.timedOut,
     outputSample: text.slice(0, 300),
   };
@@ -111,7 +130,8 @@ async function main() {
     console.log(`\n[ab] profile=${profile} model=${MODEL}…`);
     const r = await runProfile(profile, port++);
     results.push(r);
-    console.log(`[ab] ${profile}: tools=${r.toolCount} totalTok≈${r.totalInputTokensEst} repetition=${r.repetition.score.toFixed(2)} coherent=${r.coherent} timedOut=${r.timedOut}`);
+    const verdict = r.flakySkip ? `FLAKY-SKIP (empty after ${r.attempts} attempts)` : `coherent=${r.coherent} timedOut=${r.timedOut}`;
+    console.log(`[ab] ${profile}: tools=${r.toolCount} totalTok≈${r.totalInputTokensEst} repetition=${r.repetition.score.toFixed(2)} ${verdict}`);
   }
   mkdirSync(reportDir, { recursive: true });
   writeFileSync(join(reportDir, "local-model-ab-results.json"), JSON.stringify({ model: MODEL, results }, null, 2) + "\n");
