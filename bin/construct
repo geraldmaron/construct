@@ -1124,8 +1124,12 @@ async function cmdDoctor() {
   // matter how context and tools are tuned (capability is not predictable from size).
   if (args.includes('--probe-local')) {
     try {
-      const { ollamaAvailable, listModels, probeAgenticCoherence, modelDigest } = await import('../lib/ollama/provision-context.mjs');
+      const { ollamaAvailable, listModels, probeAgenticCoherence, probeStreamingToolCallLeak, modelDigest } = await import('../lib/ollama/provision-context.mjs');
       const { recordProbeResult } = await import('../lib/ollama/capability-store.mjs');
+      // --probe-stream additionally drives a streaming turn and flags a tool-call
+      // leaked into the text channel (`<function=…>`) — the artifact the buffered
+      // probe cannot reproduce. It reloads each model, so it stays opt-in.
+      const probeStream = args.includes('--probe-stream');
       if (!ollamaAvailable()) {
         add('Local-model probe: Ollama not available', false, true);
       } else {
@@ -1135,6 +1139,10 @@ async function cmdDoctor() {
           if (r.ok) recordProbeResult(m, r, modelDigest(m));
           const verdict = r.ok ? (r.coherent ? `COHERENT (repeat ${r.repeatRatio})` : `COLLAPSED (repeat ${r.repeatRatio})`) : `error: ${r.reason}`;
           add(`Local probe ${m}: ${verdict}`, r.ok && r.coherent, true);
+          if (probeStream && r.ok && r.coherent) {
+            const s = await probeStreamingToolCallLeak(m);
+            if (s.ok) add(`Stream probe ${m}: ${s.leaked ? `TOOL-CALL LEAK (${s.marker})` : 'clean (native tool_calls)'}`, !s.leaked, true);
+          }
         }
         add('Quantization: prefer Q4_K_M+ — low quants are a known word-salad source', true, true);
         add('Verified agentic-capable locals: qwen3-coder:32k, devstral:24b', true, true);
