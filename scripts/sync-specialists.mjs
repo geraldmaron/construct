@@ -45,6 +45,7 @@ import {
 } from "../lib/codex-config.mjs";
 import { findOpenCodeConfigPath, readOpenCodeConfig, writeOpenCodeConfig } from "../lib/opencode-config.mjs";
 import { HEAVY_EXTERNAL_MCP_IDS, LOCAL_SURFACE_MODES, decideTrim } from "../lib/mcp/tool-budget.mjs";
+import { emitCursorRules } from "../lib/rules-delivery.mjs";
 import { resolvePromptContract } from "../lib/prompt-composer.js";
 import {
   buildClaudeMcpEntry,
@@ -1387,6 +1388,15 @@ function syncCursor(targetDir = null, wants = true) {
         mkdirp(path.dirname(rulesPath));
         fs.writeFileSync(rulesPath, body);
       }
+    }
+
+    // Glob-scoped language rules land as managed per-rule .mdc files only when
+    // the project's own files match their globs — Cursor's native auto-attach
+    // convention. See docs/concepts/rules-delivery.md.
+    try {
+      emitCursorRules({ rulesDir: path.join(root, "rules"), targetDir, dryRun: DRY_RUN });
+    } catch (err) {
+      console.warn(`[sync] cursor rules delivery skipped: ${err.message}`);
     }
   }
   return true;
