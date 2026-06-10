@@ -1,7 +1,7 @@
 # ADR-0036: Document Ingestion — Keep the Offline Sidecar, Offer docling-mcp Remote as Opt-In
 
 - **Date**: 2026-06-10
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Construct maintainers (cx-architect)
 - **Supersedes**: none
 
