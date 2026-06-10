@@ -44,6 +44,8 @@ import {
   writeCodexConfig,
 } from "../lib/codex-config.mjs";
 import { findOpenCodeConfigPath, readOpenCodeConfig, writeOpenCodeConfig } from "../lib/opencode-config.mjs";
+import { HEAVY_EXTERNAL_MCP_IDS } from "../lib/mcp/tool-budget.mjs";
+import { ollamaAvailable, listModels } from "../lib/ollama/provision-context.mjs";
 import { resolvePromptContract } from "../lib/prompt-composer.js";
 import {
   buildClaudeMcpEntry,
@@ -1573,20 +1575,33 @@ function syncOpencode(entries, targetDir = null, wants = true) {
       }
     }
 
-    // When the default OpenCode model is local (ollama), the heavy external MCP
-    // servers serialize ~130 tool schemas into EVERY agent's request — including
-    // the built-in Build/Plan agents, which the per-agent `permission` prune on
-    // the construct orchestrator does not reach. Disabling the whole server is the
-    // only lever that drops its schemas from the payload, so trim the externals
-    // and keep construct-mcp. Cloud-model defaults keep the full surface.
+    // Heavy external MCP servers serialize ~12k tokens of schema into EVERY
+    // agent's request — including the built-in Build/Plan agents the per-agent
+    // permission prune cannot reach. OpenCode 1.15.4 has no per-session tool
+    // filter (chat.params carries no tool list), so disabling the whole server in
+    // opencode.json is the only lever. Do it whenever local Ollama models are
+    // registered — a runtime model picker leaves the default model unset, so
+    // keying off the default alone missed the common case. A manual enabled:true
+    // is preserved so a user can re-enable a server they need.
 
-    const configuredModel = config.model || config.defaultModel || "";
-    const localDefault = typeof configuredModel === "string" && configuredModel.startsWith("ollama/");
-    for (const id of ["context7", "github", "memory", "sequential-thinking"]) {
+    // Local-capable when this config registers ollama models, the default model
+    // is ollama, OR the system's Ollama has models — the last covers project
+    // sync (the project config carries no ollama models, but the user clearly
+    // runs local models if their Ollama has any).
+    const ollamaHasModels = (() => {
+      try { return ollamaAvailable() && listModels().length > 0; } catch { return false; }
+    })();
+    const localPresent = Object.keys(config.provider?.ollama?.models || {}).length > 0
+      || (config.model || config.defaultModel || "").startsWith("ollama/")
+      || ollamaHasModels;
+    for (const id of HEAVY_EXTERNAL_MCP_IDS) {
       const ocId = getOpenCodeMcpId(id);
       if (!config.mcp[ocId]) continue;
-      if (localDefault) config.mcp[ocId].enabled = false;
-      else delete config.mcp[ocId].enabled;
+      if (localPresent) {
+        if (config.mcp[ocId].enabled !== true) config.mcp[ocId].enabled = false;
+      } else {
+        delete config.mcp[ocId].enabled;
+      }
     }
   }
 
