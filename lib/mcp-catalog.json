@@ -29,7 +29,7 @@
     {
       "id": "sequential-thinking",
       "name": "Sequential Thinking",
-      "category": "core",
+      "category": "optional",
       "description": "Structured multi-step reasoning chains. Helps with complex planning and analysis.",
       "package": "@modelcontextprotocol/server-sequential-thinking",
       "command": "npx",
