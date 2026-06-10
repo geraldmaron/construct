@@ -835,6 +835,23 @@ const GLOBAL_CLAUDE_HOOK_IDS = globalHookAllowlist('claude');
 
 const GLOBAL_CLAUDE_MCP_IDS = globalMcpAllowlist('claude');
 
+// Project scope writes only core-category MCP servers (plus construct-mcp, the
+// orchestration server the specialist loop needs). optional/integration servers
+// (memory, github, sequential-thinking, playwright, …) are opt-in via
+// `construct mcp add` so a project does not silently inherit heavy servers it was
+// never asked for (ADR-0031 §Consequences follow-up). A server already present in
+// the project settings is preserved, so a manual opt-in sticks.
+
+const PROJECT_DEFAULT_MCP_IDS = (() => {
+  try {
+    const catalog = JSON.parse(fs.readFileSync(path.join(root, "lib", "mcp-catalog.json"), "utf8"));
+    const arr = catalog.mcps || catalog.servers || [];
+    return new Set([...arr.filter((m) => m.category === "core").map((m) => m.id), "construct-mcp"]);
+  } catch {
+    return new Set(["context7", "construct-mcp"]);
+  }
+})();
+
 function filterGlobalClaudeHooks(hooksJson) {
   const filtered = {};
   for (const [event, groups] of Object.entries(hooksJson ?? {})) {
@@ -893,6 +910,7 @@ function writeProjectClaudeSettings(targetDir) {
     existing.mcpServers ??= {};
     for (const [id, mcpDef] of Object.entries(template.mcpServers)) {
       if (existing.mcpServers[id]) continue;
+      if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
       existing.mcpServers[id] = mcpDef;
     }
   }
@@ -908,6 +926,7 @@ function writeProjectClaudeSettings(targetDir) {
   existing.mcpServers ??= {};
   for (const [id, mcpDef] of Object.entries(registryMcp)) {
     if (existing.mcpServers[id]) continue;
+    if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
     existing.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
   }
 
