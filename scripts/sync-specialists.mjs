@@ -44,8 +44,7 @@ import {
   writeCodexConfig,
 } from "../lib/codex-config.mjs";
 import { findOpenCodeConfigPath, readOpenCodeConfig, writeOpenCodeConfig } from "../lib/opencode-config.mjs";
-import { HEAVY_EXTERNAL_MCP_IDS } from "../lib/mcp/tool-budget.mjs";
-import { ollamaAvailable, listModels } from "../lib/ollama/provision-context.mjs";
+import { HEAVY_EXTERNAL_MCP_IDS, LOCAL_SURFACE_MODES, decideTrim } from "../lib/mcp/tool-budget.mjs";
 import { resolvePromptContract } from "../lib/prompt-composer.js";
 import {
   buildClaudeMcpEntry,
@@ -159,6 +158,19 @@ const COMPRESS_PERSONAS = process.argv.includes("--compress-personas");
 const PROJECT_FLAG = process.argv.includes("--project");
 const GLOBAL_FLAG = process.argv.includes("--global");
 
+// --local-surface=on|off|auto controls whether the heavy external MCP servers are
+// disabled to fit a small local-model window. `auto` (default) trims only when the
+// config's own default model is local — so a cloud session keeps context7/github
+// even on a machine that also has Ollama. `on` forces the trim (the lever for users
+// who pick a local model at runtime, leaving the config default unset); `off` keeps
+// every server. CONSTRUCT_LOCAL_SURFACE is the env equivalent.
+
+const LOCAL_SURFACE = (() => {
+  const arg = process.argv.find((a) => a.startsWith("--local-surface="));
+  const raw = (arg ? arg.slice("--local-surface=".length) : process.env.CONSTRUCT_LOCAL_SURFACE || "auto").trim().toLowerCase();
+  return LOCAL_SURFACE_MODES.includes(raw) ? raw : "auto";
+})();
+
 // --quiet suppresses only the closing one-line summary, not the work or any
 // warning. `construct install` runs the global tier twice (plain `sync` then
 // `sync --global`); in a non-project cwd both land in the same global branch and
@@ -175,8 +187,13 @@ const summary = (msg) => { if (!QUIET) console.log(msg); };
 // Absent → null → write every host, preserving `construct sync` back-compat.
 
 import { detectHostCapabilities } from "../lib/host-capabilities.mjs";
-
-const HOST_KEYS = ["claude", "codex", "copilot", "opencode", "vscode", "cursor"];
+import {
+  HOST_KEYS,
+  displayNameToKey,
+  hasNativeSubagents as hostHasNativeSubagents,
+  globalHookAllowlist,
+  globalMcpAllowlist,
+} from "../lib/platforms/capabilities.mjs";
 
 function parseHostSelection() {
   const arg = process.argv.find((a) => a.startsWith("--hosts="));
@@ -184,14 +201,7 @@ function parseHostSelection() {
   if (!raw) {
     // Default to detected hosts if none are explicitly requested.
     const detected = new Set();
-    const nameToKey = {
-      "Claude Code": "claude",
-      "OpenCode": "opencode",
-      "Codex": "codex",
-      "VS Code": "vscode",
-      "Cursor": "cursor",
-      "Copilot": "copilot",
-    };
+    const nameToKey = displayNameToKey();
     try {
       for (const cap of detectHostCapabilities()) {
         if (cap.availability === "installed" && nameToKey[cap.host]) {
@@ -429,7 +439,7 @@ const hardDefaults = {
 // primary's provider. Explicit CX_MODEL_* env wins if set.
 const primaryFromOpenCode = (() => {
   try {
-    const cfg = readOpenCodeConfig(findOpenCodeConfigPath()) ?? {};
+    const cfg = readOpenCodeConfig().config ?? {};
     return cfg.model || cfg.defaultModel || null;
   } catch { return null; }
 })();
@@ -591,15 +601,6 @@ export function renderRoleFrameworkSection(entry) {
   return `\n\n${lines.join("\n")}`;
 }
 
-// Platform capability matrix
-const platformCapabilities = {
-  opencode: { hasNativeSubagents: true },
-  vscode: { hasNativeSubagents: true },
-  cursor: { hasNativeSubagents: true },
-  claude: { hasNativeSubagents: false },
-  codex: { hasNativeSubagents: false },
-};
-
 function buildPrompt(entry, allEntries, platform) {
   let prompt = resolvePromptContract(entry, {
     rootDir: root,
@@ -609,7 +610,7 @@ function buildPrompt(entry, allEntries, platform) {
 
   prompt = inlineRoleAntiPatterns(prompt, root, entry.name, console.warn, { preload: entry.preloadRoleGuidance === true });
 
-  const capabilities = platformCapabilities[platform] || { hasNativeSubagents: false };
+  const capabilities = { hasNativeSubagents: HOST_KEYS.includes(platform) ? hostHasNativeSubagents(platform) : false };
 
   // Platform-Native Orchestration Alignment (ADR-0002). Hosts with native subagent
   // routing (OpenCode, VS Code, Cursor) do not get the static specialist roster
@@ -830,18 +831,9 @@ function makeHooksPortable(hooksJson) {
   return JSON.stringify(walk(hooksJson));
 }
 
-const GLOBAL_CLAUDE_HOOK_IDS = new Set([
-  'pre:bash:block-no-verify',
-  'pre:bash:guard-dangerous',
-  'pre:edit:config-protection',
-  'pre:edit-guard',
-  'post:edit:json-validate',
-  'post:edit:scan-secrets',
-]);
+const GLOBAL_CLAUDE_HOOK_IDS = globalHookAllowlist('claude');
 
-const GLOBAL_CLAUDE_MCP_IDS = new Set([
-  'context7',
-]);
+const GLOBAL_CLAUDE_MCP_IDS = globalMcpAllowlist('claude');
 
 function filterGlobalClaudeHooks(hooksJson) {
   const filtered = {};
@@ -1579,25 +1571,24 @@ function syncOpencode(entries, targetDir = null, wants = true) {
     // agent's request — including the built-in Build/Plan agents the per-agent
     // permission prune cannot reach. OpenCode 1.15.4 has no per-session tool
     // filter (chat.params carries no tool list), so disabling the whole server in
-    // opencode.json is the only lever. Do it whenever local Ollama models are
-    // registered — a runtime model picker leaves the default model unset, so
-    // keying off the default alone missed the common case. A manual enabled:true
-    // is preserved so a user can re-enable a server they need.
+    // opencode.json is the only lever. The decision is INTENT-driven: trim only
+    // when this config's own default model is local (or a local Ollama provider is
+    // registered in it), so a cloud session on a machine that merely also has
+    // Ollama keeps context7/github. decideTrim centralizes the policy; a manual
+    // enabled:true is preserved so a user can re-enable a server they need.
 
-    // Local-capable when this config registers ollama models, the default model
-    // is ollama, OR the system's Ollama has models — the last covers project
-    // sync (the project config carries no ollama models, but the user clearly
-    // runs local models if their Ollama has any).
-    const ollamaHasModels = (() => {
-      try { return ollamaAvailable() && listModels().length > 0; } catch { return false; }
-    })();
-    const localPresent = Object.keys(config.provider?.ollama?.models || {}).length > 0
-      || (config.model || config.defaultModel || "").startsWith("ollama/")
-      || ollamaHasModels;
+    // A set default model is explicit intent and wins (local → trim, cloud → keep).
+    // Only when no default is chosen does a registered Ollama provider stand in as
+    // soft local intent — so a cloud-default config is never trimmed for merely
+    // listing local models alongside.
+    const configDefaultModel = config.model || config.defaultModel || "";
+    const registersOllamaProvider = Object.keys(config.provider?.ollama?.models || {}).length > 0;
+    const intentModel = configDefaultModel || (registersOllamaProvider ? "ollama" : "");
+    const trimHeavyServers = decideTrim({ surface: LOCAL_SURFACE, defaultModel: intentModel });
     for (const id of HEAVY_EXTERNAL_MCP_IDS) {
       const ocId = getOpenCodeMcpId(id);
       if (!config.mcp[ocId]) continue;
-      if (localPresent) {
+      if (trimHeavyServers) {
         if (config.mcp[ocId].enabled !== true) config.mcp[ocId].enabled = false;
       } else {
         delete config.mcp[ocId].enabled;

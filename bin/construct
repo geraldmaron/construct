@@ -1104,19 +1104,35 @@ async function cmdDoctor() {
     add(`Docling runtime check failed: ${err.message}`, false, true);
   }
 
+  // Capability honesty without re-probing: if the OpenCode default model is one the
+  // probe recorded as COLLAPSED (and its digest still matches), flag it at health
+  // time. Reads the persisted store only — the slow probe stays behind --probe-local.
+  try {
+    const { readOpenCodeConfig } = await import('../lib/opencode-config.mjs');
+    const { isKnownCollapsed } = await import('../lib/ollama/capability-store.mjs');
+    const { modelDigest } = await import('../lib/ollama/provision-context.mjs');
+    const { config } = readOpenCodeConfig();
+    const defaultModel = (config?.model || config?.defaultModel || '').replace(/^ollama\//, '');
+    if (defaultModel && isKnownCollapsed(defaultModel, modelDigest(defaultModel))) {
+      add(`Default local model ${defaultModel} probed COLLAPSED — not agentic-capable (re-verify: construct doctor --probe-local)`, false, true);
+    }
+  } catch { /* advisory */ }
+
   // Opt-in agentic-coherence probe for local models (`construct doctor --probe-local`).
   // Loads each registered Ollama model and measures repetition collapse on an agentic
   // prompt, so it is gated behind the flag. COLLAPSED models produce word salad no
   // matter how context and tools are tuned (capability is not predictable from size).
   if (args.includes('--probe-local')) {
     try {
-      const { ollamaAvailable, listModels, probeAgenticCoherence } = await import('../lib/ollama/provision-context.mjs');
+      const { ollamaAvailable, listModels, probeAgenticCoherence, modelDigest } = await import('../lib/ollama/provision-context.mjs');
+      const { recordProbeResult } = await import('../lib/ollama/capability-store.mjs');
       if (!ollamaAvailable()) {
         add('Local-model probe: Ollama not available', false, true);
       } else {
         const models = listModels().filter((m) => !/embed/i.test(m));
         for (const m of models) {
           const r = await probeAgenticCoherence(m);
+          if (r.ok) recordProbeResult(m, r, modelDigest(m));
           const verdict = r.ok ? (r.coherent ? `COHERENT (repeat ${r.repeatRatio})` : `COLLAPSED (repeat ${r.repeatRatio})`) : `error: ${r.reason}`;
           add(`Local probe ${m}: ${verdict}`, r.ok && r.coherent, true);
         }

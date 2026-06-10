@@ -6,7 +6,8 @@
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { readOpenCodeConfig, writeOpenCodeConfig, findOpenCodeConfigPath } from "../../lib/opencode-config.mjs";
-import { ensureLocalContextVariants } from "../../lib/ollama/provision-context.mjs";
+import { ensureLocalContextVariants, modelDigest } from "../../lib/ollama/provision-context.mjs";
+import { isKnownCollapsed } from "../../lib/ollama/capability-store.mjs";
 
 const LOCAL_NUM_CTX = Number(process.env.CONSTRUCT_LOCAL_NUM_CTX) || 32768;
 
@@ -135,6 +136,14 @@ async function main() {
         family: registerId.includes("qwen") ? "qwen2" : "llama",
         tool_call: true
       };
+
+      // Capability honesty: a model the probe recorded as COLLAPSED (digest still
+      // matching) word-salads on the agentic loop. Warn rather than hide — the
+      // user keeps the choice and can re-probe — so a stale or false verdict never
+      // silently strands a working model.
+      if (isKnownCollapsed(model.id, modelDigest(model.id))) {
+        console.log(`[ollama] WARNING: ${model.id} probed COLLAPSED — not agentic-capable. Re-probe: construct doctor --probe-local`);
+      }
     }
     config.provider.ollama.models = Object.fromEntries(
       Object.entries(existingLocal).sort((a, b) => (a[1].name ?? a[0]).localeCompare(b[1].name ?? b[0]))
