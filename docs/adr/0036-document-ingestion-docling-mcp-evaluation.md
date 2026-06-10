@@ -3,7 +3,7 @@
 - **Date**: 2026-06-10
 - **Status**: proposed
 - **Deciders**: Construct maintainers (cx-architect)
-- **Supersedes**: none (refines ADR-0024 document-io capability)
+- **Supersedes**: none
 
 ## Problem
 
