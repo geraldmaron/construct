@@ -41,15 +41,38 @@ the list needs a category-level look, not a blind `rm`.
 3. **Do NOT delete on telemetry alone.** The 92 "declared-by-an-owner-but-never-loaded" skills
    are most likely fine — they load on demand when their specialist runs.
 
-## Decision needed
+## Per-category investigation (option A, completed) — the result reverses the hypothesis
 
-Which do you want?
-- **A — Investigate the 55 bound-orphans by category** (recommended): I produce a per-category
-  classification (dead vs should-bind vs composer-reachable), and we delete/rebind only the
-  confirmed-dead ones.
-- **B — Adopt OpenHands-style trigger-scoped microagents:** restructure skills so the always-on
-  surface is tiny and the rest load by keyword trigger — a larger architecture change.
-- **C — Defer:** the hot core works; consolidation is not urgent enough to risk over-pruning a
-  multi-tenant skill corpus on one user's telemetry.
+Classifying the 55 bound-orphans and **verifying each category against profiles, the
+prompt-composer telemetry, and reference counts** collapses the prune list to ~1:
 
-No skills are removed under any option until you approve the specific list.
+- **6 are composer-reachable** — loaded via `prompt-composer` despite no static binding
+  (`roles/architect`, `roles/engineer`, `roles/engineer.ai`, …). The binding audit's false
+  positives. **Keep.**
+- **43 are conditional flavors of an existing specialist** — `roles/<specialist>.<flavor>`
+  (`architect.data`, `qa.web-ui`, `security.appsec`, `product-manager.growth`, …). They load
+  when that specialist runs in that flavor. **Keep.**
+- **5 of the "truly unbound" are used by a profile** — `roles/operator{,.docs,.release,.sre}`
+  is the `operator` role in `profiles/operations.json` (lines 8, 22), and `docs/strategy-workflow`
+  has 2 references. The binding audit missed these because it checks only
+  `specialists/registry.json`, not profile role sets. **Keep.**
+- **1 unbound-but-valuable skill:** `docs/document-ingest-workflow` — no owner, no references,
+  never loaded, **but the content is legitimate** (the PDF/Word/spreadsheet → searchable-markdown
+  workflow, distinct from the sibling `evidence-ingest-workflow`). Not superseded. So it is a
+  *binding gap* (it should be bound to a specialist or referenced), not dead weight.
+
+**Conclusion: ZERO skills warrant deletion.** Of 150 skills, rigorous per-category verification
+finds none that are genuinely dead — the "94% bloat" reading was a single-user-usage artifact, and
+the binding-orphan signal is dominated by false positives — profile roles, composer reachability,
+and conditional flavors account for 54 of the 55 [source: the per-category breakdown above]. The
+corpus is appropriately sized; the real defect is the audit, not the corpus.
+
+## Recommended follow-ups (filed, not blocking)
+
+1. **Improve `lib/audit-skills.mjs`** so it counts profile role bindings and composer
+   reachability, not only `specialists/registry.json` — it currently over-reports orphans by
+   ~54/55 here (bead construct-ksfa). This is the real fix the audit needs.
+2. **Bind `docs/document-ingest-workflow`** to a specialist (it pairs with the docling ingest
+   path) instead of leaving it unreachable — a binding gap, not a deletion.
+
+No skills are removed.
