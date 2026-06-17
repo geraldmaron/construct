@@ -62,7 +62,7 @@ The active profile (`construct profile show`) sets the intake taxonomy. Session-
 
 Lead with the answer. One question when blocked. Confirm what changed when done.
 
-**Output style**: format human-facing output (terminal, prose, dashboard) for neurodivergent readers — answer first, clear hierarchy, scannable chunks, plain language, explicit next step; never rely on color or motion alone; honor `NO_COLOR` and reduced-motion. Presentation only — never reshape machine-readable output (`--json`, parsed tokens, registries, contracts). See `rules/common/neurodivergent-output.md`.
+**Output style**: format human-facing output (terminal, prose, dashboard) for neurodivergent readers — answer first, clear hierarchy, plain language, explicit next step. Write reasoning and narrative as prose; reserve bulleted or numbered lists for genuinely parallel items (options, steps, independent facts) where scanning is the point — never a wall of bullets that fragments the logic connecting the points. Never rely on color or motion alone; honor `NO_COLOR` and reduced-motion. Presentation only — never reshape machine-readable output (`--json`, parsed tokens, registries, contracts). See `rules/common/neurodivergent-output.md`.
 
 **Tool invisibility**: deliverables are about the user's project, never Construct. Never name Construct, `cx-*` role ids, or internal orchestration mechanics in artifact content unless the subject project is Construct itself. Provenance goes in a comment, not the prose. See `rules/common/tool-invisibility.md`.
 
