@@ -4238,13 +4238,17 @@ async function cmdMemory(args) {
     if (thresholdArg) opts.similarityThreshold = Number(thresholdArg.split('=')[1]);
     if (archiveDaysArg) opts.archiveAfterDays = Number(archiveDaysArg.split('=')[1]);
     if (args.includes('--no-supersede')) opts.supersedeDuplicates = false;
+    if (args.includes('--no-contradictions')) opts.detectContradictions = false;
     const result = await consolidate(process.cwd(), opts);
-    const supersededCount = result.superseded?.length ?? 0;
-    const agedOut = result.archived.length - supersededCount;
+    const superseded = result.superseded ?? [];
+    const contradictions = superseded.filter((s) => s.reason === 'contradiction').length;
+    const restatements = superseded.length - contradictions;
+    const agedOut = result.archived.length - superseded.length;
     process.stdout.write(
       `consolidate: ${result.clustersBefore} observations → ${result.clusters} insights, ` +
-      `${supersededCount} superseded, ${agedOut} aged-out, ` +
-      `${result.archivePruned ?? 0} pruned from archive\n`
+      `${restatements} restated, ${contradictions} contradicted, ${agedOut} aged-out, ` +
+      `${result.archivePruned ?? 0} pruned from archive` +
+      `${result.contradictionScanSkipped ? ' (contradiction scan skipped: store too large)' : ''}\n`
     );
     return;
   }
