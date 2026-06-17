@@ -176,34 +176,42 @@ One-time setup on npmjs.com: package → Settings → Trusted Publishers → add
 - Requires `HOMEBREW_TAP_TOKEN` secret with push access to the tap repo.
 - Gated on `vars.HOMEBREW_TAP_ENABLED == 'true'`.
 
-## Sync main → staging (post-merge automation)
+## Branch flow: feature → staging → main
 
-`.github/workflows/sync-main-to-staging.yml` opens a sync PR from `main` to `staging` after every push to `main`. The integration branch never falls behind a release that landed via squash.
+Construct uses the standard environment-promotion model. Promotion flows **upward** —
+work integrates on `staging` (pre-production) and is promoted to `main` (production).
 
-### Required repo policy
+| Branch | Role | Deploys to |
+|---|---|---|
+| feature / `fix/*` / `research/*` | unit of work | — (CI only) |
+| `staging` | integration / pre-production gate | staging environment (when provisioned — see below) |
+| `main` | production | `construct-production` via `deploy.yml` on push to main |
 
-**Settings → Actions → General → Workflow permissions → "Allow GitHub Actions to create and approve pull requests" must be enabled.** Without it, `gh pr create` from the workflow fails with `GitHub Actions is not permitted to create or approve pull requests`. The workflow's `Report token mode` and `Open sync PR against staging` steps surface this error directly with a link to the setting. Verify via:
+### How work ships
 
-```bash
-gh api /repos/geraldmaron/construct/actions/permissions/workflow
-# expect: "can_approve_pull_request_reviews": true
-```
+1. **Branch off `staging`** and do the work.
+2. **Open a PR into `staging`.** CI must pass (`ci-required`, `secret scanning`); merge when green. This is the integration gate — multiple features land here and are validated together before production.
+3. **Promote to production** with a single `staging → main` PR. Merging it is the deliberate, reviewed step that triggers the production deploy. Open the promotion PR on demand:
 
-### Recommended: PAT (`SYNC_PR_TOKEN`)
+   ```bash
+   gh workflow run "Promote staging → main"
+   # or manually:
+   gh pr create --base main --head staging --title "release: promote staging → main"
+   ```
 
-Workflows triggered by pushes from `GITHUB_TOKEN` do not fire downstream workflows (GitHub's anti-loop guard), so the auto-opened sync PR sits without CI checks and cannot satisfy branch protection on `staging` without an admin-merge. Set a fine-grained PAT as a repo secret named `SYNC_PR_TOKEN` to bypass this:
+`main` is never targeted by feature PRs directly. A hotfix that must bypass `staging` is an explicit, documented exception (PR straight to `main`), not the default.
 
-1. Generate a PAT with `contents:write` + `pull-requests:write` scoped to this repo (https://github.com/settings/personal-access-tokens).
-2. Add it as a repo secret: `gh secret set SYNC_PR_TOKEN`.
-3. The workflow picks it up automatically (`secrets.SYNC_PR_TOKEN || secrets.GITHUB_TOKEN` fallback chain).
+### Staging deploy (follow-up)
 
-Without `SYNC_PR_TOKEN`: the sync workflow still runs, opens a PR, and emits a workflow warning that the PR will not auto-trigger CI. Maintainer can admin-merge or push an empty commit to the sync branch to trigger CI.
+`staging` is the pre-production gate but does not yet have its own deploy target — only
+production (`main`) deploys today. Provisioning a staging environment (a parallel ECS
+service + Terraform workspace under `deploy/terraform/environments/staging`, deployed on
+push to `staging`) is the remaining step to make `staging` a true running pre-prod mirror.
+Until then, `staging` gates by CI + review, not by a live environment.
 
-### Manual re-trigger
-
-```bash
-gh workflow run "Sync main → staging" --ref main
-```
+> Historical: a `sync-main-to-staging` workflow previously mirrored `main` *into* `staging`
+> (the inverse, downstream direction). It was removed when adopting this model — staging now
+> leads main, not trails it.
 
 ## Pre-push gate (local, runs before every push)
 

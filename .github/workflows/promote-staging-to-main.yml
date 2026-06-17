@@ -1,0 +1,55 @@
+name: Promote staging → main
+
+# Standard environment-promotion flow: feature → staging (integration / pre-prod) →
+# main (production). Work merges into `staging`; a release is a promotion of `staging`
+# to `main`, which triggers the production deploy (.github/workflows/deploy.yml).
+#
+# This workflow opens (or updates) the promotion PR from `staging` into `main` on demand.
+# It never merges — a human reviews and merges the PR so production is always a deliberate,
+# reviewed step. Prefer SYNC_PR_TOKEN (a repo-scoped PAT) so the PR gets CI; falls back to
+# GITHUB_TOKEN otherwise (which, per GitHub's anti-loop guard, will not auto-trigger CI).
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "Promotion PR title"
+        required: false
+        default: "release: promote staging → main"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: promote-staging-to-main
+  cancel-in-progress: false
+
+jobs:
+  open-promotion-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.SYNC_PR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Open or update staging → main PR
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PR_TOKEN || secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ github.event.inputs.title }}
+        run: |
+          set -euo pipefail
+          if git rev-list --left-right --count origin/main...origin/staging | awk '{exit ($2==0)}'; then
+            echo "staging has no commits ahead of main — nothing to promote."
+            exit 0
+          fi
+          EXISTING=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number // empty')
+          BODY="Production promotion of \`staging\` → \`main\`. Merging deploys to production (deploy.yml). Review the diff below; this is the gate before prod."
+          if [ -n "$EXISTING" ]; then
+            gh pr edit "$EXISTING" --title "$PR_TITLE" --body "$BODY"
+            echo "Updated existing promotion PR #$EXISTING"
+          else
+            gh pr create --base main --head staging --title "$PR_TITLE" --body "$BODY"
+          fi
