@@ -35,6 +35,8 @@ What gets captured: number of turns, tool counts (`Bash×3, Edit×2`), files tou
 
 Salience: instead of a flat confidence, the observation's `confidence` is a deterministic salience score in `[0.05, 0.95]` (`lib/reflect/salience.mjs`) derived from signals already collected — mutating tool calls weigh most, then bash, assistant turns, and files in scope, no LLM. A session that edited the tree is remembered strongly; a read-only exchange weakly. Because consolidation archives observations that are both older than `archiveAfterDays` and below `archiveBelowConfidence` (0.5), low-salience sessions age out of the live set first — the score is the retention signal, not a second mechanism. The same module's `shouldStore` is the extraction gate: a session with no durable signal at all (no mutation, no bash, barely any exchange) yields no observation.
 
+The same salience score also drives **supersede** during consolidation (`lib/engine/consolidate.mjs`): when a cluster contains a tight restatement of a fact (cosine ≥ `supersedeThreshold` 0.97 against the cluster winner), only the highest-salience member stays live and the rest move to cold archive stamped with `supersededBy` — so search returns one current statement of a fact, not every past phrasing of it. The winner becomes the cluster representative; `construct memory consolidate` reports the superseded count, and `--no-supersede` disables it. Contradiction (a newer session that disagrees rather than restates) needs semantic judgment and is not yet handled.
+
 Where it lives:
 
 - `lib/hooks/session-reflect.mjs`. The Stop hook. 500ms hard budget. Exit 0 on any error.
