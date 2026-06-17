@@ -4,6 +4,9 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Changed
+- **Adopted the standard environment-promotion branch flow: feature → staging → main.** Previously `main` was the trunk and `staging` was a downstream mirror auto-synced *from* main (`sync-main-to-staging.yml`), so `staging` gated nothing and promotion ran the wrong direction. Now work integrates on `staging` (pre-production), and a single `staging → main` PR promotes to production (the push to `main` still drives `deploy.yml`). Removed `.github/workflows/sync-main-to-staging.yml`; added `.github/workflows/promote-staging-to-main.yml` (on-demand `workflow_dispatch` that opens/updates the promotion PR, never auto-merges). Flow documented in `docs/maintenance/release-and-deploy.md`. Follow-up: provision a real staging deploy environment (currently `staging` gates by CI + review only).
+
 ## [1.1.0] - 2026-06-17
 
 ### Upgrade notes (from v1.0.24)
