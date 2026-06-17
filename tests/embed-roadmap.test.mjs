@@ -146,6 +146,50 @@ describe('generateRoadmap', () => {
     }
   });
 
+  it('does not rewrite the file when only the timestamp would change', async () => {
+    const root = makeTmpDir();
+    try {
+      const snapshot = makeSnapshot([{
+        provider: 'jira',
+        items: [{ type: 'issue', key: 'IDEM-1', summary: 'Stable task', status: 'Open' }],
+      }]);
+      const roadmapPath = join(root, 'docs', 'roadmap.md');
+
+      await generateRoadmap({ targetPath: root, snapshot });
+      const first = readFileSync(roadmapPath, 'utf8');
+
+      const second = await generateRoadmap({ targetPath: root, snapshot });
+      assert.equal(second.unchanged, true, 'a stable re-run reports unchanged');
+      assert.equal(readFileSync(roadmapPath, 'utf8'), first, 'the file content (and its timestamp) is untouched');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('rewrites when the roadmap content actually changes', async () => {
+    const root = makeTmpDir();
+    try {
+      const one = makeSnapshot([{
+        provider: 'jira',
+        items: [{ type: 'issue', key: 'CHG-1', summary: 'First task', status: 'Open' }],
+      }]);
+      await generateRoadmap({ targetPath: root, snapshot: one });
+
+      const two = makeSnapshot([{
+        provider: 'jira',
+        items: [
+          { type: 'issue', key: 'CHG-1', summary: 'First task', status: 'Open' },
+          { type: 'issue', key: 'CHG-2', summary: 'Second task', status: 'Open' },
+        ],
+      }]);
+      const result = await generateRoadmap({ targetPath: root, snapshot: two });
+      assert.notEqual(result.unchanged, true);
+      assert.ok(readFileSync(join(root, 'docs', 'roadmap.md'), 'utf8').includes('CHG-2'));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('marks new roadmap as isNew=true', async () => {
     const root = makeTmpDir();
     try {

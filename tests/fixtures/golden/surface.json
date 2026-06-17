@@ -221,6 +221,10 @@
       "core": false
     },
     {
+      "name": "lint:prompts",
+      "core": false
+    },
+    {
       "name": "lint:research",
       "core": false
     },
@@ -285,6 +289,10 @@
       "core": false
     },
     {
+      "name": "registry:status",
+      "core": false
+    },
+    {
       "name": "resolve --json",
       "core": false
     },
@@ -330,6 +338,10 @@
     },
     {
       "name": "skills",
+      "core": false
+    },
+    {
+      "name": "specialist",
       "core": false
     },
     {

@@ -19,6 +19,7 @@ import {
   injectConstructBlock,
   injectIntoAgentFile,
   buildConstructIntegrationBody,
+  variantForFile,
   CONSTRUCT_INTEGRATION_VERSION,
 } from '../../lib/agent-instructions/inject.mjs';
 
@@ -46,7 +47,7 @@ test('appends a block while preserving user content verbatim', () => {
   const { content, action } = injectConstructBlock(user, body);
   assert.equal(action, 'created');
   assert.ok(content.startsWith(user), 'user content preserved at the top');
-  assert.match(content, /<!-- BEGIN CONSTRUCT INTEGRATION v:1 hash:[0-9a-f]{12} -->/);
+  assert.match(content, new RegExp(`<!-- BEGIN CONSTRUCT INTEGRATION v:${CONSTRUCT_INTEGRATION_VERSION} hash:[0-9a-f]{12} -->`));
   assert.match(content, /<!-- END CONSTRUCT INTEGRATION -->\n$/);
 });
 
@@ -96,4 +97,24 @@ test('injectIntoAgentFile creates a missing file from a header', () => {
   const out = fs.readFileSync(file, 'utf8');
   assert.match(out, /^# Proj\n/);
   assert.match(out, /BEGIN CONSTRUCT INTEGRATION/);
+});
+
+test('CLAUDE.md receives the pointer variant importing AGENTS.md (single source)', () => {
+  const claude = tmpFile('CLAUDE.md', '# Proj\n\nuser prose\n');
+  const agents = tmpFile('AGENTS.md', '# Proj\n');
+  const resClaude = injectIntoAgentFile(claude, { version: CONSTRUCT_INTEGRATION_VERSION });
+  const resAgents = injectIntoAgentFile(agents, { version: CONSTRUCT_INTEGRATION_VERSION });
+  const claudeContent = fs.readFileSync(claude, 'utf8');
+  const agentsContent = fs.readFileSync(agents, 'utf8');
+  assert.ok(resClaude.changed && resAgents.changed);
+  assert.match(claudeContent, /@AGENTS\.md/, 'CLAUDE.md imports AGENTS.md');
+  assert.ok(!claudeContent.includes('Durable state'), 'CLAUDE.md does not carry the full body');
+  assert.ok(agentsContent.includes('Durable state'), 'AGENTS.md carries the full body');
+  assert.ok(claudeContent.startsWith('# Proj\n\nuser prose\n'), 'user prose preserved');
+});
+
+test('variantForFile maps CLAUDE.md to pointer and everything else to full', () => {
+  assert.equal(variantForFile('/x/CLAUDE.md'), 'pointer');
+  assert.equal(variantForFile('/x/AGENTS.md'), 'full');
+  assert.equal(variantForFile('AGENTS.md'), 'full');
 });
