@@ -78,3 +78,7 @@ apps/*/out/
 
 # npm pack output (produced by the consumer-perspective audit gate)
 *.tgz
+
+# Python bytecode (docling sidecar compile artifacts)
+__pycache__/
+*.pyc

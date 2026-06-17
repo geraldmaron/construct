@@ -1,5 +1,13 @@
 ---
 description: Construct web performance rule. Use when writing or reviewing web code that involves performance.
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.html"
+  - "**/*.vue"
+  - "**/*.svelte"
 ---
 > This file extends [common/performance.md](../common/performance.md) with web-specific performance content.
 

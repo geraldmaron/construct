@@ -13,6 +13,13 @@ profile/outcomes/learning, embedded-contract).
 
 Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code, OpenCode, and any other MCP-compatible host. Tools are registered in `lib/mcp/server.mjs` and implemented across `lib/mcp/tools/`.
 
+## Tool surface (gateway)
+
+To keep the serialized tool schema small enough for any context window — a flat 71-tool surface (~10.6k tokens) overran a 32k local-model window — `ListTools` exposes only a **curated core** (`orchestration_policy`, `get_skill`, `search_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`) plus the `construct_call` **gateway**. Every other tool below stays reachable through `construct_call`.
+
+### `construct_call`
+Invoke any non-core Construct tool by name. Pass the tool name in `tool` (constrained to the catalog of available tools) and its arguments in `args` — e.g. `construct_call({ tool: "workflow_status", args: { run_id } })`. Dispatches to the same handler as a direct call, so collapsing the surface costs no capability.
+
 ## Project tools
 
 ### `agent_health`

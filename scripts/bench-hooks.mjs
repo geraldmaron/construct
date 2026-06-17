@@ -7,9 +7,14 @@
  * `@p95ms <N>` budget, the harness spawns the hook N times with a synthetic
  * stdin matching its event shape and records wall time per run. Output is a
  * JSON report at `.cx/bench/hooks-<ISO date>.json` with one entry per hook:
- * declared budget, median, p95, max, count, exits, lifecycle, status
- * (`pass` if p95 <= budget × tolerance, else `fail`). Tolerance defaults to
- * 2× per ADR-0029.
+ * declared budget, median, p95, max, count, exits, lifecycle, status.
+ *
+ * The `@p95ms` budget is the hook's OWN marginal cost, not the Node interpreter
+ * startup it shares with every other hook (~30ms cold, and it drifts with the
+ * runner's Node version — Node 20→24 alone pushed every sub-30ms budget red).
+ * So the harness first measures a bare Node+stdin baseline and judges each hook
+ * on `p95 - baseline`: status is `pass` when that marginal p95 <= budget ×
+ * tolerance, else `fail`. Tolerance defaults to 2× per ADR-0029.
  *
  * Hooks marked `@unwired` are skipped — they are not registered in
  * `platforms/claude/settings.template.json` and would never run in
@@ -25,8 +30,9 @@
  *   node scripts/bench-hooks.mjs --json     # stdout JSON only, no report file
  */
 
-import { readFileSync, readdirSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, mkdirSync, writeFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { spawn } from 'node:child_process';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
@@ -136,7 +142,24 @@ function percentile(sorted, p) {
   return sorted[Math.max(0, idx)];
 }
 
-async function benchOne(file) {
+// The unavoidable floor every hook pays: spawn a `.mjs` that reads stdin and
+// exits with zero hook logic, measured exactly like a hook. Its p95 is the Node
+// interpreter + stdin cost to subtract so a budget reflects the hook's own work.
+
+async function measureBaseline() {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'cx-bench-baseline-'));
+  const noop = path.join(dir, 'noop.mjs');
+  writeFileSync(noop, 'let d="";process.stdin.on("data",(c)=>{d+=c});process.stdin.on("end",()=>process.exit(0));process.stdin.resume();\n');
+  try {
+    const times = [];
+    for (let i = 0; i < RUNS; i++) times.push((await runOnce(noop, {})).elapsed);
+    return percentile([...times].sort((a, b) => a - b), 95);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+async function benchOne(file, baselineMs = 0) {
   const name = path.basename(file, '.mjs');
   const header = parseHeader(file);
   if (header.unwired) return { name, lifecycle: header.lifecycle, skipped: 'unwired' };
@@ -156,13 +179,19 @@ async function benchOne(file) {
   const p95 = percentile(sorted, 95);
   const max = sorted[sorted.length - 1];
   const budget = header.p95ms;
-  const status = p95 <= budget * TOLERANCE ? 'pass' : 'fail';
+
+  // Judge the hook's marginal cost over the shared Node floor, not absolute wall
+  // time — the floor is interpreter overhead the budget was never meant to cover.
+  const marginalP95 = Math.max(0, p95 - baselineMs);
+  const status = marginalP95 <= budget * TOLERANCE ? 'pass' : 'fail';
   return {
     name,
     lifecycle: header.lifecycle,
     budgetMs: budget,
     medianMs: Math.round(median),
     p95Ms: Math.round(p95),
+    baselineMs: Math.round(baselineMs),
+    marginalP95Ms: Math.round(marginalP95),
     maxMs: Math.round(max),
     runs: times.length,
     exits: exits.reduce((a, e) => ((a[e] = (a[e] ?? 0) + 1), a), {}),
@@ -176,14 +205,17 @@ async function main() {
     .map((f) => path.join(HOOKS_DIR, f))
     .filter((f) => !ONLY_HOOK || path.basename(f, '.mjs') === ONLY_HOOK);
 
+  const baselineMs = await measureBaseline();
+  if (!JSON_ONLY) process.stderr.write(`baseline (Node+stdin floor) p95=${Math.round(baselineMs)}ms — subtracted from every hook\n`);
+
   const results = [];
   for (const file of files) {
     if (!JSON_ONLY) process.stderr.write(`bench ${path.basename(file)} ...`);
-    const r = await benchOne(file);
+    const r = await benchOne(file, baselineMs);
     results.push(r);
     if (!JSON_ONLY) {
       if (r.skipped) process.stderr.write(` skipped (${r.skipped})\n`);
-      else process.stderr.write(` p95=${r.p95Ms}ms budget=${r.budgetMs}ms ${r.status}\n`);
+      else process.stderr.write(` p95=${r.p95Ms}ms marginal=${r.marginalP95Ms}ms budget=${r.budgetMs}ms ${r.status}\n`);
     }
   }
 
@@ -192,6 +224,7 @@ async function main() {
     runs: RUNS,
     tolerance: TOLERANCE,
     nodeVersion: process.version,
+    baselineMs: Math.round(baselineMs),
     results,
   };
 
@@ -210,8 +243,8 @@ async function main() {
 
   const failed = results.filter((r) => r.status === 'fail');
   if (failed.length) {
-    process.stderr.write(`\n${failed.length} hook(s) over budget × ${TOLERANCE}:\n`);
-    for (const r of failed) process.stderr.write(`  ${r.name}: p95=${r.p95Ms}ms > ${r.budgetMs * TOLERANCE}ms\n`);
+    process.stderr.write(`\n${failed.length} hook(s) over budget × ${TOLERANCE} (marginal over the ${Math.round(baselineMs)}ms Node floor):\n`);
+    for (const r of failed) process.stderr.write(`  ${r.name}: marginal=${r.marginalP95Ms}ms > ${r.budgetMs * TOLERANCE}ms\n`);
     process.exitCode = 1;
   }
 

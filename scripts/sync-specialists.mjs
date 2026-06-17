@@ -44,6 +44,8 @@ import {
   writeCodexConfig,
 } from "../lib/codex-config.mjs";
 import { findOpenCodeConfigPath, readOpenCodeConfig, writeOpenCodeConfig } from "../lib/opencode-config.mjs";
+import { HEAVY_EXTERNAL_MCP_IDS, LOCAL_SURFACE_MODES, decideTrim } from "../lib/mcp/tool-budget.mjs";
+import { emitCursorRules } from "../lib/rules-delivery.mjs";
 import { resolvePromptContract } from "../lib/prompt-composer.js";
 import {
   buildClaudeMcpEntry,
@@ -157,6 +159,19 @@ const COMPRESS_PERSONAS = process.argv.includes("--compress-personas");
 const PROJECT_FLAG = process.argv.includes("--project");
 const GLOBAL_FLAG = process.argv.includes("--global");
 
+// --local-surface=on|off|auto controls whether the heavy external MCP servers are
+// disabled to fit a small local-model window. `auto` (default) trims only when the
+// config's own default model is local — so a cloud session keeps context7/github
+// even on a machine that also has Ollama. `on` forces the trim (the lever for users
+// who pick a local model at runtime, leaving the config default unset); `off` keeps
+// every server. CONSTRUCT_LOCAL_SURFACE is the env equivalent.
+
+const LOCAL_SURFACE = (() => {
+  const arg = process.argv.find((a) => a.startsWith("--local-surface="));
+  const raw = (arg ? arg.slice("--local-surface=".length) : process.env.CONSTRUCT_LOCAL_SURFACE || "auto").trim().toLowerCase();
+  return LOCAL_SURFACE_MODES.includes(raw) ? raw : "auto";
+})();
+
 // --quiet suppresses only the closing one-line summary, not the work or any
 // warning. `construct install` runs the global tier twice (plain `sync` then
 // `sync --global`); in a non-project cwd both land in the same global branch and
@@ -173,8 +188,13 @@ const summary = (msg) => { if (!QUIET) console.log(msg); };
 // Absent → null → write every host, preserving `construct sync` back-compat.
 
 import { detectHostCapabilities } from "../lib/host-capabilities.mjs";
-
-const HOST_KEYS = ["claude", "codex", "copilot", "opencode", "vscode", "cursor"];
+import {
+  HOST_KEYS,
+  displayNameToKey,
+  hasNativeSubagents as hostHasNativeSubagents,
+  globalHookAllowlist,
+  globalMcpAllowlist,
+} from "../lib/platforms/capabilities.mjs";
 
 function parseHostSelection() {
   const arg = process.argv.find((a) => a.startsWith("--hosts="));
@@ -182,14 +202,7 @@ function parseHostSelection() {
   if (!raw) {
     // Default to detected hosts if none are explicitly requested.
     const detected = new Set();
-    const nameToKey = {
-      "Claude Code": "claude",
-      "OpenCode": "opencode",
-      "Codex": "codex",
-      "VS Code": "vscode",
-      "Cursor": "cursor",
-      "Copilot": "copilot",
-    };
+    const nameToKey = displayNameToKey();
     try {
       for (const cap of detectHostCapabilities()) {
         if (cap.availability === "installed" && nameToKey[cap.host]) {
@@ -427,7 +440,7 @@ const hardDefaults = {
 // primary's provider. Explicit CX_MODEL_* env wins if set.
 const primaryFromOpenCode = (() => {
   try {
-    const cfg = readOpenCodeConfig(findOpenCodeConfigPath()) ?? {};
+    const cfg = readOpenCodeConfig().config ?? {};
     return cfg.model || cfg.defaultModel || null;
   } catch { return null; }
 })();
@@ -598,9 +611,28 @@ function buildPrompt(entry, allEntries, platform) {
 
   prompt = inlineRoleAntiPatterns(prompt, root, entry.name, console.warn, { preload: entry.preloadRoleGuidance === true });
 
-  if (entry.injectAgentRoster && allEntries) {
+  const capabilities = { hasNativeSubagents: HOST_KEYS.includes(platform) ? hostHasNativeSubagents(platform) : false };
+
+  // Platform-Native Orchestration Alignment (ADR-0002). Hosts with native subagent
+  // routing (OpenCode, VS Code, Cursor) do not get the static specialist roster
+  // injected — on a small-context local model the roster alone is ~3-4k tokens and,
+  // combined with MCP tool schemas, overruns the model's real context window and
+  // collapses output. Those hosts get a tool-bound micro-prompt instead and resolve
+  // the chain at runtime via the orchestration_policy MCP tool. Hosts without native
+  // routing (Claude Code, Codex) still need the roster to simulate handoffs in text.
+
+  if (entry.injectAgentRoster && allEntries && !capabilities.hasNativeSubagents) {
     const roster = buildAgentRoster(allEntries);
     prompt = `Available specialist agents:\n${roster}\n\n${prompt}`;
+  } else if (entry.injectAgentRoster && capabilities.hasNativeSubagents) {
+    // A worked tool-call example lifts small local models' tool-use reliability
+    // sharply (bead construct-c16l). Keep it to one compact turn so it stays within
+    // the prompt word cap; native-subagent hosts are exactly where local models run.
+
+    prompt = `You are the primary orchestrator. To discover available specialist agents, you MUST call the \`orchestration_policy\` MCP tool. Do not guess agent names.\n\n` +
+      `Example — the user says "add rate limiting to the API". Your first action is a tool call, not prose:\n` +
+      `  call orchestration_policy { "task": "add rate limiting to the API" }\n` +
+      `Then dispatch the specialists it returns. Always call the tool before answering.\n\n${prompt}`;
   }
 
   prompt += buildRoleFooter(entry);
@@ -800,18 +832,26 @@ function makeHooksPortable(hooksJson) {
   return JSON.stringify(walk(hooksJson));
 }
 
-const GLOBAL_CLAUDE_HOOK_IDS = new Set([
-  'pre:bash:block-no-verify',
-  'pre:bash:guard-dangerous',
-  'pre:edit:config-protection',
-  'pre:edit-guard',
-  'post:edit:json-validate',
-  'post:edit:scan-secrets',
-]);
+const GLOBAL_CLAUDE_HOOK_IDS = globalHookAllowlist('claude');
 
-const GLOBAL_CLAUDE_MCP_IDS = new Set([
-  'context7',
-]);
+const GLOBAL_CLAUDE_MCP_IDS = globalMcpAllowlist('claude');
+
+// Project scope writes only core-category MCP servers (plus construct-mcp, the
+// orchestration server the specialist loop needs). optional/integration servers
+// (memory, github, sequential-thinking, playwright, …) are opt-in via
+// `construct mcp add` so a project does not silently inherit heavy servers it was
+// never asked for (ADR-0031 §Consequences follow-up). A server already present in
+// the project settings is preserved, so a manual opt-in sticks.
+
+const PROJECT_DEFAULT_MCP_IDS = (() => {
+  try {
+    const catalog = JSON.parse(fs.readFileSync(path.join(root, "lib", "mcp-catalog.json"), "utf8"));
+    const arr = catalog.mcps || catalog.servers || [];
+    return new Set([...arr.filter((m) => m.category === "core").map((m) => m.id), "construct-mcp"]);
+  } catch {
+    return new Set(["context7", "construct-mcp"]);
+  }
+})();
 
 function filterGlobalClaudeHooks(hooksJson) {
   const filtered = {};
@@ -871,6 +911,7 @@ function writeProjectClaudeSettings(targetDir) {
     existing.mcpServers ??= {};
     for (const [id, mcpDef] of Object.entries(template.mcpServers)) {
       if (existing.mcpServers[id]) continue;
+      if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
       existing.mcpServers[id] = mcpDef;
     }
   }
@@ -886,6 +927,7 @@ function writeProjectClaudeSettings(targetDir) {
   existing.mcpServers ??= {};
   for (const [id, mcpDef] of Object.entries(registryMcp)) {
     if (existing.mcpServers[id]) continue;
+    if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
     existing.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
   }
 
@@ -1347,6 +1389,15 @@ function syncCursor(targetDir = null, wants = true) {
         fs.writeFileSync(rulesPath, body);
       }
     }
+
+    // Glob-scoped language rules land as managed per-rule .mdc files only when
+    // the project's own files match their globs — Cursor's native auto-attach
+    // convention. See docs/concepts/rules-delivery.md.
+    try {
+      emitCursorRules({ rulesDir: path.join(root, "rules"), targetDir, dryRun: DRY_RUN });
+    } catch (err) {
+      console.warn(`[sync] cursor rules delivery skipped: ${err.message}`);
+    }
   }
   return true;
 }
@@ -1362,22 +1413,39 @@ function opencodePermissions(entry) {
     ? Object.fromEntries(Object.entries(entry.permissions).map(([k, v]) => [k, v]))
     : { edit: entry.canEdit === false ? "deny" : "allow", bash: "allow" };
 
-  // The orchestrator is the primary write surface; translate its abstract
-  // bash:allow into OpenCode's scoped permission map so destructive commands are
-  // denied and remote/history rewrites prompt — the commit-approval contract
-  // enforced at the tool layer, not just in the prompt. Subagents keep the
-  // abstract grant. This scoped shape is an OpenCode translation detail and stays
-  // out of the cross-adapter registry.
+  // Agentic Scope Reduction (ADR-0002). Serializing 100+ MCP tool schemas into a
+  // small local model's prompt overruns its context window and dilutes attention,
+  // collapsing output. OpenCode's per-agent permission map prunes the surface: the
+  // orchestrator keeps only orchestration + core tools and hands execution to
+  // subagents; subagents keep execution tools but not orchestration.
 
-  if (entry.isOrchestrator && perms.bash === "allow") {
-    perms.bash = {
-      "*": "allow",
-      "rm -rf *": "deny",
-      "git push *": "ask",
-      "git push --force*": "ask",
-      "git reset --hard *": "ask",
-    };
+  if (entry.isOrchestrator) {
+    if (perms.bash === "allow") {
+      perms.bash = {
+        "*": "allow",
+        "rm -rf *": "deny",
+        "git push *": "ask",
+        "git push --force*": "ask",
+        "git reset --hard *": "ask",
+      };
+    }
+    // Heavy execution and external-knowledge tools are denied to the orchestrator so
+    // its serialized tool schema stays small; orchestration_policy drives the handoff.
+
+    perms["mcp__construct-mcp__extract_document_text"] = "deny";
+    perms["mcp__construct-mcp__ingest_document"] = "deny";
+    perms["mcp__construct-mcp__scan_file"] = "deny";
+    perms["mcp__github__*"] = "deny";
+    perms["mcp__context7__*"] = "deny";
+    perms["mcp__sequential-thinking__*"] = "deny";
+    perms["mcp__memory__*"] = "deny";
+  } else {
+    // Subagents shouldn't be orchestrating
+    perms["mcp__construct-mcp__orchestration_policy"] = "deny";
+    perms["mcp__construct-mcp__agent_contract"] = "deny";
+    perms["mcp__construct-mcp__broker_check"] = "deny";
   }
+
   return perms;
 }
 
@@ -1527,6 +1595,34 @@ function syncOpencode(entries, targetDir = null, wants = true) {
         config.mcp[openCodeId] = buildOpenCodeMcpEntry(id, mcpDef, process.env).entry;
       }
     }
+
+    // Heavy external MCP servers serialize ~12k tokens of schema into EVERY
+    // agent's request — including the built-in Build/Plan agents the per-agent
+    // permission prune cannot reach. OpenCode 1.15.4 has no per-session tool
+    // filter (chat.params carries no tool list), so disabling the whole server in
+    // opencode.json is the only lever. The decision is INTENT-driven: trim only
+    // when this config's own default model is local (or a local Ollama provider is
+    // registered in it), so a cloud session on a machine that merely also has
+    // Ollama keeps context7/github. decideTrim centralizes the policy; a manual
+    // enabled:true is preserved so a user can re-enable a server they need.
+
+    // A set default model is explicit intent and wins (local → trim, cloud → keep).
+    // Only when no default is chosen does a registered Ollama provider stand in as
+    // soft local intent — so a cloud-default config is never trimmed for merely
+    // listing local models alongside.
+    const configDefaultModel = config.model || config.defaultModel || "";
+    const registersOllamaProvider = Object.keys(config.provider?.ollama?.models || {}).length > 0;
+    const intentModel = configDefaultModel || (registersOllamaProvider ? "ollama" : "");
+    const trimHeavyServers = decideTrim({ surface: LOCAL_SURFACE, defaultModel: intentModel });
+    for (const id of HEAVY_EXTERNAL_MCP_IDS) {
+      const ocId = getOpenCodeMcpId(id);
+      if (!config.mcp[ocId]) continue;
+      if (trimHeavyServers) {
+        if (config.mcp[ocId].enabled !== true) config.mcp[ocId].enabled = false;
+      } else {
+        delete config.mcp[ocId].enabled;
+      }
+    }
   }
 
   // Sweep cx-* / orchestrator agents that fall outside the current write set.
@@ -1559,12 +1655,16 @@ function syncOpencode(entries, targetDir = null, wants = true) {
     };
   }
 
+  // Pass current Construct model tiers to OpenCode config for native routing.
+  config.construct = config.construct || {};
+  config.construct.models = { ...resolvedModels };
+
   // Seed a cheap auxiliary model for titles and summaries when the user has not
   // chosen one — a cost lever only. The primary `model` stays the user's choice
   // and is never written. Global scope only; project configs inherit it.
 
   if (!targetDir && config.small_model === undefined) {
-    config.small_model = "anthropic/claude-haiku-4-5-20251001";
+    config.small_model = resolvedModels.fast || "anthropic/claude-haiku-4-5-20251001";
   }
 
   writeOpenCodeConfig(config, configPath);

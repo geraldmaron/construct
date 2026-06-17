@@ -1,5 +1,13 @@
 ---
 description: Prefer project-local tooling.
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.html"
+  - "**/*.vue"
+  - "**/*.svelte"
 ---
 # Web Hooks
 

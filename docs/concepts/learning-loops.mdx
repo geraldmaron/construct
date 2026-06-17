@@ -33,6 +33,12 @@ Every Stop event triggers `lib/hooks/session-reflect.mjs`. It reads the transcri
 
 What gets captured: number of turns, tool counts (`Bash×3, Edit×2`), files touched, session duration, first line of the final assistant reply, and a structured `meta` block with session id and cwd.
 
+Salience: instead of a flat confidence, the observation's `confidence` is a deterministic salience score in `[0.05, 0.95]` (`lib/reflect/salience.mjs`) derived from signals already collected — mutating tool calls weigh most, then bash, assistant turns, and files in scope, no LLM. A session that edited the tree is remembered strongly; a read-only exchange weakly. Because consolidation archives observations that are both older than `archiveAfterDays` and below `archiveBelowConfidence` (0.5), low-salience sessions age out of the live set first — the score is the retention signal, not a second mechanism. The same module's `shouldStore` is the extraction gate: a session with no durable signal at all (no mutation, no bash, barely any exchange) yields no observation.
+
+The same salience score also drives **supersede** during consolidation (`lib/engine/consolidate.mjs`): when a cluster contains a tight restatement of a fact (cosine ≥ `supersedeThreshold` 0.97 against the cluster winner), only the highest-salience member stays live and the rest move to cold archive stamped with `supersededBy` — so search returns one current statement of a fact, not every past phrasing of it. The winner becomes the cluster representative; `construct memory consolidate` reports the superseded count, and `--no-supersede` disables it.
+
+**Contradiction** is the inverse case (`lib/engine/contradiction.mjs`): two observations about the same subject that *disagree* — "sso login is supported" vs "sso login is not supported". A flipped claim drops cosine below the duplicate threshold, so consolidation scans a same-subject band (`contradictionMinSimilarity` 0.75 ≤ cosine < 0.97) instead of trusting cluster membership, and flags a pair when the cue-stripped claim words overlap (Jaccard ≥ 0.6) but the count of negation cues differs. Resolution inverts supersede: the **most recent** claim wins (the world changed, not the strongest-remembered one), and the older loser is archived with `supersededReason: 'contradiction'`. The O(n²) scan is bounded by `contradictionScanMax` (1500) and reports when skipped. A value swap with no negation cue ("RS256" vs "HS256") carries no polarity signal, so the heuristic abstains and defers to an optional `contradictionJudge` (`lib/engine/contradiction-judge.mjs`) — an offline-first second opinion backed by a local Ollama model, consulted only on the heuristic's misses and absent (so heuristic-only) when no model is running. `--no-contradictions` disables the whole pass.
+
 Where it lives:
 
 - `lib/hooks/session-reflect.mjs`. The Stop hook. 500ms hard budget. Exit 0 on any error.
@@ -46,7 +52,7 @@ How the loop closes: `lib/hooks/session-start.mjs` calls `searchObservations` an
 
 Opt out: `CONSTRUCT_REFLECT_AUTO=off`.
 
-Skipped automatically: sessions with no tool calls and very short final text. Avoids polluting the store with one-line acknowledgements.
+Skipped automatically: sessions carrying no durable signal — no mutation, no bash, and fewer than two assistant turns (`shouldStore`). Avoids polluting the store with one-line acknowledgements.
 
 ### Manual reflect (existing)
 

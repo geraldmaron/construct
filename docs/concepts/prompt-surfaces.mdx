@@ -8,7 +8,7 @@ Construct has one public prompt surface and several internal prompt-adjacent lay
 Understanding the split tells you where to look when something behaves unexpectedly and where to customize when you want to change Construct's voice or behavior.
 
 <FlowPipeline steps={[
-  { label: 'You', sub: 'chat in Claude Code\nor OpenCode' },
+  { label: 'You', sub: 'chat in OpenCode (Primary),\nClaude Code, or Editor' },
   { label: 'construct', badge: 'persona', sub: 'personas/construct.md\nthe only public surface', highlight: true },
   { label: 'Orchestration', sub: 'classifies intent\ndispatches internally' },
   { label: 'cx-specialist', badge: 'internal', sub: 'specialists/prompts/cx-*.md\nnever addressed directly' },

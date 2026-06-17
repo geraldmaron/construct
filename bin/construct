@@ -169,6 +169,44 @@ function runNodeScript(scriptPath, args = [], extraEnv = {}, { exitOnError = tru
   return status;
 }
 
+async function cmdRegistryStatus(args = []) {
+  const { readFileSync, existsSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const matrixPath = join(ROOT_DIR, 'tests', 'registry', 'capability-matrix.json');
+  
+  if (!existsSync(matrixPath)) {
+    errorln('Capability matrix not found. Run "construct sync" or ensure tests/registry/capability-matrix.json exists.');
+    process.exit(1);
+  }
+
+  const { capabilities } = JSON.parse(readFileSync(matrixPath, 'utf8'));
+  const jsonOutput = args.includes('--json');
+
+  if (jsonOutput) {
+    println(JSON.stringify(capabilities, null, 2));
+    return;
+  }
+
+  println(`${COLORS.bold}Workflow & Surface Capability Registry${COLORS.reset}`);
+  println('='.repeat(40));
+  println('');
+
+  for (const cap of capabilities) {
+    const tierColor = cap.criticality === 'P0' ? COLORS.red : cap.criticality === 'P1' ? COLORS.yellow : COLORS.blue;
+    println(`${tierColor}[${cap.criticality}]${COLORS.reset} ${COLORS.bold}${cap.name}${COLORS.reset} (${cap.id})`);
+    println(`  ${COLORS.dim}${cap.description}${COLORS.reset}`);
+    
+    const surfaces = Object.entries(cap.surfaces);
+    for (const [name, status] of surfaces) {
+      const icon = status.quality_score === null ? '⚪' : status.quality_score >= 0.9 ? '🟢' : status.quality_score >= 0.7 ? '🟡' : '🔴';
+      const score = status.quality_score !== null ? `${(status.quality_score * 100).toFixed(0)}%` : 'N/A';
+      const date = status.last_validated ? new Date(status.last_validated).toLocaleDateString() : 'never';
+      println(`    ${icon} ${name.padEnd(10)} | Score: ${score.padEnd(5)} | Validated: ${date}`);
+    }
+    println('');
+  }
+}
+
 async function cmdStatus() {
   const jsonOutput = restArgsCache.includes('--json');
   const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
@@ -1049,6 +1087,69 @@ async function cmdDoctor() {
     );
   } catch (err) {
     add(`Reconciliation drift check failed: ${err.message}`, false, true);
+  }
+
+  // Docling document-extraction runtime (Python venv via uv). Provisioned lazily
+  // on first document ingest, or eagerly via `construct install --with-docling`.
+  // Advisory: absence is fine until a document is ingested.
+  try {
+    const { describeDoclingRuntime } = await import('../lib/runtime/uv-bootstrap.mjs');
+    const docling = describeDoclingRuntime();
+    if (docling.available) {
+      add(`Docling runtime ready (docling ${docling.marker?.doclingVersion ?? '?'})`, true, true);
+    } else {
+      add('Docling runtime not provisioned (`construct install --with-docling`, or auto on first ingest)', false, true);
+    }
+  } catch (err) {
+    add(`Docling runtime check failed: ${err.message}`, false, true);
+  }
+
+  // Capability honesty without re-probing: if the OpenCode default model is one the
+  // probe recorded as COLLAPSED (and its digest still matches), flag it at health
+  // time. Reads the persisted store only — the slow probe stays behind --probe-local.
+  try {
+    const { readOpenCodeConfig } = await import('../lib/opencode-config.mjs');
+    const { isKnownCollapsed } = await import('../lib/ollama/capability-store.mjs');
+    const { modelDigest } = await import('../lib/ollama/provision-context.mjs');
+    const { config } = readOpenCodeConfig();
+    const defaultModel = (config?.model || config?.defaultModel || '').replace(/^ollama\//, '');
+    if (defaultModel && isKnownCollapsed(defaultModel, modelDigest(defaultModel))) {
+      add(`Default local model ${defaultModel} probed COLLAPSED — not agentic-capable (re-verify: construct doctor --probe-local)`, false, true);
+    }
+  } catch { /* advisory */ }
+
+  // Opt-in agentic-coherence probe for local models (`construct doctor --probe-local`).
+  // Loads each registered Ollama model and measures repetition collapse on an agentic
+  // prompt, so it is gated behind the flag. COLLAPSED models produce word salad no
+  // matter how context and tools are tuned (capability is not predictable from size).
+  if (args.includes('--probe-local')) {
+    try {
+      const { ollamaAvailable, listModels, probeAgenticCoherence, probeStreamingToolCallLeak, modelDigest } = await import('../lib/ollama/provision-context.mjs');
+      const { recordProbeResult } = await import('../lib/ollama/capability-store.mjs');
+      // --probe-stream additionally drives a streaming turn and flags a tool-call
+      // leaked into the text channel (`<function=…>`) — the artifact the buffered
+      // probe cannot reproduce. It reloads each model, so it stays opt-in.
+      const probeStream = args.includes('--probe-stream');
+      if (!ollamaAvailable()) {
+        add('Local-model probe: Ollama not available', false, true);
+      } else {
+        const models = listModels().filter((m) => !/embed/i.test(m));
+        for (const m of models) {
+          const r = await probeAgenticCoherence(m);
+          if (r.ok) recordProbeResult(m, r, modelDigest(m));
+          const verdict = r.ok ? (r.coherent ? `COHERENT (repeat ${r.repeatRatio})` : `COLLAPSED (repeat ${r.repeatRatio})`) : `error: ${r.reason}`;
+          add(`Local probe ${m}: ${verdict}`, r.ok && r.coherent, true);
+          if (probeStream && r.ok && r.coherent) {
+            const s = await probeStreamingToolCallLeak(m);
+            if (s.ok) add(`Stream probe ${m}: ${s.leaked ? `TOOL-CALL LEAK (${s.marker})` : 'clean (native tool_calls)'}`, !s.leaked, true);
+          }
+        }
+        add('Quantization: prefer Q4_K_M+ — low quants are a known word-salad source', true, true);
+        add('Verified agentic-capable locals: qwen3-coder:32k, devstral:24b', true, true);
+      }
+    } catch (err) {
+      add(`Local-model probe failed: ${err.message}`, false, true);
+    }
   }
 
   println('Construct Health Check');
@@ -4131,15 +4232,29 @@ async function cmdMemory(args) {
     const { getEngine } = await import('../lib/engine/index.mjs');
     const engine = await getEngine({ rootDir: process.cwd() });
     const summariser = engine.layers.compressor;
+
+    // The judge resolves the value-swap contradictions the heuristic abstains on
+    // when a local model is available; null offline, so consolidation runs the
+    // same with heuristic-only.
+    const { createContradictionJudge } = await import('../lib/engine/contradiction-judge.mjs');
+    const contradictionJudge = createContradictionJudge();
     const thresholdArg = args.find((a) => a.startsWith('--threshold='));
     const archiveDaysArg = args.find((a) => a.startsWith('--archive-days='));
-    const opts = { summariser };
+    const opts = { summariser, contradictionJudge };
     if (thresholdArg) opts.similarityThreshold = Number(thresholdArg.split('=')[1]);
     if (archiveDaysArg) opts.archiveAfterDays = Number(archiveDaysArg.split('=')[1]);
+    if (args.includes('--no-supersede')) opts.supersedeDuplicates = false;
+    if (args.includes('--no-contradictions')) opts.detectContradictions = false;
     const result = await consolidate(process.cwd(), opts);
+    const superseded = result.superseded ?? [];
+    const contradictions = superseded.filter((s) => s.reason === 'contradiction').length;
+    const restatements = superseded.length - contradictions;
+    const agedOut = result.archived.length - superseded.length;
     process.stdout.write(
       `consolidate: ${result.clustersBefore} observations → ${result.clusters} insights, ` +
-      `${result.archived.length} archived, ${result.archivePruned ?? 0} pruned from archive\n`
+      `${restatements} restated, ${contradictions} contradicted, ${agedOut} aged-out, ` +
+      `${result.archivePruned ?? 0} pruned from archive` +
+      `${result.contradictionScanSkipped ? ' (contradiction scan skipped: store too large)' : ''}\n`
     );
     return;
   }
@@ -4451,6 +4566,59 @@ async function cmdLintContracts() {
   }
   console.error(`specialists/contracts.json: ${result.errors.length} error(s)`);
   for (const err of result.errors) console.error(`  ${err}`);
+  process.exit(1);
+}
+
+async function cmdLintPrompts() {
+  const { validatePromptFiles } = await import('../lib/specialists/prompt-schema.mjs');
+  const { errors, warnings, total, converted } = validatePromptFiles({ rootDir: ROOT_DIR });
+  for (const w of warnings) console.warn(`  warn  ${w}`);
+  if (errors.length === 0) {
+    console.log(`specialist prompts: ${total} files (${converted} converted), 0 errors, ${warnings.length} warning(s)`);
+    return;
+  }
+  console.error(`specialist prompts: ${errors.length} error(s) across ${total} files`);
+  for (const err of errors) console.error(`  ${err}`);
+  process.exit(1);
+}
+
+async function cmdSpecialist(args) {
+  const sub = args[0];
+  if (sub === 'lint') return cmdLintPrompts();
+
+  if (sub === 'create') {
+    const role = args[1];
+    if (!role) { errorln('Usage: construct specialist create <role>'); process.exit(1); }
+    const { createSpecialistDraft } = await import('../lib/specialists/scaffold.mjs');
+    try {
+      const { relPath } = createSpecialistDraft({ rootDir: ROOT_DIR, role });
+      println(`Created ${relPath} — fill in the stubbed sections, add it to specialists/registry.json, then run \`construct specialist lint\`.`);
+    } catch (e) { errorln(e.message); process.exit(1); }
+    return;
+  }
+
+  if (sub === 'edit') {
+    const role = args[1];
+    if (!role) { errorln('Usage: construct specialist edit <role> [--set-bias=… --set-tension=… --add-overlay=… --bump-version]'); process.exit(1); }
+    const { editSpecialistFrontmatter } = await import('../lib/specialists/scaffold.mjs');
+    const setPerspective = {};
+    for (const f of ['bias', 'tension', 'openingQuestion', 'failureMode']) {
+      const a = args.find((x) => x.startsWith(`--set-${f}=`));
+      if (a) setPerspective[f] = a.slice(`--set-${f}=`.length);
+    }
+    const overlayArg = args.find((x) => x.startsWith('--add-overlay='));
+    try {
+      const { relPath } = editSpecialistFrontmatter({
+        rootDir: ROOT_DIR, role, setPerspective,
+        addOverlay: overlayArg ? overlayArg.slice('--add-overlay='.length) : undefined,
+        bumpVersion: args.includes('--bump-version'),
+      });
+      println(`Updated ${relPath || `specialists/prompts/cx-${role}.md`} — run \`construct specialist lint\` to confirm.`);
+    } catch (e) { errorln(e.message); process.exit(1); }
+    return;
+  }
+
+  errorln(`Unknown specialist subcommand: ${sub || '(none)'}. Available: create, edit, lint`);
   process.exit(1);
 }
 
@@ -5000,8 +5168,19 @@ async function cmdHook(args) {
     errorln(`Hook not found: ${hookPath}`);
     process.exit(1);
   }
+  const started = Date.now();
   const result = spawnSync(process.execPath, [hookPath, ...args.slice(1)], { stdio: 'inherit' });
-  process.exit(result.status ?? 0);
+  const exitCode = result.status ?? 0;
+
+  // Record fire + outcome so hooks can be judged on whether they ever gate
+  // anything, not just on latency. Dynamic import keeps non-hook commands from
+  // paying the load; a telemetry failure must never change the hook's exit code.
+  try {
+    const { logHookCall } = await import('../lib/telemetry/hook-calls.mjs');
+    logHookCall({ hookId: safe, exitCode, latencyMs: Date.now() - started });
+  } catch { /* telemetry is best-effort */ }
+
+  process.exit(exitCode);
 }
 
 const [command, ...rest] = process.argv.slice(2);
@@ -5057,6 +5236,7 @@ const handlers = new Map([
   ['infer', cmdInfer],
   ['search', cmdSearch],
   ['storage', cmdStorage],
+  ['registry:status', cmdRegistryStatus],
   // Pricing / cost readouts are stubbed out: the ledger writes, model-pricing
   // catalog, and per-turn accounting still run, but no CLI surface exposes
   // them to the user. Handlers (cmdPricing, cmdCosts, cmdCost) remain in this
@@ -5240,6 +5420,8 @@ const handlers = new Map([
   ['lint:research', cmdLintResearch],
   ['lint:agents', cmdLintAgents],
   ['lint:contracts', cmdLintContracts],
+  ['lint:prompts', cmdLintPrompts],
+  ['specialist', cmdSpecialist],
   ['decisions', async (args) => {
     const { runDecisionsCli } = await import('../lib/decisions/registry.mjs');
     return runDecisionsCli(args);

@@ -81,16 +81,20 @@ function callResult(response) {
   return text ? JSON.parse(text) : null;
 }
 
-test('construct-mcp registers the PR #67 profile/learning tools', async () => {
+test('the PR #67 profile/learning tools are reachable through the construct_call gateway', async () => {
+  // The gateway exposes a lean flat surface; long-tail tools stay reachable by
+  // name through construct_call's enum, not as flat tools/list entries.
   await withServer(async (send) => {
     const list = await send('tools/list', {});
-    const names = new Set(list.result.tools.map((t) => t.name));
+    const gateway = list.result.tools.find((t) => t.name === 'construct_call');
+    assert.ok(gateway, 'construct_call gateway is exposed');
+    const reachable = new Set(gateway.inputSchema?.properties?.tool?.enum ?? []);
     for (const expected of [
       'profile_show', 'profile_list', 'profile_drafts', 'profile_health',
       'outcomes_summary', 'outcomes_record', 'knowledge_add',
       'profile_create', 'profile_archive', 'sandbox_list', 'learning_status',
     ]) {
-      assert.ok(names.has(expected), `MCP tool ${expected} not registered`);
+      assert.ok(reachable.has(expected), `MCP tool ${expected} not reachable via construct_call`);
     }
   });
 });

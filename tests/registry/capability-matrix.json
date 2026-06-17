@@ -1,0 +1,86 @@
+{
+  "capabilities": [
+    {
+      "id": "orchestration.routing",
+      "name": "Orchestration Intent Routing",
+      "criticality": "P0",
+      "surfaces": {
+        "opencode": {
+          "supported": true,
+          "last_validated": null,
+          "quality_score": null
+        },
+        "claude": {
+          "supported": true,
+          "last_validated": null,
+          "quality_score": null
+        },
+        "api": {
+          "supported": true,
+          "last_validated": null,
+          "quality_score": null
+        }
+      },
+      "description": "Correctly classifies user intent and dispatches to the right specialist chain."
+    },
+    {
+      "id": "mcp.broker.connection",
+      "name": "MCP Broker Connectivity",
+      "criticality": "P0",
+      "surfaces": {
+        "opencode": {
+          "supported": true,
+          "last_validated": null,
+          "quality_score": null
+        },
+        "vscode": {
+          "supported": true,
+          "last_validated": null,
+          "quality_score": null
+        },
+        "cursor": {
+          "supported": true,
+          "last_validated": null,
+          "quality_score": null
+        }
+      },
+      "description": "Reliable connection and tool discovery across various MCP hosts."
+    },
+    {
+      "id": "workflow.architecture-review",
+      "name": "Architecture Review Workflow",
+      "criticality": "P1",
+      "surfaces": {
+        "opencode": {
+          "supported": true,
+          "last_validated": null,
+          "quality_score": null
+        },
+        "claude": {
+          "supported": true,
+          "last_validated": null,
+          "quality_score": null
+        }
+      },
+      "description": "In-depth architectural analysis using specialists and design standards."
+    },
+    {
+      "id": "skill.distill",
+      "name": "Skill: Distill",
+      "criticality": "P1",
+      "surfaces": {
+        "api": {
+          "supported": true,
+          "last_validated": null,
+          "quality_score": null
+        },
+        "opencode": {
+          "supported": true,
+          "last_validated": null,
+          "quality_score": null
+        }
+      },
+      "description": "Condensing large context windows into high-density insights."
+    }
+  ]
+}
