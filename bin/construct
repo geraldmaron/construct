@@ -4569,6 +4569,59 @@ async function cmdLintContracts() {
   process.exit(1);
 }
 
+async function cmdLintPrompts() {
+  const { validatePromptFiles } = await import('../lib/specialists/prompt-schema.mjs');
+  const { errors, warnings, total, converted } = validatePromptFiles({ rootDir: ROOT_DIR });
+  for (const w of warnings) console.warn(`  warn  ${w}`);
+  if (errors.length === 0) {
+    console.log(`specialist prompts: ${total} files (${converted} converted), 0 errors, ${warnings.length} warning(s)`);
+    return;
+  }
+  console.error(`specialist prompts: ${errors.length} error(s) across ${total} files`);
+  for (const err of errors) console.error(`  ${err}`);
+  process.exit(1);
+}
+
+async function cmdSpecialist(args) {
+  const sub = args[0];
+  if (sub === 'lint') return cmdLintPrompts();
+
+  if (sub === 'create') {
+    const role = args[1];
+    if (!role) { errorln('Usage: construct specialist create <role>'); process.exit(1); }
+    const { createSpecialistDraft } = await import('../lib/specialists/scaffold.mjs');
+    try {
+      const { relPath } = createSpecialistDraft({ rootDir: ROOT_DIR, role });
+      println(`Created ${relPath} — fill in the stubbed sections, add it to specialists/registry.json, then run \`construct specialist lint\`.`);
+    } catch (e) { errorln(e.message); process.exit(1); }
+    return;
+  }
+
+  if (sub === 'edit') {
+    const role = args[1];
+    if (!role) { errorln('Usage: construct specialist edit <role> [--set-bias=… --set-tension=… --add-overlay=… --bump-version]'); process.exit(1); }
+    const { editSpecialistFrontmatter } = await import('../lib/specialists/scaffold.mjs');
+    const setPerspective = {};
+    for (const f of ['bias', 'tension', 'openingQuestion', 'failureMode']) {
+      const a = args.find((x) => x.startsWith(`--set-${f}=`));
+      if (a) setPerspective[f] = a.slice(`--set-${f}=`.length);
+    }
+    const overlayArg = args.find((x) => x.startsWith('--add-overlay='));
+    try {
+      const { relPath } = editSpecialistFrontmatter({
+        rootDir: ROOT_DIR, role, setPerspective,
+        addOverlay: overlayArg ? overlayArg.slice('--add-overlay='.length) : undefined,
+        bumpVersion: args.includes('--bump-version'),
+      });
+      println(`Updated ${relPath || `specialists/prompts/cx-${role}.md`} — run \`construct specialist lint\` to confirm.`);
+    } catch (e) { errorln(e.message); process.exit(1); }
+    return;
+  }
+
+  errorln(`Unknown specialist subcommand: ${sub || '(none)'}. Available: create, edit, lint`);
+  process.exit(1);
+}
+
 async function cmdBackup(args) {
   // Postgres-era backups were removed with the SQL backend (lib/storage/backup.mjs).
   // State is now Git-backed (.cx/) plus the local LanceDB index under .cx/lancedb.
@@ -5367,6 +5420,8 @@ const handlers = new Map([
   ['lint:research', cmdLintResearch],
   ['lint:agents', cmdLintAgents],
   ['lint:contracts', cmdLintContracts],
+  ['lint:prompts', cmdLintPrompts],
+  ['specialist', cmdSpecialist],
   ['decisions', async (args) => {
     const { runDecisionsCli } = await import('../lib/decisions/registry.mjs');
     return runDecisionsCli(args);
