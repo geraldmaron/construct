@@ -65,6 +65,29 @@ The routing contract lives in code and prompt policy, not in the examples corpus
 - `examples/internal/roles/**`
   - internal role fixtures for high-leverage routed behavior
 
+## Capability-tiered composition (local models)
+
+The persona is authored once but rendered at a size matched to the model that will run it.
+Each `## ` section in `personas/construct.md` carries an inline `<!-- cx:prio=N -->` marker
+(the preamble is implicit prio 1); `lib/persona-sections.mjs` emits only the sections at or
+below a capability tier — **floor** (prio 1, must-keep: identity, anti-fabrication, commit
+approval, escalation, loop guard), **mid** (prio ≤ 2), **full** (all). Markers are metadata,
+stripped on every emit path, so no model ever sees them and the word-cap guard ignores them.
+
+The tier is keyed to capability, not the context window. `resolveCapabilityTier` in
+`lib/model-router.mjs` maps cloud models to `full` (cloud configs are never slimmed), a
+COLLAPSED local probe verdict to `floor`, a local model ≥24B to `mid`, and smaller or unknown
+local models to `floor`. The reasoning: once the cx32k Modelfile variants set the real
+`num_ctx`, the full persona fits even an 8k window — the binding constraint on a small model is
+instruction-following, not tokens (see ADR-0038, ADR-0032).
+
+For local hybrid setups this is paired with an **architect/editor split**. When the fast tier is
+local, sync emits a second `construct-local` agent pinned to it (a `subagent` with a tier-sized
+prompt, a tightened tool surface, and a `task` permission limited to handing off to `construct`).
+It executes bounded edits on the cheap local model and escalates planning, multi-file reasoning,
+and risk judgment to `construct` — which keeps the user's chosen model and is never pinned.
+Escalation is prompt-driven, because OpenCode has no runtime model-swap hook (ADR-0038).
+
 ## Visual deliverables
 
 Construct treats visual artifacts as real deliverables, not prose-only placeholders.
