@@ -28,7 +28,7 @@ Use headings in order (H2, then H3) and do not skip or nest deeper. One `h1`-equ
 
 ## 3. Scannable chunks
 
-Short paragraphs. Bulleted or numbered lists in place of long sentences that pack several facts together. White space between sections. Prefer three short lines over one dense one.
+Short paragraphs with white space between sections; prefer three short lines over one dense one. Use a bulleted or numbered list for genuinely parallel items — a set of options, steps, or independent facts — where scanning is the point. Keep reasoning, cause-and-effect, and narrative in prose: a wall of bullets fragments the logic that connects the points and is harder to follow, not easier. Bullets for what scans, sentences for what reasons.
 
 ## 4. Plain, literal language
 
