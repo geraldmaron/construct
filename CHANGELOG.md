@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-17
+
 ### Upgrade notes (from v1.0.24)
 
 No features are removed, but several **defaults change** — these are what an existing user will notice or may need to adjust on upgrade. Listed most-impactful first.
