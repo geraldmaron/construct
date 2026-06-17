@@ -154,7 +154,7 @@ describe('consolidate', () => {
 
     const result = await consolidate(tmpRoot, { similarityThreshold: 0.95, supersedeThreshold: 0.97 });
 
-    assert.deepEqual(result.superseded, [{ id: 'weak', supersededBy: 'strong' }],
+    assert.deepEqual(result.superseded, [{ id: 'weak', supersededBy: 'strong', reason: 'restatement' }],
       'the lower-salience member is superseded by the higher one');
     assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'strong.json')), true,
       'the winner stays live');
@@ -189,9 +189,54 @@ describe('consolidate', () => {
     const strong = writeObservation('strong', 'same fact', [0.999, 0.001, 0], { confidence: 0.9 });
     writeIndexAndVectors([weak, strong]);
 
-    const result = await consolidate(tmpRoot, { supersedeDuplicates: false });
+    const result = await consolidate(tmpRoot, { supersedeDuplicates: false, detectContradictions: false });
     assert.deepEqual(result.superseded, []);
     assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'weak.json')), true,
       'both members stay live when the decision layer is disabled');
+  });
+
+  it('archives the older of a contradicting pair (newest wins, even at higher salience)', async () => {
+    const old = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+    const now = new Date().toISOString();
+    // The stale claim is the higher-salience one, proving recency beats salience
+    // for a contradiction (the inverse of restatement supersede). One token
+    // ("not") flips the claim, so cosine sits in the same-subject band.
+    const stale = writeObservation('stale', 'sso login is supported on the gateway', [1, 0, 0, 0], { confidence: 0.9, createdAt: old });
+    const fresh = writeObservation('fresh', 'sso login is not supported on the gateway', [0.9, 0.43, 0, 0], { confidence: 0.4, createdAt: now });
+    writeIndexAndVectors([stale, fresh]);
+
+    const result = await consolidate(tmpRoot, { contradictionMinSimilarity: 0.75 });
+    assert.deepEqual(result.superseded, [{ id: 'stale', supersededBy: 'fresh', reason: 'contradiction' }]);
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'fresh.json')), true, 'the newer claim stays live');
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'stale.json')), false, 'the contradicted older claim leaves the live store');
+
+    const archived = JSON.parse(
+      fs.readFileSync(path.join(tmpRoot, '.cx', 'observations', 'archive', 'stale.json'), 'utf8')
+    );
+    assert.equal(archived.supersededBy, 'fresh');
+    assert.equal(archived.supersededReason, 'contradiction');
+  });
+
+  it('does not flag two distinct facts that merely cluster', async () => {
+    const a = writeObservation('a', 'sso login is supported on the gateway', [1, 0, 0, 0], { confidence: 0.8 });
+    const b = writeObservation('b', 'sso login is supported with mfa enabled', [0.9, 0.43, 0, 0], { confidence: 0.8 });
+    writeIndexAndVectors([a, b]);
+
+    const result = await consolidate(tmpRoot);
+    assert.deepEqual(result.superseded.filter((s) => s.reason === 'contradiction'), [],
+      'same polarity, no negation flip — not a contradiction');
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'b.json')), true);
+  });
+
+  it('skips the contradiction scan above contradictionScanMax', async () => {
+    const stale = writeObservation('stale', 'sso login is supported', [1, 0, 0, 0], { createdAt: new Date(Date.now() - 1000).toISOString() });
+    const fresh = writeObservation('fresh', 'sso login is not supported', [0.9, 0.43, 0, 0]);
+    writeIndexAndVectors([stale, fresh]);
+
+    const result = await consolidate(tmpRoot, { contradictionScanMax: 1 });
+    assert.equal(result.contradictionScanSkipped, true);
+    assert.deepEqual(result.superseded.filter((s) => s.reason === 'contradiction'), []);
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'stale.json')), true,
+      'nothing is archived when the scan is skipped');
   });
 });
