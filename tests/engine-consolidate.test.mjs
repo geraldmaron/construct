@@ -10,6 +10,10 @@
  *   - A Compressor-shaped summariser is invoked when present and falls back
  *     to the representative's summary when absent.
  *   - The pass is idempotent on stable input.
+ *   - Supersede (construct-xh6c): a tight restatement is archived behind a
+ *     supersededBy pointer and the highest-salience member stays live and
+ *     becomes the representative; a cluster-adjacent but non-duplicate member is
+ *     kept; the pass is a no-op when supersedeDuplicates is off.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -139,5 +143,55 @@ describe('consolidate', () => {
     assert.equal(result.clustersBefore, 0);
     assert.equal(result.clusters, 0);
     assert.deepEqual(result.archived, []);
+  });
+
+  it('supersedes a tight restatement, keeping the highest-salience member live', async () => {
+    const earlier = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const later = new Date().toISOString();
+    const weak = writeObservation('weak', 'retry uses fixed backoff', [1, 0, 0], { confidence: 0.4, createdAt: earlier });
+    const strong = writeObservation('strong', 'retry uses fixed backoff', [0.999, 0.001, 0], { confidence: 0.9, createdAt: later });
+    writeIndexAndVectors([weak, strong]);
+
+    const result = await consolidate(tmpRoot, { similarityThreshold: 0.95, supersedeThreshold: 0.97 });
+
+    assert.deepEqual(result.superseded, [{ id: 'weak', supersededBy: 'strong' }],
+      'the lower-salience member is superseded by the higher one');
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'strong.json')), true,
+      'the winner stays live');
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'weak.json')), false,
+      'the loser leaves the live store');
+
+    const archived = JSON.parse(
+      fs.readFileSync(path.join(tmpRoot, '.cx', 'observations', 'archive', 'weak.json'), 'utf8')
+    );
+    assert.equal(archived.supersededBy, 'strong', 'the archived loser records what replaced it');
+    assert.ok(archived.supersededAt, 'and when');
+
+    const consolidated = JSON.parse(
+      fs.readFileSync(path.join(tmpRoot, '.cx', 'observations', 'consolidated.json'), 'utf8')
+    );
+    assert.equal(consolidated[0].representativeId, 'strong', 'the winner is the representative');
+    assert.deepEqual(consolidated[0].supersededIds, ['weak']);
+  });
+
+  it('keeps a cluster-adjacent member that is not a tight duplicate', async () => {
+    const a = writeObservation('a', 'auth uses RS256', [1, 0, 0], { confidence: 0.9 });
+    const b = writeObservation('b', 'auth roughly similar', [0.96, 0.28, 0], { confidence: 0.5 });
+    writeIndexAndVectors([a, b]);
+
+    const result = await consolidate(tmpRoot, { similarityThreshold: 0.95, supersedeThreshold: 0.99 });
+    assert.deepEqual(result.superseded, [], 'below the supersede bar, nothing is archived');
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'b.json')), true);
+  });
+
+  it('does not supersede when supersedeDuplicates is off', async () => {
+    const weak = writeObservation('weak', 'same fact', [1, 0, 0], { confidence: 0.4 });
+    const strong = writeObservation('strong', 'same fact', [0.999, 0.001, 0], { confidence: 0.9 });
+    writeIndexAndVectors([weak, strong]);
+
+    const result = await consolidate(tmpRoot, { supersedeDuplicates: false });
+    assert.deepEqual(result.superseded, []);
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'weak.json')), true,
+      'both members stay live when the decision layer is disabled');
   });
 });

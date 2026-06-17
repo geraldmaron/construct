@@ -4237,10 +4237,14 @@ async function cmdMemory(args) {
     const opts = { summariser };
     if (thresholdArg) opts.similarityThreshold = Number(thresholdArg.split('=')[1]);
     if (archiveDaysArg) opts.archiveAfterDays = Number(archiveDaysArg.split('=')[1]);
+    if (args.includes('--no-supersede')) opts.supersedeDuplicates = false;
     const result = await consolidate(process.cwd(), opts);
+    const supersededCount = result.superseded?.length ?? 0;
+    const agedOut = result.archived.length - supersededCount;
     process.stdout.write(
       `consolidate: ${result.clustersBefore} observations → ${result.clusters} insights, ` +
-      `${result.archived.length} archived, ${result.archivePruned ?? 0} pruned from archive\n`
+      `${supersededCount} superseded, ${agedOut} aged-out, ` +
+      `${result.archivePruned ?? 0} pruned from archive\n`
     );
     return;
   }
