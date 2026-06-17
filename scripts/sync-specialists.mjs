@@ -44,9 +44,11 @@ import {
   writeCodexConfig,
 } from "../lib/codex-config.mjs";
 import { findOpenCodeConfigPath, readOpenCodeConfig, writeOpenCodeConfig } from "../lib/opencode-config.mjs";
-import { HEAVY_EXTERNAL_MCP_IDS, LOCAL_SURFACE_MODES, decideTrim } from "../lib/mcp/tool-budget.mjs";
+import { HEAVY_EXTERNAL_MCP_IDS, LOCAL_SURFACE_MODES, decideTrim, isLocalModel } from "../lib/mcp/tool-budget.mjs";
 import { emitCursorRules } from "../lib/rules-delivery.mjs";
-import { resolvePromptContract } from "../lib/prompt-composer.js";
+import { resolvePromptContract, readPromptBody } from "../lib/prompt-composer.js";
+import { renderPersonaForTier } from "../lib/persona-sections.mjs";
+import { getModelVerdict } from "../lib/ollama/capability-store.mjs";
 import {
   buildClaudeMcpEntry,
   buildOpenCodeMcpEntry,
@@ -56,7 +58,7 @@ import { loadConstructEnv } from "../lib/env-config.mjs";
 import { inlineRoleAntiPatterns, PROMPT_WORD_CAP } from "../lib/role-preload.mjs";
 import { loadManifest } from "../lib/roles/manifest.mjs";
 import { resolveActiveProfile } from "../lib/profiles/loader.mjs";
-import { resolveTiersForPrimary } from "../lib/model-router.mjs";
+import { resolveTiersForPrimary, resolveCapabilityTier, selectLocalEditorModel } from "../lib/model-router.mjs";
 import { stampFrontmatter } from "../lib/doc-stamp.mjs";
 import { buildSkillFrontmatter, stripLeadingFrontmatter } from "../lib/sync/skill-frontmatter.mjs";
 
@@ -602,52 +604,44 @@ export function renderRoleFrameworkSection(entry) {
   return `\n\n${lines.join("\n")}`;
 }
 
-function buildPrompt(entry, allEntries, platform) {
-  let prompt = resolvePromptContract(entry, {
-    rootDir: root,
-    registry,
-    fallback: entry.prompt || '',
-  }).prompt;
+// The native-subagent orchestration micro-prompt. A worked tool-call example lifts
+// small local models' tool-use reliability sharply (bead construct-c16l). Shared by the
+// full path and the capability-tiered local path so both stay in sync.
 
-  prompt = inlineRoleAntiPatterns(prompt, root, entry.name, console.warn, { preload: entry.preloadRoleGuidance === true });
+const ORCHESTRATION_MICRO_PROMPT =
+  `You are the primary orchestrator. To discover available specialist agents, you MUST call the \`orchestration_policy\` MCP tool. Do not guess agent names.\n\n` +
+  `Example — the user says "add rate limiting to the API". Your first action is a tool call, not prose:\n` +
+  `  call orchestration_policy { "task": "add rate limiting to the API" }\n` +
+  `Then dispatch the specialists it returns. Always call the tool before answering.`;
 
-  const capabilities = { hasNativeSubagents: HOST_KEYS.includes(platform) ? hostHasNativeSubagents(platform) : false };
+// Directive for the local editor agent (construct-local). It executes bounded work on
+// the cheap local model and hands planning/reasoning back to the construct architect —
+// the aider architect/editor split. Kept short: a small model must actually obey it.
 
-  // Platform-Native Orchestration Alignment (ADR-0002). Hosts with native subagent
-  // routing (OpenCode, VS Code, Cursor) do not get the static specialist roster
-  // injected — on a small-context local model the roster alone is ~3-4k tokens and,
-  // combined with MCP tool schemas, overruns the model's real context window and
-  // collapses output. Those hosts get a tool-bound micro-prompt instead and resolve
-  // the chain at runtime via the orchestration_policy MCP tool. Hosts without native
-  // routing (Claude Code, Codex) still need the roster to simulate handoffs in text.
+const LOCAL_EDITOR_DIRECTIVE =
+  `You are a focused execution agent running on a local model, dispatched by construct to do one bounded job. Do well-scoped edits for the current task and verify them; make the smallest correct change, never a broad rewrite.\n` +
+  `You do NOT plan, classify, orchestrate, or spawn other agents. For anything needing multi-file design, architecture or security judgment, dependency or contract changes, or research, STOP and return control to construct — report what needs deeper work and why, rather than attempting it yourself.`;
 
-  if (entry.injectAgentRoster && allEntries && !capabilities.hasNativeSubagents) {
-    const roster = buildAgentRoster(allEntries);
-    prompt = `Available specialist agents:\n${roster}\n\n${prompt}`;
-  } else if (entry.injectAgentRoster && capabilities.hasNativeSubagents) {
-    // A worked tool-call example lifts small local models' tool-use reliability
-    // sharply (bead construct-c16l). Keep it to one compact turn so it stays within
-    // the prompt word cap; native-subagent hosts are exactly where local models run.
+// Warn-and-emit capability advisory. Sizing already consumes the probe verdict
+// (COLLAPSED → floor tier via resolveCapabilityTier); this only nudges the user toward a
+// measured verdict and never suppresses emission. Notice-only, so it auto-suppresses in
+// CI / test / non-TTY per the repo's wrong-context rule — no skip env var.
 
-    prompt = `You are the primary orchestrator. To discover available specialist agents, you MUST call the \`orchestration_policy\` MCP tool. Do not guess agent names.\n\n` +
-      `Example — the user says "add rate limiting to the API". Your first action is a tool call, not prose:\n` +
-      `  call orchestration_policy { "task": "add rate limiting to the API" }\n` +
-      `Then dispatch the specialists it returns. Always call the tool before answering.\n\n${prompt}`;
+const localAdvisorySeen = new Set();
+function adviseLocalModelCapability(model) {
+  if (!model || !isLocalModel(model)) return;
+  if (process.env.CI === "true" || process.env.NODE_ENV === "test" || !process.stderr.isTTY) return;
+  if (localAdvisorySeen.has(model)) return;
+  localAdvisorySeen.add(model);
+  const verdict = getModelVerdict(model)?.verdict ?? null;
+  if (verdict === "COLLAPSED") {
+    console.warn(`[sync] ${model} probed COLLAPSED — emitting at the floor tier with escalation to construct. Re-probe after a Modelfile change: construct doctor --probe-local`);
+  } else if (!verdict) {
+    console.warn(`[sync] ${model} is local with no coherence verdict — tier inferred from parameter count. For a measured tier: construct doctor --probe-local`);
   }
+}
 
-  prompt += buildRoleFooter(entry);
-
-  prompt += renderRoleFrameworkSection(entry);
-
-  const platformItems = platformGuidance[platform] ?? [];
-  const allGuidance = [...sharedGuidance, ...platformItems];
-  if (allGuidance.length > 0) {
-    const guidance = allGuidance.map((item) => `- ${item}`).join("\n");
-    prompt = `${prompt}\n\nOperating guidance:\n${guidance}`;
-  }
-
-  prompt += buildModelGuidanceBlock(entry);
-
+function enforcePromptWordCap(prompt, entry) {
   const wordCount = prompt.split(/\s+/).filter(Boolean).length;
   const effectiveCap = Number(entry.wordCapOverride) > 0 ? entry.wordCapOverride : PROMPT_WORD_CAP;
   if (wordCount > effectiveCap) {
@@ -666,8 +660,64 @@ function buildPrompt(entry, allEntries, platform) {
       process.exit(1);
     }
   }
-
   return prompt;
+}
+
+function buildPrompt(entry, allEntries, platform, { capabilityTier = 'full' } = {}) {
+  const capabilities = { hasNativeSubagents: HOST_KEYS.includes(platform) ? hostHasNativeSubagents(platform) : false };
+
+  // Capability-tiered local path. A small local model follows a long multi-instruction
+  // persona poorly (instruction-following degrades before the window fills), so emit
+  // only the persona sections at/below its tier plus the orchestration micro-prompt, and
+  // skip the role footer, role-framework, operating-guidance, and model-family blocks —
+  // those add instruction load the model cannot track. Cloud models resolve to 'full'
+  // and take the unchanged path below, so cloud configs are never slimmed.
+
+  if (capabilityTier && capabilityTier !== 'full' && entry.promptFile) {
+    let slim = renderPersonaForTier(readPromptBody(entry.promptFile, root), capabilityTier);
+    if (entry.injectAgentRoster && capabilities.hasNativeSubagents) {
+      slim = `${ORCHESTRATION_MICRO_PROMPT}\n\n${slim}`;
+    }
+    return enforcePromptWordCap(slim, entry);
+  }
+
+  let prompt = resolvePromptContract(entry, {
+    rootDir: root,
+    registry,
+    fallback: entry.prompt || '',
+  }).prompt;
+
+  prompt = inlineRoleAntiPatterns(prompt, root, entry.name, console.warn, { preload: entry.preloadRoleGuidance === true });
+
+  // Platform-Native Orchestration Alignment (ADR-0002). Hosts with native subagent
+  // routing (OpenCode, VS Code, Cursor) do not get the static specialist roster
+  // injected — on a small-context local model the roster alone is ~3-4k tokens and,
+  // combined with MCP tool schemas, overruns the model's real context window and
+  // collapses output. Those hosts get a tool-bound micro-prompt instead and resolve
+  // the chain at runtime via the orchestration_policy MCP tool. Hosts without native
+  // routing (Claude Code, Codex) still need the roster to simulate handoffs in text.
+
+  if (entry.injectAgentRoster && allEntries && !capabilities.hasNativeSubagents) {
+    const roster = buildAgentRoster(allEntries);
+    prompt = `Available specialist agents:\n${roster}\n\n${prompt}`;
+  } else if (entry.injectAgentRoster && capabilities.hasNativeSubagents) {
+    prompt = `${ORCHESTRATION_MICRO_PROMPT}\n\n${prompt}`;
+  }
+
+  prompt += buildRoleFooter(entry);
+
+  prompt += renderRoleFrameworkSection(entry);
+
+  const platformItems = platformGuidance[platform] ?? [];
+  const allGuidance = [...sharedGuidance, ...platformItems];
+  if (allGuidance.length > 0) {
+    const guidance = allGuidance.map((item) => `- ${item}`).join("\n");
+    prompt = `${prompt}\n\nOperating guidance:\n${guidance}`;
+  }
+
+  prompt += buildModelGuidanceBlock(entry);
+
+  return enforcePromptWordCap(prompt, entry);
 }
 
 function escapeRegExp(value) { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
@@ -1638,6 +1688,20 @@ function syncOpencode(entries, targetDir = null, wants = true) {
   }
 
   // Write agents — no model/modelFallback set; agents inherit the global model.
+  //
+  // Capability tier for the orchestrator prompt. Keyed ONLY to an EXPLICIT local default
+  // model — that is a clear intent signal we can size against at sync time. With no
+  // explicit default (the orchestrator runs whatever model the user picks at runtime) or
+  // a cloud default, resolveCapabilityTier returns 'full', so cloud configs and unknown
+  // selections are never slimmed. Per-model slimming of a known pinned model lands on the
+  // construct-local editor agent.
+
+  const orchestratorDefaultModel = config.model || config.defaultModel || "";
+  adviseLocalModelCapability(orchestratorDefaultModel);
+  const orchestratorTier = resolveCapabilityTier({
+    model: orchestratorDefaultModel,
+    verdict: orchestratorDefaultModel ? (getModelVerdict(orchestratorDefaultModel)?.verdict ?? null) : null,
+  });
 
   for (const entry of writeEntries) {
     const name = adapterName(entry);
@@ -1647,12 +1711,62 @@ function syncOpencode(entries, targetDir = null, wants = true) {
         ? `${entry.role} — ${entry.description}`
         : entry.description,
       mode: entry.isOrchestrator ? "all" : "subagent",
-      prompt: buildPrompt(entry, entries, "opencode"),
+      prompt: buildPrompt(entry, entries, "opencode", {
+        capabilityTier: entry.isOrchestrator ? orchestratorTier : "full",
+      }),
       permission: {
         ...perms,
         task: opencodeTaskPermissions(entry),
       },
     };
+  }
+
+  // Hybrid split (aider architect/editor). When the fast tier is a LOCAL model, emit a
+  // narrow `construct-local` editor: it does bounded edits on a cheap local model and hands
+  // planning/reasoning back to `construct` (the architect, which stays on the user's chosen
+  // model — we never pin it). The editor's model is NOT the generic fast-tier default
+  // (which for an Ollama family resolves to a non-code generalist); it is the best-installed
+  // CODE model from this config's DECLARED local inventory (OpenCode only uses declared
+  // models), excluding probe-COLLAPSED ones, with the fast tier as a last resort. Its prompt
+  // is sized to the chosen model's capability tier. Deterministic name, so manage it
+  // explicitly: emit when fast is local, delete otherwise, so switching to cloud cleans up.
+
+  const orchestratorEntry = writeEntries.find((e) => e.isOrchestrator) || registry.orchestrator;
+  const orchestratorName = orchestratorEntry ? adapterName(orchestratorEntry) : "construct";
+  const localEditorName = `${orchestratorName}-local`;
+  if (orchestratorEntry?.promptFile && isLocalModel(resolvedModels.fast)) {
+    const declaredLocal = Object.entries(config.provider || {})
+      .flatMap(([pid, pv]) => Object.keys(pv?.models || {}).map((mk) => `${pid}/${mk}`))
+      .filter((id) => isLocalModel(id) && getModelVerdict(id)?.verdict !== "COLLAPSED");
+    const editorModel = selectLocalEditorModel(declaredLocal) || resolvedModels.fast;
+    adviseLocalModelCapability(editorModel);
+    const editorVerdict = getModelVerdict(editorModel)?.verdict ?? null;
+    const editorTier = resolveCapabilityTier({ model: editorModel, verdict: editorVerdict });
+    const editorBody = renderPersonaForTier(readPromptBody(orchestratorEntry.promptFile, root), editorTier);
+    config.agent[localEditorName] = {
+      description: "Local execution agent — bounded edits on the local model; escalates planning and reasoning to construct.",
+      mode: "subagent",
+      model: editorModel,
+      prompt: `${LOCAL_EDITOR_DIRECTIVE}\n\n${editorBody}`,
+      permission: {
+        edit: "allow",
+        bash: { "*": "allow", "rm -rf *": "deny", "git push *": "ask", "git push --force*": "ask", "git reset --hard *": "ask" },
+        "mcp__construct-mcp__orchestration_policy": "deny",
+        "mcp__construct-mcp__agent_contract": "deny",
+        "mcp__construct-mcp__broker_check": "deny",
+        "mcp__github__*": "deny",
+        "mcp__context7__*": "deny",
+        "mcp__sequential-thinking__*": "deny",
+        "mcp__memory__*": "deny",
+        // OpenCode 1.15.4 disables the `task` tool entirely for any restrictive task map
+        // (verified in a sterile run). For an editor that is exactly right: it spawns no
+        // subagents and escalates by RETURNING to the construct agent that dispatched it,
+        // not by dispatching. Deny-all states that intent directly.
+        task: { "*": "deny" },
+      },
+    };
+  } else {
+    delete config.agent[localEditorName];
   }
 
   // Pass current Construct model tiers to OpenCode config for native routing.
