@@ -20,10 +20,12 @@ function wordCount(text) {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
-// Budgets are about emitted prompt tokens; YAML frontmatter is structured
-// metadata stripped before emit, so it never counts against the cap.
+// Budgets are about emitted prompt tokens; YAML frontmatter and the inline
+// `<!-- cx:prio=N -->` section markers are structured metadata stripped before emit
+// (the markers by renderPersonaForTier in lib/persona-sections.mjs), so neither counts
+// against the cap.
 function promptWordCount(content) {
-  return wordCount(stripLeadingYamlFrontmatter(content));
+  return wordCount(stripLeadingYamlFrontmatter(content).replace(/<!--\s*cx:prio=\d+\s*-->/g, ""));
 }
 
 test("all agents in registry have mandatory observability guidance", () => {
