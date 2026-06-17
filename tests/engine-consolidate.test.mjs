@@ -228,6 +228,32 @@ describe('consolidate', () => {
     assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'b.json')), true);
   });
 
+  it('an injected judge resolves a value-swap the heuristic abstains on', async () => {
+    const old = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+    const now = new Date().toISOString();
+    // No negation cue, so the heuristic abstains; the judge supplies the
+    // semantic verdict and the older value loses to the newer one.
+    const stale = writeObservation('stale', 'gateway auth uses RS256', [1, 0, 0, 0], { createdAt: old });
+    const fresh = writeObservation('fresh', 'gateway auth uses HS256', [0.9, 0.43, 0, 0], { createdAt: now });
+    writeIndexAndVectors([stale, fresh]);
+
+    const judge = { judge: () => ({ contradicts: true }) };
+    const result = await consolidate(tmpRoot, { contradictionJudge: judge });
+    assert.deepEqual(result.superseded, [{ id: 'stale', supersededBy: 'fresh', reason: 'contradiction' }]);
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'stale.json')), false);
+  });
+
+  it('without a judge, a value-swap is left alone (heuristic abstains)', async () => {
+    const stale = writeObservation('stale', 'gateway auth uses RS256', [1, 0, 0, 0], { createdAt: new Date(Date.now() - 1000).toISOString() });
+    const fresh = writeObservation('fresh', 'gateway auth uses HS256', [0.9, 0.43, 0, 0]);
+    writeIndexAndVectors([stale, fresh]);
+
+    const result = await consolidate(tmpRoot);
+    assert.deepEqual(result.superseded.filter((s) => s.reason === 'contradiction'), []);
+    assert.equal(fs.existsSync(path.join(tmpRoot, '.cx', 'observations', 'stale.json')), true,
+      'both values stay live when no judge is available');
+  });
+
   it('skips the contradiction scan above contradictionScanMax', async () => {
     const stale = writeObservation('stale', 'sso login is supported', [1, 0, 0, 0], { createdAt: new Date(Date.now() - 1000).toISOString() });
     const fresh = writeObservation('fresh', 'sso login is not supported', [0.9, 0.43, 0, 0]);

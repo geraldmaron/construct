@@ -4232,9 +4232,15 @@ async function cmdMemory(args) {
     const { getEngine } = await import('../lib/engine/index.mjs');
     const engine = await getEngine({ rootDir: process.cwd() });
     const summariser = engine.layers.compressor;
+
+    // The judge resolves the value-swap contradictions the heuristic abstains on
+    // when a local model is available; null offline, so consolidation runs the
+    // same with heuristic-only.
+    const { createContradictionJudge } = await import('../lib/engine/contradiction-judge.mjs');
+    const contradictionJudge = createContradictionJudge();
     const thresholdArg = args.find((a) => a.startsWith('--threshold='));
     const archiveDaysArg = args.find((a) => a.startsWith('--archive-days='));
-    const opts = { summariser };
+    const opts = { summariser, contradictionJudge };
     if (thresholdArg) opts.similarityThreshold = Number(thresholdArg.split('=')[1]);
     if (archiveDaysArg) opts.archiveAfterDays = Number(archiveDaysArg.split('=')[1]);
     if (args.includes('--no-supersede')) opts.supersedeDuplicates = false;
