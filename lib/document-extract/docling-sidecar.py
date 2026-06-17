@@ -36,10 +36,40 @@ except ImportError as exc:
 _converter = None
 
 
+# By default docling emits a bare `<!-- image -->` marker and discards pixel data,
+# so embedded figures are lost. Enable picture-image generation on the PDF
+# pipeline and export markdown with images embedded as base64 data URIs; the Node
+# side externalizes those into an assets/ directory. The configuration is wrapped
+# so a docling API change degrades to the default converter instead of crashing.
+
+def build_converter():
+    try:
+        from docling.datamodel.base_models import InputFormat
+        from docling.datamodel.pipeline_options import PdfPipelineOptions
+        from docling.document_converter import PdfFormatOption
+
+        pdf_options = PdfPipelineOptions()
+        pdf_options.generate_picture_images = True
+        pdf_options.images_scale = 2.0
+        return DocumentConverter(
+            format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_options)}
+        )
+    except Exception:
+        return DocumentConverter()
+
+
+def export_markdown(doc):
+    try:
+        from docling_core.types.doc import ImageRefMode
+        return doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
+    except Exception:
+        return doc.export_to_markdown()
+
+
 def get_converter():
     global _converter
     if _converter is None:
-        _converter = DocumentConverter()
+        _converter = build_converter()
     return _converter
 
 
@@ -53,7 +83,7 @@ def extract(params):
 
     result = get_converter().convert(str(path))
     doc = result.document
-    markdown = doc.export_to_markdown()
+    markdown = export_markdown(doc)
 
     metadata = {
         "format": result.input.format.value if hasattr(result.input, "format") else None,

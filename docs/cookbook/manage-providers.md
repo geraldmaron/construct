@@ -39,6 +39,21 @@ construct models --apply
 
 `--apply` rewrites the per-host model config files (Claude Code `settings.json`, OpenCode config, etc.) so every harness picks up the new assignment immediately.
 
+## Subscription Bridges (Host-Native Models)
+
+If you have an active subscription to GitHub Copilot or Anthropic (via Claude Code), you can utilize these models in OpenCode without needing additional API keys.
+
+Construct automatically detects active sessions (e.g., via `gh auth status`) and provisions a local **Bridge Service** that acts as an OpenAI-compatible proxy.
+
+### Use Copilot Models in OpenCode
+
+1. Authenticate with GitHub: `gh auth login`
+2. Start Construct services: `construct up`
+3. Open OpenCode: `opencode`
+4. The models will be available as `github-copilot/gpt-4o`, `github-copilot/claude-3.5-sonnet`, etc.
+
+See the [Host-Native Models guide](./use-host-native-models.mdx) for more details.
+
 ## Adding External Data Sources
 
 Construct connects to external systems via providers. Only configured repos/projects are focal anchors: everything else is ambient (ignored by auto-fetch, searchable via Rovo).

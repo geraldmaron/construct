@@ -2,10 +2,12 @@
  * tests/mcp-tools-doc-parity.test.mjs — every registered MCP tool is documented.
  *
  * The MCP tool reference (docs/reference/mcp-tools.md) is hand-authored. This
- * guard parses the tool registry from lib/mcp/server.mjs (the ListTools handler,
- * a pure data array) and asserts each tool name appears as a `### `name``
+ * guard parses the full tool catalog from lib/mcp/server.mjs (ALL_TOOL_DEFS, a
+ * pure data array — every tool, including the long tail reachable through the
+ * construct_call gateway) and asserts each tool name appears as a `### `name``
  * heading in the doc, so a tool cannot ship undocumented. It also flags doc
- * headings that map to no registered tool (stale entries).
+ * headings that map to no registered tool (stale entries). construct_call itself
+ * is the gateway, not a catalog entry, so it is allowed in the doc.
  */
 
 import assert from 'node:assert/strict';
@@ -19,7 +21,7 @@ const ROOT = join(__dirname, '..');
 
 function registeredToolNames() {
   const src = readFileSync(join(ROOT, 'lib', 'mcp', 'server.mjs'), 'utf8');
-  const arrStart = src.indexOf('tools: [', src.indexOf('ListToolsRequestSchema'));
+  const arrStart = src.indexOf('ALL_TOOL_DEFS = [');
   let i = src.indexOf('[', arrStart);
   let depth = 0;
   let end = -1;
@@ -46,6 +48,7 @@ test('every registered MCP tool has a doc entry', () => {
 
 test('no doc entry references a tool that is no longer registered', () => {
   const registered = new Set(registeredToolNames());
+  registered.add('construct_call'); // the gateway tool — documented, not a catalog entry
   const stale = documentedToolNames().filter((name) => !registered.has(name));
   assert.equal(stale.length, 0, `stale MCP-tool doc entries: ${stale.join(', ')}`);
 });

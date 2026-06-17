@@ -1,5 +1,13 @@
 ---
 description: Construct web security rule. Use when writing or reviewing web code that involves security.
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.html"
+  - "**/*.vue"
+  - "**/*.svelte"
 ---
 > This file extends [common/security.md](../common/security.md) with web-specific security content.
 

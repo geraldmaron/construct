@@ -7,10 +7,18 @@
  * and forwards them to `node --test`, behaving identically across platforms.
  *
  * Pass --coverage (or -c) to enable experimental coverage reporting.
+ *
+ * Sterility guard: the suite is fingerprinted against the real user tool
+ * configs (~/.config/opencode/opencode.json, ~/.claude/settings.json, the
+ * Ollama model store) before and after the run. Any test that leaks a write
+ * into real host state — the failure mode that polluted live configs during the
+ * local-model investigation — fails the whole run. Tests that touch host state
+ * must isolate via tests/helpers/sterile-host-env.mjs.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import path from "node:path";
+import { fingerprintRealConfigs, assertRealConfigsUnchanged } from "../tests/helpers/sterile-host-env.mjs";
 
 const cwd = process.cwd();
 const testsDir = path.join(cwd, "tests");
@@ -81,8 +89,22 @@ const nodeArgs = ["--test", `--test-timeout=${defaultTimeout}`];
 if (enableCoverage) {
   nodeArgs.push("--experimental-test-coverage");
 }
+const sterileBefore = fingerprintRealConfigs();
+
 const result = spawnSync(process.execPath, [...nodeArgs, ...files, ...args], {
   stdio: "inherit",
 });
+
+// A non-zero test status already fails the run; still check sterility so a
+// leak is reported even when tests otherwise pass. A drift here means a test
+// wrote into real host config instead of an isolated sandbox.
+
+try {
+  assertRealConfigsUnchanged(sterileBefore);
+} catch (err) {
+  console.error(`\n${err.message}`);
+  console.error("A test mutated real host config. Isolate it via tests/helpers/sterile-host-env.mjs.");
+  process.exit(1);
+}
 
 process.exit(result.status ?? 1);

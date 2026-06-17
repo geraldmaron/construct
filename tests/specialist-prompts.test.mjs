@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inlineRoleAntiPatterns, ROLE_DIRECTIVE_RE } from "../lib/role-preload.mjs";
+import { stripLeadingYamlFrontmatter } from "../lib/prompt-composer.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
@@ -17,6 +18,12 @@ const registryPath = path.join(root, "specialists", "registry.json");
 
 function wordCount(text) {
   return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+// Budgets are about emitted prompt tokens; YAML frontmatter is structured
+// metadata stripped before emit, so it never counts against the cap.
+function promptWordCount(content) {
+  return wordCount(stripLeadingYamlFrontmatter(content));
 }
 
 test("all agents in registry have mandatory observability guidance", () => {
@@ -182,7 +189,7 @@ test("prompt source files stay within token-efficiency budgets", () => {
 
   for (const persona of [registry.orchestrator].filter(Boolean)) {
     const content = fs.readFileSync(path.join(root, persona.promptFile), "utf8");
-    const count = wordCount(content);
+    const count = promptWordCount(content);
     // Persona cap is 1000 words. Baseline rule-of-thumb is 900 for an
     // always-on prompt; the extra 100 words are reserved for behavioral
     // mandates the model cannot get from code (currently: the call-the-
@@ -198,7 +205,7 @@ test("prompt source files stay within token-efficiency budgets", () => {
   for (const agent of registry.specialists) {
     if (!agent.promptFile || allowlist.has(agent.promptFile)) continue;
     const content = fs.readFileSync(path.join(root, agent.promptFile), "utf8");
-    const count = wordCount(content);
+    const count = promptWordCount(content);
     assert.ok(count <= 1200, `${agent.promptFile} too large: ${count} words`);
   }
 });
