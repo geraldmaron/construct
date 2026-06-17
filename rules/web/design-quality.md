@@ -1,5 +1,13 @@
 ---
 description: Construct web design quality rule. Use when writing or reviewing web code that involves design quality.
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.html"
+  - "**/*.vue"
+  - "**/*.svelte"
 ---
 > This file extends [common/patterns.md](../common/patterns.md) with web-specific design-quality guidance.
 

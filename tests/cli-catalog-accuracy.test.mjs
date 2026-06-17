@@ -48,6 +48,7 @@ const HANDLER_ONLY_ALLOWLIST = new Set([
   'ask',                   // RAG ask path; surfaced via knowledge in the catalog
   'pricing', 'overrides',  // cost subcommand sub-tools
   'migrate',               // schema migration runner (lib/migrations/)
+  'registry:status',       // dev-only capability-matrix inspector (tests/registry/)
 ]);
 
 function extractHandlerNames() {

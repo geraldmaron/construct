@@ -65,11 +65,18 @@ test('a host drives construct over MCP: skills, templates, and specialist routin
   const client = await connect(env);
   t.after(() => client.close());
 
-  // The host first discovers tools — the contract surface must be present.
+  // The host first discovers tools — the contract surface must be reachable. Core
+  // tools are flat; long-tail tools stay reachable through the construct_call
+  // gateway's enum, not as flat entries.
   const { tools } = await client.listTools();
   const names = new Set(tools.map((x) => x.name));
-  for (const required of ['list_skills', 'get_skill', 'get_template', 'orchestration_policy', 'agent_contract']) {
-    assert.ok(names.has(required), `MCP server must expose ${required}`);
+  const gateway = tools.find((x) => x.name === 'construct_call');
+  const reachable = new Set(gateway?.inputSchema?.properties?.tool?.enum ?? []);
+  for (const core of ['get_skill', 'orchestration_policy']) {
+    assert.ok(names.has(core), `MCP server must expose core tool ${core} flat`);
+  }
+  for (const deferred of ['list_skills', 'get_template', 'agent_contract']) {
+    assert.ok(reachable.has(deferred), `MCP server must keep ${deferred} reachable via construct_call`);
   }
 
   // Skills are discoverable + loadable, and the load is audited.
