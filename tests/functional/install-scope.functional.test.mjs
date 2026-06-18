@@ -78,6 +78,20 @@ test('--scope (no value) fails fast with exit 1', () => {
   assert.equal(fs.existsSync(path.join(home, '.construct', 'config.env')), false);
 });
 
+test('--scope=user --dry-run previews the plan and writes nothing', () => {
+  const home = freshHome();
+  const res = runInstall(['--scope=user', '--dry-run', '--yes'], { HOME: home });
+  assert.equal(res.status, 0, `expected exit 0, got ${res.status} — stderr: ${res.stderr}`);
+  assert.match(res.stdout, /dry-run/i);
+  assert.match(res.stdout, /No files were written/i);
+  assert.equal(fs.existsSync(path.join(home, '.construct', 'config.env')), false, 'dry-run must not write config.env');
+  assert.equal(fs.existsSync(path.join(home, '.construct', 'lib')), false, 'dry-run must not create the lib symlink');
+  assert.equal(fs.existsSync(path.join(home, '.construct', 'workspace')), false, 'dry-run must not scaffold the workspace');
+  assert.equal(fs.existsSync(path.join(home, '.construct', 'vector')), false, 'dry-run must not create the vector store dir');
+  assert.equal(fs.existsSync(path.join(home, '.claude')), false, 'dry-run must not touch ~/.claude/');
+  assert.equal(fs.existsSync(path.join(home, 'Library', 'LaunchAgents', 'dev.construct.pressure-release.plist')), false, 'dry-run must not register the LaunchAgent');
+});
+
 test('--help still works and mentions --scope', () => {
   const home = freshHome();
   const res = runInstall(['--help'], { HOME: home });

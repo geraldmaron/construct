@@ -77,6 +77,10 @@
       "core": false
     },
     {
+      "name": "demo",
+      "core": false
+    },
+    {
       "name": "deployment",
       "core": false
     },
@@ -87,6 +91,10 @@
     {
       "name": "dev",
       "core": true
+    },
+    {
+      "name": "diagram",
+      "core": false
     },
     {
       "name": "diff",
