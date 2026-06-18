@@ -49,7 +49,7 @@ Interactive terminal chat on Construct's owned agent loop, with a multi-pane tra
 **Usage**
 
 ```bash
-construct chat [--model <id>] [--list] [--plain] [--accessible] [--no-thinking] [--no-path] [--no-specialists] [--no-tools] [--no-observability] [--quiet]
+construct chat [--model <id>] [--list] [--resume[=file]] [--ascii] [--plain] [--accessible] [--no-thinking] [--no-path] [--no-specialists] [--no-tools] [--no-observability] [--quiet]
 ```
 
 ## construct claude:allow

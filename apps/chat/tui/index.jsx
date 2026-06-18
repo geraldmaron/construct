@@ -12,6 +12,7 @@
  * own and never fabricates a number the host did not report (no-fabrication).
  * Slash commands route through lib/chat/commands.mjs — the same handler as the
  * linear renderer — and layer visibility uses lib/chat/transparency.mjs isVisible().
+ * Ask-mode permissions use an overlay; sessions resume via lib/chat/session-restore.mjs.
  *
  * Built to a bundle by `npm run build:chat` and loaded by the zero-dep launcher
  * (lib/chat/cli.mjs) only on a capable interactive TTY; every non-TTY, --plain,
@@ -20,19 +21,27 @@
  * alone. Input uses Ink's useInput; slash commands reuse lib/chat/commands.mjs.
  */
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo, createContext, useContext } from 'react';
 import { render, Box, Text, useApp, useInput, useStdout } from 'ink';
 import { runTurnInto } from './turn-state.mjs';
 import { formatTokens, formatUsageFooter } from '../../../lib/chat/tui/usage.mjs';
 import { LAYER_KEYS } from '../../../lib/chat/config.mjs';
 import { createCommands, createCollectWriter, PLAIN_COLORS } from '../../../lib/chat/commands.mjs';
 import { stripAnsi } from '../../../lib/term-format.mjs';
+import { formatPermissionQuestion, parsePermissionKey } from '../../../lib/chat/permission-prompt.mjs';
 import {
-  palette, glyphs, spinnerFrames, toolGlyph, toolColor, splitModel, meter, ratioColor, percent,
+  createTheme, toolGlyph, toolColor, splitModel, meter, ratioColor, percent,
 } from './theme.mjs';
 
-function Rule({ width, color = palette.muted }) {
-  return <Text color={color}>{'\u2500'.repeat(Math.max(1, width))}</Text>;
+const ChatThemeContext = createContext(createTheme());
+
+function useChatTheme() {
+  return useContext(ChatThemeContext);
+}
+
+function Rule({ width, color }) {
+  const { palette } = useChatTheme();
+  return <Text color={color || palette.muted}>{'\u2500'.repeat(Math.max(1, width))}</Text>;
 }
 
 function Badge({ bg, color = 'black', children }) {
@@ -40,6 +49,7 @@ function Badge({ bg, color = 'black', children }) {
 }
 
 function HeaderBar({ cols, model, sandbox, permissionMode, working, spin }) {
+  const { palette, glyphs } = useChatTheme();
   const { provider, name } = splitModel(model);
   return (
     <Box flexDirection="column">
@@ -61,6 +71,7 @@ function HeaderBar({ cols, model, sandbox, permissionMode, working, spin }) {
 }
 
 function EmptyState({ model }) {
+  const { palette, glyphs } = useChatTheme();
   const { provider, name } = splitModel(model);
   return (
     <Box flexDirection="column" paddingY={1}>
@@ -73,9 +84,9 @@ function EmptyState({ model }) {
       <Box marginTop={1} flexDirection="column">
         <Text color={palette.muted}>To get going</Text>
         <Text>{`  ${glyphs.caret} ask a question or describe the change you want`}</Text>
-        <Text color={palette.muted}>{`  ${glyphs.caret} /help  /model  /models  /set  /settings  /layers  /usage`}</Text>
+        <Text color={palette.muted}>{`  ${glyphs.caret} shift+enter newline   up/down history   /help for commands`}</Text>
       </Box>
-      {name ? (
+      {name && name !== '(no model)' ? (
         <Box marginTop={1}>
           <Text color={palette.muted}>{`ready on `}</Text>
           <Text color={palette.text} bold>{provider ? `${provider}/${name}` : name}</Text>
@@ -88,6 +99,7 @@ function EmptyState({ model }) {
 }
 
 function Message({ role, text }) {
+  const { palette, glyphs } = useChatTheme();
   if (role === 'thinking') {
     return (
       <Box flexDirection="column" marginBottom={1}>
@@ -106,13 +118,15 @@ function Message({ role, text }) {
   );
 }
 
-function planGlyph(status) {
-  if (status === 'completed') return glyphs.toolDone;
-  if (status === 'in_progress') return glyphs.toolBusy;
-  return glyphs.toolPending;
+function planGlyph(status, theme) {
+  const g = theme.glyphs;
+  if (status === 'completed') return g.toolDone;
+  if (status === 'in_progress') return g.toolBusy;
+  return g.toolPending;
 }
 
 function ConversationPane({ width, transcript, live, thinking, showThinking, model, working, spin }) {
+  const { palette, glyphs } = useChatTheme();
   if (transcript.length === 0 && !live && !thinking) {
     return (
       <Box flexDirection="column" width={width} paddingRight={2}>
@@ -132,6 +146,7 @@ function ConversationPane({ width, transcript, live, thinking, showThinking, mod
 }
 
 function PanelSection({ title, children, marginTop = 1 }) {
+  const { palette } = useChatTheme();
   return (
     <Box flexDirection="column" marginTop={marginTop}>
       <Text color={palette.accent}>{title}</Text>
@@ -142,11 +157,12 @@ function PanelSection({ title, children, marginTop = 1 }) {
 
 function TransparencyPanel({
   width, session, route, routeMeta, tools, plan, permissions, lastTurnUsage, layers,
-  working, model, sandbox, permissionMode, ctx, spin,
+  working, model, sandbox, permissionMode, ctx, spin, theme: themeProp,
 }) {
+  const theme = themeProp || useChatTheme();
+  const { palette, glyphs } = theme;
   const u = session.usage;
   const t = u.tokens || {};
-  const { provider, name } = splitModel(model);
 
   const ledger = [];
   if (t.input) ledger.push(['prompt', formatTokens(t.input)]);
@@ -157,11 +173,12 @@ function TransparencyPanel({
   if (t.total) ledger.push(['total', formatTokens(t.total)]);
   if (u.cost?.amount > 0) ledger.push(['cost', `~$${u.cost.amount.toFixed(u.cost.amount < 1 ? 3 : 2)}`]);
 
-  const ctxMeter = ctx?.size ? meter(ctx.used, ctx.size, Math.max(10, width - 8)) : null;
+  const ctxMeter = ctx?.size ? meter(ctx.used, ctx.size, Math.max(10, width - 8), theme) : null;
   const recentTools = tools.slice(-7);
   const turnUsage = lastTurnUsage && layers?.observability
     ? stripAnsi(formatUsageFooter(lastTurnUsage, {})).replace(/^\[usage\] /, '')
     : null;
+  const { provider, name } = splitModel(model);
 
   return (
     <Box flexDirection="column" width={width} borderStyle="round" borderColor={palette.accent} paddingX={1}>
@@ -186,7 +203,7 @@ function TransparencyPanel({
       <PanelSection title="context">
         {ctxMeter ? (
           <Box flexDirection="column">
-            <Text color={ratioColor(ctxMeter.ratio)}>{ctxMeter.bar}</Text>
+            <Text color={ratioColor(ctxMeter.ratio, theme)}>{ctxMeter.bar}</Text>
             <Text color={palette.muted}>{`${formatTokens(ctx.used)}/${formatTokens(ctx.size)}  ${percent(ctxMeter.ratio)}`}</Text>
           </Box>
         ) : (
@@ -224,7 +241,7 @@ function TransparencyPanel({
       {layers?.path && plan.length > 0 ? (
         <PanelSection title="plan">
           {plan.map((entry, i) => (
-            <Text key={`${entry.content}-${i}`} color={palette.muted} wrap="wrap">{`${planGlyph(entry.status)} ${entry.content}`}</Text>
+            <Text key={`${entry.content}-${i}`} color={palette.muted} wrap="wrap">{`${planGlyph(entry.status, theme)} ${entry.content}`}</Text>
           ))}
         </PanelSection>
       ) : null}
@@ -240,7 +257,7 @@ function TransparencyPanel({
       {layers?.tools !== false ? (
         <PanelSection title={`tools ${glyphs.gutter} ${tools.length}`}>
           {recentTools.length ? recentTools.map((tool, i) => (
-            <Text key={`${tool.id}-${i}`} color={toolColor(tool.status)}>{`${toolGlyph(tool.status)} ${tool.title}`}</Text>
+            <Text key={`${tool.id}-${i}`} color={toolColor(tool.status, theme)}>{`${toolGlyph(tool.status, theme)} ${tool.title}`}</Text>
           )) : <Text color={palette.muted}>none this turn</Text>}
         </PanelSection>
       ) : null}
@@ -252,34 +269,56 @@ function TransparencyPanel({
   );
 }
 
-function Footer({ cols, input, working, notice }) {
+function PermissionOverlay({ prompt }) {
+  const { palette } = useChatTheme();
+  if (!prompt) return null;
+  return (
+    <Box flexDirection="column" marginY={1} borderStyle="double" borderColor={palette.warn} paddingX={1}>
+      <Text color={palette.warn} bold>permission</Text>
+      <Text wrap="wrap">{formatPermissionQuestion({ tool: prompt.tool, input: prompt.input })}</Text>
+    </Box>
+  );
+}
+
+function Footer({ cols, input, working, notice, permissionActive }) {
+  const { palette, glyphs } = useChatTheme();
   return (
     <Box flexDirection="column">
       <Rule width={cols} />
       {notice ? <Text color={palette.warn}>{notice}</Text> : null}
       <Box>
-        <Text color={palette.accent} bold>{`you ${glyphs.caret} `}</Text>
+        <Text color={palette.accent} bold>{permissionActive ? `${glyphs.caret} permission ` : `you ${glyphs.caret} `}</Text>
         <Text>{input}</Text>
-        <Text color={palette.muted}>{working ? '' : glyphs.block}</Text>
+        {!permissionActive && !working ? <Text color={palette.muted}>{glyphs.block}</Text> : null}
       </Box>
-      <Text color={palette.muted}>{`enter send   ${glyphs.gutter}   /help  /models  /settings  /clear   ${glyphs.gutter}   Ctrl-C ${working ? 'cancel' : 'exit'}`}</Text>
+      <Text color={palette.muted}>
+        {permissionActive
+          ? 'y once   a always   n reject'
+          : `enter send   shift+enter newline   ${glyphs.gutter}   /help  /models  /settings   ${glyphs.gutter}   Ctrl-C ${working ? 'cancel' : 'exit'}`}
+      </Text>
     </Box>
   );
 }
 
-function App({ driver, session, layers, planTurn, persist, cwd }) {
+function App({
+  driver, session, layers, planTurn, persist, cwd, permissionBridge, initialTranscript = [],
+}) {
   const { exit } = useApp();
   const { stdout } = useStdout();
   const cols = stdout?.columns || 100;
   const panelWidth = Math.min(42, Math.max(30, Math.floor(cols * 0.34)));
   const convWidth = Math.max(20, cols - panelWidth - 2);
 
+  const [uiEpoch, setUiEpoch] = useState(0);
+  const theme = useMemo(() => createTheme({ ascii: Boolean(session.ui?.ascii) }), [uiEpoch, session.ui?.ascii]);
+  const { spinnerFrames } = theme;
+
   const commands = useMemo(
     () => createCommands({ driver, host: 'construct', hostId: 'construct', cwd }),
     [driver, cwd],
   );
 
-  const [transcript, setTranscript] = useState([]);
+  const [transcript, setTranscript] = useState(initialTranscript);
   const [live, setLive] = useState('');
   const [thinking, setThinking] = useState('');
   const [tools, setTools] = useState([]);
@@ -293,17 +332,37 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
   const [notice, setNotice] = useState(session.modelNotice || '');
   const [ctx, setCtx] = useState(null);
   const [frame, setFrame] = useState(0);
+  const [permissionPrompt, setPermissionPrompt] = useState(null);
   const [, forceTick] = useState(0);
   const busy = useRef(false);
+  const inputHistory = useRef([]);
+  const historyPos = useRef(-1);
+
+  useEffect(() => {
+    if (permissionBridge) {
+      permissionBridge.prompt = (req) => new Promise((resolve) => {
+        setPermissionPrompt({ ...req, resolve });
+      });
+      return () => { permissionBridge.prompt = null; };
+    }
+    return undefined;
+  }, [permissionBridge]);
 
   useEffect(() => {
     if (!working) return undefined;
     const timer = setInterval(() => setFrame((f) => (f + 1) % spinnerFrames.length), 90);
     return () => clearInterval(timer);
-  }, [working]);
+  }, [working, spinnerFrames.length]);
   const spin = spinnerFrames[frame];
 
   const append = useCallback((role, text) => setTranscript((prev) => [...prev, { role, text }]), []);
+
+  const resolvePermission = useCallback((decision) => {
+    if (!permissionPrompt?.resolve) return;
+    permissionPrompt.resolve(decision);
+    setPermissionPrompt(null);
+    setInput('');
+  }, [permissionPrompt]);
 
   const handleCommand = useCallback(async (text) => {
     const out = createCollectWriter();
@@ -325,6 +384,7 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
     });
     const msg = stripAnsi(out.text()).trim();
     if (msg) append('construct', msg);
+    setUiEpoch((n) => n + 1);
     if (!keep) exit();
   }, [append, commands, exit, layers, session]);
 
@@ -335,6 +395,11 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
     setWorking(true);
     setNotice('');
     append('you', text);
+    persist?.transcript?.('you', text);
+    if (!inputHistory.current.length || inputHistory.current[inputHistory.current.length - 1] !== text) {
+      inputHistory.current.push(text);
+    }
+    historyPos.current = -1;
     setLive('');
     setThinking('');
     setTools([]);
@@ -359,7 +424,7 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
           session,
           layers,
           onUpdate: (s, event) => {
-            if (persist) { try { persist(event); } catch { /* best-effort */ } }
+            if (persist?.event) { try { persist.event(event); } catch { /* best-effort */ } }
             if (event.type === 'text') setLive(s.assistant);
             else if (event.type === 'thinking') setThinking(s.thinking);
             else if (event.type === 'tool_call' || event.type === 'tool_update') setTools([...s.tools]);
@@ -373,8 +438,10 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
           },
         },
       );
-      if (state.assistant) append('construct', state.assistant);
-      else if (state.error) append('construct', `[error] ${state.error}`);
+      if (state.assistant) {
+        append('construct', state.assistant);
+        persist?.transcript?.('construct', state.assistant);
+      } else if (state.error) append('construct', `[error] ${state.error}`);
       else append('construct', '[no output] check that a model is selected and the provider is authenticated');
     } catch (err) {
       append('construct', `[error] ${err.message}`);
@@ -387,62 +454,101 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
   }, [append, driver, handleCommand, layers, persist, planTurn, session]);
 
   useInput((char, key) => {
+    if (permissionPrompt) {
+      const decision = parsePermissionKey(char);
+      if (decision) { resolvePermission(decision); return; }
+      return;
+    }
     if (key.ctrl && char === 'c') {
       if (busy.current) { try { driver.cancel?.(); } catch { /* nothing to cancel */ } }
       else exit();
       return;
     }
+    if (key.return && (key.shift || key.meta)) {
+      setInput((v) => `${v}\n`);
+      return;
+    }
     if (key.return) { const text = input; setInput(''); submit(text); return; }
+    if (key.upArrow) {
+      const hist = inputHistory.current;
+      if (!hist.length) return;
+      const next = historyPos.current < 0 ? hist.length - 1 : Math.max(0, historyPos.current - 1);
+      historyPos.current = next;
+      setInput(hist[next]);
+      return;
+    }
+    if (key.downArrow) {
+      const hist = inputHistory.current;
+      if (!hist.length || historyPos.current < 0) return;
+      const next = historyPos.current + 1;
+      if (next >= hist.length) { historyPos.current = -1; setInput(''); return; }
+      historyPos.current = next;
+      setInput(hist[next]);
+      return;
+    }
     if (key.backspace || key.delete) { setInput((v) => v.slice(0, -1)); return; }
     if (char && !key.ctrl && !key.meta) setInput((v) => v + char);
   });
 
   return (
-    <Box flexDirection="column">
-      <HeaderBar cols={cols} model={session.model} sandbox={session.sandbox} permissionMode={session.permissionMode} working={working} spin={spin} />
-      <Box>
-        <ConversationPane
-          width={convWidth}
-          transcript={transcript}
-          live={live}
-          thinking={thinking}
-          showThinking={layers.thinking}
-          model={session.model}
-          working={working}
-          spin={spin}
-        />
-        <TransparencyPanel
-          width={panelWidth}
-          session={session}
-          route={route}
-          routeMeta={routeMeta}
-          tools={tools}
-          plan={plan}
-          permissions={permissions}
-          lastTurnUsage={lastTurnUsage}
-          layers={layers}
-          working={working}
-          model={session.model}
-          sandbox={session.sandbox}
-          permissionMode={session.permissionMode}
-          ctx={ctx}
-          spin={spin}
-        />
+    <ChatThemeContext.Provider value={theme}>
+      <Box flexDirection="column">
+        <HeaderBar cols={cols} model={session.model} sandbox={session.sandbox} permissionMode={session.permissionMode} working={working} spin={spin} />
+        <PermissionOverlay prompt={permissionPrompt} />
+        <Box>
+          <ConversationPane
+            width={convWidth}
+            transcript={transcript}
+            live={live}
+            thinking={thinking}
+            showThinking={layers.thinking}
+            model={session.model}
+            working={working}
+            spin={spin}
+          />
+          <TransparencyPanel
+            width={panelWidth}
+            session={session}
+            route={route}
+            routeMeta={routeMeta}
+            tools={tools}
+            plan={plan}
+            permissions={permissions}
+            lastTurnUsage={lastTurnUsage}
+            layers={layers}
+            working={working}
+            model={session.model}
+            sandbox={session.sandbox}
+            permissionMode={session.permissionMode}
+            ctx={ctx}
+            spin={spin}
+            theme={theme}
+          />
+        </Box>
+        <Footer cols={cols} input={input} working={working} notice={notice} permissionActive={Boolean(permissionPrompt)} />
       </Box>
-      <Footer cols={cols} input={input} working={working} notice={notice} />
-    </Box>
+    </ChatThemeContext.Provider>
   );
 }
 
-// Entry point loaded by the launcher. Resolves when the user exits so the launcher
-// can tear the driver down. Kept as a named export so the built bundle exposes it.
-
-export function runInkChat({ driver, session, layers, planTurn = null, persist = null, cwd = process.cwd() } = {}) {
+export function runInkChat({
+  driver, session, layers, planTurn = null, persist = null, cwd = process.cwd(),
+  permissionBridge = null, initialTranscript = [],
+} = {}) {
   const instance = render(
-    <App driver={driver} session={session} layers={layers} planTurn={planTurn} persist={persist} cwd={cwd} />,
+    <App
+      driver={driver}
+      session={session}
+      layers={layers}
+      planTurn={planTurn}
+      persist={persist}
+      cwd={cwd}
+      permissionBridge={permissionBridge}
+      initialTranscript={initialTranscript}
+    />,
   );
   return instance.waitUntilExit();
 }
 
-export { App, TransparencyPanel, ConversationPane, HeaderBar, EmptyState };
+export { App, TransparencyPanel, ConversationPane, HeaderBar, EmptyState, createTheme };
 export default runInkChat;
