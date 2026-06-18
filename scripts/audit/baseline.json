@@ -1,16 +1,4 @@
 {
   "note": "Accepted open audit findings (ratchet) for gated phases. Tightened as remediation lands.",
-  "acceptedIds": [
-    "03-docs:review-doc-reference:agent",
-    "03-docs:review-doc-reference:demo",
-    "03-docs:review-doc-reference:diagram",
-    "03-docs:review-doc-reference:hooks",
-    "03-docs:review-doc-reference:install-both",
-    "03-docs:review-doc-reference:install-project",
-    "03-docs:review-doc-reference:install-user",
-    "03-docs:review-doc-reference:provider_fetch",
-    "03-docs:review-doc-reference:rovo_search",
-    "03-docs:review-doc-reference:rules",
-    "03-docs:review-doc-reference:strategy"
-  ]
+  "acceptedIds": []
 }

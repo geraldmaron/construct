@@ -163,6 +163,10 @@ function toFindings(report) {
   return rows;
 }
 
+export function deadcodeFindings() {
+  return toFindings(runDeadCode());
+}
+
 function main() {
   const report = runDeadCode();
   const findings = toFindings(report);

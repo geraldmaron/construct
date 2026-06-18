@@ -5838,6 +5838,14 @@ const handlers = new Map([
     const { runWireframeCli } = await import('../lib/wireframe.mjs');
     return runWireframeCli(args);
   }],
+  ['diagram', async (args) => {
+    const { runDiagramCli } = await import('../lib/diagram.mjs');
+    return runDiagramCli(args);
+  }],
+  ['demo', async (args) => {
+    const { runDemoCli } = await import('../lib/demo.mjs');
+    return runDemoCli(args);
+  }],
   ['skills', async (args) => {
     const sub = args[0];
     if (sub === 'scope' || !sub) {

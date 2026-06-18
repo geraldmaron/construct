@@ -92,7 +92,9 @@
     "@opentelemetry/exporter-trace-otlp-http": "^0.218.0",
     "@opentelemetry/resources": "^2.7.1",
     "@opentelemetry/sdk-trace-node": "^1.25.0",
-    "@opentelemetry/semantic-conventions": "^1.25.0"
+    "@opentelemetry/semantic-conventions": "^1.25.0",
+    "mammoth": "^1.12.0",
+    "unpdf": "^1.6.2"
   },
   "overrides": {
     "express-rate-limit": "8.5.1"

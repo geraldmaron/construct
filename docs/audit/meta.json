@@ -3,6 +3,8 @@
   "pages": [
     "implementation-audit-20260601",
     "prompt-audit-20260519",
-    "tooling-scorecard"
+    "tooling-scorecard",
+    "capability-matrix",
+    "visual-maturity-scorecard"
   ]
 }

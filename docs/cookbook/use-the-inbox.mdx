@@ -48,7 +48,9 @@ The inbox watcher accepts any file that can produce extractable text:
 - **PDF** (via docling, layout-aware + built-in OCR): `.pdf`
 - **Audio / Video** (via [whisper.cpp](https://github.com/ggml-org/whisper.cpp), `brew install whisper-cpp`): `.mp3`, `.wav`, `.m4a`, `.mp4`, `.mov`, `.avi`, `.mkv`, `.flac`, `.ogg`, `.webm`, `.m4v`
 
-This includes things like meeting notes, exports, specs, ADR drafts, research notes, recordings, and uploaded documents, as long as the file type is extractable. High-fidelity extraction runs through a docling Python sidecar provisioned automatically via [uv](https://github.com/astral-sh/uv) on first use.
+This includes things like meeting notes, exports, specs, ADR drafts, research notes, recordings, and uploaded documents, as long as the file type is extractable.
+
+**Extraction backends.** The default `adapter` strategy extracts plain PDF and DOCX through Node-native optional dependencies (`unpdf`, `mammoth`), so everyday ingest needs no Python and no system extractor on `PATH`; when those deps are absent it degrades to the system extractors (`pdftotext`, `textutil`). High-fidelity extraction — layout-aware tables, built-in OCR for scanned PDFs, legacy Office — runs through a docling Python sidecar provisioned automatically via [uv](https://github.com/astral-sh/uv); select it per ingest with `--with-docling` (or the `docling-remote` strategy). Audio/video routes through whisper.
 
 Binary files that cannot be read as text are skipped with a warning observation.
 

@@ -149,6 +149,8 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
+| `construct demo` | Record reproducible terminal demos via VHS/asciinema (optional system binaries; ADR-0001) |
+| `construct diagram` | Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001) |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
 | `construct export` | Export markdown to PDF/DOCX/HTML via Pandoc + Typst (optional system binaries; ADR-0024) |
