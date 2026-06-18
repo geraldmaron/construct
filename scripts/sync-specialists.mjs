@@ -1774,11 +1774,20 @@ function syncOpencode(entries, targetDir = null, wants = true) {
   config.construct.models = { ...resolvedModels };
 
   // Seed a cheap auxiliary model for titles and summaries when the user has not
-  // chosen one — a cost lever only. The primary `model` stays the user's choice
-  // and is never written. Global scope only; project configs inherit it.
+  // chosen one — a cost lever only. Global scope only; project configs inherit it.
 
   if (!targetDir && config.small_model === undefined) {
     config.small_model = resolvedModels.fast || "anthropic/claude-haiku-4-5-20251001";
+  }
+
+  // Seed a text-capable primary model when the user has not pinned one, so chat
+  // and routing never fall through to a host provider-default that happens to be
+  // an image/non-text model. Seeds only when absent; an explicit user choice is
+  // never overwritten. resolvedModels.standard is family-/registry-aware and
+  // free-biased. Global scope only; project configs inherit it.
+
+  if (!targetDir && (config.model === undefined || config.model === null || config.model === "")) {
+    config.model = resolvedModels.standard || resolvedModels.reasoning || resolvedModels.fast || "openrouter/qwen/qwen3-coder:free";
   }
 
   writeOpenCodeConfig(config, configPath);
