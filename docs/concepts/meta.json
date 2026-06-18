@@ -14,6 +14,16 @@
     "deployment-model",
     "intake-and-triage",
     "embedded-contract",
-    "learning-loops"
+    "learning-loops",
+    "observability",
+    "policy-architecture",
+    "profile-inheritance",
+    "rules-delivery",
+    "hooks",
+    "intake-loop",
+    "org-chart",
+    "doc-quality-rubric",
+    "doc-visual-matrix",
+    "template-prompt-audit"
   ]
 }

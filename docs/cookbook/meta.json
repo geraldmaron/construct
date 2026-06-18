@@ -6,7 +6,6 @@
     "add-a-custom-agent",
     "inspect-running-agents",
     "fix-a-policy-violation",
-    "slash-command-index",
     "plug-in-your-own-llm",
     "plug-in-retrieval-backend",
     "manage-providers",
@@ -22,10 +21,12 @@
     "query-the-knowledge-base",
     "distill-and-infer",
     "wireframe-and-drop",
+    "diagram-and-demo",
     "observability-and-cost",
     "start-embed-mode",
     "embed-construct-in-your-app",
     "sync-the-dashboard",
-    "override-storage-root"
+    "override-storage-root",
+    "run-local-models"
   ]
 }

@@ -97,6 +97,21 @@ MCP tool call spans also carry:
 
 Persona-to-specialist dispatches inject `traceparent` into `params._meta` per SEP-414. The specialist MCP handler extracts it and creates a child span, so the full persona-to-tool chain appears as one connected trace tree in your backend.
 
+## Audit trail (tamper-evidence)
+
+Every mutation Construct or a dispatched subagent makes (Edit, Write, MultiEdit, NotebookEdit, and state-mutating Bash) is appended to `.cx/audit-trail.jsonl` by the `audit-trail` PostToolUse hook. Each record carries a `prev_line_hash` — the SHA-256 of the previous line — so any after-the-fact reorder, deletion, or edit breaks the chain.
+
+```bash
+construct audit trail            # recent records
+construct audit trail --verify   # replay the chain and report breaks
+```
+
+A serial hash chain cannot survive concurrent appends, so the hook computes `prev_line_hash` and appends inside a single cross-process file lock (`appendAuditRecord` in `lib/audit-trail.mjs`); parallel hook, daemon, and same-session tool processes are serialized rather than racing off a shared predecessor.
+
+### Re-basing the chain
+
+A chain that was damaged before serialization existed cannot be re-derived. `construct audit trail --reset --reason="…"` writes a `chain_reset` boundary line: records ahead of the most recent boundary are sealed as immutable legacy and exempted from verification, and the live chain re-bases from the boundary. `--verify` then validates only the live segment, while tampering after the boundary is still caught.
+
 ## Disabling
 
 ```bash

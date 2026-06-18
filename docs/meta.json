@@ -5,9 +5,19 @@
     "concepts",
     "cookbook",
     "reference",
+    "audit",
+    "research",
+    "intake",
     "operations",
+    "deploy",
+    "runbooks",
+    "maintenance",
+    "releases",
     "decisions",
+    "adr",
+    "rfc",
     "contributing",
-    "changelog"
+    "changelog",
+    "roadmap"
   ]
 }

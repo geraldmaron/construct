@@ -1229,7 +1229,7 @@ async function resolveServiceSelection(args, selectable) {
   return null;
 }
 
-async function cmdUp(args = []) {
+async function cmdDev(args = []) {
   const { SELECTABLE_SERVICES } = await import('../lib/service-manager.mjs');
 
   // --only=a,b,c picks services non-interactively; --select opens a checklist.
@@ -1365,7 +1365,7 @@ async function cmdUp(args = []) {
   opLog.close(failed.length ? 'degraded' : 'ok', { failed: failed.map((r) => r.name) });
 }
 
-async function cmdDown() {
+async function cmdStop() {
   const { stopServices } = await import('../lib/service-manager.mjs');
   const result = await stopServices({ homeDir: HOME, rootDir: ROOT_DIR });
   for (const svc of result.results) {
@@ -1384,7 +1384,7 @@ async function cmdDown() {
   } catch { /* best effort */ }
 }
 
-async function cmdServe() {
+async function cmdDashboard() {
   if (restArgsCache.includes('--token')) {
     const { generateToken, setDashboardToken, getDashboardToken } = await import('../lib/server/auth.mjs');
     const existing = getDashboardToken();
@@ -1951,7 +1951,7 @@ async function cmdHosts() {
     printHostCapabilities();
   }
 }
-async function cmdSetup(args) {
+async function cmdInstall(args) {
   const { startOpLog } = await import('../lib/op-log.mjs');
   const opLog = startOpLog('install', { homeDir: HOME });
   opLog.event('args', { args });
@@ -2402,7 +2402,7 @@ async function cmdIntakeProcess(args, cwd) {
       errorln('Choose one:');
       errorln('  construct intake process --wait        Block until the holder finishes (default 30s).');
       errorln('  construct intake process --wait=<sec>  Block for a custom window.');
-      errorln('  construct down                          Stop background services, then retry.');
+      errorln('  construct stop                          Stop background services, then retry.');
       process.exit(2);
     }
     throw err;
@@ -5209,11 +5209,11 @@ async function readStdin() {
 
 const handlers = new Map([
   // Core
-  ['dev', cmdUp],
-  ['dashboard', cmdServe],
-  ['stop', cmdDown],
+  ['dev', cmdDev],
+  ['dashboard', cmdDashboard],
+  ['stop', cmdStop],
   ['status', cmdStatus],
-  ['install', cmdSetup],
+  ['install', cmdInstall],
   ['config', cmdConfig],
   ['intake', cmdIntake],
   ['recommendations', cmdRecommendations],
@@ -5838,6 +5838,14 @@ const handlers = new Map([
     const { runWireframeCli } = await import('../lib/wireframe.mjs');
     return runWireframeCli(args);
   }],
+  ['diagram', async (args) => {
+    const { runDiagramCli } = await import('../lib/diagram.mjs');
+    return runDiagramCli(args);
+  }],
+  ['demo', async (args) => {
+    const { runDemoCli } = await import('../lib/demo.mjs');
+    return runDemoCli(args);
+  }],
   ['skills', async (args) => {
     const sub = args[0];
     if (sub === 'scope' || !sub) {
@@ -6355,6 +6363,67 @@ if (command === '--version' || command === '-V') {
   process.exit(0);
 }
 
+// Unknown-flag guidance for commands that fully declare their flags (strictFlags
+// in the spec). A stray or typo'd flag on these is a user error, not a no-op:
+// reject it with the nearest declared flag and the command's help, matching how
+// install (lib/setup.mjs KNOWN_FLAGS) already behaves, so no flag is silently
+// swallowed. Opt-in keeps commands that accept undeclared flags unaffected.
+
+function validateKnownFlags(name, argv) {
+  const spec = CLI_COMMANDS.find((c) => c.name === name);
+  if (!spec || !spec.strictFlags) return;
+
+  const exact = new Set(['--help', '-h']);
+  const prefixes = [];
+  for (const opt of spec.options || []) {
+    for (const part of String(opt.flag).split(',')) {
+      const token = part.trim().split('=')[0].split(/\s/)[0];
+      if (!token.startsWith('-')) continue;
+      if (/-<[^>]+>$/.test(token)) prefixes.push(token.replace(/<[^>]+>$/, ''));
+      else exact.add(token);
+    }
+  }
+
+  const declared = [...exact].filter((f) => f.startsWith('--'));
+  const dist = (a, b) => {
+    const row = Array(b.length + 1).fill(0).map((_, i) => i);
+    for (let i = 1; i <= a.length; i += 1) {
+      let prev = i;
+      for (let j = 1; j <= b.length; j += 1) {
+        const cur = a[i - 1] === b[j - 1] ? row[j - 1] : 1 + Math.min(row[j - 1], row[j], prev);
+        row[j - 1] = prev;
+        prev = cur;
+      }
+      row[b.length] = prev;
+    }
+    return row[b.length];
+  };
+
+  const unknown = [];
+  for (const tok of argv) {
+    if (tok === '--') break;
+    if (!/^--?[A-Za-z]/.test(tok)) continue;
+    const bare = tok.split('=')[0];
+    if (exact.has(bare) || prefixes.some((p) => bare.startsWith(p))) continue;
+    unknown.push(bare);
+  }
+  if (unknown.length === 0) return;
+
+  for (const flag of unknown) {
+    errorln(`Unknown flag: ${flag}`);
+    let best = 4;
+    let suggestion = null;
+    for (const cand of declared) {
+      const d = dist(flag, cand);
+      if (d < best) { best = d; suggestion = cand; }
+    }
+    if (suggestion) errorln(`Did you mean: ${suggestion}?`);
+  }
+  println('');
+  println(`${COLORS.dim}Run 'construct ${name} --help' for valid options${COLORS.reset}`);
+  process.exit(1);
+}
+
 const handler = handlers.get(command);
 if (!handler) {
   errorln(`Unknown command: ${command}`);
@@ -6433,7 +6502,9 @@ if (command !== 'hook') {
 
 const probe = await maybeFirstInvocationProbe({ command, homeDir: HOME, env: process.env });
 if (probe?.runSetup) {
-  await cmdSetup([]);
+  await cmdInstall([]);
 }
+
+validateKnownFlags(command, rest);
 
 await handler(rest);

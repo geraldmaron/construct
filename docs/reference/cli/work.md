@@ -10,6 +10,8 @@ description: Work commands for Construct.
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
+| `construct demo` | Record reproducible terminal demos via VHS/asciinema (optional system binaries; ADR-0001) |
+| `construct diagram` | Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001) |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
 | `construct export` | Export markdown to PDF/DOCX/HTML via Pandoc + Typst (optional system binaries; ADR-0024) |
@@ -250,6 +252,46 @@ Generate wireframes from description
 ```bash
 construct wireframe <description>
 ```
+
+## construct diagram
+
+Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001)
+
+**Usage**
+
+```bash
+construct diagram <description> [--type=architecture|flow|sequence|state|er|class] [--format=svg|png] [--theme=<name>] [--out=<path>] [--source-only]
+```
+
+**Options**
+
+- `--type=<t>` — architecture (default) | flow | sequence | state | er | class
+- `--format=<f>` — svg (default) | png
+- `--theme=<name>` — D2 theme name (e.g. neutral, sketch, cool-classics)
+- `--out=<path>` — output path (default: `.cx/diagrams/<slug>-<ts>.<ext>`)
+- `--source-only` — always write the source file; skip rendering
+
+D2 is the primary renderer; Graphviz `dot` is the fallback. When neither is
+installed the command writes the `.d2`/`.dot` (or Mermaid) source and exits 0.
+
+## construct demo
+
+Record reproducible terminal demos via VHS/asciinema (optional system binaries; ADR-0001)
+
+**Usage**
+
+```bash
+construct demo <name> [--format=gif|mp4|webm] [--out=<path>] [--source-only]
+```
+
+**Options**
+
+- `--format=<f>` — gif (default) | mp4 | webm (VHS only)
+- `--out=<path>` — output path (default: `.cx/demos/<name>-<ts>.<ext>`)
+- `--source-only` — always write the `.tape` source; skip recording
+
+VHS is the primary recorder; asciinema is the fallback. When neither is
+installed the command writes the `.tape` source and exits 0.
 
 ## construct workflow
 

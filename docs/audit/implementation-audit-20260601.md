@@ -298,7 +298,7 @@ trace data plane already meets that intent today** — verified by running `lib/
 Langfuse coupling is confined to the **convenience/UX layer**, not the data plane:
 
 1. `langfuse/docker-compose.yml` + `LANGFUSE_LOCAL` (`lib/service-manager.mjs`) — the bundled local
-   self-hosted stack `construct up` starts. One optional backend, not a dependency of emission.
+   self-hosted stack `construct dev` starts. One optional backend, not a dependency of emission.
 2. `lib/server/langfuse-login.mjs` — the local-Langfuse one-click sign-in. The login **route** is now
    provider-aware (`/api/services/telemetry/login`, with `/langfuse/login` kept as a back-compat alias):
    an external `CONSTRUCT_TELEMETRY_URL` backend uses the vendor-neutral `telemetry-login.mjs`; local

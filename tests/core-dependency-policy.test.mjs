@@ -45,7 +45,7 @@ test('core dependencies obey ADR 0001 (sanctioned, or tracked pending an ADR)', 
     [],
     `New core dependency without an ADR: ${unaccounted.join(', ')}. ` +
       `ADR 0001 limits runtime dependencies to ${[...SANCTIONED].join(', ')}. ` +
-      `Write docs/adr/NNNN-*.md (see docs/dependencies.md) before adding it, or implement in-tree.`,
+      `Write docs/adr/NNNN-*.md (see docs/reference/dependencies.md) before adding it, or implement in-tree.`,
   );
 });
 

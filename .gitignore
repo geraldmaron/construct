@@ -82,3 +82,6 @@ apps/*/out/
 # Python bytecode (docling sidecar compile artifacts)
 __pycache__/
 *.pyc
+
+# Construct audit harness — regenerated evidence, not source.
+audit-artifacts/

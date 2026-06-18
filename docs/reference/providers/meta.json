@@ -1,0 +1,12 @@
+{
+  "title": "Providers",
+  "pages": [
+    "overview",
+    "authoring",
+    "github",
+    "slack",
+    "salesforce",
+    "atlassian-jira",
+    "atlassian-confluence"
+  ]
+}
