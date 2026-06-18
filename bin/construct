@@ -6363,6 +6363,67 @@ if (command === '--version' || command === '-V') {
   process.exit(0);
 }
 
+// Unknown-flag guidance for commands that fully declare their flags (strictFlags
+// in the spec). A stray or typo'd flag on these is a user error, not a no-op:
+// reject it with the nearest declared flag and the command's help, matching how
+// install (lib/setup.mjs KNOWN_FLAGS) already behaves, so no flag is silently
+// swallowed. Opt-in keeps commands that accept undeclared flags unaffected.
+
+function validateKnownFlags(name, argv) {
+  const spec = CLI_COMMANDS.find((c) => c.name === name);
+  if (!spec || !spec.strictFlags) return;
+
+  const exact = new Set(['--help', '-h']);
+  const prefixes = [];
+  for (const opt of spec.options || []) {
+    for (const part of String(opt.flag).split(',')) {
+      const token = part.trim().split('=')[0].split(/\s/)[0];
+      if (!token.startsWith('-')) continue;
+      if (/-<[^>]+>$/.test(token)) prefixes.push(token.replace(/<[^>]+>$/, ''));
+      else exact.add(token);
+    }
+  }
+
+  const declared = [...exact].filter((f) => f.startsWith('--'));
+  const dist = (a, b) => {
+    const row = Array(b.length + 1).fill(0).map((_, i) => i);
+    for (let i = 1; i <= a.length; i += 1) {
+      let prev = i;
+      for (let j = 1; j <= b.length; j += 1) {
+        const cur = a[i - 1] === b[j - 1] ? row[j - 1] : 1 + Math.min(row[j - 1], row[j], prev);
+        row[j - 1] = prev;
+        prev = cur;
+      }
+      row[b.length] = prev;
+    }
+    return row[b.length];
+  };
+
+  const unknown = [];
+  for (const tok of argv) {
+    if (tok === '--') break;
+    if (!/^--?[A-Za-z]/.test(tok)) continue;
+    const bare = tok.split('=')[0];
+    if (exact.has(bare) || prefixes.some((p) => bare.startsWith(p))) continue;
+    unknown.push(bare);
+  }
+  if (unknown.length === 0) return;
+
+  for (const flag of unknown) {
+    errorln(`Unknown flag: ${flag}`);
+    let best = 4;
+    let suggestion = null;
+    for (const cand of declared) {
+      const d = dist(flag, cand);
+      if (d < best) { best = d; suggestion = cand; }
+    }
+    if (suggestion) errorln(`Did you mean: ${suggestion}?`);
+  }
+  println('');
+  println(`${COLORS.dim}Run 'construct ${name} --help' for valid options${COLORS.reset}`);
+  process.exit(1);
+}
+
 const handler = handlers.get(command);
 if (!handler) {
   errorln(`Unknown command: ${command}`);
@@ -6443,5 +6504,7 @@ const probe = await maybeFirstInvocationProbe({ command, homeDir: HOME, env: pro
 if (probe?.runSetup) {
   await cmdInstall([]);
 }
+
+validateKnownFlags(command, rest);
 
 await handler(rest);

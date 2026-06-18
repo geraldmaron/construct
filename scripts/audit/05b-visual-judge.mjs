@@ -72,13 +72,16 @@ function scoreOutcome(text) {
 
 function scoreErrorGuidance(text) {
   const didYouMean = /did you mean/i.test(text);
+  const alternatives = /\bavailable:\s*\S/i.test(text) || /\bvalid\s+\w+s?:\s*\S/i.test(text);
   const actionable = /\b(run|try|see|use)\b/i.test(text) || /--help/.test(text);
   const named = /'[^']+'|`[^`]+`/.test(text);
   if (didYouMean) return 3;
-  if (actionable && named) return 2;
+  if (alternatives || (actionable && named)) return 2;
   if (actionable) return 1;
   return 0;
 }
+
+const specByName = Object.fromEntries(CLI_COMMANDS.map((c) => [c.name, c]));
 
 export function runVisualJudge() {
   const { fakeHome, env } = isolatedEnv({ NO_COLOR: '1' });
@@ -87,10 +90,16 @@ export function runVisualJudge() {
     for (const name of stratifiedCommands()) {
       const r = runConstruct([name, '--help'], { env, timeout: 6000 });
       const text = r.stdout || '';
+
+      // Decision-point only applies where there is a decision: a command with no
+      // options has nothing to default or warn about, so it is scored N/A (null)
+      // rather than 0, keeping the dimension's average over the population it describes.
+
+      const hasOptions = (specByName[name]?.options?.length || 0) > 0;
       surfaces.push({
         surface: name,
         kind: 'help',
-        scores: { decisionPoint: scoreDecisionPoint(text), outcome: scoreOutcome(text) },
+        scores: { decisionPoint: hasOptions ? scoreDecisionPoint(text) : null, outcome: scoreOutcome(text) },
         chars: text.length,
       });
     }
@@ -130,10 +139,17 @@ function toFindings(report) {
 function buildScorecard(report) {
   const help = report.surfaces.filter((s) => s.kind === 'help');
   const errs = report.surfaces.filter((s) => s.kind === 'error');
-  const avg = (rows, key) => rows.length ? (rows.reduce((a, r) => a + (r.scores[key] ?? 0), 0) / rows.length).toFixed(2) : 'n/a';
 
-  const helpRows = help.map((s) => [s.surface, String(s.scores.decisionPoint), String(s.scores.outcome)]);
-  const errRows = errs.map((s) => [s.surface, String(s.scores.errorGuidance)]);
+  // Average each axis over the surfaces it scores (null = not applicable, skipped).
+
+  const avg = (rows, key) => {
+    const scored = rows.map((r) => r.scores[key]).filter((v) => typeof v === 'number');
+    return scored.length ? (scored.reduce((a, v) => a + v, 0) / scored.length).toFixed(2) : 'n/a';
+  };
+  const cell = (v) => (typeof v === 'number' ? String(v) : 'n/a');
+
+  const helpRows = help.map((s) => [s.surface, cell(s.scores.decisionPoint), cell(s.scores.outcome)]);
+  const errRows = errs.map((s) => [s.surface, cell(s.scores.errorGuidance)]);
 
   return [
     '---', 'title: Visual maturity scorecard (Phase 5b)', 'description: Subjective visual-maturity proxy scores across captured CLI surfaces.', '---', '',
@@ -143,7 +159,7 @@ function buildScorecard(report) {
     '- **decision-point** (0-3): option/prompt surfaces state defaults and the consequence of each choice.',
     '- **outcome/next-step** (0-3): the surface points at the obvious next action (example, `See …`, `Run …`, `→`).',
     '- **error-guidance** (0-3): error surfaces suggest a correction (`Did you mean …`, the specific name, `--help`).', '',
-    `## Help surfaces (${help.length}) — averages: decision-point ${avg(help, 'decisionPoint')}, next-step ${avg(help, 'outcome')}`, '',
+    `## Help surfaces (${help.length}) — averages: decision-point ${avg(help, 'decisionPoint')} (option-bearing only), next-step ${avg(help, 'outcome')}`, '',
     mdTable(['Surface', 'Decision-point', 'Next-step'], helpRows), '',
     `## Error surfaces (${errs.length}) — average error-guidance ${avg(errs, 'errorGuidance')}`, '',
     mdTable(['Surface', 'Error-guidance'], errRows), '',
