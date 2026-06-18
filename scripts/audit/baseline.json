@@ -1,5 +1,5 @@
 {
-  "note": "Accepted open audit findings (ratchet). Gate fails on any finding id NOT listed here. Remove ids as remediation closes them.",
+  "note": "Accepted open audit findings (ratchet) for gated phases 01-smoke/03-docs/03b-naming. Gate fails on any finding id NOT listed here. Remove ids as remediation closes them. Includes intentional forward-refs to planned commands (diagram, demo).",
   "acceptedIds": [
     "03-docs:orphaned-doc:docs/concepts/doc-quality-rubric.md",
     "03-docs:orphaned-doc:docs/concepts/doc-visual-matrix.md",
@@ -20,6 +20,8 @@
     "03-docs:orphaned-doc:docs/security.md",
     "03-docs:orphaned-doc:docs/standards.md",
     "03-docs:review-doc-reference:agent",
+    "03-docs:review-doc-reference:demo",
+    "03-docs:review-doc-reference:diagram",
     "03-docs:review-doc-reference:hooks",
     "03-docs:review-doc-reference:install-both",
     "03-docs:review-doc-reference:install-project",
