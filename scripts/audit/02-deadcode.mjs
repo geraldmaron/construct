@@ -1,8 +1,10 @@
 /**
  * 02-deadcode.mjs — Phase 2: lib modules with no inbound reference.
  *
- * Builds the import graph over the whole repo (static `from`/side-effect imports and
- * dynamic `import('<literal>')`) and reports lib modules nothing references. Construct
+ * Builds the import graph over the whole repo — including the buildable `apps/` surfaces
+ * (dashboard, chat) whose source consumes lib contract modules — from static
+ * `from`/side-effect imports and dynamic `import('<literal>')`, and reports lib modules
+ * nothing references. Construct
  * dispatches heavily through dynamic imports, so the graph must include those or it would
  * flag live code; modules reachable only by a computed (non-literal) import path can't be
  * proven dead and are reported separately, never as a hard finding.
@@ -23,7 +25,7 @@ import { REPO_ROOT } from './lib/handlers.mjs';
 import { writeJson } from './lib/artifacts.mjs';
 import { recordFindings } from './lib/findings.mjs';
 
-const SRC_DIRS = ['lib', 'bin', 'scripts', 'tests'];
+const SRC_DIRS = ['lib', 'bin', 'scripts', 'tests', 'apps'];
 
 // lib/server/static is the compiled Next.js dashboard (hashed build chunks), not source.
 
@@ -152,7 +154,7 @@ function toFindings(report) {
   const rows = [];
   for (const f of report.dead) {
     rows.push({ type: 'dead-module', target: f, severity: 'medium', tier: 'judgment',
-      evidence: 'no inbound static or dynamic-literal import anywhere in lib/bin/scripts/tests',
+      evidence: 'no inbound static or dynamic-literal import anywhere in lib/bin/scripts/tests/apps',
       recommendation: 'Confirm not reached via a computed import path, then remove it (or wire it up).' });
   }
   for (const f of report.testOnly) {

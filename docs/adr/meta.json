@@ -30,6 +30,9 @@
     "0036-document-ingestion-docling-mcp-evaluation",
     "0037-specialist-prompt-format",
     "0038-adaptive-local-prompt-composition",
-    "0039-interaction-surface-model"
+    "0039-interaction-surface-model",
+    "0040-terminal-chat-delegated-loop",
+    "0041-terminal-chat-owned-loop",
+    "0042-llm-credential-resolution"
   ]
 }

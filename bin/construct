@@ -3602,6 +3602,7 @@ async function cmdModels(args) {
     return;
   }
   if (tier && setModel) {
+    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
     const preferFree = args.includes('--prefer-free');
     const preferFreeSameFamily = args.includes('--prefer-free-same-family');
     const inferred = setModelWithTierInference(envPath, tier, setModel, registry.models ?? {}, { preferFree, preferFreeSameFamily });
@@ -4882,12 +4883,24 @@ async function cmdCreds(args) {
 
   if (!sub || sub === 'list') {
     const entries = listCreds();
-    if (entries.length === 0) { println('No provider credentials stored.'); return; }
-    println('Provider credentials\n');
-    println('  PROVIDER                  ACCOUNT                    ROTATED_AT             NEXT_ROTATION');
-    for (const e of entries) {
-      println(`  ${e.provider.padEnd(26)} ${(e.account || '—').padEnd(27)} ${(e.rotatedAt || '—').padEnd(23)} ${e.nextRotationDue || '—'}`);
+    if (entries.length === 0) {
+      println('No provider credentials stored in the rotation store.');
+    } else {
+      println('Provider credentials\n');
+      println('  PROVIDER                  ACCOUNT                    ROTATED_AT             NEXT_ROTATION');
+      for (const e of entries) {
+        println(`  ${e.provider.padEnd(26)} ${(e.account || '—').padEnd(27)} ${(e.rotatedAt || '—').padEnd(23)} ${e.nextRotationDue || '—'}`);
+      }
     }
+    try {
+      const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
+      const { providers } = getProviderModelCatalog({ env: process.env });
+      println('\nLLM provider readiness (op:// references resolve at call time)\n');
+      for (const p of providers) {
+        println(`  ${p.configured ? '✓' : '·'} ${p.id}`);
+      }
+      println('\n  Set keys as values or op:// refs in ~/.construct/config.env; run `construct creds login copilot` for GitHub Copilot.');
+    } catch { /* readiness view is informational */ }
     return;
   }
 
@@ -4926,7 +4939,68 @@ async function cmdCreds(args) {
     return;
   }
 
-  errorln(`Unknown creds subcommand: ${sub}. Available: list, set, rotate, revoke, test`);
+  if (sub === 'login') {
+    const provider = args[1] || 'copilot';
+    if (provider !== 'copilot' && provider !== 'github-copilot') {
+      errorln(`\`creds login\` currently supports only \`copilot\`. For API-key providers use \`construct creds set ${provider}\`.`);
+      process.exit(1);
+    }
+    const copilot = await import('../lib/providers/copilot-auth.mjs');
+    if (copilot.hasStoredCredential() && !args.includes('--force')) {
+      try {
+        await copilot.getCopilotToken();
+        println('GitHub Copilot is already authenticated and the session token exchanged successfully.');
+        println('Re-run with --force to authenticate a different account.');
+        return;
+      } catch {
+        println('A stored Copilot credential exists but the session exchange failed; re-authenticating.');
+      }
+    }
+    let device;
+    try {
+      device = await copilot.requestDeviceCode({});
+    } catch (err) {
+      errorln(err.message);
+      process.exit(1);
+    }
+    println('\nGitHub Copilot sign-in');
+    println(`  1. Open: ${device.verificationUri}`);
+    println(`  2. Enter code: ${device.userCode}`);
+    println('\nWaiting for authorization...');
+    let token;
+    try {
+      token = await copilot.pollForAccessToken({
+        deviceCode: device.deviceCode,
+        interval: device.interval,
+        expiresIn: device.expiresIn,
+        onPending: () => process.stdout.write('.'),
+      });
+      process.stdout.write('\n');
+    } catch (err) {
+      process.stdout.write('\n');
+      errorln(err.message);
+      process.exit(1);
+    }
+    copilot.persistOAuth({ accessToken: token.accessToken, refreshToken: token.refreshToken, expiresAt: token.expiresAt, user: null });
+    try {
+      await copilot.getCopilotToken();
+      println('GitHub Copilot authenticated. The session token exchanged successfully.');
+      println('Credentials stored in ~/.construct/auth/github-copilot.json and ~/.config/github-copilot/apps.json.');
+      try {
+        const models = await copilot.listCopilotModels({});
+        if (models.length) {
+          println('\nModels available to your account (use as github-copilot/<id>):');
+          for (const id of models) println(`  - github-copilot/${id}`);
+        }
+      } catch { /* model listing is informational; auth already succeeded */ }
+    } catch (err) {
+      errorln(`Authenticated with GitHub, but the Copilot token exchange failed: ${err.message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  errorln(`Unknown creds subcommand: ${sub}. Available: list, login, set, rotate, revoke, test`);
   process.exit(1);
 }
 
@@ -5276,6 +5350,10 @@ const handlers = new Map([
   ['acp', async () => {
     const { runAcpServer } = await import('../lib/acp/server.mjs');
     runAcpServer({ input: process.stdin, output: process.stdout, env: process.env, defaultCwd: process.cwd() });
+  }],
+  ['chat', async (args) => {
+    const { runChat } = await import('../lib/chat/cli.mjs');
+    process.exitCode = await runChat(args, { env: process.env, cwd: process.cwd() });
   }],
   ['beads:stats', async (args) => {
     const { getContentionStats, getHumanStatus } = await import('../lib/beads-optimistic.mjs');

@@ -33,6 +33,10 @@
       "core": false
     },
     {
+      "name": "chat",
+      "core": false
+    },
+    {
       "name": "check",
       "core": true
     },
