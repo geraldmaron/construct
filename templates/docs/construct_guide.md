@@ -109,7 +109,7 @@ All ports bind to `127.0.0.1` only; nothing is reachable from other machines on 
 | `construct config [mode <m>]` | Show active deployment mode (solo / team / enterprise) or set a new one |
 | `construct doctor` | Health check across config, services, agents, hooks |
 | `construct sync` | Regenerate platform adapters (Claude Code, OpenCode, Codex, Cursor) |
-| `construct up` / `construct down` | Start / stop local services |
+| `construct dev` / `construct stop` | Start / stop local services |
 | `construct status` | Live runtime status (services, providers, daemons) |
 | `construct intake list / show / done / skip / reopen` | Drive the R&D intake queue produced from `.cx/inbox/` |
 | `construct graph from-intake <id>` | Generate a task graph from a triaged intake packet |
@@ -131,7 +131,7 @@ That refreshes the agents, hooks, and slash commands in `.claude/` and `.constru
 
 ```bash
 construct doctor              # most issues surface here with a fix hint
-construct down && construct up  # restart local services
+construct stop && construct dev  # restart local services
 ```
 
 Troubleshooting guide: <https://geraldmaron.github.io/construct/docs/operations/troubleshooting>

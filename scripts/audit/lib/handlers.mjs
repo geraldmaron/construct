@@ -6,9 +6,9 @@
  * Shared extractor for every audit phase that reasons about handler reachability
  * (Phase 0 census, Phase 1 smoke, Phase 2 dead-code).
  *
- * Keyed off the Map STRING KEYS, never the bound function identifiers: user-facing names
- * were renamed (dev/dashboard/stop/status) while handlers still bind old fns
- * (cmdUp/cmdServe/cmdDown), so function identity is not the command name.
+ * Keyed off the Map STRING KEYS, never the bound function identifiers: a handler's
+ * function name is not guaranteed to match its command name, so the string key is the
+ * only reliable command identity.
  */
 
 import fs from 'node:fs';
