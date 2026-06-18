@@ -60,6 +60,10 @@ function toFindings(report) {
   return rows;
 }
 
+export function auditFindings() {
+  return toFindings(runAuditability());
+}
+
 function main() {
   const report = runAuditability();
   const findings = toFindings(report);
