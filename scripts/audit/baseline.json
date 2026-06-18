@@ -1,5 +1,5 @@
 {
-  "note": "Accepted open audit findings (ratchet) for gated phases 01-smoke/03-docs/03b-naming. Gate fails on any finding id NOT listed here. Remove ids as remediation closes them. Includes intentional forward-refs to planned commands (diagram, demo).",
+  "note": "Accepted open audit findings (ratchet) for gated phases 01-smoke/03-docs/03b-naming. Tightened as remediation lands.",
   "acceptedIds": [
     "03-docs:orphaned-doc:docs/concepts/doc-quality-rubric.md",
     "03-docs:orphaned-doc:docs/concepts/doc-visual-matrix.md",
@@ -30,7 +30,6 @@
     "03-docs:review-doc-reference:rovo_search",
     "03-docs:review-doc-reference:rules",
     "03-docs:review-doc-reference:strategy",
-    "03-docs:stale-doc-reference:up",
     "03-docs:undocumented-flag:install_--with-docling",
     "03-docs:unnavigated-doc-dir:docs/adr",
     "03-docs:unnavigated-doc-dir:docs/audit",
@@ -42,25 +41,6 @@
     "03-docs:unnavigated-doc-dir:docs/research",
     "03-docs:unnavigated-doc-dir:docs/research/2026-06-construct-audit",
     "03-docs:unnavigated-doc-dir:docs/rfc",
-    "03-docs:unnavigated-doc-dir:docs/runbooks",
-    "03b-naming:handler-name-drift:dashboard_cmdServe",
-    "03b-naming:handler-name-drift:dev_cmdUp",
-    "03b-naming:handler-name-drift:install_cmdSetup",
-    "03b-naming:handler-name-drift:stop_cmdDown",
-    "03b-naming:naming-drift-comment:lib/doctor/index.mjs_4",
-    "03b-naming:naming-drift-comment:lib/doctor/watchers/process-pressure.mjs_5",
-    "03b-naming:naming-drift-comment:lib/doctor/watchers/service-health.mjs_4",
-    "03b-naming:naming-drift-comment:lib/handoffs/cleanup.mjs_13",
-    "03b-naming:naming-drift-comment:lib/server/index.mjs_346",
-    "03b-naming:naming-drift-comment:lib/server/langfuse-login.mjs_31",
-    "03b-naming:naming-drift-comment:lib/server/langfuse-login.mjs_4",
-    "03b-naming:naming-drift-comment:lib/server/langfuse-login.mjs_56",
-    "03b-naming:naming-drift-comment:lib/service-manager.mjs_5",
-    "03b-naming:naming-drift-comment:lib/session-store.mjs_353",
-    "03b-naming:naming-drift-user-facing:skills/docs/init-project.md_35",
-    "03b-naming:naming-drift-user-facing:templates/docs/construct_guide.md_112",
-    "03b-naming:naming-drift-user-facing:templates/docs/construct_guide.md_112",
-    "03b-naming:naming-drift-user-facing:templates/docs/construct_guide.md_134",
-    "03b-naming:naming-drift-user-facing:templates/docs/construct_guide.md_134"
+    "03-docs:unnavigated-doc-dir:docs/runbooks"
   ]
 }

@@ -47,8 +47,14 @@ function walk(dir) {
 
 function aliasDrift() {
   const hits = [];
-  for (const base of SCAN_DIRS) {
-    for (const file of walk(path.join(REPO_ROOT, base))) {
+  // bin/construct is extensionless, so walk() skips it; scan it explicitly — it carries
+  // user-facing strings (error/help text) where a retired alias is hard drift.
+  const files = [
+    ...SCAN_DIRS.flatMap((base) => walk(path.join(REPO_ROOT, base))),
+    path.join(REPO_ROOT, 'bin', 'construct'),
+  ];
+  for (const file of files) {
+    {
       const lines = fs.readFileSync(file, 'utf8').split('\n');
       lines.forEach((line, i) => {
         ALIAS_RE.lastIndex = 0;
