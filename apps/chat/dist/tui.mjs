@@ -59,7 +59,7 @@ var init_project_root = __esm({
 });
 
 // apps/chat/tui/index.jsx
-import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo, createContext, useContext } from "react";
 import { render, Box, Text, useApp, useInput, useStdout } from "ink";
 
 // lib/chat/tui/usage.mjs
@@ -253,7 +253,8 @@ var DEFAULTS = Object.freeze({
   layers: Object.freeze(Object.fromEntries(LAYER_KEYS.map((k) => [k, true]))),
   thinking: true,
   permissionMode: "allow_once",
-  sandbox: null
+  sandbox: null,
+  ui: Object.freeze({ ascii: false })
 });
 var CONFIG_BASENAME = "chat-config.json";
 function saveChatConfig(config, { cwd = process.cwd() } = {}) {
@@ -261,7 +262,7 @@ function saveChatConfig(config, { cwd = process.cwd() } = {}) {
   const persisted = {};
   for (const key of Object.keys(DEFAULTS)) {
     if (config[key] == null) continue;
-    persisted[key] = key === "layers" ? { ...config.layers } : config[key];
+    persisted[key] = key === "layers" ? { ...config.layers } : key === "ui" ? { ...config.ui } : config[key];
   }
   fs2.writeFileSync(target, `${JSON.stringify(persisted, null, 2)}
 `);
@@ -282,6 +283,10 @@ function validateSetting(key, rawValue) {
       return PERMISSION_MODES.includes(rawValue) ? { ok: true, key: "permissionMode", value: rawValue } : { ok: false, error: `permission must be one of: ${PERMISSION_MODES.join(", ")}` };
     case "sandbox":
       return SANDBOX_LEVELS.includes(rawValue) ? { ok: true, value: rawValue } : { ok: false, error: `sandbox must be one of: ${SANDBOX_LEVELS.join(", ")}` };
+    case "ascii": {
+      const v = parseBool(rawValue);
+      return v == null ? { ok: false, error: "ascii must be on/off" } : { ok: true, key: "ui.ascii", value: v };
+    }
     default:
       if (LAYER_KEYS.includes(key)) {
         const v = parseBool(rawValue);
@@ -447,7 +452,7 @@ function createCommands({ driver, host, hostId = host, version, cwd = process.cw
   }
   function applySetting(output, colors, session, layers, parts) {
     if (parts.length < 2) {
-      output.write(`${colors.dim}usage: /set <key> <value>  (keys: ${[...LAYER_KEYS, "thinking", "permission", "sandbox", "model"].join(", ")})${colors.reset}
+      output.write(`${colors.dim}usage: /set <key> <value>  (keys: ${[...LAYER_KEYS, "thinking", "permission", "sandbox", "model", "ascii"].join(", ")})${colors.reset}
 `);
       return;
     }
@@ -474,6 +479,8 @@ function createCommands({ driver, host, hostId = host, version, cwd = process.cw
       session.permissionMode = result.value;
     } else if (targetKey === "sandbox") {
       session.sandbox = result.value;
+    } else if (targetKey === "ui.ascii") {
+      session.ui = { ...session.ui || { ascii: false }, ascii: result.value };
     } else if (targetKey === "host") {
       output.write(`${colors.dim}host can only be changed by relaunching: construct chat --host ${result.value}${colors.reset}
 `);
@@ -497,10 +504,8 @@ function createCommands({ driver, host, hostId = host, version, cwd = process.cw
     const perm = session.permissionMode || "allow_once";
     output.write(`  ${colors.cyan}permission${colors.reset}  ${perm} ${colors.dim}(${PERMISSION_MODES.join("/")})${colors.reset}
 `);
-    if (perm === "ask") {
-      output.write(`  ${colors.dim}note: ask mode is not interactive yet; tool calls use allow_once until a prompt overlay ships${colors.reset}
+    output.write(`  ${colors.cyan}ascii${colors.reset}       ${session.ui?.ascii ? "on" : "off"} ${colors.dim}(glyph fallback for limited terminals)${colors.reset}
 `);
-    }
     output.write(`  ${colors.cyan}sandbox${colors.reset}     ${session.sandbox || "(host default)"} ${colors.dim}(${SANDBOX_LEVELS.join("/")})${colors.reset}
 `);
     output.write(`  ${colors.dim}chat sandbox gates tools in this session; isolated project copies use \`construct sandbox create\`${colors.reset}
@@ -514,7 +519,8 @@ function createCommands({ driver, host, hostId = host, version, cwd = process.cw
         layers,
         thinking: layers?.thinking,
         permissionMode: session.permissionMode,
-        sandbox: session.sandbox
+        sandbox: session.sandbox,
+        ui: session.ui
       }, { cwd });
     } catch {
     }
@@ -542,17 +548,37 @@ function stripAnsi(text) {
   return String(text).replace(/\[[0-9;]*m/g, "");
 }
 
+// lib/chat/permission-prompt.mjs
+function formatPermissionQuestion({ tool = "tool", input = null } = {}) {
+  const detail = input && typeof input === "object" ? Object.keys(input).slice(0, 3).join(", ") : "";
+  const suffix = detail ? ` (${detail})` : "";
+  return `Allow "${tool}"${suffix}?  [y] once  [a] always  [n] reject`;
+}
+function parsePermissionKey(char) {
+  if (!char) return null;
+  const c = char.toLowerCase();
+  if (c === "a") return "allow_always";
+  if (c === "n" || c === "r") return "reject";
+  if (c === "y") return "allow";
+  return null;
+}
+
+// lib/chat/tui/presentation.mjs
+var SEMANTIC = Object.freeze({
+  accent: { ink: "cyan", code: "36" },
+  accentAlt: { ink: "magenta", code: "35" },
+  ok: { ink: "green", code: "32" },
+  warn: { ink: "yellow", code: "33" },
+  danger: { ink: "red", code: "31" },
+  muted: { ink: "gray", code: "2" },
+  text: { ink: "white", code: "37" }
+});
+function inkPalette() {
+  return Object.fromEntries(Object.entries(SEMANTIC).map(([k, v]) => [k, v.ink]));
+}
+
 // apps/chat/tui/theme.mjs
-var palette = {
-  accent: "cyan",
-  accentAlt: "magenta",
-  ok: "green",
-  warn: "yellow",
-  danger: "red",
-  muted: "gray",
-  text: "white"
-};
-var glyphs = {
+var UNICODE_GLYPHS = {
   brand: "\u25C6",
   dot: "\u25CF",
   arrow: "\u2192",
@@ -565,18 +591,45 @@ var glyphs = {
   toolBusy: "\u25B8",
   toolPending: "\xB7"
 };
-var spinnerFrames = ["\u280B", "\u2819", "\u2839", "\u2838", "\u283C", "\u2834", "\u2826", "\u2827", "\u2807", "\u280F"];
-function toolGlyph(status) {
-  if (status === "completed") return glyphs.toolDone;
-  if (status === "failed") return glyphs.toolFail;
-  if (status === "in_progress") return glyphs.toolBusy;
-  return glyphs.toolPending;
+var ASCII_GLYPHS = {
+  brand: "*",
+  dot: "o",
+  arrow: "->",
+  caret: ">",
+  gutter: "|",
+  block: "#",
+  track: "-",
+  toolDone: "+",
+  toolFail: "x",
+  toolBusy: ">",
+  toolPending: "."
+};
+var BRAILLE_SPINNER = ["\u280B", "\u2819", "\u2839", "\u2838", "\u283C", "\u2834", "\u2826", "\u2827", "\u2807", "\u280F"];
+var ASCII_SPINNER = ["|", "/", "-", "\\"];
+var DEFAULT_THEME = createTheme({ ascii: false });
+var palette = DEFAULT_THEME.palette;
+var glyphs = DEFAULT_THEME.glyphs;
+var spinnerFrames = DEFAULT_THEME.spinnerFrames;
+function createTheme({ ascii = false } = {}) {
+  return {
+    palette: inkPalette(),
+    glyphs: ascii ? { ...ASCII_GLYPHS } : { ...UNICODE_GLYPHS },
+    spinnerFrames: ascii ? [...ASCII_SPINNER] : [...BRAILLE_SPINNER]
+  };
 }
-function toolColor(status) {
-  if (status === "completed") return palette.ok;
-  if (status === "failed") return palette.danger;
-  if (status === "in_progress") return palette.warn;
-  return palette.muted;
+function toolGlyph(status, theme = DEFAULT_THEME) {
+  const g = theme.glyphs;
+  if (status === "completed") return g.toolDone;
+  if (status === "failed") return g.toolFail;
+  if (status === "in_progress") return g.toolBusy;
+  return g.toolPending;
+}
+function toolColor(status, theme = DEFAULT_THEME) {
+  const p = theme.palette;
+  if (status === "completed") return p.ok;
+  if (status === "failed") return p.danger;
+  if (status === "in_progress") return p.warn;
+  return p.muted;
 }
 function splitModel(id) {
   if (!id) return { provider: "", name: "(no model)" };
@@ -584,15 +637,17 @@ function splitModel(id) {
   if (idx === -1) return { provider: "", name: id };
   return { provider: id.slice(0, idx), name: id.slice(idx + 1) };
 }
-function meter(used, size, width = 18) {
+function meter(used, size, width = 18, theme = DEFAULT_THEME) {
+  const g = theme.glyphs;
   const ratio = size > 0 ? Math.max(0, Math.min(1, used / size)) : 0;
   const filled = Math.round(ratio * width);
-  return { bar: glyphs.block.repeat(filled) + glyphs.track.repeat(Math.max(0, width - filled)), ratio };
+  return { bar: g.block.repeat(filled) + g.track.repeat(Math.max(0, width - filled)), ratio };
 }
-function ratioColor(ratio) {
-  if (ratio >= 0.85) return palette.danger;
-  if (ratio >= 0.6) return palette.warn;
-  return palette.ok;
+function ratioColor(ratio, theme = DEFAULT_THEME) {
+  const p = theme.palette;
+  if (ratio >= 0.85) return p.danger;
+  if (ratio >= 0.6) return p.warn;
+  return p.ok;
 }
 function percent(ratio) {
   return `${Math.round(ratio * 100)}%`;
@@ -600,80 +655,91 @@ function percent(ratio) {
 
 // apps/chat/tui/index.jsx
 import { jsx, jsxs } from "react/jsx-runtime";
-function Rule({ width, color = palette.muted }) {
-  return /* @__PURE__ */ jsx(Text, { color, children: "\u2500".repeat(Math.max(1, width)) });
+var ChatThemeContext = createContext(createTheme());
+function useChatTheme() {
+  return useContext(ChatThemeContext);
+}
+function Rule({ width, color }) {
+  const { palette: palette2 } = useChatTheme();
+  return /* @__PURE__ */ jsx(Text, { color: color || palette2.muted, children: "\u2500".repeat(Math.max(1, width)) });
 }
 function Badge({ bg, color = "black", children }) {
   return /* @__PURE__ */ jsx(Text, { backgroundColor: bg, color, bold: true, children: ` ${children} ` });
 }
 function HeaderBar({ cols, model, sandbox, permissionMode, working, spin }) {
+  const { palette: palette2, glyphs: glyphs2 } = useChatTheme();
   const { provider, name } = splitModel(model);
   return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", children: [
     /* @__PURE__ */ jsxs(Box, { width: cols, justifyContent: "space-between", children: [
       /* @__PURE__ */ jsxs(Box, { children: [
-        /* @__PURE__ */ jsx(Text, { color: palette.accent, bold: true, children: `${glyphs.brand} construct` }),
-        /* @__PURE__ */ jsx(Text, { color: palette.muted, children: `  ${glyphs.gutter}  chat` })
+        /* @__PURE__ */ jsx(Text, { color: palette2.accent, bold: true, children: `${glyphs2.brand} construct` }),
+        /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `  ${glyphs2.gutter}  chat` })
       ] }),
       /* @__PURE__ */ jsxs(Box, { children: [
-        provider ? /* @__PURE__ */ jsx(Text, { color: palette.muted, children: `${provider}/` }) : null,
-        /* @__PURE__ */ jsx(Text, { color: palette.text, bold: true, children: name }),
-        /* @__PURE__ */ jsx(Text, { color: palette.muted, children: `   ${sandbox}  ${glyphs.gutter}  ${permissionMode}  ` }),
-        /* @__PURE__ */ jsx(Text, { color: working ? palette.warn : palette.ok, children: working ? spin : glyphs.dot })
+        provider ? /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `${provider}/` }) : null,
+        /* @__PURE__ */ jsx(Text, { color: palette2.text, bold: true, children: name }),
+        /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `   ${sandbox}  ${glyphs2.gutter}  ${permissionMode}  ` }),
+        /* @__PURE__ */ jsx(Text, { color: working ? palette2.warn : palette2.ok, children: working ? spin : glyphs2.dot })
       ] })
     ] }),
     /* @__PURE__ */ jsx(Rule, { width: cols })
   ] });
 }
 function EmptyState({ model }) {
+  const { palette: palette2, glyphs: glyphs2 } = useChatTheme();
   const { provider, name } = splitModel(model);
   return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", paddingY: 1, children: [
-    /* @__PURE__ */ jsx(Text, { color: palette.accent, bold: true, children: `${glyphs.brand} welcome to construct chat` }),
-    /* @__PURE__ */ jsx(Box, { marginTop: 1, children: /* @__PURE__ */ jsx(Text, { color: palette.muted, wrap: "wrap", children: "Transparency-first coding. Every token, tool call, and the specialist route Construct would take stays in view in the panel on the right \u2014 nothing is hidden behind a host." }) }),
+    /* @__PURE__ */ jsx(Text, { color: palette2.accent, bold: true, children: `${glyphs2.brand} welcome to construct chat` }),
+    /* @__PURE__ */ jsx(Box, { marginTop: 1, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: "Transparency-first coding. Every token, tool call, and the specialist route Construct would take stays in view in the panel on the right \u2014 nothing is hidden behind a host." }) }),
     /* @__PURE__ */ jsxs(Box, { marginTop: 1, flexDirection: "column", children: [
-      /* @__PURE__ */ jsx(Text, { color: palette.muted, children: "To get going" }),
-      /* @__PURE__ */ jsx(Text, { children: `  ${glyphs.caret} ask a question or describe the change you want` }),
-      /* @__PURE__ */ jsx(Text, { color: palette.muted, children: `  ${glyphs.caret} /help  /model  /models  /set  /settings  /layers  /usage` })
+      /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "To get going" }),
+      /* @__PURE__ */ jsx(Text, { children: `  ${glyphs2.caret} ask a question or describe the change you want` }),
+      /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `  ${glyphs2.caret} shift+enter newline   up/down history   /help for commands` })
     ] }),
-    name ? /* @__PURE__ */ jsxs(Box, { marginTop: 1, children: [
-      /* @__PURE__ */ jsx(Text, { color: palette.muted, children: `ready on ` }),
-      /* @__PURE__ */ jsx(Text, { color: palette.text, bold: true, children: provider ? `${provider}/${name}` : name })
-    ] }) : /* @__PURE__ */ jsx(Box, { marginTop: 1, children: /* @__PURE__ */ jsx(Text, { color: palette.warn, children: `${glyphs.caret} no model selected \u2014 set one with /model or a provider key` }) })
+    name && name !== "(no model)" ? /* @__PURE__ */ jsxs(Box, { marginTop: 1, children: [
+      /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `ready on ` }),
+      /* @__PURE__ */ jsx(Text, { color: palette2.text, bold: true, children: provider ? `${provider}/${name}` : name })
+    ] }) : /* @__PURE__ */ jsx(Box, { marginTop: 1, children: /* @__PURE__ */ jsx(Text, { color: palette2.warn, children: `${glyphs2.caret} no model selected \u2014 set one with /model or a provider key` }) })
   ] });
 }
 function Message({ role, text }) {
+  const { palette: palette2, glyphs: glyphs2 } = useChatTheme();
   if (role === "thinking") {
     return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginBottom: 1, children: [
-      /* @__PURE__ */ jsx(Text, { color: palette.muted, children: `${glyphs.gutter} thinking` }),
-      /* @__PURE__ */ jsx(Box, { paddingLeft: 2, children: /* @__PURE__ */ jsx(Text, { color: palette.muted, wrap: "wrap", children: text }) })
+      /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `${glyphs2.gutter} thinking` }),
+      /* @__PURE__ */ jsx(Box, { paddingLeft: 2, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: text }) })
     ] });
   }
   const isYou = role === "you";
   const isError = typeof text === "string" && text.startsWith("[error]");
   return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginBottom: 1, children: [
-    /* @__PURE__ */ jsx(Badge, { bg: isYou ? palette.ok : palette.accent, children: isYou ? "you" : "construct" }),
-    /* @__PURE__ */ jsx(Box, { paddingLeft: 1, children: /* @__PURE__ */ jsx(Text, { color: isError ? palette.danger : void 0, wrap: "wrap", children: text }) })
+    /* @__PURE__ */ jsx(Badge, { bg: isYou ? palette2.ok : palette2.accent, children: isYou ? "you" : "construct" }),
+    /* @__PURE__ */ jsx(Box, { paddingLeft: 1, children: /* @__PURE__ */ jsx(Text, { color: isError ? palette2.danger : void 0, wrap: "wrap", children: text }) })
   ] });
 }
-function planGlyph(status) {
-  if (status === "completed") return glyphs.toolDone;
-  if (status === "in_progress") return glyphs.toolBusy;
-  return glyphs.toolPending;
+function planGlyph(status, theme) {
+  const g = theme.glyphs;
+  if (status === "completed") return g.toolDone;
+  if (status === "in_progress") return g.toolBusy;
+  return g.toolPending;
 }
 function ConversationPane({ width, transcript, live, thinking, showThinking, model, working, spin }) {
+  const { palette: palette2, glyphs: glyphs2 } = useChatTheme();
   if (transcript.length === 0 && !live && !thinking) {
     return /* @__PURE__ */ jsx(Box, { flexDirection: "column", width, paddingRight: 2, children: /* @__PURE__ */ jsx(EmptyState, { model }) });
   }
   const lines = transcript.map((entry) => ({ role: entry.role, text: entry.text }));
   if (showThinking && thinking) lines.push({ role: "thinking", text: thinking });
-  if (live) lines.push({ role: "construct", text: `${live}${working ? glyphs.block : ""}` });
+  if (live) lines.push({ role: "construct", text: `${live}${working ? glyphs2.block : ""}` });
   return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", width, paddingRight: 2, children: [
     lines.map((l, i) => /* @__PURE__ */ jsx(Message, { role: l.role, text: l.text }, i)),
-    working && !live ? /* @__PURE__ */ jsx(Text, { color: palette.warn, children: `${spin} working\u2026` }) : null
+    working && !live ? /* @__PURE__ */ jsx(Text, { color: palette2.warn, children: `${spin} working\u2026` }) : null
   ] });
 }
 function PanelSection({ title, children, marginTop = 1 }) {
+  const { palette: palette2 } = useChatTheme();
   return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginTop, children: [
-    /* @__PURE__ */ jsx(Text, { color: palette.accent, children: title }),
+    /* @__PURE__ */ jsx(Text, { color: palette2.accent, children: title }),
     children
   ] });
 }
@@ -692,11 +758,13 @@ function TransparencyPanel({
   sandbox,
   permissionMode,
   ctx,
-  spin
+  spin,
+  theme: themeProp
 }) {
+  const theme = themeProp || useChatTheme();
+  const { palette: palette2, glyphs: glyphs2 } = theme;
   const u = session.usage;
   const t = u.tokens || {};
-  const { provider, name } = splitModel(model);
   const ledger = [];
   if (t.input) ledger.push(["prompt", formatTokens(t.input)]);
   if (t.output) ledger.push(["output", formatTokens(t.output)]);
@@ -705,59 +773,81 @@ function TransparencyPanel({
   if (t.cacheWrite) ledger.push(["cache out", formatTokens(t.cacheWrite)]);
   if (t.total) ledger.push(["total", formatTokens(t.total)]);
   if (u.cost?.amount > 0) ledger.push(["cost", `~$${u.cost.amount.toFixed(u.cost.amount < 1 ? 3 : 2)}`]);
-  const ctxMeter = ctx?.size ? meter(ctx.used, ctx.size, Math.max(10, width - 8)) : null;
+  const ctxMeter = ctx?.size ? meter(ctx.used, ctx.size, Math.max(10, width - 8), theme) : null;
   const recentTools = tools.slice(-7);
   const turnUsage = lastTurnUsage && layers?.observability ? stripAnsi(formatUsageFooter(lastTurnUsage, {})).replace(/^\[usage\] /, "") : null;
-  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", width, borderStyle: "round", borderColor: palette.accent, paddingX: 1, children: [
-    /* @__PURE__ */ jsx(Text, { color: palette.accent, bold: true, children: `${glyphs.brand} transparency` }),
+  const { provider, name } = splitModel(model);
+  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", width, borderStyle: "round", borderColor: palette2.accent, paddingX: 1, children: [
+    /* @__PURE__ */ jsx(Text, { color: palette2.accent, bold: true, children: `${glyphs2.brand} transparency` }),
     /* @__PURE__ */ jsxs(PanelSection, { title: "model", marginTop: 1, children: [
       /* @__PURE__ */ jsxs(Text, { children: [
-        provider ? /* @__PURE__ */ jsx(Text, { color: palette.muted, children: `${provider}/` }) : null,
+        provider ? /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `${provider}/` }) : null,
         /* @__PURE__ */ jsx(Text, { bold: true, children: name })
       ] }),
-      sandbox || permissionMode ? /* @__PURE__ */ jsx(Text, { color: palette.muted, children: [sandbox, permissionMode].filter(Boolean).join(` ${glyphs.gutter} `) }) : null
+      sandbox || permissionMode ? /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: [sandbox, permissionMode].filter(Boolean).join(` ${glyphs2.gutter} `) }) : null
     ] }),
-    /* @__PURE__ */ jsx(PanelSection, { title: "layers", children: /* @__PURE__ */ jsx(Text, { color: palette.muted, wrap: "wrap", children: LAYER_KEYS.map((k) => `${k}=${layers?.[k] ? "on" : "off"}`).join(`  ${glyphs.gutter}  `) }) }),
+    /* @__PURE__ */ jsx(PanelSection, { title: "layers", children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: LAYER_KEYS.map((k) => `${k}=${layers?.[k] ? "on" : "off"}`).join(`  ${glyphs2.gutter}  `) }) }),
     /* @__PURE__ */ jsx(PanelSection, { title: "context", children: ctxMeter ? /* @__PURE__ */ jsxs(Box, { flexDirection: "column", children: [
-      /* @__PURE__ */ jsx(Text, { color: ratioColor(ctxMeter.ratio), children: ctxMeter.bar }),
-      /* @__PURE__ */ jsx(Text, { color: palette.muted, children: `${formatTokens(ctx.used)}/${formatTokens(ctx.size)}  ${percent(ctxMeter.ratio)}` })
-    ] }) : /* @__PURE__ */ jsx(Text, { color: palette.muted, children: "not reported yet" }) }),
-    turnUsage ? /* @__PURE__ */ jsx(PanelSection, { title: "this turn", children: /* @__PURE__ */ jsx(Text, { color: palette.muted, wrap: "wrap", children: turnUsage }) }) : null,
-    /* @__PURE__ */ jsx(PanelSection, { title: `usage ${glyphs.gutter} ${u.turns} turn${u.turns === 1 ? "" : "s"}`, children: ledger.length ? ledger.map(([k, v]) => /* @__PURE__ */ jsxs(Box, { justifyContent: "space-between", children: [
-      /* @__PURE__ */ jsx(Text, { color: palette.muted, children: k }),
+      /* @__PURE__ */ jsx(Text, { color: ratioColor(ctxMeter.ratio, theme), children: ctxMeter.bar }),
+      /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `${formatTokens(ctx.used)}/${formatTokens(ctx.size)}  ${percent(ctxMeter.ratio)}` })
+    ] }) : /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "not reported yet" }) }),
+    turnUsage ? /* @__PURE__ */ jsx(PanelSection, { title: "this turn", children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: turnUsage }) }) : null,
+    /* @__PURE__ */ jsx(PanelSection, { title: `usage ${glyphs2.gutter} ${u.turns} turn${u.turns === 1 ? "" : "s"}`, children: ledger.length ? ledger.map(([k, v]) => /* @__PURE__ */ jsxs(Box, { justifyContent: "space-between", children: [
+      /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: k }),
       /* @__PURE__ */ jsx(Text, { children: v })
-    ] }, k)) : /* @__PURE__ */ jsx(Text, { color: palette.muted, children: "no tokens yet" }) }),
-    routeMeta?.intent || routeMeta?.workCategory ? /* @__PURE__ */ jsx(PanelSection, { title: "intent", children: /* @__PURE__ */ jsx(Text, { color: palette.muted, wrap: "wrap", children: [routeMeta.intent, routeMeta.workCategory].filter(Boolean).join(` ${glyphs.gutter} `) }) }) : null,
-    route.length > 0 ? /* @__PURE__ */ jsx(PanelSection, { title: "route", children: /* @__PURE__ */ jsx(Text, { color: palette.accentAlt, wrap: "wrap", children: route.join(` ${glyphs.arrow} `) }) }) : null,
-    layers?.path && plan.length > 0 ? /* @__PURE__ */ jsx(PanelSection, { title: "plan", children: plan.map((entry, i) => /* @__PURE__ */ jsx(Text, { color: palette.muted, wrap: "wrap", children: `${planGlyph(entry.status)} ${entry.content}` }, `${entry.content}-${i}`)) }) : null,
-    permissions.length > 0 ? /* @__PURE__ */ jsx(PanelSection, { title: "permissions", children: permissions.slice(-5).map((entry, i) => /* @__PURE__ */ jsx(Text, { color: palette.warn, wrap: "wrap", children: `${glyphs.gutter} ${entry.title} ${glyphs.gutter} ${entry.detail}` }, `${entry.title}-${i}`)) }) : null,
-    layers?.tools !== false ? /* @__PURE__ */ jsx(PanelSection, { title: `tools ${glyphs.gutter} ${tools.length}`, children: recentTools.length ? recentTools.map((tool, i) => /* @__PURE__ */ jsx(Text, { color: toolColor(tool.status), children: `${toolGlyph(tool.status)} ${tool.title}` }, `${tool.id}-${i}`)) : /* @__PURE__ */ jsx(Text, { color: palette.muted, children: "none this turn" }) }) : null,
-    /* @__PURE__ */ jsx(Box, { marginTop: 1, children: /* @__PURE__ */ jsx(Text, { color: working ? palette.warn : palette.ok, children: working ? `${spin} working\u2026` : `${glyphs.dot} idle` }) })
+    ] }, k)) : /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "no tokens yet" }) }),
+    routeMeta?.intent || routeMeta?.workCategory ? /* @__PURE__ */ jsx(PanelSection, { title: "intent", children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: [routeMeta.intent, routeMeta.workCategory].filter(Boolean).join(` ${glyphs2.gutter} `) }) }) : null,
+    route.length > 0 ? /* @__PURE__ */ jsx(PanelSection, { title: "route", children: /* @__PURE__ */ jsx(Text, { color: palette2.accentAlt, wrap: "wrap", children: route.join(` ${glyphs2.arrow} `) }) }) : null,
+    layers?.path && plan.length > 0 ? /* @__PURE__ */ jsx(PanelSection, { title: "plan", children: plan.map((entry, i) => /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: `${planGlyph(entry.status, theme)} ${entry.content}` }, `${entry.content}-${i}`)) }) : null,
+    permissions.length > 0 ? /* @__PURE__ */ jsx(PanelSection, { title: "permissions", children: permissions.slice(-5).map((entry, i) => /* @__PURE__ */ jsx(Text, { color: palette2.warn, wrap: "wrap", children: `${glyphs2.gutter} ${entry.title} ${glyphs2.gutter} ${entry.detail}` }, `${entry.title}-${i}`)) }) : null,
+    layers?.tools !== false ? /* @__PURE__ */ jsx(PanelSection, { title: `tools ${glyphs2.gutter} ${tools.length}`, children: recentTools.length ? recentTools.map((tool, i) => /* @__PURE__ */ jsx(Text, { color: toolColor(tool.status, theme), children: `${toolGlyph(tool.status, theme)} ${tool.title}` }, `${tool.id}-${i}`)) : /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "none this turn" }) }) : null,
+    /* @__PURE__ */ jsx(Box, { marginTop: 1, children: /* @__PURE__ */ jsx(Text, { color: working ? palette2.warn : palette2.ok, children: working ? `${spin} working\u2026` : `${glyphs2.dot} idle` }) })
   ] });
 }
-function Footer({ cols, input, working, notice }) {
+function PermissionOverlay({ prompt }) {
+  const { palette: palette2 } = useChatTheme();
+  if (!prompt) return null;
+  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginY: 1, borderStyle: "double", borderColor: palette2.warn, paddingX: 1, children: [
+    /* @__PURE__ */ jsx(Text, { color: palette2.warn, bold: true, children: "permission" }),
+    /* @__PURE__ */ jsx(Text, { wrap: "wrap", children: formatPermissionQuestion({ tool: prompt.tool, input: prompt.input }) })
+  ] });
+}
+function Footer({ cols, input, working, notice, permissionActive }) {
+  const { palette: palette2, glyphs: glyphs2 } = useChatTheme();
   return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", children: [
     /* @__PURE__ */ jsx(Rule, { width: cols }),
-    notice ? /* @__PURE__ */ jsx(Text, { color: palette.warn, children: notice }) : null,
+    notice ? /* @__PURE__ */ jsx(Text, { color: palette2.warn, children: notice }) : null,
     /* @__PURE__ */ jsxs(Box, { children: [
-      /* @__PURE__ */ jsx(Text, { color: palette.accent, bold: true, children: `you ${glyphs.caret} ` }),
+      /* @__PURE__ */ jsx(Text, { color: palette2.accent, bold: true, children: permissionActive ? `${glyphs2.caret} permission ` : `you ${glyphs2.caret} ` }),
       /* @__PURE__ */ jsx(Text, { children: input }),
-      /* @__PURE__ */ jsx(Text, { color: palette.muted, children: working ? "" : glyphs.block })
+      !permissionActive && !working ? /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: glyphs2.block }) : null
     ] }),
-    /* @__PURE__ */ jsx(Text, { color: palette.muted, children: `enter send   ${glyphs.gutter}   /help  /models  /settings  /clear   ${glyphs.gutter}   Ctrl-C ${working ? "cancel" : "exit"}` })
+    /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: permissionActive ? "y once   a always   n reject" : `enter send   shift+enter newline   ${glyphs2.gutter}   /help  /models  /settings   ${glyphs2.gutter}   Ctrl-C ${working ? "cancel" : "exit"}` })
   ] });
 }
-function App({ driver, session, layers, planTurn, persist, cwd }) {
+function App({
+  driver,
+  session,
+  layers,
+  planTurn,
+  persist,
+  cwd,
+  permissionBridge,
+  initialTranscript = []
+}) {
   const { exit } = useApp();
   const { stdout } = useStdout();
   const cols = stdout?.columns || 100;
   const panelWidth = Math.min(42, Math.max(30, Math.floor(cols * 0.34)));
   const convWidth = Math.max(20, cols - panelWidth - 2);
+  const [uiEpoch, setUiEpoch] = useState(0);
+  const theme = useMemo(() => createTheme({ ascii: Boolean(session.ui?.ascii) }), [uiEpoch, session.ui?.ascii]);
+  const { spinnerFrames: spinnerFrames2 } = theme;
   const commands = useMemo(
     () => createCommands({ driver, host: "construct", hostId: "construct", cwd }),
     [driver, cwd]
   );
-  const [transcript, setTranscript] = useState([]);
+  const [transcript, setTranscript] = useState(initialTranscript);
   const [live, setLive] = useState("");
   const [thinking, setThinking] = useState("");
   const [tools, setTools] = useState([]);
@@ -771,15 +861,35 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
   const [notice, setNotice] = useState(session.modelNotice || "");
   const [ctx, setCtx] = useState(null);
   const [frame, setFrame] = useState(0);
+  const [permissionPrompt, setPermissionPrompt] = useState(null);
   const [, forceTick] = useState(0);
   const busy = useRef(false);
+  const inputHistory = useRef([]);
+  const historyPos = useRef(-1);
+  useEffect(() => {
+    if (permissionBridge) {
+      permissionBridge.prompt = (req) => new Promise((resolve) => {
+        setPermissionPrompt({ ...req, resolve });
+      });
+      return () => {
+        permissionBridge.prompt = null;
+      };
+    }
+    return void 0;
+  }, [permissionBridge]);
   useEffect(() => {
     if (!working) return void 0;
-    const timer = setInterval(() => setFrame((f) => (f + 1) % spinnerFrames.length), 90);
+    const timer = setInterval(() => setFrame((f) => (f + 1) % spinnerFrames2.length), 90);
     return () => clearInterval(timer);
-  }, [working]);
-  const spin = spinnerFrames[frame];
+  }, [working, spinnerFrames2.length]);
+  const spin = spinnerFrames2[frame];
   const append = useCallback((role, text) => setTranscript((prev) => [...prev, { role, text }]), []);
+  const resolvePermission = useCallback((decision) => {
+    if (!permissionPrompt?.resolve) return;
+    permissionPrompt.resolve(decision);
+    setPermissionPrompt(null);
+    setInput("");
+  }, [permissionPrompt]);
   const handleCommand = useCallback(async (text) => {
     const out = createCollectWriter();
     const keep = await commands.handle(text, {
@@ -800,6 +910,7 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
     });
     const msg = stripAnsi(out.text()).trim();
     if (msg) append("construct", msg);
+    setUiEpoch((n) => n + 1);
     if (!keep) exit();
   }, [append, commands, exit, layers, session]);
   const submit = useCallback(async (text) => {
@@ -812,6 +923,11 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
     setWorking(true);
     setNotice("");
     append("you", text);
+    persist?.transcript?.("you", text);
+    if (!inputHistory.current.length || inputHistory.current[inputHistory.current.length - 1] !== text) {
+      inputHistory.current.push(text);
+    }
+    historyPos.current = -1;
     setLive("");
     setThinking("");
     setTools([]);
@@ -835,9 +951,9 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
           session,
           layers,
           onUpdate: (s, event) => {
-            if (persist) {
+            if (persist?.event) {
               try {
-                persist(event);
+                persist.event(event);
               } catch {
               }
             }
@@ -854,8 +970,10 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
           }
         }
       );
-      if (state.assistant) append("construct", state.assistant);
-      else if (state.error) append("construct", `[error] ${state.error}`);
+      if (state.assistant) {
+        append("construct", state.assistant);
+        persist?.transcript?.("construct", state.assistant);
+      } else if (state.error) append("construct", `[error] ${state.error}`);
       else append("construct", "[no output] check that a model is selected and the provider is authenticated");
     } catch (err) {
       append("construct", `[error] ${err.message}`);
@@ -867,6 +985,14 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
     }
   }, [append, driver, handleCommand, layers, persist, planTurn, session]);
   useInput((char, key) => {
+    if (permissionPrompt) {
+      const decision = parsePermissionKey(char);
+      if (decision) {
+        resolvePermission(decision);
+        return;
+      }
+      return;
+    }
     if (key.ctrl && char === "c") {
       if (busy.current) {
         try {
@@ -876,10 +1002,36 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
       } else exit();
       return;
     }
+    if (key.return && (key.shift || key.meta)) {
+      setInput((v) => `${v}
+`);
+      return;
+    }
     if (key.return) {
       const text = input;
       setInput("");
       submit(text);
+      return;
+    }
+    if (key.upArrow) {
+      const hist = inputHistory.current;
+      if (!hist.length) return;
+      const next = historyPos.current < 0 ? hist.length - 1 : Math.max(0, historyPos.current - 1);
+      historyPos.current = next;
+      setInput(hist[next]);
+      return;
+    }
+    if (key.downArrow) {
+      const hist = inputHistory.current;
+      if (!hist.length || historyPos.current < 0) return;
+      const next = historyPos.current + 1;
+      if (next >= hist.length) {
+        historyPos.current = -1;
+        setInput("");
+        return;
+      }
+      historyPos.current = next;
+      setInput(hist[next]);
       return;
     }
     if (key.backspace || key.delete) {
@@ -888,8 +1040,9 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
     }
     if (char && !key.ctrl && !key.meta) setInput((v) => v + char);
   });
-  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", children: [
+  return /* @__PURE__ */ jsx(ChatThemeContext.Provider, { value: theme, children: /* @__PURE__ */ jsxs(Box, { flexDirection: "column", children: [
     /* @__PURE__ */ jsx(HeaderBar, { cols, model: session.model, sandbox: session.sandbox, permissionMode: session.permissionMode, working, spin }),
+    /* @__PURE__ */ jsx(PermissionOverlay, { prompt: permissionPrompt }),
     /* @__PURE__ */ jsxs(Box, { children: [
       /* @__PURE__ */ jsx(
         ConversationPane,
@@ -921,16 +1074,38 @@ function App({ driver, session, layers, planTurn, persist, cwd }) {
           sandbox: session.sandbox,
           permissionMode: session.permissionMode,
           ctx,
-          spin
+          spin,
+          theme
         }
       )
     ] }),
-    /* @__PURE__ */ jsx(Footer, { cols, input, working, notice })
-  ] });
+    /* @__PURE__ */ jsx(Footer, { cols, input, working, notice, permissionActive: Boolean(permissionPrompt) })
+  ] }) });
 }
-function runInkChat({ driver, session, layers, planTurn = null, persist = null, cwd = process.cwd() } = {}) {
+function runInkChat({
+  driver,
+  session,
+  layers,
+  planTurn = null,
+  persist = null,
+  cwd = process.cwd(),
+  permissionBridge = null,
+  initialTranscript = []
+} = {}) {
   const instance = render(
-    /* @__PURE__ */ jsx(App, { driver, session, layers, planTurn, persist, cwd })
+    /* @__PURE__ */ jsx(
+      App,
+      {
+        driver,
+        session,
+        layers,
+        planTurn,
+        persist,
+        cwd,
+        permissionBridge,
+        initialTranscript
+      }
+    )
   );
   return instance.waitUntilExit();
 }
@@ -941,6 +1116,7 @@ export {
   EmptyState,
   HeaderBar,
   TransparencyPanel,
+  createTheme,
   index_default as default,
   runInkChat
 };

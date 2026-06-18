@@ -16,7 +16,10 @@ import React from 'react';
 import { render } from 'ink-testing-library';
 import { createTurnState, applyTurnEvent, runTurnInto } from '../../apps/chat/tui/turn-state.mjs';
 import { createSessionUsage } from '../../lib/chat/tui/usage.mjs';
+import { createTheme } from '../../apps/chat/tui/theme.mjs';
 import { TransparencyPanel } from '../../apps/chat/dist/tui.mjs';
+
+const PANEL_THEME = createTheme();
 
 function fakeDriver(events) {
   return {
@@ -101,6 +104,7 @@ test('TransparencyPanel renders live usage, model, and the tool timeline', () =>
       layers: { thinking: true, path: true, specialists: true, tools: true, observability: true },
       working: false,
       model: 'anthropic/claude-sonnet-4-6',
+      theme: PANEL_THEME,
     }),
   );
   const frame = lastFrame();
