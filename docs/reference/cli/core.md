@@ -128,7 +128,7 @@ Machine setup (scoped per ADR-0029): --scope=project|user|both, default project
 **Usage**
 
 ```bash
-construct install [--scope=project|user|both] [--yes] [--no-docker] [--reconfigure]
+construct install [--scope=project|user|both] [--yes] [--dry-run] [--no-docker] [--no-launch-agent] [--reconfigure] [--with-docling]
 ```
 
 **Options**
@@ -137,8 +137,11 @@ construct install [--scope=project|user|both] [--yes] [--no-docker] [--reconfigu
 |---|---|
 | `--scope=<s>` | project (default, no-op + guidance) | user (writes ~/.construct/, MCP, ~/.claude/* via consent) | both |
 | `--yes` | Apply defaults without prompts (only meaningful with --scope=user|both) |
+| `--dry-run` | Preview the install plan (scopes, files, services) without writing anything |
 | `--no-docker` | Skip Docker-based service setup (local Postgres) |
+| `--no-launch-agent` | Skip background macOS LaunchAgent registration |
 | `--reconfigure` | Re-prompt for service consent, ignoring cached answers |
+| `--with-docling` | Eagerly provision the docling document-extraction venv now (heavy, ~10 min; else lazy on first ingest) |
 
 ## construct intake
 

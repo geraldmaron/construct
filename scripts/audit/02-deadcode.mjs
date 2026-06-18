@@ -34,6 +34,33 @@ const EXCLUDE = /(node_modules|\.git|audit-artifacts|lib\/server\/static)/;
 
 const EXTRA_SOURCES = ['bin/construct'];
 
+// Modules launched by PATH from outside the JS import graph — a package.json script, a
+// Dockerfile CMD, or a beads git-hook — are reachable even with zero import edges. Their
+// repo-relative path appears verbatim in one of these manifests.
+
+const LAUNCH_SOURCES = ['package.json', 'Dockerfile', 'Dockerfile.worker',
+  '.beads/hooks/post-merge', '.beads/hooks/pre-push', '.beads/hooks/post-checkout'];
+
+// Confirmed not-dead despite test-only import edges: each is reached by a mechanism the
+// graph cannot see (external host plugin, computed-path subprocess) or is intentional
+// infrastructure consumed by a CI gate. Recorded here with the reason so the disposition
+// is auditable and NEW test-only modules still surface as findings.
+
+const ACCEPTED_TEST_ONLY = {
+  'lib/intake/daemon.mjs': 'entrypoint: `construct intake daemon start` builds a DaemonRunner via computed import',
+  'lib/beads/auto-close.mjs': 'entrypoint: the .beads/hooks/post-merge git hook runs it on merge',
+  'lib/opencode-runtime-plugin.mjs': 'entrypoint: loaded by the OpenCode host at runtime as a plugin, by path',
+  'lib/worker/entrypoint.mjs': 'staged entrypoint for the team/enterprise worker plane (bead construct-9dx); not wired in solo',
+  'lib/audit-rules.mjs': 'CI gate: rules-corpus reference audit, asserted from tests',
+  'lib/evals/retrieval-bench.mjs': 'CI eval harness: retrieval recall/precision/MRR regression gate',
+  'lib/template-registry.mjs': 'canonical specialist↔template map; a drift gate asserts it from tests',
+  'lib/templates/visual-requirements.mjs': 'doc visual postcondition specs; a gate asserts them from tests',
+  'lib/engine/tokens.mjs': 'token-count utility with a test contract; retained for budget enforcement',
+  'lib/deprecate.mjs': 'single-warning deprecation utility with a test contract; retained for API retirements',
+  'lib/storage/rrf.mjs': 'reciprocal-rank-fusion primitive with a correctness test; retained for hybrid retrieval',
+  'lib/task-graph/schema.mjs': 'task-graph node/edge schema constants with a validation test; retained for the task-graph store',
+};
+
 function walk(dir, exts) {
   const out = [];
   if (!fs.existsSync(dir)) return out;
@@ -89,15 +116,26 @@ export function runDeadCode() {
     return false;
   };
 
+  // A module's repo-relative path appearing in a launch manifest proves it is started by
+  // path; matching the full path (not the basename) avoids server.mjs-style collisions.
+
+  const launchCorpus = LAUNCH_SOURCES
+    .map((rel) => path.join(REPO_ROOT, rel))
+    .filter((p) => fs.existsSync(p))
+    .map((p) => fs.readFileSync(p, 'utf8'))
+    .join('\n');
+  const launchReferenced = (f) => launchCorpus.includes(path.relative(REPO_ROOT, f));
+
   const isEntry = (f) => /\/lib\/hooks\//.test(f) || /\/index\.mjs$/.test(f) ||
     f === path.join(REPO_ROOT, 'lib', 'embedded-contract', 'index.mjs');
 
   const dead = libFiles
-    .filter((f) => !referenced.has(f) && !isEntry(f) && !referencedByName(f))
+    .filter((f) => !referenced.has(f) && !isEntry(f) && !referencedByName(f) && !launchReferenced(f))
     .map((f) => path.relative(REPO_ROOT, f));
 
   const testOnly = libFiles
-    .filter((f) => referenced.has(f) && !isEntry(f))
+    .filter((f) => referenced.has(f) && !isEntry(f) && !launchReferenced(f))
+    .filter((f) => !(path.relative(REPO_ROOT, f) in ACCEPTED_TEST_ONLY))
     .filter((f) => {
       const importers = sources.filter((s) => {
         const src = fs.readFileSync(s, 'utf8');
