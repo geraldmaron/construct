@@ -29,6 +29,7 @@
     "0035-test-strategy-extend-not-rebuild",
     "0036-document-ingestion-docling-mcp-evaluation",
     "0037-specialist-prompt-format",
-    "0038-adaptive-local-prompt-composition"
+    "0038-adaptive-local-prompt-composition",
+    "0039-interaction-surface-model"
   ]
 }
