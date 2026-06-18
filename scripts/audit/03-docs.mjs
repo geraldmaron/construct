@@ -43,8 +43,19 @@ const RETIRED_ALIASES = { up: 'dev', down: 'stop', serve: 'dashboard' };
 
 // Tokens that legitimately follow `construct` in prose without being commands:
 // example placeholders and documented rejected/future verbs. Excluded from review noise.
+//   - capability verbs the capability-matrix names as skill-driven non-commands
+//     (build/fix/plan/ship/test) — it explicitly states "no `construct <verb>`";
+//   - install-scope verbs ADR-0029 lists under Rejected alternatives;
+//   - MCP tool names quoted in provider cookbook prose (provider_fetch/rovo_search);
+//   - concept nouns that trail "construct" in prose (agent/hooks/rules/strategy).
 
-const PLACEHOLDER_TOKENS = new Set(['foo', 'bar', 'baz', 'x', 'uri', 'cmd', 'command', 'name', 'project', 'analyze']);
+const PLACEHOLDER_TOKENS = new Set([
+  'foo', 'bar', 'baz', 'x', 'uri', 'cmd', 'command', 'name', 'project', 'analyze',
+  'build', 'fix', 'plan', 'ship', 'test',
+  'install-both', 'install-project', 'install-user',
+  'provider_fetch', 'rovo_search',
+  'agent', 'hooks', 'rules', 'strategy',
+]);
 
 function buildCorpus() {
   const files = walk(DOCS_DIR, ['.md', '.mdx']);

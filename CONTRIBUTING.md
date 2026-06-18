@@ -54,7 +54,9 @@ npm run lint:js
 npm run lint:profiles
 ```
 
-All seven must exit 0. The release pipeline in `docs/maintenance/release-and-deploy.md` runs the same checks before any artifact ships.
+All eight must exit 0. The release pipeline in `docs/maintenance/release-and-deploy.md` runs the same checks before any artifact ships.
+
+`npm run test:functional` includes the **audit-phase ratchet** (`tests/functional/audit-ratchet.functional.test.mjs`): it regenerates the 01-smoke, 02-deadcode, 03-docs, 03b-naming, and 06-audit finders and fails on any finding absent from `scripts/audit/baseline.json` — a new dead module, undocumented flag, orphaned doc, retired-alias/handler-name drift, or a dereferenced audit hook. Fix the drift, or, if intentional, add the id to the baseline.
 
 If your change touches a hook + observation, a profile + classifier, a CLI + durable state, or any other multi-component path, also add a functional test under `tests/functional/`. See `tests/functional/README.md` for the pattern. If `docs:update --check` fails, regenerate and commit:
 

@@ -52,5 +52,5 @@ Two-way door. Promoting the library back to a runtime `dependency` is a one-line
 ## References
 
 - [ADR 0001: Zero npm dependencies in core](0001-zero-npm-core.md)
-- [docs/dependencies.md](../dependencies.md) § Transitive vulnerability remediation
+- [docs/reference/dependencies.md](../reference/dependencies.md) § Transitive vulnerability remediation
 - `lib/storage/embeddings-engine.mjs`, `lib/storage/embeddings-legacy.mjs`, `lib/embed/semantic.mjs`
