@@ -1,0 +1,10 @@
+{
+  "name": "construct-chat",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Owned agent-loop engine and Ink multi-pane TUI for `construct chat` (ADR-0041). Built to apps/chat/dist/tui.mjs and loaded by the zero-dep launcher.",
+  "type": "module",
+  "scripts": {
+    "build": "npm --prefix ../.. run build:chat"
+  }
+}
