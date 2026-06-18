@@ -3,22 +3,14 @@
  *
  * Holds the colour palette, glyphs, the context-budget meter, the activity
  * spinner frames, and small formatters so the Ink components stay a thin
- * projection and the visual vocabulary is defined once. No React or Ink import,
- * so it is unit-testable and reused by every pane. Status is always carried by a
- * glyph as well as a colour, so meaning never depends on colour alone (WCAG).
+ * projection and the visual vocabulary is defined once. Semantic colours come
+ * from lib/chat/tui/presentation.mjs; createTheme({ ascii }) swaps Unicode
+ * glyphs for ASCII-safe fallbacks when config or CX_CHAT_ASCII requests it.
  */
 
-export const palette = {
-  accent: 'cyan',
-  accentAlt: 'magenta',
-  ok: 'green',
-  warn: 'yellow',
-  danger: 'red',
-  muted: 'gray',
-  text: 'white',
-};
+import { inkPalette } from '../../../lib/chat/tui/presentation.mjs';
 
-export const glyphs = {
+const UNICODE_GLYPHS = {
   brand: '\u25c6',
   dot: '\u25cf',
   arrow: '\u2192',
@@ -32,24 +24,52 @@ export const glyphs = {
   toolPending: '\u00b7',
 };
 
-export const spinnerFrames = ['\u280b', '\u2819', '\u2839', '\u2838', '\u283c', '\u2834', '\u2826', '\u2827', '\u2807', '\u280f'];
+const ASCII_GLYPHS = {
+  brand: '*',
+  dot: 'o',
+  arrow: '->',
+  caret: '>',
+  gutter: '|',
+  block: '#',
+  track: '-',
+  toolDone: '+',
+  toolFail: 'x',
+  toolBusy: '>',
+  toolPending: '.',
+};
 
-export function toolGlyph(status) {
-  if (status === 'completed') return glyphs.toolDone;
-  if (status === 'failed') return glyphs.toolFail;
-  if (status === 'in_progress') return glyphs.toolBusy;
-  return glyphs.toolPending;
+const BRAILLE_SPINNER = ['\u280b', '\u2819', '\u2839', '\u2838', '\u283c', '\u2834', '\u2826', '\u2827', '\u2807', '\u280f'];
+const ASCII_SPINNER = ['|', '/', '-', '\\'];
+
+const DEFAULT_THEME = createTheme({ ascii: false });
+
+export const palette = DEFAULT_THEME.palette;
+export const glyphs = DEFAULT_THEME.glyphs;
+export const spinnerFrames = DEFAULT_THEME.spinnerFrames;
+
+export function createTheme({ ascii = false } = {}) {
+  return {
+    palette: inkPalette(),
+    glyphs: ascii ? { ...ASCII_GLYPHS } : { ...UNICODE_GLYPHS },
+    spinnerFrames: ascii ? [...ASCII_SPINNER] : [...BRAILLE_SPINNER],
+  };
 }
 
-export function toolColor(status) {
-  if (status === 'completed') return palette.ok;
-  if (status === 'failed') return palette.danger;
-  if (status === 'in_progress') return palette.warn;
-  return palette.muted;
+export function toolGlyph(status, theme = DEFAULT_THEME) {
+  const g = theme.glyphs;
+  if (status === 'completed') return g.toolDone;
+  if (status === 'failed') return g.toolFail;
+  if (status === 'in_progress') return g.toolBusy;
+  return g.toolPending;
 }
 
-// Split a router model id ("github-copilot/gpt-5.4") into provider and name so
-// the header can dim the provider and emphasize the model.
+export function toolColor(status, theme = DEFAULT_THEME) {
+  const p = theme.palette;
+  if (status === 'completed') return p.ok;
+  if (status === 'failed') return p.danger;
+  if (status === 'in_progress') return p.warn;
+  return p.muted;
+}
 
 export function splitModel(id) {
   if (!id) return { provider: '', name: '(no model)' };
@@ -58,19 +78,18 @@ export function splitModel(id) {
   return { provider: id.slice(0, idx), name: id.slice(idx + 1) };
 }
 
-// A fixed-width fill bar for a used/size ratio. Only meaningful when the host
-// reports a real context size; callers must not synthesize one (no-fabrication).
-
-export function meter(used, size, width = 18) {
+export function meter(used, size, width = 18, theme = DEFAULT_THEME) {
+  const g = theme.glyphs;
   const ratio = size > 0 ? Math.max(0, Math.min(1, used / size)) : 0;
   const filled = Math.round(ratio * width);
-  return { bar: glyphs.block.repeat(filled) + glyphs.track.repeat(Math.max(0, width - filled)), ratio };
+  return { bar: g.block.repeat(filled) + g.track.repeat(Math.max(0, width - filled)), ratio };
 }
 
-export function ratioColor(ratio) {
-  if (ratio >= 0.85) return palette.danger;
-  if (ratio >= 0.6) return palette.warn;
-  return palette.ok;
+export function ratioColor(ratio, theme = DEFAULT_THEME) {
+  const p = theme.palette;
+  if (ratio >= 0.85) return p.danger;
+  if (ratio >= 0.6) return p.warn;
+  return p.ok;
 }
 
 export function percent(ratio) {
