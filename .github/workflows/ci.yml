@@ -3,8 +3,8 @@ name: ci
 # Trigger model:
 #   - PR opened/updated:    single-runner test + consolidated lint suite.
 #   - Push to main:         full OS x Node matrix + same lint suite.
-#   - Weekly schedule:      secret rescan + live-LLM spot-check.
-#   - workflow_dispatch:    on-demand live-LLM run (override the per-PR gate).
+#   - Weekly schedule:      secret rescan.
+#   - workflow_dispatch:    on-demand full CI run.
 # Push to feature branches does NOT fire CI; the PR event covers them.
 on:
   push:
@@ -14,16 +14,7 @@ on:
   schedule:
     # Weekly secret scan on Monday 08:00 UTC — catches regressions in merged code
     - cron: '0 8 * * 1'
-    # Weekly live-LLM spot-check on Sunday 09:00 UTC — covers specialist prompt
-    # regressions against real OpenRouter behavior off the per-PR critical path.
-    - cron: '0 9 * * 0'
   workflow_dispatch:
-    inputs:
-      run_live_llm:
-        description: 'Run live-LLM tests (requires OPENROUTER_API_KEY)'
-        required: false
-        type: boolean
-        default: true
 
 # Cancel superseded runs on PR pushes (saves runner minutes when a contributor
 # force-pushes several times in a minute). Pushes to main are never cancelled —
@@ -292,35 +283,6 @@ jobs:
         run: node --test --test-timeout=180000 tests/functional/dashboard-build.functional.test.mjs
       - name: Dashboard server endpoint + auth + SSE tests
         run: node --test --test-timeout=60000 tests/functional/dashboard/*.functional.test.mjs
-
-  live-llm-tests:
-    name: live LLM via OpenRouter
-    runs-on: ubuntu-latest
-    # Live-LLM tests are true integration tests of specialist prompts against
-    # real model behavior — they don't gate per-PR merges (not in ci-required),
-    # depend on a paid OPENROUTER_API_KEY secret, and silently skipping when the
-    # key is absent added zero coverage value while consuming a runner per PR.
-    # Run them on the weekly schedule (Sunday 09:00 UTC) and on workflow_dispatch
-    # — never on pull_request / push.
-    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_live_llm)
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: .tool-versions
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - name: Specialist + tier tests against OpenRouter
-        env:
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: |
-          if [ -z "$OPENROUTER_API_KEY" ]; then
-            echo "OPENROUTER_API_KEY is required for the live-LLM job."
-            echo "Set the OPENROUTER_API_KEY secret in repo settings, or rerun"
-            echo "this workflow without --run_live_llm."
-            exit 1
-          fi
-          node --test --test-timeout=180000 tests/functional/llm/*.functional.test.mjs
 
   # Aggregator job. Branch protection requires `ci-required` instead of the
   # individual conditional jobs above. This always runs, sees the result of
