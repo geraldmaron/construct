@@ -48,7 +48,7 @@ Construct automatically detects active sessions (e.g., via `gh auth status`) and
 ### Use Copilot Models in OpenCode
 
 1. Authenticate with GitHub: `gh auth login`
-2. Start Construct services: `construct up`
+2. Start Construct services: `construct dev`
 3. Open OpenCode: `opencode`
 4. The models will be available as `github-copilot/gpt-4o`, `github-copilot/claude-3.5-sonnet`, etc.
 
