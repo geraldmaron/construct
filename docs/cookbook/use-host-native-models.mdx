@@ -8,7 +8,7 @@ Subscription Bridges allow you to use premium models from services you are alrea
 ## How it Works
 
 1. **Detection:** Construct checks for active authenticated sessions on your machine (e.g., `gh auth status`).
-2. **Bridge Service:** When you run `construct up`, it starts a local "Bridge Service" (e.g., `copilot-bridge` on port 5174).
+2. **Bridge Service:** When you run `construct dev`, it starts a local "Bridge Service" (e.g., `copilot-bridge` on port 5174).
 3. **OpenCode Sync:** Construct automatically registers these bridges as custom providers in your `opencode.json` configuration.
 4. **Agentic Use:** You can now select these models in OpenCode's TUI or via the `/models` command.
 
@@ -37,7 +37,7 @@ If you have a GitHub Copilot subscription, you can use GPT-4o, Claude 3.5 Sonnet
 Bridges are started automatically when you run the standard Construct services:
 
 ```bash
-construct up
+construct dev
 ```
 
 You can check the status of active bridges in the Construct Dashboard or via `construct doctor`.

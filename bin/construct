@@ -1229,7 +1229,7 @@ async function resolveServiceSelection(args, selectable) {
   return null;
 }
 
-async function cmdUp(args = []) {
+async function cmdDev(args = []) {
   const { SELECTABLE_SERVICES } = await import('../lib/service-manager.mjs');
 
   // --only=a,b,c picks services non-interactively; --select opens a checklist.
@@ -1365,7 +1365,7 @@ async function cmdUp(args = []) {
   opLog.close(failed.length ? 'degraded' : 'ok', { failed: failed.map((r) => r.name) });
 }
 
-async function cmdDown() {
+async function cmdStop() {
   const { stopServices } = await import('../lib/service-manager.mjs');
   const result = await stopServices({ homeDir: HOME, rootDir: ROOT_DIR });
   for (const svc of result.results) {
@@ -1384,7 +1384,7 @@ async function cmdDown() {
   } catch { /* best effort */ }
 }
 
-async function cmdServe() {
+async function cmdDashboard() {
   if (restArgsCache.includes('--token')) {
     const { generateToken, setDashboardToken, getDashboardToken } = await import('../lib/server/auth.mjs');
     const existing = getDashboardToken();
@@ -1951,7 +1951,7 @@ async function cmdHosts() {
     printHostCapabilities();
   }
 }
-async function cmdSetup(args) {
+async function cmdInstall(args) {
   const { startOpLog } = await import('../lib/op-log.mjs');
   const opLog = startOpLog('install', { homeDir: HOME });
   opLog.event('args', { args });
@@ -2402,7 +2402,7 @@ async function cmdIntakeProcess(args, cwd) {
       errorln('Choose one:');
       errorln('  construct intake process --wait        Block until the holder finishes (default 30s).');
       errorln('  construct intake process --wait=<sec>  Block for a custom window.');
-      errorln('  construct down                          Stop background services, then retry.');
+      errorln('  construct stop                          Stop background services, then retry.');
       process.exit(2);
     }
     throw err;
@@ -5209,11 +5209,11 @@ async function readStdin() {
 
 const handlers = new Map([
   // Core
-  ['dev', cmdUp],
-  ['dashboard', cmdServe],
-  ['stop', cmdDown],
+  ['dev', cmdDev],
+  ['dashboard', cmdDashboard],
+  ['stop', cmdStop],
   ['status', cmdStatus],
-  ['install', cmdSetup],
+  ['install', cmdInstall],
   ['config', cmdConfig],
   ['intake', cmdIntake],
   ['recommendations', cmdRecommendations],
@@ -6433,7 +6433,7 @@ if (command !== 'hook') {
 
 const probe = await maybeFirstInvocationProbe({ command, homeDir: HOME, env: process.env });
 if (probe?.runSetup) {
-  await cmdSetup([]);
+  await cmdInstall([]);
 }
 
 await handler(rest);
