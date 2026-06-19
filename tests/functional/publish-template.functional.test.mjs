@@ -22,7 +22,9 @@ import {
   injectMermaidBrandTheme,
   preprocessMarkdownDiagrams,
   buildDistributionDiagramEnv,
+  resolvePuppeteerExecutable,
 } from '../../lib/diagram-export.mjs';
+import { pdfEngineFontOpts } from '../../lib/document-export.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const GOLDEN = path.join(REPO, 'tests', 'fixtures', 'publish', 'golden-prd-platform.md');
@@ -65,7 +67,29 @@ test('parseArtifactMetadata reads golden fixture fields', () => {
   assert.equal(meta.owner, 'cx-product-manager');
   assert.equal(meta.artifactType, 'prd-platform');
   assert.equal(meta.date, '2026-06-19');
-  assert.equal(meta.subtitle, '');
+  assert.match(meta.subtitle, /Governed agentic platform/);
+  assert.equal(meta.version, '0.1');
+  assert.equal(meta.docId, 'PRD-PLATFORM-001');
+});
+
+test('bundled distribution fonts ship with templates', () => {
+  const fontDir = path.join(REPO, 'templates', 'distribution', 'fonts');
+  for (const file of [
+    'Geist-Regular.ttf',
+    'Geist-SemiBold.ttf',
+    'GeistMono-Regular.ttf',
+  ]) {
+    assert.ok(fs.existsSync(path.join(fontDir, file)), `missing font ${file}`);
+  }
+});
+
+test('construct-prd.typ imports brand and omits stale style helper calls', () => {
+  const prd = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-prd.typ'), 'utf8');
+  assert.match(prd, /construct-masthead/);
+  assert.doesNotMatch(prd, /construct-body-text/);
+  assert.doesNotMatch(prd, /construct-heading-style/);
+  assert.doesNotMatch(prd, /pagebreak/);
+  assert.doesNotMatch(prd, /construct-hero/);
 });
 
 test('formatPublishDate normalizes Date objects to ISO dates', () => {
@@ -84,34 +108,81 @@ test('preprocessMarkdownForPdfExport strips duplicate cover title and metadata b
 });
 
 test('pandocMetadataArgs forwards non-empty metadata', () => {
-  const args = pandocMetadataArgs({ title: 'T', status: 'draft', owner: '', artifactType: 'prd-platform' });
-  assert.deepEqual(args, ['-M', 'title=T', '-M', 'status=draft', '-M', 'artifactType=prd-platform']);
+  const args = pandocMetadataArgs({
+    title: 'T',
+    status: 'draft',
+    owner: '',
+    artifactType: 'prd-platform',
+    version: '0.1',
+    docId: 'DOC-1',
+  });
+  assert.deepEqual(args, [
+    '-M', 'title=T',
+    '-M', 'status=draft',
+    '-M', 'artifactType=prd-platform',
+    '-M', 'version=0.1',
+    '-M', 'docId=DOC-1',
+  ]);
 });
 
-test('distribution diagram defaults use neutral theme', () => {
+test('distribution diagram defaults use compact hand-drawn sizing', () => {
   const defaults = distributionDiagramDefaults();
   assert.equal(defaults.d2Theme, 'neutral');
+  assert.equal(defaults.d2Sketch, true);
+  assert.equal(defaults.d2Scale, 0.9);
+  assert.equal(defaults.d2FontSize, 14);
+  assert.equal(defaults.figureMaxWidth, '84%');
+  assert.equal(defaults.mermaidLook, 'handDrawn');
+  assert.equal(defaults.mermaidWidth, 680);
+  assert.equal(defaults.mermaidScale, 0.92);
   assert.equal(defaults.accent, BRAND.accent);
 });
 
-test('injectMermaidBrandTheme adds init preamble with brand accent', () => {
+test('injectMermaidBrandTheme adds handDrawn init with brand accent', () => {
   const out = injectMermaidBrandTheme('flowchart TD\n  A --> B');
   assert.match(out, /%%\{init:/);
+  assert.match(out, /handDrawn/);
   assert.match(out, /8b5cf6/);
-  assert.doesNotMatch(out, /sketch/i);
 });
 
-test('preprocessMarkdownDiagrams brands mermaid fences only', () => {
+test('preprocessMarkdownDiagrams brands mermaid and d2 fences', () => {
   const md = '# Doc\n\n```mermaid\nflowchart TD\n  A --> B\n```\n\n```d2\na -> b\n```\n';
   const out = preprocessMarkdownDiagrams(md);
   assert.match(out, /8b5cf6/);
+  assert.match(out, /style\.font-size: 14/);
   assert.match(out, /```d2/);
 });
 
-test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME', () => {
+test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME and sketch flag', () => {
   const env = buildDistributionDiagramEnv({});
   assert.equal(env.CONSTRUCT_D2_THEME, '0');
+  assert.equal(env.CONSTRUCT_D2_SCALE, '0.9');
+  assert.equal(env.CONSTRUCT_D2_SKETCH, '1');
   assert.equal(env.CONSTRUCT_MERMAID_THEME, 'construct');
+  assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '680');
+});
+
+test('construct-brand.typ uses Geist family names for body prose', () => {
+  const brand = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-brand.typ'), 'utf8');
+  assert.match(brand, /construct-font-sans = \("Geist",\)/);
+  assert.match(brand, /#set text\(font: construct-font-sans[\s\S]*justify: false/);
+  assert.doesNotMatch(brand, /Libertinus|SourceSerif|Inter Display|IBM Plex/);
+  assert.match(brand, /construct-figure-max-width = 84%/);
+  assert.match(brand, /fit: "contain"/);
+});
+
+test('pdfEngineFontOpts passes typst font-path and ignore-system-fonts', () => {
+  const opts = pdfEngineFontOpts(REPO);
+  assert.match(opts.join(' '), /--font-path=.*templates\/distribution\/fonts/);
+  assert.match(opts.join(' '), /--ignore-system-fonts/);
+  assert.match(opts.join(' '), /--ignore-embedded-fonts/);
+});
+
+test('buildDistributionDiagramEnv sets Chrome path when available', () => {
+  const chrome = resolvePuppeteerExecutable(process.env);
+  const env = buildDistributionDiagramEnv({});
+  assert.equal(env.CONSTRUCT_D2_SKETCH, '1');
+  if (chrome) assert.equal(env.PUPPETEER_EXECUTABLE_PATH, chrome);
 });
 
 test('ARTIFACT_TEMPLATE_MAP covers all prd family types', () => {
