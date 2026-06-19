@@ -4,8 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
-### Fixed
-- **CI docs:verify on checkout with tracked `.cx/` demos** (`lib/project-init-shared.mjs`, `lib/chat/cli.mjs`, `lib/chat/commands.mjs`). `ensureCxDir` scaffold now includes required `What was in progress` and `Open issues` sections so strict `docs:verify` passes when `.cx/` exists without a committed `context.md`. Restored missing chat engine imports (`listChatModels`, `resolveSessionModel`, `resolveChatModelSelectionAsync`, `exportTurns`) that blocked eslint in CI.
+### Changed
+- **Repo hygiene — prune ephemeral `.cx/` session artifacts** (`.cx/demos/dashboard/`, timestamped demo renders, `.cx/diagrams/` dev sketches; `apps/docs/.gitignore`). Keeps committed demo tapes/mp4s and ADR-cited research; drops Playwright dashboard recordings and local diagram scratch. Docs site ignores `apps/docs/.cx/` runtime. (`lib/project-init-shared.mjs`, `lib/chat/cli.mjs`, `lib/chat/commands.mjs`). `ensureCxDir` scaffold now includes required `What was in progress` and `Open issues` sections so strict `docs:verify` passes when `.cx/` exists without a committed `context.md`. Restored missing chat engine imports (`listChatModels`, `resolveSessionModel`, `resolveChatModelSelectionAsync`, `exportTurns`) that blocked eslint in CI.
 - **Publish gate runs before toolchain detection** (`lib/publish.mjs`). `construct publish` on a failing artifact now returns `gateBlocked` even when Pandoc/Typst are absent — fixes CI and local machines without the export stack.
 - **Credential bootstrap tests on runners without `op` CLI** (`lib/providers/credential-bootstrap.mjs`). Injected `opRun` mocks bypass the `command -v op` gate so functional tests pass on CI.
 - **CI installs ink/react for chat TUI tests** (`.github/workflows/ci.yml`). `npm ci --ignore-scripts` skips optional deps; explicit install satisfies `ink-testing-library` peer deps.
