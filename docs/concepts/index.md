@@ -9,7 +9,11 @@ Concept pages explain *why* Construct works the way it does. They're not how-to 
 
 - **One persona, many specialists.** You address `@construct`. It dispatches work to a team of 28 specialists (architect, engineer, reviewer, QA, security, designer, …) under typed contracts. [Read more →](/concepts/agents-and-personas)
 
-- **Hard gates, not vibes.** Every code mutation runs through enforcement: no secrets, tests green, docs current, comments lint-clean, CI passes. Gates live in three places (write-time, commit-time, CI safety-net) and can be bypassed only with explicit env vars. [Read more →](/concepts/gates-and-enforcement)
+- **Hard gates, not vibes.** Every code mutation runs through enforcement: no secrets, tests green, docs current, comments lint-clean, CI passes. Gates live in three places (write-time, commit-time, CI safety-net). Quality gates fire unconditionally; notice-only signals auto-suppress in CI and non-TTY contexts. [Read more →](/concepts/gates-and-enforcement)
+
+- **Owned-loop chat.** `construct chat` runs Construct's own agent loop with a transparency-first terminal or browser surface — token/cost ledger, tool timeline, routing detail. Dashboard `/chat` mirrors the same loop. [Read more →](/cookbook/construct-chat)
+
+- **Oracle health review.** The Oracle meta-controller collects project signals, synthesizes gaps, auto-executes safe maintenance, and queues consequential fixes for approval. [Read more →](/concepts/architecture)
 
 - **Durable state.** Sessions survive boundary changes. Decisions get written to `.cx/context.md`, work-in-progress to beads, handoffs to `.cx/handoffs/`. The next session resumes from the right place. [Read more →](/concepts/beads-and-state)
 
