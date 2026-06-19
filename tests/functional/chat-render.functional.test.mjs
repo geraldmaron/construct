@@ -52,8 +52,8 @@ test('renderer labels every channel and respects NO_COLOR', async () => {
 
   await renderTurn({ driver: fakeDriver(SAMPLE), text: 'hi', layers, output: out.stream, colors, env });
 
-  assert.ok(out.text.includes('[thinking]'), 'thinking labeled');
-  assert.ok(out.text.includes('[tool]'), 'tool labeled');
+  assert.ok(out.text.includes('THINKING'), 'thinking labeled');
+  assert.ok(out.text.includes('TOOLS'), 'tool labeled');
   assert.ok(out.text.includes('construct'), 'assistant text labeled');
   assert.ok(out.text.includes('final answer'));
   assert.ok(!/\u001b\[/.test(out.text), 'no ANSI escapes under NO_COLOR');
@@ -67,6 +67,6 @@ test('disabling the thinking layer removes thinking but keeps message', async ()
 
   await renderTurn({ driver: fakeDriver(SAMPLE), text: 'hi', layers, output: out.stream, colors, env });
 
-  assert.ok(!out.text.includes('[thinking]'), 'thinking hidden when layer off');
+  assert.ok(!out.text.includes('THINKING'), 'thinking hidden when layer off');
   assert.ok(out.text.includes('final answer'), 'message still shown');
 });

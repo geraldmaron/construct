@@ -26,6 +26,18 @@ Use rfc.md instead for proposals that do not touch external contracts.
 ## Proposed contract
 <!-- The new interface in full. Schemas, endpoint signatures, payload shapes, permission rules, config fields. Be precise enough that a consumer can write against this spec without asking questions. -->
 
+```mermaid
+sequenceDiagram
+  participant Consumer
+  participant Platform
+  participant Backend
+  Consumer->>Platform: contract call
+  Platform->>Backend: validate and execute
+  Backend-->>Platform: result
+  Platform-->>Consumer: response
+  Note over Platform,Backend: error path — validation failure returns typed error
+```
+
 ## Backwards compatibility strategy
 <!-- How existing consumers are supported during transition. Options: versioning, dual-write, feature flags, shim layer, deprecation window. State which and why. -->
 

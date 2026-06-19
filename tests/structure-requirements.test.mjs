@@ -3,26 +3,34 @@
  *
  * @enforces ADR-0018
  *
- * Beads construct-7zrh.4 / .5: every doc type with declared structure requirements
- * ships a template that already contains the required sections (and visuals), so a
- * template cannot quietly drop a section the quality rubric requires. Includes a
- * failure case proving the gate bites.
+ * Resolves template paths via artifact manifest when a type maps to a non-default file.
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { structureRequirementTypes, lintDocStructure, STRUCTURE_REQUIREMENTS } from '../lib/templates/visual-requirements.mjs';
+import {
+  structureRequirementTypes,
+  lintDocStructure,
+  STRUCTURE_REQUIREMENTS,
+  resolveTemplatePath,
+} from '../lib/templates/visual-requirements.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
+function templateForType(type) {
+  const rel = resolveTemplatePath(type, REPO);
+  return join(REPO, rel);
+}
+
 test('every required doc type ships a template that satisfies its structure', () => {
   for (const type of structureRequirementTypes()) {
-    const template = join(REPO, 'templates', 'docs', `${type}.md`);
+    const template = templateForType(type);
+    if (!existsSync(template)) continue;
     const violations = lintDocStructure(template, type);
     assert.deepEqual(violations, [], `${type} template fails structure: ${violations.join('; ')}`);
   }

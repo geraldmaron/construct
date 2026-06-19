@@ -507,8 +507,14 @@ var init_host_capabilities = __esm({
 });
 
 // lib/env-config.mjs
+var CREDENTIAL_ENV_KEYS;
 var init_env_config = __esm({
   "lib/env-config.mjs"() {
+    init_credential_catalog();
+    init_secret_resolver();
+    CREDENTIAL_ENV_KEYS = new Set(
+      API_KEY_CREDENTIALS.flatMap((entry) => entry.envVars)
+    );
   }
 });
 
@@ -668,25 +674,25 @@ function checkType(value, expected) {
   if (expected === "array") return Array.isArray(value);
   return typeof value === expected;
 }
-function validateField(value, rule, path33) {
+function validateField(value, rule, path36) {
   const errors = [];
   if (value === void 0) {
-    if (rule.required) errors.push(`${path33}: required field missing`);
+    if (rule.required) errors.push(`${path36}: required field missing`);
     return errors;
   }
   if (!checkType(value, rule.type)) {
-    errors.push(`${path33}: expected type ${JSON.stringify(rule.type)}, got ${value === null ? "null" : typeof value}`);
+    errors.push(`${path36}: expected type ${JSON.stringify(rule.type)}, got ${value === null ? "null" : typeof value}`);
     return errors;
   }
   if (rule.enum && !rule.enum.includes(value)) {
-    errors.push(`${path33}: must be one of ${JSON.stringify(rule.enum)}, got ${JSON.stringify(value)}`);
+    errors.push(`${path36}: must be one of ${JSON.stringify(rule.enum)}, got ${JSON.stringify(value)}`);
   }
   if (rule.maxLength && typeof value === "string" && value.length > rule.maxLength) {
-    errors.push(`${path33}: exceeds maxLength ${rule.maxLength}`);
+    errors.push(`${path36}: exceeds maxLength ${rule.maxLength}`);
   }
   if (rule.fields && checkType(value, "object")) {
     for (const [key, subRule] of Object.entries(rule.fields)) {
-      errors.push(...validateField(value[key], subRule, `${path33}.${key}`));
+      errors.push(...validateField(value[key], subRule, `${path36}.${key}`));
     }
   }
   return errors;
@@ -1376,9 +1382,9 @@ function resolveAdapterKey(modelId) {
 function readCapabilityCache() {
   try {
     if (!existsSync(CAPABILITY_CACHE_PATH)) return {};
-    const cached = JSON.parse(readFileSync(CAPABILITY_CACHE_PATH, "utf8"));
-    if (cached?.fetchedAt && Date.now() - cached.fetchedAt < CAPABILITY_CACHE_TTL_MS) {
-      return cached.capabilities || {};
+    const cached2 = JSON.parse(readFileSync(CAPABILITY_CACHE_PATH, "utf8"));
+    if (cached2?.fetchedAt && Date.now() - cached2.fetchedAt < CAPABILITY_CACHE_TTL_MS) {
+      return cached2.capabilities || {};
     }
   } catch {
   }
@@ -2756,24 +2762,24 @@ var init_models = __esm({
 });
 
 // lib/project-root.mjs
-import fs9 from "node:fs";
-import path10 from "node:path";
+import fs10 from "node:fs";
+import path11 from "node:path";
 import os8 from "node:os";
 import { createHash } from "node:crypto";
 function findProjectRoot(start = process.cwd()) {
-  let dir = path10.resolve(start);
-  const stop = path10.resolve(HOME);
+  let dir = path11.resolve(start);
+  const stop = path11.resolve(HOME);
   while (true) {
-    if (MARKERS.some((m) => fs9.existsSync(path10.join(dir, m)))) return dir;
+    if (MARKERS.some((m) => fs10.existsSync(path11.join(dir, m)))) return dir;
     if (dir === stop) return null;
-    const parent = path10.dirname(dir);
+    const parent = path11.dirname(dir);
     if (parent === dir) return null;
     dir = parent;
   }
 }
 function projectIdFor(projectRoot) {
   if (!projectRoot) return null;
-  return createHash("sha256").update(path10.resolve(projectRoot)).digest("hex").slice(0, 12);
+  return createHash("sha256").update(path11.resolve(projectRoot)).digest("hex").slice(0, 12);
 }
 function resolveProjectScope(cwd = process.cwd()) {
   if (cache.has(cwd)) return cache.get(cwd);
@@ -2785,16 +2791,16 @@ function resolveProjectScope(cwd = process.cwd()) {
   const result = {
     projectRoot,
     projectId: projectIdFor(projectRoot),
-    cxDir: path10.join(projectRoot, ".cx")
+    cxDir: path11.join(projectRoot, ".cx")
   };
   cache.set(cwd, result);
   return result;
 }
 function resolveProjectScopedPath(basename, { cwd, ensureDir = true } = {}) {
   const scope = resolveProjectScope(cwd ?? process.cwd());
-  const dir = scope ? scope.cxDir : path10.join(HOME, ".cx");
-  if (ensureDir && !fs9.existsSync(dir)) fs9.mkdirSync(dir, { recursive: true });
-  return path10.join(dir, basename);
+  const dir = scope ? scope.cxDir : path11.join(HOME, ".cx");
+  if (ensureDir && !fs10.existsSync(dir)) fs10.mkdirSync(dir, { recursive: true });
+  return path11.join(dir, basename);
 }
 var HOME, MARKERS, cache;
 var init_project_root = __esm({
@@ -2819,16 +2825,16 @@ var init_doc_stamp = __esm({
 });
 
 // lib/project-init-shared.mjs
-import fs12 from "node:fs";
-import path12 from "node:path";
+import fs13 from "node:fs";
+import path13 from "node:path";
 function ensureCxDir(rootDir) {
-  const cxDir = path12.join(rootDir, ".cx");
-  const contextPath = path12.join(cxDir, "context.md");
-  if (!fs12.existsSync(cxDir)) {
-    fs12.mkdirSync(cxDir, { recursive: true });
+  const cxDir = path13.join(rootDir, ".cx");
+  const contextPath = path13.join(cxDir, "context.md");
+  if (!fs13.existsSync(cxDir)) {
+    fs13.mkdirSync(cxDir, { recursive: true });
   }
-  if (!fs12.existsSync(contextPath)) {
-    fs12.writeFileSync(contextPath, buildContextMarkdown(), "utf8");
+  if (!fs13.existsSync(contextPath)) {
+    fs13.writeFileSync(contextPath, buildContextMarkdown(), "utf8");
   }
   return cxDir;
 }
@@ -2862,9 +2868,9 @@ var init_project_init_shared = __esm({
 
 // lib/intake/quarantine.mjs
 import { existsSync as existsSync2, mkdirSync as mkdirSync2, readdirSync, readFileSync as readFileSync2, writeFileSync as writeFileSync2, rmSync } from "node:fs";
-import path13 from "node:path";
+import path14 from "node:path";
 function quarantineDir(rootDir) {
-  return path13.join(rootDir, QUEUE_SUBDIR, "quarantine");
+  return path14.join(rootDir, QUEUE_SUBDIR, "quarantine");
 }
 function shouldQuarantine(triage) {
   if (!triage || triage.intakeType === "unknown") {
@@ -2887,7 +2893,7 @@ function writeQuarantinePacket(rootDir, packet, quarantineReason) {
   mkdirSync2(dir, { recursive: true });
   const id = packet.id;
   if (!id) throw new Error("writeQuarantinePacket: packet.id required");
-  const filePath = path13.join(dir, `${id}.json`);
+  const filePath = path14.join(dir, `${id}.json`);
   const payload = {
     ...packet,
     status: "quarantined",
@@ -2908,18 +2914,18 @@ var init_quarantine = __esm({
 
 // lib/intake/filesystem-queue.mjs
 import { existsSync as existsSync3, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync3, rmSync as rmSync2, writeFileSync as writeFileSync3 } from "node:fs";
-import path14 from "node:path";
+import path15 from "node:path";
 function queueRoot(rootDir) {
-  return path14.join(rootDir, QUEUE_SUBDIR2);
+  return path15.join(rootDir, QUEUE_SUBDIR2);
 }
 function pendingDir(rootDir) {
-  return path14.join(queueRoot(rootDir), "pending");
+  return path15.join(queueRoot(rootDir), "pending");
 }
 function processedDir(rootDir) {
-  return path14.join(queueRoot(rootDir), "processed");
+  return path15.join(queueRoot(rootDir), "processed");
 }
 function skippedDir(rootDir) {
-  return path14.join(queueRoot(rootDir), "skipped");
+  return path15.join(queueRoot(rootDir), "skipped");
 }
 function slugify(value) {
   return String(value || "untitled").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "untitled";
@@ -2945,7 +2951,7 @@ var init_filesystem_queue = __esm({
         if (!entry?.intake?.sourcePath) throw new Error("enqueue: entry.intake.sourcePath is required");
         ensureCxDir(this.rootDir);
         const ts = timestamp();
-        const slug = slugify(path14.basename(entry.intake.sourcePath, path14.extname(entry.intake.sourcePath)));
+        const slug = slugify(path15.basename(entry.intake.sourcePath, path15.extname(entry.intake.sourcePath)));
         const id = `${ts}-${slug}`;
         const quarantineDecision = shouldQuarantine(entry?.triage);
         if (quarantineDecision.quarantine) {
@@ -2955,7 +2961,7 @@ var init_filesystem_queue = __esm({
         }
         const dir = pendingDir(this.rootDir);
         mkdirSync3(dir, { recursive: true });
-        const filePath = path14.join(dir, `${id}.json`);
+        const filePath = path15.join(dir, `${id}.json`);
         const payload = { id, createdAt: (/* @__PURE__ */ new Date()).toISOString(), status: "pending", ...entry };
         writeFileSync3(filePath, JSON.stringify(payload, null, 2) + "\n", "utf8");
         return { id, filePath, route: "pending" };
@@ -2964,7 +2970,7 @@ var init_filesystem_queue = __esm({
         const dir = pendingDir(this.rootDir);
         if (!existsSync3(dir)) return [];
         return readdirSync2(dir).filter((name) => name.endsWith(".json")).map((name) => {
-          const filePath = path14.join(dir, name);
+          const filePath = path15.join(dir, name);
           try {
             const data = JSON.parse(readFileSync3(filePath, "utf8"));
             return { ...data, filePath };
@@ -2986,7 +2992,7 @@ var init_filesystem_queue = __esm({
           quarantineDir(this.rootDir)
         ];
         for (const dir of dirs) {
-          const filePath = path14.join(dir, `${id}.json`);
+          const filePath = path15.join(dir, `${id}.json`);
           if (existsSync3(filePath)) {
             const data = JSON.parse(readFileSync3(filePath, "utf8"));
             return { ...data, filePath };
@@ -2995,38 +3001,38 @@ var init_filesystem_queue = __esm({
         return null;
       }
       markProcessed(id, { processedBy = "unknown", notes = "" } = {}) {
-        const src = path14.join(pendingDir(this.rootDir), `${id}.json`);
+        const src = path15.join(pendingDir(this.rootDir), `${id}.json`);
         if (!existsSync3(src)) throw new Error(`markProcessed: no pending entry ${id}`);
         const data = JSON.parse(readFileSync3(src, "utf8"));
         data.status = "processed";
         data.processedAt = (/* @__PURE__ */ new Date()).toISOString();
         data.processedBy = processedBy;
         if (notes) data.notes = notes;
-        const dst = path14.join(processedDir(this.rootDir), `${id}.json`);
+        const dst = path15.join(processedDir(this.rootDir), `${id}.json`);
         ensureCxDir(this.rootDir);
-        mkdirSync3(path14.dirname(dst), { recursive: true });
+        mkdirSync3(path15.dirname(dst), { recursive: true });
         writeFileSync3(dst, JSON.stringify(data, null, 2) + "\n", "utf8");
         rmSync2(src);
         return { id, filePath: dst };
       }
       markSkipped(id, { skippedBy = "unknown", reason = "" } = {}) {
-        const src = path14.join(pendingDir(this.rootDir), `${id}.json`);
+        const src = path15.join(pendingDir(this.rootDir), `${id}.json`);
         if (!existsSync3(src)) throw new Error(`markSkipped: no pending entry ${id}`);
         const data = JSON.parse(readFileSync3(src, "utf8"));
         data.status = "skipped";
         data.skippedAt = (/* @__PURE__ */ new Date()).toISOString();
         data.skippedBy = skippedBy;
         if (reason) data.reason = reason;
-        const dst = path14.join(skippedDir(this.rootDir), `${id}.json`);
+        const dst = path15.join(skippedDir(this.rootDir), `${id}.json`);
         ensureCxDir(this.rootDir);
-        mkdirSync3(path14.dirname(dst), { recursive: true });
+        mkdirSync3(path15.dirname(dst), { recursive: true });
         writeFileSync3(dst, JSON.stringify(data, null, 2) + "\n", "utf8");
         rmSync2(src);
         return { id, filePath: dst };
       }
       reopen(id) {
         for (const dir of [processedDir(this.rootDir), skippedDir(this.rootDir)]) {
-          const src = path14.join(dir, `${id}.json`);
+          const src = path15.join(dir, `${id}.json`);
           if (!existsSync3(src)) continue;
           const data = JSON.parse(readFileSync3(src, "utf8"));
           data.status = "pending";
@@ -3036,12 +3042,12 @@ var init_filesystem_queue = __esm({
           delete data.skippedAt;
           delete data.skippedBy;
           delete data.reason;
-          const dst = path14.join(pendingDir(this.rootDir), `${id}.json`);
+          const dst = path15.join(pendingDir(this.rootDir), `${id}.json`);
           ensureCxDir(this.rootDir);
-          mkdirSync3(path14.dirname(dst), { recursive: true });
+          mkdirSync3(path15.dirname(dst), { recursive: true });
           writeFileSync3(dst, JSON.stringify(data, null, 2) + "\n", "utf8");
           rmSync2(src);
-          return { id, filePath: dst, from: path14.basename(dir) };
+          return { id, filePath: dst, from: path15.basename(dir) };
         }
         throw new Error(`reopen: no processed or skipped entry ${id}`);
       }
@@ -3050,9 +3056,9 @@ var init_filesystem_queue = __esm({
 });
 
 // lib/intake/git-queue.mjs
-import path15 from "node:path";
-import fs13 from "fs";
-import { execSync as execSync2 } from "node:child_process";
+import path16 from "node:path";
+import fs14 from "fs";
+import { execSync as execSync3 } from "node:child_process";
 function slugify2(value) {
   return String(value || "untitled").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "untitled";
 }
@@ -3069,29 +3075,29 @@ var init_git_queue = __esm({
     GitIntakeQueue = class {
       constructor({ project, rootDir = process.cwd() } = {}) {
         this.project = project;
-        this.inboxRoot = path15.join(rootDir, ".cx", "team-inbox");
+        this.inboxRoot = path16.join(rootDir, ".cx", "team-inbox");
         this._ensureDirs();
       }
       _ensureDirs() {
         ["pending", "claimed", "processed", "skipped", "quarantine"].forEach((dir) => {
-          fs13.mkdirSync(path15.join(this.inboxRoot, dir), { recursive: true });
+          fs14.mkdirSync(path16.join(this.inboxRoot, dir), { recursive: true });
         });
       }
       _gitAddAndCommit(filePath, message) {
         try {
-          execSync2(`git add "${filePath}"`, { stdio: "ignore" });
-          execSync2(`git commit -m "${message}"`, { stdio: "ignore" });
+          execSync3(`git add "${filePath}"`, { stdio: "ignore" });
+          execSync3(`git commit -m "${message}"`, { stdio: "ignore" });
         } catch (err) {
         }
       }
       async enqueue(entry) {
         const ts = timestamp2();
-        const slug = slugify2(path15.basename(entry.intake.sourcePath, path15.extname(entry.intake.sourcePath)));
+        const slug = slugify2(path16.basename(entry.intake.sourcePath, path16.extname(entry.intake.sourcePath)));
         const id = `${ts}-${slug}`;
         const triage = entry.triage || {};
         const quarantineDecision = shouldQuarantine(triage);
         const subDir = quarantineDecision.quarantine ? "quarantine" : "pending";
-        const filePath = path15.join(this.inboxRoot, subDir, `${id}.json`);
+        const filePath = path16.join(this.inboxRoot, subDir, `${id}.json`);
         const data = {
           id,
           project: this.project,
@@ -3099,23 +3105,23 @@ var init_git_queue = __esm({
           createdAt: (/* @__PURE__ */ new Date()).toISOString(),
           ...entry
         };
-        fs13.writeFileSync(filePath, JSON.stringify(data, null, 2));
+        fs14.writeFileSync(filePath, JSON.stringify(data, null, 2));
         this._gitAddAndCommit(filePath, `Enqueue task ${id}`);
         return { id, route: subDir === "quarantine" ? "quarantine" : "pending", reason: quarantineDecision.reason };
       }
       async listPending({ limit = 100 } = {}) {
-        const pendingDir2 = path15.join(this.inboxRoot, "pending");
-        return fs13.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).slice(0, limit).map((f) => JSON.parse(fs13.readFileSync(path15.join(pendingDir2, f), "utf8")));
+        const pendingDir2 = path16.join(this.inboxRoot, "pending");
+        return fs14.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).slice(0, limit).map((f) => JSON.parse(fs14.readFileSync(path16.join(pendingDir2, f), "utf8")));
       }
       async count() {
-        const pendingDir2 = path15.join(this.inboxRoot, "pending");
-        return fs13.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).length;
+        const pendingDir2 = path16.join(this.inboxRoot, "pending");
+        return fs14.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).length;
       }
       async read(id) {
         for (const dir of ["pending", "claimed", "processed", "skipped", "quarantine"]) {
-          const searchPath = dir === "claimed" ? path15.join(this.inboxRoot, dir) : path15.join(this.inboxRoot, dir, `${id}.json`);
-          if (dir !== "claimed" && fs13.existsSync(searchPath)) {
-            return JSON.parse(fs13.readFileSync(searchPath, "utf8"));
+          const searchPath = dir === "claimed" ? path16.join(this.inboxRoot, dir) : path16.join(this.inboxRoot, dir, `${id}.json`);
+          if (dir !== "claimed" && fs14.existsSync(searchPath)) {
+            return JSON.parse(fs14.readFileSync(searchPath, "utf8"));
           }
         }
         return null;
@@ -3123,27 +3129,27 @@ var init_git_queue = __esm({
       async claim({ claimedBy }) {
         if (!claimedBy) throw new Error("claim: claimedBy is required");
         try {
-          execSync2("git pull --rebase", { stdio: "ignore" });
+          execSync3("git pull --rebase", { stdio: "ignore" });
         } catch (e) {
         }
-        const pendingDir2 = path15.join(this.inboxRoot, "pending");
-        const files = fs13.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).sort();
+        const pendingDir2 = path16.join(this.inboxRoot, "pending");
+        const files = fs14.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).sort();
         if (files.length === 0) return null;
         const fileName = files[0];
-        const pendingPath2 = path15.join(pendingDir2, fileName);
-        const workerDir = path15.join(this.inboxRoot, "claimed", claimedBy);
-        fs13.mkdirSync(workerDir, { recursive: true });
-        const claimedPath = path15.join(workerDir, fileName);
+        const pendingPath2 = path16.join(pendingDir2, fileName);
+        const workerDir = path16.join(this.inboxRoot, "claimed", claimedBy);
+        fs14.mkdirSync(workerDir, { recursive: true });
+        const claimedPath = path16.join(workerDir, fileName);
         try {
-          fs13.renameSync(pendingPath2, claimedPath);
-          const data = JSON.parse(fs13.readFileSync(claimedPath, "utf8"));
+          fs14.renameSync(pendingPath2, claimedPath);
+          const data = JSON.parse(fs14.readFileSync(claimedPath, "utf8"));
           data.status = "claimed";
           data.claimedBy = claimedBy;
           data.claimedAt = (/* @__PURE__ */ new Date()).toISOString();
-          fs13.writeFileSync(claimedPath, JSON.stringify(data, null, 2));
-          execSync2(`git add .cx/team-inbox/pending/${fileName} .cx/team-inbox/claimed/${claimedBy}/${fileName}`, { stdio: "ignore" });
-          execSync2(`git commit -m "Claim task ${data.id} by ${claimedBy}"`, { stdio: "ignore" });
-          execSync2("git push", { stdio: "ignore" });
+          fs14.writeFileSync(claimedPath, JSON.stringify(data, null, 2));
+          execSync3(`git add .cx/team-inbox/pending/${fileName} .cx/team-inbox/claimed/${claimedBy}/${fileName}`, { stdio: "ignore" });
+          execSync3(`git commit -m "Claim task ${data.id} by ${claimedBy}"`, { stdio: "ignore" });
+          execSync3("git push", { stdio: "ignore" });
           return data;
         } catch (err) {
           console.error(`Failed to claim ${fileName}: ${err.message}`);
@@ -3155,20 +3161,20 @@ var init_git_queue = __esm({
         let currentDir = null;
         const dirs = ["pending", "claimed"];
         for (const d of dirs) {
-          const dirPath = path15.join(this.inboxRoot, d);
+          const dirPath = path16.join(this.inboxRoot, d);
           if (d === "claimed") {
-            const workers = fs13.readdirSync(dirPath);
+            const workers = fs14.readdirSync(dirPath);
             for (const w of workers) {
-              const p = path15.join(dirPath, w, `${id}.json`);
-              if (fs13.existsSync(p)) {
+              const p = path16.join(dirPath, w, `${id}.json`);
+              if (fs14.existsSync(p)) {
                 foundPath = p;
-                currentDir = path15.join(d, w);
+                currentDir = path16.join(d, w);
                 break;
               }
             }
           } else {
-            const p = path15.join(dirPath, `${id}.json`);
-            if (fs13.existsSync(p)) {
+            const p = path16.join(dirPath, `${id}.json`);
+            if (fs14.existsSync(p)) {
               foundPath = p;
               currentDir = d;
               break;
@@ -3177,17 +3183,17 @@ var init_git_queue = __esm({
           if (foundPath) break;
         }
         if (!foundPath) throw new Error(`markProcessed: no entry ${id} found`);
-        const data = JSON.parse(fs13.readFileSync(foundPath, "utf8"));
+        const data = JSON.parse(fs14.readFileSync(foundPath, "utf8"));
         data.status = "processed";
         data.processedBy = processedBy;
         data.processedAt = (/* @__PURE__ */ new Date()).toISOString();
         data.notes = notes;
-        const processedPath = path15.join(this.inboxRoot, "processed", `${id}.json`);
-        fs13.renameSync(foundPath, processedPath);
-        fs13.writeFileSync(processedPath, JSON.stringify(data, null, 2));
+        const processedPath = path16.join(this.inboxRoot, "processed", `${id}.json`);
+        fs14.renameSync(foundPath, processedPath);
+        fs14.writeFileSync(processedPath, JSON.stringify(data, null, 2));
         this._gitAddAndCommit(this.inboxRoot, `Mark task ${id} as processed`);
         try {
-          execSync2("git push", { stdio: "ignore" });
+          execSync3("git push", { stdio: "ignore" });
         } catch (e) {
         }
         return { id };
@@ -3226,7 +3232,7 @@ var init_deployment_mode = __esm({
 });
 
 // lib/intake/queue.mjs
-import path16 from "node:path";
+import path17 from "node:path";
 function resolveBackend(env) {
   const override = env?.[INTAKE_QUEUE_BACKEND_ENV_KEY];
   if (override === "filesystem" || override === "git") return override;
@@ -3236,7 +3242,7 @@ function resolveBackend(env) {
 function resolveProject(rootDir, env) {
   const explicit = env?.[INTAKE_PROJECT_ENV_KEY];
   if (explicit && explicit.trim()) return explicit.trim();
-  return path16.basename(path16.resolve(rootDir)).trim() || "construct";
+  return path17.basename(path17.resolve(rootDir)).trim() || "construct";
 }
 function createIntakeQueue(rootDir, env = process.env, opts = {}) {
   const backend = opts.backend || resolveBackend(env);
@@ -3477,9 +3483,9 @@ var init_research = __esm({
 });
 
 // lib/intake/classify.mjs
-import path17 from "node:path";
+import path18 from "node:path";
 function formatTriageLine(sourcePath, triage) {
-  const basename = sourcePath ? path17.basename(sourcePath) : "(unknown source)";
+  const basename = sourcePath ? path18.basename(sourcePath) : "(unknown source)";
   if (!triage || triage.intakeType === "unknown") {
     return `${basename} \u2192 unclassified \xB7 owner: ${triage?.primaryOwner ?? "orchestrator"} \xB7 next: ${triage?.recommendedAction ?? "summarize"}`;
   }
@@ -3499,13 +3505,13 @@ var init_classify = __esm({
 });
 
 // lib/policy/engine.mjs
-import path18 from "node:path";
+import path19 from "node:path";
 import { fileURLToPath } from "node:url";
 var MODULE_DIR, DEFAULT_MANIFEST_PATH;
 var init_engine = __esm({
   "lib/policy/engine.mjs"() {
-    MODULE_DIR = path18.dirname(fileURLToPath(import.meta.url));
-    DEFAULT_MANIFEST_PATH = path18.join(MODULE_DIR, "..", "..", "specialists", "role-manifests.json");
+    MODULE_DIR = path19.dirname(fileURLToPath(import.meta.url));
+    DEFAULT_MANIFEST_PATH = path19.join(MODULE_DIR, "..", "..", "specialists", "role-manifests.json");
   }
 });
 
@@ -3677,10 +3683,10 @@ import { dirname, join as join2, resolve } from "node:path";
 import { fileURLToPath as fileURLToPath2 } from "node:url";
 function loadProfile(id) {
   if (!id || typeof id !== "string") return null;
-  const path33 = join2(PROFILES_DIR, `${id}.json`);
-  if (!existsSync4(path33)) return null;
+  const path36 = join2(PROFILES_DIR, `${id}.json`);
+  if (!existsSync4(path36)) return null;
   try {
-    const raw = JSON.parse(readFileSync4(path33, "utf8"));
+    const raw = JSON.parse(readFileSync4(path36, "utf8"));
     return raw;
   } catch {
     return null;
@@ -3688,10 +3694,10 @@ function loadProfile(id) {
 }
 function loadCustomProfile(cwd) {
   if (!cwd) return null;
-  const path33 = join2(cwd, ".cx", "profile.json");
-  if (!existsSync4(path33)) return null;
+  const path36 = join2(cwd, ".cx", "profile.json");
+  if (!existsSync4(path36)) return null;
   try {
-    const raw = JSON.parse(readFileSync4(path33, "utf8"));
+    const raw = JSON.parse(readFileSync4(path36, "utf8"));
     if (raw && raw.custom === true) return raw;
     return null;
   } catch {
@@ -3778,13 +3784,13 @@ var init_contract = __esm({
 });
 
 // lib/parity.mjs
-import path19 from "node:path";
+import path20 from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
 var MODULE_DIR3, ROOT_DIR;
 var init_parity = __esm({
   "lib/parity.mjs"() {
-    MODULE_DIR3 = path19.dirname(fileURLToPath3(import.meta.url));
-    ROOT_DIR = path19.resolve(MODULE_DIR3, "..");
+    MODULE_DIR3 = path20.dirname(fileURLToPath3(import.meta.url));
+    ROOT_DIR = path20.resolve(MODULE_DIR3, "..");
   }
 });
 
@@ -3868,6 +3874,85 @@ var init_workflow_defs = __esm({
   }
 });
 
+// lib/artifact-manifest.mjs
+import fs15 from "node:fs";
+import path21 from "node:path";
+import { fileURLToPath as fileURLToPath4 } from "node:url";
+function manifestPathForRoot(root) {
+  return path21.join(root, "specialists", "artifact-manifest.json");
+}
+function findConstructRoot(startPath = process.cwd()) {
+  let current = path21.resolve(startPath);
+  while (true) {
+    const manifest = manifestPathForRoot(current);
+    if (fs15.existsSync(manifest)) return current;
+    const parent = path21.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  if (fs15.existsSync(manifestPathForRoot(PACKAGE_ROOT))) return PACKAGE_ROOT;
+  return null;
+}
+function loadArtifactManifest({ rootDir, force = false, cwd = process.cwd() } = {}) {
+  const resolvedRoot = rootDir ?? findConstructRoot(cwd) ?? PACKAGE_ROOT;
+  if (cached && !force && cachedRoot === resolvedRoot) return cached;
+  const p = manifestPathForRoot(resolvedRoot);
+  if (!fs15.existsSync(p)) {
+    cached = EMPTY_MANIFEST;
+    cachedRoot = resolvedRoot;
+    return cached;
+  }
+  cached = JSON.parse(fs15.readFileSync(p, "utf8"));
+  cachedRoot = resolvedRoot;
+  return cached;
+}
+function artifactTypes(opts = {}) {
+  const manifest = loadArtifactManifest(opts);
+  return Object.keys(manifest.artifacts ?? {});
+}
+function structureRequirementsFromManifest(opts = {}) {
+  const manifest = loadArtifactManifest(opts);
+  const out = {};
+  for (const [type, entry] of Object.entries(manifest.artifacts ?? {})) {
+    if (entry.structureRequirements?.length) out[type] = entry.structureRequirements;
+  }
+  return out;
+}
+function visualRequirementsFromManifest(opts = {}) {
+  const manifest = loadArtifactManifest(opts);
+  const out = {};
+  for (const [type, entry] of Object.entries(manifest.artifacts ?? {})) {
+    if (entry.visualRequirements?.length) out[type] = entry.visualRequirements;
+  }
+  return out;
+}
+var PACKAGE_ROOT, EMPTY_MANIFEST, cached, cachedRoot;
+var init_artifact_manifest = __esm({
+  "lib/artifact-manifest.mjs"() {
+    PACKAGE_ROOT = path21.resolve(path21.dirname(fileURLToPath4(import.meta.url)), "..");
+    EMPTY_MANIFEST = { version: 1, artifacts: {} };
+    cached = null;
+    cachedRoot = null;
+  }
+});
+
+// lib/artifact-type-from-path.mjs
+var KNOWN;
+var init_artifact_type_from_path = __esm({
+  "lib/artifact-type-from-path.mjs"() {
+    init_artifact_manifest();
+    KNOWN = new Set(artifactTypes());
+  }
+});
+
+// lib/artifact-reviewers.mjs
+var init_artifact_reviewers = __esm({
+  "lib/artifact-reviewers.mjs"() {
+    init_artifact_manifest();
+    init_artifact_type_from_path();
+  }
+});
+
 // lib/specialists/postconditions.mjs
 function isNonEmptyArray(value) {
   return Array.isArray(value) && value.length > 0;
@@ -3948,13 +4033,15 @@ var init_violation_log = __esm({
 
 // lib/contracts/validate.mjs
 import { join as join4, dirname as dirname3, resolve as resolve2 } from "node:path";
-import { fileURLToPath as fileURLToPath4 } from "node:url";
+import { fileURLToPath as fileURLToPath5 } from "node:url";
 var REPO_ROOT2, CONTRACTS_PATH, CONTRACTS_SCHEMA_PATH, REGISTRY_PATH;
 var init_validate = __esm({
   "lib/contracts/validate.mjs"() {
+    init_artifact_reviewers();
+    init_artifact_type_from_path();
     init_postconditions();
     init_violation_log();
-    REPO_ROOT2 = resolve2(dirname3(fileURLToPath4(import.meta.url)), "..", "..");
+    REPO_ROOT2 = resolve2(dirname3(fileURLToPath5(import.meta.url)), "..", "..");
     CONTRACTS_PATH = join4(REPO_ROOT2, "specialists", "contracts.json");
     CONTRACTS_SCHEMA_PATH = join4(REPO_ROOT2, "specialists", "contracts.schema.json");
     REGISTRY_PATH = join4(REPO_ROOT2, "specialists", "registry.json");
@@ -3962,35 +4049,49 @@ var init_validate = __esm({
 });
 
 // lib/templates/visual-requirements.mjs
+var LEGACY_STRUCTURE, STRUCTURE_REQUIREMENTS, VISUAL_REQUIREMENTS;
 var init_visual_requirements = __esm({
   "lib/templates/visual-requirements.mjs"() {
     init_validate();
+    init_artifact_manifest();
+    LEGACY_STRUCTURE = {
+      "persona-artifact": ["Goals", "Frustrations", "Decision rights", "Output contract", "Failure modes", "Evidence"],
+      "skill-artifact": ["What this skill produces", "When to invoke it", "Competency rubric", "Failure modes", "Worked example"],
+      "research-finding": ["SOURCES", "FINDINGS", "INFERENCES", "CONFIDENCE", "GAPS", "RECOMMENDATION"]
+    };
+    STRUCTURE_REQUIREMENTS = {
+      ...structureRequirementsFromManifest(),
+      ...LEGACY_STRUCTURE
+    };
+    VISUAL_REQUIREMENTS = {
+      ...visualRequirementsFromManifest()
+    };
   }
 });
 
 // lib/registry/validate.mjs
-import path20 from "node:path";
-import { fileURLToPath as fileURLToPath5 } from "node:url";
+import path22 from "node:path";
+import { fileURLToPath as fileURLToPath6 } from "node:url";
 var MODULE_DIR4, REPO_ROOT3, REGISTRY_PATH2, STALE_MS;
 var init_validate2 = __esm({
   "lib/registry/validate.mjs"() {
     init_workflow_defs();
     init_visual_requirements();
-    MODULE_DIR4 = path20.dirname(fileURLToPath5(import.meta.url));
-    REPO_ROOT3 = path20.resolve(MODULE_DIR4, "..", "..");
-    REGISTRY_PATH2 = path20.join(REPO_ROOT3, "registry", "capabilities.json");
+    MODULE_DIR4 = path22.dirname(fileURLToPath6(import.meta.url));
+    REPO_ROOT3 = path22.resolve(MODULE_DIR4, "..", "..");
+    REGISTRY_PATH2 = path22.join(REPO_ROOT3, "registry", "capabilities.json");
     STALE_MS = 90 * 24 * 60 * 60 * 1e3;
   }
 });
 
 // lib/host-disposition.mjs
-import fs14 from "node:fs";
-import path21 from "node:path";
+import fs16 from "node:fs";
+import path23 from "node:path";
 function isConstructPackageRepo(dir) {
   try {
-    const pkgPath = path21.join(dir, "package.json");
-    if (!fs14.existsSync(pkgPath)) return false;
-    const pkg = JSON.parse(fs14.readFileSync(pkgPath, "utf8"));
+    const pkgPath = path23.join(dir, "package.json");
+    if (!fs16.existsSync(pkgPath)) return false;
+    const pkg = JSON.parse(fs16.readFileSync(pkgPath, "utf8"));
     if (!pkg) return false;
     if (pkg.name === "construct" || pkg.name === "@geraldmaron/construct") return true;
     return pkg.bin && (pkg.bin === "bin/construct" || typeof pkg.bin === "object" && pkg.bin.construct === "bin/construct");
@@ -4011,11 +4112,11 @@ var init_detect_existing_structure = __esm({
 
 // lib/specialist-contracts.mjs
 import { dirname as dirname4, join as join5, resolve as resolve3 } from "node:path";
-import { fileURLToPath as fileURLToPath6 } from "node:url";
+import { fileURLToPath as fileURLToPath7 } from "node:url";
 var MODULE_DIR5, REPO_ROOT4, CONTRACTS_PATH2;
 var init_specialist_contracts = __esm({
   "lib/specialist-contracts.mjs"() {
-    MODULE_DIR5 = dirname4(fileURLToPath6(import.meta.url));
+    MODULE_DIR5 = dirname4(fileURLToPath7(import.meta.url));
     REPO_ROOT4 = resolve3(MODULE_DIR5, "..");
     CONTRACTS_PATH2 = join5(REPO_ROOT4, "specialists", "contracts.json");
   }
@@ -4023,13 +4124,13 @@ var init_specialist_contracts = __esm({
 
 // lib/telemetry/intent-verifications.mjs
 import os9 from "node:os";
-import path22 from "node:path";
+import path24 from "node:path";
 var DEFAULT_LOG_PATH;
 var init_intent_verifications = __esm({
   "lib/telemetry/intent-verifications.mjs"() {
     init_rotate();
     init_project_root();
-    DEFAULT_LOG_PATH = path22.join(os9.homedir(), ".cx", "intent-verifications.jsonl");
+    DEFAULT_LOG_PATH = path24.join(os9.homedir(), ".cx", "intent-verifications.jsonl");
   }
 });
 
@@ -4043,12 +4144,12 @@ var init_intent_classifier = __esm({
 });
 
 // lib/orchestration/routing-tables.mjs
-import { fileURLToPath as fileURLToPath7 } from "node:url";
+import { fileURLToPath as fileURLToPath8 } from "node:url";
 var REGISTRY_PATH3;
 var init_routing_tables = __esm({
   "lib/orchestration/routing-tables.mjs"() {
     init_project_root();
-    REGISTRY_PATH3 = fileURLToPath7(new URL("../../specialists/registry.json", import.meta.url));
+    REGISTRY_PATH3 = fileURLToPath8(new URL("../../specialists/registry.json", import.meta.url));
   }
 });
 
@@ -4058,14 +4159,15 @@ var init_orchestration_policy = __esm({
     init_specialist_contracts();
     init_intent_classifier();
     init_routing_tables();
+    init_artifact_manifest();
     init_routing_tables();
   }
 });
 
 // lib/workflow-state.mjs
-import fs15 from "node:fs";
-import path23 from "node:path";
-import { execSync as execSync3 } from "node:child_process";
+import fs17 from "node:fs";
+import path25 from "node:path";
+import { execSync as execSync4 } from "node:child_process";
 function normalizePhase(value, fallback = null) {
   return PHASES.includes(value) ? value : fallback;
 }
@@ -4097,15 +4199,15 @@ function slugify3(value) {
 }
 function projectName(root) {
   try {
-    const remote = execSync3("git remote get-url origin", { cwd: root, timeout: 3e3, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    const remote = execSync4("git remote get-url origin", { cwd: root, timeout: 3e3, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
     const match = remote.match(/[:/]([^/]+\/[^/.]+)(?:\.git)?$/);
     if (match) return match[1];
   } catch {
   }
-  return path23.basename(root);
+  return path25.basename(root);
 }
 function workflowPath(root = process.cwd()) {
-  return path23.join(root, ".cx", "workflow.json");
+  return path25.join(root, ".cx", "workflow.json");
 }
 function defaultWorkflow(root = process.cwd(), title = "Untitled workflow", specRef = null) {
   const id = `${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}-${slugify3(title)}`;
@@ -4140,17 +4242,17 @@ function defaultWorkflow(root = process.cwd(), title = "Untitled workflow", spec
 }
 function loadWorkflow(root = process.cwd()) {
   const file = workflowPath(root);
-  if (!fs15.existsSync(file)) return null;
-  return normalizeWorkflow(JSON.parse(fs15.readFileSync(file, "utf8")));
+  if (!fs17.existsSync(file)) return null;
+  return normalizeWorkflow(JSON.parse(fs17.readFileSync(file, "utf8")));
 }
 function saveWorkflow(workflow, root = process.cwd()) {
   const file = workflowPath(root);
-  fs15.mkdirSync(path23.dirname(file), { recursive: true });
+  fs17.mkdirSync(path25.dirname(file), { recursive: true });
   const normalized = {
     ...normalizeWorkflow(structuredClone(workflow)),
     updatedAt: now()
   };
-  fs15.writeFileSync(file, `${JSON.stringify(normalized, null, 2)}
+  fs17.writeFileSync(file, `${JSON.stringify(normalized, null, 2)}
 `, "utf8");
   return normalized;
 }
@@ -4555,7 +4657,7 @@ function runWorkflowCli(argv = process.argv.slice(2), root = process.cwd()) {
   if (command === "from-plan") {
     const file = options._[0] || options.file;
     if (!file) throw new Error("Usage: construct workflow from-plan plan.md [--phase=implement] [--owner=cx-engineer]");
-    const markdown = fs15.readFileSync(path23.resolve(root, file), "utf8");
+    const markdown = fs17.readFileSync(path25.resolve(root, file), "utf8");
     const { workflow, count } = addTasksFromPlan(root, markdown, {
       phase: options.phase,
       owner: options.owner,
@@ -4630,16 +4732,60 @@ var init_workflow_state = __esm({
 });
 
 // lib/oracle/org-graph.mjs
-import path24 from "node:path";
-import { fileURLToPath as fileURLToPath8 } from "node:url";
-var MODULE_DIR6, PACKAGE_ROOT;
+import path26 from "node:path";
+import { fileURLToPath as fileURLToPath9 } from "node:url";
+var MODULE_DIR6, PACKAGE_ROOT2;
 var init_org_graph = __esm({
   "lib/oracle/org-graph.mjs"() {
     init_workflow_state();
     init_validate2();
     init_host_disposition();
-    MODULE_DIR6 = path24.dirname(fileURLToPath8(import.meta.url));
-    PACKAGE_ROOT = path24.resolve(MODULE_DIR6, "../..");
+    MODULE_DIR6 = path26.dirname(fileURLToPath9(import.meta.url));
+    PACKAGE_ROOT2 = path26.resolve(MODULE_DIR6, "../..");
+  }
+});
+
+// lib/audit-skills.mjs
+var init_audit_skills = __esm({
+  "lib/audit-skills.mjs"() {
+  }
+});
+
+// lib/telemetry/skill-calls.mjs
+import os10 from "node:os";
+import path27 from "node:path";
+var DEFAULT_LOG_PATH2;
+var init_skill_calls = __esm({
+  "lib/telemetry/skill-calls.mjs"() {
+    init_rotate();
+    init_project_root();
+    DEFAULT_LOG_PATH2 = path27.join(os10.homedir(), ".cx", "skill-calls.jsonl");
+  }
+});
+
+// lib/role-preload.mjs
+var init_role_preload = __esm({
+  "lib/role-preload.mjs"() {
+    init_skill_calls();
+  }
+});
+
+// lib/audit-specialists.mjs
+var init_audit_specialists = __esm({
+  "lib/audit-specialists.mjs"() {
+    init_audit_skills();
+    init_artifact_manifest();
+    init_role_preload();
+  }
+});
+
+// lib/oracle/artifact-gate.mjs
+var init_artifact_gate = __esm({
+  "lib/oracle/artifact-gate.mjs"() {
+    init_audit_specialists();
+    init_artifact_type_from_path();
+    init_artifact_reviewers();
+    init_host_disposition();
   }
 });
 
@@ -4652,6 +4798,7 @@ var init_read_model = __esm({
     init_host_disposition();
     init_detect_existing_structure();
     init_org_graph();
+    init_artifact_gate();
     RECENT_MS = 24 * 60 * 60 * 1e3;
     CENSUS_STALE_MS = 7 * 24 * 60 * 60 * 1e3;
   }
@@ -4680,14 +4827,14 @@ var init_policy = __esm({
 // lib/install/stage-project.mjs
 import { spawnSync as spawnSync3 } from "node:child_process";
 import { existsSync as existsSync5, copyFileSync, writeFileSync as writeFileSync4, mkdirSync as mkdirSync4, chmodSync } from "node:fs";
-import path25 from "node:path";
+import path28 from "node:path";
 function stageProjectAdapters({ projectRoot, packageRoot, pkgVersion, log, hosts = null }) {
   if (!projectRoot) throw new Error("stageProjectAdapters: projectRoot is required");
   if (!packageRoot) throw new Error("stageProjectAdapters: packageRoot is required");
   const emit2 = typeof log === "function" ? log : () => {
   };
-  const templateDir = path25.join(packageRoot, "templates", "distribution");
-  const syncScript = path25.join(packageRoot, "scripts", "sync-specialists.mjs");
+  const templateDir = path28.join(packageRoot, "templates", "distribution");
+  const syncScript = path28.join(packageRoot, "scripts", "sync-specialists.mjs");
   ensureProjectLauncher({ projectRoot, templateDir, pkgVersion });
   emit2(`staged .construct/ launcher in ${projectRoot}`);
   if (!existsSync5(syncScript)) {
@@ -4709,10 +4856,10 @@ function stageProjectAdapters({ projectRoot, packageRoot, pkgVersion, log, hosts
   return { staged: true, synced: true };
 }
 function ensureProjectLauncher({ projectRoot, templateDir, pkgVersion }) {
-  const dotConstruct = path25.join(projectRoot, ".construct");
+  const dotConstruct = path28.join(projectRoot, ".construct");
   mkdirSync4(dotConstruct, { recursive: true });
-  mkdirSync4(path25.join(dotConstruct, "cache", "bin"), { recursive: true });
-  const versionPath = path25.join(dotConstruct, "version");
+  mkdirSync4(path28.join(dotConstruct, "cache", "bin"), { recursive: true });
+  const versionPath = path28.join(dotConstruct, "version");
   if (!existsSync5(versionPath) && pkgVersion) {
     writeFileSync4(versionPath, pkgVersion + "\n");
   }
@@ -4722,8 +4869,8 @@ function ensureProjectLauncher({ projectRoot, templateDir, pkgVersion }) {
     ["bootstrap.ps1", 420]
   ];
   for (const [name, mode] of copies) {
-    const src = path25.join(templateDir, name);
-    const dst = path25.join(dotConstruct, name);
+    const src = path28.join(templateDir, name);
+    const dst = path28.join(dotConstruct, name);
     if (!existsSync5(src)) continue;
     copyFileSync(src, dst);
     try {
@@ -4738,8 +4885,8 @@ var init_stage_project = __esm({
 });
 
 // lib/adapters-sync.mjs
-import path26 from "node:path";
-import { fileURLToPath as fileURLToPath9 } from "node:url";
+import path29 from "node:path";
+import { fileURLToPath as fileURLToPath10 } from "node:url";
 function resolveAdapterHosts({ forceAll = false, extra = [] } = {}) {
   if (forceAll) return ["claude", "opencode", "codex", "vscode", "cursor"];
   const hosts = new Set(extra);
@@ -4778,8 +4925,8 @@ var init_adapters_sync = __esm({
     init_host_capabilities();
     init_host_disposition();
     init_stage_project();
-    MODULE_DIR7 = path26.dirname(fileURLToPath9(import.meta.url));
-    PKG_ROOT = path26.resolve(MODULE_DIR7, "..");
+    MODULE_DIR7 = path29.dirname(fileURLToPath10(import.meta.url));
+    PKG_ROOT = path29.resolve(MODULE_DIR7, "..");
     HOST_ID_MAP = {
       "Claude Code": "claude",
       OpenCode: "opencode",
@@ -4799,18 +4946,18 @@ var init_adapters_sync = __esm({
 });
 
 // lib/oracle/verdicts.mjs
-import fs16 from "node:fs";
-import path27 from "node:path";
+import fs18 from "node:fs";
+import path30 from "node:path";
 function verdictsDir(projectDir) {
-  return path27.join(projectDir, ".cx", "oracle", "verdicts");
+  return path30.join(projectDir, ".cx", "oracle", "verdicts");
 }
 function readLatestVerdict(projectDir) {
   const dir = verdictsDir(projectDir);
-  if (!fs16.existsSync(dir)) return null;
-  const files = fs16.readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
+  if (!fs18.existsSync(dir)) return null;
+  const files = fs18.readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
   if (!files.length) return null;
   try {
-    const data = JSON.parse(fs16.readFileSync(path27.join(dir, files[files.length - 1]), "utf8"));
+    const data = JSON.parse(fs18.readFileSync(path30.join(dir, files[files.length - 1]), "utf8"));
     return data.latest ?? data;
   } catch {
     return null;
@@ -4822,29 +4969,29 @@ var init_verdicts = __esm({
 });
 
 // lib/beads-lock.mjs
-import path28 from "node:path";
-import { fileURLToPath as fileURLToPath10 } from "node:url";
+import path31 from "node:path";
+import { fileURLToPath as fileURLToPath11 } from "node:url";
 var __dirname, ROOT_DIR2;
 var init_beads_lock = __esm({
   "lib/beads-lock.mjs"() {
-    __dirname = path28.dirname(fileURLToPath10(import.meta.url));
-    ROOT_DIR2 = path28.resolve(__dirname, "..");
+    __dirname = path31.dirname(fileURLToPath11(import.meta.url));
+    ROOT_DIR2 = path31.resolve(__dirname, "..");
   }
 });
 
 // lib/beads-optimistic.mjs
-import path29 from "node:path";
-import { fileURLToPath as fileURLToPath11 } from "node:url";
+import path32 from "node:path";
+import { fileURLToPath as fileURLToPath12 } from "node:url";
 var __dirname2;
 var init_beads_optimistic = __esm({
   "lib/beads-optimistic.mjs"() {
-    __dirname2 = path29.dirname(fileURLToPath11(import.meta.url));
+    __dirname2 = path32.dirname(fileURLToPath12(import.meta.url));
   }
 });
 
 // lib/beads-client.mjs
-import path30 from "node:path";
-import { fileURLToPath as fileURLToPath12 } from "node:url";
+import path33 from "node:path";
+import { fileURLToPath as fileURLToPath13 } from "node:url";
 var __dirname3;
 var init_beads_client = __esm({
   "lib/beads-client.mjs"() {
@@ -4852,7 +4999,7 @@ var init_beads_client = __esm({
     init_beads_optimistic();
     init_beads_lock();
     init_beads_optimistic();
-    __dirname3 = path30.dirname(fileURLToPath12(import.meta.url));
+    __dirname3 = path33.dirname(fileURLToPath13(import.meta.url));
   }
 });
 
@@ -4903,11 +5050,11 @@ var init_event_bus = __esm({
 
 // lib/roles/manifest.mjs
 import { dirname as dirname5, join as join6 } from "node:path";
-import { fileURLToPath as fileURLToPath13 } from "node:url";
+import { fileURLToPath as fileURLToPath14 } from "node:url";
 var __dirname4, MANIFEST_PATH;
 var init_manifest = __esm({
   "lib/roles/manifest.mjs"() {
-    __dirname4 = dirname5(fileURLToPath13(import.meta.url));
+    __dirname4 = dirname5(fileURLToPath14(import.meta.url));
     MANIFEST_PATH = join6(__dirname4, "..", "..", "specialists", "role-manifests.json");
   }
 });
@@ -4951,16 +5098,16 @@ var init_execute = __esm({
 });
 
 // lib/oracle/actions.mjs
-import fs17 from "node:fs";
-import path31 from "node:path";
-import { fileURLToPath as fileURLToPath14 } from "node:url";
+import fs19 from "node:fs";
+import path34 from "node:path";
+import { fileURLToPath as fileURLToPath15 } from "node:url";
 function pendingPath(projectDir) {
-  return path31.join(projectDir, ".cx", "oracle", "pending.jsonl");
+  return path34.join(projectDir, ".cx", "oracle", "pending.jsonl");
 }
 function listPending(projectDir) {
   const file = pendingPath(projectDir);
-  if (!fs17.existsSync(file)) return [];
-  return fs17.readFileSync(file, "utf8").split("\n").filter(Boolean).map((line) => {
+  if (!fs19.existsSync(file)) return [];
+  return fs19.readFileSync(file, "utf8").split("\n").filter(Boolean).map((line) => {
     try {
       return JSON.parse(line);
     } catch {
@@ -4981,25 +5128,25 @@ var init_actions = __esm({
     init_dispatch();
     init_execute();
     init_routing();
-    MODULE_DIR8 = path31.dirname(fileURLToPath14(import.meta.url));
+    MODULE_DIR8 = path34.dirname(fileURLToPath15(import.meta.url));
   }
 });
 
 // lib/oracle/index.mjs
-import fs18 from "node:fs";
-import path32 from "node:path";
+import fs20 from "node:fs";
+import path35 from "node:path";
 import { homedir as homedir3 } from "node:os";
 function runtimeDir(homeDir2 = homedir3()) {
-  return path32.join(homeDir2, ".cx", "runtime", "oracle");
+  return path35.join(homeDir2, ".cx", "runtime", "oracle");
 }
 function lastTickPath(homeDir2 = homedir3()) {
-  return path32.join(runtimeDir(homeDir2), "last-tick.json");
+  return path35.join(runtimeDir(homeDir2), "last-tick.json");
 }
 function readLastTick(homeDir2 = homedir3()) {
   const file = lastTickPath(homeDir2);
-  if (!fs18.existsSync(file)) return null;
+  if (!fs20.existsSync(file)) return null;
   try {
-    return JSON.parse(fs18.readFileSync(file, "utf8"));
+    return JSON.parse(fs20.readFileSync(file, "utf8"));
   } catch {
     return null;
   }
@@ -5417,10 +5564,44 @@ async function runTurnWithFallback({
   return { state: lastState, model, notice: lastNotice };
 }
 
+// lib/chat/session-context.mjs
+import fs9 from "node:fs";
+import path10 from "node:path";
+import { execSync as execSync2 } from "node:child_process";
+function buildPlanContext({ session, cwd = process.cwd(), turnBlocks = [], text = "" } = {}) {
+  const turns = turnBlocks.filter((item) => item.kind === "turn");
+  const lastTurn = turns.length ? turns[turns.length - 1].block : null;
+  let workingBranch = null;
+  try {
+    workingBranch = execSync2("git branch --show-current", { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null;
+  } catch {
+  }
+  let projectSummary = null;
+  const contextPath = path10.join(cwd, ".cx", "context.md");
+  try {
+    if (fs9.existsSync(contextPath)) {
+      projectSummary = fs9.readFileSync(contextPath, "utf8").slice(0, 500);
+    }
+  } catch {
+  }
+  const trimmed = String(text).trim();
+  const vagueFollowUp = /^(tell me more|what about|continue|go on|explain|elaborate|and\?)/i.test(trimmed);
+  const projectQuestion = /\b(what is this project|what('s| is) this (repo|project|codebase)|describe this project)\b/i.test(trimmed);
+  return {
+    turnIndex: session?.usage?.turns ?? 0,
+    priorIntent: lastTurn?.overlay?.intent ?? null,
+    priorWorkCategory: lastTurn?.overlay?.workCategory ?? null,
+    workingBranch,
+    projectSummary,
+    vagueFollowUp: vagueFollowUp && (session?.usage?.turns ?? 0) > 0,
+    projectQuestion
+  };
+}
+
 // lib/chat/export.mjs
 init_project_root();
-import fs10 from "node:fs";
-import path11 from "node:path";
+import fs11 from "node:fs";
+import path12 from "node:path";
 
 // lib/chat/tui/turn-present.mjs
 function summarizeToolCalls(tools = []) {
@@ -5461,11 +5642,6 @@ function formatRefsInline(refs, { max = 3 } = {}) {
   const shown = refs.slice(0, max);
   return `${shown.join(", ")} +${refs.length - max} more`;
 }
-function formatSourceToolCounts(byTool) {
-  const entries = Object.entries(byTool || {});
-  if (!entries.length) return "";
-  return entries.map(([tool, n]) => `${tool} ${n}`).join("  ");
-}
 function contextRows(overlay, { layers = null } = {}) {
   if (!overlay) return [];
   const rows = [];
@@ -5498,8 +5674,8 @@ function toolGroupLabel(group) {
 // lib/chat/export.mjs
 function exportDir({ cwd }) {
   const base = resolveProjectScopedPath("chat-sessions", { cwd, ensureDir: true });
-  const dir = path11.join(base, "exports");
-  fs10.mkdirSync(dir, { recursive: true });
+  const dir = path12.join(base, "exports");
+  fs11.mkdirSync(dir, { recursive: true });
   return dir;
 }
 function turnToMarkdown(turn) {
@@ -5519,14 +5695,14 @@ function exportTurns(turnBlocks, { scope = "last", cwd = process.cwd() } = {}) {
   else if (scope === "turn" && turns.length) selected = [turns[turns.length - 1]];
   const body = selected.map(turnToMarkdown).join("\n---\n\n");
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-  const file = path11.join(exportDir({ cwd }), `${stamp}-${scope}-answer.md`);
-  fs10.writeFileSync(file, `${body}
+  const file = path12.join(exportDir({ cwd }), `${stamp}-${scope}-answer.md`);
+  fs11.writeFileSync(file, `${body}
 `, "utf8");
   return { ok: true, path: file, count: selected.length };
 }
 
 // lib/chat/config.mjs
-import fs11 from "node:fs";
+import fs12 from "node:fs";
 init_project_root();
 var LAYER_KEYS = ["thinking", "path", "specialists", "tools", "observability"];
 var PERMISSION_MODES = ["ask", "allow_once", "allow_always", "reject"];
@@ -5541,7 +5717,7 @@ var DEFAULTS = Object.freeze({
   thinking: true,
   permissionMode: "allow_once",
   sandbox: null,
-  ui: Object.freeze({ ascii: false, inspector: "auto", theme: "auto" })
+  ui: Object.freeze({ ascii: false, inspector: "off", theme: "auto" })
 });
 var CONFIG_BASENAME = "chat-config.json";
 function saveChatConfig(config, { cwd = process.cwd() } = {}) {
@@ -5551,7 +5727,7 @@ function saveChatConfig(config, { cwd = process.cwd() } = {}) {
     if (config[key] == null) continue;
     persisted[key] = key === "layers" ? { ...config.layers } : key === "ui" ? { ...config.ui } : config[key];
   }
-  fs11.writeFileSync(target, `${JSON.stringify(persisted, null, 2)}
+  fs12.writeFileSync(target, `${JSON.stringify(persisted, null, 2)}
 `);
   return target;
 }
@@ -6199,8 +6375,8 @@ function sourceFromToolEvent(event) {
   if (!event) return null;
   const title = event.title || event.kind || "";
   if (title === "read" || title === "grep" || title === "glob") {
-    const path33 = event.input?.path || event.input?.pattern || event.input?.glob;
-    if (path33) return { tool: title, ref: String(path33) };
+    const path36 = event.input?.path || event.input?.pattern || event.input?.glob;
+    if (path36) return { tool: title, ref: String(path36) };
   }
   if (title === "construct_tool") {
     const name = event.input?.name;
@@ -6281,14 +6457,6 @@ function finalizeTurn(turn) {
     if (!turn.notices.includes(msg)) turn.notices.push(msg);
   }
   return turn;
-}
-function shouldShowInspector({ uiInspector = "auto", turn = null, forced = null } = {}) {
-  if (forced != null) return forced;
-  const mode = uiInspector || "auto";
-  if (mode === "on") return true;
-  if (mode === "off") return false;
-  if (!turn) return false;
-  return Boolean(turn.overlay?.specialists?.length || turn.tools?.length || turn.thinking);
 }
 
 // lib/chat/tui/color-scheme.mjs
@@ -6521,18 +6689,18 @@ function stripInline(s) {
 
 // apps/chat/tui/turn-ui.jsx
 init_session_prelude();
-import { jsx, jsxs } from "react/jsx-runtime";
+import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 var LABEL_WIDTH = 10;
 function Rule({ width, color, palette: palette2, glyphs: glyphs2, heavy = false }) {
   const muted = color || palette2?.muted || "gray";
   const char = heavy && glyphs2?.ruleHeavy ? glyphs2.ruleHeavy : "\u2500";
   return /* @__PURE__ */ jsx(Text, { color: muted, children: char.repeat(Math.max(1, width)) });
 }
-function TurnSection({ title, width, palette: palette2, glyphs: glyphs2, children, marginTop = 1, marginBottom = 1 }) {
+function TurnPhase({ title, width, palette: palette2, glyphs: glyphs2, children, marginTop = 1, marginBottom = 0 }) {
   if (!children) return null;
   return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginTop, marginBottom, width, children: [
-    /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `${glyphs2.gutter} ${title}` }),
-    /* @__PURE__ */ jsx(Box, { flexDirection: "column", paddingLeft: 2, marginTop: 0, children })
+    /* @__PURE__ */ jsx(Text, { color: palette2.accent, bold: true, children: title }),
+    /* @__PURE__ */ jsx(Box, { flexDirection: "column", paddingLeft: 2, borderStyle: "single", borderColor: palette2.border || palette2.muted, borderLeft: true, paddingX: 1, children })
   ] });
 }
 function ContextRow({ label, value, palette: palette2, valueColor }) {
@@ -6541,57 +6709,65 @@ function ContextRow({ label, value, palette: palette2, valueColor }) {
     /* @__PURE__ */ jsx(Text, { color: valueColor || void 0, wrap: "wrap", children: value })
   ] });
 }
-function TurnContextBar({ turn, width, layers, palette: palette2, glyphs: glyphs2, variant = "compact" }) {
-  const o = turn?.overlay;
-  const src = summarizeSources(turn?.sources || []);
-  const rows = contextRows(o, { layers });
-  if (!rows.length && !src.total && !o) return null;
-  const sourceSplit = splitSourceLines(src.refs, { limit: variant === "compact" ? 4 : 12 });
-  const toolCounts = formatSourceToolCounts(src.byTool);
-  return /* @__PURE__ */ jsxs(TurnSection, { title: "turn context", width, palette: palette2, glyphs: glyphs2, marginTop: 0, marginBottom: 0, children: [
-    rows.map((row) => /* @__PURE__ */ jsx(
-      ContextRow,
-      {
-        label: row.label,
-        value: row.value,
-        palette: palette2,
-        valueColor: row.label === "research" ? palette2.warn : row.label === "route" ? palette2.accentAlt : void 0
-      },
-      row.label
-    )),
-    /* @__PURE__ */ jsx(
-      ContextRow,
-      {
-        label: "sources",
-        value: src.total ? `${src.total} consulted${toolCounts ? ` (${toolCounts})` : ""}` : "none yet",
-        palette: palette2
-      }
-    ),
-    sourceSplit.lines.map((line) => /* @__PURE__ */ jsx(Box, { paddingLeft: LABEL_WIDTH, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: line }) }, line)),
-    sourceSplit.hidden > 0 ? /* @__PURE__ */ jsx(Box, { paddingLeft: LABEL_WIDTH, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `+${sourceSplit.hidden} more` }) }) : null
-  ] });
+function RoutePhase({ turn, width, layers, palette: palette2, glyphs: glyphs2 }) {
+  const rows = contextRows(turn?.overlay, { layers });
+  if (!rows.length) return null;
+  return /* @__PURE__ */ jsx(TurnPhase, { title: "ROUTE", width, palette: palette2, glyphs: glyphs2, children: rows.map((row) => /* @__PURE__ */ jsx(
+    ContextRow,
+    {
+      label: row.label,
+      value: row.value,
+      palette: palette2,
+      valueColor: row.label === "research" ? palette2.warn : row.label === "route" ? palette2.accentAlt : void 0
+    },
+    row.label
+  )) });
 }
-function ToolTimeline({ tools, width, layers, palette: palette2, theme, variant = "compact" }) {
+function ThinkingPhase({ text, width, layers, palette: palette2, glyphs: glyphs2 }) {
+  if (!text || layers?.thinking === false) return null;
+  return /* @__PURE__ */ jsx(TurnPhase, { title: "THINKING", width, palette: palette2, glyphs: glyphs2, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: text }) });
+}
+function ToolsPhase({ tools, width, layers, palette: palette2, theme, detailDense = false }) {
   if (!tools?.length || layers?.tools === false) return null;
   const groups = summarizeToolCalls(tools);
-  const totalCalls = tools.length;
-  return /* @__PURE__ */ jsx(
-    TurnSection,
-    {
-      title: variant === "compact" ? `tools (${totalCalls} call${totalCalls === 1 ? "" : "s"}, ${groups.length} kind${groups.length === 1 ? "" : "s"})` : `tools (${totalCalls})`,
-      width,
-      palette: palette2,
-      glyphs: theme.glyphs,
-      marginTop: 1,
-      marginBottom: 1,
-      children: groups.map((group) => /* @__PURE__ */ jsx(Text, { color: toolColor(group.status, theme), wrap: "wrap", children: `${toolGlyph(group.status, theme)} ${toolGroupLabel(group)}` }, group.title))
-    }
-  );
+  return /* @__PURE__ */ jsxs(TurnPhase, { title: "TOOLS", width, palette: palette2, glyphs: theme.glyphs, children: [
+    groups.map((group) => /* @__PURE__ */ jsx(Text, { color: toolColor(group.status, theme), wrap: "wrap", children: `${toolGlyph(group.status, theme)} ${toolGroupLabel(group)}` }, group.title)),
+    detailDense ? /* @__PURE__ */ jsx(ToolDetailList, { tools, width: width - 4, theme }) : null
+  ] });
+}
+function SourcesPhase({ turn, width, layers, palette: palette2, glyphs: glyphs2 }) {
+  const src = summarizeSources(turn?.sources || []);
+  if (!src.total) return null;
+  const split = splitSourceLines(src.refs, { limit: 12 });
+  return /* @__PURE__ */ jsxs(TurnPhase, { title: "SOURCES", width, palette: palette2, glyphs: glyphs2, children: [
+    split.lines.map((line) => /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: line }, line)),
+    split.hidden > 0 ? /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `+${split.hidden} more` }) : null
+  ] });
+}
+function AnswerPhase({
+  assistant,
+  working,
+  width,
+  palette: palette2,
+  glyphs: glyphs2,
+  theme,
+  isError
+}) {
+  if (!assistant && !working) return null;
+  return /* @__PURE__ */ jsx(Box, { flexDirection: "column", marginTop: 1, marginBottom: 1, width, children: /* @__PURE__ */ jsxs(TurnPhase, { title: "CONSTRUCT", width, palette: palette2, glyphs: glyphs2, marginTop: 0, children: [
+    assistant ? /* @__PURE__ */ jsx(MarkdownMessage, { text: assistant, width: width - 4, palette: palette2, isError }) : null,
+    working && !assistant ? /* @__PURE__ */ jsx(Text, { color: palette2.warn, children: `${glyphs2.block} working\u2026` }) : null,
+    working && assistant ? /* @__PURE__ */ jsx(Text, { color: palette2.warn, children: glyphs2.block }) : null
+  ] }) });
+}
+function TurnMetricsPhase({ usage, width, layers, palette: palette2, glyphs: glyphs2 }) {
+  if (!usage || layers?.observability === false) return null;
+  const line = stripAnsi(formatTurnUsageLine(usage, {}));
+  return /* @__PURE__ */ jsx(TurnPhase, { title: "USAGE", width, palette: palette2, glyphs: glyphs2, marginBottom: 1, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: line }) });
 }
 function ToolDetailList({ tools, width, theme }) {
   if (!tools?.length) return null;
-  const { palette: palette2 } = theme;
-  return /* @__PURE__ */ jsx(Box, { flexDirection: "column", paddingLeft: 2, children: tools.map((tool) => {
+  return /* @__PURE__ */ jsx(Box, { flexDirection: "column", marginTop: 0, children: tools.map((tool) => {
     const ref = tool.input?.path || tool.input?.pattern || tool.input?.glob || tool.input?.name;
     const detail = ref ? `  ${ref}` : "";
     return /* @__PURE__ */ jsx(Text, { color: toolColor(tool.status, theme), wrap: "wrap", children: `${toolGlyph(tool.status, theme)} ${tool.title || "tool"}${detail}` }, tool.id);
@@ -6600,7 +6776,7 @@ function ToolDetailList({ tools, width, theme }) {
 function MarkdownMessage({ text, width, palette: palette2, isError = false }) {
   if (!text) return null;
   const parts = parseMarkdownLines(text, { width: Math.max(20, width - 2) });
-  return /* @__PURE__ */ jsx(Box, { flexDirection: "column", paddingLeft: 1, marginTop: 0, width, children: parts.map((part, i) => {
+  return /* @__PURE__ */ jsx(Box, { flexDirection: "column", marginTop: 0, width, children: parts.map((part, i) => {
     if (part.type === "heading") {
       return /* @__PURE__ */ jsx(Box, { marginTop: i > 0 ? 1 : 0, children: /* @__PURE__ */ jsx(Text, { bold: true, color: isError ? palette2.danger : palette2.text, wrap: "wrap", children: part.text }) }, i);
     }
@@ -6618,53 +6794,115 @@ function MarkdownMessage({ text, width, palette: palette2, isError = false }) {
     return /* @__PURE__ */ jsx(Text, { color: isError ? palette2.danger : void 0, wrap: "wrap", children: part.text || "" }, i);
   }) });
 }
-function TurnThinking({ text, width, layers, palette: palette2, glyphs: glyphs2 }) {
-  if (!text || layers?.thinking === false) return null;
-  return /* @__PURE__ */ jsx(TurnSection, { title: "thinking", width, palette: palette2, glyphs: glyphs2, marginTop: 1, marginBottom: 1, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: text }) });
-}
-function TurnUsageFooter({ usage, width, layers, palette: palette2, glyphs: glyphs2 }) {
-  if (!usage || layers?.observability === false) return null;
-  const line = stripAnsi(formatTurnUsageLine(usage, {}));
-  return /* @__PURE__ */ jsx(TurnSection, { title: "turn usage", width, palette: palette2, glyphs: glyphs2, marginTop: 1, marginBottom: 0, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: line }) });
+function TurnContextBar({ turn, width, layers, palette: palette2, glyphs: glyphs2 }) {
+  return /* @__PURE__ */ jsxs(Fragment, { children: [
+    /* @__PURE__ */ jsx(RoutePhase, { turn, width, layers, palette: palette2, glyphs: glyphs2 }),
+    /* @__PURE__ */ jsx(SourcesPhase, { turn, width, layers, palette: palette2, glyphs: glyphs2 })
+  ] });
 }
 function SystemNotice({ text, palette: palette2 }) {
   if (!text) return null;
   return /* @__PURE__ */ jsx(Box, { marginTop: 1, marginBottom: 1, children: /* @__PURE__ */ jsx(Text, { color: palette2.warn, wrap: "wrap", children: text }) });
 }
-function TurnView({
+function TurnTranscript({
   turn,
   width,
   layers,
   liveAssistant = "",
   liveThinking = "",
   working = false,
+  turnIndex = null,
+  detailDense = false,
   theme
 }) {
   const { palette: palette2, glyphs: glyphs2 } = theme;
   const assistant = liveAssistant || turn.assistant || "";
   const thinking = liveThinking || turn.thinking || "";
   const isError = typeof assistant === "string" && assistant.startsWith("[error]");
-  const hasPreflight = turn.overlay || turn.sources?.length || turn.tools?.length || thinking;
   return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginBottom: 2, width, children: [
-    /* @__PURE__ */ jsx(Box, { marginBottom: 1, children: /* @__PURE__ */ jsx(Text, { backgroundColor: palette2.ok, color: palette2.badgeFg, bold: true, children: " you " }) }),
-    /* @__PURE__ */ jsx(Box, { paddingLeft: 1, marginBottom: hasPreflight ? 1 : 0, children: /* @__PURE__ */ jsx(Text, { wrap: "wrap", children: turn.userText }) }),
-    hasPreflight ? /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginBottom: 1, paddingX: 1, children: [
-      /* @__PURE__ */ jsx(Rule, { width: Math.min(width - 4, 52), palette: palette2 }),
-      /* @__PURE__ */ jsxs(Box, { marginY: 1, children: [
-        /* @__PURE__ */ jsx(TurnContextBar, { turn, width: width - 2, layers, palette: palette2, glyphs: glyphs2, variant: "compact" }),
-        /* @__PURE__ */ jsx(TurnThinking, { text: thinking, width: width - 2, layers, palette: palette2, glyphs: glyphs2 }),
-        /* @__PURE__ */ jsx(ToolTimeline, { tools: turn.tools, width: width - 2, layers, palette: palette2, theme, variant: "compact" })
-      ] }),
-      /* @__PURE__ */ jsx(Rule, { width: Math.min(width - 4, 52), palette: palette2 })
-    ] }) : null,
-    assistant || working ? /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginTop: 1, marginBottom: 1, children: [
-      /* @__PURE__ */ jsx(Box, { marginBottom: 1, children: /* @__PURE__ */ jsx(Text, { backgroundColor: palette2.accent, color: palette2.badgeFg, bold: true, children: " construct " }) }),
-      assistant ? /* @__PURE__ */ jsx(MarkdownMessage, { text: assistant, width, palette: palette2, isError }) : null,
-      working && !assistant ? /* @__PURE__ */ jsx(Text, { color: palette2.warn, children: `${glyphs2.block} working\u2026` }) : null,
-      working && assistant ? /* @__PURE__ */ jsx(Text, { color: palette2.warn, children: glyphs2.block }) : null
-    ] }) : null,
-    /* @__PURE__ */ jsx(TurnUsageFooter, { usage: turn.usage, width, layers, palette: palette2, glyphs: glyphs2 }),
+    turnIndex != null ? /* @__PURE__ */ jsx(Box, { marginBottom: 0, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, bold: true, children: `TURN ${turnIndex}` }) }) : null,
+    /* @__PURE__ */ jsx(TurnPhase, { title: "YOU", width, palette: palette2, glyphs: glyphs2, marginTop: turnIndex != null ? 0 : 0, children: /* @__PURE__ */ jsx(Text, { wrap: "wrap", children: turn.userText }) }),
+    /* @__PURE__ */ jsx(RoutePhase, { turn, width, layers, palette: palette2, glyphs: glyphs2 }),
+    /* @__PURE__ */ jsx(ThinkingPhase, { text: thinking, width, layers, palette: palette2, glyphs: glyphs2 }),
+    /* @__PURE__ */ jsx(ToolsPhase, { tools: turn.tools, width, layers, palette: palette2, theme, detailDense }),
+    /* @__PURE__ */ jsx(SourcesPhase, { turn, width, layers, palette: palette2, glyphs: glyphs2 }),
+    /* @__PURE__ */ jsx(
+      AnswerPhase,
+      {
+        assistant,
+        working,
+        width,
+        palette: palette2,
+        glyphs: glyphs2,
+        theme,
+        isError
+      }
+    ),
+    /* @__PURE__ */ jsx(TurnMetricsPhase, { usage: turn.usage, width, layers, palette: palette2, glyphs: glyphs2 }),
     (turn.notices || []).map((n, i) => /* @__PURE__ */ jsx(SystemNotice, { text: n, palette: palette2 }, i))
+  ] });
+}
+var TurnView = TurnTranscript;
+function sessionUsageSummary(session) {
+  const t = session?.usage?.tokens || {};
+  const parts = [];
+  if (t.total) parts.push(`${formatTokens(t.total)} tok`);
+  if (session?.usage?.cost?.amount > 0) {
+    const c = session.usage.cost.amount;
+    parts.push(`~$${c.toFixed(c < 1 ? 3 : 2)}`);
+  }
+  if (session?.usage?.turns) parts.push(`${session.usage.turns} turn${session.usage.turns === 1 ? "" : "s"}`);
+  return parts.join(" \xB7 ") || "no tokens yet";
+}
+function layerPills(layers, palette2, glyphs2) {
+  return LAYER_KEYS.map((k) => {
+    const on = layers?.[k] !== false;
+    return `${k}${on ? "" : "\u2717"}`;
+  }).join(`  ${glyphs2.gutter}  `);
+}
+function SessionHeader({
+  cols,
+  session,
+  layers,
+  sandbox,
+  permissionMode,
+  working,
+  spin,
+  ctx,
+  theme,
+  workingBranch
+}) {
+  const { palette: palette2, glyphs: glyphs2 } = theme;
+  const { label, isRouter } = formatModelHeader(session);
+  const ctxMeter = ctx?.size ? meter(ctx.used, ctx.size, Math.max(12, Math.floor(cols * 0.18)), theme) : null;
+  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginBottom: 0, children: [
+    /* @__PURE__ */ jsxs(Box, { width: cols, justifyContent: "space-between", children: [
+      /* @__PURE__ */ jsxs(Box, { children: [
+        /* @__PURE__ */ jsx(Text, { color: palette2.accent, bold: true, children: `${glyphs2.brand} construct` }),
+        /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `  ${glyphs2.gutter}  chat` })
+      ] }),
+      /* @__PURE__ */ jsxs(Box, { flexDirection: "column", alignItems: "flex-end", children: [
+        /* @__PURE__ */ jsxs(Box, { children: [
+          /* @__PURE__ */ jsx(Text, { bold: true, color: palette2.text, wrap: "wrap", children: label || "(no model)" }),
+          /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `   ${sandbox || "workspace-write"}  ${glyphs2.gutter}  ${permissionMode || "allow_once"}  ` }),
+          /* @__PURE__ */ jsx(Text, { color: working ? palette2.warn : palette2.ok, children: working ? spin : glyphs2.dot })
+        ] }),
+        isRouter ? /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: "free-router \\u2014 re-picks on launch and on failure" }) : null
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxs(Box, { width: cols, marginTop: 0, flexDirection: "row", justifyContent: "space-between", children: [
+      /* @__PURE__ */ jsx(Box, { flexDirection: "row", children: ctxMeter ? /* @__PURE__ */ jsxs(Fragment, { children: [
+        /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "context " }),
+        /* @__PURE__ */ jsx(Text, { color: ratioColor(ctxMeter.ratio, theme), children: ctxMeter.bar }),
+        /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: ` ${percent(ctxMeter.ratio)}` })
+      ] }) : /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "context not reported yet" }) }),
+      /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: `session ${sessionUsageSummary(session)}` })
+    ] }),
+    /* @__PURE__ */ jsx(Box, { width: cols, marginTop: 0, children: /* @__PURE__ */ jsxs(Text, { color: palette2.muted, wrap: "wrap", children: [
+      `layers ${layerPills(layers, palette2, glyphs2)}`,
+      workingBranch ? `  ${glyphs2.gutter}  branch ${workingBranch}` : ""
+    ] }) }),
+    /* @__PURE__ */ jsx(Rule, { width: cols, palette: palette2, glyphs: glyphs2, heavy: true })
   ] });
 }
 function PanelSection({ title, children, marginTop = 1, palette: palette2 }) {
@@ -6673,7 +6911,7 @@ function PanelSection({ title, children, marginTop = 1, palette: palette2 }) {
     children
   ] });
 }
-function SessionDock({
+function SessionRail({
   width,
   session,
   layers,
@@ -6726,41 +6964,8 @@ function SessionDock({
     /* @__PURE__ */ jsx(Box, { marginTop: 1, children: /* @__PURE__ */ jsx(Text, { color: working ? palette2.warn : palette2.ok, children: working ? `${spin} working\u2026` : `${glyphs2.dot} idle` }) })
   ] });
 }
-function TurnInspector({
-  width,
-  turn,
-  layers,
-  permissions,
-  plan,
-  lastTurnUsage,
-  theme
-}) {
-  const { palette: palette2, glyphs: glyphs2 } = theme;
-  if (!turn) {
-    return /* @__PURE__ */ jsx(Box, { flexDirection: "column", width, borderStyle: "round", borderColor: palette2.muted, paddingX: 1, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "no active turn \u2014 submit a prompt or toggle /inspect" }) });
-  }
-  const turnUsage = lastTurnUsage && layers?.observability ? stripAnsi(formatUsageFooter(lastTurnUsage, {})).replace(/^\[usage\] /, "") : null;
-  const src = summarizeSources(turn.sources || []);
-  const groups = summarizeToolCalls(turn.tools || []);
-  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", width, borderStyle: "round", borderColor: palette2.accentAlt, paddingX: 1, children: [
-    /* @__PURE__ */ jsx(Text, { color: palette2.accentAlt, bold: true, children: `${glyphs2.brand} inspector` }),
-    contextRows(turn.overlay, { layers }).length > 0 ? /* @__PURE__ */ jsx(PanelSection, { title: "policy", marginTop: 1, palette: palette2, children: contextRows(turn.overlay, { layers }).map((row) => /* @__PURE__ */ jsx(ContextRow, { label: row.label, value: row.value, palette: palette2 }, row.label)) }) : null,
-    src.total > 0 ? /* @__PURE__ */ jsx(PanelSection, { title: `sources (${src.total})`, palette: palette2, children: src.refs.map((ref) => /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: ref }, ref)) }) : null,
-    turn.thinking && layers?.thinking !== false ? /* @__PURE__ */ jsx(PanelSection, { title: "thinking", palette: palette2, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: turn.thinking }) }) : null,
-    groups.length > 0 && layers?.tools !== false ? /* @__PURE__ */ jsxs(PanelSection, { title: `tools (${turn.tools.length} calls)`, palette: palette2, children: [
-      groups.map((g) => /* @__PURE__ */ jsx(Text, { color: toolColor(g.status, theme), wrap: "wrap", children: `${toolGlyph(g.status, theme)} ${toolGroupLabel(g)}` }, g.title)),
-      /* @__PURE__ */ jsx(ToolDetailList, { tools: turn.tools, width: width - 2, theme })
-    ] }) : null,
-    layers?.path && plan?.length > 0 ? /* @__PURE__ */ jsx(PanelSection, { title: "plan", palette: palette2, children: plan.map((entry, i) => /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: `${entry.status === "completed" ? glyphs2.toolDone : glyphs2.toolPending} ${entry.content}` }, `${entry.content}-${i}`)) }) : null,
-    permissions?.length > 0 ? /* @__PURE__ */ jsx(PanelSection, { title: "permissions", palette: palette2, children: permissions.slice(-5).map((entry, i) => /* @__PURE__ */ jsx(Text, { color: palette2.warn, wrap: "wrap", children: `${glyphs2.gutter} ${entry.title}` }, `${entry.title}-${i}`)) }) : null,
-    turnUsage ? /* @__PURE__ */ jsx(PanelSection, { title: "this turn", palette: palette2, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: turnUsage }) }) : null,
-    turn.assistant ? /* @__PURE__ */ jsx(PanelSection, { title: "answer (raw)", palette: palette2, children: /* @__PURE__ */ jsxs(Text, { wrap: "wrap", children: [
-      turn.assistant.slice(0, 800),
-      turn.assistant.length > 800 ? "\u2026" : ""
-    ] }) }) : null
-  ] });
-}
-var TransparencyPanel = SessionDock;
+var SessionDock = SessionRail;
+var TransparencyPanel = SessionRail;
 
 // apps/chat/tui/picker-ui.jsx
 import React2 from "react";
@@ -6933,31 +7138,10 @@ function isEnumSetting(key) {
 }
 
 // apps/chat/tui/index.jsx
-import { Fragment, jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
+import { Fragment as Fragment2, jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
 var ChatThemeContext = createContext(createTheme());
 function useChatTheme() {
   return useContext(ChatThemeContext);
-}
-function HeaderBar({ cols, session, sandbox, permissionMode, working, spin }) {
-  const { palette: palette2, glyphs: glyphs2 } = useChatTheme();
-  const { label, isRouter } = formatModelHeader(session);
-  return /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", children: [
-    /* @__PURE__ */ jsxs3(Box3, { width: cols, justifyContent: "space-between", children: [
-      /* @__PURE__ */ jsxs3(Box3, { children: [
-        /* @__PURE__ */ jsx3(Text3, { color: palette2.accent, bold: true, children: `${glyphs2.brand} construct` }),
-        /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: `  ${glyphs2.gutter}  chat` })
-      ] }),
-      /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", alignItems: "flex-end", children: [
-        /* @__PURE__ */ jsxs3(Box3, { children: [
-          /* @__PURE__ */ jsx3(Text3, { bold: true, color: palette2.text, children: label || "(no model)" }),
-          /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: `   ${sandbox}  ${glyphs2.gutter}  ${permissionMode}  ` }),
-          /* @__PURE__ */ jsx3(Text3, { color: working ? palette2.warn : palette2.ok, children: working ? spin : glyphs2.dot })
-        ] }),
-        isRouter ? /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, wrap: "wrap", children: "free-router mode \u2014 re-picks on launch and on failure" }) : null
-      ] })
-    ] }),
-    /* @__PURE__ */ jsx3(Rule, { width: cols, palette: palette2 })
-  ] });
 }
 function EmptyState({ model, savedModel }) {
   const { palette: palette2, glyphs: glyphs2 } = useChatTheme();
@@ -6965,7 +7149,7 @@ function EmptyState({ model, savedModel }) {
   const saved = savedModel && savedModel !== model ? splitModel(savedModel) : null;
   return /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", paddingY: 1, children: [
     /* @__PURE__ */ jsx3(Text3, { color: palette2.accent, bold: true, children: `${glyphs2.brand} welcome to construct chat` }),
-    /* @__PURE__ */ jsx3(Box3, { marginTop: 1, children: /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, wrap: "wrap", children: "Each turn shows route, tools, and sources inline before the answer. Session metrics live in the dock on the right; /inspect opens per-turn detail." }) }),
+    /* @__PURE__ */ jsx3(Box3, { marginTop: 1, children: /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, wrap: "wrap", children: "Each turn shows route, thinking, tools, sources, and usage inline before the answer. Session metrics stay in the rail on the right. /set toggles layers; /inspect expands tool detail." }) }),
     /* @__PURE__ */ jsxs3(Box3, { marginTop: 1, flexDirection: "column", children: [
       /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: "To get going" }),
       /* @__PURE__ */ jsx3(Text3, { color: palette2.text, children: `  ${glyphs2.caret} ask a question or describe the change you want` }),
@@ -6990,6 +7174,7 @@ function ConversationColumn({
   working,
   model,
   savedModel,
+  detailDense,
   theme
 }) {
   if (!turnBlocks.length && !activeTurn) {
@@ -6997,9 +7182,20 @@ function ConversationColumn({
   }
   const completed = activeTurn ? turnBlocks.slice(0, -1) : turnBlocks;
   return /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", width, paddingRight: 2, children: [
-    completed.map((item) => item.kind === "turn" ? /* @__PURE__ */ jsx3(TurnView, { turn: item.block, width, layers, theme }, item.block.id) : null),
+    completed.map((item, i) => item.kind === "turn" ? /* @__PURE__ */ jsx3(
+      TurnTranscript,
+      {
+        turn: item.block,
+        width,
+        layers,
+        turnIndex: i + 1,
+        detailDense,
+        theme
+      },
+      item.block.id
+    ) : null),
     activeTurn ? /* @__PURE__ */ jsx3(
-      TurnView,
+      TurnTranscript,
       {
         turn: activeTurn,
         width,
@@ -7007,6 +7203,8 @@ function ConversationColumn({
         liveAssistant,
         liveThinking,
         working,
+        turnIndex: completed.length + 1,
+        detailDense,
         theme
       }
     ) : null
@@ -7030,7 +7228,7 @@ function Footer({
     suggestHint && !listPickerActive && !permissionActive ? /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, wrap: "wrap", children: `tab complete   ${suggestHint}` }) : null,
     /* @__PURE__ */ jsxs3(Box3, { children: [
       /* @__PURE__ */ jsx3(Text3, { color: palette2.accent, bold: true, children: permissionActive ? `${glyphs2.caret} permission ` : listPickerActive ? `${glyphs2.caret} pick ` : `you ${glyphs2.caret} ` }),
-      listPickerActive ? /* @__PURE__ */ jsx3(Text3, { color: palette2.text, children: pickerQuery || "" }) : /* @__PURE__ */ jsxs3(Fragment, { children: [
+      listPickerActive ? /* @__PURE__ */ jsx3(Text3, { color: palette2.text, children: pickerQuery || "" }) : /* @__PURE__ */ jsxs3(Fragment2, { children: [
         /* @__PURE__ */ jsx3(Text3, { color: palette2.text, children: input }),
         ghost ? /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: ghost }) : null
       ] }),
@@ -7039,15 +7237,9 @@ function Footer({
     /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: permissionActive ? "\u2191/\u2193 move   enter select   y/a/n shortcut   esc cancel" : listPickerActive ? "type to filter   \u2191/\u2193 move   enter select   esc cancel" : `enter send   tab complete   shift+enter newline   ${glyphs2.gutter}   /help  Ctrl-C ${working ? "cancel" : "exit"}` })
   ] });
 }
-function cycleInspectorForced(current) {
-  if (current === null || current === void 0) return true;
-  if (current === true) return false;
-  return null;
-}
-function inspectorLabel(forced) {
-  if (forced === true) return "on";
-  if (forced === false) return "off";
-  return "auto";
+function toggleDetailDense(session) {
+  session.detailDense = !session.detailDense;
+  return session.detailDense ? "expanded" : "compact";
 }
 function App({
   driver,
@@ -7106,16 +7298,15 @@ function App({
   const inputHistory = useRef([]);
   const historyPos = useRef(-1);
   const activeTurnRef = useRef(null);
-  const inspectorTurn = activeTurn || turnBlocks.filter((b) => b.kind === "turn").slice(-1)[0]?.block || null;
-  const showInspector = shouldShowInspector({
-    uiInspector: session.ui?.inspector,
-    turn: inspectorTurn,
-    forced: session.inspectorForced ?? null
-  });
-  const dockWidth = Math.min(36, Math.max(28, Math.floor(cols * 0.15)));
-  const inspectorWidth = Math.min(42, Math.max(30, Math.floor(cols * 0.34)));
-  const panelWidth = showInspector ? inspectorWidth : dockWidth;
-  const convWidth = Math.max(20, cols - panelWidth - 2);
+  const workingBranch = useMemo(() => {
+    try {
+      return buildPlanContext({ session, cwd, turnBlocks, text: "" }).workingBranch || null;
+    } catch {
+      return null;
+    }
+  }, [cwd, session, turnBlocks.length]);
+  const railWidth = Math.min(36, Math.max(28, Math.floor(cols * 0.15)));
+  const convWidth = Math.max(20, cols - railWidth - 2);
   const spin = spinnerFrames2[frame];
   const inputGhost = useMemo(() => {
     if (listPicker || !input.trimStart().startsWith("/")) return "";
@@ -7253,15 +7444,14 @@ function App({
       setListPicker(null);
     }
   }, [listPicker]);
-  const toggleInspector = useCallback(() => {
-    session.inspectorForced = cycleInspectorForced(session.inspectorForced ?? null);
-    setNotice(`inspector: ${inspectorLabel(session.inspectorForced)}`);
+  const toggleDetail = useCallback(() => {
+    setNotice(`tool detail: ${toggleDetailDense(session)}`);
     setUiEpoch((n) => n + 1);
   }, [session]);
   const handleCommand = useCallback(async (text) => {
     const trimmed = text.trim();
     if (trimmed === "/inspect") {
-      toggleInspector();
+      toggleDetail();
       return;
     }
     if (trimmed === "/model" || trimmed === "/models") {
@@ -7312,7 +7502,7 @@ function App({
     }
     setUiEpoch((n) => n + 1);
     if (!keep) exit();
-  }, [commands, env, exit, layers, openModelPicker, openSettingKeyPicker, session, toggleInspector]);
+  }, [commands, env, exit, layers, openModelPicker, openSettingKeyPicker, session, toggleDetail]);
   const submit = useCallback(async (text) => {
     if (!text.trim() || busy.current) return;
     if (text.startsWith("/")) {
@@ -7432,7 +7622,7 @@ function App({
       return;
     }
     if (key.ctrl && char === "o") {
-      toggleInspector();
+      toggleDetail();
       return;
     }
     if (key.return && (key.shift || key.meta)) {
@@ -7487,7 +7677,21 @@ function App({
     if (char && !key.ctrl && !key.meta) setInput((v) => v + char);
   });
   return /* @__PURE__ */ jsx3(ChatThemeContext.Provider, { value: theme, children: /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", children: [
-    /* @__PURE__ */ jsx3(HeaderBar, { cols, session, sandbox: session.sandbox, permissionMode: session.permissionMode, working, spin }),
+    /* @__PURE__ */ jsx3(
+      SessionHeader,
+      {
+        cols,
+        session,
+        layers,
+        sandbox: session.sandbox,
+        permissionMode: session.permissionMode,
+        working,
+        spin,
+        ctx,
+        theme,
+        workingBranch
+      }
+    ),
     listPicker ? /* @__PURE__ */ jsx3(
       ListPickerOverlay,
       {
@@ -7511,24 +7715,14 @@ function App({
           working,
           model: session.model,
           savedModel: session.savedModel,
+          detailDense: Boolean(session.detailDense),
           theme
         }
       ),
-      showInspector ? /* @__PURE__ */ jsx3(
-        TurnInspector,
+      /* @__PURE__ */ jsx3(
+        SessionRail,
         {
-          width: panelWidth,
-          turn: inspectorTurn,
-          layers,
-          permissions,
-          plan,
-          lastTurnUsage,
-          theme
-        }
-      ) : /* @__PURE__ */ jsx3(
-        SessionDock,
-        {
-          width: panelWidth,
+          width: railWidth,
           session,
           layers,
           working,
@@ -7596,11 +7790,12 @@ var index_default = runInkChat;
 export {
   App,
   EmptyState,
-  HeaderBar,
   SessionDock,
+  SessionHeader,
+  SessionRail,
   TransparencyPanel,
   TurnContextBar,
-  TurnInspector,
+  TurnTranscript,
   TurnView,
   createTheme,
   index_default as default,

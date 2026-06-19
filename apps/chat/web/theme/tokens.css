@@ -1,0 +1,191 @@
+/**
+ * apps/chat/web/theme/tokens.css — semantic CSS variables for the web chat surface.
+ *
+ * Consumed by dashboard /chat. Font stacks inherit Geist and JetBrains Mono from
+ * the dashboard root layout; these tokens control chat-specific spacing and color.
+ */
+
+.cx-chat {
+  --cx-chat-bg: oklch(14% 0.01 260);
+  --cx-chat-surface: oklch(18% 0.012 260);
+  --cx-chat-border: oklch(28% 0.02 260);
+  --cx-chat-text: oklch(92% 0.01 260);
+  --cx-chat-muted: oklch(62% 0.02 260);
+  --cx-chat-accent: oklch(72% 0.14 195);
+  --cx-chat-accent-alt: oklch(68% 0.16 320);
+  --cx-chat-user: oklch(55% 0.12 145);
+  --cx-chat-assistant: oklch(58% 0.14 250);
+  --cx-chat-warn: oklch(78% 0.14 85);
+  --cx-chat-danger: oklch(62% 0.18 25);
+  --cx-chat-radius: 10px;
+  --cx-chat-gap: 12px;
+  --cx-chat-font: var(--font-sans, system-ui, sans-serif);
+  --cx-chat-mono: var(--font-mono, ui-monospace, monospace);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cx-chat-gap);
+  min-height: calc(100vh - 8rem);
+  font-family: var(--cx-chat-font);
+  color: var(--cx-chat-text);
+}
+
+[data-theme='light'] .cx-chat {
+  --cx-chat-bg: oklch(98% 0.005 260);
+  --cx-chat-surface: oklch(96% 0.008 260);
+  --cx-chat-border: oklch(88% 0.01 260);
+  --cx-chat-text: oklch(18% 0.02 260);
+  --cx-chat-muted: oklch(45% 0.02 260);
+}
+
+.cx-chat-panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: var(--cx-chat-gap);
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 900px) {
+  .cx-chat-panes {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cx-chat-conversation {
+  background: var(--cx-chat-surface);
+  border: 1px solid var(--cx-chat-border);
+  border-radius: var(--cx-chat-radius);
+  padding: 16px;
+  overflow-y: auto;
+  min-height: 360px;
+}
+
+.cx-chat-inspector {
+  background: var(--cx-chat-surface);
+  border: 1px solid var(--cx-chat-border);
+  border-radius: var(--cx-chat-radius);
+  padding: 14px;
+  overflow-y: auto;
+  font-size: 0.875rem;
+}
+
+.cx-chat-turn {
+  margin-bottom: 20px;
+}
+
+.cx-chat-role {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.cx-chat-role-you {
+  background: var(--cx-chat-user);
+  color: oklch(98% 0 0);
+}
+
+.cx-chat-role-construct {
+  background: var(--cx-chat-assistant);
+  color: oklch(98% 0 0);
+}
+
+.cx-chat-status-strip {
+  color: var(--cx-chat-muted);
+  font-size: 0.8rem;
+  font-family: var(--cx-chat-mono);
+  margin: 8px 0 12px;
+  padding: 6px 10px;
+  border-left: 2px solid var(--cx-chat-accent);
+  background: color-mix(in oklch, var(--cx-chat-bg) 50%, transparent);
+}
+
+.cx-chat-composer {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.cx-chat-input {
+  flex: 1;
+  font-family: var(--cx-chat-font);
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  border-radius: var(--cx-chat-radius);
+  border: 1px solid var(--cx-chat-border);
+  background: var(--cx-chat-bg);
+  color: var(--cx-chat-text);
+}
+
+.cx-chat-input:focus {
+  outline: 2px solid var(--cx-chat-accent);
+  outline-offset: 1px;
+}
+
+.cx-chat-send {
+  font-family: var(--cx-chat-font);
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--cx-chat-radius);
+  border: none;
+  background: var(--cx-chat-accent);
+  color: oklch(12% 0.02 260);
+  cursor: pointer;
+}
+
+.cx-chat-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cx-chat-section-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cx-chat-accent);
+  margin: 12px 0 6px;
+}
+
+.cx-chat-section-title:first-child {
+  margin-top: 0;
+}
+
+.cx-chat-muted {
+  color: var(--cx-chat-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cx-chat-tool {
+  font-family: var(--cx-chat-mono);
+  font-size: 0.8rem;
+  margin: 2px 0;
+}
+
+.cx-chat-permission {
+  border: 1px solid var(--cx-chat-warn);
+  border-radius: var(--cx-chat-radius);
+  padding: 10px;
+  margin-top: 8px;
+}
+
+.cx-chat-permission-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cx-chat-permission-actions button {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--cx-chat-border);
+  background: var(--cx-chat-bg);
+  color: var(--cx-chat-text);
+  cursor: pointer;
+}

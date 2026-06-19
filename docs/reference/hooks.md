@@ -11,6 +11,7 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 |---|---|
 | `adaptive-lint` | PostToolUse auto-formatter and debug-log detector. |
 | `agent-tracker` | Task tool lifecycle hook: records dispatch + |
+| `artifact-release-gate` | PostToolUse advisory structure/visual gate for typed docs. |
 | `audit-reads` | post-Read state tracker. |
 | `audit-trail` | append-only audit log of every mutation Construct |
 | `bash-output-logger` | persists long Bash outputs to disk and nudges |

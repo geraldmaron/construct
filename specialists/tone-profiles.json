@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "description": "Shipped tone profiles for Construct document and agent output. Projects override via .cx/brand-voice.json.",
+  "profiles": {
+    "direct": {
+      "formality": 3,
+      "sentenceLength": "short to medium",
+      "whenToUse": ["runbooks", "internal memos", "research briefs", "technical ADRs"],
+      "constraints": "Lead with the answer. Plain language. Never contradict rules/common/neurodivergent-output.md."
+    },
+    "friendly": {
+      "formality": 2,
+      "sentenceLength": "medium",
+      "whenToUse": ["onboarding", "customer-facing FAQs", "PRFAQs", "docs-keeper memos"],
+      "constraints": "Warm but not casual. No idioms. Define terms on first use."
+    },
+    "executive-concise": {
+      "formality": 4,
+      "sentenceLength": "short",
+      "whenToUse": ["one-pagers", "strategy summaries", "business PRDs", "product intelligence readouts"],
+      "constraints": "TL;DR first. One idea per paragraph. Tables for numbers."
+    },
+    "decision-forcing-direct": {
+      "formality": 4,
+      "sentenceLength": "medium",
+      "whenToUse": ["PRDs", "ADRs", "RFCs", "meta-PRDs", "backlog proposals"],
+      "constraints": "Every section drives a decision or acceptance criterion. Rejected alternatives required where applicable."
+    },
+    "blameless": {
+      "formality": 3,
+      "sentenceLength": "medium",
+      "whenToUse": ["incident reports", "postmortems", "runbooks", "SRE comms"],
+      "constraints": "Corrective actions target systems, not people. No shame language."
+    },
+    "pedagogical": {
+      "formality": 2,
+      "sentenceLength": "medium",
+      "whenToUse": ["onboarding guides", "explorer maps", "UX research summaries", "architecture overviews"],
+      "constraints": "Teach the reader. Progressive disclosure. Examples before abstractions."
+    }
+  }
+}

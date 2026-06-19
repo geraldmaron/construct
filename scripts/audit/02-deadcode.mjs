@@ -29,7 +29,7 @@ const SRC_DIRS = ['lib', 'bin', 'scripts', 'tests', 'apps'];
 
 // lib/server/static is the compiled Next.js dashboard (hashed build chunks), not source.
 
-const EXCLUDE = /(node_modules|\.git|audit-artifacts|lib\/server\/static)/;
+const EXCLUDE = /(node_modules|\.git|audit-artifacts|lib\/server\/static|apps\/[^/]+\/out(?:\/|$)|apps\/[^/]+\/\.next(?:\/|$))/;
 
 // bin/construct is the primary importer (124 dynamic imports) but has no extension, so it
 // must be added explicitly or every lazily-imported module looks dead.
@@ -142,7 +142,8 @@ export function runDeadCode() {
     .filter((f) => !(path.relative(REPO_ROOT, f) in ACCEPTED_TEST_ONLY))
     .filter((f) => {
       const importers = sources.filter((s) => {
-        const src = fs.readFileSync(s, 'utf8');
+        const src = corpusByFile.get(s);
+        if (!src) return false;
         return [...src.matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g)].some((m) => resolveSpec(s, m[1]) === f);
       });
       return importers.length > 0 && importers.every((s) => /\/tests\//.test(s) || s === f);
