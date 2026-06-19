@@ -74,6 +74,6 @@ node bin/construct publish docs/prd-platform/<slug>.md --strict --figures
 
 `construct publish` runs the artifact release gate by default. Thin or unscaffolded docs **exit 2** with remediation hints. Do not use `--no-gate` or `--no-strict` in demos or ship paths.
 
-**Presentation is part of done.** Published PDFs use type-specific Typst templates (`construct-prd.typ`, `construct-research.typ`, `construct-decision.typ`) with violet editorial branding. Lead with an `::: executive-summary` narrative paragraph — not a bullet wall. Diagrams on the publish path use professional D2 neutral / branded Mermaid themes; sketch is exploratory only.
+**Presentation is part of done.** Published PDFs use type-specific Typst templates (`construct-prd.typ`, `construct-research.typ`, `construct-decision.typ`) with violet editorial branding and Inter body typography. Lead with an `::: executive-summary` narrative paragraph — not a bullet wall. Diagrams on the publish path use D2 `--sketch` and Mermaid `handDrawn` styling with Construct violet accent.
 
 `--strict` means **toolchain and release gate** both pass. Invoke alone is not "done."

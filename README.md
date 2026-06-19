@@ -293,6 +293,7 @@ construct/
 ├── specialists      Org registry, contracts, and specialist prompts
 ├── templates        Doc and workflow templates
 ├── tests            Test suite
+├── vendor
 ```
 <!-- /AUTO:structure -->
 

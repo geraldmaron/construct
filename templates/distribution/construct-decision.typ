@@ -1,34 +1,36 @@
 /**
- * templates/distribution/construct-decision.typ — ADR/RFC decision record PDF.
+ * templates/distribution/construct-decision.typ — Construct distribution PDF.
  */
 
 #import "construct-brand.typ": *
 
 #set page(
   paper: "a4",
-  margin: (x: 2.3cm, y: 2.5cm),
+  margin: (x: 2cm, top: 1.8cm, bottom: 2.2cm),
   numbering: "1",
-  header: construct-page-header("$if(title)$$title$$endif$"),
+  header: construct-running-header(
+    "$if(title)$$title$$endif$",
+    doc-id: "$if(docId)$$docId$$endif$",
+    version: "$if(version)$$version$$endif$",
+  ),
+  footer: construct-running-footer(
+    "Decision record",
+    classification: "$if(classification)$$classification$$endif$",
+  ),
 )
-#set par(justify: true, leading: 0.67em, spacing: 0.67em)
-#set text(font: brand-serif, size: 11pt, lang: "en")
-#set heading(numbering: "1.1", outlined: true)
-
-#construct-heading-style()
-#construct-table-style()
-#construct-figure-style()
-#construct-quote-style()
 
 $if(title)$
-#construct-cover("$title$", "$if(subtitle)$$subtitle$$endif$")
-#construct-metadata-band("$if(status)$$status$$endif$", "$if(owner)$$owner$$endif$", "$if(date)$$date$$endif$", "$if(artifactType)$$artifactType$$endif$")
+#construct-masthead(
+  "$title$",
+  "$if(subtitle)$$subtitle$$endif$",
+  "$if(status)$$status$$endif$",
+  "$if(owner)$$owner$$endif$",
+  "$if(date)$$date$$endif$",
+  "$if(artifactType)$$artifactType$$endif$",
+  version: "$if(version)$$version$$endif$",
+  doc-id: "$if(docId)$$docId$$endif$",
+  classification: "$if(classification)$$classification$$endif$",
+)
 $endif$
 
 $body$
-
-#v(1fr)
-#align(center)[
-  #line(length: 40%, stroke: 0.5pt + brand-warm)
-  #v(0.3em)
-  #text(font: brand-sans, size: 8pt, fill: brand-muted)[Construct · Decision record]
-]
