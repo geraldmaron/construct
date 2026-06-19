@@ -86,7 +86,7 @@ function resolveSpec(fromFile, spec) {
 
 export function runDeadCode() {
   const sources = [
-    ...SRC_DIRS.flatMap((d) => walk(path.join(REPO_ROOT, d), ['.mjs', '.js'])),
+    ...SRC_DIRS.flatMap((d) => walk(path.join(REPO_ROOT, d), ['.mjs', '.js', '.jsx', '.tsx'])),
     ...EXTRA_SOURCES.map((f) => path.join(REPO_ROOT, f)).filter((f) => fs.existsSync(f)),
   ];
   const libFiles = sources.filter((f) => f.startsWith(path.join(REPO_ROOT, 'lib') + path.sep) && /\.mjs$/.test(f));

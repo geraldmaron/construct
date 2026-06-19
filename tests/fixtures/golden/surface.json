@@ -273,6 +273,10 @@
       "core": false
     },
     {
+      "name": "oracle",
+      "core": false
+    },
+    {
       "name": "overrides",
       "core": false
     },
@@ -301,7 +305,15 @@
       "core": false
     },
     {
+      "name": "registry:generate-docs",
+      "core": false
+    },
+    {
       "name": "registry:status",
+      "core": false
+    },
+    {
+      "name": "registry:validate",
       "core": false
     },
     {
@@ -326,6 +338,10 @@
     },
     {
       "name": "roles:set",
+      "core": false
+    },
+    {
+      "name": "rules",
       "core": false
     },
     {
@@ -437,6 +453,7 @@
     "explorer",
     "legal-compliance",
     "operations",
+    "oracle",
     "orchestrator",
     "platform-engineer",
     "product-manager",

@@ -3,6 +3,7 @@ name: docs-product-intelligence-workflow
 description: "Use when: the request involves customer evidence, PM synthesis, product requirements, PRDs, PRFAQs, customer profiles, product signals, or backlog proposals."
 inputs: [signal, evidence-brief]
 artifactType: prd
+verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
 ---
 # Product Intelligence Workflow
 

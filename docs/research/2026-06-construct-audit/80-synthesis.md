@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Synthesis — Cross-Cutting Verdicts
 
 Date: 2026-06-10 · Feeds P2 (ADRs + beads). Every claim below traces to a sibling doc in this

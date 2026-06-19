@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # 50 — Proliferation Audit: Prompt / Skill / Hook Token + Value (internal)
 
 Date: 2026-06-10 · Branch: research/capability-registry · Commit: `a027a9f` · Bead: construct-u27k
