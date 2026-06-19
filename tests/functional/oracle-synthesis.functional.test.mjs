@@ -90,3 +90,22 @@ test('synthesizeVerdict surfaces org graph workflow misalignment', () => {
   const { gaps } = synthesizeVerdict(readModel);
   assert.ok(gaps.some((g) => g.id === 'workflow-misaligned'));
 });
+
+test('synthesizeVerdict attaches remediationRoute to gaps and actions', () => {
+  const readModel = {
+    parity: { ok: false, skipped: false, summary: ['adapter drift'] },
+    contractViolations: { recentCount: 0 },
+    doctorLog: { recent: [] },
+    outcomes: { present: true, roles: {} },
+    alignmentCensus: { present: false },
+    registryValidate: { needsRun: false, warningCount: 0 },
+    observations: { present: true, count: 1 },
+    orgGraph: {},
+    projectDir: '/tmp',
+  };
+  const { gaps, recommendedActions } = synthesizeVerdict(readModel);
+  const parityGap = gaps.find((g) => g.id === 'parity-drift');
+  assert.ok(parityGap?.remediationRoute?.primary?.startsWith('cx-'));
+  const sync = recommendedActions.find((a) => a.kind === 'adapters-sync');
+  assert.ok(sync?.remediationRoute?.primary);
+});

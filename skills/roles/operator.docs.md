@@ -37,6 +37,10 @@ Additional failure modes on top of the operator core.
 **Why it fails**: rot is guaranteed; questions route to Slack instead of the doc.
 **Counter-move**: every doc declares an owner (person or role). Ownership appears in the header.
 
+## Methodology
+
+**Per-doc-type tone from the manifest.** Before editing a typed artifact, resolve tone from `specialists/artifact-manifest.json` (`toneDefault`, `toneAllowed`) and the profile definitions in `specialists/tone-profiles.json`. Projects override per type via `.cx/brand-voice.json`. `construct artifact validate <path> --type=<type>` reports the resolved tone — match it unless the user explicitly requests a different allowed profile.
+
 ## Self-check before shipping
 - [ ] Last-reviewed date present and fresh
 - [ ] One canonical source per concept; duplicates redirect
