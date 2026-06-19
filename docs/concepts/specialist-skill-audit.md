@@ -1,6 +1,6 @@
 # Specialist & skill audit
 
-Generated: 2026-06-19T04:26:52.159Z. Re-run `construct audit specialists --json` for the live matrix.
+Generated: 2026-06-19T04:51:12.653Z. Re-run `construct audit specialists --json` for the live matrix.
 
 ## Specialists
 

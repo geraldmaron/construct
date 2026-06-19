@@ -8,7 +8,7 @@
       "toneProfile": "direct",
       "grade": "strong",
       "gap": "—",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "oracle": {
       "humanEquivalent": "Platform SRE / fleet health owner",
@@ -16,7 +16,7 @@
       "toneProfile": "direct",
       "grade": "adequate",
       "gap": "Read-model gaps need explicit remediation routing evidence",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "rd-lead": {
       "humanEquivalent": "Research lead / principal investigator",
@@ -24,7 +24,7 @@
       "toneProfile": "pedagogical",
       "grade": "adequate",
       "gap": "Add power analysis and effect-size estimation to role overlay",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "product-manager": {
       "humanEquivalent": "Senior product manager",
@@ -32,7 +32,7 @@
       "toneProfile": "decision-forcing-direct",
       "grade": "strong",
       "gap": "Mandatory devil-advocate gate on PRD ship",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "ux-researcher": {
       "humanEquivalent": "UX researcher",
@@ -40,7 +40,7 @@
       "toneProfile": "pedagogical",
       "grade": "adequate",
       "gap": "Split user-research workflow from external research; deepen validity methodology",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "operations": {
       "humanEquivalent": "Technical program manager",
@@ -48,7 +48,7 @@
       "toneProfile": "direct",
       "grade": "adequate",
       "gap": "Critical-path method and resource leveling in role overlay",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "researcher": {
       "humanEquivalent": "Research analyst",
@@ -56,7 +56,7 @@
       "toneProfile": "direct",
       "grade": "strong",
       "gap": "Narrow research-workflow to external sources only",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "business-strategist": {
       "humanEquivalent": "Strategy / bizops lead",
@@ -64,7 +64,7 @@
       "toneProfile": "executive-concise",
       "grade": "adequate",
       "gap": "Porter's Five Forces and scenario planning in overlay",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "data-analyst": {
       "humanEquivalent": "Product data analyst",
@@ -72,7 +72,7 @@
       "toneProfile": "direct",
       "grade": "strong",
       "gap": "—",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "evaluator": {
       "humanEquivalent": "ML / product evaluator",
@@ -80,7 +80,7 @@
       "toneProfile": "direct",
       "grade": "strong",
       "gap": "—",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "ai-engineer": {
       "humanEquivalent": "AI engineer",
@@ -88,7 +88,7 @@
       "toneProfile": "direct",
       "grade": "strong",
       "gap": "—",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "architect": {
       "humanEquivalent": "Staff software architect",
@@ -96,7 +96,7 @@
       "toneProfile": "decision-forcing-direct",
       "grade": "strong",
       "gap": "ADR context diagram enforcement",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "engineer": {
       "humanEquivalent": "Senior software engineer",
@@ -104,7 +104,7 @@
       "toneProfile": "direct",
       "grade": "strong",
       "gap": "—",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "devil-advocate": {
       "humanEquivalent": "Red-team reviewer",
@@ -112,7 +112,7 @@
       "toneProfile": "direct",
       "grade": "adequate",
       "gap": "FMEA enumeration in role overlay; mandatory on high-risk artifacts",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "reviewer": {
       "humanEquivalent": "Staff engineer reviewer",
@@ -120,7 +120,7 @@
       "toneProfile": "direct",
       "grade": "strong",
       "gap": "—",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "security": {
       "humanEquivalent": "Application security engineer",
@@ -128,7 +128,7 @@
       "toneProfile": "direct",
       "grade": "strong",
       "gap": "Explicit STRIDE/PASTA steps in overlay",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "qa": {
       "humanEquivalent": "QA lead",
@@ -136,7 +136,7 @@
       "toneProfile": "direct",
       "grade": "strong",
       "gap": "—",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "debugger": {
       "humanEquivalent": "Senior debugger / SRE investigator",
@@ -144,7 +144,7 @@
       "toneProfile": "direct",
       "grade": "adequate",
       "gap": "Causal-model root-cause enumeration in overlay",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "sre": {
       "humanEquivalent": "Site reliability engineer",
@@ -152,7 +152,7 @@
       "toneProfile": "blameless",
       "grade": "strong",
       "gap": "Error-budget policy explicit in overlay",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "platform-engineer": {
       "humanEquivalent": "Platform engineer",
@@ -160,7 +160,7 @@
       "toneProfile": "direct",
       "grade": "adequate",
       "gap": "IaC maturity and SBOM in overlay",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "legal-compliance": {
       "humanEquivalent": "Legal / compliance counsel (technical)",
@@ -168,7 +168,7 @@
       "toneProfile": "direct",
       "grade": "adequate",
       "gap": "Risk taxonomy and technical-legal bridge in overlay",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "release-manager": {
       "humanEquivalent": "Release manager",
@@ -176,7 +176,7 @@
       "toneProfile": "direct",
       "grade": "adequate",
       "gap": "Canary failure-detection and SLO rollback trees",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "docs-keeper": {
       "humanEquivalent": "Staff technical writer",
@@ -184,7 +184,7 @@
       "toneProfile": "friendly",
       "grade": "strong",
       "gap": "Per-doc-type tone matrix not wired to manifest",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "designer": {
       "humanEquivalent": "Product designer",
@@ -192,7 +192,7 @@
       "toneProfile": "friendly",
       "grade": "adequate",
       "gap": "Design-system maturity in overlay",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "accessibility": {
       "humanEquivalent": "Accessibility specialist",
@@ -200,7 +200,7 @@
       "toneProfile": "pedagogical",
       "grade": "adequate",
       "gap": "Cognitive accessibility rigor in overlay",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "explorer": {
       "humanEquivalent": "Staff engineer (onboarding / exploration)",
@@ -208,7 +208,7 @@
       "toneProfile": "pedagogical",
       "grade": "adequate",
       "gap": "Dedicated codebase-research workflow",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "trace-reviewer": {
       "humanEquivalent": "Observability / eval analyst",
@@ -216,7 +216,7 @@
       "toneProfile": "direct",
       "grade": "adequate",
       "gap": "Statistical process control in overlay",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "data-engineer": {
       "humanEquivalent": "Data engineer",
@@ -224,7 +224,7 @@
       "toneProfile": "direct",
       "grade": "adequate",
       "gap": "Data lineage and SLA maturity in overlay",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     },
     "test-automation": {
       "humanEquivalent": "Test automation engineer",
@@ -232,7 +232,7 @@
       "toneProfile": "direct",
       "grade": "strong",
       "gap": "—",
-      "beadId": "construct-skills-hardening"
+      "beadId": "construct-hcr9"
     }
   },
   "roleOverlays": {
