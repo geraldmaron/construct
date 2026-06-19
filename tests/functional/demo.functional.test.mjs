@@ -34,7 +34,7 @@ function run(args, cwd) {
 test('construct demo list exits 0', () => {
   const result = run(['demo', 'list'], REPO);
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Project tapes/);
+  assert.match(result.stdout, /Demo tapes/);
 });
 
 test('construct demo init scaffolds project tape', () => {
@@ -98,7 +98,7 @@ test('buildDemoAttemptChain defaults to chat then dashboard then tape', () => {
 });
 
 test('agentic-platforms-prd tape uses construct chat not raw Dracula shell', () => {
-  const tapePath = path.join(REPO, '.cx', 'demos', 'tapes', 'agentic-platforms-prd.tape');
+  const tapePath = path.join(REPO, 'templates', 'demos', 'tapes', 'agentic-platforms-prd.tape');
   const themePath = path.join(REPO, 'templates', 'demos', 'vhs', 'construct-cockpit.json');
   assert.ok(fs.existsSync(tapePath));
   assert.ok(fs.existsSync(themePath));

@@ -33,6 +33,7 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 - [Deployment model](./concepts/deployment-model.mdx). Solo, team, and enterprise topology
 - [Prompt surface architecture](./concepts/prompt-surfaces.mdx). Persona, specialist, skill, rule, and fixture surfaces
 - [Knowledge layout](./concepts/knowledge-layout.md). `.cx/` directory structure, inbox routing, and durable knowledge lanes
+- [Project scopes](./concepts/project-scopes.md). `.construct` vs `.cx` vs user home — what belongs in git
 - [Intake and triage](./concepts/intake-and-triage.mdx). How dropped signals become owner-assigned work
 - [Gates and enforcement](./concepts/gates-and-enforcement.mdx). Write-time, commit-time, and CI guardrails
 - [Style](./STYLE.md). Voice, punctuation, structure rules (canonical reference for prose lint)
@@ -52,7 +53,7 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 These directories stay in git for Construct maintainers. They are excluded from the published docs site and not linked from README.
 
 - [Audit snapshots](./audit/). Dated alignment scorecards and baseline evidence
-- [Research notes](./research/). Competitive audits and synthesis reports
+- [Research notes](./research/). Competitive audits and synthesis reports; ADR-cited inputs in [decision-input](./research/decision-input/)
 - [PRDs](./prd/). Draft product requirements for this repo
 - [Roadmap](./roadmap.md). Generated placeholder (excluded from public site)
 - [Tests audit](../tests/AUDIT.md). Category-by-category survey of test files

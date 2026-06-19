@@ -1,3 +1,8 @@
+---
+intake: none
+intake_rationale: Durable ADR decision-input research; moved from .cx/research/ for vanilla package tree.
+---
+
 # Research Brief: Document I/O (Docling + export tooling) and Construct Invocation Model
 
 - **Date**: 2026-06-04

@@ -21,6 +21,7 @@ const TARGETS = [
   '.nyc_output',
   'audit-artifacts',
   '.tmp',
+  '.playwright-mcp',
 ];
 
 function rmrf(rel) {
@@ -30,7 +31,21 @@ function rmrf(rel) {
   return rel;
 }
 
+function rmRootTarballs() {
+  const removed = [];
+  for (const name of fs.readdirSync(ROOT)) {
+    if (!name.endsWith('.tgz') && !name.endsWith('.tar.gz')) continue;
+    const full = path.join(ROOT, name);
+    if (!fs.statSync(full).isFile()) continue;
+    fs.rmSync(full, { force: true });
+    removed.push(name);
+  }
+  return removed;
+}
+
 const removed = TARGETS.map(rmrf).filter(Boolean);
+const tarballs = rmRootTarballs();
+if (tarballs.length) removed.push(...tarballs.map((n) => `(root) ${n}`));
 if (removed.length) {
   for (const r of removed) process.stdout.write(`removed ${r}\n`);
 } else {
