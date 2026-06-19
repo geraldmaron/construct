@@ -4,7 +4,7 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 # ADR-0041: Terminal chat surface — own the loop, own the surface
 
 - **Date**: 2026-06-18
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher (owner), Construct maintainers (cx-architect)
 - **Supersedes**: ADR-0040
 

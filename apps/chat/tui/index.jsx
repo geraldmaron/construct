@@ -22,8 +22,9 @@ import {
 } from '../../../lib/chat/tui/turn-block.mjs';
 import { createTheme, splitModel } from './theme.mjs';
 import {
-  TurnTranscript, SessionRail, SessionHeader, Rule,
+  SessionRail, SessionHeader, Rule,
 } from './turn-ui.jsx';
+import { CompactTurnLog, SystemLogLine } from './event-log-ui.jsx';
 import { ListPickerOverlay } from './picker-ui.jsx';
 import {
   slashCommandGhost, commandSuggestHint, applyTabCompletion,
@@ -42,6 +43,7 @@ import {
   BOOL_PICKER_ITEMS, isBoolSetting, isEnumSetting,
 } from '../../../lib/chat/picker-catalog.mjs';
 import { applySessionSetting } from '../../../lib/chat/session-settings.mjs';
+import { LAYER_KEYS } from '../../../lib/chat/config.mjs';
 import { resolveTerminalColorScheme } from '../../../lib/chat/tui/color-scheme.mjs';
 
 const ChatThemeContext = createContext(createTheme());
@@ -50,10 +52,26 @@ function useChatTheme() {
   return useContext(ChatThemeContext);
 }
 
-function EmptyState({ model, savedModel }) {
+function EmptyState({ model, savedModel, demoGuide, demoTitle }) {
   const { palette, glyphs } = useChatTheme();
   const { provider, name } = splitModel(model);
   const saved = savedModel && savedModel !== model ? splitModel(savedModel) : null;
+  if (demoGuide?.script) {
+    return (
+      <Box flexDirection="column" paddingY={1}>
+        <Text color={palette.accent} bold>{`${glyphs.brand} demo: ${demoTitle || demoGuide.script.title}`}</Text>
+        <Box marginTop={1}>
+          <Text color={palette.muted} wrap="wrap">{demoGuide.script.summary}</Text>
+        </Box>
+        <Box marginTop={1} flexDirection="column">
+          <Text color={palette.muted}>Steps — type /demo next for the next prompt</Text>
+          {demoGuide.script.steps.map((step, i) => (
+            <Text key={i} color={palette.text}>{`  ${i + 1}. ${step.title || 'step'}`}</Text>
+          ))}
+        </Box>
+      </Box>
+    );
+  }
   return (
     <Box flexDirection="column" paddingY={1}>
       <Text color={palette.accent} bold>{`${glyphs.brand} welcome to construct chat`}</Text>
@@ -66,6 +84,7 @@ function EmptyState({ model, savedModel }) {
         <Text color={palette.muted}>To get going</Text>
         <Text color={palette.text}>{`  ${glyphs.caret} ask a question or describe the change you want`}</Text>
         <Text color={palette.muted}>{`  ${glyphs.caret} shift+enter newline   tab completes /commands   /model /set open searchable pickers`}</Text>
+        <Text color={palette.muted}>{`  ${glyphs.caret} construct chat --resume restores the last session`}</Text>
       </Box>
       {name && name !== '(no model)' ? (
         <Box marginTop={1} flexDirection="column">
@@ -90,42 +109,48 @@ function EmptyState({ model, savedModel }) {
 
 function ConversationColumn({
   width, turnBlocks, activeTurn, liveAssistant, liveThinking, layers, working, model, savedModel,
-  detailDense, theme,
+  detailDense, theme, demoGuide, demoTitle,
 }) {
   if (!turnBlocks.length && !activeTurn) {
     return (
       <Box flexDirection="column" width={width} paddingRight={2}>
-        <EmptyState model={model} savedModel={savedModel} />
+        <EmptyState model={model} savedModel={savedModel} demoGuide={demoGuide} demoTitle={demoTitle} />
       </Box>
     );
   }
 
   const completed = activeTurn ? turnBlocks.slice(0, -1) : turnBlocks;
+  let turnNum = 0;
 
   return (
     <Box flexDirection="column" width={width} paddingRight={2}>
-      {completed.map((item, i) => (
-        item.kind === 'turn' ? (
-          <TurnTranscript
+      {completed.map((item) => {
+        if (item.kind === 'system') {
+          return <SystemLogLine key={`sys-${item.text?.slice(0, 24)}-${turnNum}`} text={item.text} width={width} palette={theme.palette} />;
+        }
+        if (item.kind !== 'turn') return null;
+        turnNum += 1;
+        return (
+          <CompactTurnLog
             key={item.block.id}
             turn={item.block}
             width={width}
             layers={layers}
-            turnIndex={i + 1}
+            turnIndex={turnNum}
             detailDense={detailDense}
             theme={theme}
           />
-        ) : null
-      ))}
+        );
+      })}
       {activeTurn ? (
-        <TurnTranscript
+        <CompactTurnLog
           turn={activeTurn}
           width={width}
           layers={layers}
           liveAssistant={liveAssistant}
           liveThinking={liveThinking}
           working={working}
-          turnIndex={completed.length + 1}
+          turnIndex={turnNum + 1}
           detailDense={detailDense}
           theme={theme}
         />
@@ -164,7 +189,7 @@ function Footer({
           ? '↑/↓ move   enter select   y/a/n shortcut   esc cancel'
           : listPickerActive
             ? 'type to filter   ↑/↓ move   enter select   esc cancel'
-            : `enter send   tab complete   shift+enter newline   ${glyphs.gutter}   /help  Ctrl-C ${working ? 'cancel' : 'exit'}`}
+            : `enter send   tab complete   shift+enter newline   ${glyphs.gutter}   /help   Ctrl+1-5 layers   Ctrl-C ${working ? 'cancel' : 'exit'}`}
       </Text>
     </Box>
   );
@@ -203,8 +228,9 @@ function App({
       hostId: 'construct',
       cwd,
       turnBlocksRef: () => turnBlocksRef.current,
+      demoGuide: session.demoGuide || null,
     }),
-    [driver, cwd],
+    [driver, cwd, session.demoGuide],
   );
 
   const seedBlocks = initialTurnBlocks?.length
@@ -226,6 +252,7 @@ function App({
   const [ctx, setCtx] = useState(null);
   const [frame, setFrame] = useState(0);
   const [listPicker, setListPicker] = useState(null);
+  const [routeOverlay, setRouteOverlay] = useState(null);
   const [, forceTick] = useState(0);
   const busy = useRef(false);
   const inputHistory = useRef([]);
@@ -401,6 +428,14 @@ function App({
     setUiEpoch((n) => n + 1);
   }, [session]);
 
+  const toggleLayerShortcut = useCallback((layerKey) => {
+    const on = layers[layerKey] !== false;
+    const result = applySessionSetting(session, layers, layerKey, on ? 'off' : 'on', { cwd });
+    if (!result.ok) setNotice(result.error || 'invalid layer');
+    else setNotice(`${layerKey}: ${on ? 'off' : 'on'}`);
+    setUiEpoch((n) => n + 1);
+  }, [cwd, layers, session]);
+
   const handleCommand = useCallback(async (text) => {
     const trimmed = text.trim();
     if (trimmed === '/inspect') {
@@ -445,13 +480,12 @@ function App({
         setNotice('');
         setPlan([]);
         setPermissions([]);
+        setRouteOverlay(null);
       },
     });
     const msg = stripAnsi(out.text()).trim();
     if (msg) {
-      const t = createTurnBlock('');
-      t.assistant = msg;
-      setTurnBlocks((prev) => [...prev, { kind: 'turn', block: t }]);
+      setTurnBlocks((prev) => [...prev, { kind: 'system', text: msg }]);
     }
     setUiEpoch((n) => n + 1);
     if (!keep) exit();
@@ -481,7 +515,10 @@ function App({
     let overlay = null;
     try {
       overlay = await planTurn?.(text, { turnBlocks: turnBlocksRef.current });
-      if (overlay) applyOverlayToTurn(turn, overlay);
+      if (overlay) {
+        applyOverlayToTurn(turn, overlay);
+        setRouteOverlay(overlay);
+      }
       bumpTurnBlocks(turn);
     } catch { /* overlay is best-effort */ }
 
@@ -550,6 +587,10 @@ function App({
       if (action === 'cancel') { setListPicker(null); return; }
       if (action === 'commit') { commitListPicker(); return; }
       if (state) setListPicker(state);
+      return;
+    }
+    if (key.ctrl && char >= '1' && char <= '5' && !input) {
+      toggleLayerShortcut(LAYER_KEYS[Number(char) - 1]);
       return;
     }
     if (key.ctrl && char === 'c') {
@@ -637,6 +678,8 @@ function App({
             savedModel={session.savedModel}
             detailDense={Boolean(session.detailDense)}
             theme={theme}
+            demoGuide={session.demoGuide}
+            demoTitle={session.demoTitle}
           />
           <SessionRail
             width={railWidth}
@@ -653,6 +696,7 @@ function App({
             theme={theme}
             cwd={cwd}
             modelNotice={session.modelNotice || notice || ''}
+            routeOverlay={routeOverlay}
           />
         </Box>
         <Footer
@@ -694,5 +738,6 @@ export function runInkChat({
 }
 
 export { SessionRail, SessionDock, TurnContextBar, TurnTranscript, TurnView, TransparencyPanel, SessionHeader } from './turn-ui.jsx';
+export { CompactTurnLog, SystemLogLine, RouteRailPanel } from './event-log-ui.jsx';
 export { EmptyState, App, createTheme };
 export default runInkChat;

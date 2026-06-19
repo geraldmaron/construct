@@ -1,17 +1,19 @@
 ---
 cx_doc_id: 0003-rfc-dashboard-chat-protocol
 created_at: "2026-04-29T00:00:00.000Z"
-updated_at: "2026-04-29T00:00:00.000Z"
+updated_at: "2026-06-19T00:00:00.000Z"
 generator: construct/Construct-Engineer
-status: accepted
-last_verified_at: 2026-06-01
-verified_by: cx-docs-keeper · PR-D baseline stamp
+status: superseded
+last_verified_at: 2026-06-19
+verified_by: cx-docs-keeper · documentation alignment pass
 ---
 # RFC-0003: Dashboard Chat Protocol
 
 - **Date**: 2026-04-29
 - **Author**: Construct-Engineer
-- **Status**: Accepted
+- **Status**: Superseded (primary path)
+
+> **Primary path (2026-06):** Dashboard and `construct chat --web` now stream the **owned-loop** protocol at `GET /api/chat/loop/stream` (ADR-0041). Legacy `/api/chat/*` (Claude `--print` delegation) remains for backward compatibility. This RFC documents the original delegation design.
 
 ## Summary
 

@@ -1,7 +1,5 @@
 /**
- * apps/chat/web/components/terminal-cockpit.tsx — full-height terminal cockpit shell.
- *
- * Status bar, event log, route dock, session dock, and CLI prompt for dashboard /chat.
+ * apps/chat/web/components/terminal-cockpit.tsx — web port of construct chat Ink cockpit.
  */
 
 'use client';
@@ -10,9 +8,9 @@ import { useEffect, useState } from 'react';
 import { useChatStream } from '../hooks/use-chat-stream';
 import { StatusBar } from './status-bar';
 import { EventLog } from './event-log';
-import { RouteDock } from './route-dock';
 import { SessionDock } from './session-dock';
 import { CliPrompt } from './cli-prompt';
+import { ListPicker } from './list-picker';
 
 export function TerminalCockpit() {
   const {
@@ -25,9 +23,12 @@ export function TerminalCockpit() {
     streaming,
     routeDrawerOpen,
     setRouteDrawerOpen,
+    picker,
+    setPicker,
     sendMessage,
     resolvePermission,
     toggleLayer,
+    handlePickerSelect,
   } = useChatStream();
 
   const [mobile, setMobile] = useState(false);
@@ -40,11 +41,8 @@ export function TerminalCockpit() {
     return () => mq.removeEventListener('change', update);
   }, []);
 
-  const routeCount = activeOverlay?.specialists?.length || 0;
-  const turnIndex = turns.length || undefined;
-
   return (
-    <div className="cx-cockpit">
+    <div className="cx-cockpit" data-testid="terminal-cockpit">
       {error ? (
         <p role="alert" className="cx-cockpit-error-banner">{error}</p>
       ) : null}
@@ -54,19 +52,40 @@ export function TerminalCockpit() {
         layers={layers}
         streaming={streaming}
         onToggleLayer={toggleLayer}
-        showRouteToggle={mobile}
-        routeCount={routeCount}
-        onToggleRoute={() => setRouteDrawerOpen((v) => !v)}
       />
 
       <div className="cx-cockpit-main">
-        <EventLog turns={turns} layers={layers} />
+        <EventLog turns={turns} layers={layers} sessionMeta={sessionMeta} />
 
-        <div className={`cx-cockpit-dock-col ${mobile && routeDrawerOpen ? 'cx-cockpit-dock-open' : ''}`}>
-          <RouteDock overlay={activeOverlay} turnIndex={turnIndex} />
-          <SessionDock sessionMeta={sessionMeta} />
+        <div className={`cx-cockpit-rail-col ${mobile && routeDrawerOpen ? 'cx-cockpit-rail-open' : ''}`}>
+          {mobile ? (
+            <button
+              type="button"
+              className="cx-cockpit-rail-toggle"
+              onClick={() => setRouteDrawerOpen((v) => !v)}
+            >
+              {routeDrawerOpen ? 'hide session' : 'session rail'}
+            </button>
+          ) : null}
+          <SessionDock
+            sessionMeta={sessionMeta}
+            layers={layers}
+            overlay={activeOverlay}
+            streaming={streaming}
+            onToggleLayer={toggleLayer}
+          />
         </div>
       </div>
+
+      {picker ? (
+        <ListPicker
+          title={picker.title}
+          items={picker.items}
+          selectedId={picker.selectedId}
+          onSelect={handlePickerSelect}
+          onCancel={() => setPicker(null)}
+        />
+      ) : null}
 
       {pending ? (
         <div className="cx-cockpit-permission" role="dialog" aria-label="Permission request">
@@ -83,7 +102,7 @@ export function TerminalCockpit() {
         </div>
       ) : null}
 
-      <CliPrompt disabled={streaming} onSubmit={(text) => void sendMessage(text)} />
+      <CliPrompt disabled={streaming || Boolean(picker)} onSubmit={(text) => void sendMessage(text)} />
     </div>
   );
 }

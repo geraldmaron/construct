@@ -38,6 +38,7 @@ export type ChatTurn = {
   sources: string[];
   usage: Record<string, unknown> | null;
   working: boolean;
+  system?: boolean;
 };
 
 export type SessionMeta = {

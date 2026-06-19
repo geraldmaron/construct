@@ -75,6 +75,10 @@ export default function HomePage() {
             <span className="v">Claude · Codex · OpenCode · Cursor · Copilot</span>
           </div>
           <div className="hero-stat">
+            <span className="k">Surfaces</span>
+            <span className="v">editors · <Link className="link" href="/cookbook/construct-chat">construct chat</Link> · dashboard /chat</span>
+          </div>
+          <div className="hero-stat">
             <span className="k">Modes</span>
             <span className="v">solo · team · enterprise</span>
           </div>
@@ -142,8 +146,10 @@ export default function HomePage() {
         <CodeBlock>
 {`construct status          # confirm services and editor adapters are healthy
 construct sync            # refresh host adapters after registry or config changes
+construct chat            # owned-loop terminal session (optional)
 construct intake list     # review new signals, if your project uses the inbox
-construct doctor          # diagnose install, service, MCP, and adapter drift`}
+construct doctor          # diagnose install, service, MCP, and adapter drift
+construct oracle status   # fleet health verdict and pending queue`}
         </CodeBlock>
         <p>
           In your editor, start with <code>@construct</code>. Ask for the outcome, not the
@@ -165,6 +171,7 @@ construct doctor          # diagnose install, service, MCP, and adapter drift`}
           { num: '04', title: 'Health you can see', body: <>A canonical <code>construct status</code> and <code>construct doctor</code> — runtime, providers, telemetry, storage modes, adapter drift.</> },
           { num: '05', title: 'Hybrid retrieval', body: 'File-state, SQL-ready records, and semantic search over a shared corpus. Falls back to a local JSON vector index when Postgres isn’t available.' },
           { num: '06', title: 'Hard gates, not vibes', body: 'Three layers — write-time hooks, commit/push gates, CI safety-net. Quality gates fire unconditionally; notice-only signals auto-suppress in CI and non-TTY contexts. If a gate fires wrong, repair the policy — do not bypass it.' },
+          { num: '07', title: 'Owned-loop chat + Oracle', body: <>Terminal and browser chat run Construct&apos;s own loop with full transparency. Oracle reviews fleet health and queues consequential fixes — <code>construct oracle status</code>.</> },
         ]} />
       </Section>
 
@@ -206,6 +213,7 @@ construct doctor          # diagnose install, service, MCP, and adapter drift`}
           <li><Link className="link" href="/concepts/architecture">Architecture</Link> — diagrams, the request lifecycle, where things live.</li>
           <li><Link className="link" href="/concepts/deployment-model">Deployment model</Link> — pick solo, team, or enterprise.</li>
           <li><Link className="link" href="/concepts/intake-and-triage">Intake and triage</Link> — how signals become triaged R&amp;D work.</li>
+          <li><Link className="link" href="/cookbook/construct-chat">Construct chat</Link> — owned-loop terminal and browser surfaces.</li>
           <li><Link className="link" href="/cookbook">Cookbook</Link> — task-oriented recipes (custom agents, providers, retrieval backend, your own LLM).</li>
           <li><Link className="link" href="/reference">Reference</Link> — every CLI command, hook, MCP tool, config option.</li>
         </ul>

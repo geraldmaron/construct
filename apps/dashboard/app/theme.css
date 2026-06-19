@@ -944,70 +944,42 @@ h1.page-title em { font-style: normal; color: var(--muted); font-weight: 500; }
 }
 .md-step > h3 { margin-top: 0; }
 
-/* ─── Terminal chat (immersive /chat) ───────────────────────── */
+/* ─── Terminal chat (immersive /chat — matches Ink TUI) ─────── */
 .shell--chat .body-grid {
   grid-template-columns: 1fr;
-  min-height: calc(100vh - var(--header-h));
-}
-
-.shell--chat .main--chat {
-  height: calc(100vh - var(--header-h));
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background: #000;
+  min-height: 100vh;
 }
 
 .shell--chat .topbar {
-  background: #050805;
-  border-bottom: 1px solid #1a3d22;
-  grid-template-columns: auto 1fr auto;
+  display: none;
 }
 
-.shell--chat .chat-topbar-title {
+.shell--chat .main--chat {
+  height: 100vh;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 18px;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #5a8a62;
-  flex: 1;
-  min-width: 0;
-}
-
-.shell--chat .chat-topbar-mode {
-  color: #00ff88;
-  font-weight: 600;
-}
-
-.shell--chat .chat-topbar-sep {
-  color: #2a4a30;
-}
-
-.shell--chat .brand--chat-back {
-  border-right-color: #1a3d22;
-  padding: 0 18px;
-  min-width: 140px;
-}
-
-.shell--chat .chat-back-label {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #7fbf8f;
-}
-
-.shell--chat .brand--chat-back:hover .chat-back-label {
-  color: #00ff88;
+  flex-direction: column;
+  background: #0c1018;
 }
 
 .shell--chat .main--chat .cx-cockpit {
   flex: 1;
   min-height: 0;
+}
+
+.shell--chat .skip-link {
+  position: absolute;
+  left: -9999px;
+}
+
+.shell--chat .skip-link:focus {
+  left: 12px;
+  top: 12px;
+  z-index: 10;
+  padding: 8px 12px;
+  background: #101620;
+  color: #56d4dd;
+  border: 1px solid #3d5a80;
 }
 
 /* ─── Mobile ────────────────────────────────────────────────── */
