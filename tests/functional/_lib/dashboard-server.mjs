@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { existsSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { withNextBuildLock } from './next-build-lock.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..', '..');
@@ -25,20 +26,26 @@ const READY_TIMEOUT_MS = 20_000;
 // `construct dashboard:sync --build` runs. Dashboard tests require the static
 // tree present, so the harness builds on first use and caches the promise
 // across concurrent suites sharing the dashboard server.
+//
+// The cross-process lock serializes against the dashboard-build suite, which
+// runs `next build` against the same distDir in a sibling node:test worker.
+// After acquiring it, re-check the static tree: a concurrent builder may have
+// produced it during the wait, making a rebuild redundant.
 
 let dashboardBuildPromise = null;
 
 function ensureDashboardBuilt() {
   if (existsSync(STATIC_INDEX)) return Promise.resolve(true);
   if (dashboardBuildPromise) return dashboardBuildPromise;
-  dashboardBuildPromise = new Promise((resolveBuild) => {
+  dashboardBuildPromise = withNextBuildLock(REPO_ROOT, () => {
+    if (existsSync(STATIC_INDEX)) return true;
     const result = spawnSync(
       process.execPath,
       [join(REPO_ROOT, 'bin', 'construct'), 'dashboard:sync', '--build'],
       { cwd: REPO_ROOT, encoding: 'utf8', timeout: 240_000, stdio: 'pipe' },
     );
-    resolveBuild(result.status === 0 && existsSync(STATIC_INDEX));
-  });
+    return result.status === 0 && existsSync(STATIC_INDEX);
+  }).catch(() => false);
   return dashboardBuildPromise;
 }
 
