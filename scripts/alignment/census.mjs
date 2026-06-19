@@ -21,6 +21,7 @@ import { makeId } from '../audit/lib/findings.mjs';
 import { writeJson, readJson } from '../audit/lib/artifacts.mjs';
 import { REPO_ROOT } from '../audit/lib/handlers.mjs';
 import { auditSkills } from '../../lib/audit-skills.mjs';
+import { triageBoundOrphans } from '../../lib/registry/consolidation.mjs';
 import { getWorkflowDef, listWorkflowDefs, WORKFLOW_TYPES } from '../../lib/embedded-contract/workflow-defs.mjs';
 import { checkParity } from '../../lib/parity.mjs';
 import { loadCapabilities } from '../../lib/platforms/capabilities.mjs';
@@ -55,11 +56,16 @@ function collectSkillFiles(skillsDir) {
 }
 
 function registryBoundOrphans(root) {
-  const registry = JSON.parse(fs.readFileSync(path.join(root, 'specialists', 'registry.json'), 'utf8'));
-  const declared = new Set();
-  for (const s of registry.specialists ?? []) for (const sk of s.skills ?? []) declared.add(sk);
-  const all = collectSkillFiles(path.join(root, 'skills'));
-  return { declaredCount: declared.size, fileCount: all.length, boundOrphans: all.filter((s) => !declared.has(s)) };
+  const triage = triageBoundOrphans({ rootDir: root });
+  return {
+    declaredCount: triage.declaredCount,
+    fileCount: triage.fileCount,
+    boundOrphans: triage.items.map((i) => i.skill),
+    composerReachableCount: triage.composerReachableCount,
+    trueOrphanCount: triage.trueOrphanCount,
+    aBindCount: triage.aBindCount,
+    byCategory: triage.byCategory,
+  };
 }
 
 function yamlWorkflowTemplates(root) {
@@ -180,6 +186,7 @@ if (isMain) {
   const census = runAlignmentCensus();
   process.stdout.write(
     `[alignment:census] skills=${census.skills.fileCount} bound-orphans=${census.skills.boundOrphans.length} ` +
+    `composer-reachable=${census.skills.composerReachableCount ?? 0} true-orphans=${census.skills.trueOrphanCount ?? 0} ` +
     `findings=${census.audit.findingsCount} ratchet-regressions=${census.audit.ratchet.regressions.length}\n`,
   );
   if (ratchetMode && census.audit.ratchet.regressions.length > 0) {

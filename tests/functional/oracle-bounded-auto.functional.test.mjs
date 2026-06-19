@@ -63,12 +63,15 @@ test('synthesizeVerdict flags parity drift and missing census', () => {
 test('runOracleTick dry-run executes auto actions without writing pending queue', async () => {
   const env = freshProject();
   try {
+    process.env.CONSTRUCT_ORACLE_AUTO_RAISE = 'off';
     const result = await runOracleTick({ ...env, dryRun: true });
     assert.ok(['healthy', 'attention', 'degraded'].includes(result.verdict));
-    assert.ok(result.tick.executed.some((e) => e.kind === 'registry-validate'));
+    const hasRegistryAuto = result.tick.executed.some((e) => e.kind === 'registry-validate');
+    assert.equal(hasRegistryAuto, result.recommendedActions.some((a) => a.kind === 'registry-validate'));
     const pendingFile = join(env.projectDir, '.cx', 'oracle', 'pending.jsonl');
     assert.equal(existsSync(pendingFile), false);
   } finally {
+    delete process.env.CONSTRUCT_ORACLE_AUTO_RAISE;
     env.cleanup();
   }
 });
@@ -88,7 +91,7 @@ test('runOracleTick queues approve actions to pending.jsonl', async () => {
     assert.ok(pending.length > 0);
     assert.equal(pending[0].status, 'pending');
 
-    const approved = approvePending(env.projectDir, pending[0].id);
+    const approved = await approvePending(env.projectDir, pending[0].id, { execute: false });
     assert.equal(approved.ok, true);
     const after = listPending(env.projectDir).find((p) => p.id === pending[0].id);
     assert.equal(after.status, 'approved');

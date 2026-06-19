@@ -42,6 +42,7 @@ All LLMs working in the repo, including Construct, must read these as project st
 - [ADRs](../.cx/decisions/). Session-context decisions (longer ADRs live in `docs/adr/`)
 - [Skills](../skills/). Domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
 - [Tests audit](../tests/AUDIT.md). Category-by-category survey of the 188 test files
+- [Audit snapshots](./audit/). Dated alignment scorecards and baseline evidence (not living docs)
 - [Functional tests pattern](../tests/functional/README.md). When and how to add an end-to-end test
 
 ## How-to guides
@@ -105,4 +106,4 @@ Parallel work rule: one writer per file. If multiple agent or harness sessions a
 ## Ownership
 
 Maintained by: Construct contributors
-Last updated: 2026-05-28
+Last updated: 2026-06-19

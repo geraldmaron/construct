@@ -192,7 +192,9 @@ jobs:
         # public npm registry.
         env:
           DOCS_BASE_PATH: /construct
-        run: npm --prefix apps/docs run build
+        run: |
+          node ./bin/construct docs:site
+          npm --prefix apps/docs run build
       - name: gates audit
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         env:

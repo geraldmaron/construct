@@ -85,7 +85,7 @@ if [[ "${CONSTRUCT_SKIP_GATES:-0}" != "1" ]]; then
     docs_dirty=0
     for file in $staged_files; do
       case "$file" in
-        lib/cli-commands.mjs|bin/construct|lib/model-router.mjs|lib/status.mjs)
+        lib/cli-commands.mjs|lib/auto-docs.mjs|bin/construct|lib/model-router.mjs|lib/status.mjs|specialists/registry.json|lib/hooks/*)
           docs_dirty=1
           break
           ;;
@@ -97,6 +97,13 @@ if [[ "${CONSTRUCT_SKIP_GATES:-0}" != "1" ]]; then
         node ./bin/construct docs:update >/dev/null 2>&1
         git add README.md docs/reference/cli/*.md 2>/dev/null || true
         echo "[Construct pre-commit] Docs updated and staged. Please review and commit again." >&2
+        exit 1
+      fi
+      if ! node ./bin/construct docs:site --check >/dev/null 2>&1; then
+        echo "[Construct pre-commit] Generated reference out of date. Regenerating..." >&2
+        node ./bin/construct docs:site >/dev/null 2>&1
+        git add docs/reference/ 2>/dev/null || true
+        echo "[Construct pre-commit] Reference docs updated and staged. Please review and commit again." >&2
         exit 1
       fi
     fi

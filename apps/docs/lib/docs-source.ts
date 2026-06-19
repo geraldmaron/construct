@@ -187,6 +187,9 @@ const SIDEBAR_LAYOUT: { label: string; dir: string }[] = [
   { label: 'Concepts', dir: 'concepts' },
   { label: 'Cookbook', dir: 'cookbook' },
   { label: 'Reference', dir: 'reference' },
+  { label: 'Maintenance', dir: 'maintenance' },
+  { label: 'Contributing', dir: 'contributing' },
+  { label: 'ADRs', dir: 'adr' },
 ];
 
 export function buildSidebar(): SidebarSection[] {
