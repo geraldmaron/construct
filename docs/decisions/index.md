@@ -11,7 +11,7 @@ Short records of an architecturally significant decision that's already been mad
 
 Browse the [`docs/adr/`](https://github.com/geraldmaron/construct/tree/main/docs/adr) directory on GitHub.
 
-Latest: [ADR-0039 — Interaction-surface model (CLI vs agent/MCP/TUI/dashboard)](../adr/0039-interaction-surface-model.md).
+Latest: [ADR-0044 — Tool-repo root layout hygiene](../adr/0044-tool-repo-root-layout.md). See also [ADR-0041 — Terminal chat owned loop](../adr/0041-terminal-chat-owned-loop.md) and [ADR-0043 — Oracle meta-controller](../adr/0043-oracle-meta-controller.md).
 
 ## RFCs (Request for Comments)
 

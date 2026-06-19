@@ -339,6 +339,12 @@ h1.page-title em { font-style: normal; color: var(--muted); font-weight: 500; }
 /* ─── Prose ─────────────────────────────────────────────────── */
 .body p { margin: 0 0 14px; color: var(--ink-soft); }
 .body p:last-child { margin-bottom: 0; }
+.body h2 {
+  font-family: var(--display);
+  font-size: 22px; font-weight: 600; letter-spacing: -0.02em;
+  margin: 28px 0 12px; color: var(--ink);
+  line-height: 1.25;
+}
 .body h3 {
   font-family: var(--display);
   font-size: 18px; font-weight: 600; letter-spacing: -0.01em;
