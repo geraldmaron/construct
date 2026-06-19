@@ -13,10 +13,10 @@ description: Generated from registry/capabilities.json. Do not edit by hand.
 |---|---|---|---|---|---|
 | `chat.owned-loop` | Chat Owned Loop | P1 | cli:construct chat | proposal-only | never |
 | `local.model.tier` | Local Model Tier Detection | P1 | cli:construct models resolve | proposal-only | never |
-| `mcp.broker.connection` | MCP Broker Connectivity | P0 | mcp:primary, opencode, cursor, vscode, claude | autonomous | 2026-06-18 |
+| `mcp.broker.connection` | MCP Broker Connectivity | P0 | mcp:primary, opencode, cursor, vscode, claude | autonomous | 2026-06-19 |
 | `mcp.tool-budget.trim` | MCP Tool Surface Trim | P2 | opencode | proposal-only | never |
 | `oracle.meta-review` | Oracle Meta-Review | P1 | cli:construct oracle review | approve-only | never |
-| `orchestration.routing` | Orchestration Intent Routing | P0 | mcp:primary:orchestration_policy, cli:construct orchestrate run, opencode, claude, cursor | proposal-only | 2026-06-18 |
+| `orchestration.routing` | Orchestration Intent Routing | P0 | mcp:primary:orchestration_policy, cli:construct orchestrate run, opencode, claude, cursor | proposal-only | 2026-06-19 |
 
 ## document-type
 
@@ -32,7 +32,7 @@ description: Generated from registry/capabilities.json. Do not edit by hand.
 
 | ID | Name | Criticality | Surfaces | Human gate | Last validated |
 |---|---|---|---|---|---|
-| `ingest.adapter` | Adapter Ingest (default) | P0 | cli:primary:construct ingest, mcp:ingest_document | autonomous | 2026-06-18 |
+| `ingest.adapter` | Adapter Ingest (default) | P0 | cli:primary:construct ingest, mcp:ingest_document | autonomous | 2026-06-19 |
 | `ingest.docling` | Docling Sidecar Ingest | P1 | cli:construct ingest --legacy-extractor=false | autonomous | never |
 | `ingest.docling-remote` | Docling Remote Ingest | P2 | cli:construct ingest | requires-human-approval | never |
 

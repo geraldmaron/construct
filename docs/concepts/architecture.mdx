@@ -193,7 +193,7 @@ The goal is for Construct to run itself like a real organization. a department-s
 Four operational tiers:
 
 1. **L0. Deterministic agents (non-LLM, always-on).** The `construct-doctor` daemon (`lib/doctor/`) runs alongside the dashboard, holding watchers for process-pressure (extends `lib/runtime-pressure.mjs`), service-health (probes Postgres / dashboard / cm; auto-restarts docker services), disk (rotates `~/.cx/*.jsonl`, prunes `~/.construct/.runtime/`), cost (per-persona daily token ledger; the gateway hard-stops invocations at the cap), and `mcp-protocol` (performs a real MCP handshake against every configured MCP server in Claude Code and OpenCode configs, surfaces servers that fail `initialize` or `tools/list`). Recoverable actions are auto-taken and audit-logged to `~/.cx/doctor-log.jsonl`. L0 escalates a `service.down` role event when deterministic rules can't resolve the problem (e.g., 2 failed restarts or repeated pressure churn).
-2. **L0.5. Oracle meta-review (deterministic synthesis + bounded auto).** The `construct oracle` daemon (`lib/oracle/`) joins session observations, outcomes, contract violations, doctor log entries, alignment census, and beads delta into per-session verdicts (`.cx/oracle/verdicts/`). Auto actions (census, registry validate, adapter sync in the tool repo) run without approval; orchestration and global sync queue to `.cx/oracle/pending/` for explicit approval. See [ADR 0043](/concepts/adr/0043-oracle-meta-controller).
+2. **L0.5. Oracle meta-review (deterministic synthesis + bounded auto).** The `construct oracle` daemon (`lib/oracle/`) joins session observations, outcomes, contract violations, doctor log entries, alignment census, org graph (policy inventory, workflow gates, intake sign-offs), beads hygiene, and adapter parity into per-tick verdicts at `.cx/oracle/verdicts/<date>.json`. Auto actions (census, registry validate when needed, adapter sync in the tool repo) run without approval; high-severity gaps auto-raise idempotent beads when `CONSTRUCT_ORACLE_AUTO_RAISE` is not off; orchestration queues to `.cx/oracle/pending.jsonl` for explicit approval with sign-off metadata (`construct oracle approve <id>` executes by default). Routing artifacts land in `.cx/oracle/routing/`. Oracle starts with `construct dev` unless `CONSTRUCT_ORACLE=off`. See [ADR 0043](/adr/0043-oracle-meta-controller).
 3. **L1. LLM personas (event-driven, fenced, rate-limited).** The role framework in `lib/roles/`. Events published by hooks or L0 are routed by `lib/orchestration/routing-tables.mjs`, which resolves event ownership, doc-artifact ownership, and watch-condition triggers from declarative fields on `specialists/registry.json` (with optional project overlays under `.cx/specialists/`); the owning persona is then validated against `specialists/role-manifests.json`. The gateway applies threshold + cooldown + rate-ceiling, creates a bd issue, queues a pending invocation in `~/.cx/role-pending.jsonl`, and emits an SSE toast. Session-start drains the backlog (cap 5 per session) and surfaces invocations to Construct, which dispatches the persona via the existing Task path. Personas act inside a fence. allowed paths, allowed bd labels, `approvalRequired` list per role. Handoffs are recorded as `next:cx-<role>` bd labels.
 4. **L2. User.** Commits, pushes, novel decisions, budget overrides, kill switches. Approval-required actions per `rules/common/commit-approval.md` are always L2. The goal is to make L2 rare. not zero.
 
@@ -210,7 +210,7 @@ Kill switches throughout: `CONSTRUCT_ROLES=off` (global L1), `CONSTRUCT_ROLE_<NA
 
 ## Footprint contract
 
-Construct's install and init paths are governed by a per-scope opt-in contract codified in [ADR 0029](/concepts/adr/0029-install-scopes-and-hook-budgets). Two scopes; project is the default; the user scope is opt-in.
+Construct's install and init paths are governed by a per-scope opt-in contract codified in [ADR 0029](/adr/0029-install-scopes-and-hook-budgets). Two scopes; project is the default; the user scope is opt-in.
 
 ### Project scope — `construct init` (per repository)
 
@@ -247,7 +247,7 @@ Machine scope writes are opt-in. The default `construct install` (no flag, or `-
 
 - `~/.bashrc`, `~/.zshrc`, or any other shell rc — Construct never writes to shell init files.
 - `npm` global config or registries.
-- `git config --global core.hooksPath` — explicitly prohibited by [ADR 0027](/concepts/adr/0027-host-project-footprint-and-non-destructive-scaffolding) §3.
+- `git config --global core.hooksPath` — explicitly prohibited by [ADR 0027](/adr/0027-host-project-footprint-and-non-destructive-scaffolding) §3.
 - Any path outside the table above without first appearing in `construct doctor` drift output and prompting for consent.
 
 ### Hook performance budgets
@@ -291,7 +291,9 @@ See [Embedded contract layer](/concepts/embedded-contract) for the contract mode
 
 ## Capability registry (alignment spine)
 
-`registry/capabilities.json` is the machine-readable index linking capabilities, workflows, document types, ingest strategies, and hot-path skills to their verification tests, interaction surfaces, and human gates. Validated by `construct registry:validate` and surfaced in `construct doctor`; reference docs are generated (`construct registry:generate-docs` → `docs/reference/capabilities.md`). Each entry declares ADR-0039 surfaces (`mcp`, `cli`, `opencode`, `claude`, …), optional `verification.functional` paths into the existing functional suite (ADR-0035 extend-not-rebuild), and `lastValidated` stamped by `node scripts/run-capability-tests.mjs --tier=P0 --stamp`. Capability-tier tests live at `tests/capabilities/<registry-id>/<surface>.test.mjs`. Phase 0 alignment artifacts: `docs/audit/alignment-scorecard-2026-06.md`, `scripts/alignment/census.mjs`, and the bound-orphan consolidation proposal (maintainer approval before bind/merge/delete).
+`registry/capabilities.json` is the machine-readable index linking capabilities, workflows, document types, ingest strategies, and hot-path skills to their verification tests, interaction surfaces, and human gates. Validated by `construct registry:validate` and surfaced in `construct doctor`; reference docs are generated (`construct registry:generate-docs` → `docs/reference/capabilities.md`). Each entry declares ADR-0039 surfaces (`mcp`, `cli`, `opencode`, `claude`, …), optional `verification.functional` paths into the existing functional suite (ADR-0035 extend-not-rebuild), and `lastValidated` stamped by `node scripts/run-capability-tests.mjs --tier=P0 --stamp`. Capability-tier tests live at `tests/capabilities/<registry-id>/<surface>.test.mjs`. Phase 0 alignment artifacts: `docs/audit/alignment-scorecard-2026-06-19.md`, `scripts/alignment/census.mjs`, and the bound-orphan consolidation proposal (maintainer approval before bind/merge/delete).
+
+Do not confuse this with `platforms/capabilities.json` (ADR-0033): that file describes **host platform** features (Claude/Codex/Cursor hook budgets, MCP allowlists) consumed by sync and init — not product capability verification.
 
 ## Local orchestration runtime (host-independent)
 
@@ -419,4 +421,4 @@ body_hash:   sha256:<hex>          # SHA-256 of trimmed body
 **Single Front Door:** only `construct` appears in editor agent pickers. Internal specialists (`cx-*`) dispatch via `orchestration_policy` / `orchestration_run` — not as separate picker entries. Sync injects an orchestration micro-prompt instead of a static roster token block.
 
 Full roster with domain groupings: [Agents and personas](/concepts/agents-and-personas).
-Full reference with tier and purpose per specialist: [Specialist reference](/reference/agents).
+Full reference with tier and purpose per specialist: [Specialist reference](/reference/specialists).

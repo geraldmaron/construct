@@ -12,12 +12,10 @@ description: Diagnostics commands for Construct.
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct docs:check` | Check for missing how-to guides (alias for `docs check`) |
 | `construct docs:reconcile` | Reconcile docs against the registry |
-| `construct docs:site` | Manage the docs static site build |
+| `construct docs:site` | Regenerate generated reference pages under docs/reference/ |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
-| `construct registry:status` | Inspect the capability registry (`registry/capabilities.json`) |
-| `construct registry:validate` | Validate registry entries against repo reality |
-| `construct registry:generate-docs` | Regenerate `docs/reference/capabilities.md` from the registry |
-| `construct rules usage` | Roll up rule-reference and hook-fire telemetry (`~/.cx/rule-calls.jsonl`, `~/.cx/hook-calls.jsonl`) |
+| `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
+| `construct rules` | Rule and hook reference telemetry rollup |
 
 ## construct audit
 
@@ -81,12 +79,12 @@ construct docs:reconcile
 
 ## construct docs:site
 
-Manage the docs static site build
+Regenerate generated reference pages under docs/reference/
 
 **Usage**
 
 ```bash
-construct docs:site <build|serve>
+construct docs:site [--check]
 ```
 
 ## construct docs:update
@@ -107,4 +105,14 @@ Validate documentation quality (alias for `docs verify`)
 
 ```bash
 construct docs:verify
+```
+
+## construct rules
+
+Rule and hook reference telemetry rollup
+
+**Usage**
+
+```bash
+construct rules usage [--since=30d]
 ```
