@@ -3,12 +3,12 @@ name: publish-media
 on:
   push:
     paths:
-      - '.cx/demos/tapes/**'
+      - 'templates/demos/tapes/**'
       - 'lib/demo.mjs'
       - 'lib/publish.mjs'
   pull_request:
     paths:
-      - '.cx/demos/tapes/**'
+      - 'templates/demos/tapes/**'
       - 'lib/demo.mjs'
       - 'lib/publish.mjs'
   workflow_dispatch:
@@ -18,7 +18,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: charmbracelet/vhs-action@v1
+      - uses: actions/setup-go@v5
         with:
-          path: .cx/demos/tapes/resource-guard-rails.tape
-          install-fonts: 'true'
+          go-version: 'stable'
+      - name: Install VHS toolchain
+        run: |
+          go install github.com/charmbracelet/vhs@latest
+          echo "${HOME}/go/bin" >> "${GITHUB_PATH}"
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg ttyd
+      - name: Record resource-guard-rails demo
+        run: vhs templates/demos/tapes/resource-guard-rails.tape

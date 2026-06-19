@@ -101,7 +101,7 @@ Inside chat, use `/demo next` for the next prompt, `/demo steps` to replay the o
 
 ## Terminal demos (VHS recording)
 
-Project tapes live in `.cx/demos/tapes/` — **commit the `.tape`, regenerate MP4/GIF in CI**.
+Project tapes live in `templates/demos/tapes/` (shipped) with optional overrides in `.cx/demos/tapes/` — **commit shipped tapes; regenerate MP4/GIF in CI or with `construct demo record`**.
 
 Theme: `templates/demos/vhs/construct-cockpit.json` (navy + violet `#8b5cf6`).
 
