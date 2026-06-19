@@ -8,6 +8,14 @@ Construct specialists produce standard documents (PRDs, ADRs, runbooks, memos, e
 
 Shipped templates live in [`templates/docs/`](../../templates/docs/):
 
+| Layer | Path | Purpose |
+|---|---|---|
+| Specialist source | `templates/docs/{name}.md` | Canonical shape for `get_template()` MCP |
+| Init lane starters | `docs/{lane}/templates/` | Copied into downstream projects by `construct init --docs-preset=*` |
+| Project override | `.cx/templates/docs/{name}.md` | Per-project template override at fetch time |
+
+Do not duplicate starters at `docs/{lane}/_template.md` — lane READMEs link only to `./templates/`.
+
 | Template | Produced by | Purpose |
 |---|---|---|
 | `prd.md` | cx-product-manager | Product requirements doc |

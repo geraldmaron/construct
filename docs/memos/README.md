@@ -18,4 +18,4 @@ Decision memos and internal arguments for alignment and approval.
 
 ## Starter templates
 
-- [_template.md](./_template.md)
+- [_template.md](./templates/_template.md)
