@@ -69,6 +69,8 @@ In your editor, start with `@construct`. Ask for the outcome, not the specialist
 | Add a custom specialist | [Add a custom specialist](https://geraldmaron.github.io/construct/cookbook/add-a-custom-agent) |
 | Fix a blocked commit or red CI | [Fix a policy violation](https://geraldmaron.github.io/construct/cookbook/fix-a-policy-violation) |
 | Plug in your own LLM | [Plug in your own LLM](https://geraldmaron.github.io/construct/cookbook/plug-in-your-own-llm) |
+| Run terminal chat on Construct's owned loop | [Construct chat](https://geraldmaron.github.io/construct/cookbook/construct-chat) |
+| Check fleet health (Oracle) | [Architecture — Oracle](https://geraldmaron.github.io/construct/concepts/architecture) |
 | Look up a CLI command | [CLI reference](https://geraldmaron.github.io/construct/reference/cli) |
 
 Works with Anthropic, OpenRouter, Ollama, and other OpenAI-compatible providers.
@@ -97,7 +99,7 @@ First run downloads `uv` and creates `.cx/runtime/docling/.venv` (~1.5 GB includ
 
 ## Hard gates
 
-Every code mutation runs through enforcement. No secrets committed, tests green, docs current, comments lint-clean, CI passes. Gates live in three places: write-time, commit-time, CI safety net. They can only be bypassed with explicit env vars so every exception leaves an audit trail. [Gates and enforcement](https://geraldmaron.github.io/construct/concepts/gates-and-enforcement).
+Every code mutation runs through enforcement. No secrets committed, tests green, docs current, comments lint-clean, CI passes. Gates live in three places: write-time, commit-time, CI safety net. Quality gates fire unconditionally; if a gate fires wrong, repair the policy — do not bypass it. [Gates and enforcement](https://geraldmaron.github.io/construct/concepts/gates-and-enforcement).
 
 ## Footprint contract
 
@@ -150,7 +152,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
-| `construct demo` | Record reproducible terminal demos via VHS/asciinema (optional system binaries; ADR-0001) |
+| `construct demo` | Run guided demos via construct chat (default) or record VHS/asciinema tapes |
 | `construct diagram` | Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001) |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
@@ -163,11 +165,13 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
+| `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback from chat session and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
 | `construct team` | Team review and template listing |
+| `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
 | `construct wireframe` | Generate wireframes from description |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
