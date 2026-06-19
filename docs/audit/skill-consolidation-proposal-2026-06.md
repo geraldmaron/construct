@@ -1,4 +1,4 @@
-# Skill Consolidation Proposal — 2026-06-18
+# Skill Consolidation Proposal — 2026-06-19
 
 Gate: **nothing is deleted until the maintainer approves a list.**
 
@@ -7,24 +7,21 @@ Reproduce: `node -e "import('./lib/registry/consolidation.mjs').then(m => consol
 ## Summary
 
 - **149** skill files on disk
-- **94** declared in specialists/registry.json
-- **55** registry bound-orphans (not declared by any specialist)
+- **97** declared in specialists/registry.json
+- **52** registry bound-orphans (not declared by any specialist)
+- **52** composer-reachable (B-composer — intentional via prompt composer)
+- **0** true orphans (C-merge + D-review — need maintainer action)
 
 ## Categories
 
 | Category | Count | Action |
 |---|---:|---|
-| A-bind | 2 | Wire to specialist in registry |
-| B-composer | 53 | Document composer reachability or bind |
+| A-bind | 0 | Wire to specialist in registry |
+| B-composer | 52 | Document composer reachability or bind |
 | C-merge | 0 | Propose merge into parent role skill |
 | D-review | 0 | Manual review |
 
-## A-bind (2)
-
-- `skills/docs/document-ingest-workflow.md` — Bind to owner specialist in registry.json (workflow skill)
-- `skills/docs/strategy-workflow.md` — Bind to owner specialist in registry.json (workflow skill)
-
-## B-composer (53)
+## B-composer (52)
 
 - `skills/roles/architect.ai-systems.md` — Role flavor for cx-architect — reachable via prompt-composer; document in registry or bind explicitly
 - `skills/roles/architect.data.md` — Role flavor for cx-architect — reachable via prompt-composer; document in registry or bind explicitly
@@ -71,7 +68,6 @@ Reproduce: `node -e "import('./lib/registry/consolidation.mjs').then(m => consol
 - `skills/roles/reviewer.devil-advocate.md` — Role flavor for cx-reviewer — reachable via prompt-composer; document in registry or bind explicitly
 - `skills/roles/reviewer.evaluator.md` — Role flavor for cx-reviewer — reachable via prompt-composer; document in registry or bind explicitly
 - `skills/roles/reviewer.md` — Role flavor for cx-reviewer — reachable via prompt-composer; document in registry or bind explicitly
-- `skills/roles/reviewer.trace.md` — Role flavor for cx-reviewer — reachable via prompt-composer; document in registry or bind explicitly
 - `skills/roles/security.ai.md` — Role flavor for cx-security — reachable via prompt-composer; document in registry or bind explicitly
 - `skills/roles/security.appsec.md` — Role flavor for cx-security — reachable via prompt-composer; document in registry or bind explicitly
 - `skills/roles/security.cloud.md` — Role flavor for cx-security — reachable via prompt-composer; document in registry or bind explicitly

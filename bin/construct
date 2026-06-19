@@ -4234,8 +4234,21 @@ async function cmdDocsCheck(args) {
   }
 }
 
-async function cmdDocsSite() {
-  const { buildFumadocsReference } = await import('../lib/auto-docs.mjs');
+async function cmdDocsSite(args = []) {
+  const check = args.includes('--check');
+  const { buildFumadocsReference, checkFumadocsReferenceDrift } = await import('../lib/auto-docs.mjs');
+  if (check) {
+    const { drift } = checkFumadocsReferenceDrift({ rootDir: ROOT_DIR });
+    if (drift.length === 0) {
+      ok('docs/reference/ is up to date.');
+      return;
+    }
+    println('');
+    println('Generated reference docs are out of date. Run `construct docs:site` to regenerate:');
+    for (const f of drift) println(`  ✗  ${f}`);
+    process.exitCode = 1;
+    return;
+  }
   const { written } = buildFumadocsReference({ rootDir: ROOT_DIR });
   if (written.length === 0) {
     ok('docs/reference/ already up to date.');
@@ -5381,7 +5394,7 @@ const handlers = new Map([
     if (sub === 'verify') return cmdDocsVerify(rest);
     if (sub === 'update') return cmdDocsUpdate(rest);
     if (sub === 'check') return cmdDocsCheck(rest);
-    if (sub === 'site') return cmdDocsSite();
+    if (sub === 'site') return cmdDocsSite(rest);
     if (sub === 'reconcile') return cmdDocsReconcile(rest);
     errorln(`Unknown docs subcommand: ${sub}. Available: check, verify, update, site, reconcile`);
     process.exit(1);
