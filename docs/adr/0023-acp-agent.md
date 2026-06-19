@@ -8,6 +8,8 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 - **Deciders**: Gerald Dagher (owner)
 - **Supersedes**: none
 
+> **Note (2026-06):** ADR-0041 retired the terminal chat **delegate/ACP client adapter** path. Standalone ACP **server** scope in this ADR remains proposed and deferred.
+
 <!-- Owning specialist: cx-architect. Part of the host-independent orchestration runtime (epic construct-pdx0). -->
 
 ## Problem

@@ -73,6 +73,16 @@ try {
     } catch (err) {
       fail(`Tool-repo adapter sync failed: ${err.message}`, 'Run `npm run adapters` manually.');
     }
+    const chatBuild = spawnSync('npm', ['run', 'build:chat'], {
+      cwd: PKG_ROOT,
+      stdio: 'inherit',
+      env: process.env,
+    });
+    if (chatBuild.status !== 0) {
+      fail('Ink TUI build failed', 'Run `npm run build:chat` manually.');
+    } else {
+      log('built apps/chat/dist/tui.mjs');
+    }
     process.exit(0);
   }
 } catch { /* fall through */ }

@@ -3653,12 +3653,20 @@ var init_rotate = __esm({
   }
 });
 
+// lib/resources/budget.mjs
+var init_budget = __esm({
+  "lib/resources/budget.mjs"() {
+    init_project_config();
+  }
+});
+
 // lib/worker/trace.mjs
 var init_trace = __esm({
   "lib/worker/trace.mjs"() {
     init_client();
     init_project_init_shared();
     init_rotate();
+    init_budget();
   }
 });
 
@@ -3780,6 +3788,14 @@ var DEFAULT_MAX_RUNTIME_MS;
 var init_contract = __esm({
   "lib/daemons/contract.mjs"() {
     DEFAULT_MAX_RUNTIME_MS = 24 * 60 * 60 * 1e3;
+  }
+});
+
+// lib/resources/process-budget.mjs
+var init_process_budget = __esm({
+  "lib/resources/process-budget.mjs"() {
+    init_project_config();
+    init_contract();
   }
 });
 
@@ -5154,6 +5170,7 @@ function readLastTick(homeDir2 = homedir3()) {
 var init_oracle = __esm({
   "lib/oracle/index.mjs"() {
     init_contract();
+    init_process_budget();
     init_actions();
   }
 });
@@ -5284,8 +5301,8 @@ var init_session_prelude = __esm({
 });
 
 // apps/chat/tui/index.jsx
-import React3, { useState, useRef, useCallback, useEffect, useMemo, createContext, useContext } from "react";
-import { render, Box as Box3, Text as Text3, useApp, useInput, useStdout } from "ink";
+import React4, { useState, useRef, useCallback, useEffect, useMemo, createContext, useContext } from "react";
+import { render, Box as Box4, Text as Text4, useApp, useInput, useStdout } from "ink";
 
 // lib/chat/tui/usage.mjs
 function addInto(target, tokens = {}) {
@@ -5603,7 +5620,7 @@ init_project_root();
 import fs11 from "node:fs";
 import path12 from "node:path";
 
-// lib/chat/tui/turn-present.mjs
+// lib/chat/present.mjs
 function summarizeToolCalls(tools = []) {
   const groups = /* @__PURE__ */ new Map();
   for (const t of tools) {
@@ -5631,6 +5648,10 @@ function summarizeSources(sources = []) {
   const byTool = {};
   const refs = [];
   for (const s of sources) {
+    if (typeof s === "string") {
+      if (!refs.includes(s)) refs.push(s);
+      continue;
+    }
     byTool[s.tool] = (byTool[s.tool] || 0) + 1;
     if (s.ref && !refs.includes(s.ref)) refs.push(s.ref);
   }
@@ -5647,6 +5668,7 @@ function contextRows(overlay, { layers = null } = {}) {
   const rows = [];
   if (overlay.intent) rows.push({ label: "intent", value: overlay.intent });
   if (overlay.workCategory) rows.push({ label: "category", value: overlay.workCategory });
+  if (overlay.track) rows.push({ label: "track", value: overlay.track });
   if (overlay.specialists?.length && layers?.specialists !== false) {
     rows.push({ label: "route", value: overlay.specialists.join(" \u2192 ") });
   }
@@ -5670,6 +5692,36 @@ function toolGroupLabel(group) {
   const refs = formatRefsInline(group.refs, { max: 2 });
   return refs ? `${group.title}${count}  ${refs}` : `${group.title}${count}`;
 }
+function formatRouteLogLine(overlay) {
+  if (!overlay) return "";
+  const parts = [];
+  if (overlay.intent) parts.push(`intent=${overlay.intent}`);
+  if (overlay.track) parts.push(`track=${overlay.track}`);
+  const n = overlay.specialists?.length || 0;
+  parts.push(n ? `${n} specialists` : "direct");
+  return parts.join(" \xB7 ");
+}
+function formatGateRows(overlay) {
+  if (!overlay) return [];
+  const rows = [];
+  if (overlay.externalResearch?.required) {
+    const detail = overlay.externalResearch.shape || overlay.externalResearch.reason || "yes";
+    rows.push({ label: "research", value: `required (${detail})` });
+  }
+  if (overlay.framingChallenge?.required) {
+    rows.push({ label: "framing", value: "challenge required" });
+  }
+  if (overlay.docAuthoring?.docType) {
+    rows.push({ label: "doc", value: `${overlay.docAuthoring.docType} \u2192 ${overlay.docAuthoring.owner || "unknown"}` });
+  }
+  if (overlay.artifactReview?.requiredReviewers?.length) {
+    rows.push({
+      label: "reviewers",
+      value: overlay.artifactReview.requiredReviewers.join(", ")
+    });
+  }
+  return rows;
+}
 
 // lib/chat/export.mjs
 function exportDir({ cwd }) {
@@ -5687,7 +5739,7 @@ function turnToMarkdown(turn) {
   lines.push("## construct", "", turn.assistant || "(no answer)", "");
   return lines.join("\n");
 }
-function exportTurns(turnBlocks, { scope = "last", cwd = process.cwd() } = {}) {
+function exportTurns2(turnBlocks, { scope = "last", cwd = process.cwd() } = {}) {
   const turns = turnBlocks.filter((item) => item.kind === "turn").map((item) => item.block);
   if (!turns.length) return { ok: false, error: "no turns to export" };
   let selected = turns;
@@ -6048,6 +6100,70 @@ function formatModelHeader(session) {
   return { label: session?.model || "(no model)", isRouter: false };
 }
 
+// lib/chat/demo-guide.mjs
+function formatDemoStepLine(step, colors = {}) {
+  const dim = colors.dim || "";
+  const reset = colors.reset || "";
+  const bold = colors.bold || "";
+  const lines = [`${bold}Step ${step.index}${reset}: ${step.title || "prompt"}`];
+  if (step.prompt) lines.push(`${step.prompt}`);
+  if (step.command) lines.push(`${dim}command: ${step.command}${reset}`);
+  return lines.join("\n");
+}
+function formatDemoStepsList(guide, colors = {}) {
+  const dim = colors.dim || "";
+  const reset = colors.reset || "";
+  const bold = colors.bold || "";
+  const lines = [`${bold}Demo steps${reset}`];
+  guide.script.steps.forEach((step, i) => {
+    lines.push(`  ${i + 1}. ${step.title || step.prompt?.slice(0, 50) || "step"}`);
+  });
+  lines.push(`${dim}Use /demo next for the next prompt${reset}`);
+  return lines.join("\n");
+}
+function registerDemoCommands(HELP2, demoGuide) {
+  if (!demoGuide) return HELP2;
+  return [
+    ...HELP2.slice(0, 1),
+    ["/demo [next|steps|reset]", "walk the active demo script"],
+    ...HELP2.slice(1)
+  ];
+}
+function handleDemoCommand(arg, { demoGuide, output, colors }) {
+  if (!demoGuide) {
+    output.write(`${colors.dim}No active demo. Launch with \`construct demo <name>\`.${colors.reset}
+`);
+    return;
+  }
+  const action = (arg || "steps").toLowerCase();
+  if (action === "reset") {
+    demoGuide.reset();
+    output.write(`${colors.green}Demo reset to step 1.${colors.reset}
+`);
+    return;
+  }
+  if (action === "next") {
+    const step = demoGuide.next();
+    if (!step) {
+      output.write(`${colors.dim}Demo complete \u2014 all steps shown.${colors.reset}
+`);
+      return;
+    }
+    output.write(`
+${formatDemoStepLine(step, colors)}
+
+`);
+    return;
+  }
+  output.write(`${formatDemoStepsList(demoGuide, colors)}
+`);
+  const peek = demoGuide.peek();
+  if (peek) {
+    output.write(`${colors.dim}Next: /demo next \u2192 ${peek.title || "step"}${colors.reset}
+`);
+  }
+}
+
 // lib/chat/commands.mjs
 var HELP = [
   ["/help", "show this help"],
@@ -6079,11 +6195,12 @@ function modelTags(m, colors) {
   else if (m.toolCall === false) tags.push("no tools");
   return tags.length ? `${colors.dim} (${tags.join(", ")})${colors.reset}` : "";
 }
-function createCommands({ driver, host, hostId = host, version, cwd = process.cwd(), turnBlocksRef = null } = {}) {
+function createCommands({ driver, host, hostId = host, version, cwd = process.cwd(), turnBlocksRef = null, demoGuide = null } = {}) {
   async function handle(input, ctx) {
     const { output, colors, layers, session, rl, onClear } = ctx;
     const [cmd, ...rest] = input.trim().split(/\s+/);
     const arg = rest.join(" ").trim();
+    const activeGuide = demoGuide || session?.demoGuide || null;
     switch (cmd) {
       case "/exit":
       case "/quit":
@@ -6091,8 +6208,13 @@ function createCommands({ driver, host, hostId = host, version, cwd = process.cw
       case "/help":
         output.write(`${colors.bold}commands${colors.reset}
 `);
-        for (const [name, desc] of HELP) output.write(`  ${colors.cyan}${name.padEnd(28)}${colors.reset}${colors.dim}${desc}${colors.reset}
+        for (const [name, desc] of registerDemoCommands(HELP, activeGuide)) {
+          output.write(`  ${colors.cyan}${name.padEnd(28)}${colors.reset}${colors.dim}${desc}${colors.reset}
 `);
+        }
+        break;
+      case "/demo":
+        handleDemoCommand(arg, { demoGuide: activeGuide, output, colors });
         break;
       case "/host": {
         const mode = session.modelMode === "free-router" ? "free-router" : "pinned";
@@ -6600,8 +6722,8 @@ function percent(ratio) {
 }
 
 // apps/chat/tui/turn-ui.jsx
-import React from "react";
-import { Box, Text } from "ink";
+import React2 from "react";
+import { Box as Box2, Text as Text2 } from "ink";
 
 // lib/chat/tui/markdown.mjs
 function parseMarkdownLines(text, { width = 80 } = {}) {
@@ -6689,30 +6811,131 @@ function stripInline(s) {
 
 // apps/chat/tui/turn-ui.jsx
 init_session_prelude();
-import { Fragment, jsx, jsxs } from "react/jsx-runtime";
+
+// apps/chat/tui/event-log-ui.jsx
+import React from "react";
+import { Box, Text } from "ink";
+import { jsx, jsxs } from "react/jsx-runtime";
+function LogLine({ tag, channel, children, palette: palette2, channelColor, width }) {
+  return /* @__PURE__ */ jsxs(Box, { width, flexDirection: "row", children: [
+    /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `${tag} ` }),
+    /* @__PURE__ */ jsx(Text, { color: channelColor || palette2.accent, bold: true, children: `${channel} ` }),
+    /* @__PURE__ */ jsx(Box, { flexGrow: 1, children })
+  ] });
+}
+function routeSummary(overlay) {
+  if (!overlay) return null;
+  const line = formatRouteLogLine(overlay);
+  return line || null;
+}
+function sourceRefs(sources) {
+  const src = summarizeSources(sources || []);
+  return src.refs || [];
+}
+function SystemLogLine({ text, width, palette: palette2 }) {
+  if (!text) return null;
+  return /* @__PURE__ */ jsx(Box, { flexDirection: "column", marginBottom: 1, width, children: /* @__PURE__ */ jsx(LogLine, { tag: "\u2014", channel: "SYS", palette: palette2, channelColor: palette2.warn, width, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: text }) }) });
+}
+function CompactTurnLog({
+  turn,
+  width,
+  layers,
+  turnIndex,
+  liveAssistant = "",
+  liveThinking = "",
+  working = false,
+  theme
+}) {
+  const { palette: palette2 } = theme;
+  const tag = `T${turnIndex}`;
+  const assistant = liveAssistant || turn.assistant || "";
+  const thinking = liveThinking || turn.thinking || "";
+  const isError = assistant.startsWith("[error]");
+  const toolGroups = summarizeToolCalls(turn.tools || []);
+  const refs = sourceRefs(turn.sources);
+  const srcLimit = 8;
+  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginBottom: 1, width, children: [
+    /* @__PURE__ */ jsx(LogLine, { tag, channel: "YOU", palette: palette2, width, children: /* @__PURE__ */ jsx(Text, { wrap: "wrap", children: turn.userText }) }),
+    turn.overlay && layers?.specialists !== false && routeSummary(turn.overlay) ? /* @__PURE__ */ jsx(LogLine, { tag, channel: "ROUTE", palette: palette2, channelColor: palette2.accentAlt, width, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: routeSummary(turn.overlay) }) }) : null,
+    thinking && layers?.thinking !== false ? /* @__PURE__ */ jsx(Box, { flexDirection: "column", marginLeft: 2, marginBottom: 0, children: /* @__PURE__ */ jsx(LogLine, { tag, channel: "THINK", palette: palette2, width, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: thinking }) }) }) : null,
+    toolGroups.length > 0 && layers?.tools !== false ? /* @__PURE__ */ jsx(LogLine, { tag, channel: "TOOL", palette: palette2, width, children: /* @__PURE__ */ jsx(Text, { wrap: "wrap", children: toolGroups.map((g, i) => /* @__PURE__ */ jsx(Text, { color: toolColor(g.status, theme), children: `${i > 0 ? " " : ""}${toolGlyph(g.status, theme)} ${g.title}${g.count > 1 ? ` \xD7${g.count}` : ""}` }, g.title)) }) }) : null,
+    refs.length > 0 ? /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginLeft: 2, children: [
+      /* @__PURE__ */ jsx(LogLine, { tag, channel: "SRC", palette: palette2, width, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: refs.slice(0, srcLimit).join("\n") }) }),
+      refs.length > srcLimit ? /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `  +${refs.length - srcLimit} more` }) : null
+    ] }) : null,
+    assistant || working ? /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginTop: 0, children: [
+      /* @__PURE__ */ jsx(LogLine, { tag, channel: "OUT", palette: palette2, channelColor: palette2.ok, width, children: working && !assistant ? /* @__PURE__ */ jsx(Text, { color: palette2.warn, children: "working\u2026" }) : null }),
+      assistant ? /* @__PURE__ */ jsx(Box, { marginLeft: 2, flexDirection: "column", children: /* @__PURE__ */ jsx(CompactMarkdown, { text: assistant, width: width - 4, palette: palette2, isError }) }) : null
+    ] }) : null,
+    turn.usage && layers?.observability !== false ? /* @__PURE__ */ jsx(LogLine, { tag, channel: "USAGE", palette: palette2, width, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: stripAnsi(formatTurnUsageLine(turn.usage)) }) }) : null
+  ] });
+}
+function CompactMarkdown({ text, width, palette: palette2, isError = false }) {
+  const parts = parseMarkdownLines(text, { width: Math.max(20, width - 2) });
+  return /* @__PURE__ */ jsx(Box, { flexDirection: "column", children: parts.map((part, i) => {
+    if (part.type === "heading") {
+      return /* @__PURE__ */ jsx(Text, { bold: true, color: isError ? palette2.danger : palette2.text, wrap: "wrap", children: part.text }, i);
+    }
+    if (part.type === "bullet") {
+      return /* @__PURE__ */ jsx(Text, { wrap: "wrap", children: `${"  ".repeat(part.indent || 0)}\u2022 ${part.text}` }, i);
+    }
+    if (part.type === "code") {
+      return /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: part.text }, i);
+    }
+    if (part.type === "blank") return /* @__PURE__ */ jsx(Box, { height: 1 }, i);
+    return /* @__PURE__ */ jsx(Text, { color: isError ? palette2.danger : void 0, wrap: "wrap", children: part.text || "" }, i);
+  }) });
+}
+function RouteRailPanel({ overlay, width, palette: palette2, glyphs: glyphs2 }) {
+  if (!overlay) return null;
+  const risks = overlay.riskFlags ? Object.entries(overlay.riskFlags).filter(([, v]) => v).map(([k]) => k) : [];
+  const chain = overlay.specialists || [];
+  const gates = formatGateRows(overlay);
+  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginTop: 1, children: [
+    /* @__PURE__ */ jsx(Text, { color: palette2.accent, children: "route" }),
+    overlay.track ? /* @__PURE__ */ jsxs(Box, { justifyContent: "space-between", children: [
+      /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "track" }),
+      /* @__PURE__ */ jsx(Text, { children: overlay.track })
+    ] }) : null,
+    overlay.intent ? /* @__PURE__ */ jsxs(Box, { justifyContent: "space-between", children: [
+      /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "intent" }),
+      /* @__PURE__ */ jsx(Text, { children: overlay.intent })
+    ] }) : null,
+    risks.length ? /* @__PURE__ */ jsx(Text, { color: palette2.warn, wrap: "wrap", children: `risk: ${risks.join(", ")}` }) : null,
+    chain.length ? /* @__PURE__ */ jsx(Text, { wrap: "wrap", children: chain.join(` ${glyphs2.arrow} `) }) : /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "immediate \u2014 Construct responds directly" }),
+    overlay.dispatchSummary ? /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: overlay.dispatchSummary }) : null,
+    gates.length ? /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginTop: 1, children: [
+      /* @__PURE__ */ jsx(Text, { color: palette2.accent, children: "gates" }),
+      gates.map((g) => /* @__PURE__ */ jsx(Text, { color: palette2.warn, wrap: "wrap", children: `${g.label}: ${g.value}` }, g.label))
+    ] }) : null
+  ] });
+}
+
+// apps/chat/tui/turn-ui.jsx
+import { Fragment, jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
 var LABEL_WIDTH = 10;
 function Rule({ width, color, palette: palette2, glyphs: glyphs2, heavy = false }) {
   const muted = color || palette2?.muted || "gray";
   const char = heavy && glyphs2?.ruleHeavy ? glyphs2.ruleHeavy : "\u2500";
-  return /* @__PURE__ */ jsx(Text, { color: muted, children: char.repeat(Math.max(1, width)) });
+  return /* @__PURE__ */ jsx2(Text2, { color: muted, children: char.repeat(Math.max(1, width)) });
 }
 function TurnPhase({ title, width, palette: palette2, glyphs: glyphs2, children, marginTop = 1, marginBottom = 0 }) {
   if (!children) return null;
-  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginTop, marginBottom, width, children: [
-    /* @__PURE__ */ jsx(Text, { color: palette2.accent, bold: true, children: title }),
-    /* @__PURE__ */ jsx(Box, { flexDirection: "column", paddingLeft: 2, borderStyle: "single", borderColor: palette2.border || palette2.muted, borderLeft: true, paddingX: 1, children })
+  return /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", marginTop, marginBottom, width, children: [
+    /* @__PURE__ */ jsx2(Text2, { color: palette2.accent, bold: true, children: title }),
+    /* @__PURE__ */ jsx2(Box2, { flexDirection: "column", paddingLeft: 2, borderStyle: "single", borderColor: palette2.border || palette2.muted, borderLeft: true, paddingX: 1, children })
   ] });
 }
 function ContextRow({ label, value, palette: palette2, valueColor }) {
-  return /* @__PURE__ */ jsxs(Box, { flexDirection: "row", marginBottom: 0, children: [
-    /* @__PURE__ */ jsx(Box, { width: LABEL_WIDTH, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: label }) }),
-    /* @__PURE__ */ jsx(Text, { color: valueColor || void 0, wrap: "wrap", children: value })
+  return /* @__PURE__ */ jsxs2(Box2, { flexDirection: "row", marginBottom: 0, children: [
+    /* @__PURE__ */ jsx2(Box2, { width: LABEL_WIDTH, children: /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: label }) }),
+    /* @__PURE__ */ jsx2(Text2, { color: valueColor || void 0, wrap: "wrap", children: value })
   ] });
 }
 function RoutePhase({ turn, width, layers, palette: palette2, glyphs: glyphs2 }) {
   const rows = contextRows(turn?.overlay, { layers });
   if (!rows.length) return null;
-  return /* @__PURE__ */ jsx(TurnPhase, { title: "ROUTE", width, palette: palette2, glyphs: glyphs2, children: rows.map((row) => /* @__PURE__ */ jsx(
+  return /* @__PURE__ */ jsx2(TurnPhase, { title: "ROUTE", width, palette: palette2, glyphs: glyphs2, children: rows.map((row) => /* @__PURE__ */ jsx2(
     ContextRow,
     {
       label: row.label,
@@ -6725,23 +6948,23 @@ function RoutePhase({ turn, width, layers, palette: palette2, glyphs: glyphs2 })
 }
 function ThinkingPhase({ text, width, layers, palette: palette2, glyphs: glyphs2 }) {
   if (!text || layers?.thinking === false) return null;
-  return /* @__PURE__ */ jsx(TurnPhase, { title: "THINKING", width, palette: palette2, glyphs: glyphs2, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: text }) });
+  return /* @__PURE__ */ jsx2(TurnPhase, { title: "THINKING", width, palette: palette2, glyphs: glyphs2, children: /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, wrap: "wrap", children: text }) });
 }
 function ToolsPhase({ tools, width, layers, palette: palette2, theme, detailDense = false }) {
   if (!tools?.length || layers?.tools === false) return null;
   const groups = summarizeToolCalls(tools);
-  return /* @__PURE__ */ jsxs(TurnPhase, { title: "TOOLS", width, palette: palette2, glyphs: theme.glyphs, children: [
-    groups.map((group) => /* @__PURE__ */ jsx(Text, { color: toolColor(group.status, theme), wrap: "wrap", children: `${toolGlyph(group.status, theme)} ${toolGroupLabel(group)}` }, group.title)),
-    detailDense ? /* @__PURE__ */ jsx(ToolDetailList, { tools, width: width - 4, theme }) : null
+  return /* @__PURE__ */ jsxs2(TurnPhase, { title: "TOOLS", width, palette: palette2, glyphs: theme.glyphs, children: [
+    groups.map((group) => /* @__PURE__ */ jsx2(Text2, { color: toolColor(group.status, theme), wrap: "wrap", children: `${toolGlyph(group.status, theme)} ${toolGroupLabel(group)}` }, group.title)),
+    detailDense ? /* @__PURE__ */ jsx2(ToolDetailList, { tools, width: width - 4, theme }) : null
   ] });
 }
 function SourcesPhase({ turn, width, layers, palette: palette2, glyphs: glyphs2 }) {
   const src = summarizeSources(turn?.sources || []);
   if (!src.total) return null;
   const split = splitSourceLines(src.refs, { limit: 12 });
-  return /* @__PURE__ */ jsxs(TurnPhase, { title: "SOURCES", width, palette: palette2, glyphs: glyphs2, children: [
-    split.lines.map((line) => /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: line }, line)),
-    split.hidden > 0 ? /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `+${split.hidden} more` }) : null
+  return /* @__PURE__ */ jsxs2(TurnPhase, { title: "SOURCES", width, palette: palette2, glyphs: glyphs2, children: [
+    split.lines.map((line) => /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, wrap: "wrap", children: line }, line)),
+    split.hidden > 0 ? /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: `+${split.hidden} more` }) : null
   ] });
 }
 function AnswerPhase({
@@ -6754,55 +6977,55 @@ function AnswerPhase({
   isError
 }) {
   if (!assistant && !working) return null;
-  return /* @__PURE__ */ jsx(Box, { flexDirection: "column", marginTop: 1, marginBottom: 1, width, children: /* @__PURE__ */ jsxs(TurnPhase, { title: "CONSTRUCT", width, palette: palette2, glyphs: glyphs2, marginTop: 0, children: [
-    assistant ? /* @__PURE__ */ jsx(MarkdownMessage, { text: assistant, width: width - 4, palette: palette2, isError }) : null,
-    working && !assistant ? /* @__PURE__ */ jsx(Text, { color: palette2.warn, children: `${glyphs2.block} working\u2026` }) : null,
-    working && assistant ? /* @__PURE__ */ jsx(Text, { color: palette2.warn, children: glyphs2.block }) : null
+  return /* @__PURE__ */ jsx2(Box2, { flexDirection: "column", marginTop: 1, marginBottom: 1, width, children: /* @__PURE__ */ jsxs2(TurnPhase, { title: "CONSTRUCT", width, palette: palette2, glyphs: glyphs2, marginTop: 0, children: [
+    assistant ? /* @__PURE__ */ jsx2(MarkdownMessage, { text: assistant, width: width - 4, palette: palette2, isError }) : null,
+    working && !assistant ? /* @__PURE__ */ jsx2(Text2, { color: palette2.warn, children: `${glyphs2.block} working\u2026` }) : null,
+    working && assistant ? /* @__PURE__ */ jsx2(Text2, { color: palette2.warn, children: glyphs2.block }) : null
   ] }) });
 }
 function TurnMetricsPhase({ usage, width, layers, palette: palette2, glyphs: glyphs2 }) {
   if (!usage || layers?.observability === false) return null;
   const line = stripAnsi(formatTurnUsageLine(usage, {}));
-  return /* @__PURE__ */ jsx(TurnPhase, { title: "USAGE", width, palette: palette2, glyphs: glyphs2, marginBottom: 1, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: line }) });
+  return /* @__PURE__ */ jsx2(TurnPhase, { title: "USAGE", width, palette: palette2, glyphs: glyphs2, marginBottom: 1, children: /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, wrap: "wrap", children: line }) });
 }
 function ToolDetailList({ tools, width, theme }) {
   if (!tools?.length) return null;
-  return /* @__PURE__ */ jsx(Box, { flexDirection: "column", marginTop: 0, children: tools.map((tool) => {
+  return /* @__PURE__ */ jsx2(Box2, { flexDirection: "column", marginTop: 0, children: tools.map((tool) => {
     const ref = tool.input?.path || tool.input?.pattern || tool.input?.glob || tool.input?.name;
     const detail = ref ? `  ${ref}` : "";
-    return /* @__PURE__ */ jsx(Text, { color: toolColor(tool.status, theme), wrap: "wrap", children: `${toolGlyph(tool.status, theme)} ${tool.title || "tool"}${detail}` }, tool.id);
+    return /* @__PURE__ */ jsx2(Text2, { color: toolColor(tool.status, theme), wrap: "wrap", children: `${toolGlyph(tool.status, theme)} ${tool.title || "tool"}${detail}` }, tool.id);
   }) });
 }
 function MarkdownMessage({ text, width, palette: palette2, isError = false }) {
   if (!text) return null;
   const parts = parseMarkdownLines(text, { width: Math.max(20, width - 2) });
-  return /* @__PURE__ */ jsx(Box, { flexDirection: "column", marginTop: 0, width, children: parts.map((part, i) => {
+  return /* @__PURE__ */ jsx2(Box2, { flexDirection: "column", marginTop: 0, width, children: parts.map((part, i) => {
     if (part.type === "heading") {
-      return /* @__PURE__ */ jsx(Box, { marginTop: i > 0 ? 1 : 0, children: /* @__PURE__ */ jsx(Text, { bold: true, color: isError ? palette2.danger : palette2.text, wrap: "wrap", children: part.text }) }, i);
+      return /* @__PURE__ */ jsx2(Box2, { marginTop: i > 0 ? 1 : 0, children: /* @__PURE__ */ jsx2(Text2, { bold: true, color: isError ? palette2.danger : palette2.text, wrap: "wrap", children: part.text }) }, i);
     }
     if (part.type === "bullet") {
       const pad = "  ".repeat(part.indent || 0);
-      return /* @__PURE__ */ jsx(Text, { wrap: "wrap", children: `${pad}${"\u2022"} ${part.text}` }, i);
+      return /* @__PURE__ */ jsx2(Text2, { wrap: "wrap", children: `${pad}${"\u2022"} ${part.text}` }, i);
     }
     if (part.type === "code") {
-      return /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: `  ${part.text}` }, i);
+      return /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, wrap: "wrap", children: `  ${part.text}` }, i);
     }
     if (part.type === "rule") {
-      return /* @__PURE__ */ jsx(Rule, { width: Math.min(width, 40), palette: palette2 }, i);
+      return /* @__PURE__ */ jsx2(Rule, { width: Math.min(width, 40), palette: palette2 }, i);
     }
-    if (part.type === "blank") return /* @__PURE__ */ jsx(Box, { height: 1 }, i);
-    return /* @__PURE__ */ jsx(Text, { color: isError ? palette2.danger : void 0, wrap: "wrap", children: part.text || "" }, i);
+    if (part.type === "blank") return /* @__PURE__ */ jsx2(Box2, { height: 1 }, i);
+    return /* @__PURE__ */ jsx2(Text2, { color: isError ? palette2.danger : void 0, wrap: "wrap", children: part.text || "" }, i);
   }) });
 }
 function TurnContextBar({ turn, width, layers, palette: palette2, glyphs: glyphs2 }) {
-  return /* @__PURE__ */ jsxs(Fragment, { children: [
-    /* @__PURE__ */ jsx(RoutePhase, { turn, width, layers, palette: palette2, glyphs: glyphs2 }),
-    /* @__PURE__ */ jsx(SourcesPhase, { turn, width, layers, palette: palette2, glyphs: glyphs2 })
+  return /* @__PURE__ */ jsxs2(Fragment, { children: [
+    /* @__PURE__ */ jsx2(RoutePhase, { turn, width, layers, palette: palette2, glyphs: glyphs2 }),
+    /* @__PURE__ */ jsx2(SourcesPhase, { turn, width, layers, palette: palette2, glyphs: glyphs2 })
   ] });
 }
 function SystemNotice({ text, palette: palette2 }) {
   if (!text) return null;
-  return /* @__PURE__ */ jsx(Box, { marginTop: 1, marginBottom: 1, children: /* @__PURE__ */ jsx(Text, { color: palette2.warn, wrap: "wrap", children: text }) });
+  return /* @__PURE__ */ jsx2(Box2, { marginTop: 1, marginBottom: 1, children: /* @__PURE__ */ jsx2(Text2, { color: palette2.warn, wrap: "wrap", children: text }) });
 }
 function TurnTranscript({
   turn,
@@ -6819,14 +7042,14 @@ function TurnTranscript({
   const assistant = liveAssistant || turn.assistant || "";
   const thinking = liveThinking || turn.thinking || "";
   const isError = typeof assistant === "string" && assistant.startsWith("[error]");
-  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginBottom: 2, width, children: [
-    turnIndex != null ? /* @__PURE__ */ jsx(Box, { marginBottom: 0, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, bold: true, children: `TURN ${turnIndex}` }) }) : null,
-    /* @__PURE__ */ jsx(TurnPhase, { title: "YOU", width, palette: palette2, glyphs: glyphs2, marginTop: turnIndex != null ? 0 : 0, children: /* @__PURE__ */ jsx(Text, { wrap: "wrap", children: turn.userText }) }),
-    /* @__PURE__ */ jsx(RoutePhase, { turn, width, layers, palette: palette2, glyphs: glyphs2 }),
-    /* @__PURE__ */ jsx(ThinkingPhase, { text: thinking, width, layers, palette: palette2, glyphs: glyphs2 }),
-    /* @__PURE__ */ jsx(ToolsPhase, { tools: turn.tools, width, layers, palette: palette2, theme, detailDense }),
-    /* @__PURE__ */ jsx(SourcesPhase, { turn, width, layers, palette: palette2, glyphs: glyphs2 }),
-    /* @__PURE__ */ jsx(
+  return /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", marginBottom: 2, width, children: [
+    turnIndex != null ? /* @__PURE__ */ jsx2(Box2, { marginBottom: 0, children: /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, bold: true, children: `TURN ${turnIndex}` }) }) : null,
+    /* @__PURE__ */ jsx2(TurnPhase, { title: "YOU", width, palette: palette2, glyphs: glyphs2, marginTop: turnIndex != null ? 0 : 0, children: /* @__PURE__ */ jsx2(Text2, { wrap: "wrap", children: turn.userText }) }),
+    /* @__PURE__ */ jsx2(RoutePhase, { turn, width, layers, palette: palette2, glyphs: glyphs2 }),
+    /* @__PURE__ */ jsx2(ThinkingPhase, { text: thinking, width, layers, palette: palette2, glyphs: glyphs2 }),
+    /* @__PURE__ */ jsx2(ToolsPhase, { tools: turn.tools, width, layers, palette: palette2, theme, detailDense }),
+    /* @__PURE__ */ jsx2(SourcesPhase, { turn, width, layers, palette: palette2, glyphs: glyphs2 }),
+    /* @__PURE__ */ jsx2(
       AnswerPhase,
       {
         assistant,
@@ -6838,8 +7061,8 @@ function TurnTranscript({
         isError
       }
     ),
-    /* @__PURE__ */ jsx(TurnMetricsPhase, { usage: turn.usage, width, layers, palette: palette2, glyphs: glyphs2 }),
-    (turn.notices || []).map((n, i) => /* @__PURE__ */ jsx(SystemNotice, { text: n, palette: palette2 }, i))
+    /* @__PURE__ */ jsx2(TurnMetricsPhase, { usage: turn.usage, width, layers, palette: palette2, glyphs: glyphs2 }),
+    (turn.notices || []).map((n, i) => /* @__PURE__ */ jsx2(SystemNotice, { text: n, palette: palette2 }, i))
   ] });
 }
 var TurnView = TurnTranscript;
@@ -6875,39 +7098,39 @@ function SessionHeader({
   const { palette: palette2, glyphs: glyphs2 } = theme;
   const { label, isRouter } = formatModelHeader(session);
   const ctxMeter = ctx?.size ? meter(ctx.used, ctx.size, Math.max(12, Math.floor(cols * 0.18)), theme) : null;
-  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginBottom: 0, children: [
-    /* @__PURE__ */ jsxs(Box, { width: cols, justifyContent: "space-between", children: [
-      /* @__PURE__ */ jsxs(Box, { children: [
-        /* @__PURE__ */ jsx(Text, { color: palette2.accent, bold: true, children: `${glyphs2.brand} construct` }),
-        /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `  ${glyphs2.gutter}  chat` })
+  return /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", marginBottom: 0, children: [
+    /* @__PURE__ */ jsxs2(Box2, { width: cols, justifyContent: "space-between", children: [
+      /* @__PURE__ */ jsxs2(Box2, { children: [
+        /* @__PURE__ */ jsx2(Text2, { color: palette2.accent, bold: true, children: `${glyphs2.brand} construct` }),
+        /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: `  ${glyphs2.gutter}  chat` })
       ] }),
-      /* @__PURE__ */ jsxs(Box, { flexDirection: "column", alignItems: "flex-end", children: [
-        /* @__PURE__ */ jsxs(Box, { children: [
-          /* @__PURE__ */ jsx(Text, { bold: true, color: palette2.text, wrap: "wrap", children: label || "(no model)" }),
-          /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `   ${sandbox || "workspace-write"}  ${glyphs2.gutter}  ${permissionMode || "allow_once"}  ` }),
-          /* @__PURE__ */ jsx(Text, { color: working ? palette2.warn : palette2.ok, children: working ? spin : glyphs2.dot })
+      /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", alignItems: "flex-end", children: [
+        /* @__PURE__ */ jsxs2(Box2, { children: [
+          /* @__PURE__ */ jsx2(Text2, { bold: true, color: palette2.text, wrap: "wrap", children: label || "(no model)" }),
+          /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: `   ${sandbox || "workspace-write"}  ${glyphs2.gutter}  ${permissionMode || "allow_once"}  ` }),
+          /* @__PURE__ */ jsx2(Text2, { color: working ? palette2.warn : palette2.ok, children: working ? spin : glyphs2.dot })
         ] }),
-        isRouter ? /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: "free-router \\u2014 re-picks on launch and on failure" }) : null
+        isRouter ? /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, wrap: "wrap", children: "free-router \\u2014 re-picks on launch and on failure" }) : null
       ] })
     ] }),
-    /* @__PURE__ */ jsxs(Box, { width: cols, marginTop: 0, flexDirection: "row", justifyContent: "space-between", children: [
-      /* @__PURE__ */ jsx(Box, { flexDirection: "row", children: ctxMeter ? /* @__PURE__ */ jsxs(Fragment, { children: [
-        /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "context " }),
-        /* @__PURE__ */ jsx(Text, { color: ratioColor(ctxMeter.ratio, theme), children: ctxMeter.bar }),
-        /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: ` ${percent(ctxMeter.ratio)}` })
-      ] }) : /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "context not reported yet" }) }),
-      /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: `session ${sessionUsageSummary(session)}` })
+    /* @__PURE__ */ jsxs2(Box2, { width: cols, marginTop: 0, flexDirection: "row", justifyContent: "space-between", children: [
+      /* @__PURE__ */ jsx2(Box2, { flexDirection: "row", children: ctxMeter ? /* @__PURE__ */ jsxs2(Fragment, { children: [
+        /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: "context " }),
+        /* @__PURE__ */ jsx2(Text2, { color: ratioColor(ctxMeter.ratio, theme), children: ctxMeter.bar }),
+        /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: ` ${percent(ctxMeter.ratio)}` })
+      ] }) : /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: "context not reported yet" }) }),
+      /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, wrap: "wrap", children: `session ${sessionUsageSummary(session)}` })
     ] }),
-    /* @__PURE__ */ jsx(Box, { width: cols, marginTop: 0, children: /* @__PURE__ */ jsxs(Text, { color: palette2.muted, wrap: "wrap", children: [
+    /* @__PURE__ */ jsx2(Box2, { width: cols, marginTop: 0, children: /* @__PURE__ */ jsxs2(Text2, { color: palette2.muted, wrap: "wrap", children: [
       `layers ${layerPills(layers, palette2, glyphs2)}`,
       workingBranch ? `  ${glyphs2.gutter}  branch ${workingBranch}` : ""
     ] }) }),
-    /* @__PURE__ */ jsx(Rule, { width: cols, palette: palette2, glyphs: glyphs2, heavy: true })
+    /* @__PURE__ */ jsx2(Rule, { width: cols, palette: palette2, glyphs: glyphs2, heavy: true })
   ] });
 }
 function PanelSection({ title, children, marginTop = 1, palette: palette2 }) {
-  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", marginTop, children: [
-    /* @__PURE__ */ jsx(Text, { color: palette2.accent, children: title }),
+  return /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", marginTop, children: [
+    /* @__PURE__ */ jsx2(Text2, { color: palette2.accent, children: title }),
     children
   ] });
 }
@@ -6925,7 +7148,8 @@ function SessionRail({
   spin,
   theme,
   cwd,
-  modelNotice
+  modelNotice,
+  routeOverlay = null
 }) {
   const { palette: palette2, glyphs: glyphs2 } = theme;
   const u = session.usage;
@@ -6939,59 +7163,63 @@ function SessionRail({
   const ctxMeter = ctx?.size ? meter(ctx.used, ctx.size, Math.max(10, width - 8), theme) : null;
   const { label } = formatModelHeader({ model, modelMode, savedModel });
   const oracle = readOracleDockState({ cwd, env: process.env });
-  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", width, borderStyle: "round", borderColor: palette2.border || palette2.accent, paddingX: 1, children: [
-    /* @__PURE__ */ jsx(Text, { color: palette2.brandAccent || palette2.accent, bold: true, children: `${glyphs2.brand} session` }),
-    /* @__PURE__ */ jsx(Rule, { width: width - 2, palette: palette2, glyphs: glyphs2, heavy: true }),
-    /* @__PURE__ */ jsxs(PanelSection, { title: "model", marginTop: 1, palette: palette2, children: [
-      /* @__PURE__ */ jsx(Text, { bold: true, color: palette2.text, wrap: "wrap", children: label || "(none)" }),
-      modelNotice ? /* @__PURE__ */ jsx(Text, { color: palette2.warn, wrap: "wrap", children: modelNotice }) : null,
-      sandbox || permissionMode ? /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: [sandbox, permissionMode].filter(Boolean).join(` ${glyphs2.gutter} `) }) : null
+  return /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", width, borderStyle: "round", borderColor: palette2.border || palette2.accent, paddingX: 1, children: [
+    /* @__PURE__ */ jsx2(Text2, { color: palette2.brandAccent || palette2.accent, bold: true, children: `${glyphs2.brand} session` }),
+    /* @__PURE__ */ jsx2(Rule, { width: width - 2, palette: palette2, glyphs: glyphs2, heavy: true }),
+    /* @__PURE__ */ jsxs2(PanelSection, { title: "model", marginTop: 1, palette: palette2, children: [
+      /* @__PURE__ */ jsx2(Text2, { bold: true, color: palette2.text, wrap: "wrap", children: label || "(none)" }),
+      modelNotice ? /* @__PURE__ */ jsx2(Text2, { color: palette2.warn, wrap: "wrap", children: modelNotice }) : null,
+      sandbox || permissionMode ? /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: [sandbox, permissionMode].filter(Boolean).join(` ${glyphs2.gutter} `) }) : null
     ] }),
-    oracle.visible ? /* @__PURE__ */ jsxs(PanelSection, { title: "oracle", palette: palette2, children: [
-      /* @__PURE__ */ jsx(Text, { color: palette2.warn, wrap: "wrap", children: oracle.summary }),
-      oracle.topGaps.slice(0, 2).map((g) => /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: `${g.id}: ${g.detail}` }, g.id)),
-      /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "/oracle for detail" })
+    oracle.visible ? /* @__PURE__ */ jsxs2(PanelSection, { title: "oracle", palette: palette2, children: [
+      /* @__PURE__ */ jsx2(Text2, { color: palette2.warn, wrap: "wrap", children: oracle.summary }),
+      oracle.topGaps.slice(0, 2).map((g) => /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, wrap: "wrap", children: `${g.id}: ${g.detail}` }, g.id)),
+      /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: "/oracle for detail" })
     ] }) : null,
-    /* @__PURE__ */ jsx(PanelSection, { title: "layers", palette: palette2, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: LAYER_KEYS.map((k) => `${k}=${layers?.[k] ? "on" : "off"}`).join(`  ${glyphs2.gutter}  `) }) }),
-    /* @__PURE__ */ jsx(PanelSection, { title: "context", palette: palette2, children: ctxMeter ? /* @__PURE__ */ jsxs(Box, { flexDirection: "column", children: [
-      /* @__PURE__ */ jsx(Text, { color: ratioColor(ctxMeter.ratio, theme), children: ctxMeter.bar }),
-      /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: `${formatTokens(ctx.used)}/${formatTokens(ctx.size)}  ${percent(ctxMeter.ratio)}` })
-    ] }) : /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "not reported yet" }) }),
-    /* @__PURE__ */ jsx(PanelSection, { title: `usage ${glyphs2.gutter} ${u.turns} turn${u.turns === 1 ? "" : "s"}`, palette: palette2, children: ledger.length ? ledger.map(([k, v]) => /* @__PURE__ */ jsxs(Box, { justifyContent: "space-between", children: [
-      /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: k }),
-      /* @__PURE__ */ jsx(Text, { children: v })
-    ] }, k)) : /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "no tokens yet" }) }),
-    /* @__PURE__ */ jsx(Box, { marginTop: 1, children: /* @__PURE__ */ jsx(Text, { color: working ? palette2.warn : palette2.ok, children: working ? `${spin} working\u2026` : `${glyphs2.dot} idle` }) })
+    /* @__PURE__ */ jsxs2(PanelSection, { title: "layers", palette: palette2, children: [
+      /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, wrap: "wrap", children: LAYER_KEYS.map((k, i) => `${k}=${layers?.[k] !== false ? "on" : "off"}`).join(`  ${glyphs2.gutter}  `) }),
+      /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, wrap: "wrap", children: `Ctrl+1\u20135 toggle   /set pickers` })
+    ] }),
+    routeOverlay ? /* @__PURE__ */ jsx2(RouteRailPanel, { overlay: routeOverlay, width: width - 2, palette: palette2, glyphs: glyphs2 }) : null,
+    /* @__PURE__ */ jsx2(PanelSection, { title: "context", palette: palette2, children: ctxMeter ? /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", children: [
+      /* @__PURE__ */ jsx2(Text2, { color: ratioColor(ctxMeter.ratio, theme), children: ctxMeter.bar }),
+      /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: `${formatTokens(ctx.used)}/${formatTokens(ctx.size)}  ${percent(ctxMeter.ratio)}` })
+    ] }) : /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: "not reported yet" }) }),
+    /* @__PURE__ */ jsx2(PanelSection, { title: `usage ${glyphs2.gutter} ${u.turns} turn${u.turns === 1 ? "" : "s"}`, palette: palette2, children: ledger.length ? ledger.map(([k, v]) => /* @__PURE__ */ jsxs2(Box2, { justifyContent: "space-between", children: [
+      /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: k }),
+      /* @__PURE__ */ jsx2(Text2, { children: v })
+    ] }, k)) : /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: "no tokens yet" }) }),
+    /* @__PURE__ */ jsx2(Box2, { marginTop: 1, children: /* @__PURE__ */ jsx2(Text2, { color: working ? palette2.warn : palette2.ok, children: working ? `${spin} working\u2026` : `${glyphs2.dot} idle` }) })
   ] });
 }
 var SessionDock = SessionRail;
 var TransparencyPanel = SessionRail;
 
 // apps/chat/tui/picker-ui.jsx
-import React2 from "react";
-import { Box as Box2, Text as Text2 } from "ink";
-import { jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
+import React3 from "react";
+import { Box as Box3, Text as Text3 } from "ink";
+import { jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
 function ListPickerOverlay({ picker, width, theme, currentId = null, markerId = null }) {
   const { palette: palette2, glyphs: glyphs2 } = theme;
   if (!picker?.items?.length) return null;
   const visible = getPickerVisibleItems(picker);
   const { items, offset } = pickerViewport(picker, 14);
   const queryLine = picker.query ? `filter: ${picker.query}` : "type to search";
-  return /* @__PURE__ */ jsxs2(Box2, { flexDirection: "column", marginY: 1, borderStyle: "round", borderColor: palette2.accent, paddingX: 1, width: Math.min(width, 80), children: [
-    /* @__PURE__ */ jsx2(Text2, { color: palette2.accent, bold: true, children: picker.title || "select" }),
-    /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: `${queryLine}   ${glyphs2.gutter}   \u2191/\u2193 move   enter select   esc cancel` }),
-    !visible.length ? /* @__PURE__ */ jsx2(Text2, { color: palette2.warn, children: "no matches \u2014 backspace to edit filter" }) : items.map((item, i) => {
+  return /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", marginY: 1, borderStyle: "round", borderColor: palette2.accent, paddingX: 1, width: Math.min(width, 80), children: [
+    /* @__PURE__ */ jsx3(Text3, { color: palette2.accent, bold: true, children: picker.title || "select" }),
+    /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: `${queryLine}   ${glyphs2.gutter}   \u2191/\u2193 move   enter select   esc cancel` }),
+    !visible.length ? /* @__PURE__ */ jsx3(Text3, { color: palette2.warn, children: "no matches \u2014 backspace to edit filter" }) : items.map((item, i) => {
       const absolute = offset + i;
       const selected = absolute === picker.index;
       const marked = markerId && item.id === markerId || currentId && item.id === currentId;
       const muted = item.disabled && !selected;
-      return /* @__PURE__ */ jsxs2(Text2, { color: selected ? palette2.accent : muted ? palette2.muted : void 0, bold: selected, wrap: "wrap", children: [
+      return /* @__PURE__ */ jsxs3(Text3, { color: selected ? palette2.accent : muted ? palette2.muted : void 0, bold: selected, wrap: "wrap", children: [
         `${selected ? glyphs2.caret : " "} ${String(absolute + 1).padStart(2)}. ${marked ? `${glyphs2.dot} ` : "  "}${item.label || item.id}`,
-        item.tag ? /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: ` [${item.tag}]` }) : null,
-        item.detail ? /* @__PURE__ */ jsx2(Text2, { color: item.disabled ? palette2.warn : palette2.muted, children: ` \u2014 ${item.detail}` }) : null
+        item.tag ? /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: ` [${item.tag}]` }) : null,
+        item.detail ? /* @__PURE__ */ jsx3(Text3, { color: item.disabled ? palette2.warn : palette2.muted, children: ` \u2014 ${item.detail}` }) : null
       ] }, `${item.id}-${absolute}`);
     }),
-    visible.length > items.length ? /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: `${offset + 1}-${offset + items.length} of ${visible.length} shown (${picker.items.length} total)` }) : visible.length ? /* @__PURE__ */ jsx2(Text2, { color: palette2.muted, children: `${visible.length} item${visible.length === 1 ? "" : "s"}` }) : null
+    visible.length > items.length ? /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: `${offset + 1}-${offset + items.length} of ${visible.length} shown (${picker.items.length} total)` }) : visible.length ? /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: `${visible.length} item${visible.length === 1 ? "" : "s"}` }) : null
   ] });
 }
 
@@ -7005,6 +7233,7 @@ var SLASH_COMMANDS = Object.freeze([
   "/settings",
   "/layers",
   "/usage",
+  "/oracle",
   "/host",
   "/clear",
   "/inspect",
@@ -7138,30 +7367,41 @@ function isEnumSetting(key) {
 }
 
 // apps/chat/tui/index.jsx
-import { Fragment as Fragment2, jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
+import { Fragment as Fragment2, jsx as jsx4, jsxs as jsxs4 } from "react/jsx-runtime";
 var ChatThemeContext = createContext(createTheme());
 function useChatTheme() {
   return useContext(ChatThemeContext);
 }
-function EmptyState({ model, savedModel }) {
+function EmptyState({ model, savedModel, demoGuide, demoTitle }) {
   const { palette: palette2, glyphs: glyphs2 } = useChatTheme();
   const { provider, name } = splitModel(model);
   const saved = savedModel && savedModel !== model ? splitModel(savedModel) : null;
-  return /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", paddingY: 1, children: [
-    /* @__PURE__ */ jsx3(Text3, { color: palette2.accent, bold: true, children: `${glyphs2.brand} welcome to construct chat` }),
-    /* @__PURE__ */ jsx3(Box3, { marginTop: 1, children: /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, wrap: "wrap", children: "Each turn shows route, thinking, tools, sources, and usage inline before the answer. Session metrics stay in the rail on the right. /set toggles layers; /inspect expands tool detail." }) }),
-    /* @__PURE__ */ jsxs3(Box3, { marginTop: 1, flexDirection: "column", children: [
-      /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: "To get going" }),
-      /* @__PURE__ */ jsx3(Text3, { color: palette2.text, children: `  ${glyphs2.caret} ask a question or describe the change you want` }),
-      /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: `  ${glyphs2.caret} shift+enter newline   tab completes /commands   /model /set open searchable pickers` })
+  if (demoGuide?.script) {
+    return /* @__PURE__ */ jsxs4(Box4, { flexDirection: "column", paddingY: 1, children: [
+      /* @__PURE__ */ jsx4(Text4, { color: palette2.accent, bold: true, children: `${glyphs2.brand} demo: ${demoTitle || demoGuide.script.title}` }),
+      /* @__PURE__ */ jsx4(Box4, { marginTop: 1, children: /* @__PURE__ */ jsx4(Text4, { color: palette2.muted, wrap: "wrap", children: demoGuide.script.summary }) }),
+      /* @__PURE__ */ jsxs4(Box4, { marginTop: 1, flexDirection: "column", children: [
+        /* @__PURE__ */ jsx4(Text4, { color: palette2.muted, children: "Steps \u2014 type /demo next for the next prompt" }),
+        demoGuide.script.steps.map((step, i) => /* @__PURE__ */ jsx4(Text4, { color: palette2.text, children: `  ${i + 1}. ${step.title || "step"}` }, i))
+      ] })
+    ] });
+  }
+  return /* @__PURE__ */ jsxs4(Box4, { flexDirection: "column", paddingY: 1, children: [
+    /* @__PURE__ */ jsx4(Text4, { color: palette2.accent, bold: true, children: `${glyphs2.brand} welcome to construct chat` }),
+    /* @__PURE__ */ jsx4(Box4, { marginTop: 1, children: /* @__PURE__ */ jsx4(Text4, { color: palette2.muted, wrap: "wrap", children: "Each turn shows route, thinking, tools, sources, and usage inline before the answer. Session metrics stay in the rail on the right. /set toggles layers; /inspect expands tool detail." }) }),
+    /* @__PURE__ */ jsxs4(Box4, { marginTop: 1, flexDirection: "column", children: [
+      /* @__PURE__ */ jsx4(Text4, { color: palette2.muted, children: "To get going" }),
+      /* @__PURE__ */ jsx4(Text4, { color: palette2.text, children: `  ${glyphs2.caret} ask a question or describe the change you want` }),
+      /* @__PURE__ */ jsx4(Text4, { color: palette2.muted, children: `  ${glyphs2.caret} shift+enter newline   tab completes /commands   /model /set open searchable pickers` }),
+      /* @__PURE__ */ jsx4(Text4, { color: palette2.muted, children: `  ${glyphs2.caret} construct chat --resume restores the last session` })
     ] }),
-    name && name !== "(no model)" ? /* @__PURE__ */ jsxs3(Box3, { marginTop: 1, flexDirection: "column", children: [
-      /* @__PURE__ */ jsxs3(Box3, { children: [
-        /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: `active model ` }),
-        /* @__PURE__ */ jsx3(Text3, { color: palette2.text, bold: true, children: provider ? `${provider}/${name}` : name })
+    name && name !== "(no model)" ? /* @__PURE__ */ jsxs4(Box4, { marginTop: 1, flexDirection: "column", children: [
+      /* @__PURE__ */ jsxs4(Box4, { children: [
+        /* @__PURE__ */ jsx4(Text4, { color: palette2.muted, children: `active model ` }),
+        /* @__PURE__ */ jsx4(Text4, { color: palette2.text, bold: true, children: provider ? `${provider}/${name}` : name })
       ] }),
-      saved ? /* @__PURE__ */ jsx3(Box3, { marginTop: 0, children: /* @__PURE__ */ jsx3(Text3, { color: palette2.warn, wrap: "wrap", children: `saved ${saved.provider ? `${saved.provider}/` : ""}${saved.name} \u2014 OpenRouter unavailable; /model to change` }) }) : null
-    ] }) : /* @__PURE__ */ jsx3(Box3, { marginTop: 1, children: /* @__PURE__ */ jsx3(Text3, { color: palette2.warn, children: `${glyphs2.caret} no model selected \u2014 set one with /model or a provider key` }) })
+      saved ? /* @__PURE__ */ jsx4(Box4, { marginTop: 0, children: /* @__PURE__ */ jsx4(Text4, { color: palette2.warn, wrap: "wrap", children: `saved ${saved.provider ? `${saved.provider}/` : ""}${saved.name} \u2014 OpenRouter unavailable; /model to change` }) }) : null
+    ] }) : /* @__PURE__ */ jsx4(Box4, { marginTop: 1, children: /* @__PURE__ */ jsx4(Text4, { color: palette2.warn, children: `${glyphs2.caret} no model selected \u2014 set one with /model or a provider key` }) })
   ] });
 }
 function ConversationColumn({
@@ -7175,27 +7415,37 @@ function ConversationColumn({
   model,
   savedModel,
   detailDense,
-  theme
+  theme,
+  demoGuide,
+  demoTitle
 }) {
   if (!turnBlocks.length && !activeTurn) {
-    return /* @__PURE__ */ jsx3(Box3, { flexDirection: "column", width, paddingRight: 2, children: /* @__PURE__ */ jsx3(EmptyState, { model, savedModel }) });
+    return /* @__PURE__ */ jsx4(Box4, { flexDirection: "column", width, paddingRight: 2, children: /* @__PURE__ */ jsx4(EmptyState, { model, savedModel, demoGuide, demoTitle }) });
   }
   const completed = activeTurn ? turnBlocks.slice(0, -1) : turnBlocks;
-  return /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", width, paddingRight: 2, children: [
-    completed.map((item, i) => item.kind === "turn" ? /* @__PURE__ */ jsx3(
-      TurnTranscript,
-      {
-        turn: item.block,
-        width,
-        layers,
-        turnIndex: i + 1,
-        detailDense,
-        theme
-      },
-      item.block.id
-    ) : null),
-    activeTurn ? /* @__PURE__ */ jsx3(
-      TurnTranscript,
+  let turnNum = 0;
+  return /* @__PURE__ */ jsxs4(Box4, { flexDirection: "column", width, paddingRight: 2, children: [
+    completed.map((item) => {
+      if (item.kind === "system") {
+        return /* @__PURE__ */ jsx4(SystemLogLine, { text: item.text, width, palette: theme.palette }, `sys-${item.text?.slice(0, 24)}-${turnNum}`);
+      }
+      if (item.kind !== "turn") return null;
+      turnNum += 1;
+      return /* @__PURE__ */ jsx4(
+        CompactTurnLog,
+        {
+          turn: item.block,
+          width,
+          layers,
+          turnIndex: turnNum,
+          detailDense,
+          theme
+        },
+        item.block.id
+      );
+    }),
+    activeTurn ? /* @__PURE__ */ jsx4(
+      CompactTurnLog,
       {
         turn: activeTurn,
         width,
@@ -7203,7 +7453,7 @@ function ConversationColumn({
         liveAssistant,
         liveThinking,
         working,
-        turnIndex: completed.length + 1,
+        turnIndex: turnNum + 1,
         detailDense,
         theme
       }
@@ -7222,19 +7472,19 @@ function Footer({
   suggestHint
 }) {
   const { palette: palette2, glyphs: glyphs2 } = useChatTheme();
-  return /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", children: [
-    /* @__PURE__ */ jsx3(Rule, { width: cols, palette: palette2 }),
-    notice ? /* @__PURE__ */ jsx3(Text3, { color: palette2.warn, children: notice }) : null,
-    suggestHint && !listPickerActive && !permissionActive ? /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, wrap: "wrap", children: `tab complete   ${suggestHint}` }) : null,
-    /* @__PURE__ */ jsxs3(Box3, { children: [
-      /* @__PURE__ */ jsx3(Text3, { color: palette2.accent, bold: true, children: permissionActive ? `${glyphs2.caret} permission ` : listPickerActive ? `${glyphs2.caret} pick ` : `you ${glyphs2.caret} ` }),
-      listPickerActive ? /* @__PURE__ */ jsx3(Text3, { color: palette2.text, children: pickerQuery || "" }) : /* @__PURE__ */ jsxs3(Fragment2, { children: [
-        /* @__PURE__ */ jsx3(Text3, { color: palette2.text, children: input }),
-        ghost ? /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: ghost }) : null
+  return /* @__PURE__ */ jsxs4(Box4, { flexDirection: "column", children: [
+    /* @__PURE__ */ jsx4(Rule, { width: cols, palette: palette2 }),
+    notice ? /* @__PURE__ */ jsx4(Text4, { color: palette2.warn, children: notice }) : null,
+    suggestHint && !listPickerActive && !permissionActive ? /* @__PURE__ */ jsx4(Text4, { color: palette2.muted, wrap: "wrap", children: `tab complete   ${suggestHint}` }) : null,
+    /* @__PURE__ */ jsxs4(Box4, { children: [
+      /* @__PURE__ */ jsx4(Text4, { color: palette2.accent, bold: true, children: permissionActive ? `${glyphs2.caret} permission ` : listPickerActive ? `${glyphs2.caret} pick ` : `you ${glyphs2.caret} ` }),
+      listPickerActive ? /* @__PURE__ */ jsx4(Text4, { color: palette2.text, children: pickerQuery || "" }) : /* @__PURE__ */ jsxs4(Fragment2, { children: [
+        /* @__PURE__ */ jsx4(Text4, { color: palette2.text, children: input }),
+        ghost ? /* @__PURE__ */ jsx4(Text4, { color: palette2.muted, children: ghost }) : null
       ] }),
-      !permissionActive && !listPickerActive && !working ? /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: glyphs2.block }) : null
+      !permissionActive && !listPickerActive && !working ? /* @__PURE__ */ jsx4(Text4, { color: palette2.muted, children: glyphs2.block }) : null
     ] }),
-    /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: permissionActive ? "\u2191/\u2193 move   enter select   y/a/n shortcut   esc cancel" : listPickerActive ? "type to filter   \u2191/\u2193 move   enter select   esc cancel" : `enter send   tab complete   shift+enter newline   ${glyphs2.gutter}   /help  Ctrl-C ${working ? "cancel" : "exit"}` })
+    /* @__PURE__ */ jsx4(Text4, { color: palette2.muted, children: permissionActive ? "\u2191/\u2193 move   enter select   y/a/n shortcut   esc cancel" : listPickerActive ? "type to filter   \u2191/\u2193 move   enter select   esc cancel" : `enter send   tab complete   shift+enter newline   ${glyphs2.gutter}   /help   Ctrl+1-5 layers   Ctrl-C ${working ? "cancel" : "exit"}` })
   ] });
 }
 function toggleDetailDense(session) {
@@ -7273,9 +7523,10 @@ function App({
       host: "construct",
       hostId: "construct",
       cwd,
-      turnBlocksRef: () => turnBlocksRef.current
+      turnBlocksRef: () => turnBlocksRef.current,
+      demoGuide: session.demoGuide || null
     }),
-    [driver, cwd]
+    [driver, cwd, session.demoGuide]
   );
   const seedBlocks = initialTurnBlocks?.length ? initialTurnBlocks : turnBlocksFromTranscript(initialTranscript);
   const [turnBlocks, setTurnBlocks] = useState(seedBlocks);
@@ -7293,6 +7544,7 @@ function App({
   const [ctx, setCtx] = useState(null);
   const [frame, setFrame] = useState(0);
   const [listPicker, setListPicker] = useState(null);
+  const [routeOverlay, setRouteOverlay] = useState(null);
   const [, forceTick] = useState(0);
   const busy = useRef(false);
   const inputHistory = useRef([]);
@@ -7448,6 +7700,13 @@ function App({
     setNotice(`tool detail: ${toggleDetailDense(session)}`);
     setUiEpoch((n) => n + 1);
   }, [session]);
+  const toggleLayerShortcut = useCallback((layerKey) => {
+    const on = layers[layerKey] !== false;
+    const result = applySessionSetting(session, layers, layerKey, on ? "off" : "on", { cwd });
+    if (!result.ok) setNotice(result.error || "invalid layer");
+    else setNotice(`${layerKey}: ${on ? "off" : "on"}`);
+    setUiEpoch((n) => n + 1);
+  }, [cwd, layers, session]);
   const handleCommand = useCallback(async (text) => {
     const trimmed = text.trim();
     if (trimmed === "/inspect") {
@@ -7471,7 +7730,7 @@ function App({
     }
     if (trimmed.startsWith("/export")) {
       const scope = trimmed.split(/\s+/)[1] === "session" ? "session" : "last";
-      const result = exportTurns(turnBlocksRef.current, { scope, cwd });
+      const result = exportTurns2(turnBlocksRef.current, { scope, cwd });
       setNotice(result.ok ? `exported to ${result.path}` : result.error || "export failed");
       return;
     }
@@ -7492,13 +7751,12 @@ function App({
         setNotice("");
         setPlan([]);
         setPermissions([]);
+        setRouteOverlay(null);
       }
     });
     const msg = stripAnsi(out.text()).trim();
     if (msg) {
-      const t = createTurnBlock("");
-      t.assistant = msg;
-      setTurnBlocks((prev) => [...prev, { kind: "turn", block: t }]);
+      setTurnBlocks((prev) => [...prev, { kind: "system", text: msg }]);
     }
     setUiEpoch((n) => n + 1);
     if (!keep) exit();
@@ -7528,7 +7786,10 @@ function App({
     let overlay = null;
     try {
       overlay = await planTurn?.(text, { turnBlocks: turnBlocksRef.current });
-      if (overlay) applyOverlayToTurn(turn, overlay);
+      if (overlay) {
+        applyOverlayToTurn(turn, overlay);
+        setRouteOverlay(overlay);
+      }
       bumpTurnBlocks(turn);
     } catch {
     }
@@ -7612,6 +7873,10 @@ function App({
       if (state) setListPicker(state);
       return;
     }
+    if (key.ctrl && char >= "1" && char <= "5" && !input) {
+      toggleLayerShortcut(LAYER_KEYS[Number(char) - 1]);
+      return;
+    }
     if (key.ctrl && char === "c") {
       if (busy.current) {
         try {
@@ -7676,8 +7941,8 @@ function App({
     }
     if (char && !key.ctrl && !key.meta) setInput((v) => v + char);
   });
-  return /* @__PURE__ */ jsx3(ChatThemeContext.Provider, { value: theme, children: /* @__PURE__ */ jsxs3(Box3, { flexDirection: "column", children: [
-    /* @__PURE__ */ jsx3(
+  return /* @__PURE__ */ jsx4(ChatThemeContext.Provider, { value: theme, children: /* @__PURE__ */ jsxs4(Box4, { flexDirection: "column", children: [
+    /* @__PURE__ */ jsx4(
       SessionHeader,
       {
         cols,
@@ -7692,7 +7957,7 @@ function App({
         workingBranch
       }
     ),
-    listPicker ? /* @__PURE__ */ jsx3(
+    listPicker ? /* @__PURE__ */ jsx4(
       ListPickerOverlay,
       {
         picker: listPicker,
@@ -7702,8 +7967,8 @@ function App({
         markerId: listPicker.kind === "model" && session.modelMode !== "free-router" ? session.model : null
       }
     ) : null,
-    /* @__PURE__ */ jsxs3(Box3, { children: [
-      /* @__PURE__ */ jsx3(
+    /* @__PURE__ */ jsxs4(Box4, { children: [
+      /* @__PURE__ */ jsx4(
         ConversationColumn,
         {
           width: convWidth,
@@ -7716,10 +7981,12 @@ function App({
           model: session.model,
           savedModel: session.savedModel,
           detailDense: Boolean(session.detailDense),
-          theme
+          theme,
+          demoGuide: session.demoGuide,
+          demoTitle: session.demoTitle
         }
       ),
-      /* @__PURE__ */ jsx3(
+      /* @__PURE__ */ jsx4(
         SessionRail,
         {
           width: railWidth,
@@ -7735,11 +8002,12 @@ function App({
           spin,
           theme,
           cwd,
-          modelNotice: session.modelNotice || notice || ""
+          modelNotice: session.modelNotice || notice || "",
+          routeOverlay
         }
       )
     ] }),
-    /* @__PURE__ */ jsx3(
+    /* @__PURE__ */ jsx4(
       Footer,
       {
         cols,
@@ -7768,7 +8036,7 @@ function runInkChat({
   initialTranscript = []
 } = {}) {
   const instance = render(
-    /* @__PURE__ */ jsx3(
+    /* @__PURE__ */ jsx4(
       App,
       {
         driver,
@@ -7789,10 +8057,13 @@ function runInkChat({
 var index_default = runInkChat;
 export {
   App,
+  CompactTurnLog,
   EmptyState,
+  RouteRailPanel,
   SessionDock,
   SessionHeader,
   SessionRail,
+  SystemLogLine,
   TransparencyPanel,
   TurnContextBar,
   TurnTranscript,

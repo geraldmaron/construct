@@ -1,8 +1,8 @@
 ---
 intake: none
 intake_rationale: foundational PRD authored before intake traceability was wired; intake-independent by construction.
-last_verified_at: 2026-06-01
-verified_by: cx-docs-keeper · PR-D baseline stamp
+last_verified_at: 2026-06-19
+verified_by: cx-docs-keeper · documentation alignment pass
 ---
 
 # PRD: Construct: Org-in-a-Box
@@ -57,6 +57,9 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 | FR-9 | **Continuous learning**: RAG over accumulated observations, decisions, and artifacts. Trend detection across sessions. Queryable knowledge base ("what do we know about X?"). |
 | FR-10 | **Snapshot generation**: On-demand or scheduled reports summarizing project health, risks, alignment gaps, and actionable recommendations. Output to dashboard, any messaging provider, and/or markdown. |
 | FR-11 | **Hybrid approval model**: Low-risk actions (reading, analysis, draft generation) are autonomous. High-risk actions (work item creation, merge, doc publish, config changes) require human approval via dashboard or configured channel. |
+| FR-12 | **Owned-loop chat** (`construct chat`, ADR-0041): Terminal and browser surfaces run Construct's own agent loop with transparency-first layout, permission gates, and provider-agnostic model routing. |
+| FR-13 | **Oracle meta-controller** (ADR-0043): L0.5 daemon collects project health signals, synthesizes gaps, auto-executes safe maintenance, queues consequential remediation for approval. |
+| FR-14 | **Unified credential resolution** (ADR-0042): LLM keys resolve from env, config files, and `op://` 1Password references; GitHub Copilot uses OAuth device flow. |
 
 ## Non-functional requirements
 

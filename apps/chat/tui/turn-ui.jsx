@@ -20,6 +20,7 @@ import { stripAnsi } from '../../../lib/term-format.mjs';
 import { toolGlyph, toolColor, splitModel, meter, ratioColor, percent } from './theme.mjs';
 import { formatModelHeader } from '../../../lib/chat/model-picker.mjs';
 import { readOracleDockState } from '../../../lib/intake/session-prelude.mjs';
+import { RouteRailPanel } from './event-log-ui.jsx';
 
 const LABEL_WIDTH = 10;
 
@@ -325,7 +326,7 @@ function PanelSection({ title, children, marginTop = 1, palette }) {
 
 export function SessionRail({
   width, session, layers, working, model, modelMode, savedModel, sandbox, permissionMode,
-  ctx, spin, theme, cwd, modelNotice,
+  ctx, spin, theme, cwd, modelNotice, routeOverlay = null,
 }) {
   const { palette, glyphs } = theme;
   const u = session.usage;
@@ -364,9 +365,13 @@ export function SessionRail({
       ) : null}
       <PanelSection title="layers" palette={palette}>
         <Text color={palette.muted} wrap="wrap">
-          {LAYER_KEYS.map((k) => `${k}=${layers?.[k] ? 'on' : 'off'}`).join(`  ${glyphs.gutter}  `)}
+          {LAYER_KEYS.map((k, i) => `${k}=${layers?.[k] !== false ? 'on' : 'off'}`).join(`  ${glyphs.gutter}  `)}
         </Text>
+        <Text color={palette.muted} wrap="wrap">{`Ctrl+1–5 toggle   /set pickers`}</Text>
       </PanelSection>
+      {routeOverlay ? (
+        <RouteRailPanel overlay={routeOverlay} width={width - 2} palette={palette} glyphs={glyphs} />
+      ) : null}
       <PanelSection title="context" palette={palette}>
         {ctxMeter ? (
           <Box flexDirection="column">

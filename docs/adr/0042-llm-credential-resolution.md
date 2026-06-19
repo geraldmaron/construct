@@ -4,7 +4,7 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 # ADR-0042: LLM credential resolution — 1Password op:// and Copilot device flow
 
 - **Date**: 2026-06-18
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher (owner), Construct maintainers (cx-architect)
 - **Relates to**: ADR-0003 (provider interface), ADR-0041 (owned loop)
 

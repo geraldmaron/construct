@@ -63,6 +63,17 @@ intake: none
 
 `construct docs:verify` warns on any artifact in `docs/prd/**`, `docs/research/**`, or `.cx/knowledge/internal/**` that lacks either field. This keeps the corpus auditable: every document either traces to a source packet or consciously opted out.
 
+## Publish after validate passes
+
+Distribution is the last step. Specialists author from templates; **`construct workflow invoke` returns a plan only** — it does not draft the document.
+
+```bash
+construct artifact validate docs/prd/my-feature.md --type=prd
+construct publish docs/prd/my-feature.md --strict --figures
+```
+
+`construct publish` runs the release gate by default. Thin stubs exit 2 with remediation hints. Do not bypass with `--no-gate` for ship paths or demos.
+
 ## Verify artifact stamps
 
 ```bash

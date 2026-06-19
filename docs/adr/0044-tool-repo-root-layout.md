@@ -6,7 +6,7 @@ status: proposed
 # ADR-0044: Tool-repo root layout hygiene via audit alignment
 
 - **Date**: 2026-06-19
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Construct maintainers (cx-architect)
 - **Relates to**: ADR-0002 (layered architecture), ADR-0027 (host footprint), ADR-0035 (extend-not-rebuild), ADR-0043 (Oracle meta-controller)
 

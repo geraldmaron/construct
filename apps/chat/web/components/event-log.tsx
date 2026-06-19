@@ -7,12 +7,14 @@
 
 'use client';
 
-import type { ChatTurn } from '../types';
+import type { ChatTurn, SessionMeta } from '../types';
 import { MarkdownMessage } from './markdown-message';
+import { EmptyState } from './empty-state';
 
 type EventLogProps = {
   turns: ChatTurn[];
   layers: Record<string, boolean>;
+  sessionMeta: SessionMeta;
 };
 
 function toolGlyph(status: string) {
@@ -60,6 +62,20 @@ function routeSummary(overlay: ChatTurn['overlay']) {
 }
 
 function TurnBlock({ turn, index, layers }: { turn: ChatTurn; index: number; layers: Record<string, boolean> }) {
+  if (turn.system) {
+    return (
+      <li className="cx-cockpit-turn">
+        <div className="cx-cockpit-log-block">
+          <div className="cx-cockpit-log-line">
+            <span className="cx-cockpit-tag">—</span>
+            <span className="cx-cockpit-channel cx-cockpit-channel-sys">SYS</span>
+          </div>
+          <pre className="cx-cockpit-pre cx-cockpit-muted">{turn.assistant}</pre>
+        </div>
+      </li>
+    );
+  }
+
   const isError = turn.assistant.startsWith('[error]');
   const toolGroups = summarizeTools(turn.tools);
   const srcLimit = 8;
@@ -147,18 +163,25 @@ function TurnBlock({ turn, index, layers }: { turn: ChatTurn; index: number; lay
   );
 }
 
-export function EventLog({ turns, layers }: EventLogProps) {
+export function EventLog({ turns, layers, sessionMeta }: EventLogProps) {
+  let turnNum = 0;
   return (
-    <section className="cx-cockpit-log" aria-label="Event log" role="log" aria-live="polite">
+    <section className="cx-cockpit-log" aria-label="Conversation" role="log" aria-live="polite">
       {turns.length === 0 ? (
-        <p className="cx-cockpit-muted cx-cockpit-empty">
-          construct › describe a change or ask a question. Route, tools, and usage stream inline; specialist chain stays pinned in the route dock.
-        </p>
+        <EmptyState sessionMeta={sessionMeta} />
       ) : (
         <ol className="cx-cockpit-turn-list">
-          {turns.map((turn, i) => (
-            <TurnBlock key={turn.id} turn={turn} index={i + 1} layers={layers} />
-          ))}
+          {turns.map((turn) => {
+            if (!turn.system) turnNum += 1;
+            return (
+              <TurnBlock
+                key={turn.id}
+                turn={turn}
+                index={turn.system ? 0 : turnNum}
+                layers={layers}
+              />
+            );
+          })}
         </ol>
       )}
     </section>

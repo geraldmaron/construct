@@ -293,6 +293,10 @@
       "core": false
     },
     {
+      "name": "publish",
+      "core": false
+    },
+    {
       "name": "recommend --json [--text|--file|<stdin>]",
       "core": false
     },
@@ -398,6 +402,10 @@
     },
     {
       "name": "telemetry-setup",
+      "core": false
+    },
+    {
+      "name": "tools",
       "core": false
     },
     {

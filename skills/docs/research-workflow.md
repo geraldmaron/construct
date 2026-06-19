@@ -34,6 +34,38 @@ Follow [rules/common/research.md](../../rules/common/research.md) as the default
 8. **Structure** with `get_template("research-brief")`; write to `.cx/research/{topic-slug}.md`.
 9. **Reference** the research doc in the requesting agent's output.
 
+## Distribution (publish pipeline)
+
+After the brief is written, **validate then publish** — the release gate is enforced by default:
+
+```bash
+node bin/construct artifact validate .cx/research/{topic-slug}.md --type=research-brief
+node bin/construct tools detect --json
+node bin/construct publish .cx/research/{topic-slug}.md --strict \
+  --demo=resource-guard-rails \
+  --dashboard-demo=cockpit-tour
+```
+
+Do **not** publish without a passing validate. Do **not** use `--no-gate` in demos or ship paths.
+
+Optional frontmatter in the brief:
+
+```yaml
+publish:
+  demo: resource-guard-rails
+  dashboardDemo: cockpit-tour
+```
+
+**Community patterns (do not hand-roll):**
+
+- **Figures in PDF**: fenced ` ```d2` / ` ```mermaid` blocks rendered at export time via vendored [pandoc-ext/diagram](https://github.com/pandoc-ext/diagram) (`construct export --figures` or `construct publish`).
+- **Terminal demos**: committed `.tape` files under `.cx/demos/tapes/` (VHS source of truth); regenerate with `construct demo record <name>` or CI `charmbracelet/vhs-action`.
+- **Dashboard demos**: Playwright `e2e/demo/*.spec.ts` with `video: on` in `apps/dashboard`; run via `construct demo dashboard:<name>`.
+
+Install toolchain once: `brew install d2 graphviz pandoc typst vhs` and `npm install -g @mermaid-js/mermaid-cli`. Playwright: `cd apps/dashboard && npm install && npx playwright install chromium`.
+
+Do **not** claim PDF/demo done until `construct tools detect` reports ready or `--strict` publish succeeds.
+
 ## Verification bar
 
 - Two independent sources per load-bearing claim unless one authoritative primary suffices.
