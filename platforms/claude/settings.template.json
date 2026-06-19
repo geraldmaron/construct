@@ -170,6 +170,18 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/artifact-release-gate.mjs\"",
+            "timeout": 15
+          }
+        ],
+        "id": "post:edit:artifact-release-gate",
+        "description": "Advisory: surface manifest structure/visual gaps on typed docs under docs/** and .cx/research/**"
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
             "command": "node \"$HOME/.construct/lib/hooks/doc-coupling-check.mjs\"",
             "timeout": 5
           }

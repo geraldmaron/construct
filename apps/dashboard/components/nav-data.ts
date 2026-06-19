@@ -32,6 +32,7 @@ export const NAV: NavGroup[] = [
   {
     label: 'Work',
     items: [
+      { id: 'chat', title: 'Chat', href: '/chat' },
       { id: 'approvals', title: 'Approvals', href: '/approvals' },
       { id: 'workflow', title: 'Workflow', href: '/workflow' },
       { id: 'beads', title: 'Beads', href: '/beads' },
@@ -76,6 +77,7 @@ export const NAV: NavGroup[] = [
 export const PALETTE: PaletteItem[] = [
   { kind: 'page', title: 'Home', sub: '/', href: '/', glyph: 'H' },
   { kind: 'page', title: 'Doctor', sub: 'system diagnostics', href: '/doctor', glyph: 'D' },
+  { kind: 'page', title: 'Chat', sub: 'owned-loop agent', href: '/chat', glyph: 'C' },
   { kind: 'page', title: 'Approvals', sub: 'pending approval queue', href: '/approvals', glyph: 'A' },
   { kind: 'page', title: 'Models', sub: 'tier + provider config', href: '/models', glyph: 'M' },
   { kind: 'page', title: 'Knowledge', sub: 'ask the corpus', href: '/knowledge', glyph: 'K' },

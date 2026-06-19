@@ -105,10 +105,6 @@
       "core": false
     },
     {
-      "name": "doc",
-      "core": false
-    },
-    {
       "name": "docs:check",
       "core": false
     },
@@ -487,6 +483,7 @@
       "scan-secrets",
       "adaptive-lint",
       "comment-lint",
+      "artifact-release-gate",
       "doc-coupling-check",
       "edit-accumulator",
       "registry-sync",

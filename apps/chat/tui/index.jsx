@@ -1,10 +1,10 @@
 /**
  * apps/chat/tui/index.jsx — the rich, multi-pane Ink cockpit for `construct chat`.
  *
- * Each user prompt renders as an inline TurnBlock in the conversation column
- * (route overlay, thinking, tools, markdown answer, turn usage). The right panel
- * is a SessionDock by default with an optional TurnInspector toggle (/inspect,
- * Ctrl-O, ui.inspector). Built to a bundle by npm run build:chat.
+ * Transparency-first transcript in the main column (route, thinking, tools,
+ * sources, answer, usage inline). SessionHeader surfaces model, context, and
+ * layer pills; SessionRail stays persistent on the right. /inspect toggles
+ * expanded tool detail inline — not a sidebar swap.
  */
 
 import React, { useState, useRef, useCallback, useEffect, useMemo, createContext, useContext } from 'react';
@@ -18,11 +18,11 @@ import { stripAnsi } from '../../../lib/term-format.mjs';
 import { parsePermissionKey } from '../../../lib/chat/permission-prompt.mjs';
 import {
   createTurnBlock, applyOverlayToTurn, applyEventToTurn, finalizeTurn,
-  shouldShowInspector, turnBlocksFromTranscript,
+  turnBlocksFromTranscript,
 } from '../../../lib/chat/tui/turn-block.mjs';
 import { createTheme, splitModel } from './theme.mjs';
 import {
-  TurnView, SessionDock, TurnInspector, Rule,
+  TurnTranscript, SessionRail, SessionHeader, Rule,
 } from './turn-ui.jsx';
 import { ListPickerOverlay } from './picker-ui.jsx';
 import {
@@ -34,7 +34,7 @@ import {
 } from '../../../lib/chat/list-picker.mjs';
 import {
   loadModelPickerItems, commitPickerModel, resolveModelPickerSelection,
-  pickerSelectedId, formatModelHeader,
+  pickerSelectedId,
 } from '../../../lib/chat/model-picker.mjs';
 import { resolveFreeOpenRouterModel } from '../engine/models.mjs';
 import {
@@ -50,32 +50,6 @@ function useChatTheme() {
   return useContext(ChatThemeContext);
 }
 
-function HeaderBar({ cols, session, sandbox, permissionMode, working, spin }) {
-  const { palette, glyphs } = useChatTheme();
-  const { label, isRouter } = formatModelHeader(session);
-  return (
-    <Box flexDirection="column">
-      <Box width={cols} justifyContent="space-between">
-        <Box>
-          <Text color={palette.accent} bold>{`${glyphs.brand} construct`}</Text>
-          <Text color={palette.muted}>{`  ${glyphs.gutter}  chat`}</Text>
-        </Box>
-        <Box flexDirection="column" alignItems="flex-end">
-          <Box>
-            <Text bold color={palette.text}>{label || '(no model)'}</Text>
-            <Text color={palette.muted}>{`   ${sandbox}  ${glyphs.gutter}  ${permissionMode}  `}</Text>
-            <Text color={working ? palette.warn : palette.ok}>{working ? spin : glyphs.dot}</Text>
-          </Box>
-          {isRouter ? (
-            <Text color={palette.muted} wrap="wrap">free-router mode — re-picks on launch and on failure</Text>
-          ) : null}
-        </Box>
-      </Box>
-      <Rule width={cols} palette={palette} />
-    </Box>
-  );
-}
-
 function EmptyState({ model, savedModel }) {
   const { palette, glyphs } = useChatTheme();
   const { provider, name } = splitModel(model);
@@ -85,7 +59,7 @@ function EmptyState({ model, savedModel }) {
       <Text color={palette.accent} bold>{`${glyphs.brand} welcome to construct chat`}</Text>
       <Box marginTop={1}>
         <Text color={palette.muted} wrap="wrap">
-          Each turn shows route, tools, and sources inline before the answer. Session metrics live in the dock on the right; /inspect opens per-turn detail.
+          Each turn shows route, thinking, tools, sources, and usage inline before the answer. Session metrics stay in the rail on the right. /set toggles layers; /inspect expands tool detail.
         </Text>
       </Box>
       <Box marginTop={1} flexDirection="column">
@@ -115,7 +89,8 @@ function EmptyState({ model, savedModel }) {
 }
 
 function ConversationColumn({
-  width, turnBlocks, activeTurn, liveAssistant, liveThinking, layers, working, model, savedModel, theme,
+  width, turnBlocks, activeTurn, liveAssistant, liveThinking, layers, working, model, savedModel,
+  detailDense, theme,
 }) {
   if (!turnBlocks.length && !activeTurn) {
     return (
@@ -129,19 +104,29 @@ function ConversationColumn({
 
   return (
     <Box flexDirection="column" width={width} paddingRight={2}>
-      {completed.map((item) => (
+      {completed.map((item, i) => (
         item.kind === 'turn' ? (
-          <TurnView key={item.block.id} turn={item.block} width={width} layers={layers} theme={theme} />
+          <TurnTranscript
+            key={item.block.id}
+            turn={item.block}
+            width={width}
+            layers={layers}
+            turnIndex={i + 1}
+            detailDense={detailDense}
+            theme={theme}
+          />
         ) : null
       ))}
       {activeTurn ? (
-        <TurnView
+        <TurnTranscript
           turn={activeTurn}
           width={width}
           layers={layers}
           liveAssistant={liveAssistant}
           liveThinking={liveThinking}
           working={working}
+          turnIndex={completed.length + 1}
+          detailDense={detailDense}
           theme={theme}
         />
       ) : null}
@@ -185,16 +170,9 @@ function Footer({
   );
 }
 
-function cycleInspectorForced(current) {
-  if (current === null || current === undefined) return true;
-  if (current === true) return false;
-  return null;
-}
-
-function inspectorLabel(forced) {
-  if (forced === true) return 'on';
-  if (forced === false) return 'off';
-  return 'auto';
+function toggleDetailDense(session) {
+  session.detailDense = !session.detailDense;
+  return session.detailDense ? 'expanded' : 'compact';
 }
 
 function App({
@@ -254,17 +232,16 @@ function App({
   const historyPos = useRef(-1);
   const activeTurnRef = useRef(null);
 
-  const inspectorTurn = activeTurn || turnBlocks.filter((b) => b.kind === 'turn').slice(-1)[0]?.block || null;
-  const showInspector = shouldShowInspector({
-    uiInspector: session.ui?.inspector,
-    turn: inspectorTurn,
-    forced: session.inspectorForced ?? null,
-  });
+  const workingBranch = useMemo(() => {
+    try {
+      return buildPlanContext({ session, cwd, turnBlocks, text: '' }).workingBranch || null;
+    } catch {
+      return null;
+    }
+  }, [cwd, session, turnBlocks.length]);
 
-  const dockWidth = Math.min(36, Math.max(28, Math.floor(cols * 0.15)));
-  const inspectorWidth = Math.min(42, Math.max(30, Math.floor(cols * 0.34)));
-  const panelWidth = showInspector ? inspectorWidth : dockWidth;
-  const convWidth = Math.max(20, cols - panelWidth - 2);
+  const railWidth = Math.min(36, Math.max(28, Math.floor(cols * 0.15)));
+  const convWidth = Math.max(20, cols - railWidth - 2);
   const spin = spinnerFrames[frame];
 
   const inputGhost = useMemo(() => {
@@ -419,16 +396,15 @@ function App({
     }
   }, [listPicker]);
 
-  const toggleInspector = useCallback(() => {
-    session.inspectorForced = cycleInspectorForced(session.inspectorForced ?? null);
-    setNotice(`inspector: ${inspectorLabel(session.inspectorForced)}`);
+  const toggleDetail = useCallback(() => {
+    setNotice(`tool detail: ${toggleDetailDense(session)}`);
     setUiEpoch((n) => n + 1);
   }, [session]);
 
   const handleCommand = useCallback(async (text) => {
     const trimmed = text.trim();
     if (trimmed === '/inspect') {
-      toggleInspector();
+      toggleDetail();
       return;
     }
     if (trimmed === '/model' || trimmed === '/models') {
@@ -479,7 +455,7 @@ function App({
     }
     setUiEpoch((n) => n + 1);
     if (!keep) exit();
-  }, [commands, env, exit, layers, openModelPicker, openSettingKeyPicker, session, toggleInspector]);
+  }, [commands, env, exit, layers, openModelPicker, openSettingKeyPicker, session, toggleDetail]);
 
   const submit = useCallback(async (text) => {
     if (!text.trim() || busy.current) return;
@@ -582,7 +558,7 @@ function App({
       return;
     }
     if (key.ctrl && char === 'o') {
-      toggleInspector();
+      toggleDetail();
       return;
     }
     if (key.return && (key.shift || key.meta)) {
@@ -627,7 +603,18 @@ function App({
   return (
     <ChatThemeContext.Provider value={theme}>
       <Box flexDirection="column">
-        <HeaderBar cols={cols} session={session} sandbox={session.sandbox} permissionMode={session.permissionMode} working={working} spin={spin} />
+        <SessionHeader
+          cols={cols}
+          session={session}
+          layers={layers}
+          sandbox={session.sandbox}
+          permissionMode={session.permissionMode}
+          working={working}
+          spin={spin}
+          ctx={ctx}
+          theme={theme}
+          workingBranch={workingBranch}
+        />
         {listPicker ? (
           <ListPickerOverlay
             picker={listPicker}
@@ -648,36 +635,25 @@ function App({
             working={working}
             model={session.model}
             savedModel={session.savedModel}
+            detailDense={Boolean(session.detailDense)}
             theme={theme}
           />
-          {showInspector ? (
-            <TurnInspector
-              width={panelWidth}
-              turn={inspectorTurn}
-              layers={layers}
-              permissions={permissions}
-              plan={plan}
-              lastTurnUsage={lastTurnUsage}
-              theme={theme}
-            />
-          ) : (
-            <SessionDock
-              width={panelWidth}
-              session={session}
-              layers={layers}
-              working={working}
-              model={session.model}
-              modelMode={session.modelMode}
-              savedModel={session.savedModel}
-              sandbox={session.sandbox}
-              permissionMode={session.permissionMode}
-              ctx={ctx}
-              spin={spin}
-              theme={theme}
-              cwd={cwd}
-              modelNotice={session.modelNotice || notice || ''}
-            />
-          )}
+          <SessionRail
+            width={railWidth}
+            session={session}
+            layers={layers}
+            working={working}
+            model={session.model}
+            modelMode={session.modelMode}
+            savedModel={session.savedModel}
+            sandbox={session.sandbox}
+            permissionMode={session.permissionMode}
+            ctx={ctx}
+            spin={spin}
+            theme={theme}
+            cwd={cwd}
+            modelNotice={session.modelNotice || notice || ''}
+          />
         </Box>
         <Footer
           cols={cols}
@@ -717,6 +693,6 @@ export function runInkChat({
   return instance.waitUntilExit();
 }
 
-export { SessionDock, TurnInspector, TurnContextBar, TurnView, TransparencyPanel } from './turn-ui.jsx';
-export { HeaderBar, EmptyState, App, createTheme };
+export { SessionRail, SessionDock, TurnContextBar, TurnTranscript, TurnView, TransparencyPanel, SessionHeader } from './turn-ui.jsx';
+export { EmptyState, App, createTheme };
 export default runInkChat;

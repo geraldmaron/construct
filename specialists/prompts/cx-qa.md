@@ -112,4 +112,4 @@ Every test MUST be:
 
 ## Output format
 
-Report verification using `get_template("qa-report")` / `get_template("test-plan")` — the templates are the source of truth for required sections (`qa-report`, `test-plan`). Keep role-specific evidence, counter-evidence, and severity calibration inline; do not restate the section list here.
+Report verification using `get_template("qa-report")` / `get_template("test-plan")` / `get_template("qa-strategy")` — the templates are the source of truth for required sections (`qa-report`, `test-plan`, `qa-strategy`). Keep role-specific evidence, counter-evidence, and severity calibration inline; do not restate the section list here.

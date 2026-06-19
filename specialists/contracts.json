@@ -104,6 +104,12 @@
           "id": "prd-numeric-claims-cited",
           "description": "Every numeric claim in the PRD body cites a source (no fabricated percentages or multipliers)",
           "check": "artifact-claims-cited"
+        },
+        {
+          "id": "prd-manifest-reviewers",
+          "description": "Manifest required reviewers must appear in agent log before handoff",
+          "check": "artifact-reviewers-seen",
+          "fromManifest": true
         }
       ]
     },
@@ -149,6 +155,12 @@
           "id": "adr-numeric-claims-cited",
           "description": "Every numeric claim in the ADR body cites a source",
           "check": "artifact-claims-cited"
+        },
+        {
+          "id": "adr-manifest-reviewers",
+          "description": "Manifest required reviewers must appear in agent log before handoff",
+          "check": "artifact-reviewers-seen",
+          "fromManifest": true
         }
       ]
     },

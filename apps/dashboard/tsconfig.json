@@ -34,6 +34,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "../chat/web/**/*.ts",
+    "../chat/web/**/*.tsx",
     ".next/types/**/*.ts",
     ".source/**/*.ts",
     ".next/dev/types/**/*.ts"

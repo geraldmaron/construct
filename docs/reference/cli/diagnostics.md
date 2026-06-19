@@ -24,8 +24,14 @@ Audit Construct internals and review the mutation trail
 **Usage**
 
 ```bash
-construct audit <events|trail>
+construct audit <skills|specialists|trail>
 ```
+
+**Subcommands**
+
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
 
 ## construct cleanup
 

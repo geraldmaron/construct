@@ -15,6 +15,13 @@ or directly from evidence, but it must not invent customer demand.
 ## Problem statement
 <!-- Two or three paragraphs grounded in evidence. Explain the customer problem, why now, and what is missing today. -->
 
+```mermaid
+flowchart LR
+  A[Customer need] --> B[Current workaround]
+  B --> C[Proposed capability]
+  C --> D[Outcome after launch]
+```
+
 ## Press release
 <!-- Write as if the capability has shipped. Focus on customer outcome, not implementation. Include a spokesperson quote and a customer quote — mark a hypothetical quote as such; never invent an attributed one (rules/common/no-fabrication.md). -->
 

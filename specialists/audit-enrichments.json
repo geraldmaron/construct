@@ -1,0 +1,293 @@
+{
+  "$comment": "Human-equivalent metadata for construct audit specialists. Merged with live registry data by lib/audit-specialists.mjs.",
+  "version": 1,
+  "specialists": {
+    "orchestrator": {
+      "humanEquivalent": "Engineering program manager",
+      "researchProfile": null,
+      "toneProfile": "direct",
+      "grade": "strong",
+      "gap": "—",
+      "beadId": "construct-skills-hardening"
+    },
+    "oracle": {
+      "humanEquivalent": "Platform SRE / fleet health owner",
+      "researchProfile": "external",
+      "toneProfile": "direct",
+      "grade": "adequate",
+      "gap": "Read-model gaps need explicit remediation routing evidence",
+      "beadId": "construct-skills-hardening"
+    },
+    "rd-lead": {
+      "humanEquivalent": "Research lead / principal investigator",
+      "researchProfile": "external",
+      "toneProfile": "pedagogical",
+      "grade": "adequate",
+      "gap": "Add power analysis and effect-size estimation to role overlay",
+      "beadId": "construct-skills-hardening"
+    },
+    "product-manager": {
+      "humanEquivalent": "Senior product manager",
+      "researchProfile": "user",
+      "toneProfile": "decision-forcing-direct",
+      "grade": "strong",
+      "gap": "Mandatory devil-advocate gate on PRD ship",
+      "beadId": "construct-skills-hardening"
+    },
+    "ux-researcher": {
+      "humanEquivalent": "UX researcher",
+      "researchProfile": "user",
+      "toneProfile": "pedagogical",
+      "grade": "adequate",
+      "gap": "Split user-research workflow from external research; deepen validity methodology",
+      "beadId": "construct-skills-hardening"
+    },
+    "operations": {
+      "humanEquivalent": "Technical program manager",
+      "researchProfile": null,
+      "toneProfile": "direct",
+      "grade": "adequate",
+      "gap": "Critical-path method and resource leveling in role overlay",
+      "beadId": "construct-skills-hardening"
+    },
+    "researcher": {
+      "humanEquivalent": "Research analyst",
+      "researchProfile": "external",
+      "toneProfile": "direct",
+      "grade": "strong",
+      "gap": "Narrow research-workflow to external sources only",
+      "beadId": "construct-skills-hardening"
+    },
+    "business-strategist": {
+      "humanEquivalent": "Strategy / bizops lead",
+      "researchProfile": "market",
+      "toneProfile": "executive-concise",
+      "grade": "adequate",
+      "gap": "Porter's Five Forces and scenario planning in overlay",
+      "beadId": "construct-skills-hardening"
+    },
+    "data-analyst": {
+      "humanEquivalent": "Product data analyst",
+      "researchProfile": "external",
+      "toneProfile": "direct",
+      "grade": "strong",
+      "gap": "—",
+      "beadId": "construct-skills-hardening"
+    },
+    "evaluator": {
+      "humanEquivalent": "ML / product evaluator",
+      "researchProfile": "external",
+      "toneProfile": "direct",
+      "grade": "strong",
+      "gap": "—",
+      "beadId": "construct-skills-hardening"
+    },
+    "ai-engineer": {
+      "humanEquivalent": "AI engineer",
+      "researchProfile": "external",
+      "toneProfile": "direct",
+      "grade": "strong",
+      "gap": "—",
+      "beadId": "construct-skills-hardening"
+    },
+    "architect": {
+      "humanEquivalent": "Staff software architect",
+      "researchProfile": "external",
+      "toneProfile": "decision-forcing-direct",
+      "grade": "strong",
+      "gap": "ADR context diagram enforcement",
+      "beadId": "construct-skills-hardening"
+    },
+    "engineer": {
+      "humanEquivalent": "Senior software engineer",
+      "researchProfile": "codebase",
+      "toneProfile": "direct",
+      "grade": "strong",
+      "gap": "—",
+      "beadId": "construct-skills-hardening"
+    },
+    "devil-advocate": {
+      "humanEquivalent": "Red-team reviewer",
+      "researchProfile": null,
+      "toneProfile": "direct",
+      "grade": "adequate",
+      "gap": "FMEA enumeration in role overlay; mandatory on high-risk artifacts",
+      "beadId": "construct-skills-hardening"
+    },
+    "reviewer": {
+      "humanEquivalent": "Staff engineer reviewer",
+      "researchProfile": "codebase",
+      "toneProfile": "direct",
+      "grade": "strong",
+      "gap": "—",
+      "beadId": "construct-skills-hardening"
+    },
+    "security": {
+      "humanEquivalent": "Application security engineer",
+      "researchProfile": "compliance",
+      "toneProfile": "direct",
+      "grade": "strong",
+      "gap": "Explicit STRIDE/PASTA steps in overlay",
+      "beadId": "construct-skills-hardening"
+    },
+    "qa": {
+      "humanEquivalent": "QA lead",
+      "researchProfile": "codebase",
+      "toneProfile": "direct",
+      "grade": "strong",
+      "gap": "—",
+      "beadId": "construct-skills-hardening"
+    },
+    "debugger": {
+      "humanEquivalent": "Senior debugger / SRE investigator",
+      "researchProfile": "codebase",
+      "toneProfile": "direct",
+      "grade": "adequate",
+      "gap": "Causal-model root-cause enumeration in overlay",
+      "beadId": "construct-skills-hardening"
+    },
+    "sre": {
+      "humanEquivalent": "Site reliability engineer",
+      "researchProfile": "external",
+      "toneProfile": "blameless",
+      "grade": "strong",
+      "gap": "Error-budget policy explicit in overlay",
+      "beadId": "construct-skills-hardening"
+    },
+    "platform-engineer": {
+      "humanEquivalent": "Platform engineer",
+      "researchProfile": "codebase",
+      "toneProfile": "direct",
+      "grade": "adequate",
+      "gap": "IaC maturity and SBOM in overlay",
+      "beadId": "construct-skills-hardening"
+    },
+    "legal-compliance": {
+      "humanEquivalent": "Legal / compliance counsel (technical)",
+      "researchProfile": "compliance",
+      "toneProfile": "direct",
+      "grade": "adequate",
+      "gap": "Risk taxonomy and technical-legal bridge in overlay",
+      "beadId": "construct-skills-hardening"
+    },
+    "release-manager": {
+      "humanEquivalent": "Release manager",
+      "researchProfile": null,
+      "toneProfile": "direct",
+      "grade": "adequate",
+      "gap": "Canary failure-detection and SLO rollback trees",
+      "beadId": "construct-skills-hardening"
+    },
+    "docs-keeper": {
+      "humanEquivalent": "Staff technical writer",
+      "researchProfile": null,
+      "toneProfile": "friendly",
+      "grade": "strong",
+      "gap": "Per-doc-type tone matrix not wired to manifest",
+      "beadId": "construct-skills-hardening"
+    },
+    "designer": {
+      "humanEquivalent": "Product designer",
+      "researchProfile": "user",
+      "toneProfile": "friendly",
+      "grade": "adequate",
+      "gap": "Design-system maturity in overlay",
+      "beadId": "construct-skills-hardening"
+    },
+    "accessibility": {
+      "humanEquivalent": "Accessibility specialist",
+      "researchProfile": "user",
+      "toneProfile": "pedagogical",
+      "grade": "adequate",
+      "gap": "Cognitive accessibility rigor in overlay",
+      "beadId": "construct-skills-hardening"
+    },
+    "explorer": {
+      "humanEquivalent": "Staff engineer (onboarding / exploration)",
+      "researchProfile": "codebase",
+      "toneProfile": "pedagogical",
+      "grade": "adequate",
+      "gap": "Dedicated codebase-research workflow",
+      "beadId": "construct-skills-hardening"
+    },
+    "trace-reviewer": {
+      "humanEquivalent": "Observability / eval analyst",
+      "researchProfile": "external",
+      "toneProfile": "direct",
+      "grade": "adequate",
+      "gap": "Statistical process control in overlay",
+      "beadId": "construct-skills-hardening"
+    },
+    "data-engineer": {
+      "humanEquivalent": "Data engineer",
+      "researchProfile": "external",
+      "toneProfile": "direct",
+      "grade": "adequate",
+      "gap": "Data lineage and SLA maturity in overlay",
+      "beadId": "construct-skills-hardening"
+    },
+    "test-automation": {
+      "humanEquivalent": "Test automation engineer",
+      "researchProfile": "codebase",
+      "toneProfile": "direct",
+      "grade": "strong",
+      "gap": "—",
+      "beadId": "construct-skills-hardening"
+    }
+  },
+  "roleOverlays": {
+    "architect": { "grade": "strong", "gap": "—" },
+    "architect.ai-systems": { "grade": "strong", "gap": "—" },
+    "architect.data": { "grade": "strong", "gap": "—" },
+    "architect.enterprise": { "grade": "strong", "gap": "—" },
+    "architect.integration": { "grade": "strong", "gap": "—" },
+    "architect.platform": { "grade": "strong", "gap": "—" },
+    "data-analyst": { "grade": "strong", "gap": "—" },
+    "data-analyst.experiment": { "grade": "strong", "gap": "—" },
+    "data-analyst.product": { "grade": "strong", "gap": "—" },
+    "data-analyst.product-intelligence": { "grade": "strong", "gap": "—" },
+    "data-analyst.telemetry": { "grade": "strong", "gap": "—" },
+    "data-engineer.pipeline": { "grade": "adequate", "gap": "Lineage observability" },
+    "data-engineer.vector-retrieval": { "grade": "strong", "gap": "—" },
+    "data-engineer.warehouse": { "grade": "strong", "gap": "—" },
+    "debugger": { "grade": "adequate", "gap": "Causal enumeration" },
+    "designer": { "grade": "adequate", "gap": "Design-system maturity" },
+    "designer.accessibility": { "grade": "adequate", "gap": "Cognitive a11y rigor" },
+    "engineer": { "grade": "strong", "gap": "—" },
+    "engineer.ai": { "grade": "strong", "gap": "—" },
+    "engineer.data": { "grade": "strong", "gap": "—" },
+    "engineer.platform": { "grade": "strong", "gap": "—" },
+    "operator": { "grade": "strong", "gap": "—" },
+    "operator.docs": { "grade": "strong", "gap": "Tone matrix via manifest" },
+    "operator.release": { "grade": "adequate", "gap": "Canary rollback trees" },
+    "operator.sre": { "grade": "strong", "gap": "Error-budget policy explicit" },
+    "orchestrator": { "grade": "strong", "gap": "—" },
+    "product-manager": { "grade": "strong", "gap": "—" },
+    "product-manager.ai-product": { "grade": "strong", "gap": "—" },
+    "product-manager.business-strategy": { "grade": "adequate", "gap": "Scenario planning" },
+    "product-manager.enterprise": { "grade": "strong", "gap": "—" },
+    "product-manager.growth": { "grade": "strong", "gap": "—" },
+    "product-manager.platform": { "grade": "strong", "gap": "—" },
+    "product-manager.product": { "grade": "strong", "gap": "—" },
+    "qa": { "grade": "strong", "gap": "—" },
+    "qa.ai-eval": { "grade": "strong", "gap": "—" },
+    "qa.api-contract": { "grade": "strong", "gap": "—" },
+    "qa.data-pipeline": { "grade": "strong", "gap": "—" },
+    "qa.test-automation": { "grade": "strong", "gap": "—" },
+    "qa.web-ui": { "grade": "strong", "gap": "—" },
+    "researcher": { "grade": "strong", "gap": "—" },
+    "researcher.explorer": { "grade": "adequate", "gap": "Codebase workflow split" },
+    "researcher.ux": { "grade": "adequate", "gap": "User-research workflow split" },
+    "reviewer": { "grade": "strong", "gap": "—" },
+    "reviewer.devil-advocate": { "grade": "adequate", "gap": "FMEA enumeration" },
+    "reviewer.evaluator": { "grade": "strong", "gap": "—" },
+    "reviewer.trace": { "grade": "adequate", "gap": "SPC drift detection" },
+    "security": { "grade": "strong", "gap": "STRIDE/PASTA explicit" },
+    "security.ai": { "grade": "strong", "gap": "—" },
+    "security.appsec": { "grade": "strong", "gap": "—" },
+    "security.cloud": { "grade": "strong", "gap": "—" },
+    "security.legal-compliance": { "grade": "adequate", "gap": "Risk taxonomy" },
+    "security.privacy": { "grade": "strong", "gap": "—" },
+    "security.supply-chain": { "grade": "strong", "gap": "—" }
+  }
+}

@@ -123,6 +123,19 @@
     "sessionOptimize": "on"
   },
   "defaultSkills": [],
+  "toneDefaults": {
+    "prd": "decision-forcing-direct",
+    "prfaq": "friendly",
+    "memo": "executive-concise",
+    "runbook": "blameless"
+  },
+  "researchProfiles": {
+    "feature": "user",
+    "bug": "codebase",
+    "research": "external",
+    "strategy": "market",
+    "incident": "codebase"
+  },
   "rebrand": {
     "intakeQueueLabel": "R&D intake queue",
     "signalNoun": "signal"
