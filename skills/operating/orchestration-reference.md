@@ -52,7 +52,7 @@ Do not duplicate skill internals inside agent prompts. Reference the relevant sk
 Every producer→consumer pair has an explicit contract in `specialists/contracts.json`, loaded via `lib/specialist-contracts.mjs`. Specialists call the MCP tool `agent_contract` at the start of a handoff to see:
 
 - `input.mustContain`: fields the packet must carry
-- `input.schema`: JSON schema (when applicable) from `lib/schemas/`
+- `input.schema`: JSON schema (when applicable) from `lib/contract-schemas/`
 - `preconditions`: what must be true before work starts
 - `output.schema` / `output.shape`: expected return shape
 - `postconditions`: what must be true before marking DONE

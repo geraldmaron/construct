@@ -282,7 +282,10 @@ function resolveFirstSecret(varNames, opts = {}) {
   }
   return null;
 }
-function hasSecret(varName, { env = process.env, cwd = process.cwd() } = {}) {
+function hasSecret(varName, { env = process.env, cwd = process.cwd(), allowAmbient = true } = {}) {
+  const direct = env?.[varName];
+  if (typeof direct === "string" && direct.length > 0) return true;
+  if (!allowAmbient) return false;
   const home = os3.homedir();
   const raw = rawCandidate(varName, { env, cwd, home });
   return typeof raw === "string" && raw.length > 0;
@@ -510,6 +513,17 @@ var init_env_config = __esm({
 });
 
 // lib/opencode-config.mjs
+import path5 from "node:path";
+import os5 from "node:os";
+function getOpenCodeConfigDir() {
+  return path5.join(os5.homedir(), ".config", "opencode");
+}
+function getCanonicalOpenCodeConfigPath() {
+  return path5.join(getOpenCodeConfigDir(), "opencode.json");
+}
+function findOpenCodeConfigPath() {
+  return getCanonicalOpenCodeConfigPath();
+}
 var init_opencode_config = __esm({
   "lib/opencode-config.mjs"() {
     init_host_capabilities();
@@ -518,6 +532,11 @@ var init_opencode_config = __esm({
 });
 
 // lib/mcp/tool-budget.mjs
+function isLocalModel(model) {
+  const m = (model || "").toLowerCase();
+  if (m.startsWith("local/")) return true;
+  return m.includes("ollama") || m.includes("localhost") || m.includes("127.0.0.1");
+}
 var init_tool_budget = __esm({
   "lib/mcp/tool-budget.mjs"() {
   }
@@ -641,36 +660,887 @@ var init_model_free_selector = __esm({
   }
 });
 
+// lib/config/schema.mjs
+function checkType(value, expected) {
+  if (Array.isArray(expected)) return expected.some((t) => checkType(value, t));
+  if (expected === "null") return value === null;
+  if (expected === "object") return value !== null && typeof value === "object" && !Array.isArray(value);
+  if (expected === "array") return Array.isArray(value);
+  return typeof value === expected;
+}
+function validateField(value, rule, path33) {
+  const errors = [];
+  if (value === void 0) {
+    if (rule.required) errors.push(`${path33}: required field missing`);
+    return errors;
+  }
+  if (!checkType(value, rule.type)) {
+    errors.push(`${path33}: expected type ${JSON.stringify(rule.type)}, got ${value === null ? "null" : typeof value}`);
+    return errors;
+  }
+  if (rule.enum && !rule.enum.includes(value)) {
+    errors.push(`${path33}: must be one of ${JSON.stringify(rule.enum)}, got ${JSON.stringify(value)}`);
+  }
+  if (rule.maxLength && typeof value === "string" && value.length > rule.maxLength) {
+    errors.push(`${path33}: exceeds maxLength ${rule.maxLength}`);
+  }
+  if (rule.fields && checkType(value, "object")) {
+    for (const [key, subRule] of Object.entries(rule.fields)) {
+      errors.push(...validateField(value[key], subRule, `${path33}.${key}`));
+    }
+  }
+  return errors;
+}
+function validateProjectConfig(raw) {
+  const errors = [];
+  if (!checkType(raw, "object")) {
+    return { valid: false, errors: ["root: must be an object"] };
+  }
+  for (const [key, rule] of Object.entries(FIELD_RULES)) {
+    errors.push(...validateField(raw[key], rule, key));
+  }
+  if (raw.version !== void 0 && raw.version !== CONFIG_SCHEMA_VERSION) {
+    errors.push(`version: expected ${CONFIG_SCHEMA_VERSION}, got ${raw.version}`);
+  }
+  return errors.length === 0 ? { valid: true } : { valid: false, errors };
+}
+var CONFIG_SCHEMA_VERSION, DEPLOYMENT_MODES, MCP_BROKER_VALUES, DEFAULT_PROFILE_ID, SURFACES, INGEST_STRATEGIES, INGEST_FALLBACKS, INGEST_ORCHESTRATIONS, ORCHESTRATION_WORKER_BACKENDS, ORCHESTRATION_STORES, CHAIN_OF_THOUGHT_MODES, HOOK_OUTPUT_MODES, DEFAULT_PROJECT_CONFIG, FIELD_RULES;
+var init_schema = __esm({
+  "lib/config/schema.mjs"() {
+    CONFIG_SCHEMA_VERSION = 1;
+    DEPLOYMENT_MODES = ["solo", "team", "enterprise"];
+    MCP_BROKER_VALUES = ["auto", "on", "off"];
+    DEFAULT_PROFILE_ID = "rnd";
+    SURFACES = ["claude", "opencode", "codex", "copilot", "vscode", "cursor"];
+    INGEST_STRATEGIES = ["adapter", "provider", "docling-remote"];
+    INGEST_FALLBACKS = ["none", "provider", "adapter"];
+    INGEST_ORCHESTRATIONS = ["prompt-only", "orchestrated"];
+    ORCHESTRATION_WORKER_BACKENDS = ["inline", "provider"];
+    ORCHESTRATION_STORES = ["filesystem", "sqlite", "postgres"];
+    CHAIN_OF_THOUGHT_MODES = ["hidden", "surface", "telemetry_only"];
+    HOOK_OUTPUT_MODES = ["auto", "silent", "stderr", "stdout"];
+    DEFAULT_PROJECT_CONFIG = Object.freeze({
+      version: CONFIG_SCHEMA_VERSION,
+      alias: "Construct",
+      deployment: Object.freeze({
+        mode: "solo",
+        mcpBroker: "auto",
+        projectName: null,
+        tenantId: null
+      }),
+      providers: Object.freeze({}),
+      profile: DEFAULT_PROFILE_ID,
+      autoEmbed: false,
+      ingest: Object.freeze({
+        strategy: "adapter",
+        fallback: "none",
+        orchestration: "prompt-only"
+      }),
+      orchestration: Object.freeze({
+        workerBackend: "inline",
+        store: "filesystem",
+        chainOfThought: "hidden"
+      }),
+      telemetry: Object.freeze({
+        enabled: true
+      }),
+      hooks: Object.freeze({
+        outputMode: "auto"
+      }),
+      models: Object.freeze({
+        visibility: Object.freeze({
+          mode: "all_configured",
+          include: [],
+          exclude: [],
+          providers: {}
+        }),
+        catalog: Object.freeze({
+          liveOpenRouter: true,
+          maxLiveFree: 24
+        })
+      }),
+      roleSelection: Object.freeze({
+        primary: null,
+        secondary: null,
+        perConversationOverride: true
+      }),
+      hosts: Object.freeze(Object.fromEntries(SURFACES.map((s) => [s, Object.freeze({ enabled: true })]))),
+      resources: Object.freeze({
+        disk: Object.freeze({
+          tracesMaxDays: 30,
+          intakeArchiveMaxItems: 500,
+          intakeArchiveMaxDays: 90,
+          taskGraphsMaxItems: 200,
+          taskGraphsMaxDays: 90,
+          workerLogsMaxMb: 100,
+          workerLogsMaxDays: 14,
+          sessionsMaxItems: 100,
+          backupsMaxDays: 60,
+          handoffsMaxDays: 30,
+          handoffsMaxItems: 50,
+          totalCxMaxMb: 2e3
+        }),
+        process: Object.freeze({
+          embedDaemonMaxRssMb: 800,
+          mcpServerMaxRssMb: 250,
+          workerReplicaMaxRssMb: 256
+        })
+      })
+    });
+    FIELD_RULES = {
+      $schema: { type: "string", required: false },
+      version: { type: "number", required: true },
+      alias: { type: "string", required: false, maxLength: 120 },
+      deployment: {
+        type: "object",
+        required: false,
+        fields: {
+          mode: { type: "string", enum: DEPLOYMENT_MODES },
+          mcpBroker: { type: "string", enum: MCP_BROKER_VALUES },
+          projectName: { type: ["string", "null"] },
+          tenantId: { type: ["string", "null"] }
+        }
+      },
+      providers: { type: "object", required: false },
+      profile: { type: "string", required: false, maxLength: 40 },
+      autoEmbed: { type: "boolean", required: false },
+      ingest: {
+        type: "object",
+        required: false,
+        fields: {
+          strategy: { type: "string", enum: INGEST_STRATEGIES },
+          fallback: { type: "string", enum: INGEST_FALLBACKS },
+          orchestration: { type: "string", enum: INGEST_ORCHESTRATIONS }
+        }
+      },
+      orchestration: {
+        type: "object",
+        required: false,
+        fields: {
+          workerBackend: { type: "string", enum: ORCHESTRATION_WORKER_BACKENDS },
+          store: { type: "string", enum: ORCHESTRATION_STORES },
+          chainOfThought: { type: "string", enum: CHAIN_OF_THOUGHT_MODES }
+        }
+      },
+      telemetry: {
+        type: "object",
+        required: false,
+        fields: {
+          enabled: { type: "boolean" }
+        }
+      },
+      hooks: {
+        type: "object",
+        required: false,
+        fields: {
+          outputMode: { type: "string", enum: HOOK_OUTPUT_MODES }
+        }
+      },
+      roleSelection: {
+        type: "object",
+        required: false,
+        fields: {
+          primary: { type: ["string", "null"], maxLength: 50 },
+          secondary: { type: ["string", "null"], maxLength: 50 },
+          perConversationOverride: { type: "boolean" }
+        }
+      },
+      resources: { type: "object", required: false },
+      hosts: {
+        type: "object",
+        required: false,
+        fields: Object.fromEntries(SURFACES.map((s) => [s, {
+          type: "object",
+          required: false,
+          fields: {
+            enabled: { type: "boolean", required: false }
+          }
+        }]))
+      },
+      costs: {
+        type: "object",
+        required: false,
+        fields: {
+          billingMode: { type: "string", enum: ["metered", "subscription", "mixed"] },
+          enforce: { type: "boolean" },
+          budgets: { type: "object" },
+          providers: { type: "object", required: false }
+        }
+      },
+      models: {
+        type: "object",
+        required: false,
+        fields: {
+          visibility: {
+            type: "object",
+            required: false,
+            fields: {
+              mode: { type: "string", enum: ["all_configured", "tier_defaults", "explicit"] },
+              include: { type: "array" },
+              exclude: { type: "array" },
+              providers: { type: "object" }
+            }
+          },
+          catalog: {
+            type: "object",
+            required: false,
+            fields: {
+              liveOpenRouter: { type: "boolean" },
+              maxLiveFree: { type: "number" }
+            }
+          }
+        }
+      }
+    };
+  }
+});
+
+// lib/config/project-config.mjs
+import fs5 from "node:fs";
+import path6 from "node:path";
+function findProjectConfigPath(cwd = process.cwd()) {
+  let dir = path6.resolve(cwd);
+  const root = path6.parse(dir).root;
+  while (dir !== root) {
+    const candidate = path6.join(dir, PROJECT_CONFIG_FILENAME);
+    if (fs5.existsSync(candidate)) return candidate;
+    if (fs5.existsSync(path6.join(dir, ".git"))) {
+      const inGitRoot = path6.join(dir, PROJECT_CONFIG_FILENAME);
+      return fs5.existsSync(inGitRoot) ? inGitRoot : null;
+    }
+    dir = path6.dirname(dir);
+  }
+  return null;
+}
+function interpolateSecrets(value, env = process.env) {
+  if (typeof value === "string") {
+    const match = value.match(ENV_POINTER_RE);
+    if (!match) return value;
+    const resolved = env[match[1]];
+    return resolved === void 0 ? null : resolved;
+  }
+  if (Array.isArray(value)) return value.map((v) => interpolateSecrets(v, env));
+  if (value !== null && typeof value === "object") {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = interpolateSecrets(v, env);
+    return out;
+  }
+  return value;
+}
+function deepMerge(base, override) {
+  if (override === void 0) return base;
+  if (override === null || typeof override !== "object" || Array.isArray(override)) return override;
+  const out = Array.isArray(base) ? [...base || []] : { ...base || {} };
+  for (const [k, v] of Object.entries(override)) {
+    out[k] = deepMerge(base?.[k], v);
+  }
+  return out;
+}
+function loadProjectConfig(cwd = process.cwd(), env = process.env) {
+  const configPath = findProjectConfigPath(cwd);
+  if (!configPath) {
+    return {
+      path: null,
+      raw: null,
+      config: structuredClone(DEFAULT_PROJECT_CONFIG),
+      source: "default",
+      errors: []
+    };
+  }
+  let raw;
+  try {
+    raw = JSON.parse(fs5.readFileSync(configPath, "utf8"));
+  } catch (err) {
+    return {
+      path: configPath,
+      raw: null,
+      config: structuredClone(DEFAULT_PROJECT_CONFIG),
+      source: "invalid",
+      errors: [`failed to parse ${configPath}: ${err.message}`]
+    };
+  }
+  const validation = validateProjectConfig(raw);
+  if (!validation.valid) {
+    return {
+      path: configPath,
+      raw,
+      config: structuredClone(DEFAULT_PROJECT_CONFIG),
+      source: "invalid",
+      errors: validation.errors
+    };
+  }
+  const merged = deepMerge(structuredClone(DEFAULT_PROJECT_CONFIG), raw);
+  const resolved = interpolateSecrets(merged, env);
+  return {
+    path: configPath,
+    raw,
+    config: resolved,
+    source: "file",
+    errors: []
+  };
+}
+var PROJECT_CONFIG_FILENAME, ENV_POINTER_RE;
+var init_project_config = __esm({
+  "lib/config/project-config.mjs"() {
+    init_schema();
+    PROJECT_CONFIG_FILENAME = "construct.config.json";
+    ENV_POINTER_RE = /^\$([A-Z_][A-Z0-9_]*)$/;
+  }
+});
+
+// lib/models/catalog.mjs
+import fs6 from "node:fs";
+import path7 from "node:path";
+import os6 from "node:os";
+function uniqueStrings(values = []) {
+  return [...new Set(values.filter((value) => typeof value === "string" && value.trim()))];
+}
+function cachePath(homeDir2 = os6.homedir()) {
+  return path7.join(homeDir2, ".cx", CACHE_FILENAME);
+}
+function resolveModelsConfig(projectConfig = {}) {
+  const models = projectConfig?.models && typeof projectConfig.models === "object" ? projectConfig.models : {};
+  const visibility = { ...DEFAULT_MODELS_CONFIG.visibility, ...models.visibility || {} };
+  const catalog = { ...DEFAULT_MODELS_CONFIG.catalog, ...models.catalog || {} };
+  if (!MODEL_VISIBILITY_MODES.includes(visibility.mode)) {
+    visibility.mode = DEFAULT_MODELS_CONFIG.visibility.mode;
+  }
+  visibility.include = Array.isArray(visibility.include) ? visibility.include : [];
+  visibility.exclude = Array.isArray(visibility.exclude) ? visibility.exclude : [];
+  visibility.providers = visibility.providers && typeof visibility.providers === "object" ? visibility.providers : {};
+  catalog.maxLiveFree = Number.isFinite(catalog.maxLiveFree) ? catalog.maxLiveFree : DEFAULT_MODELS_CONFIG.catalog.maxLiveFree;
+  catalog.liveOpenRouter = catalog.liveOpenRouter !== false;
+  return { visibility, catalog };
+}
+function readLiveCatalogCache({ homeDir: homeDir2 = os6.homedir(), maxAgeMs = CACHE_TTL_MS } = {}) {
+  const file = cachePath(homeDir2);
+  try {
+    if (!fs6.existsSync(file)) return null;
+    const parsed = JSON.parse(fs6.readFileSync(file, "utf8"));
+    if (!parsed?.fetchedAt || !Array.isArray(parsed.models)) return null;
+    if (Date.now() - parsed.fetchedAt > maxAgeMs) return null;
+    return parsed.models;
+  } catch {
+    return null;
+  }
+}
+function writeLiveCatalogCache(models, { homeDir: homeDir2 = os6.homedir() } = {}) {
+  const file = cachePath(homeDir2);
+  fs6.mkdirSync(path7.dirname(file), { recursive: true });
+  fs6.writeFileSync(file, JSON.stringify({
+    fetchedAt: Date.now(),
+    models: models.map((m) => ({
+      id: m.id,
+      name: m.name ?? m.id,
+      isFree: m.isFree === true
+    }))
+  }, null, 2));
+}
+async function refreshLiveOpenRouterCatalog({ env = process.env, homeDir: homeDir2 = os6.homedir() } = {}) {
+  const apiKey = resolveFirstSecret(["OPENROUTER_API_KEY", "OPEN_ROUTER_API_KEY"], { env });
+  if (!apiKey) return [];
+  const models = await pollFreeModels(apiKey);
+  writeLiveCatalogCache(models, { homeDir: homeDir2 });
+  return models;
+}
+function providerFamilyEnabled(providerId, visibility) {
+  const map = visibility.providers || {};
+  if (Object.keys(map).length === 0) return true;
+  if (map[providerId] === false) return false;
+  if (providerId.startsWith("openrouter") && map.openrouter === false) return false;
+  return map[providerId] !== false;
+}
+function collectTierDefaultIds(registryModels = {}) {
+  const ids = [];
+  for (const tier of ["reasoning", "standard", "fast"]) {
+    const def = registryModels[tier];
+    if (typeof def === "string") ids.push(def);
+    else if (def && typeof def === "object") {
+      if (def.primary) ids.push(def.primary);
+      if (Array.isArray(def.fallback)) ids.push(...def.fallback);
+    }
+  }
+  return uniqueStrings(ids);
+}
+function mergeLiveModelsIntoProviders(providers, liveModels = [], { maxLiveFree = 24 } = {}) {
+  if (!liveModels.length) return providers;
+  const liveIds = liveModels.slice(0, maxLiveFree).map((m) => m.id?.startsWith("openrouter/") ? m.id : `openrouter/${m.id}`);
+  return providers.map((provider) => {
+    if (provider.id !== "openrouter" && !provider.id.startsWith("openrouter")) return provider;
+    const options = {
+      reasoning: uniqueStrings([...provider.options?.reasoning ?? [], ...liveIds]),
+      standard: uniqueStrings([...provider.options?.standard ?? [], ...liveIds]),
+      fast: uniqueStrings([...provider.options?.fast ?? [], ...liveIds])
+    };
+    return { ...provider, options, liveModelCount: liveIds.length };
+  });
+}
+function applyModelVisibilityFilter(catalog, {
+  visibility = DEFAULT_MODELS_CONFIG.visibility,
+  registryModels = {},
+  activeModelId = null
+} = {}) {
+  const includeSet = new Set(visibility.include || []);
+  const excludeSet = new Set(visibility.exclude || []);
+  const tierDefaults = collectTierDefaultIds(registryModels);
+  const modelAllowed = (modelId, providerId) => {
+    if (!modelId) return false;
+    if (modelId === activeModelId) return true;
+    if (excludeSet.has(modelId)) return false;
+    if (!providerFamilyEnabled(providerId, visibility)) return false;
+    if (visibility.mode === "explicit") {
+      return includeSet.has(modelId);
+    }
+    if (visibility.mode === "tier_defaults") {
+      return tierDefaults.includes(modelId);
+    }
+    return true;
+  };
+  const providers = catalog.providers.filter((provider) => providerFamilyEnabled(provider.id, visibility)).map((provider) => {
+    const options = {};
+    for (const tier of ["reasoning", "standard", "fast"]) {
+      options[tier] = (provider.options?.[tier] ?? []).filter((id) => modelAllowed(id, provider.id));
+    }
+    const tiers = { ...provider.tiers };
+    for (const tier of ["reasoning", "standard", "fast"]) {
+      if (tiers[tier] && !modelAllowed(tiers[tier], provider.id)) {
+        tiers[tier] = options[tier]?.[0] ?? null;
+      }
+    }
+    return { ...provider, options, tiers };
+  });
+  const tierOptions = {
+    reasoning: uniqueStrings(providers.flatMap((p) => p.options.reasoning)),
+    standard: uniqueStrings(providers.flatMap((p) => p.options.standard)),
+    fast: uniqueStrings(providers.flatMap((p) => p.options.fast))
+  };
+  return { providers, tierOptions, visibility, activeModelId };
+}
+function loadModelsCatalogContext({ cwd = process.cwd(), env = process.env, homeDir: homeDir2 = os6.homedir() } = {}) {
+  const { config } = loadProjectConfig(cwd, env);
+  const modelsConfig = resolveModelsConfig(config);
+  let registryModels = {};
+  try {
+    const registryPath = path7.join(cwd, "specialists", "registry.json");
+    if (fs6.existsSync(registryPath)) {
+      registryModels = JSON.parse(fs6.readFileSync(registryPath, "utf8")).models ?? {};
+    }
+  } catch {
+  }
+  const liveModels = modelsConfig.catalog.liveOpenRouter ? readLiveCatalogCache({ homeDir: homeDir2 }) ?? [] : [];
+  return { modelsConfig, registryModels, liveModels };
+}
+var MODEL_VISIBILITY_MODES, DEFAULT_MODELS_CONFIG, CACHE_FILENAME, CACHE_TTL_MS;
+var init_catalog = __esm({
+  "lib/models/catalog.mjs"() {
+    init_model_free_selector();
+    init_secret_resolver();
+    init_project_config();
+    MODEL_VISIBILITY_MODES = ["all_configured", "tier_defaults", "explicit"];
+    DEFAULT_MODELS_CONFIG = Object.freeze({
+      visibility: Object.freeze({
+        mode: "all_configured",
+        include: [],
+        exclude: [],
+        providers: {}
+      }),
+      catalog: Object.freeze({
+        liveOpenRouter: true,
+        maxLiveFree: 24
+      })
+    });
+    CACHE_FILENAME = "model-catalog-cache.json";
+    CACHE_TTL_MS = 10 * 60 * 1e3;
+  }
+});
+
+// lib/provider-capabilities-anthropic.js
+var provider_capabilities_anthropic_exports = {};
+__export(provider_capabilities_anthropic_exports, {
+  anthropicCapabilities: () => anthropicCapabilities,
+  capabilities: () => capabilities
+});
+function anthropicCapabilities(modelId = "") {
+  const contextWindow = resolveContextWindow(modelId);
+  return {
+    cacheControl: true,
+    cacheMechanism: "annotation",
+    cacheTTL: { "5m": 3e5, "1h": 12e5 },
+    // tokens
+    structuredOutput: true,
+    maxContextWindow: contextWindow,
+    tokenRatio: 3.5,
+    // ~3.5 chars per token for Claude
+    annotationFormat: "anthropic",
+    annotationHeaders: {
+      "anthropic-version": "2024-10-22"
+    },
+    cacheAnchoring: "system-message",
+    // where to place the cache_control
+    breakpointPlacement: "after-static"
+    // place breakpoint after static content
+  };
+}
+function resolveContextWindow(modelId) {
+  const id = String(modelId || "").toLowerCase();
+  if (id.includes("opus-4")) return 2e5;
+  if (id.includes("sonnet-4")) return 2e5;
+  if (id.includes("haiku-4")) return 2e5;
+  if (id.includes("3-5-sonnet")) return 2e5;
+  if (id.includes("3-5-haiku")) return 2e5;
+  return 2e5;
+}
+async function capabilities(modelId) {
+  return anthropicCapabilities(modelId);
+}
+var init_provider_capabilities_anthropic = __esm({
+  "lib/provider-capabilities-anthropic.js"() {
+    init_provider_capabilities();
+  }
+});
+
+// lib/provider-capabilities-google.js
+var provider_capabilities_google_exports = {};
+__export(provider_capabilities_google_exports, {
+  capabilities: () => capabilities2,
+  googleCapabilities: () => googleCapabilities
+});
+function googleCapabilities(modelId = "") {
+  const contextWindow = resolveGoogleContextWindow(modelId);
+  return {
+    cacheControl: true,
+    cacheMechanism: "resource",
+    // uses cachedContent API
+    cacheTTL: { "5m": null, "1h": 12e5 },
+    // Gemini uses 1h TTL
+    structuredOutput: true,
+    maxContextWindow: contextWindow,
+    tokenRatio: 4,
+    // ~4 chars per token for Gemini
+    annotationFormat: "google",
+    annotationHeaders: null,
+    // Gemini uses separate API endpoint
+    cachedContentEndpoint: "https://generativelanguage.googleapis.com/v1",
+    cacheAnchoring: "cached-content"
+    // reference by name
+  };
+}
+function resolveGoogleContextWindow(modelId) {
+  const id = String(modelId || "").toLowerCase();
+  if (id.includes("gemini-1.5-pro")) return 1e6;
+  if (id.includes("gemini-1.5-flash")) return 1e6;
+  if (id.includes("gemini-2.0-pro")) return 1e6;
+  if (id.includes("gemini-2.0-flash")) return 1e6;
+  if (id.includes("gemini-2.5-pro")) return 1e6;
+  if (id.includes("gemini-2.5-flash")) return 1e6;
+  if (id.includes("gemini-pro")) return 3e4;
+  if (id.includes("gemini-flash")) return 3e4;
+  if (id.includes("gemma")) return 8e3;
+  return 1e6;
+}
+async function capabilities2(modelId) {
+  return googleCapabilities(modelId);
+}
+var init_provider_capabilities_google = __esm({
+  "lib/provider-capabilities-google.js"() {
+    init_provider_capabilities();
+  }
+});
+
+// lib/provider-capabilities-openai.js
+var provider_capabilities_openai_exports = {};
+__export(provider_capabilities_openai_exports, {
+  capabilities: () => capabilities3,
+  openaiCapabilities: () => openaiCapabilities
+});
+function openaiCapabilities(modelId = "") {
+  const contextWindow = resolveOpenAIContextWindow(modelId);
+  return {
+    cacheControl: false,
+    // automatic — no annotations
+    cacheMechanism: "automatic",
+    cacheTTL: null,
+    // invisible to caller
+    structuredOutput: true,
+    maxContextWindow: contextWindow,
+    tokenRatio: 4,
+    // ~4 chars per token for GPT models
+    annotationFormat: "openai",
+    annotationHeaders: null,
+    cacheAnchoring: "prefix",
+    // stable prefix caching
+    notes: "OpenAI caches repeated prefixes automatically; no explicit cache_control needed"
+  };
+}
+function resolveOpenAIContextWindow(modelId) {
+  const id = String(modelId || "").toLowerCase();
+  if (id.includes("gpt-4o") || id.includes("gpt-4.1")) return 128e3;
+  if (id.includes("gpt-4-turbo")) return 128e3;
+  if (id.includes("gpt-4")) return 8e3;
+  if (id.includes("gpt-3.5")) return 16e3;
+  if (id.includes("gpt-3")) return 4e3;
+  if (id.includes("o1")) return 2e5;
+  if (id.includes("o3")) return 2e5;
+  return 128e3;
+}
+async function capabilities3(modelId) {
+  return openaiCapabilities(modelId);
+}
+var init_provider_capabilities_openai = __esm({
+  "lib/provider-capabilities-openai.js"() {
+    init_provider_capabilities();
+  }
+});
+
+// lib/provider-capabilities-deepseek.js
+var provider_capabilities_deepseek_exports = {};
+__export(provider_capabilities_deepseek_exports, {
+  capabilities: () => capabilities4,
+  deepseekCapabilities: () => deepseekCapabilities
+});
+function deepseekCapabilities(modelId = "") {
+  const contextWindow = resolveDeepSeekContextWindow(modelId);
+  return {
+    cacheControl: false,
+    cacheMechanism: "none",
+    cacheTTL: null,
+    structuredOutput: false,
+    maxContextWindow: contextWindow,
+    tokenRatio: 3,
+    // ~3 chars per token for DeepSeek
+    annotationFormat: "none",
+    annotationHeaders: null,
+    cacheAnchoring: "none",
+    notes: "DeepSeek has no prompt caching support via standard APIs"
+  };
+}
+function resolveDeepSeekContextWindow(modelId) {
+  const id = String(modelId || "").toLowerCase();
+  if (id.includes("deepseek-v3") || id.includes("deepseek-chat")) return 64e3;
+  if (id.includes("deepseek-coder")) return 16e3;
+  if (id.includes("deepseek-r1")) return 64e3;
+  return 64e3;
+}
+async function capabilities4(modelId) {
+  return deepseekCapabilities(modelId);
+}
+var init_provider_capabilities_deepseek = __esm({
+  "lib/provider-capabilities-deepseek.js"() {
+    init_provider_capabilities();
+  }
+});
+
+// lib/provider-capabilities-generic.js
+var provider_capabilities_generic_exports = {};
+__export(provider_capabilities_generic_exports, {
+  capabilities: () => capabilities5,
+  genericCapabilities: () => genericCapabilities
+});
+function genericCapabilities(modelId = "") {
+  return {
+    cacheControl: false,
+    cacheMechanism: "none",
+    cacheTTL: null,
+    structuredOutput: false,
+    maxContextWindow: 2e5,
+    // conservative default
+    tokenRatio: 4,
+    // ~4 chars per token (conservative)
+    annotationFormat: "none",
+    annotationHeaders: null,
+    cacheAnchoring: "none",
+    notes: "Generic provider \u2014 no special capabilities detected"
+  };
+}
+async function capabilities5(modelId) {
+  return genericCapabilities(modelId);
+}
+var init_provider_capabilities_generic = __esm({
+  "lib/provider-capabilities-generic.js"() {
+    init_provider_capabilities();
+  }
+});
+
 // lib/provider-capabilities.js
+import { readFileSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
-var CAPABILITY_CACHE_PATH, CAPABILITY_CACHE_TTL_MS;
+function resolveAdapterKey(modelId) {
+  const id = String(modelId || "").toLowerCase();
+  if (/^anthropic\//.test(id) || /^openrouter\/anthropic\//.test(id)) return "anthropic";
+  if (/^google\//.test(id) || /^openrouter\/google\//.test(id)) return "google";
+  if (/^openai\//.test(id) || /^openrouter\/openai\//.test(id) || /^github-copilot\//.test(id)) return "openai";
+  if (/^deepseek\//.test(id) || /^openrouter\/deepseek\//.test(id)) return "deepseek";
+  return "generic";
+}
+function readCapabilityCache() {
+  try {
+    if (!existsSync(CAPABILITY_CACHE_PATH)) return {};
+    const cached = JSON.parse(readFileSync(CAPABILITY_CACHE_PATH, "utf8"));
+    if (cached?.fetchedAt && Date.now() - cached.fetchedAt < CAPABILITY_CACHE_TTL_MS) {
+      return cached.capabilities || {};
+    }
+  } catch {
+  }
+  return {};
+}
+function getCache() {
+  if (_cache === null) _cache = readCapabilityCache();
+  return _cache;
+}
+async function resolveProviderCapabilities(modelId) {
+  const adapterKey = resolveAdapterKey(modelId);
+  const loader = ADAPTERS[adapterKey] || ADAPTERS.generic;
+  try {
+    const { capabilities: capabilities6 } = await loader();
+    return capabilities6(modelId);
+  } catch {
+    const { capabilities: capabilities6 } = await ADAPTERS.generic();
+    return capabilities6(modelId);
+  }
+}
+function resolveProviderCapabilitiesSync(modelId) {
+  const adapterKey = resolveAdapterKey(modelId);
+  const cache2 = getCache();
+  if (cache2[adapterKey]) return cache2[adapterKey];
+  return {
+    cacheControl: false,
+    cacheMechanism: "none",
+    cacheTTL: null,
+    structuredOutput: false,
+    maxContextWindow: 2e5,
+    tokenRatio: 4,
+    annotationFormat: "none",
+    annotationHeaders: null
+  };
+}
+var CAPABILITY_CACHE_PATH, CAPABILITY_CACHE_TTL_MS, ADAPTERS, _cache;
 var init_provider_capabilities = __esm({
   "lib/provider-capabilities.js"() {
     CAPABILITY_CACHE_PATH = join(homedir(), ".cx", "provider-capabilities.json");
     CAPABILITY_CACHE_TTL_MS = 24 * 60 * 60 * 1e3;
+    ADAPTERS = {
+      anthropic: () => Promise.resolve().then(() => (init_provider_capabilities_anthropic(), provider_capabilities_anthropic_exports)),
+      "anthropic-direct": () => Promise.resolve().then(() => (init_provider_capabilities_anthropic(), provider_capabilities_anthropic_exports)),
+      google: () => Promise.resolve().then(() => (init_provider_capabilities_google(), provider_capabilities_google_exports)),
+      openai: () => Promise.resolve().then(() => (init_provider_capabilities_openai(), provider_capabilities_openai_exports)),
+      deepseek: () => Promise.resolve().then(() => (init_provider_capabilities_deepseek(), provider_capabilities_deepseek_exports)),
+      generic: () => Promise.resolve().then(() => (init_provider_capabilities_generic(), provider_capabilities_generic_exports))
+    };
+    _cache = null;
   }
 });
 
 // lib/model-router.mjs
-import fs5 from "node:fs";
-import path5 from "node:path";
+var model_router_exports = {};
+__export(model_router_exports, {
+  MODEL_OPERATING_PROFILES: () => MODEL_OPERATING_PROFILES,
+  MODEL_TIER_BY_WORK_CATEGORY: () => MODEL_TIER_BY_WORK_CATEGORY,
+  PROVIDER_FAMILY_TIERS: () => PROVIDER_FAMILY_TIERS,
+  applyFreePreferenceToTierSet: () => applyFreePreferenceToTierSet,
+  applyFreeSameFamilyPreferenceToTierSet: () => applyFreeSameFamilyPreferenceToTierSet,
+  applyToEnv: () => applyToEnv,
+  classifyProviderFailure: () => classifyProviderFailure,
+  describeModelFamily: () => describeModelFamily,
+  formatModelStatus: () => formatModelStatus,
+  getModelForTier: () => getModelForTier,
+  getModelSource: () => getModelSource,
+  getProviderModelCatalog: () => getProviderModelCatalog,
+  inferTierModelsFromSelection: () => inferTierModelsFromSelection,
+  isChatModelAvailable: () => isChatModelAvailable,
+  isProviderOnCooldown: () => isProviderOnCooldown,
+  listModelFamilies: () => listModelFamilies,
+  readCurrentModels: () => readCurrentModels,
+  readOpenRouterApiKeyFromOpenCodeConfig: () => readOpenRouterApiKeyFromOpenCodeConfig,
+  readProviderCooldowns: () => readProviderCooldowns,
+  resetEnv: () => resetEnv,
+  resolveCapabilityTier: () => resolveCapabilityTier,
+  resolveExecutionContractModelMetadata: () => resolveExecutionContractModelMetadata,
+  resolveFallbackAction: () => resolveFallbackAction,
+  resolveModelOperatingProfile: () => resolveModelOperatingProfile,
+  resolveModelTiers: () => resolveModelTiers,
+  resolveProviderCapabilities: () => resolveProviderCapabilities,
+  resolveProviderCapabilitiesSync: () => resolveProviderCapabilitiesSync,
+  resolveTiersForPrimary: () => resolveTiersForPrimary,
+  resolveValidatedChatModel: () => resolveValidatedChatModel,
+  selectFallbackModel: () => selectFallbackModel,
+  selectLocalEditorModel: () => selectLocalEditorModel,
+  selectModelTierForWorkCategory: () => selectModelTierForWorkCategory,
+  setModelWithTierInference: () => setModelWithTierInference,
+  setTierModel: () => setTierModel,
+  validateModelTiers: () => validateModelTiers,
+  writeProviderCooldown: () => writeProviderCooldown
+});
+import fs7 from "node:fs";
+import path8 from "node:path";
 import { spawnSync as spawnSync2 } from "child_process";
-function uniqueStrings(values = []) {
+function uniqueStrings2(values = []) {
   return [...new Set(values.filter((value) => typeof value === "string" && value.trim()))];
+}
+function normalizeModelOperatingProfile(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized === "default") return "balanced";
+  return MODEL_OPERATING_PROFILES[normalized] ? normalized : null;
+}
+function parseModelSizeB(model) {
+  const size = String(model || "").toLowerCase().match(/(?:[:/-])(\d+(?:\.\d+)?)b\b/);
+  return size ? parseFloat(size[1]) : null;
+}
+function inferSmallModelProfile(selectedModel) {
+  const model = String(selectedModel || "").toLowerCase();
+  if (!model) return false;
+  if (/^(ollama|local)\//.test(model)) {
+    const size = parseModelSizeB(model);
+    if (size !== null && size <= 34) return true;
+  }
+  if (/^(anthropic|openrouter\/anthropic)\/.*haiku/.test(model)) return true;
+  if (/gpt-5\.1-mini|gemma-3|gemma-4|phi3:mini/.test(model)) return true;
+  return false;
+}
+function resolveModelOperatingProfile({
+  envValues = {},
+  selectedModel = null
+} = {}) {
+  const explicit = normalizeModelOperatingProfile(
+    envValues.CONSTRUCT_MODEL_PROFILE ?? envValues.constructModelProfile
+  );
+  if (explicit) return MODEL_OPERATING_PROFILES[explicit];
+  if (inferSmallModelProfile(selectedModel)) return MODEL_OPERATING_PROFILES.small;
+  return MODEL_OPERATING_PROFILES.balanced;
+}
+function resolveCapabilityTier({ model, verdict = null } = {}) {
+  if (!isLocalModel(model)) return "full";
+  if (verdict === "COLLAPSED") return "floor";
+  const size = parseModelSizeB(model);
+  if (size === null) return "floor";
+  if (size >= 24) return "mid";
+  return "floor";
+}
+function selectLocalEditorModel(candidates = []) {
+  if (!Array.isArray(candidates) || candidates.length === 0) return null;
+  const sized = candidates.map((m) => ({ m, size: parseModelSizeB(m) }));
+  const pick = (arr) => {
+    const band = arr.filter((x) => x.size !== null && x.size >= 7 && x.size <= 34).sort((a, b) => a.size - b.size);
+    if (band.length) return band[0].m;
+    const anySized = arr.filter((x) => x.size !== null).sort((a, b) => a.size - b.size);
+    return anySized.length ? anySized[0].m : arr[0].m;
+  };
+  const coders = sized.filter((x) => CODE_MODEL_RE.test(x.m));
+  return coders.length ? pick(coders) : pick(sized);
 }
 function hasCopilotCredential() {
   const home = process.env.HOME || process.env.USERPROFILE || "";
   if (!home) return false;
   const candidates = [
-    path5.join(home, ".construct", "auth", "github-copilot.json"),
-    path5.join(home, ".config", "github-copilot", "apps.json"),
-    path5.join(home, ".config", "github-copilot", "hosts.json")
+    path8.join(home, ".construct", "auth", "github-copilot.json"),
+    path8.join(home, ".config", "github-copilot", "apps.json"),
+    path8.join(home, ".config", "github-copilot", "hosts.json")
   ];
   for (const file of candidates) {
     try {
-      if (!fs5.existsSync(file)) continue;
-      const data = JSON.parse(fs5.readFileSync(file, "utf8"));
+      if (!fs7.existsSync(file)) continue;
+      const data = JSON.parse(fs7.readFileSync(file, "utf8"));
       if (file.endsWith("github-copilot.json")) {
         if (data && (data.oauth_token || data.token || data.refresh_token || data.refresh)) return true;
       } else {
@@ -683,7 +1553,7 @@ function hasCopilotCredential() {
   }
   return false;
 }
-function isProviderConfigured(familyId, env) {
+function isProviderConfigured(familyId, env, { allowAmbient = true } = {}) {
   const varNames = PROVIDER_ENV_MAP[familyId];
   if (!varNames?.length) return false;
   if (familyId === "ollama") {
@@ -698,7 +1568,7 @@ function isProviderConfigured(familyId, env) {
     } catch {
     }
   }
-  if (hasAnySecret(varNames, { env })) return true;
+  if (hasAnySecret(varNames, { env, allowAmbient })) return true;
   if (familyId === "github-copilot") {
     if (hasCopilotCredential()) return true;
     try {
@@ -710,13 +1580,18 @@ function isProviderConfigured(familyId, env) {
   }
   return false;
 }
-function getProviderModelCatalog({ env = process.env } = {}) {
-  const providers = PROVIDER_FAMILY_TIERS.map((family) => {
+function getProviderModelCatalog({
+  env = process.env,
+  cwd = process.cwd(),
+  activeModelId = null,
+  registryModels: registryModelsOverride = null
+} = {}) {
+  const baseProviders = PROVIDER_FAMILY_TIERS.map((family) => {
     const tiers = family.resolve({});
     const options = {
-      reasoning: uniqueStrings([...family.options?.reasoning ?? [], tiers.reasoning]),
-      standard: uniqueStrings([...family.options?.standard ?? [], tiers.standard]),
-      fast: uniqueStrings([...family.options?.fast ?? [], tiers.fast])
+      reasoning: uniqueStrings2([...family.options?.reasoning ?? [], tiers.reasoning]),
+      standard: uniqueStrings2([...family.options?.standard ?? [], tiers.standard]),
+      fast: uniqueStrings2([...family.options?.fast ?? [], tiers.fast])
     };
     return {
       id: family.id,
@@ -729,12 +1604,25 @@ function getProviderModelCatalog({ env = process.env } = {}) {
       configured: isProviderConfigured(family.id, env)
     };
   });
-  const tierOptions = {
-    reasoning: uniqueStrings(providers.flatMap((provider) => provider.options.reasoning)),
-    standard: uniqueStrings(providers.flatMap((provider) => provider.options.standard)),
-    fast: uniqueStrings(providers.flatMap((provider) => provider.options.fast))
+  const { modelsConfig, registryModels, liveModels } = loadModelsCatalogContext({ cwd, env });
+  const mergedProviders = mergeLiveModelsIntoProviders(
+    baseProviders,
+    liveModels,
+    { maxLiveFree: modelsConfig.catalog.maxLiveFree }
+  );
+  const tierOptionsRaw = {
+    reasoning: uniqueStrings2(mergedProviders.flatMap((provider) => provider.options.reasoning)),
+    standard: uniqueStrings2(mergedProviders.flatMap((provider) => provider.options.standard)),
+    fast: uniqueStrings2(mergedProviders.flatMap((provider) => provider.options.fast))
   };
-  return { providers, tierOptions };
+  return applyModelVisibilityFilter(
+    { providers: mergedProviders, tierOptions: tierOptionsRaw },
+    {
+      visibility: modelsConfig.visibility,
+      registryModels: registryModelsOverride ?? registryModels,
+      activeModelId
+    }
+  );
 }
 function isChatModelAvailable(modelId, { env = process.env, excludeFamilies = [] } = {}) {
   if (!modelId || typeof modelId !== "string") {
@@ -758,7 +1646,7 @@ function isChatModelAvailable(modelId, { env = process.env, excludeFamilies = []
   if (!provider) {
     return { ok: false, reason: "unknown_family", modelId };
   }
-  const known = uniqueStrings([
+  const known = uniqueStrings2([
     ...provider.options?.reasoning ?? [],
     ...provider.options?.standard ?? [],
     ...provider.options?.fast ?? [],
@@ -793,7 +1681,7 @@ function recommendTierModel(tier, { env = process.env, excludeFamilies = [] } = 
   const { providers } = getProviderModelCatalog({ env });
   for (const provider of providers) {
     if (!provider.configured || excludeFamilies.includes(provider.id)) continue;
-    const candidates = uniqueStrings([
+    const candidates = uniqueStrings2([
       provider.tiers?.[tier],
       ...provider.options?.[tier] ?? []
     ]);
@@ -843,10 +1731,16 @@ function resolveValidatedChatModel({ env = process.env, requested = null, exclud
 function matchProviderFamily(modelId) {
   return PROVIDER_FAMILY_TIERS.find((entry) => entry.test(modelId));
 }
-function familyDescriptor(family, env) {
+function resolveTiersForPrimary(primaryModelId) {
+  if (!primaryModelId || typeof primaryModelId !== "string") return null;
+  const family = matchProviderFamily(primaryModelId);
+  if (!family) return null;
+  return family.resolve({ reasoning: void 0, standard: void 0, fast: void 0 });
+}
+function familyDescriptor(family, env, { allowAmbient = true } = {}) {
   const requiresEnv = PROVIDER_ENV_MAP[family.id] || (Array.isArray(family.requiresEnv) ? family.requiresEnv : []);
   const local = family.local === true;
-  const configured = isProviderConfigured(family.id, env);
+  const configured = isProviderConfigured(family.id, env, { allowAmbient });
   return {
     id: family.id,
     label: family.label,
@@ -856,10 +1750,57 @@ function familyDescriptor(family, env) {
     configured
   };
 }
-function describeModelFamily(modelId, { env = process.env } = {}) {
+function describeModelFamily(modelId, { env = process.env, allowAmbient = true } = {}) {
   const family = matchProviderFamily(modelId);
   if (!family) return null;
-  return familyDescriptor(family, env);
+  return familyDescriptor(family, env, { allowAmbient });
+}
+function listModelFamilies({ env = process.env, allowAmbient = true } = {}) {
+  return PROVIDER_FAMILY_TIERS.map((family) => familyDescriptor(family, env, { allowAmbient }));
+}
+function readOpenRouterApiKeyFromOpenCodeConfig(configPath = findOpenCodeConfigPath()) {
+  return readRawFromOpenCodeProvider("openrouter", configPath) || "";
+}
+function readEnvAssignments(envPath) {
+  const tierKeys = {
+    reasoning: "CX_MODEL_REASONING",
+    standard: "CX_MODEL_STANDARD",
+    fast: "CX_MODEL_FAST"
+  };
+  const envValues = {};
+  if (fs7.existsSync(envPath)) {
+    for (const line of fs7.readFileSync(envPath, "utf8").split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("#") || !trimmed.includes("=")) continue;
+      const eqIdx = trimmed.indexOf("=");
+      const k = trimmed.slice(0, eqIdx).trim();
+      const v = trimmed.slice(eqIdx + 1).trim();
+      envValues[k] = v;
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(tierKeys).map(([tier, key]) => [tier, envValues[key] || null])
+  );
+}
+function extractPrimary(def) {
+  if (typeof def === "string") return def;
+  if (def && typeof def === "object")
+    return def.primary ?? def.fallback?.[0] ?? null;
+  return null;
+}
+function getRegistryDefaults(registryModels = {}) {
+  return {
+    reasoning: extractPrimary(registryModels.reasoning) ?? null,
+    standard: extractPrimary(registryModels.standard) ?? null,
+    fast: extractPrimary(registryModels.fast) ?? null
+  };
+}
+function normalizeEnvAssignments(envValues = {}) {
+  return {
+    reasoning: envValues.reasoning ?? envValues.CX_MODEL_REASONING ?? envValues.CONSTRUCT_MODEL_REASONING ?? null,
+    standard: envValues.standard ?? envValues.CX_MODEL_STANDARD ?? envValues.CONSTRUCT_MODEL_STANDARD ?? null,
+    fast: envValues.fast ?? envValues.CX_MODEL_FAST ?? envValues.CONSTRUCT_MODEL_FAST ?? null
+  };
 }
 function flattenText(value) {
   if (value === null || value === void 0) return "";
@@ -868,6 +1809,61 @@ function flattenText(value) {
   if (Array.isArray(value)) return value.map(flattenText).join("\n");
   if (typeof value === "object") return Object.values(value).map(flattenText).join("\n");
   return "";
+}
+function providerKey(modelId = "") {
+  if (typeof modelId !== "string" || !modelId) return "";
+  return modelId.replace(/^openrouter\//, "").split("/")[0] || "";
+}
+function resolveTierDefinition(definition) {
+  if (!definition || typeof definition !== "object") return { primary: null, fallback: [] };
+  return {
+    primary: extractPrimary(definition),
+    fallback: Array.isArray(definition.fallback) ? definition.fallback.filter((entry) => typeof entry === "string" && entry) : []
+  };
+}
+function readProviderCooldowns(cooldownPath) {
+  try {
+    const raw = fs7.readFileSync(cooldownPath, "utf8");
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+  } catch {
+  }
+  return {};
+}
+function writeProviderCooldown(cooldownPath, provider, now2 = Date.now()) {
+  if (!provider) return;
+  const existing = readProviderCooldowns(cooldownPath);
+  existing[provider] = now2 + PROVIDER_COOLDOWN_MS;
+  fs7.mkdirSync(path8.dirname(cooldownPath), { recursive: true });
+  fs7.writeFileSync(cooldownPath, JSON.stringify(existing, null, 2));
+}
+function isProviderOnCooldown(cooldownPath, provider, now2 = Date.now()) {
+  if (!provider) return false;
+  const state = readProviderCooldowns(cooldownPath);
+  const expiresAt = state[provider];
+  return typeof expiresAt === "number" && now2 < expiresAt;
+}
+function selectFallbackModel({
+  hookInput,
+  envPath,
+  cooldownPath,
+  registryModels = {},
+  now: now2 = Date.now()
+} = {}) {
+  const classified = classifyProviderFailure(hookInput);
+  if (!classified || !classified.retryable) return null;
+  const failingProvider = providerKey(classified.provider || "");
+  if (failingProvider && isProviderOnCooldown(cooldownPath, failingProvider, now2)) return null;
+  const currentModels = readCurrentModels(envPath, registryModels);
+  const action = resolveFallbackAction({
+    failure: classified,
+    currentModels,
+    registryModels
+  });
+  if (!action) return null;
+  const candidateProvider = providerKey(action.targetModel);
+  if (candidateProvider && isProviderOnCooldown(cooldownPath, candidateProvider, now2)) return null;
+  return { targetModel: action.targetModel, tier: action.tier, reason: action.reason };
 }
 function classifyProviderFailure(input) {
   const error = input?.error && typeof input.error === "object" ? input.error : input;
@@ -901,7 +1897,262 @@ function classifyProviderFailure(input) {
   }
   return null;
 }
-var MODEL_OPERATING_PROFILES, PROVIDER_FAMILY_TIERS, PROVIDER_ENV_MAP, LENIENT_MODEL_FAMILIES, PROVIDER_COOLDOWN_MS;
+function resolveFallbackAction({
+  failure,
+  requestedTier = null,
+  workCategory = null,
+  currentModels = null,
+  registryModels = {}
+} = {}) {
+  const classified = failure && typeof failure === "object" ? failure : classifyProviderFailure(failure);
+  if (!classified || !classified.retryable) return null;
+  const tier = requestedTier ?? selectModelTierForWorkCategory(workCategory) ?? "standard";
+  const tierDef = resolveTierDefinition(registryModels[tier]);
+  const currentModel = currentModels && typeof currentModels === "object" ? currentModels[tier]?.model ?? currentModels[tier] ?? null : null;
+  const currentProvider = providerKey(currentModel || "");
+  const failingProvider = providerKey(classified.provider || "");
+  const candidates = [tierDef.primary, ...tierDef.fallback].filter((modelId) => typeof modelId === "string" && modelId).filter((modelId) => modelId !== currentModel).filter((modelId) => {
+    const candidateProvider = providerKey(modelId);
+    if (!candidateProvider) return true;
+    if (failingProvider && candidateProvider === failingProvider) return false;
+    if (currentProvider && candidateProvider === currentProvider) return false;
+    return true;
+  });
+  const targetModel = candidates[0] ?? null;
+  if (!targetModel) return null;
+  return { action: "apply-models", reason: classified.kind, targetModel, tier };
+}
+function resolveTierAssignments(envValues = {}, registryModels = {}) {
+  const normalizedEnv = normalizeEnvAssignments(envValues);
+  const explicitSources = envValues?.sources && typeof envValues.sources === "object" ? envValues.sources : {};
+  const defaults = getRegistryDefaults(registryModels);
+  const tiers = {};
+  for (const tier of ["reasoning", "standard", "fast"]) {
+    if (explicitSources[tier]) {
+      tiers[tier] = { model: normalizedEnv[tier] ?? defaults[tier], source: explicitSources[tier] };
+    } else if (normalizedEnv[tier]) {
+      tiers[tier] = { model: normalizedEnv[tier], source: "env override" };
+    } else if (defaults[tier]) {
+      tiers[tier] = { model: defaults[tier], source: "registry" };
+    } else {
+      tiers[tier] = { model: null, source: "not configured" };
+    }
+  }
+  return tiers;
+}
+function selectModelTierForWorkCategory(workCategory = "") {
+  return MODEL_TIER_BY_WORK_CATEGORY[workCategory] ?? null;
+}
+function resolveExecutionContractModelMetadata({
+  envValues = {},
+  registryModels = {},
+  requestedTier = null,
+  workCategory = null
+} = {}) {
+  const tiers = resolveTierAssignments(envValues, registryModels);
+  const selectedTier = requestedTier ?? selectModelTierForWorkCategory(workCategory);
+  const selected = selectedTier ? tiers[selectedTier] : null;
+  const profile = resolveModelOperatingProfile({
+    envValues,
+    selectedModel: selected?.model ?? null
+  });
+  return {
+    version: "v1",
+    workCategory: workCategory ?? null,
+    requestedTier: requestedTier ?? null,
+    selectedTier: selectedTier ?? null,
+    selectedModel: selected?.model ?? null,
+    selectedModelSource: selected?.source ?? null,
+    profile,
+    tiers
+  };
+}
+function inferTierModelsFromSelection(selectedModel, { registryModels = {}, existing = {} } = {}) {
+  if (!selectedModel) return null;
+  const family = matchProviderFamily(selectedModel);
+  if (!family) return null;
+  const registryDefaults = getRegistryDefaults(registryModels);
+  const current = {
+    reasoning: existing.reasoning ?? null,
+    standard: existing.standard ?? null,
+    fast: existing.fast ?? null
+  };
+  const seeded = {
+    reasoning: current.reasoning === selectedModel ? selectedModel : current.reasoning,
+    standard: current.standard === selectedModel ? selectedModel : current.standard,
+    fast: current.fast === selectedModel ? selectedModel : current.fast
+  };
+  const derived = family.resolve(seeded);
+  return {
+    reasoning: derived.reasoning ?? registryDefaults.reasoning,
+    standard: derived.standard ?? registryDefaults.standard,
+    fast: derived.fast ?? registryDefaults.fast
+  };
+}
+function applyFreePreferenceToTierSet(tierSet, { registryModels = {} } = {}) {
+  const defaults = getRegistryDefaults(registryModels);
+  return {
+    reasoning: preferFreeValue(tierSet.reasoning, tierSet.standard, defaults.reasoning, null),
+    standard: preferFreeValue(tierSet.standard, tierSet.fast, defaults.standard, null),
+    fast: preferFreeValue(tierSet.fast, tierSet.standard, defaults.fast, null)
+  };
+}
+function applyFreeSameFamilyPreferenceToTierSet(tierSet, selectedModel) {
+  const family = matchProviderFamily(selectedModel);
+  if (!family) return tierSet;
+  const sameFamily = family.resolve({ reasoning: null, standard: null, fast: null });
+  const next = { ...tierSet };
+  for (const tier of ["reasoning", "standard", "fast"]) {
+    if (tierSet[tier] === selectedModel) continue;
+    const candidate = sameFamily[tier];
+    if (candidate && isFreeModel(candidate)) next[tier] = candidate;
+  }
+  return next;
+}
+function applyToEnv(envPath, selections) {
+  const existing = fs7.existsSync(envPath) ? fs7.readFileSync(envPath, "utf8") : "";
+  const date = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const commentMarker = "# Auto-set by construct models --apply on";
+  const tierMap = {
+    reasoning: "CX_MODEL_REASONING",
+    standard: "CX_MODEL_STANDARD",
+    fast: "CX_MODEL_FAST"
+  };
+  let lines = existing.split("\n");
+  lines = lines.filter((l) => {
+    const trimmed = l.trim();
+    if (trimmed.startsWith(commentMarker)) return false;
+    const key = trimmed.split("=")[0];
+    if (Object.values(tierMap).includes(key)) return false;
+    return true;
+  });
+  const modelLines = [`${commentMarker} ${date}`];
+  for (const [tier, envKey] of Object.entries(tierMap)) {
+    if (selections[tier]) modelLines.push(`${envKey}=${selections[tier]}`);
+  }
+  const insertIdx = lines.findLastIndex((l) => l.trim() !== "") + 1;
+  lines.splice(insertIdx === 0 ? lines.length : insertIdx, 0, "", ...modelLines);
+  fs7.writeFileSync(envPath, lines.join("\n"));
+}
+function resetEnv(envPath) {
+  if (!fs7.existsSync(envPath)) return;
+  const commentMarker = "# Auto-set by construct models --apply on";
+  const tierKeys = /* @__PURE__ */ new Set(["CX_MODEL_REASONING", "CX_MODEL_STANDARD", "CX_MODEL_FAST"]);
+  const lines = fs7.readFileSync(envPath, "utf8").split("\n");
+  const filtered = lines.filter((l) => {
+    const trimmed = l.trim();
+    if (trimmed.startsWith(commentMarker)) return false;
+    const key = trimmed.split("=")[0];
+    if (tierKeys.has(key)) return false;
+    return true;
+  });
+  fs7.writeFileSync(envPath, filtered.join("\n"));
+}
+function setTierModel(envPath, tier, modelId) {
+  applyToEnv(envPath, { [tier]: modelId });
+}
+function setModelWithTierInference(envPath, tier, modelId, registryModels = {}, options = {}) {
+  const existing = readEnvAssignments(envPath);
+  existing[tier] = modelId;
+  const inferred = inferTierModelsFromSelection(modelId, { registryModels, existing }) || existing;
+  inferred[tier] = modelId;
+  let resolved = inferred;
+  if (options.preferFreeSameFamily) {
+    resolved = applyFreeSameFamilyPreferenceToTierSet(resolved, modelId);
+  } else if (options.preferFree) {
+    resolved = applyFreePreferenceToTierSet(resolved, { registryModels });
+  }
+  resolved[tier] = modelId;
+  applyToEnv(envPath, resolved);
+  return resolved;
+}
+function resolveModelTiers(options = {}) {
+  const {
+    env = process.env,
+    registryPath = null,
+    strict = false
+  } = options;
+  let registryModels = {};
+  if (registryPath && fs7.existsSync(registryPath)) {
+    try {
+      const registry = JSON.parse(fs7.readFileSync(registryPath, "utf8"));
+      registryModels = registry.models ?? {};
+    } catch (err) {
+      return {
+        models: { reasoning: null, standard: null, fast: null },
+        sources: { reasoning: "not configured", standard: "not configured", fast: "not configured" },
+        configured: 0,
+        complete: false,
+        errors: [`Failed to read registry: ${err.message}`]
+      };
+    }
+  }
+  const tiers = resolveTierAssignments(normalizeEnvAssignments(env), registryModels);
+  const models = {};
+  const sources = {};
+  for (const tier of ["reasoning", "standard", "fast"]) {
+    models[tier] = tiers[tier].model;
+    sources[tier] = tiers[tier].source;
+  }
+  const configured = Object.values(models).filter(Boolean).length;
+  const errors = strict && configured < 3 ? [`Missing configuration for tiers: ${["reasoning", "standard", "fast"].filter((t) => !models[t]).join(", ")}`] : null;
+  return {
+    models,
+    sources,
+    configured,
+    complete: configured === 3,
+    errors
+  };
+}
+function getModelForTier(tier, options = {}) {
+  return resolveModelTiers(options).models[tier];
+}
+function getModelSource(tier, options = {}) {
+  return resolveModelTiers(options).sources[tier] || "unknown";
+}
+function validateModelTiers(options = {}) {
+  const resolved = resolveModelTiers({ ...options, strict: true });
+  const unconfigured = Object.entries(resolved.sources).filter(([, source]) => source === "not configured").map(([tier]) => tier);
+  return {
+    valid: resolved.complete && !resolved.errors,
+    errors: resolved.errors,
+    warnings: unconfigured.length > 0 ? [`Unconfigured tier${unconfigured.length === 1 ? "" : "s"}: ${unconfigured.join(", ")}. Run 'construct models --apply' or set CX_MODEL_<TIER>.`] : [],
+    resolution: resolved
+  };
+}
+function formatModelStatus(options = {}) {
+  const resolved = resolveModelTiers(options);
+  let output = "Model Configuration:\n\n";
+  for (const tier of ["reasoning", "standard", "fast"]) {
+    const model = resolved.models[tier];
+    const source = resolved.sources[tier];
+    const icon = source === "not configured" ? "!" : "ok";
+    output += `${icon} ${tier.padEnd(10)} ${model ?? "(not configured)"}
+`;
+    output += `  Source: ${source}
+
+`;
+  }
+  return output;
+}
+function readCurrentModels(envPath, registryModels = {}) {
+  const envValues = arguments.length > 2 ? arguments[2] : {};
+  const fileAssignments = readEnvAssignments(envPath);
+  const mergedAssignments = {
+    ...fileAssignments,
+    ...Object.fromEntries(
+      Object.entries(normalizeEnvAssignments(envValues)).filter(([, value]) => value)
+    )
+  };
+  const tiers = resolveTierAssignments(mergedAssignments, registryModels);
+  const result = { sources: {} };
+  for (const tier of ["reasoning", "standard", "fast"]) {
+    result[tier] = tiers[tier].model;
+    result.sources[tier] = tiers[tier].source;
+  }
+  return result;
+}
+var MODEL_TIER_BY_WORK_CATEGORY, MODEL_OPERATING_PROFILES, CODE_MODEL_RE, PROVIDER_FAMILY_TIERS, PROVIDER_ENV_MAP, LENIENT_MODEL_FAMILIES, PROVIDER_COOLDOWN_MS;
 var init_model_router = __esm({
   "lib/model-router.mjs"() {
     init_secret_resolver();
@@ -909,8 +2160,16 @@ var init_model_router = __esm({
     init_opencode_config();
     init_tool_budget();
     init_model_free_selector();
+    init_catalog();
     init_provider_capabilities();
     init_provider_capabilities();
+    MODEL_TIER_BY_WORK_CATEGORY = {
+      visual: "standard",
+      deep: "reasoning",
+      quick: "fast",
+      writing: "fast",
+      analysis: "standard"
+    };
     MODEL_OPERATING_PROFILES = Object.freeze({
       balanced: {
         id: "balanced",
@@ -937,6 +2196,7 @@ var init_model_router = __esm({
         preferCompressedRoleGuidance: true
       }
     });
+    CODE_MODEL_RE = /coder|codellama|starcoder|deepseek-coder|devstral/i;
     PROVIDER_FAMILY_TIERS = [
       {
         id: "anthropic",
@@ -1062,6 +2322,21 @@ var init_model_router = __esm({
         }
       },
       {
+        id: "openrouter",
+        label: "OpenRouter (general)",
+        test: (modelId) => /^openrouter\//.test(modelId),
+        resolve: ({ reasoning, standard, fast }) => ({
+          reasoning: reasoning ?? "openrouter/qwen/qwen3-coder",
+          standard: standard ?? "openrouter/qwen/qwen3-coder:free",
+          fast: fast ?? "openrouter/qwen/qwen3-coder:free"
+        }),
+        options: {
+          reasoning: ["openrouter/openrouter/free", "openrouter/qwen/qwen3-coder", "openrouter/deepseek/deepseek-r1"],
+          standard: ["openrouter/openrouter/free", "openrouter/qwen/qwen3-coder:free", "openrouter/google/gemini-2.0-flash-001"],
+          fast: ["openrouter/openrouter/free", "openrouter/qwen/qwen3-coder:free", "openrouter/meta-llama/llama-3.3-70b-instruct:free"]
+        }
+      },
+      {
         id: "ollama",
         label: "Ollama (local)",
         test: (modelId) => /^ollama\//.test(modelId),
@@ -1107,6 +2382,7 @@ var init_model_router = __esm({
       "github-copilot": ["GITHUB_TOKEN", "GH_TOKEN"],
       "openai": ["OPENAI_API_KEY"],
       "openrouter-llama": ["OPENROUTER_API_KEY", "OPEN_ROUTER_API_KEY"],
+      "openrouter": ["OPENROUTER_API_KEY", "OPEN_ROUTER_API_KEY"],
       "ollama": ["OLLAMA_BASE_URL", "OLLAMA_HOST"],
       "local": ["LOCAL_LLM_BASE_URL"]
     };
@@ -1116,6 +2392,7 @@ var init_model_router = __esm({
       "openrouter-deepseek",
       "openrouter-qwen",
       "openrouter-llama",
+      "openrouter",
       "openai",
       "anthropic",
       "ollama",
@@ -1140,36 +2417,36 @@ __export(copilot_auth_exports, {
   preflightCopilotSession: () => preflightCopilotSession,
   requestDeviceCode: () => requestDeviceCode
 });
-import fs6 from "node:fs";
-import path6 from "node:path";
-import os5 from "node:os";
+import fs8 from "node:fs";
+import path9 from "node:path";
+import os7 from "node:os";
 function normalizeToken(value) {
   if (!value || typeof value !== "string") return "";
   return value.trim().replace(/\s+/g, "");
 }
 function homeDir() {
-  return process.env.HOME || process.env.USERPROFILE || os5.homedir();
+  return process.env.HOME || process.env.USERPROFILE || os7.homedir();
 }
 function constructStorePath() {
-  return path6.join(homeDir(), ".construct", "auth", "github-copilot.json");
+  return path9.join(homeDir(), ".construct", "auth", "github-copilot.json");
 }
 function appsStorePath() {
-  return path6.join(homeDir(), ".config", "github-copilot", "apps.json");
+  return path9.join(homeDir(), ".config", "github-copilot", "apps.json");
 }
 function hostsStorePath() {
-  return path6.join(homeDir(), ".config", "github-copilot", "hosts.json");
+  return path9.join(homeDir(), ".config", "github-copilot", "hosts.json");
 }
 function readJson(file) {
   try {
-    if (!fs6.existsSync(file)) return null;
-    return JSON.parse(fs6.readFileSync(file, "utf8"));
+    if (!fs8.existsSync(file)) return null;
+    return JSON.parse(fs8.readFileSync(file, "utf8"));
   } catch {
     return null;
   }
 }
 function writeJson(file, data, mode) {
-  fs6.mkdirSync(path6.dirname(file), { recursive: true, mode: 448 });
-  fs6.writeFileSync(file, JSON.stringify(data, null, 2), { mode });
+  fs8.mkdirSync(path9.dirname(file), { recursive: true, mode: 448 });
+  fs8.writeFileSync(file, JSON.stringify(data, null, 2), { mode });
 }
 function loadStoredOAuth() {
   const own = readJson(constructStorePath());
@@ -1238,10 +2515,10 @@ async function requestDeviceCode({ fetchImpl = fetch } = {}) {
     expiresIn: json.expires_in || 900
   };
 }
-async function pollForAccessToken({ deviceCode, interval = 5, expiresIn = 900, fetchImpl = fetch, now = Date.now, onPending } = {}) {
-  const deadline = now() + expiresIn * 1e3;
+async function pollForAccessToken({ deviceCode, interval = 5, expiresIn = 900, fetchImpl = fetch, now: now2 = Date.now, onPending } = {}) {
+  const deadline = now2() + expiresIn * 1e3;
   let waitMs = interval * 1e3;
-  while (now() < deadline) {
+  while (now2() < deadline) {
     const { json } = await postJson(ACCESS_TOKEN_URL, {
       client_id: CLIENT_ID,
       device_code: deviceCode,
@@ -1251,7 +2528,7 @@ async function pollForAccessToken({ deviceCode, interval = 5, expiresIn = 900, f
       return {
         accessToken: normalizeToken(json.access_token),
         refreshToken: normalizeToken(json.refresh_token) || null,
-        expiresAt: json.expires_in ? Math.floor(now() / 1e3) + json.expires_in : null
+        expiresAt: json.expires_in ? Math.floor(now2() / 1e3) + json.expires_in : null
       };
     }
     if (json?.error === "slow_down") waitMs += 5e3;
@@ -1263,7 +2540,7 @@ async function pollForAccessToken({ deviceCode, interval = 5, expiresIn = 900, f
   }
   throw new Error("Copilot authorization timed out \u2014 the device code expired before approval.");
 }
-async function refreshAccessToken(refreshToken, { fetchImpl, now }) {
+async function refreshAccessToken(refreshToken, { fetchImpl, now: now2 }) {
   const { json } = await postJson(ACCESS_TOKEN_URL, {
     client_id: CLIENT_ID,
     grant_type: "refresh_token",
@@ -1273,7 +2550,7 @@ async function refreshAccessToken(refreshToken, { fetchImpl, now }) {
   return {
     accessToken: normalizeToken(json.access_token),
     refreshToken: normalizeToken(json.refresh_token) || refreshToken,
-    expiresAt: json.expires_in ? Math.floor(now() / 1e3) + json.expires_in : null
+    expiresAt: json.expires_in ? Math.floor(now2() / 1e3) + json.expires_in : null
   };
 }
 async function exchangeForSessionToken(accessToken, { fetchImpl }) {
@@ -1288,8 +2565,8 @@ async function exchangeForSessionToken(accessToken, { fetchImpl }) {
   }
   return res.json();
 }
-async function getCopilotToken({ fetchImpl = fetch, now = Date.now } = {}) {
-  const nowS = Math.floor(now() / 1e3);
+async function getCopilotToken({ fetchImpl = fetch, now: now2 = Date.now } = {}) {
+  const nowS = Math.floor(now2() / 1e3);
   if (sessionCache && sessionCache.expiresAt > nowS + SESSION_REFRESH_BUFFER_S) {
     return sessionCache.token;
   }
@@ -1301,7 +2578,7 @@ async function getCopilotToken({ fetchImpl = fetch, now = Date.now } = {}) {
   }
   let accessToken = stored.oauthToken;
   if (stored.oauthExpiresAt && stored.oauthExpiresAt <= nowS && stored.refreshToken) {
-    const refreshed = await refreshAccessToken(stored.refreshToken, { fetchImpl, now });
+    const refreshed = await refreshAccessToken(stored.refreshToken, { fetchImpl, now: now2 });
     accessToken = refreshed.accessToken;
     persistOAuth({ accessToken: refreshed.accessToken, refreshToken: refreshed.refreshToken, expiresAt: refreshed.expiresAt, user: stored.user });
   }
@@ -1362,7 +2639,7 @@ var init_copilot_auth = __esm({
       "User-Agent": "GitHubCopilotChat/0.26.7"
     };
     sessionCache = null;
-    sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    sleep = (ms) => new Promise((resolve4) => setTimeout(resolve4, ms));
   }
 });
 
@@ -1372,14 +2649,15 @@ __export(models_exports, {
   describeChatModel: () => describeChatModel,
   listChatModels: () => listChatModels,
   recommendChatModel: () => recommendChatModel,
+  refreshLiveOpenRouterCatalog: () => refreshLiveOpenRouterCatalog,
   resolveChatModel: () => resolveChatModel,
   resolveChatModelSelection: () => resolveChatModelSelection,
   resolveChatModelSelectionAsync: () => resolveChatModelSelectionAsync,
   resolveFreeOpenRouterModel: () => resolveFreeOpenRouterModel,
   resolveSessionModel: () => resolveSessionModel
 });
-function listChatModels({ env = process.env } = {}) {
-  const { providers } = getProviderModelCatalog({ env });
+function listChatModels({ env = process.env, cwd = process.cwd(), activeModelId = null } = {}) {
+  const { providers } = getProviderModelCatalog({ env, cwd, activeModelId });
   const models = [];
   const seen = /* @__PURE__ */ new Set();
   for (const provider of providers) {
@@ -1473,28 +2751,29 @@ var init_models = __esm({
   "apps/chat/engine/models.mjs"() {
     init_model_router();
     init_secret_resolver();
+    init_catalog();
   }
 });
 
 // lib/project-root.mjs
-import fs7 from "node:fs";
-import path7 from "node:path";
-import os6 from "node:os";
+import fs9 from "node:fs";
+import path10 from "node:path";
+import os8 from "node:os";
 import { createHash } from "node:crypto";
 function findProjectRoot(start = process.cwd()) {
-  let dir = path7.resolve(start);
-  const stop = path7.resolve(HOME);
+  let dir = path10.resolve(start);
+  const stop = path10.resolve(HOME);
   while (true) {
-    if (MARKERS.some((m) => fs7.existsSync(path7.join(dir, m)))) return dir;
+    if (MARKERS.some((m) => fs9.existsSync(path10.join(dir, m)))) return dir;
     if (dir === stop) return null;
-    const parent = path7.dirname(dir);
+    const parent = path10.dirname(dir);
     if (parent === dir) return null;
     dir = parent;
   }
 }
 function projectIdFor(projectRoot) {
   if (!projectRoot) return null;
-  return createHash("sha256").update(path7.resolve(projectRoot)).digest("hex").slice(0, 12);
+  return createHash("sha256").update(path10.resolve(projectRoot)).digest("hex").slice(0, 12);
 }
 function resolveProjectScope(cwd = process.cwd()) {
   if (cache.has(cwd)) return cache.get(cwd);
@@ -1506,23 +2785,2354 @@ function resolveProjectScope(cwd = process.cwd()) {
   const result = {
     projectRoot,
     projectId: projectIdFor(projectRoot),
-    cxDir: path7.join(projectRoot, ".cx")
+    cxDir: path10.join(projectRoot, ".cx")
   };
   cache.set(cwd, result);
   return result;
 }
 function resolveProjectScopedPath(basename, { cwd, ensureDir = true } = {}) {
   const scope = resolveProjectScope(cwd ?? process.cwd());
-  const dir = scope ? scope.cxDir : path7.join(HOME, ".cx");
-  if (ensureDir && !fs7.existsSync(dir)) fs7.mkdirSync(dir, { recursive: true });
-  return path7.join(dir, basename);
+  const dir = scope ? scope.cxDir : path10.join(HOME, ".cx");
+  if (ensureDir && !fs9.existsSync(dir)) fs9.mkdirSync(dir, { recursive: true });
+  return path10.join(dir, basename);
 }
 var HOME, MARKERS, cache;
 var init_project_root = __esm({
   "lib/project-root.mjs"() {
-    HOME = os6.homedir();
+    HOME = os8.homedir();
     MARKERS = [".cx", ".construct"];
     cache = /* @__PURE__ */ new Map();
+  }
+});
+
+// lib/tags/vocabulary.mjs
+var init_vocabulary = __esm({
+  "lib/tags/vocabulary.mjs"() {
+  }
+});
+
+// lib/doc-stamp.mjs
+var init_doc_stamp = __esm({
+  "lib/doc-stamp.mjs"() {
+    init_vocabulary();
+  }
+});
+
+// lib/project-init-shared.mjs
+import fs12 from "node:fs";
+import path12 from "node:path";
+function ensureCxDir(rootDir) {
+  const cxDir = path12.join(rootDir, ".cx");
+  const contextPath = path12.join(cxDir, "context.md");
+  if (!fs12.existsSync(cxDir)) {
+    fs12.mkdirSync(cxDir, { recursive: true });
+  }
+  if (!fs12.existsSync(contextPath)) {
+    fs12.writeFileSync(contextPath, buildContextMarkdown(), "utf8");
+  }
+  return cxDir;
+}
+function buildContextMarkdown() {
+  return `<!--
+.cx/context.md \u2014 concise resumable project context for human and agent handoff.
+
+Keep this file under 100 lines. Update it when reality changes, and prune stale bullets
+instead of letting it turn into a historical log. Durable task status belongs in Beads;
+\`plan.md\` holds the current plan; use the single-writer rule when parallel sessions are active.
+-->
+
+# Project Context
+
+> Required project state. Keep this file current enough that a new session can resume work quickly.
+
+## Active Work
+
+## Recent Decisions
+
+## Architecture Notes
+
+## Open Questions
+`;
+}
+var init_project_init_shared = __esm({
+  "lib/project-init-shared.mjs"() {
+    init_doc_stamp();
+  }
+});
+
+// lib/intake/quarantine.mjs
+import { existsSync as existsSync2, mkdirSync as mkdirSync2, readdirSync, readFileSync as readFileSync2, writeFileSync as writeFileSync2, rmSync } from "node:fs";
+import path13 from "node:path";
+function quarantineDir(rootDir) {
+  return path13.join(rootDir, QUEUE_SUBDIR, "quarantine");
+}
+function shouldQuarantine(triage) {
+  if (!triage || triage.intakeType === "unknown") {
+    return { quarantine: false };
+  }
+  const confidence = typeof triage.confidence === "number" ? triage.confidence : 1;
+  if (confidence < QUARANTINE_CONFIDENCE_THRESHOLD) {
+    return { quarantine: true, reason: `confidence ${confidence.toFixed(2)} < ${QUARANTINE_CONFIDENCE_THRESHOLD}` };
+  }
+  if (Array.isArray(triage.candidates) && triage.candidates.length >= 2) {
+    const margin = triage.candidates[0].score - triage.candidates[1].score;
+    if (margin < QUARANTINE_MARGIN_THRESHOLD) {
+      return { quarantine: true, reason: `margin ${margin.toFixed(2)} < ${QUARANTINE_MARGIN_THRESHOLD}` };
+    }
+  }
+  return { quarantine: false };
+}
+function writeQuarantinePacket(rootDir, packet, quarantineReason) {
+  const dir = quarantineDir(rootDir);
+  mkdirSync2(dir, { recursive: true });
+  const id = packet.id;
+  if (!id) throw new Error("writeQuarantinePacket: packet.id required");
+  const filePath = path13.join(dir, `${id}.json`);
+  const payload = {
+    ...packet,
+    status: "quarantined",
+    quarantinedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    quarantineReason: quarantineReason || null
+  };
+  writeFileSync2(filePath, JSON.stringify(payload, null, 2) + "\n", "utf8");
+  return { id, filePath };
+}
+var QUEUE_SUBDIR, QUARANTINE_CONFIDENCE_THRESHOLD, QUARANTINE_MARGIN_THRESHOLD;
+var init_quarantine = __esm({
+  "lib/intake/quarantine.mjs"() {
+    QUEUE_SUBDIR = ".cx/intake";
+    QUARANTINE_CONFIDENCE_THRESHOLD = 0.6;
+    QUARANTINE_MARGIN_THRESHOLD = 0.2;
+  }
+});
+
+// lib/intake/filesystem-queue.mjs
+import { existsSync as existsSync3, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync3, rmSync as rmSync2, writeFileSync as writeFileSync3 } from "node:fs";
+import path14 from "node:path";
+function queueRoot(rootDir) {
+  return path14.join(rootDir, QUEUE_SUBDIR2);
+}
+function pendingDir(rootDir) {
+  return path14.join(queueRoot(rootDir), "pending");
+}
+function processedDir(rootDir) {
+  return path14.join(queueRoot(rootDir), "processed");
+}
+function skippedDir(rootDir) {
+  return path14.join(queueRoot(rootDir), "skipped");
+}
+function slugify(value) {
+  return String(value || "untitled").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "untitled";
+}
+function timestamp() {
+  counter = (counter + 1) % 1e3;
+  const c = String(counter).padStart(3, "0");
+  return `${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").slice(0, 23)}-${c}`;
+}
+var QUEUE_SUBDIR2, counter, FilesystemIntakeQueue;
+var init_filesystem_queue = __esm({
+  "lib/intake/filesystem-queue.mjs"() {
+    init_project_init_shared();
+    init_quarantine();
+    QUEUE_SUBDIR2 = ".cx/intake";
+    counter = 0;
+    FilesystemIntakeQueue = class {
+      constructor(rootDir) {
+        if (!rootDir) throw new Error("FilesystemIntakeQueue: rootDir is required");
+        this.rootDir = rootDir;
+      }
+      enqueue(entry) {
+        if (!entry?.intake?.sourcePath) throw new Error("enqueue: entry.intake.sourcePath is required");
+        ensureCxDir(this.rootDir);
+        const ts = timestamp();
+        const slug = slugify(path14.basename(entry.intake.sourcePath, path14.extname(entry.intake.sourcePath)));
+        const id = `${ts}-${slug}`;
+        const quarantineDecision = shouldQuarantine(entry?.triage);
+        if (quarantineDecision.quarantine) {
+          const packet = { id, createdAt: (/* @__PURE__ */ new Date()).toISOString(), ...entry };
+          const written = writeQuarantinePacket(this.rootDir, packet, quarantineDecision.reason);
+          return { id: written.id, filePath: written.filePath, route: "quarantine", reason: quarantineDecision.reason };
+        }
+        const dir = pendingDir(this.rootDir);
+        mkdirSync3(dir, { recursive: true });
+        const filePath = path14.join(dir, `${id}.json`);
+        const payload = { id, createdAt: (/* @__PURE__ */ new Date()).toISOString(), status: "pending", ...entry };
+        writeFileSync3(filePath, JSON.stringify(payload, null, 2) + "\n", "utf8");
+        return { id, filePath, route: "pending" };
+      }
+      listPending() {
+        const dir = pendingDir(this.rootDir);
+        if (!existsSync3(dir)) return [];
+        return readdirSync2(dir).filter((name) => name.endsWith(".json")).map((name) => {
+          const filePath = path14.join(dir, name);
+          try {
+            const data = JSON.parse(readFileSync3(filePath, "utf8"));
+            return { ...data, filePath };
+          } catch {
+            return null;
+          }
+        }).filter(Boolean).sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
+      }
+      count() {
+        const dir = pendingDir(this.rootDir);
+        if (!existsSync3(dir)) return 0;
+        return readdirSync2(dir).filter((name) => name.endsWith(".json")).length;
+      }
+      read(id) {
+        const dirs = [
+          pendingDir(this.rootDir),
+          processedDir(this.rootDir),
+          skippedDir(this.rootDir),
+          quarantineDir(this.rootDir)
+        ];
+        for (const dir of dirs) {
+          const filePath = path14.join(dir, `${id}.json`);
+          if (existsSync3(filePath)) {
+            const data = JSON.parse(readFileSync3(filePath, "utf8"));
+            return { ...data, filePath };
+          }
+        }
+        return null;
+      }
+      markProcessed(id, { processedBy = "unknown", notes = "" } = {}) {
+        const src = path14.join(pendingDir(this.rootDir), `${id}.json`);
+        if (!existsSync3(src)) throw new Error(`markProcessed: no pending entry ${id}`);
+        const data = JSON.parse(readFileSync3(src, "utf8"));
+        data.status = "processed";
+        data.processedAt = (/* @__PURE__ */ new Date()).toISOString();
+        data.processedBy = processedBy;
+        if (notes) data.notes = notes;
+        const dst = path14.join(processedDir(this.rootDir), `${id}.json`);
+        ensureCxDir(this.rootDir);
+        mkdirSync3(path14.dirname(dst), { recursive: true });
+        writeFileSync3(dst, JSON.stringify(data, null, 2) + "\n", "utf8");
+        rmSync2(src);
+        return { id, filePath: dst };
+      }
+      markSkipped(id, { skippedBy = "unknown", reason = "" } = {}) {
+        const src = path14.join(pendingDir(this.rootDir), `${id}.json`);
+        if (!existsSync3(src)) throw new Error(`markSkipped: no pending entry ${id}`);
+        const data = JSON.parse(readFileSync3(src, "utf8"));
+        data.status = "skipped";
+        data.skippedAt = (/* @__PURE__ */ new Date()).toISOString();
+        data.skippedBy = skippedBy;
+        if (reason) data.reason = reason;
+        const dst = path14.join(skippedDir(this.rootDir), `${id}.json`);
+        ensureCxDir(this.rootDir);
+        mkdirSync3(path14.dirname(dst), { recursive: true });
+        writeFileSync3(dst, JSON.stringify(data, null, 2) + "\n", "utf8");
+        rmSync2(src);
+        return { id, filePath: dst };
+      }
+      reopen(id) {
+        for (const dir of [processedDir(this.rootDir), skippedDir(this.rootDir)]) {
+          const src = path14.join(dir, `${id}.json`);
+          if (!existsSync3(src)) continue;
+          const data = JSON.parse(readFileSync3(src, "utf8"));
+          data.status = "pending";
+          delete data.processedAt;
+          delete data.processedBy;
+          delete data.notes;
+          delete data.skippedAt;
+          delete data.skippedBy;
+          delete data.reason;
+          const dst = path14.join(pendingDir(this.rootDir), `${id}.json`);
+          ensureCxDir(this.rootDir);
+          mkdirSync3(path14.dirname(dst), { recursive: true });
+          writeFileSync3(dst, JSON.stringify(data, null, 2) + "\n", "utf8");
+          rmSync2(src);
+          return { id, filePath: dst, from: path14.basename(dir) };
+        }
+        throw new Error(`reopen: no processed or skipped entry ${id}`);
+      }
+    };
+  }
+});
+
+// lib/intake/git-queue.mjs
+import path15 from "node:path";
+import fs13 from "fs";
+import { execSync as execSync2 } from "node:child_process";
+function slugify2(value) {
+  return String(value || "untitled").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "untitled";
+}
+function timestamp2() {
+  counter2 = (counter2 + 1) % 1e3;
+  const c = String(counter2).padStart(3, "0");
+  return `${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").slice(0, 23)}-${c}`;
+}
+var counter2, GitIntakeQueue;
+var init_git_queue = __esm({
+  "lib/intake/git-queue.mjs"() {
+    init_quarantine();
+    counter2 = 0;
+    GitIntakeQueue = class {
+      constructor({ project, rootDir = process.cwd() } = {}) {
+        this.project = project;
+        this.inboxRoot = path15.join(rootDir, ".cx", "team-inbox");
+        this._ensureDirs();
+      }
+      _ensureDirs() {
+        ["pending", "claimed", "processed", "skipped", "quarantine"].forEach((dir) => {
+          fs13.mkdirSync(path15.join(this.inboxRoot, dir), { recursive: true });
+        });
+      }
+      _gitAddAndCommit(filePath, message) {
+        try {
+          execSync2(`git add "${filePath}"`, { stdio: "ignore" });
+          execSync2(`git commit -m "${message}"`, { stdio: "ignore" });
+        } catch (err) {
+        }
+      }
+      async enqueue(entry) {
+        const ts = timestamp2();
+        const slug = slugify2(path15.basename(entry.intake.sourcePath, path15.extname(entry.intake.sourcePath)));
+        const id = `${ts}-${slug}`;
+        const triage = entry.triage || {};
+        const quarantineDecision = shouldQuarantine(triage);
+        const subDir = quarantineDecision.quarantine ? "quarantine" : "pending";
+        const filePath = path15.join(this.inboxRoot, subDir, `${id}.json`);
+        const data = {
+          id,
+          project: this.project,
+          status: subDir === "quarantine" ? "quarantined" : "pending",
+          createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+          ...entry
+        };
+        fs13.writeFileSync(filePath, JSON.stringify(data, null, 2));
+        this._gitAddAndCommit(filePath, `Enqueue task ${id}`);
+        return { id, route: subDir === "quarantine" ? "quarantine" : "pending", reason: quarantineDecision.reason };
+      }
+      async listPending({ limit = 100 } = {}) {
+        const pendingDir2 = path15.join(this.inboxRoot, "pending");
+        return fs13.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).slice(0, limit).map((f) => JSON.parse(fs13.readFileSync(path15.join(pendingDir2, f), "utf8")));
+      }
+      async count() {
+        const pendingDir2 = path15.join(this.inboxRoot, "pending");
+        return fs13.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).length;
+      }
+      async read(id) {
+        for (const dir of ["pending", "claimed", "processed", "skipped", "quarantine"]) {
+          const searchPath = dir === "claimed" ? path15.join(this.inboxRoot, dir) : path15.join(this.inboxRoot, dir, `${id}.json`);
+          if (dir !== "claimed" && fs13.existsSync(searchPath)) {
+            return JSON.parse(fs13.readFileSync(searchPath, "utf8"));
+          }
+        }
+        return null;
+      }
+      async claim({ claimedBy }) {
+        if (!claimedBy) throw new Error("claim: claimedBy is required");
+        try {
+          execSync2("git pull --rebase", { stdio: "ignore" });
+        } catch (e) {
+        }
+        const pendingDir2 = path15.join(this.inboxRoot, "pending");
+        const files = fs13.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).sort();
+        if (files.length === 0) return null;
+        const fileName = files[0];
+        const pendingPath2 = path15.join(pendingDir2, fileName);
+        const workerDir = path15.join(this.inboxRoot, "claimed", claimedBy);
+        fs13.mkdirSync(workerDir, { recursive: true });
+        const claimedPath = path15.join(workerDir, fileName);
+        try {
+          fs13.renameSync(pendingPath2, claimedPath);
+          const data = JSON.parse(fs13.readFileSync(claimedPath, "utf8"));
+          data.status = "claimed";
+          data.claimedBy = claimedBy;
+          data.claimedAt = (/* @__PURE__ */ new Date()).toISOString();
+          fs13.writeFileSync(claimedPath, JSON.stringify(data, null, 2));
+          execSync2(`git add .cx/team-inbox/pending/${fileName} .cx/team-inbox/claimed/${claimedBy}/${fileName}`, { stdio: "ignore" });
+          execSync2(`git commit -m "Claim task ${data.id} by ${claimedBy}"`, { stdio: "ignore" });
+          execSync2("git push", { stdio: "ignore" });
+          return data;
+        } catch (err) {
+          console.error(`Failed to claim ${fileName}: ${err.message}`);
+          return null;
+        }
+      }
+      async markProcessed(id, { processedBy = "unknown", notes = "" } = {}) {
+        let foundPath = null;
+        let currentDir = null;
+        const dirs = ["pending", "claimed"];
+        for (const d of dirs) {
+          const dirPath = path15.join(this.inboxRoot, d);
+          if (d === "claimed") {
+            const workers = fs13.readdirSync(dirPath);
+            for (const w of workers) {
+              const p = path15.join(dirPath, w, `${id}.json`);
+              if (fs13.existsSync(p)) {
+                foundPath = p;
+                currentDir = path15.join(d, w);
+                break;
+              }
+            }
+          } else {
+            const p = path15.join(dirPath, `${id}.json`);
+            if (fs13.existsSync(p)) {
+              foundPath = p;
+              currentDir = d;
+              break;
+            }
+          }
+          if (foundPath) break;
+        }
+        if (!foundPath) throw new Error(`markProcessed: no entry ${id} found`);
+        const data = JSON.parse(fs13.readFileSync(foundPath, "utf8"));
+        data.status = "processed";
+        data.processedBy = processedBy;
+        data.processedAt = (/* @__PURE__ */ new Date()).toISOString();
+        data.notes = notes;
+        const processedPath = path15.join(this.inboxRoot, "processed", `${id}.json`);
+        fs13.renameSync(foundPath, processedPath);
+        fs13.writeFileSync(processedPath, JSON.stringify(data, null, 2));
+        this._gitAddAndCommit(this.inboxRoot, `Mark task ${id} as processed`);
+        try {
+          execSync2("git push", { stdio: "ignore" });
+        } catch (e) {
+        }
+        return { id };
+      }
+      // markSkipped and reopen would follow similar logic...
+    };
+  }
+});
+
+// lib/deployment-mode.mjs
+function isValidDeploymentMode(value) {
+  return typeof value === "string" && DEPLOYMENT_MODES2.includes(value);
+}
+function getDeploymentMode(env = process.env, { cwd } = {}) {
+  const raw = env?.[DEPLOYMENT_MODE_ENV_KEY];
+  if (raw) {
+    const trimmed = String(raw).trim().toLowerCase();
+    return isValidDeploymentMode(trimmed) ? trimmed : DEFAULT_DEPLOYMENT_MODE;
+  }
+  try {
+    const { config } = loadProjectConfig(cwd, env);
+    const fromConfig = config?.deployment?.mode;
+    if (typeof fromConfig === "string" && isValidDeploymentMode(fromConfig)) return fromConfig;
+  } catch {
+  }
+  return DEFAULT_DEPLOYMENT_MODE;
+}
+var DEPLOYMENT_MODES2, DEFAULT_DEPLOYMENT_MODE, DEPLOYMENT_MODE_ENV_KEY;
+var init_deployment_mode = __esm({
+  "lib/deployment-mode.mjs"() {
+    init_project_config();
+    DEPLOYMENT_MODES2 = ["solo", "team", "enterprise"];
+    DEFAULT_DEPLOYMENT_MODE = "solo";
+    DEPLOYMENT_MODE_ENV_KEY = "CONSTRUCT_DEPLOYMENT_MODE";
+  }
+});
+
+// lib/intake/queue.mjs
+import path16 from "node:path";
+function resolveBackend(env) {
+  const override = env?.[INTAKE_QUEUE_BACKEND_ENV_KEY];
+  if (override === "filesystem" || override === "git") return override;
+  const mode = getDeploymentMode(env);
+  return mode === "solo" ? "filesystem" : "git";
+}
+function resolveProject(rootDir, env) {
+  const explicit = env?.[INTAKE_PROJECT_ENV_KEY];
+  if (explicit && explicit.trim()) return explicit.trim();
+  return path16.basename(path16.resolve(rootDir)).trim() || "construct";
+}
+function createIntakeQueue(rootDir, env = process.env, opts = {}) {
+  const backend = opts.backend || resolveBackend(env);
+  if (backend === "filesystem") return new FilesystemIntakeQueue(rootDir);
+  if (backend === "git" || backend === "postgres") {
+    const project = opts.project ?? resolveProject(rootDir, env);
+    return new GitIntakeQueue({ project, rootDir });
+  }
+  throw new Error(`Unknown intake queue backend: ${backend}`);
+}
+var INTAKE_QUEUE_BACKEND_ENV_KEY, INTAKE_PROJECT_ENV_KEY;
+var init_queue = __esm({
+  "lib/intake/queue.mjs"() {
+    init_filesystem_queue();
+    init_git_queue();
+    init_deployment_mode();
+    INTAKE_QUEUE_BACKEND_ENV_KEY = "CONSTRUCT_INTAKE_QUEUE_BACKEND";
+    INTAKE_PROJECT_ENV_KEY = "CONSTRUCT_PROJECT_NAME";
+  }
+});
+
+// lib/intake/tables/rnd.mjs
+var INTAKE_TYPES, STAGES, UNKNOWN_TRIAGE, CLASSIFICATION_TABLE, rnd_default;
+var init_rnd = __esm({
+  "lib/intake/tables/rnd.mjs"() {
+    INTAKE_TYPES = [
+      "user-signal",
+      "bug",
+      "requirement",
+      "research",
+      "experiment",
+      "eval-finding",
+      "architecture",
+      "incident",
+      "launch-asset",
+      "ops",
+      "security",
+      "legal-compliance",
+      "memo",
+      "transcript",
+      "raw-data",
+      "unknown"
+    ];
+    STAGES = [
+      "signal",
+      "framing",
+      "hypothesis",
+      "research",
+      "artifact",
+      "design",
+      "implementation",
+      "evaluation",
+      "release",
+      "operations",
+      "unknown"
+    ];
+    UNKNOWN_TRIAGE = {
+      intakeType: "unknown",
+      rdStage: "unknown",
+      primaryOwner: "orchestrator",
+      recommendedChain: ["orchestrator"],
+      recommendedAction: "summarize",
+      risk: "low",
+      requiresApproval: false
+    };
+    CLASSIFICATION_TABLE = [
+      {
+        intakeType: "security",
+        keywords: ["security", "secret", "cve", "vulnerability", "vuln", "exploit", "leak", "auth bypass", "privilege escalation", "sqli", "xss", "csrf", "rce"],
+        rdStage: "operations",
+        primaryOwner: "security",
+        recommendedChain: ["security", "engineer", "reviewer"],
+        recommendedAction: "diagnose",
+        risk: "high",
+        requiresApproval: true
+      },
+      {
+        intakeType: "incident",
+        keywords: ["incident", "outage", "slo breach", "sla breach", "latency spike", "availability", "down", "p0 ", "p1 ", "pagerduty", "5xx", "oncall"],
+        rdStage: "operations",
+        primaryOwner: "sre",
+        recommendedChain: ["sre", "debugger", "platform-engineer"],
+        recommendedAction: "create-runbook",
+        risk: "high",
+        requiresApproval: true
+      },
+      {
+        intakeType: "legal-compliance",
+        keywords: ["gdpr", "ccpa", "hipaa", "sox", "soc2", "license", "lawsuit", "dpa", "data retention", "pii", "subpoena", "compliance audit"],
+        rdStage: "operations",
+        primaryOwner: "legal-compliance",
+        recommendedChain: ["legal-compliance", "security", "product-manager"],
+        recommendedAction: "clarify",
+        risk: "high",
+        requiresApproval: true
+      },
+      {
+        intakeType: "architecture",
+        keywords: ["architecture", "adr", "rfc", "interface", "tradeoff", "boundary", "system design", "data model", "api contract", "migration plan"],
+        rdStage: "design",
+        primaryOwner: "architect",
+        recommendedChain: ["architect", "devil-advocate", "engineer"],
+        recommendedAction: "draft-rfc",
+        risk: "medium",
+        requiresApproval: false
+      },
+      {
+        intakeType: "eval-finding",
+        keywords: ["eval", "evaluation", "hallucination", "judge", "trace", "score regression", "recall@", "precision@", "mrr", "ndcg", "failure case", "rubric"],
+        rdStage: "evaluation",
+        primaryOwner: "evaluator",
+        recommendedChain: ["evaluator", "ai-engineer", "trace-reviewer"],
+        recommendedAction: "evaluate",
+        risk: "medium",
+        requiresApproval: false
+      },
+      {
+        intakeType: "bug",
+        keywords: ["bug", "broken", "error", "stack trace", "regression", "crash", "exception", "fails", "failing", "throws", "not working", "reproduce", "repro:"],
+        rdStage: "implementation",
+        primaryOwner: "debugger",
+        recommendedChain: ["debugger", "engineer", "qa", "reviewer"],
+        recommendedAction: "diagnose",
+        risk: "medium",
+        requiresApproval: false
+      },
+      {
+        intakeType: "experiment",
+        keywords: ["hypothesis", "experiment", "spike", "prototype", "falsifiable", "research question", "a/b test", "pilot"],
+        rdStage: "hypothesis",
+        primaryOwner: "rd-lead",
+        recommendedChain: ["rd-lead", "researcher", "evaluator"],
+        recommendedAction: "create-experiment",
+        risk: "low",
+        requiresApproval: false
+      },
+      {
+        intakeType: "launch-asset",
+        keywords: ["release", "changelog", "version bump", "ship", "launch", "rollout", "cut a release", "rc1", "rc2", "release candidate"],
+        rdStage: "release",
+        primaryOwner: "release-manager",
+        recommendedChain: ["release-manager", "qa", "docs-keeper"],
+        recommendedAction: "release-review",
+        risk: "medium",
+        requiresApproval: false
+      },
+      {
+        intakeType: "research",
+        keywords: ["competitor", "market", "pricing", "positioning", "industry", "state of the art", "literature", "benchmark study", "desk research"],
+        rdStage: "research",
+        primaryOwner: "business-strategist",
+        recommendedChain: ["business-strategist", "researcher", "product-manager"],
+        recommendedAction: "research",
+        risk: "low",
+        requiresApproval: false
+      },
+      {
+        intakeType: "user-signal",
+        keywords: ["customer", "feedback", "pain point", "user says", "user feedback", "support ticket", "churn", "nps", "usability", "frustrated"],
+        rdStage: "signal",
+        primaryOwner: "product-manager",
+        recommendedChain: ["product-manager", "ux-researcher", "researcher"],
+        recommendedAction: "clarify",
+        risk: "low",
+        requiresApproval: false
+      },
+      {
+        intakeType: "requirement",
+        keywords: ["acceptance criteria", "requirement", "must have", "should have", "feature request", "prd", "use case", "success metric"],
+        rdStage: "framing",
+        primaryOwner: "product-manager",
+        recommendedChain: ["product-manager", "architect", "engineer"],
+        recommendedAction: "draft-prd",
+        risk: "low",
+        requiresApproval: false
+      },
+      {
+        intakeType: "ops",
+        keywords: ["runbook", "cron", "scheduled job", "maintenance", "backup", "restore", "capacity plan", "cost optimization", "dependency upgrade"],
+        rdStage: "operations",
+        primaryOwner: "operations",
+        recommendedChain: ["operations", "sre", "engineer"],
+        recommendedAction: "create-runbook",
+        risk: "low",
+        requiresApproval: false
+      },
+      {
+        intakeType: "memo",
+        keywords: ["memo", "decision memo", "for your information", "fyi", "action item", "action items", "status update", "weekly update", "announcement", "heads up", "team update", "decided to", "proposal to"],
+        rdStage: "artifact",
+        primaryOwner: "docs-keeper",
+        recommendedChain: ["docs-keeper", "reviewer"],
+        recommendedAction: "summarize",
+        risk: "low",
+        requiresApproval: false
+      },
+      {
+        intakeType: "transcript",
+        keywords: ["transcript", "webvtt", "meeting notes", "meeting minutes", "minutes of", "attendees", "call notes", "stand-up notes", "standup notes", "recording of", "speaker 1", "speaker 2"],
+        rdStage: "signal",
+        primaryOwner: "researcher",
+        recommendedChain: ["researcher", "data-analyst"],
+        recommendedAction: "summarize",
+        risk: "low",
+        requiresApproval: false
+      },
+      {
+        intakeType: "raw-data",
+        keywords: ["dataset", "raw data", "data dump", "csv export", "data export", "column names", "field names", "rows and columns", "records export", "telemetry export", "json export"],
+        rdStage: "research",
+        primaryOwner: "data-analyst",
+        recommendedChain: ["data-analyst", "data-engineer"],
+        recommendedAction: "summarize",
+        risk: "low",
+        requiresApproval: false
+      }
+    ];
+    rnd_default = { INTAKE_TYPES, STAGES, CLASSIFICATION_TABLE, UNKNOWN_TRIAGE };
+  }
+});
+
+// lib/intake/tables/operations.mjs
+var init_operations = __esm({
+  "lib/intake/tables/operations.mjs"() {
+  }
+});
+
+// lib/intake/tables/creative.mjs
+var init_creative = __esm({
+  "lib/intake/tables/creative.mjs"() {
+  }
+});
+
+// lib/intake/tables/research.mjs
+var init_research = __esm({
+  "lib/intake/tables/research.mjs"() {
+  }
+});
+
+// lib/intake/classify.mjs
+import path17 from "node:path";
+function formatTriageLine(sourcePath, triage) {
+  const basename = sourcePath ? path17.basename(sourcePath) : "(unknown source)";
+  if (!triage || triage.intakeType === "unknown") {
+    return `${basename} \u2192 unclassified \xB7 owner: ${triage?.primaryOwner ?? "orchestrator"} \xB7 next: ${triage?.recommendedAction ?? "summarize"}`;
+  }
+  const ownerLabel = triage.primaryOwner ?? "unassigned";
+  return `${basename} \u2192 ${triage.intakeType} / ${triage.rdStage} \xB7 owner: ${ownerLabel} \xB7 next: ${triage.recommendedAction}`;
+}
+var INTAKE_TYPES2, RD_STAGES;
+var init_classify = __esm({
+  "lib/intake/classify.mjs"() {
+    init_rnd();
+    init_operations();
+    init_creative();
+    init_research();
+    INTAKE_TYPES2 = rnd_default.INTAKE_TYPES;
+    RD_STAGES = rnd_default.STAGES;
+  }
+});
+
+// lib/policy/engine.mjs
+import path18 from "node:path";
+import { fileURLToPath } from "node:url";
+var MODULE_DIR, DEFAULT_MANIFEST_PATH;
+var init_engine = __esm({
+  "lib/policy/engine.mjs"() {
+    MODULE_DIR = path18.dirname(fileURLToPath(import.meta.url));
+    DEFAULT_MANIFEST_PATH = path18.join(MODULE_DIR, "..", "..", "specialists", "role-manifests.json");
+  }
+});
+
+// lib/telemetry/ingest.mjs
+var init_ingest = __esm({
+  "lib/telemetry/ingest.mjs"() {
+  }
+});
+
+// lib/telemetry/client.mjs
+var init_client = __esm({
+  "lib/telemetry/client.mjs"() {
+    init_ingest();
+    init_project_init_shared();
+  }
+});
+
+// lib/logging/rotate.mjs
+var LIMITS;
+var init_rotate = __esm({
+  "lib/logging/rotate.mjs"() {
+    LIMITS = {
+      // Trace shards under .cx/traces/<date>.jsonl — capped below GitHub's
+      // 100 MB single-file ceiling. Bead construct-1vv5.
+      trace: {
+        maxBytes: 100 * 1024 * 1024,
+        maxSegments: 0,
+        // keep all history; rotation is for the size cap, not retention
+        gzip: false,
+        envOverride: "CONSTRUCT_TRACE_MAX_MB"
+      },
+      // OS-supervised stdout log at ~/.cx/runtime/embed-daemon.log. Bead
+      // construct-88i. Rotation is poll-style via the daemon scheduler.
+      "embed-daemon-log": {
+        maxBytes: 50 * 1024 * 1024,
+        maxSegments: 5,
+        gzip: true,
+        envOverride: "CONSTRUCT_EMBED_LOG_MAX_MB"
+      },
+      // Per-edit audit of file reads. High traffic in active sessions.
+      // ~/.cx/audit-reads.jsonl.
+      "audit-reads": {
+        maxBytes: 25 * 1024 * 1024,
+        maxSegments: 4,
+        gzip: true,
+        envOverride: "CONSTRUCT_AUDIT_READS_MAX_MB"
+      },
+      // Per-skill-call telemetry. ~/.cx/skill-calls.jsonl.
+      "skill-calls": {
+        maxBytes: 25 * 1024 * 1024,
+        maxSegments: 4,
+        gzip: true,
+        envOverride: "CONSTRUCT_SKILL_CALLS_MAX_MB"
+      },
+      // Per-hook fire/block/error telemetry. ~/.cx/hook-calls.jsonl.
+      "hook-calls": {
+        maxBytes: 25 * 1024 * 1024,
+        maxSegments: 4,
+        gzip: true,
+        envOverride: "CONSTRUCT_HOOK_CALLS_MAX_MB"
+      },
+      // Rule path reference telemetry. ~/.cx/rule-calls.jsonl.
+      "rule-calls": {
+        maxBytes: 10 * 1024 * 1024,
+        maxSegments: 2,
+        gzip: true,
+        envOverride: "CONSTRUCT_RULE_CALLS_MAX_MB"
+      },
+      // Legacy-lock fallback firings on the beads write path. ~/.cx/beads-fallback.jsonl.
+      "beads-fallback": {
+        maxBytes: 5 * 1024 * 1024,
+        maxSegments: 2,
+        gzip: true,
+        envOverride: "CONSTRUCT_BEADS_FALLBACK_MAX_MB"
+      },
+      // Agent-dispatch log written by `lib/hooks/agent-tracker.mjs`. Path: ~/.cx/agent-log.jsonl.
+      "agent-log": {
+        maxBytes: 25 * 1024 * 1024,
+        maxSegments: 4,
+        gzip: true,
+        envOverride: "CONSTRUCT_AGENT_LOG_MAX_MB"
+      },
+      // Pending role invocations across all projects. ~/.cx/role-pending.jsonl.
+      "role-pending": {
+        maxBytes: 10 * 1024 * 1024,
+        maxSegments: 2,
+        gzip: true,
+        envOverride: "CONSTRUCT_ROLE_PENDING_MAX_MB"
+      },
+      // Intent verifications. ~/.cx/intent-verifications.jsonl.
+      "intent-verifications": {
+        maxBytes: 10 * 1024 * 1024,
+        maxSegments: 2,
+        gzip: true,
+        envOverride: "CONSTRUCT_INTENT_VERIFICATIONS_MAX_MB"
+      },
+      // Contract postcondition violations. ~/.cx/contract-violations.jsonl.
+      "contract-violations": {
+        maxBytes: 10 * 1024 * 1024,
+        maxSegments: 2,
+        gzip: true,
+        envOverride: "CONSTRUCT_CONTRACT_VIOLATIONS_MAX_MB"
+      },
+      // Bash-output warning flags appended by the bash-output-logger hook on
+      // every Bash tool use over the size threshold. ~/.cx/warn-flags.txt.
+      "bash-warn-flags": {
+        maxBytes: 5 * 1024 * 1024,
+        maxSegments: 2,
+        gzip: false,
+        envOverride: "CONSTRUCT_BASH_WARN_FLAGS_MAX_MB"
+      },
+      // Per-turn cost ledger written by the Stop hook. Cross-project (so the
+      // user has one place to see spend across every project) — each entry
+      // carries a projectId tag so readers can split by project. Path:
+      // ~/.cx/session-cost.jsonl.
+      "session-cost": {
+        maxBytes: 25 * 1024 * 1024,
+        maxSegments: 4,
+        gzip: true,
+        envOverride: "CONSTRUCT_SESSION_COST_MAX_MB"
+      },
+      // Tamper-evident audit trail of every mutation Construct (or a dispatched
+      // subagent) makes. Project-scoped. Path: <project>/.cx/audit-trail.jsonl.
+      "audit-trail": {
+        maxBytes: 50 * 1024 * 1024,
+        maxSegments: 4,
+        gzip: true,
+        envOverride: "CONSTRUCT_AUDIT_TRAIL_MAX_MB"
+      },
+      // Pending typecheck queue written by the edit-accumulator hook on every
+      // Edit/Write of a TS/JS file. Path: ~/.cx/pending-typecheck.txt.
+      "edit-accumulator": {
+        maxBytes: 5 * 1024 * 1024,
+        maxSegments: 2,
+        gzip: false,
+        envOverride: "CONSTRUCT_EDIT_ACCUMULATOR_MAX_MB"
+      }
+    };
+  }
+});
+
+// lib/worker/trace.mjs
+var init_trace = __esm({
+  "lib/worker/trace.mjs"() {
+    init_client();
+    init_project_init_shared();
+    init_rotate();
+  }
+});
+
+// lib/mcp/broker.mjs
+function isBrokered(env = process.env) {
+  const override = env?.CONSTRUCT_MCP_BROKER;
+  if (override === "on") return true;
+  if (override === "off") return false;
+  const mode = env?.CONSTRUCT_DEPLOYMENT_MODE || "solo";
+  return mode === "team" || mode === "enterprise";
+}
+var init_broker = __esm({
+  "lib/mcp/broker.mjs"() {
+    init_engine();
+    init_trace();
+  }
+});
+
+// lib/profiles/loader.mjs
+import { existsSync as existsSync4, readFileSync as readFileSync4, readdirSync as readdirSync3 } from "node:fs";
+import { dirname, join as join2, resolve } from "node:path";
+import { fileURLToPath as fileURLToPath2 } from "node:url";
+function loadProfile(id) {
+  if (!id || typeof id !== "string") return null;
+  const path33 = join2(PROFILES_DIR, `${id}.json`);
+  if (!existsSync4(path33)) return null;
+  try {
+    const raw = JSON.parse(readFileSync4(path33, "utf8"));
+    return raw;
+  } catch {
+    return null;
+  }
+}
+function loadCustomProfile(cwd) {
+  if (!cwd) return null;
+  const path33 = join2(cwd, ".cx", "profile.json");
+  if (!existsSync4(path33)) return null;
+  try {
+    const raw = JSON.parse(readFileSync4(path33, "utf8"));
+    if (raw && raw.custom === true) return raw;
+    return null;
+  } catch {
+    return null;
+  }
+}
+function resolveActiveProfile(cwd, configProfileId = null) {
+  if (configProfileId) {
+    const p = loadProfile(configProfileId);
+    if (p) return p;
+  }
+  const custom = loadCustomProfile(cwd);
+  if (custom) return custom;
+  const fromConfig = readProfileFromProjectConfig(cwd);
+  if (fromConfig) {
+    const p = loadProfile(fromConfig);
+    if (p) return p;
+  }
+  return loadProfile(DEFAULT_PROFILE_ID2) ?? minimalRndFallback();
+}
+function readProfileFromProjectConfig(cwd) {
+  if (!cwd) return null;
+  const p = join2(cwd, "construct.config.json");
+  if (!existsSync4(p)) return null;
+  try {
+    const raw = JSON.parse(readFileSync4(p, "utf8"));
+    return typeof raw?.profile === "string" ? raw.profile : null;
+  } catch {
+    return null;
+  }
+}
+function minimalRndFallback() {
+  return {
+    id: "rnd",
+    displayName: "Software R&D",
+    roles: [],
+    intake: { types: [], stages: [] },
+    docTemplates: [],
+    hooks: { sessionReflect: "on", sessionOptimize: "on" },
+    rebrand: { intakeQueueLabel: "R&D intake queue", signalNoun: "signal" }
+  };
+}
+var MODULE_DIR2, REPO_ROOT, PROFILES_DIR, DEFAULT_PROFILE_ID2;
+var init_loader = __esm({
+  "lib/profiles/loader.mjs"() {
+    MODULE_DIR2 = dirname(fileURLToPath2(import.meta.url));
+    REPO_ROOT = resolve(MODULE_DIR2, "..", "..");
+    PROFILES_DIR = join2(REPO_ROOT, "profiles");
+    DEFAULT_PROFILE_ID2 = "rnd";
+  }
+});
+
+// lib/profiles/rebrand.mjs
+function getRebrand(rootDir) {
+  if (!rootDir || typeof rootDir !== "string") return { ...DEFAULT_REBRAND };
+  try {
+    const profile = resolveActiveProfile(rootDir);
+    const rb = profile?.rebrand;
+    if (!rb || typeof rb !== "object") return { ...DEFAULT_REBRAND };
+    const intakeQueueLabel = typeof rb.intakeQueueLabel === "string" && rb.intakeQueueLabel.trim() ? rb.intakeQueueLabel.trim() : DEFAULT_REBRAND.intakeQueueLabel;
+    const signalNoun = typeof rb.signalNoun === "string" && rb.signalNoun.trim() ? rb.signalNoun.trim() : DEFAULT_REBRAND.signalNoun;
+    return { intakeQueueLabel, signalNoun };
+  } catch {
+    return { ...DEFAULT_REBRAND };
+  }
+}
+var DEFAULT_REBRAND;
+var init_rebrand = __esm({
+  "lib/profiles/rebrand.mjs"() {
+    init_loader();
+    DEFAULT_REBRAND = Object.freeze({
+      intakeQueueLabel: "Intake queue",
+      signalNoun: "signal"
+    });
+  }
+});
+
+// lib/daemons/contract.mjs
+var DEFAULT_MAX_RUNTIME_MS;
+var init_contract = __esm({
+  "lib/daemons/contract.mjs"() {
+    DEFAULT_MAX_RUNTIME_MS = 24 * 60 * 60 * 1e3;
+  }
+});
+
+// lib/parity.mjs
+import path19 from "node:path";
+import { fileURLToPath as fileURLToPath3 } from "node:url";
+var MODULE_DIR3, ROOT_DIR;
+var init_parity = __esm({
+  "lib/parity.mjs"() {
+    MODULE_DIR3 = path19.dirname(fileURLToPath3(import.meta.url));
+    ROOT_DIR = path19.resolve(MODULE_DIR3, "..");
+  }
+});
+
+// lib/embedded-contract/workflow-defs.mjs
+var DEFS, WORKFLOW_TYPES;
+var init_workflow_defs = __esm({
+  "lib/embedded-contract/workflow-defs.mjs"() {
+    DEFS = {
+      "evidence-ingest": {
+        tier: "fast",
+        defaultApprovalMode: "proposal-only",
+        chain: ["researcher", "data-analyst"],
+        outputSchema: null,
+        description: "Ingest and structure raw evidence (notes, documents, signals) into a normalized summary."
+      },
+      "proposal-review": {
+        tier: "standard",
+        defaultApprovalMode: "requires-human-approval",
+        chain: ["reviewer", "devil-advocate"],
+        outputSchema: "review-report",
+        description: "Review a proposal for correctness, risk, and hidden assumptions before acceptance."
+      },
+      "prd-draft": {
+        tier: "standard",
+        defaultApprovalMode: "proposal-only",
+        chain: ["product-manager", "architect"],
+        outputSchema: "decision",
+        description: "Draft a product requirements document from a problem statement and supporting evidence."
+      },
+      "architecture-review": {
+        tier: "reasoning",
+        defaultApprovalMode: "requires-human-approval",
+        chain: ["architect", "security", "devil-advocate"],
+        outputSchema: "review-report",
+        description: "Review an architecture or design for trade-offs, failure modes, and security exposure."
+      },
+      "risk-review": {
+        tier: "reasoning",
+        defaultApprovalMode: "requires-human-approval",
+        chain: ["devil-advocate", "security", "legal-compliance"],
+        outputSchema: "review-report",
+        description: "Stress-test a plan for risk: failure modes, security, and compliance exposure."
+      },
+      "research-synthesis": {
+        tier: "reasoning",
+        defaultApprovalMode: "proposal-only",
+        chain: ["researcher", "data-analyst", "evaluator"],
+        outputSchema: null,
+        description: "Synthesize multiple sources into a cited, evidence-graded research summary."
+      },
+      "transcript-process": {
+        tier: "fast",
+        defaultApprovalMode: "proposal-only",
+        chain: ["researcher", "data-analyst"],
+        outputSchema: null,
+        description: "Process a meeting/call transcript into a summary, decisions, and action items."
+      },
+      "data-structure": {
+        tier: "standard",
+        defaultApprovalMode: "proposal-only",
+        chain: ["data-analyst", "data-engineer"],
+        outputSchema: null,
+        description: "Parse, validate, and profile a raw dataset into a structured, described shape."
+      },
+      "memo-draft": {
+        tier: "fast",
+        defaultApprovalMode: "proposal-only",
+        chain: ["docs-keeper", "reviewer"],
+        outputSchema: null,
+        description: "Draft a decision or status memo from a problem statement and context."
+      },
+      "structure-notes": {
+        tier: "fast",
+        defaultApprovalMode: "proposal-only",
+        chain: ["orchestrator", "researcher"],
+        outputSchema: null,
+        description: "Structure an unclassified brain-dump or rough notes into a normalized summary with extracted intents."
+      }
+    };
+    WORKFLOW_TYPES = Object.keys(DEFS);
+  }
+});
+
+// lib/specialists/postconditions.mjs
+function isNonEmptyArray(value) {
+  return Array.isArray(value) && value.length > 0;
+}
+function isNonEmptyString(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+function isLaterOrEqual(a, b) {
+  const ta = a instanceof Date ? a.getTime() : Date.parse(a);
+  const tb = b instanceof Date ? b.getTime() : Date.parse(b);
+  if (!Number.isFinite(ta) || !Number.isFinite(tb)) return false;
+  return ta >= tb;
+}
+var ROOT_CAUSE_SOURCES, POSTCONDITIONS;
+var init_postconditions = __esm({
+  "lib/specialists/postconditions.mjs"() {
+    ROOT_CAUSE_SOURCES = /* @__PURE__ */ new Set(["reproduction", "trace", "test"]);
+    POSTCONDITIONS = {
+      "cx-reviewer": [
+        {
+          id: "reviewer.findings-or-explicit-clear",
+          description: 'Reviewer must either return at least one finding or explicitly state "no issues found at: <paths>".',
+          check: (p) => isNonEmptyArray(p?.findings) || isNonEmptyArray(p?.noIssuesFoundAt) || isNonEmptyString(p?.noIssuesFoundStatement),
+          reason: 'Reviewer output rubber-stamped: empty findings and no explicit "no issues found at: <paths>" statement.'
+        }
+      ],
+      "cx-security": [
+        {
+          id: "security.threat-model-not-post-hoc",
+          description: "Threat model must be updated at or after the contract start (not retrofitted).",
+          check: (p) => {
+            if (!p?.threatModelUpdatedAt || !p?.contractStart) return false;
+            return isLaterOrEqual(p.threatModelUpdatedAt, p.contractStart);
+          },
+          reason: "Threat model missing or older than the contract start \u2014 likely retrofitted after implementation."
+        }
+      ],
+      "cx-debugger": [
+        {
+          id: "debugger.root-cause-confirmed-via",
+          description: "Root cause must be confirmed via reproduction, trace, or test (not inferred).",
+          check: (p) => typeof p?.rootCauseConfirmedVia === "string" && ROOT_CAUSE_SOURCES.has(p.rootCauseConfirmedVia),
+          reason: `rootCauseConfirmedVia must be one of: ${[...ROOT_CAUSE_SOURCES].join(", ")}.`
+        }
+      ],
+      "cx-docs-keeper": [
+        {
+          id: "docs-keeper.cross-doc-coherence-check-ran",
+          description: "Docs-keeper must run the cross-doc coherence check and attach a named diff.",
+          check: (p) => p?.crossDocCoherenceCheckRan === true && isNonEmptyString(p?.coherenceDiff),
+          reason: "crossDocCoherenceCheckRan must be true AND coherenceDiff must be a non-empty named diff."
+        }
+      ],
+      "cx-designer": [
+        {
+          id: "designer.accessibility-check-ran",
+          description: "Designer must run the accessibility check before handoff (no post-hoc a11y).",
+          check: (p) => p?.accessibilityCheckRan === true,
+          reason: "accessibilityCheckRan must be true \u2014 accessibility review is a precondition for any visual deliverable."
+        }
+      ]
+    };
+  }
+});
+
+// lib/contracts/violation-log.mjs
+import { join as join3, dirname as dirname2 } from "node:path";
+import { homedir as homedir2 } from "node:os";
+var CX_DIR, LAST_AGENT;
+var init_violation_log = __esm({
+  "lib/contracts/violation-log.mjs"() {
+    init_rotate();
+    init_project_root();
+    CX_DIR = join3(homedir2(), ".cx");
+    LAST_AGENT = join3(CX_DIR, "last-agent.json");
+  }
+});
+
+// lib/contracts/validate.mjs
+import { join as join4, dirname as dirname3, resolve as resolve2 } from "node:path";
+import { fileURLToPath as fileURLToPath4 } from "node:url";
+var REPO_ROOT2, CONTRACTS_PATH, CONTRACTS_SCHEMA_PATH, REGISTRY_PATH;
+var init_validate = __esm({
+  "lib/contracts/validate.mjs"() {
+    init_postconditions();
+    init_violation_log();
+    REPO_ROOT2 = resolve2(dirname3(fileURLToPath4(import.meta.url)), "..", "..");
+    CONTRACTS_PATH = join4(REPO_ROOT2, "specialists", "contracts.json");
+    CONTRACTS_SCHEMA_PATH = join4(REPO_ROOT2, "specialists", "contracts.schema.json");
+    REGISTRY_PATH = join4(REPO_ROOT2, "specialists", "registry.json");
+  }
+});
+
+// lib/templates/visual-requirements.mjs
+var init_visual_requirements = __esm({
+  "lib/templates/visual-requirements.mjs"() {
+    init_validate();
+  }
+});
+
+// lib/registry/validate.mjs
+import path20 from "node:path";
+import { fileURLToPath as fileURLToPath5 } from "node:url";
+var MODULE_DIR4, REPO_ROOT3, REGISTRY_PATH2, STALE_MS;
+var init_validate2 = __esm({
+  "lib/registry/validate.mjs"() {
+    init_workflow_defs();
+    init_visual_requirements();
+    MODULE_DIR4 = path20.dirname(fileURLToPath5(import.meta.url));
+    REPO_ROOT3 = path20.resolve(MODULE_DIR4, "..", "..");
+    REGISTRY_PATH2 = path20.join(REPO_ROOT3, "registry", "capabilities.json");
+    STALE_MS = 90 * 24 * 60 * 60 * 1e3;
+  }
+});
+
+// lib/host-disposition.mjs
+import fs14 from "node:fs";
+import path21 from "node:path";
+function isConstructPackageRepo(dir) {
+  try {
+    const pkgPath = path21.join(dir, "package.json");
+    if (!fs14.existsSync(pkgPath)) return false;
+    const pkg = JSON.parse(fs14.readFileSync(pkgPath, "utf8"));
+    if (!pkg) return false;
+    if (pkg.name === "construct" || pkg.name === "@geraldmaron/construct") return true;
+    return pkg.bin && (pkg.bin === "bin/construct" || typeof pkg.bin === "object" && pkg.bin.construct === "bin/construct");
+  } catch {
+    return false;
+  }
+}
+var init_host_disposition = __esm({
+  "lib/host-disposition.mjs"() {
+  }
+});
+
+// lib/init/detect-existing-structure.mjs
+var init_detect_existing_structure = __esm({
+  "lib/init/detect-existing-structure.mjs"() {
+  }
+});
+
+// lib/specialist-contracts.mjs
+import { dirname as dirname4, join as join5, resolve as resolve3 } from "node:path";
+import { fileURLToPath as fileURLToPath6 } from "node:url";
+var MODULE_DIR5, REPO_ROOT4, CONTRACTS_PATH2;
+var init_specialist_contracts = __esm({
+  "lib/specialist-contracts.mjs"() {
+    MODULE_DIR5 = dirname4(fileURLToPath6(import.meta.url));
+    REPO_ROOT4 = resolve3(MODULE_DIR5, "..");
+    CONTRACTS_PATH2 = join5(REPO_ROOT4, "specialists", "contracts.json");
+  }
+});
+
+// lib/telemetry/intent-verifications.mjs
+import os9 from "node:os";
+import path22 from "node:path";
+var DEFAULT_LOG_PATH;
+var init_intent_verifications = __esm({
+  "lib/telemetry/intent-verifications.mjs"() {
+    init_rotate();
+    init_project_root();
+    DEFAULT_LOG_PATH = path22.join(os9.homedir(), ".cx", "intent-verifications.jsonl");
+  }
+});
+
+// lib/intent-classifier.mjs
+var init_intent_classifier = __esm({
+  "lib/intent-classifier.mjs"() {
+    init_model_router();
+    init_env_config();
+    init_intent_verifications();
+  }
+});
+
+// lib/orchestration/routing-tables.mjs
+import { fileURLToPath as fileURLToPath7 } from "node:url";
+var REGISTRY_PATH3;
+var init_routing_tables = __esm({
+  "lib/orchestration/routing-tables.mjs"() {
+    init_project_root();
+    REGISTRY_PATH3 = fileURLToPath7(new URL("../../specialists/registry.json", import.meta.url));
+  }
+});
+
+// lib/orchestration-policy.mjs
+var init_orchestration_policy = __esm({
+  "lib/orchestration-policy.mjs"() {
+    init_specialist_contracts();
+    init_intent_classifier();
+    init_routing_tables();
+    init_routing_tables();
+  }
+});
+
+// lib/workflow-state.mjs
+import fs15 from "node:fs";
+import path23 from "node:path";
+import { execSync as execSync3 } from "node:child_process";
+function normalizePhase(value, fallback = null) {
+  return PHASES.includes(value) ? value : fallback;
+}
+function normalizeWorkflow(workflow) {
+  if (!workflow || typeof workflow !== "object") return workflow;
+  const normalizedPhase = normalizePhase(workflow.phase, workflow.phase);
+  const normalizedPhases = {};
+  for (const [key, entry] of Object.entries(workflow.phases || {})) {
+    const phaseKey = normalizePhase(key, key);
+    normalizedPhases[phaseKey] = {
+      ...normalizedPhases[phaseKey],
+      ...entry,
+      owner: normalizePhase(entry?.owner, entry?.owner ?? phaseKey)
+    };
+  }
+  workflow.phase = normalizedPhase;
+  workflow.phases = normalizedPhases;
+  workflow.tasks = (workflow.tasks || []).map((task) => ({
+    ...task,
+    phase: normalizePhase(task.phase, task.phase)
+  }));
+  return workflow;
+}
+function now() {
+  return (/* @__PURE__ */ new Date()).toISOString();
+}
+function slugify3(value) {
+  return String(value || "workflow").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64) || "workflow";
+}
+function projectName(root) {
+  try {
+    const remote = execSync3("git remote get-url origin", { cwd: root, timeout: 3e3, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    const match = remote.match(/[:/]([^/]+\/[^/.]+)(?:\.git)?$/);
+    if (match) return match[1];
+  } catch {
+  }
+  return path23.basename(root);
+}
+function workflowPath(root = process.cwd()) {
+  return path23.join(root, ".cx", "workflow.json");
+}
+function defaultWorkflow(root = process.cwd(), title = "Untitled workflow", specRef = null) {
+  const id = `${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}-${slugify3(title)}`;
+  return {
+    version: 1,
+    project: projectName(root),
+    id,
+    title,
+    specRef: specRef || null,
+    status: "in-progress",
+    phase: "plan",
+    currentTaskKey: null,
+    updatedAt: now(),
+    phases: {
+      research: { owner: "research", status: "todo", summary: "Explore the problem and gather evidence." },
+      plan: { owner: "plan", status: "in-progress", summary: "Define and challenge the approach." },
+      implement: { owner: "implement", status: "todo", summary: "Build the approved solution." },
+      validate: { owner: "validate", status: "todo", summary: "Verify correctness, security, accessibility, and tests." },
+      operate: { owner: "operate", status: "todo", summary: "Run, release, deploy, or operationalize when needed." }
+    },
+    tasks: [],
+    decisions: [],
+    handoffs: [],
+    alignment: {
+      acceptanceCriteriaRequired: true,
+      ownerRequired: true,
+      readFirstRequired: true,
+      doNotChangeRequired: true,
+      verificationRequiredBeforeDone: true
+    }
+  };
+}
+function loadWorkflow(root = process.cwd()) {
+  const file = workflowPath(root);
+  if (!fs15.existsSync(file)) return null;
+  return normalizeWorkflow(JSON.parse(fs15.readFileSync(file, "utf8")));
+}
+function saveWorkflow(workflow, root = process.cwd()) {
+  const file = workflowPath(root);
+  fs15.mkdirSync(path23.dirname(file), { recursive: true });
+  const normalized = {
+    ...normalizeWorkflow(structuredClone(workflow)),
+    updatedAt: now()
+  };
+  fs15.writeFileSync(file, `${JSON.stringify(normalized, null, 2)}
+`, "utf8");
+  return normalized;
+}
+function initWorkflow(root = process.cwd(), title = "Untitled workflow", specRef = null) {
+  const existing = loadWorkflow(root);
+  if (existing) return { workflow: existing, created: false };
+  return { workflow: saveWorkflow(defaultWorkflow(root, title, specRef), root), created: true };
+}
+function nextTaskKey(workflow) {
+  const used = new Set((workflow.tasks || []).map((task) => task.key));
+  let n = 1;
+  while (used.has(`todo:${n}`)) n += 1;
+  return `todo:${n}`;
+}
+function addTask(root, options) {
+  const workflow = loadWorkflow(root) || defaultWorkflow(root, options.workflowTitle || "Untitled workflow");
+  const phase = normalizePhase(options.phase || workflow.phase || "implement");
+  if (!phase) throw new Error(`Invalid phase: ${options.phase || workflow.phase}`);
+  const task = {
+    key: options.key || nextTaskKey(workflow),
+    title: options.title || "Untitled task",
+    phase,
+    owner: options.owner || phase,
+    status: options.status || "todo",
+    dependsOn: options.dependsOn || [],
+    files: options.files || [],
+    readFirst: options.readFirst || [],
+    doNotChange: options.doNotChange || [],
+    acceptanceCriteria: options.acceptanceCriteria || [],
+    verification: options.verification || [],
+    overlays: options.overlays || [],
+    challengeRequired: Boolean(options.challengeRequired),
+    challengeStatus: options.challengeStatus || null,
+    tokenBudget: options.tokenBudget || null,
+    tokensUsed: null,
+    notes: [],
+    createdAt: now(),
+    updatedAt: now()
+  };
+  if (!VALID_STATUS.has(task.status)) throw new Error(`Invalid status: ${task.status}`);
+  const existing = workflow.tasks || [];
+  const normalizedTitle = task.title.trim().toLowerCase();
+  const duplicate = existing.find((t) => {
+    if (t.key === task.key) return true;
+    if (t.status === "done" || t.status === "skipped") return false;
+    return (t.title || "").trim().toLowerCase() === normalizedTitle;
+  });
+  if (duplicate) {
+    if (!workflow.currentTaskKey) workflow.currentTaskKey = duplicate.key;
+    return saveWorkflow(workflow, root);
+  }
+  workflow.tasks = [...existing, task];
+  if (!workflow.currentTaskKey) workflow.currentTaskKey = task.key;
+  return saveWorkflow(workflow, root);
+}
+function parseCommaSeparated(value) {
+  if (!value) return [];
+  return String(value).split(",").map((s) => s.trim()).filter(Boolean);
+}
+function slugifyTitle(title, usedKeys) {
+  const base = slugify3(title);
+  if (!usedKeys.has(base)) return base;
+  let n = 2;
+  while (usedKeys.has(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
+}
+function parseRichSections(markdown, options) {
+  const defaultPhase = normalizePhase(options.phase || "implement");
+  const defaultOwner = options.owner || "cx-engineer";
+  const defaultReadFirst = options.readFirst || [];
+  const defaultDoNotChange = options.doNotChange || [];
+  const defaultAcceptanceCriteria = options.acceptanceCriteria || [];
+  const lines = String(markdown || "").split("\n");
+  const sectionStarts = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (/^###\s+T\d+\s*[—-]/.test(lines[i]) || /^###\s+T\d+$/.test(lines[i])) {
+      sectionStarts.push(i);
+    }
+  }
+  if (sectionStarts.length === 0) return null;
+  const usedKeys = /* @__PURE__ */ new Set();
+  const tasks = [];
+  for (let si = 0; si < sectionStarts.length; si++) {
+    const start = sectionStarts[si];
+    const end = si + 1 < sectionStarts.length ? sectionStarts[si + 1] : lines.length;
+    const sectionLines = lines.slice(start, end);
+    const headerMatch = sectionLines[0].match(/^###\s+T\d+\s*[—-]\s*(.+)$/) || sectionLines[0].match(/^###\s+(T\d+)$/);
+    const title = headerMatch ? headerMatch[1].trim() : sectionLines[0].replace(/^###\s*/, "").trim();
+    let owner = defaultOwner;
+    let phase = defaultPhase;
+    let files = [];
+    let dependsOn = [];
+    let readFirst = defaultReadFirst.slice();
+    let doNotChange = defaultDoNotChange.slice();
+    let acceptanceCriteria = [];
+    let inAcceptanceCriteria = false;
+    for (let li = 1; li < sectionLines.length; li++) {
+      const line = sectionLines[li];
+      const trimmed = line.trim();
+      const field = trimmed.replace(/^[-*]\s+/, "");
+      if (/^\*\*Owner\*\*\s*:/.test(field)) {
+        owner = field.replace(/^\*\*Owner\*\*\s*:\s*/, "").trim() || defaultOwner;
+        inAcceptanceCriteria = false;
+        continue;
+      }
+      if (/^\*\*Phase\*\*\s*:/.test(field)) {
+        phase = normalizePhase(field.replace(/^\*\*Phase\*\*\s*:\s*/, "").trim()) || defaultPhase;
+        inAcceptanceCriteria = false;
+        continue;
+      }
+      if (/^\*\*Files\*\*\s*:/.test(field)) {
+        files = parseCommaSeparated(field.replace(/^\*\*Files\*\*\s*:\s*/, ""));
+        inAcceptanceCriteria = false;
+        continue;
+      }
+      if (/^\*\*Depends on\*\*\s*:/.test(field)) {
+        const raw = field.replace(/^\*\*Depends on\*\*\s*:\s*/, "").trim();
+        dependsOn = raw.toLowerCase() === "(none)" ? [] : parseCommaSeparated(raw);
+        inAcceptanceCriteria = false;
+        continue;
+      }
+      if (/^\*\*Read first\*\*\s*:/.test(field)) {
+        readFirst = parseCommaSeparated(field.replace(/^\*\*Read first\*\*\s*:\s*/, ""));
+        inAcceptanceCriteria = false;
+        continue;
+      }
+      if (/^\*\*Do not change\*\*\s*:/.test(field)) {
+        doNotChange = parseCommaSeparated(field.replace(/^\*\*Do not change\*\*\s*:\s*/, ""));
+        inAcceptanceCriteria = false;
+        continue;
+      }
+      if (/^\*\*Acceptance criteria\*\*\s*:/.test(field)) {
+        inAcceptanceCriteria = true;
+        continue;
+      }
+      if (inAcceptanceCriteria && /^[-*]\s+/.test(trimmed)) {
+        acceptanceCriteria.push(trimmed.replace(/^[-*]\s+/, "").trim());
+        continue;
+      }
+      if (inAcceptanceCriteria && trimmed && !/^[-*]/.test(trimmed) && !/^\*\*/.test(trimmed)) {
+        inAcceptanceCriteria = false;
+      }
+    }
+    if (acceptanceCriteria.length === 0) {
+      acceptanceCriteria = defaultAcceptanceCriteria.length ? defaultAcceptanceCriteria : [`Complete: ${title}`];
+    } else if (defaultAcceptanceCriteria.length) {
+      acceptanceCriteria = [...acceptanceCriteria, ...defaultAcceptanceCriteria];
+    }
+    const key = slugifyTitle(title, usedKeys);
+    usedKeys.add(key);
+    tasks.push({ title, phase, owner, files, dependsOn, readFirst, doNotChange, acceptanceCriteria });
+  }
+  return tasks;
+}
+function extractTasksFromPlan(markdown, options = {}) {
+  const rich = parseRichSections(markdown, options);
+  if (rich !== null) return rich;
+  const phase = normalizePhase(options.phase || "implement");
+  const owner = options.owner || "cx-engineer";
+  const readFirst = options.readFirst || [];
+  const doNotChange = options.doNotChange || [];
+  const acceptanceCriteria = options.acceptanceCriteria || [];
+  return String(markdown || "").split("\n").map((line) => line.trim()).map((line) => {
+    const checkbox = /^[-*]\s+\[[ xX]\]\s+(.+)$/.exec(line);
+    if (checkbox) return checkbox[1].trim();
+    const numbered = /^\d+\.\s+(.+)$/.exec(line);
+    if (numbered) return numbered[1].trim();
+    return null;
+  }).filter(Boolean).map((title) => ({
+    title,
+    phase,
+    owner,
+    readFirst,
+    doNotChange,
+    acceptanceCriteria: acceptanceCriteria.length ? acceptanceCriteria : [`Complete: ${title}`]
+  }));
+}
+function addTasksFromPlan(root, markdown, options = {}) {
+  const tasks = extractTasksFromPlan(markdown, options);
+  let workflow = loadWorkflow(root) || saveWorkflow(defaultWorkflow(root, options.workflowTitle || "Imported plan", options.specRef || null), root);
+  if (options.specRef && !workflow.specRef) {
+    workflow.specRef = options.specRef;
+    workflow = saveWorkflow(workflow, root);
+  }
+  if (options.phase && PHASES.includes(options.phase)) {
+    workflow = transitionPhase(root, options.phase);
+  }
+  for (const task of tasks) {
+    workflow = addTask(root, task);
+  }
+  return { workflow, count: tasks.length };
+}
+function updateTask(root, key, patch) {
+  const workflow = loadWorkflow(root);
+  if (!workflow) throw new Error("No .cx/workflow.json found. Run `construct workflow init` first.");
+  const cleanPatch = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== void 0));
+  let found = false;
+  workflow.tasks = (workflow.tasks || []).map((task) => {
+    if (task.key !== key) return task;
+    found = true;
+    const notes = cleanPatch.note ? [...task.notes || [], { at: now(), note: cleanPatch.note }] : task.notes || [];
+    return {
+      ...task,
+      ...cleanPatch,
+      notes,
+      updatedAt: now()
+    };
+  });
+  if (!found) throw new Error(`Task not found: ${key}`);
+  if (cleanPatch.status && !VALID_STATUS.has(cleanPatch.status)) throw new Error(`Invalid status: ${cleanPatch.status}`);
+  if (cleanPatch.status === "done") {
+    const task = workflow.tasks.find((t) => t.key === key);
+    if (task && task.phase === "implement" && workflow.alignment?.verificationRequiredBeforeDone !== false) {
+      const mergedVerification = cleanPatch.verification ?? task.verification ?? [];
+      if (mergedVerification.length === 0) {
+        throw new Error(
+          `Cannot mark implement-phase task "${key}" as done without verification evidence. Add cx-reviewer and cx-qa results to task.verification before marking done.`
+        );
+      }
+    }
+  }
+  if (cleanPatch.status === "in-progress" || cleanPatch.status === "blocked_needs_user") workflow.currentTaskKey = key;
+  if (cleanPatch.status === "done" && workflow.currentTaskKey === key) {
+    workflow.currentTaskKey = (workflow.tasks || []).find((task) => task.status !== "done" && task.status !== "skipped")?.key || null;
+  }
+  return saveWorkflow(workflow, root);
+}
+function transitionPhase(root, phase, status = "in-progress") {
+  phase = normalizePhase(phase);
+  if (!phase) throw new Error(`Invalid phase: ${phase}`);
+  const workflow = loadWorkflow(root);
+  if (!workflow) throw new Error("No .cx/workflow.json found. Run `construct workflow init` first.");
+  workflow.phase = phase;
+  workflow.phases = workflow.phases || {};
+  for (const p of PHASES) {
+    workflow.phases[p] = workflow.phases[p] || { owner: p, status: "todo" };
+  }
+  workflow.phases[phase] = { ...workflow.phases[phase], status };
+  return saveWorkflow(workflow, root);
+}
+function alignmentFindings(workflow) {
+  if (!workflow) {
+    return [{
+      severity: "HIGH",
+      issue: "No .cx/workflow.json found",
+      fix: 'Run `construct workflow init "<title>"` at the project root.'
+    }];
+  }
+  const findings = [];
+  const tasks = workflow.tasks || [];
+  const current = tasks.find((task) => task.key === workflow.currentTaskKey);
+  if (current && current.phase !== workflow.phase) {
+    findings.push({
+      severity: "HIGH",
+      task: current.key,
+      issue: `Current task phase (${current.phase}) does not match workflow phase (${workflow.phase})`,
+      fix: `Run \`construct workflow phase ${current.phase}\` or move the task to the active phase.`
+    });
+  }
+  if (workflow.status === "in-progress" && tasks.length === 0) {
+    findings.push({
+      severity: "MEDIUM",
+      issue: "Workflow has no tasks",
+      fix: "Add scoped tasks with owners, read-first files, protected files, and acceptance criteria."
+    });
+  }
+  for (const task of tasks) {
+    if (!task.owner) findings.push({ severity: "HIGH", task: task.key, issue: "Task has no owner", fix: "Set owner to a persona or cx-specialist." });
+    if (!Array.isArray(task.acceptanceCriteria) || task.acceptanceCriteria.length === 0) {
+      findings.push({ severity: "HIGH", task: task.key, issue: "Task has no acceptance criteria", fix: "Add binary pass/fail acceptance criteria." });
+    }
+    if (!Array.isArray(task.readFirst) || task.readFirst.length === 0) {
+      findings.push({ severity: "MEDIUM", task: task.key, issue: "Task has no readFirst list", fix: "Add files, docs, or memory queries to inspect before work." });
+    }
+    if (!Array.isArray(task.doNotChange) || task.doNotChange.length === 0) {
+      findings.push({ severity: "MEDIUM", task: task.key, issue: "Task has no doNotChange list", fix: "Add explicit drift boundaries." });
+    }
+    if (task.status === "done" && (!Array.isArray(task.verification) || task.verification.length === 0)) {
+      findings.push({ severity: "HIGH", task: task.key, issue: "Done task has no verification evidence", fix: "Record commands, checks, or review evidence before marking done." });
+    }
+    for (const dep of task.dependsOn || []) {
+      const depTask = tasks.find((candidate) => candidate.key === dep);
+      if (!depTask) findings.push({ severity: "HIGH", task: task.key, issue: `Unknown dependency ${dep}`, fix: "Remove or correct dependsOn." });
+      if (depTask && task.status === "in-progress" && !["done", "skipped"].includes(depTask.status)) {
+        findings.push({ severity: "HIGH", task: task.key, issue: `Started before dependency ${dep} completed`, fix: "Finish dependency first or revise task graph." });
+      }
+    }
+  }
+  return findings;
+}
+function summarizeWorkflow(workflow) {
+  if (!workflow) return "No workflow state found.";
+  const tasks = workflow.tasks || [];
+  const done = tasks.filter((task) => task.status === "done" || task.status === "skipped").length;
+  const blocked = tasks.filter((task) => task.status === "blocked").length;
+  const current = tasks.find((task) => task.key === workflow.currentTaskKey);
+  const lines = [
+    `${workflow.title} (${workflow.id})`,
+    `Status: ${workflow.status} | Phase: ${workflow.phase} | Tasks: ${done}/${tasks.length} complete${blocked ? ` | Blocked: ${blocked}` : ""}`
+  ];
+  if (current) lines.push(`Current: ${current.key} ${current.title} -> ${current.owner} [${current.status}]`);
+  return lines.join("\n");
+}
+function parseOptions(args) {
+  const result = { _: [] };
+  for (const arg of args) {
+    if (!arg.startsWith("--")) {
+      result._.push(arg);
+      continue;
+    }
+    const [key, raw = "true"] = arg.slice(2).split("=");
+    result[key] = raw;
+  }
+  return result;
+}
+function splitList(value) {
+  if (!value) return [];
+  return String(value).split(",").map((item) => item.trim()).filter(Boolean);
+}
+function printStatus(root) {
+  const workflow = loadWorkflow(root);
+  console.log(summarizeWorkflow(workflow));
+  if (!workflow) return;
+  for (const task of workflow.tasks || []) {
+    console.log(`  ${task.key.padEnd(8)} ${task.status.padEnd(11)} ${task.phase.padEnd(8)} ${task.owner.padEnd(18)} ${task.title}`);
+  }
+}
+function printAlign(root) {
+  const workflow = loadWorkflow(root);
+  const findings = alignmentFindings(workflow);
+  if (workflow) console.log(summarizeWorkflow(workflow));
+  if (findings.length === 0) {
+    console.log("Alignment: PASS");
+    return;
+  }
+  console.log(`Alignment: ${findings.some((f) => f.severity === "HIGH") ? "FAIL" : "WARN"}`);
+  for (const finding of findings) {
+    const prefix = finding.task ? `${finding.severity} ${finding.task}` : finding.severity;
+    console.log(`  ${prefix}: ${finding.issue}`);
+    console.log(`    fix: ${finding.fix}`);
+  }
+}
+function approveWorkflow(root = process.cwd(), note = "Approved by Executive") {
+  const workflow = loadWorkflow(root);
+  if (!workflow) throw new Error("Workflow not found");
+  workflow.status = "in-progress";
+  workflow.updatedAt = now();
+  const phase = workflow.phase;
+  if (workflow.phases[phase]) {
+    workflow.phases[phase].status = "executive-approved";
+    if (!workflow.phases[phase].notes) workflow.phases[phase].notes = [];
+    workflow.phases[phase].notes.push({ date: now(), text: note });
+  }
+  saveWorkflow(root, workflow);
+  return workflow;
+}
+function approveTask(root = process.cwd(), key, note = "Approved by Executive") {
+  const workflow = loadWorkflow(root);
+  if (!workflow) throw new Error("Workflow not found");
+  const task = workflow.tasks.find((t) => t.key === key);
+  if (!task) throw new Error(`Task ${key} not found`);
+  task.status = "todo";
+  if (!task.notes) task.notes = [];
+  task.notes.push({ date: now(), text: note });
+  workflow.updatedAt = now();
+  saveWorkflow(root, workflow);
+  return workflow;
+}
+function runWorkflowCli(argv = process.argv.slice(2), root = process.cwd()) {
+  const [command = "status", ...rest] = argv;
+  const options = parseOptions(rest);
+  if (command === "init") {
+    const title = options._.join(" ") || options.title || "Untitled workflow";
+    const { workflow, created } = initWorkflow(root, title);
+    console.log(`${created ? "Created" : "Existing"} .cx/workflow.json`);
+    console.log(summarizeWorkflow(workflow));
+    return;
+  }
+  if (command === "status") {
+    printStatus(root);
+    return;
+  }
+  if (command === "add") {
+    const title = options.title || options._.join(" ");
+    if (!title) throw new Error('Usage: construct workflow add --title="..." [--phase=implement] [--owner=cx-engineer]');
+    const workflow = addTask(root, {
+      title,
+      phase: options.phase,
+      owner: options.owner,
+      files: splitList(options.files),
+      readFirst: splitList(options.readFirst),
+      doNotChange: splitList(options.doNotChange),
+      acceptanceCriteria: splitList(options.acceptance),
+      verification: splitList(options.verification),
+      dependsOn: splitList(options.dependsOn),
+      tokenBudget: options.tokenBudget ? Number(options.tokenBudget) : void 0
+    });
+    console.log("Task added.");
+    console.log(summarizeWorkflow(workflow));
+    return;
+  }
+  if (command === "from-plan") {
+    const file = options._[0] || options.file;
+    if (!file) throw new Error("Usage: construct workflow from-plan plan.md [--phase=implement] [--owner=cx-engineer]");
+    const markdown = fs15.readFileSync(path23.resolve(root, file), "utf8");
+    const { workflow, count } = addTasksFromPlan(root, markdown, {
+      phase: options.phase,
+      owner: options.owner,
+      readFirst: splitList(options.readFirst),
+      doNotChange: splitList(options.doNotChange),
+      acceptanceCriteria: splitList(options.acceptance),
+      workflowTitle: options.title
+    });
+    console.log(`Imported ${count} task${count === 1 ? "" : "s"} from ${file}.`);
+    console.log(summarizeWorkflow(workflow));
+    return;
+  }
+  if (command === "task") {
+    const key = options.task || options.key || options._[0];
+    if (!key) throw new Error('Usage: construct workflow task todo:1 --status=in-progress [--note="..."]');
+    const workflow = updateTask(root, key, {
+      status: options.status,
+      owner: options.owner,
+      phase: options.phase,
+      note: options.note,
+      verification: options.verification ? splitList(options.verification) : void 0,
+      overlays: options.overlays ? splitList(options.overlays) : void 0,
+      challengeRequired: options.challengeRequired !== void 0 ? options.challengeRequired === "true" : void 0,
+      challengeStatus: options.challengeStatus !== void 0 ? options.challengeStatus : void 0
+    });
+    console.log("Task updated.");
+    console.log(summarizeWorkflow(workflow));
+    return;
+  }
+  if (command === "phase") {
+    const phase = options.phase || options._[0];
+    if (!phase) throw new Error("Usage: construct workflow phase implement [--status=in-progress]");
+    const workflow = transitionPhase(root, phase, options.status || "in-progress");
+    console.log("Phase updated.");
+    console.log(summarizeWorkflow(workflow));
+    return;
+  }
+  if (command === "align") {
+    printAlign(root);
+    return;
+  }
+  if (command === "approve") {
+    const workflow = approveWorkflow(root, options.note);
+    console.log("Workflow approved by executive.");
+    console.log(summarizeWorkflow(workflow));
+    return;
+  }
+  if (command === "approve-task") {
+    const key = options.task || options.key || options._[0];
+    const workflow = approveTask(root, key, options.note);
+    console.log(`Task ${key} approved by executive.`);
+    console.log(summarizeWorkflow(workflow));
+    return;
+  }
+  throw new Error(`Unknown workflow subcommand: ${command}`);
+}
+var PHASES, VALID_STATUS;
+var init_workflow_state = __esm({
+  "lib/workflow-state.mjs"() {
+    init_orchestration_policy();
+    PHASES = ["research", "plan", "implement", "validate", "operate"];
+    VALID_STATUS = /* @__PURE__ */ new Set(["todo", "in-progress", "blocked", "blocked_needs_user", "blocked_needs_executive", "done", "skipped"]);
+    if (import.meta.url === `file://${process.argv[1]}`) {
+      try {
+        runWorkflowCli(process.argv.slice(2), process.cwd());
+      } catch (error) {
+        console.error(error.message);
+        process.exit(1);
+      }
+    }
+  }
+});
+
+// lib/oracle/org-graph.mjs
+import path24 from "node:path";
+import { fileURLToPath as fileURLToPath8 } from "node:url";
+var MODULE_DIR6, PACKAGE_ROOT;
+var init_org_graph = __esm({
+  "lib/oracle/org-graph.mjs"() {
+    init_workflow_state();
+    init_validate2();
+    init_host_disposition();
+    MODULE_DIR6 = path24.dirname(fileURLToPath8(import.meta.url));
+    PACKAGE_ROOT = path24.resolve(MODULE_DIR6, "../..");
+  }
+});
+
+// lib/oracle/read-model.mjs
+var RECENT_MS, CENSUS_STALE_MS;
+var init_read_model = __esm({
+  "lib/oracle/read-model.mjs"() {
+    init_parity();
+    init_validate2();
+    init_host_disposition();
+    init_detect_existing_structure();
+    init_org_graph();
+    RECENT_MS = 24 * 60 * 60 * 1e3;
+    CENSUS_STALE_MS = 7 * 24 * 60 * 60 * 1e3;
+  }
+});
+
+// lib/oracle/routing.mjs
+var init_routing = __esm({
+  "lib/oracle/routing.mjs"() {
+  }
+});
+
+// lib/oracle/synthesize.mjs
+var init_synthesize = __esm({
+  "lib/oracle/synthesize.mjs"() {
+    init_org_graph();
+    init_routing();
+  }
+});
+
+// lib/oracle/policy.mjs
+var init_policy = __esm({
+  "lib/oracle/policy.mjs"() {
+  }
+});
+
+// lib/install/stage-project.mjs
+import { spawnSync as spawnSync3 } from "node:child_process";
+import { existsSync as existsSync5, copyFileSync, writeFileSync as writeFileSync4, mkdirSync as mkdirSync4, chmodSync } from "node:fs";
+import path25 from "node:path";
+function stageProjectAdapters({ projectRoot, packageRoot, pkgVersion, log, hosts = null }) {
+  if (!projectRoot) throw new Error("stageProjectAdapters: projectRoot is required");
+  if (!packageRoot) throw new Error("stageProjectAdapters: packageRoot is required");
+  const emit2 = typeof log === "function" ? log : () => {
+  };
+  const templateDir = path25.join(packageRoot, "templates", "distribution");
+  const syncScript = path25.join(packageRoot, "scripts", "sync-specialists.mjs");
+  ensureProjectLauncher({ projectRoot, templateDir, pkgVersion });
+  emit2(`staged .construct/ launcher in ${projectRoot}`);
+  if (!existsSync5(syncScript)) {
+    emit2(`sync-specialists.mjs not found at ${syncScript}; skipping adapter sync`);
+    return { staged: true, synced: false };
+  }
+  const syncArgs = [syncScript, "--project"];
+  if (Array.isArray(hosts) && hosts.length > 0) syncArgs.push(`--hosts=${hosts.join(",")}`);
+  emit2(`syncing project adapters into ${projectRoot}/.claude/`);
+  const result = spawnSync3(process.execPath, syncArgs, {
+    cwd: projectRoot,
+    stdio: "inherit",
+    env: { ...process.env, CONSTRUCT_PROJECT_ROOT: projectRoot }
+  });
+  if (result.status !== 0) {
+    emit2(`sync failed (exit ${result.status}); project left in a clean state`);
+    return { staged: true, synced: false };
+  }
+  return { staged: true, synced: true };
+}
+function ensureProjectLauncher({ projectRoot, templateDir, pkgVersion }) {
+  const dotConstruct = path25.join(projectRoot, ".construct");
+  mkdirSync4(dotConstruct, { recursive: true });
+  mkdirSync4(path25.join(dotConstruct, "cache", "bin"), { recursive: true });
+  const versionPath = path25.join(dotConstruct, "version");
+  if (!existsSync5(versionPath) && pkgVersion) {
+    writeFileSync4(versionPath, pkgVersion + "\n");
+  }
+  const copies = [
+    ["run.mjs", 420],
+    ["bootstrap.sh", 493],
+    ["bootstrap.ps1", 420]
+  ];
+  for (const [name, mode] of copies) {
+    const src = path25.join(templateDir, name);
+    const dst = path25.join(dotConstruct, name);
+    if (!existsSync5(src)) continue;
+    copyFileSync(src, dst);
+    try {
+      chmodSync(dst, mode);
+    } catch {
+    }
+  }
+}
+var init_stage_project = __esm({
+  "lib/install/stage-project.mjs"() {
+  }
+});
+
+// lib/adapters-sync.mjs
+import path26 from "node:path";
+import { fileURLToPath as fileURLToPath9 } from "node:url";
+function resolveAdapterHosts({ forceAll = false, extra = [] } = {}) {
+  if (forceAll) return ["claude", "opencode", "codex", "vscode", "cursor"];
+  const hosts = new Set(extra);
+  for (const entry of detectHostCapabilities()) {
+    if (entry.availability !== "installed") continue;
+    const id = HOST_ID_MAP[entry.host];
+    if (id) hosts.add(id);
+  }
+  if (hosts.size === 0) hosts.add("claude");
+  return [...hosts];
+}
+function syncProjectAdapters({
+  projectRoot = process.cwd(),
+  packageRoot = PKG_ROOT,
+  hosts = null,
+  log = () => {
+  }
+} = {}) {
+  const resolvedHosts = hosts ?? resolveAdapterHosts({ forceAll: isConstructPackageRepo(projectRoot) });
+  return stageProjectAdapters({
+    projectRoot,
+    packageRoot,
+    pkgVersion: null,
+    log,
+    hosts: resolvedHosts
+  });
+}
+function runAdaptersScript({ cwd = process.cwd(), hosts = null } = {}) {
+  const result = syncProjectAdapters({ projectRoot: cwd, hosts, log: (m) => process.stdout.write(`[adapters] ${m}
+`) });
+  return result.synced ? 0 : 1;
+}
+var MODULE_DIR7, PKG_ROOT, HOST_ID_MAP;
+var init_adapters_sync = __esm({
+  "lib/adapters-sync.mjs"() {
+    init_host_capabilities();
+    init_host_disposition();
+    init_stage_project();
+    MODULE_DIR7 = path26.dirname(fileURLToPath9(import.meta.url));
+    PKG_ROOT = path26.resolve(MODULE_DIR7, "..");
+    HOST_ID_MAP = {
+      "Claude Code": "claude",
+      OpenCode: "opencode",
+      Codex: "codex",
+      "VS Code": "vscode",
+      Cursor: "cursor",
+      Copilot: "copilot"
+    };
+    if (import.meta.url === `file://${process.argv[1]}`) {
+      const args = new Set(process.argv.slice(2));
+      const forceAll = args.has("--all-hosts");
+      const hosts = forceAll ? resolveAdapterHosts({ forceAll: true }) : null;
+      const code = runAdaptersScript({ cwd: process.cwd(), hosts });
+      process.exit(code);
+    }
+  }
+});
+
+// lib/oracle/verdicts.mjs
+import fs16 from "node:fs";
+import path27 from "node:path";
+function verdictsDir(projectDir) {
+  return path27.join(projectDir, ".cx", "oracle", "verdicts");
+}
+function readLatestVerdict(projectDir) {
+  const dir = verdictsDir(projectDir);
+  if (!fs16.existsSync(dir)) return null;
+  const files = fs16.readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
+  if (!files.length) return null;
+  try {
+    const data = JSON.parse(fs16.readFileSync(path27.join(dir, files[files.length - 1]), "utf8"));
+    return data.latest ?? data;
+  } catch {
+    return null;
+  }
+}
+var init_verdicts = __esm({
+  "lib/oracle/verdicts.mjs"() {
+  }
+});
+
+// lib/beads-lock.mjs
+import path28 from "node:path";
+import { fileURLToPath as fileURLToPath10 } from "node:url";
+var __dirname, ROOT_DIR2;
+var init_beads_lock = __esm({
+  "lib/beads-lock.mjs"() {
+    __dirname = path28.dirname(fileURLToPath10(import.meta.url));
+    ROOT_DIR2 = path28.resolve(__dirname, "..");
+  }
+});
+
+// lib/beads-optimistic.mjs
+import path29 from "node:path";
+import { fileURLToPath as fileURLToPath11 } from "node:url";
+var __dirname2;
+var init_beads_optimistic = __esm({
+  "lib/beads-optimistic.mjs"() {
+    __dirname2 = path29.dirname(fileURLToPath11(import.meta.url));
+  }
+});
+
+// lib/beads-client.mjs
+import path30 from "node:path";
+import { fileURLToPath as fileURLToPath12 } from "node:url";
+var __dirname3;
+var init_beads_client = __esm({
+  "lib/beads-client.mjs"() {
+    init_beads_lock();
+    init_beads_optimistic();
+    init_beads_lock();
+    init_beads_optimistic();
+    __dirname3 = path30.dirname(fileURLToPath12(import.meta.url));
+  }
+});
+
+// lib/oracle/issues.mjs
+var init_issues = __esm({
+  "lib/oracle/issues.mjs"() {
+    init_beads_client();
+    init_routing();
+  }
+});
+
+// lib/oracle/dispatch.mjs
+var init_dispatch = __esm({
+  "lib/oracle/dispatch.mjs"() {
+    init_routing();
+  }
+});
+
+// lib/storage/file-lock.mjs
+var init_file_lock = __esm({
+  "lib/storage/file-lock.mjs"() {
+  }
+});
+
+// lib/outcomes/record.mjs
+var init_record = __esm({
+  "lib/outcomes/record.mjs"() {
+    init_file_lock();
+    init_project_init_shared();
+  }
+});
+
+// lib/outcomes/aggregate.mjs
+var DAY_MS;
+var init_aggregate = __esm({
+  "lib/outcomes/aggregate.mjs"() {
+    init_record();
+    DAY_MS = 24 * 60 * 60 * 1e3;
+  }
+});
+
+// lib/roles/event-bus.mjs
+var init_event_bus = __esm({
+  "lib/roles/event-bus.mjs"() {
+    init_project_root();
+  }
+});
+
+// lib/roles/manifest.mjs
+import { dirname as dirname5, join as join6 } from "node:path";
+import { fileURLToPath as fileURLToPath13 } from "node:url";
+var __dirname4, MANIFEST_PATH;
+var init_manifest = __esm({
+  "lib/roles/manifest.mjs"() {
+    __dirname4 = dirname5(fileURLToPath13(import.meta.url));
+    MANIFEST_PATH = join6(__dirname4, "..", "..", "specialists", "role-manifests.json");
+  }
+});
+
+// lib/roles/router.mjs
+var init_router = __esm({
+  "lib/roles/router.mjs"() {
+    init_routing_tables();
+    init_manifest();
+  }
+});
+
+// lib/roles/gateway.mjs
+var DEFAULTS2;
+var init_gateway = __esm({
+  "lib/roles/gateway.mjs"() {
+    init_event_bus();
+    init_router();
+    init_beads_client();
+    DEFAULTS2 = {
+      thresholdHits: 2,
+      thresholdWindowMs: 10 * 60 * 1e3,
+      cooldownMs: 30 * 60 * 1e3,
+      rateCeilingPerHour: 3,
+      pendingTtlMs: 14 * 24 * 60 * 60 * 1e3
+    };
+  }
+});
+
+// lib/oracle/execute.mjs
+var init_execute = __esm({
+  "lib/oracle/execute.mjs"() {
+    init_adapters_sync();
+    init_host_disposition();
+    init_aggregate();
+    init_gateway();
+    init_validate2();
+    init_dispatch();
+    init_routing();
+  }
+});
+
+// lib/oracle/actions.mjs
+import fs17 from "node:fs";
+import path31 from "node:path";
+import { fileURLToPath as fileURLToPath14 } from "node:url";
+function pendingPath(projectDir) {
+  return path31.join(projectDir, ".cx", "oracle", "pending.jsonl");
+}
+function listPending(projectDir) {
+  const file = pendingPath(projectDir);
+  if (!fs17.existsSync(file)) return [];
+  return fs17.readFileSync(file, "utf8").split("\n").filter(Boolean).map((line) => {
+    try {
+      return JSON.parse(line);
+    } catch {
+      return null;
+    }
+  }).filter(Boolean);
+}
+var MODULE_DIR8;
+var init_actions = __esm({
+  "lib/oracle/actions.mjs"() {
+    init_read_model();
+    init_synthesize();
+    init_policy();
+    init_host_disposition();
+    init_adapters_sync();
+    init_verdicts();
+    init_issues();
+    init_dispatch();
+    init_execute();
+    init_routing();
+    MODULE_DIR8 = path31.dirname(fileURLToPath14(import.meta.url));
+  }
+});
+
+// lib/oracle/index.mjs
+import fs18 from "node:fs";
+import path32 from "node:path";
+import { homedir as homedir3 } from "node:os";
+function runtimeDir(homeDir2 = homedir3()) {
+  return path32.join(homeDir2, ".cx", "runtime", "oracle");
+}
+function lastTickPath(homeDir2 = homedir3()) {
+  return path32.join(runtimeDir(homeDir2), "last-tick.json");
+}
+function readLastTick(homeDir2 = homedir3()) {
+  const file = lastTickPath(homeDir2);
+  if (!fs18.existsSync(file)) return null;
+  try {
+    return JSON.parse(fs18.readFileSync(file, "utf8"));
+  } catch {
+    return null;
+  }
+}
+var init_oracle = __esm({
+  "lib/oracle/index.mjs"() {
+    init_contract();
+    init_actions();
+  }
+});
+
+// lib/intake/session-prelude.mjs
+var session_prelude_exports = {};
+__export(session_prelude_exports, {
+  buildBrokerStatusLine: () => buildBrokerStatusLine,
+  buildIntakePrelude: () => buildIntakePrelude,
+  buildOraclePrelude: () => buildOraclePrelude,
+  buildSessionPrelude: () => buildSessionPrelude,
+  formatOracleDockDetail: () => formatOracleDockDetail,
+  readOracleDockState: () => readOracleDockState
+});
+import { homedir as osHomedir } from "node:os";
+function buildIntakePrelude({ cwd, env = process.env } = {}) {
+  if (!cwd) return "";
+  try {
+    const queue = createIntakeQueue(cwd, env);
+    const pending = queue.listPending();
+    if (!pending.length) return "";
+    const { intakeQueueLabel, signalNoun } = getRebrand(cwd);
+    const recent = pending.slice(-3).map((p) => {
+      const src = p.intake?.sourcePath || p.id;
+      return `- ${formatTriageLine(src, p.triage)}`;
+    });
+    const heading = intakeQueueLabel.replace(/\s+queue$/i, "");
+    return `
+## Pending ${heading} (${pending.length})
+${recent.join("\n")}
+Each packet at \`.cx/intake/pending/<id>.json\` carries the new ${signalNoun}, a triage block (intakeType, rdStage, primaryOwner, recommendedChain, recommendedAction, risk), related existing docs, and an excerpt. Process via the recommended chain, then close via \`construct intake done <id>\`.
+`;
+  } catch {
+    return "";
+  }
+}
+function buildBrokerStatusLine({ env = process.env } = {}) {
+  const active = isBrokered(env);
+  const mode = env?.CONSTRUCT_DEPLOYMENT_MODE || "solo";
+  if (!active) {
+    return `MCP broker: off \xB7 deployment mode: ${mode} (set CONSTRUCT_MCP_BROKER=on to engage in solo mode).`;
+  }
+  return `MCP broker: on \xB7 deployment mode: ${mode}. High-risk actions may return \`ApprovalRequired\` \u2014 surface the question to the user; never bypass.`;
+}
+function buildSessionPrelude({ cwd, env = process.env } = {}) {
+  const intake = buildIntakePrelude({ cwd, env });
+  const broker = buildBrokerStatusLine({ env });
+  const oracle = buildOraclePrelude({ cwd, env });
+  if (!intake && !broker && !oracle) return "";
+  const parts = [];
+  if (intake) parts.push(intake.trim());
+  if (oracle) parts.push(oracle.trim());
+  if (broker) parts.push(broker);
+  return parts.join("\n\n");
+}
+function buildOraclePrelude({ cwd, env = process.env, homeDir: homeDir2 } = {}) {
+  if (!cwd) return "";
+  if (env.CONSTRUCT_ORACLE === "off" || env.CONSTRUCT_ORACLE === "0") return "";
+  try {
+    const home = homeDir2 ?? osHomedir();
+    const last = readLastTick(home);
+    const verdict = readLatestVerdict(cwd);
+    const pending = listPending(cwd).filter((p) => p.status === "pending");
+    const v = verdict?.verdict ?? last?.verdict ?? "unknown";
+    if (v === "healthy" && pending.length === 0) return "";
+    const lines = [`
+## Oracle overseer \xB7 verdict: **${v}**`];
+    const gapSource = verdict?.gaps ?? last?.gaps ?? [];
+    const top = gapSource.filter((g) => g.severity === "high").slice(0, 3);
+    for (const g of top) lines.push(`- [${g.severity}] ${g.id}: ${g.detail}`);
+    if (pending.length) {
+      lines.push(`Pending approvals (${pending.length}): \`construct oracle pending\``);
+    }
+    lines.push("Review: `construct oracle review` \xB7 Approve: `construct oracle approve <id>`\n");
+    return lines.join("\n");
+  } catch {
+    return "";
+  }
+}
+function readOracleDockState({ cwd, env = process.env, homeDir: homeDir2 } = {}) {
+  if (!cwd || env.CONSTRUCT_ORACLE === "off" || env.CONSTRUCT_ORACLE === "0") {
+    return { visible: false, verdict: null, pendingCount: 0, topGaps: [], summary: "" };
+  }
+  try {
+    const home = homeDir2 ?? osHomedir();
+    const last = readLastTick(home);
+    const verdictDoc = readLatestVerdict(cwd);
+    const pending = listPending(cwd).filter((p) => p.status === "pending");
+    const verdict = verdictDoc?.verdict ?? last?.verdict ?? "unknown";
+    const gapSource = verdictDoc?.gaps ?? last?.gaps ?? [];
+    const topGaps = gapSource.filter((g) => g.severity === "high").slice(0, 3);
+    const visible = verdict !== "healthy" || pending.length > 0;
+    const parts = [`verdict ${verdict}`];
+    if (pending.length) parts.push(`${pending.length} pending`);
+    return {
+      visible,
+      verdict,
+      pendingCount: pending.length,
+      topGaps,
+      summary: parts.join(" \xB7 ")
+    };
+  } catch {
+    return { visible: false, verdict: null, pendingCount: 0, topGaps: [], summary: "" };
+  }
+}
+function formatOracleDockDetail(state) {
+  if (!state?.visible) return "Oracle: healthy \u2014 no pending approvals.";
+  const lines = [`Oracle overseer \xB7 ${state.summary}`];
+  for (const g of state.topGaps || []) {
+    lines.push(`  [${g.severity}] ${g.id}: ${g.detail}`);
+  }
+  if (state.pendingCount > 0) {
+    lines.push("  Pending: construct oracle pending");
+  }
+  lines.push("  Review: construct oracle review");
+  return lines.join("\n");
+}
+var init_session_prelude = __esm({
+  "lib/intake/session-prelude.mjs"() {
+    init_queue();
+    init_classify();
+    init_broker();
+    init_rebrand();
+    init_oracle();
+    init_actions();
+    init_verdicts();
   }
 });
 
@@ -1809,8 +5419,8 @@ async function runTurnWithFallback({
 
 // lib/chat/export.mjs
 init_project_root();
-import fs8 from "node:fs";
-import path8 from "node:path";
+import fs10 from "node:fs";
+import path11 from "node:path";
 
 // lib/chat/tui/turn-present.mjs
 function summarizeToolCalls(tools = []) {
@@ -1888,8 +5498,8 @@ function toolGroupLabel(group) {
 // lib/chat/export.mjs
 function exportDir({ cwd }) {
   const base = resolveProjectScopedPath("chat-sessions", { cwd, ensureDir: true });
-  const dir = path8.join(base, "exports");
-  fs8.mkdirSync(dir, { recursive: true });
+  const dir = path11.join(base, "exports");
+  fs10.mkdirSync(dir, { recursive: true });
   return dir;
 }
 function turnToMarkdown(turn) {
@@ -1909,14 +5519,14 @@ function exportTurns(turnBlocks, { scope = "last", cwd = process.cwd() } = {}) {
   else if (scope === "turn" && turns.length) selected = [turns[turns.length - 1]];
   const body = selected.map(turnToMarkdown).join("\n---\n\n");
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-  const file = path8.join(exportDir({ cwd }), `${stamp}-${scope}-answer.md`);
-  fs8.writeFileSync(file, `${body}
+  const file = path11.join(exportDir({ cwd }), `${stamp}-${scope}-answer.md`);
+  fs10.writeFileSync(file, `${body}
 `, "utf8");
   return { ok: true, path: file, count: selected.length };
 }
 
 // lib/chat/config.mjs
-import fs9 from "node:fs";
+import fs11 from "node:fs";
 init_project_root();
 var LAYER_KEYS = ["thinking", "path", "specialists", "tools", "observability"];
 var PERMISSION_MODES = ["ask", "allow_once", "allow_always", "reject"];
@@ -1941,7 +5551,7 @@ function saveChatConfig(config, { cwd = process.cwd() } = {}) {
     if (config[key] == null) continue;
     persisted[key] = key === "layers" ? { ...config.layers } : key === "ui" ? { ...config.ui } : config[key];
   }
-  fs9.writeFileSync(target, `${JSON.stringify(persisted, null, 2)}
+  fs11.writeFileSync(target, `${JSON.stringify(persisted, null, 2)}
 `);
   return target;
 }
@@ -2031,6 +5641,7 @@ function applySessionSetting(session, layers, key, rawValue, { cwd, hostId = "co
 // lib/chat/model-picker.mjs
 init_secret_resolver();
 init_model_router();
+init_catalog();
 init_models();
 
 // lib/chat/list-picker.mjs
@@ -2179,13 +5790,16 @@ async function loadModelPickerItems(_driver, { env = process.env, currentModel =
   seen.add(FREE_ROUTER_ITEM_ID);
   if (hasOpenRouter) {
     try {
+      await refreshLiveOpenRouterCatalog({ env });
       const apiKey = resolveFirstSecret(["OPENROUTER_API_KEY", "OPEN_ROUTER_API_KEY"], { env });
       if (!apiKey) throw new Error("missing");
       const { pollFreeModels: pollFreeModels2, topForTier: topForTier2 } = await Promise.resolve().then(() => (init_model_free_selector(), model_free_selector_exports));
+      const { isChatModelAvailable: isChatModelAvailable2 } = await Promise.resolve().then(() => (init_model_router(), model_router_exports));
       const freeLive = await pollFreeModels2(apiKey);
       for (const f of topForTier2(freeLive, "standard", FREE_PICKER_LIMIT)) {
         const id = f.id?.startsWith("openrouter/") ? f.id : `openrouter/${f.id}`;
         if (seen.has(id)) continue;
+        if (!isChatModelAvailable2(id, { env }).ok) continue;
         seen.add(id);
         items.push(catalogItem({
           id,
@@ -2269,13 +5883,14 @@ var HELP = [
   ["/settings", "show current settings"],
   ["/layers", "show transparency layers"],
   ["/usage", "show session token and cost breakdown"],
+  ["/oracle", "show Oracle overseer verdict and pending approvals"],
   ["/host", "show the active host"],
   ["/clear", "clear the screen"],
   ["/inspect", "toggle turn inspector panel (on/off/auto)"],
   ["/exit", "quit"]
 ];
 function ask(rl, question) {
-  return new Promise((resolve) => rl.question(question, (answer) => resolve(answer)));
+  return new Promise((resolve4) => rl.question(question, (answer) => resolve4(answer)));
 }
 function sortBySuitability(models) {
   return [...models].sort((a, b) => Number(b.suitable !== false) - Number(a.suitable !== false) || Number(Boolean(b.isProviderDefault)) - Number(Boolean(a.isProviderDefault)));
@@ -2355,6 +5970,15 @@ function createCommands({ driver, host, hostId = host, version, cwd = process.cw
       case "/usage":
         output.write(formatUsagePanel(session.usage, colors) + "\n");
         break;
+      case "/oracle": {
+        const { readOracleDockState: readOracleDockState2, formatOracleDockDetail: formatOracleDockDetail2 } = await Promise.resolve().then(() => (init_session_prelude(), session_prelude_exports));
+        const state = readOracleDockState2({ cwd, env: process.env });
+        output.write(`${colors.bold}oracle${colors.reset}
+`);
+        output.write(`${formatOracleDockDetail2(state)}
+`);
+        break;
+      }
       case "/inspect": {
         session.inspectorForced = session.inspectorForced === true ? false : session.inspectorForced === false ? null : true;
         const label = session.inspectorForced === true ? "on" : session.inspectorForced === false ? "off" : "auto";
@@ -2575,8 +6199,8 @@ function sourceFromToolEvent(event) {
   if (!event) return null;
   const title = event.title || event.kind || "";
   if (title === "read" || title === "grep" || title === "glob") {
-    const path9 = event.input?.path || event.input?.pattern || event.input?.glob;
-    if (path9) return { tool: title, ref: String(path9) };
+    const path33 = event.input?.path || event.input?.pattern || event.input?.glob;
+    if (path33) return { tool: title, ref: String(path33) };
   }
   if (title === "construct_tool") {
     const name = event.input?.name;
@@ -2697,6 +6321,10 @@ var DARK_SEMANTIC = Object.freeze({
   muted: { ink: "gray", code: "90" },
   accent: { ink: "cyan", code: "36" },
   accentAlt: { ink: "magenta", code: "35" },
+  brandAccent: { ink: "cyanBright", code: "96" },
+  surface: { ink: "gray", code: "90" },
+  surfaceMuted: { ink: "gray", code: "90" },
+  border: { ink: "blue", code: "34" },
   ok: { ink: "green", code: "32" },
   warn: { ink: "yellow", code: "33" },
   danger: { ink: "red", code: "31" },
@@ -2707,6 +6335,10 @@ var LIGHT_SEMANTIC = Object.freeze({
   muted: { ink: "gray", code: "90" },
   accent: { ink: "blue", code: "34" },
   accentAlt: { ink: "magenta", code: "35" },
+  brandAccent: { ink: "blue", code: "34" },
+  surface: { ink: "gray", code: "90" },
+  surfaceMuted: { ink: "gray", code: "90" },
+  border: { ink: "blue", code: "34" },
   ok: { ink: "green", code: "32" },
   warn: { ink: "rgb(161,98,7)", code: "33" },
   danger: { ink: "red", code: "31" },
@@ -2729,6 +6361,7 @@ var UNICODE_GLYPHS = {
   gutter: "\u2502",
   block: "\u2588",
   track: "\u2591",
+  ruleHeavy: "\u2550",
   toolDone: "\u2713",
   toolFail: "\u2717",
   toolBusy: "\u25B8",
@@ -2742,6 +6375,7 @@ var ASCII_GLYPHS = {
   gutter: "|",
   block: "#",
   track: "-",
+  ruleHeavy: "=",
   toolDone: "+",
   toolFail: "x",
   toolBusy: ">",
@@ -2886,11 +6520,13 @@ function stripInline(s) {
 }
 
 // apps/chat/tui/turn-ui.jsx
+init_session_prelude();
 import { jsx, jsxs } from "react/jsx-runtime";
 var LABEL_WIDTH = 10;
-function Rule({ width, color, palette: palette2 }) {
+function Rule({ width, color, palette: palette2, glyphs: glyphs2, heavy = false }) {
   const muted = color || palette2?.muted || "gray";
-  return /* @__PURE__ */ jsx(Text, { color: muted, children: "\u2500".repeat(Math.max(1, width)) });
+  const char = heavy && glyphs2?.ruleHeavy ? glyphs2.ruleHeavy : "\u2500";
+  return /* @__PURE__ */ jsx(Text, { color: muted, children: char.repeat(Math.max(1, width)) });
 }
 function TurnSection({ title, width, palette: palette2, glyphs: glyphs2, children, marginTop = 1, marginBottom = 1 }) {
   if (!children) return null;
@@ -3049,7 +6685,9 @@ function SessionDock({
   permissionMode,
   ctx,
   spin,
-  theme
+  theme,
+  cwd,
+  modelNotice
 }) {
   const { palette: palette2, glyphs: glyphs2 } = theme;
   const u = session.usage;
@@ -3062,12 +6700,20 @@ function SessionDock({
   if (u.cost?.amount > 0) ledger.push(["cost", `~$${u.cost.amount.toFixed(u.cost.amount < 1 ? 3 : 2)}`]);
   const ctxMeter = ctx?.size ? meter(ctx.used, ctx.size, Math.max(10, width - 8), theme) : null;
   const { label } = formatModelHeader({ model, modelMode, savedModel });
-  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", width, borderStyle: "round", borderColor: palette2.accent, paddingX: 1, children: [
-    /* @__PURE__ */ jsx(Text, { color: palette2.accent, bold: true, children: `${glyphs2.brand} session` }),
+  const oracle = readOracleDockState({ cwd, env: process.env });
+  return /* @__PURE__ */ jsxs(Box, { flexDirection: "column", width, borderStyle: "round", borderColor: palette2.border || palette2.accent, paddingX: 1, children: [
+    /* @__PURE__ */ jsx(Text, { color: palette2.brandAccent || palette2.accent, bold: true, children: `${glyphs2.brand} session` }),
+    /* @__PURE__ */ jsx(Rule, { width: width - 2, palette: palette2, glyphs: glyphs2, heavy: true }),
     /* @__PURE__ */ jsxs(PanelSection, { title: "model", marginTop: 1, palette: palette2, children: [
       /* @__PURE__ */ jsx(Text, { bold: true, color: palette2.text, wrap: "wrap", children: label || "(none)" }),
+      modelNotice ? /* @__PURE__ */ jsx(Text, { color: palette2.warn, wrap: "wrap", children: modelNotice }) : null,
       sandbox || permissionMode ? /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: [sandbox, permissionMode].filter(Boolean).join(` ${glyphs2.gutter} `) }) : null
     ] }),
+    oracle.visible ? /* @__PURE__ */ jsxs(PanelSection, { title: "oracle", palette: palette2, children: [
+      /* @__PURE__ */ jsx(Text, { color: palette2.warn, wrap: "wrap", children: oracle.summary }),
+      oracle.topGaps.slice(0, 2).map((g) => /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: `${g.id}: ${g.detail}` }, g.id)),
+      /* @__PURE__ */ jsx(Text, { color: palette2.muted, children: "/oracle for detail" })
+    ] }) : null,
     /* @__PURE__ */ jsx(PanelSection, { title: "layers", palette: palette2, children: /* @__PURE__ */ jsx(Text, { color: palette2.muted, wrap: "wrap", children: LAYER_KEYS.map((k) => `${k}=${layers?.[k] ? "on" : "off"}`).join(`  ${glyphs2.gutter}  `) }) }),
     /* @__PURE__ */ jsx(PanelSection, { title: "context", palette: palette2, children: ctxMeter ? /* @__PURE__ */ jsxs(Box, { flexDirection: "column", children: [
       /* @__PURE__ */ jsx(Text, { color: ratioColor(ctxMeter.ratio, theme), children: ctxMeter.bar }),
@@ -3307,8 +6953,7 @@ function HeaderBar({ cols, session, sandbox, permissionMode, working, spin }) {
           /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, children: `   ${sandbox}  ${glyphs2.gutter}  ${permissionMode}  ` }),
           /* @__PURE__ */ jsx3(Text3, { color: working ? palette2.warn : palette2.ok, children: working ? spin : glyphs2.dot })
         ] }),
-        isRouter ? /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, wrap: "wrap", children: "free-router mode \u2014 re-picks on launch and on failure" }) : null,
-        session.modelNotice ? /* @__PURE__ */ jsx3(Text3, { color: palette2.warn, wrap: "wrap", children: session.modelNotice }) : null
+        isRouter ? /* @__PURE__ */ jsx3(Text3, { color: palette2.muted, wrap: "wrap", children: "free-router mode \u2014 re-picks on launch and on failure" }) : null
       ] })
     ] }),
     /* @__PURE__ */ jsx3(Rule, { width: cols, palette: palette2 })
@@ -3418,7 +7063,12 @@ function App({
 }) {
   const { exit } = useApp();
   const { stdout } = useStdout();
-  const cols = stdout?.columns || 100;
+  const [cols, setCols] = useState(stdout?.columns || 100);
+  useEffect(() => {
+    const onResize = () => setCols(stdout?.columns || 100);
+    stdout?.on?.("resize", onResize);
+    return () => stdout?.off?.("resize", onResize);
+  }, [stdout]);
   const [uiEpoch, setUiEpoch] = useState(0);
   const theme = useMemo(() => createTheme({
     ascii: Boolean(session.ui?.ascii),
@@ -3567,12 +7217,12 @@ function App({
   }, [cwd, env, layers, listPicker, openModelPicker, session]);
   useEffect(() => {
     if (permissionBridge) {
-      permissionBridge.prompt = (req) => new Promise((resolve) => {
+      permissionBridge.prompt = (req) => new Promise((resolve4) => {
         setListPicker(createListPickerState({
           kind: "permission",
           title: `Allow "${req.tool || "tool"}"?`,
           items: PERMISSION_PICKER_ITEMS,
-          context: { resolve, req }
+          context: { resolve: resolve4, req }
         }));
       });
       return () => {
@@ -3889,7 +7539,9 @@ function App({
           permissionMode: session.permissionMode,
           ctx,
           spin,
-          theme
+          theme,
+          cwd,
+          modelNotice: session.modelNotice || notice || ""
         }
       )
     ] }),
@@ -3899,7 +7551,7 @@ function App({
         cols,
         input,
         working,
-        notice,
+        notice: notice && notice !== session.modelNotice ? notice : "",
         permissionActive: listPicker?.kind === "permission",
         listPickerActive: Boolean(listPicker),
         pickerQuery: listPicker?.query || "",

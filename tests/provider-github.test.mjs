@@ -7,9 +7,9 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { runContractTests } from '../providers/lib/contract-tests.mjs';
-import provider from '../providers/github/index.mjs';
-import { CapabilityNotSupported } from '../providers/lib/errors.mjs';
+import { runContractTests } from '../lib/providers/contract/contract-tests.mjs';
+import provider from '../lib/providers/contract/adapters/github/index.mjs';
+import { CapabilityNotSupported } from '../lib/providers/contract/errors.mjs';
 
 runContractTests(provider);
 

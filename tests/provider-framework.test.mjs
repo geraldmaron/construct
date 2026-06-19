@@ -4,15 +4,15 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { validate, hasCapability, CAPABILITIES } from '../providers/lib/interface.mjs';
-import { ProviderRegistry } from '../providers/lib/registry.mjs';
+import { validate, hasCapability, CAPABILITIES } from '../lib/providers/contract/interface.mjs';
+import { ProviderRegistry } from '../lib/providers/contract/registry.mjs';
 import {
   ProviderError,
   CapabilityNotSupported,
   AuthError,
   RateLimitError,
   NotFoundError,
-} from '../providers/lib/errors.mjs';
+} from '../lib/providers/contract/errors.mjs';
 
 // ── Minimal valid provider fixture ──────────────────────────────────────
 

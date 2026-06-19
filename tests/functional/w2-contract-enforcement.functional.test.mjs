@@ -84,7 +84,7 @@ test('flags an output.schema path that does not exist on disk', () => {
         producer: 'construct',
         consumer: 'cx-architect',
         input: { shape: 'task-packet' },
-        output: { schema: 'lib/schemas/never-existed.json', type: 'mystery' },
+        output: { schema: 'lib/contract-schemas/never-existed.json', type: 'mystery' },
       }],
     });
     const r = validateContractsFile({

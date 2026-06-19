@@ -40,7 +40,7 @@
         "mustContain": ["goal", "intent", "workCategory", "riskFlags", "acceptanceCriteria"]
       },
       "output": {
-        "schema": "lib/schemas/decision.json",
+        "schema": "lib/contract-schemas/decision.json",
         "type": "decision"
       },
       "preconditions": [
@@ -63,7 +63,7 @@
         "mustContain": ["question", "method", "sources", "findings", "confidence"]
       },
       "output": {
-        "schema": "lib/schemas/decision.json",
+        "schema": "lib/contract-schemas/decision.json",
         "type": "decision"
       },
       "preconditions": [
@@ -117,7 +117,7 @@
         "mustContain": ["problem", "functionalRequirements", "nonFunctionalRequirements", "acceptanceCriteria", "constraints"]
       },
       "output": {
-        "schema": "lib/schemas/decision.json",
+        "schema": "lib/contract-schemas/decision.json",
         "type": "decision"
       },
       "preconditions": [
@@ -179,11 +179,11 @@
       "consumer": "cx-engineer",
       "trigger": { "intent": ["implementation", "fix"] },
       "input": {
-        "schema": "lib/schemas/decision.json",
+        "schema": "lib/contract-schemas/decision.json",
         "mustContain": ["goal", "approach", "tasks", "acceptanceCriteria"]
       },
       "output": {
-        "schema": "lib/schemas/implementation.json",
+        "schema": "lib/contract-schemas/implementation.json",
         "type": "implementation"
       },
       "preconditions": [
@@ -202,11 +202,11 @@
       "consumer": "cx-ai-engineer",
       "trigger": { "riskFlags": ["ai"], "intent": ["implementation"] },
       "input": {
-        "schema": "lib/schemas/decision.json",
+        "schema": "lib/contract-schemas/decision.json",
         "mustContain": ["goal", "approach", "evalCriteria"]
       },
       "output": {
-        "schema": "lib/schemas/implementation.json",
+        "schema": "lib/contract-schemas/implementation.json",
         "type": "implementation"
       },
       "preconditions": [
@@ -222,11 +222,11 @@
       "consumer": "cx-reviewer",
       "trigger": { "always": true },
       "input": {
-        "schema": "lib/schemas/implementation.json",
+        "schema": "lib/contract-schemas/implementation.json",
         "mustContain": ["filesChanged", "verificationChecklist"]
       },
       "output": {
-        "schema": "lib/schemas/review-report.json",
+        "schema": "lib/contract-schemas/review-report.json",
         "type": "review-report",
         "mustContain": ["verdict"],
         "mustContainOneOf": [["findings", "noIssuesFoundAt"]],
@@ -251,11 +251,11 @@
       "consumer": "cx-qa",
       "trigger": { "always": true },
       "input": {
-        "schema": "lib/schemas/implementation.json",
+        "schema": "lib/contract-schemas/implementation.json",
         "mustContain": ["filesChanged", "tests"]
       },
       "output": {
-        "schema": "lib/schemas/test-report.json",
+        "schema": "lib/contract-schemas/test-report.json",
         "type": "test-report"
       },
       "preconditions": [
@@ -273,11 +273,11 @@
       "consumer": "cx-security",
       "trigger": { "riskFlags": ["security"] },
       "input": {
-        "schema": "lib/schemas/review-report.json",
+        "schema": "lib/contract-schemas/review-report.json",
         "mustContain": ["target", "findings"]
       },
       "output": {
-        "schema": "lib/schemas/review-report.json",
+        "schema": "lib/contract-schemas/review-report.json",
         "type": "review-report",
         "specialization": "security",
         "mustContain": ["threatModelUpdatedAt", "contractStart"]
@@ -297,7 +297,7 @@
       "consumer": "cx-release-manager",
       "trigger": { "intent": ["implementation"], "workCategory": "deep" },
       "input": {
-        "schema": "lib/schemas/test-report.json",
+        "schema": "lib/contract-schemas/test-report.json",
         "mustContain": ["verdict", "passed", "failed", "coverage"]
       },
       "output": {
@@ -467,7 +467,7 @@
         "mustContain": ["problemStatement", "hypothesis", "keyUnknowns", "evidenceThreshold", "recommendation"]
       },
       "output": {
-        "schema": "lib/schemas/decision.json",
+        "schema": "lib/contract-schemas/decision.json",
         "type": "decision"
       },
       "preconditions": [
@@ -517,7 +517,7 @@
       "consumer": "cx-operations",
       "trigger": { "intent": ["implementation"], "workCategory": "deep" },
       "input": {
-        "schema": "lib/schemas/decision.json",
+        "schema": "lib/contract-schemas/decision.json",
         "mustContain": ["goal", "approach", "tasks", "acceptanceCriteria"]
       },
       "output": {
@@ -652,7 +652,7 @@
       "consumer": "cx-evaluator",
       "trigger": { "riskFlags": ["ai", "quality"], "intent": ["implementation"] },
       "input": {
-        "schema": "lib/schemas/decision.json",
+        "schema": "lib/contract-schemas/decision.json",
         "mustContain": ["goal", "approach", "evalCriteria"]
       },
       "output": {
@@ -686,7 +686,7 @@
       "consumer": "cx-platform-engineer",
       "trigger": { "riskFlags": ["platform", "infrastructure"], "intent": ["implementation"] },
       "input": {
-        "schema": "lib/schemas/decision.json",
+        "schema": "lib/contract-schemas/decision.json",
         "mustContain": ["goal", "approach", "platformDependencies"]
       },
       "output": {
@@ -713,7 +713,7 @@
         "mustContain": ["solution", "migration", "rollback"]
       },
       "output": {
-        "schema": "lib/schemas/implementation.json",
+        "schema": "lib/contract-schemas/implementation.json",
         "type": "implementation"
       },
       "preconditions": [
@@ -731,7 +731,7 @@
       "consumer": "cx-legal-compliance",
       "trigger": { "riskFlags": ["compliance", "privacy", "licensing"] },
       "input": {
-        "schema": "lib/schemas/decision.json",
+        "schema": "lib/contract-schemas/decision.json",
         "mustContain": ["goal", "approach", "dataFlows"]
       },
       "output": {
@@ -811,7 +811,7 @@
         "mustContain": ["findings", "wcagCriterion", "userImpact"]
       },
       "output": {
-        "schema": "lib/schemas/test-report.json",
+        "schema": "lib/contract-schemas/test-report.json",
         "type": "test-report"
       },
       "preconditions": [
@@ -858,7 +858,7 @@
         "mustContain": ["entryPoints", "keyFiles", "gaps"]
       },
       "output": {
-        "schema": "lib/schemas/implementation.json",
+        "schema": "lib/contract-schemas/implementation.json",
         "type": "implementation"
       },
       "preconditions": [
@@ -918,7 +918,7 @@
       "consumer": "cx-data-engineer",
       "trigger": { "riskFlags": ["data", "pipeline"], "intent": ["implementation"] },
       "input": {
-        "schema": "lib/schemas/decision.json",
+        "schema": "lib/contract-schemas/decision.json",
         "mustContain": ["goal", "approach", "dataContracts"]
       },
       "output": {
@@ -973,7 +973,7 @@
       "consumer": "cx-test-automation",
       "trigger": { "intent": ["implementation"], "automation.required": true },
       "input": {
-        "schema": "lib/schemas/test-report.json",
+        "schema": "lib/contract-schemas/test-report.json",
         "mustContain": ["testStrategy", "verdict"]
       },
       "output": {
@@ -1005,7 +1005,7 @@
         "mustContain": ["framework", "coverageTargets", "flakeBudget"]
       },
       "output": {
-        "schema": "lib/schemas/implementation.json",
+        "schema": "lib/contract-schemas/implementation.json",
         "type": "implementation"
       },
       "preconditions": [

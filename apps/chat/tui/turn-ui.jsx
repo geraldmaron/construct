@@ -19,12 +19,14 @@ import { LAYER_KEYS } from '../../../lib/chat/config.mjs';
 import { stripAnsi } from '../../../lib/term-format.mjs';
 import { toolGlyph, toolColor, splitModel, meter, ratioColor, percent } from './theme.mjs';
 import { formatModelHeader } from '../../../lib/chat/model-picker.mjs';
+import { readOracleDockState } from '../../../lib/intake/session-prelude.mjs';
 
 const LABEL_WIDTH = 10;
 
-export function Rule({ width, color, palette }) {
+export function Rule({ width, color, palette, glyphs, heavy = false }) {
   const muted = color || palette?.muted || 'gray';
-  return <Text color={muted}>{'\u2500'.repeat(Math.max(1, width))}</Text>;
+  const char = heavy && glyphs?.ruleHeavy ? glyphs.ruleHeavy : '\u2500';
+  return <Text color={muted}>{char.repeat(Math.max(1, width))}</Text>;
 }
 
 function TurnSection({ title, width, palette, glyphs, children, marginTop = 1, marginBottom = 1 }) {
@@ -241,7 +243,8 @@ function PanelSection({ title, children, marginTop = 1, palette }) {
 }
 
 export function SessionDock({
-  width, session, layers, working, model, modelMode, savedModel, sandbox, permissionMode, ctx, spin, theme,
+  width, session, layers, working, model, modelMode, savedModel, sandbox, permissionMode,
+  ctx, spin, theme, cwd, modelNotice,
 }) {
   const { palette, glyphs } = theme;
   const u = session.usage;
@@ -254,16 +257,30 @@ export function SessionDock({
   if (u.cost?.amount > 0) ledger.push(['cost', `~$${u.cost.amount.toFixed(u.cost.amount < 1 ? 3 : 2)}`]);
   const ctxMeter = ctx?.size ? meter(ctx.used, ctx.size, Math.max(10, width - 8), theme) : null;
   const { label } = formatModelHeader({ model, modelMode, savedModel });
+  const oracle = readOracleDockState({ cwd, env: process.env });
 
   return (
-    <Box flexDirection="column" width={width} borderStyle="round" borderColor={palette.accent} paddingX={1}>
-      <Text color={palette.accent} bold>{`${glyphs.brand} session`}</Text>
+    <Box flexDirection="column" width={width} borderStyle="round" borderColor={palette.border || palette.accent} paddingX={1}>
+      <Text color={palette.brandAccent || palette.accent} bold>{`${glyphs.brand} session`}</Text>
+      <Rule width={width - 2} palette={palette} glyphs={glyphs} heavy />
       <PanelSection title="model" marginTop={1} palette={palette}>
         <Text bold color={palette.text} wrap="wrap">{label || '(none)'}</Text>
+        {modelNotice ? (
+          <Text color={palette.warn} wrap="wrap">{modelNotice}</Text>
+        ) : null}
         {(sandbox || permissionMode) ? (
           <Text color={palette.muted}>{[sandbox, permissionMode].filter(Boolean).join(` ${glyphs.gutter} `)}</Text>
         ) : null}
       </PanelSection>
+      {oracle.visible ? (
+        <PanelSection title="oracle" palette={palette}>
+          <Text color={palette.warn} wrap="wrap">{oracle.summary}</Text>
+          {oracle.topGaps.slice(0, 2).map((g) => (
+            <Text key={g.id} color={palette.muted} wrap="wrap">{`${g.id}: ${g.detail}`}</Text>
+          ))}
+          <Text color={palette.muted}>/oracle for detail</Text>
+        </PanelSection>
+      ) : null}
       <PanelSection title="layers" palette={palette}>
         <Text color={palette.muted} wrap="wrap">
           {LAYER_KEYS.map((k) => `${k}=${layers?.[k] ? 'on' : 'off'}`).join(`  ${glyphs.gutter}  `)}
