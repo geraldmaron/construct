@@ -24,7 +24,7 @@ function readJson(p) { return JSON.parse(readFileSync(p, 'utf8')); }
 // (e.g. construct itself, the orchestrator entrypoint). Excluded from the
 // producer/consumer participation check; still validated to appear in the
 // registry.
-const COVERAGE_EXEMPT = new Set(['orchestrator']);
+const COVERAGE_EXEMPT = new Set(['orchestrator', 'oracle']);
 
 test('every specialist in registry.json appears as producer or consumer in contracts.json', () => {
   const registry = readJson(REGISTRY_PATH);

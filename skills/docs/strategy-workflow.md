@@ -3,6 +3,7 @@ name: docs-strategy-workflow
 description: "Use when: the user asks about product direction, strategic bets, what to prioritize, whether a signal aligns with strategy, or wants to update the strategy."
 inputs: [signal, decision-context]
 artifactType: strategy
+verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
 ---
 # Strategy Workflow
 

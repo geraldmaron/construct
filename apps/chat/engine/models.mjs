@@ -57,16 +57,31 @@ export function resolveChatModelSelection({ env = process.env, requested = null,
   return resolveValidatedChatModel({ env, requested, excludeFamilies });
 }
 
-export async function resolveFreeOpenRouterModel({ env = process.env, tier = 'standard' } = {}) {
+export async function resolveFreeOpenRouterModel({ env = process.env, tier = 'standard', exclude = [] } = {}) {
   const apiKey = resolveFirstSecret(['OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY'], { env });
   if (!apiKey) return null;
-  const { pollFreeModels, selectForTier } = await import('../../../lib/model-free-selector.mjs');
+  const excludeSet = new Set(Array.isArray(exclude) ? exclude : []);
+  const { pollFreeModels, topForTier } = await import('../../../lib/model-free-selector.mjs');
   const freeModels = await pollFreeModels(apiKey);
-  const id = selectForTier(freeModels, tier, ['openrouter/qwen/qwen3-coder:free']);
-  if (!id) return null;
-  const modelId = id.startsWith('openrouter/') ? id : `openrouter/${id}`;
-  if (!isChatModelAvailable(modelId, { env }).ok) return null;
-  return modelId;
+  for (const candidate of topForTier(freeModels, tier, 20)) {
+    const modelId = candidate.id.startsWith('openrouter/') ? candidate.id : `openrouter/${candidate.id}`;
+    if (excludeSet.has(modelId)) continue;
+    if (isChatModelAvailable(modelId, { env }).ok) return modelId;
+  }
+  return null;
+}
+
+export async function resolveSessionModel(session, { env = process.env, exclude = [], tier = 'standard' } = {}) {
+  if (session?.modelMode === 'free-router') {
+    const merged = [...new Set([...getExcludeFromSession(session), ...exclude])];
+    return resolveFreeOpenRouterModel({ env, tier, exclude: merged });
+  }
+  return session?.model || session?.savedModel || null;
+}
+
+function getExcludeFromSession(session) {
+  if (!session?.failedModels) return [];
+  return session.failedModels instanceof Set ? [...session.failedModels] : [];
 }
 
 export async function resolveChatModelSelectionAsync({

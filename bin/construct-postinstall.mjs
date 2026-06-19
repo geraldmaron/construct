@@ -24,7 +24,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { stageProjectAdapters } from '../lib/install/stage-project.mjs';
-import { missingIgnorePatterns } from '../lib/host-disposition.mjs';
+import { syncProjectAdapters } from '../lib/adapters-sync.mjs';
+import { missingIgnorePatterns, isConstructPackageRepo } from '../lib/host-disposition.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = path.resolve(HERE, '..');
@@ -59,13 +60,18 @@ const initCwd = process.env.INIT_CWD || process.cwd();
 try {
   const pkgRealRoot = statSync(PKG_ROOT).isDirectory() ? PKG_ROOT : null;
   if (pkgRealRoot && pkgRealRoot.startsWith(initCwd) && initCwd === PKG_ROOT) {
-    log('install is inside the Construct repo itself; skipping sync');
+    log('Construct tool repo — syncing project adapters for dogfooding');
     if (existsSync(path.join(PKG_ROOT, '.gitmessage')) && existsSync(path.join(PKG_ROOT, '.git'))) {
       const cfg = spawnSync('git', ['config', 'commit.template', '.gitmessage'], {
         cwd: PKG_ROOT,
         stdio: 'ignore',
       });
       if (cfg.status === 0) log('configured git commit.template -> .gitmessage');
+    }
+    try {
+      syncProjectAdapters({ projectRoot: PKG_ROOT, packageRoot: PKG_ROOT, log });
+    } catch (err) {
+      fail(`Tool-repo adapter sync failed: ${err.message}`, 'Run `npm run adapters` manually.');
     }
     process.exit(0);
   }

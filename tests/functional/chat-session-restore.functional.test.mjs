@@ -43,3 +43,30 @@ test('restoreFromSession rebuilds transcript and usage from jsonl rows', () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('restoreFromSession reads transcript_block turn snapshots', () => {
+  const { dir, sessions } = tmpProject();
+  try {
+    const file = path.join(sessions, 'snap.jsonl');
+    fs.writeFileSync(file, `${JSON.stringify({
+      type: 'transcript_block',
+      block: {
+        kind: 'turn_snapshot',
+        id: 'turn-1',
+        userText: 'compare',
+        overlay: { intent: 'research', specialists: ['cx-researcher'], externalResearch: { required: true } },
+        assistant: 'answer',
+        tools: [],
+        sources: [],
+        notices: [],
+      },
+    })}\n`);
+
+    const restored = restoreFromSession(file);
+    assert.equal(restored.turnBlocks.length, 1);
+    assert.equal(restored.turnBlocks[0].block.userText, 'compare');
+    assert.equal(restored.turnBlocks[0].block.overlay.intent, 'research');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

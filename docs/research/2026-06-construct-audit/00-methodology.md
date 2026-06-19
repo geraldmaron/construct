@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Construct Challenge-Everything Audit — Research Methodology
 
 Date: 2026-06-10 · Branch: research/capability-registry · Tracking epic: construct-6zga

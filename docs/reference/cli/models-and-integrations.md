@@ -44,7 +44,25 @@ construct capability describe --json
 
 ## construct chat
 
-Interactive terminal chat on Construct's owned agent loop, with a multi-pane transparency surface (live token/cost/context usage, reasoning, tool timeline, and the planned specialist route); switch models, change settings, and see a token/cost breakdown in-session. Use `--accessible` or `--plain` for the linear, screen-reader-friendly renderer
+Interactive terminal chat on Construct's owned agent loop. Each turn renders inline in the conversation column (policy route, thinking, tools, markdown answer, sources consulted); the right panel is a session dock with an optional per-turn inspector (`/inspect`, Ctrl-O, or `/set inspector auto|on|off`). Use `--accessible` or `--plain` for the linear, screen-reader-friendly renderer with the same turn ordering.
+
+**Turn layout**
+
+- **TurnBlock** — user message → turn context (intent, route, external-research badge, sources from tool events) → thinking → tools → construct answer (markdown) → turn usage
+- **SessionDock** — model, sandbox, permission, layers, context meter, session token/cost totals
+- **TurnInspector** — optional deep dive on the active turn (toggle `/inspect` or `ui.inspector` in `chat-config.json`)
+
+**Ink controls**
+
+- `/model` or `/models` — searchable picker (type to filter, ↑/↓, Enter, Esc); includes **OpenRouter free router** and live `:free` models when configured
+- `/free` — set the free-router model (same as `construct chat --free`)
+- `/set` — searchable setting picker, then value picker for enums/bools
+- Permission prompts — same list picker (↑/↓, Enter, or y/a/n)
+- **Tab** — completes slash commands and `/set` keys
+- **Theme** — auto-detect light/dark from the terminal (`COLORFGBG`); override with `CX_CHAT_THEME=light|dark` or `/set theme auto|light|dark`
+- **Model mode** — `/free` or picker **free router** sets `modelMode: free-router` (re-picks at launch + on 429/404); pinned models set `modelMode: pinned`
+- **Export** — `/export last` or `/export session` writes plain markdown to `.cx/chat-sessions/exports/` for copy/paste
+- ↑/↓ while typing an incomplete `/command` cycles matching commands
 
 **Usage**
 

@@ -57,6 +57,7 @@ test('validateSetting coerces and rejects values', () => {
   assert.equal(validateSetting('permission', 'reject').key, 'permissionMode');
   assert.equal(validateSetting('permission', 'bogus').ok, false);
   assert.equal(validateSetting('sandbox', 'read-only').ok, true);
+  assert.deepEqual(validateSetting('inspector', 'auto'), { ok: true, key: 'ui.inspector', value: 'auto' });
   assert.equal(validateSetting('nope', 'x').ok, false);
 });
 

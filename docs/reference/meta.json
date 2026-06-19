@@ -11,6 +11,8 @@
     "mcp-tools",
     "embed-api",
     "specialists",
+    "capabilities",
+    "naming",
     "providers",
     "dependencies",
     "standards",

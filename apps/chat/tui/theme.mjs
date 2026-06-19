@@ -47,9 +47,10 @@ export const palette = DEFAULT_THEME.palette;
 export const glyphs = DEFAULT_THEME.glyphs;
 export const spinnerFrames = DEFAULT_THEME.spinnerFrames;
 
-export function createTheme({ ascii = false } = {}) {
+export function createTheme({ ascii = false, scheme = 'dark' } = {}) {
   return {
-    palette: inkPalette(),
+    scheme,
+    palette: inkPalette({ scheme }),
     glyphs: ascii ? { ...ASCII_GLYPHS } : { ...UNICODE_GLYPHS },
     spinnerFrames: ascii ? [...ASCII_SPINNER] : [...BRAILLE_SPINNER],
   };
