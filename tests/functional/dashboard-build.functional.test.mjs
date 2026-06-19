@@ -10,6 +10,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { withNextBuildLock } from './_lib/next-build-lock.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -37,21 +38,29 @@ test('apps/dashboard builds via next build', { timeout: 360_000 }, async () => {
   // step and Next.js's own cleanup; reproduces about 1-in-N runs locally
   // under parallel `node --test`, never in isolation. A clean rebuild
   // virtually always succeeds.
+  //
+  // Hold the cross-process next-build lock across both attempts. The dashboard
+  // server suites also run `next build` (via construct dashboard:sync --build)
+  // against the same distDir, and node:test runs those files concurrently;
+  // without serialization Next.js 15 aborts the loser with "Another next build
+  // process is already running".
 
   let result;
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
-    rmSync(NEXT_CACHE, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    result = spawnSync('npm', ['--prefix', APP, 'run', 'build'], {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-      timeout: 170_000,
-    });
-    const transientRename = /ENOENT.*rename.*\.next\/(export|server\/pages)\/500\.html/.test(
-      `${result.stdout}\n${result.stderr}`,
-    );
-    if (result.status === 0) break;
-    if (!transientRename) break;
-  }
+  await withNextBuildLock(REPO_ROOT, async () => {
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      rmSync(NEXT_CACHE, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      result = spawnSync('npm', ['--prefix', APP, 'run', 'build'], {
+        cwd: REPO_ROOT,
+        encoding: 'utf8',
+        timeout: 170_000,
+      });
+      const transientRename = /ENOENT.*rename.*\.next\/(export|server\/pages)\/500\.html/.test(
+        `${result.stdout}\n${result.stderr}`,
+      );
+      if (result.status === 0) break;
+      if (!transientRename) break;
+    }
+  });
   assert.equal(result.status, 0, `dashboard build failed:\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
   assert.ok(existsSync(OUT), `expected build output at ${OUT}`);
   assert.ok(existsSync(join(OUT, 'index.html')), 'index.html must exist');
