@@ -24,24 +24,49 @@ node bin/construct publish docs/prd-platform/brief.md --strict --figures
 ```
 
 - Runs **artifact release gate** before export (structure, visuals, citations, prose minimum)
-- Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **distribution brand themes** (D2 neutral, branded Mermaid — not sketch/hand-drawn)
-- PDF routes by `artifactType`: `construct-prd.typ` (editorial), `construct-research.typ` (analytics), `construct-decision.typ` (ADR/RFC); override: `.cx/publish-theme.typ`
+- Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **hand-drawn distribution styling** (D2 `--sketch`, Mermaid `handDrawn` look, violet accent)
+- PDF routes by `artifactType`: `construct-prd.typ` (product editorial), `construct-research.typ` (analytics), `construct-decision.typ` (ADR/RFC); override: `.cx/publish-theme.typ`
+- Typography ships bundled in `templates/distribution/fonts/` (Inter body + masthead/headings, IBM Plex Mono code; Source Serif bundled but not default). Success metrics tables in blockquotes render as **Key metrics** callouts.
 - Optional VHS terminal demo + Playwright dashboard demo via frontmatter or flags
 
 Authoring conventions for richer PDFs:
 
 ```markdown
-::: executive-summary
-One paragraph a PM would read aloud in a review.
-:::
+> One paragraph a PM would read aloud — renders as an **At a glance** callout.
 
-::: key-metrics
-| Metric | Baseline | Target |
+> | Metric | Baseline | Target |
+> | --- | --- | --- |
+> | Gate pass rate | manual | enforced |
+
+\`\`\`d2
+direction: right
+a: Component A
+b: Component B
+a -> b
+\`\`\`
+
+\`\`\`mermaid
+flowchart TD
+  A[Host] --> B[construct publish]
+\`\`\`
 ```
 
-Demo tapes show **construct chat cockpit** (violet theme), not raw shell — run `construct demo agentic-platforms-prd` or see `.cx/demos/tapes/agentic-platforms-prd.tape`.
+Reference D2 sources live under `tests/fixtures/publish/diagrams/` in the tool repo; inline fenced blocks export at publish time with **D2 `--sketch`** and **Mermaid `handDrawn`** (violet accent, Inter labels).
 
-Optional frontmatter:
+Optional masthead metadata (renders in the compact header — do not repeat in body):
+
+```yaml
+subtitle: One-line product framing
+version: "0.1"
+doc_id: PRD-PLATFORM-001
+classification: internal
+status: draft
+owner: cx-product-manager
+last_verified_at: 2026-06-19
+artifactType: prd-platform
+```
+
+Optional publish frontmatter:
 
 ```yaml
 publish:
@@ -55,7 +80,7 @@ publish:
 construct diagram "web app: client -> api -> db"
 ```
 
-Default D2 theme is **neutral** (professional geometry). Use `--theme sketch` only for exploratory whiteboarding — not for publish.
+Default D2 theme is **neutral** (clean geometry). Use `--theme sketch` for hand-drawn output (`construct diagram` and publish `--figures` both honor sketch on the distribution path).
 
 Output: `.cx/diagrams/*.svg` (or `.d2` source when no renderer).
 

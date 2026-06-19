@@ -1,41 +1,36 @@
 /**
- * templates/distribution/construct-pdf.typ — fallback Pandoc Typst PDF template.
- *
- * Uses construct-brand tokens when no type-specific template matches.
+ * templates/distribution/construct-pdf.typ — Construct distribution PDF.
  */
 
 #import "construct-brand.typ": *
 
 #set page(
   paper: "a4",
-  margin: (x: 2.4cm, y: 2.6cm),
+  margin: (x: 2cm, top: 1.8cm, bottom: 2.2cm),
   numbering: "1",
-  header: construct-page-header("$if(title)$$title$$endif$"),
+  header: construct-running-header(
+    "$if(title)$$title$$endif$",
+    doc-id: "$if(docId)$$docId$$endif$",
+    version: "$if(version)$$version$$endif$",
+  ),
+  footer: construct-running-footer(
+    "Construct brief",
+    classification: "$if(classification)$$classification$$endif$",
+  ),
 )
-#set par(justify: true, leading: 0.65em, spacing: 0.65em)
-#set text(font: brand-serif, size: 11pt, lang: "en")
-#set heading(numbering: "1.1", outlined: true)
-
-#construct-heading-style()
-#construct-table-style()
-#construct-figure-style()
 
 $if(title)$
-#align(center)[
-  #block(spacing: 0.4em)[
-    #text(font: brand-serif, size: 22pt, weight: "bold", fill: brand-ink)[$title$]
-  ]
-  $if(subtitle)$
-  #text(font: brand-sans, size: 12pt, fill: brand-muted)[$subtitle$]
-  $endif$
-  $if(date)$
-  #v(0.5em)
-  #text(font: brand-sans, size: 10pt, fill: brand-muted)[$date$]
-  $endif$
-]
-#v(1.5em)
-#line(length: 100%, stroke: 0.8pt + brand-accent)
-#v(1.2em)
+#construct-masthead(
+  "$title$",
+  "$if(subtitle)$$subtitle$$endif$",
+  "$if(status)$$status$$endif$",
+  "$if(owner)$$owner$$endif$",
+  "$if(date)$$date$$endif$",
+  "$if(artifactType)$$artifactType$$endif$",
+  version: "$if(version)$$version$$endif$",
+  doc-id: "$if(docId)$$docId$$endif$",
+  classification: "$if(classification)$$classification$$endif$",
+)
 $endif$
 
 $body$

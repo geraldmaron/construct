@@ -149,16 +149,26 @@ local mermaid = {
   line_comment_start = '%%',
   mime_types = mime_types_set{'pdf', 'png', 'svg'},
   compile = function (self, code)
-    local mime_type = self.mime_type or 'image/svg+xml'
+    local override = os.getenv('CONSTRUCT_MERMAID_MIME')
+    local mime_type = (override and override ~= '') and override or (self.mime_type or 'image/svg+xml')
     local file_extension = extension_for_mimetype[mime_type]
     return with_temporary_directory("diagram", function (tmpdir)
       return with_working_directory(tmpdir, function ()
         local infile = 'diagram.mmd'
         local outfile = 'diagram.' .. file_extension
         write_file(infile, code)
+        local mmdc_args = {"--pdfFit", "--input", infile, "--output", outfile}
+        local mermaid_width = os.getenv('CONSTRUCT_MERMAID_WIDTH')
+        if mermaid_width and mermaid_width ~= '' then
+          table.insert(mmdc_args, 1, '--width=' .. mermaid_width)
+        end
+        local mermaid_scale = os.getenv('CONSTRUCT_MERMAID_SCALE')
+        if mermaid_scale and mermaid_scale ~= '' then
+          table.insert(mmdc_args, 1, '--scale=' .. mermaid_scale)
+        end
         pipe(
           self.execpath or 'mmdc',
-          {"--pdfFit", "--input", infile, "--output", outfile},
+          mmdc_args,
           ''
         )
         return read_file(outfile), mime_type
@@ -306,11 +316,17 @@ local d2 = {
         local outfile = 'diagram.' .. file_extension
 
         local d2_pad = os.getenv('CONSTRUCT_D2_PAD') or '8'
-        args = {'--bundle', '--pad=' .. d2_pad, '--scale=1'}
+        local d2_scale = os.getenv('CONSTRUCT_D2_SCALE') or '0.9'
+        args = {'--bundle', '--pad=' .. d2_pad, '--scale=' .. d2_scale}
 
         local d2_theme = os.getenv('CONSTRUCT_D2_THEME')
         if d2_theme and d2_theme ~= '' then
           table.insert(args, '--theme=' .. d2_theme)
+        end
+
+        local d2_sketch = os.getenv('CONSTRUCT_D2_SKETCH')
+        if d2_sketch == '1' or d2_sketch == 'true' then
+          table.insert(args, '--sketch')
         end
 
         d2_user_opts = {
