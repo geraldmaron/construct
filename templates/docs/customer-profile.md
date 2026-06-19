@@ -21,6 +21,10 @@ asks for cleanup. Keep facts tied to source evidence.
 ## Open asks
 <!-- Table: ask, first raised, times mentioned, source, linked issue, status. -->
 
+| Ask | First raised | Status |
+|---|---|---|
+| {customer ask} | {YYYY-MM-DD} | open / blocked / done |
+
 ## Key contacts
 <!-- Roles and responsibilities. Avoid unnecessary personal data. -->
 

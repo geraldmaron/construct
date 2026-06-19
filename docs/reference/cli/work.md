@@ -7,6 +7,7 @@ description: Work commands for Construct.
 
 | Command | What it does |
 |---|---|
+| `construct artifact` | Validate typed document artifacts against the release gate |
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
@@ -31,6 +32,20 @@ description: Work commands for Construct.
 | `construct wireframe` | Generate wireframes from description |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
+
+## construct artifact
+
+Validate typed document artifacts against the release gate
+
+**Usage**
+
+```bash
+construct artifact validate <path> --type=<doc-type> [--json]
+```
+
+**Subcommands**
+
+- `[object Object]`
 
 ## construct ask
 

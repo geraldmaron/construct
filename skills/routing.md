@@ -120,7 +120,9 @@ Read the matching skill file before responding when the user's request matches t
 | Trigger Keywords | Skill File | Description |
 |---|---|---|
 | init docs, create docs structure, set up documentation, docs scaffold, documentation init | `skills/docs/init-docs.md` | Initialize required project-state docs and documentation structure |
-| research X, investigate X, find evidence, gather evidence | `skills/docs/research-workflow.md` | Research workflow: question to .cx/research/ file |
+| research X, investigate X, find evidence, gather evidence, CVE, vendor docs, market data | `skills/docs/research-workflow.md` | External research workflow (cx-researcher) |
+| user research, interview synthesis, support tickets, UX evidence, field notes | `skills/docs/user-research-workflow.md` | User research workflow (cx-ux-researcher) |
+| map codebase, explore repo structure, dependency graph, hot path | `skills/docs/codebase-research-workflow.md` | Codebase research workflow (cx-explorer) |
 | product intelligence, customer notes, field notes, product signals, customer profile, evidence brief, signal brief, backlog proposal | `skills/docs/product-intelligence-workflow.md` | Product Intelligence workflow: evidence to product artifacts |
 | strategy, product strategy, strategic bet, non-bet, north star, time horizon, competitive positioning | `skills/docs/strategy-workflow.md` | Product strategy: read, update, and reason about the strategy store |
 | ingest evidence, ingest customer notes, ingest Slack thread, ingest support ticket, normalize field notes | `skills/docs/evidence-ingest-workflow.md` | Evidence ingest workflow: raw source to .cx/knowledge/ |

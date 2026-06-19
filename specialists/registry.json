@@ -134,7 +134,8 @@
       },
       "skills": [
         "ai/agent-dev",
-        "ai/prompt-and-eval"
+        "ai/prompt-and-eval",
+        "docs/research-workflow"
       ],
       "perspective": {
         "bias": "High-confidence requirements with no evidence, premature hardening, timelines with no room to be wrong",
@@ -245,7 +246,8 @@
         ]
       },
       "skills": [
-        "docs/research-workflow",
+        "docs/user-research-workflow",
+        "docs/evidence-ingest-workflow",
         "strategy/jobs-to-be-done"
       ],
       "perspective": {
@@ -1098,7 +1100,8 @@
       },
       "skills": [
         "devops/git-workflow",
-        "quality-gates/verify-change"
+        "quality-gates/verify-change",
+        "docs/memo-and-decision-capture"
       ],
       "perspective": {
         "bias": "Untested rollback procedures, migrations that can't be reversed, canary deployments without rollback triggers",
@@ -1292,6 +1295,7 @@
         ]
       },
       "skills": [
+        "docs/codebase-research-workflow",
         "exploration/repo-map",
         "exploration/unknown-codebase-onboarding",
         "exploration/tracer-bullet-method",

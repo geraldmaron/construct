@@ -62,6 +62,8 @@ import {
 } from '../lib/beads-lock.mjs';
 import { runBd, getHumanStatus, acquireMergeSlot, releaseMergeSlot } from '../lib/beads-client.mjs';
 import { auditSkills, runAuditSkillsCli } from '../lib/audit-skills.mjs';
+import { auditSpecialists, runAuditSpecialistsCli } from '../lib/audit-specialists.mjs';
+import { runArtifactValidateCli } from '../lib/artifact-release-gate.mjs';
 import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
 import { readDashboardState, startDashboard, startServices } from '../lib/service-manager.mjs';
 import { readCostLog, summarizeCostData, formatCostReport, clearCostLog } from '../lib/cost.mjs';
@@ -866,6 +868,8 @@ async function cmdDoctor() {
     add('Headhunt classifier agents exist in registry', classifierOrphans.length === 0);
     const skillAudit = auditSkills({ rootDir: ROOT_DIR, silent: true });
     add('No declared skills missing on disk', skillAudit.pass, false);
+    const specialistAudit = auditSpecialists({ rootDir: ROOT_DIR, silent: true });
+    add('Specialist/skill audit cross-checks', specialistAudit.pass, false);
     const { lintResearchRepo } = await import('../lib/research-lint.mjs');
     const researchLintResults = lintResearchRepo({ rootDir: process.cwd() });
     add('Research artifacts meet minimum evidence structure', researchLintResults.every((entry) => entry.errors.length === 0), true);
@@ -5590,11 +5594,18 @@ const handlers = new Map([
   ['audit', async (args) => {
     const sub = args[0];
     if (sub === 'skills') return runAuditSkillsCli(args.slice(1));
+    if (sub === 'specialists') return runAuditSpecialistsCli(args.slice(1));
     if (sub === 'trail' || !sub) {
       const { runAuditTrailCli } = await import('../lib/audit-trail.mjs');
       return runAuditTrailCli(args.slice(sub === 'trail' ? 1 : 0));
     }
-    errorln(`Unknown audit subcommand: ${sub}. Available: skills, trail`);
+    errorln(`Unknown audit subcommand: ${sub}. Available: skills, specialists, trail`);
+    process.exit(1);
+  }],
+  ['artifact', async (args) => {
+    const sub = args[0];
+    if (sub === 'validate') return runArtifactValidateCli(args.slice(1));
+    errorln(`Unknown artifact subcommand: ${sub || '(none)'}. Available: validate`);
     process.exit(1);
   }],
   ['doc', async (args) => {

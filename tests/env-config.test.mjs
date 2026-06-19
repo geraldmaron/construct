@@ -50,3 +50,47 @@ test('loadConstructEnv exposes composed DATABASE_URL for downstream callers', ()
 
   assert.equal(env.DATABASE_URL, 'postgresql://construct:secret@db.internal:5432/construct');
 });
+
+test('loadConstructEnv keeps op run injected credentials over config.env op refs', () => {
+  const homeDir = tempDir('construct-env-op-run-');
+  const configPath = path.join(homeDir, '.construct', 'config.env');
+  fs.mkdirSync(path.dirname(configPath), { recursive: true });
+  fs.writeFileSync(
+    configPath,
+    'ANTHROPIC_API_KEY=op://Dev/Anthropic/credential\nOPENROUTER_API_KEY=op://Dev/OpenRouter/credential\n',
+    'utf8',
+  );
+
+  const env = loadConstructEnv({
+    homeDir,
+    env: {
+      ANTHROPIC_API_KEY: 'sk-ant-resolved-once',
+      OPENROUTER_API_KEY: 'or-resolved-once',
+    },
+    warn: false,
+  });
+
+  assert.equal(env.ANTHROPIC_API_KEY, 'sk-ant-resolved-once');
+  assert.equal(env.OPENROUTER_API_KEY, 'or-resolved-once');
+});
+
+test('loadConstructEnv still prefers config.env over stale shell op refs', () => {
+  const homeDir = tempDir('construct-env-op-ref-');
+  const configPath = path.join(homeDir, '.construct', 'config.env');
+  fs.mkdirSync(path.dirname(configPath), { recursive: true });
+  fs.writeFileSync(
+    configPath,
+    'OPENAI_API_KEY=op://Dev/OpenAI/from-config\n',
+    'utf8',
+  );
+
+  const env = loadConstructEnv({
+    homeDir,
+    env: {
+      OPENAI_API_KEY: 'op://Dev/OpenAI/from-shell',
+    },
+    warn: false,
+  });
+
+  assert.equal(env.OPENAI_API_KEY, 'op://Dev/OpenAI/from-config');
+});

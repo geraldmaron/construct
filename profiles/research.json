@@ -64,6 +64,18 @@
     "sessionOptimize": "on"
   },
   "defaultSkills": [],
+  "toneDefaults": {
+    "research-brief": "direct",
+    "evidence-brief": "direct",
+    "memo": "executive-concise"
+  },
+  "researchProfiles": {
+    "question": "external",
+    "study": "user",
+    "synthesis": "external",
+    "report": "external",
+    "experiment": "external"
+  },
   "rebrand": {
     "intakeQueueLabel": "Research queue",
     "signalNoun": "question"

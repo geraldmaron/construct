@@ -17,7 +17,7 @@ import { render } from 'ink-testing-library';
 import { createTurnState, applyTurnEvent, runTurnInto } from '../../apps/chat/tui/turn-state.mjs';
 import { createSessionUsage } from '../../lib/chat/tui/usage.mjs';
 import { createTheme } from '../../apps/chat/tui/theme.mjs';
-import { TransparencyPanel, TurnContextBar } from '../../apps/chat/dist/tui.mjs';
+import { TransparencyPanel, TurnContextBar, TurnView } from '../../apps/chat/dist/tui.mjs';
 
 const PANEL_THEME = createTheme();
 
@@ -127,9 +127,41 @@ test('TurnContextBar renders route and external research badge', () => {
     }),
   );
   const frame = lastFrame();
-  assert.match(frame, /turn context/);
+  assert.match(frame, /ROUTE/);
   assert.match(frame, /intent/);
   assert.match(frame, /route/);
   assert.match(frame, /research/);
+  assert.match(frame, /SOURCES/);
   assert.match(frame, /docs\/adr\/0015.md/);
+});
+
+test('TurnTranscript renders full thinking inline with phase labels', () => {
+  const turn = {
+    id: 't1',
+    userText: 'what is pending for oracle',
+    overlay: { intent: 'implementation', workCategory: 'quick', specialists: ['cx-researcher'] },
+    thinking: 'The user is asking about oracle pending work.\nLine two.\nLine three.',
+    tools: [{ id: 'a', title: 'glob', status: 'completed', input: { pattern: '**/*oracle*' } }],
+    sources: [{ tool: 'glob', ref: '**/*oracle*' }],
+    assistant: 'Here is the summary.',
+    usage: { tokens: { input: 2000, output: 481, total: 2481 } },
+  };
+  const { lastFrame } = render(
+    React.createElement(TurnView, {
+      turn,
+      width: 60,
+      layers: { thinking: true, tools: true, specialists: true, observability: true },
+      turnIndex: 1,
+      theme: PANEL_THEME,
+    }),
+  );
+  const frame = lastFrame();
+  assert.match(frame, /TURN 1/);
+  assert.match(frame, /ROUTE/);
+  assert.match(frame, /THINKING/);
+  assert.match(frame, /The user is asking about oracle/);
+  assert.match(frame, /TOOLS/);
+  assert.match(frame, /CONSTRUCT/);
+  assert.match(frame, /USAGE/);
+  assert.doesNotMatch(frame, /inspector/);
 });
