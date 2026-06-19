@@ -14,7 +14,10 @@ description: Diagnostics commands for Construct.
 | `construct docs:reconcile` | Reconcile docs against the registry |
 | `construct docs:site` | Manage the docs static site build |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
-| `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
+| `construct registry:status` | Inspect the capability registry (`registry/capabilities.json`) |
+| `construct registry:validate` | Validate registry entries against repo reality |
+| `construct registry:generate-docs` | Regenerate `docs/reference/capabilities.md` from the registry |
+| `construct rules usage` | Roll up rule-reference and hook-fire telemetry (`~/.cx/rule-calls.jsonl`, `~/.cx/hook-calls.jsonl`) |
 
 ## construct audit
 

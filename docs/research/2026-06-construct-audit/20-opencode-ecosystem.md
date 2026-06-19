@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # 20 — OpenCode Ecosystem: config, precedence, plugins, local-model handling
 
 Date: 2026-06-09 · Branch: research/capability-registry · Bead: construct-hibq

@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Skills Consolidation Report — for approval (bead construct-smil)
 
 Date: 2026-06-10 · Gate: **nothing is deleted until the maintainer approves a list.**

@@ -1,24 +1,24 @@
 ---
 title: Connect your editor
-description: Construct syncs host adapters to Claude Code, OpenCode, Codex, Copilot, VS Code, and Cursor. Two scopes — global keeps only the `construct` front door; project carries every specialist.
+description: Construct syncs host adapters to Claude Code, OpenCode, Codex, Copilot, VS Code, and Cursor. Two scopes — global keeps only the `construct` front door; project writes the front door plus skills, hooks, and MCP wiring (Single Front Door — specialists dispatch internally).
 ---
 
 `construct sync` keeps one canonical registry and writes the right host-specific shape for each supported tool. The CLI runs in two scopes:
 
 - **Global (`construct sync --global`, or the `npm i -g` postinstall)** installs the session-level hooks and a `construct` front door for Codex and Copilot. It does **not** write a global Claude agent: Claude Code *and* VS Code both read `~/.claude/agents/`, so a global agent there would show up twice (once from the project, once from home) in the VS Code picker — the orchestrator is project-scoped instead. Specialists never land at global scope either; they would pollute every editor picker on your machine regardless of the workspace.
-- **Project (`construct sync` inside a Construct project, or `construct init`)** writes the orchestrator + all 28 `cx-*` specialists, slash commands, skills, and MCP wiring under the project's own `.claude/`, `.codex/`, `.opencode/`, `.github/`, `.vscode/`, `.cursor/` trees. Files version with the repo and travel with teammates via git.
+- **Project (`construct sync` inside a Construct project, `construct init`, or `npm run adapters` in the tool repo)** writes the **`construct` front door only** in agent pickers, plus slash commands, skills (`.claude/skills/`), MCP configs, and Cursor rules. The 28 `cx-*` specialists are **internal** — reached via `orchestration_policy` / `orchestration_run`, not editor pickers. Adapter files are gitignored (ADR-0027); run sync after clone.
 
 `construct sync` auto-detects a Construct project (presence of `.cx/` or `.construct/`) and runs project mode when inside one; global mode otherwise. Pass `--global` or `--project` to force a tier.
 
 <SyncGrid targets={[
   { name: 'Claude Code (global)', path: 'hooks in ~/.claude/settings.json + ~/.claude/CLAUDE.md (no agent — project-scoped)', type: 'mcp' },
-  { name: 'Claude Code (project)', path: '<project>/.claude/agents/{construct, cx-*}.md', type: 'full' },
+  { name: 'Claude Code (project)', path: '<project>/.claude/agents/construct.md + settings + commands + skills', type: 'full' },
   { name: 'OpenCode (global)', path: '~/.config/opencode/opencode.json — construct entry only', type: 'full' },
-  { name: 'OpenCode (project)', path: '<project>/.opencode/opencode.json — orchestrator + 28 specialists', type: 'full' },
+  { name: 'OpenCode (project)', path: '<project>/.opencode/opencode.json — construct (+ optional construct-local)', type: 'full' },
   { name: 'Codex (global)', path: '~/.codex/agents/construct.toml + [agents.construct] in config.toml', type: 'full' },
-  { name: 'Codex (project)', path: '<project>/.codex/agents/{construct, cx-*}.toml', type: 'full' },
+  { name: 'Codex (project)', path: '<project>/.codex/agents/construct.toml', type: 'full' },
   { name: 'Copilot (global)', path: '~/.github/prompts/construct.prompt.md', type: 'prompt' },
-  { name: 'Copilot (project)', path: '<project>/.github/prompts/*.prompt.md (29 files); agents via .claude/agents', type: 'full' },
+  { name: 'Copilot (project)', path: '<project>/.github/prompts/construct.prompt.md; agents via .claude/agents/construct.md', type: 'full' },
   { name: 'VS Code (project)', path: '<project>/.vscode/mcp.json', type: 'mcp' },
   { name: 'Cursor (project)', path: '<project>/.cursor/mcp.json + .cursor/rules/construct.mdc', type: 'mcp' },
 ]} />
@@ -43,32 +43,32 @@ Construct classifies every host honestly — no surface is cosmetic. `construct 
 - `~/.claude/CLAUDE.md` — a Construct-managed block appended to your global Claude instructions
 - `~/.claude/agents/` — intentionally left without a `construct.md` (run `construct init` in a project to get `@construct` there)
 
-**Project tier** writes the full agent set + project-local Claude config:
+**Project tier** writes the front door + project-local Claude config:
 
-- `<project>/.claude/agents/construct.md` and `cx-*.md` — orchestrator + 28 specialists
+- `<project>/.claude/agents/construct.md` — orchestrator only (Single Front Door)
 - `<project>/.claude/settings.json` — full project-portable hook suite (relative paths via `.construct/run.mjs`)
 - `<project>/.claude/commands/*.md` — slash commands
 - `<project>/.claude/skills/<name>/SKILL.md` — Anthropic Agent Skills
 
-In Claude Code, address the persona with `@construct` from any session. Inside a Construct project the same prefix works for specialists: `@cx-engineer`, `@cx-security`, `@cx-architect`. Outside a project, only `@construct` is registered.
+In Claude Code, address the persona with `@construct`. Internal specialists dispatch via MCP — not as separate `@cx-*` picker entries.
 
 ## OpenCode
 
 **Global** writes only the orchestrator agent into `~/.config/opencode/opencode.json` (the existing provider auth, models, and unrelated agents are preserved on merge).
 
-**Project** writes `<project>/.opencode/opencode.json` with the orchestrator + 28 specialists, providers, MCP servers, and the runtime plugin. This is the path OpenCode's resolver actually reads for per-project config (`opencode.json` / `opencode.jsonc` / `.opencode/opencode.json`) — a prior `.opencode/config.json` was silently ignored, so the agents and MCP servers never loaded. Existing installs are migrated to the canonical name on the next `construct sync`. The project config shadows the global one, so teammates get the same setup automatically.
+**Project** writes `<project>/.opencode/opencode.json` with the `construct` front door, optional `construct-local` for Ollama setups, providers, MCP servers, and the runtime plugin.
 
 ## Codex (CLI)
 
 **Global** writes `~/.codex/agents/construct.toml` and registers it in `~/.codex/config.toml` under `[agents.construct]`, plus any Construct MCP entries in the managed block.
 
-**Project** writes `<project>/.codex/agents/{construct, cx-*}.toml` and updates the project's `config.toml`.
+**Project** writes `<project>/.codex/agents/construct.toml` and updates the project's `config.toml`.
 
 ## Copilot
 
 **Global** writes only `~/.github/prompts/construct.prompt.md` and a minimal Construct-managed block in `~/.github/copilot-instructions.md` listing the front-door prompt.
 
-**Project** writes 29 `.prompt.md` files under `<project>/.github/prompts/` (orchestrator + 28 specialists) and a richer managed block in `<project>/.github/copilot-instructions.md`. Copilot **agent mode** reads the project's `.claude/agents/*.md` natively (Claude-format custom agents), so the orchestrator and specialists already appear in the agent picker from that one set — Construct does **not** write a separate `.github/agents/` copy, which would duplicate every agent. The prompt files are reusable `/`-invoked passes; for a real multi-specialist run, the `construct` agent calls the `orchestration_run` MCP tool. All travel with the repo via git.
+**Project** writes `construct.prompt.md` under `<project>/.github/prompts/` and a managed block in `<project>/.github/copilot-instructions.md`. Copilot **agent mode** reads `<project>/.claude/agents/construct.md` — the Single Front Door. Multi-specialist runs use the `orchestration_run` MCP tool.
 
 ## VS Code
 
@@ -85,7 +85,7 @@ A run executed with the `provider` worker backend (set `orchestration.workerBack
 
 ## Cursor
 
-**Project** writes `<project>/.cursor/mcp.json` (Cursor's documented per-project MCP config) and `<project>/.cursor/rules/construct.mdc` (a minimal rule explaining Construct is the front door for this project). Cursor has no global rules concept by design.
+**Project** writes `<project>/.cursor/mcp.json` (Cursor's documented per-project MCP config) and `<project>/.cursor/rules/construct.mdc` (refreshed every sync). Cursor has no global rules concept by design. Run `npm run adapters` after clone — adapters are gitignored (ADR-0027).
 
 If `~/.cursor/mcp.json` already exists, **global** sync merges Construct's own MCP server entries in there too so `construct` MCP tools are reachable from any Cursor workspace.
 
@@ -103,17 +103,17 @@ The editor speaks JSON-RPC 2.0 over stdio; an ACP `session/prompt` runs a real m
 
 | Surface | Global tier | Project tier |
 |---|---|---|
-| Claude agent files | — (none — VS Code reads this scope too) | `construct.md` + 28 `cx-*.md` |
+| Claude agent files | — (none — VS Code reads this scope too) | `construct.md` only (Single Front Door) |
 | Claude hooks + settings.json | yes (always global — session-level) | project-portable copy with relative paths |
 | CLAUDE.md | Construct-managed block | project `CLAUDE.md` |
-| Codex agent TOMLs | `construct.toml` only | `construct.toml` + 28 `cx-*.toml` |
-| OpenCode config | `construct` agent + MCP | full orchestrator + 28 specialists + plugins |
-| Copilot prompt files | `construct.prompt.md` only | 29 prompt files |
-| copilot-instructions.md | minimal Construct block | full listing |
-| VS Code MCP | — | `.vscode/mcp.json` |
-| Cursor MCP | merged into existing `~/.cursor/mcp.json` if present | `.cursor/mcp.json` + `.cursor/rules/construct.mdc` |
+| Codex agent TOMLs | `construct.toml` only | `construct.toml` only |
+| OpenCode config | `construct` agent + MCP | `construct` (+ optional `construct-local`) + MCP |
+| Copilot prompt files | `construct.prompt.md` only | `construct.prompt.md` |
+| copilot-instructions.md | minimal Construct block | front-door listing |
+| VS Code MCP | merged into user `mcp.json` when present | `.vscode/mcp.json` |
+| Cursor MCP + rules | merged into existing `~/.cursor/mcp.json` if present | `.cursor/mcp.json` + `.cursor/rules/construct.mdc` |
 | Slash commands | — | `.claude/commands/*.md` |
-| Skills | — | `.claude/skills/<name>/SKILL.md` |
+| Skills | — | `.claude/skills/<name>/SKILL.md` (Claude); Cursor uses MCP `get_skill` |
 
 Hooks stay global because they're session-level (pre-tool-use, session-start). Everything else follows each host's documented best-practice scope: agents/prompts/MCP-for-the-team live with the project repo. The Codex and Copilot front doors live in `~/.` (those hosts don't cross-read another host's agent dir), but the **Claude** front door is project-scoped — Claude Code and VS Code both read `~/.claude/agents/`, so a global agent there would appear twice in the VS Code picker.
 

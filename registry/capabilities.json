@@ -1,0 +1,754 @@
+{
+  "version": 1,
+  "capabilities": [
+    {
+      "id": "orchestration.routing",
+      "kind": "capability",
+      "name": "Orchestration Intent Routing",
+      "description": "Classifies user intent and dispatches to the correct specialist chain.",
+      "criticality": "P0",
+      "ownerSpecialists": [
+        "orchestrator"
+      ],
+      "skill": "ai/orchestration-workflow",
+      "contracts": [
+        "user-to-construct",
+        "construct-to-orchestrator"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "orchestration_policy"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct orchestrate run",
+          "jsonTwin": true
+        },
+        "opencode": {
+          "supported": true
+        },
+        "claude": {
+          "supported": true
+        },
+        "cursor": {
+          "supported": true
+        }
+      },
+      "dependencies": {
+        "skills": [
+          "ai/orchestration-workflow",
+          "operating/orchestration-reference"
+        ],
+        "rules": [
+          "rules/common/no-fabrication.md"
+        ]
+      },
+      "verification": {
+        "functional": "tests/functional/orchestration-mcp.functional.test.mjs",
+        "hostEmulation": "tests/functional/host-mcp-emulation.functional.test.mjs"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": "2026-06-19T00:33:11.085Z"
+    },
+    {
+      "id": "oracle.meta-review",
+      "kind": "capability",
+      "name": "Oracle Meta-Review",
+      "description": "Deterministic read-model synthesis and bounded-auto maintenance for fleet health gaps.",
+      "criticality": "P1",
+      "ownerSpecialists": [
+        "oracle"
+      ],
+      "skill": "ai/orchestration-workflow",
+      "surfaces": {
+        "cli": {
+          "supported": true,
+          "command": "construct oracle review",
+          "jsonTwin": true
+        },
+        "mcp": {
+          "supported": false
+        }
+      },
+      "dependencies": {
+        "skills": [
+          "ai/orchestration-workflow",
+          "exploration/dependency-graph-reading",
+          "roles/reviewer.trace"
+        ],
+        "rules": [
+          "rules/common/no-fabrication.md"
+        ]
+      },
+      "verification": {
+        "functional": "tests/functional/oracle-bounded-auto.functional.test.mjs"
+      },
+      "humanGate": "approve-only",
+      "lastValidated": null
+    },
+    {
+      "id": "mcp.broker.connection",
+      "kind": "capability",
+      "name": "MCP Broker Connectivity",
+      "description": "Reliable MCP tool discovery and dispatch across hosts.",
+      "criticality": "P0",
+      "ownerSpecialists": [
+        "orchestrator"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true
+        },
+        "opencode": {
+          "supported": true
+        },
+        "cursor": {
+          "supported": true
+        },
+        "vscode": {
+          "supported": true
+        },
+        "claude": {
+          "supported": true
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/mcp-parity.functional.test.mjs",
+        "hostEmulation": "tests/functional/host-mcp-emulation.functional.test.mjs"
+      },
+      "humanGate": "autonomous",
+      "lastValidated": "2026-06-19T00:33:22.235Z"
+    },
+    {
+      "id": "workflow.evidence-ingest",
+      "kind": "workflow",
+      "name": "Evidence Ingest Workflow",
+      "description": "Ingest and structure raw evidence into a normalized summary.",
+      "criticality": "P1",
+      "ownerSpecialists": [
+        "researcher",
+        "data-analyst"
+      ],
+      "skill": "docs/evidence-ingest-workflow",
+      "embeddedWorkflow": "evidence-ingest",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      },
+      "dependencies": {
+        "skills": [
+          "docs/evidence-ingest-workflow"
+        ],
+        "templates": [
+          "evidence-brief",
+          "signal-brief"
+        ],
+        "rules": [
+          "rules/common/research.md",
+          "rules/common/no-fabrication.md"
+        ]
+      },
+      "verification": {
+        "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs",
+        "verificationBar": "Source metadata preserved; no invented quotes; confidence labeled"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "workflow.research-synthesis",
+      "kind": "workflow",
+      "name": "Research Synthesis Workflow",
+      "description": "Synthesize multiple sources into a cited, evidence-graded research summary.",
+      "criticality": "P1",
+      "ownerSpecialists": [
+        "researcher",
+        "data-analyst",
+        "evaluator"
+      ],
+      "skill": "docs/research-workflow",
+      "embeddedWorkflow": "research-synthesis",
+      "contracts": [
+        "researcher-to-architect"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct ask",
+          "jsonTwin": false
+        },
+        "claude": {
+          "supported": true,
+          "slashCommand": "understand:research"
+        }
+      },
+      "dependencies": {
+        "skills": [
+          "docs/research-workflow"
+        ],
+        "templates": [
+          "research-brief"
+        ],
+        "rules": [
+          "rules/common/research.md"
+        ]
+      },
+      "verification": {
+        "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs",
+        "structureRequirements": "research-brief",
+        "verificationBar": "≥2 primary sources; URLs fetched; confidence labeled"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "workflow.prd-draft",
+      "kind": "workflow",
+      "name": "PRD Draft Workflow",
+      "description": "Draft a product requirements document from a problem statement and evidence.",
+      "criticality": "P1",
+      "ownerSpecialists": [
+        "product-manager",
+        "architect"
+      ],
+      "skill": "docs/prd-workflow",
+      "embeddedWorkflow": "prd-draft",
+      "contracts": [
+        "product-manager-to-architect"
+      ],
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      },
+      "dependencies": {
+        "skills": [
+          "docs/prd-workflow"
+        ],
+        "templates": [
+          "prd",
+          "meta-prd",
+          "rfc"
+        ],
+        "rules": [
+          "rules/common/no-fabrication.md"
+        ]
+      },
+      "verification": {
+        "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs",
+        "structureRequirements": "prd",
+        "verificationBar": "Template chosen before draft; rejected alternatives recorded for ADR/RFC paths"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "workflow.architecture-review",
+      "kind": "workflow",
+      "name": "Architecture Review Workflow",
+      "description": "Review an architecture for trade-offs, failure modes, and security exposure.",
+      "criticality": "P1",
+      "ownerSpecialists": [
+        "architect",
+        "security",
+        "devil-advocate"
+      ],
+      "embeddedWorkflow": "architecture-review",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
+      },
+      "humanGate": "requires-human-approval",
+      "lastValidated": null
+    },
+    {
+      "id": "workflow.proposal-review",
+      "kind": "workflow",
+      "name": "Proposal Review Workflow",
+      "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance.",
+      "criticality": "P1",
+      "ownerSpecialists": [
+        "reviewer",
+        "devil-advocate"
+      ],
+      "embeddedWorkflow": "proposal-review",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
+      },
+      "humanGate": "requires-human-approval",
+      "lastValidated": null
+    },
+    {
+      "id": "workflow.risk-review",
+      "kind": "workflow",
+      "name": "Risk Review Workflow",
+      "description": "Stress-test a plan for failure modes, security, and compliance exposure.",
+      "criticality": "P1",
+      "ownerSpecialists": [
+        "devil-advocate",
+        "security",
+        "legal-compliance"
+      ],
+      "embeddedWorkflow": "risk-review",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
+      },
+      "humanGate": "requires-human-approval",
+      "lastValidated": null
+    },
+    {
+      "id": "workflow.structure-notes",
+      "kind": "workflow",
+      "name": "Structure Notes Workflow",
+      "description": "Structure unclassified notes into a normalized summary with extracted intents.",
+      "criticality": "P2",
+      "ownerSpecialists": [
+        "orchestrator",
+        "researcher"
+      ],
+      "skill": "operating/unstructured-triage",
+      "embeddedWorkflow": "structure-notes",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct intake classify",
+          "jsonTwin": true
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "workflow.transcript-process",
+      "kind": "workflow",
+      "name": "Transcript Process Workflow",
+      "description": "Process a meeting or call transcript into summary, decisions, and action items.",
+      "criticality": "P2",
+      "ownerSpecialists": [
+        "researcher",
+        "data-analyst"
+      ],
+      "embeddedWorkflow": "transcript-process",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "workflow.data-structure",
+      "kind": "workflow",
+      "name": "Data Structure Workflow",
+      "description": "Parse, validate, and profile a raw dataset into a structured, described shape.",
+      "criticality": "P2",
+      "ownerSpecialists": [
+        "data-analyst",
+        "data-engineer"
+      ],
+      "embeddedWorkflow": "data-structure",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "workflow.memo-draft",
+      "kind": "workflow",
+      "name": "Memo Draft Workflow",
+      "description": "Draft a decision or status memo from a problem statement and context.",
+      "criticality": "P2",
+      "ownerSpecialists": [
+        "docs-keeper",
+        "reviewer"
+      ],
+      "embeddedWorkflow": "memo-draft",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "document-type.research-brief",
+      "kind": "document-type",
+      "name": "Research Brief",
+      "description": "Cited research findings with confidence summary and recommendation.",
+      "ownerSpecialists": [
+        "researcher"
+      ],
+      "skill": "docs/research-workflow",
+      "template": "research-brief",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "tool": "get_template"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct knowledge add"
+        }
+      },
+      "verification": {
+        "structureRequirements": "research-brief",
+        "verificationBar": "Sources section with dates; confidence summary; recommendation"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "document-type.evidence-brief",
+      "kind": "document-type",
+      "name": "Evidence Brief",
+      "description": "Product evidence synthesis before decisions.",
+      "ownerSpecialists": [
+        "product-manager",
+        "researcher"
+      ],
+      "skill": "docs/evidence-ingest-workflow",
+      "template": "evidence-brief",
+      "verification": {
+        "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs",
+        "verificationBar": "Signal, evidence, counter-signal; no invented customer quotes"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "document-type.prd",
+      "kind": "document-type",
+      "name": "Product Requirements Document",
+      "description": "Customer-facing product capabilities and requirements.",
+      "ownerSpecialists": [
+        "product-manager"
+      ],
+      "skill": "docs/prd-workflow",
+      "template": "prd",
+      "verification": {
+        "structureRequirements": "prd",
+        "verificationBar": "Problem, goals, success metrics, risks and mitigations"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "document-type.adr",
+      "kind": "document-type",
+      "name": "Architecture Decision Record",
+      "description": "Record of an architecture decision with rejected alternatives.",
+      "ownerSpecialists": [
+        "architect",
+        "rd-lead"
+      ],
+      "skill": "docs/adr-workflow",
+      "template": "adr",
+      "verification": {
+        "structureRequirements": "adr",
+        "verificationBar": "Problem, decision, rejected alternatives, consequences, reversibility"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "document-type.ingested-markdown",
+      "kind": "document-type",
+      "name": "Ingested Markdown",
+      "description": "Normalized markdown from external documents with extraction metadata.",
+      "ownerSpecialists": [
+        "data-engineer",
+        "researcher"
+      ],
+      "skill": "docs/document-ingest-workflow",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "ingest_document"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct ingest"
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/node-native-extraction.functional.test.mjs",
+        "verificationBar": "Source metadata preserved; droppedInfo surfaced; no invented structure"
+      },
+      "humanGate": "autonomous",
+      "lastValidated": null
+    },
+    {
+      "id": "ingest.adapter",
+      "kind": "ingest-strategy",
+      "name": "Adapter Ingest (default)",
+      "description": "Local extraction via unpdf/mammoth with docling/whisper for fidelity paths.",
+      "criticality": "P0",
+      "ownerSpecialists": [
+        "data-engineer"
+      ],
+      "ingestStrategy": "adapter",
+      "surfaces": {
+        "cli": {
+          "supported": true,
+          "primary": true,
+          "command": "construct ingest"
+        },
+        "mcp": {
+          "supported": true,
+          "tool": "ingest_document"
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/node-native-extraction.functional.test.mjs"
+      },
+      "humanGate": "autonomous",
+      "lastValidated": "2026-06-19T00:33:22.459Z"
+    },
+    {
+      "id": "ingest.docling",
+      "kind": "ingest-strategy",
+      "name": "Docling Sidecar Ingest",
+      "description": "Offline docling Python sidecar for layout-aware PDF/Office and OCR.",
+      "criticality": "P1",
+      "ingestStrategy": "adapter",
+      "surfaces": {
+        "cli": {
+          "supported": true,
+          "command": "construct ingest --legacy-extractor=false"
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/mcp-ingest-resilience.functional.test.mjs"
+      },
+      "humanGate": "autonomous",
+      "lastValidated": null
+    },
+    {
+      "id": "ingest.docling-remote",
+      "kind": "ingest-strategy",
+      "name": "Docling Remote Ingest",
+      "description": "Opt-in remote conversion via DOCLING_SERVE_URL (explicit user choice).",
+      "criticality": "P2",
+      "ingestStrategy": "docling-remote",
+      "surfaces": {
+        "cli": {
+          "supported": true,
+          "command": "construct ingest"
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/docling-remote-ingest.functional.test.mjs"
+      },
+      "humanGate": "requires-human-approval",
+      "lastValidated": null
+    },
+    {
+      "id": "skill.roles-engineer",
+      "kind": "skill",
+      "name": "Role Skill: Engineer",
+      "description": "Engineer role playbook — hot path per skill telemetry.",
+      "ownerSpecialists": [
+        "engineer"
+      ],
+      "skill": "roles/engineer",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "get_skill"
+        }
+      },
+      "verification": {
+        "hostEmulation": "tests/functional/host-mcp-emulation.functional.test.mjs"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "skill.roles-architect-ai-systems",
+      "kind": "skill",
+      "name": "Role Skill: Architect AI Systems",
+      "description": "Architect AI systems flavor — hot path per skill telemetry.",
+      "ownerSpecialists": [
+        "architect"
+      ],
+      "skill": "roles/architect.ai-systems",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "get_skill"
+        }
+      },
+      "verification": {
+        "hostEmulation": "tests/functional/host-mcp-emulation.functional.test.mjs"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "local.model.tier",
+      "kind": "capability",
+      "name": "Local Model Tier Detection",
+      "description": "resolveCapabilityTier and isLocalModel include local/ OpenAI-compatible models.",
+      "criticality": "P1",
+      "ownerSpecialists": [
+        "orchestrator"
+      ],
+      "surfaces": {
+        "cli": {
+          "supported": true,
+          "command": "construct models resolve"
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/chat-free-router-mode.functional.test.mjs"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "chat.owned-loop",
+      "kind": "capability",
+      "name": "Chat Owned Loop",
+      "description": "construct chat tier-aware system prompt and owned-loop engine.",
+      "criticality": "P1",
+      "ownerSpecialists": [
+        "orchestrator"
+      ],
+      "surfaces": {
+        "cli": {
+          "supported": true,
+          "command": "construct chat"
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/chat-tui.functional.test.mjs"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    },
+    {
+      "id": "mcp.tool-budget.trim",
+      "kind": "capability",
+      "name": "MCP Tool Surface Trim",
+      "description": "Heavy external MCP servers disabled when default model is local.",
+      "criticality": "P2",
+      "ownerSpecialists": [
+        "orchestrator"
+      ],
+      "surfaces": {
+        "opencode": {
+          "supported": true
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/host-config-parity.functional.test.mjs"
+      },
+      "humanGate": "proposal-only",
+      "lastValidated": null
+    }
+  ]
+}

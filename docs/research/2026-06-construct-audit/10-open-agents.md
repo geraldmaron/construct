@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # 10 — Open-Source Coding Agents Benchmark
 
 Date: 2026-06-09 · Branch: research/capability-registry · Bead: construct-0oiv

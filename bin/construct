@@ -27,6 +27,7 @@ import { runUpgrade } from '../lib/upgrade.mjs';
 import { runUninstall } from '../lib/uninstall/uninstall.mjs';
 import { maybeFirstInvocationProbe } from '../lib/install/first-invocation.mjs';
 import { loadConstructEnv, getUserEnvPath, writeEnvValues, ensureUserConfigDir } from '../lib/env-config.mjs';
+import { ensureConstructCredentials } from '../lib/providers/credential-bootstrap.mjs';
 import {
   loadProjectConfig,
   writeProjectConfig,
@@ -74,6 +75,7 @@ import { runPressureRelease } from '../lib/runtime-pressure.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const HOME = os.homedir();
+ensureConstructCredentials({ env: process.env, cwd: ROOT_DIR, home: HOME });
 const ENV = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME, env: process.env });
 for (const [key, value] of Object.entries(ENV)) {
   if (!(key in process.env)) process.env[key] = value;
@@ -170,41 +172,51 @@ function runNodeScript(scriptPath, args = [], extraEnv = {}, { exitOnError = tru
 }
 
 async function cmdRegistryStatus(args = []) {
-  const { readFileSync, existsSync } = await import('node:fs');
-  const { join } = await import('node:path');
-  const matrixPath = join(ROOT_DIR, 'tests', 'registry', 'capability-matrix.json');
-  
-  if (!existsSync(matrixPath)) {
-    errorln('Capability matrix not found. Run "construct sync" or ensure tests/registry/capability-matrix.json exists.');
-    process.exit(1);
-  }
+  const { runRegistryStatus } = await import('../lib/registry/cli.mjs');
+  const code = await runRegistryStatus(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
 
-  const { capabilities } = JSON.parse(readFileSync(matrixPath, 'utf8'));
-  const jsonOutput = args.includes('--json');
+async function cmdRegistryValidate(args = []) {
+  const { runRegistryValidate } = await import('../lib/registry/cli.mjs');
+  const code = await runRegistryValidate(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
 
-  if (jsonOutput) {
-    println(JSON.stringify(capabilities, null, 2));
+async function cmdRegistryGenerateDocs(args = []) {
+  const { runRegistryGenerateDocs } = await import('../lib/registry/cli.mjs');
+  const code = await runRegistryGenerateDocs(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdRulesUsage(args = []) {
+  const { summarizeRuleCalls } = await import('../lib/telemetry/rule-calls.mjs');
+  const { summarizeHookCalls } = await import('../lib/telemetry/hook-calls.mjs');
+  const sub = args[0] || 'usage';
+  const sinceFlag = args.find((a) => a.startsWith('--since='));
+  const since = sinceFlag ? sinceFlag.split('=')[1] : '30d';
+
+  if (sub === 'usage') {
+    const rules = summarizeRuleCalls({ since });
+    const hooks = summarizeHookCalls({ since });
+    println(`Rule references — last ${since} (${rules.total} events)\n`);
+    const ruleRows = Object.entries(rules.rules).sort((a, b) => b[1] - a[1]);
+    if (ruleRows.length === 0) println('  No rule reference events in the window.');
+    for (const [path, count] of ruleRows) println(`  ${path.padEnd(50)} refs=${count}`);
+    println('');
+    println(`Hook fires — last ${since} (${hooks.totalEvents ?? 0} events)\n`);
+    const hookEntries = Object.entries(hooks.hooks ?? {}).sort((a, b) => b[1].calls - a[1].calls);
+    if (!hookEntries.length) {
+      println('  No hook events in window.');
+    } else {
+      for (const [id, s] of hookEntries) {
+        println(`  ${id.padEnd(40)} calls=${s.calls} blocked=${s.blocked ?? 0} errors=${s.errors ?? 0}`);
+      }
+    }
     return;
   }
-
-  println(`${COLORS.bold}Workflow & Surface Capability Registry${COLORS.reset}`);
-  println('='.repeat(40));
-  println('');
-
-  for (const cap of capabilities) {
-    const tierColor = cap.criticality === 'P0' ? COLORS.red : cap.criticality === 'P1' ? COLORS.yellow : COLORS.blue;
-    println(`${tierColor}[${cap.criticality}]${COLORS.reset} ${COLORS.bold}${cap.name}${COLORS.reset} (${cap.id})`);
-    println(`  ${COLORS.dim}${cap.description}${COLORS.reset}`);
-    
-    const surfaces = Object.entries(cap.surfaces);
-    for (const [name, status] of surfaces) {
-      const icon = status.quality_score === null ? '⚪' : status.quality_score >= 0.9 ? '🟢' : status.quality_score >= 0.7 ? '🟡' : '🔴';
-      const score = status.quality_score !== null ? `${(status.quality_score * 100).toFixed(0)}%` : 'N/A';
-      const date = status.last_validated ? new Date(status.last_validated).toLocaleDateString() : 'never';
-      println(`    ${icon} ${name.padEnd(10)} | Score: ${score.padEnd(5)} | Validated: ${date}`);
-    }
-    println('');
-  }
+  errorln(`Unknown rules subcommand: ${sub}. Available: usage`);
+  process.exit(1);
 }
 
 async function cmdStatus() {
@@ -917,6 +929,14 @@ async function cmdDoctor() {
     }
 
     try {
+      const { checkProjectAdaptersForDoctor } = await import('../lib/doctor/project-adapters.mjs');
+      const projectAdapters = checkProjectAdaptersForDoctor({ rootDir: ROOT_DIR, projectDir: process.cwd() });
+      add(projectAdapters.label, projectAdapters.ok, projectAdapters.warning);
+    } catch {
+      add('Project adapters', false, true);
+    }
+
+    try {
       const { validateSkills } = await import('../lib/validators/skills.mjs');
       const skillsRoot = path.join(ROOT_DIR, 'skills');
       const skillReport = validateSkills(skillsRoot);
@@ -926,6 +946,28 @@ async function cmdDoctor() {
       add(label, skillReport.valid, true);
     } catch {
       add('Skill structure', false, true);
+    }
+
+    try {
+      const { lintWorkflowSkillVerification } = await import('../lib/registry/skill-verification.mjs');
+      const wf = lintWorkflowSkillVerification(path.join(ROOT_DIR, 'skills'));
+      const wfLabel = wf.warnings.length
+        ? `Workflow skill verification (${wf.checked} checked, ${wf.warnings.length} missing bars)`
+        : `Workflow skill verification (${wf.checked} checked)`;
+      add(wfLabel, wf.valid && wf.warnings.length === 0, true);
+    } catch {
+      add('Workflow skill verification', false, true);
+    }
+
+    try {
+      const { validateCapabilityRegistry } = await import('../lib/registry/validate.mjs');
+      const reg = validateCapabilityRegistry({ rootDir: ROOT_DIR });
+      const regLabel = reg.warnings.length
+        ? `Capability registry (${reg.count} entries, ${reg.warnings.length} warnings)`
+        : `Capability registry (${reg.count} entries)`;
+      add(regLabel, reg.valid, reg.errors.length > 0);
+    } catch {
+      add('Capability registry', false, true);
     }
 
     try {
@@ -5311,6 +5353,9 @@ const handlers = new Map([
   ['search', cmdSearch],
   ['storage', cmdStorage],
   ['registry:status', cmdRegistryStatus],
+  ['registry:validate', cmdRegistryValidate],
+  ['registry:generate-docs', cmdRegistryGenerateDocs],
+  ['rules', cmdRulesUsage],
   // Pricing / cost readouts are stubbed out: the ledger writes, model-pricing
   // catalog, and per-turn accounting still run, but no CLI surface exposes
   // them to the user. Handlers (cmdPricing, cmdCosts, cmdCost) remain in this
@@ -5967,6 +6012,10 @@ const handlers = new Map([
    ['embed', async (args) => {
      const { runEmbedCli } = await import('../lib/embed/cli.mjs');
      return runEmbedCli(args, { rootDir: new URL('..', import.meta.url).pathname });
+   }],
+   ['oracle', async (args) => {
+     const { runOracleCli } = await import('../lib/oracle/cli.mjs');
+     return runOracleCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd(), homeDir: HOME });
    }],
    ['reflect', async (args) => {
      const { runReflectCli } = await import('../lib/reflect.mjs');

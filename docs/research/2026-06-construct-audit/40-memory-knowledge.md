@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # 40 — Memory & Knowledge: Construct vs mem0, Letta/MemGPT
 
 Area: skill/knowledge architecture (rubric dim 4), with prompt-economy (dim 1) and

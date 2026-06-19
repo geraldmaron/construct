@@ -17,7 +17,7 @@ import { render } from 'ink-testing-library';
 import { createTurnState, applyTurnEvent, runTurnInto } from '../../apps/chat/tui/turn-state.mjs';
 import { createSessionUsage } from '../../lib/chat/tui/usage.mjs';
 import { createTheme } from '../../apps/chat/tui/theme.mjs';
-import { TransparencyPanel } from '../../apps/chat/dist/tui.mjs';
+import { TransparencyPanel, TurnContextBar } from '../../apps/chat/dist/tui.mjs';
 
 const PANEL_THEME = createTheme();
 
@@ -87,7 +87,7 @@ test('turn-state records permission events', () => {
   assert.equal(state.permissions[0].title, 'shell');
 });
 
-test('TransparencyPanel renders live usage, model, and the tool timeline', () => {
+test('SessionDock renders session usage and model', () => {
   const session = { usage: createSessionUsage() };
   applyTurnEvent(createTurnState(), { type: 'usage', tokens: { input: 1200, output: 300, total: 1500 } }, { session });
 
@@ -95,12 +95,6 @@ test('TransparencyPanel renders live usage, model, and the tool timeline', () =>
     React.createElement(TransparencyPanel, {
       width: 40,
       session,
-      route: ['cx-architect', 'cx-engineer'],
-      routeMeta: { intent: 'implement', workCategory: 'code' },
-      tools: [{ id: 't1', title: 'read', status: 'completed' }],
-      plan: [],
-      permissions: [],
-      lastTurnUsage: null,
       layers: { thinking: true, path: true, specialists: true, tools: true, observability: true },
       working: false,
       model: 'anthropic/claude-sonnet-4-6',
@@ -108,10 +102,34 @@ test('TransparencyPanel renders live usage, model, and the tool timeline', () =>
     }),
   );
   const frame = lastFrame();
-  assert.match(frame, /transparency/);
+  assert.match(frame, /session/);
   assert.match(frame, /anthropic\/claude-sonnet-4-6/);
-  assert.match(frame, /cx-architect/);
-  assert.match(frame, /read/);
   assert.match(frame, /layers/);
-  assert.match(frame, /implement/);
+});
+
+test('TurnContextBar renders route and external research badge', () => {
+  const turn = {
+    overlay: {
+      intent: 'research',
+      workCategory: 'competitive-analysis',
+      specialists: ['cx-researcher'],
+      externalResearch: { required: true, shape: 'landscape' },
+    },
+    sources: [{ tool: 'read', ref: 'docs/adr/0015.md' }],
+  };
+  const { lastFrame } = render(
+    React.createElement(TurnContextBar, {
+      turn,
+      width: 50,
+      layers: { specialists: true },
+      palette: PANEL_THEME.palette,
+      glyphs: PANEL_THEME.glyphs,
+    }),
+  );
+  const frame = lastFrame();
+  assert.match(frame, /turn context/);
+  assert.match(frame, /intent/);
+  assert.match(frame, /route/);
+  assert.match(frame, /research/);
+  assert.match(frame, /docs\/adr\/0015.md/);
 });

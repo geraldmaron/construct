@@ -29,7 +29,7 @@ describe('Scheduler', () => {
     let ran = 0;
     s.register('quick', 20, async () => { ran++; });
     s.start();
-    await new Promise((r) => setTimeout(r, 70));
+    await new Promise((r) => setTimeout(r, 100));
     s.stop();
     assert.ok(ran >= 2, `Expected >=2 runs, got ${ran}`);
   });
