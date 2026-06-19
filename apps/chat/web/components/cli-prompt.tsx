@@ -1,10 +1,20 @@
 /**
  * apps/chat/web/components/cli-prompt.tsx — shell-style input for terminal cockpit.
+ *
+ * Tab completion, input history, and slash-command ghost hints match Ink Footer.
  */
 
 'use client';
 
-import { FormEvent, KeyboardEvent, useState } from 'react';
+import { FormEvent, KeyboardEvent, useRef, useState } from 'react';
+import {
+  applyTabCompletion,
+  commandSuggestHint,
+  cycleSlashCommand,
+  isSlashOnlyInput,
+  slashCommandGhost,
+  slashCommandMatches,
+} from '../../../../lib/chat/command-suggest.mjs';
 
 type CliPromptProps = {
   disabled: boolean;
@@ -13,10 +23,17 @@ type CliPromptProps = {
 
 export function CliPrompt({ disabled, onSubmit }: CliPromptProps) {
   const [input, setInput] = useState('');
+  const inputHistory = useRef<string[]>([]);
+  const historyPos = useRef(-1);
 
   const submit = () => {
     const text = input.trim();
     if (!text || disabled) return;
+    if (!text.startsWith('/')) {
+      const hist = inputHistory.current;
+      if (!hist.length || hist[hist.length - 1] !== text) hist.push(text);
+    }
+    historyPos.current = -1;
     setInput('');
     onSubmit(text);
   };
@@ -25,6 +42,43 @@ export function CliPrompt({ disabled, onSubmit }: CliPromptProps) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       submit();
+      return;
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      setInput((v) => applyTabCompletion(v));
+      return;
+    }
+    const slashMode = isSlashOnlyInput(input);
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (slashMode && slashCommandMatches(input).length > 1) {
+        setInput((v) => cycleSlashCommand(v, -1));
+        return;
+      }
+      const hist = inputHistory.current;
+      if (!hist.length) return;
+      const next = historyPos.current < 0 ? hist.length - 1 : Math.max(0, historyPos.current - 1);
+      historyPos.current = next;
+      setInput(hist[next]);
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (slashMode && slashCommandMatches(input).length > 1) {
+        setInput((v) => cycleSlashCommand(v, 1));
+        return;
+      }
+      const hist = inputHistory.current;
+      if (!hist.length || historyPos.current < 0) return;
+      const next = historyPos.current + 1;
+      if (next >= hist.length) {
+        historyPos.current = -1;
+        setInput('');
+        return;
+      }
+      historyPos.current = next;
+      setInput(hist[next]);
     }
   };
 
@@ -33,21 +87,43 @@ export function CliPrompt({ disabled, onSubmit }: CliPromptProps) {
     submit();
   };
 
+  const ghost = slashCommandGhost(input);
+  const suggestHint = commandSuggestHint(input);
+
   return (
-    <form className="cx-cockpit-prompt" onSubmit={onFormSubmit} aria-label="Construct prompt">
-      <label htmlFor="construct-prompt" className="cx-cockpit-prompt-glyph">construct ›</label>
-      <textarea
-        id="construct-prompt"
-        className="cx-cockpit-prompt-input"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={onKeyDown}
-        disabled={disabled}
-        rows={1}
-        placeholder="Message or /clear …"
-        aria-label="Message construct"
-      />
-      <span className="cx-cockpit-prompt-hints cx-cockpit-muted">/clear · Shift+Enter newline</span>
-    </form>
+    <footer className="cx-cockpit-footer" aria-label="Construct prompt">
+      <hr className="cx-cockpit-rule" />
+      {suggestHint ? (
+        <p className="cx-cockpit-muted cx-cockpit-prompt-suggest">{`tab complete   ${suggestHint}`}</p>
+      ) : null}
+      <form onSubmit={onFormSubmit}>
+        <div className="cx-cockpit-prompt-line">
+          <label htmlFor="construct-prompt" className="cx-cockpit-prompt-glyph">you ▸</label>
+          <textarea
+            id="construct-prompt"
+            className="cx-cockpit-prompt-input"
+            value={input}
+            onChange={(e) => {
+              historyPos.current = -1;
+              setInput(e.target.value);
+            }}
+            onKeyDown={onKeyDown}
+            disabled={disabled}
+            rows={1}
+            placeholder=""
+            aria-label="Message construct"
+          />
+          {!disabled && !input ? (
+            <span className="cx-cockpit-cursor" aria-hidden>▌</span>
+          ) : null}
+          {ghost ? (
+            <span className="cx-cockpit-muted cx-cockpit-prompt-ghost-inline" aria-hidden>{ghost}</span>
+          ) : null}
+        </div>
+        <p className="cx-cockpit-prompt-hints cx-cockpit-muted">
+          enter send   tab complete   shift+enter newline   │   /help  Ctrl-C exit
+        </p>
+      </form>
+    </footer>
   );
 }

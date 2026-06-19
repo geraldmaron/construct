@@ -116,27 +116,14 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
   const isChatRoute = pathname === '/chat' || pathname === '/chat/';
 
   return (
-    <div className={'shell' + (prefs.calmMode ? ' calm' : '') + (isChatRoute ? ' shell--chat' : '')}>
+    <div className={'shell' + (prefs.calmMode ? ' calm' : '') + (isChatRoute ? ' shell--chat' : '')} data-testid="app-shell">
       <a className="skip-link" href="#main">Skip to content</a>
+      {!isChatRoute ? (
       <header className="topbar">
-        {isChatRoute ? (
-          <>
-            <Link href="/" className="brand brand--chat-back">
-              <span className="chat-back-label">← dashboard</span>
-            </Link>
-            <div className="chat-topbar-title" aria-hidden="true">
-              <span className="chat-topbar-mode">terminal cockpit</span>
-              <span className="chat-topbar-sep">│</span>
-              <span className="chat-topbar-sub">owned loop · specialist routes</span>
-            </div>
-          </>
-        ) : (
-          <Link href="/" className="brand">
-            <div className="mark" />
-            <div className="name">Construct<em>dashboard</em></div>
-          </Link>
-        )}
-        {!isChatRoute ? (
+        <Link href="/" className="brand">
+          <div className="mark" />
+          <div className="name">Construct<em>dashboard</em></div>
+        </Link>
         <div className="search-wrap">
           <label className="search" onClick={() => setPaletteOpen(true)}>
             <SearchIcon />
@@ -149,7 +136,6 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
             <span className="kbd">⌘K</span>
           </label>
         </div>
-        ) : null}
         <div className="top-actions">
           <button
             className="icon-btn"
@@ -181,6 +167,7 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
         </div>
         <div className="progress" />
       </header>
+      ) : null}
 
       <div className="body-grid">
         {!isChatRoute ? (

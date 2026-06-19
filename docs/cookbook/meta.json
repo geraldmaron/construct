@@ -26,6 +26,7 @@
     "start-embed-mode",
     "embed-construct-in-your-app",
     "sync-the-dashboard",
+    "construct-chat",
     "override-storage-root",
     "run-local-models"
   ]

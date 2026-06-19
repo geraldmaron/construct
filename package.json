@@ -66,6 +66,7 @@
     "lint:agents": "node ./bin/construct lint:agents",
     "build:sea": "esbuild bin/construct --bundle --platform=node --target=node20 --packages=external --outfile=dist/construct-bundle.cjs 2>&1 || (echo 'esbuild not found \u2014 install with: npm install -g esbuild' && exit 1)",
     "build:chat": "esbuild apps/chat/tui/index.jsx --bundle --platform=node --format=esm --packages=external --jsx=automatic --jsx-import-source=react --outfile=apps/chat/dist/tui.mjs",
+    "clean:artifacts": "node scripts/clean-artifacts.mjs",
     "lint:profiles": "node scripts/lint-profiles.mjs",
     "learning:status": "node scripts/learning-status.mjs",
     "lint:templates": "node scripts/lint-commits-pr.mjs",

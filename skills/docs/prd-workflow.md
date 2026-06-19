@@ -60,3 +60,20 @@ Run `construct artifact validate <path> --type=<type>` before marking the artifa
 ## After approval → beads
 
 Once the PRD is approved, run `/plan feature {feature-slug}` to produce a structured implementation plan and import it as workflow task packets (beads) into `.cx/workflow.json`. Link the resulting `.cx/plans/` file back in the PRD as the implementation reference.
+
+## Distribution (publish pipeline)
+
+**`construct workflow invoke` returns a plan only** — it does not draft the PRD. Run the listed specialists (cx-product-manager, cx-researcher, cx-ux-researcher as needed) to author the artifact from the template. **Do not hand-write a stub and publish.**
+
+Before distribution:
+
+```bash
+node bin/construct artifact validate docs/prd-platform/<slug>.md --type=prd-platform
+node bin/construct publish docs/prd-platform/<slug>.md --strict --figures
+```
+
+`construct publish` runs the artifact release gate by default. Thin or unscaffolded docs **exit 2** with remediation hints. Do not use `--no-gate` or `--no-strict` in demos or ship paths.
+
+**Presentation is part of done.** Published PDFs use type-specific Typst templates (`construct-prd.typ`, `construct-research.typ`, `construct-decision.typ`) with violet editorial branding. Lead with an `::: executive-summary` narrative paragraph — not a bullet wall. Diagrams on the publish path use professional D2 neutral / branded Mermaid themes; sketch is exploratory only.
+
+`--strict` means **toolchain and release gate** both pass. Invoke alone is not "done."

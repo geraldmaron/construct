@@ -98,16 +98,18 @@ export function StatusBar({
 
       <div className="cx-cockpit-status-row cx-cockpit-status-layers">
         <span className="cx-cockpit-muted">layers</span>
-        {LAYER_KEYS.map((key) => (
-          <button
-            key={key}
-            type="button"
-            className="cx-cockpit-layer-btn"
-            aria-pressed={layers[key] !== false}
-            onClick={() => onToggleLayer(key)}
-          >
-            {`${key}${layers[key] !== false ? '' : '✗'}`}
-          </button>
+        {LAYER_KEYS.map((key, i) => (
+          <span key={key} className="cx-cockpit-layer-pill-wrap">
+            {i > 0 ? <span className="cx-cockpit-gutter">│</span> : null}
+            <button
+              type="button"
+              className="cx-cockpit-layer-btn"
+              aria-pressed={layers[key] !== false}
+              onClick={() => onToggleLayer(key)}
+            >
+              {`${key}${layers[key] !== false ? '' : '✗'}`}
+            </button>
+          </span>
         ))}
         {sessionMeta.workingBranch ? (
           <>

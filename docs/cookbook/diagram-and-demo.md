@@ -1,12 +1,53 @@
 ---
 title: Diagram and demo
-description: Render code-driven diagrams (D2/Graphviz) and reproducible terminal demos (VHS/asciinema), degrading to source when no renderer is installed.
+description: Render code-driven diagrams (D2/Graphviz), reproducible terminal demos (VHS), dashboard demos (Playwright), and publish research briefs to PDF.
 ---
 
-Both commands follow the same contract as `construct export`: rendering goes
-through optional **external system binaries** detected at runtime (ADR-0001,
-zero-npm-core). When the binary is absent, the command still succeeds (exit 0)
-by writing the diagram/recording **source** plus an install hint.
+Commands follow the optional **external system binaries** contract (ADR-0001).
+`construct publish --strict` fails loud (exit 2) when required tooling **or the
+artifact release gate** fails. Do not use `--no-gate` in demos or ship paths;
+individual `diagram`/`demo` commands degrade to source-only (exit 0).
+
+## Toolchain detect
+
+```bash
+node bin/construct tools detect --json
+brew install d2 graphviz pandoc typst vhs
+npm install -g @mermaid-js/mermaid-cli
+```
+
+## Publish a typed artifact (validate first)
+
+```bash
+node bin/construct artifact validate docs/prd-platform/brief.md --type=prd-platform
+node bin/construct publish docs/prd-platform/brief.md --strict --figures
+```
+
+- Runs **artifact release gate** before export (structure, visuals, citations, prose minimum)
+- Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **distribution brand themes** (D2 neutral, branded Mermaid — not sketch/hand-drawn)
+- PDF routes by `artifactType`: `construct-prd.typ` (editorial), `construct-research.typ` (analytics), `construct-decision.typ` (ADR/RFC); override: `.cx/publish-theme.typ`
+- Optional VHS terminal demo + Playwright dashboard demo via frontmatter or flags
+
+Authoring conventions for richer PDFs:
+
+```markdown
+::: executive-summary
+One paragraph a PM would read aloud in a review.
+:::
+
+::: key-metrics
+| Metric | Baseline | Target |
+```
+
+Demo tapes show **construct chat cockpit** (violet theme), not raw shell — run `construct demo agentic-platforms-prd` or see `.cx/demos/tapes/agentic-platforms-prd.tape`.
+
+Optional frontmatter:
+
+```yaml
+publish:
+  demo: resource-guard-rails
+  dashboardDemo: agentic-platforms-prd
+```
 
 ## Render a diagram
 
@@ -14,65 +55,51 @@ by writing the diagram/recording **source** plus an install hint.
 construct diagram "web app: client -> api -> db"
 ```
 
-Parses the `a -> b -> c` chain into a graph, generates D2 source, and renders
-an SVG to `.cx/diagrams/`. If neither D2 nor Graphviz `dot` is installed, the
-`.d2` source is written instead and the command exits 0 with an install hint.
+Default D2 theme is **neutral** (professional geometry). Use `--theme sketch` only for exploratory whiteboarding — not for publish.
 
-### Choose a type, format, and theme
+Output: `.cx/diagrams/*.svg` (or `.d2` source when no renderer).
 
-```bash
-construct diagram "auth flow" --type flow
-construct diagram "client -> api -> db" --format png --theme sketch
-construct diagram "order lifecycle" --type state --source-only
-```
+## Terminal demos (chat-first)
 
-| Type | Renderer | Notes |
-|---|---|---|
-| `architecture` (default) | D2 | Distinctive sketch + themes, MPL-2.0 |
-| `flow` / `sequence` / `state` / `er` | Mermaid source | Reuses `lib/wireframe.mjs`; paste into any Mermaid viewer |
-| `class` | D2 | |
-
-`--format` accepts `svg` (default) or `png`. `--theme` takes a D2 theme name
-(`neutral`, `sketch`, `cool-classics`, ...). `--out` overrides the output path.
-`--source-only` skips rendering and always writes the source.
-
-D2 is the **primary** renderer (single Go binary, headless SVG/PNG, distinctive
-look). Graphviz `dot` is the **fallback** (ubiquitous on CI images). Install:
+Demo scripts under `templates/demos/scripts/` drive **construct chat** by default:
 
 ```bash
-brew install d2        # primary
-brew install graphviz  # fallback
+construct demo list
+construct demo agentic-platforms-prd          # Ink chat with /demo next steps
+construct demo agentic-platforms-prd --web    # browser cockpit at /chat/
+construct demo agentic-platforms-prd --surface=tape --format mp4   # VHS fallback
 ```
 
-## Record a demo
+Fallback chain when chat is unavailable: **web chat → dashboard Playwright → VHS tape → printed script steps**.
+
+Inside chat, use `/demo next` for the next prompt, `/demo steps` to replay the outline.
+
+## Terminal demos (VHS recording)
+
+Project tapes live in `.cx/demos/tapes/` — **commit the `.tape`, regenerate MP4/GIF in CI**.
+
+Theme: `templates/demos/vhs/construct-cockpit.json` (navy + violet `#8b5cf6`).
 
 ```bash
-construct demo quickstart
+construct demo init my-topic --from=quickstart
+construct demo record resource-guard-rails --format mp4
 ```
 
-Writes a VHS `.tape` describing a plan -> build -> ship walkthrough, then
-renders a GIF to `.cx/demos/`. If neither VHS nor asciinema is installed, the
-`.tape` source is written and the command exits 0 with an install hint.
+Scaffold templates: `quickstart`, `diagram`. CI: `.github/workflows/publish-media.yml` uses `charmbracelet/vhs-action`.
 
-### Choose a tape and format
+## Dashboard demos (Playwright)
 
 ```bash
-construct demo diagram --format mp4
-construct demo quickstart --source-only
+cd apps/dashboard && npm install && npx playwright install chromium
+node bin/construct demo dashboard:agentic-platforms-prd
 ```
 
-Built-in tapes: `quickstart` (plan/build/ship) and `diagram` (render an
-architecture diagram). `--format` accepts `gif` (default), `mp4`, or `webm`
-(VHS only). `--out` overrides the output path. `--source-only` always writes
-the `.tape` source.
+Playwright spec: `apps/dashboard/e2e/demo/agentic-platforms-prd.spec.ts` — walks `/chat/` with `/demo` steps. Config: `webServer` + `video: on`.
 
-VHS is the **primary** recorder (declarative `.tape` -> GIF/MP4/WebM, MIT,
-reproducible in CI). asciinema is the **fallback** (records a `.cast`). Install:
+## Export only
 
 ```bash
-brew install vhs        # primary
-brew install asciinema  # fallback
+construct export brief.md --to=pdf --figures
 ```
 
-The `.tape` and `.d2`/`.dot` sources are the source of truth — commit them and
-regenerate the artifacts in CI.
+Uses Pandoc + Typst (PDF) with the diagram Lua filter when `--figures` is set.
