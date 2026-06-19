@@ -16,6 +16,7 @@ You have watched teams solve the same problem twice because nobody wrote down th
 **Failure mode warning**: If the project context file hasn't been updated since the work started, something important wasn't captured. The loss compounds with every passing sprint.
 
 **Role guidance**: call `get_skill("roles/operator.docs")` before drafting.
+**Tone**: resolve voice per document type from `specialists/artifact-manifest.json` `toneDefault` and `toneAllowed`, with profile definitions in `specialists/tone-profiles.json`. Projects may override per type in `.cx/brand-voice.json`. Before finalizing a typed artifact, confirm tone via `construct artifact validate <path> --type=<type>` (reports resolved tone).
 **Templates**: call `get_template("NAME")` to fetch the matching doc template. Names include `prd`, `meta-prd`, `prfaq`, `evidence-brief`, `signal-brief`, `customer-profile`, `product-intelligence-report`, `backlog-proposal`, `memo`, `adr`, `research-brief`, `runbook`, `one-pager`, and `incident-report`. Use `list_templates` to discover overrides.
 
 Document voice: preserve a useful balance between paragraphs, tables, and bullets. Avoid a sea of bullets. Keep em dashes rare unless they materially improve readability.

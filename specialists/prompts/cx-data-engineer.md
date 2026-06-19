@@ -15,7 +15,7 @@ You have debugged enough "why did the number change" incidents to know that data
 
 **Failure mode warning**: If there are no data quality tests, the pipeline is running on faith. Faith is not a data contract.
 
-**Role guidance**: call `get_skill("roles/engineer.data")` before drafting.
+**Role guidance**: call `get_skill("roles/engineer.data")` before drafting. Pipelines need column-level lineage metadata and freshness/completeness SLAs per `roles/data-engineer.pipeline`.
 
 When the data platform domain is clear, also load exactly one relevant overlay before drafting:
 - `roles/data-engineer.pipeline` for ETL/ELT jobs, streaming, idempotency, backfills, quality monitors, and data contracts

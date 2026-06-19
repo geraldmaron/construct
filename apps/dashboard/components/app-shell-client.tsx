@@ -113,14 +113,30 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
     return pathname === href || pathname.startsWith(href + '/');
   };
 
+  const isChatRoute = pathname === '/chat' || pathname === '/chat/';
+
   return (
-    <div className={'shell' + (prefs.calmMode ? ' calm' : '')}>
+    <div className={'shell' + (prefs.calmMode ? ' calm' : '') + (isChatRoute ? ' shell--chat' : '')}>
       <a className="skip-link" href="#main">Skip to content</a>
       <header className="topbar">
-        <Link href="/" className="brand">
-          <div className="mark" />
-          <div className="name">Construct<em>dashboard</em></div>
-        </Link>
+        {isChatRoute ? (
+          <>
+            <Link href="/" className="brand brand--chat-back">
+              <span className="chat-back-label">← dashboard</span>
+            </Link>
+            <div className="chat-topbar-title" aria-hidden="true">
+              <span className="chat-topbar-mode">terminal cockpit</span>
+              <span className="chat-topbar-sep">│</span>
+              <span className="chat-topbar-sub">owned loop · specialist routes</span>
+            </div>
+          </>
+        ) : (
+          <Link href="/" className="brand">
+            <div className="mark" />
+            <div className="name">Construct<em>dashboard</em></div>
+          </Link>
+        )}
+        {!isChatRoute ? (
         <div className="search-wrap">
           <label className="search" onClick={() => setPaletteOpen(true)}>
             <SearchIcon />
@@ -133,6 +149,7 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
             <span className="kbd">⌘K</span>
           </label>
         </div>
+        ) : null}
         <div className="top-actions">
           <button
             className="icon-btn"
@@ -166,6 +183,7 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
       </header>
 
       <div className="body-grid">
+        {!isChatRoute ? (
         <nav className="sidebar" aria-label="Dashboard sections">
           {nav.map((group) => (
             <div className="side-group" key={group.label}>
@@ -190,8 +208,9 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
             Local dashboard for Construct. Theme + density preferences persist.
           </div>
         </nav>
+        ) : null}
 
-        <main className="main" id="main" tabIndex={-1} ref={mainRef} onScroll={onScroll}>
+        <main className={'main' + (isChatRoute ? ' main--chat' : '')} id="main" tabIndex={-1} ref={mainRef} onScroll={onScroll}>
           {children}
         </main>
       </div>
