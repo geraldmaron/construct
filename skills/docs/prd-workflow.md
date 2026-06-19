@@ -11,6 +11,8 @@ Use when: the user asks to create a PRD, platform spec, business case, RFC, or r
 
 Choose the document type before drafting:
 
+Resolve tone from `specialists/tone-profiles.json` and optional `.cx/brand-voice.json` override for the selected template.
+
 | Template | Use when |
 |---|---|
 | `prd` | Customer-facing product capabilities, user workflows, end-user requirements |

@@ -58,7 +58,8 @@ Hook count target: ≤ 30 (see projection below).
 | `session-start.mjs` | SessionStart | 300 | Tiered context injection at session open + `.env.example` vs `.env` comparison notice |
 | `pre-compact.mjs` | PreCompact | 100 | Context summary before compaction |
 | `adaptive-lint.mjs` | PostToolUse | 800 | Auto-runs linter/formatter on edited file; flags debug logging |
-| `comment-lint.mjs` | PostToolUse | 50 | Warns on missing headers and banned comment patterns |
+| `comment-lint.mjs` | PostToolUse | 50 | Blocks banned comment patterns and missing required headers |
+| `artifact-release-gate.mjs` | PostToolUse | 80 | Advisory: manifest structure/visual gaps on typed docs (`docs/**`, `.cx/research/**`) |
 | `stop-typecheck.mjs` | Stop | 2000 | Runs `tsc --noEmit` at session end |
 | `edit-error-recovery.mjs` | PostToolUse | 10 | Recovery guide for failed Edit/Write calls |
 | `context-window-recovery.mjs` | PostToolUse | 10 | Detects context-limit errors; saves recovery snapshot |
@@ -73,8 +74,8 @@ Hook count target: ≤ 30 (see projection below).
 |---|---|
 | observability | 8 |
 | guardrail | 8 |
-| keep | 10 |
-| **Total** | **26** |
+| keep | 11 |
+| **Total** | **27** |
 
 Ceiling: 30. Adding a hook requires retiring one or explicit approval.
 

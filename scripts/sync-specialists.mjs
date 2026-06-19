@@ -56,6 +56,7 @@ import {
 } from "../lib/mcp-platform-config.mjs";
 import { loadConstructEnv } from "../lib/env-config.mjs";
 import { inlineRoleAntiPatterns, PROMPT_WORD_CAP } from "../lib/role-preload.mjs";
+import { inlineValidationContract } from "../lib/prompt-validation-contract.mjs";
 import { loadManifest } from "../lib/roles/manifest.mjs";
 import { resolveActiveProfile } from "../lib/profiles/loader.mjs";
 import { resolveTiersForPrimary, resolveCapabilityTier, selectLocalEditorModel } from "../lib/model-router.mjs";
@@ -688,6 +689,7 @@ function buildPrompt(entry, allEntries, platform, { capabilityTier = 'full' } = 
   }).prompt;
 
   prompt = inlineRoleAntiPatterns(prompt, root, entry.name, console.warn, { preload: entry.preloadRoleGuidance === true });
+  prompt = inlineValidationContract(prompt, root, entry.name);
 
   // Platform-Native Orchestration Alignment (ADR-0002). Hosts with native subagent
   // routing (OpenCode, VS Code, Cursor) do not get the static specialist roster

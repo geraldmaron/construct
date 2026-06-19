@@ -146,6 +146,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 | Command | What it does |
 |---|---|
+| `construct artifact` | Validate typed document artifacts against the release gate |
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |

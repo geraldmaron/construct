@@ -83,6 +83,37 @@ The server detects the claude binary via which(1) at startup. If not found, the 
 
 Chat endpoints are behind the standard /api/* auth gate (session cookie or Bearer token). No additional auth layer needed.
 
+## Extension: owned-loop web chat (2026-06)
+
+ADR-0041 adds a second dashboard chat path backed by Construct's owned agent loop (`apps/chat/engine/`, `lib/chat/web-session.mjs`) instead of the `claude --print` CLI. The legacy endpoints above remain for backward compatibility.
+
+### Endpoints
+
+    GET /api/chat/loop/stream?message=<urlencoded>&id=<convId>
+      Response: text/event-stream
+      Events: data: { type, ...fields, id }
+        type = "session"     -- first event; assigns conversation id
+        type = "overlay"     -- route/intent overlay from planTurn
+        type = "thinking"    -- reasoning chunk
+        type = "text"        -- assistant message chunk
+        type = "tool_call"   -- tool invocation
+        type = "tool_update" -- tool status change
+        type = "usage"       -- token/cost/context usage
+        type = "permission"  -- ask-mode permission prompt
+        type = "done"        -- stream complete
+        type = "error"       -- fatal error
+
+    POST /api/chat/loop/permission
+      Body: { requestId, decision }
+      Resolves an ask-mode permission prompt (CSRF required).
+
+    GET /api/chat/loop/pending?id=<convId>
+      Response: { pending: [{ requestId, title, options }] }
+
+Launch from the terminal: `construct chat --web` (starts dashboard if needed, opens `/chat/`).
+
+UI: `apps/chat/web/` components mounted at `apps/dashboard/app/chat/page.tsx`.
+
 ## Drawbacks
 
 - Conversation history is lost on server restart -- acceptable for local single-user; not acceptable for multi-user cloud (Phase 5 addresses with persistent session store)

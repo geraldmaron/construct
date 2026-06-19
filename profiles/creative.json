@@ -72,6 +72,17 @@
     "sessionOptimize": "on"
   },
   "defaultSkills": [],
+  "toneDefaults": {
+    "one-pager": "friendly",
+    "memo": "friendly",
+    "prfaq": "friendly"
+  },
+  "researchProfiles": {
+    "brief": "user",
+    "research": "user",
+    "draft": "user",
+    "measure": "external"
+  },
   "rebrand": {
     "intakeQueueLabel": "Creative queue",
     "signalNoun": "brief"

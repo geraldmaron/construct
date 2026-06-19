@@ -132,6 +132,18 @@ Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CX_MODEL_*` (alias still honor
 |---|---|
 | `GITHUB_TOKEN` | GitHub personal access token. Alias: `GH_TOKEN`. Without this, unauthenticated rate limits apply (60 req/h). |
 | `GH_TOKEN` | Alias for `GITHUB_TOKEN`: checked when `GITHUB_TOKEN` is absent |
+
+### 1Password (`op://`) credentials
+
+Store provider keys in `~/.construct/config.env` as `op://vault/item/field` references (or plain values). Construct resolves them lazily via `op read` when a model call needs the plaintext.
+
+**Recommended (one auth per invocation):** wrap the CLI with `op run` and a shared env file (same pattern as OpenCode on this machine):
+
+```bash
+op run --no-masking --env-file="$HOME/.config/claude/.env.op" -- construct chat
+```
+
+When `op run` injects materialized keys into `process.env`, Construct keeps those values instead of overwriting them with stored `op://` refs from `config.env`. A local `~/bin/construct` wrapper is the usual setup; override with `CONSTRUCT_OP_ENV_FILE` and `CONSTRUCT_BIN`.
 | `GITHUB_REPOS` | Comma-separated `owner/repo` list surfaced as provider source hints at session start |
 | `JIRA_BASE_URL` | Atlassian Jira base URL (e.g. `https://yourorg.atlassian.net`) |
 | `JIRA_EMAIL` | Jira account email: used for Basic auth |
@@ -189,6 +201,8 @@ Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CX_MODEL_*` (alias still honor
 | `OPENROUTER_API_KEY` | OpenRouter key: enables free model fallback when primary provider is down |
 | `ANTHROPIC_API_KEY` | Anthropic key for Claude model calls |
 | `OPENAI_API_KEY` | OpenAI key: used for OpenAI model tier or openai embedding model |
+| `GITHUB_TOKEN` | GitHub PAT for integrations; may be a plain value or `op://` reference |
+| `CONSTRUCT_OP_ENV_FILE` | Override path for the 1Password env file used by a local `op run` wrapper (default on this machine: `~/.config/claude/.env.op`) |
 | `CX_MODEL_REASONING` | Override the reasoning-tier model id |
 | `CX_MODEL_STANDARD` | Override the standard-tier model id |
 | `CX_MODEL_FAST` | Override the fast-tier model id |
