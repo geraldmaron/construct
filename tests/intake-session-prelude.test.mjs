@@ -16,6 +16,7 @@ import {
   buildIntakePrelude,
   buildBrokerStatusLine,
   buildSessionPrelude,
+  readOracleDockState,
 } from '../lib/intake/session-prelude.mjs';
 
 let tmpRoot;
@@ -119,5 +120,12 @@ describe('buildSessionPrelude', () => {
     } finally {
       fs.rmSync(empty, { recursive: true, force: true });
     }
+  });
+});
+
+describe('readOracleDockState', () => {
+  it('returns hidden state when oracle is disabled', () => {
+    const state = readOracleDockState({ cwd: tmpRoot, env: { CONSTRUCT_ORACLE: 'off' } });
+    assert.equal(state.visible, false);
   });
 });

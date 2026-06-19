@@ -17,8 +17,8 @@ import {
 } from '../../../lib/model-router.mjs';
 import { resolveFirstSecret } from '../../../lib/providers/secret-resolver.mjs';
 
-export function listChatModels({ env = process.env } = {}) {
-  const { providers } = getProviderModelCatalog({ env });
+export function listChatModels({ env = process.env, cwd = process.cwd(), activeModelId = null } = {}) {
+  const { providers } = getProviderModelCatalog({ env, cwd, activeModelId });
   const models = [];
   const seen = new Set();
   for (const provider of providers) {
@@ -41,6 +41,8 @@ export function listChatModels({ env = process.env } = {}) {
   }
   return models.sort((a, b) => Number(b.configured) - Number(a.configured) || a.id.localeCompare(b.id));
 }
+
+export { refreshLiveOpenRouterCatalog } from '../../../lib/models/catalog.mjs';
 
 export function recommendChatModel({ env = process.env } = {}) {
   const { providers } = getProviderModelCatalog({ env });

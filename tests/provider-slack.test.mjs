@@ -4,8 +4,8 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { runContractTests } from '../providers/lib/contract-tests.mjs';
-import provider from '../providers/slack/index.mjs';
+import { runContractTests } from '../lib/providers/contract/contract-tests.mjs';
+import provider from '../lib/providers/contract/adapters/slack/index.mjs';
 
 runContractTests(provider);
 

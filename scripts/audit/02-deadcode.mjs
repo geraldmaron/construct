@@ -61,6 +61,8 @@ const ACCEPTED_TEST_ONLY = {
   'lib/deprecate.mjs': 'single-warning deprecation utility with a test contract; retained for API retirements',
   'lib/storage/rrf.mjs': 'reciprocal-rank-fusion primitive with a correctness test; retained for hybrid retrieval',
   'lib/task-graph/schema.mjs': 'task-graph node/edge schema constants with a validation test; retained for the task-graph store',
+  'lib/providers/contract/contract-tests.mjs': 'contract harness: imported by tests/provider-*.test.mjs for ADR-0003 provider interface validation',
+  'lib/providers/contract/registry.mjs': 'contract harness: ProviderRegistry for embed-snapshot and provider-framework tests',
 };
 
 function walk(dir, exts) {
