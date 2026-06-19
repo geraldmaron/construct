@@ -5,6 +5,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Changed
+- **CI dashboard-build race fixed** (`tests/functional/_lib/next-build-lock.mjs`, `tests/functional/dashboard-build.functional.test.mjs`, `tests/functional/_lib/dashboard-server.mjs`, `tests/next-build-lock.test.mjs`). `node --test` runs each file in its own worker, so the dashboard-build suite and the dashboard server suites launched `next build` against the same `apps/dashboard` distDir at once; Next.js 15 aborted the loser with "Another next build process is already running" — the intermittent `test (macos-latest / node 22)` failure. A cross-process pid-file lock (long acquire timeout, stale-holder steal, throws rather than building concurrently on timeout) serializes the two paths; after acquiring it the server harness re-checks the static tree and reuses a build the suite already produced. New unit test covers mutual exclusion, acquire timeout, and stale-holder recovery.
 - **Vanilla package tree — zero committed `.cx/` content**
 - **Doc lane templates deduplicated**
 - **Local artifact cleanup** (`scripts/clean-artifacts.mjs`, `scripts/audit-published-artifact.mjs`, `scripts/audit/03c-root-layout.mjs`, `.gitignore`). Removed stale `geraldmaron-construct-*.tgz` npm pack outputs at repo root; consumer audit now packs to a temp dir; `clean:artifacts` also removes root tarballs and `.playwright-mcp/` scratch.
