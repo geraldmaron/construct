@@ -1,0 +1,23 @@
+{
+  "capturedAt": "2026-06-19",
+  "branch": "feature/construct-terminal-acp",
+  "census": {
+    "skills": 149,
+    "declaredInRegistry": 97,
+    "boundOrphans": 52,
+    "composerReachable": 52,
+    "trueOrphans": 0,
+    "findings": 0,
+    "ratchetRegressions": 0
+  },
+  "p0Validation": {
+    "orchestration.routing": "2026-06-19T01:07:58.535Z",
+    "mcp.broker.connection": "2026-06-19T01:08:09.548Z",
+    "ingest.adapter": "2026-06-19T01:08:09.791Z"
+  },
+  "site": {
+    "sidebarLanes": ["start", "concepts", "cookbook", "reference", "maintenance", "contributing", "adr"],
+    "docsSiteCheckGate": true,
+    "brokenAgentsLinkFixed": true
+  }
+}

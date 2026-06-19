@@ -219,7 +219,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct docs:check` | Check for missing how-to guides (alias for `docs check`) |
 | `construct docs:reconcile` | Reconcile docs against the registry |
-| `construct docs:site` | Manage the docs static site build |
+| `construct docs:site` | Regenerate generated reference pages under docs/reference/ |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
 | `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
 | `construct rules` | Rule and hook reference telemetry rollup |
@@ -282,6 +282,7 @@ construct/
 ├── platforms
 ├── profiles
 ├── providers
+├── registry
 ├── rules            Coding and quality standards
 ├── schemas
 ├── scripts

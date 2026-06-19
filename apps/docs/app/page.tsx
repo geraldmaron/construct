@@ -72,7 +72,7 @@ export default function HomePage() {
           </div>
           <div className="hero-stat">
             <span className="k">Surfaces</span>
-            <span className="v">Claude · Codex · OpenCode</span>
+            <span className="v">Claude · Codex · OpenCode · Cursor · Copilot</span>
           </div>
           <div className="hero-stat">
             <span className="k">Modes</span>
@@ -164,7 +164,7 @@ construct doctor          # diagnose install, service, MCP, and adapter drift`}
           { num: '03', title: 'Durable project state', body: <>Beads for work items, <code>.cx/</code> for context + handoffs, git for code, Postgres + pgvector for embeddings. Nothing important lives in only one place.</> },
           { num: '04', title: 'Health you can see', body: <>A canonical <code>construct status</code> and <code>construct doctor</code> — runtime, providers, telemetry, storage modes, adapter drift.</> },
           { num: '05', title: 'Hybrid retrieval', body: 'File-state, SQL-ready records, and semantic search over a shared corpus. Falls back to a local JSON vector index when Postgres isn’t available.' },
-          { num: '06', title: 'Hard gates, not vibes', body: 'Three layers — write-time hooks, commit/push gates, CI safety-net. Every blocking gate has an explicit env-var bypass; silent bypasses aren’t allowed.' },
+          { num: '06', title: 'Hard gates, not vibes', body: 'Three layers — write-time hooks, commit/push gates, CI safety-net. Quality gates fire unconditionally; notice-only signals auto-suppress in CI and non-TTY contexts. If a gate fires wrong, repair the policy — do not bypass it.' },
         ]} />
       </Section>
 

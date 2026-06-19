@@ -70,9 +70,9 @@ test('collectReadModel ingests outcomes, violations, doctor log, and census', ()
 
     writeFileSync(join(env.homeDir, '.cx', 'doctor-log.jsonl'), JSON.stringify({
       ts: Date.now(),
-      kind: 'escalation',
+      kind: 'escalate',
       watcher: 'service-health',
-      result: 'escalated',
+      result: 'recorded',
       summary: 'dashboard unreachable after 2 restarts',
     }) + '\n');
 

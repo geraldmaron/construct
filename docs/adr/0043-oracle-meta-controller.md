@@ -62,7 +62,7 @@ Ship the **Oracle meta-controller** as a daemon-backed L0.5 layer:
 ### Read/write contract
 
 - **Read**: Oracle reads durable JSON/JSONL artifacts only. No MCP, no LLM, no network on the read-model path.
-- **Write**: Oracle may append to `.cx/oracle/pending.jsonl`, write heartbeat/last-tick under `~/.cx/runtime/oracle/`, and spawn bounded maintenance subprocesses. It does not mutate specialist prompts, beads, or git state.
+- **Write**: Oracle may append to `.cx/oracle/pending.jsonl`, write per-tick verdicts to `.cx/oracle/verdicts/<date>.json`, routing artifacts to `.cx/oracle/routing/`, idempotent beads issues via `lib/oracle/issues.mjs`, heartbeat/last-tick under `~/.cx/runtime/oracle/`, and spawn bounded maintenance subprocesses. Approve actions execute via `lib/oracle/execute.mjs` (L1 dispatch, outcomes aggregate). It does not mutate specialist prompts or git state autonomously.
 
 ### Relationship to doctor, embed, and L1 gateway
 
