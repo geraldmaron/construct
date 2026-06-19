@@ -11,7 +11,7 @@ description: Work commands for Construct.
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
-| `construct demo` | Record reproducible terminal demos via VHS/asciinema (optional system binaries; ADR-0001) |
+| `construct demo` | Run guided demos via construct chat (default) or record VHS/asciinema tapes |
 | `construct diagram` | Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001) |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
@@ -24,11 +24,13 @@ description: Work commands for Construct.
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
+| `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback from chat session and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
 | `construct team` | Team review and template listing |
+| `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
 | `construct wireframe` | Generate wireframes from description |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
@@ -86,21 +88,27 @@ construct customer list|show|add|update|search
 
 ## construct demo
 
-Record reproducible terminal demos via VHS/asciinema (optional system binaries; ADR-0001)
+Run guided demos via construct chat (default) or record VHS/asciinema tapes
 
 **Usage**
 
 ```bash
-construct demo <name> [--format=gif|mp4|webm] [--out=<path>] [--source-only]
+construct demo <list|init|record|name> [--surface=chat|web|tape|dashboard] [--format=gif|mp4|webm] [--out=<path>] [--source-only]
 ```
 
 **Options**
 
 | Flag | Description |
 |---|---|
-| `--format=<f>` | gif (default) | mp4 | webm (VHS only) |
-| `--out=<path>` | Output path (default: .cx/demos/<name>-<ts>.<ext>) |
-| `--source-only` | Always write the .tape source; skip recording |
+| `--surface=<s>` | chat (default) | web | tape | dashboard |
+| `--model=<id>` | Pin model for chat demo |
+| `--web` | Open web chat (/chat/) instead of terminal Ink |
+| `--plain` | Linear chat renderer (accessibility / non-TTY) |
+| `--free` | OpenRouter free-router mode for chat demo |
+| `--format=<f>` | gif (default) | mp4 | webm (tape surface only) |
+| `--out=<path>` | Output path (tape recording) |
+| `--from=<t>` | Template for init: quickstart | diagram |
+| `--source-only` | Tape: write .tape only; skip recording |
 
 ## construct diagram
 
@@ -149,8 +157,17 @@ Export markdown to PDF/DOCX/HTML via Pandoc + Typst (optional system binaries; A
 **Usage**
 
 ```bash
-construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>]
+construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>] [--figures] [--detect]
 ```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--to=<format>` | pdf | docx | html |
+| `--output=<path>` | Output path |
+| `--figures` | Render d2/mermaid via pandoc-ext/diagram filter |
+| `--detect` | Report binary availability (JSON) |
 
 ## construct graph
 
@@ -246,6 +263,33 @@ Inspect memory layer
 construct memory <status|search>
 ```
 
+## construct publish
+
+Publish typed artifacts: release gate + export PDF with figures + optional demos
+
+**Usage**
+
+```bash
+construct publish <markdown> [--to=pdf] [--type=DOC] [--demo=NAME] [--strict]
+```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--to=<format>` | pdf (default) | docx | html |
+| `--output=<path>` | Output path (default: .cx/publish/<name>.<format>) |
+| `--type=<doc-type>` | Manifest doc type for release gate (inferred when omitted) |
+| `--demo=<name>` | Terminal VHS tape to record (repeatable) |
+| `--dashboard-demo=<name>` | Playwright demo spec basename (repeatable) |
+| `--figures` | Render d2/mermaid via diagram filter (default on) |
+| `--no-figures` | Skip diagram filter |
+| `--no-gate` | Skip artifact release gate (escape hatch only) |
+| `--source-only` | Write sources only |
+| `--strict` | Exit 2 when toolchain or release gate fails (default) |
+| `--no-strict` | Do not exit 2 on toolchain/gate failure |
+| `--detect` | Print tooling JSON and exit |
+
 ## construct reflect
 
 Capture improvement feedback from chat session and update Construct core
@@ -295,6 +339,26 @@ Team review and template listing
 ```bash
 construct team <list|review>
 ```
+
+## construct tools
+
+Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright)
+
+**Usage**
+
+```bash
+construct tools detect [--json] [--figures] [--demo=NAME]
+```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--json` | JSON output |
+| `--figures` | Include figure tooling (default on) |
+| `--no-figures` | Skip figure binaries |
+| `--demo=<name>` | Include terminal demo recorder check |
+| `--dashboard-demo=<name>` | Include dashboard Playwright check |
 
 ## construct wireframe
 
