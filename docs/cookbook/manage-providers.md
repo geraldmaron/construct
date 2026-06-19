@@ -23,12 +23,20 @@ Current model assignments:
 
 ## Change a tier
 
-Edit `~/.construct/config.env`:
+Edit `~/.construct/config.env` (preferred env keys — `CONSTRUCT_MODEL_*` is deprecated but still honored):
 
 ```bash
-CONSTRUCT_MODEL_REASONING=openrouter/anthropic/claude-opus-4
-CONSTRUCT_MODEL_STANDARD=openrouter/anthropic/claude-sonnet-4-5
-CONSTRUCT_MODEL_FAST=openrouter/google/gemini-flash-2-0
+CX_MODEL_REASONING=openrouter/anthropic/claude-opus-4
+CX_MODEL_STANDARD=openrouter/anthropic/claude-sonnet-4-5
+CX_MODEL_FAST=openrouter/google/gemini-flash-2-0
+```
+
+Control which models appear in pickers via `construct.config.json`:
+
+```bash
+construct config set models.visibility.mode all_configured
+construct models list
+construct models list --json
 ```
 
 Then apply:

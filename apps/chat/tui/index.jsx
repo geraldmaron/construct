@@ -69,9 +69,6 @@ function HeaderBar({ cols, session, sandbox, permissionMode, working, spin }) {
           {isRouter ? (
             <Text color={palette.muted} wrap="wrap">free-router mode — re-picks on launch and on failure</Text>
           ) : null}
-          {session.modelNotice ? (
-            <Text color={palette.warn} wrap="wrap">{session.modelNotice}</Text>
-          ) : null}
         </Box>
       </Box>
       <Rule width={cols} palette={palette} />
@@ -206,7 +203,13 @@ function App({
 }) {
   const { exit } = useApp();
   const { stdout } = useStdout();
-  const cols = stdout?.columns || 100;
+  const [cols, setCols] = useState(stdout?.columns || 100);
+
+  useEffect(() => {
+    const onResize = () => setCols(stdout?.columns || 100);
+    stdout?.on?.('resize', onResize);
+    return () => stdout?.off?.('resize', onResize);
+  }, [stdout]);
 
   const [uiEpoch, setUiEpoch] = useState(0);
   const theme = useMemo(() => createTheme({
@@ -671,6 +674,8 @@ function App({
               ctx={ctx}
               spin={spin}
               theme={theme}
+              cwd={cwd}
+              modelNotice={session.modelNotice || notice || ''}
             />
           )}
         </Box>
@@ -678,7 +683,7 @@ function App({
           cols={cols}
           input={input}
           working={working}
-          notice={notice}
+          notice={notice && notice !== session.modelNotice ? notice : ''}
           permissionActive={listPicker?.kind === 'permission'}
           listPickerActive={Boolean(listPicker)}
           pickerQuery={listPicker?.query || ''}

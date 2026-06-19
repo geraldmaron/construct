@@ -1,9 +1,9 @@
 ---
 title: Sync the dashboard
-description: Rebuild the static dashboard bundle and serve it from lib/server/.
+description: Rebuild the Next.js dashboard static export and serve it from lib/server/.
 ---
 
-Use `construct dashboard:sync` when `dashboard/src/` changes and you need the HTTP server bundle in `lib/server/static/` to match.
+Use `construct dashboard:sync` when `apps/dashboard/` changes and you need the HTTP server bundle in `lib/server/static/` to match.
 
 ## Common commands
 
@@ -11,7 +11,7 @@ Use `construct dashboard:sync` when `dashboard/src/` changes and you need the HT
 construct dashboard:sync --build
 ```
 
-Builds the Vite dashboard in `dashboard/dist/` and syncs the output into `lib/server/static/`.
+Builds the Next.js dashboard under `apps/dashboard/` and copies the static export into `lib/server/static/`.
 
 ```bash
 construct dashboard:sync --check
@@ -21,13 +21,13 @@ Checks for drift without writing files. This is the right mode for CI and releas
 
 ## When to run it
 
-- After editing files under `dashboard/src/`
+- After editing files under `apps/dashboard/`
 - Before shipping changes that rely on the built dashboard
 - In CI or release checks to catch stale static assets
 
 ## What it updates
 
-- Source build output: `dashboard/dist/`
+- Source build output: `apps/dashboard/out/` (Next.js static export)
 - Server-served bundle: `lib/server/static/`
 
-The sync step mirrors `dashboard/dist/` into `lib/server/static/`, including removing stale files that no longer exist in the build output.
+The sync step mirrors `apps/dashboard/out/` into `lib/server/static/`, including removing stale files that no longer exist in the build output.

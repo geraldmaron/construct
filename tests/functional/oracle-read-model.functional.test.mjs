@@ -83,6 +83,7 @@ test('collectReadModel ingests outcomes, violations, doctor log, and census', ()
     writeFileSync(join(env.rootDir, 'audit-artifacts', 'alignment-census.json'), JSON.stringify({
       generatedAt: new Date().toISOString(),
       summary: { skills: 100 },
+      rootLayout: { legacyDirs: ['providers'], findingCount: 1, clean: false },
     }));
 
     const model = collectReadModel(env);
@@ -91,6 +92,8 @@ test('collectReadModel ingests outcomes, violations, doctor log, and census', ()
     assert.equal(model.doctorLog.recentCount, 1);
     assert.equal(model.observations.indexCount, 1);
     assert.equal(model.alignmentCensus.present, true);
+    assert.equal(model.alignmentCensus.rootLayout?.clean, false);
+    assert.deepEqual(model.alignmentCensus.rootLayout?.legacyDirs, ['providers']);
   } finally {
     env.cleanup();
   }

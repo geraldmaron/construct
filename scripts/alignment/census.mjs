@@ -16,6 +16,7 @@ import { smokeFindings } from '../audit/01-smoke.mjs';
 import { deadcodeFindings } from '../audit/02-deadcode.mjs';
 import { docsFindings } from '../audit/03-docs.mjs';
 import { namingFindings } from '../audit/03b-naming.mjs';
+import { rootLayoutFindings } from '../audit/03c-root-layout.mjs';
 import { auditFindings } from '../audit/06-audit.mjs';
 import { makeId } from '../audit/lib/findings.mjs';
 import { writeJson, readJson } from '../audit/lib/artifacts.mjs';
@@ -90,6 +91,22 @@ function workflowCrossMap(root) {
   });
 }
 
+function collectRootLayoutSummary(rootDir) {
+  const rows = rootLayoutFindings(rootDir);
+  const legacyDirs = rows.filter((r) => r.type === 'legacy-root-dir').map((r) => r.target);
+  const phantomPackPaths = rows.filter((r) => r.type === 'packaging-phantom').map((r) => r.target);
+  const staleAutoDocKeys = rows.filter((r) => r.type === 'stale-auto-doc').map((r) => r.target);
+  const legacyImports = rows.filter((r) => r.type === 'import-legacy-path').map((r) => r.target);
+  return {
+    legacyDirs,
+    phantomPackPaths,
+    staleAutoDocKeys,
+    legacyImports,
+    findingCount: rows.length,
+    clean: rows.length === 0,
+  };
+}
+
 function capabilityTestCoverage(root) {
   const capDir = path.join(root, 'tests', 'capabilities');
   const legacyMatrix = path.join(root, 'tests', 'registry', 'capability-matrix.json');
@@ -123,6 +140,7 @@ export function runAlignmentCensus({ rootDir = REPO_ROOT, homeDir = process.env.
     ['02-deadcode', deadcodeFindings()],
     ['03-docs', docsFindings()],
     ['03b-naming', namingFindings()],
+    ['03c-root-layout', rootLayoutFindings()],
     ['06-audit', repoDeterministic(auditFindings())],
   ];
   const findings = phases.flatMap(([phase, rows]) =>
@@ -153,6 +171,7 @@ export function runAlignmentCensus({ rootDir = REPO_ROOT, homeDir = process.env.
   const census = {
     generatedAt: new Date().toISOString(),
     branch: process.env.GIT_BRANCH || 'unknown',
+    rootLayout: collectRootLayoutSummary(rootDir),
     audit: {
       commandCount: readJson('command-census.json')?.commands?.length ?? null,
       findingsCount: findings.length,

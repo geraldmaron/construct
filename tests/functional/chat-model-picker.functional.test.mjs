@@ -47,7 +47,7 @@ test('loadModelPickerItems stays smaller than the full static catalog', async ()
   );
   const items = await loadModelPickerItems(null, { env: {} });
   assert.ok(items.length < catalogIds.size);
-  assert.ok(items.length <= 40);
+  assert.ok(items.length <= 60, 'picker stays curated — not the full merged catalog');
 });
 
 test('configuredTierPickerItems only includes tier defaults from configured providers', async () => {

@@ -46,21 +46,51 @@ The loop is the differentiator. Other agent tools dispatch to specialists; Const
 
 <Cards>
   <Card title="core/ — orchestration brain">
-    `bin/construct` + `lib/cli-commands.mjs` · `lib/mcp/` MCP server + tools · `lib/orchestration-policy.mjs` routing · `lib/storage/` file + SQL + vector · `lib/hooks/` session-start, audit, guards
+    Physical: `bin/construct`, `lib/cli-commands.mjs`, `lib/mcp/`, `lib/orchestration-policy.mjs`, `lib/storage/`, `lib/hooks/`, `lib/oracle/`. ADR-0002 logical `core/` maps here — not a top-level directory.
   </Card>
   <Card title="providers/ — external systems">
-    Transport-agnostic adapters for GitHub, Atlassian Jira, Confluence, Slack, and Salesforce. Core dispatches through the interface; it never knows the transport.
+    Physical: `lib/providers/` (REST data-source adapters + credentials), `lib/providers/contract/` (transport-agnostic contract harness + CLI adapters), `lib/embed/providers/` (embed daemon). Root-level `providers/` was removed (ADR-0044).
   </Card>
   <Card title="runtime/ — keeps the lights on">
-    Embed daemon + supervisor · scheduler · `lib/storage/backup.mjs` timestamped archives with SHA-256 manifest
+    Physical: `lib/embed/` (daemon + supervisor), `lib/service-manager.mjs`, scheduler jobs under `lib/embed/`.
   </Card>
   <Card title="dashboard/ — the web app">
-    Chat (SSE streaming) · approval queue · knowledge panel · snapshot viewer · infrastructure tab
+    Physical: `apps/dashboard/` (Next.js source) → static export in `lib/server/static/`. Served by `construct dev`.
   </Card>
   <Card title="deploy/ — ship it">
     Multi-stage hardened Dockerfile · Terraform modules (ECS, ALB, RDS+pgvector) · `release.yml` SEA binaries, GHCR, npm publish
   </Card>
 </Cards>
+
+### Physical root map (tool repository)
+
+```text
+construct/
+├── apps/           chat, dashboard, docs (shipped UIs)
+├── bin/            CLI entrypoint
+├── lib/            runtime (hooks, MCP, providers, oracle, embed)
+├── docs/           human + generated reference
+├── deploy/         terraform / docker
+├── packages/       cx-ui shared workspace
+├── specialists/    org registry + prompts + contracts  ─┐
+├── registry/       product capability registry          │ org surface
+├── platforms/      host adapter capabilities            │ (see ADR-0044)
+├── schemas/        registry JSON Schema only            │
+├── profiles/       profile catalog                      │
+├── personas/       public persona                       │
+├── commands/       slash command assets                 │
+├── skills/         domain knowledge                     │
+├── rules/          coding standards                     │
+├── templates/      doc templates                        ─┘
+├── config/         tag-vocabulary.json
+├── scripts/        audit, alignment, release
+├── tests/
+└── examples/
+```
+
+Repo layout hygiene is enforced by audit phase `03c-root-layout` (ratchet + alignment census). Oracle consumes census `rootLayout` signals on the tool repo. See [ADR-0044](/adr/0044-tool-repo-root-layout).
+
+Two registries, two jobs: `registry/capabilities.json` (product capabilities + verification tests) vs `platforms/capabilities.json` (host adapter configs). Handoff artifact schemas live in `lib/contract-schemas/`; registry JSON Schema lives in `schemas/`.
 
 ## In human terms
 
@@ -81,12 +111,14 @@ A user request hits the Construct persona (`personas/construct.md`). The orchest
 
 ## Architecture layers
 
+ADR-0002 logical layers — physical paths in [ADR-0044](/adr/0044-tool-repo-root-layout):
+
 ```
-core/        . CLI, MCP server, orchestration, memory, sessions
-providers/   . abstract provider interface + per-system implementations
-runtime/     . Docker management, embed daemon, scheduler
-dashboard/   . full web app: auth, chat, approvals, config
-deploy/      . Dockerfile, Terraform modules, cloud configs
+core/        → bin/, lib/ (CLI, MCP, orchestration, memory, sessions)
+providers/   → lib/providers/, lib/providers/contract/, lib/embed/providers/
+runtime/     → lib/embed/, lib/service-manager.mjs
+dashboard/   → apps/dashboard/ → lib/server/static/
+deploy/      → deploy/
 ```
 
 ### Core
@@ -126,7 +158,7 @@ Transport-agnostic interface to external systems. Each provider implements a cap
 - Providers are stateless adapters. Durable state lives in core stores.
 - Auth is per-provider, configured in `.cx/providers.yaml` or environment.
 - A provider may support any subset of capabilities; unsupported capabilities return a typed error.
-- Provider implementations live in `providers/` with one directory per system.
+- Provider implementations live in `lib/providers/` (data-source adapters) and `lib/providers/contract/adapters/` (contract harness). See [ADR-0044](/adr/0044-tool-repo-root-layout).
 
 **Provider scope framing.** Every provider config carries an allowlist (`repoAllowlist`/`repoAllowGlob` for GitHub, `projectAllowlist` for Jira, `spaceAllowlist` for Confluence, `channelAllowlist` for Slack). Requests targeting out-of-scope resources return a typed `OUT_OF_SCOPE` error. `construct creds set|rotate|list|revoke|test <provider>` manages credentials in `~/.construct/config.env` (0600 enforced), and `construct creds login copilot` runs the GitHub Copilot OAuth device flow (ADR-0042). Values may be plain keys or 1Password `op://` references, resolved at call time by `lib/providers/secret-resolver.mjs`. `construct providers discover <name>` runs provider-specific discovery with TTL-cached results.
 
@@ -309,7 +341,7 @@ The runtime has two pluggable axes behind unchanged callers: a worker backend an
 
 ## Terminal chat surface (own-the-loop, own-the-surface)
 
-`construct chat` is the interactive terminal surface (the TUI tier of ADR-0039). Construct runs the agent loop itself (ADR-0041, superseding the delegate-the-loop ADR-0040): prompt → model → tool calls → tool results → repeat, on a provider-agnostic engine (Vercel AI SDK) so every token, tool result, permission decision, and routing choice is first-party data. The owned-loop engine (`apps/chat/engine/`) is exposed as just another driver implementing the existing normalized event union (`lib/chat/harness/driver.mjs`) — thinking, text, tool_call/tool_update, usage (input/output/cache/reasoning/total + cost), error, done — so the renderers, transparency overlay, persistence, and `/usage` panel stay decoupled and reused; the engine is verified against a scripted mock with no network or API key. Model and credentials resolve through `lib/model-router.mjs`; nothing is hardcoded. Provider credentials resolve through one shared resolver (`lib/providers/secret-resolver.mjs`, ADR-0042) across the chat engine, the orchestration worker, and the router's detection: env → `~/.construct/config.env` → `~/.env` → project `.env` → shell rc, with 1Password `op://` references resolved through the `op` CLI (cached, never logged) so a stored reference counts as configured. GitHub Copilot authenticates via the OAuth device flow (`lib/providers/copilot-auth.mjs`, `construct creds login copilot`) — not an API key — and the engine, worker, and `copilot-proxy.mjs` bridge all consume the resulting session token. Owned tools (`apps/chat/engine/tools/`: read, glob, grep, write, edit, shell) run behind a permission/sandbox gate that reuses the `allow`/`allow_always`/`reject` vocabulary and the read-only/workspace-write/danger-full-access levels, with a `construct_tool` bridge to Construct's MCP surface via `dispatchToolByName`; bounded shell reuses `lib/worker/run.mjs`. The default surface is a multi-pane Ink TUI (`apps/chat/tui/`, built to `apps/chat/dist/tui.mjs`): each user prompt renders as an inline **TurnBlock** in the conversation column (policy overlay from `routeRequest()`, thinking, tools, markdown answer, turn usage; sources populated only from recorded tool events). A **SessionDock** on the right shows session-level telemetry; `/inspect` or `ui.inspector` toggles an optional per-turn inspector. Accessibility is preserved by dual-mode rendering at the launcher (`lib/chat/cli.mjs`, zero-dep): Ink is the default only on a capable interactive TTY, while `--plain`, `--accessible`, `NO_COLOR`, `TERM=dumb`, and any non-TTY route to the linear, screen-reader-friendly renderer (`lib/chat/tui/render.mjs`) — both consume the same TurnBlock ordering. In-session commands (`lib/chat/commands.mjs` + Ink-native handlers) switch models (`/model`, `/models`, `/free` for free-router mode), change and persist settings (`/set`, `/settings`: layers, permission mode, sandbox, ascii, inspector, theme), export copy-friendly markdown (`/export last|session`), and show usage (`/usage`); settings persist to `<project>/.cx/chat-config.json` (`lib/chat/config.mjs`) including `modelMode` (`pinned` vs `free-router` — router re-picks a free OpenRouter slug at session launch and on classified 429/404 via `lib/chat/openrouter-fallback.mjs`, not every turn) and turn snapshots to `.cx/chat-sessions/*.jsonl`. Per-turn intent routing (`lib/chat/transparency.mjs`) receives session context (`lib/chat/session-context.mjs`) so follow-ups inherit prior intent; project-purpose questions block assumption overlay when no repo evidence ran. The engine and Ink dependencies (`ai`, `@ai-sdk/*`, `ink`, `react`, `zod`) live in the ADR-0001-exempt `apps/chat/` zone as `optionalDependencies`, so the zero-dep core install stays lean; missing extras print an install hint and fall back to linear. Token accounting is truthful — only engine-reported counts (no fabricated per-specialist splits). Decision: ADR-0041.
+`construct chat` is the interactive terminal surface (the TUI tier of ADR-0039). Construct runs the agent loop itself (ADR-0041, superseding the delegate-the-loop ADR-0040): prompt → model → tool calls → tool results → repeat, on a provider-agnostic engine (Vercel AI SDK) so every token, tool result, permission decision, and routing choice is first-party data. The owned-loop engine (`apps/chat/engine/`) is exposed as just another driver implementing the existing normalized event union (`lib/chat/harness/driver.mjs`) — thinking, text, tool_call/tool_update, usage (input/output/cache/reasoning/total + cost), error, done — so the renderers, transparency overlay, persistence, and `/usage` panel stay decoupled and reused; the engine is verified against a scripted mock with no network or API key. Model and credentials resolve through `lib/model-router.mjs`; nothing is hardcoded. Provider credentials resolve through one shared resolver (`lib/providers/secret-resolver.mjs`, ADR-0042) across the chat engine, the orchestration worker, and the router's detection: env → `~/.construct/config.env` → `~/.env` → project `.env` → shell rc, with 1Password `op://` references resolved through the `op` CLI (cached, never logged) so a stored reference counts as configured. GitHub Copilot authenticates via the OAuth device flow (`lib/providers/copilot-auth.mjs`, `construct creds login copilot`) — not an API key — and the engine, worker, and `copilot-proxy.mjs` bridge all consume the resulting session token. Owned tools (`apps/chat/engine/tools/`: read, glob, grep, write, edit, shell) run behind a permission/sandbox gate that reuses the `allow`/`allow_always`/`reject` vocabulary and the read-only/workspace-write/danger-full-access levels, with a `construct_tool` bridge to Construct's MCP surface via `dispatchToolByName`; bounded shell reuses `lib/worker/run.mjs`. The default surface is a multi-pane Ink TUI (`apps/chat/tui/`, built to `apps/chat/dist/tui.mjs`): each user prompt renders as an inline **TurnBlock** in the conversation column (policy overlay from `routeRequest()`, thinking, tools, markdown answer, turn usage; sources populated only from recorded tool events). A **SessionDock** on the right shows session-level telemetry; `/inspect` or `ui.inspector` toggles an optional per-turn inspector. Accessibility is preserved by dual-mode rendering at the launcher (`lib/chat/cli.mjs`, zero-dep): Ink is the default only on a capable interactive TTY, while `--plain`, `--accessible`, `NO_COLOR`, `TERM=dumb`, and any non-TTY route to the linear, screen-reader-friendly renderer (`lib/chat/tui/render.mjs`) — both consume the same TurnBlock ordering. In-session commands (`lib/chat/commands.mjs` + Ink-native handlers) switch models (`/model`, `/models`, `/free` for free-router mode), change and persist settings (`/set`, `/settings`: layers, permission mode, sandbox, ascii, inspector, theme), export copy-friendly markdown (`/export last|session`), show Oracle fleet health (`/oracle`), and show usage (`/usage`); settings persist to `<project>/.cx/chat-config.json` (`lib/chat/config.mjs`) including `modelMode` (`pinned` vs `free-router` — router re-picks a free OpenRouter slug at session launch and on classified 429/404 via `lib/chat/openrouter-fallback.mjs`, not every turn) and turn snapshots to `.cx/chat-sessions/*.jsonl`. Model pickers and `construct models list` share `getProviderModelCatalog()` (`lib/model-router.mjs` + `lib/models/catalog.mjs`), filtered by `construct.config.json` `models.visibility` and merged with cached live OpenRouter free models (`~/.cx/model-catalog-cache.json`). Session-start on Claude Code uses `buildSessionPrelude` (intake + Oracle overseer + broker — parity with OpenCode). Per-turn intent routing (`lib/chat/transparency.mjs`) receives session context (`lib/chat/session-context.mjs`) so follow-ups inherit prior intent; project-purpose questions block assumption overlay when no repo evidence ran. The engine and Ink dependencies (`ai`, `@ai-sdk/*`, `ink`, `react`, `zod`) live in the ADR-0001-exempt `apps/chat/` zone as `optionalDependencies`, so the zero-dep core install stays lean; missing extras print an install hint and fall back to linear. Token accounting is truthful — only engine-reported counts (no fabricated per-specialist splits). Decision: ADR-0041.
 
 ## Project-state hierarchy
 

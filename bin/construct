@@ -3727,6 +3727,22 @@ async function cmdModels(args) {
     await cmdSync([]);
     return;
   }
+  if (args.includes('--list') || args[0] === 'list') {
+    const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
+    const { listChatModels } = await import('../apps/chat/engine/models.mjs');
+    const catalog = getProviderModelCatalog({ env: process.env, cwd: process.cwd() });
+    const models = listChatModels({ env: process.env, cwd: process.cwd() });
+    if (args.includes('--json')) {
+      println(JSON.stringify({ catalog, models }, null, 2));
+      return;
+    }
+    println('Visible models (filtered by construct.config.json models.visibility):');
+    for (const model of models) {
+      const flag = model.available ? 'ok' : '—';
+      println(`  ${flag}  ${model.id}${model.configured ? '' : ' (provider not configured)'}`);
+    }
+    return;
+  }
   const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
   const result = readCurrentModels(envPath, registry.models ?? {});
   const nothingSelected = ['reasoning', 'standard', 'fast'].every((t) => !result[t]);

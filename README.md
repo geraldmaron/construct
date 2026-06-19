@@ -268,27 +268,25 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 <!-- AUTO:structure -->
 ```text
 construct/
-├── apps             User-facing apps shipped from this repo (e.g. apps/docs/, the Next.js docs site)
+├── apps             User-facing apps shipped from this repo (chat, dashboard, docs)
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
-├── config
-├── dashboard
-├── deploy
+├── config           Repo-wide controlled vocabulary (tag-vocabulary.json)
+├── deploy           Terraform and deployment configs
 ├── docs             Architecture notes, runbooks, and documentation contract
-├── examples
-├── lib              Core runtime: CLI, hooks, MCP, status, sync, workflow
-├── packages
+├── examples         Example projects and persona fixtures
+├── lib              Core runtime: CLI, hooks, MCP, providers, oracle, sync
+├── packages         Shared workspace packages (e.g. cx-ui)
 ├── personas         Persona prompt definitions
-├── platforms
-├── profiles
-├── providers
-├── registry
+├── platforms        Host adapter capability configs
+├── profiles         Profile catalog
+├── registry         Product capability registry
 ├── rules            Coding and quality standards
-├── schemas
-├── scripts
+├── schemas          Registry and config JSON Schema
+├── scripts          Audit, alignment, release, and sync scripts
 ├── skills           Reusable domain knowledge files
-├── specialists
-├── templates
+├── specialists      Org registry, contracts, and specialist prompts
+├── templates        Doc and workflow templates
 ├── tests            Test suite
 ```
 <!-- /AUTO:structure -->

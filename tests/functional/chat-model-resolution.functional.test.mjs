@@ -1,7 +1,7 @@
 /**
  * tests/functional/chat-model-resolution.functional.test.mjs — validated chat
- * model resolution when CX_MODEL pins or explicit picks point at providers that
- * are no longer configured or model ids that are not available.
+ * model resolution when CX_MODEL pins or explicit picks target providers missing
+ * credentials or model ids outside the shipped allowlist.
  *
  * Exercises resolveValidatedChatModel and isChatModelAvailable from the real
  * router with an isolated HOME and injected env — no network, no live Copilot
@@ -92,5 +92,39 @@ test('explicit --model request falls through when unavailable', () => {
     });
     assert.equal(result.id, 'anthropic/claude-sonnet-4-6');
     assert.match(result.notice, /github-copilot/);
+  });
+});
+
+test('isChatModelAvailable accepts openrouter/openrouter/free when key is configured', () => {
+  withIsolatedHome(() => {
+    const env = { OPENROUTER_API_KEY: 'sk-or-test' };
+    const check = isChatModelAvailable('openrouter/openrouter/free', { env });
+    assert.equal(check.ok, true);
+    assert.equal(check.provider, 'openrouter');
+  });
+});
+
+test('isChatModelAvailable accepts generic openrouter vendor slugs', () => {
+  withIsolatedHome(() => {
+    const env = { OPENROUTER_API_KEY: 'sk-or-test' };
+    const check = isChatModelAvailable('openrouter/mistralai/mistral-small:free', { env });
+    assert.equal(check.ok, true);
+    assert.equal(check.provider, 'openrouter');
+  });
+});
+
+test('resolveValidatedChatModel honors pinned openrouter/openrouter/free', () => {
+  withIsolatedHome(() => {
+    const env = {
+      OPENROUTER_API_KEY: 'sk-or-test',
+      ANTHROPIC_API_KEY: 'sk-test',
+    };
+    const result = resolveValidatedChatModel({
+      env,
+      requested: 'openrouter/openrouter/free',
+    });
+    assert.equal(result.id, 'openrouter/openrouter/free');
+    assert.equal(result.source, 'explicit');
+    assert.equal(result.notice, null);
   });
 });

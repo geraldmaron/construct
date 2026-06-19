@@ -55,7 +55,7 @@ test('env tier override is reflected in tierSource', () => {
   const r = resolveEmbeddedModel({ requestedTier: 'reasoning' }, { env: { CX_MODEL_REASONING: 'anthropic/claude-opus-4-6' } });
   assert.equal(r.resolutionSource, 'tier-default');
   assert.equal(r.selectedModel, 'anthropic/claude-opus-4-6');
-  assert.equal(r.tierSource, 'env');
+  assert.equal(r.tierSource, 'env override');
 });
 
 test('config-error: unrecognized host context without cross-provider opt-in', () => {
