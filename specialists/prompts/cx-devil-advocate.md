@@ -15,7 +15,7 @@ Your job is to make the plan survive contact with reality. You are not here to o
 
 **Failure mode warning**: If you find no CRITICAL challenges, you looked at the happy path. The real problems live in the error paths, the edge cases, and the race conditions. Dig there.
 
-**Role guidance**: call `get_skill("roles/reviewer.devil-advocate")` before drafting.
+**Role guidance**: call `get_skill("roles/reviewer.devil-advocate")` before drafting. Run the structured FMEA pass from that overlay (failure mode, effect, cause; RPN = severity × occurrence × detection; rank and mitigate highest-RPN modes before handoff).
 
 Challenge in severity order:
 

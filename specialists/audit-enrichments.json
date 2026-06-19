@@ -14,16 +14,16 @@
       "humanEquivalent": "Platform SRE / fleet health owner",
       "researchProfile": "external",
       "toneProfile": "direct",
-      "grade": "adequate",
-      "gap": "Read-model gaps need explicit remediation routing evidence",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "rd-lead": {
       "humanEquivalent": "Research lead / principal investigator",
       "researchProfile": "external",
       "toneProfile": "pedagogical",
-      "grade": "adequate",
-      "gap": "Add power analysis and effect-size estimation to role overlay",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "product-manager": {
@@ -31,23 +31,23 @@
       "researchProfile": "user",
       "toneProfile": "decision-forcing-direct",
       "grade": "strong",
-      "gap": "Mandatory devil-advocate gate on PRD ship",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "ux-researcher": {
       "humanEquivalent": "UX researcher",
       "researchProfile": "user",
       "toneProfile": "pedagogical",
-      "grade": "adequate",
-      "gap": "Split user-research workflow from external research; deepen validity methodology",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "operations": {
       "humanEquivalent": "Technical program manager",
       "researchProfile": null,
       "toneProfile": "direct",
-      "grade": "adequate",
-      "gap": "Critical-path method and resource leveling in role overlay",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "researcher": {
@@ -55,15 +55,15 @@
       "researchProfile": "external",
       "toneProfile": "direct",
       "grade": "strong",
-      "gap": "Narrow research-workflow to external sources only",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "business-strategist": {
       "humanEquivalent": "Strategy / bizops lead",
       "researchProfile": "market",
       "toneProfile": "executive-concise",
-      "grade": "adequate",
-      "gap": "Porter's Five Forces and scenario planning in overlay",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "data-analyst": {
@@ -95,7 +95,7 @@
       "researchProfile": "external",
       "toneProfile": "decision-forcing-direct",
       "grade": "strong",
-      "gap": "ADR context diagram enforcement",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "engineer": {
@@ -110,8 +110,8 @@
       "humanEquivalent": "Red-team reviewer",
       "researchProfile": null,
       "toneProfile": "direct",
-      "grade": "adequate",
-      "gap": "FMEA enumeration in role overlay; mandatory on high-risk artifacts",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "reviewer": {
@@ -127,7 +127,7 @@
       "researchProfile": "compliance",
       "toneProfile": "direct",
       "grade": "strong",
-      "gap": "Explicit STRIDE/PASTA steps in overlay",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "qa": {
@@ -142,8 +142,8 @@
       "humanEquivalent": "Senior debugger / SRE investigator",
       "researchProfile": "codebase",
       "toneProfile": "direct",
-      "grade": "adequate",
-      "gap": "Causal-model root-cause enumeration in overlay",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "sre": {
@@ -151,31 +151,31 @@
       "researchProfile": "external",
       "toneProfile": "blameless",
       "grade": "strong",
-      "gap": "Error-budget policy explicit in overlay",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "platform-engineer": {
       "humanEquivalent": "Platform engineer",
       "researchProfile": "codebase",
       "toneProfile": "direct",
-      "grade": "adequate",
-      "gap": "IaC maturity and SBOM in overlay",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "legal-compliance": {
       "humanEquivalent": "Legal / compliance counsel (technical)",
       "researchProfile": "compliance",
       "toneProfile": "direct",
-      "grade": "adequate",
-      "gap": "Risk taxonomy and technical-legal bridge in overlay",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "release-manager": {
       "humanEquivalent": "Release manager",
       "researchProfile": null,
       "toneProfile": "direct",
-      "grade": "adequate",
-      "gap": "Canary failure-detection and SLO rollback trees",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "docs-keeper": {
@@ -183,47 +183,47 @@
       "researchProfile": null,
       "toneProfile": "friendly",
       "grade": "strong",
-      "gap": "Per-doc-type tone matrix not wired to manifest",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "designer": {
       "humanEquivalent": "Product designer",
       "researchProfile": "user",
       "toneProfile": "friendly",
-      "grade": "adequate",
-      "gap": "Design-system maturity in overlay",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "accessibility": {
       "humanEquivalent": "Accessibility specialist",
       "researchProfile": "user",
       "toneProfile": "pedagogical",
-      "grade": "adequate",
-      "gap": "Cognitive accessibility rigor in overlay",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "explorer": {
       "humanEquivalent": "Staff engineer (onboarding / exploration)",
       "researchProfile": "codebase",
       "toneProfile": "pedagogical",
-      "grade": "adequate",
-      "gap": "Dedicated codebase-research workflow",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "trace-reviewer": {
       "humanEquivalent": "Observability / eval analyst",
       "researchProfile": "external",
       "toneProfile": "direct",
-      "grade": "adequate",
-      "gap": "Statistical process control in overlay",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "data-engineer": {
       "humanEquivalent": "Data engineer",
       "researchProfile": "external",
       "toneProfile": "direct",
-      "grade": "adequate",
-      "gap": "Data lineage and SLA maturity in overlay",
+      "grade": "strong",
+      "gap": "—",
       "beadId": "construct-hcr9"
     },
     "test-automation": {
@@ -236,58 +236,219 @@
     }
   },
   "roleOverlays": {
-    "architect": { "grade": "strong", "gap": "—" },
-    "architect.ai-systems": { "grade": "strong", "gap": "—" },
-    "architect.data": { "grade": "strong", "gap": "—" },
-    "architect.enterprise": { "grade": "strong", "gap": "—" },
-    "architect.integration": { "grade": "strong", "gap": "—" },
-    "architect.platform": { "grade": "strong", "gap": "—" },
-    "data-analyst": { "grade": "strong", "gap": "—" },
-    "data-analyst.experiment": { "grade": "strong", "gap": "—" },
-    "data-analyst.product": { "grade": "strong", "gap": "—" },
-    "data-analyst.product-intelligence": { "grade": "strong", "gap": "—" },
-    "data-analyst.telemetry": { "grade": "strong", "gap": "—" },
-    "data-engineer.pipeline": { "grade": "adequate", "gap": "Lineage observability" },
-    "data-engineer.vector-retrieval": { "grade": "strong", "gap": "—" },
-    "data-engineer.warehouse": { "grade": "strong", "gap": "—" },
-    "debugger": { "grade": "adequate", "gap": "Causal enumeration" },
-    "designer": { "grade": "adequate", "gap": "Design-system maturity" },
-    "designer.accessibility": { "grade": "adequate", "gap": "Cognitive a11y rigor" },
-    "engineer": { "grade": "strong", "gap": "—" },
-    "engineer.ai": { "grade": "strong", "gap": "—" },
-    "engineer.data": { "grade": "strong", "gap": "—" },
-    "engineer.platform": { "grade": "strong", "gap": "—" },
-    "operator": { "grade": "strong", "gap": "—" },
-    "operator.docs": { "grade": "strong", "gap": "Tone matrix via manifest" },
-    "operator.release": { "grade": "adequate", "gap": "Canary rollback trees" },
-    "operator.sre": { "grade": "strong", "gap": "Error-budget policy explicit" },
-    "orchestrator": { "grade": "strong", "gap": "—" },
-    "product-manager": { "grade": "strong", "gap": "—" },
-    "product-manager.ai-product": { "grade": "strong", "gap": "—" },
-    "product-manager.business-strategy": { "grade": "adequate", "gap": "Scenario planning" },
-    "product-manager.enterprise": { "grade": "strong", "gap": "—" },
-    "product-manager.growth": { "grade": "strong", "gap": "—" },
-    "product-manager.platform": { "grade": "strong", "gap": "—" },
-    "product-manager.product": { "grade": "strong", "gap": "—" },
-    "qa": { "grade": "strong", "gap": "—" },
-    "qa.ai-eval": { "grade": "strong", "gap": "—" },
-    "qa.api-contract": { "grade": "strong", "gap": "—" },
-    "qa.data-pipeline": { "grade": "strong", "gap": "—" },
-    "qa.test-automation": { "grade": "strong", "gap": "—" },
-    "qa.web-ui": { "grade": "strong", "gap": "—" },
-    "researcher": { "grade": "strong", "gap": "—" },
-    "researcher.explorer": { "grade": "adequate", "gap": "Codebase workflow split" },
-    "researcher.ux": { "grade": "adequate", "gap": "User-research workflow split" },
-    "reviewer": { "grade": "strong", "gap": "—" },
-    "reviewer.devil-advocate": { "grade": "adequate", "gap": "FMEA enumeration" },
-    "reviewer.evaluator": { "grade": "strong", "gap": "—" },
-    "reviewer.trace": { "grade": "adequate", "gap": "SPC drift detection" },
-    "security": { "grade": "strong", "gap": "STRIDE/PASTA explicit" },
-    "security.ai": { "grade": "strong", "gap": "—" },
-    "security.appsec": { "grade": "strong", "gap": "—" },
-    "security.cloud": { "grade": "strong", "gap": "—" },
-    "security.legal-compliance": { "grade": "adequate", "gap": "Risk taxonomy" },
-    "security.privacy": { "grade": "strong", "gap": "—" },
-    "security.supply-chain": { "grade": "strong", "gap": "—" }
+    "architect": {
+      "grade": "strong",
+      "gap": "—",
+      "beadId": "construct-fb8s.11"
+    },
+    "architect.ai-systems": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "architect.data": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "architect.enterprise": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "architect.integration": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "architect.platform": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "data-analyst": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "data-analyst.experiment": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "data-analyst.product": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "data-analyst.product-intelligence": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "data-analyst.telemetry": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "data-engineer.pipeline": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "data-engineer.vector-retrieval": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "data-engineer.warehouse": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "debugger": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "designer": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "designer.accessibility": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "engineer": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "engineer.ai": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "engineer.data": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "engineer.platform": {
+      "grade": "strong",
+      "gap": "—",
+      "beadId": "construct-fb8s.7"
+    },
+    "operator": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "operator.docs": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "operator.release": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "operator.sre": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "orchestrator": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "product-manager": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "product-manager.ai-product": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "product-manager.business-strategy": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "product-manager.enterprise": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "product-manager.growth": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "product-manager.platform": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "product-manager.product": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "qa": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "qa.ai-eval": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "qa.api-contract": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "qa.data-pipeline": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "qa.test-automation": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "qa.web-ui": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "researcher": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "researcher.explorer": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "researcher.ux": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "reviewer": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "reviewer.devil-advocate": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "reviewer.evaluator": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "reviewer.trace": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "security": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "security.ai": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "security.appsec": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "security.cloud": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "security.legal-compliance": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "security.privacy": {
+      "grade": "strong",
+      "gap": "—"
+    },
+    "security.supply-chain": {
+      "grade": "strong",
+      "gap": "—"
+    }
   }
 }

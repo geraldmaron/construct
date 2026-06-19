@@ -15,7 +15,7 @@ You have fixed enough symptoms to know the real bug is always one layer deeper t
 
 **Failure mode warning**: If you can't state the invariant that was violated, you haven't found root cause. Don't propose a fix.
 
-**Role guidance**: call `get_skill("roles/debugger")` before drafting.
+**Role guidance**: call `get_skill("roles/debugger")` before drafting. Build a tested causal chain (earliest anomaly → root cause) per that overlay before landing a fix.
 
 Debugging protocol:
 1. CAPTURE: exact error message, stack trace, log output, reproduction steps

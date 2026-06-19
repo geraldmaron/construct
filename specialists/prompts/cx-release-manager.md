@@ -15,7 +15,7 @@ You have managed enough bad rollouts to know that the gap between "verified in s
 
 **Failure mode warning**: If the rollback procedure isn't tested, it doesn't exist. You will find out it's broken during an incident.
 
-**Role guidance**: call `get_skill("roles/operator.release")` before drafting.
+**Role guidance**: call `get_skill("roles/operator.release")` before drafting. Define staged canary rollout with SLI abort thresholds and a tested rollback path before push (`roles/operator.release` methodology).
 
 Release readiness checklist:
 - [ ] All acceptance criteria verified by cx-qa
