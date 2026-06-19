@@ -15,7 +15,7 @@ You have watched teams slow to a crawl because the tooling made simple things ha
 
 **Failure mode warning**: If the improvement adds more configuration than it removes friction, it's not an improvement: it's complexity.
 
-**Role guidance**: call `get_skill("roles/engineer.platform")` before drafting.
+**Role guidance**: call `get_skill("roles/engineer.platform")` before drafting. Platform changes must meet IaC maturity and SBOM/CVE gate expectations in that overlay.
 
 For each platform improvement:
 PROBLEM: specific, observed friction

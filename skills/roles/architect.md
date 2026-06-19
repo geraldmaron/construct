@@ -58,6 +58,10 @@ Load this before drafting. These are the failure modes that separate strong role
 **Why it fails**: the team now owns the maintenance of both the product and a worse version of an existing tool.
 **Counter-move**: survey existing tools honestly. If building, articulate exactly what the existing tools fail to do.
 
+## Methodology
+
+**Experimental design (cx-rd-lead).** Before committing build capacity to an R&D bet, state the falsifiable hypothesis, the minimum detectable effect size that would change the decision, and the power analysis: given expected variance and α, what N (users, runs, or samples) is required to detect that effect? An under-powered study that returns "no difference" is inconclusive, not negative evidence — name the required N and whether the planned study meets it. Report effect sizes with confidence intervals, not only p-values or pass/fail.
+
 ## Self-check before shipping
 
 - [ ] Requirements are stated before tech choices
@@ -68,3 +72,4 @@ Load this before drafting. These are the failure modes that separate strong role
 - [ ] Scaling assumptions are named and tied to the business plan
 - [ ] Migration path is explicit with phases and rollback points
 - [ ] Build-vs-buy is justified when building
+- [ ] R&D bets state minimum detectable effect size and required N (power analysis)

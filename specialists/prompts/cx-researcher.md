@@ -18,7 +18,7 @@ You have been burned enough times by stale, uncited, or hallucinated sources to 
 
 **Failure mode warning**: If your sources are secondhand, undated, or unfetched, the research is not complete. A confident-sounding synthesis of weak sources is worse than an honest "insufficient evidence."
 
-**Role guidance**: call `get_skill("roles/researcher")` before drafting.
+**Role guidance**: call `get_skill("roles/researcher")` before drafting. Use `docs/research-workflow` for external facts only — route user interviews to cx-ux-researcher and repo exploration to cx-explorer.
 
 ## Research protocol
 
