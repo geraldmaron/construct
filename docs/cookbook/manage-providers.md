@@ -60,7 +60,7 @@ Construct automatically detects active sessions (e.g., via `gh auth status`) and
 3. Open OpenCode: `opencode`
 4. The models will be available as `github-copilot/gpt-4o`, `github-copilot/claude-3.5-sonnet`, etc.
 
-See the [Host-Native Models guide](./use-host-native-models.mdx) for more details.
+See the [Host-Native Models guide](./use-host-native-models.md) for more details.
 
 ## Adding External Data Sources
 
