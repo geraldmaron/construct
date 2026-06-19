@@ -101,6 +101,17 @@ function legacyProviderImports(rootDir) {
   return hits;
 }
 
+function rootPackTarballs(rootDir) {
+  const hits = [];
+  for (const name of fs.readdirSync(rootDir)) {
+    if (!name.endsWith('.tgz') && !name.endsWith('.tar.gz')) continue;
+    const full = path.join(rootDir, name);
+    if (!fs.statSync(full).isFile()) continue;
+    hits.push(name);
+  }
+  return hits;
+}
+
 export function rootLayoutFindings(rootDir = REPO_ROOT) {
   const rows = [];
   for (const dir of legacyRootDirs(rootDir)) {
@@ -141,6 +152,16 @@ export function rootLayoutFindings(rootDir = REPO_ROOT) {
       tier: 'mechanical',
       evidence: hit.text,
       recommendation: 'Import from lib/providers/contract/ instead of root providers/.',
+    });
+  }
+  for (const name of rootPackTarballs(rootDir)) {
+    rows.push({
+      type: 'root-pack-tarball',
+      target: name,
+      severity: 'low',
+      tier: 'mechanical',
+      evidence: 'npm pack output at repo root — gitignored but pollutes the workspace',
+      recommendation: `Remove ${name} (npm run clean:artifacts) and pack to a temp dir in scripts.`,
     });
   }
   return rows;

@@ -55,4 +55,4 @@ Architecture decision records for decisions that have already been made.
 
 ## Starter templates
 
-- [_template.md](./_template.md)
+- [_template.md](./templates/_template.md)

@@ -1,3 +1,8 @@
+---
+intake: none
+intake_rationale: Durable ADR decision-input research; moved from .cx/research/ for vanilla package tree.
+---
+
 # Research Brief: Dolt Sync Options for Beads (DoltHub vs DoltLab vs filesystem/object-store remote vs git-native)
 
 - **Date / access date for all sources**: 2026-06-04

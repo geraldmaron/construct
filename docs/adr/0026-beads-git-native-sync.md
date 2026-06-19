@@ -1,6 +1,6 @@
 ---
 intake: none
-intake_rationale: infrastructure decision recorded from research brief .cx/research/dolt-sync-options-for-beads.md and a verified local trial; not routed through an intake packet.
+intake_rationale: infrastructure decision recorded from research brief docs/research/decision-input/dolt-sync-options-for-beads.md and a verified local trial; not routed through an intake packet.
 last_verified_at: 2026-06-04
 verified_by: construct · git-native push verified (refs/dolt/data on origin)
 ---
@@ -55,7 +55,7 @@ Two-way door. A filesystem or S3 remote can be added as an additional backup mir
 
 ## References
 
-- Research brief: `.cx/research/dolt-sync-options-for-beads.md` (2026-06-04)
+- Research brief: `docs/research/decision-input/dolt-sync-options-for-beads.md` (2026-06-04)
 - [ADR 0001: Zero npm dependencies in core](0001-zero-npm-core.md)
 - [ADR 0014: Local ONNX embeddings are an optional capability](0014-local-embeddings-optional.md)
 - Dolt Git-remote support (v1.81.10): https://www.dolthub.com/blog/2026-02-13-announcing-git-remote-support-in-dolt/

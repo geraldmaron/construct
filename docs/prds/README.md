@@ -18,8 +18,8 @@ Product and capability requirement documents.
 
 ## Starter templates
 
-- [_template.md](./_template.md)
-- [meta-prd.template.md](./meta-prd.template.md)
-- [prd-business.template.md](./prd-business.template.md)
-- [prd-platform.template.md](./prd-platform.template.md)
-- [prfaq.template.md](./prfaq.template.md)
+- [_template.md](./templates/_template.md)
+- [meta-prd.template.md](./templates/meta-prd.template.md)
+- [prd-business.template.md](./templates/prd-business.template.md)
+- [prd-platform.template.md](./templates/prd-platform.template.md)
+- [prfaq.template.md](./templates/prfaq.template.md)

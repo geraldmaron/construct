@@ -59,7 +59,7 @@ publish:
 **Community patterns (do not hand-roll):**
 
 - **Figures in PDF**: fenced ` ```d2` / ` ```mermaid` blocks rendered at export time via vendored [pandoc-ext/diagram](https://github.com/pandoc-ext/diagram) (`construct export --figures` or `construct publish`).
-- **Terminal demos**: committed `.tape` files under `.cx/demos/tapes/` (VHS source of truth); regenerate with `construct demo record <name>` or CI `charmbracelet/vhs-action`.
+- **Terminal demos**: shipped `.tape` files under `templates/demos/tapes/`; project overrides in `.cx/demos/tapes/`; regenerate with `construct demo record <name>` or CI `charmbracelet/vhs-action`.
 - **Dashboard demos**: Playwright `e2e/demo/*.spec.ts` with `video: on` in `apps/dashboard`; run via `construct demo dashboard:<name>`.
 
 Install toolchain once: `brew install d2 graphviz pandoc typst vhs` and `npm install -g @mermaid-js/mermaid-cli`. Playwright: `cd apps/dashboard && npm install && npx playwright install chromium`.
