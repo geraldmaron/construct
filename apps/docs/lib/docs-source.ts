@@ -23,6 +23,7 @@ export type DocPage = {
   title: string;
   description?: string;
   body: string;
+  format: 'md' | 'mdx';
 };
 
 export type DocMeta = {
@@ -31,6 +32,7 @@ export type DocMeta = {
   pages?: string[];
 };
 
+// Maintainer-only lanes stay in git but are excluded from the public docs site.
 const SKIP_DIRS = new Set([
   'templates',
   '_template',
@@ -42,6 +44,8 @@ const SKIP_DIRS = new Set([
   'prd',
   'prds',
   'audit',
+  'research',
+  'decisions',
   'intake',
   'rfc',
   'rfcs',
@@ -50,19 +54,40 @@ const SKIP_DIRS = new Set([
 const SKIP_FILE_PATTERNS = [
   /^_template/i,
   /\.template\./i,
+  /^roadmap\.md$/i,
 ];
 
 function shouldSkipFile(name: string): boolean {
   return SKIP_FILE_PATTERNS.some((p) => p.test(name));
 }
 
+const MDX_COMPONENT_NAMES = [
+  'FlowPipeline',
+  'RequestFlow',
+  'SyncGrid',
+  'AgentGrid',
+  'DeployModes',
+  'Cards',
+  'Card',
+  'Steps',
+  'Step',
+  'Callout',
+] as const;
+
+const MDX_COMPONENT_RE = new RegExp(
+  `<(?:${MDX_COMPONENT_NAMES.join('|')})(?:\\s|\\/|>)`,
+);
+
+/** True when the body uses `@cx/ui` MDX shims (PascalCase JSX tags). */
+export function docUsesMdxComponents(content: string): boolean {
+  return MDX_COMPONENT_RE.test(content);
+}
+
 /**
  * Plain Markdown allows constructs MDX rejects: HTML comments, autolinks
  * (`<https://…>`), and placeholder syntax inside tables / inline text
- * (`--target=<value>`). `.md` files were authored against CommonMark and
- * shouldn't carry JSX, so we walk the body, leave fenced code blocks alone,
- * and escape every `<` outside them. `.mdx` files are left untouched — their
- * authors opted into MDX rules already.
+ * (`--target=<value>`). Walk the body, leave fenced code blocks alone,
+ * and escape every `<` outside them.
  */
 function sanitizePlainMarkdown(content: string): string {
   let out = content.replace(/<!--[\s\S]*?-->/g, '');
@@ -80,6 +105,18 @@ function sanitizePlainMarkdown(content: string): string {
   if (cursor < out.length) segments.push({ text: out.slice(cursor), isCode: false });
 
   return segments.map((s) => (s.isCode ? s.text : s.text.replace(/</g, '\\<'))).join('');
+}
+
+/**
+ * One pipeline for every doc page. Prose without JSX is sanitized and compiled
+ * as CommonMark (`format: 'md'`). Only pages that embed `@cx/ui` components stay
+ * on the MDX path.
+ */
+export function prepareDocBody(content: string): { body: string; format: 'md' | 'mdx' } {
+  if (docUsesMdxComponents(content)) {
+    return { body: content, format: 'mdx' };
+  }
+  return { body: sanitizePlainMarkdown(content), format: 'md' };
 }
 
 function walk(dir: string, relParts: string[] = []): DocPage[] {
@@ -127,6 +164,8 @@ function walk(dir: string, relParts: string[] = []): DocPage[] {
       || base.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
     const description = (data.description as string) || undefined;
 
+    const prepared = prepareDocBody(content);
+
     out.push({
       slug,
       url: slug.length === 0 ? '/' : '/' + slug.join('/'),
@@ -134,7 +173,8 @@ function walk(dir: string, relParts: string[] = []): DocPage[] {
       ext,
       title,
       description,
-      body: ext === 'md' ? sanitizePlainMarkdown(content) : content,
+      body: prepared.body,
+      format: prepared.format,
     });
   }
   return out;

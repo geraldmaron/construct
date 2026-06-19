@@ -21,6 +21,10 @@ Tracker hierarchy: external tracker (prefer Beads) for durable work, `plan.md` f
 All LLMs working in the repo, including Construct, must read these as project state, keep them current when work changes project reality, and prune stale sections instead of letting managed docs drift.
 <!-- /AUTO:core-docs -->
 
+## File format: `.md` vs `.mdx`
+
+Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.mdx`** only when a page embeds `@cx/ui` MDX components (`<FlowPipeline>`, `<RequestFlow>`, `<Callout>`, …). The docs site compiles both through the same pipeline: prose-only bodies are sanitized and rendered as Markdown; JSX pages stay on the MDX path (`apps/docs/lib/docs-source.ts` → `prepareDocBody`).
+
 ## Contents
 
 - [Start](./start/). Install, initialize a project, connect an editor, and run the first task
@@ -39,11 +43,19 @@ All LLMs working in the repo, including Construct, must read these as project st
 - [Release and deploy automation](./maintenance/release-and-deploy.md). What fires when you tag, plus the failure-mode lookup
 - [Templates and role anti-patterns](./templates/README.md)
 - [Runbooks](./runbooks/)
-- [ADRs](../.cx/decisions/). Session-context decisions (longer ADRs live in `docs/adr/`)
+- [ADRs](./adr/). Architecture decision records (public site lane)
 - [Skills](../skills/). Domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
-- [Tests audit](../tests/AUDIT.md). Category-by-category survey of the 188 test files
-- [Audit snapshots](./audit/). Dated alignment scorecards and baseline evidence (not living docs)
 - [Functional tests pattern](../tests/functional/README.md). When and how to add an end-to-end test
+
+## Maintainer lanes (not on the public site)
+
+These directories stay in git for Construct maintainers. They are excluded from the published docs site and not linked from README.
+
+- [Audit snapshots](./audit/). Dated alignment scorecards and baseline evidence
+- [Research notes](./research/). Competitive audits and synthesis reports
+- [PRDs](./prd/). Draft product requirements for this repo
+- [Roadmap](./roadmap.md). Generated placeholder (excluded from public site)
+- [Tests audit](../tests/AUDIT.md). Category-by-category survey of test files
 
 ## How-to guides
 
