@@ -12,14 +12,21 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import React from 'react';
-import { render } from 'ink-testing-library';
 import { createTurnState, applyTurnEvent, runTurnInto } from '../../apps/chat/tui/turn-state.mjs';
 import { createSessionUsage } from '../../lib/chat/tui/usage.mjs';
 import { createTheme } from '../../apps/chat/tui/theme.mjs';
-import { TransparencyPanel, TurnContextBar, TurnView } from '../../apps/chat/dist/tui.mjs';
 
-const PANEL_THEME = createTheme();
+const INK_SKIP = Number(process.versions.node.split('.')[0]) < 22
+  ? 'ink 7 requires Node >= 22'
+  : false;
+
+async function loadInkHarness() {
+  const React = (await import('react')).default;
+  const { render } = await import('ink-testing-library');
+  const tui = await import('../../apps/chat/dist/tui.mjs');
+  const theme = createTheme();
+  return { React, render, theme, tui };
+}
 
 function fakeDriver(events) {
   return {
@@ -87,18 +94,19 @@ test('turn-state records permission events', () => {
   assert.equal(state.permissions[0].title, 'shell');
 });
 
-test('SessionDock renders session usage and model', () => {
+test('SessionDock renders session usage and model', { skip: INK_SKIP }, async () => {
+  const { React, render, theme, tui } = await loadInkHarness();
   const session = { usage: createSessionUsage() };
   applyTurnEvent(createTurnState(), { type: 'usage', tokens: { input: 1200, output: 300, total: 1500 } }, { session });
 
   const { lastFrame } = render(
-    React.createElement(TransparencyPanel, {
+    React.createElement(tui.TransparencyPanel, {
       width: 40,
       session,
       layers: { thinking: true, path: true, specialists: true, tools: true, observability: true },
       working: false,
       model: 'anthropic/claude-sonnet-4-6',
-      theme: PANEL_THEME,
+      theme,
     }),
   );
   const frame = lastFrame();
@@ -107,7 +115,8 @@ test('SessionDock renders session usage and model', () => {
   assert.match(frame, /layers/);
 });
 
-test('TurnContextBar renders route and external research badge', () => {
+test('TurnContextBar renders route and external research badge', { skip: INK_SKIP }, async () => {
+  const { React, render, theme, tui } = await loadInkHarness();
   const turn = {
     overlay: {
       intent: 'research',
@@ -118,12 +127,12 @@ test('TurnContextBar renders route and external research badge', () => {
     sources: [{ tool: 'read', ref: 'docs/adr/0015.md' }],
   };
   const { lastFrame } = render(
-    React.createElement(TurnContextBar, {
+    React.createElement(tui.TurnContextBar, {
       turn,
       width: 50,
       layers: { specialists: true },
-      palette: PANEL_THEME.palette,
-      glyphs: PANEL_THEME.glyphs,
+      palette: theme.palette,
+      glyphs: theme.glyphs,
     }),
   );
   const frame = lastFrame();
@@ -135,7 +144,8 @@ test('TurnContextBar renders route and external research badge', () => {
   assert.match(frame, /docs\/adr\/0015.md/);
 });
 
-test('TurnTranscript renders full thinking inline with phase labels', () => {
+test('TurnTranscript renders full thinking inline with phase labels', { skip: INK_SKIP }, async () => {
+  const { React, render, theme, tui } = await loadInkHarness();
   const turn = {
     id: 't1',
     userText: 'what is pending for oracle',
@@ -147,12 +157,12 @@ test('TurnTranscript renders full thinking inline with phase labels', () => {
     usage: { tokens: { input: 2000, output: 481, total: 2481 } },
   };
   const { lastFrame } = render(
-    React.createElement(TurnView, {
+    React.createElement(tui.TurnView, {
       turn,
       width: 60,
       layers: { thinking: true, tools: true, specialists: true, observability: true },
       turnIndex: 1,
-      theme: PANEL_THEME,
+      theme,
     }),
   );
   const frame = lastFrame();
@@ -166,8 +176,8 @@ test('TurnTranscript renders full thinking inline with phase labels', () => {
   assert.doesNotMatch(frame, /inspector/);
 });
 
-test('CompactTurnLog renders mono channel lines', async () => {
-  const { CompactTurnLog } = await import('../../apps/chat/dist/tui.mjs');
+test('CompactTurnLog renders mono channel lines', { skip: INK_SKIP }, async () => {
+  const { React, render, theme, tui } = await loadInkHarness();
   const turn = {
     id: 't2',
     userText: 'fix the hook',
@@ -179,12 +189,12 @@ test('CompactTurnLog renders mono channel lines', async () => {
     usage: { tokens: { total: 100 } },
   };
   const { lastFrame } = render(
-    React.createElement(CompactTurnLog, {
+    React.createElement(tui.CompactTurnLog, {
       turn,
       width: 70,
       layers: { thinking: true, tools: true, specialists: true, observability: true },
       turnIndex: 2,
-      theme: PANEL_THEME,
+      theme,
     }),
   );
   const frame = lastFrame();
