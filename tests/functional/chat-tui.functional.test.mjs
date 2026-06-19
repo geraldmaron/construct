@@ -165,3 +165,35 @@ test('TurnTranscript renders full thinking inline with phase labels', () => {
   assert.match(frame, /USAGE/);
   assert.doesNotMatch(frame, /inspector/);
 });
+
+test('CompactTurnLog renders mono channel lines', async () => {
+  const { CompactTurnLog } = await import('../../apps/chat/dist/tui.mjs');
+  const turn = {
+    id: 't2',
+    userText: 'fix the hook',
+    overlay: { intent: 'implementation', specialists: ['cx-engineer'] },
+    thinking: 'Checking hooks.',
+    tools: [{ id: 'b', title: 'read', status: 'completed', input: { path: 'lib/hooks/foo.mjs' } }],
+    sources: ['lib/hooks/foo.mjs'],
+    assistant: 'Done.',
+    usage: { tokens: { total: 100 } },
+  };
+  const { lastFrame } = render(
+    React.createElement(CompactTurnLog, {
+      turn,
+      width: 70,
+      layers: { thinking: true, tools: true, specialists: true, observability: true },
+      turnIndex: 2,
+      theme: PANEL_THEME,
+    }),
+  );
+  const frame = lastFrame();
+  assert.match(frame, /T2/);
+  assert.match(frame, /YOU/);
+  assert.match(frame, /ROUTE/);
+  assert.match(frame, /THINK/);
+  assert.match(frame, /TOOL/);
+  assert.match(frame, /OUT/);
+  assert.match(frame, /USAGE/);
+  assert.doesNotMatch(frame, /TURN 2/);
+});

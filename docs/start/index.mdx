@@ -13,7 +13,7 @@ If anything goes wrong, jump to [troubleshooting](/operations/troubleshooting).
 
 <FlowPipeline steps={[
   { label: 'Install', badge: '5 min', sub: 'npm or brew' },
-  { label: 'First task', sub: 'construct init · sync · up' },
+  { label: 'First task', sub: 'construct init · sync · dev' },
   { label: 'Connect editor', sub: 'Claude · OpenCode · Codex · Copilot' },
   { label: 'What next', sub: 'intake · concepts · cookbook' },
 ]} />
@@ -34,6 +34,8 @@ If anything goes wrong, jump to [troubleshooting](/operations/troubleshooting).
 - Optional local Postgres + pgvector for retrieval, managed via Docker if available. Trace capture writes local `.cx/traces/*.jsonl` by default; remote export is optional.
 
 You install in `solo` mode by default — everything runs locally, the intake queue is the filesystem under `.cx/intake/`, and there's no Construct cloud account. Two other deployment modes (`team` and `enterprise`) promote the queue and memory to shared Postgres and route MCP through a broker — see [deployment model](/concepts/deployment-model).
+
+Optional: run **`construct chat`** for a transparency-first terminal session on Construct's owned agent loop, or **`construct chat --web`** / dashboard **`/chat`** for the browser cockpit. See [Construct chat](/cookbook/construct-chat).
 
 ## Platform support
 

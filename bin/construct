@@ -1598,6 +1598,36 @@ async function cmdExport(args) {
   ok(result.message);
 }
 
+async function cmdPublish(args) {
+  const { runPublishCli } = await import('../lib/publish.mjs');
+  const { exitCode } = await runPublishCli(args, { cwd: process.cwd(), repoRoot: ROOT_DIR });
+  process.exit(exitCode ?? 0);
+}
+
+async function cmdTools(args) {
+  const [sub, ...rest] = args;
+  if (sub !== 'detect') {
+    errorln('Usage: construct tools detect [--json] [--figures] [--no-figures] [--demo=NAME] [--dashboard-demo=NAME]');
+    process.exit(1);
+  }
+  const { detectPublishPipeline, formatToolsDetectReport } = await import('../lib/publish-tooling.mjs');
+  const json = rest.includes('--json');
+  const figures = !rest.includes('--no-figures');
+  const demos = rest.filter((a) => a.startsWith('--demo=')).map((a) => a.slice(7));
+  const dashboardDemos = rest.filter((a) => a.startsWith('--dashboard-demo=')).map((a) => a.slice(17));
+  const detection = detectPublishPipeline({
+    format: 'pdf',
+    includeFigures: figures,
+    includeTerminalDemo: demos.length > 0,
+    includeDashboardDemo: dashboardDemos.length > 0,
+    cwd: process.cwd(),
+    repoRoot: ROOT_DIR,
+  });
+  if (json) println(formatToolsDetectReport(detection, { json: true }));
+  else println(formatToolsDetectReport(detection));
+  process.exit(detection.present ? 0 : 2);
+}
+
 async function cmdInfer(args) {
   try {
     const result = await runInferCli(args, { cwd: process.cwd() });
@@ -5382,6 +5412,8 @@ const handlers = new Map([
   ['distill', cmdDistill],
   ['ingest', cmdIngest],
   ['export', cmdExport],
+  ['publish', cmdPublish],
+  ['tools', cmdTools],
   ['infer', cmdInfer],
   ['search', cmdSearch],
   ['storage', cmdStorage],

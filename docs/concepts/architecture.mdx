@@ -42,6 +42,19 @@ The signal-to-memory path is deterministic where it should be (classification, r
 
 The loop is the differentiator. Other agent tools dispatch to specialists; Construct dispatches *and* gates *and* re-runs until verification passes or a real blocker surfaces.
 
+## Interaction surfaces
+
+The CLI registry is the substrate (~118 commands). Four surfaces are emphasized for everyday use ([ADR-0039](/adr/0039-interaction-surface-model)):
+
+| Surface | Entry | Role |
+|---|---|---|
+| Agent / MCP | `@construct` in Claude, OpenCode, Codex, Cursor, Copilot | Primary authoring — orchestration policy, skills, workflows |
+| Terminal chat | `construct chat` | Owned agent loop with transparency-first Ink or linear UI |
+| Dashboard chat | `construct chat --web` or `/chat` | Browser cockpit on the same owned loop (SSE) |
+| Thin CLI | `construct status`, `construct doctor`, `construct intake`, … | Operator diagnostics and queue inspection |
+
+Oracle (`construct oracle status`) sits alongside as an L0.5 bounded-auto health layer — not a user-facing chat surface.
+
 ## Where things live
 
 <Cards>
@@ -363,9 +376,7 @@ Hybrid: autonomous for low-risk, human-gated for high-risk.
 
 ## Policy enforcement. three layers
 
-Policy rules (comment convention, doc-update requirement, CI green before walk-away, branch hygiene) are enforced at three layers so violations cannot fall through the cracks. Every blocking layer has an explicit env-var bypass so legitimate exceptions leave an audit trail.
-
-**Layer 1. Real-time (write/edit time).** Catches at the source.
+Policy rules (comment convention, doc-update requirement, CI green before walk-away, branch hygiene) are enforced at three layers so violations cannot fall through the cracks. Quality gates fire unconditionally — no skip env vars on blocking checks. If a gate fires wrong, repair the policy at its source.
 
 **Layer 1. Real-time (write/edit time).** Catches at the source.
 

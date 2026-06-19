@@ -2,7 +2,7 @@
 
 > This is the strategy doc for the Construct project itself. The org-in-a-box, dogfooding on its own repo. Other projects that use Construct have their own strategy at `.cx/strategy.md` (see [`templates/docs/strategy.md`](./templates/docs/strategy.md)).
 
-Last updated: 2026-05-26
+Last updated: 2026-06-19
 Horizon: 6 to 12 months
 Status: living document, revised when a bet changes
 
@@ -42,7 +42,9 @@ What is there:
 - Intake loop classifies signals in `.cx/inbox/` deterministically, assigns owners, and routes through typed contract chains.
 - Hard gates fire at write time, commit time, and CI. Bypasses are env-var only and audited.
 - Solo mode runs locally with filesystem queue, local pgvector, JSONL traces. Team and enterprise modes exist as a scaffold.
-- Dashboard is shipped: chat, approvals, knowledge panel, providers, models, infra tab.
+- Dashboard is shipped: chat (owned-loop `/chat` cockpit), approvals, knowledge panel, providers, models, infra tab.
+- **`construct chat`** ships an owned-loop terminal and browser surface (ADR-0041) with transparency-first layout.
+- **Oracle** L0.5 meta-controller collects signals, auto-executes safe maintenance, queues consequential fixes (`construct oracle`).
 - Doc auditability stamps land on every generated `.md` file.
 - A docs site is published at `geraldmaron.github.io/construct/`.
 
@@ -84,7 +86,7 @@ Why: vertical agents are a feature, not a fork. The lifecycle in `docs/concepts/
 
 ### Bet 4: Hard gates over soft hooks
 
-Comment policy, doc verification, template policy, and contract postconditions fail the build. They are not advisory. Bypasses require explicit env vars and leave an audit trail.
+Comment policy, doc verification, template policy, and contract postconditions fail the build. They are not advisory. Quality gates fire unconditionally — no `CONSTRUCT_SKIP_*` bypass env vars on blocking checks (`tests/hooks/no-skip-vars.test.mjs`). Notice-only signals auto-suppress in CI and non-TTY contexts.
 
 Why: soft hooks decay. Hard gates either pass or they get fixed. The decay rate of a soft gate is the same as a TODO comment.
 

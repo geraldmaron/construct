@@ -1,0 +1,13 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:05.000
+<v Alice>Good morning everyone. Any blockers from yesterday?
+
+00:00:05.500 --> 00:00:12.000
+<v Bob>I was blocked on the memory isolation PR. Waiting for review from the infra team.
+
+00:00:12.500 --> 00:00:18.000
+<v Alice>Got it. I'll ping them now. Bob, add yourself to the PR as co-author.
+
+00:00:18.500 --> 00:00:25.000
+<v Bob>Will do. Also the eval harness passed overnight — no regressions on the tool-calling suite.

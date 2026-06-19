@@ -24,24 +24,24 @@ Sourcing follows `rules/common/no-fabrication.md`: command names trace to `lib/c
 | **test** | `construct ci` (local CI mirror runs the test jobs); no `construct test` command | `review:code` (coverage axis); testing knowledge in `cx-qa` / `cx-test-automation` skills | `cx-qa` (does the test test what matters), `cx-test-automation` (determinism/flakiness) | partial — testing is owned by `cx-qa` + `cx-test-automation`; `construct ci preview` runs the real test jobs locally. No standalone `construct test`. |
 | **ship** | `construct status` (state), `construct doctor` (health gate), `construct ci` (pre-merge mirror); release itself is conversational | `ship:ready` (also `ship:release`, `ship:status`) | `cx-release-manager` (rollout/rollback/changelog) | partial — `ship:ready`/`ship:release` route to `cx-release-manager`; readiness signals come from `construct status`/`doctor`/`ci`. No single `construct ship`. |
 | **document** | `construct docs check\|verify\|update`; `construct doc verify\|inspect` (auditability stamps); `construct export` (markdown → PDF/DOCX/HTML) | `remember:context`, `remember:handoff`, `remember:runbook`; `understand:docs` for lookup | `cx-docs-keeper` (decision record, freshness) | shipped — `construct docs` is the command surface; `cx-docs-keeper` owns the judgment; skills cover context/handoff/runbook capture. |
-| **diagram** | `construct diagram` | (new; extends the `wireframe` capability — no shipped slash-command skill yet) | `cx-designer` (visual/interaction) / `cx-architect` (system diagrams) for the judgment | **landing** — approved in `tooling-scorecard.md` (verdict: *add*); command not yet merged. Implementation tracked by bead `construct-ij31.16` (primary candidate D2, fallback Excalidraw; `lib/diagram.mjs` extending `lib/wireframe.mjs`). Today only `construct wireframe` (text-only) exists. |
-| **demo** | `construct demo` | (new; no shipped slash-command skill yet) | `cx-release-manager` / `cx-docs-keeper` for demo-artifact ownership | **landing** — approved in `tooling-scorecard.md` (verdict: *add*); command not yet merged. Tracked by bead `construct-ij31.17` (primary VHS for terminal, Playwright for dashboard; `lib/demo.mjs`). No demo capability exists today. |
+| **diagram** | `construct diagram` | (new; extends the `wireframe` capability — no shipped slash-command skill yet) | `cx-designer` (visual/interaction) / `cx-architect` (system diagrams) for the judgment | **shipped** — `lib/diagram.mjs`; D2 primary, Graphviz fallback; bead `construct-ij31.16`. |
+| **demo** | `construct demo` | (new; no shipped slash-command skill yet) | `cx-release-manager` / `cx-docs-keeper` for demo-artifact ownership | **shipped** — project tapes in `.cx/demos/tapes/`, VHS terminal + Playwright dashboard bridge; bead `construct-ij31.17`. |
+| **publish** | `construct publish` | — | `cx-researcher` / `cx-docs-keeper` | **shipped** — orchestrates export + optional demos; `lib/publish.mjs`. |
 | **research** | `construct ask` (one-shot KB query), `construct search` (hybrid search), `construct knowledge add` (persist a finding) | `understand:research` (also `understand:docs`, `understand:this`, `understand:why`) | `cx-researcher` (sources every claim with a primary reference + date) | shipped — `cx-researcher` owns the judgment; `construct ask`/`search`/`knowledge` are the command surface for querying and persisting findings. |
 | **ingest** | `construct ingest` (doc → indexed markdown), `construct drop` (Downloads/Desktop), `construct distill` (query-focused chunking), `construct intake` (queue triage), `construct infer` (schema) | (no slash-command skill; driven by intake/ingest workflows) | `cx-data-engineer` (pipeline trust/idempotency), `cx-product-manager` (intake triage) | shipped — richest command surface (`ingest`/`drop`/`distill`/`intake`/`infer`); strategy-selected extraction per `lib/ingest/strategy.mjs` (adapter \| provider \| docling-remote). Scorecard follow-up: add a Node-native default fast path (see `tooling-scorecard.md`). |
 
 ## Coverage
 
-Eleven capabilities mapped end-to-end: **plan · build · fix · review · test · ship · document · diagram · demo · research · ingest.**
+Twelve capabilities mapped end-to-end: **plan · build · fix · review · test · ship · document · diagram · demo · publish · research · ingest.**
 
-- **3 shipped** with a dedicated command surface: document, research, ingest.
+- **6 shipped** with a dedicated command surface: document, research, ingest, diagram, demo, publish.
 - **6 partial** — skill + specialist path is live and routes through Construct, but there is no single dedicated `construct <verb>` command (the work happens in-session or rides sibling commands): plan, build, fix, review, test, ship.
-- **2 landing** — approved capability gaps with the command name fixed but not yet merged: diagram (`construct-ij31.16`), demo (`construct-ij31.17`).
 
 ## Agreement with the scorecard
 
 This matrix and [`tooling-scorecard.md`](./tooling-scorecard.md) are consistent:
 
-- **diagram** and **demo** are the scorecard's two *add* verdicts; here they are the two `landing` rows, same beads (`.16` / `.17`).
+- **diagram**, **demo**, and **publish** implement the scorecard's visual/demo/publish verdicts; beads `construct-ij31.16`/`.17` closed.
 - **ingest** carries the scorecard's one *soften* note (Node-native extraction default) as a follow-up, not a blocker.
 - The remaining capabilities ride the scorecard's *keep* stack (custom CLI dispatcher, beads, telemetry, Pandoc/Typst export) with no tooling change implied.
 
