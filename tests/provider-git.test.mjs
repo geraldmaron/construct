@@ -8,8 +8,8 @@ import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runContractTests } from '../providers/lib/contract-tests.mjs';
-import provider from '../providers/git/index.mjs';
+import { runContractTests } from '../lib/providers/contract/contract-tests.mjs';
+import provider from '../lib/providers/contract/adapters/git/index.mjs';
 
 const ROOT = path.resolve(fileURLToPath(import.meta.url), '..', '..');
 

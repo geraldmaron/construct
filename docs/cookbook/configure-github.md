@@ -82,6 +82,6 @@ The webhook handler verifies the signature, normalizes the payload, and emits th
 
 ## Reference
 
-- [`docs/providers/github.md`](https://github.com/geraldmaron/construct/blob/main/docs/providers/github.md): full provider reference, including all queryable fields.
+- [Providers → GitHub](/reference/providers/github): full provider reference, including all queryable fields.
 - [Cookbook → Manage providers](/cookbook/manage-providers): the broader provider model.
 - [Concepts → Architecture](/concepts/architecture#providers): how the provider layer fits into Construct.
