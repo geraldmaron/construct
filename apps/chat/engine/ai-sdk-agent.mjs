@@ -106,31 +106,55 @@ async function resolveLanguageModel(modelId, env) {
   throw err;
 }
 
-const DEFAULT_SYSTEM = 'You are Construct, a transparent terminal coding agent. Use the provided tools to inspect and edit the workspace. Explain your reasoning and keep actions scoped to the request.';
+import { buildSystemPrompt } from '../../../lib/chat/system-prompt.mjs';
+import { buildTurnPolicyMessage } from '../../../lib/chat/transparency.mjs';
 
 export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(), model = null, handlers = {}, systemPrompt = '', tools = null } = {}) {
   const { streamText, stepCountIs } = await import('ai');
-  const languageModel = await resolveLanguageModel(model, env);
 
   const { buildAgentTools } = await import('./tools/registry.mjs');
   const sdkTools = await buildAgentTools({ env, cwd, handlers, only: tools });
 
   const maxSteps = Number(env.CX_CHAT_MAX_STEPS) > 0 ? Number(env.CX_CHAT_MAX_STEPS) : 16;
   const messages = [];
+  const languageModels = new Map();
+  let activeModelId = model;
+
+  async function languageModelFor(modelId) {
+    const id = modelId || activeModelId;
+    if (!id) {
+      const err = new Error('No model selected and no configured provider found. Run `construct models` or set CX_MODEL_STANDARD.');
+      err.code = 'PROVIDER_MODEL_UNRESOLVED';
+      throw err;
+    }
+    if (!languageModels.has(id)) {
+      languageModels.set(id, await resolveLanguageModel(id, env));
+    }
+    return languageModels.get(id);
+  }
 
   return {
     sessionId: `construct-${Date.now()}`,
     model,
     listModels: () => listChatModels({ env }),
-    async *streamTurn(text, { signal } = {}) {
-      messages.push({ role: 'user', content: text });
+    async *streamTurn(text, { signal, model: turnModel = null, turnOverlay = null } = {}) {
+      if (turnModel) activeModelId = turnModel;
+      const languageModel = await languageModelFor(activeModelId);
+
+      let content = String(text);
+      if (turnOverlay) {
+        const preamble = buildTurnPolicyMessage(turnOverlay);
+        if (preamble) content = `${preamble}\n\n---\n\n${content}`;
+      }
+      messages.push({ role: 'user', content });
       const result = streamText({
         model: languageModel,
-        system: systemPrompt || DEFAULT_SYSTEM,
+        system: systemPrompt || buildSystemPrompt(),
         messages,
         tools: sdkTools,
         stopWhen: stepCountIs(maxSteps),
         abortSignal: signal,
+        maxRetries: 0,
       });
       for await (const part of result.fullStream) yield part;
       // Persist the assistant turn (incl. tool exchanges) so the next prompt has history.

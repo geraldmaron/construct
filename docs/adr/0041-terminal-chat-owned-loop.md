@@ -51,11 +51,12 @@ Ship `construct chat` as an **own-the-loop, own-the-surface** experience:
   (knowledge search, orchestration policy, etc.) are bridged through the
   existing MCP dispatcher (`dispatchToolByName`, `lib/mcp/server.mjs`); bounded
   shell reuses `lib/worker/run.mjs`.
-- **Owned surface (`apps/chat/tui/`).** A multi-pane Ink TUI renders the
-  conversation in a main pane and a dedicated transparency side panel (live
-  tokens/cost/context window, reasoning, tool timeline, and the specialist route
-  the policy would select). Ink is the proven Node-native React TUI used by the
-  peer agents Construct sits beside.
+- **Owned surface (`apps/chat/tui/`).** A multi-pane Ink TUI renders each turn inline in the
+  conversation column (TurnBlock: policy overlay, thinking, tools, markdown answer,
+  turn usage) beside a **SessionDock** for session-level telemetry (tokens/cost/context,
+  layers, model). An optional **TurnInspector** (`/inspect`, Ctrl-O, `ui.inspector`)
+  exposes deep per-turn detail without hiding route/thinking in the sidebar alone.
+  Ink is the proven Node-native React TUI used by the peer agents Construct sits beside.
 - **Accessible by construction.** The full-screen Ink TUI is the default only on
   a capable interactive TTY. `--plain`, `--accessible`, `NO_COLOR`, `TERM=dumb`,
   and any non-TTY stream route to the retained linear renderer

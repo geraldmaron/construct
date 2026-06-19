@@ -3,6 +3,7 @@ name: docs-backlog-proposal-workflow
 description: "Use when: product evidence should create or update Jira, Linear, GitHub Issues, or another tracker."
 inputs: [evidence-brief, prd, signal]
 artifactType: backlog-proposal
+verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
 ---
 # Backlog Proposal Workflow
 

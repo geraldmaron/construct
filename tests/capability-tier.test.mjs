@@ -31,6 +31,10 @@ test("COLLAPSED verdict forces floor regardless of size", () => {
   assert.equal(resolveCapabilityTier({ model: "ollama/qwen3-coder:30b-cx32k", verdict: "COLLAPSED" }), "floor");
 });
 
+test("local/ OpenAI-compatible prefix maps to floor tier", () => {
+  assert.equal(resolveCapabilityTier({ model: "local/custom-small" }), "floor");
+});
+
 test("local model with no size marker is conservative (floor)", () => {
   assert.equal(resolveCapabilityTier({ model: "ollama/some-model:latest" }), "floor");
 });

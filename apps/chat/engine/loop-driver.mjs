@@ -137,7 +137,11 @@ export function createOwnedLoopDriver({
 
     (async () => {
       try {
-        const stream = await agent.streamTurn(text, { signal: controller.signal, model: currentModel });
+        const stream = await agent.streamTurn(text, {
+          signal: controller.signal,
+          model: currentModel,
+          turnOverlay: opts.turnOverlay ?? null,
+        });
         for await (const part of stream) {
           if (queue.closed) break;
           mapPart(part, queue, turn);

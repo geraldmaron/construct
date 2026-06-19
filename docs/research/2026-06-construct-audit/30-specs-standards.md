@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # 30 — Specs & Standards: MCP, AGENTS.md, ACP, Multi-Lab Tool Design
 
 Date: 2026-06-09 · Branch: research/capability-registry · Bead: construct-qd8p

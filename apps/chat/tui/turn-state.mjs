@@ -49,7 +49,12 @@ export function applyTurnEvent(state, event, { session = null } = {}) {
       state.rendered = true;
       break;
     case 'tool_call': {
-      state.tools.push({ id: event.id, title: event.title || event.kind || 'tool', status: 'pending' });
+      state.tools.push({
+        id: event.id,
+        title: event.title || event.kind || 'tool',
+        status: 'pending',
+        input: event.input ?? null,
+      });
       state.rendered = true;
       break;
     }

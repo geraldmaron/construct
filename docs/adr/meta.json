@@ -33,6 +33,7 @@
     "0039-interaction-surface-model",
     "0040-terminal-chat-delegated-loop",
     "0041-terminal-chat-owned-loop",
-    "0042-llm-credential-resolution"
+    "0042-llm-credential-resolution",
+    "0043-oracle-meta-controller"
   ]
 }

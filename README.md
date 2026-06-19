@@ -222,6 +222,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct docs:site` | Manage the docs static site build |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
 | `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
+| `construct rules` | Rule and hook reference telemetry rollup |
 
 ### Advanced
 

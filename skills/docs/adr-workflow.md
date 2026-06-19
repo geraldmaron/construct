@@ -3,6 +3,7 @@ name: docs-adr-workflow
 description: "Use when: an architectural decision is made that affects the system structure, data model, API contracts, or technology choices."
 inputs: [decision-context]
 artifactType: adr
+verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
 ---
 # ADR Workflow
 
