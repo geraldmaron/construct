@@ -106,7 +106,8 @@ test('agentic-platforms-prd tape uses construct chat not raw Dracula shell', () 
   assert.match(tape, /construct chat --demo=agentic-platforms-prd/);
   assert.doesNotMatch(tape, /Set Theme "Dracula"/);
   const theme = JSON.parse(fs.readFileSync(themePath, 'utf8'));
-  assert.equal(theme.cursor, '#8b5cf6');
+  assert.equal(theme.name, 'Construct Cockpit');
+  assert.equal(theme.cursor, '#ffffff');
 });
 
 test('detectChatDemoReady returns structured readiness', () => {

@@ -55,7 +55,7 @@ ops: Ops engineer {
 
 construct: Construct CLI {
   style.fill: "#f5f3ff"
-  style.stroke: "#8b5cf6"
+  style.stroke: "#0a0c10"
 }
 
 gate: Release gate\nvalidate + citations {
@@ -66,7 +66,7 @@ gate: Release gate\nvalidate + citations {
 export: Publish export\nPDF + figures {
   style.fill: "#0c1018"
   style.font-color: "#e5e7eb"
-  style.stroke: "#8b5cf6"
+  style.stroke: "#0a0c10"
 }
 
 developer -> construct: invoke + review plan

@@ -130,26 +130,29 @@ test('distribution diagram defaults use compact hand-drawn sizing', () => {
   assert.equal(defaults.d2Theme, 'neutral');
   assert.equal(defaults.d2Sketch, true);
   assert.equal(defaults.d2Scale, 0.9);
-  assert.equal(defaults.d2FontSize, 14);
-  assert.equal(defaults.figureMaxWidth, '84%');
+  assert.equal(defaults.d2FontSize, 15);
+  assert.equal(defaults.figureMaxWidth, '74%');
   assert.equal(defaults.mermaidLook, 'handDrawn');
-  assert.equal(defaults.mermaidWidth, 680);
-  assert.equal(defaults.mermaidScale, 0.92);
-  assert.equal(defaults.accent, BRAND.accent);
+  assert.equal(defaults.mermaidWidth, 640);
+  assert.equal(defaults.mermaidScale, 2);
+  assert.equal(defaults.accent, '#0a0c10');
 });
 
-test('injectMermaidBrandTheme adds handDrawn init with brand accent', () => {
+test('injectMermaidBrandTheme adds handDrawn init with monochrome ink and handwritten font', () => {
   const out = injectMermaidBrandTheme('flowchart TD\n  A --> B');
   assert.match(out, /%%\{init:/);
   assert.match(out, /handDrawn/);
-  assert.match(out, /8b5cf6/);
+  assert.match(out, /Caveat/);
+  assert.match(out, /0a0c10/);
+  assert.doesNotMatch(out, /8b5cf6/);
 });
 
-test('preprocessMarkdownDiagrams brands mermaid and d2 fences', () => {
+test('preprocessMarkdownDiagrams brands mermaid and d2 fences monochrome', () => {
   const md = '# Doc\n\n```mermaid\nflowchart TD\n  A --> B\n```\n\n```d2\na -> b\n```\n';
   const out = preprocessMarkdownDiagrams(md);
-  assert.match(out, /8b5cf6/);
-  assert.match(out, /style\.font-size: 14/);
+  assert.match(out, /0a0c10/);
+  assert.doesNotMatch(out, /8b5cf6/);
+  assert.match(out, /style\.font-size: 15/);
   assert.match(out, /```d2/);
 });
 
@@ -159,15 +162,15 @@ test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME and sketch flag', () =
   assert.equal(env.CONSTRUCT_D2_SCALE, '0.9');
   assert.equal(env.CONSTRUCT_D2_SKETCH, '1');
   assert.equal(env.CONSTRUCT_MERMAID_THEME, 'construct');
-  assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '680');
+  assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '640');
 });
 
 test('construct-brand.typ uses Geist family names for body prose', () => {
   const brand = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-brand.typ'), 'utf8');
   assert.match(brand, /construct-font-sans = \("Geist",\)/);
-  assert.match(brand, /#set text\(font: construct-font-sans[\s\S]*justify: false/);
+  assert.match(brand, /set text\(font: construct-font-sans[\s\S]*justify: false/);
   assert.doesNotMatch(brand, /Libertinus|SourceSerif|Inter Display|IBM Plex/);
-  assert.match(brand, /construct-figure-max-width = 84%/);
+  assert.match(brand, /construct-figure-max-width = 74%/);
   assert.match(brand, /fit: "contain"/);
 });
 

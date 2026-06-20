@@ -15,7 +15,7 @@ description: Work commands for Construct.
 | `construct diagram` | Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001) |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
-| `construct export` | Export markdown to PDF/DOCX/HTML via Pandoc + Typst (optional system binaries; ADR-0024) |
+| `construct export` | Export markdown to PDF, DOCX, HTML, and other Pandoc formats via Pandoc + Typst (optional system binaries; ADR-0024) |
 | `construct graph` | Task graph management |
 | `construct handoffs` | List and inspect session handoff files in .cx/handoffs/ |
 | `construct headhunt` | Create domain expertise overlays |
@@ -152,19 +152,19 @@ construct drop <file>
 
 ## construct export
 
-Export markdown to PDF/DOCX/HTML via Pandoc + Typst (optional system binaries; ADR-0024)
+Export markdown to PDF, DOCX, HTML, and other Pandoc formats via Pandoc + Typst (optional system binaries; ADR-0024)
 
 **Usage**
 
 ```bash
-construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>] [--figures] [--detect]
+construct export <markdown-file> --to=<pdf|docx|doc|html|rtf|odt|epub|tex|txt|md|mdx> [--output=<path>] [--figures] [--detect]
 ```
 
 **Options**
 
 | Flag | Description |
 |---|---|
-| `--to=<format>` | pdf | docx | html |
+| `--to=<format>` | pdf, docx, doc, html, rtf, odt, epub, tex, txt, md, mdx |
 | `--output=<path>` | Output path |
 | `--figures` | Render d2/mermaid via pandoc-ext/diagram filter |
 | `--detect` | Report binary availability (JSON) |
@@ -277,7 +277,7 @@ construct publish <markdown> [--to=pdf] [--type=DOC] [--demo=NAME] [--strict]
 
 | Flag | Description |
 |---|---|
-| `--to=<format>` | pdf (default) | docx | html |
+| `--to=<format>` | pdf (default), docx, doc, html, rtf, odt, epub, tex, txt, md, mdx |
 | `--output=<path>` | Output path (default: .cx/publish/<name>.<format>) |
 | `--type=<doc-type>` | Manifest doc type for release gate (inferred when omitted) |
 | `--demo=<name>` | Terminal VHS tape to record (repeatable) |
