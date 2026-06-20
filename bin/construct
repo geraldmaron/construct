@@ -4037,6 +4037,17 @@ async function cmdCleanup() {
         println(`  ! ${err.step}: ${err.error}`);
       }
     }
+
+    // Reclaim orphaned Postgres containers/volumes from deleted home namespaces.
+    const { reclaimOrphanedDockerResources, formatReclaim } = await import('../lib/maintenance/docker-reclaim.mjs');
+    const reclaim = reclaimOrphanedDockerResources({ homeDir: HOME, env: process.env, dryRun });
+    if (!quiet) {
+      const line = formatReclaim(reclaim);
+      if (line) println(`  ${line}`);
+      for (const entry of reclaim.errors ?? []) {
+        println(`  ! docker reclaim ${entry.name}: ${entry.error}`);
+      }
+    }
   }
 }
 
