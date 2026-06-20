@@ -41,7 +41,7 @@ export function TerminalCockpit() {
   } = useChatStream();
 
   const [mobile, setMobile] = useState(false);
-  const [detailDense, setDetailDense] = useState(false);
+  const [activeTurnId, setActiveTurnId] = useState<string | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 900px)');
@@ -66,11 +66,6 @@ export function TerminalCockpit() {
     }
 
     if (event.ctrlKey && !event.metaKey && !event.altKey && !inPrompt) {
-      if (event.key === 'o' || event.key === 'O') {
-        event.preventDefault();
-        setDetailDense((value) => !value);
-        return;
-      }
       const layerIndex = Number.parseInt(event.key, 10);
       if (layerIndex >= 1 && layerIndex <= LAYER_KEYS.length) {
         event.preventDefault();
@@ -113,6 +108,8 @@ export function TerminalCockpit() {
         streaming={streaming}
         onOpenModelPicker={() => void openModelPicker()}
         onOpenSettingsPicker={openSettingsPicker}
+        onToggleInspector={() => setRouteDrawerOpen((v) => !v)}
+        inspectorOpen={routeDrawerOpen}
       />
 
       <div className="cx-cockpit-body">
@@ -121,32 +118,24 @@ export function TerminalCockpit() {
             turns={turns}
             layers={layers}
             sessionMeta={sessionMeta}
-            detailDense={detailDense}
             onOpenModelPicker={() => void openModelPicker()}
             onOpenSettingsPicker={openSettingsPicker}
+            onSelectTurn={setActiveTurnId}
+            activeTurnId={activeTurnId}
           />
 
-        <div className={`cx-cockpit-rail-col ${mobile && routeDrawerOpen ? 'cx-cockpit-rail-open' : ''}`}>
-          {mobile ? (
-            <button
-              type="button"
-              className="cx-cockpit-rail-toggle"
-              onClick={() => setRouteDrawerOpen((v) => !v)}
-            >
-              {routeDrawerOpen ? 'hide session' : 'session rail'}
-            </button>
-          ) : null}
-          <SessionDock
-            sessionMeta={sessionMeta}
-            layers={layers}
-            overlay={activeOverlay}
-            streaming={streaming}
-            onToggleLayer={toggleLayer}
-            onOpenModelPicker={() => void openModelPicker()}
-            onOpenSettingsPicker={openSettingsPicker}
-          />
+          <div className={`cx-cockpit-rail-col ${mobile && routeDrawerOpen ? 'cx-cockpit-rail-open' : ''}`}>
+            <SessionDock
+              sessionMeta={sessionMeta}
+              layers={layers}
+              overlay={activeTurnId ? turns.find((t) => t.id === activeTurnId)?.overlay || null : activeOverlay}
+              streaming={streaming}
+              onToggleLayer={toggleLayer}
+              onOpenModelPicker={() => void openModelPicker()}
+              onOpenSettingsPicker={openSettingsPicker}
+            />
+          </div>
         </div>
-      </div>
       </div>
 
       {picker ? (

@@ -1,8 +1,5 @@
 /**
- * apps/chat/web/components/event-log.tsx — mono event log stream for terminal cockpit.
- *
- * Each turn renders as prefixed log lines (YOU, ROUTE, THINK, TOOL, SRC, OUT,
- * USAGE). Full route detail lives in RouteDock; the log keeps continuity.
+ * apps/chat/web/components/event-log.tsx — conversational transcript.
  */
 
 'use client';
@@ -10,173 +7,43 @@
 import type { ChatTurn, SessionMeta } from '../types';
 import { MarkdownMessage } from './markdown-message';
 import { EmptyState } from './empty-state';
-import { RouteStrip } from './route-strip';
 
 type EventLogProps = {
   turns: ChatTurn[];
   layers: Record<string, boolean>;
   sessionMeta: SessionMeta;
-  detailDense?: boolean;
   onOpenModelPicker: () => void;
   onOpenSettingsPicker: () => void;
+  onSelectTurn: (turnId: string) => void;
+  activeTurnId: string | null;
 };
 
-function toolGlyph(status: string) {
-  if (status === 'completed') return '✓';
-  if (status === 'failed') return '✗';
-  if (status === 'in_progress') return '›';
-  return '·';
-}
-
-function summarizeTools(tools: ChatTurn['tools']) {
-  const groups = new Map<string, { count: number; status: string }>();
-  for (const t of tools) {
-    const title = t.title || 'tool';
-    if (!groups.has(title)) groups.set(title, { count: 0, status: 'completed' });
-    const g = groups.get(title)!;
-    g.count += 1;
-    if (t.status === 'failed') g.status = 'failed';
-    else if (t.status === 'pending' && g.status !== 'failed') g.status = 'pending';
-    else if (t.status === 'in_progress' && g.status === 'completed') g.status = 'in_progress';
-  }
-  return [...groups.entries()];
-}
-
-function formatUsage(usage: Record<string, unknown> | null) {
-  if (!usage) return null;
-  const tokens = (usage.tokens as Record<string, number>) || {};
+function formatMetadata(turn: ChatTurn): string | null {
   const parts: string[] = [];
-  if (tokens.input) parts.push(`prompt ${tokens.input}`);
-  if (tokens.output) parts.push(`output ${tokens.output}`);
-  if (tokens.reasoning) parts.push(`reasoning ${tokens.reasoning}`);
-  if (tokens.total) parts.push(`total ${tokens.total}`);
-  const cost = usage.cost as { amount?: number } | undefined;
-  if (cost?.amount) parts.push(`~$${cost.amount.toFixed(cost.amount < 1 ? 3 : 2)}`);
-  return parts.length ? parts.join(' · ') : JSON.stringify(tokens);
-}
-
-function TurnBlock({ turn, index, layers, detailDense }: { turn: ChatTurn; index: number; layers: Record<string, boolean>; detailDense?: boolean }) {
-  if (turn.system) {
-    return (
-      <li className="cx-cockpit-turn">
-        <div className="cx-cockpit-log-block">
-          <div className="cx-cockpit-log-line">
-            <span className="cx-cockpit-tag">—</span>
-            <span className="cx-cockpit-channel cx-cockpit-channel-sys">SYS</span>
-          </div>
-          <pre className="cx-cockpit-pre cx-cockpit-muted">{turn.assistant}</pre>
-        </div>
-      </li>
-    );
+  if (turn.overlay?.specialists?.length) {
+    parts.push(`via ${turn.overlay.specialists.join(', ')}`);
   }
-
-  const isError = turn.assistant.startsWith('[error]');
-  const toolGroups = summarizeTools(turn.tools);
-  const srcLimit = 8;
-  const srcHidden = Math.max(0, turn.sources.length - srcLimit);
-
-  return (
-    <li className="cx-cockpit-turn">
-      <div className="cx-cockpit-log-line">
-        <span className="cx-cockpit-tag">T{index}</span>
-        <span className="cx-cockpit-channel">YOU</span>
-        <span className="cx-cockpit-log-text">{turn.userText}</span>
-      </div>
-
-      {turn.overlay && layers.specialists !== false ? (
-        <div className="cx-cockpit-log-line">
-          <span className="cx-cockpit-tag">T{index}</span>
-          <span className="cx-cockpit-channel cx-cockpit-channel-route">ROUTE</span>
-          <span className="cx-cockpit-log-text">
-            <RouteStrip overlay={turn.overlay} layers={layers} />
-          </span>
-        </div>
-      ) : null}
-
-      {turn.thinking && layers.thinking !== false ? (
-        <div className="cx-cockpit-log-block">
-          <div className="cx-cockpit-log-line">
-            <span className="cx-cockpit-tag">T{index}</span>
-            <span className="cx-cockpit-channel">THINK</span>
-          </div>
-          <pre className="cx-cockpit-pre cx-cockpit-muted">{turn.thinking}</pre>
-        </div>
-      ) : null}
-
-      {toolGroups.length > 0 && layers.tools !== false ? (
-        <div className={detailDense ? 'cx-cockpit-log-block' : undefined}>
-          <div className="cx-cockpit-log-line">
-            <span className="cx-cockpit-tag">T{index}</span>
-            <span className="cx-cockpit-channel">TOOL</span>
-            <span className="cx-cockpit-log-text">
-              {toolGroups.map(([title, g]) => (
-                <span key={title} className="cx-cockpit-tool">
-                  {`${toolGlyph(g.status)} ${title}${g.count > 1 ? ` ×${g.count}` : ''}`}
-                  {' '}
-                </span>
-              ))}
-            </span>
-          </div>
-          {detailDense ? turn.tools.map((tool) => (
-            <pre key={tool.id} className="cx-cockpit-pre cx-cockpit-muted">
-              {`${tool.title} · ${tool.status}${tool.input ? `\n${JSON.stringify(tool.input, null, 2)}` : ''}`}
-            </pre>
-          )) : null}
-        </div>
-      ) : null}
-
-      {turn.sources.length > 0 ? (
-        <div className="cx-cockpit-log-block">
-          <div className="cx-cockpit-log-line">
-            <span className="cx-cockpit-tag">T{index}</span>
-            <span className="cx-cockpit-channel">SRC</span>
-          </div>
-          {turn.sources.slice(0, srcLimit).map((ref) => (
-            <p key={ref} className="cx-cockpit-src-line cx-cockpit-muted">{ref}</p>
-          ))}
-          {srcHidden > 0 ? (
-            <p className="cx-cockpit-src-line cx-cockpit-muted">{`+${srcHidden} more`}</p>
-          ) : null}
-        </div>
-      ) : null}
-
-      {(turn.assistant || turn.working) ? (
-        <div className="cx-cockpit-log-block">
-          <div className="cx-cockpit-log-line">
-            <span className="cx-cockpit-tag">T{index}</span>
-            <span className="cx-cockpit-channel cx-cockpit-channel-out">OUT</span>
-            {turn.working && !turn.assistant ? (
-              <span className="cx-cockpit-log-text cx-cockpit-warn">working…</span>
-            ) : null}
-          </div>
-          {turn.assistant ? (
-            <MarkdownMessage text={turn.assistant} isError={isError} />
-          ) : null}
-        </div>
-      ) : null}
-
-      {turn.usage && layers.observability !== false ? (
-        <div className="cx-cockpit-log-line">
-          <span className="cx-cockpit-tag">T{index}</span>
-          <span className="cx-cockpit-channel">USAGE</span>
-          <span className="cx-cockpit-log-text cx-cockpit-muted">{formatUsage(turn.usage)}</span>
-        </div>
-      ) : null}
-    </li>
-  );
+  if (turn.tools?.length) {
+    parts.push(`${turn.tools.length} tool${turn.tools.length === 1 ? '' : 's'}`);
+  }
+  const tokens = turn.usage?.tokens as Record<string, number> | undefined;
+  if (tokens?.total) {
+    parts.push(`${tokens.total}k tok`);
+  }
+  return parts.length ? `› ${parts.join(' · ')}` : null;
 }
 
 export function EventLog({
   turns,
   layers,
   sessionMeta,
-  detailDense = false,
   onOpenModelPicker,
   onOpenSettingsPicker,
+  onSelectTurn,
+  activeTurnId,
 }: EventLogProps) {
-  let turnNum = 0;
   return (
-    <section className="cx-cockpit-log" aria-label="Conversation" role="log" aria-live="polite">
+    <section className="cx-conv-log" aria-label="Conversation" role="log" aria-live="polite">
       {turns.length === 0 ? (
         <EmptyState
           sessionMeta={sessionMeta}
@@ -184,20 +51,45 @@ export function EventLog({
           onOpenSettingsPicker={onOpenSettingsPicker}
         />
       ) : (
-        <ol className="cx-cockpit-turn-list">
+        <div className="cx-conv-transcript">
           {turns.map((turn) => {
-            if (!turn.system) turnNum += 1;
+            if (turn.system) {
+              return (
+                <div key={turn.id} className="cx-conv-system-notice">
+                  <p>{turn.assistant}</p>
+                </div>
+              );
+            }
+            const metadata = formatMetadata(turn);
+            const isActive = activeTurnId === turn.id;
             return (
-              <TurnBlock
-                key={turn.id}
-                turn={turn}
-                index={turn.system ? 0 : turnNum}
-                layers={layers}
-                detailDense={detailDense}
-              />
+              <div key={turn.id} className={`cx-conv-turn ${isActive ? 'cx-conv-turn-active' : ''}`}>
+                <div className="cx-conv-you">
+                  <p className="cx-conv-label">You</p>
+                  <p className="cx-conv-text">{turn.userText}</p>
+                </div>
+                <div className="cx-conv-construct">
+                  <p className="cx-conv-label">Construct</p>
+                  {turn.working && !turn.assistant ? (
+                    <p className="cx-conv-working">working…</p>
+                  ) : turn.assistant ? (
+                    <MarkdownMessage text={turn.assistant} isError={turn.assistant.startsWith('[error]')} />
+                  ) : null}
+                  {metadata ? (
+                    <button
+                      type="button"
+                      className="cx-conv-metadata-summary"
+                      onClick={() => onSelectTurn(turn.id)}
+                      aria-label={`View details for this turn. ${metadata}`}
+                    >
+                      {metadata}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
             );
           })}
-        </ol>
+        </div>
       )}
     </section>
   );
