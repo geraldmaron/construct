@@ -35,19 +35,31 @@ test('pickerStartIndex selects current model when present', () => {
   assert.equal(pickerStartIndex(models, 'missing'), 0);
 });
 
-test('loadModelPickerItems stays smaller than the full static catalog', async () => {
+test('loadModelPickerItems groups live provider models with capability badges', async () => {
   const { loadModelPickerItems } = await import('../../lib/chat/model-picker.mjs');
-  const { getProviderModelCatalog } = await import('../../lib/model-router.mjs');
-  const catalogIds = new Set(
-    getProviderModelCatalog({ env: {} }).providers.flatMap((provider) => [
-      ...provider.options.reasoning,
-      ...provider.options.standard,
-      ...provider.options.fast,
-    ]),
-  );
-  const items = await loadModelPickerItems(null, { env: {} });
-  assert.ok(items.length < catalogIds.size);
-  assert.ok(items.length <= 60, 'picker stays curated — not the full merged catalog');
+
+  const pollProviders = async () => ([
+    { id: 'anthropic', label: 'Anthropic', live: true, models: [
+      { id: 'anthropic/claude-opus-4-8', label: 'Claude Opus 4.8', provider: 'anthropic', free: false, pricing: { input: 15, output: 75 }, context: 200000, reasoning: true, tools: true, vision: true, source: 'live' },
+    ] },
+    { id: 'ollama', label: 'Ollama (local)', live: true, models: [
+      { id: 'ollama/llama3.1:8b', label: 'llama3.1:8b', provider: 'ollama', free: true, pricing: { input: 0, output: 0 }, context: null, reasoning: false, tools: false, vision: false, source: 'live' },
+    ] },
+  ]);
+
+  const items = await loadModelPickerItems(null, { env: {}, pollProviders });
+
+  assert.equal(items[0].id, '__free_router__', 'free-router stays on top');
+  const opus = items.find((i) => i.id === 'anthropic/claude-opus-4-8');
+  assert.ok(opus, 'anthropic model present');
+  assert.equal(opus.group, 'Anthropic');
+  assert.deepEqual(opus.badges, ['reasoning', 'vision', 'tools']);
+  assert.match(opus.price, /\$15\.00 in/);
+
+  const llama = items.find((i) => i.id === 'ollama/llama3.1:8b');
+  assert.ok(llama, 'ollama model present');
+  assert.equal(llama.group, 'Ollama (local)');
+  assert.equal(llama.tag, 'free');
 });
 
 test('configuredTierPickerItems only includes tier defaults from configured providers', async () => {

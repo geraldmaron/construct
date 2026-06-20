@@ -79,7 +79,12 @@ apps/*/out/
 
 # Tauri desktop window — built via npm run build:chat-desktop
 apps/chat/desktop/src-tauri/target/
+# Tauri-generated capability schemas — regenerated on build
+apps/chat/desktop/src-tauri/gen/
 apps/chat/dist/
+
+# TypeScript incremental build cache
+apps/*/tsconfig.tsbuildinfo
 
 # npm pack output (produced by the consumer-perspective audit gate)
 *.tgz

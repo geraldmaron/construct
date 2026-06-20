@@ -1,10 +1,11 @@
 /**
- * apps/chat/web/components/status-bar.tsx — minimal conversational header.
+ * apps/chat/web/components/status-bar.tsx — topbar with brand, model, status, and context bar.
  */
 
 'use client';
 
 import type { SessionMeta } from '../types';
+import { ContextBar } from './context-bar';
 
 type StatusBarProps = {
   sessionMeta: SessionMeta;
@@ -17,15 +18,9 @@ type StatusBarProps = {
 
 function modelLabel(sessionMeta: SessionMeta) {
   if (sessionMeta.modelMode === 'free-router') {
-    return sessionMeta.model || '?';
+    return sessionMeta.model ?? 'free-router';
   }
-  return sessionMeta.model || 'choose';
-}
-
-function contextPercent(ctx: SessionMeta['ctx']) {
-  if (!ctx?.size) return null;
-  const ratio = Math.max(0, Math.min(1, ctx.used / ctx.size));
-  return Math.round(ratio * 100);
+  return sessionMeta.model ?? 'choose model';
 }
 
 export function StatusBar({
@@ -36,13 +31,18 @@ export function StatusBar({
   inspectorOpen,
 }: StatusBarProps) {
   const model = modelLabel(sessionMeta);
-  const ctxPct = contextPercent(sessionMeta.ctx);
+  const branch = sessionMeta.workingBranch;
 
   return (
     <header className="cx-conv-header" aria-label="Session">
       <div className="cx-conv-header-left">
-        <span className="cx-conv-brand-mark">◆</span>
-        <h1 className="cx-conv-brand-title">Construct chat</h1>
+        <span className="cx-conv-brand-mark" aria-hidden>◆</span>
+        <h1 className="cx-conv-brand-title">Construct</h1>
+        {branch && (
+          <span className="cx-conv-branch-chip" title={`Branch: ${branch}`}>
+            {branch}
+          </span>
+        )}
       </div>
       <div className="cx-conv-header-right">
         <button
@@ -59,7 +59,7 @@ export function StatusBar({
           aria-label={streaming ? 'working' : 'ready'}
           aria-hidden
         />
-        {ctxPct !== null && <span className="cx-conv-ctx-label">{ctxPct}%</span>}
+        <ContextBar ctx={sessionMeta.ctx} />
         <button
           type="button"
           className={`cx-conv-inspector-toggle ${inspectorOpen ? 'cx-conv-inspector-open' : ''}`}

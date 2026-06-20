@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTurnState, applyTurnEvent, runTurnInto } from '../../lib/chat/tui/turn-state.mjs';
-import { createSessionUsage } from '../../lib/chat/tui/usage.mjs';
+import { createSessionUsage, addUsage } from '../../lib/chat/tui/usage.mjs';
 
 function fakeDriver(events) {
   return {
@@ -67,6 +67,24 @@ test('runTurnInto respects transparency layers', async () => {
   assert.equal(state.thinking, '');
   assert.equal(state.assistant, 'visible');
   assert.equal(session.usage.turns, 0);
+});
+
+test('addUsage never crashes a turn on a malformed accumulator', () => {
+  // Regression: the web loop once passed the whole session (no top-level .tokens)
+  // where the usage accumulator was expected, so addInto hit Object.keys(undefined)
+  // and threw "Cannot convert undefined or null to object" mid-turn. addInto now
+  // tolerates any non-object target.
+  const sessionShaped = { model: 'x', usage: createSessionUsage() };
+  assert.doesNotThrow(() => addUsage(sessionShaped, { tokens: { input: 5, total: 5 } }));
+  assert.doesNotThrow(() => addUsage(null, { tokens: { input: 1 } }));
+});
+
+test('runTurnInto accumulates a turn usage event exactly once', () => {
+  const session = { usage: createSessionUsage() };
+  const state = createTurnState();
+  applyTurnEvent(state, { type: 'usage', tokens: { input: 30, output: 10, total: 40 } }, { session });
+  assert.equal(session.usage.tokens.total, 40);
+  assert.equal(session.usage.turns, 1);
 });
 
 test('turn-state records permission events', () => {

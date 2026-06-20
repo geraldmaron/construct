@@ -23,6 +23,9 @@ export type PickerItem = {
   label: string;
   detail?: string | null;
   tag?: string | null;
+  group?: string | null;
+  badges?: string[];
+  price?: string | null;
   disabled?: boolean;
 };
 
@@ -64,6 +67,17 @@ export function ListPicker({ title, items, selectedId, onSelect, onCancel }: Lis
     () => getPickerVisibleItems(pickerState),
     [pickerState],
   );
+
+  // Selectable-model count per group (hint/disabled rows excluded) so each header
+  // shows the scale of its section in the current view before scrolling.
+  const groupCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of visible as PickerItem[]) {
+      if (!item.group || item.disabled) continue;
+      counts.set(item.group, (counts.get(item.group) || 0) + 1);
+    }
+    return counts;
+  }, [visible]);
 
   const applyKey = useCallback((event: KeyboardEvent | React.KeyboardEvent) => {
     if (!isPickerNavigationKey(event.key)) return false;
@@ -133,24 +147,42 @@ export function ListPicker({ title, items, selectedId, onSelect, onCancel }: Lis
         <ul ref={listRef} className="cx-cockpit-picker-list" role="listbox" aria-label={title}>
           {!visible.length ? (
             <li className="cx-cockpit-warn">no matches</li>
-          ) : visible.map((item, i) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={i === pickerState.index}
-                className={`cx-cockpit-picker-item ${i === pickerState.index ? 'cx-cockpit-picker-item-active' : ''}`}
-                disabled={item.disabled}
-                onClick={() => !item.disabled && onSelect(item)}
-              >
-                <span>{`${i === pickerState.index ? '›' : ' '} ${String(i + 1).padStart(2)}.`}</span>
-                <span>{selectedId === item.id ? ' ● ' : '   '}</span>
-                <span>{item.label || item.id}</span>
-                {item.tag ? <span className="cx-cockpit-muted">{` [${item.tag}]`}</span> : null}
-                {item.detail ? <span className="cx-cockpit-muted">{` — ${item.detail}`}</span> : null}
-              </button>
-            </li>
-          ))}
+          ) : visible.map((item: PickerItem, i: number) => {
+            const prevGroup = i > 0 ? (visible[i - 1] as PickerItem).group : undefined;
+            const showHeader = item.group && item.group !== prevGroup;
+            const isActive = i === pickerState.index;
+            const isSelected = selectedId === item.id;
+            return (
+              <li key={item.id}>
+                {showHeader ? (
+                  <p className="cx-cockpit-picker-group" role="presentation">
+                    <span>{item.group}</span>
+                    {groupCounts.get(item.group as string) ? (
+                      <span className="cx-cockpit-picker-group-count">{groupCounts.get(item.group as string)}</span>
+                    ) : null}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={isActive}
+                  className={`cx-cockpit-picker-item ${isActive ? 'cx-cockpit-picker-item-active' : ''} ${item.disabled ? 'cx-cockpit-picker-item-hint' : ''}`}
+                  disabled={item.disabled}
+                  onClick={() => !item.disabled && onSelect(item)}
+                >
+                  <span className="cx-cockpit-picker-mark" aria-hidden="true">{isSelected ? '●' : isActive ? '›' : ''}</span>
+                  <span className="cx-cockpit-picker-mid">
+                    <span className="cx-cockpit-picker-name">{item.label || item.id}</span>
+                    {item.tag ? <span className={`cx-cockpit-badge cx-cockpit-badge-${item.tag}`}>{item.tag}</span> : null}
+                    {(item.badges || []).map((b: string) => (
+                      <span key={b} className={`cx-cockpit-badge cx-cockpit-badge-${b}`}>{b}</span>
+                    ))}
+                  </span>
+                  <span className="cx-cockpit-picker-meta">{item.price || item.detail || ''}</span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>

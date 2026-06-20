@@ -70,25 +70,30 @@ test('resolveDesktopBinary finds mock binary via CONSTRUCT_CHAT_DESKTOP_BIN', as
   }
 });
 
-test('runDesktopChat falls back to app window when Tauri binary is missing', async (t) => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-chat-appwin-'));
-  const fakeBrowser = path.join(tmp, 'fake-chrome');
-  fs.writeFileSync(fakeBrowser, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+test('runDesktopChat fails loudly when no binary, no source, and no download', async (t) => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-chat-nobin-'));
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 
+  // tmp has no Tauri source, so the build path is skipped; stub fetch so the
+  // download path resolves offline to a non-fatal skip rather than hitting GitHub.
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = () => Promise.reject(new Error('offline'));
+  t.after(() => { globalThis.fetch = realFetch; });
+
+  let stderr = '';
   const mod = await import('../../lib/chat/desktop-launcher.mjs');
   const code = await mod.runDesktopChat({
-    cwd: REPO_ROOT,
+    cwd: tmp,
     env: {
       ...process.env,
       CONSTRUCT_CHAT_DESKTOP_BIN: path.join(tmp, 'missing-construct-chat'),
-      CONSTRUCT_CHAT_APP_BROWSER: fakeBrowser,
       CX_CHAT_NO_DISPLAY: '0',
     },
     output: { write: () => {} },
-    errorOutput: { write: () => {} },
+    errorOutput: { write: (s) => { stderr += s; } },
     dashOverride: { port: 4242, url: 'http://127.0.0.1:4242' },
   });
 
-  assert.equal(code, 0);
+  assert.equal(code, 1);
+  assert.match(stderr, /native window is unavailable/);
 });

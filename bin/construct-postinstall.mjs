@@ -83,6 +83,17 @@ try {
     } else {
       log('built apps/chat/dist/tui.mjs');
     }
+
+    const dashBuild = spawnSync('npm', ['run', 'build:dashboard'], {
+      cwd: PKG_ROOT,
+      stdio: 'inherit',
+      env: process.env,
+    });
+    if (dashBuild.status !== 0) {
+      fail('Dashboard build failed', 'Run `npm run build:dashboard` manually.');
+    } else {
+      log('built lib/server/static/ (dashboard)');
+    }
     process.exit(0);
   }
 } catch { /* fall through */ }

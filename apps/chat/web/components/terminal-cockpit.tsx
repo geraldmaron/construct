@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useChatStream, LAYER_KEYS, type LayerKey } from '../hooks/use-chat-stream';
 import { StatusBar } from './status-bar';
 import { EventLog } from './event-log';
-import { SessionDock } from './session-dock';
+import { InspectorPanel } from './inspector-panel';
 import { CliPrompt } from './cli-prompt';
 import { ListPicker } from './list-picker';
 
@@ -17,6 +17,8 @@ const PERMISSION_KEYS: Record<string, string> = {
   a: 'allow_always',
   n: 'reject',
 };
+
+type InspectorTab = 'session' | 'turn';
 
 export function TerminalCockpit() {
   const {
@@ -40,21 +42,28 @@ export function TerminalCockpit() {
     openSettingsPicker,
   } = useChatStream();
 
-  const [mobile, setMobile] = useState(false);
   const [activeTurnId, setActiveTurnId] = useState<string | null>(null);
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>('session');
 
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 900px)');
-    const update = () => setMobile(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
-  }, []);
+  const openInspectorForTurn = useCallback((turnId: string) => {
+    setActiveTurnId(turnId);
+    setInspectorTab('turn');
+    setRouteDrawerOpen(true);
+  }, [setRouteDrawerOpen]);
+
+  const openInspectorSession = useCallback(() => {
+    setInspectorTab('session');
+    setRouteDrawerOpen((v) => !v);
+  }, [setRouteDrawerOpen]);
+
+  const closeInspector = useCallback(() => {
+    setRouteDrawerOpen(false);
+  }, [setRouteDrawerOpen]);
 
   const onGlobalKeyDown = useCallback((event: KeyboardEvent) => {
     if (picker) return;
     const target = event.target as HTMLElement | null;
-    const inPrompt = target?.closest('.cx-cockpit-prompt') != null;
+    const inPrompt = target?.closest('.cx-cockpit-footer') != null;
 
     if (pending && !inPrompt) {
       const decision = PERMISSION_KEYS[event.key];
@@ -97,6 +106,10 @@ export function TerminalCockpit() {
     return () => window.removeEventListener('keydown', onGlobalKeyDown);
   }, [onGlobalKeyDown]);
 
+  const inspectorOverlay = activeTurnId
+    ? (turns.find((t) => t.id === activeTurnId)?.overlay ?? null)
+    : activeOverlay;
+
   return (
     <div className="cx-cockpit" data-testid="terminal-cockpit">
       {error ? (
@@ -108,7 +121,7 @@ export function TerminalCockpit() {
         streaming={streaming}
         onOpenModelPicker={() => void openModelPicker()}
         onOpenSettingsPicker={openSettingsPicker}
-        onToggleInspector={() => setRouteDrawerOpen((v) => !v)}
+        onToggleInspector={openInspectorSession}
         inspectorOpen={routeDrawerOpen}
       />
 
@@ -118,23 +131,13 @@ export function TerminalCockpit() {
             turns={turns}
             layers={layers}
             sessionMeta={sessionMeta}
+            streaming={streaming}
             onOpenModelPicker={() => void openModelPicker()}
             onOpenSettingsPicker={openSettingsPicker}
             onSelectTurn={setActiveTurnId}
             activeTurnId={activeTurnId}
+            onOpenInspector={openInspectorForTurn}
           />
-
-          <div className={`cx-cockpit-rail-col ${mobile && routeDrawerOpen ? 'cx-cockpit-rail-open' : ''}`}>
-            <SessionDock
-              sessionMeta={sessionMeta}
-              layers={layers}
-              overlay={activeTurnId ? turns.find((t) => t.id === activeTurnId)?.overlay || null : activeOverlay}
-              streaming={streaming}
-              onToggleLayer={toggleLayer}
-              onOpenModelPicker={() => void openModelPicker()}
-              onOpenSettingsPicker={openSettingsPicker}
-            />
-          </div>
         </div>
       </div>
 
@@ -167,7 +170,23 @@ export function TerminalCockpit() {
       <CliPrompt
         disabled={streaming}
         pickerActive={Boolean(picker)}
+        sessionMeta={sessionMeta}
+        layers={layers}
         onSubmit={(text) => void sendMessage(text)}
+      />
+
+      <InspectorPanel
+        isOpen={routeDrawerOpen}
+        activeTab={inspectorTab}
+        onClose={closeInspector}
+        onTabChange={(tab) => setInspectorTab(tab)}
+        sessionMeta={sessionMeta}
+        layers={layers}
+        overlay={inspectorOverlay}
+        streaming={streaming}
+        onToggleLayer={toggleLayer}
+        onOpenModelPicker={() => void openModelPicker()}
+        onOpenSettingsPicker={openSettingsPicker}
       />
     </div>
   );
