@@ -4,6 +4,8 @@
 
 #import "construct-brand.typ": *
 
+#show: construct-theme
+
 #set page(
   paper: "a4",
   margin: (x: 2cm, top: 1.8cm, bottom: 2.2cm),
