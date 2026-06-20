@@ -1,6 +1,6 @@
 /**
  * tests/functional/document-export.functional.test.mjs — markdown → PDF/DOCX/HTML
- * export contract (ADR-0024 / construct-yrdd).
+ * (plus DOC/RTF/ODT/EPUB/LaTeX/TXT/MD/MDX) export contract (ADR-0024 / construct-yrdd).
  *
  * The export half is bound to external binaries (Pandoc + Typst) discovered at
  * runtime and never bundled (ADR-0001). The tests assert the contract callers
@@ -69,9 +69,9 @@ function stubPandocPath(prefix = 'cx-export-stub-') {
 }
 
 test('detect reports unsupported format clearly without spawning', () => {
-  const result = detect('rtf');
+  const result = detect('xyz');
   assert.equal(result.ok, false);
-  assert.match(result.message, /Unsupported format: rtf/);
+  assert.match(result.message, /Unsupported format: xyz/);
 });
 
 test('detect on a real format returns availability + actionable install hint when missing', () => {
@@ -86,9 +86,9 @@ test('detect on a real format returns availability + actionable install hint whe
 });
 
 test('exportMarkdown rejects bad format BEFORE checking input existence', () => {
-  const result = exportMarkdown({ inputPath: '/no/such/path.md', format: 'rtf' });
+  const result = exportMarkdown({ inputPath: '/no/such/path.md', format: 'xyz' });
   assert.equal(result.ok, false);
-  assert.match(result.message, /Unsupported format: rtf/);
+  assert.match(result.message, /Unsupported format: xyz/);
 });
 
 test('exportMarkdown reports a clear error for missing input file', () => {
@@ -119,6 +119,6 @@ test('happy path: stubbed pandoc on PATH is spawned and the output file is writt
   assert.equal(fs.readFileSync(result.outputPath, 'utf8'), 'stub-output\n');
 });
 
-test('EXPORT_FORMATS lists exactly pdf/docx/html (contract surface)', () => {
-  assert.deepEqual([...EXPORT_FORMATS].sort(), ['docx', 'html', 'pdf']);
+test('EXPORT_FORMATS pins the supported export set (contract surface)', () => {
+  assert.deepEqual([...EXPORT_FORMATS].sort(), ['doc', 'docx', 'epub', 'html', 'md', 'mdx', 'odt', 'pdf', 'rtf', 'tex', 'txt']);
 });
