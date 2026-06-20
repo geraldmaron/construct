@@ -24,9 +24,9 @@ node bin/construct publish docs/prd-platform/brief.md --strict --figures
 ```
 
 - Runs **artifact release gate** before export (structure, visuals, citations, prose minimum)
-- Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **hand-drawn distribution styling** (D2 `--sketch`, Mermaid `handDrawn` look, violet accent)
+- Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **hand-drawn distribution styling** (D2 `--sketch`, Mermaid `handDrawn` look + bundled Caveat handwriting, monochrome ink accent)
 - PDF routes by `artifactType`: `construct-prd.typ` (product editorial), `construct-research.typ` (analytics), `construct-decision.typ` (ADR/RFC); override: `.cx/publish-theme.typ`
-- Typography ships bundled in `templates/distribution/fonts/` (Inter body + masthead/headings, IBM Plex Mono code; Source Serif bundled but not default). Success metrics tables in blockquotes render as **Key metrics** callouts.
+- Typography ships bundled in `templates/distribution/fonts/` (Geist body + headings, Geist Mono code; Caveat handwriting for hand-drawn diagram labels). Success metrics tables in blockquotes render as **Key metrics** callouts.
 - Optional VHS terminal demo + Playwright dashboard demo via frontmatter or flags
 
 Authoring conventions for richer PDFs:
@@ -51,7 +51,7 @@ flowchart TD
 \`\`\`
 ```
 
-Reference D2 sources live under `tests/fixtures/publish/diagrams/` in the tool repo; inline fenced blocks export at publish time with **D2 `--sketch`** and **Mermaid `handDrawn`** (violet accent, Inter labels).
+Reference D2 sources live under `tests/fixtures/publish/diagrams/` in the tool repo; inline fenced blocks export at publish time with **D2 `--sketch`** and **Mermaid `handDrawn`** (monochrome ink, Caveat handwriting labels).
 
 Optional masthead metadata (renders in the compact header — do not repeat in body):
 
@@ -103,7 +103,7 @@ Inside chat, use `/demo next` for the next prompt, `/demo steps` to replay the o
 
 Project tapes live in `templates/demos/tapes/` (shipped) with optional overrides in `.cx/demos/tapes/` — **commit shipped tapes; regenerate MP4/GIF in CI or with `construct demo record`**.
 
-Theme: `templates/demos/vhs/construct-cockpit.json` (navy + violet `#8b5cf6`).
+Theme: `templates/demos/vhs/construct-cockpit.json` (monochrome — `#0a0c10` background, white cursor, grey accents).
 
 ```bash
 construct demo init my-topic --from=quickstart
@@ -128,3 +128,5 @@ construct export brief.md --to=pdf --figures
 ```
 
 Uses Pandoc + Typst (PDF) with the diagram Lua filter when `--figures` is set.
+
+`--to` accepts `pdf`, `docx`, `doc`, `html`, `rtf`, `odt`, `epub`, `tex`, `txt`, `md`, `mdx`: Pandoc drives the typeset formats, `md`/`mdx` copy straight from source, HTML uses the bundled `construct-web.html` template (`--embed-resources`), and legacy `.doc` needs LibreOffice.
