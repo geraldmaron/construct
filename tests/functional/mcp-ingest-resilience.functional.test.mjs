@@ -6,7 +6,7 @@
  * stalled docling extractor. Spawns the REAL MCP server over stdio in a sterile
  * sandbox whose docling venv is a stub (a python that exits non-zero), recorded
  * via the install marker so provisioning never runs and the network is never
- * touched. The tool must return a clean, bounded result — the legacy-extractor
+ * touched. The tool must return a clean, bounded result — the node-native
  * fallback — never hang the server and never surface an undefined-property crash.
  */
 import test from "node:test";
@@ -60,7 +60,7 @@ async function withClient(root, fn) {
   try { return await fn(client); } finally { await client.close(); }
 }
 
-test("ingest_document with a broken docling extractor returns the legacy fallback, never hangs or crashes on 'invoke'", async () => {
+test("ingest_document with a broken docling extractor returns the node-native fallback, never hangs or crashes on 'invoke'", async () => {
   const { root, rtf } = makeSandbox();
   try {
     const parsed = await withClient(root, async (client) => {
@@ -74,7 +74,7 @@ test("ingest_document with a broken docling extractor returns the legacy fallbac
     assert.equal(parsed.status, "ok", `ingest should complete via fallback, got: ${JSON.stringify(parsed).slice(0, 300)}`);
     const file = parsed.files?.[0];
     assert.ok(file, "a file result is present");
-    assert.ok(file.droppedInfo.some((d) => d.kind === "docling-fallback"), "fallback to the legacy extractor is recorded");
+    assert.ok(file.droppedInfo.some((d) => d.kind === "docling-fallback"), "fallback to the node-native extractor is recorded");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

@@ -26,7 +26,7 @@ node bin/construct publish docs/prd-platform/brief.md --strict --figures
 - Runs **artifact release gate** before export (structure, visuals, citations, prose minimum)
 - Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **hand-drawn distribution styling** (D2 `--sketch`, Mermaid `handDrawn` look + bundled Caveat handwriting, monochrome ink accent)
 - PDF routes by `artifactType`: `construct-prd.typ` (product editorial), `construct-research.typ` (analytics), `construct-decision.typ` (ADR/RFC); override: `.cx/publish-theme.typ`
-- Typography ships bundled in `templates/distribution/fonts/` (Geist body + headings, Geist Mono code; Caveat handwriting for hand-drawn diagram labels). Success metrics tables in blockquotes render as **Key metrics** callouts.
+- Typography ships bundled in `templates/distribution/fonts/` (Plus Jakarta Sans body + headings, IBM Plex Mono code; Caveat handwriting for hand-drawn diagram labels). Success metrics tables in blockquotes render as **Key metrics** callouts.
 - Optional VHS terminal demo + Playwright dashboard demo via frontmatter or flags
 
 Authoring conventions for richer PDFs:
@@ -129,4 +129,13 @@ construct export brief.md --to=pdf --figures
 
 Uses Pandoc + Typst (PDF) with the diagram Lua filter when `--figures` is set.
 
-`--to` accepts `pdf`, `docx`, `doc`, `html`, `rtf`, `odt`, `epub`, `tex`, `txt`, `md`, `mdx`: Pandoc drives the typeset formats, `md`/`mdx` copy straight from source, HTML uses the bundled `construct-web.html` template (`--embed-resources`), and legacy `.doc` needs LibreOffice.
+`--to` accepts `pdf`, `docx`, `doc`, `deck`, `pptx`, `html`, `rtf`, `odt`, `epub`, `tex`, `txt`, `md`, `mdx`. Export **input** is a markdown artifact; **output** spans PDF (Pandoc+Typst), HTML/deck (branded templates), PPTX (pptxgenjs), DOCX (Pandoc), and legacy `.doc` (Pandoc DOCX + LibreOffice headless). Ingest (`construct ingest`) is the separate path that accepts PDF, Office, email, AV, and plain text — see [Document I/O reference](/reference/document-io).
+
+**Branded deck preview** (local, gitignored):
+
+```bash
+npm run examples:deck
+open .tmp/distribution-examples/construct-deck-example.html
+```
+
+Source fixture: `tests/fixtures/publish/golden-deck-platform.md`.

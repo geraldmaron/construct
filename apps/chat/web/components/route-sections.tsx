@@ -1,11 +1,12 @@
 /**
  * apps/chat/web/components/route-sections.tsx — specialist route detail for session rail.
+ *
+ * Specialist ids are in-session labels only; they do not link to dashboard pages.
  */
 
 'use client';
 
 import type { ReactNode } from 'react';
-import Link from 'next/link';
 import type { RouteOverlay } from '../types';
 
 function DockSection({ title, children }: { title: string; children: ReactNode }) {
@@ -39,7 +40,7 @@ export function RouteSections({ overlay }: { overlay: RouteOverlay | null }) {
 
   return (
     <>
-      <DockSection title="route">
+      <DockSection title="Route">
         {overlay.track ? <Row label="track" value={overlay.track} /> : null}
         {overlay.intent ? <Row label="intent" value={overlay.intent} /> : null}
         {overlay.workCategory ? <Row label="category" value={overlay.workCategory} /> : null}
@@ -49,17 +50,17 @@ export function RouteSections({ overlay }: { overlay: RouteOverlay | null }) {
             {chain.map((id, i) => (
               <span key={id}>
                 {i > 0 ? <span className="cx-cockpit-muted"> → </span> : null}
-                <Link href="/agents/" className="cx-cockpit-link">{id}</Link>
+                <span className="cx-cockpit-specialist-id" title="Specialist route">{id}</span>
               </span>
             ))}
           </p>
         ) : (
-          <p className="cx-cockpit-muted">immediate — Construct responds directly</p>
+          <p className="cx-cockpit-muted">Construct responds directly on this turn.</p>
         )}
       </DockSection>
 
       {(triggers.length > 0 || Object.keys(reasons).length > 0 || overlay.dispatchSummary) ? (
-        <DockSection title="dispatch">
+        <DockSection title="Dispatch">
           {triggers.map((t) => (
             <Row key={`${t.specialist}-${t.reason}`} label={t.specialist} value={t.reason} />
           ))}
@@ -73,7 +74,7 @@ export function RouteSections({ overlay }: { overlay: RouteOverlay | null }) {
       ) : null}
 
       {(overlay.contractChain || []).length > 0 ? (
-        <DockSection title="contracts">
+        <DockSection title="Contracts">
           {(overlay.contractChain || []).map((edge) => (
             <Row
               key={edge.id || `${edge.producer}-${edge.consumer}`}
@@ -85,7 +86,7 @@ export function RouteSections({ overlay }: { overlay: RouteOverlay | null }) {
       ) : null}
 
       {(overlay.externalResearch?.required || overlay.framingChallenge?.required || overlay.docAuthoring?.docType) ? (
-        <DockSection title="gates">
+        <DockSection title="Gates">
           {overlay.externalResearch?.required ? (
             <Row
               label="research"

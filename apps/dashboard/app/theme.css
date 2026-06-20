@@ -978,8 +978,17 @@ h1.page-title em { font-style: normal; color: var(--muted); font-weight: 500; }
   z-index: 10;
   padding: 8px 12px;
   background: #101620;
-  color: #56d4dd;
-  border: 1px solid #3d5a80;
+  color: #e8eaed;
+  border: 1px solid #565c66;
+}
+
+html[data-chat-surface='desktop'] .shell--chat .main--chat {
+  height: 100vh;
+  max-height: 100vh;
+}
+
+html[data-chat-surface='desktop'] .shell--chat .cx-cockpit {
+  border-radius: 0;
 }
 
 /* ─── Mobile ────────────────────────────────────────────────── */

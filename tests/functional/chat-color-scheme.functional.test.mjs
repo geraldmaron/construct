@@ -9,8 +9,7 @@ import {
   detectTerminalColorScheme,
   resolveTerminalColorScheme,
 } from '../../lib/chat/tui/color-scheme.mjs';
-import { inkPalette, resolveChatColors } from '../../lib/chat/tui/presentation.mjs';
-import { createTheme } from '../../apps/chat/tui/theme.mjs';
+import { inkPalette, resolveChatColors, createTheme } from '../../lib/chat/tui/presentation.mjs';
 
 test('schemeFromColorFgBg detects light and dark backgrounds', () => {
   assert.equal(schemeFromColorFgBg('0;15'), 'light');
@@ -31,6 +30,7 @@ test('detectTerminalColorScheme falls back to dark without COLORFGBG', () => {
 test('inkPalette uses readable text color per scheme', () => {
   assert.equal(inkPalette({ scheme: 'dark' }).text, 'white');
   assert.equal(inkPalette({ scheme: 'light' }).text, 'black');
+  assert.equal(inkPalette({ scheme: 'dark' }).accent, 'whiteBright');
 });
 
 test('createTheme and resolveChatColors stay aligned', () => {

@@ -126,7 +126,6 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm install --no-save ink react
       - run: npm test
       - run: node bin/construct doctor
       - run: node bin/construct docs:verify

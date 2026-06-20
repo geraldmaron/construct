@@ -162,6 +162,7 @@ export function useChatStream() {
   const [picker, setPicker] = useState<{ title: string; items: PickerItem[]; selectedId?: string | null; kind: string; context?: string } | null>(null);
   const convRef = useRef<string | null>(null);
   const resumedRef = useRef(false);
+  const streamRef = useRef<EventSource | null>(null);
 
   const applyServerSessionMeta = useCallback((raw: Record<string, unknown> | null | undefined) => {
     if (!raw) return;
@@ -220,6 +221,34 @@ export function useChatStream() {
     setTurns((prev) => [...prev, createTurn(output, true)]);
   }, []);
 
+  const openSettingsPicker = useCallback(() => {
+    setPicker({ kind: 'set-key', title: 'select setting', items: SETTING_KEY_ITEMS });
+  }, []);
+
+  const openModelPicker = useCallback(async () => {
+    try {
+      const modelsRes = await fetch(`/api/chat/models${convRef.current ? `?id=${encodeURIComponent(convRef.current)}` : ''}`);
+      const modelsData = await modelsRes.json();
+      if (!modelsRes.ok) {
+        appendSystemOutput(modelsData.error || `model list failed (${modelsRes.status})`);
+        return;
+      }
+      const items = modelsData.items || [];
+      if (!items.length) {
+        appendSystemOutput('no models available — configure a provider key in ~/.construct/config.env');
+        return;
+      }
+      setPicker({
+        kind: 'model',
+        title: 'select model',
+        items,
+        selectedId: modelsData.selectedId,
+      });
+    } catch (err) {
+      appendSystemOutput(err instanceof Error ? err.message : 'model picker failed');
+    }
+  }, [appendSystemOutput]);
+
   const runCommand = useCallback(async (command: string) => {
     const res = await fetch('/api/chat/loop/command', {
       method: 'POST',
@@ -238,14 +267,7 @@ export function useChatStream() {
     applyServerSessionMeta(data.sessionMeta);
 
     if (data.picker === 'model') {
-      const modelsRes = await fetch(`/api/chat/models${convRef.current ? `?id=${encodeURIComponent(convRef.current)}` : ''}`);
-      const modelsData = await modelsRes.json();
-      setPicker({
-        kind: 'model',
-        title: 'select model',
-        items: modelsData.items || [],
-        selectedId: modelsData.selectedId,
-      });
+      await openModelPicker();
     } else if (data.picker === 'set') {
       setPicker({
         kind: 'set-key',
@@ -254,18 +276,7 @@ export function useChatStream() {
       });
     }
     return data;
-  }, [appendSystemOutput, applyServerSessionMeta, persistConvId]);
-
-  const openModelPicker = useCallback(async () => {
-    const modelsRes = await fetch(`/api/chat/models${convRef.current ? `?id=${encodeURIComponent(convRef.current)}` : ''}`);
-    const modelsData = await modelsRes.json();
-    setPicker({
-      kind: 'model',
-      title: 'select model',
-      items: modelsData.items || [],
-      selectedId: modelsData.selectedId,
-    });
-  }, []);
+  }, [appendSystemOutput, applyServerSessionMeta, openModelPicker, persistConvId]);
 
   const selectModel = useCallback(async (item: PickerItem) => {
     setPicker(null);
@@ -372,6 +383,27 @@ export function useChatStream() {
     setPending(null);
   }, [pending]);
 
+  const cancelStream = useCallback(async () => {
+    streamRef.current?.close();
+    streamRef.current = null;
+    if (convRef.current) {
+      try {
+        await fetch('/api/chat/loop/cancel', {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ id: convRef.current }),
+        });
+      } catch { /* best-effort */ }
+    }
+    setStreaming(false);
+    setTurns((prev) => {
+      const copy = [...prev];
+      const last = copy[copy.length - 1];
+      if (last?.working) copy[copy.length - 1] = { ...last, working: false };
+      return copy;
+    });
+  }, []);
+
   const sendMessage = useCallback(async (message: string) => {
     const text = message.trim();
     if (!text || streaming) return;
@@ -401,6 +433,7 @@ export function useChatStream() {
     const params = new URLSearchParams({ message: text });
     if (convRef.current) params.set('id', convRef.current);
     const es = new EventSource(`/api/chat/loop/stream?${params.toString()}`);
+    streamRef.current = es;
 
     es.onmessage = (ev) => {
       let event: Record<string, unknown>;
@@ -437,6 +470,7 @@ export function useChatStream() {
           return copy;
         });
         es.close();
+        streamRef.current = null;
         setStreaming(false);
         return;
       }
@@ -456,6 +490,7 @@ export function useChatStream() {
           return copy;
         });
         es.close();
+        streamRef.current = null;
         setStreaming(false);
         return;
       }
@@ -470,10 +505,15 @@ export function useChatStream() {
 
     es.onerror = () => {
       es.close();
+      streamRef.current = null;
       setStreaming(false);
       setError((e) => e || 'connection lost');
     };
   }, [applyServerSessionMeta, openModelPicker, persistConvId, runCommand, streaming]);
+
+  useEffect(() => () => {
+    streamRef.current?.close();
+  }, []);
 
   const activeOverlay = turns.filter((t) => !t.system).length
     ? turns.filter((t) => !t.system)[turns.filter((t) => !t.system).length - 1]?.overlay
@@ -496,6 +536,9 @@ export function useChatStream() {
     resolvePermission,
     toggleLayer,
     handlePickerSelect,
+    cancelStream,
+    openModelPicker,
+    openSettingsPicker,
   };
 }
 

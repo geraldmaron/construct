@@ -120,5 +120,32 @@ test('happy path: stubbed pandoc on PATH is spawned and the output file is writt
 });
 
 test('EXPORT_FORMATS pins the supported export set (contract surface)', () => {
-  assert.deepEqual([...EXPORT_FORMATS].sort(), ['doc', 'docx', 'epub', 'html', 'md', 'mdx', 'odt', 'pdf', 'rtf', 'tex', 'txt']);
+  assert.deepEqual([...EXPORT_FORMATS].sort(), ['deck', 'doc', 'docx', 'epub', 'html', 'md', 'mdx', 'odt', 'pdf', 'pptx', 'rtf', 'tex', 'txt']);
+});
+
+test('detect doc format requires pandoc and libreoffice when absent', () => {
+  const emptyPathEnv = { ...process.env, PATH: tmpDir('cx-empty-path-doc-'), CONSTRUCT_LIBREOFFICE_BIN: '', SOFFICE_BIN: '' };
+  const result = detect('doc', emptyPathEnv);
+  assert.equal(result.ok, true);
+  assert.equal(result.present, false);
+  assert.ok(result.missing.includes('pandoc'));
+  assert.ok(result.missing.includes('libreoffice'));
+});
+
+test('detect deck format requires pandoc when absent', () => {
+  const emptyPathEnv = { ...process.env, PATH: tmpDir('cx-empty-path-deck-') };
+  const result = detect('deck', emptyPathEnv);
+  assert.equal(result.ok, true);
+  assert.equal(result.present, false);
+  assert.ok(result.missing.includes('pandoc'));
+});
+
+test('detect pptx format reports pptxgenjs when absent', () => {
+  const result = detect('pptx', process.env);
+  assert.equal(result.ok, true);
+  if (result.present) {
+    assert.ok(result.binaries.some((b) => b.name === 'pptxgenjs' && b.path));
+  } else {
+    assert.ok(result.missing.includes('pptxgenjs'));
+  }
 });

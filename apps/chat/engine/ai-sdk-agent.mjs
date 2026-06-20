@@ -70,10 +70,18 @@ async function resolveLanguageModel(modelId, env) {
   }
 
   if (/^ollama\//.test(modelId)) {
+    const nativeModel = modelId.replace(/^ollama\//, '');
+    const { isOllamaModelInstalled, formatOllamaModelMissingMessage } = await import('../../../lib/ollama/installed-models.mjs');
+    const installed = isOllamaModelInstalled(modelId, { env });
+    if (installed === false) {
+      const err = new Error(formatOllamaModelMissingMessage(nativeModel));
+      err.code = 'OLLAMA_MODEL_NOT_PULLED';
+      throw err;
+    }
     const baseURL = envKey(env, 'OLLAMA_BASE_URL') || 'http://localhost:11434/v1';
     const { createOpenAICompatible } = await import('@ai-sdk/openai-compatible');
     const provider = createOpenAICompatible({ name: 'ollama', baseURL, apiKey: 'ollama' });
-    return provider(modelId.replace(/^ollama\//, ''));
+    return provider(nativeModel);
   }
 
   if (/^local\//.test(modelId)) {

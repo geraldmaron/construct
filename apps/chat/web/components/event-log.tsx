@@ -10,11 +10,15 @@
 import type { ChatTurn, SessionMeta } from '../types';
 import { MarkdownMessage } from './markdown-message';
 import { EmptyState } from './empty-state';
+import { RouteStrip } from './route-strip';
 
 type EventLogProps = {
   turns: ChatTurn[];
   layers: Record<string, boolean>;
   sessionMeta: SessionMeta;
+  detailDense?: boolean;
+  onOpenModelPicker: () => void;
+  onOpenSettingsPicker: () => void;
 };
 
 function toolGlyph(status: string) {
@@ -51,17 +55,7 @@ function formatUsage(usage: Record<string, unknown> | null) {
   return parts.length ? parts.join(' · ') : JSON.stringify(tokens);
 }
 
-function routeSummary(overlay: ChatTurn['overlay']) {
-  if (!overlay) return null;
-  const parts: string[] = [];
-  if (overlay.intent) parts.push(`intent=${overlay.intent}`);
-  if (overlay.track) parts.push(`track=${overlay.track}`);
-  const n = overlay.specialists?.length || 0;
-  parts.push(n ? `${n} specialists` : 'direct');
-  return parts.join(' · ');
-}
-
-function TurnBlock({ turn, index, layers }: { turn: ChatTurn; index: number; layers: Record<string, boolean> }) {
+function TurnBlock({ turn, index, layers, detailDense }: { turn: ChatTurn; index: number; layers: Record<string, boolean>; detailDense?: boolean }) {
   if (turn.system) {
     return (
       <li className="cx-cockpit-turn">
@@ -93,7 +87,9 @@ function TurnBlock({ turn, index, layers }: { turn: ChatTurn; index: number; lay
         <div className="cx-cockpit-log-line">
           <span className="cx-cockpit-tag">T{index}</span>
           <span className="cx-cockpit-channel cx-cockpit-channel-route">ROUTE</span>
-          <span className="cx-cockpit-log-text cx-cockpit-muted">{routeSummary(turn.overlay)}</span>
+          <span className="cx-cockpit-log-text">
+            <RouteStrip overlay={turn.overlay} layers={layers} />
+          </span>
         </div>
       ) : null}
 
@@ -108,17 +104,24 @@ function TurnBlock({ turn, index, layers }: { turn: ChatTurn; index: number; lay
       ) : null}
 
       {toolGroups.length > 0 && layers.tools !== false ? (
-        <div className="cx-cockpit-log-line">
-          <span className="cx-cockpit-tag">T{index}</span>
-          <span className="cx-cockpit-channel">TOOL</span>
-          <span className="cx-cockpit-log-text">
-            {toolGroups.map(([title, g]) => (
-              <span key={title} className="cx-cockpit-tool">
-                {`${toolGlyph(g.status)} ${title}${g.count > 1 ? ` ×${g.count}` : ''}`}
-                {' '}
-              </span>
-            ))}
-          </span>
+        <div className={detailDense ? 'cx-cockpit-log-block' : undefined}>
+          <div className="cx-cockpit-log-line">
+            <span className="cx-cockpit-tag">T{index}</span>
+            <span className="cx-cockpit-channel">TOOL</span>
+            <span className="cx-cockpit-log-text">
+              {toolGroups.map(([title, g]) => (
+                <span key={title} className="cx-cockpit-tool">
+                  {`${toolGlyph(g.status)} ${title}${g.count > 1 ? ` ×${g.count}` : ''}`}
+                  {' '}
+                </span>
+              ))}
+            </span>
+          </div>
+          {detailDense ? turn.tools.map((tool) => (
+            <pre key={tool.id} className="cx-cockpit-pre cx-cockpit-muted">
+              {`${tool.title} · ${tool.status}${tool.input ? `\n${JSON.stringify(tool.input, null, 2)}` : ''}`}
+            </pre>
+          )) : null}
         </div>
       ) : null}
 
@@ -163,12 +166,23 @@ function TurnBlock({ turn, index, layers }: { turn: ChatTurn; index: number; lay
   );
 }
 
-export function EventLog({ turns, layers, sessionMeta }: EventLogProps) {
+export function EventLog({
+  turns,
+  layers,
+  sessionMeta,
+  detailDense = false,
+  onOpenModelPicker,
+  onOpenSettingsPicker,
+}: EventLogProps) {
   let turnNum = 0;
   return (
     <section className="cx-cockpit-log" aria-label="Conversation" role="log" aria-live="polite">
       {turns.length === 0 ? (
-        <EmptyState sessionMeta={sessionMeta} />
+        <EmptyState
+          sessionMeta={sessionMeta}
+          onOpenModelPicker={onOpenModelPicker}
+          onOpenSettingsPicker={onOpenSettingsPicker}
+        />
       ) : (
         <ol className="cx-cockpit-turn-list">
           {turns.map((turn) => {
@@ -179,6 +193,7 @@ export function EventLog({ turns, layers, sessionMeta }: EventLogProps) {
                 turn={turn}
                 index={turn.system ? 0 : turnNum}
                 layers={layers}
+                detailDense={detailDense}
               />
             );
           })}
