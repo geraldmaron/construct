@@ -12,10 +12,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { CLI_COMMANDS, CLI_COMMANDS_BY_CATEGORY, CATEGORY_ORDER, formatCommandHelp, isInternalCommand } from '../lib/cli-commands.mjs';
+import { CLI_COMMANDS, CATEGORY_ORDER, formatCommandHelp } from '../lib/cli-commands.mjs';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { validateRegistry } from '../lib/validator.mjs';
-import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setTierModel, setModelWithTierInference } from '../lib/model-router.mjs';
+import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setModelWithTierInference } from '../lib/model-router.mjs';
 import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
 import { cmdOllama } from '../lib/ollama-manager.mjs';
@@ -26,7 +26,7 @@ import { runUpdate } from '../lib/update.mjs';
 import { runUpgrade } from '../lib/upgrade.mjs';
 import { runUninstall } from '../lib/uninstall/uninstall.mjs';
 import { maybeFirstInvocationProbe } from '../lib/install/first-invocation.mjs';
-import { loadConstructEnv, getUserEnvPath, writeEnvValues, ensureUserConfigDir } from '../lib/env-config.mjs';
+import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
 import { ensureConstructCredentials } from '../lib/providers/credential-bootstrap.mjs';
 import {
   loadProjectConfig,
@@ -40,32 +40,28 @@ import {
 import { validateProjectConfig } from '../lib/config/schema.mjs';
 import {
   DEPLOYMENT_MODES,
-  DEFAULT_DEPLOYMENT_MODE,
   DEPLOYMENT_MODE_ENV_KEY,
   describeDeploymentMode,
-  describeResourceLine,
   getDeploymentMode,
-  isValidDeploymentMode,
   resolveResourceMode,
 } from '../lib/deployment-mode.mjs';
 import { runDistillCli } from '../lib/distill.mjs';
 import { runIngestCli } from '../lib/document-ingest.mjs';
 import { runInferCli } from '../lib/schema-infer.mjs';
-import { COMPLETIONS_DIR, generateCompletions, getCompletionScript } from '../lib/completions.mjs';
+import { generateCompletions, getCompletionScript } from '../lib/completions.mjs';
 import { runHeadhunt, listTeamTemplates } from '../lib/headhunt.mjs';
 import {
   getLockStatus,
   cleanupStaleLock,
   cleanupStaleQueue,
   readQueue,
-  formatStatus,
 } from '../lib/beads-lock.mjs';
 import { runBd, getHumanStatus, acquireMergeSlot, releaseMergeSlot } from '../lib/beads-client.mjs';
 import { auditSkills, runAuditSkillsCli } from '../lib/audit-skills.mjs';
 import { auditSpecialists, runAuditSpecialistsCli } from '../lib/audit-specialists.mjs';
 import { runArtifactValidateCli } from '../lib/artifact-release-gate.mjs';
 import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
-import { readDashboardState, startDashboard, startServices } from '../lib/service-manager.mjs';
+import { startDashboard, startServices } from '../lib/service-manager.mjs';
 import { readCostLog, summarizeCostData, formatCostReport, clearCostLog } from '../lib/cost.mjs';
 import { readEfficiencyLog, summarizeEfficiencyData, formatEfficiencyReport } from '../lib/efficiency.mjs';
 import { resolveColors } from '../lib/term-format.mjs';
@@ -267,22 +263,6 @@ async function cmdStatus() {
     println(`  Outcome roles    ${outcomeRoles}`);
     println(`  Detail:          npm run learning:status`);
   } catch { /* best-effort surface; never block status */ }
-}
-
-async function cmdShow() {
-  const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
-  const dashboard = readDashboardState(HOME);
-  println('');
-  println('Construct Services');
-  println('══════════════════');
-  println('');
-  if (dashboard) println(`  • Managed dashboard PID ${dashboard.pid} on ${dashboard.url}`);
-  for (const service of status.system.services) {
-    const icon = service.status === 'healthy' ? '✓' : service.status === 'degraded' ? '⚠' : '✗';
-    const note = service.note ? ` (${service.note})` : '';
-    println(`  ${icon}  ${service.name.padEnd(28)} ${service.url}${note}`);
-  }
-  println('');
 }
 
 async function cmdSync(args) {
@@ -1082,7 +1062,7 @@ async function cmdDoctor() {
     }
 
     // Agent contracts integrity
-    const { getAllContracts, summarize } = await import('../lib/specialist-contracts.mjs');
+    const { getAllContracts } = await import('../lib/specialist-contracts.mjs');
     const contracts = getAllContracts();
     add('Agent contracts loaded', contracts.length > 0);
     if (contracts.length > 0) {
@@ -1288,7 +1268,7 @@ async function cmdDev(args = []) {
   opLog.event('selection', { services: selected ? [...selected] : 'all' });
 
   // Auto-magic health check — catch missing prerequisites before starting services
-  const { quickHealthCheck, detectCredentials, resolveCredentials } = await import('../lib/health-check.mjs');
+  const { quickHealthCheck, resolveCredentials } = await import('../lib/health-check.mjs');
 
   // Resolve credentials from env, .env files, and 1Password before starting services
   const resolvedCreds = await resolveCredentials({ homeDir: HOME });
@@ -1750,7 +1730,7 @@ async function cmdPrune(args) {
   println(`.cx/ now at ${Math.round(after.totalCxBytes / 1024 / 1024)}MB / ${Math.round(after.totalCxCap / 1024 / 1024)}MB cap (${Math.round(after.totalCxUsageRatio * 100)}%).`);
 }
 
-async function cmdCosts(args) {
+async function _cmdCosts(args) {
   const sub = args[0] || 'status';
   const {
     getDailySpend,
@@ -1965,7 +1945,7 @@ async function cmdOverrides(args) {
   process.exit(1);
 }
 
-async function cmdPricing(args) {
+async function _cmdPricing(args) {
   const sub = args[0] || 'status';
   const {
     describePricingCatalogFreshness,
@@ -2163,7 +2143,7 @@ async function cmdEmbeddedTriage(args) {
     input = fs.readFileSync(0, 'utf8');
   }
   if (!input.trim() && !ingestion?.error) {
-    // This is an embedded-contract verb: an embedder that pipes empty/no input
+    // Embedded-contract verb: an embedder that pipes empty/no input
     // must still get a parseable, versioned envelope — not a bare exit. Emit a
     // typed error envelope on stdout so the contract holds, and exit non-zero so
     // shell callers still see failure.
@@ -3161,7 +3141,7 @@ async function cmdWorkspace(args) {
   const sub = args[0];
   if (!sub || sub === '--help' || sub === '-h') { printWorkspaceHelp(); return; }
 
-  const { createWorkspace, getWorkspace, listWorkspaces, updateWorkspace } = await import('../lib/embed/workspaces.mjs');
+  const { createWorkspace, getWorkspace, listWorkspaces } = await import('../lib/embed/workspaces.mjs');
 
   if (sub === 'list') {
     const workspaces = listWorkspaces();
@@ -3275,7 +3255,6 @@ async function cmdRecommendations(args) {
     const reasonFlag = args.find(a => a.startsWith('--reason='))?.split('=').slice(1).join('=');
     const suppressDaysFlag = args.find(a => a.startsWith('--suppress-days='))?.split('=')[1];
     try {
-      const { dedupKey: computeKey } = await import('../lib/embed/recommendation-store.mjs');
       const key = `${recType}::${recTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60)}`;
       const { dismissRecommendation } = await import('../lib/embed/recommendation-store.mjs');
       dismissRecommendation(key, {
@@ -3731,7 +3710,7 @@ async function cmdModels(args) {
     return;
   }
   if (args.includes('--cheapest')) {
-    const { selectCheapestProvider, rankConfiguredProvidersByCost, formatCheapestProviderMessage, isCheapestProviderEnabled } =
+    const { selectCheapestProvider, formatCheapestProviderMessage, isCheapestProviderEnabled } =
       await import('../lib/model-cheapest-provider.mjs');
     const cheapestTier = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1] ?? 'standard';
     const verbose = args.includes('--verbose');
@@ -3743,7 +3722,7 @@ async function cmdModels(args) {
     return;
   }
   if (args.includes('--apply-cheapest')) {
-    const { selectCheapestForAllTiers, setCheapestProviderPreference } =
+    const { setCheapestProviderPreference } =
       await import('../lib/model-cheapest-provider.mjs');
     const allTiers = args.includes('--all-tiers') || !args.find((arg) => arg.startsWith('--tier='));
     const tierArg = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1];
@@ -4051,7 +4030,7 @@ async function cmdCleanup() {
   }
 }
 
-async function cmdCost(args) {
+async function _cmdCost(args) {
   const jsonOutput = args.includes('--json');
   const resetFlag = args.includes('--reset');
   const daysArg = args.find((a) => a.startsWith('--days='));
@@ -4464,7 +4443,6 @@ async function cmdCiPreview(args) {
   const { readFileSync, existsSync } = await import('node:fs');
   const { join } = await import('node:path');
   const { spawnSync: spSync } = await import('node:child_process');
-  const YAML = await import('node:fs');
 
   const listOnly = args.includes('--list');
   const fullMode = args.includes('--full');
@@ -4962,7 +4940,7 @@ async function cmdTags(args) {
 
 async function cmdScheduler(args) {
   const sub = args[0];
-  const { registerJob, runJobOnce, listJobs } = await import('../lib/scheduler/index.mjs');
+  const { runJobOnce, listJobs } = await import('../lib/scheduler/index.mjs');
 
   if (!sub || sub === 'list') {
     const jobs = listJobs();
@@ -5000,7 +4978,7 @@ async function cmdScheduler(args) {
 
 async function cmdCreds(args) {
   const sub = args[0];
-  const { readCreds, writeCreds, deleteCreds, listCreds, checkCredsFileMode, credsFilePath } =
+  const { writeCreds, deleteCreds, listCreds, checkCredsFileMode, credsFilePath } =
     await import('../lib/providers/creds.mjs');
   const { createInterface } = await import('node:readline');
 
@@ -5441,7 +5419,7 @@ const handlers = new Map([
   ['rules', cmdRulesUsage],
   // Pricing / cost readouts are stubbed out: the ledger writes, model-pricing
   // catalog, and per-turn accounting still run, but no CLI surface exposes
-  // them to the user. Handlers (cmdPricing, cmdCosts, cmdCost) remain in this
+  // them to the user. Handlers (_cmdPricing, _cmdCosts, _cmdCost) remain in this
   // file so the OTel + dashboard wiring (planned in Workstream J) can rewire
   // the surface without re-implementing the logic.
   ['overrides', cmdOverrides],
@@ -6106,6 +6084,16 @@ const handlers = new Map([
    ['oracle', async (args) => {
      const { runOracleCli } = await import('../lib/oracle/cli.mjs');
      return runOracleCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd(), homeDir: HOME });
+   }],
+   ['matrix', async (args) => {
+     const { runGraphCli } = await import('../lib/graph/cli.mjs');
+     const code = runGraphCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
+   }],
+   ['impact', async (args) => {
+     const { runImpactCli } = await import('../lib/graph/impact-cli.mjs');
+     const code = await runImpactCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
    ['reflect', async (args) => {
      const { runReflectCli } = await import('../lib/reflect.mjs');
