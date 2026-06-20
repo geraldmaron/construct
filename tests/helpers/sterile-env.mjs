@@ -64,8 +64,8 @@ export function createSterileEnv({ prefix = "construct-test-", env = {} } = {}) 
  * Returns a score between 0.0 and 1.0.
  */
 export async function evaluateOutcome(output, rubric) {
-  // TODO: Implement cx-evaluator logic or LLM-as-a-judge call.
-  // For now, we use a basic rule-based heuristic for the boilerplate.
+  // TODO (geraldmaron): Implement cx-evaluator logic or LLM-as-a-judge call.
+  // A basic rule-based heuristic stands in for the boilerplate.
   let score = 0;
   let totalWeight = 0;
 
