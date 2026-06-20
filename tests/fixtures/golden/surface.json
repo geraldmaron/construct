@@ -185,6 +185,10 @@
       "core": false
     },
     {
+      "name": "impact",
+      "core": false
+    },
+    {
       "name": "infer",
       "core": false
     },
@@ -246,6 +250,10 @@
     },
     {
       "name": "llm-judge",
+      "core": false
+    },
+    {
+      "name": "matrix",
       "core": false
     },
     {
