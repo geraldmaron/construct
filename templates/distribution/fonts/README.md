@@ -1,25 +1,33 @@
 # Distribution PDF fonts
 
-Bundled for offline Typst export via `--font-path`. Family names must match Typst discovery (`Geist`, `Geist Mono`).
+Bundled for offline Typst export via `--font-path`. Family names must match Typst discovery (`Plus Jakarta Sans`, `IBM Plex Mono`).
+
+**Active `--font-path` faces** (only these belong at this directory root):
 
 | File | Role | License |
 | --- | --- | --- |
-| Geist-*.ttf | Body, masthead, headings (same face as dashboard/docs) | [OFL-1.1](https://github.com/vercel/geist-font/blob/main/LICENSE) (Vercel) |
-| GeistMono-*.ttf | Code, IDs, monospace | [OFL-1.1](https://github.com/vercel/geist-font/blob/main/LICENSE) (Vercel) |
+| PlusJakartaSans-*.ttf | Body, masthead, headings, deck/PPTX embed | [OFL-1.1](https://github.com/tokotype/PlusJakartaSans/blob/master/OFL.txt) (Tokotype) |
+| IBMPlexMono-Regular.otf | Code, IDs, monospace | [OFL-1.1](https://scripts.sil.org/OFL) (IBM) |
 
-Legacy faces live under `legacy/` (outside `--font-path` so Typst cannot fall back to them):
+**Not active** — kept for reference or diagram labels only; do not copy back to the root unless re-promoting:
 
-| File | Role | License |
-| --- | --- | --- |
-| Inter-*.otf, InterDisplay-*.otf | Retained for reference only | [OFL-1.1](https://scripts.sil.org/OFL) (rsms/inter) |
-| IBMPlexMono-Regular.otf | Retained for reference only | [OFL-1.1](https://scripts.sil.org/OFL) (IBM) |
-| SourceSerif4-*.otf | Retained for reference only | [OFL-1.1](https://github.com/adobe-fonts/source-serif) |
+| Location | Contents |
+| --- | --- |
+| `legacy/` | Inter, Source Serif, older IBM Plex Mono copies |
+| `Geist-*.ttf`, `GeistMono-*.ttf` | Pre-Jakarta sans/mono (retired from brand) |
+| `handwritten/Caveat.ttf` | Mermaid/D2 hand-drawn diagram labels |
 
-Refresh Geist cuts from the pinned `geist` npm package:
+Refresh Plus Jakarta Sans from the upstream repo:
 
 ```bash
-cp node_modules/geist/dist/fonts/geist-sans/Geist-{Regular,Medium,SemiBold,Bold}.ttf templates/distribution/fonts/
-cp node_modules/geist/dist/fonts/geist-mono/GeistMono-{Regular,Medium,SemiBold}.ttf templates/distribution/fonts/
+BASE=https://raw.githubusercontent.com/tokotype/PlusJakartaSans/master/fonts/ttf
+for f in PlusJakartaSans-Regular.ttf PlusJakartaSans-Medium.ttf PlusJakartaSans-SemiBold.ttf PlusJakartaSans-Bold.ttf; do
+  curl -fsSL -o "templates/distribution/fonts/$f" "$BASE/$f"
+done
 ```
 
 Export passes `--font-path`, `--ignore-system-fonts`, and `--ignore-embedded-fonts` so Typst does not fall back to Libertinus Serif or DejaVu Sans Mono.
+
+PPTX export embeds the Jakarta TTF files via optional `pptx-embed-fonts` when `pptxgenjs` is installed.
+
+Deck/PPTX **preview artifacts** are not stored here — run `npm run examples:deck` to write gitignored outputs under `.tmp/distribution-examples/`.

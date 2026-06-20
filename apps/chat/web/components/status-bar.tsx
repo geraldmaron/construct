@@ -1,32 +1,25 @@
 /**
- * apps/chat/web/components/status-bar.tsx — session status strip for terminal cockpit.
+ * apps/chat/web/components/status-bar.tsx — cockpit header with session controls.
  *
- * Model, sandbox, permission mode, context meter, branch, layer toggles, and
- * working indicator. Mirrors Ink SessionHeader in web form.
+ * Model and settings open in-app pickers. Context and usage stay read-only.
  */
 
 'use client';
 
 import type { SessionMeta } from '../types';
-import { LAYER_KEYS } from '../types';
 
 type StatusBarProps = {
   sessionMeta: SessionMeta;
-  layers: Record<string, boolean>;
   streaming: boolean;
-  onToggleLayer: (key: typeof LAYER_KEYS[number]) => void;
-  onToggleRoute?: () => void;
-  routeCount?: number;
-  showRouteToggle?: boolean;
+  onOpenModelPicker: () => void;
+  onOpenSettingsPicker: () => void;
 };
 
 function contextMeter(ctx: SessionMeta['ctx']) {
   if (!ctx?.size) return null;
   const ratio = Math.max(0, Math.min(1, ctx.used / ctx.size));
-  const width = 14;
-  const filled = Math.round(ratio * width);
-  const bar = '█'.repeat(filled) + '░'.repeat(Math.max(0, width - filled));
-  return { bar, pct: `${Math.round(ratio * 100)}%` };
+  const pct = Math.round(ratio * 100);
+  return { pct, label: `${ctx.used}/${ctx.size}` };
 }
 
 function usageLine(usage: SessionMeta['usage']) {
@@ -38,93 +31,84 @@ function usageLine(usage: SessionMeta['usage']) {
   return parts.join(' · ');
 }
 
+function modelLabel(sessionMeta: SessionMeta) {
+  if (sessionMeta.modelMode === 'free-router') {
+    return `free-router → ${sessionMeta.model || '?'}`;
+  }
+  return sessionMeta.model || 'choose model';
+}
+
 export function StatusBar({
   sessionMeta,
-  layers,
   streaming,
-  onToggleLayer,
-  onToggleRoute,
-  routeCount = 0,
-  showRouteToggle = false,
+  onOpenModelPicker,
+  onOpenSettingsPicker,
 }: StatusBarProps) {
   const meter = contextMeter(sessionMeta.ctx);
-  const modelLabel = sessionMeta.modelMode === 'free-router'
-    ? `free-router → ${sessionMeta.model || '?'}`
-    : (sessionMeta.model || '(no model)');
+  const model = modelLabel(sessionMeta);
 
   return (
-    <header className="cx-cockpit-status" aria-label="Session status">
-      <div className="cx-cockpit-status-row">
-        <div className="cx-cockpit-status-left">
-          <span className="cx-cockpit-brand">◆ construct</span>
-          <span className="cx-cockpit-gutter">│</span>
-          <span className="cx-cockpit-muted">chat</span>
+    <header className="cx-cockpit-header" aria-label="Session">
+      <div className="cx-cockpit-header-main">
+        <div className="cx-cockpit-header-brand">
+          <span className="cx-cockpit-brand-mark" aria-hidden>◆</span>
+          <div>
+            <p className="cx-cockpit-brand-title">Construct chat</p>
+            <p className="cx-cockpit-brand-sub">
+              {sessionMeta.workingBranch ? `branch ${sessionMeta.workingBranch}` : 'owned agent loop'}
+            </p>
+          </div>
         </div>
-        <div className="cx-cockpit-status-right">
-          <span className="cx-cockpit-model">{modelLabel}</span>
-          {sessionMeta.sandbox ? (
-            <>
-              <span className="cx-cockpit-gutter">│</span>
-              <span className="cx-cockpit-muted">{sessionMeta.sandbox}</span>
-            </>
-          ) : null}
-          {sessionMeta.permissionMode ? (
-            <>
-              <span className="cx-cockpit-gutter">│</span>
-              <span className="cx-cockpit-muted">{sessionMeta.permissionMode}</span>
-            </>
-          ) : null}
-          <span className={`cx-cockpit-dot ${streaming ? 'cx-cockpit-dot-working' : 'cx-cockpit-dot-idle'}`} aria-hidden />
-          <span className="cx-cockpit-sr-only">{streaming ? 'working' : 'idle'}</span>
+
+        <div className="cx-cockpit-header-actions">
+          <button
+            type="button"
+            className="cx-cockpit-action-chip cx-cockpit-action-chip-primary"
+            onClick={onOpenModelPicker}
+            aria-label={`Change model. Current: ${model}`}
+          >
+            <span className="cx-cockpit-action-chip-label">model</span>
+            <span className="cx-cockpit-action-chip-value">{model}</span>
+          </button>
+          <button
+            type="button"
+            className="cx-cockpit-action-chip"
+            onClick={onOpenSettingsPicker}
+            aria-label="Open settings picker"
+          >
+            <span className="cx-cockpit-action-chip-label">settings</span>
+            <span className="cx-cockpit-action-chip-value">/set</span>
+          </button>
+          <span
+            className={`cx-cockpit-status-pill ${streaming ? 'cx-cockpit-status-pill-working' : 'cx-cockpit-status-pill-idle'}`}
+            role="status"
+          >
+            {streaming ? 'working' : 'ready'}
+          </span>
         </div>
       </div>
 
-      <div className="cx-cockpit-status-row">
-        <div className="cx-cockpit-status-left">
+      <div className="cx-cockpit-header-meta">
+        <div className="cx-cockpit-meta-group">
           {meter ? (
-            <span className="cx-cockpit-muted">
-              context
-              {' '}
-              <span className="cx-cockpit-meter">{meter.bar}</span>
-              {' '}
-              {meter.pct}
-            </span>
+            <>
+              <span className="cx-cockpit-meta-label">context</span>
+              <span className="cx-cockpit-meta-meter" aria-hidden>
+                <span className="cx-cockpit-meta-meter-fill" style={{ width: `${meter.pct}%` }} />
+              </span>
+              <span className="cx-cockpit-meta-value">{`${meter.pct}% · ${meter.label}`}</span>
+            </>
           ) : (
             <span className="cx-cockpit-muted">context not reported yet</span>
           )}
         </div>
-        <span className="cx-cockpit-muted">{`session ${usageLine(sessionMeta.usage)}`}</span>
+        <div className="cx-cockpit-meta-group">
+          {[sessionMeta.sandbox, sessionMeta.permissionMode].filter(Boolean).map((value) => (
+            <span key={value} className="cx-cockpit-meta-tag">{value}</span>
+          ))}
+          <span className="cx-cockpit-meta-value">{usageLine(sessionMeta.usage)}</span>
+        </div>
       </div>
-
-      <div className="cx-cockpit-status-row cx-cockpit-status-layers">
-        <span className="cx-cockpit-muted">layers</span>
-        {LAYER_KEYS.map((key, i) => (
-          <span key={key} className="cx-cockpit-layer-pill-wrap">
-            {i > 0 ? <span className="cx-cockpit-gutter">│</span> : null}
-            <button
-              type="button"
-              className="cx-cockpit-layer-btn"
-              aria-pressed={layers[key] !== false}
-              onClick={() => onToggleLayer(key)}
-            >
-              {`${key}${layers[key] !== false ? '' : '✗'}`}
-            </button>
-          </span>
-        ))}
-        {sessionMeta.workingBranch ? (
-          <>
-            <span className="cx-cockpit-gutter">│</span>
-            <span className="cx-cockpit-muted">{`branch ${sessionMeta.workingBranch}`}</span>
-          </>
-        ) : null}
-        {showRouteToggle ? (
-          <button type="button" className="cx-cockpit-route-toggle" onClick={onToggleRoute}>
-            {`route · ${routeCount} specialists`}
-          </button>
-        ) : null}
-      </div>
-
-      <hr className="cx-cockpit-rule cx-cockpit-rule-heavy" />
     </header>
   );
 }

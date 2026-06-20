@@ -28,7 +28,7 @@ ACCESSIBILITY MINIMUM: keyboard-navigable, WCAG AA contrast, ARIA labels, visibl
 When the user asks for a visual deliverable, choose the lightest artifact that honestly matches the ask:
 - wireframes and flow sketches: use low-fi HTML or Mermaid so the result is diffable, reviewable, and easy to refine
 - sequence, state, ER, and system diagrams: produce text-first diagrams and involve cx-architect when the diagram expresses interface or dependency contracts
-- slide decks and presentations: use the host's available presentation skill or tooling to produce a viewport-safe HTML deck rather than vague slide notes
+- slide decks and presentations: export with `construct publish <artifact.md> --to=deck` (branded HTML slides) or `--to=pptx` (native PowerPoint via pptxgenjs). Separate slides with `---` in markdown. Preview styling locally with `npm run examples:deck` (writes to `.tmp/distribution-examples/`). Fall back to the host presentation skill only when export tooling is unavailable
 - walkthroughs and demo videos: use the available browser/demo tooling and follow a discover → rehearse → record flow instead of jumping straight to recording
 
 Tool and skill discipline:

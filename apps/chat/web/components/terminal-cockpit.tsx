@@ -1,16 +1,22 @@
 /**
- * apps/chat/web/components/terminal-cockpit.tsx — web port of construct chat Ink cockpit.
+ * apps/chat/web/components/terminal-cockpit.tsx — Construct chat cockpit for web and desktop window.
  */
 
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useChatStream } from '../hooks/use-chat-stream';
+import { useCallback, useEffect, useState } from 'react';
+import { useChatStream, LAYER_KEYS, type LayerKey } from '../hooks/use-chat-stream';
 import { StatusBar } from './status-bar';
 import { EventLog } from './event-log';
 import { SessionDock } from './session-dock';
 import { CliPrompt } from './cli-prompt';
 import { ListPicker } from './list-picker';
+
+const PERMISSION_KEYS: Record<string, string> = {
+  y: 'allow',
+  a: 'allow_always',
+  n: 'reject',
+};
 
 export function TerminalCockpit() {
   const {
@@ -29,9 +35,13 @@ export function TerminalCockpit() {
     resolvePermission,
     toggleLayer,
     handlePickerSelect,
+    cancelStream,
+    openModelPicker,
+    openSettingsPicker,
   } = useChatStream();
 
   const [mobile, setMobile] = useState(false);
+  const [detailDense, setDetailDense] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 900px)');
@@ -41,6 +51,57 @@ export function TerminalCockpit() {
     return () => mq.removeEventListener('change', update);
   }, []);
 
+  const onGlobalKeyDown = useCallback((event: KeyboardEvent) => {
+    if (picker) return;
+    const target = event.target as HTMLElement | null;
+    const inPrompt = target?.closest('.cx-cockpit-prompt') != null;
+
+    if (pending && !inPrompt) {
+      const decision = PERMISSION_KEYS[event.key];
+      if (decision) {
+        event.preventDefault();
+        void resolvePermission(decision);
+        return;
+      }
+    }
+
+    if (event.ctrlKey && !event.metaKey && !event.altKey && !inPrompt) {
+      if (event.key === 'o' || event.key === 'O') {
+        event.preventDefault();
+        setDetailDense((value) => !value);
+        return;
+      }
+      const layerIndex = Number.parseInt(event.key, 10);
+      if (layerIndex >= 1 && layerIndex <= LAYER_KEYS.length) {
+        event.preventDefault();
+        void toggleLayer(LAYER_KEYS[layerIndex - 1] as LayerKey);
+      }
+    }
+
+    if (event.key === 'Escape' && streaming && !inPrompt) {
+      event.preventDefault();
+      void cancelStream();
+      return;
+    }
+
+    if (!inPrompt && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      if (event.key === 'm' || event.key === 'M') {
+        event.preventDefault();
+        void openModelPicker();
+        return;
+      }
+      if (event.key === ',') {
+        event.preventDefault();
+        openSettingsPicker();
+      }
+    }
+  }, [cancelStream, openModelPicker, openSettingsPicker, pending, picker, resolvePermission, streaming, toggleLayer]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', onGlobalKeyDown);
+    return () => window.removeEventListener('keydown', onGlobalKeyDown);
+  }, [onGlobalKeyDown]);
+
   return (
     <div className="cx-cockpit" data-testid="terminal-cockpit">
       {error ? (
@@ -49,13 +110,21 @@ export function TerminalCockpit() {
 
       <StatusBar
         sessionMeta={sessionMeta}
-        layers={layers}
         streaming={streaming}
-        onToggleLayer={toggleLayer}
+        onOpenModelPicker={() => void openModelPicker()}
+        onOpenSettingsPicker={openSettingsPicker}
       />
 
-      <div className="cx-cockpit-main">
-        <EventLog turns={turns} layers={layers} sessionMeta={sessionMeta} />
+      <div className="cx-cockpit-body">
+        <div className="cx-cockpit-main">
+          <EventLog
+            turns={turns}
+            layers={layers}
+            sessionMeta={sessionMeta}
+            detailDense={detailDense}
+            onOpenModelPicker={() => void openModelPicker()}
+            onOpenSettingsPicker={openSettingsPicker}
+          />
 
         <div className={`cx-cockpit-rail-col ${mobile && routeDrawerOpen ? 'cx-cockpit-rail-open' : ''}`}>
           {mobile ? (
@@ -73,8 +142,11 @@ export function TerminalCockpit() {
             overlay={activeOverlay}
             streaming={streaming}
             onToggleLayer={toggleLayer}
+            onOpenModelPicker={() => void openModelPicker()}
+            onOpenSettingsPicker={openSettingsPicker}
           />
         </div>
+      </div>
       </div>
 
       {picker ? (
@@ -99,10 +171,15 @@ export function TerminalCockpit() {
               </button>
             ))}
           </div>
+          <p className="cx-cockpit-muted">y allow · a always · n reject</p>
         </div>
       ) : null}
 
-      <CliPrompt disabled={streaming || Boolean(picker)} onSubmit={(text) => void sendMessage(text)} />
+      <CliPrompt
+        disabled={streaming}
+        pickerActive={Boolean(picker)}
+        onSubmit={(text) => void sendMessage(text)}
+      />
     </div>
   );
 }

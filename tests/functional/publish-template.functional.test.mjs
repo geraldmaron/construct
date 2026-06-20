@@ -29,8 +29,8 @@ import { pdfEngineFontOpts } from '../../lib/document-export.mjs';
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const GOLDEN = path.join(REPO, 'tests', 'fixtures', 'publish', 'golden-prd-platform.md');
 
-test('BRAND uses violet accent not cyan', () => {
-  assert.equal(BRAND.accent, '#8b5cf6');
+test('BRAND uses monochrome ink accent', () => {
+  assert.equal(BRAND.accent, '#0a0c10');
   assert.notEqual(BRAND.accent, '#38bdf8');
 });
 
@@ -75,9 +75,11 @@ test('parseArtifactMetadata reads golden fixture fields', () => {
 test('bundled distribution fonts ship with templates', () => {
   const fontDir = path.join(REPO, 'templates', 'distribution', 'fonts');
   for (const file of [
-    'Geist-Regular.ttf',
-    'Geist-SemiBold.ttf',
-    'GeistMono-Regular.ttf',
+    'PlusJakartaSans-Regular.ttf',
+    'PlusJakartaSans-Medium.ttf',
+    'PlusJakartaSans-SemiBold.ttf',
+    'PlusJakartaSans-Bold.ttf',
+    'IBMPlexMono-Regular.otf',
   ]) {
     assert.ok(fs.existsSync(path.join(fontDir, file)), `missing font ${file}`);
   }
@@ -165,11 +167,11 @@ test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME and sketch flag', () =
   assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '640');
 });
 
-test('construct-brand.typ uses Geist family names for body prose', () => {
+test('construct-brand.typ uses Plus Jakarta Sans family names for body prose', () => {
   const brand = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-brand.typ'), 'utf8');
-  assert.match(brand, /construct-font-sans = \("Geist",\)/);
+  assert.match(brand, /construct-font-sans = \("Plus Jakarta Sans",\)/);
   assert.match(brand, /set text\(font: construct-font-sans[\s\S]*justify: false/);
-  assert.doesNotMatch(brand, /Libertinus|SourceSerif|Inter Display|IBM Plex/);
+  assert.doesNotMatch(brand, /Libertinus|SourceSerif|Geist|IBM Plex Sans|"Inter"/);
   assert.match(brand, /construct-figure-max-width = 74%/);
   assert.match(brand, /fit: "contain"/);
 });

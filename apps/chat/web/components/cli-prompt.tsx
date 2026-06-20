@@ -18,10 +18,11 @@ import {
 
 type CliPromptProps = {
   disabled: boolean;
+  pickerActive?: boolean;
   onSubmit: (text: string) => void;
 };
 
-export function CliPrompt({ disabled, onSubmit }: CliPromptProps) {
+export function CliPrompt({ disabled, pickerActive = false, onSubmit }: CliPromptProps) {
   const [input, setInput] = useState('');
   const inputHistory = useRef<string[]>([]);
   const historyPos = useRef(-1);
@@ -90,6 +91,18 @@ export function CliPrompt({ disabled, onSubmit }: CliPromptProps) {
   const ghost = slashCommandGhost(input);
   const suggestHint = commandSuggestHint(input);
 
+  if (pickerActive) {
+    return (
+      <footer className="cx-cockpit-footer cx-cockpit-footer-picker" aria-label="Picker active">
+        <hr className="cx-cockpit-rule" />
+        <div className="cx-cockpit-prompt-line">
+          <span className="cx-cockpit-prompt-glyph">pick ▸</span>
+          <span className="cx-cockpit-muted">use the picker above — type to filter, ↑/↓ move, enter select, esc cancel</span>
+        </div>
+      </footer>
+    );
+  }
+
   return (
     <footer className="cx-cockpit-footer" aria-label="Construct prompt">
       <hr className="cx-cockpit-rule" />
@@ -121,7 +134,7 @@ export function CliPrompt({ disabled, onSubmit }: CliPromptProps) {
           ) : null}
         </div>
         <p className="cx-cockpit-prompt-hints cx-cockpit-muted">
-          enter send   tab complete   shift+enter newline   │   /help  Ctrl-C exit
+          enter send   tab complete   shift+enter newline   m model   , settings   esc cancel stream
         </p>
       </form>
     </footer>

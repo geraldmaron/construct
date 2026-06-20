@@ -77,7 +77,8 @@ skills/roles/*.bak
 apps/*/.next/
 apps/*/out/
 
-# Ink TUI bundle — rebuilt via npm run build:chat (postinstall in tool repo)
+# Tauri desktop window — built via npm run build:chat-desktop
+apps/chat/desktop/src-tauri/target/
 apps/chat/dist/
 
 # npm pack output (produced by the consumer-perspective audit gate)
@@ -93,3 +94,8 @@ audit-artifacts/
 # Agentic-hq fixture: full session trace logs are local-only (can grow unbounded).
 tests/fixtures/projects/agentic-hq/.cx/traces/*.jsonl
 !tests/fixtures/projects/agentic-hq/.cx/traces/sample-traces.jsonl
+
+# Construct — generated adapters, launcher, and runtime state.
+# Machine-specific, recreated by `construct sync`; never source (ADR-0027).
+.construct/
+inbox/

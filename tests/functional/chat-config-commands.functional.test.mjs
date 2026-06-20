@@ -122,15 +122,15 @@ test('/model <id> sets and persists the model', async () => {
   }
 });
 
-test('/models lists host models and /usage renders the panel', async () => {
+test('/models opens the curated picker and /usage renders the panel', async () => {
   const commands = createCommands({ driver: fakeDriver(), host: 'construct', hostId: 'construct', cwd: tmpProject() });
   const session = makeSession();
   addUsage(session.usage, { type: 'usage', tokens: { input: 100, output: 50, total: 150 }, cost: { amount: 0.001 } });
 
   const models = collector();
-  await commands.handle('/models', { output: models.stream, colors: PLAIN, layers: session.layers, session, rl: null });
-  assert.ok(models.text.includes('openrouter/a'));
-  assert.ok(models.text.includes('ollama/b'));
+  await commands.handle('/models', { output: models.stream, colors: PLAIN, layers: session.layers, session, rl: null, askFn: async () => '' });
+  assert.ok(models.text.includes('select a model'));
+  assert.ok(models.text.includes('OpenRouter free router'));
 
   const usage = collector();
   await commands.handle('/usage', { output: usage.stream, colors: PLAIN, layers: session.layers, session, rl: null });
