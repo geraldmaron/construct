@@ -15,6 +15,7 @@ description: Diagnostics commands for Construct.
 | `construct docs:site` | Regenerate generated reference pages under docs/reference/ |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
 | `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
+| `construct impact` | Change-impact analysis — map changed files to affected tests, capabilities, and workflows |
 | `construct rules` | Rule and hook reference telemetry rollup |
 
 ## construct audit
@@ -111,6 +112,16 @@ Validate documentation quality (alias for `docs verify`)
 
 ```bash
 construct docs:verify
+```
+
+## construct impact
+
+Change-impact analysis — map changed files to affected tests, capabilities, and workflows
+
+**Usage**
+
+```bash
+construct impact [files…] [--stdin] [--run] [--json]
 ```
 
 ## construct rules
