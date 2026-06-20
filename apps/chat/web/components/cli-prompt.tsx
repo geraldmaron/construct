@@ -1,7 +1,8 @@
 /**
- * apps/chat/web/components/cli-prompt.tsx — shell-style input for terminal cockpit.
+ * apps/chat/web/components/cli-prompt.tsx — modern prompt card with session usage strip.
  *
- * Tab completion, input history, and slash-command ghost hints match Ink Footer.
+ * Tab completion, input history, and slash-command ghost hints preserved from original.
+ * Visual update: rounded input card with top session strip for token totals.
  */
 
 'use client';
@@ -15,14 +16,24 @@ import {
   slashCommandGhost,
   slashCommandMatches,
 } from '../../../../lib/chat/command-suggest.mjs';
+import type { SessionMeta } from '../types';
+import { SessionUsageFooter } from './session-usage-footer';
 
 type CliPromptProps = {
   disabled: boolean;
   pickerActive?: boolean;
+  sessionMeta?: SessionMeta;
+  layers?: Record<string, boolean>;
   onSubmit: (text: string) => void;
 };
 
-export function CliPrompt({ disabled, pickerActive = false, onSubmit }: CliPromptProps) {
+export function CliPrompt({
+  disabled,
+  pickerActive = false,
+  sessionMeta,
+  layers,
+  onSubmit,
+}: CliPromptProps) {
   const [input, setInput] = useState('');
   const inputHistory = useRef<string[]>([]);
   const historyPos = useRef(-1);
@@ -90,53 +101,58 @@ export function CliPrompt({ disabled, pickerActive = false, onSubmit }: CliPromp
 
   const ghost = slashCommandGhost(input);
   const suggestHint = commandSuggestHint(input);
-
-  if (pickerActive) {
-    return (
-      <footer className="cx-cockpit-footer cx-cockpit-footer-picker" aria-label="Picker active">
-        <hr className="cx-cockpit-rule" />
-        <div className="cx-cockpit-prompt-line">
-          <span className="cx-cockpit-prompt-glyph">pick ▸</span>
-          <span className="cx-cockpit-muted">use the picker above — type to filter, ↑/↓ move, enter select, esc cancel</span>
-        </div>
-      </footer>
-    );
-  }
+  const showObservability = layers?.observability !== false;
 
   return (
     <footer className="cx-cockpit-footer" aria-label="Construct prompt">
-      <hr className="cx-cockpit-rule" />
-      {suggestHint ? (
-        <p className="cx-cockpit-muted cx-cockpit-prompt-suggest">{`tab complete   ${suggestHint}`}</p>
-      ) : null}
-      <form onSubmit={onFormSubmit}>
-        <div className="cx-cockpit-prompt-line">
-          <label htmlFor="construct-prompt" className="cx-cockpit-prompt-glyph">you ▸</label>
-          <textarea
-            id="construct-prompt"
-            className="cx-cockpit-prompt-input"
-            value={input}
-            onChange={(e) => {
-              historyPos.current = -1;
-              setInput(e.target.value);
-            }}
-            onKeyDown={onKeyDown}
-            disabled={disabled}
-            rows={1}
-            placeholder=""
-            aria-label="Message construct"
-          />
-          {!disabled && !input ? (
-            <span className="cx-cockpit-cursor" aria-hidden>▌</span>
-          ) : null}
-          {ghost ? (
-            <span className="cx-cockpit-muted cx-cockpit-prompt-ghost-inline" aria-hidden>{ghost}</span>
-          ) : null}
-        </div>
-        <p className="cx-cockpit-prompt-hints cx-cockpit-muted">
-          enter send   tab complete   shift+enter newline   m model   , settings   esc cancel stream
-        </p>
-      </form>
+      {sessionMeta && (
+        <SessionUsageFooter sessionMeta={sessionMeta} visible={showObservability} />
+      )}
+
+      <div className="cx-cockpit-footer-inner">
+        {pickerActive ? (
+          <div className="cx-prompt-card-picker">
+            <span className="cx-cockpit-muted">
+              Picker active — type to filter, ↑/↓ navigate, enter select, esc cancel
+            </span>
+          </div>
+        ) : (
+          <form onSubmit={onFormSubmit}>
+            {suggestHint && (
+              <p className="cx-prompt-card-suggest">{`tab complete   ${suggestHint}`}</p>
+            )}
+            <div className="cx-prompt-card">
+              <div className="cx-prompt-card-row">
+                <textarea
+                  id="construct-prompt"
+                  className="cx-prompt-card-input"
+                  value={input}
+                  onChange={(e) => {
+                    historyPos.current = -1;
+                    setInput(e.target.value);
+                  }}
+                  onKeyDown={onKeyDown}
+                  disabled={disabled}
+                  rows={1}
+                  placeholder={disabled ? 'working…' : 'Ask Construct anything…'}
+                  aria-label="Message construct"
+                />
+                {ghost && (
+                  <span className="cx-prompt-card-ghost cx-cockpit-muted" aria-hidden>{ghost}</span>
+                )}
+              </div>
+              <p className="cx-prompt-card-hints">
+                <span>↵ send</span>
+                <span>⇥ complete</span>
+                <span>⇧↵ newline</span>
+                <span>m model</span>
+                <span>, settings</span>
+                <span>esc cancel</span>
+              </p>
+            </div>
+          </form>
+        )}
+      </div>
     </footer>
   );
 }

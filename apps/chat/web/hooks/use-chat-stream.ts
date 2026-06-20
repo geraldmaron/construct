@@ -292,6 +292,10 @@ export function useChatStream() {
     }
     if (data.id) persistConvId(data.id);
     applyServerSessionMeta(data.sessionMeta);
+    // The select endpoint returns sessionMeta only once a runtime exists (after the
+    // first turn). Always reflect the chosen model so the header chip updates even
+    // when the pick happens from the empty state.
+    setSessionMeta((prev) => ({ ...prev, model: data.model, modelMode: data.modelMode }));
     appendSystemOutput(`model set: ${data.modelMode === 'free-router' ? `free-router → ${data.model}` : data.model} (saved)`);
   }, [appendSystemOutput, applyServerSessionMeta, persistConvId]);
 

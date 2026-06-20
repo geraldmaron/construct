@@ -60,12 +60,20 @@ test('handleChatModelSelect persists a pinned model in an isolated project', asy
   const { loadChatConfig } = await import('../../lib/chat/config.mjs');
   const { loadModelPickerItems } = await import('../../lib/chat/model-picker.mjs');
 
-  const items = await loadModelPickerItems(null, { env: {}, cwd });
+  // Inject a deterministic provider catalog so the test does not depend on live
+  // provider polling — the same seam the server handler uses.
+  const pollProviders = async () => ([
+    { id: 'anthropic', label: 'Anthropic', live: true, models: [
+      { id: 'anthropic/claude-sonnet-4-6', label: 'Claude Sonnet 4.6', provider: 'anthropic', free: false, pricing: { input: 3, output: 15 }, context: 200000, reasoning: true, tools: true, vision: true, source: 'live' },
+    ] },
+  ]);
+
+  const items = await loadModelPickerItems(null, { env: {}, cwd, pollProviders });
   const target = items.find((item) => !item.disabled);
   assert.ok(target, 'expected a selectable model in picker items');
 
   const server = await listen((req, res) => {
-    void handleChatModelSelect(req, res, { rootDir: cwd });
+    void handleChatModelSelect(req, res, { rootDir: cwd, pollProviders });
   });
 
   try {
