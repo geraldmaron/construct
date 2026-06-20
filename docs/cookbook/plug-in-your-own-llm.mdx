@@ -101,6 +101,17 @@ Walks the registry and remaps each tier to the cheapest available model. Useful 
 
 For smaller local checkpoints, set `CONSTRUCT_MODEL_PROFILE=small` in `~/.construct/config.env`. That keeps runtime prompts tighter, compresses role overlays, and biases prompt assembly toward retrieval-first context instead of broad prompt stuffing.
 
+## Resolve keys from 1Password
+
+If you keep provider keys in 1Password and run other LLM CLIs through `op run`, point Construct at the same env-file:
+
+```bash
+# ~/.construct/config.env
+CONSTRUCT_OP_ENV_FILE=~/.config/claude/.env.op
+```
+
+The env-file holds `op://` references (`OPENROUTER_API_KEY=op://vault/item/credential`). When it is set and the `op` CLI is installed, Construct launches its dashboard daemon under `op run`, so every reference resolves once at startup (one biometric unlock) into the daemon's environment — `construct chat` then sees all provider keys with no shell wrapper. This is strictly opt-in: unset the variable and Construct never invokes `op`, resolving plain keys from the environment or `config.env` as usual.
+
 ## Configure fallbacks
 
 Each tier has a fallback chain. If the primary model returns rate-limit, model-unavailable, or a timeout, Construct walks the chain in order. Configure the chain:
