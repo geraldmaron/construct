@@ -1,0 +1,78 @@
+{
+  "$schema": "../../../schemas/provider-behavior-matrix.schema.json",
+  "version": 1,
+  "description": "Hermetic baseline behavior observations, one per capability class. Synthetic and deterministic — no live API is touched. Capability VALUES are illustrative-but-conservative; the live probe (opt-in) replaces them with measured evidence. Keyed by structural class, never by vendor name.",
+  "observations": [
+    {
+      "capabilityClass": "hosted-direct",
+      "transport": "direct",
+      "adapterProtocol": "anthropic-messages",
+      "responseModelId": null,
+      "requestShape": { "system": "accepted", "toolSchemaCount": 8, "toolSchemaTokenEstimate": 2400 },
+      "toolCall": { "supported": true, "parseShape": "native_tool_use", "resultShape": "tool_result_block" },
+      "cancellation": { "supported": true, "mechanism": "abort_signal" },
+      "usage": { "fields": ["input", "output", "total", "cacheRead", "reasoning"], "cost": true },
+      "contextFailureBehavior": "error",
+      "fallbackClassification": "retryable",
+      "evidence": { "source": "hermetic_fixture", "capturedAt": null, "redacted": false, "runs": 1, "distribution": null }
+    },
+    {
+      "capabilityClass": "hosted-routed",
+      "transport": "routed",
+      "adapterProtocol": "openai-chat-completions",
+      "responseModelId": null,
+      "requestShape": { "system": "accepted", "toolSchemaCount": 8, "toolSchemaTokenEstimate": 2400 },
+      "toolCall": { "supported": true, "parseShape": "openai_function", "resultShape": "message_role_tool" },
+      "cancellation": { "supported": true, "mechanism": "abort_signal" },
+      "usage": { "fields": ["input", "output", "total"], "cost": true },
+      "contextFailureBehavior": "error",
+      "fallbackClassification": "rate_limited",
+      "evidence": { "source": "hermetic_fixture", "capturedAt": null, "redacted": false, "runs": 1, "distribution": null }
+    },
+    {
+      "capabilityClass": "local-capable",
+      "transport": "local",
+      "adapterProtocol": "openai-compatible",
+      "responseModelId": null,
+      "requestShape": { "system": "accepted", "toolSchemaCount": 8, "toolSchemaTokenEstimate": 2400 },
+      "toolCall": { "supported": true, "parseShape": "openai_function", "resultShape": "message_role_tool" },
+      "cancellation": { "supported": true, "mechanism": "abort_signal" },
+      "usage": { "fields": ["input", "output", "total"], "cost": false },
+      "contextFailureBehavior": "truncate",
+      "fallbackClassification": "retryable",
+      "evidence": {
+        "source": "hermetic_fixture",
+        "capturedAt": null,
+        "redacted": false,
+        "runs": 3,
+        "distribution": { "runs": 3, "deterministic": true, "classCounts": { "local-capable": 3 }, "modalClass": "local-capable", "agreement": 1, "toolSupportedRatio": 1 }
+      }
+    },
+    {
+      "capabilityClass": "local-constrained",
+      "transport": "local",
+      "adapterProtocol": "openai-compatible",
+      "responseModelId": null,
+      "requestShape": { "system": "ignored", "toolSchemaCount": 0, "toolSchemaTokenEstimate": 0 },
+      "toolCall": { "supported": false, "parseShape": "none", "resultShape": "none" },
+      "cancellation": { "supported": true, "mechanism": "abort_signal" },
+      "usage": { "fields": ["input", "output"], "cost": false },
+      "contextFailureBehavior": "silent_drop",
+      "fallbackClassification": "model_unavailable",
+      "evidence": { "source": "hermetic_fixture", "capturedAt": null, "redacted": false, "runs": 1, "distribution": null }
+    },
+    {
+      "capabilityClass": "unknown",
+      "transport": "unknown",
+      "adapterProtocol": "unknown",
+      "responseModelId": null,
+      "requestShape": { "system": "unknown", "toolSchemaCount": 0, "toolSchemaTokenEstimate": 0 },
+      "toolCall": { "supported": false, "parseShape": "unknown", "resultShape": "unknown" },
+      "cancellation": { "supported": false, "mechanism": "unknown" },
+      "usage": { "fields": [], "cost": false },
+      "contextFailureBehavior": "unknown",
+      "fallbackClassification": "unknown",
+      "evidence": { "source": "hermetic_fixture", "capturedAt": null, "redacted": false, "runs": 1, "distribution": null }
+    }
+  ]
+}
