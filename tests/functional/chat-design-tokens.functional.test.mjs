@@ -7,8 +7,8 @@ import assert from 'node:assert/strict';
 import { FONTS, INK } from '../../lib/brand-tokens.mjs';
 import { chatCssVars, chatPalette, CHAT_DARK } from '../../lib/chat/design-tokens.mjs';
 
-test('FONTS.sans uses Plus Jakarta Sans stack', () => {
-  assert.match(FONTS.sans, /Plus Jakarta Sans/);
+test('FONTS.sans uses Space Grotesk stack', () => {
+  assert.match(FONTS.sans, /Space Grotesk/);
 });
 
 test('chatCssVars exposes brand typography and ink palette', () => {
@@ -21,6 +21,6 @@ test('chatCssVars exposes brand typography and ink palette', () => {
 
 test('chatPalette dark scheme uses monochrome accent not violet', () => {
   const p = chatPalette('dark');
-  assert.equal(p.accent, '#e8eaed');
+  assert.equal(p.accent, '#ffffff');
   assert.notEqual(p.accent, '#8b5cf6');
 });

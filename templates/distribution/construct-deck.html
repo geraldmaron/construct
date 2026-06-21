@@ -1,7 +1,7 @@
 <!--
   templates/distribution/construct-deck.html — Construct branded 16:9 slide deck
   HTML for `construct export --to=deck`. Pandoc emits section divs (--section-divs)
-  from markdown slides separated by ---; Plus Jakarta Sans via Google Fonts; monochrome ink
+  from markdown slides separated by ---; Space Grotesk via Google Fonts; monochrome ink
   tokens mirror construct-brand.typ. Metadata variables fill the title slide.
 -->
 <!DOCTYPE html>
@@ -12,13 +12,13 @@
 <title>$if(title)$$title$$else$Construct deck$endif$</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --ink:#0a0c10; --ink-strong:#16191f; --ink-body:#23272e; --muted:#565c66; --faint:#9499a2;
     --hairline:#e3e4e8; --hairline-strong:#cdd0d6; --surface:#fafafa; --surface-alt:#f3f4f6; --paper:#ffffff;
-    --sans:'Plus Jakarta Sans',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+    --sans:'Space Grotesk',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
     --slide-w:1280px;
     --slide-h:720px;
   }

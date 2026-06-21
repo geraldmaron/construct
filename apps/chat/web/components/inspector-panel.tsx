@@ -22,6 +22,7 @@ type InspectorPanelProps = {
   onClose: () => void;
   onTabChange: (tab: InspectorTab) => void;
   sessionMeta: SessionMeta;
+  turns: ChatTurn[];
   layers: Record<string, boolean>;
   overlay: RouteOverlay | null;
   streaming: boolean;
@@ -29,6 +30,24 @@ type InspectorPanelProps = {
   onOpenModelPicker?: () => void;
   onOpenSettingsPicker?: () => void;
 };
+
+function deriveTelemetry(turns: ChatTurn[]) {
+  let tools = 0;
+  let sources = 0;
+  const specialists = new Map<string, number>();
+  for (const turn of turns) {
+    if (turn.system) continue;
+    tools += turn.tools?.length ?? 0;
+    sources += turn.sources?.length ?? 0;
+    for (const id of turn.overlay?.specialists ?? []) {
+      const name = id.replace(/^cx-/, '');
+      specialists.set(name, (specialists.get(name) ?? 0) + 1);
+    }
+  }
+  const ranked = [...specialists.entries()].sort((a, b) => b[1] - a[1]);
+  const max = ranked[0]?.[1] ?? 1;
+  return { tools, sources, specialists: ranked, specialistMax: max };
+}
 
 function modelLabel(sessionMeta: SessionMeta) {
   if (sessionMeta.modelMode === 'free-router') {
@@ -49,6 +68,7 @@ export function InspectorPanel({
   onClose,
   onTabChange,
   sessionMeta,
+  turns: sessionTurns,
   layers,
   overlay,
   streaming,
@@ -70,6 +90,8 @@ export function InspectorPanel({
   const t = sessionMeta.usage?.tokens ?? {};
   const cost = sessionMeta.usage?.cost;
   const turns = sessionMeta.usage?.turns ?? 0;
+  const tel = deriveTelemetry(sessionTurns);
+  const totalTokens = t.total ?? ((t.input ?? 0) + (t.output ?? 0));
 
   const ledger: Array<[string, string]> = [];
   if (t.input) ledger.push(['in', formatTokens(t.input)]);
@@ -152,34 +174,75 @@ export function InspectorPanel({
               </section>
 
               <section className="cx-cockpit-dock-section">
-                <h3 className="cx-cockpit-dock-heading">Context window</h3>
+                <h3 className="cx-cockpit-dock-heading">Session telemetry</h3>
+                <div className="cx-tel-total">
+                  <span className="cx-tel-total-value">{(totalTokens || 0).toLocaleString()}</span>
+                  <span className="cx-tel-total-unit">tokens</span>
+                </div>
+                <p className="cx-tel-split">
+                  {`${formatTokens(t.input)} input · ${formatTokens(t.output)} output`}
+                </p>
                 {meter ? (
                   <>
-                    <div className="cx-cockpit-meta-meter cx-cockpit-meta-meter-rail" aria-hidden>
-                      <span className="cx-cockpit-meta-meter-fill" style={{ width: `${meter.pct}%` }} />
+                    <div className="cx-tel-meter" aria-hidden>
+                      <span className="cx-tel-meter-fill" style={{ width: `${meter.pct}%` }} />
                     </div>
-                    <p className="cx-cockpit-muted" style={{ fontSize: '11px' }}>
-                      {`${meter.pct}% · ${meter.label}`}
-                    </p>
+                    <div className="cx-tel-meter-foot">
+                      <span>{`${meter.pct}% of context`}</span>
+                      <span>{meter.label}</span>
+                    </div>
                   </>
                 ) : (
-                  <p className="cx-cockpit-muted" style={{ fontSize: '11px' }}>not reported yet</p>
+                  <p className="cx-cockpit-muted" style={{ fontSize: '10.5px' }}>context not reported yet</p>
                 )}
+
+                <div className="cx-tel-trio">
+                  <div className="cx-tel-stat">
+                    <div className="cx-tel-stat-value">{turns}</div>
+                    <div className="cx-tel-stat-label">TURNS</div>
+                  </div>
+                  <div className="cx-tel-stat">
+                    <div className="cx-tel-stat-value">{tel.tools}</div>
+                    <div className="cx-tel-stat-label">TOOLS</div>
+                  </div>
+                  <div className="cx-tel-stat">
+                    <div className="cx-tel-stat-value">{tel.sources}</div>
+                    <div className="cx-tel-stat-label">SOURCES</div>
+                  </div>
+                </div>
               </section>
 
-              <section className="cx-cockpit-dock-section">
-                <h3 className="cx-cockpit-dock-heading">{`Usage · ${turns} turn${turns === 1 ? '' : 's'}`}</h3>
-                {ledger.length ? (
-                  ledger.map(([k, v]) => (
+              {tel.specialists.length > 0 && (
+                <section className="cx-cockpit-dock-section">
+                  <h3 className="cx-cockpit-dock-heading">Specialists engaged</h3>
+                  <div className="cx-tel-spec-list">
+                    {tel.specialists.map(([name, count]) => (
+                      <div key={name} className="cx-tel-spec-row">
+                        <span className="cx-tel-spec-name">{name}</span>
+                        <span className="cx-tel-spec-bar" aria-hidden>
+                          <span
+                            className="cx-tel-spec-fill"
+                            style={{ width: `${Math.round((count / tel.specialistMax) * 100)}%` }}
+                          />
+                        </span>
+                        <span className="cx-tel-spec-count">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {ledger.length > 0 && (
+                <section className="cx-cockpit-dock-section">
+                  <h3 className="cx-cockpit-dock-heading">Token ledger</h3>
+                  {ledger.map(([k, v]) => (
                     <div key={k} className="cx-cockpit-ledger-row">
                       <span>{k}</span>
                       <span>{v}</span>
                     </div>
-                  ))
-                ) : (
-                  <p className="cx-cockpit-muted" style={{ fontSize: '11px' }}>no tokens yet</p>
-                )}
-              </section>
+                  ))}
+                </section>
+              )}
 
               {sessionMeta.oracle?.visible && (
                 <section className="cx-cockpit-dock-section">
