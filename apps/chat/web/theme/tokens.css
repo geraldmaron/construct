@@ -1382,10 +1382,34 @@ body.cx-cockpit-picker-open {
   color: var(--cx-chat-muted);
 }
 
+.cx-construct-via {
+  font-family: var(--cx-chat-mono);
+  font-size: 10px;
+  color: var(--cx-chat-faint);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+}
+
 .cx-construct-head-right {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.cx-unverified-chip {
+  font-family: var(--cx-chat-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cx-chat-danger);
+  border: 1px solid color-mix(in srgb, var(--cx-chat-danger) 45%, var(--cx-chat-border));
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  cursor: help;
 }
 
 .cx-usage-chip {
