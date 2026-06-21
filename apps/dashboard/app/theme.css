@@ -6,7 +6,7 @@
 
 :root {
   --bg: #000;
-  --ink: #f4f4f4;
+  --ink: #ededed;
   --ink-soft: #d4d4d4;
   --muted: #8a8a8a;
   --faint: #5a5a5a;
@@ -16,11 +16,14 @@
   --surface-2: rgba(255, 255, 255, 0.06);
   --code-bg: #0a0a0a;
 
-  --hue-a: #8b5cf6;
-  --hue-b: #38bdf8;
-  --hue-c: #fb923c;
+  /* Monochrome rebrand: the accent "hues" are now a neutral grey ramp so every
+     gradient that references them reads as one white-on-black family. */
 
-  --display: var(--font-display), "Newsreader", Georgia, serif;
+  --hue-a: #e8e8e8;
+  --hue-b: #b4b4b4;
+  --hue-c: #8a8a8a;
+
+  --display: var(--font-display), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
@@ -158,11 +161,9 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 .brand .mark {
-  width: 22px; height: 22px; border-radius: 6px;
-  background:
-    radial-gradient(120% 120% at 0% 0%, var(--hue-a), transparent 60%),
-    radial-gradient(120% 120% at 100% 100%, var(--hue-c), transparent 60%),
-    var(--hue-b);
+  width: 15px; height: 15px; border-radius: 3px;
+  background: var(--ink);
+  transform: rotate(45deg);
   box-shadow: 0 0 0 1px var(--hairline-strong) inset;
 }
 .brand .name {
@@ -959,7 +960,7 @@ h1.page-title em { font-style: normal; color: var(--muted); font-weight: 500; }
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: #0c1018;
+  background: #000;
 }
 
 .shell--chat .main--chat .cx-cockpit {
@@ -977,8 +978,8 @@ h1.page-title em { font-style: normal; color: var(--muted); font-weight: 500; }
   top: 12px;
   z-index: 10;
   padding: 8px 12px;
-  background: #101620;
-  color: #e8eaed;
+  background: #0b0b0c;
+  color: #ededed;
   border: 1px solid #565c66;
 }
 

@@ -10,11 +10,11 @@
 import { FormEvent, KeyboardEvent, useRef, useState } from 'react';
 import {
   applyTabCompletion,
-  commandSuggestHint,
   cycleSlashCommand,
   isSlashOnlyInput,
   slashCommandGhost,
   slashCommandMatches,
+  slashCommandSuggestions,
 } from '../../../../lib/chat/command-suggest.mjs';
 import type { SessionMeta } from '../types';
 import { SessionUsageFooter } from './session-usage-footer';
@@ -100,8 +100,14 @@ export function CliPrompt({
   };
 
   const ghost = slashCommandGhost(input);
-  const suggestHint = commandSuggestHint(input);
+  const suggestions = slashCommandSuggestions(input);
   const showObservability = layers?.observability !== false;
+
+  const completeSuggestion = (value: string) => {
+    const next = suggestions.kind === 'set' ? `/set ${value} ` : `${value} `;
+    historyPos.current = -1;
+    setInput(next);
+  };
 
   return (
     <footer className="cx-cockpit-footer" aria-label="Construct prompt">
@@ -118,8 +124,26 @@ export function CliPrompt({
           </div>
         ) : (
           <form onSubmit={onFormSubmit}>
-            {suggestHint && (
-              <p className="cx-prompt-card-suggest">{`tab complete   ${suggestHint}`}</p>
+            {suggestions.items.length > 0 && (
+              <ul className="cx-cmd-suggest" role="listbox" aria-label="Command suggestions">
+                {suggestions.items.map((s, i) => (
+                  <li key={s.value} className={`cx-cmd-suggest-item${i === 0 ? ' cx-cmd-suggest-active' : ''}`}>
+                    <button
+                      type="button"
+                      className="cx-cmd-suggest-btn"
+                      onMouseDown={(e) => { e.preventDefault(); completeSuggestion(s.value); }}
+                    >
+                      <span className="cx-cmd-suggest-name">{s.value}</span>
+                      <span className="cx-cmd-suggest-desc">{s.desc}</span>
+                    </button>
+                  </li>
+                ))}
+                <li className="cx-cmd-suggest-foot">
+                  <span><kbd>Tab</kbd> complete</span>
+                  <span><kbd>↑↓</kbd> cycle</span>
+                  <span><kbd>↵</kbd> run</span>
+                </li>
+              </ul>
             )}
             <div className="cx-prompt-card">
               <div className="cx-prompt-card-row">

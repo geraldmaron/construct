@@ -68,6 +68,7 @@ function parseSessionMeta(event: Record<string, unknown>): SessionMeta {
 function createTurn(userText: string, system = false): ChatTurn {
   return {
     id: `turn-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    createdAt: Date.now(),
     userText: system ? '' : userText,
     assistant: system ? userText : '',
     thinking: '',
@@ -120,32 +121,50 @@ function applyEvent(turn: ChatTurn, event: Record<string, unknown>): ChatTurn {
   return next;
 }
 
+// Settings grouped by intent. Each carries a one-line description so the picker
+// says what the setting does, not just its name. `thinking` lives only here as a
+// transparency layer — it and the layer entry were the same toggle.
 const SETTING_KEY_ITEMS: PickerItem[] = [
-  { id: 'thinking', label: 'thinking', tag: 'bool' },
-  ...LAYER_KEYS.map((k) => ({ id: k, label: k, tag: 'layer' })),
-  { id: 'permission', label: 'permission mode', tag: 'enum' },
-  { id: 'sandbox', label: 'sandbox', tag: 'enum' },
-  { id: 'inspector', label: 'inspector panel', tag: 'enum' },
-  { id: 'theme', label: 'color theme', tag: 'enum' },
-  { id: 'model', label: 'model', tag: 'model' },
+  { id: 'thinking', label: 'thinking', group: 'Transparency — what each turn shows', detail: 'show the model’s reasoning before the answer' },
+  { id: 'path', label: 'path', group: 'Transparency — what each turn shows', detail: 'show the routing path for each turn' },
+  { id: 'specialists', label: 'specialists', group: 'Transparency — what each turn shows', detail: 'show which specialists were engaged' },
+  { id: 'tools', label: 'tools', group: 'Transparency — what each turn shows', detail: 'show tool calls — reads, writes, commands' },
+  { id: 'observability', label: 'observability', group: 'Transparency — what each turn shows', detail: 'show token usage and telemetry' },
+  { id: 'permission', label: 'permission', group: 'Safety — what Construct may do', detail: 'when tools run without asking you first' },
+  { id: 'sandbox', label: 'sandbox', group: 'Safety — what Construct may do', detail: 'what files the tools are allowed to change' },
+  { id: 'inspector', label: 'inspector panel', group: 'Appearance', detail: 'when the side telemetry panel is shown' },
+  { id: 'theme', label: 'color theme', group: 'Appearance', detail: 'light, dark, or follow the system' },
+  { id: 'model', label: 'model', group: 'Model', detail: 'choose the model that answers' },
 ];
 
 const BOOL_ITEMS: PickerItem[] = [
-  { id: 'on', label: 'on' },
-  { id: 'off', label: 'off' },
+  { id: 'on', label: 'on', detail: 'show this in every turn' },
+  { id: 'off', label: 'off', detail: 'hide this' },
 ];
 
 const PERMISSION_ITEMS: PickerItem[] = [
-  { id: 'ask', label: 'ask' },
-  { id: 'allow_once', label: 'allow_once' },
-  { id: 'allow_always', label: 'allow_always' },
-  { id: 'reject', label: 'reject' },
+  { id: 'ask', label: 'ask', detail: 'prompt before every tool run (safest)' },
+  { id: 'allow_once', label: 'allow once', detail: 'allow tools for this session only' },
+  { id: 'allow_always', label: 'allow always', detail: 'never prompt — tools run freely' },
+  { id: 'reject', label: 'reject', detail: 'block all tool runs' },
 ];
 
 const SANDBOX_ITEMS: PickerItem[] = [
-  { id: 'read-only', label: 'read-only' },
-  { id: 'workspace-write', label: 'workspace-write' },
-  { id: 'danger-full-access', label: 'danger-full-access' },
+  { id: 'read-only', label: 'read-only', detail: 'tools can read but never write' },
+  { id: 'workspace-write', label: 'workspace-write', detail: 'tools may write inside this project' },
+  { id: 'danger-full-access', label: 'danger-full-access', detail: 'tools may write anywhere on disk' },
+];
+
+const INSPECTOR_ITEMS: PickerItem[] = [
+  { id: 'off', label: 'off', detail: 'never show the inspector panel' },
+  { id: 'auto', label: 'auto', detail: 'show it when a turn has detail' },
+  { id: 'on', label: 'on', detail: 'always show the inspector panel' },
+];
+
+const THEME_ITEMS: PickerItem[] = [
+  { id: 'auto', label: 'auto', detail: 'follow the system appearance' },
+  { id: 'light', label: 'light', detail: 'light background' },
+  { id: 'dark', label: 'dark', detail: 'dark background' },
 ];
 
 export function useChatStream() {
@@ -158,7 +177,7 @@ export function useChatStream() {
   const [pending, setPending] = useState<PendingPermission | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false);
-  const [routeDrawerOpen, setRouteDrawerOpen] = useState(false);
+  const [routeDrawerOpen, setRouteDrawerOpen] = useState(true);
   const [picker, setPicker] = useState<{ title: string; items: PickerItem[]; selectedId?: string | null; kind: string; context?: string } | null>(null);
   const convRef = useRef<string | null>(null);
   const resumedRef = useRef(false);
@@ -305,39 +324,29 @@ export function useChatStream() {
       void openModelPicker();
       return;
     }
-    if (item.tag === 'bool' || item.tag === 'layer') {
+    if ((LAYER_KEYS as readonly string[]).includes(item.id)) {
       setPicker({
         kind: 'set-value',
-        title: `/set ${item.id}`,
+        title: `${item.label} — on or off`,
         items: BOOL_ITEMS,
         context: item.id,
       });
       return;
     }
     if (item.id === 'permission') {
-      setPicker({ kind: 'set-value', title: '/set permission', items: PERMISSION_ITEMS, context: 'permission' });
+      setPicker({ kind: 'set-value', title: 'permission mode', items: PERMISSION_ITEMS, context: 'permission' });
       return;
     }
     if (item.id === 'sandbox') {
-      setPicker({ kind: 'set-value', title: '/set sandbox', items: SANDBOX_ITEMS, context: 'sandbox' });
+      setPicker({ kind: 'set-value', title: 'sandbox', items: SANDBOX_ITEMS, context: 'sandbox' });
       return;
     }
     if (item.id === 'inspector') {
-      setPicker({
-        kind: 'set-value',
-        title: '/set inspector',
-        items: [{ id: 'off', label: 'off' }, { id: 'auto', label: 'auto' }, { id: 'on', label: 'on' }],
-        context: 'inspector',
-      });
+      setPicker({ kind: 'set-value', title: 'inspector panel', items: INSPECTOR_ITEMS, context: 'inspector' });
       return;
     }
     if (item.id === 'theme') {
-      setPicker({
-        kind: 'set-value',
-        title: '/set theme',
-        items: [{ id: 'auto', label: 'auto' }, { id: 'light', label: 'light' }, { id: 'dark', label: 'dark' }],
-        context: 'theme',
-      });
+      setPicker({ kind: 'set-value', title: 'color theme', items: THEME_ITEMS, context: 'theme' });
     }
   }, [openModelPicker]);
 

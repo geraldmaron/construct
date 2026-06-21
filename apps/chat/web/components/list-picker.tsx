@@ -172,13 +172,16 @@ export function ListPicker({ title, items, selectedId, onSelect, onCancel }: Lis
                 >
                   <span className="cx-cockpit-picker-mark" aria-hidden="true">{isSelected ? '●' : isActive ? '›' : ''}</span>
                   <span className="cx-cockpit-picker-mid">
-                    <span className="cx-cockpit-picker-name">{item.label || item.id}</span>
-                    {item.tag ? <span className={`cx-cockpit-badge cx-cockpit-badge-${item.tag}`}>{item.tag}</span> : null}
-                    {(item.badges || []).map((b: string) => (
-                      <span key={b} className={`cx-cockpit-badge cx-cockpit-badge-${b}`}>{b}</span>
-                    ))}
+                    <span className="cx-cockpit-picker-row">
+                      <span className="cx-cockpit-picker-name">{item.label || item.id}</span>
+                      {item.tag ? <span className={`cx-cockpit-badge cx-cockpit-badge-${item.tag}`}>{item.tag}</span> : null}
+                      {(item.badges || []).map((b: string) => (
+                        <span key={b} className={`cx-cockpit-badge cx-cockpit-badge-${b}`}>{b}</span>
+                      ))}
+                    </span>
+                    {item.detail ? <span className="cx-cockpit-picker-sub">{item.detail}</span> : null}
                   </span>
-                  <span className="cx-cockpit-picker-meta">{item.price || item.detail || ''}</span>
+                  <span className="cx-cockpit-picker-meta">{item.price || ''}</span>
                 </button>
               </li>
             );

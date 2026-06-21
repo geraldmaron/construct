@@ -75,10 +75,10 @@ export function ToolCardList({ tools, visible }: ToolCardListProps) {
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
       >
+        <span className="cx-tool-chevron" aria-hidden>›</span>
         <span className="cx-tool-summary-label">Tools</span>
         <span className="cx-tool-summary-count">{summary}</span>
         {hasWorking && <span className="cx-tool-working-dot" aria-label="tools running" />}
-        <span className="cx-tool-chevron" aria-hidden>{expanded ? '▴' : '▾'}</span>
       </button>
       {expanded && (
         <div className="cx-tool-cards">

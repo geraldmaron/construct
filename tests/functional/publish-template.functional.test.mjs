@@ -75,11 +75,10 @@ test('parseArtifactMetadata reads golden fixture fields', () => {
 test('bundled distribution fonts ship with templates', () => {
   const fontDir = path.join(REPO, 'templates', 'distribution', 'fonts');
   for (const file of [
-    'PlusJakartaSans-Regular.ttf',
-    'PlusJakartaSans-Medium.ttf',
-    'PlusJakartaSans-SemiBold.ttf',
-    'PlusJakartaSans-Bold.ttf',
-    'IBMPlexMono-Regular.otf',
+    'SpaceGrotesk-Variable.ttf',
+    'JetBrainsMono-Regular.ttf',
+    'JetBrainsMono-Medium.ttf',
+    'JetBrainsMono-SemiBold.ttf',
   ]) {
     assert.ok(fs.existsSync(path.join(fontDir, file)), `missing font ${file}`);
   }
@@ -167,9 +166,9 @@ test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME and sketch flag', () =
   assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '640');
 });
 
-test('construct-brand.typ uses Plus Jakarta Sans family names for body prose', () => {
+test('construct-brand.typ uses Space Grotesk family names for body prose', () => {
   const brand = fs.readFileSync(path.join(REPO, 'templates', 'distribution', 'construct-brand.typ'), 'utf8');
-  assert.match(brand, /construct-font-sans = \("Plus Jakarta Sans",\)/);
+  assert.match(brand, /construct-font-sans = \("Space Grotesk",\)/);
   assert.match(brand, /set text\(font: construct-font-sans[\s\S]*justify: false/);
   assert.doesNotMatch(brand, /Libertinus|SourceSerif|Geist|IBM Plex Sans|"Inter"/);
   assert.match(brand, /construct-figure-max-width = 74%/);

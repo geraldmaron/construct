@@ -62,6 +62,30 @@ test('loadModelPickerItems groups live provider models with capability badges', 
   assert.equal(llama.tag, 'free');
 });
 
+test('loadModelPickerItems drops known tool-incapable models but keeps unknown ones', async () => {
+  const { loadModelPickerItems } = await import('../../lib/chat/model-picker.mjs');
+
+  const pollProviders = async () => ([
+    { id: 'openrouter', label: 'OpenRouter', live: true, models: [
+      // provider reported no tool support → the chat loop would always error → filtered
+      { id: 'openrouter/meta-llama/llama-3.2-3b-instruct:free', label: 'Llama 3.2 3B', provider: 'openrouter', free: true, pricing: { input: 0, output: 0 }, reasoning: false, tools: false, toolsKnown: true, vision: false, source: 'live' },
+      // tool-capable → kept
+      { id: 'openrouter/anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet', provider: 'openrouter', free: false, pricing: { input: 3, output: 15 }, reasoning: true, tools: true, toolsKnown: true, vision: true, source: 'live' },
+    ] },
+    { id: 'ollama', label: 'Ollama (local)', live: true, models: [
+      // tool support unknown for a local tag → stays selectable
+      { id: 'ollama/llama3.1:8b', label: 'llama3.1:8b', provider: 'ollama', free: true, pricing: { input: 0, output: 0 }, reasoning: false, tools: false, toolsKnown: false, vision: false, source: 'live' },
+    ] },
+  ]);
+
+  const items = await loadModelPickerItems(null, { env: {}, pollProviders });
+  const ids = items.map((i) => i.id);
+
+  assert.ok(!ids.includes('openrouter/meta-llama/llama-3.2-3b-instruct:free'), 'known tool-incapable model is filtered out');
+  assert.ok(ids.includes('openrouter/anthropic/claude-3.5-sonnet'), 'tool-capable model is kept');
+  assert.ok(ids.includes('ollama/llama3.1:8b'), 'unknown-capability local model is kept');
+});
+
 test('configuredTierPickerItems only includes tier defaults from configured providers', async () => {
   const { getProviderModelCatalog } = await import('../../lib/model-router.mjs');
   const { items } = configuredTierPickerItems({ env: process.env });

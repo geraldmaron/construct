@@ -30,6 +30,7 @@ export type ChatTool = {
 
 export type ChatTurn = {
   id: string;
+  createdAt?: number;
   userText: string;
   assistant: string;
   thinking: string;

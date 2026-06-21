@@ -9,19 +9,31 @@ import { fileURLToPath } from 'node:url';
 
 import {
   BRAND_SANS_FAMILY,
+  BRAND_MONO_FAMILY,
   bundledSansFontPaths,
+  bundledMonoFontPaths,
   createPptxGenerator,
 } from '../lib/brand-fonts.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-test('BRAND_SANS_FAMILY is Plus Jakarta Sans', () => {
-  assert.equal(BRAND_SANS_FAMILY, 'Plus Jakarta Sans');
+test('BRAND_SANS_FAMILY is Space Grotesk', () => {
+  assert.equal(BRAND_SANS_FAMILY, 'Space Grotesk');
 });
 
-test('bundledSansFontPaths returns four Jakarta TTF cuts', () => {
+test('BRAND_MONO_FAMILY is JetBrains Mono', () => {
+  assert.equal(BRAND_MONO_FAMILY, 'JetBrains Mono');
+});
+
+test('bundledSansFontPaths returns the Space Grotesk variable TTF', () => {
   const paths = bundledSansFontPaths(REPO);
-  assert.equal(paths.length, 4);
+  assert.equal(paths.length, 1);
+  assert.ok(paths.every((p) => p.endsWith('.ttf')));
+});
+
+test('bundledMonoFontPaths returns three JetBrains Mono TTF cuts', () => {
+  const paths = bundledMonoFontPaths(REPO);
+  assert.equal(paths.length, 3);
   assert.ok(paths.every((p) => p.endsWith('.ttf')));
 });
 

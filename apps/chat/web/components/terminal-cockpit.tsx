@@ -126,19 +126,44 @@ export function TerminalCockpit() {
       />
 
       <div className="cx-cockpit-body">
-        <div className="cx-cockpit-main">
-          <EventLog
-            turns={turns}
-            layers={layers}
+        <div className="cx-cockpit-conversation">
+          <div className="cx-cockpit-main">
+            <EventLog
+              turns={turns}
+              layers={layers}
+              sessionMeta={sessionMeta}
+              streaming={streaming}
+              onOpenModelPicker={() => void openModelPicker()}
+              onOpenSettingsPicker={openSettingsPicker}
+              onSelectTurn={setActiveTurnId}
+              activeTurnId={activeTurnId}
+              onOpenInspector={openInspectorForTurn}
+            />
+          </div>
+
+          <CliPrompt
+            disabled={streaming}
+            pickerActive={Boolean(picker)}
             sessionMeta={sessionMeta}
-            streaming={streaming}
-            onOpenModelPicker={() => void openModelPicker()}
-            onOpenSettingsPicker={openSettingsPicker}
-            onSelectTurn={setActiveTurnId}
-            activeTurnId={activeTurnId}
-            onOpenInspector={openInspectorForTurn}
+            layers={layers}
+            onSubmit={(text) => void sendMessage(text)}
           />
         </div>
+
+        <InspectorPanel
+          isOpen={routeDrawerOpen}
+          activeTab={inspectorTab}
+          onClose={closeInspector}
+          onTabChange={(tab) => setInspectorTab(tab)}
+          sessionMeta={sessionMeta}
+          turns={turns}
+          layers={layers}
+          overlay={inspectorOverlay}
+          streaming={streaming}
+          onToggleLayer={toggleLayer}
+          onOpenModelPicker={() => void openModelPicker()}
+          onOpenSettingsPicker={openSettingsPicker}
+        />
       </div>
 
       {picker ? (
@@ -166,28 +191,6 @@ export function TerminalCockpit() {
           <p className="cx-cockpit-muted">y allow · a always · n reject</p>
         </div>
       ) : null}
-
-      <CliPrompt
-        disabled={streaming}
-        pickerActive={Boolean(picker)}
-        sessionMeta={sessionMeta}
-        layers={layers}
-        onSubmit={(text) => void sendMessage(text)}
-      />
-
-      <InspectorPanel
-        isOpen={routeDrawerOpen}
-        activeTab={inspectorTab}
-        onClose={closeInspector}
-        onTabChange={(tab) => setInspectorTab(tab)}
-        sessionMeta={sessionMeta}
-        layers={layers}
-        overlay={inspectorOverlay}
-        streaming={streaming}
-        onToggleLayer={toggleLayer}
-        onOpenModelPicker={() => void openModelPicker()}
-        onOpenSettingsPicker={openSettingsPicker}
-      />
     </div>
   );
 }

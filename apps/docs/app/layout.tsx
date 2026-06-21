@@ -1,24 +1,25 @@
 /**
  * Root layout for the Construct docs site.
  *
- * Loads Geist (sans + display) and JetBrains Mono via next/font/google so
- * they're inlined as CSS variables that theme.css consumes. AppShell renders
+ * Loads Space Grotesk (sans + display) and JetBrains Mono via next/font/google
+ * so they're inlined as CSS variables that theme.css consumes. AppShell renders
  * the topbar + sidebar + main grid and owns runtime theme/density/motion
  * state.
  */
 
 import type { ReactNode } from 'react';
-import { Geist, JetBrains_Mono } from 'next/font/google';
+import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import './theme.css';
 import { AppShell } from '@/components/app-shell';
 
-const sans = Geist({
+const sans = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-sans',
   display: 'swap',
+  weight: ['400', '500', '600', '700'],
 });
 
-const display = Geist({
+const display = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-display',
   display: 'swap',

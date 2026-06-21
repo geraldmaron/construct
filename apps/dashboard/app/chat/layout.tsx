@@ -1,19 +1,19 @@
 /**
- * Chat route layout — Plus Jakarta Sans / IBM Plex Mono and immersive shell.
+ * Chat route layout — Space Grotesk / JetBrains Mono and immersive shell.
  */
 
 import type { ReactNode } from 'react';
-import { IBM_Plex_Mono, Plus_Jakarta_Sans } from 'next/font/google';
+import { JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 import { ChatShell } from './chat-shell';
 
-const chatSans = Plus_Jakarta_Sans({
+const chatSans = Space_Grotesk({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-chat-sans',
   display: 'swap',
 });
 
-const chatMono = IBM_Plex_Mono({
+const chatMono = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
   variable: '--font-chat-mono',

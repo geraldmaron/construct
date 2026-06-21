@@ -1,31 +1,33 @@
 /**
  * apps/chat/web/theme/tokens.css — conversational chat styling with monochrome tokens.
  *
- * Design system: Plus Jakarta Sans typography, monochrome ink ramp, semantic status colors.
+ * Design system: Space Grotesk + JetBrains Mono typography on a pure-black canvas.
+ * White is the sole accent; surfaces and borders are translucent white over #000.
+ * Mono carries every label, metric, and metadata chip; sans carries prose.
  */
 
 .cx-cockpit {
-  --cx-chat-bg: #0c1018;
-  --cx-chat-surface: #101620;
-  --cx-chat-surface-raised: #141b28;
-  --cx-chat-surface-hover: #1a2235;
-  --cx-chat-border: #3a4150;
-  --cx-chat-border-strong: #565c66;
-  --cx-chat-text: #e8eaed;
-  --cx-chat-muted: #8a9199;
-  --cx-chat-faint: #4a5060;
-  --cx-chat-accent: #7c9ef8;
-  --cx-chat-accent-subtle: color-mix(in srgb, #7c9ef8 12%, transparent);
-  --cx-chat-accent-alt: #a5c8f5;
-  --cx-chat-warn: #e5c07b;
-  --cx-chat-danger: #e06c75;
-  --cx-chat-ok: #98c379;
-  --cx-chat-info: #56b6c2;
-  --cx-chat-font: var(--font-chat-sans, 'Plus Jakarta Sans'), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --cx-chat-mono: var(--font-chat-mono, 'IBM Plex Mono'), ui-monospace, 'SF Mono', Menlo, monospace;
+  --cx-chat-bg: #000000;
+  --cx-chat-surface: rgba(255, 255, 255, 0.018);
+  --cx-chat-surface-raised: rgba(255, 255, 255, 0.03);
+  --cx-chat-surface-hover: rgba(255, 255, 255, 0.06);
+  --cx-chat-border: rgba(255, 255, 255, 0.08);
+  --cx-chat-border-strong: rgba(255, 255, 255, 0.14);
+  --cx-chat-text: #ededed;
+  --cx-chat-muted: #9a9a9e;
+  --cx-chat-faint: #5a5a5e;
+  --cx-chat-accent: #ffffff;
+  --cx-chat-accent-subtle: rgba(255, 255, 255, 0.06);
+  --cx-chat-accent-alt: #cfcfd2;
+  --cx-chat-warn: #cfcfd2;
+  --cx-chat-danger: #d08a8a;
+  --cx-chat-ok: #ededed;
+  --cx-chat-info: #b4b4b4;
+  --cx-chat-font: var(--font-chat-sans, 'Space Grotesk'), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --cx-chat-mono: var(--font-chat-mono, 'JetBrains Mono'), ui-monospace, 'SF Mono', Menlo, monospace;
 
   --cx-conv-max-w: 760px;
-  --cx-inspector-w: 360px;
+  --cx-inspector-w: 344px;
   --cx-topbar-h: 48px;
 
   --cx-space-1: 4px;
@@ -35,8 +37,8 @@
   --cx-space-5: 24px;
   --cx-space-6: 32px;
   flex: 1;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   font-family: var(--cx-chat-font);
   font-size: 14px;
@@ -46,21 +48,22 @@
 }
 
 [data-theme='light'] .cx-cockpit {
-  --cx-chat-bg: #f8f9fb;
-  --cx-chat-surface: #f3f4f6;
-  --cx-chat-surface-raised: #ffffff;
-  --cx-chat-surface-hover: #f0f1f3;
-  --cx-chat-border: #d1d5db;
-  --cx-chat-border-strong: #9ca3af;
-  --cx-chat-text: #0a0c10;
-  --cx-chat-muted: #565c66;
-  --cx-chat-faint: #e5e7eb;
-  --cx-chat-accent: #2563eb;
-  --cx-chat-accent-subtle: #dbeafe;
-  --cx-chat-accent-alt: #1d4ed8;
-  --cx-chat-warn: #a16207;
-  --cx-chat-ok: #15803d;
-  --cx-chat-info: #0891b2;
+  --cx-chat-bg: #ffffff;
+  --cx-chat-surface: rgba(0, 0, 0, 0.02);
+  --cx-chat-surface-raised: rgba(0, 0, 0, 0.035);
+  --cx-chat-surface-hover: rgba(0, 0, 0, 0.06);
+  --cx-chat-border: rgba(0, 0, 0, 0.1);
+  --cx-chat-border-strong: rgba(0, 0, 0, 0.18);
+  --cx-chat-text: #0a0a0a;
+  --cx-chat-muted: #565656;
+  --cx-chat-faint: #a0a0a0;
+  --cx-chat-accent: #0a0a0a;
+  --cx-chat-accent-subtle: rgba(0, 0, 0, 0.06);
+  --cx-chat-accent-alt: #2b2b2b;
+  --cx-chat-warn: #565656;
+  --cx-chat-danger: #b04848;
+  --cx-chat-ok: #0a0a0a;
+  --cx-chat-info: #565656;
 }
 
 /* Conversational header: minimal top bar */
@@ -70,29 +73,74 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 16px;
+  min-height: 58px;
+  padding: 0 20px;
   border-bottom: 1px solid var(--cx-chat-border);
-  background: linear-gradient(180deg, var(--cx-chat-surface-raised) 0%, var(--cx-chat-bg) 100%);
+  background: var(--cx-chat-bg);
 }
 
 .cx-conv-header-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
 }
 
 .cx-conv-brand-mark {
-  font-size: 16px;
-  color: var(--cx-chat-accent);
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--cx-chat-accent);
+  transform: rotate(45deg);
   flex-shrink: 0;
 }
 
 .cx-conv-brand-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--cx-chat-text);
+}
+
+.cx-conv-session-pill {
+  font-family: var(--cx-chat-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--cx-chat-faint);
+  border: 1px solid var(--cx-chat-border);
+  padding: 3px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.cx-conv-total-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--cx-chat-mono);
+  font-size: 12px;
+  color: var(--cx-chat-accent-alt);
+  border: 1px solid var(--cx-chat-border);
+  background: var(--cx-chat-surface-raised);
+  padding: 6px 11px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+
+.cx-conv-total-label {
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: var(--cx-chat-faint);
+}
+
+.cx-conv-total-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.cx-conv-total-unit {
+  color: var(--cx-chat-faint);
 }
 
 .cx-conv-header-right {
@@ -103,19 +151,26 @@
 }
 
 .cx-conv-model-chip {
-  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--cx-chat-mono);
   font-size: 12px;
-  padding: 6px 10px;
+  padding: 6px 11px;
   border: 1px solid var(--cx-chat-border);
-  border-radius: 6px;
-  background: var(--cx-chat-surface);
-  color: var(--cx-chat-text);
+  border-radius: 7px;
+  background: var(--cx-chat-surface-raised);
+  color: var(--cx-chat-accent-alt);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .cx-conv-model-chip:hover {
-  border-color: var(--cx-chat-accent);
+  border-color: var(--cx-chat-border-strong);
+}
+
+.cx-conv-model-caret {
+  color: var(--cx-chat-faint);
 }
 
 .cx-conv-model-chip:focus-visible {
@@ -129,18 +184,19 @@
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: var(--cx-chat-accent);
 }
 
 .cx-conv-status-ready {
-  background: var(--cx-chat-ok);
+  animation: cx-conv-pulse 2.4s ease-in-out infinite;
 }
 
 .cx-conv-status-working {
-  background: var(--cx-chat-warn);
   animation: cx-conv-pulse 1s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .cx-conv-status-ready,
   .cx-conv-status-working {
     animation: none;
     opacity: 0.7;
@@ -148,7 +204,7 @@
 }
 
 @keyframes cx-conv-pulse {
-  50% { opacity: 0.45; }
+  50% { opacity: 0.3; }
 }
 
 .cx-conv-ctx-label {
@@ -158,18 +214,24 @@
 }
 
 .cx-conv-inspector-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
   font-family: inherit;
-  font-size: 14px;
-  padding: 4px 8px;
-  border: none;
-  background: none;
-  color: var(--cx-chat-muted);
+  font-size: 15px;
+  border: 1px solid var(--cx-chat-border);
+  border-radius: 7px;
+  background: var(--cx-chat-surface-raised);
+  color: var(--cx-chat-accent-alt);
   cursor: pointer;
 }
 
 .cx-conv-inspector-toggle:hover,
 .cx-conv-inspector-open {
   color: var(--cx-chat-text);
+  border-color: var(--cx-chat-border-strong);
 }
 
 .cx-conv-inspector-toggle:focus-visible {
@@ -179,8 +241,20 @@
 
 /* Conversational transcript and turns */
 .cx-cockpit-body {
+  flex: 1;
   min-height: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: row;
+}
+
+/* The conversation column owns the scroll area and the composer; the inspector
+   sits beside it as an in-flow sibling so it never overlaps the chat. */
+
+.cx-cockpit-conversation {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -188,7 +262,6 @@
 .cx-cockpit-main {
   flex: 1;
   min-height: 0;
-  height: 100%;
   overflow: hidden;
 }
 
@@ -196,16 +269,17 @@
   flex: 1;
   height: 100%;
   overflow-y: auto;
-  padding: 24px 32px;
+  padding: 36px 0 28px;
   box-sizing: border-box;
 }
 
 .cx-conv-transcript {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 0;
   max-width: var(--cx-conv-max-w, 760px);
   margin: 0 auto;
+  padding: 0 32px;
 }
 
 .cx-conv-system-notice {
@@ -327,12 +401,13 @@
 }
 
 .cx-cockpit-dock-heading {
-  margin: 0 0 6px;
-  font-size: 11px;
-  font-weight: 600;
+  margin: 0 0 13px;
+  font-family: var(--cx-chat-mono);
+  font-size: 9.5px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--cx-chat-muted);
+  letter-spacing: 0.18em;
+  color: var(--cx-chat-faint);
 }
 
 .cx-cockpit-dock-body {
@@ -386,6 +461,140 @@
   font-family: var(--cx-chat-mono);
 }
 
+/* ─── Inspector session telemetry ─────────────────────────────── */
+
+.cx-tel-total {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.cx-tel-total-value {
+  font-size: 42px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--cx-chat-text);
+}
+
+.cx-tel-total-unit {
+  font-family: var(--cx-chat-mono);
+  font-size: 12px;
+  color: var(--cx-chat-faint);
+  margin-bottom: 5px;
+}
+
+.cx-tel-split {
+  margin: 0 0 9px;
+  font-family: var(--cx-chat-mono);
+  font-size: 11px;
+  color: var(--cx-chat-muted);
+}
+
+.cx-tel-meter {
+  height: 6px;
+  border-radius: 4px;
+  background: var(--cx-chat-surface-hover);
+  overflow: hidden;
+  margin-bottom: 7px;
+}
+
+.cx-tel-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--cx-chat-accent);
+}
+
+.cx-tel-meter-foot {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--cx-chat-mono);
+  font-size: 10.5px;
+  color: var(--cx-chat-faint);
+}
+
+.cx-tel-trio {
+  display: flex;
+  border: 1px solid var(--cx-chat-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 18px;
+}
+
+.cx-tel-stat {
+  flex: 1;
+  padding: 13px 0;
+  text-align: center;
+  border-right: 1px solid var(--cx-chat-border);
+}
+
+.cx-tel-stat:last-child {
+  border-right: none;
+}
+
+.cx-tel-stat-value {
+  font-size: 21px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--cx-chat-text);
+}
+
+.cx-tel-stat-label {
+  font-family: var(--cx-chat-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--cx-chat-faint);
+  margin-top: 3px;
+}
+
+.cx-tel-spec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.cx-tel-spec-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.cx-tel-spec-name {
+  font-family: var(--cx-chat-mono);
+  font-size: 12px;
+  color: var(--cx-chat-accent-alt);
+  flex: none;
+  width: 108px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cx-tel-spec-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--cx-chat-surface-hover);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.cx-tel-spec-fill {
+  display: block;
+  height: 100%;
+  background: color-mix(in srgb, var(--cx-chat-accent) 55%, transparent);
+}
+
+.cx-tel-spec-count {
+  font-family: var(--cx-chat-mono);
+  font-size: 11px;
+  color: var(--cx-chat-muted);
+  width: 14px;
+  text-align: right;
+}
+
 /* Layers and toggles */
 .cx-cockpit-layer-row {
   display: flex;
@@ -417,29 +626,95 @@
 .cx-cockpit-md {
   margin: 0;
   font-family: inherit;
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #e6e6e8;
 }
 
 .cx-cockpit-md-heading {
-  font-weight: 700;
-  margin: 12px 0 4px;
+  font-weight: 600;
+  margin: 18px 0 6px;
   color: var(--cx-chat-text);
+  letter-spacing: -0.01em;
+}
+
+.cx-cockpit-md-h1 { font-size: 19px; }
+.cx-cockpit-md-h2 { font-size: 17px; }
+.cx-cockpit-md-h3 { font-size: 15px; }
+.cx-cockpit-md-h4 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cx-chat-muted);
+}
+
+.cx-cockpit-md-heading:first-child {
+  margin-top: 0;
 }
 
 .cx-cockpit-md-line {
-  margin: 2px 0;
+  margin: 8px 0;
+}
+
+/* List rows use a hanging marker (flex) so wrapped lines align under the text,
+   not under the bullet; nested levels indent via an inline margin-left. */
+
+.cx-cockpit-md-li {
+  display: flex;
+  gap: 9px;
+  margin: 5px 0;
+  align-items: baseline;
+}
+
+.cx-cockpit-md-marker {
+  flex: none;
+  color: var(--cx-chat-faint);
+  user-select: none;
+}
+
+.cx-cockpit-md-marker-num {
+  font-variant-numeric: tabular-nums;
+  min-width: 1.2em;
+  text-align: right;
+  color: var(--cx-chat-muted);
+}
+
+.cx-cockpit-md-strong {
+  font-weight: 600;
+  color: var(--cx-chat-text);
+}
+
+.cx-cockpit-md-icode {
+  font-family: var(--cx-chat-mono);
+  font-size: 0.86em;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--cx-chat-text);
+}
+
+.cx-cockpit-md-link {
+  color: var(--cx-chat-text);
+  text-decoration: underline;
+  text-decoration-color: var(--cx-chat-border-strong);
+  text-underline-offset: 2px;
+}
+
+.cx-cockpit-md-link:hover {
+  text-decoration-color: var(--cx-chat-accent);
 }
 
 .cx-cockpit-md-code {
-  margin: 8px 0;
-  padding: 8px 10px;
-  background: var(--cx-chat-bg);
-  border: 1px solid color-mix(in srgb, var(--cx-chat-border) 50%, transparent);
-  border-radius: 4px;
+  margin: 12px 0 16px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--cx-chat-border);
+  border-radius: 10px;
   overflow-x: auto;
   font-family: var(--cx-chat-mono);
-  font-size: 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #cfcfd2;
 }
 
 .cx-cockpit-md-blank {
@@ -763,10 +1038,10 @@ body.cx-cockpit-picker-open {
   text-align: left;
   font-family: inherit;
   font-size: 13px;
-  padding: 7px 8px;
+  padding: 9px 9px;
   border: none;
   border-left: 2px solid transparent;
-  border-radius: 4px;
+  border-radius: 6px;
   background: none;
   color: var(--cx-chat-text);
   cursor: pointer;
@@ -793,8 +1068,15 @@ body.cx-cockpit-picker-open {
 
 .cx-cockpit-picker-mid {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cx-cockpit-picker-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -804,7 +1086,14 @@ body.cx-cockpit-picker-open {
   white-space: nowrap;
 }
 
-.cx-cockpit-picker-mid .cx-cockpit-badge {
+.cx-cockpit-picker-sub {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--cx-chat-muted);
+  white-space: normal;
+}
+
+.cx-cockpit-picker-row .cx-cockpit-badge {
   flex-shrink: 0;
 }
 
@@ -847,34 +1136,35 @@ body.cx-cockpit-picker-open {
 
 /* Empty state */
 .cx-cockpit-welcome {
-  max-width: 640px;
-  margin: 40px auto;
-  padding: 24px;
-  border: 1px solid var(--cx-chat-border);
-  border-radius: 8px;
-  background: var(--cx-chat-surface);
+  max-width: var(--cx-conv-max-w, 760px);
+  margin: 0 auto;
+  padding: 8px 32px 0;
 }
 
 .cx-cockpit-welcome-eyebrow {
-  margin: 0 0 8px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  margin: 0 0 14px;
+  font-family: var(--cx-chat-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--cx-chat-muted);
+  color: var(--cx-chat-faint);
 }
 
 .cx-cockpit-welcome-title {
-  margin: 0 0 12px;
-  font-size: 18px;
-  font-weight: 700;
+  margin: 0 0 14px;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   color: var(--cx-chat-text);
 }
 
 .cx-cockpit-welcome-lede {
-  margin: 0 0 16px;
-  font-size: 13px;
+  margin: 0 0 24px;
+  font-size: 15px;
+  line-height: 1.6;
   color: var(--cx-chat-muted);
+  max-width: 58ch;
 }
 
 .cx-cockpit-welcome-actions {
@@ -911,13 +1201,19 @@ body.cx-cockpit-picker-open {
 
 .cx-cockpit-welcome-list {
   margin: 0;
-  padding-left: 16px;
-  color: var(--cx-chat-muted);
-  font-size: 12px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--cx-chat-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--cx-chat-faint);
 }
 
 .cx-cockpit-welcome-list li {
-  margin-bottom: 4px;
+  margin: 0;
 }
 
 /* Routes and sources */
@@ -956,14 +1252,19 @@ body.cx-cockpit-picker-open {
   display: flex;
   flex-direction: column;
   gap: 0;
-  border-radius: 8px;
   transition: background 150ms;
   cursor: default;
 }
 
+.cx-turn-block:not(:last-child) {
+  padding-bottom: 34px;
+  margin-bottom: 34px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
 .cx-turn-block-active .cx-turn-response {
-  border-left: 2px solid var(--cx-chat-accent);
-  padding-left: 12px;
+  border-left: none;
+  padding-left: 0;
 }
 
 .cx-turn-block-streaming {
@@ -1016,25 +1317,341 @@ body.cx-cockpit-picker-open {
   font-style: italic;
 }
 
-/* ─── User bubble ─────────────────────────────────────────────── */
+/* ─── User message ────────────────────────────────────────────── */
 
 .cx-user-bubble {
-  align-self: flex-start;
-  max-width: 88%;
-  padding: 10px 14px;
-  background: var(--cx-chat-surface-raised);
-  border: 1px solid var(--cx-chat-border);
-  border-radius: 8px 8px 8px 2px;
+  margin-bottom: 28px;
+}
+
+.cx-user-bubble-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   margin-bottom: 10px;
+}
+
+.cx-user-bubble-label {
+  font-family: var(--cx-chat-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--cx-chat-faint);
+}
+
+.cx-user-bubble-time {
+  font-family: var(--cx-chat-mono);
+  font-size: 10.5px;
+  color: var(--cx-chat-faint);
 }
 
 .cx-user-bubble-text {
   margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.55;
   color: var(--cx-chat-text);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* ─── Assistant header + metadata rail ────────────────────────── */
+
+.cx-construct-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.cx-construct-ident {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.cx-construct-mark {
+  width: 9px;
+  height: 9px;
+  border-radius: 1px;
+  background: var(--cx-chat-accent);
+  transform: rotate(45deg);
+}
+
+.cx-construct-label {
+  font-family: var(--cx-chat-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--cx-chat-muted);
+}
+
+.cx-construct-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cx-usage-chip {
+  font-family: var(--cx-chat-mono);
+  font-size: 11px;
+  color: var(--cx-chat-muted);
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--cx-chat-border);
+  padding: 4px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.cx-turn-detail-btn {
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 6px;
+  border: none;
+  background: none;
+  color: var(--cx-chat-faint);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.cx-turn-detail-btn:hover {
+  color: var(--cx-chat-text);
+}
+
+.cx-metadata-rail {
+  border: 1px solid var(--cx-chat-border);
+  border-radius: 12px;
+  background: var(--cx-chat-surface);
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+
+.cx-metadata-rail > * {
+  border-bottom: 1px solid var(--cx-chat-border);
+}
+
+.cx-metadata-rail > *:last-child {
+  border-bottom: none;
+}
+
+/* Inside the rail, child blocks shed their own chrome so the panel reads as one
+   stack of hairline-divided sections rather than nested cards. */
+
+.cx-metadata-rail .cx-routing-block,
+.cx-metadata-rail .cx-thinking-block,
+.cx-metadata-rail .cx-tool-card-list {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+}
+
+/* Uniform summary rhythm for the THINKING / TOOLS disclosure rows so they read
+   as identical rail sections: a rotating › chevron, a mono uppercase label, and
+   a muted mono meta value. */
+
+.cx-metadata-rail .cx-thinking-summary,
+.cx-metadata-rail .cx-tool-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 15px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cx-metadata-rail .cx-thinking-summary:hover,
+.cx-metadata-rail .cx-tool-summary:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.cx-metadata-rail .cx-thinking-chevron,
+.cx-metadata-rail .cx-tool-chevron {
+  font-size: 12px;
+  color: var(--cx-chat-faint);
+  transition: transform 0.16s ease;
+  transform: none;
+}
+
+.cx-metadata-rail .cx-thinking-block[data-expanded='true'] .cx-thinking-chevron,
+.cx-metadata-rail .cx-tool-card-list[data-expanded='true'] .cx-tool-chevron {
+  transform: rotate(90deg);
+}
+
+.cx-metadata-rail .cx-thinking-label,
+.cx-metadata-rail .cx-tool-summary-label {
+  font-family: var(--cx-chat-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cx-chat-faint);
+}
+
+.cx-metadata-rail .cx-thinking-meta,
+.cx-metadata-rail .cx-tool-summary-count {
+  font-family: var(--cx-chat-mono);
+  font-size: 11px;
+  color: var(--cx-chat-muted);
+}
+
+.cx-metadata-rail .cx-thinking-content {
+  padding: 2px 16px 15px 37px;
+}
+
+.cx-metadata-rail .cx-thinking-pre {
+  margin: 0;
+  font-family: var(--cx-chat-font);
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #9c9c9f;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Tool list reads as clean two-column mono rows (name · detail), not cards. */
+
+.cx-metadata-rail .cx-tool-cards {
+  padding: 2px 16px 14px 37px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.cx-metadata-rail .cx-tool-card {
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.cx-metadata-rail .cx-tool-card-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--cx-chat-mono);
+  font-size: 11.5px;
+}
+
+.cx-metadata-rail .cx-tool-glyph {
+  display: none;
+}
+
+.cx-metadata-rail .cx-tool-name {
+  color: #dededf;
+  min-width: 74px;
+  flex: none;
+}
+
+.cx-metadata-rail .cx-tool-input {
+  color: #76767a;
+}
+
+/* Generic rail section (SOURCES) shares the routing/thinking summary rhythm. */
+
+.cx-rail-section > summary,
+.cx-rail-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.cx-rail-summary::-webkit-details-marker {
+  display: none;
+}
+
+.cx-rail-chevron {
+  color: var(--cx-chat-faint);
+  font-size: 12px;
+  transition: transform 0.16s ease;
+}
+
+.cx-rail-section[open] > summary .cx-rail-chevron {
+  transform: rotate(90deg);
+}
+
+.cx-rail-label {
+  font-family: var(--cx-chat-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: var(--cx-chat-faint);
+}
+
+.cx-rail-meta {
+  font-family: var(--cx-chat-mono);
+  font-size: 11px;
+  color: var(--cx-chat-muted);
+}
+
+.cx-rail-detail {
+  padding: 2px 16px 14px 37px;
+}
+
+.cx-sources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-family: var(--cx-chat-mono);
+  font-size: 11.5px;
+  color: var(--cx-chat-muted);
+}
+
+.cx-sources-item {
+  word-break: break-word;
+}
+
+/* ─── ROUTE chip row (always visible, matches the design) ─────── */
+
+.cx-route-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  padding: 13px 15px;
+}
+
+.cx-route-label {
+  font-family: var(--cx-chat-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: var(--cx-chat-faint);
+  margin-right: 2px;
+}
+
+.cx-route-chip {
+  font-family: var(--cx-chat-mono);
+  font-size: 11px;
+  color: #c4c4c6;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 4px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.cx-route-row .cx-route-chip:last-child {
+  color: #0a0a0a;
+  background: var(--cx-chat-accent);
+  border-color: var(--cx-chat-accent);
+  font-weight: 500;
+}
+
+.cx-route-arrow {
+  font-family: var(--cx-chat-mono);
+  font-size: 12px;
+  color: #3e3e42;
+}
+
+.cx-route-direct {
+  font-family: var(--cx-chat-mono);
+  font-size: 11px;
+  color: var(--cx-chat-muted);
+  border: 1px solid var(--cx-chat-border);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 4px 9px;
+  border-radius: 6px;
 }
 
 /* ─── Routing block ───────────────────────────────────────────── */
@@ -1050,9 +1667,9 @@ body.cx-cockpit-picker-open {
 .cx-routing-summary {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   width: 100%;
-  padding: 7px 10px;
+  padding: 13px 15px;
   font: inherit;
   font-size: 11px;
   background: none;
@@ -1072,10 +1689,11 @@ body.cx-cockpit-picker-open {
 }
 
 .cx-routing-label {
-  font-size: 10px;
-  font-weight: 600;
+  font-family: var(--cx-chat-mono);
+  font-size: 9.5px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.14em;
   color: var(--cx-chat-faint);
   flex-shrink: 0;
 }
@@ -1150,12 +1768,21 @@ body.cx-cockpit-picker-open {
 .cx-routing-specialist-chip {
   font-family: var(--cx-chat-mono);
   font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  background: var(--cx-chat-accent-subtle);
-  border: 1px solid color-mix(in srgb, var(--cx-chat-accent) 35%, transparent);
-  color: var(--cx-chat-accent);
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: var(--cx-chat-surface-raised);
+  border: 1px solid var(--cx-chat-border-strong);
+  color: var(--cx-chat-accent-alt);
   cursor: help;
+}
+
+/* The synthesiser/last hop reads as the resolved endpoint: invert it. */
+
+.cx-routing-chain-item:last-child .cx-routing-specialist-chip {
+  background: var(--cx-chat-accent);
+  border-color: var(--cx-chat-accent);
+  color: #0a0a0a;
+  font-weight: 500;
 }
 
 .cx-routing-arrow {
@@ -1587,31 +2214,50 @@ body.cx-cockpit-picker-open {
 
 /* ─── Inspector panel ─────────────────────────────────────────── */
 
+/* Backdrop only applies in the narrow overlay mode; in the wide in-flow layout
+   the inspector is a sibling, not an overlay, so the backdrop stays hidden. */
+
 .cx-inspector-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  background: rgba(8, 10, 14, 0.45);
+  display: none;
 }
 
-[data-theme='light'] .cx-inspector-backdrop {
-  background: rgba(248, 249, 251, 0.5);
-}
+/* Wide layout: the inspector is an in-flow column beside the conversation. It
+   shares the body's height (below the app bar) and pushes the chat narrower
+   rather than covering it. */
 
 .cx-inspector {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: var(--cx-inspector-w, 360px);
-  max-width: 100%;
-  z-index: 31;
-  background: var(--cx-chat-surface);
-  border-left: 1px solid var(--cx-chat-border-strong);
+  flex: none;
+  width: var(--cx-inspector-w, 344px);
+  min-height: 0;
+  background: var(--cx-chat-bg);
+  border-left: 1px solid var(--cx-chat-border);
   display: flex;
   flex-direction: column;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.35);
-  animation: cx-inspector-slide-in 200ms ease-out;
+}
+
+/* Narrow layout: not enough room for a side-by-side column, so the inspector
+   becomes a right-anchored overlay drawer with a dimming backdrop. */
+
+@media (max-width: 900px) {
+  .cx-inspector-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .cx-inspector {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(var(--cx-inspector-w, 344px), 92vw);
+    z-index: 31;
+    background: var(--cx-chat-surface-raised);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.45);
+    animation: cx-inspector-slide-in 200ms ease-out;
+  }
 }
 
 @keyframes cx-inspector-slide-in {
@@ -1619,7 +2265,7 @@ body.cx-cockpit-picker-open {
   to   { transform: translateX(0); }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) {
   .cx-inspector {
     animation: none;
   }
@@ -1747,9 +2393,9 @@ body.cx-cockpit-picker-open {
 
 .cx-cockpit-footer {
   flex-shrink: 0;
-  border-top: none;
+  border-top: 1px solid var(--cx-chat-border);
   background: var(--cx-chat-bg);
-  padding: 0;
+  padding: 16px 0 0;
 }
 
 .cx-cockpit-footer-inner {
@@ -1766,9 +2412,9 @@ body.cx-cockpit-picker-open {
 
 .cx-prompt-card {
   border: 1px solid var(--cx-chat-border-strong);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--cx-chat-surface-raised);
-  padding: 10px 12px 8px;
+  padding: 14px 16px 11px;
   transition: border-color 150ms;
 }
 
@@ -1785,7 +2431,7 @@ body.cx-cockpit-picker-open {
 .cx-prompt-card-input {
   flex: 1;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 15px;
   padding: 0;
   border: none;
   background: transparent;
@@ -1802,11 +2448,13 @@ body.cx-cockpit-picker-open {
 }
 
 .cx-prompt-card-hints {
-  margin: 4px 0 0;
-  font-size: 10px;
+  margin: 12px 0 0;
+  font-family: var(--cx-chat-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.01em;
   color: var(--cx-chat-faint);
   display: flex;
-  gap: 12px;
+  gap: 18px;
 }
 
 .cx-prompt-card-ghost {
@@ -1820,6 +2468,72 @@ body.cx-cockpit-picker-open {
   font-size: 10px;
   color: var(--cx-chat-muted);
   margin-bottom: 4px;
+}
+
+/* ─── Slash-command autocomplete dropdown ─────────────────────── */
+
+.cx-cmd-suggest {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 6px;
+  border: 1px solid var(--cx-chat-border);
+  border-radius: 12px;
+  background: var(--cx-chat-surface-raised);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.cx-cmd-suggest-item {
+  margin: 0;
+}
+
+.cx-cmd-suggest-btn {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cx-cmd-suggest-btn:hover,
+.cx-cmd-suggest-active .cx-cmd-suggest-btn {
+  background: var(--cx-chat-surface-hover);
+}
+
+.cx-cmd-suggest-name {
+  font-family: var(--cx-chat-mono);
+  font-size: 12.5px;
+  color: var(--cx-chat-text);
+  flex: none;
+  min-width: 92px;
+}
+
+.cx-cmd-suggest-desc {
+  font-size: 12.5px;
+  color: var(--cx-chat-muted);
+  line-height: 1.4;
+}
+
+.cx-cmd-suggest-foot {
+  display: flex;
+  gap: 16px;
+  padding: 8px 10px 4px;
+  margin-top: 2px;
+  border-top: 1px solid var(--cx-chat-border);
+  font-family: var(--cx-chat-mono);
+  font-size: 10px;
+  color: var(--cx-chat-faint);
+}
+
+.cx-cmd-suggest-foot kbd {
+  font-family: inherit;
+  color: var(--cx-chat-accent-alt);
 }
 
 .cx-prompt-card-picker {
@@ -1874,17 +2588,18 @@ body.cx-cockpit-picker-open {
   gap: 10px;
 }
 
-/* ─── Empty state (updated lede) ─────────────────────────────── */
+/* ─── Empty state (flat, column-aligned to the design) ───────── */
 
 .cx-cockpit-welcome-lede {
-  margin: 0 0 20px;
-  font-size: 14px;
+  margin: 0 0 24px;
+  font-size: 15px;
   line-height: 1.6;
   color: var(--cx-chat-muted);
+  max-width: 58ch;
 }
 
 .cx-cockpit-welcome {
-  max-width: 600px;
-  margin: 60px auto;
-  padding: 32px;
+  max-width: var(--cx-conv-max-w, 760px);
+  margin: 0 auto;
+  padding: 8px 32px 0;
 }

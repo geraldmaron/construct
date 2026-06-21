@@ -1,11 +1,15 @@
 /**
- * apps/chat/web/components/status-bar.tsx — topbar with brand, model, status, and context bar.
+ * apps/chat/web/components/status-bar.tsx — app bar with brand, session, model, and inspector toggle.
+ *
+ * Monochrome design: white diamond mark, mono session pill, total-tokens chip,
+ * and a model chip carrying a pulsing white liveness dot. Context lives in the
+ * inspector telemetry panel, not the bar.
  */
 
 'use client';
 
 import type { SessionMeta } from '../types';
-import { ContextBar } from './context-bar';
+import { formatTokens } from '../lib/format';
 
 type StatusBarProps = {
   sessionMeta: SessionMeta;
@@ -31,20 +35,26 @@ export function StatusBar({
   inspectorOpen,
 }: StatusBarProps) {
   const model = modelLabel(sessionMeta);
-  const branch = sessionMeta.workingBranch;
+  const turns = sessionMeta.usage?.turns ?? 0;
+  const totalTokens = sessionMeta.usage?.tokens?.total ?? 0;
 
   return (
     <header className="cx-conv-header" aria-label="Session">
       <div className="cx-conv-header-left">
-        <span className="cx-conv-brand-mark" aria-hidden>◆</span>
+        <span className="cx-conv-brand-mark" aria-hidden />
         <h1 className="cx-conv-brand-title">Construct</h1>
-        {branch && (
-          <span className="cx-conv-branch-chip" title={`Branch: ${branch}`}>
-            {branch}
-          </span>
-        )}
+        <span className="cx-conv-session-pill">
+          {`SESSION · ${turns} TURN${turns === 1 ? '' : 'S'}`}
+        </span>
       </div>
       <div className="cx-conv-header-right">
+        {totalTokens > 0 && (
+          <span className="cx-conv-total-chip" title="Session tokens">
+            <span className="cx-conv-total-label">TOTAL</span>
+            <span className="cx-conv-total-value">{formatTokens(totalTokens)}</span>
+            <span className="cx-conv-total-unit">tok</span>
+          </span>
+        )}
         <button
           type="button"
           className="cx-conv-model-chip"
@@ -52,14 +62,12 @@ export function StatusBar({
           aria-label={`Change model. Current: ${model}`}
         >
           {model}
+          <span
+            className={`cx-conv-status-dot ${streaming ? 'cx-conv-status-working' : 'cx-conv-status-ready'}`}
+            aria-hidden
+          />
+          <span className="cx-conv-model-caret" aria-hidden>▾</span>
         </button>
-        <span
-          className={`cx-conv-status-dot ${streaming ? 'cx-conv-status-working' : 'cx-conv-status-ready'}`}
-          role="status"
-          aria-label={streaming ? 'working' : 'ready'}
-          aria-hidden
-        />
-        <ContextBar ctx={sessionMeta.ctx} />
         <button
           type="button"
           className={`cx-conv-inspector-toggle ${inspectorOpen ? 'cx-conv-inspector-open' : ''}`}
@@ -67,7 +75,7 @@ export function StatusBar({
           aria-label={inspectorOpen ? 'Close inspector' : 'Open inspector'}
           aria-pressed={inspectorOpen}
         >
-          ☰
+          ≡
         </button>
       </div>
     </header>

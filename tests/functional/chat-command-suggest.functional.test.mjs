@@ -14,7 +14,7 @@ import {
 } from '../../lib/chat/command-suggest.mjs';
 
 test('slashCommandMatches filters by typed prefix', () => {
-  assert.deepEqual(slashCommandMatches('/mod'), ['/model', '/models']);
+  assert.deepEqual(slashCommandMatches('/mod'), ['/model']);
   assert.ok(slashCommandMatches('/').length >= 10);
 });
 

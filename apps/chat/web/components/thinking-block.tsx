@@ -37,12 +37,12 @@ export function ThinkingBlock({ thinking, streaming, visible }: ThinkingBlockPro
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
       >
+        <span className="cx-thinking-chevron" aria-hidden>›</span>
         <span className="cx-thinking-label">Thinking</span>
-        {!expanded && <span className="cx-thinking-meta">{summary}</span>}
+        <span className="cx-thinking-meta">{summary}</span>
         {streaming && expanded && (
           <span className="cx-thinking-live" aria-label="streaming">●</span>
         )}
-        <span className="cx-thinking-chevron" aria-hidden>{expanded ? '▴' : '▾'}</span>
       </button>
       {expanded && (
         <div className="cx-thinking-content" aria-label="Extended thinking">
