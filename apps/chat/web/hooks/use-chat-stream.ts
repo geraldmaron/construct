@@ -101,10 +101,6 @@ function applyEvent(turn: ChatTurn, event: Record<string, unknown>): ChatTurn {
         status: 'pending',
         input: (event.input as Record<string, unknown>) || null,
       });
-      const ref = (event.input as Record<string, unknown>)?.path
-        || (event.input as Record<string, unknown>)?.pattern
-        || (event.input as Record<string, unknown>)?.glob;
-      if (ref) next.sources.push(String(ref));
       break;
     }
     case 'tool_update': {
@@ -120,6 +116,10 @@ function applyEvent(turn: ChatTurn, event: Record<string, unknown>): ChatTurn {
       break;
     case 'unverified':
       next.unverified = event.value !== false;
+      break;
+    case 'evidence':
+      next.evidence = (event.value as ChatTurn['evidence']) || null;
+      next.sources = next.evidence?.records.map((record) => record.target) || [];
       break;
     default:
       break;

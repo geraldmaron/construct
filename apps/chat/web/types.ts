@@ -40,6 +40,7 @@ export type ChatTurn = {
   usage: Record<string, unknown> | null;
   resolvedModel?: string | null;
   unverified?: boolean;
+  evidence?: { schemaVersion: number; status: string; records: Array<{ recordId: string; turnId: string | null; toolId: string; tool: string; requestedTarget: string; target: string; sourceId: string; completion: string; result: string }>; citations: string[]; reasonCodes: string[] } | null;
   working: boolean;
   system?: boolean;
 };

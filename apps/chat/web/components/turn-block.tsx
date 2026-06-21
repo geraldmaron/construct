@@ -113,7 +113,9 @@ export function TurnBlock({
             {turn.unverified && (
               <span
                 className="cx-unverified-chip"
-                title="This turn required reading the repo but the model answered without any read/grep — treat it as unverified."
+                title={turn.evidence?.status === 'uncited_evidence'
+                  ? 'The model read repo evidence but did not cite its recorded paths — treat claims as unverified.'
+                  : 'This turn required repo evidence but has no successful recorded evidence — treat it as unverified.'}
               >
                 unverified
               </span>
