@@ -115,7 +115,6 @@ async function resolveLanguageModel(modelId, env) {
 }
 
 import { buildSystemPrompt } from '../../../lib/chat/system-prompt.mjs';
-import { buildTurnPolicyMessage } from '../../../lib/chat/transparency.mjs';
 
 export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(), model = null, handlers = {}, systemPrompt = '', tools = null } = {}) {
   const { streamText, stepCountIs } = await import('ai');
@@ -149,15 +148,13 @@ export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(),
       if (turnModel) activeModelId = turnModel;
       const languageModel = await languageModelFor(activeModelId);
 
-      let content = String(text);
-      if (turnOverlay) {
-        const preamble = buildTurnPolicyMessage(turnOverlay);
-        if (preamble) content = `${preamble}\n\n---\n\n${content}`;
-      }
-      messages.push({ role: 'user', content });
+      // Per-turn routing policy belongs in the SYSTEM role (via buildSystemPrompt),
+      // never prepended to the user message: a user-role policy gets echoed in model
+      // reasoning and compounds in persisted history.
+      messages.push({ role: 'user', content: String(text) });
       const result = streamText({
         model: languageModel,
-        system: systemPrompt || buildSystemPrompt(),
+        system: buildSystemPrompt({ base: systemPrompt || undefined, overlay: turnOverlay }),
         messages,
         tools: sdkTools,
         stopWhen: stepCountIs(maxSteps),
@@ -169,6 +166,12 @@ export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(),
       try {
         const response = await result.response;
         if (Array.isArray(response?.messages)) messages.push(...response.messages);
+        // Surface the model that actually answered — the OpenRouter free router
+        // resolves to an underlying model id, not the "openrouter/free" alias.
+        const resolved = response?.modelId;
+        if (resolved && resolved !== activeModelId && !String(activeModelId).endsWith(resolved)) {
+          yield { type: 'model-resolved', model: resolved };
+        }
       } catch { /* history append is best-effort */ }
     },
   };

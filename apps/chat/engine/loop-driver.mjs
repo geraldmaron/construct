@@ -70,6 +70,10 @@ function mapPart(part, queue, state) {
       if (t) queue.push({ type: 'thinking', text: t, messageId: part.id || null });
       break;
     }
+    case 'model-resolved': {
+      if (part.model) queue.push({ type: 'model_resolved', model: part.model });
+      break;
+    }
     case 'tool-call': {
       const id = part.toolCallId || part.id;
       state.tools.add(id);

@@ -103,8 +103,21 @@ export function TurnBlock({
           <span className="cx-construct-ident">
             <span className="cx-construct-mark" aria-hidden />
             <span className="cx-construct-label">CONSTRUCT</span>
+            {turn.resolvedModel && (
+              <span className="cx-construct-via" title="Model that produced this answer">
+                via {turn.resolvedModel}
+              </span>
+            )}
           </span>
           <span className="cx-construct-head-right">
+            {turn.unverified && (
+              <span
+                className="cx-unverified-chip"
+                title="This turn required reading the repo but the model answered without any read/grep — treat it as unverified."
+              >
+                unverified
+              </span>
+            )}
             {chip && <span className="cx-usage-chip">{chip}</span>}
             <button
               type="button"

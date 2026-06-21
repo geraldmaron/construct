@@ -38,6 +38,8 @@ export type ChatTurn = {
   overlay: RouteOverlay | null;
   sources: string[];
   usage: Record<string, unknown> | null;
+  resolvedModel?: string | null;
+  unverified?: boolean;
   working: boolean;
   system?: boolean;
 };

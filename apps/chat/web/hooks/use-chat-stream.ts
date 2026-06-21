@@ -115,6 +115,12 @@ function applyEvent(turn: ChatTurn, event: Record<string, unknown>): ChatTurn {
     case 'usage':
       next.usage = event as Record<string, unknown>;
       break;
+    case 'model_resolved':
+      next.resolvedModel = (event.model as string) || null;
+      break;
+    case 'unverified':
+      next.unverified = event.value !== false;
+      break;
     default:
       break;
   }
