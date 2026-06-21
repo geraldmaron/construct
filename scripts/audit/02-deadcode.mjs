@@ -61,6 +61,7 @@ const ACCEPTED_TEST_ONLY = {
   'lib/deprecate.mjs': 'single-warning deprecation utility with a test contract; retained for API retirements',
   'lib/storage/rrf.mjs': 'reciprocal-rank-fusion primitive with a correctness test; retained for hybrid retrieval',
   'lib/task-graph/schema.mjs': 'task-graph node/edge schema constants with a validation test; retained for the task-graph store',
+  'lib/models/behavior-matrix.mjs': 'CI gate: provider/model behavior-matrix schema+validator+fixtures asserted by tests/provider-behavior-matrix.test.mjs; staged evidence producer for the ExecutionCapabilityProfile (construct-6zga.1.8), which will import it and tighten this entry out',
   'lib/providers/contract/contract-tests.mjs': 'contract harness: imported by tests/provider-*.test.mjs for ADR-0003 provider interface validation',
   'lib/providers/contract/registry.mjs': 'contract harness: ProviderRegistry for embed-snapshot and provider-framework tests',
 };
