@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/execution-policy.schema.json",
+  "title": "Construct Execution Policy",
+  "description": "The immutable per-turn execution policy compiled from an ExecutionCapabilityProfile plus the turn's intent, risk, and evidence requirement (construct-6zga.1.2). The single record the owned loop reads for prompt section budgets, tool limits, evidence-first requirement, output budget, visible-thinking policy, continuation/compaction trigger, and caching eligibility. Compiled only from measured capability class/transport/values and the turn inputs — never from a provider or model name.",
+  "type": "object",
+  "required": ["schemaVersion", "source", "prompt", "tools", "evidence", "output", "continuation", "caching", "degradedMode", "telemetry"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "source": {
+      "type": "object",
+      "required": ["capabilityClass", "transport", "intent", "risk", "evidenceRequirement", "evidenceSources"],
+      "additionalProperties": false,
+      "properties": {
+        "profileSchemaVersion": { "type": ["integer", "null"] },
+        "profileKey": {
+          "type": ["object", "null"],
+          "properties": {
+            "provider": { "type": "string" },
+            "requestedModel": { "type": ["string", "null"] },
+            "resolvedModel": { "type": ["string", "null"] },
+            "adapterProtocol": { "type": "string" },
+            "observedAt": { "type": ["string", "null"] }
+          }
+        },
+        "capabilityClass": { "$ref": "#/$defs/capabilityClass" },
+        "transport": { "enum": ["direct", "routed", "local", "unknown"] },
+        "intent": { "$ref": "#/$defs/intent" },
+        "risk": { "$ref": "#/$defs/risk" },
+        "evidenceRequirement": { "$ref": "#/$defs/evidenceRequirement" },
+        "evidenceSources": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "prompt": {
+      "type": "object",
+      "required": ["systemPromptTier", "operatingProfileId", "sectionBudgets", "retrievalFirst", "preferCompressedGuidance"],
+      "additionalProperties": false,
+      "properties": {
+        "systemPromptTier": { "type": "string" },
+        "operatingProfileId": { "type": "string" },
+        "sectionBudgets": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "retrievalFirst": { "type": "boolean" },
+        "preferCompressedGuidance": { "type": "boolean" }
+      }
+    },
+    "tools": {
+      "type": "object",
+      "required": ["maxToolSchemas", "allowedToolGroups", "maxToolIterations"],
+      "additionalProperties": false,
+      "properties": {
+        "maxToolSchemas": { "type": "integer", "minimum": 0 },
+        "allowedToolGroups": { "type": "array", "items": { "$ref": "#/$defs/toolGroup" } },
+        "maxToolIterations": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["evidenceFirst", "citationsRequired"],
+      "additionalProperties": false,
+      "properties": {
+        "evidenceFirst": { "type": "boolean" },
+        "citationsRequired": { "type": "boolean" }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["outputTokenBudget", "visibleThinking"],
+      "additionalProperties": false,
+      "properties": {
+        "outputTokenBudget": { "type": "integer", "minimum": 1 },
+        "visibleThinking": { "enum": ["hidden", "summary", "full"] }
+      }
+    },
+    "continuation": {
+      "type": "object",
+      "required": ["compactionTriggerRatio", "compactionTriggerTokens"],
+      "additionalProperties": false,
+      "properties": {
+        "compactionTriggerRatio": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "compactionTriggerTokens": { "type": ["integer", "null"], "minimum": 1 }
+      }
+    },
+    "caching": {
+      "type": "object",
+      "required": ["eligible", "scope"],
+      "additionalProperties": false,
+      "properties": {
+        "eligible": { "type": "boolean" },
+        "scope": { "enum": ["none", "stable-prefix"] }
+      }
+    },
+    "degradedMode": { "type": "boolean" },
+    "telemetry": {
+      "type": "object",
+      "required": ["degraded", "reasons"],
+      "additionalProperties": false,
+      "properties": {
+        "degraded": { "type": "boolean" },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  "$defs": {
+    "capabilityClass": { "enum": ["hosted-direct", "hosted-routed", "local-constrained", "local-capable", "unknown"] },
+    "intent": { "enum": ["repository-summary", "code-change", "research", "tool-failure", "general"] },
+    "risk": { "enum": ["low", "medium", "high"] },
+    "evidenceRequirement": { "enum": ["none", "preferred", "required"] },
+    "toolGroup": { "enum": ["read", "search", "edit", "shell", "construct", "heavy-mcp"] }
+  }
+}
