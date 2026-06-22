@@ -6092,6 +6092,11 @@ const handlers = new Map([
      const { runOracleCli } = await import('../lib/oracle/cli.mjs');
      return runOracleCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd(), homeDir: HOME });
    }],
+   ['certify', async (args) => {
+     const { runCertificationCli } = await import('../lib/certification/cli.mjs');
+     const code = runCertificationCli(args, { projectDir: process.cwd() });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
+   }],
    ['improvement', async (args) => {
      const { runImprovementCli } = await import('../lib/improvement/cli.mjs');
      const code = await runImprovementCli(args, { projectDir: process.cwd() });

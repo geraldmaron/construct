@@ -1,21 +1,21 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-22T17:46:58.303Z",
+  "generatedAt": "2026-06-22T17:55:32.888Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 481,
-    "topLevelTestFiles": 269,
+    "testFiles": 482,
+    "topLevelTestFiles": 270,
     "nestedTestFiles": 212,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 6,
+    "capabilityMarkedFiles": 7,
     "byLayer": {
-      "unit": 287,
+      "unit": 288,
       "integration": 31,
       "visual": 5,
       "functional": 158
     },
     "byCategory": {
-      "unit": 251,
+      "unit": 252,
       "structural-guard": 10,
       "contract-subsystem": 26,
       "integration": 22,
@@ -235,6 +235,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "capability-tier.test.mjs — Unit tests for resolveCapabilityTier and the small-model"
+    },
+    {
+      "path": "tests/certification-run.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [
+        "test-system.certification-run"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/certification-run.test.mjs — certification run schema, verdict rules, and store."
     },
     {
       "path": "tests/chat-evidence.test.mjs",

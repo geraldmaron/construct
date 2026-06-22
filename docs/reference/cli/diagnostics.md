@@ -8,6 +8,7 @@ description: Diagnostics commands for Construct.
 | Command | What it does |
 |---|---|
 | `construct audit` | Audit Construct internals and review the mutation trail |
+| `construct certify` | Inspect scenario-based certification runs stored under .cx/certification/ |
 | `construct cleanup` | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct docs:check` | Check for missing how-to guides (alias for `docs check`) |
@@ -32,6 +33,21 @@ construct audit <skills|specialists|tests|trail>
 
 - `[object Object]`
 - `[object Object]`
+- `[object Object]`
+- `[object Object]`
+
+## construct certify
+
+Inspect scenario-based certification runs stored under .cx/certification/
+
+**Usage**
+
+```bash
+construct certify list|show <run-id>
+```
+
+**Subcommands**
+
 - `[object Object]`
 - `[object Object]`
 

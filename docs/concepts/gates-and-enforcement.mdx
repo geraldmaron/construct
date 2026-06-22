@@ -111,6 +111,12 @@ coverage proves the same user-visible outcome and failure modes.
 signal category. Regenerate it with `node scripts/generate-test-corpus-inventory.mjs`
 or validate freshness with `construct audit tests --corpus`.
 
+Certification runs (scenario-based live evaluation) persist under
+`.cx/certification/runs/<run-id>/run.json` with optional redacted `output.md` /
+`output.json` siblings. The record shape is defined in
+`schemas/certification-run.schema.json` and validated by `lib/certification/run.mjs`.
+Skipped provider calls must be recorded as `inconclusive` and never as `pass`.
+
 ## Where to look when something is blocking
 
 | Symptom | Likely gate | Where to start |
