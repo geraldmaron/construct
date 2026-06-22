@@ -10,6 +10,7 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveChatSurface, wantsLinearSurface } from '../../lib/chat/cli.mjs';
+import { GUI_TEST_ENV } from './_lib/gui-env.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -40,7 +41,7 @@ test('wantsLinearSurface is true for plain, accessible, and piped IO', () => {
 test('resolveChatSurface defaults to desktop on GUI TTY', () => {
   assert.equal(resolveChatSurface({
     flags: { plain: false, accessible: false, web: false, window: false, noWindow: false },
-    env: {},
+    env: { ...GUI_TEST_ENV },
     output: tty,
     input: tty,
   }), 'desktop');

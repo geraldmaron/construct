@@ -118,8 +118,13 @@ test('runTurnWithFallback completes turn on provider after unpulled ollama', asy
 test('configuredTierPickerItems marks unpulled ollama models disabled', async () => {
   resetInstalledOllamaModelsCacheForTests();
   setInstalledOllamaModelsCacheForTests(['llama3.1:8b']);
-  const { configuredTierPickerItems } = await import('../../lib/chat/model-picker.mjs');
   const env = { OLLAMA_BASE_URL: 'http://127.0.0.1:11434' };
+  const { isChatModelAvailable } = await import('../../lib/model-router.mjs');
+  const availability = isChatModelAvailable('ollama/llama3.2:3b', { env });
+  assert.equal(availability.ok, false);
+  assert.equal(availability.reason, 'model_not_pulled');
+
+  const { configuredTierPickerItems } = await import('../../lib/chat/model-picker.mjs');
   const { items } = configuredTierPickerItems({ env });
   const missing = items.find((item) => item.id === 'ollama/llama3.2:3b');
   assert.ok(missing, 'expected fast-tier ollama default in picker items');

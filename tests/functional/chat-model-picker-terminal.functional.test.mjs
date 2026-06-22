@@ -4,14 +4,34 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { promptModelPickerTerminal } from '../../lib/chat/model-picker.mjs';
 import { PLAIN_COLORS, createCollectWriter } from '../../lib/chat/commands.mjs';
 
 test('promptModelPickerTerminal lists curated models and commits selection', async () => {
   const session = { model: null, modelMode: 'pinned', layers: {} };
   const out = createCollectWriter();
-  const { loadModelPickerItems } = await import('../../lib/chat/model-picker.mjs');
-  const items = await loadModelPickerItems(null, { env: {} });
+  const { loadModelPickerItems, promptModelPickerTerminal } = await import('../../lib/chat/model-picker.mjs');
+  const pollProviders = async () => ([
+    {
+      id: 'openrouter',
+      label: 'OpenRouter',
+      live: true,
+      models: [
+        {
+          id: 'openrouter/anthropic/claude-3.5-sonnet',
+          label: 'Claude 3.5 Sonnet',
+          provider: 'openrouter',
+          free: false,
+          pricing: { input: 3, output: 15 },
+          reasoning: true,
+          tools: true,
+          toolsKnown: true,
+          vision: true,
+          source: 'live',
+        },
+      ],
+    },
+  ]);
+  const items = await loadModelPickerItems(null, { env: {}, pollProviders });
   const enabledIdx = items.findIndex((item) => !item.disabled);
   assert.ok(enabledIdx >= 0, 'expected at least one selectable model');
   const selection = await promptModelPickerTerminal({
@@ -21,6 +41,7 @@ test('promptModelPickerTerminal lists curated models and commits selection', asy
     askFn: async () => String(enabledIdx + 1),
     env: {},
     cwd: process.cwd(),
+    pollProviders,
   });
   assert.ok(selection);
   assert.match(out.text(), /select a model/);

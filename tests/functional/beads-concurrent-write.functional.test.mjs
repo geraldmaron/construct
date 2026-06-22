@@ -5,6 +5,7 @@
  * retired exclusive file-lock fallback (bead construct-nhn5 stage 2).
  */
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -13,7 +14,19 @@ import { runBd, runBdJson } from '../../lib/beads-client.mjs';
 
 const REPO = process.cwd();
 
+function bdAvailable() {
+  try {
+    return spawnSync('bd', ['--version'], { encoding: 'utf8' }).status === 0;
+  } catch {
+    return false;
+  }
+}
+
 test('parallel construct beads notes succeed without legacy lock fallback', async (t) => {
+  if (!bdAvailable()) {
+    t.skip('bd not installed — skip live beads concurrency test on CI');
+    return;
+  }
   const ready = await runBdJson(['ready', '-n', '1'], { cwd: REPO, silent: true });
   const targetId = ready?.[0]?.id || ready?.[0]?.issue_id || null;
   if (!targetId) {
