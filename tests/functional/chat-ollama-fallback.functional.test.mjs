@@ -16,9 +16,10 @@ import {
   runTurnWithFallback,
 } from '../../lib/chat/openrouter-fallback.mjs';
 import {
-  resetInstalledOllamaModelsCacheForTests,
-  setInstalledOllamaModelsCacheForTests,
+  runWithInstalledOllamaCacheForTests,
 } from '../../lib/ollama/installed-models.mjs';
+import { isChatModelAvailable } from '../../lib/model-router.mjs';
+import { configuredTierPickerItems } from '../../lib/chat/model-picker.mjs';
 
 function withIsolatedHome(fn) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-ollama-fb-'));
@@ -65,28 +66,22 @@ test('isOllamaNotPulledError recognizes preflight and API messages', () => {
 });
 
 test('handleOllamaNotPulledFailure picks next configured provider', async () => {
-  withIsolatedHome(() => {
-    resetInstalledOllamaModelsCacheForTests();
-    setInstalledOllamaModelsCacheForTests(['llama3.1:8b']);
+  await withIsolatedHome(() => runWithInstalledOllamaCacheForTests(['llama3.1:8b'], async () => {
     const env = { ANTHROPIC_API_KEY: 'sk-test' };
-    return handleOllamaNotPulledFailure({
+    const result = await handleOllamaNotPulledFailure({
       session: {},
       error: ollamaMissingMessage(),
       env,
       currentModel: 'ollama/llama3.2:3b',
-    }).then((result) => {
-      assert.ok(result);
-      assert.equal(result.modelId, 'anthropic/claude-sonnet-4-6');
-      assert.match(result.notice, /Switched to anthropic\/claude-sonnet-4-6/);
-      resetInstalledOllamaModelsCacheForTests();
     });
-  });
+    assert.ok(result);
+    assert.equal(result.modelId, 'anthropic/claude-sonnet-4-6');
+    assert.match(result.notice, /Switched to anthropic\/claude-sonnet-4-6/);
+  }));
 });
 
 test('runTurnWithFallback completes turn on provider after unpulled ollama', async () => {
-  withIsolatedHome(async () => {
-    resetInstalledOllamaModelsCacheForTests();
-    setInstalledOllamaModelsCacheForTests(['llama3.1:8b']);
+  await withIsolatedHome(() => runWithInstalledOllamaCacheForTests(['llama3.1:8b'], async () => {
     const env = { ANTHROPIC_API_KEY: 'sk-test' };
     const session = {
       model: 'ollama/llama3.2:3b',
@@ -111,26 +106,22 @@ test('runTurnWithFallback completes turn on provider after unpulled ollama', asy
     assert.equal(model, 'anthropic/claude-sonnet-4-6');
     assert.match(notice, /Switched to anthropic\/claude-sonnet-4-6/);
     assert.equal(session.model, 'anthropic/claude-sonnet-4-6');
-    resetInstalledOllamaModelsCacheForTests();
-  });
+  }));
 });
 
 test('configuredTierPickerItems marks unpulled ollama models disabled', async () => {
-  resetInstalledOllamaModelsCacheForTests();
-  setInstalledOllamaModelsCacheForTests(['llama3.1:8b']);
-  const env = { OLLAMA_BASE_URL: 'http://127.0.0.1:11434' };
-  const { isChatModelAvailable } = await import('../../lib/model-router.mjs');
-  const availability = isChatModelAvailable('ollama/llama3.2:3b', { env });
-  assert.equal(availability.ok, false);
-  assert.equal(availability.reason, 'model_not_pulled');
+  await runWithInstalledOllamaCacheForTests(['llama3.1:8b'], () => {
+    const env = { OLLAMA_BASE_URL: 'http://127.0.0.1:11434' };
+    const availability = isChatModelAvailable('ollama/llama3.2:3b', { env });
+    assert.equal(availability.ok, false);
+    assert.equal(availability.reason, 'model_not_pulled');
 
-  const { configuredTierPickerItems } = await import('../../lib/chat/model-picker.mjs');
-  const { items } = configuredTierPickerItems({ env });
-  const missing = items.find((item) => item.id === 'ollama/llama3.2:3b');
-  assert.ok(missing, 'expected fast-tier ollama default in picker items');
-  assert.equal(missing.disabled, true);
-  assert.match(missing.detail, /not installed/i);
-  resetInstalledOllamaModelsCacheForTests();
+    const { items } = configuredTierPickerItems({ env });
+    const missing = items.find((item) => item.id === 'ollama/llama3.2:3b');
+    assert.ok(missing, 'expected fast-tier ollama default in picker items');
+    assert.equal(missing.disabled, true);
+    assert.match(missing.detail, /not installed/i);
+  });
 });
 
 test('handleModelFailure prefers OpenRouter retry before ollama provider switch', async () => {
