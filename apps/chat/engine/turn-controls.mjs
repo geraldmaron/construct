@@ -5,8 +5,10 @@
  * The owned-loop engine (ai-sdk-agent.mjs) calls this once per turn to turn a
  * capability profile plus the turn overlay into the concrete knobs streamText
  * needs: the step cap, the output-token cap, caching eligibility, and the tool-
- * group / schema budget. The capability profile is resolved from the active model
- * id, so a mid-session model switch re-derives the envelope.
+ * group / schema budget, plus the continuation/compaction budget the session uses
+ * to decide when to compact context (construct-6zga.1.9). The capability profile
+ * is resolved from the active model id, so a mid-session model switch re-derives
+ * the envelope.
  *
  * Behavior preservation is the contract: this never throws and never returns a
  * tighter envelope than today for a hosted-direct model. hosted-direct keeps the
@@ -19,6 +21,7 @@
 
 import { resolveExecutionCapabilityProfile } from '../../../lib/models/execution-capability-profile.mjs';
 import { compilePolicyFromOverlay } from '../../../lib/models/execution-policy.mjs';
+import { continuationBudgetFromPolicy } from '../../../lib/chat/context-continuation.mjs';
 
 const LEGACY_STEP_CAP = 16;
 
@@ -30,6 +33,7 @@ const LEGACY_CONTROLS = Object.freeze({
   allowedToolGroups: null,
   maxToolSchemas: Infinity,
   degraded: false,
+  continuation: Object.freeze({ triggerTokens: null, triggerRatio: null }),
 });
 
 function legacyControls() {
@@ -58,6 +62,7 @@ export function resolveTurnControls({ model = null, turnOverlay = null, env = {}
       allowedToolGroups: policy.tools.allowedToolGroups,
       maxToolSchemas: policy.tools.maxToolSchemas,
       degraded: policy.degradedMode === true,
+      continuation: continuationBudgetFromPolicy(policy),
     };
   } catch {
     return legacyControls();
