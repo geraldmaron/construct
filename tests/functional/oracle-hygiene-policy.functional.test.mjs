@@ -14,7 +14,7 @@ import { synthesizeVerdict } from '../../lib/oracle/synthesize.mjs';
 import { raiseIssuesForGaps } from '../../lib/oracle/issues.mjs';
 import { runOracleTick } from '../../lib/oracle/actions.mjs';
 import { isVerdictOnlyGap, autoRaiseEnabledForGap } from '../../lib/oracle/policy.mjs';
-import { planHygieneReconcile } from '../../lib/oracle/reconcile.mjs';
+import { planHygieneReconcile, planContractViolationSupersede } from '../../lib/oracle/reconcile.mjs';
 
 function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-hygiene-'));
@@ -85,6 +85,30 @@ test('planHygieneReconcile closes all verdict-only hygiene oracle beads', () => 
   ]);
   assert.equal(keep.size, 0);
   assert.deepEqual(close.sort(), ['construct-a', 'construct-b', 'construct-c']);
+});
+
+test('planContractViolationSupersede targets homogeneous bare-goal construct violations', async () => {
+  const env = freshProject();
+  try {
+    const { logViolation } = await import('../../lib/contracts/violation-log.mjs');
+    logViolation(
+      'construct-to-orchestrator',
+      'output',
+      [
+        'artifact missing required field: intent',
+        'artifact missing required field: workCategory',
+        'artifact missing required field: riskFlags',
+        'artifact missing required field: acceptanceCriteria',
+      ],
+      { goal: 'x' },
+      { repoRoot: env.projectDir },
+    );
+    const plan = planContractViolationSupersede(env.projectDir);
+    assert.equal(plan.shouldSupersede, true);
+    assert.equal(plan.recentCount, 1);
+  } finally {
+    env.cleanup();
+  }
 });
 
 test('runOracleTick with auto-raise on still skips hygiene gaps in beadsRaised', async () => {

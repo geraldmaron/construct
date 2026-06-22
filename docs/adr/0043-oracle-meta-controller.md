@@ -126,6 +126,7 @@ flowchart TB
 **Neutral**
 
 - `construct doctor` remains the operator-facing diagnostic; Oracle complements it with periodic synthesis and action queue.
+- Contract-violation hygiene: `workflow_contract_validate` enriches bare `construct→orchestrator` goal packets before logging; `construct oracle reconcile` may write `.cx/contract-violations-superseded.json` so pre-fix homogeneous violations drop from oracle counts without deleting the forensic JSONL.
 
 ## Verification
 

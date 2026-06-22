@@ -5,6 +5,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Fixed
+- **Oracle contract-violation hygiene** (`lib/contracts/{construct-handoff,violation-log}.mjs`, `lib/mcp/tools/workflow.mjs`, `lib/oracle/{read-model,reconcile}.mjs`). Bare `{ goal }` packets on `workflow_contract_validate` enrich via `buildConstructToOrchestratorPacket` before shape checks; consecutive identical violations dedupe; `construct oracle reconcile` supersede marker clears historical bare-goal `construct-to-orchestrator` noise from oracle counts while preserving the forensic log. Closes bead `construct-r4i1`.
 - **Beads drift false stale counts** (`lib/beads/drift.mjs`). `detectBeadsDrift` now reads `updated_at` / `created_at` from `bd list --json`, eliminating Infinity-age false positives that inflated `beads-hygiene` verdicts. `construct oracle reconcile` closes all verdict-only hygiene oracle beads (none kept in tracker).
 
 ### Added
