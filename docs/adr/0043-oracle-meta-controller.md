@@ -38,7 +38,7 @@ Ship the **Oracle meta-controller** as a daemon-backed L0.5 layer:
 | Policy | `lib/oracle/policy.mjs` | `classifyAction(kind)` → `auto` \| `approve` \| `deny` |
 | Actions | `lib/oracle/actions.mjs` | `runOracleTick()` executes auto actions; queues approve actions to `.cx/oracle/pending.jsonl` |
 | Daemon | `lib/oracle/index.mjs` | `createDaemon` contract; killswitch `CONSTRUCT_ORACLE=off`; heartbeat `~/.cx/runtime/oracle/heartbeat.json` |
-| CLI | `lib/oracle/cli.mjs` | `construct oracle start\|status\|review\|pending\|approve` |
+| CLI | `lib/oracle/cli.mjs` | `construct oracle start\|status\|review\|pending\|approve\|gaps\|reconcile` |
 | Specialist | `cx-oracle` | Routes gaps to owning specialists via `get_skill`; internal, reasoning tier |
 | API | `GET /api/oracle`, `GET /api/oracle/pending` | Dashboard read surfaces |
 | Capability | `oracle.meta-review` | Registry entry with functional verification |
@@ -58,6 +58,10 @@ Ship the **Oracle meta-controller** as a daemon-backed L0.5 layer:
 **Deny** (never via Oracle):
 
 - `git-push`, `git-commit`, destructive deletes, force sync
+
+### Gap surfaces and auto-raise policy
+
+Hygiene and meta gaps (`beads-hygiene`, `workflow-misaligned`, `propagation-stale`, `census-stale`, `outcomes-missing`) are **verdict-only**: they appear in `.cx/oracle/verdicts/`, `construct doctor`, session prelude, and `construct oracle gaps`, but Oracle never auto-raises tracker beads for them. Novel actionable high gaps (e.g. `doctor-escalation`, `dead-code-regression`, `parity-drift`) may auto-raise **at most one open bead per `gapId`** via persistent fingerprinting and open-bead lookup. `detectBeadsDrift()` excludes `[oracle/*]` meta beads from stuck/stale counts so Oracle does not reinforce its own alerts. One-time duplicate cleanup: `construct oracle reconcile [--dry-run]`.
 
 ### Read/write contract
 
@@ -127,4 +131,5 @@ flowchart TB
 
 - `tests/functional/oracle-read-model.functional.test.mjs`
 - `tests/functional/oracle-bounded-auto.functional.test.mjs`
+- `tests/functional/oracle-hygiene-policy.functional.test.mjs`
 - Capability registry entry `oracle.meta-review` with `humanGate: approve-only`
