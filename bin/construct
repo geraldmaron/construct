@@ -6094,7 +6094,7 @@ const handlers = new Map([
    }],
    ['certify', async (args) => {
      const { runCertificationCli } = await import('../lib/certification/cli.mjs');
-     const code = runCertificationCli(args, { projectDir: process.cwd() });
+     const code = await runCertificationCli(args, { projectDir: process.cwd(), repoRoot: ROOT_DIR });
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
    ['improvement', async (args) => {

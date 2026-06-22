@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "description": "Hermetic and opt-in live certification scenarios. Hermetic scenarios run deterministic gates only; live scenarios require CONSTRUCT_CERTIFY_LIVE=1.",
+  "scenarios": [
+    {
+      "id": "ledger.traceability",
+      "capabilityId": "test-system.capability-ledger",
+      "mode": "hermetic",
+      "fixture": { "path": "tests/capabilities/ledger.json" },
+      "gates": [{ "id": "capability-ledger-valid", "type": "capability-ledger-audit" }],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/ledger",
+        "resolvedId": "fixture/ledger",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "corpus.inventory",
+      "capabilityId": "test-system.corpus-inventory",
+      "mode": "hermetic",
+      "fixture": { "path": "tests/capabilities/corpus-inventory.json" },
+      "gates": [{ "id": "corpus-inventory-valid", "type": "corpus-inventory-audit" }],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/corpus",
+        "resolvedId": "fixture/corpus",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "artifact.release-gate.prd",
+      "capabilityId": "artifact.release-gate",
+      "mode": "hermetic",
+      "fixture": { "path": "templates/docs/prd.md" },
+      "gates": [{ "id": "prd-template-valid", "type": "artifact-release-gate", "artifactType": "prd" }],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/prd",
+        "resolvedId": "fixture/prd",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.prompt.normal",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": { "path": "tests/fixtures/certification/specialist-normal.json" },
+      "gates": [{ "id": "handoff-contract", "type": "live-provider-smoke" }],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "openrouter/free",
+        "resolvedId": "openrouter/free",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    }
+  ]
+}

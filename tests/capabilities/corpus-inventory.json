@@ -1,52 +1,30 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-22T17:55:32.888Z",
+  "generatedAt": "2026-06-22T18:37:37.498Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 482,
-    "topLevelTestFiles": 270,
-    "nestedTestFiles": 212,
+    "testFiles": 484,
+    "topLevelTestFiles": 271,
+    "nestedTestFiles": 213,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 7,
+    "capabilityMarkedFiles": 12,
     "byLayer": {
-      "unit": 288,
+      "unit": 289,
       "integration": 31,
       "visual": 5,
-      "functional": 158
+      "functional": 159
     },
     "byCategory": {
-      "unit": 252,
+      "unit": 253,
       "structural-guard": 10,
       "contract-subsystem": 26,
       "integration": 22,
       "visual": 5,
-      "functional": 158,
+      "functional": 159,
       "hook": 9
     }
   },
-  "releaseCriticalGaps": [
-    {
-      "source": "docs/audit/capability-matrix.md",
-      "capability": "research",
-      "status": "shipped",
-      "reason": "no ledger entry matches shipped capability hints",
-      "suggestedLedgerHints": [
-        "research",
-        "knowledge",
-        "ask"
-      ]
-    },
-    {
-      "source": "docs/audit/capability-matrix.md",
-      "capability": "diagram",
-      "status": "shipped",
-      "reason": "no ledger entry matches shipped capability hints",
-      "suggestedLedgerHints": [
-        "diagram",
-        "wireframe"
-      ]
-    }
-  ],
+  "releaseCriticalGaps": [],
   "files": [
     {
       "path": "tests/adr-stamp-integrity.test.mjs",
@@ -126,7 +104,9 @@
       "path": "tests/auto-docs.test.mjs",
       "layer": "unit",
       "category": "structural-guard",
-      "capabilities": [],
+      "capabilities": [
+        "document.auto-docs"
+      ],
       "skipped": false,
       "maintainerNotes": "tests/auto-docs.test.mjs — tests for lib/auto-docs.mjs region regeneration."
     },
@@ -245,6 +225,16 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/certification-run.test.mjs — certification run schema, verdict rules, and store."
+    },
+    {
+      "path": "tests/certification-runner.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [
+        "test-system.certification-runner"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/certification-runner.test.mjs — certification scenario runner and CLI wiring."
     },
     {
       "path": "tests/chat-evidence.test.mjs",
@@ -1121,6 +1111,14 @@
       "maintainerNotes": "tests/functional/binary-postcondition-enforcement.functional.test.mjs"
     },
     {
+      "path": "tests/functional/certification-runner.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/certification-runner.functional.test.mjs — end-to-end construct certify run."
+    },
+    {
       "path": "tests/functional/chat-color-scheme.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1528,7 +1526,9 @@
       "path": "tests/functional/diagram.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
-      "capabilities": [],
+      "capabilities": [
+        "diagram.graceful-render"
+      ],
       "skipped": false,
       "maintainerNotes": "diagram.functional.test.mjs — `construct diagram` smoke gate."
     },
@@ -1784,7 +1784,9 @@
       "path": "tests/functional/knowledge-search-project-scope.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
-      "capabilities": [],
+      "capabilities": [
+        "research.project-search"
+      ],
       "skipped": false,
       "maintainerNotes": "tests/functional/knowledge-search-project-scope.functional.test.mjs —"
     },
@@ -2072,7 +2074,9 @@
       "path": "tests/functional/publish.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
-      "capabilities": [],
+      "capabilities": [
+        "publish.distribution"
+      ],
       "skipped": false,
       "maintainerNotes": "publish.functional.test.mjs — `construct publish` and `construct tools detect`."
     },

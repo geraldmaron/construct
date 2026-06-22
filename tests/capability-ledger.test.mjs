@@ -11,7 +11,7 @@ import { formatCapabilityLedgerAudit, validateCapabilityLedger } from '../lib/ca
 test('the committed capability ledger has bidirectional behavior-to-test traceability', () => {
   const result = validateCapabilityLedger();
   assert.equal(result.pass, true, formatCapabilityLedgerAudit(result));
-  assert.ok(result.capabilityCount >= 4);
+  assert.ok(result.capabilityCount >= 10);
   assert.ok(result.mappedTestCount >= result.capabilityCount);
 });
 
