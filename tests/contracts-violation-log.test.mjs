@@ -22,6 +22,8 @@ let priorHome;
 let logViolation;
 let recentViolations;
 let verifyChain;
+let markContractViolationsSuperseded;
+let readViolationSupersedeCutoff;
 
 beforeEach(async () => {
   tmpRoot = mkdtempSync(join(tmpdir(), 'cx-violation-log-'));
@@ -33,7 +35,13 @@ beforeEach(async () => {
 
   // Force fresh module load so logFile() resolves against the new cwd/HOME.
   const mod = await import(`../lib/contracts/violation-log.mjs?cache=${Date.now()}`);
-  ({ logViolation, recentViolations, verifyChain } = mod);
+  ({
+    logViolation,
+    recentViolations,
+    verifyChain,
+    markContractViolationsSuperseded,
+    readViolationSupersedeCutoff,
+  } = mod);
 });
 
 afterEach(() => {
@@ -139,5 +147,19 @@ describe('violation-log', () => {
 
   test('verifyChain on missing log returns ok', () => {
     assert.deepEqual(verifyChain(), { ok: true });
+  });
+
+  test('logViolation skips consecutive identical violations', () => {
+    logViolation('construct-to-orchestrator', 'input', ['intent'], { goal: 'x' }, { repoRoot: tmpRoot });
+    logViolation('construct-to-orchestrator', 'input', ['intent'], { goal: 'x' }, { repoRoot: tmpRoot });
+    assert.equal(readLog().length, 1);
+  });
+
+  test('markContractViolationsSuperseded hides older rows from recentViolations', () => {
+    logViolation('contract-a', 'output', ['x'], { x: 1 }, { repoRoot: tmpRoot });
+    assert.equal(recentViolations({ repoRoot: tmpRoot }).length, 1);
+    markContractViolationsSuperseded({ repoRoot: tmpRoot, reason: 'test supersede' });
+    assert.ok(readViolationSupersedeCutoff(tmpRoot) > 0);
+    assert.equal(recentViolations({ repoRoot: tmpRoot }).length, 0);
   });
 });

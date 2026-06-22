@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-22T20:46:45.851Z",
+  "generatedAt": "2026-06-22T21:06:35.304Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 509,
-    "topLevelTestFiles": 274,
+    "testFiles": 510,
+    "topLevelTestFiles": 275,
     "nestedTestFiles": 235,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 21,
     "byLayer": {
-      "unit": 311,
+      "unit": 312,
       "live-provider": 2,
       "integration": 31,
       "visual": 5,
       "functional": 160
     },
     "byCategory": {
-      "unit": 272,
+      "unit": 273,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
@@ -515,6 +515,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/context-state.test.mjs — context state prefers JSON and preserves markdown compatibility"
+    },
+    {
+      "path": "tests/contracts-construct-handoff.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/contracts-construct-handoff.test.mjs — construct→orchestrator handoff enrichment."
     },
     {
       "path": "tests/contracts-coverage.test.mjs",
