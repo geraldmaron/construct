@@ -49,6 +49,7 @@ function loadPrefs(): Prefs {
 export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname() || '/';
+  const isChatRoute = pathname === '/chat' || pathname === '/chat/';
   const [prefs, setPrefs] = useState<Prefs>(DEFAULTS);
   const [hydrated, setHydrated] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -77,6 +78,7 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
   }, [scroll]);
 
   useEffect(() => {
+    if (isChatRoute) return undefined;
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
@@ -93,7 +95,7 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [paletteOpen]);
+  }, [isChatRoute, paletteOpen]);
 
   useEffect(() => {
     if (mainRef.current) mainRef.current.scrollTop = 0;
@@ -112,8 +114,6 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
     if (href === '/') return pathname === '/' || pathname === '';
     return pathname === href || pathname.startsWith(href + '/');
   };
-
-  const isChatRoute = pathname === '/chat' || pathname === '/chat/';
 
   return (
     <div className={'shell' + (prefs.calmMode ? ' calm' : '') + (isChatRoute ? ' shell--chat' : '')} data-testid="app-shell">
@@ -203,7 +203,7 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
       </div>
 
       <CommandPalette
-        open={paletteOpen}
+        open={paletteOpen && !isChatRoute}
         items={PALETTE}
         onClose={() => setPaletteOpen(false)}
         onNavigate={(href) => router.push(href)}

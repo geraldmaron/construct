@@ -3,122 +3,55 @@
  *
  * Lazy-loaded by the launcher only when `construct chat` runs the rich/owned path,
  * so the optional dependencies (`ai`, `@ai-sdk/*`, `zod`) never load in the zero-dep
- * core or in tests of the mapping layer. It maps a Construct model id (the router's
- * `provider/model` form) onto an AI SDK language model, builds the agent tool set
- * from the tool registry, and runs streamText with a step cap so the loop iterates
- * tool calls until the model stops or the cap is hit. It yields the SDK fullStream
- * parts unchanged; loop-driver.mjs owns the normalization into the event union.
- *
- * Provider mapping covers the router's families: Anthropic and OpenAI direct, and
- * everything OpenAI-compatible (OpenRouter, Ollama, local servers) via one
- * compatible provider keyed by base URL. GitHub Copilot uses its OAuth device-flow
- * session token (lib/providers/copilot-auth.mjs), not an API key. Credentials are
- * resolved through the shared secret resolver (env, dotenv, shell rc, 1Password
- * op:// refs); a missing key fails fast with a remediation hint, not an opaque 401.
+ * core or in tests of the mapping layer. It resolves a Construct model id (the
+ * router's `provider/model` form) to an AI SDK language model through the adapter
+ * registry (provider-adapters.mjs), builds the agent tool set from the tool
+ * registry, and runs streamText under the turn's compiled execution policy
+ * (turn-controls.mjs): the step cap, tool-group / schema budget, output cap, and
+ * caching eligibility all derive from the resolved capability profile, so the loop
+ * adapts to the model while staying behavior-preserving for hosted-direct. It
+ * yields the SDK fullStream parts unchanged; loop-driver.mjs owns the
+ * normalization into the event union.
  */
 
 import { listChatModels } from './models.mjs';
-import { resolveFirstSecret } from '../../../lib/providers/secret-resolver.mjs';
-
-const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
-
-// Resolve through the shared secret resolver so env, the dotenv files, shell rc
-// exports, and 1Password op:// references all work the same here as in the
-// worker and the router. Non-secret settings (base URLs, ports) resolve through
-// the same path and simply pass through when they are plain values.
-
-function envKey(env, ...names) {
-  return resolveFirstSecret(names, { env });
-}
-
-function missingKey(provider, varName) {
-  const err = new Error(`No credentials for ${provider}: set ${varName} (or run \`construct creds\`) and retry.`);
-  err.code = 'PROVIDER_KEY_MISSING';
-  return err;
-}
-
-// Map "provider/model" (router form) onto an AI SDK language model. The leading
-// segment selects the provider; the remainder is the provider-native model id.
-
-async function resolveLanguageModel(modelId, env) {
-  if (!modelId) {
-    const err = new Error('No model selected and no configured provider found. Run `construct models` or set CX_MODEL_STANDARD.');
-    err.code = 'PROVIDER_MODEL_UNRESOLVED';
-    throw err;
-  }
-
-  if (/^anthropic\//.test(modelId)) {
-    const apiKey = envKey(env, 'ANTHROPIC_API_KEY');
-    if (!apiKey) throw missingKey('Anthropic', 'ANTHROPIC_API_KEY');
-    const { createAnthropic } = await import('@ai-sdk/anthropic');
-    return createAnthropic({ apiKey })(modelId.replace(/^anthropic\//, ''));
-  }
-
-  if (/^openai\//.test(modelId)) {
-    const apiKey = envKey(env, 'OPENAI_API_KEY');
-    if (!apiKey) throw missingKey('OpenAI', 'OPENAI_API_KEY');
-    const { createOpenAI } = await import('@ai-sdk/openai');
-    return createOpenAI({ apiKey })(modelId.replace(/^openai\//, ''));
-  }
-
-  if (/^openrouter\//.test(modelId)) {
-    const apiKey = envKey(env, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY');
-    if (!apiKey) throw missingKey('OpenRouter', 'OPENROUTER_API_KEY');
-    const { createOpenAICompatible } = await import('@ai-sdk/openai-compatible');
-    const provider = createOpenAICompatible({ name: 'openrouter', baseURL: OPENROUTER_BASE, apiKey });
-    return provider(modelId.replace(/^openrouter\//, ''));
-  }
-
-  if (/^ollama\//.test(modelId)) {
-    const baseURL = envKey(env, 'OLLAMA_BASE_URL') || 'http://localhost:11434/v1';
-    const { createOpenAICompatible } = await import('@ai-sdk/openai-compatible');
-    const provider = createOpenAICompatible({ name: 'ollama', baseURL, apiKey: 'ollama' });
-    return provider(modelId.replace(/^ollama\//, ''));
-  }
-
-  if (/^local\//.test(modelId)) {
-    const baseURL = envKey(env, 'LOCAL_LLM_BASE_URL');
-    if (!baseURL) throw missingKey('local OpenAI-compatible server', 'LOCAL_LLM_BASE_URL');
-    const { createOpenAICompatible } = await import('@ai-sdk/openai-compatible');
-    const provider = createOpenAICompatible({ name: 'local', baseURL, apiKey: envKey(env, 'LOCAL_LLM_API_KEY') || 'local' });
-    return provider(modelId.replace(/^local\//, ''));
-  }
-
-  if (/^github-copilot\//.test(modelId)) {
-    // Copilot uses an OAuth device-flow session token (lib/providers/copilot-auth.mjs),
-    // not an API key. Inject a fresh session token per request so a refresh mid-session
-    // is transparent, and send the editor/integration headers the endpoint requires.
-    const { getCopilotToken, copilotApiHeaders, COPILOT_API_BASE } = await import('../../../lib/providers/copilot-auth.mjs');
-    const { createOpenAICompatible } = await import('@ai-sdk/openai-compatible');
-    const copilotFetch = async (url, init = {}) => {
-      const token = await getCopilotToken();
-      const headers = new Headers(init.headers);
-      for (const [key, value] of Object.entries(copilotApiHeaders())) headers.set(key, value);
-      headers.set('Authorization', `Bearer ${token}`);
-      return fetch(url, { ...init, headers });
-    };
-    const provider = createOpenAICompatible({ name: 'github-copilot', baseURL: COPILOT_API_BASE, apiKey: 'via-fetch', fetch: copilotFetch });
-    return provider(modelId.replace(/^github-copilot\//, ''));
-  }
-
-  const err = new Error(`Provider for model '${modelId}' is not wired into the owned loop yet. Try an anthropic/, openai/, openrouter/, ollama/, local/, or github-copilot/ model.`);
-  err.code = 'PROVIDER_UNSUPPORTED';
-  throw err;
-}
-
+import { resolveLanguageModel } from './provider-adapters.mjs';
+import { resolveTurnControls } from './turn-controls.mjs';
 import { buildSystemPrompt } from '../../../lib/chat/system-prompt.mjs';
-import { buildTurnPolicyMessage } from '../../../lib/chat/transparency.mjs';
+import { applyToolBudget } from '../../../lib/mcp/tool-budget.mjs';
+import { recordPolicyTelemetry } from '../../../lib/chat/policy-telemetry.mjs';
+import { maybeCompact, estimateTextTokens, messageText } from '../../../lib/chat/context-compactor.mjs';
 
-export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(), model = null, handlers = {}, systemPrompt = '', tools = null } = {}) {
-  const { streamText, stepCountIs } = await import('ai');
+// Real summarization of the compactible layers (tool results, prior assistant
+// reasoning) the contract elides, run on the same language model as the turn.
+// Bounded output and zero retries keep the once-per-compaction cost small; a throw
+// is caught upstream and falls back to the deterministic extractive summary, so a
+// summarizer failure degrades fidelity without breaking the turn.
+
+function makeSummarizer({ generateText, languageModel, signal }) {
+  return async (text, meta = {}) => {
+    const { text: summary } = await generateText({
+      model: languageModel,
+      system: 'Compress earlier agent work into a faithful, terse recap for context continuation. Preserve decisions, findings, file paths, identifiers, and unresolved threads. Never invent facts. No preamble.',
+      prompt: `Summarize these ${meta.segmentCount || 'earlier'} turn(s) of an agent working in a repository. Use compact bullets, keep concrete identifiers, stay under 200 words:\n\n${text}`,
+      maxOutputTokens: 512,
+      maxRetries: 0,
+      abortSignal: signal,
+    });
+    return summary;
+  };
+}
+
+export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(), model = null, handlers = {}, systemPrompt = '', tools = null, onTelemetry = recordPolicyTelemetry } = {}) {
+  const { streamText, stepCountIs, generateText } = await import('ai');
 
   const { buildAgentTools } = await import('./tools/registry.mjs');
   const sdkTools = await buildAgentTools({ env, cwd, handlers, only: tools });
 
-  const maxSteps = Number(env.CX_CHAT_MAX_STEPS) > 0 ? Number(env.CX_CHAT_MAX_STEPS) : 16;
   const messages = [];
   const languageModels = new Map();
   let activeModelId = model;
+  let contextTokens = 0;
 
   async function languageModelFor(modelId) {
     const id = modelId || activeModelId;
@@ -141,27 +74,110 @@ export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(),
       if (turnModel) activeModelId = turnModel;
       const languageModel = await languageModelFor(activeModelId);
 
-      let content = String(text);
-      if (turnOverlay) {
-        const preamble = buildTurnPolicyMessage(turnOverlay);
-        if (preamble) content = `${preamble}\n\n---\n\n${content}`;
+      const controls = resolveTurnControls({ model: activeModelId, turnOverlay, env });
+      if (controls.degraded) {
+        onTelemetry({
+          kind: 'execution-policy-degraded',
+          model: activeModelId,
+          capabilityClass: controls.policy?.source?.capabilityClass || 'unknown',
+          reasons: controls.policy?.telemetry?.reasons || [],
+        });
       }
-      messages.push({ role: 'user', content });
-      const result = streamText({
+      const turnTools = applyToolBudget(sdkTools, {
+        allowedToolGroups: controls.allowedToolGroups,
+        maxToolSchemas: controls.maxToolSchemas,
+      });
+
+      // Per-turn routing policy belongs in the SYSTEM role (via buildSystemPrompt),
+      // never prepended to the user message: a user-role policy gets echoed in model
+      // reasoning and compounds in persisted history.
+      messages.push({ role: 'user', content: String(text) });
+      const systemText = buildSystemPrompt({ base: systemPrompt || undefined, overlay: turnOverlay });
+
+      const request = {
         model: languageModel,
-        system: systemPrompt || buildSystemPrompt(),
-        messages,
-        tools: sdkTools,
-        stopWhen: stepCountIs(maxSteps),
+        tools: turnTools,
+        stopWhen: stepCountIs(controls.iterations),
         abortSignal: signal,
         maxRetries: 0,
-      });
-      for await (const part of result.fullStream) yield part;
+      };
+      if (controls.outputCap) request.maxOutputTokens = controls.outputCap;
+
+      // A cache-eligible provider marks the stable system prefix as a cache
+      // breakpoint: the AI SDK maps a single leading system message onto the
+      // provider's system field, so the request stays output-identical and only the
+      // cache_control annotation is added. Every other provider keeps the plain
+      // system string — today's exact request shape.
+      if (controls.cacheEligible) {
+        const providerNs = String(activeModelId || '').split('/')[0] || 'anthropic';
+        request.messages = [
+          { role: 'system', content: systemText, providerOptions: { [providerNs]: { cacheControl: { type: 'ephemeral' } } } },
+          ...messages,
+        ];
+      } else {
+        request.system = systemText;
+        request.messages = messages;
+      }
+
+      const result = streamText(request);
+
+      // The compaction trigger needs the current context SIZE, which is the last
+      // model call's per-step input (system + full history), not the turn's
+      // aggregate input — totalUsage sums input across tool steps and would
+      // over-count a multi-step turn, tripping compaction below the real budget.
+      // Prefer the last finish-step's per-call usage; fall back to the aggregate
+      // only when the host reports no per-step usage. Host numbers only, no split.
+      let lastStepUsage = null;
+      let aggregateUsage = null;
+      for await (const part of result.fullStream) {
+        if (part.type === 'finish-step' && part.usage) lastStepUsage = part.usage;
+        if (part.type === 'finish') aggregateUsage = part.totalUsage || part.usage || aggregateUsage;
+        yield part;
+      }
+      const turnUsage = lastStepUsage || aggregateUsage;
+
       // Persist the assistant turn (incl. tool exchanges) so the next prompt has history.
       try {
         const response = await result.response;
         if (Array.isArray(response?.messages)) messages.push(...response.messages);
+        // Surface the model that actually answered — the OpenRouter free router
+        // resolves to an underlying model id, not the "openrouter/free" alias.
+        const resolved = response?.modelId;
+        if (resolved && resolved !== activeModelId && !String(activeModelId).endsWith(resolved)) {
+          yield { type: 'model-resolved', model: resolved };
+        }
       } catch { /* history append is best-effort */ }
+
+      // The next turn's context ≈ this turn's input (system + full history) plus the
+      // output just appended. When that crosses the policy's continuation trigger,
+      // compact without silent loss. Behavior-preserving: hosted only crosses near
+      // its ~150k budget, so short conversations are never touched. Compaction is
+      // best-effort — any failure leaves the live history intact.
+      const input = Number(turnUsage?.inputTokens) || 0;
+      const output = Number(turnUsage?.outputTokens) || 0;
+      if (input || output) contextTokens = input + output;
+
+      const trigger = controls.continuation?.triggerTokens || null;
+      if (trigger && contextTokens >= trigger) {
+        try {
+          const outcome = await maybeCompact({
+            messages,
+            systemText,
+            triggerTokens: trigger,
+            contextTokens,
+            summarize: makeSummarizer({ generateText, languageModel, signal }),
+          });
+          if (outcome.packet) yield { type: 'context-continuation', packet: outcome.packet, compacted: outcome.compacted };
+          if (outcome.notice) {
+            yield { type: 'context-notice', level: outcome.blocker ? 'warn' : 'info', code: outcome.blocker ? 'context-blocker' : 'context-compacted', message: outcome.notice };
+          }
+          if (outcome.compacted && Array.isArray(outcome.messages)) {
+            messages.length = 0;
+            messages.push(...outcome.messages);
+            contextTokens = estimateTextTokens(systemText) + messages.reduce((n, m) => n + estimateTextTokens(messageText(m)), 0);
+          }
+        } catch { /* compaction must never break a turn */ }
+      }
     },
   };
 }

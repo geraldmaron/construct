@@ -16,6 +16,13 @@ test('exportTurns writes plain markdown for last turn', () => {
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   const turn = createTurnBlock('what is this project');
   turn.assistant = 'Construct is a meta-system for agents.';
+  turn.evidence = {
+    schemaVersion: 1,
+    status: 'verified',
+    reasonCodes: ['all_recorded_evidence_cited'],
+    citations: ['README.md'],
+    records: [{ tool: 'read', target: 'README.md' }],
+  };
   const result = exportTurns([{ kind: 'turn', block: turn }], { scope: 'last', cwd });
   assert.equal(result.ok, true);
   assert.ok(fs.existsSync(result.path));
@@ -23,5 +30,7 @@ test('exportTurns writes plain markdown for last turn', () => {
   assert.match(body, /## you/);
   assert.match(body, /what is this project/);
   assert.match(body, /Construct is a meta-system/);
+  assert.match(body, /evidence: verified/);
+  assert.match(body, /sources: README.md/);
   fs.rmSync(home, { recursive: true, force: true });
 });

@@ -35,19 +35,55 @@ test('pickerStartIndex selects current model when present', () => {
   assert.equal(pickerStartIndex(models, 'missing'), 0);
 });
 
-test('loadModelPickerItems stays smaller than the full static catalog', async () => {
+test('loadModelPickerItems groups live provider models with capability badges', async () => {
   const { loadModelPickerItems } = await import('../../lib/chat/model-picker.mjs');
-  const { getProviderModelCatalog } = await import('../../lib/model-router.mjs');
-  const catalogIds = new Set(
-    getProviderModelCatalog({ env: {} }).providers.flatMap((provider) => [
-      ...provider.options.reasoning,
-      ...provider.options.standard,
-      ...provider.options.fast,
-    ]),
-  );
-  const items = await loadModelPickerItems(null, { env: {} });
-  assert.ok(items.length < catalogIds.size);
-  assert.ok(items.length <= 60, 'picker stays curated — not the full merged catalog');
+
+  const pollProviders = async () => ([
+    { id: 'anthropic', label: 'Anthropic', live: true, models: [
+      { id: 'anthropic/claude-opus-4-8', label: 'Claude Opus 4.8', provider: 'anthropic', free: false, pricing: { input: 15, output: 75 }, context: 200000, reasoning: true, tools: true, vision: true, source: 'live' },
+    ] },
+    { id: 'ollama', label: 'Ollama (local)', live: true, models: [
+      { id: 'ollama/llama3.1:8b', label: 'llama3.1:8b', provider: 'ollama', free: true, pricing: { input: 0, output: 0 }, context: null, reasoning: false, tools: false, vision: false, source: 'live' },
+    ] },
+  ]);
+
+  const items = await loadModelPickerItems(null, { env: {}, pollProviders });
+
+  assert.equal(items[0].id, '__free_router__', 'free-router stays on top');
+  const opus = items.find((i) => i.id === 'anthropic/claude-opus-4-8');
+  assert.ok(opus, 'anthropic model present');
+  assert.equal(opus.group, 'Anthropic');
+  assert.deepEqual(opus.badges, ['reasoning', 'vision', 'tools']);
+  assert.match(opus.price, /\$15\.00 in/);
+
+  const llama = items.find((i) => i.id === 'ollama/llama3.1:8b');
+  assert.ok(llama, 'ollama model present');
+  assert.equal(llama.group, 'Ollama (local)');
+  assert.equal(llama.tag, 'free');
+});
+
+test('loadModelPickerItems drops known tool-incapable models but keeps unknown ones', async () => {
+  const { loadModelPickerItems } = await import('../../lib/chat/model-picker.mjs');
+
+  const pollProviders = async () => ([
+    { id: 'openrouter', label: 'OpenRouter', live: true, models: [
+      // provider reported no tool support → the chat loop would always error → filtered
+      { id: 'openrouter/meta-llama/llama-3.2-3b-instruct:free', label: 'Llama 3.2 3B', provider: 'openrouter', free: true, pricing: { input: 0, output: 0 }, reasoning: false, tools: false, toolsKnown: true, vision: false, source: 'live' },
+      // tool-capable → kept
+      { id: 'openrouter/anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet', provider: 'openrouter', free: false, pricing: { input: 3, output: 15 }, reasoning: true, tools: true, toolsKnown: true, vision: true, source: 'live' },
+    ] },
+    { id: 'ollama', label: 'Ollama (local)', live: true, models: [
+      // tool support unknown for a local tag → stays selectable
+      { id: 'ollama/llama3.1:8b', label: 'llama3.1:8b', provider: 'ollama', free: true, pricing: { input: 0, output: 0 }, reasoning: false, tools: false, toolsKnown: false, vision: false, source: 'live' },
+    ] },
+  ]);
+
+  const items = await loadModelPickerItems(null, { env: {}, pollProviders });
+  const ids = items.map((i) => i.id);
+
+  assert.ok(!ids.includes('openrouter/meta-llama/llama-3.2-3b-instruct:free'), 'known tool-incapable model is filtered out');
+  assert.ok(ids.includes('openrouter/anthropic/claude-3.5-sonnet'), 'tool-capable model is kept');
+  assert.ok(ids.includes('ollama/llama3.1:8b'), 'unknown-capability local model is kept');
 });
 
 test('configuredTierPickerItems only includes tier defaults from configured providers', async () => {

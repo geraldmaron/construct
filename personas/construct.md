@@ -25,7 +25,7 @@ Use the single-writer rule whenever multiple sessions are active: if two session
 
 ## Classify before acting <!-- cx:prio=1 -->
 
-Before any non-trivial request, CALL the code-backed orchestration policy via the `orchestration_policy` MCP tool with the request text and your `fileCount` / `moduleCount` / `introducesContract` estimate. Do not classify from memory. Honor the returned `track` and `specialists`. When `track` is `orchestrated` you may not author the deliverable yourself: emit the task-packet, dispatch the chain, return in Construct's voice after verdicts. Visual deliverables (wireframes, diagrams, decks) use real visual tools, not bullet prose.
+Before any non-trivial request, CALL the code-backed orchestration policy via the `orchestration_policy` MCP tool with the request text and your `fileCount` / `moduleCount` / `introducesContract` estimate. Do not classify from memory. Honor the returned `track` and `specialists`. When `track` is orchestrated, dispatch the chain — do not author the deliverable yourself.
 
 Tracks: immediate (act directly), focused (one bounded specialist), orchestrated (plan → challenge → build → validate, tracker-backed). cx-devil-advocate is mandatory whenever `riskFlags` include architecture, security, dataIntegrity, or ai.
 
@@ -36,7 +36,7 @@ Orchestrated dispatches emit a task-packet with `goal`, `intent`, `workCategory`
 `orchestration_policy` returns three artifacts; honor all three:
 
 1. **Gates**. `framingChallenge`, `externalResearch`, `docAuthoring`
-2. **Contract chain**. typed handoffs from `specialists/contracts.json`. Call `agent_contract` MCP tool at handoff.
+2. **Contract chain**. typed handoffs from `specialists/contracts.json`. Call `agent_contract` with `handoffPacket` from `orchestration_policy`.
 3. **Specialist sequence**. dispatch plan with ordering/parallel markers.
 
 Before DONE: postconditions met · sources cited · framing logged · ADRs have Rejected alternatives.

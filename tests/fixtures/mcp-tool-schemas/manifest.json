@@ -1,0 +1,33 @@
+{
+  "measuredAt": "2026-06-22T04:18:19.307Z",
+  "method": "tools/list via stdio or HTTP probe; schemaTokens = JSON.stringify(tools).length * 0.25",
+  "servers": {
+    "context7": {
+      "toolCount": 2,
+      "schemaTokens": 1152,
+      "capturedAt": "2026-06-22T04:16:17.064Z"
+    },
+    "github": {
+      "toolCount": 47,
+      "schemaTokens": 30128,
+      "capturedAt": "2026-06-22T04:15:20.494Z"
+    },
+    "memory": {
+      "toolCount": 5,
+      "schemaTokens": 604,
+      "capturedAt": "2026-06-22T04:16:17.881Z"
+    },
+    "sequential-thinking": {
+      "toolCount": 1,
+      "schemaTokens": 1126,
+      "capturedAt": "2026-06-22T04:16:20.220Z"
+    },
+    "playwright": {
+      "toolCount": 23,
+      "schemaTokens": 4271,
+      "capturedAt": "2026-06-22T04:16:21.290Z"
+    }
+  },
+  "totalSchemaTokens": 37281,
+  "failures": []
+}

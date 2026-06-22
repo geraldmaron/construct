@@ -155,6 +155,16 @@ if (validationErrors.length > 0) {
   }
 }
 
+{
+  const { validatePromptFiles } = await import("../lib/specialists/prompt-schema.mjs");
+  const promptResult = validatePromptFiles({ rootDir: root, registry });
+  if (promptResult.errors.length > 0) {
+    console.error("Specialist prompt validation failed:");
+    for (const err of promptResult.errors) console.error(`  - ${err}`);
+    process.exit(1);
+  }
+}
+
 // --- Dry-run + lockfile + two-phase write infrastructure ---
 
 const DRY_RUN = process.argv.includes("--dry-run");
@@ -519,10 +529,6 @@ function loadPersonaPrompt(persona) {
   return prompt;
 }
 
-export function buildAgentRoster(allEntries) {
-  return allEntries.map((e) => `- ${adapterName(e)}: ${e.when_to_use || e.description}`).join("\n");
-}
-
 function buildModelGuidanceBlock(entry) {
   const merged = { ...globalModelGuidance, ...(entry.modelGuidance ?? {}) };
   const families = Object.keys(merged);
@@ -676,7 +682,7 @@ function buildPrompt(entry, allEntries, platform, { capabilityTier = 'full' } = 
 
   if (capabilityTier && capabilityTier !== 'full' && entry.promptFile) {
     let slim = renderPersonaForTier(readPromptBody(entry.promptFile, root), capabilityTier);
-    if (entry.injectAgentRoster && capabilities.hasNativeSubagents) {
+    if (entry.injectAgentRoster) {
       slim = `${ORCHESTRATION_MICRO_PROMPT}\n\n${slim}`;
     }
     return enforcePromptWordCap(slim, entry);
@@ -691,13 +697,10 @@ function buildPrompt(entry, allEntries, platform, { capabilityTier = 'full' } = 
   prompt = inlineRoleAntiPatterns(prompt, root, entry.name, console.warn, { preload: entry.preloadRoleGuidance === true });
   prompt = inlineValidationContract(prompt, root, entry.name);
 
-  // Platform-Native Orchestration Alignment (ADR-0002). Hosts with native subagent
-  // routing (OpenCode, VS Code, Cursor) do not get the static specialist roster
-  // injected — on a small-context local model the roster alone is ~3-4k tokens and,
-  // combined with MCP tool schemas, overruns the model's real context window and
-  // collapses output. Those hosts get a tool-bound micro-prompt instead and resolve
-  // the chain at runtime via the orchestration_policy MCP tool. Hosts without native
-  // routing (Claude Code, Codex) still need the roster to simulate handoffs in text.
+  // Platform-Native Orchestration Alignment (ADR-0002). All hosts receive the
+  // tool-bound micro-prompt when injectAgentRoster is set; the static 29-line
+  // roster was removed (construct-ymp5). Specialists resolve at runtime via
+  // orchestration_policy, which returns a lazy specialistCatalog.
 
   // Single Front Door: all hosts resolve specialists at runtime via
   // orchestration_policy / orchestration_run — never inject the static roster.
@@ -1646,7 +1649,8 @@ function syncOpencode(entries, targetDir = null, wants = true) {
       }
     }
 
-    // Heavy external MCP servers serialize ~12k tokens of schema into EVERY
+    // Heavy external MCP servers serialize a measured ~37k tokens of tool schema
+    // into EVERY agent's request — github ~30k alone (fixtures 2026-06-22) —
     // agent's request — including the built-in Build/Plan agents the per-agent
     // permission prune cannot reach. OpenCode 1.15.4 has no per-session tool
     // filter (chat.params carries no tool list), so disabling the whole server in

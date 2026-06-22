@@ -4,6 +4,8 @@
 - **Status**: accepted
 - **Deciders**: Construct maintainers (cx-architect)
 - **Supersedes**: none
+- **last_verified_at**: 2026-06-20
+- **verified_by**: construct · 2026 re-evaluation confirms offline sidecar default; node-native fast tier; legacy regex fallback removed
 
 ## Problem
 
@@ -87,3 +89,28 @@ the privacy objection to making it the default.
 - docling-mcp: https://github.com/docling-project/docling-mcp
 - ADR-0024 (document-io optional capability)
 - `lib/document-extract/docling-sidecar.py`, `lib/runtime/uv-bootstrap.mjs`, `lib/document-ingest.mjs`
+
+## Re-evaluation (2026-06-20)
+
+Community benchmarks (2025–2026) rank docling highest on complex table extraction; MarkItDown and Unstructured trade fidelity for footprint or format breadth. Hybrid orchestrators (pdfmux-style) route per page but add another Python layer Construct would own.
+
+**Confirmed for Construct:**
+
+| Criterion | Docling sidecar | Node-native (unpdf/mammoth) | docling-remote |
+|-----------|-----------------|----------------------------|----------------|
+| Local-first default | Yes | Yes (fast tier) | No (opt-in) |
+| Cross-platform | Yes (uv) | Yes | Yes |
+| Office beyond DOCX | Yes | No — fail loud | Yes |
+| Table/layout fidelity | Best | Low | Best |
+| Footprint | ~1.5 GB | Optional npm deps | None local |
+
+**Changes shipped with this re-evaluation:**
+
+- Default high-fidelity ingest unchanged (docling sidecar).
+- Fast tier (`--fidelity=fast`) uses unpdf/mammoth; office zip formats require docling.
+- Docling failure fallback is **node-native**, not regex/CLI legacy extractors.
+- Legacy zip-xml / pdftotext gated behind `CONSTRUCT_ALLOW_LEGACY_EXTRACT=1` for debugging only.
+
+**Still rejected as default:** docling-mcp remote (privacy), MarkItDown (fidelity), Unstructured (PDF table accuracy vs docling).
+
+Canonical intake/export matrix: [`docs/reference/document-io.md`](../reference/document-io.md).

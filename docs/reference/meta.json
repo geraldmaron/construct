@@ -3,6 +3,7 @@
   "pages": [
     "index",
     "cli",
+    "document-io",
     "config",
     "hooks",
     "hooks-inventory",

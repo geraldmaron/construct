@@ -18,6 +18,12 @@ test('parseOpenRouterError extracts rate-limit metadata', () => {
   assert.match(parsed.summary, /rate-limited|gemma-4/i);
 });
 
+test('parseOpenRouterError suggests ollama pull for missing local models', () => {
+  const parsed = parseOpenRouterError("model 'llama3.2:3b' not found");
+  assert.match(parsed.summary, /ollama pull llama3\.2:3b/);
+  assert.match(parsed.summary, /construct ollama pull/);
+});
+
 test('recordFailedModel tracks exclude list on session', () => {
   const session = {};
   recordFailedModel(session, 'openrouter/a:free');

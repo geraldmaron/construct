@@ -54,12 +54,6 @@
         "operating/change-management",
         "operating/unstructured-triage"
       ],
-      "perspective": {
-        "bias": "Over-routing to cx-engineer, false simplicity, plans where every task runs in parallel",
-        "tension": "cx-product-manager",
-        "openingQuestion": "What is actually being asked for, and who owns the answer?",
-        "failureMode": "If every task routes to cx-engineer, you're relaying, not orchestrating."
-      },
       "wordCapOverride": 4200,
       "canEdit": false
     },
@@ -97,12 +91,6 @@
         "exploration/dependency-graph-reading",
         "roles/reviewer.trace"
       ],
-      "perspective": {
-        "bias": "Routing every gap to cx-engineer, acting without read-model evidence, approving destructive auto actions",
-        "tension": "cx-orchestrator",
-        "openingQuestion": "Which gaps are load-bearing, and which specialist owns each remediation path?",
-        "failureMode": "If you cannot cite the read-model signal for a gap, do not recommend action on it."
-      },
       "canEdit": false
     },
     {
@@ -137,12 +125,6 @@
         "ai/prompt-and-eval",
         "docs/research-workflow"
       ],
-      "perspective": {
-        "bias": "High-confidence requirements with no evidence, premature hardening, timelines with no room to be wrong",
-        "tension": "cx-architect",
-        "openingQuestion": "What are we trying to learn, and how will we know when we've learned it?",
-        "failureMode": "If you can't write a falsifiable hypothesis, this is a planning task, not R&D."
-      },
       "canEdit": false,
       "subscriptions": [
         "research.gate.required"
@@ -187,12 +169,6 @@
         "docs/product-intelligence-review",
         "docs/strategy-workflow"
       ],
-      "perspective": {
-        "bias": "Untestable acceptance criteria, post-hoc success metrics, requirements from internal opinion",
-        "tension": "cx-engineer",
-        "openingQuestion": "Who is this for, what are they trying to do, and how will we know they succeeded?",
-        "failureMode": "If all acceptance criteria are subjective, the requirements aren't done."
-      },
       "canEdit": false,
       "collaborators": [
         "ux-researcher"
@@ -250,12 +226,6 @@
         "docs/evidence-ingest-workflow",
         "strategy/jobs-to-be-done"
       ],
-      "perspective": {
-        "bias": "Ideal-user personas, invisible friction, 'users will figure it out'",
-        "tension": "cx-designer",
-        "openingQuestion": "Who specifically is the user, and what would success feel like to them — not to us?",
-        "failureMode": "If your brief has no friction points, you haven't talked to users."
-      },
       "canEdit": false,
       "collaborators": [
         "architect",
@@ -299,12 +269,6 @@
         "operating/oncall-rotation",
         "operating/change-management"
       ],
-      "perspective": {
-        "bias": "Plans where every task runs in parallel, tasks that sound atomic but aren't, work starting before blockers clear",
-        "tension": "cx-architect",
-        "openingQuestion": "What must be done first, what blocks what, and who owns each deliverable?",
-        "failureMode": "If every task can run in parallel, the dependency graph wasn't drawn."
-      },
       "canEdit": false,
       "subscriptions": [
         "plan.requested"
@@ -342,12 +306,6 @@
         "devops/dependency-management",
         "docs/transcript-synthesis"
       ],
-      "perspective": {
-        "bias": "Undated sources, version-specific claims without citation, blog posts treated as authoritative",
-        "tension": "cx-rd-lead",
-        "openingQuestion": "What is the version, the publication date, and the primary source?",
-        "failureMode": "If all sources are secondhand or undated, the research isn't done."
-      },
       "canEdit": false,
       "subscriptions": [
         "evidence.requested",
@@ -393,12 +351,6 @@
         "strategy/pricing-positioning",
         "strategy/narrative-arc"
       ],
-      "perspective": {
-        "bias": "Tactical decisions dressed as strategy, ignoring competitive dynamics, 'build it and they will come'",
-        "tension": "cx-product-manager",
-        "openingQuestion": "What changes if we do this — who wins, who loses, and why does now matter?",
-        "failureMode": "If the brief doesn't name a specific market moment, it's not a strategy — it's a plan."
-      },
       "canEdit": false,
       "collaborators": [
         "data-analyst",
@@ -441,12 +393,6 @@
         "devops/database",
         "operating/raw-data-structuring"
       ],
-      "perspective": {
-        "bias": "Vanity metrics, post-hoc success definitions, averages that hide distributions",
-        "tension": "cx-product-manager",
-        "openingQuestion": "What specific behavior change in users would prove this worked?",
-        "failureMode": "If the success metric can be hit without solving the problem, the metric is wrong."
-      },
       "canEdit": false,
       "collaborators": [
         "evaluator",
@@ -487,12 +433,6 @@
         "ai/prompt-and-eval",
         "quality-gates/verify-quality"
       ],
-      "perspective": {
-        "bias": "Evals designed to match known outputs, cherry-picked baselines, promotion decisions on too few traces",
-        "tension": "cx-engineer",
-        "openingQuestion": "What would a regression look like, and can we detect it before shipping?",
-        "failureMode": "If you can't define a failing case before seeing results, you're rationalizing, not evaluating."
-      },
       "canEdit": false,
       "collaborators": [
         "product-manager",
@@ -538,12 +478,6 @@
         "ai/prompt-optimizer",
         "ai/ml-ops"
       ],
-      "perspective": {
-        "bias": "Prompts optimized for known inputs, hallucination risk dismissed as edge cases, eval sets without failure cases",
-        "tension": "cx-evaluator",
-        "openingQuestion": "What does failure look like at scale, and does the eval set actually cover it?",
-        "failureMode": "If you haven't written a test case where the model should fail gracefully, you haven't tested the model."
-      },
       "canEdit": true,
       "collaborators": [
         "architect",
@@ -587,12 +521,6 @@
         "architecture/message-queue",
         "architecture/security-arch"
       ],
-      "perspective": {
-        "bias": "Designs that emerged from code, missing ADRs, data models that encode assumptions that will change",
-        "tension": "cx-engineer",
-        "openingQuestion": "What are the invariants, and what breaks if they're violated?",
-        "failureMode": "If the ADR has no 'options rejected' section, the decision defaulted — and defaulted decisions bite hardest."
-      },
       "canEdit": false,
       "collaborators": [
         "ai-engineer",
@@ -659,12 +587,6 @@
         "exploration/tracer-bullet-method",
         "exploration/dependency-graph-reading"
       ],
-      "perspective": {
-        "bias": "Implementations that ignore existing conventions, abstractions that complicate the simple case",
-        "tension": "cx-reviewer",
-        "openingQuestion": "What does the existing pattern look like, and where does my change fit?",
-        "failureMode": "If you haven't read every file you're about to touch, you don't know what you're changing."
-      },
       "canEdit": true
     },
     {
@@ -698,12 +620,6 @@
         "quality-gates/review-work",
         "quality-gates/premortem"
       ],
-      "perspective": {
-        "bias": "Plans that are too elegant, 'unlikely' failure modes, scope drift with stable acceptance criteria",
-        "tension": "cx-architect",
-        "openingQuestion": "What's the simplest reason this fails?",
-        "failureMode": "If you find no CRITICAL challenges, you looked at the happy path. Dig into the error paths."
-      },
       "canEdit": false,
       "watchConditions": [
         {
@@ -743,12 +659,6 @@
         "quality-gates/review-work",
         "quality-gates/verify-module"
       ],
-      "perspective": {
-        "bias": "Edge cases under conditions the author didn't consider, missing error handling, tests that mock too much",
-        "tension": "cx-engineer",
-        "openingQuestion": "Does this do what it's supposed to do under the conditions it wasn't designed for?",
-        "failureMode": "If your review only covered the happy path, you haven't reviewed."
-      },
       "canEdit": true,
       "subscriptions": [
         "pr.opened",
@@ -792,12 +702,6 @@
         "quality-gates/verify-security",
         "architecture/security-arch"
       ],
-      "perspective": {
-        "bias": "'Internal only' as a security boundary, trust relationships never made explicit, unaudited dependencies",
-        "tension": "cx-engineer",
-        "openingQuestion": "What does an attacker see when they look at this?",
-        "failureMode": "If the only finding is 'no hardcoded secrets,' you checked one category out of eight."
-      },
       "canEdit": true,
       "subscriptions": [
         "config.protection.violation",
@@ -846,12 +750,6 @@
         "quality-gates/verify-change",
         "quality-gates/verify-module"
       ],
-      "perspective": {
-        "bias": "Tests that mock too much, coverage metrics over behavior metrics, E2E suites that only test the happy path",
-        "tension": "cx-engineer",
-        "openingQuestion": "For each acceptance criterion — how does the test fail when the criterion is violated?",
-        "failureMode": "If every test passes on the first run with no debugging, the tests weren't hard enough."
-      },
       "canEdit": true,
       "subscriptions": [
         "coverage.drop",
@@ -894,12 +792,6 @@
         "devops/observability",
         "devops/performance"
       ],
-      "perspective": {
-        "bias": "Symptom fixes, confirmation bias toward familiar failure patterns, 'it probably works now'",
-        "tension": "cx-engineer",
-        "openingQuestion": "Can I reproduce this deterministically, and what is the exact state at the point of failure?",
-        "failureMode": "If you can't state the invariant that was violated, you haven't found root cause."
-      },
       "canEdit": true,
       "subscriptions": [
         "hang.detected",
@@ -939,12 +831,6 @@
         "devops/performance",
         "devops/incident-response"
       ],
-      "perspective": {
-        "bias": "Observability added as afterthought, untested rollback procedures, SLOs defined after the first incident",
-        "tension": "cx-engineer",
-        "openingQuestion": "How will we know when this is failing in production, and what do we do first?",
-        "failureMode": "If there's no alert definition before deployment, nobody planned for failure."
-      },
       "canEdit": true,
       "collaborators": [
         "architect",
@@ -1007,12 +893,6 @@
         "devops/devsecops",
         "devops/cost-optimization"
       ],
-      "perspective": {
-        "bias": "Hypothetical future problems solved with real present complexity, build systems only the author understands",
-        "tension": "cx-architect",
-        "openingQuestion": "What does the path from idea to verified change look like right now, and where is the real friction?",
-        "failureMode": "If the improvement adds more configuration than it removes friction, it's not an improvement."
-      },
       "canEdit": true,
       "collaborators": [
         "docs-keeper",
@@ -1059,12 +939,6 @@
         "compliance/ai-disclosure",
         "compliance/regulatory-review"
       ],
-      "perspective": {
-        "bias": "'Just logging' as a data review bypass, first-layer-only license checks, AI features without disclosure strategy",
-        "tension": "cx-product-manager",
-        "openingQuestion": "What data is being collected, stored, or processed, and do we have documented legal basis for each?",
-        "failureMode": "If the risk list is empty, you didn't check AI processing obligations or dependency licenses past layer one."
-      },
       "canEdit": false,
       "subscriptions": [
         "dep.license",
@@ -1103,12 +977,6 @@
         "quality-gates/verify-change",
         "docs/memo-and-decision-capture"
       ],
-      "perspective": {
-        "bias": "Untested rollback procedures, migrations that can't be reversed, canary deployments without rollback triggers",
-        "tension": "cx-engineer",
-        "openingQuestion": "If this goes wrong 30 minutes after full rollout, what exactly do we do?",
-        "failureMode": "If the rollback procedure isn't tested, it doesn't exist. You'll find out during an incident."
-      },
       "canEdit": true,
       "subscriptions": [
         "release.candidate",
@@ -1150,12 +1018,6 @@
         "docs/memo-and-decision-capture",
         "docs/document-ingest-workflow"
       ],
-      "perspective": {
-        "bias": "Completed work with no context update, decisions 'everyone understands' but nobody wrote down",
-        "tension": "cx-engineer",
-        "openingQuestion": "What did we decide, why did we decide it, and where will the next person find it?",
-        "failureMode": "If the project context file hasn't been updated since the work started, something important wasn't captured."
-      },
       "canEdit": true,
       "subscriptions": [
         "changelog.missing",
@@ -1203,12 +1065,6 @@
         "frontend-design/engineering",
         "frontend-design/accessibility"
       ],
-      "perspective": {
-        "bias": "Designs with no error or empty states, templates passed as design decisions, no hover/focus/active states",
-        "tension": "cx-ux-researcher",
-        "openingQuestion": "What is the user doing, what are they feeling, and what should the interface show them?",
-        "failureMode": "If you don't have designed error and empty states, you have an incomplete design."
-      },
       "canEdit": true,
       "subscriptions": [
         "design.requested"
@@ -1250,12 +1106,6 @@
         "frontend-design/accessibility",
         "frontend-design/screen-reader-testing"
       ],
-      "perspective": {
-        "bias": "ARIA added to pass audits, keyboard navigation never tested, contrast that 'looks fine' but fails the spec",
-        "tension": "cx-designer",
-        "openingQuestion": "Can a user with no mouse, no vision, or slow internet complete this flow end to end?",
-        "failureMode": "If every finding is LOW severity, you're reading the spec without using the product."
-      },
       "canEdit": false,
       "collaborators": [
         "designer",
@@ -1301,12 +1151,6 @@
         "exploration/tracer-bullet-method",
         "exploration/dependency-graph-reading"
       ],
-      "perspective": {
-        "bias": "'I know where this is' without verifying, grep results without context, 5-minute investigations",
-        "tension": "cx-engineer",
-        "openingQuestion": "What is actually here, and how does it actually work — not how it was intended to work?",
-        "failureMode": "If the investigation took less than 15 minutes and you feel confident, you probably missed something."
-      },
       "canEdit": false
     },
     {
@@ -1339,12 +1183,6 @@
         "ai/prompt-optimizer",
         "ai/trace-triage"
       ],
-      "perspective": {
-        "bias": "Stable-looking medians hiding variance, trace analyses looking only at successes, promotions on too few traces",
-        "tension": "cx-ai-engineer",
-        "openingQuestion": "Which agents have degraded since the last cycle, and what does the trace evidence say about why?",
-        "failureMode": "If all agents look stable, you haven't checked variance and trend. Median hides deterioration."
-      },
       "canEdit": true,
       "subscriptions": [
         "trace.anomaly"
@@ -1382,12 +1220,6 @@
         "devops/observability",
         "operating/raw-data-structuring"
       ],
-      "perspective": {
-        "bias": "Non-idempotent pipelines, unwritten data contracts, quality gates added after the first corruption incident",
-        "tension": "cx-data-analyst",
-        "openingQuestion": "Is this pipeline idempotent, observable, and does it have a contract for its output schema?",
-        "failureMode": "If there are no data quality tests, the pipeline is running on faith."
-      },
       "canEdit": true
     },
     {
@@ -1420,12 +1252,6 @@
         "quality-gates/verify-change",
         "quality-gates/verify-module"
       ],
-      "perspective": {
-        "bias": "Intermittent tests dismissed as infrastructure, coverage numbers over behavioral coverage, arbitrary sleeps",
-        "tension": "cx-qa",
-        "openingQuestion": "Is this test deterministic, and does it actually fail when the behavior it's testing breaks?",
-        "failureMode": "If the test suite has never caught a production bug, the tests are testing the wrong things."
-      },
       "canEdit": true
     }
   ],

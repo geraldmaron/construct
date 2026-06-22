@@ -33,7 +33,7 @@ Commit subjects must match `type(scope): subject`: type from {feat, fix, refacto
 
 PR descriptions must keep all six headings (Summary, Beads issue, Doc updates included, Local gates, Test plan, Risks / rollback) with at least one checked box in both the "Doc updates" and "Local gates" sections. Empty templates fail.
 
-Forbidden in commit messages: `Co-Authored-By: Claude*` trailers (unless the user explicitly asks), `--no-verify`, `--no-gpg-sign`. Forbidden in PR bodies: deleting the required headings, leaving every gate box unchecked.
+Forbidden in commit messages: any `Co-Authored-By:` trailer (including Cursor agent attribution) unless the user explicitly asks, `--no-verify`, `--no-gpg-sign`. Forbidden in PR bodies: deleting the required headings, leaving every gate box unchecked.
 
 ## The tracker contract
 

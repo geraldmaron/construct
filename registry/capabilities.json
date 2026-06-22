@@ -725,7 +725,7 @@
         }
       },
       "verification": {
-        "functional": "tests/functional/chat-tui.functional.test.mjs"
+        "functional": "tests/functional/chat-owned-loop.functional.test.mjs"
       },
       "humanGate": "proposal-only",
       "lastValidated": null

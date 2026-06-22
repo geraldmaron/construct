@@ -1,7 +1,7 @@
 <!--
   templates/distribution/construct-web.html — Construct branded standalone HTML
   template for `construct export --to=html`. Monochrome design mirroring the PDF
-  brand (construct-brand.typ): Geist webfont, masthead from frontmatter metadata,
+  brand (construct-brand.typ): Space Grotesk webfont, masthead from frontmatter metadata,
   bold-header hairline tables, callout blockquotes, framed figures. Pandoc fills
   $title$/$subtitle$/$status$/$owner$/$date$/$artifactType$/$version$/$docId$/
   $classification$ and $body$; export runs with --embed-resources so diagrams and
@@ -15,13 +15,13 @@
 <title>$if(title)$$title$$else$Construct document$endif$</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --ink:#0a0c10; --ink-strong:#16191f; --ink-body:#23272e; --muted:#565c66; --faint:#9499a2;
     --hairline:#e3e4e8; --hairline-strong:#cdd0d6; --surface:#fafafa; --surface-alt:#f3f4f6; --paper:#ffffff;
-    --sans:'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    --mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,monospace;
+    --sans:'Space Grotesk',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
   }
   * { box-sizing:border-box; }
   html { -webkit-text-size-adjust:100%; }

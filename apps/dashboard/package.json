@@ -6,7 +6,6 @@
     "dev": "next dev -p 4242",
     "build": "next build && node scripts/copy-to-server-static.mjs",
     "build:next": "next build",
-    "build:chat": "npm --prefix ../.. run build:chat",
     "start": "next start -p 4242",
     "demo:record": "playwright test e2e/demo --project=demo-recording"
   },

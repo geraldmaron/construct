@@ -37,7 +37,7 @@ export function Mermaid({ id, chart, theme }: MermaidProps) {
             lineColor: palette.line,
             secondaryColor: palette.node,
             tertiaryColor: palette.node,
-            fontFamily: 'Geist, ui-sans-serif, system-ui',
+            fontFamily: 'Space Grotesk, ui-sans-serif, system-ui',
             fontSize: '13px',
           },
           flowchart: { curve: 'basis', padding: 14 },
