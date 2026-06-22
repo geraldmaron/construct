@@ -106,6 +106,13 @@ test('orchestrationPolicy includes approvalRequired and terminalStates', async (
   assert.ok(result.terminalStates.includes('DONE'));
 });
 
+test('orchestrationPolicy returns a lazy specialistCatalog (construct-ymp5)', async () => {
+  const result = await orchestrationPolicy({ request: 'explain caching', fileCount: 1, moduleCount: 1 });
+  assert.ok(Array.isArray(result.specialistCatalog));
+  assert.ok(result.specialistCatalog.length >= 20);
+  assert.ok(result.specialistCatalog.every((row) => row.id.startsWith('cx-') && row.whenToUse));
+});
+
 test('routeRequest dispatches cx-legal-compliance on compliance keyword (focused track)', () => {
   const route = routeRequest({ request: 'review GDPR compliance of our consent flow', fileCount: 1, moduleCount: 1 });
   assert.equal(route.track, EXECUTION_TRACKS.focused);

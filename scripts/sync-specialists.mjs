@@ -519,10 +519,6 @@ function loadPersonaPrompt(persona) {
   return prompt;
 }
 
-export function buildAgentRoster(allEntries) {
-  return allEntries.map((e) => `- ${adapterName(e)}: ${e.when_to_use || e.description}`).join("\n");
-}
-
 function buildModelGuidanceBlock(entry) {
   const merged = { ...globalModelGuidance, ...(entry.modelGuidance ?? {}) };
   const families = Object.keys(merged);
@@ -676,7 +672,7 @@ function buildPrompt(entry, allEntries, platform, { capabilityTier = 'full' } = 
 
   if (capabilityTier && capabilityTier !== 'full' && entry.promptFile) {
     let slim = renderPersonaForTier(readPromptBody(entry.promptFile, root), capabilityTier);
-    if (entry.injectAgentRoster && capabilities.hasNativeSubagents) {
+    if (entry.injectAgentRoster) {
       slim = `${ORCHESTRATION_MICRO_PROMPT}\n\n${slim}`;
     }
     return enforcePromptWordCap(slim, entry);
@@ -691,13 +687,10 @@ function buildPrompt(entry, allEntries, platform, { capabilityTier = 'full' } = 
   prompt = inlineRoleAntiPatterns(prompt, root, entry.name, console.warn, { preload: entry.preloadRoleGuidance === true });
   prompt = inlineValidationContract(prompt, root, entry.name);
 
-  // Platform-Native Orchestration Alignment (ADR-0002). Hosts with native subagent
-  // routing (OpenCode, VS Code, Cursor) do not get the static specialist roster
-  // injected — on a small-context local model the roster alone is ~3-4k tokens and,
-  // combined with MCP tool schemas, overruns the model's real context window and
-  // collapses output. Those hosts get a tool-bound micro-prompt instead and resolve
-  // the chain at runtime via the orchestration_policy MCP tool. Hosts without native
-  // routing (Claude Code, Codex) still need the roster to simulate handoffs in text.
+  // Platform-Native Orchestration Alignment (ADR-0002). All hosts receive the
+  // tool-bound micro-prompt when injectAgentRoster is set; the static 29-line
+  // roster was removed (construct-ymp5). Specialists resolve at runtime via
+  // orchestration_policy, which returns a lazy specialistCatalog.
 
   // Single Front Door: all hosts resolve specialists at runtime via
   // orchestration_policy / orchestration_run — never inject the static roster.
