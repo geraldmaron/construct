@@ -84,7 +84,7 @@ Use the generated [CLI reference](./reference/cli/) for exact flags and subcomma
 - Core: `construct docs`, `construct recommendations`, `construct sandbox`
 - Workflows and knowledge: `construct customer`, `construct graph`, `construct integrations`, `construct reflect`, `construct tags`, `construct workflow`, `construct workspace`
 - Models and integrations: `construct claude:allow`, `construct creds`, `construct ollama`
-- Observability and diagnostics: `construct llm-judge`, `construct telemetry`, `construct cleanup`
+- Observability and diagnostics: `construct audit`, `construct llm-judge`, `construct telemetry`, `construct cleanup`
 - Administration: `construct auth:status`, `construct backup`, `construct beads`, `construct completions`, `construct gates:audit`, `construct hooks:health`, `construct role`, `construct scheduler`, `construct uninstall`, `construct upgrade`
 
 ## Prompt surfaces

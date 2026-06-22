@@ -14,6 +14,7 @@ import {
   buildCleanupPlan,
   buildPressureGuardValues,
   installPressureGuardLaunchAgent,
+  listPressureProcesses,
   parseElapsedSeconds,
   parseSwapUsage,
   runPressureRelease,
@@ -38,13 +39,13 @@ test('parseSwapUsage extracts used and total bytes from macOS sysctl output', ()
 
 test('buildCleanupPlan marks opencode cleanup as warn-first and still targets stale helpers', () => {
   const plan = buildCleanupPlan([
-    { pid: 100, command: 'opencode', elapsedSeconds: 60 * 60 * 30, rssKb: 100000 },
-    { pid: 101, command: 'opencode', elapsedSeconds: 60 * 60 * 12, rssKb: 110000 },
-    { pid: 102, command: 'opencode web', elapsedSeconds: 60 * 60 * 40, rssKb: 80000 },
-    { pid: 200, command: 'node /tmp/context7-mcp', elapsedSeconds: 60 * 60 * 6, rssKb: 40000 },
-    { pid: 201, command: 'node /tmp/playwright-mcp', elapsedSeconds: 60 * 60 * 5, rssKb: 40000 },
-    { pid: 202, command: 'node /tmp/mcp-server-sequential-thinking', elapsedSeconds: 60 * 60 * 4, rssKb: 20000 },
-    { pid: 300, command: '/Users/gerald/.local/bin/cass index', elapsedSeconds: 60 * 60 * 10, rssKb: 300000 },
+    { pid: 100, ppid: 1, command: 'opencode', elapsedSeconds: 60 * 60 * 30, rssKb: 100000 },
+    { pid: 101, ppid: 1, command: 'opencode', elapsedSeconds: 60 * 60 * 12, rssKb: 110000 },
+    { pid: 102, ppid: 1, command: 'opencode web', elapsedSeconds: 60 * 60 * 40, rssKb: 80000 },
+    { pid: 200, ppid: 1, command: 'node /tmp/context7-mcp', elapsedSeconds: 60 * 60 * 6, rssKb: 40000 },
+    { pid: 201, ppid: 1, command: 'node /tmp/playwright-mcp', elapsedSeconds: 60 * 60 * 5, rssKb: 40000 },
+    { pid: 202, ppid: 1, command: 'node /tmp/mcp-server-sequential-thinking', elapsedSeconds: 60 * 60 * 4, rssKb: 20000 },
+    { pid: 300, ppid: 1, command: '/Users/gerald/.local/bin/cass index', elapsedSeconds: 60 * 60 * 10, rssKb: 300000 },
   ], {
     maxOpencodeProcesses: 2,
     maxOpencodeAgeHours: 24,
@@ -73,10 +74,10 @@ test('runPressureRelease warns before terminating opencode sessions and terminat
       CONSTRUCT_PRESSURE_GUARD_MAX_CASS_INDEX_AGE_HOURS: '8',
     },
     processEntries: [
-      { pid: 100, command: 'opencode', elapsedSeconds: 60 * 60 * 30, rssKb: 100000 },
-      { pid: 101, command: 'opencode', elapsedSeconds: 60 * 60 * 12, rssKb: 110000 },
-      { pid: 200, command: 'node /tmp/context7-mcp', elapsedSeconds: 60 * 60 * 6, rssKb: 40000 },
-      { pid: 300, command: '/Users/gerald/.local/bin/cass index', elapsedSeconds: 60 * 60 * 10, rssKb: 300000 },
+      { pid: 100, ppid: 1, command: 'opencode', elapsedSeconds: 60 * 60 * 30, rssKb: 100000 },
+      { pid: 101, ppid: 1, command: 'opencode', elapsedSeconds: 60 * 60 * 12, rssKb: 110000 },
+      { pid: 200, ppid: 1, command: 'node /tmp/context7-mcp', elapsedSeconds: 60 * 60 * 6, rssKb: 40000 },
+      { pid: 300, ppid: 1, command: '/Users/gerald/.local/bin/cass index', elapsedSeconds: 60 * 60 * 10, rssKb: 300000 },
     ],
     swapUsage: {
       totalBytes: 15 * 1024 * 1024 * 1024,
@@ -122,4 +123,61 @@ test('installPressureGuardLaunchAgent writes a launch agent plist', () => {
   assert.doesNotMatch(plist, /<string>--quiet<\/string>/);
   assert.match(plist, /<integer>300<\/integer>/);
   assert.match(plist, /\/usr\/local\/bin\/node/);
+});
+
+test('buildCleanupPlan terminates orphaned VHS ttyd and stale vhs recorders', () => {
+  const ttyd = 'ttyd --port=57862 --interface 127.0.0.1 -t rendererType canvas -t disableResizeOverlay true --once --writable bash --noprofile';
+  const plan = buildCleanupPlan([
+    { pid: 400, ppid: 1, command: ttyd, elapsedSeconds: 120, rssKb: 1000 },
+    { pid: 401, ppid: 68209, command: ttyd, elapsedSeconds: 90, rssKb: 1000 },
+    { pid: 402, ppid: 1, command: '/opt/homebrew/bin/vhs demo.tape', elapsedSeconds: 60 * 60 * 3, rssKb: 2000 },
+    { pid: 403, ppid: 1, command: '/opt/homebrew/bin/vhs fresh.tape', elapsedSeconds: 300, rssKb: 2000 },
+  ], {
+    maxHelperAgeHours: 2,
+  });
+
+  assert.deepEqual(
+    plan.terminate.map((entry) => [entry.pid, entry.reason]),
+    [
+      [400, 'leaked-vhs-ttyd'],
+      [402, 'stale-vhs-recorder'],
+    ],
+  );
+});
+
+test('listPressureProcesses retains parent PID for a managed VHS ttyd sidecar', () => {
+  const ttyd = 'ttyd --port=57862 --interface 127.0.0.1 -t rendererType canvas --once --writable bash --noprofile';
+  const entries = listPressureProcesses({
+    spawnSyncFn: () => ({ status: 0, stdout: `  400     1  1000 00:02:00 ${ttyd}\n` }),
+  });
+
+  assert.deepEqual(entries, [{
+    pid: 400,
+    ppid: 1,
+    rssKb: 1000,
+    elapsedSeconds: 120,
+    command: ttyd,
+  }]);
+});
+
+test('runPressureRelease kills leaked VHS ttyd without swap pressure', () => {
+  const killed = [];
+  const homeDir = tempDir('construct-pressure-vhs-');
+  const ttyd = 'ttyd --port=57862 --interface 127.0.0.1 -t rendererType canvas --once --writable bash --noprofile';
+  const report = runPressureRelease({
+    env: { HOME: homeDir },
+    processEntries: [
+      { pid: 500, ppid: 1, command: ttyd, elapsedSeconds: 30, rssKb: 1000 },
+    ],
+    swapUsage: {
+      totalBytes: 15 * 1024 * 1024 * 1024,
+      usedBytes: 1 * 1024 * 1024 * 1024,
+      freeBytes: 14 * 1024 * 1024 * 1024,
+    },
+    killFn: (pid, signal) => killed.push({ pid, signal }),
+  });
+
+  assert.equal(report.pressureTriggered, false);
+  assert.deepEqual(killed, [{ pid: 500, signal: 'SIGTERM' }]);
+  assert.equal(report.killed[0].reason, 'leaked-vhs-ttyd');
 });

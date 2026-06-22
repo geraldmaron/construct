@@ -3,6 +3,8 @@
  * of the context-continuation contract across the real owned-loop surfaces
  * (construct-6zga.1.10).
  *
+ * @capability chat.continuation.export
+ *
  * Drives the real modules end-to-end — maybeCompact builds a packet from a live
  * message history, the owned-loop driver maps the engine's continuation parts onto
  * the normalized event union, the packet rides a turn block through the real
@@ -126,8 +128,13 @@ test('export renders the continuation through the same resolver (AC3)', async ()
   applyEventToTurn(turn, { type: 'context_continuation', packet });
 
   const tmp = mkTmp('cx-export-');
+  // Export is project-scoped when the caller is inside a Construct project.
+  // Create that marker in the fixture so this test verifies the production
+  // contract without falling back to the developer's user-level ~/.cx path.
+  fs.mkdirSync(path.join(tmp, '.cx'), { recursive: true });
   const result = exportTurns([{ kind: 'turn', block: turn }], { scope: 'last', cwd: tmp });
   assert.equal(result.ok, true);
+  assert.ok(result.path.startsWith(path.join(tmp, '.cx', 'chat-sessions', 'exports')), result.path);
 
   const md = fs.readFileSync(result.path, 'utf8');
   assert.match(md, /context continuation/);

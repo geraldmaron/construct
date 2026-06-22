@@ -94,6 +94,19 @@ A skip env var on a quality gate is an admission that the gate is wrong, the pol
 - Advisory notices auto-detect non-interactive contexts (`CI=true`, `NODE_ENV=test`) and stay silent. The wrong-context detection is the right mechanism, not an opt-out flag.
 - Pinned by `tests/hooks/no-skip-vars.test.mjs`: any `CONSTRUCT_SKIP_*` / `CONSTRUCT_ALLOW_*` / `CONSTRUCT_QUIET_*` reference introduced into `lib/hooks/*.mjs` fails the test.
 
+## Behavior-to-test traceability
+
+`tests/capabilities/ledger.json` maps release-critical product behaviors to their
+failure modes, implementation impact paths, fixtures, and verifying tests. The
+ledger describes observable outcomes rather than private implementation units.
+Each mapped test declares the same `@capability <id>` marker, so
+`construct audit tests` can fail when either side of the relationship drifts.
+
+The ledger does not make every test a release gate by itself. It provides the
+evidence required to keep tests useful: retain a test when it uniquely proves a
+behavior or regression, and remove or consolidate it only after replacement
+coverage proves the same user-visible outcome and failure modes.
+
 ## Where to look when something is blocking
 
 | Symptom | Likely gate | Where to start |

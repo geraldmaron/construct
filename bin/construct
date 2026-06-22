@@ -59,6 +59,7 @@ import {
 import { runBd, getHumanStatus, acquireMergeSlot, releaseMergeSlot } from '../lib/beads-client.mjs';
 import { auditSkills, runAuditSkillsCli } from '../lib/audit-skills.mjs';
 import { auditSpecialists, runAuditSpecialistsCli } from '../lib/audit-specialists.mjs';
+import { runCapabilityLedgerAuditCli } from '../lib/capability-ledger.mjs';
 import { runArtifactValidateCli } from '../lib/artifact-release-gate.mjs';
 import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
 import { startDashboard, startServices } from '../lib/service-manager.mjs';
@@ -5623,11 +5624,12 @@ const handlers = new Map([
     const sub = args[0];
     if (sub === 'skills') return runAuditSkillsCli(args.slice(1));
     if (sub === 'specialists') return runAuditSpecialistsCli(args.slice(1));
+    if (sub === 'tests') return runCapabilityLedgerAuditCli(args.slice(1), { rootDir: ROOT_DIR });
     if (sub === 'trail' || !sub) {
       const { runAuditTrailCli } = await import('../lib/audit-trail.mjs');
       return runAuditTrailCli(args.slice(sub === 'trail' ? 1 : 0));
     }
-    errorln(`Unknown audit subcommand: ${sub}. Available: skills, specialists, trail`);
+    errorln(`Unknown audit subcommand: ${sub}. Available: skills, specialists, tests, trail`);
     process.exit(1);
   }],
   ['artifact', async (args) => {
