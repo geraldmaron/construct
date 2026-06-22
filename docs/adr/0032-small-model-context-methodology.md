@@ -1,7 +1,7 @@
 # ADR 0032: Small Model Context Methodology & Platform-Native Orchestration
 
 ## Status
-Accepted | revised 2026-06-09 after empirical validation — see `tests/e2e/reports/local-model-validation.md` | revised 2026-06-10 after OpenCode config-semantics confirmation — see `docs/research/2026-06-construct-audit/20-opencode-ecosystem.md` and `80-synthesis.md`
+Accepted | revised 2026-06-09 after empirical validation — see `tests/e2e/reports/local-model-validation.md` | revised 2026-06-10 after OpenCode config-semantics confirmation — see `docs/research/2026-06-construct-audit/20-opencode-ecosystem.md` and `80-synthesis.md` | revised 2026-06-22 after measured external-MCP schema capture — see `tests/fixtures/mcp-tool-schemas/manifest.json`
 
 ## Context
 Running local Ollama models (e.g. Qwen 7B) inside OpenCode produced severe repetition
@@ -93,3 +93,16 @@ model — a false COLLAPSED verdict must never strand a working model.
   disk cost is negligible) and depend on `ollama create`. Models that fail the coherence
   probe simply are not usable for agentic work — Construct surfaces this rather than
   papering over it.
+
+### Measured external-MCP schema cost (2026-06-22)
+
+The earlier informal `~12k` figure for the five heavy external servers
+(`context7`, `github`, `memory`, `sequential-thinking`, `playwright`) was
+understated. A reproducible `tools/list` capture
+(`scripts/measure-external-mcp-schemas.mjs`, fixtures in
+`tests/fixtures/mcp-tool-schemas/`) measured **37,281 schema tokens** total
+(`estimateToolTokens`, `TOKENS_PER_CHAR = 0.25`): github **30,128** (47 tools),
+playwright **4,271** (23), context7 **1,152** (2), sequential-thinking **1,126**
+(1), memory **604** (5 via cm bridge). GitHub dominates; sync-time
+`mcp.<id>.enabled:false` trim is therefore essential for local-model windows,
+not optional hygiene.
