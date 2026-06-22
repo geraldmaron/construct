@@ -194,6 +194,18 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/graph-impact-advisory.mjs\"",
+            "timeout": 10
+          }
+        ],
+        "id": "post:edit:graph-impact",
+        "description": "Advisory: surface affected tests from the dependency graph after code edits"
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
             "command": "node \"$HOME/.construct/lib/hooks/edit-accumulator.mjs\"",
             "timeout": 3
           }

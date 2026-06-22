@@ -131,7 +131,7 @@ Read the matching skill file before responding when the user's request matches t
 | create Jira proposal, update Linear, backlog proposal, issue proposal | `skills/docs/backlog-proposal-workflow.md` | Backlog proposal workflow: approval-gated issue tracker changes |
 | record this decision, create an ADR, architecture decision | `skills/docs/adr-workflow.md` | ADR workflow: decision to docs/adr/ file |
 | write a runbook, document this operation, operational procedure | `skills/docs/runbook-workflow.md` | Runbook workflow: operation to docs/runbooks/ file |
-| init project, new project setup, join project, set up doc structure | `skills/docs/init-project.md` | Project initialization via construct init-docs |
+| init project, new project setup, join project, set up doc structure | `skills/docs/init-project.md` | Project initialization via `construct init --docs-preset=*` |
 
 ## Routing Rules
 

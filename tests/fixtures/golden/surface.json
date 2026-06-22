@@ -505,6 +505,7 @@
       "comment-lint",
       "artifact-release-gate",
       "doc-coupling-check",
+      "graph-impact-advisory",
       "edit-accumulator",
       "registry-sync",
       "dep-audit",

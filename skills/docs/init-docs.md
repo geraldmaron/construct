@@ -46,7 +46,7 @@ docs/
 
 ## Interactive UX (TTY)
 
-When run interactively, `construct init-docs` renders a keyboard-driven **full-screen checkbox picker**: all available lanes listed with the default set pre-checked and context-suggested lanes highlighted in the UI. No typing required.
+When run interactively, `construct init --docs-preset=*` renders a keyboard-driven **full-screen checkbox picker**: all available lanes listed with the default set pre-checked and context-suggested lanes highlighted in the UI. No typing required.
 
 - **↑ / ↓**: move cursor (details shown in a dedicated panel)
 - **Space**: toggle lane on/off
@@ -54,7 +54,7 @@ When run interactively, `construct init-docs` renders a keyboard-driven **full-s
 - **Enter**: confirm and scaffold
 - Follow-up choices use the same menu pattern instead of free-text answers
 
-If the user selects the `intake` lane, `construct init-docs` should also create `.cx/inbox/`. Both `.cx/inbox/` and `docs/intake/` act as drop zones for ingestable files, while `docs/intake/` also serves as the durable paper trail lane.
+If the user selects the `intake` lane, `construct init` should also create `.cx/inbox/`. Both `.cx/inbox/` and `docs/intake/` act as drop zones for ingestable files, while `docs/intake/` also serves as the durable paper trail lane.
 
 When run non-interactively (`--yes` or piped stdin), the lean default set is used unless `--docs=` is supplied. `--docs=lean|product|full` or `--docs=adrs,prds,rfcs` both work.
 
