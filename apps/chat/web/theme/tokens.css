@@ -1317,6 +1317,16 @@ body.cx-cockpit-picker-open {
   font-style: italic;
 }
 
+.cx-turn-notice {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--cx-chat-warn);
+  background: color-mix(in srgb, var(--cx-chat-warn) 8%, transparent);
+  border-left: 2px solid var(--cx-chat-warn);
+  border-radius: 4px;
+}
+
 /* ─── User message ────────────────────────────────────────────── */
 
 .cx-user-bubble {

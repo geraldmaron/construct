@@ -111,6 +111,11 @@ function applyEvent(turn: ChatTurn, event: Record<string, unknown>): ChatTurn {
     case 'usage':
       next.usage = event as Record<string, unknown>;
       break;
+    case 'notice': {
+      const message = (event.message as string) || '';
+      if (message) next.notices = [...(turn.notices || []), message];
+      break;
+    }
     case 'model_resolved':
       next.resolvedModel = (event.model as string) || null;
       break;
