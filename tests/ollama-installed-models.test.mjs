@@ -8,8 +8,7 @@ import {
   toOllamaNativeModelId,
   formatOllamaModelMissingMessage,
   isOllamaModelInstalled,
-  resetInstalledOllamaModelsCacheForTests,
-  setInstalledOllamaModelsCacheForTests,
+  runWithInstalledOllamaCacheForTests,
 } from '../lib/ollama/installed-models.mjs';
 import { isChatModelAvailable } from '../lib/model-router.mjs';
 
@@ -24,32 +23,29 @@ test('formatOllamaModelMissingMessage includes pull commands', () => {
   assert.match(msg, /construct ollama pull llama3\.2:3b/);
 });
 
-test('isOllamaModelInstalled uses cached tag list when listable', () => {
-  resetInstalledOllamaModelsCacheForTests();
-  setInstalledOllamaModelsCacheForTests(['llama3.1:8b']);
-  assert.equal(isOllamaModelInstalled('ollama/llama3.1:8b'), true);
-  assert.equal(isOllamaModelInstalled('ollama/llama3.2:3b'), false);
-  resetInstalledOllamaModelsCacheForTests();
+test('isOllamaModelInstalled uses cached tag list when listable', async () => {
+  await runWithInstalledOllamaCacheForTests(['llama3.1:8b'], () => {
+    assert.equal(isOllamaModelInstalled('ollama/llama3.1:8b'), true);
+    assert.equal(isOllamaModelInstalled('ollama/llama3.2:3b'), false);
+  });
 });
 
-test('isChatModelAvailable rejects unpulled ollama model when tags are listable', () => {
-  resetInstalledOllamaModelsCacheForTests();
-  setInstalledOllamaModelsCacheForTests(['llama3.1:8b']);
-  const check = isChatModelAvailable('ollama/llama3.2:3b', {
-    env: { OLLAMA_BASE_URL: 'http://127.0.0.1:11434' },
+test('isChatModelAvailable rejects unpulled ollama model when tags are listable', async () => {
+  await runWithInstalledOllamaCacheForTests(['llama3.1:8b'], () => {
+    const check = isChatModelAvailable('ollama/llama3.2:3b', {
+      env: { OLLAMA_BASE_URL: 'http://127.0.0.1:11434' },
+    });
+    assert.equal(check.ok, false);
+    assert.equal(check.reason, 'model_not_pulled');
+    assert.equal(check.nativeModel, 'llama3.2:3b');
   });
-  assert.equal(check.ok, false);
-  assert.equal(check.reason, 'model_not_pulled');
-  assert.equal(check.nativeModel, 'llama3.2:3b');
-  resetInstalledOllamaModelsCacheForTests();
 });
 
-test('isChatModelAvailable accepts installed ollama model when tags are listable', () => {
-  resetInstalledOllamaModelsCacheForTests();
-  setInstalledOllamaModelsCacheForTests(['llama3.2:3b']);
-  const check = isChatModelAvailable('ollama/llama3.2:3b', {
-    env: { OLLAMA_BASE_URL: 'http://127.0.0.1:11434' },
+test('isChatModelAvailable accepts installed ollama model when tags are listable', async () => {
+  await runWithInstalledOllamaCacheForTests(['llama3.2:3b'], () => {
+    const check = isChatModelAvailable('ollama/llama3.2:3b', {
+      env: { OLLAMA_BASE_URL: 'http://127.0.0.1:11434' },
+    });
+    assert.equal(check.ok, true);
   });
-  assert.equal(check.ok, true);
-  resetInstalledOllamaModelsCacheForTests();
 });
