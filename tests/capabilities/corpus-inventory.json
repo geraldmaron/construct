@@ -1,23 +1,25 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-22T20:17:34.740Z",
+  "generatedAt": "2026-06-22T20:46:45.851Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 502,
+    "testFiles": 509,
     "topLevelTestFiles": 274,
-    "nestedTestFiles": 228,
+    "nestedTestFiles": 235,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 20,
+    "capabilityMarkedFiles": 21,
     "byLayer": {
-      "unit": 306,
+      "unit": 311,
+      "live-provider": 2,
       "integration": 31,
       "visual": 5,
       "functional": 160
     },
     "byCategory": {
-      "unit": 268,
-      "structural-guard": 10,
+      "unit": 272,
+      "structural-guard": 11,
       "contract-subsystem": 28,
+      "live-provider": 2,
       "integration": 22,
       "visual": 5,
       "functional": 160,
@@ -267,6 +269,22 @@
       "maintainerNotes": "tests/certification/artifact-gates.test.mjs — golden artifact gate matrix."
     },
     {
+      "path": "tests/certification/artifact-provenance.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/artifact-provenance.test.mjs — provenance and accessibility gates."
+    },
+    {
+      "path": "tests/certification/demo-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/demo-parity.test.mjs — cross-surface demo parity report."
+    },
+    {
       "path": "tests/certification/demo-surfaces.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -295,6 +313,14 @@
       "maintainerNotes": "tests/certification/document-io-cert.test.mjs — fidelity and strict-mode certification."
     },
     {
+      "path": "tests/certification/document-workflow.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/document-workflow.test.mjs — ingest to export workflow certification."
+    },
+    {
       "path": "tests/certification/export-format-cert.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -305,6 +331,24 @@
       "maintainerNotes": "tests/certification/export-format-cert.test.mjs — deck/pptx/doc/pdf export certification."
     },
     {
+      "path": "tests/certification/p2-surface-harness.test.mjs",
+      "layer": "live-provider",
+      "category": "live-provider",
+      "capabilities": [
+        "test-system.certification-runner"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/p2-surface-harness.test.mjs — P2 certification surface harnesses."
+    },
+    {
+      "path": "tests/certification/prompt-budget.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/prompt-budget.test.mjs — composed prompt budget evidence."
+    },
+    {
       "path": "tests/certification/rc-gate.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -313,12 +357,28 @@
       "maintainerNotes": "tests/certification/rc-gate.test.mjs — release candidate certification gate."
     },
     {
+      "path": "tests/certification/real-llm-scenarios.test.mjs",
+      "layer": "live-provider",
+      "category": "live-provider",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/real-llm-scenarios.test.mjs — S3/S8 certification harness exports."
+    },
+    {
       "path": "tests/certification/role-cards.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/certification/role-cards.test.mjs — specialist role card fixtures."
+    },
+    {
+      "path": "tests/certification/role-overlays.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/role-overlays.test.mjs — role overlay parity certification."
     },
     {
       "path": "tests/certification/skills/inventory.test.mjs",
@@ -2238,7 +2298,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "real-llm-scenarios.functional.test.mjs — opt-in S3 (PRD) + S8 (orchestration_run) scenarios."
+      "maintainerNotes": "tests/functional/real-llm-scenarios.functional.test.mjs — opt-in S3 (PRD) + S8 (orchestration_run) scenarios."
     },
     {
       "path": "tests/functional/reconcile-legacy-footprint.functional.test.mjs",
