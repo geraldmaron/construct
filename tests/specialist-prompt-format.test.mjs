@@ -1,7 +1,7 @@
 /**
  * tests/specialist-prompt-format.test.mjs — hybrid specialist prompt format (ADR-0037).
  *
- * Pins three guarantees: the frontmatter schema + perspective drift gate
+ * Pins three guarantees: the frontmatter schema + perspective validation
  * (lib/specialists/prompt-schema.mjs); emit-neutrality — adding frontmatter does
  * not change the body the sync pipeline reads, checked against committed golden
  * fixtures via the real strip path; and the scaffold/edit CLI surface
@@ -40,10 +40,8 @@ function frontmatter(extra = {}) {
     '---', '', '## Anti-fabrication contract', 'x', '', '## Output format', 'y', ''].join('\n');
 }
 
-const registryEntry = { name: 'architect', perspective: ARCHITECT_PERSPECTIVE };
-
 test('a valid converted file passes with no errors', () => {
-  const r = validatePromptContent({ content: frontmatter(), id: 'cx-architect', registryEntry });
+  const r = validatePromptContent({ content: frontmatter(), id: 'cx-architect', registryEntry: { name: 'architect' } });
   assert.equal(r.converted, true);
   assert.deepEqual(r.errors, []);
 });
@@ -61,10 +59,10 @@ test('missing required frontmatter is an error', () => {
   assert.ok(r.errors.some((e) => /missing required frontmatter field "version"/.test(e)));
 });
 
-test('the perspective drift gate fires when frontmatter disagrees with the registry', () => {
-  const drifted = { ...registryEntry, perspective: { ...ARCHITECT_PERSPECTIVE, tension: 'cx-someone-else' } };
-  const r = validatePromptContent({ content: frontmatter(), id: 'cx-architect', registryEntry: drifted });
-  assert.ok(r.errors.some((e) => /drifts from registry/.test(e)), 'drift is an error');
+test('incomplete perspective fields are errors', () => {
+  const bad = frontmatter().replace(`  tension: ${JSON.stringify(ARCHITECT_PERSPECTIVE.tension)}`, '  tension: ""');
+  const r = validatePromptContent({ content: bad, id: 'cx-architect' });
+  assert.ok(r.errors.some((e) => /perspective\.tension/.test(e)), 'empty tension is an error');
 });
 
 test('invalid YAML frontmatter is an error, not a crash', () => {

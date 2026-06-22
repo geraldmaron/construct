@@ -155,6 +155,16 @@ if (validationErrors.length > 0) {
   }
 }
 
+{
+  const { validatePromptFiles } = await import("../lib/specialists/prompt-schema.mjs");
+  const promptResult = validatePromptFiles({ rootDir: root, registry });
+  if (promptResult.errors.length > 0) {
+    console.error("Specialist prompt validation failed:");
+    for (const err of promptResult.errors) console.error(`  - ${err}`);
+    process.exit(1);
+  }
+}
+
 // --- Dry-run + lockfile + two-phase write infrastructure ---
 
 const DRY_RUN = process.argv.includes("--dry-run");
