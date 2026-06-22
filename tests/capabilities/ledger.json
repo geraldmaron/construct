@@ -47,6 +47,76 @@
       "fixtures": ["templates/demos/tapes/agentic-platforms-prd.tape", "templates/demos/vhs/construct-cockpit.json"],
       "assertions": ["source tape is always produced", "the shipped tape drives construct chat with the Construct Cockpit theme"],
       "tests": [{ "path": "tests/functional/demo.functional.test.mjs", "layer": "functional" }]
+    },
+    {
+      "id": "research.project-search",
+      "criticality": "release",
+      "outcome": "A user can search project knowledge and receive hits from the active project's .cx/knowledge before bundled docs.",
+      "failureModes": ["project research is invisible to construct knowledge search", "bundled docs outrank the user's own research for the same query"],
+      "changePaths": ["lib/knowledge/search.mjs", "lib/knowledge/rag.mjs", "bin/construct"],
+      "fixtures": ["tests/functional/knowledge-search-project-scope.functional.test.mjs"],
+      "assertions": ["project-origin hits are returned", "project hits outrank bundled Construct docs for the same query"],
+      "tests": [{ "path": "tests/functional/knowledge-search-project-scope.functional.test.mjs", "layer": "functional" }]
+    },
+    {
+      "id": "publish.distribution",
+      "criticality": "release",
+      "outcome": "A user can publish a validated markdown artifact to distributable outputs with explicit gate failures when prerequisites are missing.",
+      "failureModes": ["invalid artifacts publish without release-gate failure", "missing export tooling crashes instead of degrading"],
+      "changePaths": ["lib/publish.mjs", "lib/publish-tooling.mjs", "lib/publish-template.mjs"],
+      "fixtures": ["tests/fixtures/publish/golden-prd-platform.md", "tests/functional/publish.functional.test.mjs"],
+      "assertions": ["release-gate failures surface actionable messages", "publish pipeline detection reports missing optional tools honestly"],
+      "tests": [{ "path": "tests/functional/publish.functional.test.mjs", "layer": "functional" }]
+    },
+    {
+      "id": "diagram.graceful-render",
+      "criticality": "release",
+      "outcome": "A user can render or export a diagram source and always receive source output even when external renderers are absent.",
+      "failureModes": ["missing renderer crashes the command", "rendered output is produced without source when renderer fails"],
+      "changePaths": ["lib/diagram.mjs", "lib/diagram-export.mjs", "bin/construct"],
+      "fixtures": ["tests/functional/diagram.functional.test.mjs"],
+      "assertions": ["construct diagram exits 0 without renderer binaries", "renderer presence also yields rendered SVG"],
+      "tests": [{ "path": "tests/functional/diagram.functional.test.mjs", "layer": "functional" }]
+    },
+    {
+      "id": "document.auto-docs",
+      "criticality": "release",
+      "outcome": "A user can regenerate and verify AUTO-managed documentation regions without silent drift.",
+      "failureModes": ["AUTO regions drift without detection", "regeneration is not idempotent"],
+      "changePaths": ["lib/auto-docs.mjs", "lib/docs-verify.mjs", "bin/construct"],
+      "fixtures": ["tests/auto-docs.test.mjs"],
+      "assertions": ["regenerateDocs is idempotent", "check mode detects drift without writing"],
+      "tests": [{ "path": "tests/auto-docs.test.mjs", "layer": "integration" }]
+    },
+    {
+      "id": "test-system.corpus-inventory",
+      "criticality": "important",
+      "outcome": "Every test file is classified in a reproducible corpus inventory tied to certification gap analysis.",
+      "failureModes": ["inventory omits test files", "summary counts diverge from on-disk files"],
+      "changePaths": ["lib/test-corpus-inventory.mjs", "tests/capabilities/corpus-inventory.json", "scripts/generate-test-corpus-inventory.mjs"],
+      "fixtures": ["tests/capabilities/corpus-inventory.json"],
+      "assertions": ["inventory includes every tests/**/*.test.mjs file", "construct audit tests --corpus passes"],
+      "tests": [{ "path": "tests/test-corpus-inventory.test.mjs", "layer": "integration" }]
+    },
+    {
+      "id": "test-system.certification-run",
+      "criticality": "important",
+      "outcome": "Certification run records validate and skipped provider calls cannot be recorded as pass.",
+      "failureModes": ["invalid run schema is accepted", "skipped-provider verdict is promoted to pass"],
+      "changePaths": ["lib/certification/run.mjs", "lib/certification/store.mjs", "schemas/certification-run.schema.json"],
+      "fixtures": ["tests/fixtures/certification/minimal-pass-run.json", "tests/fixtures/certification/skipped-provider-run.json"],
+      "assertions": ["fixture runs validate", "skipped provider calls derive inconclusive verdicts"],
+      "tests": [{ "path": "tests/certification-run.test.mjs", "layer": "unit" }]
+    },
+    {
+      "id": "test-system.certification-runner",
+      "criticality": "important",
+      "outcome": "construct certify run executes hermetic scenarios and records durable pass/fail/inconclusive results.",
+      "failureModes": ["live scenarios run without opt-in", "hermetic scenarios do not persist run artifacts"],
+      "changePaths": ["lib/certification/runner.mjs", "lib/certification/cli.mjs", "tests/certification/scenarios/catalog.json"],
+      "fixtures": ["tests/certification/scenarios/catalog.json"],
+      "assertions": ["hermetic scenario passes and persists", "live scenario without opt-in is inconclusive"],
+      "tests": [{ "path": "tests/certification-runner.test.mjs", "layer": "integration" }]
     }
   ]
 }

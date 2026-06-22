@@ -221,7 +221,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | Command | What it does |
 |---|---|
 | `construct audit` | Audit Construct internals and review the mutation trail |
-| `construct certify` | Inspect scenario-based certification runs stored under .cx/certification/ |
+| `construct certify` | Inspect and run scenario-based certification under .cx/certification/ |
 | `construct cleanup` | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct docs:check` | Check for missing how-to guides (alias for `docs check`) |

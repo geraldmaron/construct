@@ -1,5 +1,7 @@
 /**
  * publish.functional.test.mjs — `construct publish` and `construct tools detect`.
+ *
+ * @capability publish.distribution
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

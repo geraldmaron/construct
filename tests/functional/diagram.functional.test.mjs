@@ -1,6 +1,8 @@
 /**
  * diagram.functional.test.mjs — `construct diagram` smoke gate.
  *
+ * @capability diagram.graceful-render
+ *
  * Contract: source is ALWAYS produced and the command ALWAYS exits 0,
  * whether or not a renderer binary (D2 / Graphviz dot) is present. When a
  * renderer IS present, a rendered SVG must also appear. This asserts the

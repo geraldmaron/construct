@@ -1,6 +1,8 @@
 /**
  * tests/functional/knowledge-search-project-scope.functional.test.mjs —
  * `construct knowledge search` surfaces the cwd project's `.cx/knowledge/**`
+ *
+ * @capability research.project-search
  * alongside (and ahead of) the bundled Construct docs (construct-wxip).
  *
  * The bug: knowledgeSearch built its source list from the Construct repo only,

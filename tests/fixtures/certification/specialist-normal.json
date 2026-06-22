@@ -1,0 +1,5 @@
+{
+  "scenarioId": "specialist.prompt.normal",
+  "prompt": "Summarize the construct certify command in one sentence.",
+  "expectedShape": "non-empty prose"
+}
