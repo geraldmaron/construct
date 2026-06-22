@@ -1,0 +1,6 @@
+From: fixture@construct.test
+To: intake@construct.test
+Subject: Document I/O email fixture
+Content-Type: text/plain; charset=utf-8
+
+Email body for document-io fixture.

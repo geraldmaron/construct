@@ -43,11 +43,12 @@ Inspect and run scenario-based certification under .cx/certification/
 **Usage**
 
 ```bash
-construct certify list|show|scenarios|run <scenario-id>
+construct certify list|show|scenarios|models|demos|run <scenario-id>
 ```
 
 **Subcommands**
 
+- `[object Object]`
 - `[object Object]`
 - `[object Object]`
 - `[object Object]`

@@ -49,9 +49,23 @@
       "gates": [{ "id": "handoff-contract", "type": "live-provider-smoke" }],
       "model": {
         "provider": "openrouter",
-        "requestedId": "openrouter/free",
-        "resolvedId": "openrouter/free",
+        "requestedId": "openrouter/free-auto",
+        "resolvedId": "openrouter/openrouter/free",
         "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "specialist.prompt.paid-reference",
+      "capabilityId": "specialist.prompt",
+      "mode": "live",
+      "fixture": { "path": "tests/fixtures/certification/specialist-normal.json" },
+      "gates": [{ "id": "handoff-contract", "type": "live-provider-smoke" }],
+      "model": {
+        "provider": "openrouter",
+        "requestedId": "anthropic/claude-sonnet-4",
+        "resolvedId": "openrouter/anthropic/claude-sonnet-4",
+        "tier": "paid-reference"
       },
       "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
     }

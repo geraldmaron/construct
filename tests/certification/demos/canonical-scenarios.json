@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "schema": "construct/certification/canonical-demos/1",
+  "description": "Canonical demo scenarios citing templates/demos tape and theme sources.",
+  "demos": [
+    {
+      "id": "agentic-platforms-prd",
+      "capabilityId": "demo.terminal-fallback",
+      "tape": "templates/demos/tapes/agentic-platforms-prd.tape",
+      "script": "templates/demos/scripts/agentic-platforms-prd.json",
+      "vhsTheme": "templates/demos/vhs/construct-cockpit.json",
+      "references": [
+        "templates/demos/tapes/agentic-platforms-prd.tape",
+        "templates/demos/scripts/agentic-platforms-prd.json"
+      ]
+    },
+    {
+      "id": "construct-cockpit",
+      "capabilityId": "demo.terminal-fallback",
+      "tape": "templates/demos/tapes/resource-guard-rails.tape",
+      "vhsTheme": "templates/demos/vhs/construct-cockpit.json",
+      "references": [
+        "templates/demos/tapes/resource-guard-rails.tape",
+        "templates/demos/vhs/construct-cockpit.json"
+      ]
+    }
+  ]
+}
