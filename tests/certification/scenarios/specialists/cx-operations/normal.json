@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "specialistId": "cx-operations",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path",
+  "userPrompt": "What must be done first, what blocks what, and who owns each deliverable?",
+  "roleCardRefs": [
+    "openingQuestion",
+    "humanEquivalent",
+    "skills"
+  ],
+  "hermeticChecks": [
+    "role-card-exists",
+    "registry-specialist-match",
+    "contract-audit-pass"
+  ],
+  "handoffEvidence": {
+    "required": false,
+    "artifactTypes": []
+  },
+  "liveScoring": {
+    "enabled": true,
+    "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+  }
+}

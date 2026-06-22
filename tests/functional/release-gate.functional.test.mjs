@@ -158,6 +158,12 @@ test('release gate (W1): no misleading "future implementation" wording in source
   }
 });
 
+test('release gate: construct certify gate passes on HEAD', () => {
+  const result = run(['certify', 'gate']);
+  assert.equal(result.status, 0, `certify gate exited ${result.status}; stdout: ${result.stdout}\nstderr: ${result.stderr}`);
+  assert.match(result.stdout, /PASS/);
+});
+
 test('release gate: CHANGELOG.md Unreleased section exists', () => {
   const changelog = readFileSync(join(REPO_ROOT, 'CHANGELOG.md'), 'utf8');
   assert.match(changelog, /## \[Unreleased\]/, 'CHANGELOG.md must carry an Unreleased section');

@@ -6,8 +6,15 @@
       "id": "ledger.traceability",
       "capabilityId": "test-system.capability-ledger",
       "mode": "hermetic",
-      "fixture": { "path": "tests/capabilities/ledger.json" },
-      "gates": [{ "id": "capability-ledger-valid", "type": "capability-ledger-audit" }],
+      "fixture": {
+        "path": "tests/capabilities/ledger.json"
+      },
+      "gates": [
+        {
+          "id": "capability-ledger-valid",
+          "type": "capability-ledger-audit"
+        }
+      ],
       "model": {
         "provider": "hermetic",
         "requestedId": "fixture/ledger",
@@ -19,8 +26,15 @@
       "id": "corpus.inventory",
       "capabilityId": "test-system.corpus-inventory",
       "mode": "hermetic",
-      "fixture": { "path": "tests/capabilities/corpus-inventory.json" },
-      "gates": [{ "id": "corpus-inventory-valid", "type": "corpus-inventory-audit" }],
+      "fixture": {
+        "path": "tests/capabilities/corpus-inventory.json"
+      },
+      "gates": [
+        {
+          "id": "corpus-inventory-valid",
+          "type": "corpus-inventory-audit"
+        }
+      ],
       "model": {
         "provider": "hermetic",
         "requestedId": "fixture/corpus",
@@ -32,8 +46,16 @@
       "id": "artifact.release-gate.prd",
       "capabilityId": "artifact.release-gate",
       "mode": "hermetic",
-      "fixture": { "path": "templates/docs/prd.md" },
-      "gates": [{ "id": "prd-template-valid", "type": "artifact-release-gate", "artifactType": "prd" }],
+      "fixture": {
+        "path": "templates/docs/prd.md"
+      },
+      "gates": [
+        {
+          "id": "prd-template-valid",
+          "type": "artifact-release-gate",
+          "artifactType": "prd"
+        }
+      ],
       "model": {
         "provider": "hermetic",
         "requestedId": "fixture/prd",
@@ -42,11 +64,58 @@
       }
     },
     {
+      "id": "specialist.role-cards",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "specialists/registry.json"
+      },
+      "gates": [
+        {
+          "id": "role-cards-complete",
+          "type": "role-cards-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/role-cards",
+        "resolvedId": "fixture/role-cards",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.contracts",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "specialists/registry.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-contracts-pass",
+          "type": "specialist-contracts-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/contracts",
+        "resolvedId": "fixture/contracts",
+        "tier": "hermetic"
+      }
+    },
+    {
       "id": "specialist.prompt.normal",
       "capabilityId": "specialist.prompt",
       "mode": "live",
-      "fixture": { "path": "tests/fixtures/certification/specialist-normal.json" },
-      "gates": [{ "id": "handoff-contract", "type": "live-provider-smoke" }],
+      "fixture": {
+        "path": "tests/fixtures/certification/specialist-normal.json"
+      },
+      "gates": [
+        {
+          "id": "handoff-contract",
+          "type": "live-provider-smoke"
+        }
+      ],
       "model": {
         "provider": "openrouter",
         "requestedId": "openrouter/free-auto",
@@ -59,8 +128,15 @@
       "id": "specialist.prompt.paid-reference",
       "capabilityId": "specialist.prompt",
       "mode": "live",
-      "fixture": { "path": "tests/fixtures/certification/specialist-normal.json" },
-      "gates": [{ "id": "handoff-contract", "type": "live-provider-smoke" }],
+      "fixture": {
+        "path": "tests/fixtures/certification/specialist-normal.json"
+      },
+      "gates": [
+        {
+          "id": "handoff-contract",
+          "type": "live-provider-smoke"
+        }
+      ],
       "model": {
         "provider": "openrouter",
         "requestedId": "anthropic/claude-sonnet-4",
@@ -68,6 +144,1546 @@
         "tier": "paid-reference"
       },
       "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "skill.positive.devops.testing",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/devops__testing/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-devops/testing",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.docs.adr-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__adr-workflow/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-docs/adr-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.docs.backlog-proposal-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__backlog-proposal-workflow/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-docs/backlog-proposal-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.docs.customer-profile-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__customer-profile-workflow/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-docs/customer-profile-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.docs.evidence-ingest-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__evidence-ingest-workflow/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-docs/evidence-ingest-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.negative.docs.evidence-ingest-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__evidence-ingest-workflow/negative.json"
+      },
+      "gates": [
+        {
+          "id": "skill-negative-docs/evidence-ingest-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.docs.memo-and-decision-capture",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__memo-and-decision-capture/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-docs/memo-and-decision-capture",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.docs.prd-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__prd-workflow/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-docs/prd-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.negative.docs.prd-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__prd-workflow/negative.json"
+      },
+      "gates": [
+        {
+          "id": "skill-negative-docs/prd-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.docs.prfaq-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__prfaq-workflow/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-docs/prfaq-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.docs.product-intelligence-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__product-intelligence-workflow/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-docs/product-intelligence-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.negative.docs.product-intelligence-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__product-intelligence-workflow/negative.json"
+      },
+      "gates": [
+        {
+          "id": "skill-negative-docs/product-intelligence-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.docs.research-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__research-workflow/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-docs/research-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.docs.runbook-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__runbook-workflow/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-docs/runbook-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.docs.strategy-workflow",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/docs__strategy-workflow/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-docs/strategy-workflow",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.quality-gates.verify-security",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/quality-gates__verify-security/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-quality-gates/verify-security",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.negative.quality-gates.verify-security",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/quality-gates__verify-security/negative.json"
+      },
+      "gates": [
+        {
+          "id": "skill-negative-quality-gates/verify-security",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.positive.security.threat-intel",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/security__threat-intel/positive.json"
+      },
+      "gates": [
+        {
+          "id": "skill-positive-security/threat-intel",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skill.negative.security.threat-intel",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/security__threat-intel/negative.json"
+      },
+      "gates": [
+        {
+          "id": "skill-negative-security/threat-intel",
+          "type": "skill-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/skill",
+        "resolvedId": "fixture/skill",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.orchestrator",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-orchestrator/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-orchestrator",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.orchestrator",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-orchestrator/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-orchestrator",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.oracle",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-oracle/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-oracle",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.oracle",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-oracle/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-oracle",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.rd-lead",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-rd-lead/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-rd-lead",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.rd-lead",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-rd-lead/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-rd-lead",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.product-manager",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-product-manager/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-product-manager",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.product-manager",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-product-manager/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-product-manager",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.ux-researcher",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-ux-researcher/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-ux-researcher",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.ux-researcher",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-ux-researcher/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-ux-researcher",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.operations",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-operations/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-operations",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.operations",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-operations/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-operations",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.researcher",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-researcher/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-researcher",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.researcher",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-researcher/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-researcher",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.business-strategist",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-business-strategist/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-business-strategist",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.business-strategist",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-business-strategist/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-business-strategist",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.data-analyst",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-data-analyst/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-data-analyst",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.data-analyst",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-data-analyst/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-data-analyst",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.evaluator",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-evaluator/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-evaluator",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.evaluator",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-evaluator/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-evaluator",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.ai-engineer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-ai-engineer/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-ai-engineer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.ai-engineer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-ai-engineer/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-ai-engineer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.architect",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-architect/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-architect",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.architect",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-architect/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-architect",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.engineer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-engineer/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-engineer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.engineer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-engineer/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-engineer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.devil-advocate",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-devil-advocate/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-devil-advocate",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.devil-advocate",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-devil-advocate/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-devil-advocate",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.reviewer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-reviewer/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-reviewer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.reviewer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-reviewer/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-reviewer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.security",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-security/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-security",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.security",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-security/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-security",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.qa",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-qa/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-qa",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.qa",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-qa/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-qa",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.debugger",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-debugger/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-debugger",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.debugger",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-debugger/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-debugger",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.sre",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-sre/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-sre",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.sre",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-sre/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-sre",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.platform-engineer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-platform-engineer/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-platform-engineer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.platform-engineer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-platform-engineer/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-platform-engineer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.legal-compliance",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-legal-compliance/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-legal-compliance",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.legal-compliance",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-legal-compliance/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-legal-compliance",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.release-manager",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-release-manager/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-release-manager",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.release-manager",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-release-manager/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-release-manager",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.docs-keeper",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-docs-keeper/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-docs-keeper",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.docs-keeper",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-docs-keeper/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-docs-keeper",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.designer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-designer/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-designer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.designer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-designer/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-designer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.accessibility",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-accessibility/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-accessibility",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.accessibility",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-accessibility/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-accessibility",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.explorer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-explorer/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-explorer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.explorer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-explorer/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-explorer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.trace-reviewer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-trace-reviewer/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-trace-reviewer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.trace-reviewer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-trace-reviewer/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-trace-reviewer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.data-engineer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-data-engineer/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-data-engineer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.data-engineer",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-data-engineer/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-data-engineer",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.normal.test-automation",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-test-automation/normal.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-normal-test-automation",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "specialist.adversarial.test-automation",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/specialists/cx-test-automation/adversarial.json"
+      },
+      "gates": [
+        {
+          "id": "specialist-adversarial-test-automation",
+          "type": "specialist-scenario-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/specialist",
+        "resolvedId": "fixture/specialist",
+        "tier": "hermetic"
+      }
     }
   ]
 }

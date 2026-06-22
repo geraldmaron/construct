@@ -1,0 +1,22 @@
+{
+  "skillId": "docs/backlog-proposal-workflow",
+  "mode": "positive",
+  "activationTriggers": [
+    "Use when: product evidence should create or update Jira, Linear, GitHub Issues, or another tracker.",
+    "product evidence should create or update Jira, Linear, GitHub Issues, or another tracker."
+  ],
+  "inputs": [
+    "[evidence-brief, prd, signal]"
+  ],
+  "expectedOutputs": {
+    "artifactType": "backlog-proposal",
+    "name": "docs-backlog-proposal-workflow"
+  },
+  "verificationSteps": [
+    "skill file exists under skills/",
+    "inventory lists owners and workflowSkill=true"
+  ],
+  "owners": [
+    "cx-product-manager"
+  ]
+}

@@ -1,21 +1,21 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-22T19:32:23.509Z",
+  "generatedAt": "2026-06-22T20:17:34.740Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 493,
+    "testFiles": 502,
     "topLevelTestFiles": 274,
-    "nestedTestFiles": 219,
+    "nestedTestFiles": 228,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 16,
+    "capabilityMarkedFiles": 20,
     "byLayer": {
-      "unit": 297,
+      "unit": 306,
       "integration": 31,
       "visual": 5,
       "functional": 160
     },
     "byCategory": {
-      "unit": 259,
+      "unit": 268,
       "structural-guard": 10,
       "contract-subsystem": 28,
       "integration": 22,
@@ -257,12 +257,68 @@
       "maintainerNotes": "tests/certification-runner.test.mjs — certification scenario runner and CLI wiring."
     },
     {
+      "path": "tests/certification/artifact-gates.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [
+        "artifact.release-gate"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/artifact-gates.test.mjs — golden artifact gate matrix."
+    },
+    {
+      "path": "tests/certification/demo-surfaces.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [
+        "demo.terminal-fallback"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/demo-surfaces.test.mjs — Tauri/web/VHS demo certification harness markers."
+    },
+    {
       "path": "tests/certification/demos/canonical-scenarios.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/certification/demos/canonical-scenarios.test.mjs — canonical demo scenario catalog validator."
+    },
+    {
+      "path": "tests/certification/document-io-cert.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [
+        "ingest.document-io"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/document-io-cert.test.mjs — fidelity and strict-mode certification."
+    },
+    {
+      "path": "tests/certification/export-format-cert.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [
+        "publish.deck-export"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/export-format-cert.test.mjs — deck/pptx/doc/pdf export certification."
+    },
+    {
+      "path": "tests/certification/rc-gate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/rc-gate.test.mjs — release candidate certification gate."
+    },
+    {
+      "path": "tests/certification/role-cards.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/role-cards.test.mjs — specialist role card fixtures."
     },
     {
       "path": "tests/certification/skills/inventory.test.mjs",
@@ -273,12 +329,36 @@
       "maintainerNotes": "tests/certification/skills/inventory.test.mjs — skill inventory audit and freshness."
     },
     {
+      "path": "tests/certification/specialist-contracts.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/specialist-contracts.test.mjs — deterministic specialist contract gates."
+    },
+    {
+      "path": "tests/certification/specialist-scenarios.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/specialist-scenarios.test.mjs — per-specialist scenario fixtures."
+    },
+    {
       "path": "tests/certification/stale-impact.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/certification/stale-impact.test.mjs — certification stale marking on ledger path changes."
+    },
+    {
+      "path": "tests/certification/status.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/status.test.mjs — certification status rollup."
     },
     {
       "path": "tests/chat-evidence.test.mjs",

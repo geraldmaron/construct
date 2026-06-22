@@ -1,0 +1,22 @@
+{
+  "skillId": "docs/customer-profile-workflow",
+  "mode": "positive",
+  "activationTriggers": [
+    "Use when: customer evidence should update durable product memory.",
+    "customer evidence should update durable product memory."
+  ],
+  "inputs": [
+    "[signal, customer-profile]"
+  ],
+  "expectedOutputs": {
+    "artifactType": "customer-profile",
+    "name": "docs-customer-profile-workflow"
+  },
+  "verificationSteps": [
+    "skill file exists under skills/",
+    "inventory lists owners and workflowSkill=true"
+  ],
+  "owners": [
+    "cx-product-manager"
+  ]
+}

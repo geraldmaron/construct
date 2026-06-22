@@ -1,0 +1,568 @@
+{
+  "generatedAt": "2026-06-22T20:29:29.023Z",
+  "matrix": [
+    {
+      "type": "prd",
+      "structureRequirements": [
+        "Problem",
+        "Goals",
+        "Success metrics",
+        "Risks and mitigations"
+      ],
+      "visualRequirements": [
+        "artifact-has-mermaid",
+        "artifact-table-has-columns"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 3,
+        "requiredReviewers": [
+          "cx-devil-advocate"
+        ],
+        "optionalReviewers": [
+          "cx-ux-researcher"
+        ]
+      }
+    },
+    {
+      "type": "prd-platform",
+      "structureRequirements": [
+        "Problem",
+        "Goals and non-goals",
+        "Success metrics",
+        "Risks and mitigations"
+      ],
+      "visualRequirements": [
+        "artifact-has-mermaid",
+        "artifact-table-has-columns"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 3,
+        "requiredReviewers": [
+          "cx-devil-advocate",
+          "cx-architect"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "prd-business",
+      "structureRequirements": [
+        "The bet",
+        "Market thesis",
+        "Problem and opportunity",
+        "Strategic goals",
+        "Alternatives rejected"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 3,
+        "requiredReviewers": [
+          "cx-devil-advocate"
+        ],
+        "optionalReviewers": [
+          "cx-business-strategist"
+        ]
+      }
+    },
+    {
+      "type": "meta-prd",
+      "structureRequirements": [
+        "Problem",
+        "Goals",
+        "Principles",
+        "Failure modes and mitigations",
+        "Rollout"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 3,
+        "requiredReviewers": [
+          "cx-devil-advocate",
+          "cx-reviewer"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "adr",
+      "structureRequirements": [
+        "Problem",
+        "Decision",
+        "Rejected alternatives",
+        "Consequences",
+        "Reversibility"
+      ],
+      "visualRequirements": [
+        "artifact-has-mermaid"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 2,
+        "requiredReviewers": [
+          "cx-devil-advocate",
+          "cx-reviewer"
+        ],
+        "optionalReviewers": [
+          "cx-architect"
+        ]
+      }
+    },
+    {
+      "type": "rfc",
+      "structureRequirements": [
+        "Summary",
+        "Motivation",
+        "Proposed design",
+        "Risks",
+        "Verification"
+      ],
+      "visualRequirements": [
+        "artifact-has-mermaid"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 3,
+        "requiredReviewers": [
+          "cx-devil-advocate",
+          "cx-reviewer"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "rfc-platform",
+      "structureRequirements": [
+        "Summary",
+        "Motivation",
+        "Proposed contract",
+        "Risks",
+        "Verification"
+      ],
+      "visualRequirements": [
+        "artifact-has-mermaid"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 3,
+        "requiredReviewers": [
+          "cx-devil-advocate",
+          "cx-reviewer"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "research-brief",
+      "structureRequirements": [
+        "Sources",
+        "Findings",
+        "Confidence summary",
+        "Recommendation"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 2,
+        "requiredReviewers": [],
+        "optionalReviewers": [
+          "cx-reviewer"
+        ]
+      }
+    },
+    {
+      "type": "evidence-brief",
+      "structureRequirements": [
+        "Sources",
+        "What we observed",
+        "Confidence",
+        "Recommendation"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 2,
+        "requiredReviewers": [],
+        "optionalReviewers": [
+          "cx-devil-advocate"
+        ]
+      }
+    },
+    {
+      "type": "signal-brief",
+      "structureRequirements": [
+        "Signal",
+        "Evidence",
+        "Counter-signal",
+        "What would make this actionable"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 1,
+        "requiredReviewers": [],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "runbook",
+      "structureRequirements": [
+        "Alert trigger",
+        "Symptoms",
+        "Impact",
+        "Severity and response",
+        "Diagnostic steps",
+        "Remediation",
+        "Rollback",
+        "Escalation"
+      ],
+      "visualRequirements": [
+        "artifact-has-mermaid"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": false,
+        "proseMinimum": 2,
+        "requiredReviewers": [],
+        "optionalReviewers": [
+          "cx-sre"
+        ]
+      }
+    },
+    {
+      "type": "incident-report",
+      "structureRequirements": [
+        "Summary",
+        "Severity rationale",
+        "Impact",
+        "Timeline",
+        "Trigger",
+        "Root cause",
+        "Contributing factors",
+        "Action items"
+      ],
+      "visualRequirements": [
+        "artifact-table-has-columns"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": false,
+        "proseMinimum": 2,
+        "requiredReviewers": [],
+        "optionalReviewers": [
+          "cx-devil-advocate"
+        ]
+      }
+    },
+    {
+      "type": "postmortem",
+      "structureRequirements": [
+        "Summary",
+        "Severity rationale",
+        "Impact",
+        "Timeline",
+        "Trigger",
+        "Root cause",
+        "Contributing factors",
+        "Action items"
+      ],
+      "visualRequirements": [
+        "artifact-table-has-columns"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": false,
+        "proseMinimum": 2,
+        "requiredReviewers": [],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "strategy",
+      "structureRequirements": [
+        "Vision",
+        "Bets",
+        "Non-bets",
+        "North Star Metric",
+        "Metrics",
+        "Milestones",
+        "Risks"
+      ],
+      "visualRequirements": [
+        "artifact-table-has-columns"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 2,
+        "requiredReviewers": [
+          "cx-devil-advocate"
+        ],
+        "optionalReviewers": [
+          "cx-business-strategist"
+        ]
+      }
+    },
+    {
+      "type": "memo",
+      "structureRequirements": [
+        "TL;DR",
+        "Context",
+        "Argument",
+        "Recommendation",
+        "Risks and tradeoffs",
+        "Decision requested"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 2,
+        "requiredReviewers": [],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "prfaq",
+      "structureRequirements": [
+        "Problem statement",
+        "Press release",
+        "External FAQ",
+        "Internal FAQ",
+        "Evidence appendix"
+      ],
+      "visualRequirements": [
+        "artifact-has-mermaid"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 3,
+        "requiredReviewers": [
+          "cx-devil-advocate"
+        ],
+        "optionalReviewers": [
+          "cx-ux-researcher"
+        ]
+      }
+    },
+    {
+      "type": "one-pager",
+      "structureRequirements": [
+        "Problem",
+        "Proposal",
+        "Why now",
+        "Success measure",
+        "Cost",
+        "Asks"
+      ],
+      "visualRequirements": [
+        "artifact-table-has-columns"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 2,
+        "requiredReviewers": [
+          "cx-devil-advocate"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "customer-profile",
+      "structureRequirements": [
+        "Snapshot",
+        "Active pain points",
+        "Open asks",
+        "Evidence links"
+      ],
+      "visualRequirements": [
+        "artifact-table-has-columns"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 1,
+        "requiredReviewers": [],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "backlog-proposal",
+      "structureRequirements": [
+        "Source evidence",
+        "Proposed changes",
+        "Duplicate and conflict check",
+        "Approval request"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 1,
+        "requiredReviewers": [],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "test-plan",
+      "structureRequirements": [
+        "Scope",
+        "Test strategy",
+        "Coverage",
+        "Key scenarios",
+        "Entry and exit criteria"
+      ],
+      "visualRequirements": [
+        "artifact-table-has-columns"
+      ],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": false,
+        "proseMinimum": 2,
+        "requiredReviewers": [],
+        "optionalReviewers": [
+          "cx-qa"
+        ]
+      }
+    },
+    {
+      "type": "qa-strategy",
+      "structureRequirements": [
+        "Scope",
+        "Test strategy",
+        "Coverage",
+        "Key scenarios",
+        "Entry and exit criteria"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": false,
+        "proseMinimum": 2,
+        "requiredReviewers": [],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "changelog",
+      "structureRequirements": [],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": false,
+        "citationLint": false,
+        "proseMinimum": 1,
+        "requiredReviewers": [],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "architecture-overview",
+      "structureRequirements": [
+        "Problem",
+        "Decision",
+        "Consequences"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 2,
+        "requiredReviewers": [
+          "cx-reviewer"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "system-design",
+      "structureRequirements": [
+        "Problem",
+        "Decision",
+        "Consequences"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 2,
+        "requiredReviewers": [
+          "cx-reviewer"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "security-review",
+      "structureRequirements": [
+        "Executive summary",
+        "Findings",
+        "Remediation priority"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 2,
+        "requiredReviewers": [
+          "cx-devil-advocate"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "threat-model",
+      "structureRequirements": [
+        "Executive summary",
+        "Findings",
+        "Remediation priority"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 2,
+        "requiredReviewers": [
+          "cx-devil-advocate"
+        ],
+        "optionalReviewers": []
+      }
+    },
+    {
+      "type": "product-intelligence-report",
+      "structureRequirements": [
+        "Executive readout",
+        "Evidence base",
+        "Themes",
+        "Customer asks",
+        "Product implications",
+        "Recommended actions",
+        "Gaps and risks"
+      ],
+      "visualRequirements": [],
+      "releaseGate": {
+        "structuralLint": true,
+        "citationLint": true,
+        "proseMinimum": 3,
+        "requiredReviewers": [],
+        "optionalReviewers": [
+          "cx-devil-advocate"
+        ]
+      }
+    }
+  ]
+}
