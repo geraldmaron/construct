@@ -1,6 +1,8 @@
 /**
  * demo.functional.test.mjs — `construct demo` smoke gate.
  *
+ * @capability demo.terminal-fallback
+ *
  * Contract: the `.tape` source is ALWAYS produced and the command ALWAYS
  * exits 0, whether or not a recorder binary (VHS / asciinema) is present.
  * When a recorder IS present, a recording artifact must also appear. This
@@ -15,7 +17,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 
-import { locateRecorder } from '../../lib/demo.mjs';
+import { locateRecorder, renderWithVhs } from '../../lib/demo.mjs';
 import { loadDemoScript } from '../../lib/demo-script.mjs';
 import { buildDemoAttemptChain, detectChatDemoReady } from '../../lib/demo-surface.mjs';
 
@@ -71,6 +73,40 @@ test('construct demo: tape always produced; recording when recorder present; exi
   } finally {
     if (tryCleanup) fs.rmSync(cwd, { recursive: true, force: true });
   }
+});
+
+test('VHS rendering owns and reaps its POSIX recorder process group', () => {
+  const calls = [];
+  const result = renderWithVhs('/fake/vhs', '/tmp/demo.tape', {
+    platform: 'darwin',
+    spawnSyncFn: (binary, args, options) => {
+      calls.push({ binary, args, options });
+      return { status: 0, pid: 4242 };
+    },
+    killFn: (pid, signal) => calls.push({ pid, signal }),
+  });
+
+  assert.equal(result.status, 0);
+  assert.deepEqual(calls[0], {
+    binary: '/fake/vhs',
+    args: ['/tmp/demo.tape'],
+    options: { encoding: 'utf8', timeout: 180_000, detached: true },
+  });
+  assert.deepEqual(calls[1], { pid: -4242, signal: 'SIGTERM' });
+});
+
+test('VHS rendering skips POSIX group signaling on Windows', () => {
+  const calls = [];
+  renderWithVhs('vhs.exe', 'demo.tape', {
+    platform: 'win32',
+    spawnSyncFn: (_binary, _args, options) => {
+      calls.push(options);
+      return { status: 0, pid: 4242 };
+    },
+    killFn: () => calls.push('unexpected kill'),
+  });
+
+  assert.deepEqual(calls, [{ encoding: 'utf8', timeout: 180_000, detached: false }]);
 });
 
 test('construct demo list includes shipped demo scripts', () => {

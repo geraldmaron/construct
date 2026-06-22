@@ -1,5 +1,7 @@
 /**
  * tests/artifact-release-gate.test.mjs — release gate runner.
+ *
+ * @capability artifact.release-gate
  */
 
 import test from 'node:test';

@@ -25,11 +25,12 @@ Audit Construct internals and review the mutation trail
 **Usage**
 
 ```bash
-construct audit <skills|specialists|trail>
+construct audit <skills|specialists|tests|trail>
 ```
 
 **Subcommands**
 
+- `[object Object]`
 - `[object Object]`
 - `[object Object]`
 - `[object Object]`
@@ -50,7 +51,7 @@ construct cleanup [--dry-run] [--quiet] [--pressure-release] [--pressure-only] [
 |---|---|
 | `--dry-run` | Show what would be cleaned without changing anything |
 | `--quiet` | Minimal output |
-| `--pressure-release` | Also kill stale dev-agent processes |
+| `--pressure-release` | Also kill stale dev-agent and leaked VHS demo-recorder processes |
 | `--pressure-only` | Pressure release only — skip disk cleanup |
 | `--disk-only` | Disk cleanup only — skip pressure release |
 

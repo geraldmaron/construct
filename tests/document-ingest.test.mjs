@@ -1,5 +1,7 @@
 /**
  * tests/document-ingest.test.mjs — document ingest CLI/library behavior tests.
+ *
+ * @capability document.ingest.local
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -60,4 +62,3 @@ test('ingestDocuments recursively ingests supported files from directories', asy
     ['a.csv', 'b.md'],
   );
 });
-
