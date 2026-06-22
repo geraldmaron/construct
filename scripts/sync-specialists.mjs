@@ -1639,7 +1639,8 @@ function syncOpencode(entries, targetDir = null, wants = true) {
       }
     }
 
-    // Heavy external MCP servers serialize ~12k tokens of schema into EVERY
+    // Heavy external MCP servers serialize a measured ~37k tokens of tool schema
+    // into EVERY agent's request — github ~30k alone (fixtures 2026-06-22) —
     // agent's request — including the built-in Build/Plan agents the per-agent
     // permission prune cannot reach. OpenCode 1.15.4 has no per-session tool
     // filter (chat.params carries no tool list), so disabling the whole server in
