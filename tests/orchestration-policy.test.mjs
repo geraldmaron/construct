@@ -14,12 +14,14 @@ import {
   EXECUTION_TRACKS,
   INTENT_CLASSES,
   WORK_CATEGORIES,
+  buildConstructToOrchestratorPacket,
   buildDispatchPlan,
   detectRiskFlags,
   requiresExecutiveApproval,
   routeRequest,
   routeRequestVerified,
 } from '../lib/orchestration-policy.mjs';
+import { validateHandoff } from '../lib/contracts/validate.mjs';
 import { resetCache as resetIntentCache } from '../lib/intent-classifier.mjs';
 import { orchestrationPolicy } from '../lib/mcp/tools/skills.mjs';
 
@@ -91,12 +93,29 @@ test('orchestrationPolicy includes draftTask for non-immediate requests', async 
   assert.ok(Array.isArray(result.draftTask.acceptanceCriteria), 'draftTask should have acceptanceCriteria array');
   assert.equal(result.draftTask.source.intent, INTENT_CLASSES.fix);
   assert.equal(result.draftTask.source.track, EXECUTION_TRACKS.focused);
+  assert.ok(result.handoffPacket, 'handoffPacket should be present for focused/orchestrated requests');
+  assert.equal(result.handoffPacket.goal, 'fix the login redirect bug');
+  assert.equal(result.handoffPacket.intent, INTENT_CLASSES.fix);
+  const verdict = validateHandoff({
+    producer: 'construct',
+    consumer: 'cx-orchestrator',
+    id: 'construct-to-orchestrator',
+    artifact: result.handoffPacket,
+    enforcement: 'block',
+  });
+  assert.equal(verdict.ok, true, `handoffPacket must satisfy construct-to-orchestrator: ${verdict.errors?.join('; ')}`);
+});
+
+test('buildConstructToOrchestratorPacket returns null for immediate track', () => {
+  const packet = buildConstructToOrchestratorPacket({ request: 'explain how caching works', fileCount: 1, moduleCount: 1 });
+  assert.equal(packet, null);
 });
 
 test('orchestrationPolicy omits draftTask for immediate requests', async () => {
   const result = await orchestrationPolicy({ request: 'explain how the caching layer works', fileCount: 1, moduleCount: 1 });
   assert.equal(result.track, EXECUTION_TRACKS.immediate);
   assert.equal(result.draftTask, null);
+  assert.equal(result.handoffPacket, null);
 });
 
 test('orchestrationPolicy includes approvalRequired and terminalStates', async () => {
