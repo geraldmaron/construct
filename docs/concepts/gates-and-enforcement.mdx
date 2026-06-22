@@ -107,6 +107,10 @@ evidence required to keep tests useful: retain a test when it uniquely proves a
 behavior or regression, and remove or consolidate it only after replacement
 coverage proves the same user-visible outcome and failure modes.
 
+`tests/capabilities/corpus-inventory.json` classifies every test file by layer and
+signal category. Regenerate it with `node scripts/generate-test-corpus-inventory.mjs`
+or validate freshness with `construct audit tests --corpus`.
+
 ## Where to look when something is blocking
 
 | Symptom | Likely gate | Where to start |
