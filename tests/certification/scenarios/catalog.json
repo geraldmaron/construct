@@ -526,6 +526,151 @@
       }
     },
     {
+      "id": "specialist.role-overlays",
+      "capabilityId": "specialist.prompt",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/README.md"
+      },
+      "gates": [
+        {
+          "id": "role-overlays-complete",
+          "type": "role-overlays-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/roles",
+        "resolvedId": "fixture/roles",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "skills.prompt-budget",
+      "capabilityId": "skills.workflow",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/scenarios/skills/README.md"
+      },
+      "gates": [
+        {
+          "id": "prompt-budget-chains",
+          "type": "prompt-budget-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/budget",
+        "resolvedId": "fixture/budget",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "artifact.provenance",
+      "capabilityId": "artifact.release-gate",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/fixtures/artifacts/README.md"
+      },
+      "gates": [
+        {
+          "id": "artifact-provenance",
+          "type": "artifact-provenance-audit",
+          "strict": true
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/artifact",
+        "resolvedId": "fixture/artifact",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "document.workflow.roundtrip",
+      "capabilityId": "document.ingest.local",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/fixtures/document-io/plain-text/sample.md"
+      },
+      "gates": [
+        {
+          "id": "document-workflow-roundtrip",
+          "type": "document-workflow-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/document-io",
+        "resolvedId": "fixture/document-io",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "demo.parity.surfaces",
+      "capabilityId": "demo.terminal-fallback",
+      "mode": "hermetic",
+      "fixture": {
+        "path": "tests/certification/demos/canonical-scenarios.json"
+      },
+      "gates": [
+        {
+          "id": "demo-parity-report",
+          "type": "demo-parity-audit"
+        }
+      ],
+      "model": {
+        "provider": "hermetic",
+        "requestedId": "fixture/demo",
+        "resolvedId": "fixture/demo",
+        "tier": "hermetic"
+      }
+    },
+    {
+      "id": "real-llm.s3",
+      "capabilityId": "test-system.certification-runner",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/e2e/reports/real-llm-scenarios-2026-06-22.md"
+      },
+      "gates": [
+        {
+          "id": "real-llm-s3-prd",
+          "type": "real-llm-scenario",
+          "scenario": "s3"
+        }
+      ],
+      "model": {
+        "provider": "github-copilot",
+        "requestedId": "github-copilot/auto",
+        "resolvedId": "github-copilot/auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
+      "id": "real-llm.s8",
+      "capabilityId": "test-system.certification-runner",
+      "mode": "live",
+      "fixture": {
+        "path": "tests/e2e/reports/real-llm-scenarios-2026-06-22.md"
+      },
+      "gates": [
+        {
+          "id": "real-llm-s8-orchestration",
+          "type": "real-llm-scenario",
+          "scenario": "s8"
+        }
+      ],
+      "model": {
+        "provider": "github-copilot",
+        "requestedId": "github-copilot/auto",
+        "resolvedId": "github-copilot/auto",
+        "tier": "free"
+      },
+      "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+    },
+    {
       "id": "specialist.normal.orchestrator",
       "capabilityId": "specialist.prompt",
       "mode": "hermetic",
