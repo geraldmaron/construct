@@ -12,6 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
+import { GUI_TEST_ENV } from './_lib/gui-env.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const MOCK_BIN = path.join(REPO_ROOT, 'scripts', 'mock-construct-chat-desktop.mjs');
@@ -42,6 +43,7 @@ test('runDesktopChat passes surface=desktop URL to the binary', async (t) => {
     cwd: REPO_ROOT,
     env: {
       ...process.env,
+      ...GUI_TEST_ENV,
       CONSTRUCT_CHAT_DESKTOP_BIN: MOCK_BIN,
       CONSTRUCT_CHAT_DESKTOP_MARKER: marker,
       CX_CHAT_NO_DISPLAY: '0',
@@ -86,6 +88,7 @@ test('runDesktopChat fails loudly when no binary, no source, and no download', a
     cwd: tmp,
     env: {
       ...process.env,
+      ...GUI_TEST_ENV,
       CONSTRUCT_CHAT_DESKTOP_BIN: path.join(tmp, 'missing-construct-chat'),
       CX_CHAT_NO_DISPLAY: '0',
     },
