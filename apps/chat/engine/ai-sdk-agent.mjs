@@ -6,22 +6,27 @@
  * core or in tests of the mapping layer. It resolves a Construct model id (the
  * router's `provider/model` form) to an AI SDK language model through the adapter
  * registry (provider-adapters.mjs), builds the agent tool set from the tool
- * registry, and runs streamText with a step cap so the loop iterates tool calls
- * until the model stops or the cap is hit. It yields the SDK fullStream parts
- * unchanged; loop-driver.mjs owns the normalization into the event union.
+ * registry, and runs streamText under the turn's compiled execution policy
+ * (turn-controls.mjs): the step cap, tool-group / schema budget, output cap, and
+ * caching eligibility all derive from the resolved capability profile, so the loop
+ * adapts to the model while staying behavior-preserving for hosted-direct. It
+ * yields the SDK fullStream parts unchanged; loop-driver.mjs owns the
+ * normalization into the event union.
  */
 
 import { listChatModels } from './models.mjs';
 import { resolveLanguageModel } from './provider-adapters.mjs';
+import { resolveTurnControls } from './turn-controls.mjs';
 import { buildSystemPrompt } from '../../../lib/chat/system-prompt.mjs';
+import { applyToolBudget } from '../../../lib/mcp/tool-budget.mjs';
+import { recordPolicyTelemetry } from '../../../lib/chat/policy-telemetry.mjs';
 
-export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(), model = null, handlers = {}, systemPrompt = '', tools = null } = {}) {
+export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(), model = null, handlers = {}, systemPrompt = '', tools = null, onTelemetry = recordPolicyTelemetry } = {}) {
   const { streamText, stepCountIs } = await import('ai');
 
   const { buildAgentTools } = await import('./tools/registry.mjs');
   const sdkTools = await buildAgentTools({ env, cwd, handlers, only: tools });
 
-  const maxSteps = Number(env.CX_CHAT_MAX_STEPS) > 0 ? Number(env.CX_CHAT_MAX_STEPS) : 16;
   const messages = [];
   const languageModels = new Map();
   let activeModelId = model;
@@ -47,19 +52,52 @@ export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(),
       if (turnModel) activeModelId = turnModel;
       const languageModel = await languageModelFor(activeModelId);
 
+      const controls = resolveTurnControls({ model: activeModelId, turnOverlay, env });
+      if (controls.degraded) {
+        onTelemetry({
+          kind: 'execution-policy-degraded',
+          model: activeModelId,
+          capabilityClass: controls.policy?.source?.capabilityClass || 'unknown',
+          reasons: controls.policy?.telemetry?.reasons || [],
+        });
+      }
+      const turnTools = applyToolBudget(sdkTools, {
+        allowedToolGroups: controls.allowedToolGroups,
+        maxToolSchemas: controls.maxToolSchemas,
+      });
+
       // Per-turn routing policy belongs in the SYSTEM role (via buildSystemPrompt),
       // never prepended to the user message: a user-role policy gets echoed in model
       // reasoning and compounds in persisted history.
       messages.push({ role: 'user', content: String(text) });
-      const result = streamText({
+      const systemText = buildSystemPrompt({ base: systemPrompt || undefined, overlay: turnOverlay });
+
+      const request = {
         model: languageModel,
-        system: buildSystemPrompt({ base: systemPrompt || undefined, overlay: turnOverlay }),
-        messages,
-        tools: sdkTools,
-        stopWhen: stepCountIs(maxSteps),
+        tools: turnTools,
+        stopWhen: stepCountIs(controls.iterations),
         abortSignal: signal,
         maxRetries: 0,
-      });
+      };
+      if (controls.outputCap) request.maxOutputTokens = controls.outputCap;
+
+      // A cache-eligible provider marks the stable system prefix as a cache
+      // breakpoint: the AI SDK maps a single leading system message onto the
+      // provider's system field, so the request stays output-identical and only the
+      // cache_control annotation is added. Every other provider keeps the plain
+      // system string — today's exact request shape.
+      if (controls.cacheEligible) {
+        const providerNs = String(activeModelId || '').split('/')[0] || 'anthropic';
+        request.messages = [
+          { role: 'system', content: systemText, providerOptions: { [providerNs]: { cacheControl: { type: 'ephemeral' } } } },
+          ...messages,
+        ];
+      } else {
+        request.system = systemText;
+        request.messages = messages;
+      }
+
+      const result = streamText(request);
       for await (const part of result.fullStream) yield part;
       // Persist the assistant turn (incl. tool exchanges) so the next prompt has history.
       try {
