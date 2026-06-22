@@ -77,16 +77,14 @@ test('runOracleTick does not write raised-issues for hygiene-only synthesis', as
   }
 });
 
-test('planHygieneReconcile keeps newest bead per gap id', () => {
+test('planHygieneReconcile closes all verdict-only hygiene oracle beads', () => {
   const { keep, close } = planHygieneReconcile([
     { id: 'construct-a', gapId: 'beads-hygiene', updatedAt: 100 },
     { id: 'construct-b', gapId: 'beads-hygiene', updatedAt: 200 },
     { id: 'construct-c', gapId: 'workflow-misaligned', updatedAt: 50 },
-    { id: 'construct-d', gapId: 'workflow-misaligned', updatedAt: 150 },
   ]);
-  assert.equal(keep.get('beads-hygiene'), 'construct-b');
-  assert.equal(keep.get('workflow-misaligned'), 'construct-d');
-  assert.deepEqual(close.sort(), ['construct-a', 'construct-c']);
+  assert.equal(keep.size, 0);
+  assert.deepEqual(close.sort(), ['construct-a', 'construct-b', 'construct-c']);
 });
 
 test('runOracleTick with auto-raise on still skips hygiene gaps in beadsRaised', async () => {

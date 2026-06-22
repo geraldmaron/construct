@@ -47,8 +47,8 @@ describe('detectBeadsDrift', () => {
   it('flags stale-open beads past the threshold', () => {
     const runner = makeRunner({
       open: [
-        { id: 'construct-old', title: 'old thing', updated: days(30) },
-        { id: 'construct-fresh', title: 'recent', updated: days(2) },
+        { id: 'construct-old', title: 'old thing', updated_at: days(30) },
+        { id: 'construct-fresh', title: 'recent', updated_at: days(2) },
       ],
     });
     const r = detectBeadsDrift({ runner, staleOpenDays: 14 });
