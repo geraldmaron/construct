@@ -55,7 +55,7 @@ const ACCEPTED_TEST_ONLY = {
   'lib/worker/entrypoint.mjs': 'staged entrypoint for the team/enterprise worker plane (bead construct-9dx); not wired in solo',
   'lib/audit-rules.mjs': 'CI gate: rules-corpus reference audit, asserted from tests',
   'lib/evals/retrieval-bench.mjs': 'CI eval harness: retrieval recall/precision/MRR regression gate',
-  'lib/evals/gates.mjs': 'staged eval harness for the construct-6zga.1.5 improvement-loop controller (deterministic gates + judge metadata); asserted from tests',
+  'lib/improvement/controller.mjs': 'staged entry for the governed improvement loop (construct-6zga.1.5); reaches the eval gates + dataset + proposal modules, wired live by construct-6zga.1.7; asserted from tests',
   'lib/template-registry.mjs': 'canonical specialist↔template map; a drift gate asserts it from tests',
   'lib/templates/visual-requirements.mjs': 'doc visual postcondition specs; a gate asserts them from tests',
   'lib/engine/tokens.mjs': 'token-count utility with a test contract; retained for budget enforcement',

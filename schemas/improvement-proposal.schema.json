@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/improvement-proposal.schema.json",
+  "title": "ImprovementProposal",
+  "description": "A candidate change in the governed AI improvement loop (construct-6zga.1.5). Never an applied mutation: it declares its type, affected profiles, blast radius, rollback target, required gates, approver, and rollout mode, plus immutable lineage, and moves only through the legal operator states.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "id", "type", "state", "affectedProfiles", "blastRadius",
+    "rollbackTarget", "requiredGates", "rolloutMode", "lineage", "approver"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "type": { "enum": ["prompt", "role-flavor", "skill", "routing-rule", "contract", "provider-adapter", "policy-config"] },
+    "state": {
+      "enum": ["observed", "rejected", "reproduce_failed", "baseline_failed", "proposal_ready", "evaluation_failed", "awaiting_approval", "approved", "applied", "rolled_back", "superseded"]
+    },
+    "affectedProfiles": { "type": "array", "items": { "type": "string" } },
+    "blastRadius": { "enum": ["single-surface", "multi-surface", "global"] },
+    "rollbackTarget": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["version"],
+      "properties": {
+        "version": { "type": "string" },
+        "ref": { "type": ["string", "null"] }
+      }
+    },
+    "requiredGates": { "type": "array", "items": { "type": "string" } },
+    "rolloutMode": { "enum": ["sandbox", "staged", "monitored"] },
+    "dependencies": { "type": "array", "items": { "type": "string" } },
+    "evaluationReportId": { "type": ["string", "null"] },
+    "terminalReason": { "type": ["string", "null"] },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["inputTraceIds", "baselineVersion", "candidateVersion", "capabilitySnapshot", "evaluatorVersions"],
+      "properties": {
+        "inputTraceIds": { "type": "array", "items": { "type": "string" }, "description": "Immutable input-trace references; the controller refuses an empty set as insufficient provenance" },
+        "baselineVersion": { "type": "string" },
+        "candidateVersion": { "type": "string" },
+        "capabilitySnapshot": { "type": "object" },
+        "evaluatorVersions": { "type": "array", "items": { "type": "string" } },
+        "budgets": { "type": ["object", "null"] }
+      }
+    },
+    "approver": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["identity"],
+          "properties": {
+            "identity": { "type": "string" },
+            "approvedAt": { "type": ["string", "null"] },
+            "decision": { "type": ["string", "null"] }
+          }
+        }
+      ]
+    },
+    "rollout": { "type": ["object", "null"] }
+  }
+}
