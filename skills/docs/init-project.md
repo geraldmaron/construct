@@ -12,7 +12,8 @@ Use when: starting work on a new project or joining an existing one without doc 
 ```bash
 construct init --docs-preset=lean [path]   # defaults to current directory; presets: lean | product | full
 # or lane-specific init:
-construct init-docs [path]                     # interactive lane picker (legacy entrypoint)
+construct init [path] [--docs-preset=lean|product|full]   # unified bootstrap (preferred)
+construct init --docs-preset=lean [path]                  # docs-only lean preset
 ```
 
 `npm run docs:init` is deprecated — use `construct init --docs-preset=*` instead.
@@ -39,7 +40,7 @@ docs/                   ← human-readable project documentation
 4. Run `construct dashboard` to see the project in the dashboard.
 
 ## For cx-docs-keeper
-At session start, check the core docs set. If missing, suggest running `construct init --docs-preset=lean` (or `construct init-docs` for the interactive lane picker).
+At session start, check the core docs set. If missing, suggest running `construct init --docs-preset=lean` (or `construct init --docs-preset=full` for the full lane set).
 At session end, update the affected core docs so the next LLM session inherits current project reality.
 
 ## For all LLMs working in the repo

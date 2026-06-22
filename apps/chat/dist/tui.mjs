@@ -309,6 +309,68 @@ var init_secret_resolver = __esm({
   }
 });
 
+// lib/ollama/installed-models.mjs
+import { spawnSync as spawnSync2 } from "node:child_process";
+function ollamaBaseUrl(env = process.env) {
+  const fromEnv = resolveFirstSecret(["OLLAMA_BASE_URL", "OLLAMA_HOST"], { env, allowAmbient: true });
+  const base = (fromEnv || "http://localhost:11434").replace(/\/+$/, "");
+  return base.endsWith("/v1") ? base.slice(0, -3) : base;
+}
+function parseTagsResponse(body) {
+  const data = typeof body === "string" ? JSON.parse(body) : body;
+  const names = (data?.models || []).map((entry) => entry?.name || entry?.model).filter(Boolean);
+  return new Set(names);
+}
+function listViaTagsApi(baseUrl) {
+  const url = `${baseUrl}/api/tags`;
+  const r = spawnSync2("curl", ["-s", "--connect-timeout", "2", url], { encoding: "utf8", timeout: 4e3 });
+  if (r.status !== 0 || !r.stdout?.trim()) return null;
+  try {
+    return parseTagsResponse(r.stdout);
+  } catch {
+    return null;
+  }
+}
+function listViaCli() {
+  const r = spawnSync2("ollama", ["list"], { encoding: "utf8", timeout: 5e3 });
+  if (r.status !== 0) return null;
+  const names = r.stdout.trim().split("\n").slice(1).map((line) => line.split(/\s+/).filter(Boolean)[0]).filter(Boolean);
+  return new Set(names);
+}
+function toOllamaNativeModelId(modelId) {
+  if (!modelId || typeof modelId !== "string") return null;
+  return modelId.replace(/^ollama\//, "");
+}
+function listInstalledOllamaModels({ env = process.env, now: now2 = Date.now(), refresh = false } = {}) {
+  if (!refresh && cache.models && now2 - cache.at < CACHE_MS) {
+    return { models: cache.models, listable: cache.listable };
+  }
+  const baseUrl = ollamaBaseUrl(env);
+  let models = listViaTagsApi(baseUrl);
+  if (!models) models = listViaCli();
+  if (!models) {
+    cache = { at: now2, models: null, listable: false };
+    return { models: null, listable: false };
+  }
+  cache = { at: now2, models, listable: true };
+  return { models, listable: true };
+}
+function isOllamaModelInstalled(modelId, opts = {}) {
+  const native = toOllamaNativeModelId(modelId);
+  if (!native) return null;
+  const { models, listable } = listInstalledOllamaModels(opts);
+  if (!listable || !models) return null;
+  return models.has(native);
+}
+var CACHE_MS, cache;
+var init_installed_models = __esm({
+  "lib/ollama/installed-models.mjs"() {
+    init_secret_resolver();
+    CACHE_MS = 2500;
+    cache = { at: 0, models: null, listable: false };
+  }
+});
+
 // lib/host-capabilities.mjs
 import { execFileSync, execSync } from "node:child_process";
 import fs4 from "node:fs";
@@ -674,25 +736,25 @@ function checkType(value, expected) {
   if (expected === "array") return Array.isArray(value);
   return typeof value === expected;
 }
-function validateField(value, rule, path36) {
+function validateField(value, rule, path37) {
   const errors = [];
   if (value === void 0) {
-    if (rule.required) errors.push(`${path36}: required field missing`);
+    if (rule.required) errors.push(`${path37}: required field missing`);
     return errors;
   }
   if (!checkType(value, rule.type)) {
-    errors.push(`${path36}: expected type ${JSON.stringify(rule.type)}, got ${value === null ? "null" : typeof value}`);
+    errors.push(`${path37}: expected type ${JSON.stringify(rule.type)}, got ${value === null ? "null" : typeof value}`);
     return errors;
   }
   if (rule.enum && !rule.enum.includes(value)) {
-    errors.push(`${path36}: must be one of ${JSON.stringify(rule.enum)}, got ${JSON.stringify(value)}`);
+    errors.push(`${path37}: must be one of ${JSON.stringify(rule.enum)}, got ${JSON.stringify(value)}`);
   }
   if (rule.maxLength && typeof value === "string" && value.length > rule.maxLength) {
-    errors.push(`${path36}: exceeds maxLength ${rule.maxLength}`);
+    errors.push(`${path37}: exceeds maxLength ${rule.maxLength}`);
   }
   if (rule.fields && checkType(value, "object")) {
     for (const [key, subRule] of Object.entries(rule.fields)) {
-      errors.push(...validateField(value[key], subRule, `${path36}.${key}`));
+      errors.push(...validateField(value[key], subRule, `${path37}.${key}`));
     }
   }
   return errors;
@@ -1407,8 +1469,8 @@ async function resolveProviderCapabilities(modelId) {
 }
 function resolveProviderCapabilitiesSync(modelId) {
   const adapterKey = resolveAdapterKey(modelId);
-  const cache2 = getCache();
-  if (cache2[adapterKey]) return cache2[adapterKey];
+  const cache3 = getCache();
+  if (cache3[adapterKey]) return cache3[adapterKey];
   return {
     cacheControl: false,
     cacheMechanism: "none",
@@ -1479,7 +1541,7 @@ __export(model_router_exports, {
 });
 import fs7 from "node:fs";
 import path8 from "node:path";
-import { spawnSync as spawnSync2 } from "child_process";
+import { spawnSync as spawnSync3 } from "child_process";
 function uniqueStrings2(values = []) {
   return [...new Set(values.filter((value) => typeof value === "string" && value.trim()))];
 }
@@ -1564,12 +1626,12 @@ function isProviderConfigured(familyId, env, { allowAmbient = true } = {}) {
   if (!varNames?.length) return false;
   if (familyId === "ollama") {
     try {
-      const r = spawnSync2("curl", ["-s", "--connect-timeout", "1", "-o", "/dev/null", "-w", "%{http_code}", "http://localhost:11434/api/tags"], { encoding: "utf8", timeout: 3e3 });
+      const r = spawnSync3("curl", ["-s", "--connect-timeout", "1", "-o", "/dev/null", "-w", "%{http_code}", "http://localhost:11434/api/tags"], { encoding: "utf8", timeout: 3e3 });
       if (r.status === 0 && r.stdout?.trim() === "200") return true;
     } catch {
     }
     try {
-      const r = spawnSync2("ollama", ["--version"], { encoding: "utf8", timeout: 2e3 });
+      const r = spawnSync3("ollama", ["--version"], { encoding: "utf8", timeout: 2e3 });
       if (r.status === 0) return true;
     } catch {
     }
@@ -1578,7 +1640,7 @@ function isProviderConfigured(familyId, env, { allowAmbient = true } = {}) {
   if (familyId === "github-copilot") {
     if (hasCopilotCredential()) return true;
     try {
-      const r = spawnSync2("gh", ["auth", "status"], { encoding: "utf8", timeout: 3e3 });
+      const r = spawnSync3("gh", ["auth", "status"], { encoding: "utf8", timeout: 3e3 });
       return r.status === 0;
     } catch {
       return false;
@@ -1644,6 +1706,24 @@ function isChatModelAvailable(modelId, { env = process.env, excludeFamilies = []
   if (!isProviderConfigured(family.id, env)) {
     return { ok: false, reason: "provider_not_configured", modelId, provider: family.id };
   }
+  if (family.id === "ollama") {
+    const nativeModel = toOllamaNativeModelId(modelId);
+    const installed = isOllamaModelInstalled(modelId, { env });
+    if (installed === true) {
+      return { ok: true, modelId, provider: family.id };
+    }
+    if (installed === false) {
+      return {
+        ok: false,
+        reason: "model_not_pulled",
+        modelId,
+        provider: family.id,
+        nativeModel,
+        pullCommand: `ollama pull ${nativeModel}`
+      };
+    }
+    return { ok: true, modelId, provider: family.id };
+  }
   if (LENIENT_MODEL_FAMILIES.has(family.id)) {
     return { ok: true, modelId, provider: family.id };
   }
@@ -1677,6 +1757,10 @@ function availabilityNotice(rejected) {
   }
   if (rejected.reason === "model_not_available") {
     return `Pinned ${label} \u2014 not available on your account.`;
+  }
+  if (rejected.reason === "model_not_pulled") {
+    const native = rejected.nativeModel || toOllamaNativeModelId(label);
+    return `Pinned ${label} \u2014 not installed locally. Run \`ollama pull ${native}\` or \`construct ollama pull ${native}\`.`;
   }
   if (rejected.reason === "unknown_family") {
     return `Pinned ${label} \u2014 unrecognized model id.`;
@@ -2162,6 +2246,7 @@ var MODEL_TIER_BY_WORK_CATEGORY, MODEL_OPERATING_PROFILES, CODE_MODEL_RE, PROVID
 var init_model_router = __esm({
   "lib/model-router.mjs"() {
     init_secret_resolver();
+    init_installed_models();
     init_credential_sources();
     init_opencode_config();
     init_tool_budget();
@@ -2782,10 +2867,10 @@ function projectIdFor(projectRoot) {
   return createHash("sha256").update(path11.resolve(projectRoot)).digest("hex").slice(0, 12);
 }
 function resolveProjectScope(cwd = process.cwd()) {
-  if (cache.has(cwd)) return cache.get(cwd);
+  if (cache2.has(cwd)) return cache2.get(cwd);
   const projectRoot = findProjectRoot(cwd);
   if (!projectRoot) {
-    cache.set(cwd, null);
+    cache2.set(cwd, null);
     return null;
   }
   const result = {
@@ -2793,7 +2878,7 @@ function resolveProjectScope(cwd = process.cwd()) {
     projectId: projectIdFor(projectRoot),
     cxDir: path11.join(projectRoot, ".cx")
   };
-  cache.set(cwd, result);
+  cache2.set(cwd, result);
   return result;
 }
 function resolveProjectScopedPath(basename, { cwd, ensureDir = true } = {}) {
@@ -2802,12 +2887,12 @@ function resolveProjectScopedPath(basename, { cwd, ensureDir = true } = {}) {
   if (ensureDir && !fs10.existsSync(dir)) fs10.mkdirSync(dir, { recursive: true });
   return path11.join(dir, basename);
 }
-var HOME, MARKERS, cache;
+var HOME, MARKERS, cache2;
 var init_project_root = __esm({
   "lib/project-root.mjs"() {
     HOME = os8.homedir();
     MARKERS = [".cx", ".construct"];
-    cache = /* @__PURE__ */ new Map();
+    cache2 = /* @__PURE__ */ new Map();
   }
 });
 
@@ -2851,7 +2936,10 @@ instead of letting it turn into a historical log. Durable task status belongs in
 
 > Required project state. Keep this file current enough that a new session can resume work quickly.
 
-## Active Work
+## What was in progress
+
+## Open issues
+None
 
 ## Recent Decisions
 
@@ -3691,10 +3779,10 @@ import { dirname, join as join2, resolve } from "node:path";
 import { fileURLToPath as fileURLToPath2 } from "node:url";
 function loadProfile(id) {
   if (!id || typeof id !== "string") return null;
-  const path36 = join2(PROFILES_DIR, `${id}.json`);
-  if (!existsSync4(path36)) return null;
+  const path37 = join2(PROFILES_DIR, `${id}.json`);
+  if (!existsSync4(path37)) return null;
   try {
-    const raw = JSON.parse(readFileSync4(path36, "utf8"));
+    const raw = JSON.parse(readFileSync4(path37, "utf8"));
     return raw;
   } catch {
     return null;
@@ -3702,10 +3790,10 @@ function loadProfile(id) {
 }
 function loadCustomProfile(cwd) {
   if (!cwd) return null;
-  const path36 = join2(cwd, ".cx", "profile.json");
-  if (!existsSync4(path36)) return null;
+  const path37 = join2(cwd, ".cx", "profile.json");
+  if (!existsSync4(path37)) return null;
   try {
-    const raw = JSON.parse(readFileSync4(path36, "utf8"));
+    const raw = JSON.parse(readFileSync4(path37, "utf8"));
     if (raw && raw.custom === true) return raw;
     return null;
   } catch {
@@ -4805,6 +4893,24 @@ var init_artifact_gate = __esm({
   }
 });
 
+// lib/graph/store.mjs
+import path28 from "node:path";
+var STORE_SUBDIR;
+var init_store = __esm({
+  "lib/graph/store.mjs"() {
+    STORE_SUBDIR = path28.join(".cx", "graph");
+  }
+});
+
+// lib/graph/build-from-registry.mjs
+var init_build_from_registry = __esm({
+  "lib/graph/build-from-registry.mjs"() {
+    init_workflow_defs();
+    init_validate2();
+    init_store();
+  }
+});
+
 // lib/oracle/read-model.mjs
 var RECENT_MS, CENSUS_STALE_MS;
 var init_read_model = __esm({
@@ -4815,6 +4921,8 @@ var init_read_model = __esm({
     init_detect_existing_structure();
     init_org_graph();
     init_artifact_gate();
+    init_store();
+    init_build_from_registry();
     RECENT_MS = 24 * 60 * 60 * 1e3;
     CENSUS_STALE_MS = 7 * 24 * 60 * 60 * 1e3;
   }
@@ -4841,16 +4949,16 @@ var init_policy = __esm({
 });
 
 // lib/install/stage-project.mjs
-import { spawnSync as spawnSync3 } from "node:child_process";
+import { spawnSync as spawnSync4 } from "node:child_process";
 import { existsSync as existsSync5, copyFileSync, writeFileSync as writeFileSync4, mkdirSync as mkdirSync4, chmodSync } from "node:fs";
-import path28 from "node:path";
+import path29 from "node:path";
 function stageProjectAdapters({ projectRoot, packageRoot, pkgVersion, log, hosts = null }) {
   if (!projectRoot) throw new Error("stageProjectAdapters: projectRoot is required");
   if (!packageRoot) throw new Error("stageProjectAdapters: packageRoot is required");
   const emit2 = typeof log === "function" ? log : () => {
   };
-  const templateDir = path28.join(packageRoot, "templates", "distribution");
-  const syncScript = path28.join(packageRoot, "scripts", "sync-specialists.mjs");
+  const templateDir = path29.join(packageRoot, "templates", "distribution");
+  const syncScript = path29.join(packageRoot, "scripts", "sync-specialists.mjs");
   ensureProjectLauncher({ projectRoot, templateDir, pkgVersion });
   emit2(`staged .construct/ launcher in ${projectRoot}`);
   if (!existsSync5(syncScript)) {
@@ -4860,7 +4968,7 @@ function stageProjectAdapters({ projectRoot, packageRoot, pkgVersion, log, hosts
   const syncArgs = [syncScript, "--project"];
   if (Array.isArray(hosts) && hosts.length > 0) syncArgs.push(`--hosts=${hosts.join(",")}`);
   emit2(`syncing project adapters into ${projectRoot}/.claude/`);
-  const result = spawnSync3(process.execPath, syncArgs, {
+  const result = spawnSync4(process.execPath, syncArgs, {
     cwd: projectRoot,
     stdio: "inherit",
     env: { ...process.env, CONSTRUCT_PROJECT_ROOT: projectRoot }
@@ -4872,10 +4980,10 @@ function stageProjectAdapters({ projectRoot, packageRoot, pkgVersion, log, hosts
   return { staged: true, synced: true };
 }
 function ensureProjectLauncher({ projectRoot, templateDir, pkgVersion }) {
-  const dotConstruct = path28.join(projectRoot, ".construct");
+  const dotConstruct = path29.join(projectRoot, ".construct");
   mkdirSync4(dotConstruct, { recursive: true });
-  mkdirSync4(path28.join(dotConstruct, "cache", "bin"), { recursive: true });
-  const versionPath = path28.join(dotConstruct, "version");
+  mkdirSync4(path29.join(dotConstruct, "cache", "bin"), { recursive: true });
+  const versionPath = path29.join(dotConstruct, "version");
   if (!existsSync5(versionPath) && pkgVersion) {
     writeFileSync4(versionPath, pkgVersion + "\n");
   }
@@ -4885,8 +4993,8 @@ function ensureProjectLauncher({ projectRoot, templateDir, pkgVersion }) {
     ["bootstrap.ps1", 420]
   ];
   for (const [name, mode] of copies) {
-    const src = path28.join(templateDir, name);
-    const dst = path28.join(dotConstruct, name);
+    const src = path29.join(templateDir, name);
+    const dst = path29.join(dotConstruct, name);
     if (!existsSync5(src)) continue;
     copyFileSync(src, dst);
     try {
@@ -4901,7 +5009,7 @@ var init_stage_project = __esm({
 });
 
 // lib/adapters-sync.mjs
-import path29 from "node:path";
+import path30 from "node:path";
 import { fileURLToPath as fileURLToPath10 } from "node:url";
 function resolveAdapterHosts({ forceAll = false, extra = [] } = {}) {
   if (forceAll) return ["claude", "opencode", "codex", "vscode", "cursor"];
@@ -4941,8 +5049,8 @@ var init_adapters_sync = __esm({
     init_host_capabilities();
     init_host_disposition();
     init_stage_project();
-    MODULE_DIR7 = path29.dirname(fileURLToPath10(import.meta.url));
-    PKG_ROOT = path29.resolve(MODULE_DIR7, "..");
+    MODULE_DIR7 = path30.dirname(fileURLToPath10(import.meta.url));
+    PKG_ROOT = path30.resolve(MODULE_DIR7, "..");
     HOST_ID_MAP = {
       "Claude Code": "claude",
       OpenCode: "opencode",
@@ -4963,9 +5071,9 @@ var init_adapters_sync = __esm({
 
 // lib/oracle/verdicts.mjs
 import fs18 from "node:fs";
-import path30 from "node:path";
+import path31 from "node:path";
 function verdictsDir(projectDir) {
-  return path30.join(projectDir, ".cx", "oracle", "verdicts");
+  return path31.join(projectDir, ".cx", "oracle", "verdicts");
 }
 function readLatestVerdict(projectDir) {
   const dir = verdictsDir(projectDir);
@@ -4973,7 +5081,7 @@ function readLatestVerdict(projectDir) {
   const files = fs18.readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
   if (!files.length) return null;
   try {
-    const data = JSON.parse(fs18.readFileSync(path30.join(dir, files[files.length - 1]), "utf8"));
+    const data = JSON.parse(fs18.readFileSync(path31.join(dir, files[files.length - 1]), "utf8"));
     return data.latest ?? data;
   } catch {
     return null;
@@ -4985,28 +5093,28 @@ var init_verdicts = __esm({
 });
 
 // lib/beads-lock.mjs
-import path31 from "node:path";
+import path32 from "node:path";
 import { fileURLToPath as fileURLToPath11 } from "node:url";
 var __dirname, ROOT_DIR2;
 var init_beads_lock = __esm({
   "lib/beads-lock.mjs"() {
-    __dirname = path31.dirname(fileURLToPath11(import.meta.url));
-    ROOT_DIR2 = path31.resolve(__dirname, "..");
+    __dirname = path32.dirname(fileURLToPath11(import.meta.url));
+    ROOT_DIR2 = path32.resolve(__dirname, "..");
   }
 });
 
 // lib/beads-optimistic.mjs
-import path32 from "node:path";
+import path33 from "node:path";
 import { fileURLToPath as fileURLToPath12 } from "node:url";
 var __dirname2;
 var init_beads_optimistic = __esm({
   "lib/beads-optimistic.mjs"() {
-    __dirname2 = path32.dirname(fileURLToPath12(import.meta.url));
+    __dirname2 = path33.dirname(fileURLToPath12(import.meta.url));
   }
 });
 
 // lib/beads-client.mjs
-import path33 from "node:path";
+import path34 from "node:path";
 import { fileURLToPath as fileURLToPath13 } from "node:url";
 var __dirname3;
 var init_beads_client = __esm({
@@ -5015,7 +5123,7 @@ var init_beads_client = __esm({
     init_beads_optimistic();
     init_beads_lock();
     init_beads_optimistic();
-    __dirname3 = path33.dirname(fileURLToPath13(import.meta.url));
+    __dirname3 = path34.dirname(fileURLToPath13(import.meta.url));
   }
 });
 
@@ -5115,10 +5223,10 @@ var init_execute = __esm({
 
 // lib/oracle/actions.mjs
 import fs19 from "node:fs";
-import path34 from "node:path";
+import path35 from "node:path";
 import { fileURLToPath as fileURLToPath15 } from "node:url";
 function pendingPath(projectDir) {
-  return path34.join(projectDir, ".cx", "oracle", "pending.jsonl");
+  return path35.join(projectDir, ".cx", "oracle", "pending.jsonl");
 }
 function listPending(projectDir) {
   const file = pendingPath(projectDir);
@@ -5144,19 +5252,19 @@ var init_actions = __esm({
     init_dispatch();
     init_execute();
     init_routing();
-    MODULE_DIR8 = path34.dirname(fileURLToPath15(import.meta.url));
+    MODULE_DIR8 = path35.dirname(fileURLToPath15(import.meta.url));
   }
 });
 
 // lib/oracle/index.mjs
 import fs20 from "node:fs";
-import path35 from "node:path";
+import path36 from "node:path";
 import { homedir as homedir3 } from "node:os";
 function runtimeDir(homeDir2 = homedir3()) {
-  return path35.join(homeDir2, ".cx", "runtime", "oracle");
+  return path36.join(homeDir2, ".cx", "runtime", "oracle");
 }
 function lastTickPath(homeDir2 = homedir3()) {
-  return path35.join(runtimeDir(homeDir2), "last-tick.json");
+  return path36.join(runtimeDir(homeDir2), "last-tick.json");
 }
 function readLastTick(homeDir2 = homedir3()) {
   const file = lastTickPath(homeDir2);
@@ -5503,12 +5611,18 @@ function parseOpenRouterError(error) {
   } catch {
   }
   let summary = raw;
-  if (/rate[- ]?limit|429|temporarily rate-limited/i.test(raw)) {
+  const ollamaMissing = raw.match(/model ['"]([^'"]+)['"] not found/i);
+  if (ollamaMissing) {
+    const native = ollamaMissing[1];
+    summary = `Ollama model '${native}' is not installed locally. Pull it with: ollama pull ${native} (or: construct ollama pull ${native})`;
+  } else if (/rate[- ]?limit|429|temporarily rate-limited/i.test(raw)) {
     summary = raw.replace(/^Provider returned error\.?\s*/i, "").trim() || "rate-limited upstream";
   } else if (/unavailable for free|paid version is available/i.test(raw)) {
     summary = "free tier retired \u2014 use a different free model or paid slug";
   } else if (/Failed after \d+ attempts/i.test(text)) {
     summary = raw || "provider error after retries";
+  } else if (/OLLAMA_MODEL_NOT_PULLED|not installed locally/i.test(raw)) {
+    summary = raw;
   }
   return { raw, summary, text };
 }
@@ -5526,6 +5640,28 @@ function getExcludeList(session) {
 function shouldAttemptFreeFallback(session, modelId) {
   if (session?.modelMode === "free-router") return true;
   return typeof modelId === "string" && /:free$/i.test(modelId);
+}
+function isOllamaNotPulledError(error) {
+  const text = typeof error === "string" ? error : String(error?.message || error || "");
+  return error?.code === "OLLAMA_MODEL_NOT_PULLED" || /not installed locally/i.test(text);
+}
+async function handleOllamaNotPulledFailure({ session, error, env = process.env, currentModel }) {
+  if (!isOllamaNotPulledError(error)) return null;
+  if (typeof currentModel !== "string" || !currentModel.startsWith("ollama/")) return null;
+  recordFailedModel(session, currentModel);
+  const excludeFamilies = typeof currentModel === "string" && currentModel.startsWith("ollama/") ? ["ollama"] : [];
+  const next = resolveValidatedChatModel({ env, requested: null, excludeFamilies });
+  if (!next?.id || next.id === currentModel) return null;
+  const parsed = parseOpenRouterError(error);
+  return {
+    modelId: next.id,
+    notice: `${parsed.summary} Switched to ${next.id} for this turn.`
+  };
+}
+async function handleModelFailure(opts) {
+  const openRouter = await handleOpenRouterFailure(opts);
+  if (openRouter) return openRouter;
+  return handleOllamaNotPulledFailure(opts);
 }
 async function handleOpenRouterFailure({ session, error, env = process.env, currentModel }) {
   const parsed = parseOpenRouterError(error);
@@ -5567,7 +5703,7 @@ async function runTurnWithFallback({
     if (!lastState.error) {
       return { state: lastState, model, notice: lastNotice };
     }
-    const fallback = await handleOpenRouterFailure({
+    const fallback = await handleModelFailure({
       session,
       error: lastState.error,
       env,
@@ -5692,13 +5828,24 @@ function toolGroupLabel(group) {
   const refs = formatRefsInline(group.refs, { max: 2 });
   return refs ? `${group.title}${count}  ${refs}` : `${group.title}${count}`;
 }
-function formatRouteLogLine(overlay) {
-  if (!overlay) return "";
+function formatRouteStrip(overlay, { layers = null } = {}) {
+  if (!overlay) return null;
+  const showSpecialists = layers?.specialists !== false;
+  const chain = showSpecialists && Array.isArray(overlay.specialists) ? [...overlay.specialists] : [];
+  const intent = overlay.intent || null;
+  const track = overlay.track || null;
+  const gates = formatGateRows(overlay);
+  const summary = overlay.dispatchSummary || null;
+  const chainLine = showSpecialists ? chain.length ? chain.join(" \u2192 ") : "direct" : null;
+  return { chain, intent, track, gates, summary, chainLine };
+}
+function formatRouteLogLine(overlay, { layers = null } = {}) {
+  const strip = formatRouteStrip(overlay, { layers });
+  if (!strip) return "";
   const parts = [];
-  if (overlay.intent) parts.push(`intent=${overlay.intent}`);
-  if (overlay.track) parts.push(`track=${overlay.track}`);
-  const n = overlay.specialists?.length || 0;
-  parts.push(n ? `${n} specialists` : "direct");
+  if (strip.intent) parts.push(`intent=${strip.intent}`);
+  if (strip.track) parts.push(`track=${strip.track}`);
+  if (strip.chainLine) parts.push(strip.chainLine);
   return parts.join(" \xB7 ");
 }
 function formatGateRows(overlay) {
@@ -5739,7 +5886,7 @@ function turnToMarkdown(turn) {
   lines.push("## construct", "", turn.assistant || "(no answer)", "");
   return lines.join("\n");
 }
-function exportTurns2(turnBlocks, { scope = "last", cwd = process.cwd() } = {}) {
+function exportTurns(turnBlocks, { scope = "last", cwd = process.cwd() } = {}) {
   const turns = turnBlocks.filter((item) => item.kind === "turn").map((item) => item.block);
   if (!turns.length) return { ok: false, error: "no turns to export" };
   let selected = turns;
@@ -5839,6 +5986,7 @@ function applySessionSetting(session, layers, key, rawValue, { cwd, hostId = "co
     session.model = result.value;
     session.modelMode = "pinned";
     session.savedModel = result.value;
+    session.modelNotice = null;
   } else if (targetKey === "permissionMode") {
     session.permissionMode = result.value;
   } else if (targetKey === "sandbox") {
@@ -5884,6 +6032,9 @@ function filterPickerItems(items = [], query = "") {
 function pickerStartIndex(items, selectedId, idKey = "id") {
   if (!items?.length) return 0;
   const idx = items.findIndex((item) => item[idKey] === selectedId);
+  if (idx >= 0 && !items[idx]?.disabled) return idx;
+  const firstEnabled = items.findIndex((item) => !item.disabled);
+  if (firstEnabled >= 0) return firstEnabled;
   return idx >= 0 ? idx : 0;
 }
 function windowPickerItems(items, index, windowSize = 12) {
@@ -5926,8 +6077,13 @@ function getPickerSelectedItem(state) {
 function movePickerIndex(state, delta) {
   const visible = getPickerVisibleItems(state);
   if (!visible.length) return state;
-  const next = Math.max(0, Math.min(visible.length - 1, (state.index ?? 0) + delta));
-  return { ...state, index: next };
+  let idx = state.index ?? 0;
+  for (let step = 0; step < visible.length; step++) {
+    idx = Math.max(0, Math.min(visible.length - 1, idx + delta));
+    if (!visible[idx]?.disabled) return { ...state, index: idx };
+    if (delta < 0 && idx === 0 || delta > 0 && idx === visible.length - 1) break;
+  }
+  return { ...state, index: idx };
 }
 function appendPickerQuery(state, char) {
   if (!char) return state;
@@ -5976,7 +6132,8 @@ function catalogItem(model) {
     detail: model.detail || model.name || (model.configured === false ? "not configured" : null),
     isFree,
     action: model.action || null,
-    suitable: model.suitable
+    suitable: model.suitable,
+    disabled: model.disabled === true
   };
 }
 function configuredTierPickerItems({ env = process.env } = {}) {
@@ -5989,14 +6146,18 @@ function configuredTierPickerItems({ env = process.env } = {}) {
       const id = provider.tiers?.[tier];
       if (!id || seen.has(id)) continue;
       seen.add(id);
+      const availability = isChatModelAvailable(id, { env });
+      const notPulled = availability.reason === "model_not_pulled";
       items.push(catalogItem({
         id,
         label: id,
         name: `${provider.label} \xB7 ${tier}`,
         tier,
-        configured: true,
-        suitable: true,
-        isProviderDefault: tier === "standard"
+        configured: availability.ok,
+        suitable: availability.ok,
+        isProviderDefault: tier === "standard",
+        disabled: !availability.ok,
+        detail: notPulled ? `not installed \u2014 run ollama pull ${availability.nativeModel || id.replace(/^ollama\//, "")}` : availability.ok ? null : availability.reason?.replace(/_/g, " ") || "unavailable"
       }));
     }
   }
@@ -6073,6 +6234,7 @@ function commitPickerModel(session, selection, { cwd, hostId = "construct", laye
   session.modelMode = normalized.mode || "pinned";
   session.model = normalized.modelId;
   session.savedModel = session.modelMode === "pinned" ? normalized.modelId : null;
+  session.modelNotice = null;
   try {
     saveChatConfig({
       host: hostId,
@@ -6097,7 +6259,81 @@ function formatModelHeader(session) {
     const slug = session.model ? session.model.replace(/^openrouter\//, "") : "(resolving\u2026)";
     return { label: `free router \u2192 ${slug}`, isRouter: true };
   }
-  return { label: session?.model || "(no model)", isRouter: false };
+  const active = session?.model || "(no model)";
+  const saved = session?.savedModel;
+  if (saved && saved !== session?.model) {
+    return { label: active, savedPin: saved, isRouter: false };
+  }
+  return { label: active, isRouter: false };
+}
+function formatPickerLine(item, colors, { selected = false } = {}) {
+  const marker = selected ? `${colors.green}\u25CF${colors.reset}` : " ";
+  const tag = item.tag ? `${colors.dim} [${item.tag}]${colors.reset}` : "";
+  const disabled = item.disabled ? `${colors.dim} (unavailable)${colors.reset}` : "";
+  const detail = item.detail ? `
+      ${colors.dim}${item.detail}${colors.reset}` : "";
+  return `  ${marker} ${item.label || item.id}${tag}${disabled}${detail}`;
+}
+async function promptModelPickerTerminal({
+  output,
+  colors,
+  session,
+  rl = null,
+  askFn = null,
+  env = process.env,
+  cwd = process.cwd(),
+  hostId = "construct",
+  layers = session?.layers
+} = {}) {
+  const items = await loadModelPickerItems(null, {
+    env,
+    currentModel: session?.model,
+    modelMode: session?.modelMode || "pinned"
+  });
+  if (!items.length) {
+    output.write(`${colors.dim}no models to pick from \u2014 set a provider key in ~/.construct/config.env or use /model <id>${colors.reset}
+`);
+    return null;
+  }
+  const selectedId = pickerSelectedId(session);
+  output.write(`${colors.bold}select a model${colors.reset}
+`);
+  output.write(`${colors.dim}enter a number, or press enter to cancel${colors.reset}
+`);
+  items.forEach((item2, i) => {
+    output.write(`${String(i + 1).padStart(2)}.${formatPickerLine(item2, colors, { selected: item2.id === selectedId })}
+`);
+  });
+  const prompt = `${colors.green}model #${colors.reset} `;
+  const answer = rl ? (await new Promise((resolve4) => rl.question(prompt, resolve4))).trim() : askFn ? String(await askFn(prompt)).trim() : "";
+  if (!answer) {
+    output.write(`${colors.dim}${rl || askFn ? "cancelled" : "pick one with /model <id> or use the Ink UI for search"}${colors.reset}
+`);
+    return null;
+  }
+  const idx = Number(answer) - 1;
+  if (!Number.isInteger(idx) || idx < 0 || idx >= items.length) {
+    output.write(`${colors.red}invalid selection${colors.reset}
+`);
+    return null;
+  }
+  const item = items[idx];
+  if (item.disabled) {
+    output.write(`${colors.red}${item.detail || "model not available"}${colors.reset}
+`);
+    return null;
+  }
+  const selection = await resolveModelPickerSelection(item, { env });
+  if (!selection?.modelId && selection?.mode !== "free-router") {
+    output.write(`${colors.red}could not resolve model${colors.reset}
+`);
+    return null;
+  }
+  commitPickerModel(session, selection, { cwd, hostId, layers });
+  const label = selection.mode === "free-router" ? `free-router \u2192 ${selection.modelId}` : selection.modelId;
+  output.write(`${colors.green}model set:${colors.reset} ${label} ${colors.dim}(saved)${colors.reset}
+`);
+  return selection;
 }
 
 // lib/chat/demo-guide.mjs
@@ -6181,23 +6417,10 @@ var HELP = [
   ["/inspect", "toggle turn inspector panel (on/off/auto)"],
   ["/exit", "quit"]
 ];
-function ask(rl, question) {
-  return new Promise((resolve4) => rl.question(question, (answer) => resolve4(answer)));
-}
-function sortBySuitability(models) {
-  return [...models].sort((a, b) => Number(b.suitable !== false) - Number(a.suitable !== false) || Number(Boolean(b.isProviderDefault)) - Number(Boolean(a.isProviderDefault)));
-}
-function modelTags(m, colors) {
-  const tags = [];
-  if (m.isProviderDefault) tags.push("provider default");
-  if (m.imageOutput) tags.push("image \u2014 not for chat");
-  else if (m.suitable === false) tags.push("non-text");
-  else if (m.toolCall === false) tags.push("no tools");
-  return tags.length ? `${colors.dim} (${tags.join(", ")})${colors.reset}` : "";
-}
-function createCommands({ driver, host, hostId = host, version, cwd = process.cwd(), turnBlocksRef = null, demoGuide = null } = {}) {
+function createCommands({ driver, host, hostId = host, version, cwd = process.cwd(), env = process.env, turnBlocksRef = null, demoGuide = null } = {}) {
   async function handle(input, ctx) {
     const { output, colors, layers, session, rl, onClear } = ctx;
+    const runtimeEnv = ctx.env || env;
     const [cmd, ...rest] = input.trim().split(/\s+/);
     const arg = rest.join(" ").trim();
     const activeGuide = demoGuide || session?.demoGuide || null;
@@ -6225,11 +6448,28 @@ function createCommands({ driver, host, hostId = host, version, cwd = process.cw
         break;
       }
       case "/models":
-        await showModels(output, colors, session);
+      case "/model":
+        if (arg) {
+          commitPickerModel(session, { mode: "pinned", modelId: arg }, { cwd, hostId, layers: session.layers });
+          output.write(`${colors.green}model set:${colors.reset} ${arg} ${colors.dim}(pinned, saved)${colors.reset}
+`);
+          break;
+        }
+        await promptModelPickerTerminal({
+          output,
+          colors,
+          session,
+          rl,
+          askFn: ctx.ask,
+          env: runtimeEnv,
+          cwd,
+          hostId,
+          layers: session.layers
+        });
         break;
       case "/free": {
         const { resolveFreeOpenRouterModel: resolveFreeOpenRouterModel2 } = await Promise.resolve().then(() => (init_models(), models_exports));
-        const freeId = await resolveFreeOpenRouterModel2({ env: process.env, tier: "standard" });
+        const freeId = await resolveFreeOpenRouterModel2({ env: runtimeEnv, tier: "standard" });
         if (!freeId) {
           output.write(`${colors.red}OpenRouter free router needs OPENROUTER_API_KEY${colors.reset}
 `);
@@ -6250,9 +6490,6 @@ function createCommands({ driver, host, hostId = host, version, cwd = process.cw
 `);
         break;
       }
-      case "/model":
-        await setModel(output, colors, session, rl, arg, ctx.ask);
-        break;
       case "/set":
         applySetting(output, colors, session, layers, rest);
         break;
@@ -6270,7 +6507,7 @@ function createCommands({ driver, host, hostId = host, version, cwd = process.cw
         break;
       case "/oracle": {
         const { readOracleDockState: readOracleDockState2, formatOracleDockDetail: formatOracleDockDetail2 } = await Promise.resolve().then(() => (init_session_prelude(), session_prelude_exports));
-        const state = readOracleDockState2({ cwd, env: process.env });
+        const state = readOracleDockState2({ cwd, env: runtimeEnv });
         output.write(`${colors.bold}oracle${colors.reset}
 `);
         output.write(`${formatOracleDockDetail2(state)}
@@ -6293,73 +6530,6 @@ function createCommands({ driver, host, hostId = host, version, cwd = process.cw
 `);
     }
     return true;
-  }
-  async function listModelsSafe() {
-    if (typeof driver.listModels !== "function") return null;
-    try {
-      return await driver.listModels();
-    } catch {
-      return null;
-    }
-  }
-  async function showModels(output, colors, session) {
-    const models = await listModelsSafe();
-    if (!models) {
-      output.write(`${colors.dim}this host does not expose a model list${colors.reset}
-`);
-      return;
-    }
-    if (!models.length) {
-      output.write(`${colors.dim}no models reported by the host${colors.reset}
-`);
-      return;
-    }
-    output.write(`${colors.bold}available models${colors.reset} ${colors.dim}(${models.length})${colors.reset}
-`);
-    for (const m of sortBySuitability(models)) {
-      const marker = session.model === m.id ? `${colors.green}\u25CF${colors.reset}` : " ";
-      output.write(`  ${marker} ${m.id}${modelTags(m, colors)}
-`);
-    }
-  }
-  async function setModel(output, colors, session, rl, arg, askFn = null) {
-    if (arg) {
-      commitModel(output, colors, session, arg);
-      return;
-    }
-    const models = await listModelsSafe();
-    if (!models || !models.length) {
-      output.write(`${colors.dim}no models to pick from; set one with /model <id>${colors.reset}
-`);
-      return;
-    }
-    output.write(`${colors.bold}select a model${colors.reset}
-`);
-    const ordered = sortBySuitability(models);
-    ordered.forEach((m, i) => {
-      const marker = session.model === m.id ? `${colors.green}\u25CF${colors.reset}` : " ";
-      output.write(`  ${marker} ${String(i + 1).padStart(2)}. ${m.id}${modelTags(m, colors)}
-`);
-    });
-    const prompt = `${colors.green}model #${colors.reset} `;
-    const answer = rl ? (await ask(rl, prompt)).trim() : askFn ? String(await askFn(prompt)).trim() : "";
-    if (!answer) {
-      output.write(`${colors.dim}${rl || askFn ? "cancelled" : "pick one with /model <id>"}${colors.reset}
-`);
-      return;
-    }
-    const idx = Number(answer) - 1;
-    if (!Number.isInteger(idx) || idx < 0 || idx >= ordered.length) {
-      output.write(`${colors.red}invalid selection${colors.reset}
-`);
-      return;
-    }
-    commitModel(output, colors, session, ordered[idx].id);
-  }
-  function commitModel(output, colors, session, id) {
-    commitPickerModel(session, { mode: "pinned", modelId: id }, { cwd, hostId, layers: session.layers });
-    output.write(`${colors.green}model set:${colors.reset} ${id} ${colors.dim}(pinned, saved)${colors.reset}
-`);
   }
   function applySetting(output, colors, session, layers, parts) {
     if (parts.length < 2) {
@@ -6479,7 +6649,11 @@ function overlayToContext(overlay) {
     specialists: Array.isArray(overlay.specialists) ? [...overlay.specialists] : [],
     externalResearch: overlay.externalResearch || null,
     riskFlags: overlay.riskFlags || [],
-    track: overlay.track || null
+    track: overlay.track || null,
+    contractChain: Array.isArray(overlay.contractChain) ? overlay.contractChain.map((edge) => ({ ...edge })) : [],
+    dispatchReasons: overlay.dispatchReasons ? { ...overlay.dispatchReasons } : null,
+    triggers: Array.isArray(overlay.triggers) ? overlay.triggers.map((t) => ({ ...t })) : [],
+    dispatchSummary: overlay.dispatchSummary || null
   };
 }
 function applyOverlayToTurn(turn, overlay) {
@@ -6497,8 +6671,8 @@ function sourceFromToolEvent(event) {
   if (!event) return null;
   const title = event.title || event.kind || "";
   if (title === "read" || title === "grep" || title === "glob") {
-    const path36 = event.input?.path || event.input?.pattern || event.input?.glob;
-    if (path36) return { tool: title, ref: String(path36) };
+    const path37 = event.input?.path || event.input?.pattern || event.input?.glob;
+    if (path37) return { tool: title, ref: String(path37) };
   }
   if (title === "construct_tool") {
     const name = event.input?.name;
@@ -6581,6 +6755,143 @@ function finalizeTurn(turn) {
   return turn;
 }
 
+// lib/brand-tokens.mjs
+var INK = Object.freeze({
+  ink: "#0a0c10",
+  inkStrong: "#16191f",
+  inkBody: "#23272e",
+  muted: "#565c66",
+  faint: "#9499a2",
+  hairline: "#e3e4e8",
+  hairlineStrong: "#cdd0d6",
+  surface: "#fafafa",
+  surfaceAlt: "#f3f4f6",
+  paper: "#ffffff",
+  navy: "#0c1018"
+});
+var FONTS = Object.freeze({
+  sans: "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  mono: "'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace"
+});
+var STATUS = Object.freeze({
+  ok: "#98c379",
+  warn: "#e5c07b",
+  danger: "#e06c75"
+});
+var BRAND_TOKENS = Object.freeze({
+  ink: Object.freeze({
+    default: INK.ink,
+    strong: INK.inkStrong,
+    body: INK.inkBody,
+    muted: INK.muted,
+    faint: INK.faint
+  }),
+  line: Object.freeze({
+    hairline: INK.hairline,
+    hairlineStrong: INK.hairlineStrong
+  }),
+  surface: Object.freeze({
+    default: INK.surface,
+    alt: INK.surfaceAlt,
+    paper: INK.paper
+  }),
+  navy: INK.navy,
+  typography: Object.freeze({
+    fontSans: "Plus Jakarta Sans",
+    fontDisplay: "Plus Jakarta Sans",
+    fontMono: "IBM Plex Mono",
+    fontStack: FONTS.sans,
+    fontStackMono: FONTS.mono,
+    weight: Object.freeze({
+      regular: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700
+    }),
+    size: Object.freeze({
+      micro: "8pt",
+      small: "8.5pt",
+      meta: "9pt",
+      body: "10pt",
+      h4: "8.5pt",
+      h3: "11pt",
+      h2: "13pt",
+      h1: "17pt",
+      subtitle: "11.5pt",
+      title: "24pt"
+    })
+  }),
+  layout: Object.freeze({
+    figureMaxWidth: "74%",
+    slideAspect: "16 / 9"
+  })
+});
+var BRAND = Object.freeze({
+  accent: INK.ink,
+  accentWarm: INK.ink,
+  navy: INK.navy,
+  ink: INK.inkStrong,
+  muted: INK.muted,
+  surface: INK.surface,
+  surfaceAlt: INK.surfaceAlt,
+  tableHeader: INK.surfaceAlt
+});
+
+// lib/chat/design-tokens.mjs
+var CHAT_DARK = Object.freeze({
+  bg: INK.navy,
+  surface: "#101620",
+  border: INK.muted,
+  text: "#e8eaed",
+  muted: "#8a9199",
+  accent: "#e8eaed",
+  accentAlt: INK.hairlineStrong,
+  ...STATUS
+});
+var CHAT_LIGHT = Object.freeze({
+  bg: "#f8f9fb",
+  surface: INK.surfaceAlt,
+  border: INK.hairlineStrong,
+  text: INK.ink,
+  muted: INK.muted,
+  accent: INK.inkStrong,
+  accentAlt: INK.muted,
+  ok: "#15803d",
+  warn: "#a16207",
+  danger: STATUS.danger
+});
+var TERMINAL_DARK = Object.freeze({
+  text: { ink: "white", code: "37" },
+  muted: { ink: "gray", code: "90" },
+  accent: { ink: "whiteBright", code: "97" },
+  accentAlt: { ink: "gray", code: "90" },
+  brandAccent: { ink: "whiteBright", code: "97" },
+  surface: { ink: "gray", code: "90" },
+  surfaceMuted: { ink: "gray", code: "90" },
+  border: { ink: "gray", code: "90" },
+  ok: { ink: "green", code: "32" },
+  warn: { ink: "yellow", code: "33" },
+  danger: { ink: "red", code: "31" },
+  badgeFg: { ink: "black", code: "30" }
+});
+var TERMINAL_LIGHT = Object.freeze({
+  text: { ink: "black", code: "30" },
+  muted: { ink: "gray", code: "90" },
+  accent: { ink: "black", code: "30" },
+  accentAlt: { ink: "gray", code: "90" },
+  brandAccent: { ink: "black", code: "30" },
+  surface: { ink: "gray", code: "90" },
+  surfaceMuted: { ink: "gray", code: "90" },
+  border: { ink: "gray", code: "90" },
+  ok: { ink: "green", code: "32" },
+  warn: { ink: "rgb(161,98,7)", code: "33" },
+  danger: { ink: "red", code: "31" },
+  badgeFg: { ink: "white", code: "97" }
+});
+function chatTerminalSemantic(scheme = "dark") {
+  return scheme === "light" ? TERMINAL_LIGHT : TERMINAL_DARK;
+}
+
 // lib/chat/tui/color-scheme.mjs
 function schemeFromColorFgBg(value) {
   const parts = String(value).split(";").map((p) => parseInt(p, 10)).filter((n) => !Number.isNaN(n));
@@ -6606,34 +6917,26 @@ function resolveTerminalColorScheme(env = process.env, configTheme = null) {
 }
 
 // lib/chat/tui/presentation.mjs
-var DARK_SEMANTIC = Object.freeze({
-  text: { ink: "white", code: "37" },
-  muted: { ink: "gray", code: "90" },
-  accent: { ink: "cyan", code: "36" },
-  accentAlt: { ink: "magenta", code: "35" },
-  brandAccent: { ink: "cyanBright", code: "96" },
-  surface: { ink: "gray", code: "90" },
-  surfaceMuted: { ink: "gray", code: "90" },
-  border: { ink: "blue", code: "34" },
-  ok: { ink: "green", code: "32" },
-  warn: { ink: "yellow", code: "33" },
-  danger: { ink: "red", code: "31" },
-  badgeFg: { ink: "black", code: "30" }
+var ASCII_GLYPHS = Object.freeze({
+  spinner: ["|", "/", "-", "\\"],
+  bullet: "*",
+  check: "OK",
+  cross: "X",
+  arrow: "->",
+  boxH: "-",
+  boxV: "|"
 });
-var LIGHT_SEMANTIC = Object.freeze({
-  text: { ink: "black", code: "30" },
-  muted: { ink: "gray", code: "90" },
-  accent: { ink: "blue", code: "34" },
-  accentAlt: { ink: "magenta", code: "35" },
-  brandAccent: { ink: "blue", code: "34" },
-  surface: { ink: "gray", code: "90" },
-  surfaceMuted: { ink: "gray", code: "90" },
-  border: { ink: "blue", code: "34" },
-  ok: { ink: "green", code: "32" },
-  warn: { ink: "rgb(161,98,7)", code: "33" },
-  danger: { ink: "red", code: "31" },
-  badgeFg: { ink: "white", code: "97" }
+var UNICODE_GLYPHS = Object.freeze({
+  spinner: ["\u280B", "\u2819", "\u2839", "\u2838", "\u283C", "\u2834", "\u2826", "\u2827", "\u2807", "\u280F"],
+  bullet: "\u2022",
+  check: "\u2713",
+  cross: "\u2717",
+  arrow: "\u2192",
+  boxH: "\u2500",
+  boxV: "\u2502"
 });
+var DARK_SEMANTIC = Object.freeze(chatTerminalSemantic("dark"));
+var LIGHT_SEMANTIC = Object.freeze(chatTerminalSemantic("light"));
 function semanticForScheme(scheme = "dark") {
   return scheme === "light" ? LIGHT_SEMANTIC : DARK_SEMANTIC;
 }
@@ -6643,7 +6946,7 @@ function inkPalette({ scheme = "dark" } = {}) {
 }
 
 // apps/chat/tui/theme.mjs
-var UNICODE_GLYPHS = {
+var UNICODE_GLYPHS2 = {
   brand: "\u25C6",
   dot: "\u25CF",
   arrow: "\u2192",
@@ -6657,7 +6960,7 @@ var UNICODE_GLYPHS = {
   toolBusy: "\u25B8",
   toolPending: "\xB7"
 };
-var ASCII_GLYPHS = {
+var ASCII_GLYPHS2 = {
   brand: "*",
   dot: "o",
   arrow: "->",
@@ -6681,7 +6984,7 @@ function createTheme({ ascii = false, scheme = "dark" } = {}) {
   return {
     scheme,
     palette: inkPalette({ scheme }),
-    glyphs: ascii ? { ...ASCII_GLYPHS } : { ...UNICODE_GLYPHS },
+    glyphs: ascii ? { ...ASCII_GLYPHS2 } : { ...UNICODE_GLYPHS2 },
     spinnerFrames: ascii ? [...ASCII_SPINNER] : [...BRAILLE_SPINNER]
   };
 }
@@ -7730,7 +8033,7 @@ function App({
     }
     if (trimmed.startsWith("/export")) {
       const scope = trimmed.split(/\s+/)[1] === "session" ? "session" : "last";
-      const result = exportTurns2(turnBlocksRef.current, { scope, cwd });
+      const result = exportTurns(turnBlocksRef.current, { scope, cwd });
       setNotice(result.ok ? `exported to ${result.path}` : result.error || "export failed");
       return;
     }

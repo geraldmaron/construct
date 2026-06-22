@@ -39,7 +39,7 @@ const isTemplate = (p) => /(^|\/)(templates?)(\/|$)|_template|\.template\./i.tes
 // Command names retired by the dev/dashboard/stop rename. A doc that still says
 // `construct up` is hard drift, not a placeholder — these gate.
 
-const RETIRED_ALIASES = { up: 'dev', down: 'stop', serve: 'dashboard' };
+const RETIRED_ALIASES = { up: 'dev', down: 'stop', serve: 'dashboard', 'init-docs': 'init' };
 
 // Tokens that legitimately follow `construct` in prose without being commands:
 // example placeholders and documented rejected/future verbs. Excluded from review noise.

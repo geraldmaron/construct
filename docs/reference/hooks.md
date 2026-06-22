@@ -26,6 +26,7 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 | `edit-accumulator` | accumulates edited paths for the next |
 | `edit-error-recovery` | Edit error recovery hook — recovers from failed edit attempts and suggests fixes. |
 | `edit-guard` | Edit guard hook — validates old_string exists in target file before allowing edits. |
+| `graph-impact-advisory` | PostToolUse hook: test-impact advisory on code edits. |
 | `guard-bash` | Guard bash hook — blocks dangerous shell commands from running unreviewed. |
 | `mcp-audit` | MCP audit hook — logs all MCP tool calls for observability and review. |
 | `mcp-health-check` | MCP health check hook — verifies MCP servers are reachable before tool use. |

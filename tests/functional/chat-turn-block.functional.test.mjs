@@ -21,6 +21,10 @@ test('turn block orders overlay, thinking, tools, assistant, usage', () => {
     workCategory: 'competitive-analysis',
     specialists: ['cx-researcher', 'cx-product-manager'],
     externalResearch: { required: true, shape: 'landscape' },
+    contractChain: [{ id: 'e1', producer: 'cx-researcher', consumer: 'cx-product-manager' }],
+    dispatchReasons: { 'cx-researcher': 'signal' },
+    triggers: [{ specialist: 'cx-researcher', reason: 'research' }],
+    dispatchSummary: 'handoff planned',
   });
   applyEventToTurn(turn, { type: 'thinking', text: 'scan docs' });
   applyEventToTurn(turn, { type: 'tool_call', id: 't1', title: 'grep', input: { pattern: 'CrewAI', path: 'docs/' } });
@@ -32,6 +36,8 @@ test('turn block orders overlay, thinking, tools, assistant, usage', () => {
   const types = flat.map((p) => p.type);
   assert.deepEqual(types, ['user', 'turn_context', 'thinking', 'tool', 'assistant', 'turn_usage']);
   assert.equal(flat[1].overlay.intent, 'research');
+  assert.equal(flat[1].overlay.dispatchSummary, 'handoff planned');
+  assert.equal(flat[1].overlay.contractChain.length, 1);
   assert.equal(flat[3].title, 'grep');
 });
 
@@ -45,6 +51,8 @@ test('finalizeTurn adds unverified notice when research required but no sources'
 test('tool events populate source ledger without fabrication', () => {
   const turn = createTurnBlock('q');
   applyEventToTurn(turn, { type: 'tool_call', id: 'r1', title: 'read', input: { path: 'docs/adr/0015.md' } });
+  assert.equal(turn.sources.length, 0);
+  applyEventToTurn(turn, { type: 'tool_update', id: 'r1', status: 'completed', content: { ok: true } });
   assert.equal(turn.sources.length, 1);
   assert.equal(turn.sources[0].ref, 'docs/adr/0015.md');
 });

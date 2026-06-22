@@ -22,3 +22,9 @@ if command -v bd >/dev/null 2>&1; then
   if [ $_bd_exit -ne 0 ]; then exit $_bd_exit; fi
 fi
 # --- END BEADS INTEGRATION v1.0.0 ---
+
+if [ -n "$1" ] && [ -f "$1" ]; then
+  _strip_tmp=$(mktemp)
+  sed '/^Co-[Aa]uthored-[Bb]y:/Id' "$1" > "$_strip_tmp"
+  mv "$_strip_tmp" "$1"
+fi

@@ -1,7 +1,5 @@
 /**
- * apps/chat/web/components/empty-state.tsx — TUI welcome screen for web chat.
- *
- * Matches apps/chat/tui/index.jsx EmptyState copy and structure.
+ * apps/chat/web/components/empty-state.tsx — onboarding panel for an empty chat session.
  */
 
 'use client';
@@ -25,29 +23,28 @@ export function EmptyState({ sessionMeta }: EmptyStateProps) {
     : sessionMeta.model;
   const { provider, name } = splitModel(model);
   const label = provider ? `${provider}/${name}` : name;
+  const hasModel = Boolean(label && label !== '(no model)');
 
   return (
     <div className="cx-cockpit-welcome">
-      <p className="cx-cockpit-welcome-title">◆ welcome to construct chat</p>
+      <p className="cx-cockpit-welcome-eyebrow">Session ready</p>
+      <h2 className="cx-cockpit-welcome-title">Start a turn with Construct</h2>
       <p className="cx-cockpit-muted cx-cockpit-welcome-lede">
         Each turn shows route, thinking, tools, sources, and usage inline before the answer.
-        Session metrics stay in the rail on the right. /set toggles layers; /inspect expands tool detail.
+        Open the inspector (☰) for session telemetry, token usage, and layer controls.
       </p>
-      <p className="cx-cockpit-muted">To get going</p>
-      <p className="cx-cockpit-welcome-item">▸ ask a question or describe the change you want</p>
-      <p className="cx-cockpit-muted cx-cockpit-welcome-item">
-        ▸ shift+enter newline   tab completes /commands   /model /set open searchable pickers
-      </p>
-      {label && label !== '(no model)' ? (
-        <p className="cx-cockpit-welcome-model">
-          <span className="cx-cockpit-muted">active model </span>
-          <strong>{label}</strong>
-        </p>
-      ) : (
-        <p className="cx-cockpit-warn">› no model selected — set one with /model or a provider key</p>
-      )}
+
+      <ul className="cx-cockpit-welcome-list">
+        <li>Ask a question or describe the change you want.</li>
+        <li>Shift+Enter for a newline; Tab completes slash commands.</li>
+        <li>Ctrl+1–5 toggles transparency layers; Esc cancels an active stream.</li>
+      </ul>
+
+      {!hasModel ? (
+        <p className="cx-cockpit-warn">No model selected yet — pick one before your first turn.</p>
+      ) : null}
       {sessionMeta.modelMode === 'free-router' ? (
-        <p className="cx-cockpit-muted">free-router — re-picks on launch and on failure</p>
+        <p className="cx-cockpit-muted">Free-router re-picks on launch and on provider failure.</p>
       ) : null}
     </div>
   );

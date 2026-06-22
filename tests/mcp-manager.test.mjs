@@ -74,6 +74,14 @@ function makeRepoCopy(t) {
       return true;
     },
   });
+  // Sync validates specialist prompts (js-yaml). The tree copy skips node_modules for
+  // speed; symlink the workspace install so isolated sync invocations resolve deps.
+
+  const nmSrc = path.join(root, "node_modules");
+  const nmDest = path.join(dest, "node_modules");
+  if (fs.existsSync(nmSrc) && !fs.existsSync(nmDest)) {
+    fs.symlinkSync(nmSrc, nmDest, process.platform === "win32" ? "junction" : "dir");
+  }
   return dest;
 }
 

@@ -71,3 +71,21 @@ test('node-native adapter extracts PDF and DOCX with no Python or system binary'
     rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
+
+test('node-native adapter rejects xlsx without docling when legacy extract is disabled', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cx-node-extract-'));
+  const xlsxPath = join(dir, 'sample.xlsx');
+  writeFileSync(xlsxPath, 'not-a-real-xlsx');
+  const prevLegacy = process.env.CONSTRUCT_ALLOW_LEGACY_EXTRACT;
+  delete process.env.CONSTRUCT_ALLOW_LEGACY_EXTRACT;
+  try {
+    await assert.rejects(
+      extractDocumentTextNodeNative(xlsxPath),
+      (err) => err.code === 'OFFICE_REQUIRES_DOCLING',
+    );
+  } finally {
+    if (prevLegacy === undefined) delete process.env.CONSTRUCT_ALLOW_LEGACY_EXTRACT;
+    else process.env.CONSTRUCT_ALLOW_LEGACY_EXTRACT = prevLegacy;
+    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  }
+});

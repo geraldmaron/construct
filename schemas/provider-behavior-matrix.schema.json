@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/provider-behavior-matrix.schema.json",
+  "title": "Construct Provider/Model Behavior Matrix",
+  "description": "Baseline evidence producer for the ExecutionCapabilityProfile (construct-6zga.1.8). Records measured execution behavior keyed by structural capability class — never by vendor name. Each observation carries an evidence provenance so the profile can declare where every field came from.",
+  "type": "object",
+  "required": ["version", "observations"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+    "observations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/observation" }
+    }
+  },
+  "$defs": {
+    "capabilityClass": {
+      "enum": ["hosted-direct", "hosted-routed", "local-constrained", "local-capable", "unknown"]
+    },
+    "transport": {
+      "enum": ["direct", "routed", "local", "unknown"]
+    },
+    "evidenceSource": {
+      "enum": ["hermetic_fixture", "live_probe", "provider_metadata", "operator_override"]
+    },
+    "observation": {
+      "type": "object",
+      "required": ["capabilityClass", "transport", "adapterProtocol", "requestShape", "toolCall", "cancellation", "usage", "contextFailureBehavior", "fallbackClassification", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "capabilityClass": { "$ref": "#/$defs/capabilityClass" },
+        "transport": { "$ref": "#/$defs/transport" },
+        "adapterProtocol": { "type": "string", "minLength": 1 },
+        "responseModelId": { "type": ["string", "null"] },
+        "requestShape": {
+          "type": "object",
+          "required": ["system", "toolSchemaCount", "toolSchemaTokenEstimate"],
+          "additionalProperties": false,
+          "properties": {
+            "system": { "enum": ["accepted", "rejected", "ignored", "unknown"] },
+            "toolSchemaCount": { "type": "integer", "minimum": 0 },
+            "toolSchemaTokenEstimate": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "toolCall": {
+          "type": "object",
+          "required": ["supported", "parseShape", "resultShape"],
+          "additionalProperties": false,
+          "properties": {
+            "supported": { "type": "boolean" },
+            "parseShape": { "enum": ["native_tool_use", "openai_function", "none", "unknown"] },
+            "resultShape": { "enum": ["tool_result_block", "message_role_tool", "none", "unknown"] }
+          }
+        },
+        "cancellation": {
+          "type": "object",
+          "required": ["supported", "mechanism"],
+          "additionalProperties": false,
+          "properties": {
+            "supported": { "type": "boolean" },
+            "mechanism": { "enum": ["abort_signal", "none", "unknown"] }
+          }
+        },
+        "usage": {
+          "type": "object",
+          "required": ["fields", "cost"],
+          "additionalProperties": false,
+          "properties": {
+            "fields": { "type": "array", "items": { "type": "string" } },
+            "cost": { "type": "boolean" }
+          }
+        },
+        "contextFailureBehavior": { "enum": ["error", "truncate", "silent_drop", "unknown"] },
+        "fallbackClassification": { "enum": ["retryable", "fatal", "rate_limited", "model_unavailable", "unknown"] },
+        "evidence": {
+          "type": "object",
+          "required": ["source", "redacted", "runs"],
+          "additionalProperties": false,
+          "properties": {
+            "source": { "$ref": "#/$defs/evidenceSource" },
+            "capturedAt": { "type": ["string", "null"] },
+            "redacted": { "type": "boolean" },
+            "runs": { "type": "integer", "minimum": 1 },
+            "distribution": { "type": ["object", "null"] }
+          }
+        }
+      }
+    }
+  }
+}

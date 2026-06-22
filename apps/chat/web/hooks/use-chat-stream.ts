@@ -68,6 +68,7 @@ function parseSessionMeta(event: Record<string, unknown>): SessionMeta {
 function createTurn(userText: string, system = false): ChatTurn {
   return {
     id: `turn-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    createdAt: Date.now(),
     userText: system ? '' : userText,
     assistant: system ? userText : '',
     thinking: '',
@@ -100,10 +101,6 @@ function applyEvent(turn: ChatTurn, event: Record<string, unknown>): ChatTurn {
         status: 'pending',
         input: (event.input as Record<string, unknown>) || null,
       });
-      const ref = (event.input as Record<string, unknown>)?.path
-        || (event.input as Record<string, unknown>)?.pattern
-        || (event.input as Record<string, unknown>)?.glob;
-      if (ref) next.sources.push(String(ref));
       break;
     }
     case 'tool_update': {
@@ -114,38 +111,71 @@ function applyEvent(turn: ChatTurn, event: Record<string, unknown>): ChatTurn {
     case 'usage':
       next.usage = event as Record<string, unknown>;
       break;
+    case 'notice': {
+      const message = (event.message as string) || '';
+      if (message) next.notices = [...(turn.notices || []), message];
+      break;
+    }
+    case 'model_resolved':
+      next.resolvedModel = (event.model as string) || null;
+      break;
+    case 'unverified':
+      next.unverified = event.value !== false;
+      break;
+    case 'evidence':
+      next.evidence = (event.value as ChatTurn['evidence']) || null;
+      next.sources = next.evidence?.records.map((record) => record.target) || [];
+      break;
     default:
       break;
   }
   return next;
 }
 
+// Settings grouped by intent. Each carries a one-line description so the picker
+// says what the setting does, not just its name. `thinking` lives only here as a
+// transparency layer — it and the layer entry were the same toggle.
 const SETTING_KEY_ITEMS: PickerItem[] = [
-  { id: 'thinking', label: 'thinking', tag: 'bool' },
-  ...LAYER_KEYS.map((k) => ({ id: k, label: k, tag: 'layer' })),
-  { id: 'permission', label: 'permission mode', tag: 'enum' },
-  { id: 'sandbox', label: 'sandbox', tag: 'enum' },
-  { id: 'inspector', label: 'inspector panel', tag: 'enum' },
-  { id: 'theme', label: 'color theme', tag: 'enum' },
-  { id: 'model', label: 'model', tag: 'model' },
+  { id: 'thinking', label: 'thinking', group: 'Transparency — what each turn shows', detail: 'show the model’s reasoning before the answer' },
+  { id: 'path', label: 'path', group: 'Transparency — what each turn shows', detail: 'show the routing path for each turn' },
+  { id: 'specialists', label: 'specialists', group: 'Transparency — what each turn shows', detail: 'show which specialists were engaged' },
+  { id: 'tools', label: 'tools', group: 'Transparency — what each turn shows', detail: 'show tool calls — reads, writes, commands' },
+  { id: 'observability', label: 'observability', group: 'Transparency — what each turn shows', detail: 'show token usage and telemetry' },
+  { id: 'permission', label: 'permission', group: 'Safety — what Construct may do', detail: 'when tools run without asking you first' },
+  { id: 'sandbox', label: 'sandbox', group: 'Safety — what Construct may do', detail: 'what files the tools are allowed to change' },
+  { id: 'inspector', label: 'inspector panel', group: 'Appearance', detail: 'when the side telemetry panel is shown' },
+  { id: 'theme', label: 'color theme', group: 'Appearance', detail: 'light, dark, or follow the system' },
+  { id: 'model', label: 'model', group: 'Model', detail: 'choose the model that answers' },
 ];
 
 const BOOL_ITEMS: PickerItem[] = [
-  { id: 'on', label: 'on' },
-  { id: 'off', label: 'off' },
+  { id: 'on', label: 'on', detail: 'show this in every turn' },
+  { id: 'off', label: 'off', detail: 'hide this' },
 ];
 
 const PERMISSION_ITEMS: PickerItem[] = [
-  { id: 'ask', label: 'ask' },
-  { id: 'allow_once', label: 'allow_once' },
-  { id: 'allow_always', label: 'allow_always' },
-  { id: 'reject', label: 'reject' },
+  { id: 'ask', label: 'ask', detail: 'prompt before every tool run (safest)' },
+  { id: 'allow_once', label: 'allow once', detail: 'allow tools for this session only' },
+  { id: 'allow_always', label: 'allow always', detail: 'never prompt — tools run freely' },
+  { id: 'reject', label: 'reject', detail: 'block all tool runs' },
 ];
 
 const SANDBOX_ITEMS: PickerItem[] = [
-  { id: 'read-only', label: 'read-only' },
-  { id: 'workspace-write', label: 'workspace-write' },
-  { id: 'danger-full-access', label: 'danger-full-access' },
+  { id: 'read-only', label: 'read-only', detail: 'tools can read but never write' },
+  { id: 'workspace-write', label: 'workspace-write', detail: 'tools may write inside this project' },
+  { id: 'danger-full-access', label: 'danger-full-access', detail: 'tools may write anywhere on disk' },
+];
+
+const INSPECTOR_ITEMS: PickerItem[] = [
+  { id: 'off', label: 'off', detail: 'never show the inspector panel' },
+  { id: 'auto', label: 'auto', detail: 'show it when a turn has detail' },
+  { id: 'on', label: 'on', detail: 'always show the inspector panel' },
+];
+
+const THEME_ITEMS: PickerItem[] = [
+  { id: 'auto', label: 'auto', detail: 'follow the system appearance' },
+  { id: 'light', label: 'light', detail: 'light background' },
+  { id: 'dark', label: 'dark', detail: 'dark background' },
 ];
 
 export function useChatStream() {
@@ -158,10 +188,11 @@ export function useChatStream() {
   const [pending, setPending] = useState<PendingPermission | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false);
-  const [routeDrawerOpen, setRouteDrawerOpen] = useState(false);
+  const [routeDrawerOpen, setRouteDrawerOpen] = useState(true);
   const [picker, setPicker] = useState<{ title: string; items: PickerItem[]; selectedId?: string | null; kind: string; context?: string } | null>(null);
   const convRef = useRef<string | null>(null);
   const resumedRef = useRef(false);
+  const streamRef = useRef<EventSource | null>(null);
 
   const applyServerSessionMeta = useCallback((raw: Record<string, unknown> | null | undefined) => {
     if (!raw) return;
@@ -220,6 +251,34 @@ export function useChatStream() {
     setTurns((prev) => [...prev, createTurn(output, true)]);
   }, []);
 
+  const openSettingsPicker = useCallback(() => {
+    setPicker({ kind: 'set-key', title: 'select setting', items: SETTING_KEY_ITEMS });
+  }, []);
+
+  const openModelPicker = useCallback(async () => {
+    try {
+      const modelsRes = await fetch(`/api/chat/models${convRef.current ? `?id=${encodeURIComponent(convRef.current)}` : ''}`);
+      const modelsData = await modelsRes.json();
+      if (!modelsRes.ok) {
+        appendSystemOutput(modelsData.error || `model list failed (${modelsRes.status})`);
+        return;
+      }
+      const items = modelsData.items || [];
+      if (!items.length) {
+        appendSystemOutput('no models available — configure a provider key in ~/.construct/config.env');
+        return;
+      }
+      setPicker({
+        kind: 'model',
+        title: 'select model',
+        items,
+        selectedId: modelsData.selectedId,
+      });
+    } catch (err) {
+      appendSystemOutput(err instanceof Error ? err.message : 'model picker failed');
+    }
+  }, [appendSystemOutput]);
+
   const runCommand = useCallback(async (command: string) => {
     const res = await fetch('/api/chat/loop/command', {
       method: 'POST',
@@ -238,14 +297,7 @@ export function useChatStream() {
     applyServerSessionMeta(data.sessionMeta);
 
     if (data.picker === 'model') {
-      const modelsRes = await fetch(`/api/chat/models${convRef.current ? `?id=${encodeURIComponent(convRef.current)}` : ''}`);
-      const modelsData = await modelsRes.json();
-      setPicker({
-        kind: 'model',
-        title: 'select model',
-        items: modelsData.items || [],
-        selectedId: modelsData.selectedId,
-      });
+      await openModelPicker();
     } else if (data.picker === 'set') {
       setPicker({
         kind: 'set-key',
@@ -254,18 +306,7 @@ export function useChatStream() {
       });
     }
     return data;
-  }, [appendSystemOutput, applyServerSessionMeta, persistConvId]);
-
-  const openModelPicker = useCallback(async () => {
-    const modelsRes = await fetch(`/api/chat/models${convRef.current ? `?id=${encodeURIComponent(convRef.current)}` : ''}`);
-    const modelsData = await modelsRes.json();
-    setPicker({
-      kind: 'model',
-      title: 'select model',
-      items: modelsData.items || [],
-      selectedId: modelsData.selectedId,
-    });
-  }, []);
+  }, [appendSystemOutput, applyServerSessionMeta, openModelPicker, persistConvId]);
 
   const selectModel = useCallback(async (item: PickerItem) => {
     setPicker(null);
@@ -281,6 +322,10 @@ export function useChatStream() {
     }
     if (data.id) persistConvId(data.id);
     applyServerSessionMeta(data.sessionMeta);
+    // The select endpoint returns sessionMeta only once a runtime exists (after the
+    // first turn). Always reflect the chosen model so the header chip updates even
+    // when the pick happens from the empty state.
+    setSessionMeta((prev) => ({ ...prev, model: data.model, modelMode: data.modelMode }));
     appendSystemOutput(`model set: ${data.modelMode === 'free-router' ? `free-router → ${data.model}` : data.model} (saved)`);
   }, [appendSystemOutput, applyServerSessionMeta, persistConvId]);
 
@@ -290,39 +335,29 @@ export function useChatStream() {
       void openModelPicker();
       return;
     }
-    if (item.tag === 'bool' || item.tag === 'layer') {
+    if ((LAYER_KEYS as readonly string[]).includes(item.id)) {
       setPicker({
         kind: 'set-value',
-        title: `/set ${item.id}`,
+        title: `${item.label} — on or off`,
         items: BOOL_ITEMS,
         context: item.id,
       });
       return;
     }
     if (item.id === 'permission') {
-      setPicker({ kind: 'set-value', title: '/set permission', items: PERMISSION_ITEMS, context: 'permission' });
+      setPicker({ kind: 'set-value', title: 'permission mode', items: PERMISSION_ITEMS, context: 'permission' });
       return;
     }
     if (item.id === 'sandbox') {
-      setPicker({ kind: 'set-value', title: '/set sandbox', items: SANDBOX_ITEMS, context: 'sandbox' });
+      setPicker({ kind: 'set-value', title: 'sandbox', items: SANDBOX_ITEMS, context: 'sandbox' });
       return;
     }
     if (item.id === 'inspector') {
-      setPicker({
-        kind: 'set-value',
-        title: '/set inspector',
-        items: [{ id: 'off', label: 'off' }, { id: 'auto', label: 'auto' }, { id: 'on', label: 'on' }],
-        context: 'inspector',
-      });
+      setPicker({ kind: 'set-value', title: 'inspector panel', items: INSPECTOR_ITEMS, context: 'inspector' });
       return;
     }
     if (item.id === 'theme') {
-      setPicker({
-        kind: 'set-value',
-        title: '/set theme',
-        items: [{ id: 'auto', label: 'auto' }, { id: 'light', label: 'light' }, { id: 'dark', label: 'dark' }],
-        context: 'theme',
-      });
+      setPicker({ kind: 'set-value', title: 'color theme', items: THEME_ITEMS, context: 'theme' });
     }
   }, [openModelPicker]);
 
@@ -372,6 +407,27 @@ export function useChatStream() {
     setPending(null);
   }, [pending]);
 
+  const cancelStream = useCallback(async () => {
+    streamRef.current?.close();
+    streamRef.current = null;
+    if (convRef.current) {
+      try {
+        await fetch('/api/chat/loop/cancel', {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ id: convRef.current }),
+        });
+      } catch { /* best-effort */ }
+    }
+    setStreaming(false);
+    setTurns((prev) => {
+      const copy = [...prev];
+      const last = copy[copy.length - 1];
+      if (last?.working) copy[copy.length - 1] = { ...last, working: false };
+      return copy;
+    });
+  }, []);
+
   const sendMessage = useCallback(async (message: string) => {
     const text = message.trim();
     if (!text || streaming) return;
@@ -401,6 +457,7 @@ export function useChatStream() {
     const params = new URLSearchParams({ message: text });
     if (convRef.current) params.set('id', convRef.current);
     const es = new EventSource(`/api/chat/loop/stream?${params.toString()}`);
+    streamRef.current = es;
 
     es.onmessage = (ev) => {
       let event: Record<string, unknown>;
@@ -437,6 +494,7 @@ export function useChatStream() {
           return copy;
         });
         es.close();
+        streamRef.current = null;
         setStreaming(false);
         return;
       }
@@ -456,6 +514,7 @@ export function useChatStream() {
           return copy;
         });
         es.close();
+        streamRef.current = null;
         setStreaming(false);
         return;
       }
@@ -470,10 +529,15 @@ export function useChatStream() {
 
     es.onerror = () => {
       es.close();
+      streamRef.current = null;
       setStreaming(false);
       setError((e) => e || 'connection lost');
     };
   }, [applyServerSessionMeta, openModelPicker, persistConvId, runCommand, streaming]);
+
+  useEffect(() => () => {
+    streamRef.current?.close();
+  }, []);
 
   const activeOverlay = turns.filter((t) => !t.system).length
     ? turns.filter((t) => !t.system)[turns.filter((t) => !t.system).length - 1]?.overlay
@@ -496,6 +560,9 @@ export function useChatStream() {
     resolvePermission,
     toggleLayer,
     handlePickerSelect,
+    cancelStream,
+    openModelPicker,
+    openSettingsPicker,
   };
 }
 

@@ -30,6 +30,7 @@ export type ChatTool = {
 
 export type ChatTurn = {
   id: string;
+  createdAt?: number;
   userText: string;
   assistant: string;
   thinking: string;
@@ -37,6 +38,10 @@ export type ChatTurn = {
   overlay: RouteOverlay | null;
   sources: string[];
   usage: Record<string, unknown> | null;
+  resolvedModel?: string | null;
+  unverified?: boolean;
+  notices?: string[];
+  evidence?: { schemaVersion: number; status: string; records: Array<{ recordId: string; turnId: string | null; toolId: string; tool: string; requestedTarget: string; target: string; sourceId: string; completion: string; result: string }>; citations: string[]; reasonCodes: string[] } | null;
   working: boolean;
   system?: boolean;
 };

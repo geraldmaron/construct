@@ -7,10 +7,10 @@
  * artifacts read as one consistent family regardless of type. Color belongs to
  * diagrams, not to the page furniture.
  *
- * Geist is referenced by explicit numeric weight (400/500/600/700). The bundled
- * Geist-Medium / Geist-SemiBold faces do NOT register as separate Typst families,
- * so named weights like "Geist SemiBold" must never be used — they fall back to a
- * serif. Document-wide #set/#show rules sit at module scope so the Pandoc $body$
+ * Space Grotesk is referenced by explicit numeric weight (400/500/600/700) and ships
+ * as a single weight-axis variable TTF registered under the family name "Space
+ * Grotesk"; named weights like "Space Grotesk SemiBold" must never be used — they
+ * fall back to a serif. Document-wide #set/#show rules sit at module scope so the Pandoc $body$
  * inherits them; exported helpers keep stable signatures for the layout templates.
  */
 
@@ -51,9 +51,9 @@
 #let brand-hairline = hairline
 #let brand-rule = hairline-strong
 
-#let construct-font-sans = ("Geist",)
-#let construct-font-display = ("Geist",)
-#let construct-font-mono = ("Geist Mono",)
+#let construct-font-sans = ("Space Grotesk",)
+#let construct-font-display = ("Space Grotesk",)
+#let construct-font-mono = ("JetBrains Mono",)
 
 // Type scale. One modular ramp shared by every document type so sizing never
 // drifts between a PRD, a research brief, and a decision record.
@@ -69,7 +69,7 @@
 #let fs-subtitle = 11.5pt
 #let fs-title = 24pt
 
-// Weight scale. Numeric only; these resolve to bundled Geist faces.
+// Weight scale. Numeric only; these resolve to the bundled Space Grotesk variable face.
 
 #let wt-regular = 400
 #let wt-medium = 500
@@ -285,7 +285,7 @@
 // The theme function carries every body-level #set/#show rule. Module-scope set
 // rules do NOT propagate through `#import`, so each layout template applies this
 // with `#show: construct-theme` to wrap the Pandoc $body$ in the styled scope.
-// Geist is referenced by numeric weight throughout to avoid serif fallback.
+// Space Grotesk is referenced by numeric weight throughout to avoid serif fallback.
 
 #let construct-theme(body) = {
   set text(font: construct-font-sans, size: fs-body, fill: ink-body, lang: "en", tracking: 0.002em)

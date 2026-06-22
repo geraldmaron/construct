@@ -1,6 +1,6 @@
 ---
 title: Construct chat
-description: Run Construct's owned agent loop in the terminal or browser — transparency-first, provider-agnostic.
+description: Run Construct's owned agent loop in a dedicated window or browser — transparency-first, provider-agnostic.
 ---
 
 `construct chat` runs Construct's own agent loop: prompt → model → tool calls → results → repeat. Every token, tool result, permission decision, and routing choice is first-party data — not whatever a host chose to stream.
@@ -9,22 +9,30 @@ description: Run Construct's owned agent loop in the terminal or browser — tra
 
 ```bash
 construct dev                 # start local services (if not already running)
-construct chat                # Ink cockpit on a capable TTY
-construct chat --plain        # linear, screen-reader-friendly renderer
-construct chat --web          # browser cockpit at /chat/
+construct chat                # dedicated Construct chat window (Tauri + system WebView)
+construct chat --web          # browser tab at /chat/ instead
+construct chat --plain        # linear terminal mode (SSH, CI, scripts only)
 ```
 
-Optional Ink dependencies ship as `optionalDependencies` under `apps/chat/`. If they are missing, the launcher prints an install hint and falls back to linear mode.
+Build the desktop window binary once:
+
+```bash
+npm run build:chat-desktop
+```
+
+If the binary is missing, `construct chat` prints an install hint with the build command.
 
 ## What you see
 
-The default Ink surface shows:
+The default **desktop window** loads the same React cockpit as dashboard `/chat/` — Plus Jakarta Sans and IBM Plex Mono via `next/font`, full CSS layout freedom, no browser chrome.
 
-- **Conversation column** — phased turn log (`YOU`, `ROUTE`, `THINKING`, `TOOLS`, `SOURCES`, `CONSTRUCT`, `USAGE`)
-- **Session rail** — model, context meter, session usage, transparency layer toggles, route detail
+- **Conversation column** — turn cards with phased log lines (`YOU`, `ROUTE`, `THINK`, `TOOL`, `SRC`, `OUT`, `USAGE`)
+- **ROUTE strip** — full planned specialist chain inline (`cx-researcher → cx-architect → …`), intent, track, and gates — not just a specialist count
+- **Session rail** — model, context meter, session usage, transparency layer toggles, dispatch detail
 - **Permission prompts** — `y` / `a` / `n` (ask mode) or pre-set sandbox levels
+- **Keyboard shortcuts** — Ctrl+1–5 toggle layers, Ctrl+O expand tool detail, Escape cancel stream
 
-Use `--accessible`, `--plain`, `NO_COLOR`, or `TERM=dumb` for the linear renderer on non-TTY or accessibility needs.
+Use `--plain`, `--accessible`, `NO_COLOR`, or `TERM=dumb` only for headless or SSH workflows.
 
 ## In-session commands
 

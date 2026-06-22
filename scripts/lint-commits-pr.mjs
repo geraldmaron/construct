@@ -16,7 +16,7 @@ import { readFileSync } from "node:fs";
 const COMMIT_SUBJECT_RE =
   /^(feat|fix|refactor|perf|docs|test|chore|ci|build|style)(\([\w/.,:-]+\))?(!)?: [^A-Z].{1,70}$/;
 
-const FORBIDDEN_TRAILER_RE = /^Co-Authored-By:\s+Claude/im;
+const FORBIDDEN_TRAILER_RE = /^Co-[Aa]uthored-[Bb]y:/im;
 
 const REQUIRED_PR_HEADINGS = [
   "## Summary",
@@ -102,7 +102,7 @@ function lintCommits() {
       violations.push(`${sha.slice(0, 9)}: subject does not match \`type(scope): subject\` (≤72 chars, imperative, no period): ${JSON.stringify(subject)}`);
     }
     if (FORBIDDEN_TRAILER_RE.test(body ?? "")) {
-      violations.push(`${sha.slice(0, 9)}: forbidden trailer "Co-Authored-By: Claude" detected`);
+      violations.push(`${sha.slice(0, 9)}: forbidden Co-Authored-By trailer detected`);
     }
   }
   return violations;
