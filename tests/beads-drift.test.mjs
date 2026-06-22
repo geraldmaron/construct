@@ -10,7 +10,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { detectBeadsDrift, formatDriftReport } from '../lib/beads/drift.mjs';
+import { detectBeadsDrift, formatDriftReport, isOracleMetaBead } from '../lib/beads/drift.mjs';
 
 function days(n) {
   return new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString();
@@ -66,6 +66,36 @@ describe('detectBeadsDrift', () => {
     const r = detectBeadsDrift({ runner, stuckInProgressDays: 3 });
     assert.equal(r.counts.stuckInProgress, 1);
     assert.equal(r.stuckInProgress[0].id, 'construct-stuck');
+  });
+
+  it('excludes oracle meta beads from stuck and stale counts by default', () => {
+    assert.equal(isOracleMetaBead({ title: '[oracle/beads-hygiene] stuck' }), true);
+    assert.equal(isOracleMetaBead({ title: 'normal bead', labels: ['oracle'] }), true);
+    const runner = makeRunner({
+      open: [
+        { id: 'construct-stale', title: 'stale human work', updated: days(30) },
+        { id: 'construct-oracle', title: '[oracle/beads-hygiene] hygiene', updated: days(30) },
+      ],
+      inProgress: [
+        { id: 'construct-stuck', title: 'stuck human work', updated: days(5) },
+        { id: 'construct-oracle-ip', title: '[oracle/workflow-misaligned] wf', updated: days(5) },
+      ],
+    });
+    const r = detectBeadsDrift({ runner, staleOpenDays: 14, stuckInProgressDays: 3 });
+    assert.equal(r.counts.staleOpen, 1);
+    assert.equal(r.counts.stuckInProgress, 1);
+    assert.equal(r.staleOpen[0].id, 'construct-stale');
+    assert.equal(r.stuckInProgress[0].id, 'construct-stuck');
+  });
+
+  it('includes oracle meta beads when excludeOracleMeta is false', () => {
+    const runner = makeRunner({
+      inProgress: [
+        { id: 'construct-oracle-ip', title: '[oracle/workflow-misaligned] wf', updated: days(5) },
+      ],
+    });
+    const r = detectBeadsDrift({ runner, stuckInProgressDays: 3, excludeOracleMeta: false });
+    assert.equal(r.counts.stuckInProgress, 1);
   });
 
   it('flags merge-drift when an open bead title shares 3+ significant tokens with a commit subject', () => {

@@ -1,18 +1,18 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-22T19:01:38.695Z",
+  "generatedAt": "2026-06-22T19:32:23.509Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 492,
+    "testFiles": 493,
     "topLevelTestFiles": 274,
-    "nestedTestFiles": 218,
+    "nestedTestFiles": 219,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 16,
     "byLayer": {
       "unit": 297,
       "integration": 31,
       "visual": 5,
-      "functional": 159
+      "functional": 160
     },
     "byCategory": {
       "unit": 259,
@@ -20,7 +20,7 @@
       "contract-subsystem": 28,
       "integration": 22,
       "visual": 5,
-      "functional": 159,
+      "functional": 160,
       "hook": 9
     }
   },
@@ -2037,6 +2037,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/oracle-closed-loop.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/oracle-hygiene-policy.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/oracle-hygiene-policy.functional.test.mjs —"
     },
     {
       "path": "tests/functional/oracle-read-model.functional.test.mjs",

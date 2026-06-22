@@ -50,13 +50,49 @@ test('runOracleTick writes verdict history under .cx/oracle/verdicts/', async ()
   }
 });
 
-test('gapFingerprint is stable per gap id and day', () => {
+test('gapFingerprint is stable per gap id across calendar days', () => {
   const gap = { id: 'parity-drift' };
-  const fp1 = gapFingerprint(gap, new Date('2026-06-18T12:00:00Z'));
-  const fp2 = gapFingerprint(gap, new Date('2026-06-18T23:00:00Z'));
-  const fp3 = gapFingerprint(gap, new Date('2026-06-19T01:00:00Z'));
-  assert.equal(fp1, fp2);
-  assert.notEqual(fp1, fp3);
+  assert.equal(gapFingerprint(gap), 'parity-drift');
+  assert.equal(gapFingerprint({ id: 'parity-drift' }), gapFingerprint(gap));
+});
+
+test('raiseIssuesForGaps skips verdict-only hygiene gaps without bd create', async () => {
+  const env = freshProject();
+  try {
+    const { raiseIssuesForGaps } = await import('../../lib/oracle/issues.mjs');
+    const gaps = [
+      { id: 'beads-hygiene', severity: 'high', detail: '2 stuck in_progress, 50 stale-open' },
+      { id: 'workflow-misaligned', severity: 'high', detail: 'No .cx/workflow.json found' },
+    ];
+    const raised = await raiseIssuesForGaps({ projectDir: env.projectDir, gaps, dryRun: false });
+    assert.equal(raised.length, 2);
+    for (const row of raised) {
+      assert.equal(row.skipped, true);
+      assert.equal(row.reason, 'verdict-only');
+    }
+    const raisedFile = join(env.projectDir, '.cx', 'oracle', 'raised-issues.jsonl');
+    assert.equal(existsSync(raisedFile), false);
+  } finally {
+    env.cleanup();
+  }
+});
+
+test('raiseIssuesForGaps persistent dedup skips when raised-issues record exists', async () => {
+  const env = freshProject();
+  try {
+    const { raiseIssuesForGaps } = await import('../../lib/oracle/issues.mjs');
+    mkdirSync(join(env.projectDir, '.cx', 'oracle'), { recursive: true });
+    writeFileSync(
+      join(env.projectDir, '.cx', 'oracle', 'raised-issues.jsonl'),
+      JSON.stringify({ fingerprint: 'dead-code-regression', gapId: 'dead-code-regression', beadId: 'construct-test' }) + '\n',
+    );
+    const gaps = [{ id: 'dead-code-regression', severity: 'high', detail: '1 new dead module' }];
+    const raised = await raiseIssuesForGaps({ projectDir: env.projectDir, gaps, dryRun: false });
+    assert.equal(raised[0].skipped, true);
+    assert.equal(raised[0].reason, 'already-raised');
+  } finally {
+    env.cleanup();
+  }
 });
 
 test('approve executes outcomes-aggregate and creates outcomes summary', async () => {

@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { synthesizeVerdict, isDoctorEscalation } from '../../lib/oracle/synthesize.mjs';
+import { autoRaiseEnabledForGap } from '../../lib/oracle/policy.mjs';
 
 test('isDoctorEscalation matches production doctor-log shapes', () => {
   assert.equal(isDoctorEscalation({ kind: 'escalation', result: 'escalated' }), true);
@@ -88,7 +89,9 @@ test('synthesizeVerdict surfaces org graph workflow misalignment', () => {
     projectDir: '/tmp',
   };
   const { gaps } = synthesizeVerdict(readModel);
-  assert.ok(gaps.some((g) => g.id === 'workflow-misaligned'));
+  const wf = gaps.find((g) => g.id === 'workflow-misaligned');
+  assert.ok(wf);
+  assert.equal(autoRaiseEnabledForGap(wf), false);
 });
 
 test('synthesizeVerdict attaches remediationRoute to gaps and actions', () => {
