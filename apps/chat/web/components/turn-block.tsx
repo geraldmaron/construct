@@ -146,6 +146,12 @@ export function TurnBlock({
             isError={turn.assistant.startsWith('[error]')}
           />
         ) : null}
+
+        {(turn.notices || []).map((notice, i) => (
+          <p key={`notice-${i}`} className="cx-turn-notice" role="status">
+            {notice}
+          </p>
+        ))}
       </div>
     </div>
   );

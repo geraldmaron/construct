@@ -20,9 +20,30 @@ import { resolveTurnControls } from './turn-controls.mjs';
 import { buildSystemPrompt } from '../../../lib/chat/system-prompt.mjs';
 import { applyToolBudget } from '../../../lib/mcp/tool-budget.mjs';
 import { recordPolicyTelemetry } from '../../../lib/chat/policy-telemetry.mjs';
+import { maybeCompact, estimateTextTokens, messageText } from '../../../lib/chat/context-compactor.mjs';
+
+// Real summarization of the compactible layers (tool results, prior assistant
+// reasoning) the contract elides, run on the same language model as the turn.
+// Bounded output and zero retries keep the once-per-compaction cost small; a throw
+// is caught upstream and falls back to the deterministic extractive summary, so a
+// summarizer failure degrades fidelity without breaking the turn.
+
+function makeSummarizer({ generateText, languageModel, signal }) {
+  return async (text, meta = {}) => {
+    const { text: summary } = await generateText({
+      model: languageModel,
+      system: 'Compress earlier agent work into a faithful, terse recap for context continuation. Preserve decisions, findings, file paths, identifiers, and unresolved threads. Never invent facts. No preamble.',
+      prompt: `Summarize these ${meta.segmentCount || 'earlier'} turn(s) of an agent working in a repository. Use compact bullets, keep concrete identifiers, stay under 200 words:\n\n${text}`,
+      maxOutputTokens: 512,
+      maxRetries: 0,
+      abortSignal: signal,
+    });
+    return summary;
+  };
+}
 
 export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(), model = null, handlers = {}, systemPrompt = '', tools = null, onTelemetry = recordPolicyTelemetry } = {}) {
-  const { streamText, stepCountIs } = await import('ai');
+  const { streamText, stepCountIs, generateText } = await import('ai');
 
   const { buildAgentTools } = await import('./tools/registry.mjs');
   const sdkTools = await buildAgentTools({ env, cwd, handlers, only: tools });
@@ -30,6 +51,7 @@ export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(),
   const messages = [];
   const languageModels = new Map();
   let activeModelId = model;
+  let contextTokens = 0;
 
   async function languageModelFor(modelId) {
     const id = modelId || activeModelId;
@@ -98,7 +120,22 @@ export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(),
       }
 
       const result = streamText(request);
-      for await (const part of result.fullStream) yield part;
+
+      // The compaction trigger needs the current context SIZE, which is the last
+      // model call's per-step input (system + full history), not the turn's
+      // aggregate input — totalUsage sums input across tool steps and would
+      // over-count a multi-step turn, tripping compaction below the real budget.
+      // Prefer the last finish-step's per-call usage; fall back to the aggregate
+      // only when the host reports no per-step usage. Host numbers only, no split.
+      let lastStepUsage = null;
+      let aggregateUsage = null;
+      for await (const part of result.fullStream) {
+        if (part.type === 'finish-step' && part.usage) lastStepUsage = part.usage;
+        if (part.type === 'finish') aggregateUsage = part.totalUsage || part.usage || aggregateUsage;
+        yield part;
+      }
+      const turnUsage = lastStepUsage || aggregateUsage;
+
       // Persist the assistant turn (incl. tool exchanges) so the next prompt has history.
       try {
         const response = await result.response;
@@ -110,6 +147,37 @@ export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(),
           yield { type: 'model-resolved', model: resolved };
         }
       } catch { /* history append is best-effort */ }
+
+      // The next turn's context ≈ this turn's input (system + full history) plus the
+      // output just appended. When that crosses the policy's continuation trigger,
+      // compact without silent loss. Behavior-preserving: hosted only crosses near
+      // its ~150k budget, so short conversations are never touched. Compaction is
+      // best-effort — any failure leaves the live history intact.
+      const input = Number(turnUsage?.inputTokens) || 0;
+      const output = Number(turnUsage?.outputTokens) || 0;
+      if (input || output) contextTokens = input + output;
+
+      const trigger = controls.continuation?.triggerTokens || null;
+      if (trigger && contextTokens >= trigger) {
+        try {
+          const outcome = await maybeCompact({
+            messages,
+            systemText,
+            triggerTokens: trigger,
+            contextTokens,
+            summarize: makeSummarizer({ generateText, languageModel, signal }),
+          });
+          if (outcome.packet) yield { type: 'context-continuation', packet: outcome.packet, compacted: outcome.compacted };
+          if (outcome.notice) {
+            yield { type: 'context-notice', level: outcome.blocker ? 'warn' : 'info', code: outcome.blocker ? 'context-blocker' : 'context-compacted', message: outcome.notice };
+          }
+          if (outcome.compacted && Array.isArray(outcome.messages)) {
+            messages.length = 0;
+            messages.push(...outcome.messages);
+            contextTokens = estimateTextTokens(systemText) + messages.reduce((n, m) => n + estimateTextTokens(messageText(m)), 0);
+          }
+        } catch { /* compaction must never break a turn */ }
+      }
     },
   };
 }
