@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "cert-skipped-provider-001",
+  "scenarioId": "specialist.cx-engineer.normal",
+  "capabilityId": "specialist.cx-engineer",
+  "model": {
+    "provider": "openrouter",
+    "requestedId": "openrouter/free-model",
+    "resolvedId": "openrouter/free-model",
+    "tier": "free",
+    "paidOptIn": false
+  },
+  "fixture": {
+    "path": "tests/fixtures/certification/specialist-normal.json",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "verdict": {
+    "status": "inconclusive",
+    "source": "skipped-provider",
+    "reason": "provider call skipped: missing OPENROUTER_API_KEY"
+  },
+  "gates": [],
+  "qualitative": null,
+  "timing": {
+    "latencyMs": 0,
+    "startedAt": "2026-06-22T18:00:00.000Z",
+    "finishedAt": "2026-06-22T18:00:00.000Z"
+  },
+  "cost": null,
+  "artifacts": null,
+  "evidenceVersion": "corpus-inventory:1",
+  "createdAt": "2026-06-22T18:00:00.000Z"
+}
