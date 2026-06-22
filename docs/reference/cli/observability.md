@@ -12,6 +12,7 @@ description: Observability commands for Construct.
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
 | `construct feedback:history` | Show recorded outcome ratings |
 | `construct feedback:record` | Record an outcome rating for a recent specialist invocation |
+| `construct improvement` | Governed improvement loop — review, approve, and record apply/rollback for proposals |
 | `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
 | `construct optimize` | Prompt optimization using telemetry trace quality scores |
 | `construct review` | Generate agent performance review from the configured telemetry trace backend |
@@ -67,6 +68,16 @@ Record an outcome rating for a recent specialist invocation
 
 ```bash
 construct feedback:record <id> --score=<0-1> [--note="..."]
+```
+
+## construct improvement
+
+Governed improvement loop — review, approve, and record apply/rollback for proposals
+
+**Usage**
+
+```bash
+construct improvement submit|review|pending|show|approve|apply|rollback|list
 ```
 
 ## construct llm-judge

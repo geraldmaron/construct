@@ -189,6 +189,10 @@
       "core": false
     },
     {
+      "name": "improvement",
+      "core": false
+    },
+    {
       "name": "infer",
       "core": false
     },
