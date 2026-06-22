@@ -208,6 +208,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
 | `construct feedback:history` | Show recorded outcome ratings |
 | `construct feedback:record` | Record an outcome rating for a recent specialist invocation |
+| `construct improvement` | Governed improvement loop — review, approve, and record apply/rollback for proposals |
 | `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
 | `construct optimize` | Prompt optimization using telemetry trace quality scores |
 | `construct review` | Generate agent performance review from the configured telemetry trace backend |
