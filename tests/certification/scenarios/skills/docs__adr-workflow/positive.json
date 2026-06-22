@@ -1,0 +1,22 @@
+{
+  "skillId": "docs/adr-workflow",
+  "mode": "positive",
+  "activationTriggers": [
+    "Use when: an architectural decision is made that affects the system structure, data model, API contracts, or technology choices.",
+    "an architectural decision is made that affects the system structure, data model, API contracts, or technology choices."
+  ],
+  "inputs": [
+    "[decision-context]"
+  ],
+  "expectedOutputs": {
+    "artifactType": "adr",
+    "name": "docs-adr-workflow"
+  },
+  "verificationSteps": [
+    "skill file exists under skills/",
+    "inventory lists owners and workflowSkill=true"
+  ],
+  "owners": [
+    "cx-docs-keeper"
+  ]
+}

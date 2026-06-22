@@ -7,7 +7,7 @@ These are blocking gates. Every agent, persona, and harness session working in o
 
 The goal is simple: if a gate would fail in CI, it fails locally first. We never push and pray.
 
-## The five local gates
+## The six local gates
 
 Run these before declaring work done. Pasting the output into the PR body or `bd note` is the standard evidence.
 
@@ -18,8 +18,9 @@ Run these before declaring work done. Pasting the output into the PR body or `bd
 | Doc verification | `node bin/construct docs:verify` | "All documentation checks passed": no warnings either |
 | AUTO doc drift | `node bin/construct docs:update --check` | "Docs are up to date" |
 | Template policy | `npm run lint:templates` | "Template policy: clean." |
+| Certification RC gate | `node bin/construct certify gate` | Release-critical capabilities are not stale; hermetic certification scenarios pass; skipped live runs do not satisfy evidence |
 
-The shortcut for all five (plus dashboard sync) is:
+The shortcut for all six (plus dashboard sync) is:
 
 ```bash
 npm run release:check

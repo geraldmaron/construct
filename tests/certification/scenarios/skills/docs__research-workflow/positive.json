@@ -1,0 +1,23 @@
+{
+  "skillId": "docs/research-workflow",
+  "mode": "positive",
+  "activationTriggers": [
+    "Use when: cx-researcher must investigate external facts — CVEs, APIs, market data, regulations, or vendor behavior.",
+    "cx-researcher investigates **external** facts — not user interviews or codebase exploration. For user evidence use `docs/user-research-workflow`; for repo exploration use `docs/codebase-research-workflow`."
+  ],
+  "inputs": [
+    "[research-question]"
+  ],
+  "expectedOutputs": {
+    "artifactType": "research-brief",
+    "name": "docs-research-workflow"
+  },
+  "verificationSteps": [
+    "skill file exists under skills/",
+    "inventory lists owners and workflowSkill=true"
+  ],
+  "owners": [
+    "cx-rd-lead",
+    "cx-researcher"
+  ]
+}

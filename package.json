@@ -76,7 +76,7 @@
     "lint:templates": "node scripts/lint-commits-pr.mjs",
     "eval:routing": "node scripts/eval/score-intent-classifier.mjs",
     "adapters": "node lib/adapters-sync.mjs",
-    "release:check": "node ./bin/construct doctor && npm test && node ./bin/construct docs:update --check && node ./bin/construct docs:site --check && node ./bin/construct registry:generate-docs --check && node ./bin/construct docs:verify --strict && node scripts/alignment/census.mjs --ratchet && node ./bin/construct dashboard:sync --check && node ./bin/construct lint:comments && node scripts/lint-commits-pr.mjs",
+    "release:check": "node ./bin/construct doctor && npm test && node ./bin/construct docs:update --check && node ./bin/construct docs:site --check && node ./bin/construct registry:generate-docs --check && node ./bin/construct docs:verify --strict && node scripts/alignment/census.mjs --ratchet && node ./bin/construct dashboard:sync --check && node ./bin/construct lint:comments && node ./bin/construct certify gate && node scripts/lint-commits-pr.mjs",
     "release:gate": "node --test tests/functional/release-gate.functional.test.mjs",
     "audit:published": "node scripts/audit-published-artifact.mjs",
     "version": "node scripts/sync-construct-version.mjs && git add .construct/version",

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "specialistId": "cx-researcher",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path",
+  "userPrompt": "What is the version, the publication date, and the primary source?",
+  "roleCardRefs": [
+    "openingQuestion",
+    "humanEquivalent",
+    "skills"
+  ],
+  "hermeticChecks": [
+    "role-card-exists",
+    "registry-specialist-match",
+    "contract-audit-pass"
+  ],
+  "handoffEvidence": {
+    "required": true,
+    "artifactTypes": [
+      "evidence-brief",
+      "product-intelligence-report",
+      "research-brief",
+      "signal-brief"
+    ]
+  },
+  "liveScoring": {
+    "enabled": true,
+    "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+  }
+}
