@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-22T18:37:37.498Z",
+  "generatedAt": "2026-06-22T19:01:38.695Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 484,
-    "topLevelTestFiles": 271,
-    "nestedTestFiles": 213,
+    "testFiles": 492,
+    "topLevelTestFiles": 274,
+    "nestedTestFiles": 218,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 12,
+    "capabilityMarkedFiles": 16,
     "byLayer": {
-      "unit": 289,
+      "unit": 297,
       "integration": 31,
       "visual": 5,
       "functional": 159
     },
     "byCategory": {
-      "unit": 253,
+      "unit": 259,
       "structural-guard": 10,
-      "contract-subsystem": 26,
+      "contract-subsystem": 28,
       "integration": 22,
       "visual": 5,
       "functional": 159,
@@ -217,6 +217,26 @@
       "maintainerNotes": "capability-tier.test.mjs — Unit tests for resolveCapabilityTier and the small-model"
     },
     {
+      "path": "tests/certification-eval-gates.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [
+        "test-system.certification-eval-gates"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/certification-eval-gates.test.mjs — eval gate integration in certification runs."
+    },
+    {
+      "path": "tests/certification-model-routing.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [
+        "test-system.certification-model-routing"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/certification-model-routing.test.mjs — OpenRouter free-first certification routing."
+    },
+    {
       "path": "tests/certification-run.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -235,6 +255,30 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/certification-runner.test.mjs — certification scenario runner and CLI wiring."
+    },
+    {
+      "path": "tests/certification/demos/canonical-scenarios.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/demos/canonical-scenarios.test.mjs — canonical demo scenario catalog validator."
+    },
+    {
+      "path": "tests/certification/skills/inventory.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/skills/inventory.test.mjs — skill inventory audit and freshness."
+    },
+    {
+      "path": "tests/certification/stale-impact.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/certification/stale-impact.test.mjs — certification stale marking on ledger path changes."
     },
     {
       "path": "tests/chat-evidence.test.mjs",
@@ -981,6 +1025,26 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/first-invocation-probe.test.mjs — `maybeFirstInvocationProbe` matrix."
+    },
+    {
+      "path": "tests/fixtures/artifacts/golden-fixtures.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [
+        "artifact.release-gate"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/fixtures/artifacts/golden-fixtures.test.mjs — golden artifact fixtures per manifest type."
+    },
+    {
+      "path": "tests/fixtures/document-io/document-io-fixtures.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [
+        "document.ingest.local"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/fixtures/document-io/document-io-fixtures.test.mjs — document I/O intake fixture catalog."
     },
     {
       "path": "tests/flavors/schema.test.mjs",
@@ -3793,6 +3857,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/test-hygiene.test.mjs — regression guard against /tmp/construct-* leaks."
+    },
+    {
+      "path": "tests/test-isolation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/test-isolation.test.mjs — regression guard for functional test HOME isolation."
     },
     {
       "path": "tests/tool-budget.test.mjs",

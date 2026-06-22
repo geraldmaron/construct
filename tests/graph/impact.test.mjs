@@ -60,6 +60,7 @@ test('a changed file selects transitive-importer tests and validating tests', ()
   assert.deepEqual(r.impactedCapabilities, ['c']);
   assert.deepEqual(r.impactedWorkflows, ['w']);
   assert.deepEqual(r.coverageGaps, []);
+  assert.ok(Array.isArray(r.staleCapabilities));
 });
 
 test('a changed impl realizing no capability is a coverage gap', () => {

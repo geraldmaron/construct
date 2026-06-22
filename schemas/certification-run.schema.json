@@ -32,7 +32,8 @@
         "requestedId": { "type": "string", "minLength": 1 },
         "resolvedId": { "type": "string", "minLength": 1 },
         "tier": { "enum": ["free", "paid-reference", "hermetic", "unknown"] },
-        "paidOptIn": { "type": "boolean" }
+        "paidOptIn": { "type": "boolean" },
+        "operatorAckAt": { "type": ["string", "null"] }
       }
     },
     "fixture": {
@@ -63,7 +64,8 @@
         "properties": {
           "id": { "type": "string", "minLength": 1 },
           "pass": { "type": "boolean" },
-          "detail": { "type": ["string", "null"] }
+          "detail": { "type": ["string", "null"] },
+          "evidence": { "type": ["string", "null"] }
         }
       }
     },
@@ -74,6 +76,24 @@
         "judgeModel": { "type": ["string", "null"] },
         "score": { "type": ["number", "null"] },
         "abstained": { "type": "boolean" }
+      }
+    },
+    "evaluation": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "properties": {
+        "schemaVersion": { "type": "integer" },
+        "blocked": { "type": ["boolean", "null"] },
+        "gates": { "type": "array" },
+        "evaluators": { "type": "array" },
+        "decision": {
+          "type": "object",
+          "properties": {
+            "promotable": { "type": "boolean" },
+            "reason": { "type": "string" },
+            "judgesConsulted": { "type": "integer" }
+          }
+        }
       }
     },
     "timing": {

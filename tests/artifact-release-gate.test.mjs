@@ -13,14 +13,14 @@ import { lintDocVisuals } from '../lib/templates/visual-requirements.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-test('good PRD template passes structural gate', () => {
-  const p = join(REPO, 'templates', 'docs', 'prd.md');
+test('good PRD golden fixture passes structural gate', () => {
+  const p = join(REPO, 'tests', 'fixtures', 'artifacts', 'prd', 'golden.md');
   const r = validateArtifactRelease({ filePath: p, type: 'prd', rootDir: REPO });
   assert.equal(r.ok, true, r.errors.join('; '));
 });
 
-test('ADR template satisfies manifest adr-context-diagram visual requirement', () => {
-  const p = join(REPO, 'templates', 'docs', 'adr.md');
+test('ADR golden fixture satisfies manifest adr-context-diagram visual requirement', () => {
+  const p = join(REPO, 'tests', 'fixtures', 'artifacts', 'adr', 'golden.md');
   const errors = lintDocVisuals(p, 'adr');
   assert.deepEqual(errors, [], errors.join('; '));
 });

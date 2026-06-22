@@ -19,6 +19,8 @@ test('hermetic ledger scenario passes and persists a run record', async (t) => {
   const repoRoot = process.cwd();
   const result = await runCertificationScenario('ledger.traceability', { projectDir: rootDir, repoRoot });
   assert.equal(result.run.verdict.status, 'pass');
+  assert.ok(result.run.gates.some((gate) => gate.id.startsWith('eval:')));
+  assert.ok(result.run.evaluation?.decision?.promotable);
   assert.equal(listCertificationRunIds({ rootDir }).length, 1);
 });
 
@@ -33,10 +35,18 @@ test('live scenario without opt-in records inconclusive and exits 2', async (t) 
   assert.equal(result.run.verdict.source, 'skipped-provider');
 });
 
-test('construct certify run supports dry-run without writing artifacts', async () => {
-  const code = await runCertificationCli(['run', 'ledger.traceability', '--dry-run', '--json'], {
-    projectDir: process.cwd(),
-    repoRoot: process.cwd(),
-  });
-  assert.equal(code, 0);
+test('construct certify run surfaces model tier before dry-run', async () => {
+  const chunks = [];
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = (chunk) => { chunks.push(String(chunk)); return true; };
+  try {
+    const code = await runCertificationCli(['run', 'ledger.traceability', '--dry-run'], {
+      projectDir: process.cwd(),
+      repoRoot: process.cwd(),
+    });
+    assert.equal(code, 0);
+    assert.match(chunks.join(''), /model-tier:/);
+  } finally {
+    process.stdout.write = originalWrite;
+  }
 });
