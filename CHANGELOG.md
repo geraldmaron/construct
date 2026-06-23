@@ -7,6 +7,9 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ### Added
 - **Project-config source targets and root intake** (`construct-1arm`). Typed `sources.targets` and `intakePolicy` blocks in `construct.config.json` for GitHub, Jira, Linear, and Slack selectors with stable IDs, validation, and legacy env merging (`GITHUB_REPOS`, `JIRA_PROJECTS`, `LINEAR_TEAMS`, `SLACK_CHANNELS`). Runtime embed auto-discovery, demand-fetch, session-start hints, and MCP matching consume resolved targets; explicit `embed.yaml` remains a complete override. Universal `inbox/` drop zone is initialized and watched by default; intake policy migrates from deprecated `.cx/intake-config.json` via `construct intake config migrate`. CLI: `construct sources list|add|remove|validate`; dashboard **Sources** surface and intake zone controls including root inbox.
 
+### Fixed
+- **Doctor on published npm installs** ([#297](https://github.com/geraldmaron/construct/issues/297)). `construct doctor` no longer hard-fails `Dashboard built` or `Specialist/skill audit cross-checks` when running from a consumer `npx` install (no `apps/dashboard/` or `tests/certification/`). Those checks remain enforced on source checkouts.
+
 ## [1.2.0] - 2026-06-23
 
 ### Added

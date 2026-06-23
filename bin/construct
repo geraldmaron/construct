@@ -500,15 +500,19 @@ async function cmdDoctor() {
 
   const checks = [];
   const add = (label, pass, optional = false) => checks.push({ label, pass, optional });
+  const { isConstructSourceCheckout } = await import('../lib/doctor/source-checkout.mjs');
+  const isSourceCheckout = isConstructSourceCheckout(ROOT_DIR);
   add('registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'registry.json')));
   add('sync-specialists.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs')));
 
-  // Dashboard static build output. The Next.js app under apps/dashboard
-  // emits a static export into lib/server/static/ via its postbuild script;
-  // an empty static dir means lib/server/index.mjs will serve 404s.
+  // Dashboard static build output. Skipped on published npm installs (#297).
 
-  const dashboardIndex = path.join(ROOT_DIR, 'lib', 'server', 'static', 'index.html');
-  add('Dashboard built (lib/server/static/index.html)', fs.existsSync(dashboardIndex));
+  if (isSourceCheckout) {
+    const dashboardIndex = path.join(ROOT_DIR, 'lib', 'server', 'static', 'index.html');
+    add('Dashboard built (lib/server/static/index.html)', fs.existsSync(dashboardIndex));
+  } else {
+    add('Dashboard built (skipped — published package)', true, true);
+  }
 
   // Project .gitignore must cover .cx/. Auto-fix via --fix-gitignore.
   // Only checks when cwd looks like a Construct project (has .cx/ or
@@ -858,8 +862,12 @@ async function cmdDoctor() {
     add('Headhunt classifier agents exist in registry', classifierOrphans.length === 0);
     const skillAudit = auditSkills({ rootDir: ROOT_DIR, silent: true });
     add('No declared skills missing on disk', skillAudit.pass, false);
-    const specialistAudit = auditSpecialists({ rootDir: ROOT_DIR, silent: true });
-    add('Specialist/skill audit cross-checks', specialistAudit.pass, false);
+    if (isSourceCheckout) {
+      const specialistAudit = auditSpecialists({ rootDir: ROOT_DIR, silent: true });
+      add('Specialist/skill audit cross-checks', specialistAudit.pass, false);
+    } else {
+      add('Specialist/skill audit cross-checks (skipped — published package)', true, true);
+    }
     const { lintResearchRepo } = await import('../lib/research-lint.mjs');
     const researchLintResults = lintResearchRepo({ rootDir: process.cwd() });
     add('Research artifacts meet minimum evidence structure', researchLintResults.every((entry) => entry.errors.length === 0), true);
