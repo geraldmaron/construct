@@ -3,6 +3,8 @@
  *
  * Delegates to lib/certification/real-llm-scenarios.mjs; certification catalog ids
  * real-llm.s3 and real-llm.s8 mirror the same semantics via construct certify run.
+ * Default provider is OpenRouter (OPENROUTER_API_KEY); override with
+ * CONSTRUCT_E2E_REAL_LLM_PROVIDER / CONSTRUCT_E2E_REAL_LLM_MODEL.
  */
 
 import assert from 'node:assert/strict';
