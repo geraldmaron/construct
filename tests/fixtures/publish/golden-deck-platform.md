@@ -12,25 +12,25 @@ last_verified_at: 2026-06-20
 
 # Construct Platform Overview
 
-Monochrome ink · Plus Jakarta Sans typography · 16:9 slides
+Monochrome ink · Space Grotesk typography · 16:9 slides
 
 ---
 
 ## Problem
 
-Platform teams orchestrating multiple AI agents lack a **governed operational layer**.
+Platform teams orchestrating AI agents lack a **governed operational layer**.
 
-- Cold start every session — context is re-discovered, not replayed
-- Artifacts ship without provenance or citation discipline
-- Exports use host-default styling instead of one Construct brand
+- Cold start — context re-discovered each session
+- Artifacts ship without provenance or citations
+- Exports use host styling, not Construct brand
 
 ---
 
 ## What Construct provides
 
-1. **Routing** — specialist chains with explicit intent, track, and gates
+1. **Routing** — specialist chains with intent, track, and gates
 2. **Validation** — manifest-enforced structure before distribution
-3. **Document I/O** — many formats in; branded PDF, HTML, deck, and PPTX out
+3. **Document I/O** — many formats in; branded PDF, HTML, deck, PPTX out
 
 ---
 
@@ -38,28 +38,28 @@ Platform teams orchestrating multiple AI agents lack a **governed operational la
 
 | Direction | Formats |
 |-----------|---------|
-| **Ingest** | PDF, Office, email, AV, transcripts |
-| **Author** | Typed markdown artifacts (PRD, ADR, RFC, …) |
-| **Export** | PDF, DOCX, DOC, HTML, **deck**, **PPTX**, RTF, EPUB |
+| **Ingest** | PDF, Office, email, AV |
+| **Author** | Typed markdown artifacts |
+| **Export** | PDF, DOCX, HTML, PPTX |
 
-High fidelity ingest uses the **docling Python sidecar** (local-first). Fast tier uses unpdf/mammoth.
+High fidelity: **docling** sidecar (local-first). Fast tier: unpdf/mammoth.
 
 ---
 
 ## Branded exports
 
-Every distributable format shares the same tokens:
+One token set across all distributable formats:
 
 - Ink ramp `#0a0c10` → `#fafafa`
-- **Plus Jakarta Sans** body and headings · **IBM Plex Mono** for code
-- Hand-drawn diagrams in PDF/HTML (D2 sketch + Mermaid handDrawn)
-
-Open the generated examples under `.tmp/distribution-examples/` to review deck HTML and PPTX output.
+- **Space Grotesk** body · **JetBrains Mono** code
+- Hand-drawn diagrams in PDF/HTML (D2 sketch + Mermaid)
 
 ---
 
 ## Next steps
 
-- Export this deck: `construct export tests/fixtures/publish/golden-deck-platform.md --to=pptx`
-- Regenerate examples: `npm run examples:deck`
-- Read the matrix: [Document I/O reference](/reference/document-io)
+- Export: `construct export … --to=pptx`
+- Regenerate: `npm run examples:deck`
+- Matrix: [Document I/O reference](/reference/document-io)
+
+Review outputs in `.tmp/distribution-examples/`.
