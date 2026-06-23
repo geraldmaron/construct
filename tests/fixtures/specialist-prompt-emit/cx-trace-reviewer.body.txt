@@ -53,7 +53,7 @@ Follow skills/ai/prompt-optimizer.md. For each agent meeting the minimum trace t
 
 For agents with staging versions that have accumulated 20+ new traces:
 - Compare staging vs production median quality scores
-- If staging improvement > 0.05: recommend promotion (update registry promptFile and run construct sync)
+- If staging improvement > 0.05: recommend promotion (update registry promptFile and run `construct sync`)
 - If regression detected: recommend rollback
 
 ## Output format

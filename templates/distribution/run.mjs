@@ -58,6 +58,19 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+
+// npm 11.2+ warns on unknown npm_config_* keys. Cursor injects devdir for
+// node-gyp cache routing; strip before npm spawns (inline — no repo imports).
+
+function sanitizeNpmSpawnEnv(env = process.env) {
+  const next = { ...env };
+  for (const key of Object.keys(next)) {
+    if (/^npm_config_devdir$/i.test(key) || key === 'NPM_CONFIG_DEVDIR') {
+      delete next[key];
+    }
+  }
+  return next;
+}
 const PROJECT_ROOT = resolve(HERE, '..');
 const VERSION_FILE = join(HERE, 'version');
 const CACHE_BIN_DIR = join(HERE, 'cache', 'bin');
@@ -138,7 +151,11 @@ function tryNpx(version) {
   // so that failure can never fall through to the global/cache/Docker resolvers below.
   // Confirm the spec resolves first; on a miss, defer instead of dead-ending the chain.
 
-  const probe = spawnSync('npm', ['view', spec, 'version'], { stdio: 'ignore', timeout: 8000 });
+  const probe = spawnSync('npm', ['view', spec, 'version'], {
+    stdio: 'ignore',
+    timeout: 8000,
+    env: sanitizeNpmSpawnEnv(process.env),
+  });
   if (probe.status !== 0) return false;
   runForeground('npx', ['-p', spec, '--', 'construct', ...process.argv.slice(2)]);
   return true;

@@ -24,7 +24,7 @@ If the binary is missing, `construct chat` prints an install hint with the build
 
 ## What you see
 
-The default **desktop window** loads the same React cockpit as dashboard `/chat/` — Plus Jakarta Sans and IBM Plex Mono via `next/font`, full CSS layout freedom, no browser chrome.
+The default **desktop window** loads the same React cockpit as dashboard `/chat/` — Space Grotesk and JetBrains Mono via `next/font`, full CSS layout freedom, no browser chrome.
 
 - **Conversation column** — turn cards with phased log lines (`YOU`, `ROUTE`, `THINK`, `TOOL`, `SRC`, `OUT`, `USAGE`)
 - **ROUTE strip** — full planned specialist chain inline (`cx-researcher → cx-architect → …`), intent, track, and gates — not just a specialist count

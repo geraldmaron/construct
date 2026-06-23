@@ -21,6 +21,7 @@ const PHASE_HARNESS = {
   '02-deadcode': 'scripts/audit/02-deadcode.mjs',
   '03-docs': 'scripts/audit/03-docs.mjs',
   '03b-naming': 'scripts/audit/03b-naming.mjs',
+  '03d-brand': 'scripts/audit/03d-brand.mjs',
   '03c-root-layout': 'scripts/audit/03c-root-layout.mjs',
   '06-audit': 'scripts/audit/06-audit.mjs',
 };

@@ -1,13 +1,14 @@
 /**
  * apps/dashboard/e2e/demo/agentic-platforms-prd.spec.ts — publish guardrails demo recording.
  *
- * Walks the terminal cockpit on /chat/ and executes demo script steps via /demo
- * slash commands for Playwright video output.
+ * Act 1: branded terminal cockpit on /chat/ with /demo walkthrough.
+ * Act 2: open exported PDF via /demo-preview/ and scroll through the artifact.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+import { revealArtifact } from './_helpers/scroll-artifact.ts';
 
-test('agentic platforms prd — chat cockpit demo walkthrough', async ({ page }) => {
+async function runCockpitWalkthrough(page: Page) {
   await page.goto('/chat/');
   await expect(page.getByTestId('terminal-cockpit')).toBeVisible({ timeout: 30_000 });
 
@@ -16,15 +17,25 @@ test('agentic platforms prd — chat cockpit demo walkthrough', async ({ page })
 
   await prompt.fill('/demo steps');
   await prompt.press('Enter');
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(1500);
   await expect(page.getByText(/Demo steps/i)).toBeVisible({ timeout: 10_000 });
 
   for (let i = 0; i < 5; i += 1) {
     await prompt.fill('/demo next');
     await prompt.press('Enter');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(1800);
   }
 
   await expect(page.getByText(/Step 5|Publish PASS|styled PDF/i)).toBeVisible({ timeout: 10_000 });
   await page.waitForTimeout(2000);
+}
+
+test('agentic platforms prd — cockpit walkthrough and PDF scroll', async ({ page }) => {
+  test.setTimeout(180_000);
+  await runCockpitWalkthrough(page);
+  await revealArtifact(page, {
+    file: process.env.DEMO_ARTIFACT_FILE || 'prd-platform.pdf',
+    basePath: '/demo-preview',
+    mode: process.env.DEMO_ARTIFACT_REVEAL_MODE || 'constructPreview',
+  });
 });

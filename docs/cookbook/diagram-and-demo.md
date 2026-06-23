@@ -26,7 +26,7 @@ node bin/construct publish docs/prd-platform/brief.md --strict --figures
 - Runs **artifact release gate** before export (structure, visuals, citations, prose minimum)
 - Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **hand-drawn distribution styling** (D2 `--sketch`, Mermaid `handDrawn` look + bundled Caveat handwriting, monochrome ink accent)
 - PDF routes by `artifactType`: `construct-prd.typ` (product editorial), `construct-research.typ` (analytics), `construct-decision.typ` (ADR/RFC); override: `.cx/publish-theme.typ`
-- Typography ships bundled in `templates/distribution/fonts/` (Plus Jakarta Sans body + headings, IBM Plex Mono code; Caveat handwriting for hand-drawn diagram labels). Success metrics tables in blockquotes render as **Key metrics** callouts.
+- Typography ships bundled in `templates/distribution/fonts/` (Space Grotesk body + headings, JetBrains Mono code; Caveat handwriting for hand-drawn diagram labels). Success metrics tables in blockquotes render as **Key metrics** callouts.
 - Optional VHS terminal demo + Playwright dashboard demo via frontmatter or flags
 
 Authoring conventions for richer PDFs:
@@ -71,8 +71,53 @@ Optional publish frontmatter:
 ```yaml
 publish:
   demo: resource-guard-rails
-  dashboardDemo: agentic-platforms-prd
+  dashboardDemo: cockpit-tour
+  recording: agentic-platforms-prd
 ```
+
+`recording` references a Playwright manifest in `.cx/demos/recordings/` (project) or `templates/demos/recordings/` (shipped). Legacy `dashboardDemo` still works via the script bridge.
+
+## Demo any application (Playwright recordings)
+
+Project-scoped manifests live under `.cx/demos/recordings/<name>.json`:
+
+```json
+{
+  "name": "marketing-site",
+  "engine": "playwright",
+  "workspace": ".",
+  "spec": ".cx/demos/specs/marketing-site.spec.ts",
+  "baseUrl": "http://127.0.0.1:3456",
+  "webServer": {
+    "command": "npx serve out -l 3456",
+    "url": "http://127.0.0.1:3456"
+  },
+  "artifactReveal": {
+    "mode": "sameOrigin",
+    "staticDir": "out",
+    "file": "pricing.html",
+    "scroll": true
+  },
+  "output": { "format": "mp4", "path": ".cx/demos/marketing-site.mp4" }
+}
+```
+
+| Archetype | `webServer` | `artifactReveal.mode` |
+|-----------|-------------|------------------------|
+| Construct cockpit | `lib/server` (dashboard config) | `constructPreview` → `/demo-preview/<file>` |
+| Next.js static export | `npx serve out` | `sameOrigin` → `{baseUrl}/<file>` |
+| External SaaS | `skipWebServer: true` | optional |
+
+Scaffold a project recording:
+
+```bash
+construct demo init marketing --from=nextjs-static
+construct demo init docs-tour --from=external-url
+construct demo init my-prd --from=construct-cockpit
+npm run build && construct demo record marketing --format mp4
+```
+
+Shared scroll helpers ship in `templates/demos/specs/_helpers/scroll-artifact.ts` (copied into `.cx/demos/specs/_helpers/` on init). Schema: `schemas/demo-recording.schema.json`.
 
 ## Render a diagram
 
@@ -95,7 +140,7 @@ construct demo agentic-platforms-prd --web    # browser cockpit at /chat/
 construct demo agentic-platforms-prd --surface=tape --format mp4   # VHS fallback
 ```
 
-Fallback chain when chat is unavailable: **web chat → dashboard Playwright → VHS tape → printed script steps**.
+Fallback chain when chat is unavailable: **web chat → Playwright recording → dashboard → VHS tape → printed script steps**.
 
 Inside chat, use `/demo next` for the next prompt, `/demo steps` to replay the outline.
 
@@ -112,16 +157,30 @@ construct demo record resource-guard-rails --format mp4
 
 Scaffold templates: `quickstart`, `diagram`. CI: `.github/workflows/publish-media.yml` uses `charmbracelet/vhs-action`.
 
-## Dashboard demos (Playwright)
+## Dashboard demos (Playwright — cockpit + PDF scroll)
+
+The flagship `agentic-platforms-prd` demo records the **branded web terminal cockpit** at `/chat/`, then opens the exported PDF via `/demo-preview/` and scrolls through the artifact. Distribution gallery generation uses this surface by default.
 
 ```bash
 cd apps/dashboard && npm install && npx playwright install chromium
+construct demo record agentic-platforms-prd --format mp4
 node bin/construct demo dashboard:agentic-platforms-prd
 ```
 
-Playwright spec: `apps/dashboard/e2e/demo/agentic-platforms-prd.spec.ts` — walks `/chat/` with `/demo` steps. Config: `webServer` + `video: on`.
+Playwright spec: `apps/dashboard/e2e/demo/agentic-platforms-prd.spec.ts` — Act 1 walks `/chat/` with `/demo` steps; Act 2 opens `prd-platform.pdf` from `CONSTRUCT_DEMO_ARTIFACT_DIR` and scrolls in Chrome's PDF viewer.
 
-## Export only
+When recording with a published artifact on disk:
+
+```bash
+CONSTRUCT_DEMO_ARTIFACT_DIR=.tmp/distribution-examples \
+DEMO_ARTIFACT_FILE=prd-platform.pdf \
+npx playwright test --config apps/dashboard/playwright.config.mjs \
+  apps/dashboard/e2e/demo/agentic-platforms-prd.spec.ts --project=demo-recording
+```
+
+The dashboard server exposes `GET /demo-preview/<filename>` only when `CONSTRUCT_DEMO_ARTIFACT_DIR` is set (path-traversal guarded). Config: `webServer` + `video: on`; output transcodes WebM → MP4 via ffmpeg when available.
+
+## Terminal demos (VHS recording — CLI fallback)
 
 ```bash
 construct export brief.md --to=pdf --figures

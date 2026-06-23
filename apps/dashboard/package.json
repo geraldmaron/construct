@@ -7,11 +7,10 @@
     "build": "next build && node scripts/copy-to-server-static.mjs",
     "build:next": "next build",
     "start": "next start -p 4242",
-    "demo:record": "playwright test e2e/demo --project=demo-recording"
+    "demo:record": "playwright test --project=demo-recording"
   },
   "dependencies": {
     "@cx/ui": "*",
-    "geist": "^1.7.2",
     "next": "^16.2.7",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

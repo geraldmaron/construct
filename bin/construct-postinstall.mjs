@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url';
 import { stageProjectAdapters } from '../lib/install/stage-project.mjs';
 import { syncProjectAdapters } from '../lib/adapters-sync.mjs';
 import { missingIgnorePatterns, isConstructPackageRepo } from '../lib/host-disposition.mjs';
+import { sanitizeNpmSpawnEnv } from '../lib/npm-spawn-env.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = path.resolve(HERE, '..');
@@ -76,7 +77,7 @@ try {
     const chatBuild = spawnSync('npm', ['run', 'build:chat'], {
       cwd: PKG_ROOT,
       stdio: 'inherit',
-      env: process.env,
+      env: sanitizeNpmSpawnEnv(process.env),
     });
     if (chatBuild.status !== 0) {
       fail('Ink TUI build failed', 'Run `npm run build:chat` manually.');
@@ -87,7 +88,7 @@ try {
     const dashBuild = spawnSync('npm', ['run', 'build:dashboard'], {
       cwd: PKG_ROOT,
       stdio: 'inherit',
-      env: process.env,
+      env: sanitizeNpmSpawnEnv(process.env),
     });
     if (dashBuild.status !== 0) {
       fail('Dashboard build failed', 'Run `npm run build:dashboard` manually.');

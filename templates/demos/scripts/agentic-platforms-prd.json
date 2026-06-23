@@ -6,6 +6,10 @@
   "tape": "agentic-platforms-prd",
   "dashboardDemo": "agentic-platforms-prd",
   "fallbackSurface": "tape",
+  "artifactReveal": {
+    "path": "prd-platform.pdf",
+    "scroll": true
+  },
   "fixtures": {
     "stub": "tests/fixtures/publish/agentic-platforms-stub.md",
     "golden": "tests/fixtures/publish/golden-prd-platform.md"

@@ -76,7 +76,8 @@
 #let wt-semibold = 600
 #let wt-bold = 700
 
-#let construct-figure-max-width = 74%
+#let construct-figure-max-width = 58%
+#let construct-figure-max-height = 2.35in
 
 // A document-type word maps to a compact badge so the masthead reads as a
 // labelled artifact rather than a bare title.
@@ -414,7 +415,7 @@
     )[
       #align(center)[
         #box(width: construct-figure-max-width)[
-          #show image: img => image(img, width: 100%, fit: "contain")
+          #show image: img => image(img, width: 100%, height: construct-figure-max-height, fit: "contain")
           #it.body
         ]
       ]

@@ -96,13 +96,27 @@ Legacy `.doc` export: Pandoc writes branded DOCX, then LibreOffice headless down
 
 ### Branded deck preview (local only)
 
-Generated examples are **not** committed under `templates/`. Regenerate into `.tmp/distribution-examples/` for local review:
+Regenerate into `.tmp/distribution-examples/` for local review:
 
-| Output | Path after `npm run examples:deck` |
-|--------|--------------------------------------|
-| HTML slide deck | `.tmp/distribution-examples/construct-deck-example.html` |
-| PowerPoint | `.tmp/distribution-examples/construct-deck-example.pptx` |
-| Source markdown | [`tests/fixtures/publish/golden-deck-platform.md`](../../tests/fixtures/publish/golden-deck-platform.md) |
+```bash
+npm run examples:distribution
+open .tmp/distribution-examples/index.html
+```
+
+Single deck (legacy):
+
+```bash
+npm run examples:deck
+```
+
+| Output | Path after generate |
+|--------|---------------------|
+| Gallery index | `.tmp/distribution-examples/index.html` |
+| PRD / ADR / research / runbook / strategy PDFs | `.tmp/distribution-examples/<id>.pdf` |
+| Platform PRD demo (cockpit + PDF scroll) | `.tmp/distribution-examples/agentic-platforms-prd.mp4` (Playwright recording `agentic-platforms-prd`) |
+| HTML slide deck | `.tmp/distribution-examples/deck-deck.html` |
+| PowerPoint | `.tmp/distribution-examples/deck.pptx` |
+| Sources | [`examples/distribution/sources/`](../../examples/distribution/sources/) |
 
 ### Publish templates by artifact type
 
@@ -137,4 +151,4 @@ Reports export (Pandoc, Typst, LibreOffice for `.doc`, pptxgenjs, deck template)
 
 ## Brand consistency
 
-Distribution exports share tokens from [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs): monochrome ink ramp, Plus Jakarta Sans / IBM Plex Mono typography. PPTX exports embed bundled TTF cuts via [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) when `pptx-embed-fonts` is installed. Chat UI and wireframe scaffolds consume the same tokens via [`lib/chat/design-tokens.mjs`](../../lib/chat/design-tokens.mjs).
+Distribution exports, chat UI, dashboard, and wireframe scaffolds share the Construct brand contract documented in [branding.md](./branding.md). Visual tokens live in [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) (monochrome ink ramp, Space Grotesk / JetBrains Mono). PPTX exports embed bundled TTF cuts via [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) when `pptx-embed-fonts` is installed.

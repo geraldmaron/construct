@@ -121,6 +121,7 @@ test('loadDemoScript loads agentic-platforms-prd with five steps', () => {
   assert.ok(script);
   assert.equal(script.steps.length, 5);
   assert.ok(script.fixtures.golden.includes('golden-prd-platform'));
+  assert.equal(script.artifactReveal?.file, 'prd-platform.pdf');
 });
 
 test('buildDemoAttemptChain defaults to chat then dashboard then tape', () => {

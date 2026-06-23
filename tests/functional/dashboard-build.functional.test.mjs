@@ -11,6 +11,7 @@ import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { withNextBuildLock } from './_lib/next-build-lock.mjs';
+import { sanitizeNpmSpawnEnv } from '../../lib/npm-spawn-env.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -53,6 +54,7 @@ test('apps/dashboard builds via next build', { timeout: 360_000 }, async () => {
         cwd: REPO_ROOT,
         encoding: 'utf8',
         timeout: 170_000,
+        env: sanitizeNpmSpawnEnv(process.env),
       });
       const transientRename = /ENOENT.*rename.*\.next\/(export|server\/pages)\/500\.html/.test(
         `${result.stdout}\n${result.stderr}`,
