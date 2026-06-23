@@ -4,7 +4,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
-## [1.1.2] - 2026-06-23
+## [1.2.0] - 2026-06-23
 
 ### Added
 - **Generalized application demo capability** (`lib/demo-recording.mjs`, `lib/playwright-demo.mjs`, `templates/demos/recordings/`, `templates/demos/playwright/demo-recording.config.mjs`, `templates/demos/specs/_helpers/scroll-artifact.ts`, `schemas/demo-recording.schema.json`). Project-scoped Playwright recording manifests under `.cx/demos/recordings/` with scaffolds via `construct demo init --from=nextjs-static|external-url|construct-cockpit`. `construct demo record` and `publish.recording` frontmatter drive workspace-agnostic `npx playwright test --config <config> <spec>`. Shipped `agentic-platforms-prd` recording JSON; legacy `dashboardDemo` script bridge preserved. `artifactReveal.mode`: `constructPreview` (distribution PDF via `/demo-preview/`) or `sameOrigin` (static export served by app webServer).
