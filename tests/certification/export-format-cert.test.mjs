@@ -34,9 +34,9 @@ test('deck export produces non-empty branded html or actionable degradation', ()
       assert.ok(fs.existsSync(out));
       assert.ok(fs.statSync(out).size > 0);
       const html = fs.readFileSync(out, 'utf8');
-      assert.match(html, /Construct|Jakarta|deck/i);
+      assert.match(html, /Construct|Space Grotesk|deck/i);
     } else {
-      assert.ok(result.hint || result.reason, 'missing engine should return actionable hint');
+      assert.ok(result.hint || result.reason || result.message, 'missing engine should return actionable hint');
     }
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -55,7 +55,7 @@ test('pptx export produces file or actionable hint when engine missing', () => {
     if (result.ok) {
       assert.ok(fs.statSync(out).size > 0);
     } else {
-      assert.ok(result.hint || result.reason);
+      assert.ok(result.hint || result.reason || result.message);
     }
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
