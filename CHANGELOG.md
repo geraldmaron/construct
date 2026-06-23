@@ -9,6 +9,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 - **Doctor on published npm installs** ([#297](https://github.com/geraldmaron/construct/issues/297)). `construct doctor` no longer hard-fails `Dashboard built` or `Specialist/skill audit cross-checks` when running from a consumer `npx` install (no `apps/dashboard/` or `tests/certification/`). Those checks remain enforced on source checkouts.
+- **Demo recording reliability**. Chat UI shows `demo · <title>` when a scripted demo session is active; `/api/chat/loop/command` uses a dedicated `command` rate tier (120/min) so slash-command bursts during Playwright recordings are not throttled as chat streams. Playwright video records only on the `demo-recording` project; ffmpeg re-encode uses `-crf 18 -preset medium`; Step 5 assertion tightened to `Step 5: Publish PASS`.
 
 ## [1.2.0] - 2026-06-23
 

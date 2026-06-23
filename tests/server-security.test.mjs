@@ -160,6 +160,15 @@ describe('rate-limit', () => {
     assert.equal(checkRateLimit(req, 'write', { env }).allowed, true);
     assert.equal(checkRateLimit(req, 'write', { env }).allowed, false);
   });
+
+  it('command tier allows rapid slash-command bursts for demo recordings', () => {
+    const req = new FakeReq({ remoteAddress: '10.0.0.4' });
+    const cap = DEFAULT_TIERS.command.capacity;
+    assert.ok(cap >= 10, 'command tier must cover /demo steps + multiple /demo next');
+    for (let i = 0; i < 8; i += 1) {
+      assert.equal(checkRateLimit(req, 'command', { env: {} }).allowed, true);
+    }
+  });
 });
 
 describe('logger', () => {

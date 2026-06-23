@@ -50,6 +50,9 @@ function deriveTelemetry(turns: ChatTurn[]) {
 }
 
 function modelLabel(sessionMeta: SessionMeta) {
+  if (sessionMeta.demoLabel) {
+    return `demo · ${sessionMeta.demoLabel}`;
+  }
   if (sessionMeta.modelMode === 'free-router') {
     return `free-router → ${sessionMeta.model ?? '?'}`;
   }

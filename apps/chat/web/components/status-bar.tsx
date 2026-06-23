@@ -21,6 +21,9 @@ type StatusBarProps = {
 };
 
 function modelLabel(sessionMeta: SessionMeta) {
+  if (sessionMeta.demoLabel) {
+    return `demo · ${sessionMeta.demoLabel}`;
+  }
   if (sessionMeta.modelMode === 'free-router') {
     return sessionMeta.model ?? 'free-router';
   }
