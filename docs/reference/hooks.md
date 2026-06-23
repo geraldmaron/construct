@@ -16,6 +16,7 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 | `audit-trail` | append-only audit log of every mutation Construct |
 | `bash-output-logger` | persists long Bash outputs to disk and nudges |
 | `block-no-verify` | refuse `git commit/push/merge --no-verify`. |
+| `brand-prose-lint` | PostToolUse hook: block brand drift at write time. |
 | `ci-status-check` | UserPromptSubmit hook: inject remote CI status into agent context. |
 | `comment-lint` | PostToolUse hook: enforce the comment policy at write time. |
 | `config-protection` | protects code-quality config from being weakened. |

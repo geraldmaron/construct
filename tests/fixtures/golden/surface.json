@@ -503,6 +503,7 @@
       "scan-secrets",
       "adaptive-lint",
       "comment-lint",
+      "brand-prose-lint",
       "artifact-release-gate",
       "doc-coupling-check",
       "graph-impact-advisory",

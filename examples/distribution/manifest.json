@@ -1,0 +1,53 @@
+{
+  "description": "Branded distribution examples — sources for npm run examples:distribution",
+  "outputDir": ".tmp/distribution-examples",
+  "items": [
+    {
+      "id": "prd-platform",
+      "source": "sources/prd-platform.md",
+      "artifactType": "prd-platform",
+      "formats": ["pdf", "html"],
+      "recording": "agentic-platforms-prd",
+      "demo": "agentic-platforms-prd",
+      "demoSurface": "playwright",
+      "demoArtifact": "prd-platform.pdf",
+      "demoFormat": "mp4"
+    },
+    {
+      "id": "adr",
+      "source": "sources/adr.md",
+      "artifactType": "adr",
+      "formats": ["pdf", "html"]
+    },
+    {
+      "id": "research-brief",
+      "source": "sources/research-brief.md",
+      "artifactType": "research-brief",
+      "formats": ["pdf", "html"]
+    },
+    {
+      "id": "runbook",
+      "source": "sources/runbook.md",
+      "artifactType": "runbook",
+      "formats": ["pdf", "html"]
+    },
+    {
+      "id": "rfc-platform",
+      "source": "sources/rfc-platform.md",
+      "artifactType": "rfc-platform",
+      "formats": ["pdf", "html"]
+    },
+    {
+      "id": "strategy",
+      "source": "sources/strategy.md",
+      "artifactType": "strategy",
+      "formats": ["pdf", "html"]
+    },
+    {
+      "id": "deck",
+      "source": "sources/deck-one-pager.md",
+      "artifactType": "one-pager",
+      "formats": ["deck", "pptx"]
+    }
+  ]
+}

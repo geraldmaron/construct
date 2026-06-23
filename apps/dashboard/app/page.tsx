@@ -11,7 +11,7 @@ import { Section, Callout } from '@cx/ui';
 import { Page, CardGrid, StatCard, StatusPill, DataTable, EmptyState, Spinner } from '@/components/page';
 import { useApi } from '@/components/use-api';
 import {
-  fetchStatus, fetchApprovals, fetchMode, fetchEmbedStatus, fetchAuthStatus,
+  fetchStatus, fetchApprovals, fetchMode, fetchEmbedStatus, fetchAuthStatus, apiGet,
 } from '@/lib/api';
 
 type StatusPayload = {
@@ -27,12 +27,16 @@ type ModePayload = { mode?: string; instanceId?: string; embedStatus?: string };
 type EmbedPayload = { running?: boolean; lastTickAt?: number; backend?: string };
 type ApprovalsPayload = { items?: { id: string; kind?: string; summary?: string; ts?: number }[] };
 
+type IntakeMetaPayload = { label?: string };
+
 export default function HomePage() {
   const status = useApi<StatusPayload>(fetchStatus, 15000);
   const mode = useApi<ModePayload>(fetchMode, 30000);
   const embed = useApi<EmbedPayload>(fetchEmbedStatus, 15000);
   const approvals = useApi<ApprovalsPayload>(fetchApprovals, 10000);
   const auth = useApi(fetchAuthStatus);
+  const intakeMeta = useApi<IntakeMetaPayload>(() => apiGet('/intake/list'), 30000);
+  const queueLinkLabel = intakeMeta.data?.label ?? 'Queue';
 
   const services = status.data?.services ?? {};
   const credentials = status.data?.credentials ?? {};
@@ -173,7 +177,7 @@ export default function HomePage() {
           <p>
             <Link className="link" href="/doctor">Doctor</Link>,{' '}
             <Link className="link" href="/knowledge">Knowledge</Link>,{' '}
-            <Link className="link" href="/intake">Intake</Link>,{' '}
+            <Link className="link" href="/intake">{queueLinkLabel}</Link>,{' '}
             <Link className="link" href="/workflow">Workflow</Link>,{' '}
             <Link className="link" href="/agents">Specialists</Link>,{' '}
             <Link className="link" href="/models">Models</Link>,{' '}

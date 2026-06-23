@@ -673,6 +673,14 @@ async function cmdDoctor() {
 
   add('Node.js 20+ (recommended)', Number.parseInt(process.versions.node.split('.')[0], 10) >= 20);
   add('npm available', true);
+  const npmDevdir = process.env.npm_config_devdir ?? process.env.NPM_CONFIG_DEVDIR;
+  if (npmDevdir) {
+    add(
+      'npm env: npm_config_devdir set (Cursor sandbox) — npm 11.2+ warns on every `npm run`. Unset: unset npm_config_devdir NPM_CONFIG_DEVDIR. Or run scripts directly: node scripts/... / construct ...',
+      false,
+      true,
+    );
+  }
   const constructOnPath = spawnSync('zsh', ['-lc', 'command -v construct'], { encoding: 'utf8', env: process.env });
   const constructPath = constructOnPath.status === 0 ? constructOnPath.stdout.trim() : '';
   const constructVersion = constructPath

@@ -16,6 +16,7 @@ import { smokeFindings } from '../audit/01-smoke.mjs';
 import { deadcodeFindings } from '../audit/02-deadcode.mjs';
 import { docsFindings } from '../audit/03-docs.mjs';
 import { namingFindings } from '../audit/03b-naming.mjs';
+import { brandFindings } from '../audit/03d-brand.mjs';
 import { rootLayoutFindings } from '../audit/03c-root-layout.mjs';
 import { auditFindings } from '../audit/06-audit.mjs';
 import { makeId } from '../audit/lib/findings.mjs';
@@ -140,6 +141,7 @@ export function runAlignmentCensus({ rootDir = REPO_ROOT, homeDir = process.env.
     ['02-deadcode', deadcodeFindings()],
     ['03-docs', docsFindings()],
     ['03b-naming', namingFindings()],
+    ['03d-brand', brandFindings()],
     ['03c-root-layout', rootLayoutFindings()],
     ['06-audit', repoDeterministic(auditFindings())],
   ];

@@ -4,19 +4,24 @@
 import { Section, Callout } from '@cx/ui';
 import { Page, DataTable, EmptyState, Spinner } from '@/components/page';
 import { useApi } from '@/components/use-api';
-import { fetchSnapshots } from '@/lib/api';
+import { fetchSnapshots, apiGet } from '@/lib/api';
 
 type SnapshotsPayload = { snapshots?: { id: string; kind?: string; ts?: number; summary?: string }[] };
 
+type IntakeMetaPayload = { label?: string; itemNoun?: string };
+
 export default function SnapshotsPage() {
   const { data, error, loading } = useApi<SnapshotsPayload>(fetchSnapshots);
+  const meta = useApi<IntakeMetaPayload>(() => apiGet('/intake/list'));
   const snapshots = data?.snapshots ?? [];
+  const itemNoun = meta.data?.itemNoun ?? 'signal';
+  const nounTitle = itemNoun.charAt(0).toUpperCase() + itemNoun.slice(1);
 
   return (
     <Page
       eyebrow="activity · snapshots"
-      title="Intake snapshots"
-      lede="Recent state captures from the intake watcher. Each snapshot is an append-only record of what the daemon saw."
+      title={`${nounTitle} snapshots`}
+      lede={`Recent state captures from the intake watcher. Each snapshot is an append-only record of what the daemon saw for pending ${itemNoun}s.`}
       meta={<span className="pill">{snapshots.length} recent</span>}
     >
       {loading && !data && <Spinner />}

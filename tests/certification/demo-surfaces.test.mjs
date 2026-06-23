@@ -29,7 +29,7 @@ test('web cockpit theme tokens and RouteStrip exist for certification', () => {
   assert.ok(fs.existsSync(routeStrip));
   const src = fs.readFileSync(routeStrip, 'utf8');
   assert.match(src, /cx-cockpit-route-strip/);
-  assert.match(fs.readFileSync(tokens, 'utf8'), /Jakarta|--cx-/);
+  assert.match(fs.readFileSync(tokens, 'utf8'), /Space Grotesk|--cx-/);
 });
 
 test('desktop launcher test documents surface=tauri certification path', () => {
@@ -46,4 +46,13 @@ test('demo functional harness references canonical tapes', () => {
   const tapesDir = path.join(REPO, 'templates/demos/tapes');
   assert.ok(fs.existsSync(tapesDir));
   assert.ok(fs.readdirSync(tapesDir).some((f) => f.endsWith('.tape')));
+});
+
+test('agentic-platforms-prd dashboard spec exists for cockpit + PDF demo', () => {
+  const spec = path.join(REPO, 'apps/dashboard/e2e/demo/agentic-platforms-prd.spec.ts');
+  assert.ok(fs.existsSync(spec));
+  const src = fs.readFileSync(spec, 'utf8');
+  assert.match(src, /terminal-cockpit/);
+  assert.match(src, /demo-preview/);
+  assert.match(src, /revealArtifact/);
 });

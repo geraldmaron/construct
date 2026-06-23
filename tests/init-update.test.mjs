@@ -89,3 +89,22 @@ test("construct init:update dry-run reports proposals without writing files", ()
     fs.rmSync(projectDir, { recursive: true, force: true });
   }
 });
+
+test("construct init:update proposes construct_guide refresh for stale .cx copy", () => {
+  const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-init-update-guide-"));
+  try {
+    fs.mkdirSync(path.join(projectDir, ".cx"), { recursive: true });
+    fs.writeFileSync(
+      path.join(projectDir, ".cx", "construct_guide.md"),
+      "# Welcome\n\nR&D intake queue instructions.\n",
+    );
+
+    const result = runInitUpdate(projectDir);
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const proposal = path.join(projectDir, ".cx", "proposals", "construct_guide.construct-update.md");
+    assert.equal(fs.existsSync(proposal), true);
+    assert.match(fs.readFileSync(proposal, "utf8"), /construct intake --help/);
+  } finally {
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  }
+});

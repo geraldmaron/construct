@@ -37,6 +37,7 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 - [Intake and triage](./concepts/intake-and-triage.mdx). How dropped signals become owner-assigned work
 - [Gates and enforcement](./concepts/gates-and-enforcement.mdx). Write-time, commit-time, and CI guardrails
 - [Style](./STYLE.md). Voice, punctuation, structure rules (canonical reference for prose lint)
+- [Branding](./reference/branding.md). Visual identity, naming, voice, tone, and profile terminology
 - [Learning loops](./concepts/learning-loops.mdx). What is wired vs aspirational across A1-A4
 - [Profile lifecycle](./concepts/profile-lifecycle.md). Draft → promote → archive flow for org-type profiles
 - [Persona and skill research](./concepts/persona-research.md). Methodology grounded in Goodwin, Cooper, Galbraith STAR, Bloom

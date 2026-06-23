@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-22T21:06:35.304Z",
+  "generatedAt": "2026-06-23T05:29:38.070Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 510,
-    "topLevelTestFiles": 275,
-    "nestedTestFiles": 235,
+    "testFiles": 518,
+    "topLevelTestFiles": 280,
+    "nestedTestFiles": 238,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 21,
+    "capabilityMarkedFiles": 23,
     "byLayer": {
-      "unit": 312,
+      "unit": 316,
       "live-provider": 2,
+      "visual": 6,
       "integration": 31,
-      "visual": 5,
-      "functional": 160
+      "functional": 163
     },
     "byCategory": {
-      "unit": 273,
+      "unit": 277,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
+      "visual": 6,
       "integration": 22,
-      "visual": 5,
-      "functional": 160,
+      "functional": 163,
       "hook": 9
     }
   },
@@ -167,6 +167,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/brand-fonts.test.mjs — bundled sans paths and PPTX embed contract."
+    },
+    {
+      "path": "tests/brand-prose.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/brand-prose.test.mjs — brand prose lint (marketing voice, naming, fonts)."
     },
     {
       "path": "tests/broker-check.test.mjs",
@@ -581,6 +589,14 @@
       "maintainerNotes": "tests/cost.test.mjs — validates token and cache accounting."
     },
     {
+      "path": "tests/dashboard-demo.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/dashboard-demo.test.mjs — dashboard demo video finalize helpers."
+    },
+    {
       "path": "tests/dashboard-static.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -627,6 +643,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/deck-export-pptx.test.mjs — PPTX deck parser and layout helpers."
+    },
+    {
+      "path": "tests/demo-recording.test.mjs",
+      "layer": "visual",
+      "category": "visual",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/demo-recording.test.mjs — recording manifest loader and legacy bridge."
     },
     {
       "path": "tests/deploy-contract.test.mjs",
@@ -1709,12 +1733,40 @@
       "maintainerNotes": "SSE channel smoke. Connects to /events and reads the initial bytes to"
     },
     {
+      "path": "tests/functional/dashboard/intake-rebrand.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/dashboard/intake-rebrand.functional.test.mjs — /api/intake/*"
+    },
+    {
       "path": "tests/functional/deck-export.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/deck-export.functional.test.mjs — branded deck HTML + PPTX export contract."
+    },
+    {
+      "path": "tests/functional/demo-preview-route.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "demo.terminal-fallback"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/demo-preview-route.functional.test.mjs — /demo-preview/ gated static serve."
+    },
+    {
+      "path": "tests/functional/demo-recording-loader.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "demo.terminal-fallback"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/demo-recording-loader.functional.test.mjs — recording validation in tmpdir."
     },
     {
       "path": "tests/functional/demo.functional.test.mjs",
@@ -2781,6 +2833,14 @@
       "maintainerNotes": "tests/init-intake-defaults.test.mjs — non-interactive `construct init`"
     },
     {
+      "path": "tests/init-update-guide.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/init-update-guide.test.mjs — construct_guide migration helpers."
+    },
+    {
       "path": "tests/init-update.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3139,6 +3199,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/no-fabrication-coverage.test.mjs — every specialist prompt and the"
+    },
+    {
+      "path": "tests/npm-spawn-env.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/npm-spawn-env.test.mjs — npm spawn env sanitization."
     },
     {
       "path": "tests/observation-store.test.mjs",

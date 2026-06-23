@@ -1,6 +1,6 @@
 ---
 title: Use Host-Native Models
-description: Leverage your existing GitHub Copilot or Anthropic subscriptions in OpenCode via Subscription Bridges.
+description: Use your existing GitHub Copilot or Anthropic subscriptions in OpenCode via Subscription Bridges.
 ---
 
 Subscription Bridges allow you to use premium models from services you are already subscribed to, without needing direct API keys or paying extra per token. Construct manages local proxy services that bridge your host-native authentication (like the `gh` CLI for Copilot) to a standard OpenAI-compatible API that OpenCode can consume.
@@ -28,7 +28,7 @@ If you have a GitHub Copilot subscription, you can use GPT-4o, Claude 3.5 Sonnet
 
 ### Anthropic (Claude Bridge)
 
-*Coming soon.* This bridge will allow you to leverage your Claude Pro subscription or active `claude` CLI sessions.
+*Coming soon.* This bridge will let you use your Claude Pro subscription or active `claude` CLI sessions.
 
 ## Configuration & Management
 

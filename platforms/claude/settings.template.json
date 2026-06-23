@@ -170,6 +170,18 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/brand-prose-lint.mjs\"",
+            "timeout": 15
+          }
+        ],
+        "id": "post:edit:brand-prose-lint",
+        "description": "Block marketing voice, retired fonts, and Construct/cli naming drift in governed docs and templates."
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
             "command": "node \"$HOME/.construct/lib/hooks/artifact-release-gate.mjs\"",
             "timeout": 15
           }

@@ -1,5 +1,5 @@
 /**
- * Playwright config for dashboard demo recordings (publish pipeline).
+ * apps/dashboard/playwright.config.mjs — Playwright config for dashboard demo recordings.
  *
  * Starts lib/server for static dashboard routes; writes video artifacts to
  * DEMO_OUTPUT_DIR or .cx/demos/dashboard under the repo root.
@@ -17,7 +17,7 @@ const DEMO_OUTPUT = process.env.DEMO_OUTPUT_DIR
 export default defineConfig({
   testDir: './e2e',
   testMatch: 'demo/**/*.spec.ts',
-  timeout: 120_000,
+  timeout: 180_000,
   fullyParallel: false,
   workers: 1,
   reporter: 'list',
@@ -48,6 +48,8 @@ export default defineConfig({
           PORT: '4242',
           NODE_ENV: 'test',
           CONSTRUCT_DEMO: process.env.CONSTRUCT_DEMO || 'agentic-platforms-prd',
+          CONSTRUCT_DEMO_ARTIFACT_DIR: process.env.CONSTRUCT_DEMO_ARTIFACT_DIR || '',
+          DEMO_ARTIFACT_FILE: process.env.DEMO_ARTIFACT_FILE || '',
         },
       },
 });

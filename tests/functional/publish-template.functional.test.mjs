@@ -130,12 +130,12 @@ test('distribution diagram defaults use compact hand-drawn sizing', () => {
   const defaults = distributionDiagramDefaults();
   assert.equal(defaults.d2Theme, 'neutral');
   assert.equal(defaults.d2Sketch, true);
-  assert.equal(defaults.d2Scale, 0.9);
-  assert.equal(defaults.d2FontSize, 15);
-  assert.equal(defaults.figureMaxWidth, '74%');
+  assert.equal(defaults.d2Scale, 0.72);
+  assert.equal(defaults.d2FontSize, 14);
+  assert.equal(defaults.figureMaxWidth, '58%');
   assert.equal(defaults.mermaidLook, 'handDrawn');
-  assert.equal(defaults.mermaidWidth, 640);
-  assert.equal(defaults.mermaidScale, 2);
+  assert.equal(defaults.mermaidWidth, 480);
+  assert.equal(defaults.mermaidScale, 1);
   assert.equal(defaults.accent, '#0a0c10');
 });
 
@@ -153,17 +153,18 @@ test('preprocessMarkdownDiagrams brands mermaid and d2 fences monochrome', () =>
   const out = preprocessMarkdownDiagrams(md);
   assert.match(out, /0a0c10/);
   assert.doesNotMatch(out, /8b5cf6/);
-  assert.match(out, /style\.font-size: 15/);
+  assert.match(out, /style\.font-size: 14/);
   assert.match(out, /```d2/);
 });
 
 test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME and sketch flag', () => {
   const env = buildDistributionDiagramEnv({});
   assert.equal(env.CONSTRUCT_D2_THEME, '0');
-  assert.equal(env.CONSTRUCT_D2_SCALE, '0.9');
+  assert.equal(env.CONSTRUCT_D2_SCALE, '0.72');
   assert.equal(env.CONSTRUCT_D2_SKETCH, '1');
   assert.equal(env.CONSTRUCT_MERMAID_THEME, 'construct');
-  assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '640');
+  assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '480');
+  assert.equal(env.CONSTRUCT_MERMAID_SCALE, '1');
 });
 
 test('construct-brand.typ uses Space Grotesk family names for body prose', () => {
@@ -171,8 +172,19 @@ test('construct-brand.typ uses Space Grotesk family names for body prose', () =>
   assert.match(brand, /construct-font-sans = \("Space Grotesk",\)/);
   assert.match(brand, /set text\(font: construct-font-sans[\s\S]*justify: false/);
   assert.doesNotMatch(brand, /Libertinus|SourceSerif|Geist|IBM Plex Sans|"Inter"/);
-  assert.match(brand, /construct-figure-max-width = 74%/);
+  assert.match(brand, /construct-figure-max-width = 58%/);
+  assert.match(brand, /construct-figure-max-height = 2\.35in/);
   assert.match(brand, /fit: "contain"/);
+});
+
+test('construct-deck.html and construct-web.html use Space Grotesk brand stack', () => {
+  const dist = path.join(REPO, 'templates', 'distribution');
+  for (const file of ['construct-deck.html', 'construct-web.html']) {
+    const html = fs.readFileSync(path.join(dist, file), 'utf8');
+    assert.match(html, /Space Grotesk/, `${file} must reference Space Grotesk`);
+    assert.match(html, /JetBrains Mono/, `${file} must reference JetBrains Mono`);
+    assert.doesNotMatch(html, /Plus Jakarta|Geist|IBM Plex|Libertinus/i, `${file} must not cite retired fonts`);
+  }
 });
 
 test('pdfEngineFontOpts passes typst font-path and ignore-system-fonts', () => {
