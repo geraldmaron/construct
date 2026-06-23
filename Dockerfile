@@ -27,8 +27,10 @@ WORKDIR /build
 # Upgrade npm before any install step.  The npm version shipped in the base
 # image (10.x) bundles picomatch 4.0.3 (CVE-2026-33671, ReDoS).  npm 11+
 # no longer bundles picomatch at all — upgrading eliminates the vulnerability
-# from the image rather than suppressing it.
-RUN npm install -g npm@latest --silent
+# from the image rather than suppressing it.  Patch npm's bundled undici to
+# 6.27.0+ (CVE-2026-12151) so the release Trivy gate passes.
+RUN npm install -g npm@latest --silent \
+  && npm install undici@6.27.0 --prefix /usr/local/lib/node_modules/npm/node_modules --no-save --silent
 
 COPY package.json package-lock.json ./
 
