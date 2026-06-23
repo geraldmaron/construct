@@ -26,7 +26,7 @@ async function runCockpitWalkthrough(page: Page) {
     await page.waitForTimeout(1800);
   }
 
-  await expect(page.getByText(/Step 5|Publish PASS|styled PDF/i)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/^Step 5: Publish PASS/i)).toBeVisible({ timeout: 10_000 });
   await page.waitForTimeout(2000);
 }
 

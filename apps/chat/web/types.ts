@@ -48,6 +48,7 @@ export type ChatTurn = {
 
 export type SessionMeta = {
   model?: string | null;
+  demoLabel?: string | null;
   modelMode?: string;
   sandbox?: string | null;
   permissionMode?: string | null;

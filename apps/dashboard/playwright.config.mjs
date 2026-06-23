@@ -25,13 +25,15 @@ export default defineConfig({
     baseURL: process.env.BASE_URL || 'http://127.0.0.1:4242',
     trace: 'off',
     screenshot: 'off',
-    video: 'on',
     viewport: { width: 1280, height: 720 },
   },
   projects: [
     {
       name: 'demo-recording',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        video: { mode: 'on', size: { width: 1280, height: 720 } },
+      },
     },
   ],
   outputDir: DEMO_OUTPUT,

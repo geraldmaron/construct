@@ -54,6 +54,7 @@ function parseOverlay(event: Record<string, unknown>): RouteOverlay {
 function parseSessionMeta(event: Record<string, unknown>): SessionMeta {
   return {
     model: (event.model as string) || null,
+    demoLabel: (event.demoLabel as string) || null,
     modelMode: (event.modelMode as string) || 'pinned',
     sandbox: (event.sandbox as string) || null,
     permissionMode: (event.permissionMode as string) || null,
