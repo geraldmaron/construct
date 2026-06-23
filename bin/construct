@@ -865,8 +865,17 @@ async function cmdDoctor() {
     if (isSourceCheckout) {
       const specialistAudit = auditSpecialists({ rootDir: ROOT_DIR, silent: true });
       add('Specialist/skill audit cross-checks', specialistAudit.pass, false);
+
+      // The catalog is the public-service source of truth; doctor joins it to runtime dispatch
+      // and the generated reference so a command that is unroutable or undocumented surfaces here.
+
+      const { buildCliServiceInventory } = await import('../lib/cli-service-inventory.mjs');
+      const cliDrift = buildCliServiceInventory({ rootDir: ROOT_DIR })
+        .filter((entry) => !entry.runnable || !entry.documented);
+      add('Public CLI dispatch/reference parity', cliDrift.length === 0, false);
     } else {
       add('Specialist/skill audit cross-checks (skipped — published package)', true, true);
+      add('Public CLI dispatch/reference parity (skipped — published package)', true, true);
     }
     const { lintResearchRepo } = await import('../lib/research-lint.mjs');
     const researchLintResults = lintResearchRepo({ rootDir: process.cwd() });
