@@ -87,7 +87,7 @@ Pick or change modes with `construct config mode [solo|team|enterprise]`. [Deplo
 
 ## Intake
 
-Anything dropped into `.cx/inbox/` (a bug report, a customer comment, a competitor PDF, a postmortem draft) is classified by the active profile's intake taxonomy. The default `rnd` profile uses bug, user-signal, experiment, architecture, incident, security, requirement, research, ops, eval-finding, launch-asset, legal-compliance. The `operations` profile uses request, incident, ops, security, docs. The `creative` profile uses brief, content-request, asset, experiment, report. The `research` profile uses question, study, synthesis, report.
+Anything dropped into `inbox/` (a bug report, a customer comment, a competitor PDF, a postmortem draft) is classified by the active profile's intake taxonomy. The default `rnd` profile uses bug, user-signal, experiment, architecture, incident, security, requirement, research, ops, eval-finding, launch-asset, legal-compliance. The `operations` profile uses request, incident, ops, security, docs. The `creative` profile uses brief, content-request, asset, experiment, report. The `research` profile uses question, study, synthesis, report.
 
 Each signal gets a primary owner and a recommended handoff chain. Inspect with `construct intake list` and `construct intake show <id>`. Generate a task graph with `construct graph from-intake <id>`. The classifier runs in the daemon and is deterministic. The agent in your editor does the actual analysis. [Intake and triage](https://geraldmaron.github.io/construct/concepts/intake-and-triage).
 

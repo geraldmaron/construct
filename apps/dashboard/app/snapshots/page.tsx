@@ -26,7 +26,7 @@ export default function SnapshotsPage() {
     >
       {loading && !data && <Spinner />}
       {error && <EmptyState label="Failed to load" hint={error} />}
-      {data && snapshots.length === 0 && <Callout label="No snapshots yet"><p>Drop a file into <code>.cx/inbox/</code> to trigger one.</p></Callout>}
+      {data && snapshots.length === 0 && <Callout label="No snapshots yet"><p>Drop a file into <code>inbox/</code> to trigger one.</p></Callout>}
       {snapshots.length > 0 && (
         <Section num="01" title="Recent" defaultOpen>
           <DataTable

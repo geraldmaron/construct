@@ -39,7 +39,7 @@ The single test: can Construct run the construct repo without manual artifact au
 What is there:
 
 - One persona (`construct`) sits in front of a specialist team shaped by an org profile. The default `rnd` profile is wired, plus `operations`, `creative`, `research`.
-- Intake loop classifies signals in `.cx/inbox/` deterministically, assigns owners, and routes through typed contract chains.
+- Intake loop classifies signals in `inbox/` deterministically, assigns owners, and routes through typed contract chains.
 - Hard gates fire at write time, commit time, and CI. Bypasses are env-var only and audited.
 - Solo mode runs locally with filesystem queue, local pgvector, JSONL traces. Team and enterprise modes exist as a scaffold.
 - Dashboard is shipped: chat (owned-loop `/chat` cockpit), approvals, knowledge panel, providers, models, infra tab.

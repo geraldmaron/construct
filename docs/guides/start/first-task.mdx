@@ -76,14 +76,14 @@ Good for: code review, architectural decisions, security-sensitive changes, PRDs
 
 ## Drop a signal into the intake queue
 
-For work that arrives as a file — a bug report, a customer comment, a competitor scan, a postmortem draft — drop it into `.cx/inbox/`:
+For work that arrives as a file — a bug report, a customer comment, a competitor scan, a postmortem draft — drop it into `inbox/` at the project root:
 
 ```bash
-echo "Stack trace on login redirect — reproduce at /auth. authMiddleware crash." > .cx/inbox/login-bug.md
+echo "Stack trace on login redirect — reproduce at /auth. authMiddleware crash." > inbox/login-bug.md
 ```
 
 <FlowPipeline steps={[
-  { label: '.cx/inbox/', sub: 'drop any file' },
+  { label: 'inbox/', sub: 'drop any file' },
   { label: 'embed daemon', sub: 'classifies in ~1s\nno LLM call' },
   { label: '.cx/intake/pending/', sub: 'triage packet\ntype · owner · chain' },
   { label: 'your editor', sub: 'read packet · dispatch', highlight: true },

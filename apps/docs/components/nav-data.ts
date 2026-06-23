@@ -18,7 +18,7 @@ export const PALETTE: PaletteItem[] = [
   { kind: 'page', title: 'Get started', sub: 'install · init · first task', href: '/start', glyph: 'S' },
   { kind: 'page', title: 'Architecture', sub: 'diagrams · gates · contracts', href: '/concepts/architecture', glyph: 'A' },
   { kind: 'page', title: 'Deployment model', sub: 'solo · team · enterprise', href: '/concepts/deployment-model', glyph: 'D' },
-  { kind: 'page', title: 'Intake and triage', sub: '.cx/inbox/ → triage → agent', href: '/concepts/intake-and-triage', glyph: 'I' },
+  { kind: 'page', title: 'Intake and triage', sub: 'inbox/ → triage → agent', href: '/concepts/intake-and-triage', glyph: 'I' },
   { kind: 'page', title: 'Cookbook', sub: 'recipes by job-to-be-done', href: '/cookbook', glyph: 'C' },
   { kind: 'page', title: 'Reference', sub: 'CLI · hooks · MCP · config', href: '/reference', glyph: 'R' },
   { kind: 'page', title: 'Release and deploy', sub: 'tag pipeline · Pages · npm', href: '/maintenance/release-and-deploy', glyph: 'M' },

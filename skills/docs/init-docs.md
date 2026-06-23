@@ -54,7 +54,7 @@ When run interactively, `construct init --docs-preset=*` renders a keyboard-driv
 - **Enter**: confirm and scaffold
 - Follow-up choices use the same menu pattern instead of free-text answers
 
-If the user selects the `intake` lane, `construct init` should also create `.cx/inbox/`. Both `.cx/inbox/` and `docs/intake/` act as drop zones for ingestable files, while `docs/intake/` also serves as the durable paper trail lane.
+The single canonical drop zone for ingestable files is `inbox/` at the project root (ADR-0045 §C); `construct init` scaffolds it with a gitignored `inbox/.staging/` for atomic handoff. The `intake` docs lane (`docs/intake/`) is a separate, optional durable paper-trail lane for intake batch records — it is not a watched drop zone.
 
 When run non-interactively (`--yes` or piped stdin), the lean default set is used unless `--docs=` is supplied. `--docs=lean|product|full` or `--docs=adrs,prds,rfcs` both work.
 

@@ -35,7 +35,7 @@ const MDX_COMPONENT_RE = new RegExp(
 
 const SKIP_DIR_BASENAMES = new Set(['templates', '_template', 'archive']);
 const SKIP_REL_DIRS = new Set([
-  'specs', 'notes', 'intake', 'decisions/rfc', 'operations/audit', 'operations/incidents',
+  'specs', 'notes', 'decisions/rfc', 'operations/audit', 'operations/incidents',
 ]);
 const SKIP_REL_FILES = new Set([
   'decisions/index.md', 'decisions/index.mdx', 'decisions/README.md', 'operations/audit.md',
@@ -79,7 +79,6 @@ const MAINTAINER_LANE_PREFIXES = [
   '/notes/meetings',
   '/notes',
   '/operations/incidents',
-  '/intake',
 ];
 
 test('release gate: construct docs:site --check reports no drift', () => {
@@ -97,6 +96,16 @@ test('docs site catalog excludes maintainer-only lanes', () => {
     const hit = urls.find((u) => u === prefix || u.startsWith(`${prefix}/`));
     assert.equal(hit, undefined, `maintainer lane should not appear on site: ${prefix} (found ${hit})`);
   }
+});
+
+// The document-intake feature docs are user documentation (ADR-0045 §C): they
+// live under docs/guides/intake/ and must render on the public site.
+
+test('docs site catalog includes the document-intake guide pages', () => {
+  const urls = walkUrls(DOCS_ROOT);
+  assert.ok(urls.includes('/guides/intake'), 'guides/intake lane index (README) must render');
+  assert.ok(urls.includes('/guides/intake/audio-video'), 'audio-video page must render');
+  assert.ok(urls.includes('/guides/intake/scanned-pdfs'), 'scanned-pdfs page must render');
 });
 
 test('public docs: .mdx reserved for pages with @cx/ui JSX components', () => {

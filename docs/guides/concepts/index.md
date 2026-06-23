@@ -17,7 +17,7 @@ Concept pages explain *why* Construct works the way it does. They're not how-to 
 
 - **Durable state.** Sessions survive boundary changes. Decisions get written to `.cx/context.md`, work-in-progress to beads, handoffs to `.cx/handoffs/`. The next session resumes from the right place. [Read more →](/guides/concepts/beads-and-state)
 
-- **R&D intake and triage.** Files dropped into `.cx/inbox/` are classified into the R&D loop (bug / experiment / incident / requirement / …), assigned a primary owner persona, and given a recommended handoff chain — all by a deterministic keyword classifier in the daemon, no LLM call. The `construct intake` CLI inspects and drives the queue. [Read more →](/guides/concepts/intake-and-triage)
+- **R&D intake and triage.** Files dropped into `inbox/` are classified into the R&D loop (bug / experiment / incident / requirement / …), assigned a primary owner persona, and given a recommended handoff chain — all by a deterministic keyword classifier in the daemon, no LLM call. The `construct intake` CLI inspects and drives the queue. [Read more →](/guides/concepts/intake-and-triage)
 
 - **Deployable.** Construct runs locally as the default and can be deployed for team or enterprise usage with shared memory, telemetry, queues, and policy. Three modes — solo, team, enterprise — and the rest of the system reads from there. [Read more →](/guides/concepts/deployment-model)
 

@@ -22,8 +22,7 @@ Construct uses four storage roots. Mixing them is the usual source of “why is 
 
 | Subtree | Subsystem | Hand-edit? |
 |---|---|---|
-| `.cx/inbox/` | Intake drop zone | Drop files only |
-| `.cx/intake/` | Intake triage queue (`pending/`, `processed/`, `skipped/`) | Via `construct intake` CLI |
+| `.cx/intake/` | Intake triage queue (`pending/`, `processed/`, `skipped/`, `quarantine/`, `dead-letter/`) | Via `construct intake` CLI |
 | `.cx/knowledge/` | Ingested / curated knowledge | Yes (see [knowledge layout](/guides/concepts/knowledge-layout)) |
 | `.cx/research/` | Project research briefs (working) | Yes |
 | `.cx/observations/` | Machine observations + entity graph | No |
@@ -34,7 +33,7 @@ Construct uses four storage roots. Mixing them is the usual source of “why is 
 | `.cx/context.md` | Session handoff context | Yes |
 | `.cx/publish/` | `construct publish` outputs | No |
 
-**Intake** is not a separate top-level directory — it is the `.cx/inbox/` + `.cx/intake/` pipeline. **Construct the package** does not keep a `.cx/` tree in git; shipped demos live in `templates/demos/`.
+**Intake** has one visible drop zone — the project-root `inbox/` — feeding the gitignored `.cx/intake/` triage queue. **Construct the package** does not keep a `.cx/` tree in git; shipped demos live in `templates/demos/`.
 
 ## Construct package repo vs host project
 

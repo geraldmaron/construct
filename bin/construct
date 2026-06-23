@@ -2116,15 +2116,13 @@ async function printIntakeHelp() {
   println('  construct intake metrics               Show pipeline volume, velocity, and processing stats.');
   println('  construct intake integrate <id> <system>    Push intake to external system (github, jira, confluence).');
   println('  construct intake integrate <id> <system> --create-issue  Create an issue from the intake packet.');
-  println('  construct intake config               Show current watch dirs + scan depth.');
+  println('  construct intake config               Show the inbox/ drop zone + scan depth.');
   println('  construct intake config set --depth=N [--add-dir=PATH] [--remove-dir=PATH]');
+  println('                                       Update intake config. --depth caps at the hard limit.');
   println('  construct intake extraction-warnings [--since=7d] [--kind=table] [--limit=50]');
   println('                                       Summarize ~/.cx/intake/extraction-warnings.jsonl (dropped content log).');
   println('  construct intake needs-asr list       List audio/video files awaiting ASR transcription.');
   println('  construct intake needs-asr show <id>  Show a specific ASR-pending packet.');
-  println('                                       Update intake config. --depth caps at the hard limit.');
-  println('  construct intake config set --include-project-inbox=on|off');
-  println('  construct intake config set --include-docs-intake=on|off');
 }
 
 function parseKvFlags(args, keys) {
@@ -2856,33 +2854,23 @@ async function cmdIntakeConfig(args) {
   const cwd = process.cwd();
 
   const action = args[0];
-  if (action === 'migrate') {
-    const { migrateLegacyIntakeConfig } = await import('../lib/intake/intake-config.mjs');
-    const result = migrateLegacyIntakeConfig(cwd);
-    if (!result.migrated) {
-      info(result.reason ?? 'nothing to migrate');
-      return;
-    }
-    info('Migrated .cx/intake-config.json → construct.config.json intakePolicy');
-    println(JSON.stringify(result.policy, null, 2));
-    return;
-  }
+
+  // Single-zone model (ADR-0045 §C): the canonical `inbox/` is always watched.
+  // Only maxDepth and additionalDirs are configurable.
 
   if (!action || action === 'show') {
     const cfg = loadIntakeConfig(cwd, process.env);
     const desc = describeIntakeDepth(cfg.maxDepth);
     println(`Intake config (root: ${cwd})`);
     println('');
-    println(`  includeProjectInbox: ${cfg.includeProjectInbox ? 'on' : 'off'} (.cx/inbox)`);
-    println(`  includeRootInbox:    ${(cfg.includeRootInbox ?? cfg.includeArchetypeInbox) ? 'on' : 'off'} (inbox/)`);
-    println(`  includeDocsIntake:   ${cfg.includeDocsIntake ? 'on' : 'off'} (docs/intake)`);
+    println('  drop zone:           inbox/ (always watched)');
     println(`  maxDepth:            ${cfg.maxDepth} — ${desc.label}`);
     println(`                       ${desc.detail}`);
     println(`  hardMaxDepth:        ${INTAKE_HARD_MAX_DEPTH}`);
     if (cfg.parentDirs.length === 0) {
-      println('  parentDirs:          (none — only the built-in zones are watched)');
+      println('  additionalDirs:      (none — only inbox/ is watched)');
     } else {
-      println('  parentDirs:');
+      println('  additionalDirs:');
       for (const dir of cfg.parentDirs) println(`    - ${dir}`);
     }
     println('');
@@ -2903,15 +2891,6 @@ async function cmdIntakeConfig(args) {
   const depthFlag = tail.find((a) => a.startsWith('--depth='));
   if (depthFlag) patch.maxDepth = Number(depthFlag.split('=')[1]);
 
-  const projectFlag = tail.find((a) => a.startsWith('--include-project-inbox='));
-  if (projectFlag) patch.includeProjectInbox = /^(on|true|1|yes)$/i.test(projectFlag.split('=')[1] || '');
-
-  const docsFlag = tail.find((a) => a.startsWith('--include-docs-intake='));
-  if (docsFlag) patch.includeDocsIntake = /^(on|true|1|yes)$/i.test(docsFlag.split('=')[1] || '');
-
-  const rootFlag = tail.find((a) => a.startsWith('--include-root-inbox='));
-  if (rootFlag) patch.includeRootInbox = /^(on|true|1|yes)$/i.test(rootFlag.split('=')[1] || '');
-
   const addFlags = tail.filter((a) => a.startsWith('--add-dir='));
   const removeFlags = tail.filter((a) => a.startsWith('--remove-dir='));
 
@@ -2924,7 +2903,7 @@ async function cmdIntakeConfig(args) {
   }
 
   if (Object.keys(patch).length === 0) {
-    errorln('Nothing to change. Pass --depth=N, --add-dir=PATH, --remove-dir=PATH, --include-project-inbox=on|off, or --include-docs-intake=on|off.');
+    errorln('Nothing to change. Pass --depth=N, --add-dir=PATH, or --remove-dir=PATH.');
     process.exit(1);
   }
 

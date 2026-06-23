@@ -49,7 +49,6 @@ const SKIP_DIR_BASENAMES = new Set([
 const SKIP_REL_DIRS = new Set([
   'specs',
   'notes',
-  'intake',
   'decisions/rfc',
   'operations/audit',
   'operations/incidents',
@@ -256,6 +255,7 @@ const SIDEBAR_LAYOUT: { label: string; dir: string }[] = [
   { label: 'Start', dir: 'guides/start' },
   { label: 'Concepts', dir: 'guides/concepts' },
   { label: 'Cookbook', dir: 'guides/cookbook' },
+  { label: 'Intake', dir: 'guides/intake' },
   { label: 'Reference', dir: 'guides/reference' },
   { label: 'Maintenance', dir: 'operations/maintenance' },
   { label: 'Contributing', dir: 'guides/contributing' },
