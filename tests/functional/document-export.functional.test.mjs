@@ -56,10 +56,11 @@ function stubPandocPath(prefix = 'cx-export-stub-') {
     const script = [
       '#!/usr/bin/env node',
       'const fs = require("node:fs");',
+      'const path = require("node:path");',
       'const args = process.argv.slice(2);',
       'if (args[0] === "--version") { console.log("pandoc 3.0.0-test"); process.exit(0); }',
       'const o = args.indexOf("-o");',
-      'if (o >= 0 && args[o + 1]) fs.writeFileSync(args[o + 1], "stub-output\\n");',
+      'if (o >= 0 && args[o + 1]) { fs.writeFileSync(args[o + 1], "stub-output\\n"); fs.writeFileSync(path.join(__dirname, "argv.json"), JSON.stringify(args)); }',
       'process.exit(0);',
     ].join('\n');
     fs.writeFileSync(pandocPath, script);
@@ -110,12 +111,28 @@ test('exportMarkdown returns missing+install hint when pandoc is absent (no thro
 test('construct-branded docx export succeeds without a bundled reference doc (graceful, not blocked)', () => {
   const { dir: stubDir } = stubPandocPath('cx-export-docx-stub-');
   const work = tmpDir('cx-export-docx-work-');
+  const emptyRepo = tmpDir('cx-export-docx-norepo-');
+  const inputPath = writeMarkdown(work);
+  const env = { ...process.env, PATH: `${stubDir}${path.delimiter}${process.env.PATH || ''}` };
+  const result = exportMarkdown({ inputPath, format: 'docx', branding: 'construct', env, repoRoot: emptyRepo });
+  assert.equal(result.ok, true, `expected ok; got: ${JSON.stringify(result)}`);
+  assert.equal(result.engine, 'pandoc');
+  assert.ok(fs.existsSync(result.outputPath), `output not written: ${result.outputPath}`);
+  const argv = JSON.parse(fs.readFileSync(path.join(stubDir, 'argv.json'), 'utf8'));
+  assert.ok(!argv.includes('--reference-doc'), 'absent reference doc must not pass --reference-doc');
+});
+
+test('construct-branded docx export passes --reference-doc for the bundled reference doc when present', () => {
+  const { dir: stubDir } = stubPandocPath('cx-export-refdoc-stub-');
+  const work = tmpDir('cx-export-refdoc-work-');
   const inputPath = writeMarkdown(work);
   const env = { ...process.env, PATH: `${stubDir}${path.delimiter}${process.env.PATH || ''}` };
   const result = exportMarkdown({ inputPath, format: 'docx', branding: 'construct', env });
   assert.equal(result.ok, true, `expected ok; got: ${JSON.stringify(result)}`);
-  assert.equal(result.engine, 'pandoc');
-  assert.ok(fs.existsSync(result.outputPath), `output not written: ${result.outputPath}`);
+  const argv = JSON.parse(fs.readFileSync(path.join(stubDir, 'argv.json'), 'utf8'));
+  const refIdx = argv.indexOf('--reference-doc');
+  assert.ok(refIdx >= 0, `--reference-doc not passed; argv: ${argv.join(' ')}`);
+  assert.match(argv[refIdx + 1], /construct-reference\.docx$/);
 });
 
 test('happy path: stubbed pandoc on PATH is spawned and the output file is written', () => {
