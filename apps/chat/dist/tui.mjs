@@ -297,7 +297,7 @@ var OP_READ_TIMEOUT_MS, opCache, SecretResolutionError;
 var init_secret_resolver = __esm({
   "lib/providers/secret-resolver.mjs"() {
     init_credential_sources();
-    OP_READ_TIMEOUT_MS = 5e3;
+    OP_READ_TIMEOUT_MS = 2e4;
     opCache = /* @__PURE__ */ new Map();
     SecretResolutionError = class extends Error {
       constructor(message, code) {
@@ -342,6 +342,9 @@ function toOllamaNativeModelId(modelId) {
   return modelId.replace(/^ollama\//, "");
 }
 function listInstalledOllamaModels({ env = process.env, now: now2 = Date.now(), refresh = false } = {}) {
+  if (cache.pinned) {
+    return { models: cache.models, listable: cache.listable };
+  }
   if (!refresh && cache.models && now2 - cache.at < CACHE_MS) {
     return { models: cache.models, listable: cache.listable };
   }
@@ -362,12 +365,13 @@ function isOllamaModelInstalled(modelId, opts = {}) {
   if (!listable || !models) return null;
   return models.has(native);
 }
-var CACHE_MS, cache;
+var CACHE_MS, cache, cacheTestTail;
 var init_installed_models = __esm({
   "lib/ollama/installed-models.mjs"() {
     init_secret_resolver();
     CACHE_MS = 2500;
     cache = { at: 0, models: null, listable: false };
+    cacheTestTail = Promise.resolve();
   }
 });
 
@@ -581,17 +585,6 @@ var init_env_config = __esm({
 });
 
 // lib/opencode-config.mjs
-import path5 from "node:path";
-import os5 from "node:os";
-function getOpenCodeConfigDir() {
-  return path5.join(os5.homedir(), ".config", "opencode");
-}
-function getCanonicalOpenCodeConfigPath() {
-  return path5.join(getOpenCodeConfigDir(), "opencode.json");
-}
-function findOpenCodeConfigPath() {
-  return getCanonicalOpenCodeConfigPath();
-}
 var init_opencode_config = __esm({
   "lib/opencode-config.mjs"() {
     init_host_capabilities();
@@ -599,14 +592,33 @@ var init_opencode_config = __esm({
   }
 });
 
+// lib/mcp/external-schema-cost.mjs
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+var __dirname, REPO_ROOT, EXTERNAL_MCP_SCHEMA_FIXTURE_DIR;
+var init_external_schema_cost = __esm({
+  "lib/mcp/external-schema-cost.mjs"() {
+    init_tool_budget();
+    __dirname = dirname(fileURLToPath(import.meta.url));
+    REPO_ROOT = join(__dirname, "..", "..");
+    EXTERNAL_MCP_SCHEMA_FIXTURE_DIR = join(REPO_ROOT, "tests", "fixtures", "mcp-tool-schemas");
+  }
+});
+
 // lib/mcp/tool-budget.mjs
-function isLocalModel(model) {
-  const m = (model || "").toLowerCase();
-  if (m.startsWith("local/")) return true;
-  return m.includes("ollama") || m.includes("localhost") || m.includes("127.0.0.1");
-}
+var AGENT_TOOL_GROUPS;
 var init_tool_budget = __esm({
   "lib/mcp/tool-budget.mjs"() {
+    init_external_schema_cost();
+    AGENT_TOOL_GROUPS = Object.freeze({
+      read: "read",
+      glob: "search",
+      grep: "search",
+      write: "edit",
+      edit: "edit",
+      shell: "shell",
+      construct_tool: "construct"
+    });
   }
 });
 
@@ -736,25 +748,25 @@ function checkType(value, expected) {
   if (expected === "array") return Array.isArray(value);
   return typeof value === expected;
 }
-function validateField(value, rule, path37) {
+function validateField(value, rule, path40) {
   const errors = [];
   if (value === void 0) {
-    if (rule.required) errors.push(`${path37}: required field missing`);
+    if (rule.required) errors.push(`${path40}: required field missing`);
     return errors;
   }
   if (!checkType(value, rule.type)) {
-    errors.push(`${path37}: expected type ${JSON.stringify(rule.type)}, got ${value === null ? "null" : typeof value}`);
+    errors.push(`${path40}: expected type ${JSON.stringify(rule.type)}, got ${value === null ? "null" : typeof value}`);
     return errors;
   }
   if (rule.enum && !rule.enum.includes(value)) {
-    errors.push(`${path37}: must be one of ${JSON.stringify(rule.enum)}, got ${JSON.stringify(value)}`);
+    errors.push(`${path40}: must be one of ${JSON.stringify(rule.enum)}, got ${JSON.stringify(value)}`);
   }
   if (rule.maxLength && typeof value === "string" && value.length > rule.maxLength) {
-    errors.push(`${path37}: exceeds maxLength ${rule.maxLength}`);
+    errors.push(`${path40}: exceeds maxLength ${rule.maxLength}`);
   }
   if (rule.fields && checkType(value, "object")) {
     for (const [key, subRule] of Object.entries(rule.fields)) {
-      errors.push(...validateField(value[key], subRule, `${path37}.${key}`));
+      errors.push(...validateField(value[key], subRule, `${path40}.${key}`));
     }
   }
   return errors;
@@ -965,18 +977,18 @@ var init_schema = __esm({
 
 // lib/config/project-config.mjs
 import fs5 from "node:fs";
-import path6 from "node:path";
+import path5 from "node:path";
 function findProjectConfigPath(cwd = process.cwd()) {
-  let dir = path6.resolve(cwd);
-  const root = path6.parse(dir).root;
+  let dir = path5.resolve(cwd);
+  const root = path5.parse(dir).root;
   while (dir !== root) {
-    const candidate = path6.join(dir, PROJECT_CONFIG_FILENAME);
+    const candidate = path5.join(dir, PROJECT_CONFIG_FILENAME);
     if (fs5.existsSync(candidate)) return candidate;
-    if (fs5.existsSync(path6.join(dir, ".git"))) {
-      const inGitRoot = path6.join(dir, PROJECT_CONFIG_FILENAME);
+    if (fs5.existsSync(path5.join(dir, ".git"))) {
+      const inGitRoot = path5.join(dir, PROJECT_CONFIG_FILENAME);
       return fs5.existsSync(inGitRoot) ? inGitRoot : null;
     }
-    dir = path6.dirname(dir);
+    dir = path5.dirname(dir);
   }
   return null;
 }
@@ -1058,13 +1070,13 @@ var init_project_config = __esm({
 
 // lib/models/catalog.mjs
 import fs6 from "node:fs";
-import path7 from "node:path";
-import os6 from "node:os";
+import path6 from "node:path";
+import os5 from "node:os";
 function uniqueStrings(values = []) {
   return [...new Set(values.filter((value) => typeof value === "string" && value.trim()))];
 }
-function cachePath(homeDir2 = os6.homedir()) {
-  return path7.join(homeDir2, ".cx", CACHE_FILENAME);
+function cachePath(homeDir2 = os5.homedir()) {
+  return path6.join(homeDir2, ".cx", CACHE_FILENAME);
 }
 function resolveModelsConfig(projectConfig = {}) {
   const models = projectConfig?.models && typeof projectConfig.models === "object" ? projectConfig.models : {};
@@ -1080,7 +1092,7 @@ function resolveModelsConfig(projectConfig = {}) {
   catalog.liveOpenRouter = catalog.liveOpenRouter !== false;
   return { visibility, catalog };
 }
-function readLiveCatalogCache({ homeDir: homeDir2 = os6.homedir(), maxAgeMs = CACHE_TTL_MS } = {}) {
+function readLiveCatalogCache({ homeDir: homeDir2 = os5.homedir(), maxAgeMs = CACHE_TTL_MS } = {}) {
   const file = cachePath(homeDir2);
   try {
     if (!fs6.existsSync(file)) return null;
@@ -1092,9 +1104,9 @@ function readLiveCatalogCache({ homeDir: homeDir2 = os6.homedir(), maxAgeMs = CA
     return null;
   }
 }
-function writeLiveCatalogCache(models, { homeDir: homeDir2 = os6.homedir() } = {}) {
+function writeLiveCatalogCache(models, { homeDir: homeDir2 = os5.homedir() } = {}) {
   const file = cachePath(homeDir2);
-  fs6.mkdirSync(path7.dirname(file), { recursive: true });
+  fs6.mkdirSync(path6.dirname(file), { recursive: true });
   fs6.writeFileSync(file, JSON.stringify({
     fetchedAt: Date.now(),
     models: models.map((m) => ({
@@ -1104,7 +1116,7 @@ function writeLiveCatalogCache(models, { homeDir: homeDir2 = os6.homedir() } = {
     }))
   }, null, 2));
 }
-async function refreshLiveOpenRouterCatalog({ env = process.env, homeDir: homeDir2 = os6.homedir() } = {}) {
+async function refreshLiveOpenRouterCatalog({ env = process.env, homeDir: homeDir2 = os5.homedir() } = {}) {
   const apiKey = resolveFirstSecret(["OPENROUTER_API_KEY", "OPEN_ROUTER_API_KEY"], { env });
   if (!apiKey) return [];
   const models = await pollFreeModels(apiKey);
@@ -1184,12 +1196,12 @@ function applyModelVisibilityFilter(catalog, {
   };
   return { providers, tierOptions, visibility, activeModelId };
 }
-function loadModelsCatalogContext({ cwd = process.cwd(), env = process.env, homeDir: homeDir2 = os6.homedir() } = {}) {
+function loadModelsCatalogContext({ cwd = process.cwd(), env = process.env, homeDir: homeDir2 = os5.homedir() } = {}) {
   const { config } = loadProjectConfig(cwd, env);
   const modelsConfig = resolveModelsConfig(config);
   let registryModels = {};
   try {
-    const registryPath = path7.join(cwd, "specialists", "registry.json");
+    const registryPath = path6.join(cwd, "specialists", "registry.json");
     if (fs6.existsSync(registryPath)) {
       registryModels = JSON.parse(fs6.readFileSync(registryPath, "utf8")).models ?? {};
     }
@@ -1222,388 +1234,31 @@ var init_catalog = __esm({
   }
 });
 
-// lib/provider-capabilities-anthropic.js
-var provider_capabilities_anthropic_exports = {};
-__export(provider_capabilities_anthropic_exports, {
-  anthropicCapabilities: () => anthropicCapabilities,
-  capabilities: () => capabilities
-});
-function anthropicCapabilities(modelId = "") {
-  const contextWindow = resolveContextWindow(modelId);
-  return {
-    cacheControl: true,
-    cacheMechanism: "annotation",
-    cacheTTL: { "5m": 3e5, "1h": 12e5 },
-    // tokens
-    structuredOutput: true,
-    maxContextWindow: contextWindow,
-    tokenRatio: 3.5,
-    // ~3.5 chars per token for Claude
-    annotationFormat: "anthropic",
-    annotationHeaders: {
-      "anthropic-version": "2024-10-22"
-    },
-    cacheAnchoring: "system-message",
-    // where to place the cache_control
-    breakpointPlacement: "after-static"
-    // place breakpoint after static content
-  };
-}
-function resolveContextWindow(modelId) {
-  const id = String(modelId || "").toLowerCase();
-  if (id.includes("opus-4")) return 2e5;
-  if (id.includes("sonnet-4")) return 2e5;
-  if (id.includes("haiku-4")) return 2e5;
-  if (id.includes("3-5-sonnet")) return 2e5;
-  if (id.includes("3-5-haiku")) return 2e5;
-  return 2e5;
-}
-async function capabilities(modelId) {
-  return anthropicCapabilities(modelId);
-}
-var init_provider_capabilities_anthropic = __esm({
-  "lib/provider-capabilities-anthropic.js"() {
-    init_provider_capabilities();
-  }
-});
-
-// lib/provider-capabilities-google.js
-var provider_capabilities_google_exports = {};
-__export(provider_capabilities_google_exports, {
-  capabilities: () => capabilities2,
-  googleCapabilities: () => googleCapabilities
-});
-function googleCapabilities(modelId = "") {
-  const contextWindow = resolveGoogleContextWindow(modelId);
-  return {
-    cacheControl: true,
-    cacheMechanism: "resource",
-    // uses cachedContent API
-    cacheTTL: { "5m": null, "1h": 12e5 },
-    // Gemini uses 1h TTL
-    structuredOutput: true,
-    maxContextWindow: contextWindow,
-    tokenRatio: 4,
-    // ~4 chars per token for Gemini
-    annotationFormat: "google",
-    annotationHeaders: null,
-    // Gemini uses separate API endpoint
-    cachedContentEndpoint: "https://generativelanguage.googleapis.com/v1",
-    cacheAnchoring: "cached-content"
-    // reference by name
-  };
-}
-function resolveGoogleContextWindow(modelId) {
-  const id = String(modelId || "").toLowerCase();
-  if (id.includes("gemini-1.5-pro")) return 1e6;
-  if (id.includes("gemini-1.5-flash")) return 1e6;
-  if (id.includes("gemini-2.0-pro")) return 1e6;
-  if (id.includes("gemini-2.0-flash")) return 1e6;
-  if (id.includes("gemini-2.5-pro")) return 1e6;
-  if (id.includes("gemini-2.5-flash")) return 1e6;
-  if (id.includes("gemini-pro")) return 3e4;
-  if (id.includes("gemini-flash")) return 3e4;
-  if (id.includes("gemma")) return 8e3;
-  return 1e6;
-}
-async function capabilities2(modelId) {
-  return googleCapabilities(modelId);
-}
-var init_provider_capabilities_google = __esm({
-  "lib/provider-capabilities-google.js"() {
-    init_provider_capabilities();
-  }
-});
-
-// lib/provider-capabilities-openai.js
-var provider_capabilities_openai_exports = {};
-__export(provider_capabilities_openai_exports, {
-  capabilities: () => capabilities3,
-  openaiCapabilities: () => openaiCapabilities
-});
-function openaiCapabilities(modelId = "") {
-  const contextWindow = resolveOpenAIContextWindow(modelId);
-  return {
-    cacheControl: false,
-    // automatic — no annotations
-    cacheMechanism: "automatic",
-    cacheTTL: null,
-    // invisible to caller
-    structuredOutput: true,
-    maxContextWindow: contextWindow,
-    tokenRatio: 4,
-    // ~4 chars per token for GPT models
-    annotationFormat: "openai",
-    annotationHeaders: null,
-    cacheAnchoring: "prefix",
-    // stable prefix caching
-    notes: "OpenAI caches repeated prefixes automatically; no explicit cache_control needed"
-  };
-}
-function resolveOpenAIContextWindow(modelId) {
-  const id = String(modelId || "").toLowerCase();
-  if (id.includes("gpt-4o") || id.includes("gpt-4.1")) return 128e3;
-  if (id.includes("gpt-4-turbo")) return 128e3;
-  if (id.includes("gpt-4")) return 8e3;
-  if (id.includes("gpt-3.5")) return 16e3;
-  if (id.includes("gpt-3")) return 4e3;
-  if (id.includes("o1")) return 2e5;
-  if (id.includes("o3")) return 2e5;
-  return 128e3;
-}
-async function capabilities3(modelId) {
-  return openaiCapabilities(modelId);
-}
-var init_provider_capabilities_openai = __esm({
-  "lib/provider-capabilities-openai.js"() {
-    init_provider_capabilities();
-  }
-});
-
-// lib/provider-capabilities-deepseek.js
-var provider_capabilities_deepseek_exports = {};
-__export(provider_capabilities_deepseek_exports, {
-  capabilities: () => capabilities4,
-  deepseekCapabilities: () => deepseekCapabilities
-});
-function deepseekCapabilities(modelId = "") {
-  const contextWindow = resolveDeepSeekContextWindow(modelId);
-  return {
-    cacheControl: false,
-    cacheMechanism: "none",
-    cacheTTL: null,
-    structuredOutput: false,
-    maxContextWindow: contextWindow,
-    tokenRatio: 3,
-    // ~3 chars per token for DeepSeek
-    annotationFormat: "none",
-    annotationHeaders: null,
-    cacheAnchoring: "none",
-    notes: "DeepSeek has no prompt caching support via standard APIs"
-  };
-}
-function resolveDeepSeekContextWindow(modelId) {
-  const id = String(modelId || "").toLowerCase();
-  if (id.includes("deepseek-v3") || id.includes("deepseek-chat")) return 64e3;
-  if (id.includes("deepseek-coder")) return 16e3;
-  if (id.includes("deepseek-r1")) return 64e3;
-  return 64e3;
-}
-async function capabilities4(modelId) {
-  return deepseekCapabilities(modelId);
-}
-var init_provider_capabilities_deepseek = __esm({
-  "lib/provider-capabilities-deepseek.js"() {
-    init_provider_capabilities();
-  }
-});
-
-// lib/provider-capabilities-generic.js
-var provider_capabilities_generic_exports = {};
-__export(provider_capabilities_generic_exports, {
-  capabilities: () => capabilities5,
-  genericCapabilities: () => genericCapabilities
-});
-function genericCapabilities(modelId = "") {
-  return {
-    cacheControl: false,
-    cacheMechanism: "none",
-    cacheTTL: null,
-    structuredOutput: false,
-    maxContextWindow: 2e5,
-    // conservative default
-    tokenRatio: 4,
-    // ~4 chars per token (conservative)
-    annotationFormat: "none",
-    annotationHeaders: null,
-    cacheAnchoring: "none",
-    notes: "Generic provider \u2014 no special capabilities detected"
-  };
-}
-async function capabilities5(modelId) {
-  return genericCapabilities(modelId);
-}
-var init_provider_capabilities_generic = __esm({
-  "lib/provider-capabilities-generic.js"() {
-    init_provider_capabilities();
-  }
-});
-
 // lib/provider-capabilities.js
-import { readFileSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { join as join2 } from "node:path";
 import { homedir } from "node:os";
-function resolveAdapterKey(modelId) {
-  const id = String(modelId || "").toLowerCase();
-  if (/^anthropic\//.test(id) || /^openrouter\/anthropic\//.test(id)) return "anthropic";
-  if (/^google\//.test(id) || /^openrouter\/google\//.test(id)) return "google";
-  if (/^openai\//.test(id) || /^openrouter\/openai\//.test(id) || /^github-copilot\//.test(id)) return "openai";
-  if (/^deepseek\//.test(id) || /^openrouter\/deepseek\//.test(id)) return "deepseek";
-  return "generic";
-}
-function readCapabilityCache() {
-  try {
-    if (!existsSync(CAPABILITY_CACHE_PATH)) return {};
-    const cached2 = JSON.parse(readFileSync(CAPABILITY_CACHE_PATH, "utf8"));
-    if (cached2?.fetchedAt && Date.now() - cached2.fetchedAt < CAPABILITY_CACHE_TTL_MS) {
-      return cached2.capabilities || {};
-    }
-  } catch {
-  }
-  return {};
-}
-function getCache() {
-  if (_cache === null) _cache = readCapabilityCache();
-  return _cache;
-}
-async function resolveProviderCapabilities(modelId) {
-  const adapterKey = resolveAdapterKey(modelId);
-  const loader = ADAPTERS[adapterKey] || ADAPTERS.generic;
-  try {
-    const { capabilities: capabilities6 } = await loader();
-    return capabilities6(modelId);
-  } catch {
-    const { capabilities: capabilities6 } = await ADAPTERS.generic();
-    return capabilities6(modelId);
-  }
-}
-function resolveProviderCapabilitiesSync(modelId) {
-  const adapterKey = resolveAdapterKey(modelId);
-  const cache3 = getCache();
-  if (cache3[adapterKey]) return cache3[adapterKey];
-  return {
-    cacheControl: false,
-    cacheMechanism: "none",
-    cacheTTL: null,
-    structuredOutput: false,
-    maxContextWindow: 2e5,
-    tokenRatio: 4,
-    annotationFormat: "none",
-    annotationHeaders: null
-  };
-}
-var CAPABILITY_CACHE_PATH, CAPABILITY_CACHE_TTL_MS, ADAPTERS, _cache;
+var CAPABILITY_CACHE_PATH, CAPABILITY_CACHE_TTL_MS;
 var init_provider_capabilities = __esm({
   "lib/provider-capabilities.js"() {
-    CAPABILITY_CACHE_PATH = join(homedir(), ".cx", "provider-capabilities.json");
+    CAPABILITY_CACHE_PATH = join2(homedir(), ".cx", "provider-capabilities.json");
     CAPABILITY_CACHE_TTL_MS = 24 * 60 * 60 * 1e3;
-    ADAPTERS = {
-      anthropic: () => Promise.resolve().then(() => (init_provider_capabilities_anthropic(), provider_capabilities_anthropic_exports)),
-      "anthropic-direct": () => Promise.resolve().then(() => (init_provider_capabilities_anthropic(), provider_capabilities_anthropic_exports)),
-      google: () => Promise.resolve().then(() => (init_provider_capabilities_google(), provider_capabilities_google_exports)),
-      openai: () => Promise.resolve().then(() => (init_provider_capabilities_openai(), provider_capabilities_openai_exports)),
-      deepseek: () => Promise.resolve().then(() => (init_provider_capabilities_deepseek(), provider_capabilities_deepseek_exports)),
-      generic: () => Promise.resolve().then(() => (init_provider_capabilities_generic(), provider_capabilities_generic_exports))
-    };
-    _cache = null;
   }
 });
 
 // lib/model-router.mjs
-var model_router_exports = {};
-__export(model_router_exports, {
-  MODEL_OPERATING_PROFILES: () => MODEL_OPERATING_PROFILES,
-  MODEL_TIER_BY_WORK_CATEGORY: () => MODEL_TIER_BY_WORK_CATEGORY,
-  PROVIDER_FAMILY_TIERS: () => PROVIDER_FAMILY_TIERS,
-  applyFreePreferenceToTierSet: () => applyFreePreferenceToTierSet,
-  applyFreeSameFamilyPreferenceToTierSet: () => applyFreeSameFamilyPreferenceToTierSet,
-  applyToEnv: () => applyToEnv,
-  classifyProviderFailure: () => classifyProviderFailure,
-  describeModelFamily: () => describeModelFamily,
-  formatModelStatus: () => formatModelStatus,
-  getModelForTier: () => getModelForTier,
-  getModelSource: () => getModelSource,
-  getProviderModelCatalog: () => getProviderModelCatalog,
-  inferTierModelsFromSelection: () => inferTierModelsFromSelection,
-  isChatModelAvailable: () => isChatModelAvailable,
-  isProviderOnCooldown: () => isProviderOnCooldown,
-  listModelFamilies: () => listModelFamilies,
-  readCurrentModels: () => readCurrentModels,
-  readOpenRouterApiKeyFromOpenCodeConfig: () => readOpenRouterApiKeyFromOpenCodeConfig,
-  readProviderCooldowns: () => readProviderCooldowns,
-  resetEnv: () => resetEnv,
-  resolveCapabilityTier: () => resolveCapabilityTier,
-  resolveExecutionContractModelMetadata: () => resolveExecutionContractModelMetadata,
-  resolveFallbackAction: () => resolveFallbackAction,
-  resolveModelOperatingProfile: () => resolveModelOperatingProfile,
-  resolveModelTiers: () => resolveModelTiers,
-  resolveProviderCapabilities: () => resolveProviderCapabilities,
-  resolveProviderCapabilitiesSync: () => resolveProviderCapabilitiesSync,
-  resolveTiersForPrimary: () => resolveTiersForPrimary,
-  resolveValidatedChatModel: () => resolveValidatedChatModel,
-  selectFallbackModel: () => selectFallbackModel,
-  selectLocalEditorModel: () => selectLocalEditorModel,
-  selectModelTierForWorkCategory: () => selectModelTierForWorkCategory,
-  setModelWithTierInference: () => setModelWithTierInference,
-  setTierModel: () => setTierModel,
-  validateModelTiers: () => validateModelTiers,
-  writeProviderCooldown: () => writeProviderCooldown
-});
 import fs7 from "node:fs";
-import path8 from "node:path";
+import path7 from "node:path";
 import { spawnSync as spawnSync3 } from "child_process";
 function uniqueStrings2(values = []) {
   return [...new Set(values.filter((value) => typeof value === "string" && value.trim()))];
-}
-function normalizeModelOperatingProfile(value) {
-  const normalized = String(value || "").trim().toLowerCase();
-  if (!normalized) return null;
-  if (normalized === "default") return "balanced";
-  return MODEL_OPERATING_PROFILES[normalized] ? normalized : null;
-}
-function parseModelSizeB(model) {
-  const size = String(model || "").toLowerCase().match(/(?:[:/-])(\d+(?:\.\d+)?)b\b/);
-  return size ? parseFloat(size[1]) : null;
-}
-function inferSmallModelProfile(selectedModel) {
-  const model = String(selectedModel || "").toLowerCase();
-  if (!model) return false;
-  if (/^(ollama|local)\//.test(model)) {
-    const size = parseModelSizeB(model);
-    if (size !== null && size <= 34) return true;
-  }
-  if (/^(anthropic|openrouter\/anthropic)\/.*haiku/.test(model)) return true;
-  if (/gpt-5\.1-mini|gemma-3|gemma-4|phi3:mini/.test(model)) return true;
-  return false;
-}
-function resolveModelOperatingProfile({
-  envValues = {},
-  selectedModel = null
-} = {}) {
-  const explicit = normalizeModelOperatingProfile(
-    envValues.CONSTRUCT_MODEL_PROFILE ?? envValues.constructModelProfile
-  );
-  if (explicit) return MODEL_OPERATING_PROFILES[explicit];
-  if (inferSmallModelProfile(selectedModel)) return MODEL_OPERATING_PROFILES.small;
-  return MODEL_OPERATING_PROFILES.balanced;
-}
-function resolveCapabilityTier({ model, verdict = null } = {}) {
-  if (!isLocalModel(model)) return "full";
-  if (verdict === "COLLAPSED") return "floor";
-  const size = parseModelSizeB(model);
-  if (size === null) return "floor";
-  if (size >= 24) return "mid";
-  return "floor";
-}
-function selectLocalEditorModel(candidates = []) {
-  if (!Array.isArray(candidates) || candidates.length === 0) return null;
-  const sized = candidates.map((m) => ({ m, size: parseModelSizeB(m) }));
-  const pick = (arr) => {
-    const band = arr.filter((x) => x.size !== null && x.size >= 7 && x.size <= 34).sort((a, b) => a.size - b.size);
-    if (band.length) return band[0].m;
-    const anySized = arr.filter((x) => x.size !== null).sort((a, b) => a.size - b.size);
-    return anySized.length ? anySized[0].m : arr[0].m;
-  };
-  const coders = sized.filter((x) => CODE_MODEL_RE.test(x.m));
-  return coders.length ? pick(coders) : pick(sized);
 }
 function hasCopilotCredential() {
   const home = process.env.HOME || process.env.USERPROFILE || "";
   if (!home) return false;
   const candidates = [
-    path8.join(home, ".construct", "auth", "github-copilot.json"),
-    path8.join(home, ".config", "github-copilot", "apps.json"),
-    path8.join(home, ".config", "github-copilot", "hosts.json")
+    path7.join(home, ".construct", "auth", "github-copilot.json"),
+    path7.join(home, ".config", "github-copilot", "apps.json"),
+    path7.join(home, ".config", "github-copilot", "hosts.json")
   ];
   for (const file of candidates) {
     try {
@@ -1821,12 +1476,6 @@ function resolveValidatedChatModel({ env = process.env, requested = null, exclud
 function matchProviderFamily(modelId) {
   return PROVIDER_FAMILY_TIERS.find((entry) => entry.test(modelId));
 }
-function resolveTiersForPrimary(primaryModelId) {
-  if (!primaryModelId || typeof primaryModelId !== "string") return null;
-  const family = matchProviderFamily(primaryModelId);
-  if (!family) return null;
-  return family.resolve({ reasoning: void 0, standard: void 0, fast: void 0 });
-}
 function familyDescriptor(family, env, { allowAmbient = true } = {}) {
   const requiresEnv = PROVIDER_ENV_MAP[family.id] || (Array.isArray(family.requiresEnv) ? family.requiresEnv : []);
   const local = family.local === true;
@@ -1845,53 +1494,6 @@ function describeModelFamily(modelId, { env = process.env, allowAmbient = true }
   if (!family) return null;
   return familyDescriptor(family, env, { allowAmbient });
 }
-function listModelFamilies({ env = process.env, allowAmbient = true } = {}) {
-  return PROVIDER_FAMILY_TIERS.map((family) => familyDescriptor(family, env, { allowAmbient }));
-}
-function readOpenRouterApiKeyFromOpenCodeConfig(configPath = findOpenCodeConfigPath()) {
-  return readRawFromOpenCodeProvider("openrouter", configPath) || "";
-}
-function readEnvAssignments(envPath) {
-  const tierKeys = {
-    reasoning: "CX_MODEL_REASONING",
-    standard: "CX_MODEL_STANDARD",
-    fast: "CX_MODEL_FAST"
-  };
-  const envValues = {};
-  if (fs7.existsSync(envPath)) {
-    for (const line of fs7.readFileSync(envPath, "utf8").split("\n")) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith("#") || !trimmed.includes("=")) continue;
-      const eqIdx = trimmed.indexOf("=");
-      const k = trimmed.slice(0, eqIdx).trim();
-      const v = trimmed.slice(eqIdx + 1).trim();
-      envValues[k] = v;
-    }
-  }
-  return Object.fromEntries(
-    Object.entries(tierKeys).map(([tier, key]) => [tier, envValues[key] || null])
-  );
-}
-function extractPrimary(def) {
-  if (typeof def === "string") return def;
-  if (def && typeof def === "object")
-    return def.primary ?? def.fallback?.[0] ?? null;
-  return null;
-}
-function getRegistryDefaults(registryModels = {}) {
-  return {
-    reasoning: extractPrimary(registryModels.reasoning) ?? null,
-    standard: extractPrimary(registryModels.standard) ?? null,
-    fast: extractPrimary(registryModels.fast) ?? null
-  };
-}
-function normalizeEnvAssignments(envValues = {}) {
-  return {
-    reasoning: envValues.reasoning ?? envValues.CX_MODEL_REASONING ?? envValues.CONSTRUCT_MODEL_REASONING ?? null,
-    standard: envValues.standard ?? envValues.CX_MODEL_STANDARD ?? envValues.CONSTRUCT_MODEL_STANDARD ?? null,
-    fast: envValues.fast ?? envValues.CX_MODEL_FAST ?? envValues.CONSTRUCT_MODEL_FAST ?? null
-  };
-}
 function flattenText(value) {
   if (value === null || value === void 0) return "";
   if (typeof value === "string") return value;
@@ -1899,61 +1501,6 @@ function flattenText(value) {
   if (Array.isArray(value)) return value.map(flattenText).join("\n");
   if (typeof value === "object") return Object.values(value).map(flattenText).join("\n");
   return "";
-}
-function providerKey(modelId = "") {
-  if (typeof modelId !== "string" || !modelId) return "";
-  return modelId.replace(/^openrouter\//, "").split("/")[0] || "";
-}
-function resolveTierDefinition(definition) {
-  if (!definition || typeof definition !== "object") return { primary: null, fallback: [] };
-  return {
-    primary: extractPrimary(definition),
-    fallback: Array.isArray(definition.fallback) ? definition.fallback.filter((entry) => typeof entry === "string" && entry) : []
-  };
-}
-function readProviderCooldowns(cooldownPath) {
-  try {
-    const raw = fs7.readFileSync(cooldownPath, "utf8");
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
-  } catch {
-  }
-  return {};
-}
-function writeProviderCooldown(cooldownPath, provider, now2 = Date.now()) {
-  if (!provider) return;
-  const existing = readProviderCooldowns(cooldownPath);
-  existing[provider] = now2 + PROVIDER_COOLDOWN_MS;
-  fs7.mkdirSync(path8.dirname(cooldownPath), { recursive: true });
-  fs7.writeFileSync(cooldownPath, JSON.stringify(existing, null, 2));
-}
-function isProviderOnCooldown(cooldownPath, provider, now2 = Date.now()) {
-  if (!provider) return false;
-  const state = readProviderCooldowns(cooldownPath);
-  const expiresAt = state[provider];
-  return typeof expiresAt === "number" && now2 < expiresAt;
-}
-function selectFallbackModel({
-  hookInput,
-  envPath,
-  cooldownPath,
-  registryModels = {},
-  now: now2 = Date.now()
-} = {}) {
-  const classified = classifyProviderFailure(hookInput);
-  if (!classified || !classified.retryable) return null;
-  const failingProvider = providerKey(classified.provider || "");
-  if (failingProvider && isProviderOnCooldown(cooldownPath, failingProvider, now2)) return null;
-  const currentModels = readCurrentModels(envPath, registryModels);
-  const action = resolveFallbackAction({
-    failure: classified,
-    currentModels,
-    registryModels
-  });
-  if (!action) return null;
-  const candidateProvider = providerKey(action.targetModel);
-  if (candidateProvider && isProviderOnCooldown(cooldownPath, candidateProvider, now2)) return null;
-  return { targetModel: action.targetModel, tier: action.tier, reason: action.reason };
 }
 function classifyProviderFailure(input) {
   const error = input?.error && typeof input.error === "object" ? input.error : input;
@@ -1987,262 +1534,7 @@ function classifyProviderFailure(input) {
   }
   return null;
 }
-function resolveFallbackAction({
-  failure,
-  requestedTier = null,
-  workCategory = null,
-  currentModels = null,
-  registryModels = {}
-} = {}) {
-  const classified = failure && typeof failure === "object" ? failure : classifyProviderFailure(failure);
-  if (!classified || !classified.retryable) return null;
-  const tier = requestedTier ?? selectModelTierForWorkCategory(workCategory) ?? "standard";
-  const tierDef = resolveTierDefinition(registryModels[tier]);
-  const currentModel = currentModels && typeof currentModels === "object" ? currentModels[tier]?.model ?? currentModels[tier] ?? null : null;
-  const currentProvider = providerKey(currentModel || "");
-  const failingProvider = providerKey(classified.provider || "");
-  const candidates = [tierDef.primary, ...tierDef.fallback].filter((modelId) => typeof modelId === "string" && modelId).filter((modelId) => modelId !== currentModel).filter((modelId) => {
-    const candidateProvider = providerKey(modelId);
-    if (!candidateProvider) return true;
-    if (failingProvider && candidateProvider === failingProvider) return false;
-    if (currentProvider && candidateProvider === currentProvider) return false;
-    return true;
-  });
-  const targetModel = candidates[0] ?? null;
-  if (!targetModel) return null;
-  return { action: "apply-models", reason: classified.kind, targetModel, tier };
-}
-function resolveTierAssignments(envValues = {}, registryModels = {}) {
-  const normalizedEnv = normalizeEnvAssignments(envValues);
-  const explicitSources = envValues?.sources && typeof envValues.sources === "object" ? envValues.sources : {};
-  const defaults = getRegistryDefaults(registryModels);
-  const tiers = {};
-  for (const tier of ["reasoning", "standard", "fast"]) {
-    if (explicitSources[tier]) {
-      tiers[tier] = { model: normalizedEnv[tier] ?? defaults[tier], source: explicitSources[tier] };
-    } else if (normalizedEnv[tier]) {
-      tiers[tier] = { model: normalizedEnv[tier], source: "env override" };
-    } else if (defaults[tier]) {
-      tiers[tier] = { model: defaults[tier], source: "registry" };
-    } else {
-      tiers[tier] = { model: null, source: "not configured" };
-    }
-  }
-  return tiers;
-}
-function selectModelTierForWorkCategory(workCategory = "") {
-  return MODEL_TIER_BY_WORK_CATEGORY[workCategory] ?? null;
-}
-function resolveExecutionContractModelMetadata({
-  envValues = {},
-  registryModels = {},
-  requestedTier = null,
-  workCategory = null
-} = {}) {
-  const tiers = resolveTierAssignments(envValues, registryModels);
-  const selectedTier = requestedTier ?? selectModelTierForWorkCategory(workCategory);
-  const selected = selectedTier ? tiers[selectedTier] : null;
-  const profile = resolveModelOperatingProfile({
-    envValues,
-    selectedModel: selected?.model ?? null
-  });
-  return {
-    version: "v1",
-    workCategory: workCategory ?? null,
-    requestedTier: requestedTier ?? null,
-    selectedTier: selectedTier ?? null,
-    selectedModel: selected?.model ?? null,
-    selectedModelSource: selected?.source ?? null,
-    profile,
-    tiers
-  };
-}
-function inferTierModelsFromSelection(selectedModel, { registryModels = {}, existing = {} } = {}) {
-  if (!selectedModel) return null;
-  const family = matchProviderFamily(selectedModel);
-  if (!family) return null;
-  const registryDefaults = getRegistryDefaults(registryModels);
-  const current = {
-    reasoning: existing.reasoning ?? null,
-    standard: existing.standard ?? null,
-    fast: existing.fast ?? null
-  };
-  const seeded = {
-    reasoning: current.reasoning === selectedModel ? selectedModel : current.reasoning,
-    standard: current.standard === selectedModel ? selectedModel : current.standard,
-    fast: current.fast === selectedModel ? selectedModel : current.fast
-  };
-  const derived = family.resolve(seeded);
-  return {
-    reasoning: derived.reasoning ?? registryDefaults.reasoning,
-    standard: derived.standard ?? registryDefaults.standard,
-    fast: derived.fast ?? registryDefaults.fast
-  };
-}
-function applyFreePreferenceToTierSet(tierSet, { registryModels = {} } = {}) {
-  const defaults = getRegistryDefaults(registryModels);
-  return {
-    reasoning: preferFreeValue(tierSet.reasoning, tierSet.standard, defaults.reasoning, null),
-    standard: preferFreeValue(tierSet.standard, tierSet.fast, defaults.standard, null),
-    fast: preferFreeValue(tierSet.fast, tierSet.standard, defaults.fast, null)
-  };
-}
-function applyFreeSameFamilyPreferenceToTierSet(tierSet, selectedModel) {
-  const family = matchProviderFamily(selectedModel);
-  if (!family) return tierSet;
-  const sameFamily = family.resolve({ reasoning: null, standard: null, fast: null });
-  const next = { ...tierSet };
-  for (const tier of ["reasoning", "standard", "fast"]) {
-    if (tierSet[tier] === selectedModel) continue;
-    const candidate = sameFamily[tier];
-    if (candidate && isFreeModel(candidate)) next[tier] = candidate;
-  }
-  return next;
-}
-function applyToEnv(envPath, selections) {
-  const existing = fs7.existsSync(envPath) ? fs7.readFileSync(envPath, "utf8") : "";
-  const date = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const commentMarker = "# Auto-set by construct models --apply on";
-  const tierMap = {
-    reasoning: "CX_MODEL_REASONING",
-    standard: "CX_MODEL_STANDARD",
-    fast: "CX_MODEL_FAST"
-  };
-  let lines = existing.split("\n");
-  lines = lines.filter((l) => {
-    const trimmed = l.trim();
-    if (trimmed.startsWith(commentMarker)) return false;
-    const key = trimmed.split("=")[0];
-    if (Object.values(tierMap).includes(key)) return false;
-    return true;
-  });
-  const modelLines = [`${commentMarker} ${date}`];
-  for (const [tier, envKey] of Object.entries(tierMap)) {
-    if (selections[tier]) modelLines.push(`${envKey}=${selections[tier]}`);
-  }
-  const insertIdx = lines.findLastIndex((l) => l.trim() !== "") + 1;
-  lines.splice(insertIdx === 0 ? lines.length : insertIdx, 0, "", ...modelLines);
-  fs7.writeFileSync(envPath, lines.join("\n"));
-}
-function resetEnv(envPath) {
-  if (!fs7.existsSync(envPath)) return;
-  const commentMarker = "# Auto-set by construct models --apply on";
-  const tierKeys = /* @__PURE__ */ new Set(["CX_MODEL_REASONING", "CX_MODEL_STANDARD", "CX_MODEL_FAST"]);
-  const lines = fs7.readFileSync(envPath, "utf8").split("\n");
-  const filtered = lines.filter((l) => {
-    const trimmed = l.trim();
-    if (trimmed.startsWith(commentMarker)) return false;
-    const key = trimmed.split("=")[0];
-    if (tierKeys.has(key)) return false;
-    return true;
-  });
-  fs7.writeFileSync(envPath, filtered.join("\n"));
-}
-function setTierModel(envPath, tier, modelId) {
-  applyToEnv(envPath, { [tier]: modelId });
-}
-function setModelWithTierInference(envPath, tier, modelId, registryModels = {}, options = {}) {
-  const existing = readEnvAssignments(envPath);
-  existing[tier] = modelId;
-  const inferred = inferTierModelsFromSelection(modelId, { registryModels, existing }) || existing;
-  inferred[tier] = modelId;
-  let resolved = inferred;
-  if (options.preferFreeSameFamily) {
-    resolved = applyFreeSameFamilyPreferenceToTierSet(resolved, modelId);
-  } else if (options.preferFree) {
-    resolved = applyFreePreferenceToTierSet(resolved, { registryModels });
-  }
-  resolved[tier] = modelId;
-  applyToEnv(envPath, resolved);
-  return resolved;
-}
-function resolveModelTiers(options = {}) {
-  const {
-    env = process.env,
-    registryPath = null,
-    strict = false
-  } = options;
-  let registryModels = {};
-  if (registryPath && fs7.existsSync(registryPath)) {
-    try {
-      const registry = JSON.parse(fs7.readFileSync(registryPath, "utf8"));
-      registryModels = registry.models ?? {};
-    } catch (err) {
-      return {
-        models: { reasoning: null, standard: null, fast: null },
-        sources: { reasoning: "not configured", standard: "not configured", fast: "not configured" },
-        configured: 0,
-        complete: false,
-        errors: [`Failed to read registry: ${err.message}`]
-      };
-    }
-  }
-  const tiers = resolveTierAssignments(normalizeEnvAssignments(env), registryModels);
-  const models = {};
-  const sources = {};
-  for (const tier of ["reasoning", "standard", "fast"]) {
-    models[tier] = tiers[tier].model;
-    sources[tier] = tiers[tier].source;
-  }
-  const configured = Object.values(models).filter(Boolean).length;
-  const errors = strict && configured < 3 ? [`Missing configuration for tiers: ${["reasoning", "standard", "fast"].filter((t) => !models[t]).join(", ")}`] : null;
-  return {
-    models,
-    sources,
-    configured,
-    complete: configured === 3,
-    errors
-  };
-}
-function getModelForTier(tier, options = {}) {
-  return resolveModelTiers(options).models[tier];
-}
-function getModelSource(tier, options = {}) {
-  return resolveModelTiers(options).sources[tier] || "unknown";
-}
-function validateModelTiers(options = {}) {
-  const resolved = resolveModelTiers({ ...options, strict: true });
-  const unconfigured = Object.entries(resolved.sources).filter(([, source]) => source === "not configured").map(([tier]) => tier);
-  return {
-    valid: resolved.complete && !resolved.errors,
-    errors: resolved.errors,
-    warnings: unconfigured.length > 0 ? [`Unconfigured tier${unconfigured.length === 1 ? "" : "s"}: ${unconfigured.join(", ")}. Run 'construct models --apply' or set CX_MODEL_<TIER>.`] : [],
-    resolution: resolved
-  };
-}
-function formatModelStatus(options = {}) {
-  const resolved = resolveModelTiers(options);
-  let output = "Model Configuration:\n\n";
-  for (const tier of ["reasoning", "standard", "fast"]) {
-    const model = resolved.models[tier];
-    const source = resolved.sources[tier];
-    const icon = source === "not configured" ? "!" : "ok";
-    output += `${icon} ${tier.padEnd(10)} ${model ?? "(not configured)"}
-`;
-    output += `  Source: ${source}
-
-`;
-  }
-  return output;
-}
-function readCurrentModels(envPath, registryModels = {}) {
-  const envValues = arguments.length > 2 ? arguments[2] : {};
-  const fileAssignments = readEnvAssignments(envPath);
-  const mergedAssignments = {
-    ...fileAssignments,
-    ...Object.fromEntries(
-      Object.entries(normalizeEnvAssignments(envValues)).filter(([, value]) => value)
-    )
-  };
-  const tiers = resolveTierAssignments(mergedAssignments, registryModels);
-  const result = { sources: {} };
-  for (const tier of ["reasoning", "standard", "fast"]) {
-    result[tier] = tiers[tier].model;
-    result.sources[tier] = tiers[tier].source;
-  }
-  return result;
-}
-var MODEL_TIER_BY_WORK_CATEGORY, MODEL_OPERATING_PROFILES, CODE_MODEL_RE, PROVIDER_FAMILY_TIERS, PROVIDER_ENV_MAP, LENIENT_MODEL_FAMILIES, PROVIDER_COOLDOWN_MS;
+var MODEL_OPERATING_PROFILES, PROVIDER_FAMILY_TIERS, PROVIDER_ENV_MAP, LENIENT_MODEL_FAMILIES, PROVIDER_COOLDOWN_MS;
 var init_model_router = __esm({
   "lib/model-router.mjs"() {
     init_secret_resolver();
@@ -2254,13 +1546,6 @@ var init_model_router = __esm({
     init_catalog();
     init_provider_capabilities();
     init_provider_capabilities();
-    MODEL_TIER_BY_WORK_CATEGORY = {
-      visual: "standard",
-      deep: "reasoning",
-      quick: "fast",
-      writing: "fast",
-      analysis: "standard"
-    };
     MODEL_OPERATING_PROFILES = Object.freeze({
       balanced: {
         id: "balanced",
@@ -2287,7 +1572,6 @@ var init_model_router = __esm({
         preferCompressedRoleGuidance: true
       }
     });
-    CODE_MODEL_RE = /coder|codellama|starcoder|deepseek-coder|devstral/i;
     PROVIDER_FAMILY_TIERS = [
       {
         id: "anthropic",
@@ -2509,23 +1793,23 @@ __export(copilot_auth_exports, {
   requestDeviceCode: () => requestDeviceCode
 });
 import fs8 from "node:fs";
-import path9 from "node:path";
-import os7 from "node:os";
+import path8 from "node:path";
+import os6 from "node:os";
 function normalizeToken(value) {
   if (!value || typeof value !== "string") return "";
   return value.trim().replace(/\s+/g, "");
 }
 function homeDir() {
-  return process.env.HOME || process.env.USERPROFILE || os7.homedir();
+  return process.env.HOME || process.env.USERPROFILE || os6.homedir();
 }
 function constructStorePath() {
-  return path9.join(homeDir(), ".construct", "auth", "github-copilot.json");
+  return path8.join(homeDir(), ".construct", "auth", "github-copilot.json");
 }
 function appsStorePath() {
-  return path9.join(homeDir(), ".config", "github-copilot", "apps.json");
+  return path8.join(homeDir(), ".config", "github-copilot", "apps.json");
 }
 function hostsStorePath() {
-  return path9.join(homeDir(), ".config", "github-copilot", "hosts.json");
+  return path8.join(homeDir(), ".config", "github-copilot", "hosts.json");
 }
 function readJson(file) {
   try {
@@ -2536,7 +1820,7 @@ function readJson(file) {
   }
 }
 function writeJson(file, data, mode) {
-  fs8.mkdirSync(path9.dirname(file), { recursive: true, mode: 448 });
+  fs8.mkdirSync(path8.dirname(file), { recursive: true, mode: 448 });
   fs8.writeFileSync(file, JSON.stringify(data, null, 2), { mode });
 }
 function loadStoredOAuth() {
@@ -2848,23 +2132,23 @@ var init_models = __esm({
 
 // lib/project-root.mjs
 import fs10 from "node:fs";
-import path11 from "node:path";
-import os8 from "node:os";
+import path10 from "node:path";
+import os7 from "node:os";
 import { createHash } from "node:crypto";
 function findProjectRoot(start = process.cwd()) {
-  let dir = path11.resolve(start);
-  const stop = path11.resolve(HOME);
+  let dir = path10.resolve(start);
+  const stop = path10.resolve(HOME);
   while (true) {
-    if (MARKERS.some((m) => fs10.existsSync(path11.join(dir, m)))) return dir;
+    if (MARKERS.some((m) => fs10.existsSync(path10.join(dir, m)))) return dir;
     if (dir === stop) return null;
-    const parent = path11.dirname(dir);
+    const parent = path10.dirname(dir);
     if (parent === dir) return null;
     dir = parent;
   }
 }
 function projectIdFor(projectRoot) {
   if (!projectRoot) return null;
-  return createHash("sha256").update(path11.resolve(projectRoot)).digest("hex").slice(0, 12);
+  return createHash("sha256").update(path10.resolve(projectRoot)).digest("hex").slice(0, 12);
 }
 function resolveProjectScope(cwd = process.cwd()) {
   if (cache2.has(cwd)) return cache2.get(cwd);
@@ -2876,23 +2160,641 @@ function resolveProjectScope(cwd = process.cwd()) {
   const result = {
     projectRoot,
     projectId: projectIdFor(projectRoot),
-    cxDir: path11.join(projectRoot, ".cx")
+    cxDir: path10.join(projectRoot, ".cx")
   };
   cache2.set(cwd, result);
   return result;
 }
-function resolveProjectScopedPath(basename, { cwd, ensureDir = true } = {}) {
+function resolveProjectScopedPath(basename, { cwd, ensureDir: ensureDir2 = true } = {}) {
   const scope = resolveProjectScope(cwd ?? process.cwd());
-  const dir = scope ? scope.cxDir : path11.join(HOME, ".cx");
-  if (ensureDir && !fs10.existsSync(dir)) fs10.mkdirSync(dir, { recursive: true });
-  return path11.join(dir, basename);
+  const dir = scope ? scope.cxDir : path10.join(HOME, ".cx");
+  if (ensureDir2 && !fs10.existsSync(dir)) fs10.mkdirSync(dir, { recursive: true });
+  return path10.join(dir, basename);
 }
 var HOME, MARKERS, cache2;
 var init_project_root = __esm({
   "lib/project-root.mjs"() {
-    HOME = os8.homedir();
+    HOME = os7.homedir();
     MARKERS = [".cx", ".construct"];
     cache2 = /* @__PURE__ */ new Map();
+  }
+});
+
+// lib/storage/embeddings.mjs
+function tokenize(text) {
+  return String(text || "").toLowerCase().split(/[^a-z0-9]+/).filter((term) => term.length >= 2);
+}
+var init_embeddings = __esm({
+  "lib/storage/embeddings.mjs"() {
+  }
+});
+
+// lib/storage/embeddings-legacy.mjs
+var embeddings_legacy_exports = {};
+__export(embeddings_legacy_exports, {
+  DIMENSIONS: () => DIMENSIONS,
+  MODEL_ID: () => MODEL_ID,
+  embed: () => embed,
+  embedBatch: () => embedBatch,
+  embedSync: () => embedSync,
+  getModelInfo: () => getModelInfo
+});
+import crypto from "node:crypto";
+function bucketForToken(token, dimensions) {
+  const hash = crypto.createHash("sha256").update(token).digest();
+  return hash.readUInt32BE(0) % dimensions;
+}
+function signForToken(token) {
+  const hash = crypto.createHash("sha256").update(token).digest();
+  return (hash[4] & 1) === 0 ? 1 : -1;
+}
+function hashEmbedding(text, dimensions = DIMENSIONS) {
+  const vector = new Array(dimensions).fill(0);
+  const tokens = tokenize(text);
+  if (tokens.length === 0) return new Float32Array(vector);
+  for (const token of tokens) {
+    vector[bucketForToken(token, dimensions)] += signForToken(token);
+  }
+  let normSq = 0;
+  for (const v of vector) normSq += v * v;
+  const norm = Math.sqrt(normSq);
+  if (norm === 0) return new Float32Array(vector);
+  const out = new Float32Array(dimensions);
+  for (let i = 0; i < dimensions; i++) out[i] = Number((vector[i] / norm).toFixed(8));
+  return out;
+}
+function embedSync(text) {
+  return Array.from(hashEmbedding(String(text || "")));
+}
+async function embed(text) {
+  return {
+    embedding: hashEmbedding(String(text || "")),
+    model: MODEL_ID,
+    dimensions: DIMENSIONS
+  };
+}
+async function embedBatch(texts) {
+  return texts.map((t) => ({
+    embedding: hashEmbedding(String(t || "")),
+    model: MODEL_ID,
+    dimensions: DIMENSIONS
+  }));
+}
+function getModelInfo() {
+  return {
+    id: "hashing",
+    model: MODEL_ID,
+    provider: "local",
+    dimensions: DIMENSIONS
+  };
+}
+var MODEL_ID, DIMENSIONS;
+var init_embeddings_legacy = __esm({
+  "lib/storage/embeddings-legacy.mjs"() {
+    init_embeddings();
+    MODEL_ID = "hashing-bow-v1";
+    DIMENSIONS = 256;
+  }
+});
+
+// lib/storage/embeddings-local.mjs
+var embeddings_local_exports = {};
+__export(embeddings_local_exports, {
+  embed: () => embed2,
+  embedBatch: () => embedBatch2,
+  getModelInfo: () => getModelInfo2
+});
+import { join as join3 } from "node:path";
+import { homedir as homedir2 } from "node:os";
+import { mkdirSync, existsSync } from "node:fs";
+async function getExtractor(cacheDir) {
+  if (extractor) return extractor;
+  if (modelPromise) return modelPromise;
+  const cachePath3 = cacheDir || join3(homedir2(), ".construct", "cache", "embeddings");
+  if (!existsSync(cachePath3)) {
+    mkdirSync(cachePath3, { recursive: true });
+  }
+  modelPromise = (async () => {
+    const { pipeline, env: hfEnv } = await import("@huggingface/transformers");
+    hfEnv.allowLocalModels = true;
+    hfEnv.allowRemoteModels = false;
+    hfEnv.useBrowserCache = false;
+    try {
+      const ex = await pipeline("feature-extraction", MODEL_ID2, {
+        cache_dir: cachePath3,
+        quantized: true
+      });
+      extractor = ex;
+      return ex;
+    } catch (err) {
+      modelPromise = null;
+      throw new Error(`Local embedding model failed to load: ${err.message}. Falling back to hashing-bow-v1.`);
+    }
+  })();
+  return modelPromise;
+}
+async function embed2(text, { env = process.env } = {}) {
+  try {
+    if (env.CONSTRUCT_EMBEDDING_DISABLE_LOCAL === "1") {
+      throw new Error("local embeddings disabled by CONSTRUCT_EMBEDDING_DISABLE_LOCAL");
+    }
+    const ex = await getExtractor(env.CONSTRUCT_EMBEDDING_CACHE_DIR);
+    const output = await ex(text, { pooling: "mean", normalize: true });
+    return {
+      embedding: output.data,
+      model: MODEL_ID2,
+      dimensions: DIMENSIONS2
+    };
+  } catch (err) {
+    const { embed: hashEmbed } = await Promise.resolve().then(() => (init_embeddings_legacy(), embeddings_legacy_exports));
+    const fallback = await hashEmbed(text, { env });
+    return {
+      ...fallback,
+      degraded: true,
+      requestedModel: MODEL_ID2,
+      fallbackReason: err?.message || "local embedding model unavailable"
+    };
+  }
+}
+async function embedBatch2(texts, { env = process.env } = {}) {
+  try {
+    if (env.CONSTRUCT_EMBEDDING_DISABLE_LOCAL === "1") {
+      throw new Error("local embeddings disabled by CONSTRUCT_EMBEDDING_DISABLE_LOCAL");
+    }
+    const ex = await getExtractor(env.CONSTRUCT_EMBEDDING_CACHE_DIR);
+    const results = [];
+    for (const text of texts) {
+      const output = await ex(text, { pooling: "mean", normalize: true });
+      results.push({
+        embedding: output.data,
+        model: MODEL_ID2,
+        dimensions: DIMENSIONS2
+      });
+    }
+    return results;
+  } catch (err) {
+    const { embedBatch: hashBatch } = await Promise.resolve().then(() => (init_embeddings_legacy(), embeddings_legacy_exports));
+    const fallbacks = await hashBatch(texts, { env });
+    return fallbacks.map((fallback) => ({
+      ...fallback,
+      degraded: true,
+      requestedModel: MODEL_ID2,
+      fallbackReason: err?.message || "local embedding model unavailable"
+    }));
+  }
+}
+function getModelInfo2({ env = process.env } = {}) {
+  return {
+    id: "local",
+    model: MODEL_ID2,
+    provider: "onnx",
+    dimensions: DIMENSIONS2
+  };
+}
+var modelPromise, extractor, MODEL_ID2, DIMENSIONS2;
+var init_embeddings_local = __esm({
+  "lib/storage/embeddings-local.mjs"() {
+    modelPromise = null;
+    extractor = null;
+    MODEL_ID2 = "Xenova/all-MiniLM-L6-v2";
+    DIMENSIONS2 = 384;
+  }
+});
+
+// lib/storage/embeddings-openai.mjs
+var embeddings_openai_exports = {};
+__export(embeddings_openai_exports, {
+  embed: () => embed3,
+  embedBatch: () => embedBatch3,
+  getModelInfo: () => getModelInfo3
+});
+async function openaiEmbed(key, input) {
+  const res = await fetch("https://api.openai.com/v1/embeddings", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${key}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ model: MODEL_ID3, input })
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`OpenAI embedding error ${res.status}: ${body}`);
+  }
+  return res.json();
+}
+async function embed3(text, { env = process.env } = {}) {
+  const key = env.OPENAI_API_KEY;
+  if (!key) throw new Error("OPENAI_API_KEY required for OpenAI embeddings");
+  const data = await openaiEmbed(key, text);
+  return {
+    embedding: new Float32Array(data.data[0].embedding),
+    model: `openai/${MODEL_ID3}`,
+    dimensions: DIMENSIONS3
+  };
+}
+async function embedBatch3(texts, { env = process.env } = {}) {
+  const key = env.OPENAI_API_KEY;
+  if (!key) throw new Error("OPENAI_API_KEY required for OpenAI embeddings");
+  const results = [];
+  for (let i = 0; i < texts.length; i += MAX_BATCH_SIZE) {
+    const batch = texts.slice(i, i + MAX_BATCH_SIZE);
+    const data = await openaiEmbed(key, batch);
+    for (const item of data.data) {
+      results.push({
+        embedding: new Float32Array(item.embedding),
+        model: `openai/${MODEL_ID3}`,
+        dimensions: DIMENSIONS3
+      });
+    }
+  }
+  return results;
+}
+function getModelInfo3({ env = process.env } = {}) {
+  return {
+    id: "openai",
+    model: `openai/${MODEL_ID3}`,
+    provider: "openai",
+    dimensions: DIMENSIONS3
+  };
+}
+var MODEL_ID3, DIMENSIONS3, MAX_BATCH_SIZE;
+var init_embeddings_openai = __esm({
+  "lib/storage/embeddings-openai.mjs"() {
+    MODEL_ID3 = "text-embedding-3-small";
+    DIMENSIONS3 = 1536;
+    MAX_BATCH_SIZE = 2048;
+  }
+});
+
+// lib/storage/embeddings-ollama.mjs
+var embeddings_ollama_exports = {};
+__export(embeddings_ollama_exports, {
+  embed: () => embed4,
+  embedBatch: () => embedBatch4,
+  getModelInfo: () => getModelInfo4
+});
+async function ollamaEmbed(baseUrl, text) {
+  const res = await fetch(`${baseUrl}/api/embeddings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model: MODEL_ID4, prompt: text })
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Ollama embedding error ${res.status}: ${body}`);
+  }
+  return res.json();
+}
+async function embed4(text, { env = process.env } = {}) {
+  const baseUrl = env.OLLAMA_BASE_URL || "http://localhost:11434";
+  const data = await ollamaEmbed(baseUrl, text);
+  return {
+    embedding: new Float32Array(data.embedding),
+    model: `ollama/${MODEL_ID4}`,
+    dimensions: DIMENSIONS4
+  };
+}
+async function embedBatch4(texts, { env = process.env } = {}) {
+  const baseUrl = env.OLLAMA_BASE_URL || "http://localhost:11434";
+  const results = [];
+  for (const text of texts) {
+    const data = await ollamaEmbed(baseUrl, text);
+    results.push({
+      embedding: new Float32Array(data.embedding),
+      model: `ollama/${MODEL_ID4}`,
+      dimensions: DIMENSIONS4
+    });
+  }
+  return results;
+}
+function getModelInfo4({ env = process.env } = {}) {
+  return {
+    id: "ollama",
+    model: `ollama/${MODEL_ID4}`,
+    provider: "ollama",
+    dimensions: DIMENSIONS4
+  };
+}
+var MODEL_ID4, DIMENSIONS4;
+var init_embeddings_ollama = __esm({
+  "lib/storage/embeddings-ollama.mjs"() {
+    MODEL_ID4 = "nomic-embed-text";
+    DIMENSIONS4 = 768;
+  }
+});
+
+// lib/storage/embeddings-engine.mjs
+function resolveModelId(env) {
+  const requested = (env.CONSTRUCT_EMBEDDING_MODEL || DEFAULT_MODEL).toLowerCase();
+  if (requested !== "openai") {
+    if (!KNOWN_MODELS.has(requested)) {
+      throw new Error(
+        `CONSTRUCT_EMBEDDING_MODEL='${requested}' is not a known embedding model (${[...KNOWN_MODELS].join("|")}). Fix the value \u2014 falling through to the 256d hashing adapter would silently degrade retrieval and mismatch the vector schema.`
+      );
+    }
+    return requested;
+  }
+  if (env.OPENAI_API_KEY) return "openai";
+  if (env.CONSTRUCT_EMBEDDING_FALLBACK === "1") {
+    if (!openaiFallbackWarned) {
+      openaiFallbackWarned = true;
+      process.stderr.write(
+        "[construct] CONSTRUCT_EMBEDDING_MODEL=openai but OPENAI_API_KEY is missing; falling back to local because CONSTRUCT_EMBEDDING_FALLBACK=1.\n"
+      );
+    }
+    return DEFAULT_MODEL;
+  }
+  throw new Error(
+    "CONSTRUCT_EMBEDDING_MODEL=openai requires OPENAI_API_KEY. Set the key, choose a different model (local|ollama|hashing), or opt into silent fallback with CONSTRUCT_EMBEDDING_FALLBACK=1."
+  );
+}
+async function embedText(text, { env = process.env } = {}) {
+  const modelId = resolveModelId(env);
+  const loader = ADAPTERS[modelId];
+  const { embed: embed5 } = await loader();
+  return embed5(text, { env });
+}
+async function getEmbeddingModelInfo({ env = process.env } = {}) {
+  const modelId = resolveModelId(env);
+  const loader = ADAPTERS[modelId];
+  const { getModelInfo: getModelInfo5 } = await loader();
+  return getModelInfo5({ env });
+}
+var ADAPTERS, KNOWN_MODELS, DEFAULT_MODEL, openaiFallbackWarned;
+var init_embeddings_engine = __esm({
+  "lib/storage/embeddings-engine.mjs"() {
+    ADAPTERS = {
+      local: () => Promise.resolve().then(() => (init_embeddings_local(), embeddings_local_exports)),
+      "local-onnx": () => Promise.resolve().then(() => (init_embeddings_local(), embeddings_local_exports)),
+      openai: () => Promise.resolve().then(() => (init_embeddings_openai(), embeddings_openai_exports)),
+      ollama: () => Promise.resolve().then(() => (init_embeddings_ollama(), embeddings_ollama_exports)),
+      hashing: () => Promise.resolve().then(() => (init_embeddings_legacy(), embeddings_legacy_exports))
+    };
+    KNOWN_MODELS = new Set(Object.keys(ADAPTERS));
+    DEFAULT_MODEL = "local";
+    openaiFallbackWarned = false;
+  }
+});
+
+// lib/storage/vector-client.mjs
+import path11 from "path";
+import fs11 from "fs";
+function getDbPath(env = process.env) {
+  if (env.CONSTRUCT_LANCEDB_PATH) return env.CONSTRUCT_LANCEDB_PATH;
+  return path11.join(process.cwd(), ".cx", "lancedb");
+}
+function serializeWrite(dbPath, task) {
+  const prev = writeQueues.get(dbPath) || Promise.resolve();
+  const run = prev.then(task, task);
+  const chain = run.then(() => {
+  }, () => {
+  });
+  writeQueues.set(dbPath, chain);
+  chain.then(() => {
+    if (writeQueues.get(dbPath) === chain) writeQueues.delete(dbPath);
+  });
+  return run;
+}
+async function withWriteRetry(task, { attempts = 6, baseMs = 25 } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await task();
+    } catch (err) {
+      lastErr = err;
+      const msg = String(err?.message || err);
+      const retriable = /Incompatible transaction|already exists|Commit conflict|conflict_resolver|failed to persist|No such file or directory|LanceError\(IO\)/i.test(msg);
+      if (!retriable || attempt === attempts - 1) throw err;
+      await new Promise((resolve4) => setTimeout(resolve4, baseMs * (attempt + 1)));
+    }
+  }
+  throw lastErr;
+}
+var FALLBACK_DIMENSIONS, writeQueues, VectorClient;
+var init_vector_client = __esm({
+  "lib/storage/vector-client.mjs"() {
+    init_embeddings_engine();
+    FALLBACK_DIMENSIONS = 384;
+    writeQueues = /* @__PURE__ */ new Map();
+    VectorClient = class {
+      constructor({ databaseUrl, env } = {}) {
+        this.env = env || process.env;
+        this._db = null;
+        this._lancedbModule = null;
+        this._arrowModule = null;
+        this._engineDim = null;
+      }
+      async _initModules() {
+        if (this._lancedbModule && this._arrowModule) return;
+        try {
+          this._lancedbModule = await import("@lancedb/lancedb");
+          this._arrowModule = await import("apache-arrow");
+        } catch (err) {
+          throw new Error(
+            `Failed to load LanceDB or Apache Arrow: ${err.message}. Ensure they are installed (npm install @lancedb/lancedb apache-arrow).`
+          );
+        }
+      }
+      async _getDb() {
+        if (this._db) return this._db;
+        await this._initModules();
+        const dbPath = getDbPath(this.env);
+        if (!fs11.existsSync(dbPath)) {
+          fs11.mkdirSync(dbPath, { recursive: true });
+        }
+        this._db = await this._lancedbModule.connect(dbPath);
+        return this._db;
+      }
+      async getEngineDimensions() {
+        if (this._engineDim != null) return this._engineDim;
+        try {
+          const info = await getEmbeddingModelInfo({ env: this.env });
+          this._engineDim = info.dimensions;
+        } catch {
+          this._engineDim = FALLBACK_DIMENSIONS;
+        }
+        return this._engineDim;
+      }
+      async _getObservationsTable() {
+        const db = await this._getDb();
+        const tableName = "observations_v1";
+        const dim = await this.getEngineDimensions();
+        try {
+          return await db.openTable(tableName);
+        } catch {
+          const schema = new this._arrowModule.Schema([
+            new this._arrowModule.Field("id", new this._arrowModule.Utf8()),
+            new this._arrowModule.Field("project", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("role", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("category", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("summary", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("content", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("tags", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("confidence", new this._arrowModule.Float32(), true),
+            new this._arrowModule.Field("source", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("git_sha", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("embedding", new this._arrowModule.FixedSizeList(dim, new this._arrowModule.Field("item", new this._arrowModule.Float32()))),
+            new this._arrowModule.Field("content_hash", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("model", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("created_at", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("updated_at", new this._arrowModule.Utf8(), true)
+          ]);
+          try {
+            return await db.createTable(tableName, [], { schema });
+          } catch (err) {
+            if (/already exists/i.test(String(err?.message))) return await db.openTable(tableName);
+            throw err;
+          }
+        }
+      }
+      async _getDocumentsTable() {
+        const db = await this._getDb();
+        const tableName = "documents_v1";
+        const dim = await this.getEngineDimensions();
+        try {
+          return await db.openTable(tableName);
+        } catch {
+          const schema = new this._arrowModule.Schema([
+            new this._arrowModule.Field("id", new this._arrowModule.Utf8()),
+            new this._arrowModule.Field("project", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("kind", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("title", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("summary", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("body", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("source_path", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("tags", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("content_hash", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("embedding", new this._arrowModule.FixedSizeList(dim, new this._arrowModule.Field("item", new this._arrowModule.Float32()))),
+            new this._arrowModule.Field("model", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("created_at", new this._arrowModule.Utf8(), true),
+            new this._arrowModule.Field("updated_at", new this._arrowModule.Utf8(), true)
+          ]);
+          try {
+            return await db.createTable(tableName, [], { schema });
+          } catch (err) {
+            if (/already exists/i.test(String(err?.message))) return await db.openTable(tableName);
+            throw err;
+          }
+        }
+      }
+      async isHealthy() {
+        try {
+          await this._getDb();
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      async isPgvectorEnabled() {
+        return this.isHealthy();
+      }
+      async storeObservation(record) {
+        return serializeWrite(getDbPath(this.env), () => withWriteRetry(() => this._storeObservation(record)));
+      }
+      async _storeObservation(record) {
+        const table = await this._getObservationsTable();
+        const now2 = (/* @__PURE__ */ new Date()).toISOString();
+        const data = {
+          id: record.id,
+          project: record.project || "",
+          role: record.role || "unknown",
+          category: record.category || "insight",
+          summary: record.summary || "",
+          content: record.content || "",
+          tags: JSON.stringify(record.tags || []),
+          confidence: Number(record.confidence || 0.8),
+          source: typeof record.source === "object" ? JSON.stringify(record.source) : record.source || "",
+          git_sha: record.gitSha || "",
+          embedding: Array.from(record.embedding),
+          content_hash: record.contentHash || "",
+          model: record.model || "",
+          created_at: record.createdAt || now2,
+          updated_at: now2
+        };
+        await table.mergeInsert("id").whenMatchedUpdateAll().whenNotMatchedInsertAll().execute([data]);
+        return { mode: "lancedb", id: record.id };
+      }
+      async getObservationFingerprints(ids = []) {
+        const table = await this._getObservationsTable();
+        if (!Array.isArray(ids) || ids.length === 0) return /* @__PURE__ */ new Map();
+        const results = await table.query().where(`id IN (${ids.map((id) => `'${id}'`).join(",")})`).select(["id", "content_hash", "model"]).toArray();
+        return new Map(results.map((r) => [r.id, { contentHash: r.content_hash, model: r.model }]));
+      }
+      async searchObservations({ project, queryEmbedding, limit = 10, minSimilarity = 0.01, role, category }) {
+        const table = await this._getObservationsTable();
+        const query = table.query().nearestTo(Array.from(queryEmbedding)).distanceType("cosine");
+        const rawResults = await query.limit(100).toArray();
+        return rawResults.map((r) => {
+          const distance = r._distance !== void 0 ? r._distance : 0;
+          let tags = [];
+          try {
+            tags = typeof r.tags === "string" && r.tags.startsWith("[") ? JSON.parse(r.tags) : Array.isArray(r.tags) ? r.tags : [];
+          } catch {
+          }
+          return {
+            ...r,
+            similarity: 1 - distance,
+            tags
+          };
+        }).filter((r) => {
+          if (r.similarity < minSimilarity) return false;
+          if (project && r.project !== project) return false;
+          if (role && r.role && r.role !== role) return false;
+          if (category && r.category && r.category !== category) return false;
+          return true;
+        }).slice(0, limit);
+      }
+      async storeDocument(record) {
+        return serializeWrite(getDbPath(this.env), () => withWriteRetry(() => this._storeDocument(record)));
+      }
+      async _storeDocument(record) {
+        const table = await this._getDocumentsTable();
+        const now2 = (/* @__PURE__ */ new Date()).toISOString();
+        const data = {
+          id: record.id,
+          project: record.project || "",
+          kind: record.kind || "",
+          title: record.title || "",
+          summary: record.summary || "",
+          body: record.body || "",
+          source_path: record.sourcePath || "",
+          tags: JSON.stringify(record.tags || []),
+          content_hash: record.contentHash || "",
+          embedding: Array.from(record.embedding),
+          model: record.model || "",
+          created_at: record.createdAt || now2,
+          updated_at: now2
+        };
+        await table.mergeInsert("id").whenMatchedUpdateAll().whenNotMatchedInsertAll().execute([data]);
+        return { mode: "lancedb", id: record.id };
+      }
+      async searchDocuments({ project, queryEmbedding, limit = 10, minSimilarity = 0.01 }) {
+        const table = await this._getDocumentsTable();
+        const query = table.query().nearestTo(Array.from(queryEmbedding)).distanceType("cosine");
+        const rawResults = await query.limit(100).toArray();
+        return rawResults.map((r) => {
+          const distance = r._distance !== void 0 ? r._distance : 0;
+          let tags = [];
+          try {
+            tags = typeof r.tags === "string" && r.tags.startsWith("[") ? JSON.parse(r.tags) : Array.isArray(r.tags) ? r.tags : [];
+          } catch {
+          }
+          return {
+            ...r,
+            similarity: 1 - distance,
+            tags
+          };
+        }).filter((r) => {
+          if (r.similarity < minSimilarity) return false;
+          if (project && r.project !== project) return false;
+          return true;
+        }).slice(0, limit);
+      }
+      async close() {
+        this._db = null;
+      }
+    };
   }
 });
 
@@ -2910,16 +2812,16 @@ var init_doc_stamp = __esm({
 });
 
 // lib/project-init-shared.mjs
-import fs13 from "node:fs";
-import path13 from "node:path";
+import fs12 from "node:fs";
+import path12 from "node:path";
 function ensureCxDir(rootDir) {
-  const cxDir = path13.join(rootDir, ".cx");
-  const contextPath = path13.join(cxDir, "context.md");
-  if (!fs13.existsSync(cxDir)) {
-    fs13.mkdirSync(cxDir, { recursive: true });
+  const cxDir = path12.join(rootDir, ".cx");
+  const contextPath = path12.join(cxDir, "context.md");
+  if (!fs12.existsSync(cxDir)) {
+    fs12.mkdirSync(cxDir, { recursive: true });
   }
-  if (!fs13.existsSync(contextPath)) {
-    fs13.writeFileSync(contextPath, buildContextMarkdown(), "utf8");
+  if (!fs12.existsSync(contextPath)) {
+    fs12.writeFileSync(contextPath, buildContextMarkdown(), "utf8");
   }
   return cxDir;
 }
@@ -2954,11 +2856,301 @@ var init_project_init_shared = __esm({
   }
 });
 
+// lib/observation-store.mjs
+var observation_store_exports = {};
+__export(observation_store_exports, {
+  addObservation: () => addObservation,
+  checkObservationsSize: () => checkObservationsSize,
+  countObservations: () => countObservations,
+  deleteObservation: () => deleteObservation,
+  getObservation: () => getObservation,
+  getObservationsSize: () => getObservationsSize,
+  listObservations: () => listObservations,
+  observationContentHash: () => observationContentHash,
+  observationSearchText: () => observationSearchText,
+  searchObservations: () => searchObservations
+});
+import crypto2 from "node:crypto";
+import fs13 from "node:fs";
+import path13 from "node:path";
+function vectorClientFor(rootDir) {
+  const env = process.env.CONSTRUCT_LANCEDB_PATH ? process.env : { ...process.env, CONSTRUCT_LANCEDB_PATH: path13.join(rootDir, ".cx", "lancedb") };
+  return new VectorClient({ env });
+}
+function observationSearchText(obs) {
+  return [obs.summary, obs.content, ...obs.tags || []].filter(Boolean).join(" ");
+}
+function observationContentHash(text) {
+  return crypto2.createHash("sha256").update(String(text || "")).digest("hex");
+}
+function ensureDir(dir, rootDir = null) {
+  if (rootDir) ensureCxDir(rootDir);
+  if (!fs13.existsSync(dir)) fs13.mkdirSync(dir, { recursive: true });
+}
+function obsDir(rootDir) {
+  return path13.join(rootDir, OBS_DIR);
+}
+function indexPath(rootDir) {
+  return path13.join(obsDir(rootDir), INDEX_FILE);
+}
+function generateId() {
+  const ts = Date.now().toString(36);
+  const rand = crypto2.randomBytes(4).toString("hex");
+  return `obs-${ts}-${rand}`;
+}
+function sanitizeExtras(extras) {
+  if (extras == null) return null;
+  if (typeof extras !== "object" || Array.isArray(extras)) return null;
+  try {
+    const serialized = JSON.stringify(extras);
+    if (Buffer.byteLength(serialized, "utf8") > MAX_EXTRAS_BYTES) return null;
+    return JSON.parse(serialized);
+  } catch {
+    return null;
+  }
+}
+function clamp(str, max) {
+  if (!str || str.length <= max) return str || null;
+  return str.slice(0, max - 1) + "\u2026";
+}
+function readIndex(rootDir) {
+  const p = indexPath(rootDir);
+  if (!fs13.existsSync(p)) return [];
+  try {
+    return JSON.parse(fs13.readFileSync(p, "utf8"));
+  } catch {
+    return [];
+  }
+}
+function logCapDrop(rootDir, kind, dropped, total) {
+  if (dropped <= 0) return;
+  try {
+    const logPath = path13.join(rootDir, ".cx", "observation-cap-warnings.jsonl");
+    ensureCxDir(rootDir);
+    fs13.mkdirSync(path13.dirname(logPath), { recursive: true });
+    const entry = JSON.stringify({
+      ts: (/* @__PURE__ */ new Date()).toISOString(),
+      kind,
+      dropped,
+      total,
+      cap: MAX_INDEX,
+      remedy: "run `construct memory consolidate` or raise --max-stored"
+    });
+    fs13.appendFileSync(logPath, entry + "\n");
+  } catch {
+  }
+}
+function writeIndex(rootDir, entries) {
+  ensureDir(obsDir(rootDir), rootDir);
+  const trimmed = entries.slice(0, MAX_INDEX);
+  const dropped = Math.max(0, entries.length - MAX_INDEX);
+  if (dropped > 0) {
+    logCapDrop(rootDir, "observation-index", dropped, entries.length);
+  }
+  fs13.writeFileSync(indexPath(rootDir), JSON.stringify(trimmed, null, 2) + "\n");
+  return { dropped };
+}
+async function addObservation(rootDir, {
+  role = "unknown",
+  category = "insight",
+  summary = "",
+  content = "",
+  tags = [],
+  project = null,
+  confidence = 0.8,
+  source = null,
+  gitSha = null,
+  extras = null
+} = {}) {
+  const id = generateId();
+  const now2 = (/* @__PURE__ */ new Date()).toISOString();
+  const effectiveCategory = VALID_CATEGORIES.has(category) ? category : "insight";
+  const clampedSummary = clamp(String(summary), MAX_SUMMARY);
+  const clampedContent = clamp(String(content), MAX_CONTENT);
+  const clampedTags = (Array.isArray(tags) ? tags : []).slice(0, MAX_TAGS).map(String);
+  const clampedExtras = sanitizeExtras(extras);
+  const effectiveProject = project ? String(project) : rootDir.split("/").pop();
+  const record = {
+    id,
+    role: String(role),
+    category: effectiveCategory,
+    summary: clampedSummary,
+    content: clampedContent,
+    tags: clampedTags,
+    project: effectiveProject,
+    confidence: Math.max(0, Math.min(1, Number(confidence) || 0.8)),
+    source: source || null,
+    gitSha: gitSha ? String(gitSha).slice(0, 40) : null,
+    extras: clampedExtras,
+    createdAt: now2,
+    updatedAt: now2
+  };
+  ensureDir(obsDir(rootDir), rootDir);
+  fs13.writeFileSync(
+    path13.join(obsDir(rootDir), `${id}.json`),
+    JSON.stringify(record, null, 2) + "\n"
+  );
+  const index = readIndex(rootDir);
+  index.unshift({
+    id,
+    role: record.role,
+    category: record.category,
+    summary: record.summary,
+    project: record.project,
+    createdAt: now2
+  });
+  const indexDropped = writeIndex(rootDir, index).dropped;
+  if (indexDropped > 0) {
+    record.capDropped = indexDropped;
+    process.stderr.write(`[observation-store] observation cap reached: ${indexDropped} oldest entries evicted (cap=${MAX_INDEX})
+`);
+  }
+  try {
+    const client = vectorClientFor(rootDir);
+    if (await client.isHealthy()) {
+      const searchText = observationSearchText(record);
+      const { embedding, model } = await embedText(searchText);
+      await client.storeObservation({
+        ...record,
+        embedding,
+        contentHash: observationContentHash(searchText),
+        model
+      });
+    }
+    await client.close();
+  } catch (err) {
+    process.stderr.write(`[observation-store] vector store failed; kept observation in local index: ${err?.message || err}
+`);
+  }
+  return record;
+}
+async function searchObservations(rootDir, query, {
+  role = null,
+  category = null,
+  project = null,
+  limit = 10
+} = {}) {
+  if (!query) return [];
+  try {
+    const client = vectorClientFor(rootDir);
+    if (await client.isHealthy()) {
+      const { embedding } = await embedText(String(query));
+      const results = await client.searchObservations({
+        project: project || rootDir.split("/").pop(),
+        queryEmbedding: embedding,
+        limit,
+        minSimilarity: 0.01,
+        role,
+        category
+      });
+      await client.close();
+      return results.map((r) => ({
+        id: r.id,
+        role: r.role,
+        category: r.category,
+        project: r.project,
+        summary: r.summary,
+        content: r.content,
+        tags: r.tags || [],
+        confidence: r.confidence,
+        source: r.source,
+        createdAt: r.created_at,
+        score: r.similarity
+      }));
+    }
+    await client.close();
+  } catch {
+  }
+  return [];
+}
+function listObservations(rootDir, {
+  role = null,
+  category = null,
+  project = null,
+  limit = 20
+} = {}) {
+  let entries = readIndex(rootDir);
+  if (role) entries = entries.filter((e) => e.role === role);
+  if (category) entries = entries.filter((e) => e.category === category);
+  if (project) entries = entries.filter((e) => e.project === project);
+  return entries.slice(0, limit);
+}
+function getObservation(rootDir, id) {
+  const filePath = path13.join(obsDir(rootDir), `${id}.json`);
+  if (!fs13.existsSync(filePath)) return null;
+  try {
+    return JSON.parse(fs13.readFileSync(filePath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+function deleteObservation(rootDir, id) {
+  const filePath = path13.join(obsDir(rootDir), `${id}.json`);
+  if (fs13.existsSync(filePath)) fs13.rmSync(filePath, { force: true });
+  const index = readIndex(rootDir);
+  const filtered = index.filter((e) => e.id !== id);
+  if (filtered.length !== index.length) writeIndex(rootDir, filtered);
+  return true;
+}
+function countObservations(rootDir, { role = null, project = null } = {}) {
+  let entries = readIndex(rootDir);
+  if (role) entries = entries.filter((e) => e.role === role);
+  if (project) entries = entries.filter((e) => e.project === project);
+  return entries.length;
+}
+function getObservationsSize(rootDir) {
+  const root = obsDir(rootDir);
+  if (!fs13.existsSync(root)) return 0;
+  let total = 0;
+  const walk = (dir) => {
+    for (const entry of fs13.readdirSync(dir, { withFileTypes: true })) {
+      const full = path13.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.isFile()) {
+        try {
+          total += fs13.statSync(full).size;
+        } catch {
+        }
+      }
+    }
+  };
+  walk(root);
+  return total;
+}
+function checkObservationsSize(rootDir, { cap = MAX_BYTES } = {}) {
+  const size = getObservationsSize(rootDir);
+  return { size, cap, ok: size <= cap };
+}
+var OBS_DIR, INDEX_FILE, MAX_INDEX, MAX_SUMMARY, MAX_CONTENT, MAX_TAGS, MAX_BYTES, VALID_CATEGORIES, MAX_EXTRAS_BYTES;
+var init_observation_store = __esm({
+  "lib/observation-store.mjs"() {
+    init_embeddings_engine();
+    init_vector_client();
+    init_project_init_shared();
+    OBS_DIR = ".cx/observations";
+    INDEX_FILE = "index.json";
+    MAX_INDEX = 1e3;
+    MAX_SUMMARY = 500;
+    MAX_CONTENT = 2e3;
+    MAX_TAGS = 10;
+    MAX_BYTES = 50 * 1024 * 1024;
+    VALID_CATEGORIES = /* @__PURE__ */ new Set([
+      "pattern",
+      "anti-pattern",
+      "dependency",
+      "decision",
+      "insight",
+      "session-summary"
+    ]);
+    MAX_EXTRAS_BYTES = 2 * 1024;
+  }
+});
+
 // lib/intake/quarantine.mjs
-import { existsSync as existsSync2, mkdirSync as mkdirSync2, readdirSync, readFileSync as readFileSync2, writeFileSync as writeFileSync2, rmSync } from "node:fs";
-import path14 from "node:path";
+import { existsSync as existsSync2, mkdirSync as mkdirSync2, readdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import path17 from "node:path";
 function quarantineDir(rootDir) {
-  return path14.join(rootDir, QUEUE_SUBDIR, "quarantine");
+  return path17.join(rootDir, QUEUE_SUBDIR, "quarantine");
 }
 function shouldQuarantine(triage) {
   if (!triage || triage.intakeType === "unknown") {
@@ -2981,14 +3173,14 @@ function writeQuarantinePacket(rootDir, packet, quarantineReason) {
   mkdirSync2(dir, { recursive: true });
   const id = packet.id;
   if (!id) throw new Error("writeQuarantinePacket: packet.id required");
-  const filePath = path14.join(dir, `${id}.json`);
+  const filePath = path17.join(dir, `${id}.json`);
   const payload = {
     ...packet,
     status: "quarantined",
     quarantinedAt: (/* @__PURE__ */ new Date()).toISOString(),
     quarantineReason: quarantineReason || null
   };
-  writeFileSync2(filePath, JSON.stringify(payload, null, 2) + "\n", "utf8");
+  writeFileSync(filePath, JSON.stringify(payload, null, 2) + "\n", "utf8");
   return { id, filePath };
 }
 var QUEUE_SUBDIR, QUARANTINE_CONFIDENCE_THRESHOLD, QUARANTINE_MARGIN_THRESHOLD;
@@ -3001,19 +3193,19 @@ var init_quarantine = __esm({
 });
 
 // lib/intake/filesystem-queue.mjs
-import { existsSync as existsSync3, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync3, rmSync as rmSync2, writeFileSync as writeFileSync3 } from "node:fs";
-import path15 from "node:path";
+import { existsSync as existsSync3, mkdirSync as mkdirSync3, readdirSync as readdirSync2, readFileSync as readFileSync2, rmSync as rmSync2, writeFileSync as writeFileSync2 } from "node:fs";
+import path18 from "node:path";
 function queueRoot(rootDir) {
-  return path15.join(rootDir, QUEUE_SUBDIR2);
+  return path18.join(rootDir, QUEUE_SUBDIR2);
 }
 function pendingDir(rootDir) {
-  return path15.join(queueRoot(rootDir), "pending");
+  return path18.join(queueRoot(rootDir), "pending");
 }
 function processedDir(rootDir) {
-  return path15.join(queueRoot(rootDir), "processed");
+  return path18.join(queueRoot(rootDir), "processed");
 }
 function skippedDir(rootDir) {
-  return path15.join(queueRoot(rootDir), "skipped");
+  return path18.join(queueRoot(rootDir), "skipped");
 }
 function slugify(value) {
   return String(value || "untitled").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "untitled";
@@ -3039,7 +3231,7 @@ var init_filesystem_queue = __esm({
         if (!entry?.intake?.sourcePath) throw new Error("enqueue: entry.intake.sourcePath is required");
         ensureCxDir(this.rootDir);
         const ts = timestamp();
-        const slug = slugify(path15.basename(entry.intake.sourcePath, path15.extname(entry.intake.sourcePath)));
+        const slug = slugify(path18.basename(entry.intake.sourcePath, path18.extname(entry.intake.sourcePath)));
         const id = `${ts}-${slug}`;
         const quarantineDecision = shouldQuarantine(entry?.triage);
         if (quarantineDecision.quarantine) {
@@ -3049,18 +3241,18 @@ var init_filesystem_queue = __esm({
         }
         const dir = pendingDir(this.rootDir);
         mkdirSync3(dir, { recursive: true });
-        const filePath = path15.join(dir, `${id}.json`);
+        const filePath = path18.join(dir, `${id}.json`);
         const payload = { id, createdAt: (/* @__PURE__ */ new Date()).toISOString(), status: "pending", ...entry };
-        writeFileSync3(filePath, JSON.stringify(payload, null, 2) + "\n", "utf8");
+        writeFileSync2(filePath, JSON.stringify(payload, null, 2) + "\n", "utf8");
         return { id, filePath, route: "pending" };
       }
       listPending() {
         const dir = pendingDir(this.rootDir);
         if (!existsSync3(dir)) return [];
         return readdirSync2(dir).filter((name) => name.endsWith(".json")).map((name) => {
-          const filePath = path15.join(dir, name);
+          const filePath = path18.join(dir, name);
           try {
-            const data = JSON.parse(readFileSync3(filePath, "utf8"));
+            const data = JSON.parse(readFileSync2(filePath, "utf8"));
             return { ...data, filePath };
           } catch {
             return null;
@@ -3080,49 +3272,49 @@ var init_filesystem_queue = __esm({
           quarantineDir(this.rootDir)
         ];
         for (const dir of dirs) {
-          const filePath = path15.join(dir, `${id}.json`);
+          const filePath = path18.join(dir, `${id}.json`);
           if (existsSync3(filePath)) {
-            const data = JSON.parse(readFileSync3(filePath, "utf8"));
+            const data = JSON.parse(readFileSync2(filePath, "utf8"));
             return { ...data, filePath };
           }
         }
         return null;
       }
       markProcessed(id, { processedBy = "unknown", notes = "" } = {}) {
-        const src = path15.join(pendingDir(this.rootDir), `${id}.json`);
+        const src = path18.join(pendingDir(this.rootDir), `${id}.json`);
         if (!existsSync3(src)) throw new Error(`markProcessed: no pending entry ${id}`);
-        const data = JSON.parse(readFileSync3(src, "utf8"));
+        const data = JSON.parse(readFileSync2(src, "utf8"));
         data.status = "processed";
         data.processedAt = (/* @__PURE__ */ new Date()).toISOString();
         data.processedBy = processedBy;
         if (notes) data.notes = notes;
-        const dst = path15.join(processedDir(this.rootDir), `${id}.json`);
+        const dst = path18.join(processedDir(this.rootDir), `${id}.json`);
         ensureCxDir(this.rootDir);
-        mkdirSync3(path15.dirname(dst), { recursive: true });
-        writeFileSync3(dst, JSON.stringify(data, null, 2) + "\n", "utf8");
+        mkdirSync3(path18.dirname(dst), { recursive: true });
+        writeFileSync2(dst, JSON.stringify(data, null, 2) + "\n", "utf8");
         rmSync2(src);
         return { id, filePath: dst };
       }
       markSkipped(id, { skippedBy = "unknown", reason = "" } = {}) {
-        const src = path15.join(pendingDir(this.rootDir), `${id}.json`);
+        const src = path18.join(pendingDir(this.rootDir), `${id}.json`);
         if (!existsSync3(src)) throw new Error(`markSkipped: no pending entry ${id}`);
-        const data = JSON.parse(readFileSync3(src, "utf8"));
+        const data = JSON.parse(readFileSync2(src, "utf8"));
         data.status = "skipped";
         data.skippedAt = (/* @__PURE__ */ new Date()).toISOString();
         data.skippedBy = skippedBy;
         if (reason) data.reason = reason;
-        const dst = path15.join(skippedDir(this.rootDir), `${id}.json`);
+        const dst = path18.join(skippedDir(this.rootDir), `${id}.json`);
         ensureCxDir(this.rootDir);
-        mkdirSync3(path15.dirname(dst), { recursive: true });
-        writeFileSync3(dst, JSON.stringify(data, null, 2) + "\n", "utf8");
+        mkdirSync3(path18.dirname(dst), { recursive: true });
+        writeFileSync2(dst, JSON.stringify(data, null, 2) + "\n", "utf8");
         rmSync2(src);
         return { id, filePath: dst };
       }
       reopen(id) {
         for (const dir of [processedDir(this.rootDir), skippedDir(this.rootDir)]) {
-          const src = path15.join(dir, `${id}.json`);
+          const src = path18.join(dir, `${id}.json`);
           if (!existsSync3(src)) continue;
-          const data = JSON.parse(readFileSync3(src, "utf8"));
+          const data = JSON.parse(readFileSync2(src, "utf8"));
           data.status = "pending";
           delete data.processedAt;
           delete data.processedBy;
@@ -3130,12 +3322,12 @@ var init_filesystem_queue = __esm({
           delete data.skippedAt;
           delete data.skippedBy;
           delete data.reason;
-          const dst = path15.join(pendingDir(this.rootDir), `${id}.json`);
+          const dst = path18.join(pendingDir(this.rootDir), `${id}.json`);
           ensureCxDir(this.rootDir);
-          mkdirSync3(path15.dirname(dst), { recursive: true });
-          writeFileSync3(dst, JSON.stringify(data, null, 2) + "\n", "utf8");
+          mkdirSync3(path18.dirname(dst), { recursive: true });
+          writeFileSync2(dst, JSON.stringify(data, null, 2) + "\n", "utf8");
           rmSync2(src);
-          return { id, filePath: dst, from: path15.basename(dir) };
+          return { id, filePath: dst, from: path18.basename(dir) };
         }
         throw new Error(`reopen: no processed or skipped entry ${id}`);
       }
@@ -3144,8 +3336,8 @@ var init_filesystem_queue = __esm({
 });
 
 // lib/intake/git-queue.mjs
-import path16 from "node:path";
-import fs14 from "fs";
+import path19 from "node:path";
+import fs18 from "fs";
 import { execSync as execSync3 } from "node:child_process";
 function slugify2(value) {
   return String(value || "untitled").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "untitled";
@@ -3163,12 +3355,12 @@ var init_git_queue = __esm({
     GitIntakeQueue = class {
       constructor({ project, rootDir = process.cwd() } = {}) {
         this.project = project;
-        this.inboxRoot = path16.join(rootDir, ".cx", "team-inbox");
+        this.inboxRoot = path19.join(rootDir, ".cx", "team-inbox");
         this._ensureDirs();
       }
       _ensureDirs() {
         ["pending", "claimed", "processed", "skipped", "quarantine"].forEach((dir) => {
-          fs14.mkdirSync(path16.join(this.inboxRoot, dir), { recursive: true });
+          fs18.mkdirSync(path19.join(this.inboxRoot, dir), { recursive: true });
         });
       }
       _gitAddAndCommit(filePath, message) {
@@ -3180,12 +3372,12 @@ var init_git_queue = __esm({
       }
       async enqueue(entry) {
         const ts = timestamp2();
-        const slug = slugify2(path16.basename(entry.intake.sourcePath, path16.extname(entry.intake.sourcePath)));
+        const slug = slugify2(path19.basename(entry.intake.sourcePath, path19.extname(entry.intake.sourcePath)));
         const id = `${ts}-${slug}`;
         const triage = entry.triage || {};
         const quarantineDecision = shouldQuarantine(triage);
         const subDir = quarantineDecision.quarantine ? "quarantine" : "pending";
-        const filePath = path16.join(this.inboxRoot, subDir, `${id}.json`);
+        const filePath = path19.join(this.inboxRoot, subDir, `${id}.json`);
         const data = {
           id,
           project: this.project,
@@ -3193,23 +3385,23 @@ var init_git_queue = __esm({
           createdAt: (/* @__PURE__ */ new Date()).toISOString(),
           ...entry
         };
-        fs14.writeFileSync(filePath, JSON.stringify(data, null, 2));
+        fs18.writeFileSync(filePath, JSON.stringify(data, null, 2));
         this._gitAddAndCommit(filePath, `Enqueue task ${id}`);
         return { id, route: subDir === "quarantine" ? "quarantine" : "pending", reason: quarantineDecision.reason };
       }
       async listPending({ limit = 100 } = {}) {
-        const pendingDir2 = path16.join(this.inboxRoot, "pending");
-        return fs14.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).slice(0, limit).map((f) => JSON.parse(fs14.readFileSync(path16.join(pendingDir2, f), "utf8")));
+        const pendingDir2 = path19.join(this.inboxRoot, "pending");
+        return fs18.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).slice(0, limit).map((f) => JSON.parse(fs18.readFileSync(path19.join(pendingDir2, f), "utf8")));
       }
       async count() {
-        const pendingDir2 = path16.join(this.inboxRoot, "pending");
-        return fs14.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).length;
+        const pendingDir2 = path19.join(this.inboxRoot, "pending");
+        return fs18.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).length;
       }
       async read(id) {
         for (const dir of ["pending", "claimed", "processed", "skipped", "quarantine"]) {
-          const searchPath = dir === "claimed" ? path16.join(this.inboxRoot, dir) : path16.join(this.inboxRoot, dir, `${id}.json`);
-          if (dir !== "claimed" && fs14.existsSync(searchPath)) {
-            return JSON.parse(fs14.readFileSync(searchPath, "utf8"));
+          const searchPath = dir === "claimed" ? path19.join(this.inboxRoot, dir) : path19.join(this.inboxRoot, dir, `${id}.json`);
+          if (dir !== "claimed" && fs18.existsSync(searchPath)) {
+            return JSON.parse(fs18.readFileSync(searchPath, "utf8"));
           }
         }
         return null;
@@ -3220,21 +3412,21 @@ var init_git_queue = __esm({
           execSync3("git pull --rebase", { stdio: "ignore" });
         } catch (e) {
         }
-        const pendingDir2 = path16.join(this.inboxRoot, "pending");
-        const files = fs14.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).sort();
+        const pendingDir2 = path19.join(this.inboxRoot, "pending");
+        const files = fs18.readdirSync(pendingDir2).filter((f) => f.endsWith(".json")).sort();
         if (files.length === 0) return null;
         const fileName = files[0];
-        const pendingPath2 = path16.join(pendingDir2, fileName);
-        const workerDir = path16.join(this.inboxRoot, "claimed", claimedBy);
-        fs14.mkdirSync(workerDir, { recursive: true });
-        const claimedPath = path16.join(workerDir, fileName);
+        const pendingPath2 = path19.join(pendingDir2, fileName);
+        const workerDir = path19.join(this.inboxRoot, "claimed", claimedBy);
+        fs18.mkdirSync(workerDir, { recursive: true });
+        const claimedPath = path19.join(workerDir, fileName);
         try {
-          fs14.renameSync(pendingPath2, claimedPath);
-          const data = JSON.parse(fs14.readFileSync(claimedPath, "utf8"));
+          fs18.renameSync(pendingPath2, claimedPath);
+          const data = JSON.parse(fs18.readFileSync(claimedPath, "utf8"));
           data.status = "claimed";
           data.claimedBy = claimedBy;
           data.claimedAt = (/* @__PURE__ */ new Date()).toISOString();
-          fs14.writeFileSync(claimedPath, JSON.stringify(data, null, 2));
+          fs18.writeFileSync(claimedPath, JSON.stringify(data, null, 2));
           execSync3(`git add .cx/team-inbox/pending/${fileName} .cx/team-inbox/claimed/${claimedBy}/${fileName}`, { stdio: "ignore" });
           execSync3(`git commit -m "Claim task ${data.id} by ${claimedBy}"`, { stdio: "ignore" });
           execSync3("git push", { stdio: "ignore" });
@@ -3249,20 +3441,20 @@ var init_git_queue = __esm({
         let currentDir = null;
         const dirs = ["pending", "claimed"];
         for (const d of dirs) {
-          const dirPath = path16.join(this.inboxRoot, d);
+          const dirPath = path19.join(this.inboxRoot, d);
           if (d === "claimed") {
-            const workers = fs14.readdirSync(dirPath);
+            const workers = fs18.readdirSync(dirPath);
             for (const w of workers) {
-              const p = path16.join(dirPath, w, `${id}.json`);
-              if (fs14.existsSync(p)) {
+              const p = path19.join(dirPath, w, `${id}.json`);
+              if (fs18.existsSync(p)) {
                 foundPath = p;
-                currentDir = path16.join(d, w);
+                currentDir = path19.join(d, w);
                 break;
               }
             }
           } else {
-            const p = path16.join(dirPath, `${id}.json`);
-            if (fs14.existsSync(p)) {
+            const p = path19.join(dirPath, `${id}.json`);
+            if (fs18.existsSync(p)) {
               foundPath = p;
               currentDir = d;
               break;
@@ -3271,14 +3463,14 @@ var init_git_queue = __esm({
           if (foundPath) break;
         }
         if (!foundPath) throw new Error(`markProcessed: no entry ${id} found`);
-        const data = JSON.parse(fs14.readFileSync(foundPath, "utf8"));
+        const data = JSON.parse(fs18.readFileSync(foundPath, "utf8"));
         data.status = "processed";
         data.processedBy = processedBy;
         data.processedAt = (/* @__PURE__ */ new Date()).toISOString();
         data.notes = notes;
-        const processedPath = path16.join(this.inboxRoot, "processed", `${id}.json`);
-        fs14.renameSync(foundPath, processedPath);
-        fs14.writeFileSync(processedPath, JSON.stringify(data, null, 2));
+        const processedPath = path19.join(this.inboxRoot, "processed", `${id}.json`);
+        fs18.renameSync(foundPath, processedPath);
+        fs18.writeFileSync(processedPath, JSON.stringify(data, null, 2));
         this._gitAddAndCommit(this.inboxRoot, `Mark task ${id} as processed`);
         try {
           execSync3("git push", { stdio: "ignore" });
@@ -3320,7 +3512,7 @@ var init_deployment_mode = __esm({
 });
 
 // lib/intake/queue.mjs
-import path17 from "node:path";
+import path20 from "node:path";
 function resolveBackend(env) {
   const override = env?.[INTAKE_QUEUE_BACKEND_ENV_KEY];
   if (override === "filesystem" || override === "git") return override;
@@ -3330,7 +3522,7 @@ function resolveBackend(env) {
 function resolveProject(rootDir, env) {
   const explicit = env?.[INTAKE_PROJECT_ENV_KEY];
   if (explicit && explicit.trim()) return explicit.trim();
-  return path17.basename(path17.resolve(rootDir)).trim() || "construct";
+  return path20.basename(path20.resolve(rootDir)).trim() || "construct";
 }
 function createIntakeQueue(rootDir, env = process.env, opts = {}) {
   const backend = opts.backend || resolveBackend(env);
@@ -3571,9 +3763,9 @@ var init_research = __esm({
 });
 
 // lib/intake/classify.mjs
-import path18 from "node:path";
+import path21 from "node:path";
 function formatTriageLine(sourcePath, triage) {
-  const basename = sourcePath ? path18.basename(sourcePath) : "(unknown source)";
+  const basename = sourcePath ? path21.basename(sourcePath) : "(unknown source)";
   if (!triage || triage.intakeType === "unknown") {
     return `${basename} \u2192 unclassified \xB7 owner: ${triage?.primaryOwner ?? "orchestrator"} \xB7 next: ${triage?.recommendedAction ?? "summarize"}`;
   }
@@ -3593,13 +3785,13 @@ var init_classify = __esm({
 });
 
 // lib/policy/engine.mjs
-import path19 from "node:path";
-import { fileURLToPath } from "node:url";
+import path22 from "node:path";
+import { fileURLToPath as fileURLToPath2 } from "node:url";
 var MODULE_DIR, DEFAULT_MANIFEST_PATH;
 var init_engine = __esm({
   "lib/policy/engine.mjs"() {
-    MODULE_DIR = path19.dirname(fileURLToPath(import.meta.url));
-    DEFAULT_MANIFEST_PATH = path19.join(MODULE_DIR, "..", "..", "specialists", "role-manifests.json");
+    MODULE_DIR = path22.dirname(fileURLToPath2(import.meta.url));
+    DEFAULT_MANIFEST_PATH = path22.join(MODULE_DIR, "..", "..", "specialists", "role-manifests.json");
   }
 });
 
@@ -3774,15 +3966,15 @@ var init_broker = __esm({
 });
 
 // lib/profiles/loader.mjs
-import { existsSync as existsSync4, readFileSync as readFileSync4, readdirSync as readdirSync3 } from "node:fs";
-import { dirname, join as join2, resolve } from "node:path";
-import { fileURLToPath as fileURLToPath2 } from "node:url";
+import { existsSync as existsSync4, readFileSync as readFileSync3, readdirSync as readdirSync3 } from "node:fs";
+import { dirname as dirname2, join as join4, resolve } from "node:path";
+import { fileURLToPath as fileURLToPath3 } from "node:url";
 function loadProfile(id) {
   if (!id || typeof id !== "string") return null;
-  const path37 = join2(PROFILES_DIR, `${id}.json`);
-  if (!existsSync4(path37)) return null;
+  const path40 = join4(PROFILES_DIR, `${id}.json`);
+  if (!existsSync4(path40)) return null;
   try {
-    const raw = JSON.parse(readFileSync4(path37, "utf8"));
+    const raw = JSON.parse(readFileSync3(path40, "utf8"));
     return raw;
   } catch {
     return null;
@@ -3790,10 +3982,10 @@ function loadProfile(id) {
 }
 function loadCustomProfile(cwd) {
   if (!cwd) return null;
-  const path37 = join2(cwd, ".cx", "profile.json");
-  if (!existsSync4(path37)) return null;
+  const path40 = join4(cwd, ".cx", "profile.json");
+  if (!existsSync4(path40)) return null;
   try {
-    const raw = JSON.parse(readFileSync4(path37, "utf8"));
+    const raw = JSON.parse(readFileSync3(path40, "utf8"));
     if (raw && raw.custom === true) return raw;
     return null;
   } catch {
@@ -3816,10 +4008,10 @@ function resolveActiveProfile(cwd, configProfileId = null) {
 }
 function readProfileFromProjectConfig(cwd) {
   if (!cwd) return null;
-  const p = join2(cwd, "construct.config.json");
+  const p = join4(cwd, "construct.config.json");
   if (!existsSync4(p)) return null;
   try {
-    const raw = JSON.parse(readFileSync4(p, "utf8"));
+    const raw = JSON.parse(readFileSync3(p, "utf8"));
     return typeof raw?.profile === "string" ? raw.profile : null;
   } catch {
     return null;
@@ -3836,12 +4028,12 @@ function minimalRndFallback() {
     rebrand: { intakeQueueLabel: "R&D intake queue", signalNoun: "signal" }
   };
 }
-var MODULE_DIR2, REPO_ROOT, PROFILES_DIR, DEFAULT_PROFILE_ID2;
+var MODULE_DIR2, REPO_ROOT2, PROFILES_DIR, DEFAULT_PROFILE_ID2;
 var init_loader = __esm({
   "lib/profiles/loader.mjs"() {
-    MODULE_DIR2 = dirname(fileURLToPath2(import.meta.url));
-    REPO_ROOT = resolve(MODULE_DIR2, "..", "..");
-    PROFILES_DIR = join2(REPO_ROOT, "profiles");
+    MODULE_DIR2 = dirname2(fileURLToPath3(import.meta.url));
+    REPO_ROOT2 = resolve(MODULE_DIR2, "..", "..");
+    PROFILES_DIR = join4(REPO_ROOT2, "profiles");
     DEFAULT_PROFILE_ID2 = "rnd";
   }
 });
@@ -3888,13 +4080,13 @@ var init_process_budget = __esm({
 });
 
 // lib/parity.mjs
-import path20 from "node:path";
-import { fileURLToPath as fileURLToPath3 } from "node:url";
+import path23 from "node:path";
+import { fileURLToPath as fileURLToPath4 } from "node:url";
 var MODULE_DIR3, ROOT_DIR;
 var init_parity = __esm({
   "lib/parity.mjs"() {
-    MODULE_DIR3 = path20.dirname(fileURLToPath3(import.meta.url));
-    ROOT_DIR = path20.resolve(MODULE_DIR3, "..");
+    MODULE_DIR3 = path23.dirname(fileURLToPath4(import.meta.url));
+    ROOT_DIR = path23.resolve(MODULE_DIR3, "..");
   }
 });
 
@@ -3979,34 +4171,34 @@ var init_workflow_defs = __esm({
 });
 
 // lib/artifact-manifest.mjs
-import fs15 from "node:fs";
-import path21 from "node:path";
-import { fileURLToPath as fileURLToPath4 } from "node:url";
+import fs19 from "node:fs";
+import path24 from "node:path";
+import { fileURLToPath as fileURLToPath5 } from "node:url";
 function manifestPathForRoot(root) {
-  return path21.join(root, "specialists", "artifact-manifest.json");
+  return path24.join(root, "specialists", "artifact-manifest.json");
 }
 function findConstructRoot(startPath = process.cwd()) {
-  let current = path21.resolve(startPath);
+  let current = path24.resolve(startPath);
   while (true) {
     const manifest = manifestPathForRoot(current);
-    if (fs15.existsSync(manifest)) return current;
-    const parent = path21.dirname(current);
+    if (fs19.existsSync(manifest)) return current;
+    const parent = path24.dirname(current);
     if (parent === current) break;
     current = parent;
   }
-  if (fs15.existsSync(manifestPathForRoot(PACKAGE_ROOT))) return PACKAGE_ROOT;
+  if (fs19.existsSync(manifestPathForRoot(PACKAGE_ROOT))) return PACKAGE_ROOT;
   return null;
 }
 function loadArtifactManifest({ rootDir, force = false, cwd = process.cwd() } = {}) {
   const resolvedRoot = rootDir ?? findConstructRoot(cwd) ?? PACKAGE_ROOT;
   if (cached && !force && cachedRoot === resolvedRoot) return cached;
   const p = manifestPathForRoot(resolvedRoot);
-  if (!fs15.existsSync(p)) {
+  if (!fs19.existsSync(p)) {
     cached = EMPTY_MANIFEST;
     cachedRoot = resolvedRoot;
     return cached;
   }
-  cached = JSON.parse(fs15.readFileSync(p, "utf8"));
+  cached = JSON.parse(fs19.readFileSync(p, "utf8"));
   cachedRoot = resolvedRoot;
   return cached;
 }
@@ -4033,7 +4225,7 @@ function visualRequirementsFromManifest(opts = {}) {
 var PACKAGE_ROOT, EMPTY_MANIFEST, cached, cachedRoot;
 var init_artifact_manifest = __esm({
   "lib/artifact-manifest.mjs"() {
-    PACKAGE_ROOT = path21.resolve(path21.dirname(fileURLToPath4(import.meta.url)), "..");
+    PACKAGE_ROOT = path24.resolve(path24.dirname(fileURLToPath5(import.meta.url)), "..");
     EMPTY_MANIFEST = { version: 1, artifacts: {} };
     cached = null;
     cachedRoot = null;
@@ -4123,32 +4315,32 @@ var init_postconditions = __esm({
 });
 
 // lib/contracts/violation-log.mjs
-import { join as join3, dirname as dirname2 } from "node:path";
-import { homedir as homedir2 } from "node:os";
+import { join as join5, dirname as dirname3 } from "node:path";
+import { homedir as homedir3 } from "node:os";
 var CX_DIR, LAST_AGENT;
 var init_violation_log = __esm({
   "lib/contracts/violation-log.mjs"() {
     init_rotate();
     init_project_root();
-    CX_DIR = join3(homedir2(), ".cx");
-    LAST_AGENT = join3(CX_DIR, "last-agent.json");
+    CX_DIR = join5(homedir3(), ".cx");
+    LAST_AGENT = join5(CX_DIR, "last-agent.json");
   }
 });
 
 // lib/contracts/validate.mjs
-import { join as join4, dirname as dirname3, resolve as resolve2 } from "node:path";
-import { fileURLToPath as fileURLToPath5 } from "node:url";
-var REPO_ROOT2, CONTRACTS_PATH, CONTRACTS_SCHEMA_PATH, REGISTRY_PATH;
+import { join as join6, dirname as dirname4, resolve as resolve2 } from "node:path";
+import { fileURLToPath as fileURLToPath6 } from "node:url";
+var REPO_ROOT3, CONTRACTS_PATH, CONTRACTS_SCHEMA_PATH, REGISTRY_PATH;
 var init_validate = __esm({
   "lib/contracts/validate.mjs"() {
     init_artifact_reviewers();
     init_artifact_type_from_path();
     init_postconditions();
     init_violation_log();
-    REPO_ROOT2 = resolve2(dirname3(fileURLToPath5(import.meta.url)), "..", "..");
-    CONTRACTS_PATH = join4(REPO_ROOT2, "specialists", "contracts.json");
-    CONTRACTS_SCHEMA_PATH = join4(REPO_ROOT2, "specialists", "contracts.schema.json");
-    REGISTRY_PATH = join4(REPO_ROOT2, "specialists", "registry.json");
+    REPO_ROOT3 = resolve2(dirname4(fileURLToPath6(import.meta.url)), "..", "..");
+    CONTRACTS_PATH = join6(REPO_ROOT3, "specialists", "contracts.json");
+    CONTRACTS_SCHEMA_PATH = join6(REPO_ROOT3, "specialists", "contracts.schema.json");
+    REGISTRY_PATH = join6(REPO_ROOT3, "specialists", "registry.json");
   }
 });
 
@@ -4174,28 +4366,28 @@ var init_visual_requirements = __esm({
 });
 
 // lib/registry/validate.mjs
-import path22 from "node:path";
-import { fileURLToPath as fileURLToPath6 } from "node:url";
-var MODULE_DIR4, REPO_ROOT3, REGISTRY_PATH2, STALE_MS;
+import path25 from "node:path";
+import { fileURLToPath as fileURLToPath7 } from "node:url";
+var MODULE_DIR4, REPO_ROOT4, REGISTRY_PATH2, STALE_MS;
 var init_validate2 = __esm({
   "lib/registry/validate.mjs"() {
     init_workflow_defs();
     init_visual_requirements();
-    MODULE_DIR4 = path22.dirname(fileURLToPath6(import.meta.url));
-    REPO_ROOT3 = path22.resolve(MODULE_DIR4, "..", "..");
-    REGISTRY_PATH2 = path22.join(REPO_ROOT3, "registry", "capabilities.json");
+    MODULE_DIR4 = path25.dirname(fileURLToPath7(import.meta.url));
+    REPO_ROOT4 = path25.resolve(MODULE_DIR4, "..", "..");
+    REGISTRY_PATH2 = path25.join(REPO_ROOT4, "registry", "capabilities.json");
     STALE_MS = 90 * 24 * 60 * 60 * 1e3;
   }
 });
 
 // lib/host-disposition.mjs
-import fs16 from "node:fs";
-import path23 from "node:path";
+import fs20 from "node:fs";
+import path26 from "node:path";
 function isConstructPackageRepo(dir) {
   try {
-    const pkgPath = path23.join(dir, "package.json");
-    if (!fs16.existsSync(pkgPath)) return false;
-    const pkg = JSON.parse(fs16.readFileSync(pkgPath, "utf8"));
+    const pkgPath = path26.join(dir, "package.json");
+    if (!fs20.existsSync(pkgPath)) return false;
+    const pkg = JSON.parse(fs20.readFileSync(pkgPath, "utf8"));
     if (!pkg) return false;
     if (pkg.name === "construct" || pkg.name === "@geraldmaron/construct") return true;
     return pkg.bin && (pkg.bin === "bin/construct" || typeof pkg.bin === "object" && pkg.bin.construct === "bin/construct");
@@ -4215,26 +4407,26 @@ var init_detect_existing_structure = __esm({
 });
 
 // lib/specialist-contracts.mjs
-import { dirname as dirname4, join as join5, resolve as resolve3 } from "node:path";
-import { fileURLToPath as fileURLToPath7 } from "node:url";
-var MODULE_DIR5, REPO_ROOT4, CONTRACTS_PATH2;
+import { dirname as dirname5, join as join7, resolve as resolve3 } from "node:path";
+import { fileURLToPath as fileURLToPath8 } from "node:url";
+var MODULE_DIR5, REPO_ROOT5, CONTRACTS_PATH2;
 var init_specialist_contracts = __esm({
   "lib/specialist-contracts.mjs"() {
-    MODULE_DIR5 = dirname4(fileURLToPath7(import.meta.url));
-    REPO_ROOT4 = resolve3(MODULE_DIR5, "..");
-    CONTRACTS_PATH2 = join5(REPO_ROOT4, "specialists", "contracts.json");
+    MODULE_DIR5 = dirname5(fileURLToPath8(import.meta.url));
+    REPO_ROOT5 = resolve3(MODULE_DIR5, "..");
+    CONTRACTS_PATH2 = join7(REPO_ROOT5, "specialists", "contracts.json");
   }
 });
 
 // lib/telemetry/intent-verifications.mjs
-import os9 from "node:os";
-import path24 from "node:path";
+import os10 from "node:os";
+import path27 from "node:path";
 var DEFAULT_LOG_PATH;
 var init_intent_verifications = __esm({
   "lib/telemetry/intent-verifications.mjs"() {
     init_rotate();
     init_project_root();
-    DEFAULT_LOG_PATH = path24.join(os9.homedir(), ".cx", "intent-verifications.jsonl");
+    DEFAULT_LOG_PATH = path27.join(os10.homedir(), ".cx", "intent-verifications.jsonl");
   }
 });
 
@@ -4248,12 +4440,12 @@ var init_intent_classifier = __esm({
 });
 
 // lib/orchestration/routing-tables.mjs
-import { fileURLToPath as fileURLToPath8 } from "node:url";
+import { fileURLToPath as fileURLToPath9 } from "node:url";
 var REGISTRY_PATH3;
 var init_routing_tables = __esm({
   "lib/orchestration/routing-tables.mjs"() {
     init_project_root();
-    REGISTRY_PATH3 = fileURLToPath8(new URL("../../specialists/registry.json", import.meta.url));
+    REGISTRY_PATH3 = fileURLToPath9(new URL("../../specialists/registry.json", import.meta.url));
   }
 });
 
@@ -4269,8 +4461,8 @@ var init_orchestration_policy = __esm({
 });
 
 // lib/workflow-state.mjs
-import fs17 from "node:fs";
-import path25 from "node:path";
+import fs21 from "node:fs";
+import path28 from "node:path";
 import { execSync as execSync4 } from "node:child_process";
 function normalizePhase(value, fallback = null) {
   return PHASES.includes(value) ? value : fallback;
@@ -4308,10 +4500,10 @@ function projectName(root) {
     if (match) return match[1];
   } catch {
   }
-  return path25.basename(root);
+  return path28.basename(root);
 }
 function workflowPath(root = process.cwd()) {
-  return path25.join(root, ".cx", "workflow.json");
+  return path28.join(root, ".cx", "workflow.json");
 }
 function defaultWorkflow(root = process.cwd(), title = "Untitled workflow", specRef = null) {
   const id = `${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}-${slugify3(title)}`;
@@ -4346,17 +4538,17 @@ function defaultWorkflow(root = process.cwd(), title = "Untitled workflow", spec
 }
 function loadWorkflow(root = process.cwd()) {
   const file = workflowPath(root);
-  if (!fs17.existsSync(file)) return null;
-  return normalizeWorkflow(JSON.parse(fs17.readFileSync(file, "utf8")));
+  if (!fs21.existsSync(file)) return null;
+  return normalizeWorkflow(JSON.parse(fs21.readFileSync(file, "utf8")));
 }
 function saveWorkflow(workflow, root = process.cwd()) {
   const file = workflowPath(root);
-  fs17.mkdirSync(path25.dirname(file), { recursive: true });
+  fs21.mkdirSync(path28.dirname(file), { recursive: true });
   const normalized = {
     ...normalizeWorkflow(structuredClone(workflow)),
     updatedAt: now()
   };
-  fs17.writeFileSync(file, `${JSON.stringify(normalized, null, 2)}
+  fs21.writeFileSync(file, `${JSON.stringify(normalized, null, 2)}
 `, "utf8");
   return normalized;
 }
@@ -4761,7 +4953,7 @@ function runWorkflowCli(argv = process.argv.slice(2), root = process.cwd()) {
   if (command === "from-plan") {
     const file = options._[0] || options.file;
     if (!file) throw new Error("Usage: construct workflow from-plan plan.md [--phase=implement] [--owner=cx-engineer]");
-    const markdown = fs17.readFileSync(path25.resolve(root, file), "utf8");
+    const markdown = fs21.readFileSync(path28.resolve(root, file), "utf8");
     const { workflow, count } = addTasksFromPlan(root, markdown, {
       phase: options.phase,
       owner: options.owner,
@@ -4836,16 +5028,16 @@ var init_workflow_state = __esm({
 });
 
 // lib/oracle/org-graph.mjs
-import path26 from "node:path";
-import { fileURLToPath as fileURLToPath9 } from "node:url";
+import path29 from "node:path";
+import { fileURLToPath as fileURLToPath10 } from "node:url";
 var MODULE_DIR6, PACKAGE_ROOT2;
 var init_org_graph = __esm({
   "lib/oracle/org-graph.mjs"() {
     init_workflow_state();
     init_validate2();
     init_host_disposition();
-    MODULE_DIR6 = path26.dirname(fileURLToPath9(import.meta.url));
-    PACKAGE_ROOT2 = path26.resolve(MODULE_DIR6, "../..");
+    MODULE_DIR6 = path29.dirname(fileURLToPath10(import.meta.url));
+    PACKAGE_ROOT2 = path29.resolve(MODULE_DIR6, "../..");
   }
 });
 
@@ -4855,15 +5047,51 @@ var init_audit_skills = __esm({
   }
 });
 
+// lib/specialists/prompt-schema.mjs
+import yaml from "js-yaml";
+var init_prompt_schema = __esm({
+  "lib/specialists/prompt-schema.mjs"() {
+  }
+});
+
+// lib/certification/role-cards.mjs
+var init_role_cards = __esm({
+  "lib/certification/role-cards.mjs"() {
+    init_prompt_schema();
+  }
+});
+
+// lib/certification/specialist-contracts.mjs
+var init_specialist_contracts2 = __esm({
+  "lib/certification/specialist-contracts.mjs"() {
+    init_prompt_schema();
+  }
+});
+
+// lib/certification/role-overlays.mjs
+var OVERLAY_CLASSES;
+var init_role_overlays = __esm({
+  "lib/certification/role-overlays.mjs"() {
+    init_prompt_schema();
+    OVERLAY_CLASSES = Object.freeze({
+      architect: (key) => key.startsWith("architect"),
+      engineer: (key) => key.startsWith("engineer") || key === "debugger",
+      qa: (key) => key.startsWith("qa"),
+      security: (key) => key.startsWith("security"),
+      pm: (key) => key.startsWith("product-manager")
+    });
+  }
+});
+
 // lib/telemetry/skill-calls.mjs
-import os10 from "node:os";
-import path27 from "node:path";
+import os11 from "node:os";
+import path30 from "node:path";
 var DEFAULT_LOG_PATH2;
 var init_skill_calls = __esm({
   "lib/telemetry/skill-calls.mjs"() {
     init_rotate();
     init_project_root();
-    DEFAULT_LOG_PATH2 = path27.join(os10.homedir(), ".cx", "skill-calls.jsonl");
+    DEFAULT_LOG_PATH2 = path30.join(os11.homedir(), ".cx", "skill-calls.jsonl");
   }
 });
 
@@ -4879,6 +5107,10 @@ var init_audit_specialists = __esm({
   "lib/audit-specialists.mjs"() {
     init_audit_skills();
     init_artifact_manifest();
+    init_prompt_schema();
+    init_role_cards();
+    init_specialist_contracts2();
+    init_role_overlays();
     init_role_preload();
   }
 });
@@ -4894,11 +5126,11 @@ var init_artifact_gate = __esm({
 });
 
 // lib/graph/store.mjs
-import path28 from "node:path";
+import path31 from "node:path";
 var STORE_SUBDIR;
 var init_store = __esm({
   "lib/graph/store.mjs"() {
-    STORE_SUBDIR = path28.join(".cx", "graph");
+    STORE_SUBDIR = path31.join(".cx", "graph");
   }
 });
 
@@ -4923,6 +5155,7 @@ var init_read_model = __esm({
     init_artifact_gate();
     init_store();
     init_build_from_registry();
+    init_violation_log();
     RECENT_MS = 24 * 60 * 60 * 1e3;
     CENSUS_STALE_MS = 7 * 24 * 60 * 60 * 1e3;
   }
@@ -4943,22 +5176,33 @@ var init_synthesize = __esm({
 });
 
 // lib/oracle/policy.mjs
+function isVerdictOnlyGap(gap) {
+  return VERDICT_ONLY_GAP_IDS.has(gap?.id);
+}
+var VERDICT_ONLY_GAP_IDS;
 var init_policy = __esm({
   "lib/oracle/policy.mjs"() {
+    VERDICT_ONLY_GAP_IDS = /* @__PURE__ */ new Set([
+      "beads-hygiene",
+      "workflow-misaligned",
+      "propagation-stale",
+      "census-stale",
+      "outcomes-missing"
+    ]);
   }
 });
 
 // lib/install/stage-project.mjs
 import { spawnSync as spawnSync4 } from "node:child_process";
-import { existsSync as existsSync5, copyFileSync, writeFileSync as writeFileSync4, mkdirSync as mkdirSync4, chmodSync } from "node:fs";
-import path29 from "node:path";
+import { existsSync as existsSync5, copyFileSync, writeFileSync as writeFileSync3, mkdirSync as mkdirSync4, chmodSync } from "node:fs";
+import path32 from "node:path";
 function stageProjectAdapters({ projectRoot, packageRoot, pkgVersion, log, hosts = null }) {
   if (!projectRoot) throw new Error("stageProjectAdapters: projectRoot is required");
   if (!packageRoot) throw new Error("stageProjectAdapters: packageRoot is required");
   const emit2 = typeof log === "function" ? log : () => {
   };
-  const templateDir = path29.join(packageRoot, "templates", "distribution");
-  const syncScript = path29.join(packageRoot, "scripts", "sync-specialists.mjs");
+  const templateDir = path32.join(packageRoot, "templates", "distribution");
+  const syncScript = path32.join(packageRoot, "scripts", "sync-specialists.mjs");
   ensureProjectLauncher({ projectRoot, templateDir, pkgVersion });
   emit2(`staged .construct/ launcher in ${projectRoot}`);
   if (!existsSync5(syncScript)) {
@@ -4980,12 +5224,12 @@ function stageProjectAdapters({ projectRoot, packageRoot, pkgVersion, log, hosts
   return { staged: true, synced: true };
 }
 function ensureProjectLauncher({ projectRoot, templateDir, pkgVersion }) {
-  const dotConstruct = path29.join(projectRoot, ".construct");
+  const dotConstruct = path32.join(projectRoot, ".construct");
   mkdirSync4(dotConstruct, { recursive: true });
-  mkdirSync4(path29.join(dotConstruct, "cache", "bin"), { recursive: true });
-  const versionPath = path29.join(dotConstruct, "version");
+  mkdirSync4(path32.join(dotConstruct, "cache", "bin"), { recursive: true });
+  const versionPath = path32.join(dotConstruct, "version");
   if (!existsSync5(versionPath) && pkgVersion) {
-    writeFileSync4(versionPath, pkgVersion + "\n");
+    writeFileSync3(versionPath, pkgVersion + "\n");
   }
   const copies = [
     ["run.mjs", 420],
@@ -4993,8 +5237,8 @@ function ensureProjectLauncher({ projectRoot, templateDir, pkgVersion }) {
     ["bootstrap.ps1", 420]
   ];
   for (const [name, mode] of copies) {
-    const src = path29.join(templateDir, name);
-    const dst = path29.join(dotConstruct, name);
+    const src = path32.join(templateDir, name);
+    const dst = path32.join(dotConstruct, name);
     if (!existsSync5(src)) continue;
     copyFileSync(src, dst);
     try {
@@ -5009,8 +5253,8 @@ var init_stage_project = __esm({
 });
 
 // lib/adapters-sync.mjs
-import path30 from "node:path";
-import { fileURLToPath as fileURLToPath10 } from "node:url";
+import path33 from "node:path";
+import { fileURLToPath as fileURLToPath11 } from "node:url";
 function resolveAdapterHosts({ forceAll = false, extra = [] } = {}) {
   if (forceAll) return ["claude", "opencode", "codex", "vscode", "cursor"];
   const hosts = new Set(extra);
@@ -5049,8 +5293,8 @@ var init_adapters_sync = __esm({
     init_host_capabilities();
     init_host_disposition();
     init_stage_project();
-    MODULE_DIR7 = path30.dirname(fileURLToPath10(import.meta.url));
-    PKG_ROOT = path30.resolve(MODULE_DIR7, "..");
+    MODULE_DIR7 = path33.dirname(fileURLToPath11(import.meta.url));
+    PKG_ROOT = path33.resolve(MODULE_DIR7, "..");
     HOST_ID_MAP = {
       "Claude Code": "claude",
       OpenCode: "opencode",
@@ -5070,18 +5314,18 @@ var init_adapters_sync = __esm({
 });
 
 // lib/oracle/verdicts.mjs
-import fs18 from "node:fs";
-import path31 from "node:path";
+import fs22 from "node:fs";
+import path34 from "node:path";
 function verdictsDir(projectDir) {
-  return path31.join(projectDir, ".cx", "oracle", "verdicts");
+  return path34.join(projectDir, ".cx", "oracle", "verdicts");
 }
 function readLatestVerdict(projectDir) {
   const dir = verdictsDir(projectDir);
-  if (!fs18.existsSync(dir)) return null;
-  const files = fs18.readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
+  if (!fs22.existsSync(dir)) return null;
+  const files = fs22.readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
   if (!files.length) return null;
   try {
-    const data = JSON.parse(fs18.readFileSync(path31.join(dir, files[files.length - 1]), "utf8"));
+    const data = JSON.parse(fs22.readFileSync(path34.join(dir, files[files.length - 1]), "utf8"));
     return data.latest ?? data;
   } catch {
     return null;
@@ -5093,37 +5337,37 @@ var init_verdicts = __esm({
 });
 
 // lib/beads-lock.mjs
-import path32 from "node:path";
-import { fileURLToPath as fileURLToPath11 } from "node:url";
-var __dirname, ROOT_DIR2;
+import path35 from "node:path";
+import { fileURLToPath as fileURLToPath12 } from "node:url";
+var __dirname2, ROOT_DIR2;
 var init_beads_lock = __esm({
   "lib/beads-lock.mjs"() {
-    __dirname = path32.dirname(fileURLToPath11(import.meta.url));
-    ROOT_DIR2 = path32.resolve(__dirname, "..");
+    __dirname2 = path35.dirname(fileURLToPath12(import.meta.url));
+    ROOT_DIR2 = path35.resolve(__dirname2, "..");
   }
 });
 
 // lib/beads-optimistic.mjs
-import path33 from "node:path";
-import { fileURLToPath as fileURLToPath12 } from "node:url";
-var __dirname2;
+import path36 from "node:path";
+import { fileURLToPath as fileURLToPath13 } from "node:url";
+var __dirname3;
 var init_beads_optimistic = __esm({
   "lib/beads-optimistic.mjs"() {
-    __dirname2 = path33.dirname(fileURLToPath12(import.meta.url));
+    __dirname3 = path36.dirname(fileURLToPath13(import.meta.url));
   }
 });
 
 // lib/beads-client.mjs
-import path34 from "node:path";
-import { fileURLToPath as fileURLToPath13 } from "node:url";
-var __dirname3;
+import path37 from "node:path";
+import { fileURLToPath as fileURLToPath14 } from "node:url";
+var __dirname4;
 var init_beads_client = __esm({
   "lib/beads-client.mjs"() {
     init_beads_lock();
     init_beads_optimistic();
     init_beads_lock();
     init_beads_optimistic();
-    __dirname3 = path34.dirname(fileURLToPath13(import.meta.url));
+    __dirname4 = path37.dirname(fileURLToPath14(import.meta.url));
   }
 });
 
@@ -5131,6 +5375,7 @@ var init_beads_client = __esm({
 var init_issues = __esm({
   "lib/oracle/issues.mjs"() {
     init_beads_client();
+    init_policy();
     init_routing();
   }
 });
@@ -5173,13 +5418,13 @@ var init_event_bus = __esm({
 });
 
 // lib/roles/manifest.mjs
-import { dirname as dirname5, join as join6 } from "node:path";
-import { fileURLToPath as fileURLToPath14 } from "node:url";
-var __dirname4, MANIFEST_PATH;
+import { dirname as dirname6, join as join8 } from "node:path";
+import { fileURLToPath as fileURLToPath15 } from "node:url";
+var __dirname5, MANIFEST_PATH;
 var init_manifest = __esm({
   "lib/roles/manifest.mjs"() {
-    __dirname4 = dirname5(fileURLToPath14(import.meta.url));
-    MANIFEST_PATH = join6(__dirname4, "..", "..", "specialists", "role-manifests.json");
+    __dirname5 = dirname6(fileURLToPath15(import.meta.url));
+    MANIFEST_PATH = join8(__dirname5, "..", "..", "specialists", "role-manifests.json");
   }
 });
 
@@ -5222,16 +5467,16 @@ var init_execute = __esm({
 });
 
 // lib/oracle/actions.mjs
-import fs19 from "node:fs";
-import path35 from "node:path";
-import { fileURLToPath as fileURLToPath15 } from "node:url";
+import fs23 from "node:fs";
+import path38 from "node:path";
+import { fileURLToPath as fileURLToPath16 } from "node:url";
 function pendingPath(projectDir) {
-  return path35.join(projectDir, ".cx", "oracle", "pending.jsonl");
+  return path38.join(projectDir, ".cx", "oracle", "pending.jsonl");
 }
 function listPending(projectDir) {
   const file = pendingPath(projectDir);
-  if (!fs19.existsSync(file)) return [];
-  return fs19.readFileSync(file, "utf8").split("\n").filter(Boolean).map((line) => {
+  if (!fs23.existsSync(file)) return [];
+  return fs23.readFileSync(file, "utf8").split("\n").filter(Boolean).map((line) => {
     try {
       return JSON.parse(line);
     } catch {
@@ -5252,25 +5497,25 @@ var init_actions = __esm({
     init_dispatch();
     init_execute();
     init_routing();
-    MODULE_DIR8 = path35.dirname(fileURLToPath15(import.meta.url));
+    MODULE_DIR8 = path38.dirname(fileURLToPath16(import.meta.url));
   }
 });
 
 // lib/oracle/index.mjs
-import fs20 from "node:fs";
-import path36 from "node:path";
-import { homedir as homedir3 } from "node:os";
-function runtimeDir(homeDir2 = homedir3()) {
-  return path36.join(homeDir2, ".cx", "runtime", "oracle");
+import fs24 from "node:fs";
+import path39 from "node:path";
+import { homedir as homedir4 } from "node:os";
+function runtimeDir(homeDir2 = homedir4()) {
+  return path39.join(homeDir2, ".cx", "runtime", "oracle");
 }
-function lastTickPath(homeDir2 = homedir3()) {
-  return path36.join(runtimeDir(homeDir2), "last-tick.json");
+function lastTickPath(homeDir2 = homedir4()) {
+  return path39.join(runtimeDir(homeDir2), "last-tick.json");
 }
-function readLastTick(homeDir2 = homedir3()) {
+function readLastTick(homeDir2 = homedir4()) {
   const file = lastTickPath(homeDir2);
-  if (!fs20.existsSync(file)) return null;
+  if (!fs24.existsSync(file)) return null;
   try {
-    return JSON.parse(fs20.readFileSync(file, "utf8"));
+    return JSON.parse(fs24.readFileSync(file, "utf8"));
   } catch {
     return null;
   }
@@ -5340,19 +5585,26 @@ function buildOraclePrelude({ cwd, env = process.env, homeDir: homeDir2 } = {}) 
   try {
     const home = homeDir2 ?? osHomedir();
     const last = readLastTick(home);
-    const verdict = readLatestVerdict(cwd);
+    const verdict2 = readLatestVerdict(cwd);
     const pending = listPending(cwd).filter((p) => p.status === "pending");
-    const v = verdict?.verdict ?? last?.verdict ?? "unknown";
+    const v = verdict2?.verdict ?? last?.verdict ?? "unknown";
     if (v === "healthy" && pending.length === 0) return "";
     const lines = [`
 ## Oracle overseer \xB7 verdict: **${v}**`];
-    const gapSource = verdict?.gaps ?? last?.gaps ?? [];
+    const gapSource = verdict2?.gaps ?? last?.gaps ?? [];
     const top = gapSource.filter((g) => g.severity === "high").slice(0, 3);
-    for (const g of top) lines.push(`- [${g.severity}] ${g.id}: ${g.detail}`);
+    for (const g of top) {
+      if (isVerdictOnlyGap(g)) {
+        const hint = g.id === "beads-hygiene" ? "run `construct beads drift`" : g.id === "workflow-misaligned" ? "run `construct workflow init` or `construct init`" : "see `construct oracle gaps`";
+        lines.push(`- [${g.severity}] ${g.id} (verdict-only): ${g.detail} \u2014 ${hint}`);
+      } else {
+        lines.push(`- [${g.severity}] ${g.id}: ${g.detail}`);
+      }
+    }
     if (pending.length) {
       lines.push(`Pending approvals (${pending.length}): \`construct oracle pending\``);
     }
-    lines.push("Review: `construct oracle review` \xB7 Approve: `construct oracle approve <id>`\n");
+    lines.push("Review: `construct oracle review` \xB7 Gaps: `construct oracle gaps` \xB7 Approve: `construct oracle approve <id>`\n");
     return lines.join("\n");
   } catch {
     return "";
@@ -5367,15 +5619,15 @@ function readOracleDockState({ cwd, env = process.env, homeDir: homeDir2 } = {})
     const last = readLastTick(home);
     const verdictDoc = readLatestVerdict(cwd);
     const pending = listPending(cwd).filter((p) => p.status === "pending");
-    const verdict = verdictDoc?.verdict ?? last?.verdict ?? "unknown";
+    const verdict2 = verdictDoc?.verdict ?? last?.verdict ?? "unknown";
     const gapSource = verdictDoc?.gaps ?? last?.gaps ?? [];
     const topGaps = gapSource.filter((g) => g.severity === "high").slice(0, 3);
-    const visible = verdict !== "healthy" || pending.length > 0;
-    const parts = [`verdict ${verdict}`];
+    const visible = verdict2 !== "healthy" || pending.length > 0;
+    const parts = [`verdict ${verdict2}`];
     if (pending.length) parts.push(`${pending.length} pending`);
     return {
       visible,
-      verdict,
+      verdict: verdict2,
       pendingCount: pending.length,
       topGaps,
       summary: parts.join(" \xB7 ")
@@ -5388,12 +5640,16 @@ function formatOracleDockDetail(state) {
   if (!state?.visible) return "Oracle: healthy \u2014 no pending approvals.";
   const lines = [`Oracle overseer \xB7 ${state.summary}`];
   for (const g of state.topGaps || []) {
-    lines.push(`  [${g.severity}] ${g.id}: ${g.detail}`);
+    if (isVerdictOnlyGap(g)) {
+      lines.push(`  [${g.severity}] ${g.id} (verdict-only): ${g.detail}`);
+    } else {
+      lines.push(`  [${g.severity}] ${g.id}: ${g.detail}`);
+    }
   }
   if (state.pendingCount > 0) {
     lines.push("  Pending: construct oracle pending");
   }
-  lines.push("  Review: construct oracle review");
+  lines.push("  Review: construct oracle review \xB7 Gaps: construct oracle gaps");
   return lines.join("\n");
 }
 var init_session_prelude = __esm({
@@ -5405,6 +5661,7 @@ var init_session_prelude = __esm({
     init_oracle();
     init_actions();
     init_verdicts();
+    init_policy();
   }
 });
 
@@ -5414,24 +5671,27 @@ import { render, Box as Box4, Text as Text4, useApp, useInput, useStdout } from 
 
 // lib/chat/tui/usage.mjs
 function addInto(target, tokens = {}) {
+  if (!target || typeof target !== "object") return;
   for (const key of Object.keys(target)) {
     if (Number.isFinite(tokens[key])) target[key] += tokens[key];
   }
 }
 function addUsage(session, event) {
-  if (!session || !event) return;
-  session.turns += 1;
+  if (!session || !event || !session.tokens) return;
+  session.turns = (session.turns || 0) + 1;
   addInto(session.tokens, event.tokens || {});
-  if (event.cost && Number.isFinite(event.cost.amount)) {
+  if (event.cost && Number.isFinite(event.cost.amount) && session.cost) {
     session.cost.amount += event.cost.amount;
     if (event.cost.currency) session.cost.currency = event.cost.currency;
   }
-  if (event.subAgent && event.tokens) {
+  if (event.subAgent && event.tokens && session.bySubAgent?.get) {
     const prev = session.bySubAgent.get(event.subAgent) || { input: 0, output: 0, total: 0 };
     addInto(prev, event.tokens);
     session.bySubAgent.set(event.subAgent, prev);
   }
-  session.history.push({ tokens: event.tokens || null, cost: event.cost || null, model: event.model || null });
+  if (Array.isArray(session.history)) {
+    session.history.push({ tokens: event.tokens || null, cost: event.cost || null, model: event.model || null });
+  }
 }
 function formatTokens(n) {
   if (!Number.isFinite(n)) return null;
@@ -5719,7 +5979,7 @@ async function runTurnWithFallback({
 
 // lib/chat/session-context.mjs
 import fs9 from "node:fs";
-import path10 from "node:path";
+import path9 from "node:path";
 import { execSync as execSync2 } from "node:child_process";
 function buildPlanContext({ session, cwd = process.cwd(), turnBlocks = [], text = "" } = {}) {
   const turns = turnBlocks.filter((item) => item.kind === "turn");
@@ -5730,7 +5990,7 @@ function buildPlanContext({ session, cwd = process.cwd(), turnBlocks = [], text 
   } catch {
   }
   let projectSummary = null;
-  const contextPath = path10.join(cwd, ".cx", "context.md");
+  const contextPath = path9.join(cwd, ".cx", "context.md");
   try {
     if (fs9.existsSync(contextPath)) {
       projectSummary = fs9.readFileSync(contextPath, "utf8").slice(0, 500);
@@ -5753,8 +6013,8 @@ function buildPlanContext({ session, cwd = process.cwd(), turnBlocks = [], text 
 
 // lib/chat/export.mjs
 init_project_root();
-import fs11 from "node:fs";
-import path12 from "node:path";
+import fs14 from "node:fs";
+import path14 from "node:path";
 
 // lib/chat/present.mjs
 function summarizeToolCalls(tools = []) {
@@ -5870,20 +6130,167 @@ function formatGateRows(overlay) {
   return rows;
 }
 
+// lib/chat/context-continuation.mjs
+var CONTEXT_LAYER_KINDS = Object.freeze([
+  "static-instructions",
+  "role-guidance",
+  "task-packet",
+  "validated-evidence",
+  "tool-results",
+  "conversation-summary",
+  "learned-patterns",
+  "user-constraints",
+  "approvals",
+  "blockers"
+]);
+var COMPACTION_ELIGIBILITY = Object.freeze(["required", "reconstructible", "compactible"]);
+var LAYER_DISPOSITIONS = Object.freeze(["retained", "referenced", "elided"]);
+var DEFAULT_ELIGIBILITY = Object.freeze({
+  "user-constraints": "required",
+  approvals: "required",
+  "task-packet": "required",
+  "validated-evidence": "required",
+  blockers: "required",
+  "static-instructions": "reconstructible",
+  "role-guidance": "reconstructible",
+  "learned-patterns": "reconstructible",
+  "conversation-summary": "compactible",
+  "tool-results": "compactible"
+});
+function rehydrateContinuation(packet, { resolveSource = null } = {}) {
+  const layers = Array.isArray(packet?.layers) ? packet.layers : [];
+  return layers.map((layer) => {
+    if (layer.disposition === "referenced") {
+      const content = typeof resolveSource === "function" ? resolveSource(layer.sourceId, layer) : null;
+      return { id: layer.id, kind: layer.kind, content: typeof content === "string" ? content : null, resolved: typeof content === "string", sourceId: layer.sourceId };
+    }
+    if (layer.disposition === "elided") {
+      return { id: layer.id, kind: layer.kind, content: null, elided: true, tokens: layer.tokens, sourceId: layer.sourceId };
+    }
+    return { id: layer.id, kind: layer.kind, content: layer.content ?? "" };
+  });
+}
+
+// lib/chat/system-prompt.mjs
+var CHAT_SYSTEM_BASE = `You are Construct \u2014 a transparent terminal coding agent operating inside a real repository.
+
+Rules:
+- Use read, grep, glob, and construct_tool before making load-bearing claims about this project.
+- For competitive, landscape, or research questions: consult repo files (docs/, ADR/, STRATEGY.md) and cite paths.
+- Call construct_tool with orchestration_policy or knowledge_search when routing or prior artifacts matter.
+- Mark any claim you cannot tie to a tool result as [unverified].
+- Prefer structured markdown answers: headings, short paragraphs, compact tables when useful.
+- Keep actions scoped to the user's request; use write/edit/shell only when asked.`;
+var CHAT_SYSTEM_SMALL = `You are Construct in a local/small-model profile. Be concise.
+- One tool call at a time when possible; cite file paths for claims.
+- Use construct_tool for orchestration_policy when routing is non-trivial.
+- Mark unverified claims explicitly.`;
+function turnPolicyLines(overlay) {
+  if (!overlay) return [];
+  const lines = [];
+  if (overlay.intent || overlay.workCategory) {
+    lines.push(`Classified intent: ${overlay.intent || "unknown"}${overlay.workCategory ? ` (${overlay.workCategory})` : ""}.`);
+  }
+  if (overlay.specialists?.length) {
+    lines.push(`Resolved route (a policy overlay, not separate agents): ${overlay.specialists.join(" -> ")}.`);
+  }
+  if (overlay.externalResearch?.required) {
+    lines.push("Repo evidence is REQUIRED this turn: grep/read the relevant files and cite their paths. Do not write a long essay without it.");
+  }
+  if (overlay.assumptionsBlocked) {
+    lines.push("Do not infer the project\u2019s purpose, architecture, or behavior from file names or prior knowledge \u2014 read the files first. Mark any claim you cannot tie to a tool result as [unverified].");
+  }
+  return lines;
+}
+function buildSystemPrompt({ base = CHAT_SYSTEM_BASE, overlay = null, capabilityTier = "full" } = {}) {
+  const effectiveBase = capabilityTier === "full" ? base : CHAT_SYSTEM_SMALL;
+  const lines = turnPolicyLines(overlay);
+  return lines.length ? `${effectiveBase}
+
+Turn policy (internal \u2014 never restate this to the user):
+${lines.join("\n")}` : effectiveBase;
+}
+
+// lib/chat/continuation-source.mjs
+function observationText(record) {
+  return [record?.summary, record?.content].filter(Boolean).join(" \u2014 ").trim();
+}
+function createContinuationResolver({
+  systemText = null,
+  overlay = null,
+  capabilityTier = "full",
+  cwd = process.cwd(),
+  learnedPatterns = null
+} = {}) {
+  const composedSystem = typeof systemText === "string" ? systemText : buildSystemPrompt({ overlay, capabilityTier });
+  const cache3 = /* @__PURE__ */ new Map([["prompt:system", composedSystem]]);
+  if (typeof learnedPatterns === "string") cache3.set("learned-patterns", learnedPatterns);
+  function resolveSource(sourceId) {
+    if (sourceId == null) return null;
+    if (cache3.has(sourceId)) return cache3.get(sourceId);
+    if (sourceId.startsWith("prompt:") || sourceId.startsWith("role:")) return composedSystem;
+    if (sourceId === "learned-patterns" || sourceId.startsWith("observation:")) return cache3.get("learned-patterns") ?? null;
+    return null;
+  }
+  async function loadLearnedPatterns(query, { limit = 5 } = {}) {
+    try {
+      const { searchObservations: searchObservations2 } = await Promise.resolve().then(() => (init_observation_store(), observation_store_exports));
+      const results = await searchObservations2(cwd, query, { limit });
+      const text = (results || []).map(observationText).filter(Boolean).map((line) => `- ${line}`).join("\n");
+      cache3.set("learned-patterns", text);
+      return text;
+    } catch {
+      return cache3.get("learned-patterns") ?? null;
+    }
+  }
+  return { resolveSource, loadLearnedPatterns, get systemText() {
+    return composedSystem;
+  } };
+}
+
 // lib/chat/export.mjs
 function exportDir({ cwd }) {
   const base = resolveProjectScopedPath("chat-sessions", { cwd, ensureDir: true });
-  const dir = path12.join(base, "exports");
-  fs11.mkdirSync(dir, { recursive: true });
+  const dir = path14.join(base, "exports");
+  fs14.mkdirSync(dir, { recursive: true });
   return dir;
 }
-function turnToMarkdown(turn) {
+function continuationToMarkdown(packet, { cwd }) {
+  if (!packet || typeof packet !== "object") return "";
+  const resolver = createContinuationResolver({ cwd });
+  const layers = rehydrateContinuation(packet, { resolveSource: resolver.resolveSource });
+  const budget = packet.budget || {};
+  const lines = [
+    "### context continuation",
+    "",
+    `compacted to fit ~${budget.triggerTokens ?? "n/a"} tokens \u2014 retained ${budget.retainedTokens ?? 0}, summarized ${budget.elidedTokens ?? 0}, referenced ${budget.referencedCount ?? 0}`
+  ];
+  if (packet.blocker) {
+    lines.push("", `blocker: ${packet.blocker.reason} (required ${packet.blocker.requiredTokens} > budget ${packet.blocker.budgetTokens})`);
+  }
+  const reconstructed = layers.filter((l) => l.sourceId || l.elided);
+  if (reconstructed.length) {
+    lines.push("", "layers on rehydrate:");
+    for (const layer of reconstructed) {
+      if (layer.elided) lines.push(`- ${layer.kind}: summarized (elided)`);
+      else lines.push(`- ${layer.kind}: ${layer.resolved ? `re-derived from ${layer.sourceId}` : `unresolved (${layer.sourceId})`}`);
+    }
+  }
+  return lines.join("\n");
+}
+function turnToMarkdown(turn, { cwd = process.cwd() } = {}) {
   const lines = [`## you`, "", turn.userText || "", ""];
-  const src = summarizeSources(turn.sources || []);
+  const evidence = turn.evidence || null;
+  if (evidence) lines.push(`evidence: ${evidence.status}${evidence.reasonCodes?.length ? ` (${evidence.reasonCodes.join(", ")})` : ""}`, "");
+  const src = summarizeSources(evidence?.records?.map((record) => ({ tool: record.tool, ref: record.target })) || turn.sources || []);
   if (src.total) {
     lines.push(`sources: ${src.refs.join(", ")}`, "");
   }
   lines.push("## construct", "", turn.assistant || "(no answer)", "");
+  if (turn.continuation) {
+    const cont = continuationToMarkdown(turn.continuation, { cwd });
+    if (cont) lines.push("", cont, "");
+  }
   return lines.join("\n");
 }
 function exportTurns(turnBlocks, { scope = "last", cwd = process.cwd() } = {}) {
@@ -5892,16 +6299,16 @@ function exportTurns(turnBlocks, { scope = "last", cwd = process.cwd() } = {}) {
   let selected = turns;
   if (scope === "last") selected = [turns[turns.length - 1]];
   else if (scope === "turn" && turns.length) selected = [turns[turns.length - 1]];
-  const body = selected.map(turnToMarkdown).join("\n---\n\n");
+  const body = selected.map((turn) => turnToMarkdown(turn, { cwd })).join("\n---\n\n");
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-  const file = path12.join(exportDir({ cwd }), `${stamp}-${scope}-answer.md`);
-  fs11.writeFileSync(file, `${body}
+  const file = path14.join(exportDir({ cwd }), `${stamp}-${scope}-answer.md`);
+  fs14.writeFileSync(file, `${body}
 `, "utf8");
   return { ok: true, path: file, count: selected.length };
 }
 
 // lib/chat/config.mjs
-import fs12 from "node:fs";
+import fs15 from "node:fs";
 init_project_root();
 var LAYER_KEYS = ["thinking", "path", "specialists", "tools", "observability"];
 var PERMISSION_MODES = ["ask", "allow_once", "allow_always", "reject"];
@@ -5926,7 +6333,7 @@ function saveChatConfig(config, { cwd = process.cwd() } = {}) {
     if (config[key] == null) continue;
     persisted[key] = key === "layers" ? { ...config.layers } : key === "ui" ? { ...config.ui } : config[key];
   }
-  fs12.writeFileSync(target, `${JSON.stringify(persisted, null, 2)}
+  fs15.writeFileSync(target, `${JSON.stringify(persisted, null, 2)}
 `);
   return target;
 }
@@ -6017,7 +6424,430 @@ function applySessionSetting(session, layers, key, rawValue, { cwd, hostId = "co
 // lib/chat/model-picker.mjs
 init_secret_resolver();
 init_model_router();
-init_catalog();
+
+// lib/models/provider-poll.mjs
+init_secret_resolver();
+init_model_router();
+init_installed_models();
+import fs17 from "node:fs";
+import os9 from "node:os";
+import path16 from "node:path";
+
+// lib/model-pricing.mjs
+import fs16 from "node:fs";
+import os8 from "node:os";
+import path15 from "node:path";
+var DEFAULT_CACHE_FILE = path15.join(os8.homedir(), ".cx", "model-pricing.json");
+var CACHE_TTL_MS2 = 5 * 60 * 1e3;
+var OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/models";
+var STATIC_PRICING = {
+  "anthropic/claude-opus-4-6": { input: 15, output: 75 },
+  "anthropic/claude-sonnet-4-6": { input: 3, output: 15 },
+  "anthropic/claude-haiku-4-5-20251001": { input: 0.8, output: 4 },
+  "openai/gpt-5.4": { input: 12, output: 60 },
+  "openai/gpt-5.1": { input: 2.5, output: 12.5 },
+  "openai/gpt-5.1-mini": { input: 0.6, output: 3 }
+};
+var LOCAL_PRICING = { input: 0, output: 0, source: "local", label: "free \xB7 runs locally" };
+function readCache(cacheFile) {
+  try {
+    const raw = fs16.readFileSync(cacheFile, "utf8");
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && parsed.fetchedAt) return parsed;
+  } catch {
+  }
+  return null;
+}
+function writeCache(cacheFile, payload) {
+  try {
+    fs16.mkdirSync(path15.dirname(cacheFile), { recursive: true });
+    fs16.writeFileSync(cacheFile, JSON.stringify(payload, null, 2));
+  } catch {
+  }
+}
+function isCacheFresh(cache3, now2 = Date.now()) {
+  if (!cache3 || typeof cache3.fetchedAt !== "number") return false;
+  const age = now2 - cache3.fetchedAt;
+  if (age < 0) return false;
+  return age < CACHE_TTL_MS2;
+}
+async function fetchOpenRouterPricing({ fetchImpl = globalThis.fetch, signal } = {}) {
+  if (typeof fetchImpl !== "function") return null;
+  let res;
+  try {
+    res = await fetchImpl(OPENROUTER_ENDPOINT, { signal });
+  } catch {
+    return null;
+  }
+  if (!res?.ok) return null;
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    return null;
+  }
+  const list = Array.isArray(data?.data) ? data.data : [];
+  const map = {};
+  for (const entry of list) {
+    if (!entry?.id) continue;
+    const p = entry.pricing || {};
+    const input = Number(p.prompt);
+    const output = Number(p.completion);
+    if (!Number.isFinite(input) || !Number.isFinite(output)) continue;
+    map[`openrouter/${entry.id}`] = {
+      input: input * 1e6,
+      output: output * 1e6,
+      context: entry.context_length || null
+    };
+  }
+  return map;
+}
+async function getPricingForModels(modelIds, { fetchImpl, signal, now: now2 = Date.now(), cacheFile = DEFAULT_CACHE_FILE } = {}) {
+  const result = {};
+  const needsRemote = [];
+  for (const id of modelIds || []) {
+    if (typeof id !== "string" || !id) continue;
+    if (/^ollama\//.test(id) || /^local\//.test(id)) {
+      result[id] = { ...LOCAL_PRICING, unit: "1M tokens", currency: "USD" };
+      continue;
+    }
+    if (STATIC_PRICING[id]) {
+      result[id] = { ...STATIC_PRICING[id], unit: "1M tokens", currency: "USD", source: "static" };
+      continue;
+    }
+    if (/^openrouter\//.test(id)) {
+      needsRemote.push(id);
+      continue;
+    }
+    result[id] = null;
+  }
+  if (needsRemote.length === 0) return result;
+  let cache3 = readCache(cacheFile);
+  if (!isCacheFresh(cache3, now2)) {
+    const fresh = await fetchOpenRouterPricing({ fetchImpl, signal });
+    if (fresh) {
+      cache3 = { fetchedAt: now2, models: fresh };
+      writeCache(cacheFile, cache3);
+    }
+  }
+  const remoteMap = cache3?.models ?? {};
+  for (const id of needsRemote) {
+    const hit = remoteMap[id];
+    result[id] = hit ? { input: hit.input, output: hit.output, context: hit.context, unit: "1M tokens", currency: "USD", source: "openrouter" } : null;
+  }
+  return result;
+}
+
+// lib/models/provider-poll.mjs
+var FETCH_TIMEOUT_MS2 = 1e4;
+var CACHE_TTL_MS3 = 10 * 60 * 1e3;
+var CACHE_FILENAME2 = "provider-catalog-cache.json";
+var PROVIDER_LABELS = {
+  anthropic: "Anthropic",
+  openai: "OpenAI",
+  "github-copilot": "GitHub Copilot",
+  openrouter: "OpenRouter",
+  ollama: "Ollama (local)",
+  local: "Local"
+};
+var PROVIDER_ORDER = ["anthropic", "openai", "github-copilot", "openrouter", "ollama", "local"];
+function cachePath2(homeDir2 = os9.homedir()) {
+  return path16.join(homeDir2, ".cx", CACHE_FILENAME2);
+}
+async function fetchJson(url, { headers = {}, signal } = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS2);
+  try {
+    const res = await fetch(url, { headers, signal: signal || controller.signal });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+function isFreePricing(pricing) {
+  return pricing?.prompt === "0" && pricing?.completion === "0";
+}
+function openRouterCapabilities(model) {
+  const params = Array.isArray(model.supported_parameters) ? model.supported_parameters : [];
+  const inputs = model.architecture?.input_modalities || [];
+  return {
+    reasoning: params.includes("reasoning") || params.includes("include_reasoning"),
+    tools: params.includes("tools") || params.includes("tool_choice"),
+    vision: Array.isArray(inputs) && inputs.includes("image")
+  };
+}
+async function pollOpenRouter({ env = process.env } = {}) {
+  const apiKey = resolveFirstSecret(["OPENROUTER_API_KEY", "OPEN_ROUTER_API_KEY"], { env });
+  const headers = apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+  const data = await fetchJson("https://openrouter.ai/api/v1/models", { headers });
+  if (!data) return null;
+  const list = Array.isArray(data?.data) ? data.data : [];
+  const models = [];
+  for (const m of list) {
+    if (!m?.id) continue;
+    const free = isFreePricing(m.pricing);
+    const input = Number(m.pricing?.prompt);
+    const output = Number(m.pricing?.completion);
+    const caps = openRouterCapabilities(m);
+    models.push({
+      id: `openrouter/${m.id}`,
+      label: m.name || m.id,
+      provider: "openrouter",
+      free,
+      pricing: Number.isFinite(input) && Number.isFinite(output) ? { input: input * 1e6, output: output * 1e6 } : null,
+      context: Number(m.context_length) || null,
+      reasoning: caps.reasoning,
+      tools: caps.tools,
+      toolsKnown: true,
+      vision: caps.vision,
+      source: "live"
+    });
+  }
+  return models;
+}
+var OPENAI_NON_CHAT = /(embedding|whisper|tts|audio|realtime|image|dall-e|moderation|search|babbage|davinci|transcribe|sora)/i;
+async function pollOpenAI({ env = process.env } = {}) {
+  const apiKey = resolveFirstSecret(["OPENAI_API_KEY"], { env });
+  if (!apiKey) return null;
+  const data = await fetchJson("https://api.openai.com/v1/models", {
+    headers: { Authorization: `Bearer ${apiKey}` }
+  });
+  if (!data) return null;
+  const list = Array.isArray(data?.data) ? data.data : [];
+  const models = [];
+  for (const m of list) {
+    const nativeId = m?.id;
+    if (!nativeId) continue;
+    if (OPENAI_NON_CHAT.test(nativeId)) continue;
+    if (!/^(gpt-|o\d|chatgpt)/i.test(nativeId)) continue;
+    models.push({
+      id: `openai/${nativeId}`,
+      label: nativeId,
+      provider: "openai",
+      free: false,
+      pricing: null,
+      context: null,
+      reasoning: /^o\d/i.test(nativeId),
+      tools: !/instruct/i.test(nativeId),
+      toolsKnown: true,
+      vision: false,
+      source: "live"
+    });
+  }
+  return models;
+}
+async function pollAnthropic({ env = process.env } = {}) {
+  const apiKey = resolveFirstSecret(["ANTHROPIC_API_KEY"], { env });
+  if (!apiKey) return null;
+  const data = await fetchJson("https://api.anthropic.com/v1/models?limit=100", {
+    headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01" }
+  });
+  if (!data) return null;
+  const list = Array.isArray(data?.data) ? data.data : [];
+  const models = [];
+  for (const m of list) {
+    const nativeId = m?.id;
+    if (!nativeId) continue;
+    models.push({
+      id: `anthropic/${nativeId}`,
+      label: m.display_name || nativeId,
+      provider: "anthropic",
+      free: false,
+      pricing: null,
+      context: null,
+      reasoning: false,
+      tools: true,
+      toolsKnown: true,
+      vision: false,
+      source: "live"
+    });
+  }
+  return models;
+}
+function copilotReasoning(supports) {
+  const effort = supports.reasoning_effort;
+  if (Array.isArray(effort) && effort.some((e) => e && e !== "none")) return true;
+  return Boolean(supports.adaptive_thinking);
+}
+async function pollCopilot() {
+  try {
+    const { getCopilotToken: getCopilotToken2, copilotApiHeaders: copilotApiHeaders2, COPILOT_API_BASE: COPILOT_API_BASE2 } = await Promise.resolve().then(() => (init_copilot_auth(), copilot_auth_exports));
+    const token = await getCopilotToken2();
+    const data = await fetchJson(`${COPILOT_API_BASE2}/models`, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}`, ...copilotApiHeaders2() }
+    });
+    if (!data) return null;
+    const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    const seen = /* @__PURE__ */ new Set();
+    const models = [];
+    for (const m of list) {
+      const nativeId = m?.id || m?.model;
+      if (!nativeId || seen.has(nativeId)) continue;
+      if (m?.model_picker_enabled === false) continue;
+      if (m?.capabilities?.type && m.capabilities.type !== "chat") continue;
+      seen.add(nativeId);
+      const caps = m?.capabilities || {};
+      const supports = caps.supports || {};
+      models.push({
+        id: `github-copilot/${nativeId}`,
+        label: m?.name || nativeId,
+        provider: "github-copilot",
+        free: false,
+        pricing: null,
+        context: Number(caps.limits?.max_prompt_tokens || caps.limits?.max_context_window_tokens) || null,
+        reasoning: copilotReasoning(supports),
+        tools: Boolean(supports.tool_calls),
+        toolsKnown: true,
+        vision: Boolean(supports.vision) || Boolean(caps.limits?.vision),
+        source: "live"
+      });
+    }
+    return models;
+  } catch {
+    return null;
+  }
+}
+function pollOllama({ env = process.env } = {}) {
+  const { models: installed, listable } = listInstalledOllamaModels({ env });
+  if (!listable || !installed) return null;
+  const models = [];
+  for (const native of installed) {
+    models.push({
+      id: `ollama/${native}`,
+      label: native,
+      provider: "ollama",
+      free: true,
+      pricing: { input: 0, output: 0 },
+      context: null,
+      reasoning: false,
+      tools: false,
+      toolsKnown: false,
+      vision: false,
+      source: "live"
+    });
+  }
+  return models;
+}
+var UNREACHABLE_HINTS = {
+  ollama: "Ollama server not reachable \u2014 start it with `ollama serve`"
+};
+function unreachableHint(groupId, label) {
+  return {
+    id: `__unreachable__/${groupId}`,
+    label: UNREACHABLE_HINTS[groupId] || `${label} unreachable \u2014 check credentials or connection`,
+    provider: groupId,
+    free: false,
+    pricing: null,
+    context: null,
+    reasoning: false,
+    tools: false,
+    vision: false,
+    disabled: true,
+    source: "hint"
+  };
+}
+function providerGroupId(familyId) {
+  return familyId.startsWith("openrouter") ? "openrouter" : familyId;
+}
+async function pollLiveFor(groupId, env) {
+  if (groupId === "openrouter") return pollOpenRouter({ env });
+  if (groupId === "openai") return pollOpenAI({ env });
+  if (groupId === "anthropic") return pollAnthropic({ env });
+  if (groupId === "github-copilot") return pollCopilot();
+  if (groupId === "ollama") return pollOllama({ env });
+  return null;
+}
+async function enrichPricing(models, { env }) {
+  const needPricing = models.filter((m) => !m.pricing && m.provider !== "ollama" && m.provider !== "local").map((m) => m.id);
+  if (!needPricing.length) return models;
+  let priceMap = {};
+  try {
+    priceMap = await getPricingForModels(needPricing);
+  } catch {
+  }
+  return models.map((m) => {
+    if (m.pricing || !priceMap[m.id]) return m;
+    const hit = priceMap[m.id];
+    return { ...m, pricing: { input: hit.input, output: hit.output } };
+  });
+}
+async function pollConfiguredProviders({ env = process.env, cwd = process.cwd(), homeDir: homeDir2 = os9.homedir() } = {}) {
+  const { providers } = getProviderModelCatalog({ env, cwd });
+  const configured = providers.filter((p) => p.configured);
+  const groupIds = [];
+  const groupForId = /* @__PURE__ */ new Map();
+  for (const provider of configured) {
+    const gid = providerGroupId(provider.id);
+    if (!groupForId.has(gid)) {
+      groupForId.set(gid, { id: gid, label: PROVIDER_LABELS[gid] || provider.label });
+      groupIds.push(gid);
+    }
+  }
+  const cached2 = readProviderCatalogCache({ homeDir: homeDir2, maxAgeMs: Infinity }) || [];
+  const cachedById = new Map(cached2.map((g) => [g.id, g]));
+  const polled = await Promise.all(groupIds.map(async (gid) => {
+    let live = null;
+    try {
+      live = await pollLiveFor(gid, env);
+    } catch {
+      live = null;
+    }
+    return { gid, live };
+  }));
+  const groups = [];
+  const liveGroupsToCache = [];
+  for (const { gid, live } of polled) {
+    const group = groupForId.get(gid);
+    if (Array.isArray(live)) {
+      const enriched = await enrichPricing(live, { env });
+      groups.push({ id: gid, label: group.label, models: enriched, live: true });
+      liveGroupsToCache.push({ id: gid, label: group.label, models: enriched });
+      continue;
+    }
+    const cachedGroup = cachedById.get(gid);
+    if (cachedGroup?.models?.length) {
+      groups.push({
+        id: gid,
+        label: group.label,
+        models: cachedGroup.models.map((m) => ({ ...m, source: "cached" })),
+        live: false
+      });
+      liveGroupsToCache.push(cachedGroup);
+      continue;
+    }
+    groups.push({ id: gid, label: group.label, models: [unreachableHint(gid, group.label)], live: false });
+  }
+  groups.sort((a, b) => {
+    const ai = PROVIDER_ORDER.indexOf(a.id);
+    const bi = PROVIDER_ORDER.indexOf(b.id);
+    return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi) || a.label.localeCompare(b.label);
+  });
+  if (liveGroupsToCache.length) writeProviderCatalogCache(liveGroupsToCache, { homeDir: homeDir2 });
+  return groups;
+}
+function readProviderCatalogCache({ homeDir: homeDir2 = os9.homedir(), maxAgeMs = CACHE_TTL_MS3, now: now2 = Date.now() } = {}) {
+  try {
+    const parsed = JSON.parse(fs17.readFileSync(cachePath2(homeDir2), "utf8"));
+    if (!parsed?.fetchedAt || !Array.isArray(parsed.groups)) return null;
+    if (now2 - parsed.fetchedAt > maxAgeMs) return null;
+    return parsed.groups;
+  } catch {
+    return null;
+  }
+}
+function writeProviderCatalogCache(groups, { homeDir: homeDir2 = os9.homedir(), now: now2 = Date.now() } = {}) {
+  try {
+    const file = cachePath2(homeDir2);
+    fs17.mkdirSync(path16.dirname(file), { recursive: true });
+    fs17.writeFileSync(file, JSON.stringify({ fetchedAt: now2, groups }, null, 2));
+  } catch {
+  }
+}
+
+// lib/chat/model-picker.mjs
 init_models();
 
 // lib/chat/list-picker.mjs
@@ -6110,115 +6940,116 @@ function pickerViewport(state, windowSize = 14) {
 
 // lib/chat/model-picker.mjs
 var FREE_ROUTER_ITEM_ID = "__free_router__";
-var FREE_PICKER_LIMIT = 18;
-function sortModelsForPicker(models = []) {
-  return [...models].sort(
-    (a, b) => Number(Boolean(b.action === "free-router")) - Number(Boolean(a.action === "free-router")) || Number(Boolean(b.isFree)) - Number(Boolean(a.isFree)) || Number(b.suitable !== false) - Number(a.suitable !== false) || Number(Boolean(b.isProviderDefault)) - Number(Boolean(a.isProviderDefault)) || String(a.label || a.id).localeCompare(String(b.label || b.id))
-  );
-}
 function shortModelLabel(id) {
   if (!id) return id;
   const name = id.replace(/^openrouter\//, "");
   const slash = name.lastIndexOf("/");
   return slash >= 0 ? name.slice(slash + 1) : name;
 }
-function catalogItem(model) {
-  const id = model.id;
-  const isFree = id.includes(":free") || model.isFree === true;
+function capabilityBadges(model) {
+  const badges = [];
+  if (model.reasoning) badges.push("reasoning");
+  if (model.vision) badges.push("vision");
+  if (model.tools) badges.push("tools");
+  return badges;
+}
+function priceLabel(pricing) {
+  if (!pricing) return null;
+  if (pricing.input === 0 && pricing.output === 0) return null;
+  const fmt = (n) => n >= 1 ? n.toFixed(2) : n.toFixed(3);
+  return `$${fmt(pricing.input)} in \xB7 $${fmt(pricing.output)} out / 1M`;
+}
+function contextLabel(context) {
+  if (!context) return null;
+  if (context >= 1e6) return `${(context / 1e6).toFixed(1).replace(/\.0$/, "")}M ctx`;
+  if (context >= 1e3) return `${Math.round(context / 1e3)}K ctx`;
+  return `${context} ctx`;
+}
+function pickerItemFromModel(model, groupLabel) {
+  if (model.source === "hint" || model.disabled) {
+    return {
+      id: model.id,
+      label: model.label || model.id,
+      group: groupLabel,
+      tag: null,
+      badges: [],
+      detail: null,
+      isFree: false,
+      suitable: false,
+      disabled: true,
+      source: model.source || "hint"
+    };
+  }
+  const badges = capabilityBadges(model);
+  const price = priceLabel(model.pricing);
+  const detailParts = [];
+  if (model.free) detailParts.push(model.provider === "ollama" ? "free \xB7 runs locally" : "free");
+  else if (price) detailParts.push(price);
+  const ctx = contextLabel(model.context);
+  if (ctx) detailParts.push(ctx);
+  if (model.source === "cached") detailParts.push("cached \u2014 provider offline");
+  if (/^openrouter\/openrouter\/(free|auto)\b/.test(String(model.id))) {
+    detailParts.push("variable quality \u2014 routes to a random free model");
+  }
   return {
-    id,
-    label: model.label || (isFree ? shortModelLabel(id) : id),
-    tag: model.action === "free-router" ? "router" : isFree ? "free" : model.local ? "local" : model.tier || null,
-    detail: model.detail || model.name || (model.configured === false ? "not configured" : null),
-    isFree,
-    action: model.action || null,
-    suitable: model.suitable,
-    disabled: model.disabled === true
+    id: model.id,
+    label: model.label || shortModelLabel(model.id),
+    group: groupLabel,
+    tag: model.free ? "free" : null,
+    badges,
+    price: model.free ? null : price,
+    context: model.context || null,
+    detail: detailParts.join(" \xB7 ") || null,
+    isFree: Boolean(model.free),
+    suitable: true,
+    disabled: false,
+    source: model.source || "live"
   };
 }
-function configuredTierPickerItems({ env = process.env } = {}) {
-  const { providers } = getProviderModelCatalog({ env });
-  const items = [];
-  const seen = /* @__PURE__ */ new Set();
-  for (const provider of providers) {
-    if (!provider.configured) continue;
-    for (const tier of ["reasoning", "standard", "fast"]) {
-      const id = provider.tiers?.[tier];
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-      const availability = isChatModelAvailable(id, { env });
-      const notPulled = availability.reason === "model_not_pulled";
-      items.push(catalogItem({
-        id,
-        label: id,
-        name: `${provider.label} \xB7 ${tier}`,
-        tier,
-        configured: availability.ok,
-        suitable: availability.ok,
-        isProviderDefault: tier === "standard",
-        disabled: !availability.ok,
-        detail: notPulled ? `not installed \u2014 run ollama pull ${availability.nativeModel || id.replace(/^ollama\//, "")}` : availability.ok ? null : availability.reason?.replace(/_/g, " ") || "unavailable"
-      }));
-    }
-  }
-  return { items, seen };
-}
-async function loadModelPickerItems(_driver, { env = process.env, currentModel = null, modelMode = "pinned" } = {}) {
+async function loadModelPickerItems(_driver, { env = process.env, cwd = process.cwd(), currentModel = null, modelMode = "pinned", pollProviders = pollConfiguredProviders } = {}) {
   const items = [];
   const seen = /* @__PURE__ */ new Set();
   const hasOpenRouter = hasAnySecret(["OPENROUTER_API_KEY", "OPEN_ROUTER_API_KEY"], { env });
   items.push({
     id: FREE_ROUTER_ITEM_ID,
     label: "OpenRouter free router \u2014 auto-pick best standard model",
+    group: "Smart routing",
     tag: "router",
-    detail: hasOpenRouter ? "auto-pick on launch + retry on failure; not pinned" : "needs OPENROUTER_API_KEY in ~/.construct/config.env",
+    badges: [],
+    detail: hasOpenRouter ? "auto-picks a free model + retries on failure; not pinned \u2014 quality varies" : "needs OPENROUTER_API_KEY in ~/.construct/config.env",
     action: "free-router",
     configured: hasOpenRouter,
     disabled: !hasOpenRouter
   });
   seen.add(FREE_ROUTER_ITEM_ID);
-  if (hasOpenRouter) {
-    try {
-      await refreshLiveOpenRouterCatalog({ env });
-      const apiKey = resolveFirstSecret(["OPENROUTER_API_KEY", "OPEN_ROUTER_API_KEY"], { env });
-      if (!apiKey) throw new Error("missing");
-      const { pollFreeModels: pollFreeModels2, topForTier: topForTier2 } = await Promise.resolve().then(() => (init_model_free_selector(), model_free_selector_exports));
-      const { isChatModelAvailable: isChatModelAvailable2 } = await Promise.resolve().then(() => (init_model_router(), model_router_exports));
-      const freeLive = await pollFreeModels2(apiKey);
-      for (const f of topForTier2(freeLive, "standard", FREE_PICKER_LIMIT)) {
-        const id = f.id?.startsWith("openrouter/") ? f.id : `openrouter/${f.id}`;
-        if (seen.has(id)) continue;
-        if (!isChatModelAvailable2(id, { env }).ok) continue;
-        seen.add(id);
-        items.push(catalogItem({
-          id,
-          label: shortModelLabel(id),
-          name: f.name || id,
-          detail: id,
-          isFree: true,
-          configured: true,
-          suitable: true
-        }));
+  let groups = [];
+  try {
+    groups = await pollProviders({ env, cwd });
+  } catch {
+    groups = readProviderCatalogCache() || [];
+  }
+  for (const group of groups) {
+    const sorted = [...group.models].sort(
+      (a, b) => Number(Boolean(b.free)) - Number(Boolean(a.free)) || String(a.label || a.id).localeCompare(String(b.label || b.id))
+    );
+    for (const model of sorted) {
+      if (seen.has(model.id)) continue;
+      if (!model.disabled && model.source !== "hint" && model.toolsKnown === true && !model.tools) {
+        seen.add(model.id);
+        continue;
       }
-    } catch {
+      seen.add(model.id);
+      items.push(pickerItemFromModel(model, group.label));
     }
   }
-  const tierItems = configuredTierPickerItems({ env });
-  for (const item of tierItems.items) {
-    if (seen.has(item.id)) continue;
-    seen.add(item.id);
-    items.push(item);
-  }
   if (currentModel && modelMode !== "free-router" && !seen.has(currentModel)) {
-    items.push(catalogItem({
-      id: currentModel,
-      label: currentModel,
-      name: "current session",
-      configured: true,
-      suitable: true
-    }));
+    seen.add(currentModel);
+    items.push(pickerItemFromModel(
+      { id: currentModel, label: currentModel, free: false, source: "live" },
+      "Current session"
+    ));
   }
-  return sortModelsForPicker(items);
+  return items;
 }
 async function resolveModelPickerSelection(item, { env = process.env } = {}) {
   if (!item) return null;
@@ -6269,10 +7100,11 @@ function formatModelHeader(session) {
 function formatPickerLine(item, colors, { selected = false } = {}) {
   const marker = selected ? `${colors.green}\u25CF${colors.reset}` : " ";
   const tag = item.tag ? `${colors.dim} [${item.tag}]${colors.reset}` : "";
+  const badges = item.badges?.length ? `${colors.dim} ${item.badges.map((b) => `\xB7${b}`).join(" ")}${colors.reset}` : "";
   const disabled = item.disabled ? `${colors.dim} (unavailable)${colors.reset}` : "";
   const detail = item.detail ? `
       ${colors.dim}${item.detail}${colors.reset}` : "";
-  return `  ${marker} ${item.label || item.id}${tag}${disabled}${detail}`;
+  return `  ${marker} ${item.label || item.id}${tag}${badges}${disabled}${detail}`;
 }
 async function promptModelPickerTerminal({
   output,
@@ -6283,12 +7115,15 @@ async function promptModelPickerTerminal({
   env = process.env,
   cwd = process.cwd(),
   hostId = "construct",
-  layers = session?.layers
+  layers = session?.layers,
+  pollProviders = pollConfiguredProviders
 } = {}) {
   const items = await loadModelPickerItems(null, {
     env,
+    cwd,
     currentModel: session?.model,
-    modelMode: session?.modelMode || "pinned"
+    modelMode: session?.modelMode || "pinned",
+    pollProviders
   });
   if (!items.length) {
     output.write(`${colors.dim}no models to pick from \u2014 set a provider key in ~/.construct/config.env or use /model <id>${colors.reset}
@@ -6300,7 +7135,21 @@ async function promptModelPickerTerminal({
 `);
   output.write(`${colors.dim}enter a number, or press enter to cancel${colors.reset}
 `);
+  const groupCounts = /* @__PURE__ */ new Map();
+  for (const item2 of items) {
+    if (!item2.group || item2.disabled) continue;
+    groupCounts.set(item2.group, (groupCounts.get(item2.group) || 0) + 1);
+  }
+  let lastGroup = null;
   items.forEach((item2, i) => {
+    if (item2.group && item2.group !== lastGroup) {
+      lastGroup = item2.group;
+      const count = groupCounts.get(item2.group);
+      const suffix = count ? ` (${count})` : "";
+      output.write(`
+${colors.dim}\u2500\u2500 ${item2.group}${suffix} \u2500\u2500${colors.reset}
+`);
+    }
     output.write(`${String(i + 1).padStart(2)}.${formatPickerLine(item2, colors, { selected: item2.id === selectedId })}
 `);
   });
@@ -6404,7 +7253,6 @@ ${formatDemoStepLine(step, colors)}
 var HELP = [
   ["/help", "show this help"],
   ["/model [id]", "show or set the model (no id opens a searchable picker)"],
-  ["/models", "open the searchable model picker"],
   ["/free", "set OpenRouter free-router mode (--free equivalent)"],
   ["/export [last|session]", "write plain markdown answer to .cx/chat-sessions/exports/"],
   ["/set <key> <on|off|value>", "change a setting (thinking, tools, path, specialists, observability, permission, sandbox, model)"],
@@ -6626,6 +7474,107 @@ function parsePermissionKey(char) {
   return null;
 }
 
+// lib/chat/evidence.mjs
+var EVIDENCE_SCHEMA_VERSION = 1;
+var REPO_EVIDENCE_TOOLS = /* @__PURE__ */ new Set(["read", "grep", "glob"]);
+var GLOB_META_RE = /[*?\[\]{}]/;
+function freeze(value) {
+  if (Array.isArray(value)) value.forEach(freeze);
+  else if (value && typeof value === "object") Object.values(value).forEach(freeze);
+  return Object.freeze(value);
+}
+function concreteTarget(value) {
+  if (typeof value !== "string" || !value.trim() || GLOB_META_RE.test(value)) return null;
+  return value;
+}
+function toolResult(tool = {}) {
+  const result = tool.content ?? tool.result;
+  return result && typeof result === "object" ? result : null;
+}
+function concreteTargets(tool = {}) {
+  const result = toolResult(tool);
+  const name = String(tool.title || tool.kind || "");
+  if (!result) return [];
+  if (name === "read") return [concreteTarget(result.path || tool.input?.path)].filter(Boolean);
+  const matches = Array.isArray(result.matches) ? result.matches : [];
+  return [...new Set(matches.map((match) => concreteTarget(typeof match === "string" ? match : match?.file || match?.path)).filter(Boolean))];
+}
+function evidenceTarget(tool = {}) {
+  return concreteTargets(tool)[0] || null;
+}
+function isSuccessfulEvidenceTool(tool = {}) {
+  if (!REPO_EVIDENCE_TOOLS.has(String(tool.title || tool.kind || ""))) return false;
+  if (tool.status !== "completed") return false;
+  const result = toolResult(tool);
+  return Boolean(result && result.ok !== false && result.denied !== true && !result.error && concreteTargets(tool).length);
+}
+function evidenceRecords(tools = [], { turnId = null } = {}) {
+  const records = [];
+  for (const tool of tools) {
+    if (!isSuccessfulEvidenceTool(tool)) continue;
+    for (const target of concreteTargets(tool)) {
+      records.push(freeze({
+        schemaVersion: EVIDENCE_SCHEMA_VERSION,
+        recordId: `${turnId || "turn"}:${String(tool.id || "")}:${target}`,
+        turnId: turnId ? String(turnId) : null,
+        toolId: String(tool.id || ""),
+        tool: String(tool.title || tool.kind),
+        requestedTarget: String(tool.input?.path || tool.input?.glob || tool.input?.pattern || ""),
+        target,
+        sourceId: `repo:${target}`,
+        completion: "completed",
+        result: "success"
+      }));
+    }
+  }
+  return freeze(records);
+}
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function citationMatches(text, record) {
+  const target = String(record?.target || "");
+  const sourceId = String(record?.sourceId || "");
+  if (!target) return false;
+  const escapedTarget = escapeRegExp(target);
+  const targetPattern = new RegExp(`(^|[^A-Za-z0-9_./-])${escapedTarget}(?=$|[^A-Za-z0-9_./-])`);
+  const sourcePattern = sourceId ? new RegExp(`\\[source:\\s*${escapeRegExp(sourceId)}\\s*\\]`, "i") : null;
+  return targetPattern.test(text) || Boolean(sourcePattern?.test(text));
+}
+function verdict({ status, records = [], citations = [], reasonCodes = [] }) {
+  return freeze({
+    schemaVersion: EVIDENCE_SCHEMA_VERSION,
+    status,
+    records: [...records],
+    citations: [...new Set(citations)],
+    reasonCodes: [...reasonCodes]
+  });
+}
+function deriveEvidenceVerdict({ id = null, overlay = null, tools = [], assistant = "", evidenceVisible = true, migration = false } = {}) {
+  const required = overlay?.assumptionsBlocked || overlay?.externalResearch?.required;
+  const migrationCode = migration ? ["legacy_snapshot_without_evidence"] : [];
+  if (!required) return verdict({ status: "not_applicable", reasonCodes: ["evidence_not_required", ...migrationCode] });
+  if (!evidenceVisible) return verdict({ status: "insufficient_evidence", reasonCodes: ["evidence_layer_hidden", ...migrationCode] });
+  const records = evidenceRecords(tools, { turnId: id });
+  if (!records.length) return verdict({ status: "insufficient_evidence", records, reasonCodes: ["no_successful_concrete_evidence", ...migrationCode] });
+  const text = String(assistant || "");
+  const citations = records.filter((record) => citationMatches(text, record)).map((record) => record.target);
+  if (!citations.length) return verdict({ status: "uncited_evidence", records, citations, reasonCodes: ["evidence_not_cited", ...migrationCode] });
+  return verdict({
+    status: citations.length === records.length ? "verified" : "partially_verified",
+    records,
+    citations,
+    reasonCodes: [citations.length === records.length ? "all_recorded_evidence_cited" : "some_recorded_evidence_uncited", ...migrationCode]
+  });
+}
+function evidenceNotice(verdict2) {
+  if (!verdict2 || verdict2.status === "not_applicable" || verdict2.status === "verified") return null;
+  if (verdict2.reasonCodes?.includes("evidence_layer_hidden")) return "Evidence tools were hidden for this turn, so no source was verified";
+  if (verdict2.status === "uncited_evidence") return "Evidence was read but the answer does not cite its recorded paths \u2014 treat claims as unverified";
+  if (verdict2.status === "partially_verified") return "Only some recorded evidence paths are cited \u2014 treat uncited claims as unverified";
+  return "Answer produced without successful recorded repo evidence \u2014 treat as unverified";
+}
+
 // lib/chat/tui/turn-block.mjs
 function createTurnBlock(userText) {
   return {
@@ -6637,7 +7586,9 @@ function createTurnBlock(userText) {
     assistant: "",
     usage: null,
     sources: [],
+    evidence: null,
     notices: [],
+    continuation: null,
     closed: false
   };
 }
@@ -6671,8 +7622,8 @@ function sourceFromToolEvent(event) {
   if (!event) return null;
   const title = event.title || event.kind || "";
   if (title === "read" || title === "grep" || title === "glob") {
-    const path37 = event.input?.path || event.input?.pattern || event.input?.glob;
-    if (path37) return { tool: title, ref: String(path37) };
+    const path40 = evidenceTarget(event);
+    if (path40) return { tool: title, ref: String(path40) };
   }
   if (title === "construct_tool") {
     const name = event.input?.name;
@@ -6713,8 +7664,6 @@ function applyEventToTurn(turn, event, state = null) {
       turn.assistant = state?.assistant ?? `${turn.assistant || ""}${event.text || ""}`;
       break;
     case "tool_call": {
-      const src = sourceFromToolEvent(event);
-      if (src) recordSource(turn, src);
       const existing = turn.tools.find((t) => t.id === event.id);
       if (existing) {
         existing.input = event.input ?? existing.input;
@@ -6730,12 +7679,22 @@ function applyEventToTurn(turn, event, state = null) {
     }
     case "tool_update": {
       const t = turn.tools.find((x) => x.id === event.id);
-      if (t) t.status = event.status || t.status;
-      else turn.tools.push({ id: event.id, title: event.id, status: event.status || "pending" });
+      if (t) {
+        t.status = event.status || t.status;
+        t.content = event.content ?? t.content;
+        const src = sourceFromToolEvent(t);
+        if (isSuccessfulEvidenceTool(t) && src) recordSource(turn, src);
+      } else turn.tools.push({ id: event.id, title: event.id, status: event.status || "pending" });
       break;
     }
     case "usage":
       turn.usage = event;
+      break;
+    case "notice":
+      if (event.message && !turn.notices.includes(event.message)) turn.notices.push(event.message);
+      break;
+    case "context_continuation":
+      if (event.packet) turn.continuation = event.packet;
       break;
     default:
       break;
@@ -6745,11 +7704,13 @@ function applyEventToTurn(turn, event, state = null) {
 function formatTurnUsageLine(usage, colors = {}) {
   return formatUsageFooter(usage, colors).replace(/^\[usage\] /, "");
 }
-function finalizeTurn(turn) {
+function finalizeTurn(turn, { evidenceVisible = true } = {}) {
   if (!turn) return turn;
   turn.closed = true;
-  if (turn.overlay?.externalResearch?.required && !turn.sources?.length) {
-    const msg = "Answer produced without recorded sources \u2014 treat as unverified";
+  turn.evidence = deriveEvidenceVerdict({ ...turn, evidenceVisible });
+  turn.sources = turn.evidence.records.map((record) => ({ tool: record.tool, ref: record.target, ts: Date.now() }));
+  const msg = evidenceNotice(turn.evidence);
+  if (msg) {
     if (!turn.notices.includes(msg)) turn.notices.push(msg);
   }
   return turn;
@@ -6770,8 +7731,8 @@ var INK = Object.freeze({
   navy: "#0c1018"
 });
 var FONTS = Object.freeze({
-  sans: "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  mono: "'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace"
+  sans: "'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  mono: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace"
 });
 var STATUS = Object.freeze({
   ok: "#98c379",
@@ -6797,9 +7758,9 @@ var BRAND_TOKENS = Object.freeze({
   }),
   navy: INK.navy,
   typography: Object.freeze({
-    fontSans: "Plus Jakarta Sans",
-    fontDisplay: "Plus Jakarta Sans",
-    fontMono: "IBM Plex Mono",
+    fontSans: "Space Grotesk",
+    fontDisplay: "Space Grotesk",
+    fontMono: "JetBrains Mono",
     fontStack: FONTS.sans,
     fontStackMono: FONTS.mono,
     weight: Object.freeze({
@@ -6839,12 +7800,12 @@ var BRAND = Object.freeze({
 
 // lib/chat/design-tokens.mjs
 var CHAT_DARK = Object.freeze({
-  bg: INK.navy,
-  surface: "#101620",
+  bg: "#000000",
+  surface: "#0b0b0c",
   border: INK.muted,
-  text: "#e8eaed",
-  muted: "#8a9199",
-  accent: "#e8eaed",
+  text: "#ededed",
+  muted: "#9a9a9e",
+  accent: "#ffffff",
   accentAlt: INK.hairlineStrong,
   ...STATUS
 });
@@ -7527,34 +8488,37 @@ function ListPickerOverlay({ picker, width, theme, currentId = null, markerId = 
 }
 
 // lib/chat/command-suggest.mjs
-var SLASH_COMMANDS = Object.freeze([
-  "/help",
-  "/model",
-  "/models",
-  "/free",
-  "/set",
-  "/settings",
-  "/layers",
-  "/usage",
-  "/oracle",
-  "/host",
-  "/clear",
-  "/inspect",
-  "/export",
-  "/exit"
+var SLASH_COMMAND_INFO = Object.freeze([
+  { cmd: "/help", desc: "list every command and what it does" },
+  { cmd: "/model", desc: "show or pick the model (opens a searchable picker)" },
+  { cmd: "/free", desc: "switch to OpenRouter free-router mode" },
+  { cmd: "/set", desc: "change a setting \u2014 /set <key> <on|off|value>" },
+  { cmd: "/settings", desc: "show the current settings" },
+  { cmd: "/layers", desc: "show transparency layers (Ctrl+1\u20135 to toggle)" },
+  { cmd: "/usage", desc: "session token and cost breakdown" },
+  { cmd: "/oracle", desc: "Oracle overseer verdict and pending approvals" },
+  { cmd: "/host", desc: "show the active engine / host" },
+  { cmd: "/inspect", desc: "toggle the inspector panel" },
+  { cmd: "/export", desc: "save the answer to markdown \u2014 /export [last|session]" },
+  { cmd: "/clear", desc: "clear the conversation" },
+  { cmd: "/exit", desc: "quit (terminal only)" }
 ]);
-var SETTING_KEYS = Object.freeze([
-  "thinking",
-  "path",
-  "specialists",
-  "tools",
-  "observability",
-  "permission",
-  "sandbox",
-  "model",
-  "ascii",
-  "inspector"
+var SLASH_COMMANDS = Object.freeze(SLASH_COMMAND_INFO.map((c) => c.cmd));
+var SETTING_KEY_INFO = Object.freeze([
+  { key: "thinking", desc: "show model reasoning inline" },
+  { key: "path", desc: "show the routing path" },
+  { key: "specialists", desc: "show the specialist chain" },
+  { key: "tools", desc: "show tool calls" },
+  { key: "observability", desc: "show usage + telemetry" },
+  { key: "permission", desc: "ask | allow_once | allow_always | reject" },
+  { key: "sandbox", desc: "read-only | workspace-write | danger-full-access" },
+  { key: "model", desc: "set the model id" },
+  { key: "ascii", desc: "ASCII-only glyphs (on|off)" },
+  { key: "inspector", desc: "inspector panel (on|off|auto)" }
 ]);
+var SETTING_KEYS = Object.freeze(SETTING_KEY_INFO.map((s) => s.key));
+var DESC_BY_CMD = new Map(SLASH_COMMAND_INFO.map((c) => [c.cmd, c.desc]));
+var DESC_BY_KEY = new Map(SETTING_KEY_INFO.map((s) => [s.key, s.desc]));
 function slashCommandMatches(input) {
   const trimmed = String(input || "").trimStart();
   if (!trimmed.startsWith("/")) return [];
