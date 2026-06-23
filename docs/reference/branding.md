@@ -53,6 +53,19 @@ Typed artifacts resolve tone from:
 
 Validate before ship: `construct artifact validate <path> --type=<doc-type>`.
 
+## Artifact workflow branding
+
+`specialists/artifact-manifest.json` also defines the registered document-class
+workflow. A class resolves its author chain, reviewer chain, validation policy,
+output formats, and branding policy from that manifest. Any registered class is
+eligible; Construct does not silently substitute a PRD for an unknown class.
+
+For workflow settings, precedence is: invocation override, then
+`construct.config.json` `artifactWorkflow`, then manifest defaults. Branded is
+the default for all styling-capable distribution formats (PDF, HTML, deck,
+PPTX, DOCX/DOC, RTF, ODT, EPUB, and TeX). Markdown and text remain plain by
+nature; a request or project configuration can explicitly opt out of branding.
+
 ## Profile terminology (rebrand)
 
 Each curated profile may define `rebrand.intakeQueueLabel` and `rebrand.signalNoun` in `profiles/*.json`. [`lib/profiles/rebrand.mjs`](../../lib/profiles/rebrand.mjs) centralizes lookup; defaults are `Intake queue` / `signal`.

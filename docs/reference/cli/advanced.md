@@ -289,10 +289,10 @@ construct sources list|add|remove|validate
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `list` — Show config targets, legacy env merge, and effective set
+- `add <provider> <id> <selector-json>` — Add a typed target (github, jira, linear, slack)
+- `remove <id>` — Remove a config target by id
+- `validate` — Validate sources.targets in construct.config.json
 
 ## construct uninstall
 

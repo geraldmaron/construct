@@ -7,7 +7,7 @@ description: Work commands for Construct.
 
 | Command | What it does |
 |---|---|
-| `construct artifact` | Validate typed document artifacts against the release gate |
+| `construct artifact` | Plan or locally execute manifest-backed artifact workflows with execution provenance |
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
@@ -37,17 +37,18 @@ description: Work commands for Construct.
 
 ## construct artifact
 
-Validate typed document artifacts against the release gate
+Plan or locally execute manifest-backed artifact workflows with execution provenance
 
 **Usage**
 
 ```bash
-construct artifact validate <path> --type=<doc-type> [--json]
+construct artifact <validate|workflow> ...
 ```
 
 **Subcommands**
 
-- `[object Object]`
+- `validate` — Run manifest structure, citation, and reviewer checks
+- `workflow` — Return a truthful plan/run report; --apply only runs local validation/export after approval
 
 ## construct ask
 
@@ -81,10 +82,10 @@ construct customer list|show|add|update|search
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `list` — List all customer profiles
+- `show <id>` — Show a customer profile
+- `add --name=Acme --owner=Jane` — Create a new customer profile
+- `search <query>` — Search customer profiles by name/alias
 
 ## construct demo
 
@@ -157,7 +158,7 @@ Export markdown to PDF, DOCX, HTML, and other Pandoc formats via Pandoc + Typst 
 **Usage**
 
 ```bash
-construct export <markdown-file> --to=<pdf|docx|deck|pptx|html|rtf|odt|epub|tex|txt|md|mdx> [--output=<path>] [--figures] [--detect]
+construct export <markdown-file> --to=<pdf|docx|deck|pptx|html|rtf|odt|epub|tex|txt|md|mdx> [--output=<path>] [--figures|--no-figures] [--plain] [--detect]
 ```
 
 **Options**
@@ -167,6 +168,8 @@ construct export <markdown-file> --to=<pdf|docx|deck|pptx|html|rtf|odt|epub|tex|
 | `--to=<format>` | pdf, docx, deck, pptx, html, rtf, odt, epub, tex, txt, md, mdx |
 | `--output=<path>` | Output path |
 | `--figures` | Render d2/mermaid via pandoc-ext/diagram filter |
+| `--no-figures` | Skip diagram rendering |
+| `--plain, --no-brand` | Explicitly opt out of Construct branding for a brand-capable output |
 | `--detect` | Report binary availability (JSON) |
 
 ## construct graph
@@ -181,7 +184,7 @@ construct graph <list|show|from-intake|recommend>
 
 **Subcommands**
 
-- `[object Object]`
+- `recommend --json [--text|--file|<stdin>]` — Return a role-aware plan for an artifact without enqueuing (embedded contract; alias of intake classify)
 
 ## construct handoffs
 
@@ -235,7 +238,7 @@ construct integrations status
 
 **Subcommands**
 
-- `[object Object]`
+- `status` — Check which external integrations are configured
 
 ## construct knowledge
 
@@ -249,9 +252,9 @@ construct knowledge trends|index|add
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `trends` — Show trend report across observations and artifacts
+- `index` — Rebuild the local RAG corpus over .cx/ artifacts
+- `add --source=research --slug=<id> --topic="..." [--source-url=<url>]` — Persist a research finding into .cx/knowledge/external/research/
 
 ## construct memory
 
@@ -382,7 +385,7 @@ construct workflow <list|show|new|invoke>
 
 **Subcommands**
 
-- `[object Object]`
+- `invoke --json --workflow-type <t> [--text|--file|<stdin>]` — Invoke a workflow (roles/skills) non-interactively with approval gating and provenance (embedded contract)
 
 ## construct workspace
 
@@ -396,7 +399,7 @@ construct workspace list|create|show|assign
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `list` — List all workspaces
+- `create --name=X --owner=Jane` — Create a new workspace
+- `show <id>` — Show workspace details
+- `assign --customer=X --workspace=Y` — Assign customer to workspace

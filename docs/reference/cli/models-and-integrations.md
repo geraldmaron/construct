@@ -40,7 +40,7 @@ construct capability describe --json
 
 **Subcommands**
 
-- `[object Object]`
+- `describe --json` — Emit versions, interfaces, roles, skills, workflows, schemas, models, policies, telemetry, plugins
 
 ## construct chat
 
@@ -74,7 +74,7 @@ construct execution resolve --json
 
 **Subcommands**
 
-- `[object Object]`
+- `resolve --json` — Report executionMode, active Construct capabilities, and any degradation given host/strategy context
 
 ## construct hosts
 
@@ -98,10 +98,10 @@ construct mcp <list|add|remove|info>
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `list` — List configured MCP integrations
+- `add <id>` — Add an MCP integration by id
+- `remove <id>` — Remove an MCP integration
+- `info <id>` — Show details for one MCP integration
 
 ## construct models
 
@@ -115,13 +115,13 @@ construct models <list|set|free|reset|usage|cost|resolve>
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `list` — Show current tier assignments
+- `set --tier=<reasoning|standard|fast> --model=<model>` — Set a model for a tier
+- `free` — List available free models
+- `reset` — Reset all tier assignments
+- `usage` — Show token usage per tier
+- `cost` — Show cost breakdown
+- `resolve --json` — Resolve the model for an embedded workflow given host context
 
 ## construct orchestrate
 
@@ -135,8 +135,8 @@ construct orchestrate <run|status> [options] [--remote]
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
+- `run "<request>" [--strategy S] [--host H] [--worker-backend provider] [--no-construct] [--no-execute] [--json] [--remote]` — Plan and run a request through a Construct-owned specialist chain; --remote drives the local daemon over HTTP
+- `status [run-id] [--json] [--remote]` — Inspect a run, or list recent runs (locally or from the daemon)
 
 ## construct plugin
 
@@ -150,8 +150,8 @@ construct plugin <list|info|init|validate|engine>
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `list` — List discovered plugin manifests
+- `info <id>` — Show details for one plugin
+- `init` — Scaffold a new plugin manifest
+- `validate` — Validate a plugin manifest against the schema
+- `engine` — Plugin engine operations
