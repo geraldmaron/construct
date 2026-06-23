@@ -6,7 +6,7 @@ description: reusable design patterns and skeleton project strategy.
 ## Skeleton Projects
 
 When implementing new functionality:
-1. Search for battle-tested skeleton projects
+1. Search for proven skeleton projects
 2. Evaluate options for security, extensibility, and relevance
 3. Clone best match as foundation
 4. Iterate within proven structure

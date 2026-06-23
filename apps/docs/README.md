@@ -1,68 +1,56 @@
 # Construct docs site
 
-Next.js 15 app (plain App Router + Tailwind, no Fumadocs) that publishes the
-editorial docs experience at `<owner>.github.io/construct/`. Designed to match
-the handoff bundle in `Construct Docs.html`: black-and-white core with an
-optional gradient accent, collapsible editorial sections, Cmd+K palette,
-theme + density preferences.
+Next.js app (App Router + Tailwind + `@cx/ui`) that publishes the editorial docs
+experience at `https://geraldmaron.github.io/construct/`.
 
 ## Quick start
 
 ```bash
-npm --prefix apps/docs install
+npm ci
+node ./bin/construct docs:site
 npm --prefix apps/docs run dev
 ```
 
-Site runs at http://localhost:3000/.
+Site runs at http://localhost:3000/ (empty base path). Production build uses
+`DOCS_BASE_PATH=/construct`.
 
 ## How it works
 
-- **Three explicit pages** today: `/` (home), `/start` (getting started),
-  `/architecture`. Each page is a server-or-client React component in
-  `app/<route>/page.tsx`. The chrome (topbar, sidebar, command palette, theme
-  toggles) lives in `components/app-shell.tsx` and wraps every route via
-  `app/layout.tsx`.
-- **MDX-driven content** under repo-root `docs/` is still emitted by
-  `construct docs:update` and `construct docs:site` into `docs/reference/`,
-  but a generic `/docs/[...slug]` MDX renderer is a follow-up: it is not
-  wired into this version of the site.
-- **Build:** `next build` produces a static export to `apps/docs/out/`.
-  Deployed by `.github/workflows/pages.yml` to GitHub Pages.
-- **Theme:** runtime preferences (theme, density, reduce-motion, calm mode,
-  hue palette) persist in `localStorage` under `construct-docs-prefs` so a
-  returning reader gets their last selection.
+- **Home (`/`)** — hand-authored React in `app/page.tsx`; mirrors README narrative.
+- **All other routes** — rendered from repo-root `docs/**/*.md(x)` via the catch-all
+  `app/[...slug]/page.tsx`. Prose pages use `.md`; pages with `@cx/ui` components use `.mdx`.
+  Catalog + sidebar come from `lib/docs-source.ts`.
+- **Generated reference** — `construct docs:site` writes `docs/reference/cli/*`,
+  `docs/reference/hooks.md`, and `docs/reference/specialists.md` from live registries.
+- **Build:** `next build` static-exports to `apps/docs/out/`. Deployed by
+  `.github/workflows/pages.yml` when `PAGES_ENABLED` is true.
+
+## Sidebar lanes
+
+Configured in `lib/docs-source.ts` (`SIDEBAR_LAYOUT`):
+
+- Start, Concepts, Cookbook, Reference (editorial core)
+- Maintenance, Contributing, ADRs (ops and governance)
+
+Each lane reads ordering from its `docs/<lane>/meta.json`. Nested pages (e.g.
+`/reference/cli/advanced`) are reachable by URL but not listed in the sidebar.
 
 ## Structure
 
 ```
 apps/docs/
 ├── app/
-│   ├── page.tsx             — Home (hero + 5 sections)
-│   ├── start/page.tsx       — Getting Started (8 sections)
-│   ├── architecture/page.tsx — Architecture (9 sections)
-│   ├── layout.tsx           — Root layout + font wiring
-│   └── theme.css            — Editorial theme variables + classes
-├── components/
-│   ├── app-shell.tsx        — Topbar + sidebar + theme/palette state
-│   ├── section.tsx          — Collapsible editorial section primitive
-│   ├── code-block.tsx       — Code block with copy + bash highlight
-│   ├── mermaid.tsx          — Mermaid + framed Diagram container
-│   ├── command-palette.tsx  — ⌘K / ⌃K palette
-│   ├── callout.tsx, feature-grid.tsx, icons.tsx, nav-data.ts,
-│   │  use-theme.ts          — supporting primitives
-├── next.config.mjs          — Next.js config (static export, MDX support)
-├── tailwind.config.ts       — Tailwind v3 setup
-└── tsconfig.json
+│   ├── page.tsx              — Home
+│   ├── [...slug]/page.tsx    — MDX catch-all for docs/
+│   └── layout.tsx            — Root layout + fonts
+├── lib/docs-source.ts        — Walk docs/, build sidebar + static params
+├── components/               — App shell, palette, theme
+└── next.config.mjs           — Static export, basePath from DOCS_BASE_PATH
 ```
 
-## Adding a page
+## Adding content
 
-Create `app/<route>/page.tsx` and add it to `components/nav-data.ts` so the
-sidebar + command palette pick it up. Use `<Section>`, `<CodeBlock>`,
-`<Diagram>`, `<Callout>`, and `<FeatureGrid>` from `components/` to keep the
-visual language consistent.
-
-## Tracking
-
-This package isn't published to npm. It's a sibling app that owns the public
-docs experience and emits a static site.
+1. Add or edit a file under repo-root `docs/`.
+2. Update the lane's `meta.json` if ordering matters.
+3. Run `node ./bin/construct docs:site` when CLI/hooks/specialists registries change.
+4. Build: `DOCS_BASE_PATH=/construct npm --prefix apps/docs run build`.

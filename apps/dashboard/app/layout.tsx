@@ -4,12 +4,17 @@
  */
 
 import type { ReactNode } from 'react';
-import { Geist, JetBrains_Mono } from 'next/font/google';
+import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import './theme.css';
 import { AppShell } from '@/components/app-shell';
 
-const sans = Geist({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
-const display = Geist({
+const sans = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+});
+const display = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-display',
   display: 'swap',

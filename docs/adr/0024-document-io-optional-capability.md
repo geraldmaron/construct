@@ -25,7 +25,7 @@ The naive fix is to bundle a conversion library into core. That collides head-on
 - ADR 0001 commits `lib/` and `bin/` to Node built-ins plus a narrow sanctioned exception, to keep installs small and reliable.
 - ADR 0014 established the pattern for heavy capability deps: declare them `optional`, lazy-load on first use, and degrade gracefully to a working baseline when absent.
 - An ingestion provider abstraction already exists (`lib/ingest/strategy.mjs`, `lib/ingest/provider-extract.mjs`), so a new provider plugs into a known seam rather than a greenfield surface.
-- The research brief (`.cx/research/doc-io-and-invocation-research.md`, 2026-06-04) establishes three load-bearing facts: Docling converts *into* markdown/HTML/JSON but cannot export markdown *to* PDF/DOCX (ingestion-only); Pandoc ships as a statically-linked binary with no runtime dependencies (GPLv2+, isolated by process boundary); and Typst is a single Apache-2.0 binary suitable as a PDF engine.
+- The research brief (`docs/research/decision-input/doc-io-and-invocation-research.md`, 2026-06-04) establishes three load-bearing facts: Docling converts *into* markdown/HTML/JSON but cannot export markdown *to* PDF/DOCX (ingestion-only); Pandoc ships as a statically-linked binary with no runtime dependencies (GPLv2+, isolated by process boundary); and Typst is a single Apache-2.0 binary suitable as a PDF engine.
 
 ## Decision
 
@@ -62,6 +62,6 @@ Two-way door per half. The export engines are swappable behind the operation; th
 
 - [ADR 0001: Zero npm dependencies in core](0001-zero-npm-core.md)
 - [ADR 0014: Local ONNX embeddings are an optional capability](0014-local-embeddings-optional.md)
-- Research brief: `.cx/research/doc-io-and-invocation-research.md` (2026-06-04)
+- Research brief: `docs/research/decision-input/doc-io-and-invocation-research.md` (2026-06-04)
 - `lib/ingest/strategy.mjs`, `lib/ingest/provider-extract.mjs`
 - Beads: `construct-yrdd` (capability), `construct-i1mt` (research)

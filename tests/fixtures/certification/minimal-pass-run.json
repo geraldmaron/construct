@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "cert-hermetic-pass-001",
+  "scenarioId": "demo.terminal-fallback",
+  "capabilityId": "demo.terminal-fallback",
+  "model": {
+    "provider": "hermetic",
+    "requestedId": "fixture/demo",
+    "resolvedId": "fixture/demo",
+    "tier": "hermetic",
+    "paidOptIn": false
+  },
+  "fixture": {
+    "path": "tests/fixtures/certification/demo-terminal.json",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "verdict": {
+    "status": "pass",
+    "source": "deterministic",
+    "reason": null
+  },
+  "gates": [
+    { "id": "tape-produced", "pass": true, "detail": null }
+  ],
+  "qualitative": null,
+  "timing": {
+    "latencyMs": 12,
+    "startedAt": "2026-06-22T18:00:00.000Z",
+    "finishedAt": "2026-06-22T18:00:00.012Z"
+  },
+  "cost": null,
+  "artifacts": {
+    "outputMarkdown": "output.md"
+  },
+  "evidenceVersion": "corpus-inventory:1",
+  "createdAt": "2026-06-22T18:00:00.000Z"
+}

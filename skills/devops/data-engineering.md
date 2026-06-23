@@ -17,7 +17,7 @@ artifactType: data-pipeline
 
 ### ELT over ETL
 
-Modern data platforms (BigQuery, Snowflake, Redshift) are powerful enough to transform inside the warehouse. Prefer **ELT** (Extract → Load raw → Transform in warehouse):
+Modern data platforms (BigQuery, Snowflake, Redshift) are capable enough to transform inside the warehouse. Prefer **ELT** (Extract → Load raw → Transform in warehouse):
 
 ```
 Source → Airbyte/Fivetran → Raw tables → dbt models → Mart/API

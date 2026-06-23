@@ -10,6 +10,7 @@
     "prompt-surfaces",
     "opencode-config-ownership",
     "knowledge-layout",
+    "project-scopes",
     "embedding-boundary",
     "deployment-model",
     "intake-and-triage",
@@ -24,6 +25,7 @@
     "org-chart",
     "doc-quality-rubric",
     "doc-visual-matrix",
-    "template-prompt-audit"
+    "template-prompt-audit",
+    "specialist-skill-audit"
   ]
 }

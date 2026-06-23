@@ -1,8 +1,10 @@
 /**
  * 02-deadcode.mjs — Phase 2: lib modules with no inbound reference.
  *
- * Builds the import graph over the whole repo (static `from`/side-effect imports and
- * dynamic `import('<literal>')`) and reports lib modules nothing references. Construct
+ * Builds the import graph over the whole repo — including the buildable `apps/` surfaces
+ * (dashboard, chat) whose source consumes lib contract modules — from static
+ * `from`/side-effect imports and dynamic `import('<literal>')`, and reports lib modules
+ * nothing references. Construct
  * dispatches heavily through dynamic imports, so the graph must include those or it would
  * flag live code; modules reachable only by a computed (non-literal) import path can't be
  * proven dead and are reported separately, never as a hard finding.
@@ -23,11 +25,11 @@ import { REPO_ROOT } from './lib/handlers.mjs';
 import { writeJson } from './lib/artifacts.mjs';
 import { recordFindings } from './lib/findings.mjs';
 
-const SRC_DIRS = ['lib', 'bin', 'scripts', 'tests'];
+const SRC_DIRS = ['lib', 'bin', 'scripts', 'tests', 'apps'];
 
 // lib/server/static is the compiled Next.js dashboard (hashed build chunks), not source.
 
-const EXCLUDE = /(node_modules|\.git|audit-artifacts|lib\/server\/static)/;
+const EXCLUDE = /(node_modules|\.git|audit-artifacts|lib\/server\/static|apps\/[^/]+\/out(?:\/|$)|apps\/[^/]+\/\.next(?:\/|$))/;
 
 // bin/construct is the primary importer (124 dynamic imports) but has no extension, so it
 // must be added explicitly or every lazily-imported module looks dead.
@@ -59,6 +61,8 @@ const ACCEPTED_TEST_ONLY = {
   'lib/deprecate.mjs': 'single-warning deprecation utility with a test contract; retained for API retirements',
   'lib/storage/rrf.mjs': 'reciprocal-rank-fusion primitive with a correctness test; retained for hybrid retrieval',
   'lib/task-graph/schema.mjs': 'task-graph node/edge schema constants with a validation test; retained for the task-graph store',
+  'lib/providers/contract/contract-tests.mjs': 'contract harness: imported by tests/provider-*.test.mjs for ADR-0003 provider interface validation',
+  'lib/providers/contract/registry.mjs': 'contract harness: ProviderRegistry for embed-snapshot and provider-framework tests',
 };
 
 function walk(dir, exts) {
@@ -84,7 +88,7 @@ function resolveSpec(fromFile, spec) {
 
 export function runDeadCode() {
   const sources = [
-    ...SRC_DIRS.flatMap((d) => walk(path.join(REPO_ROOT, d), ['.mjs', '.js'])),
+    ...SRC_DIRS.flatMap((d) => walk(path.join(REPO_ROOT, d), ['.mjs', '.js', '.jsx', '.tsx'])),
     ...EXTRA_SOURCES.map((f) => path.join(REPO_ROOT, f)).filter((f) => fs.existsSync(f)),
   ];
   const libFiles = sources.filter((f) => f.startsWith(path.join(REPO_ROOT, 'lib') + path.sep) && /\.mjs$/.test(f));
@@ -138,7 +142,8 @@ export function runDeadCode() {
     .filter((f) => !(path.relative(REPO_ROOT, f) in ACCEPTED_TEST_ONLY))
     .filter((f) => {
       const importers = sources.filter((s) => {
-        const src = fs.readFileSync(s, 'utf8');
+        const src = corpusByFile.get(s);
+        if (!src) return false;
         return [...src.matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g)].some((m) => resolveSpec(s, m[1]) === f);
       });
       return importers.length > 0 && importers.every((s) => /\/tests\//.test(s) || s === f);
@@ -152,7 +157,7 @@ function toFindings(report) {
   const rows = [];
   for (const f of report.dead) {
     rows.push({ type: 'dead-module', target: f, severity: 'medium', tier: 'judgment',
-      evidence: 'no inbound static or dynamic-literal import anywhere in lib/bin/scripts/tests',
+      evidence: 'no inbound static or dynamic-literal import anywhere in lib/bin/scripts/tests/apps',
       recommendation: 'Confirm not reached via a computed import path, then remove it (or wire it up).' });
   }
   for (const f of report.testOnly) {

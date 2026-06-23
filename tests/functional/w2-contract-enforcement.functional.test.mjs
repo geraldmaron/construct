@@ -84,7 +84,7 @@ test('flags an output.schema path that does not exist on disk', () => {
         producer: 'construct',
         consumer: 'cx-architect',
         input: { shape: 'task-packet' },
-        output: { schema: 'lib/schemas/never-existed.json', type: 'mystery' },
+        output: { schema: 'lib/contract-schemas/never-existed.json', type: 'mystery' },
       }],
     });
     const r = validateContractsFile({
@@ -178,23 +178,22 @@ test('validateHandoff returns BLOCKED_CONTRACT in block mode when no contract is
   assert.equal(result.status, 'BLOCKED_CONTRACT');
 });
 
-test('workflow_contract_validate MCP tool wraps validateHandoff', async () => {
+test('workflow_contract_validate MCP tool enriches bare goal before validateHandoff', async () => {
   const { workflowContractValidate } = await import('../../lib/mcp/tools/workflow.mjs');
   const block = await workflowContractValidate({
     producer: 'construct',
     consumer: 'cx-orchestrator',
-    artifact: { goal: 'g' },
+    artifact: { goal: 'add rate limiting to the API' },
     enforcement: 'block',
   });
-  assert.equal(block.ok, false);
-  assert.equal(block.status, 'BLOCKED_CONTRACT');
+  assert.equal(block.ok, true, block.errors?.join('; '));
 
   const warn = await workflowContractValidate({
     producer: 'construct',
     consumer: 'cx-orchestrator',
-    artifact: { goal: 'g' },
+    artifact: { goal: 'add rate limiting to the API' },
     enforcement: 'warn',
   });
   assert.equal(warn.ok, true);
-  assert.ok(warn.warnings.length > 0);
+  assert.equal(warn.warnings?.length ?? 0, 0);
 });

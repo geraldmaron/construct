@@ -7,18 +7,18 @@ description: Integrations commands for Construct.
 
 | Command | What it does |
 |---|---|
-| `construct creds` | Manage provider credentials (set, rotate, revoke, list) |
+| `construct creds` | Manage provider credentials (login, set, rotate, revoke, list, test) |
 | `construct ollama` | Manage local Ollama models |
 | `construct providers` | Provider status, circuit-breaker reset, and resource discovery |
 
 ## construct creds
 
-Manage provider credentials (set, rotate, revoke, list)
+Manage provider credentials (login, set, rotate, revoke, list, test)
 
 **Usage**
 
 ```bash
-construct creds <list|set|rotate|revoke|test>
+construct creds <list|login|set|rotate|revoke|test>
 ```
 
 ## construct ollama

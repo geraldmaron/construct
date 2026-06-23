@@ -1,7 +1,7 @@
 /**
  * tests/specialist-prompt-format.test.mjs — hybrid specialist prompt format (ADR-0037).
  *
- * Pins three guarantees: the frontmatter schema + perspective drift gate
+ * Pins three guarantees: the frontmatter schema + perspective validation
  * (lib/specialists/prompt-schema.mjs); emit-neutrality — adding frontmatter does
  * not change the body the sync pipeline reads, checked against committed golden
  * fixtures via the real strip path; and the scaffold/edit CLI surface
@@ -40,10 +40,8 @@ function frontmatter(extra = {}) {
     '---', '', '## Anti-fabrication contract', 'x', '', '## Output format', 'y', ''].join('\n');
 }
 
-const registryEntry = { name: 'architect', perspective: ARCHITECT_PERSPECTIVE };
-
 test('a valid converted file passes with no errors', () => {
-  const r = validatePromptContent({ content: frontmatter(), id: 'cx-architect', registryEntry });
+  const r = validatePromptContent({ content: frontmatter(), id: 'cx-architect', registryEntry: { name: 'architect' } });
   assert.equal(r.converted, true);
   assert.deepEqual(r.errors, []);
 });
@@ -61,10 +59,10 @@ test('missing required frontmatter is an error', () => {
   assert.ok(r.errors.some((e) => /missing required frontmatter field "version"/.test(e)));
 });
 
-test('the perspective drift gate fires when frontmatter disagrees with the registry', () => {
-  const drifted = { ...registryEntry, perspective: { ...ARCHITECT_PERSPECTIVE, tension: 'cx-someone-else' } };
-  const r = validatePromptContent({ content: frontmatter(), id: 'cx-architect', registryEntry: drifted });
-  assert.ok(r.errors.some((e) => /drifts from registry/.test(e)), 'drift is an error');
+test('incomplete perspective fields are errors', () => {
+  const bad = frontmatter().replace(`  tension: ${JSON.stringify(ARCHITECT_PERSPECTIVE.tension)}`, '  tension: ""');
+  const r = validatePromptContent({ content: bad, id: 'cx-architect' });
+  assert.ok(r.errors.some((e) => /perspective\.tension/.test(e)), 'empty tension is an error');
 });
 
 test('invalid YAML frontmatter is an error, not a crash', () => {
@@ -73,19 +71,22 @@ test('invalid YAML frontmatter is an error, not a crash', () => {
   assert.ok(r.errors.some((e) => /not valid YAML/.test(e)));
 });
 
-test('the live registry validates with zero errors (architect + test-automation converted)', () => {
+test('the live registry validates with zero errors (all specialist prompts converted)', () => {
   const r = validatePromptFiles({ rootDir: ROOT });
   assert.deepEqual(r.errors, [], r.errors.join('\n'));
-  assert.ok(r.converted >= 2, `expected >= 2 converted, got ${r.converted}`);
+  assert.equal(r.converted, r.total, `expected all ${r.total} prompts converted, got ${r.converted}`);
+  assert.ok(r.total >= 29, `expected >= 29 prompts, got ${r.total}`);
 });
 
 test('emit-neutral: stripping frontmatter yields the golden body byte-for-byte', () => {
-  for (const name of ['cx-architect', 'cx-test-automation']) {
-    const golden = fs.readFileSync(path.join(ROOT, 'tests/fixtures/specialist-prompt-emit', `${name}.body.txt`), 'utf8');
+  const goldenDir = path.join(ROOT, 'tests/fixtures/specialist-prompt-emit');
+  const names = fs.readdirSync(goldenDir).filter((f) => f.endsWith('.body.txt')).map((f) => f.replace(/\.body\.txt$/, ''));
+  assert.ok(names.length >= 29, `expected >= 29 golden bodies, got ${names.length}`);
+  for (const name of names) {
+    const golden = fs.readFileSync(path.join(goldenDir, `${name}.body.txt`), 'utf8');
     const body = readPromptBody(`specialists/prompts/${name}.md`, ROOT);
     assert.equal(body, golden.trim(), `${name}: body changed by frontmatter addition`);
     assert.ok(!body.startsWith('---'), `${name}: frontmatter leaked into the body`);
-    // The frontmatter parses and exposes structured perspective.
     const { frontmatter: fm } = splitFrontmatter(fs.readFileSync(path.join(ROOT, `specialists/prompts/${name}.md`), 'utf8'));
     assert.ok(fm && fm.perspective && fm.perspective.tension, `${name}: frontmatter perspective missing`);
   }

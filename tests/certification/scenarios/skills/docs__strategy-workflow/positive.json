@@ -1,0 +1,22 @@
+{
+  "skillId": "docs/strategy-workflow",
+  "mode": "positive",
+  "activationTriggers": [
+    "Use when: the user asks about product direction, strategic bets, what to prioritize, whether a signal aligns with strategy, or wants to update the strategy.",
+    "the user asks about product direction, strategic bets, what to prioritize, whether a signal aligns with strategy, or wants to update the strategy."
+  ],
+  "inputs": [
+    "[signal, decision-context]"
+  ],
+  "expectedOutputs": {
+    "artifactType": "strategy",
+    "name": "docs-strategy-workflow"
+  },
+  "verificationSteps": [
+    "skill file exists under skills/",
+    "inventory lists owners and workflowSkill=true"
+  ],
+  "owners": [
+    "cx-product-manager"
+  ]
+}

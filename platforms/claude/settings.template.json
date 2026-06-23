@@ -170,12 +170,48 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/brand-prose-lint.mjs\"",
+            "timeout": 15
+          }
+        ],
+        "id": "post:edit:brand-prose-lint",
+        "description": "Block marketing voice, retired fonts, and Construct/cli naming drift in governed docs and templates."
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/artifact-release-gate.mjs\"",
+            "timeout": 15
+          }
+        ],
+        "id": "post:edit:artifact-release-gate",
+        "description": "Advisory: surface manifest structure/visual gaps on typed docs under docs/** and .cx/research/**"
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
             "command": "node \"$HOME/.construct/lib/hooks/doc-coupling-check.mjs\"",
             "timeout": 5
           }
         ],
         "id": "post:edit:doc-coupling",
         "description": "Advisory: nudge when code edits accumulate without CHANGELOG/docs updates (pre-commit gate will block at commit time)"
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.construct/lib/hooks/graph-impact-advisory.mjs\"",
+            "timeout": 10
+          }
+        ],
+        "id": "post:edit:graph-impact",
+        "description": "Advisory: surface affected tests from the dependency graph after code edits"
       },
       {
         "matcher": "Write|Edit|MultiEdit",

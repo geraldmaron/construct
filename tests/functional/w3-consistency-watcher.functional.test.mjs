@@ -22,7 +22,7 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 function freshRepoSlice() {
   const root = mkdtempSync(join(tmpdir(), 'construct-consistency-'));
-  for (const dir of ['platforms/claude', 'lib/hooks', 'lib/mcp/tools', 'lib/schemas', 'specialists']) {
+  for (const dir of ['platforms/claude', 'lib/hooks', 'lib/mcp/tools', 'lib/contract-schemas', 'specialists']) {
     mkdirSync(join(root, dir), { recursive: true });
   }
   // W2's contract validator + schema are optional dependencies for the
@@ -34,7 +34,7 @@ function freshRepoSlice() {
   }
   const contractsSchemaSrc = join(REPO_ROOT, 'specialists', 'contracts.schema.json');
   if (existsSync(contractsSchemaSrc)) cpSync(contractsSchemaSrc, join(root, 'agents', 'contracts.schema.json'));
-  cpSync(join(REPO_ROOT, 'lib', 'schemas'), join(root, 'lib', 'schemas'), { recursive: true });
+  cpSync(join(REPO_ROOT, 'lib', 'contract-schemas'), join(root, 'lib', 'contract-schemas'), { recursive: true });
   return {
     root,
     cleanup() { try { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } },

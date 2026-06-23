@@ -1,0 +1,21 @@
+{
+  "skillId": "security/threat-intel",
+  "mode": "positive",
+  "activationTriggers": [
+    "Use this skill when performing OSINT, threat modeling, or building threat intelligence programs."
+  ],
+  "inputs": [
+    "[system-design]"
+  ],
+  "expectedOutputs": {
+    "artifactType": "threat-model",
+    "name": "security-threat-intel"
+  },
+  "verificationSteps": [
+    "skill file exists under skills/",
+    "inventory lists owners and workflowSkill=true"
+  ],
+  "owners": [
+    "cx-security"
+  ]
+}

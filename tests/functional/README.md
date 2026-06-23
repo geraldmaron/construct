@@ -31,6 +31,20 @@ Every functional test:
 4. Verifies the next-step contract: if A1 writes an observation, A1's functional test reads it back with `searchObservations` to prove the loop closes.
 5. Cleans up. The tmpdir is deleted on success.
 
+### Isolation contract
+
+Durable writes must stay under the fixture root — never the developer's real `HOME`,
+`~/.cx`, or repo `profiles/`. When a test redirects `process.env.HOME`, it must
+restore the prior value in `finally`, `after`, or `t.after` (parallel `node --test`
+shares one process environment).
+
+- Use `tests/helpers/isolation-contract.mjs` (`assertPathUnderRoot`) after APIs that
+  resolve project-scoped storage (`exportTurns`, `resolveProjectScopedPath`, etc.).
+- Create a Construct project marker (`.cx/` or `package.json` + `.cx/`) in the
+  fixture when exercising project-scoped commands.
+- `tests/test-isolation.test.mjs` flags files that assign `HOME` without an in-file
+  restore signal.
+
 ## Run
 
 ```bash

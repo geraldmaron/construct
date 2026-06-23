@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geraldmaron.github.io/construct/schemas/brand-voice.schema.json",
+  "title": "Project brand voice override",
+  "type": "object",
+  "required": ["version"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "formality": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "toneOverride": {
+      "type": "object",
+      "description": "Maps doc type id to tone profile id from specialists/tone-profiles.json",
+      "additionalProperties": { "type": "string" }
+    },
+    "audienceLexicon": {
+      "type": "object",
+      "properties": {
+        "prefer": { "type": "array", "items": { "type": "string" } },
+        "avoid": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

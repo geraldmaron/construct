@@ -8,13 +8,16 @@ description: Diagnostics commands for Construct.
 | Command | What it does |
 |---|---|
 | `construct audit` | Audit Construct internals and review the mutation trail |
+| `construct certify` | Inspect and run scenario-based certification under .cx/certification/ |
 | `construct cleanup` | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct docs:check` | Check for missing how-to guides (alias for `docs check`) |
 | `construct docs:reconcile` | Reconcile docs against the registry |
-| `construct docs:site` | Manage the docs static site build |
+| `construct docs:site` | Regenerate generated reference pages under docs/reference/ |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
 | `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
+| `construct impact` | Change-impact analysis — map changed files to affected tests, capabilities, and workflows |
+| `construct rules` | Rule and hook reference telemetry rollup |
 
 ## construct audit
 
@@ -23,8 +26,35 @@ Audit Construct internals and review the mutation trail
 **Usage**
 
 ```bash
-construct audit <events|trail>
+construct audit <skills|specialists|tests|trail>
 ```
+
+**Subcommands**
+
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+
+## construct certify
+
+Inspect and run scenario-based certification under .cx/certification/
+
+**Usage**
+
+```bash
+construct certify list|show|scenarios|models|demos|status|gate|run <scenario-id>
+```
+
+**Subcommands**
+
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
+- `[object Object]`
 
 ## construct cleanup
 
@@ -42,7 +72,7 @@ construct cleanup [--dry-run] [--quiet] [--pressure-release] [--pressure-only] [
 |---|---|
 | `--dry-run` | Show what would be cleaned without changing anything |
 | `--quiet` | Minimal output |
-| `--pressure-release` | Also kill stale dev-agent processes |
+| `--pressure-release` | Also kill stale dev-agent and leaked VHS demo-recorder processes |
 | `--pressure-only` | Pressure release only — skip disk cleanup |
 | `--disk-only` | Disk cleanup only — skip pressure release |
 
@@ -78,12 +108,12 @@ construct docs:reconcile
 
 ## construct docs:site
 
-Manage the docs static site build
+Regenerate generated reference pages under docs/reference/
 
 **Usage**
 
 ```bash
-construct docs:site <build|serve>
+construct docs:site [--check]
 ```
 
 ## construct docs:update
@@ -104,4 +134,24 @@ Validate documentation quality (alias for `docs verify`)
 
 ```bash
 construct docs:verify
+```
+
+## construct impact
+
+Change-impact analysis — map changed files to affected tests, capabilities, and workflows
+
+**Usage**
+
+```bash
+construct impact [files…] [--stdin] [--run] [--json]
+```
+
+## construct rules
+
+Rule and hook reference telemetry rollup
+
+**Usage**
+
+```bash
+construct rules usage [--since=30d]
 ```

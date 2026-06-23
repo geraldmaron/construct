@@ -65,6 +65,11 @@ test('release gate: construct docs:update --check reports no drift', () => {
   assert.equal(result.status, 0, `docs:update --check exited ${result.status}; stdout: ${result.stdout}`);
 });
 
+test('release gate: construct docs:site --check reports no drift', () => {
+  const result = run(['docs:site', '--check']);
+  assert.equal(result.status, 0, `docs:site --check exited ${result.status}; stdout: ${result.stdout}`);
+});
+
 test('release gate: construct lint:comments is clean', () => {
   const result = run(['lint:comments']);
   assert.equal(result.status, 0, `lint:comments exited ${result.status}; stdout: ${result.stdout}`);
@@ -151,6 +156,12 @@ test('release gate (W1): no misleading "future implementation" wording in source
     );
     assert.equal(lines.length, 0, `expected zero misleading-wording matches in source, got:\n${lines.join('\n')}`);
   }
+});
+
+test('release gate: construct certify gate passes on HEAD', () => {
+  const result = run(['certify', 'gate']);
+  assert.equal(result.status, 0, `certify gate exited ${result.status}; stdout: ${result.stdout}\nstderr: ${result.stderr}`);
+  assert.match(result.stdout, /PASS/);
 });
 
 test('release gate: CHANGELOG.md Unreleased section exists', () => {

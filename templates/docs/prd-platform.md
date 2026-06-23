@@ -25,6 +25,15 @@ operator. "Developer" is too broad.
 ## Goals and non-goals
 <!-- Goals: what success looks like for the consumers. Non-goals: explicitly scoped out. -->
 
+## Platform flow
+
+```mermaid
+flowchart TD
+  A[Consumer] --> B[Platform API]
+  B --> C[Core service]
+  C --> D[Response / event]
+```
+
 ## API and interface contract
 <!-- The surface being defined: endpoints, schemas, SDK methods, event payloads, config shapes, permission models. Number each contract item (C-1, C-2, …). -->
 
@@ -48,6 +57,16 @@ operator. "Developer" is too broad.
 
 ## Success metrics
 <!-- How we know this worked: adoption, error rate, latency, support ticket reduction. Leading vs. lagging. -->
+
+| Metric | Baseline | Target |
+|---|---|---|
+| {name} | {current} | {goal} |
+
+## Risks and mitigations
+
+| Risk | Likelihood | Impact | Mitigation |
+|---|---|---|---|
+| {risk} | low / med / high | low / med / high | {mitigation} |
 
 ## Consumer impact
 <!-- What changes for existing consumers. What breaks, what degrades, what stays the same. Link to migration guide if needed. -->

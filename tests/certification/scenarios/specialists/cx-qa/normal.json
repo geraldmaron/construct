@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "specialistId": "cx-qa",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path",
+  "userPrompt": "For each acceptance criterion — how does the test fail when the criterion is violated?",
+  "roleCardRefs": [
+    "openingQuestion",
+    "humanEquivalent",
+    "skills"
+  ],
+  "hermeticChecks": [
+    "role-card-exists",
+    "registry-specialist-match",
+    "contract-audit-pass"
+  ],
+  "handoffEvidence": {
+    "required": true,
+    "artifactTypes": [
+      "qa-strategy",
+      "test-plan"
+    ]
+  },
+  "liveScoring": {
+    "enabled": true,
+    "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "specialistId": "cx-sre",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path",
+  "userPrompt": "How will we know when this is failing in production, and what do we do first?",
+  "roleCardRefs": [
+    "openingQuestion",
+    "humanEquivalent",
+    "skills"
+  ],
+  "hermeticChecks": [
+    "role-card-exists",
+    "registry-specialist-match",
+    "contract-audit-pass"
+  ],
+  "handoffEvidence": {
+    "required": true,
+    "artifactTypes": [
+      "incident-report",
+      "postmortem",
+      "runbook"
+    ]
+  },
+  "liveScoring": {
+    "enabled": true,
+    "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+  }
+}

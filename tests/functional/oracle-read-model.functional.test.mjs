@@ -1,0 +1,100 @@
+/**
+ * tests/functional/oracle-read-model.functional.test.mjs —
+ *
+ * Oracle read model collects project-scoped signals from an isolated tmpdir
+ * without touching the developer's home log or real project state.
+ */
+
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, cpSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import { collectReadModel } from '../../lib/oracle/read-model.mjs';
+
+function freshEnv() {
+  const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-proj-'));
+  const homeDir = mkdtempSync(join(tmpdir(), 'construct-oracle-home-'));
+  const rootDir = mkdtempSync(join(tmpdir(), 'construct-oracle-root-'));
+  mkdirSync(join(projectDir, '.cx', 'observations'), { recursive: true });
+  mkdirSync(join(projectDir, '.cx', 'outcomes'), { recursive: true });
+  mkdirSync(join(rootDir, 'audit-artifacts'), { recursive: true });
+  mkdirSync(join(homeDir, '.cx'), { recursive: true });
+  mkdirSync(join(rootDir, 'specialists'), { recursive: true });
+  cpSync(join(process.cwd(), 'specialists', 'registry.json'), join(rootDir, 'specialists', 'registry.json'));
+  return {
+    projectDir,
+    homeDir,
+    rootDir,
+    cleanup() {
+      for (const d of [projectDir, homeDir, rootDir]) {
+        try { rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
+      }
+    },
+  };
+}
+
+test('collectReadModel returns empty sections for a minimal project', () => {
+  const env = freshEnv();
+  try {
+    const model = collectReadModel(env);
+    assert.ok(model.collectedAt);
+    assert.equal(model.observations.present, true);
+    assert.equal(model.observations.count, 0);
+    assert.equal(model.outcomes.present, false);
+    assert.equal(model.contractViolations.recentCount, 0);
+    assert.equal(model.alignmentCensus.present, false);
+    assert.equal(model.parity.skipped, false);
+  } finally {
+    env.cleanup();
+  }
+});
+
+test('collectReadModel ingests outcomes, violations, doctor log, and census', () => {
+  const env = freshEnv();
+  try {
+    writeFileSync(join(env.projectDir, '.cx', 'outcomes', '_summary.json'), JSON.stringify({
+      generatedAt: new Date().toISOString(),
+      roles: { engineer: { count: 10, success: 8, successRate: 0.8, last30: { count: 5, successRate: 0.8 } } },
+    }));
+
+    const violation = {
+      ts: new Date().toISOString(),
+      contractId: 'engineer-to-reviewer',
+      agent: 'cx-engineer',
+      verdict: 'CONTRACT_VIOLATION',
+      direction: 'output',
+    };
+    writeFileSync(join(env.projectDir, '.cx', 'contract-violations.jsonl'), JSON.stringify(violation) + '\n');
+
+    writeFileSync(join(env.homeDir, '.cx', 'doctor-log.jsonl'), JSON.stringify({
+      ts: Date.now(),
+      kind: 'escalate',
+      watcher: 'service-health',
+      result: 'recorded',
+      summary: 'dashboard unreachable after 2 restarts',
+    }) + '\n');
+
+    writeFileSync(join(env.projectDir, '.cx', 'observations', 'index.json'), JSON.stringify([
+      { id: 'obs-1', role: 'cx-engineer', category: 'insight', summary: 'test observation', timestamp: new Date().toISOString() },
+    ]));
+
+    writeFileSync(join(env.rootDir, 'audit-artifacts', 'alignment-census.json'), JSON.stringify({
+      generatedAt: new Date().toISOString(),
+      summary: { skills: 100 },
+      rootLayout: { legacyDirs: ['providers'], findingCount: 1, clean: false },
+    }));
+
+    const model = collectReadModel(env);
+    assert.equal(model.outcomes.present, true);
+    assert.equal(model.contractViolations.recentCount, 1);
+    assert.equal(model.doctorLog.recentCount, 1);
+    assert.equal(model.observations.indexCount, 1);
+    assert.equal(model.alignmentCensus.present, true);
+    assert.equal(model.alignmentCensus.rootLayout?.clean, false);
+    assert.deepEqual(model.alignmentCensus.rootLayout?.legacyDirs, ['providers']);
+  } finally {
+    env.cleanup();
+  }
+});

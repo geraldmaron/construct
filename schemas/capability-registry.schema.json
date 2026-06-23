@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/capability-registry.schema.json",
+  "title": "Construct Capability Registry",
+  "type": "object",
+  "required": ["version", "capabilities"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "capabilities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/capability" }
+    }
+  },
+  "$defs": {
+    "surfaceEntry": {
+      "type": "object",
+      "properties": {
+        "supported": { "type": "boolean" },
+        "primary": { "type": "boolean" },
+        "tool": { "type": "string" },
+        "command": { "type": "string" },
+        "jsonTwin": { "type": "boolean" },
+        "slashCommand": { "type": "string" }
+      }
+    },
+    "capability": {
+      "type": "object",
+      "required": ["id", "kind", "humanGate"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9.-]*$" },
+        "kind": {
+          "enum": ["capability", "workflow", "skill", "document-type", "ingest-strategy", "contract-chain"]
+        },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "criticality": { "enum": ["P0", "P1", "P2", "P3"] },
+        "ownerSpecialists": { "type": "array", "items": { "type": "string" } },
+        "skill": { "type": "string" },
+        "embeddedWorkflow": { "type": "string" },
+        "template": { "type": "string" },
+        "ingestStrategy": { "type": "string" },
+        "contracts": { "type": "array", "items": { "type": "string" } },
+        "surfaces": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/surfaceEntry" }
+        },
+        "dependencies": {
+          "type": "object",
+          "properties": {
+            "skills": { "type": "array", "items": { "type": "string" } },
+            "templates": { "type": "array", "items": { "type": "string" } },
+            "rules": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "verification": {
+          "type": "object",
+          "properties": {
+            "functional": { "type": "string" },
+            "hostEmulation": { "type": "string" },
+            "structureRequirements": { "type": "string" },
+            "verificationBar": { "type": "string" },
+            "untestableRationale": { "type": "string" }
+          }
+        },
+        "humanGate": {
+          "enum": ["proposal-only", "requires-human-approval", "autonomous"]
+        },
+        "lastValidated": { "type": ["string", "null"], "format": "date-time" }
+      }
+    }
+  }
+}

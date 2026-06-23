@@ -11,10 +11,12 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 |---|---|
 | `adaptive-lint` | PostToolUse auto-formatter and debug-log detector. |
 | `agent-tracker` | Task tool lifecycle hook: records dispatch + |
+| `artifact-release-gate` | PostToolUse advisory structure/visual gate for typed docs. |
 | `audit-reads` | post-Read state tracker. |
 | `audit-trail` | append-only audit log of every mutation Construct |
 | `bash-output-logger` | persists long Bash outputs to disk and nudges |
 | `block-no-verify` | refuse `git commit/push/merge --no-verify`. |
+| `brand-prose-lint` | PostToolUse hook: block brand drift at write time. |
 | `ci-status-check` | UserPromptSubmit hook: inject remote CI status into agent context. |
 | `comment-lint` | PostToolUse hook: enforce the comment policy at write time. |
 | `config-protection` | protects code-quality config from being weakened. |
@@ -25,6 +27,7 @@ Hooks are wired in `platforms/claude/settings.template.json` and execute as chil
 | `edit-accumulator` | accumulates edited paths for the next |
 | `edit-error-recovery` | Edit error recovery hook — recovers from failed edit attempts and suggests fixes. |
 | `edit-guard` | Edit guard hook — validates old_string exists in target file before allowing edits. |
+| `graph-impact-advisory` | PostToolUse hook: test-impact advisory on code edits. |
 | `guard-bash` | Guard bash hook — blocks dangerous shell commands from running unreviewed. |
 | `mcp-audit` | MCP audit hook — logs all MCP tool calls for observability and review. |
 | `mcp-health-check` | MCP health check hook — verifies MCP servers are reachable before tool use. |

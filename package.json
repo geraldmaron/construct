@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "type": "module",
   "packageManager": "npm@11.5.1",
   "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
@@ -26,7 +26,6 @@
     "platforms/**",
     "templates/**",
     "templates/distribution/**",
-    "db/**",
     "scripts/sync-specialists.mjs",
     "README.md",
     ".env.example"
@@ -57,20 +56,28 @@
     "test:unit": "node scripts/run-tests.mjs --exclude=tests/functional",
     "lint:js": "eslint bin/construct \"lib/**/*.mjs\" \"scripts/**/*.mjs\" \"tests/**/*.mjs\"",
     "coverage": "c8 --reporter=text-summary --reporter=lcov --src=lib --src=bin node scripts/run-tests.mjs --exclude=tests/functional",
-    "docs:init": "node lib/init-docs.mjs --yes",
+    "docs:init": "node -e \"console.error('docs:init is deprecated — use: construct init --docs-preset=lean|product|full'); process.exit(1)\"",
     "docs:update": "node ./bin/construct docs:update",
     "docs:site": "node ./bin/construct docs:site",
-    "docs:dev": "npm --prefix apps/docs run dev",
-    "docs:build": "npm --prefix apps/docs run build",
+    "docs:dev": "node scripts/npm-run.mjs npm --prefix apps/docs run dev",
+    "docs:build": "node scripts/npm-run.mjs npm --prefix apps/docs run build",
     "lint:comments": "node ./bin/construct lint:comments",
     "lint:contracts": "node ./bin/construct lint:contracts",
     "lint:agents": "node ./bin/construct lint:agents",
     "build:sea": "esbuild bin/construct --bundle --platform=node --target=node20 --packages=external --outfile=dist/construct-bundle.cjs 2>&1 || (echo 'esbuild not found — install with: npm install -g esbuild' && exit 1)",
+    "build:chat": "esbuild apps/chat/tui/index.jsx --bundle --platform=node --format=esm --packages=external --jsx=automatic --jsx-import-source=react --outfile=apps/chat/dist/tui.mjs",
+    "build:chat-desktop": "node scripts/build-chat-desktop.mjs",
+    "build:chat-desktop:bundle": "node scripts/npm-run.mjs npm install --prefix apps/chat/desktop --include=dev && node scripts/npm-run.mjs npm --prefix apps/chat/desktop run build",
+    "build:dashboard": "node scripts/npm-run.mjs npm install --prefix apps/dashboard && node scripts/npm-run.mjs npm --prefix apps/dashboard run build",
+    "examples:deck": "node scripts/generate-deck-examples.mjs",
+    "examples:distribution": "node scripts/generate-distribution-examples.mjs",
+    "clean:artifacts": "node scripts/clean-artifacts.mjs",
     "lint:profiles": "node scripts/lint-profiles.mjs",
     "learning:status": "node scripts/learning-status.mjs",
     "lint:templates": "node scripts/lint-commits-pr.mjs",
     "eval:routing": "node scripts/eval/score-intent-classifier.mjs",
-    "release:check": "node ./bin/construct doctor && npm test && node ./bin/construct docs:update --check && node ./bin/construct dashboard:sync --check && node ./bin/construct lint:comments && node scripts/lint-commits-pr.mjs",
+    "adapters": "node lib/adapters-sync.mjs",
+    "release:check": "node ./bin/construct doctor && npm test && node ./bin/construct docs:update --check && node ./bin/construct docs:site --check && node ./bin/construct registry:generate-docs --check && node ./bin/construct docs:verify --strict && node scripts/alignment/census.mjs --ratchet && node ./bin/construct dashboard:sync --check && node ./bin/construct lint:comments && node ./bin/construct certify gate && node scripts/lint-commits-pr.mjs",
     "release:gate": "node --test tests/functional/release-gate.functional.test.mjs",
     "audit:published": "node scripts/audit-published-artifact.mjs",
     "version": "node scripts/sync-construct-version.mjs && git add .construct/version",
@@ -86,15 +93,19 @@
     "js-yaml": "^4.2.0"
   },
   "optionalDependencies": {
+    "@ai-sdk/anthropic": "^3.0.85",
+    "@ai-sdk/openai": "^3.0.73",
+    "@ai-sdk/openai-compatible": "^2.0.51",
     "@huggingface/transformers": "^4.2.0",
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/core": "^2.7.1",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.218.0",
-    "@opentelemetry/resources": "^2.7.1",
-    "@opentelemetry/sdk-trace-node": "^1.25.0",
-    "@opentelemetry/semantic-conventions": "^1.25.0",
+    "ai": "^6.0.208",
+    "ink": "^7.1.0",
     "mammoth": "^1.12.0",
-    "unpdf": "^1.6.2"
+    "pptx-embed-fonts": "^0.0.6",
+    "pptxgenjs": "^4.0.1",
+    "react": "^19.2.7",
+    "unpdf": "^1.6.2",
+    "zod": "^4.4.3"
   },
   "overrides": {
     "express-rate-limit": "8.5.1"
@@ -102,7 +113,9 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "c8": "^11.0.0",
+    "esbuild": "^0.28.1",
     "eslint": "^10.4.1",
-    "globals": "^17.6.0"
+    "globals": "^17.6.0",
+    "ink-testing-library": "^4.0.0"
   }
 }

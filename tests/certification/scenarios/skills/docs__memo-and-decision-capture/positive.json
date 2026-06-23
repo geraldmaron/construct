@@ -1,0 +1,22 @@
+{
+  "skillId": "docs/memo-and-decision-capture",
+  "mode": "positive",
+  "activationTriggers": [
+    "Use when: a decision, status update, or announcement needs to be captured as a short, durable memo that states the decision, its rationale, and what changes."
+  ],
+  "inputs": [
+    "[decision-context]"
+  ],
+  "expectedOutputs": {
+    "artifactType": "memo",
+    "name": "docs-memo-and-decision-capture"
+  },
+  "verificationSteps": [
+    "skill file exists under skills/",
+    "inventory lists owners and workflowSkill=true"
+  ],
+  "owners": [
+    "cx-docs-keeper",
+    "cx-release-manager"
+  ]
+}

@@ -73,8 +73,7 @@ describe('no-fabrication coverage', () => {
     const missingLink = [];
     for (const file of prompts) {
       const text = fs.readFileSync(file, 'utf8');
-      // Find the contract paragraph (single line in the existing pattern)
-      const match = text.match(/\*\*Anti-fabrication contract\*\*:[\s\S]*?(?=\n\n)/);
+      const match = text.match(/(?:\*\*Anti-fabrication contract\*\*:|## Anti-fabrication contract\n\n)([\s\S]*?)(?=\n\n)/);
       if (!match) {
         missingLink.push(`${path.relative(root, file)} (no contract paragraph found at all)`);
         continue;
@@ -98,7 +97,7 @@ describe('no-fabrication coverage', () => {
     const contracts = new Map();
     for (const file of prompts) {
       const text = fs.readFileSync(file, 'utf8');
-      const match = text.match(/\*\*Anti-fabrication contract\*\*:([\s\S]*?)(?=\n\n)/);
+      const match = text.match(/(?:\*\*Anti-fabrication contract\*\*:|## Anti-fabrication contract\n\n)([\s\S]*?)(?=\n\n)/);
       if (!match) continue;
       // Normalize whitespace for comparison
       const normalized = match[1].replace(/\s+/g, ' ').trim();

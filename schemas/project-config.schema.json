@@ -131,6 +131,52 @@
       "description": "Provider-specific settings (e.g., Anthropic, OpenAI, GitHub). Values starting with '$' are interpolated from environment variables.",
       "additionalProperties": true
     },
+    "models": {
+      "type": "object",
+      "description": "Model catalog visibility and live polling preferences.",
+      "properties": {
+        "visibility": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["all_configured", "tier_defaults", "explicit"],
+              "default": "all_configured"
+            },
+            "include": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Allowlist used when mode is explicit."
+            },
+            "exclude": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Model ids hidden from pickers (active pin still shown with warning)."
+            },
+            "providers": {
+              "type": "object",
+              "description": "Per provider-family toggles; false hides the family from pickers.",
+              "additionalProperties": { "type": "boolean" }
+            }
+          }
+        },
+        "catalog": {
+          "type": "object",
+          "properties": {
+            "liveOpenRouter": {
+              "type": "boolean",
+              "default": true,
+              "description": "Merge cached live OpenRouter free models into the catalog."
+            },
+            "maxLiveFree": {
+              "type": "number",
+              "default": 24,
+              "description": "Maximum live free models merged from cache."
+            }
+          }
+        }
+      }
+    },
     "resources": {
       "type": "object",
       "description": "Storage and runtime resource limits.",

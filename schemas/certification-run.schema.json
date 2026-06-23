@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/certification-run.schema.json",
+  "title": "CertificationRun",
+  "description": "Durable result of a scenario-based certification execution. Records model, fixture, gates, qualitative verdict, cost, and redacted output pointers without storing secrets.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "scenarioId",
+    "capabilityId",
+    "model",
+    "fixture",
+    "verdict",
+    "gates",
+    "timing",
+    "evidenceVersion",
+    "createdAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "scenarioId": { "type": "string", "minLength": 1 },
+    "capabilityId": { "type": "string", "minLength": 1 },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "requestedId", "resolvedId", "tier"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "requestedId": { "type": "string", "minLength": 1 },
+        "resolvedId": { "type": "string", "minLength": 1 },
+        "tier": { "enum": ["free", "paid-reference", "hermetic", "unknown"] },
+        "paidOptIn": { "type": "boolean" },
+        "operatorAckAt": { "type": ["string", "null"] }
+      }
+    },
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "source"],
+      "properties": {
+        "status": { "enum": ["pass", "fail", "inconclusive"] },
+        "source": { "enum": ["deterministic", "qualitative", "skipped-provider", "error"] },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "pass"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "pass": { "type": "boolean" },
+          "detail": { "type": ["string", "null"] },
+          "evidence": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "qualitative": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "judgeModel": { "type": ["string", "null"] },
+        "score": { "type": ["number", "null"] },
+        "abstained": { "type": "boolean" }
+      }
+    },
+    "evaluation": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "properties": {
+        "schemaVersion": { "type": "integer" },
+        "blocked": { "type": ["boolean", "null"] },
+        "gates": { "type": "array" },
+        "evaluators": { "type": "array" },
+        "decision": {
+          "type": "object",
+          "properties": {
+            "promotable": { "type": "boolean" },
+            "reason": { "type": "string" },
+            "judgesConsulted": { "type": "integer" }
+          }
+        }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["latencyMs"],
+      "properties": {
+        "latencyMs": { "type": "number", "minimum": 0 },
+        "startedAt": { "type": ["string", "null"] },
+        "finishedAt": { "type": ["string", "null"] }
+      }
+    },
+    "cost": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "currency": { "type": "string" },
+        "inputTokens": { "type": ["number", "null"] },
+        "outputTokens": { "type": ["number", "null"] },
+        "totalUsd": { "type": ["number", "null"] }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "outputMarkdown": { "type": ["string", "null"] },
+        "outputJson": { "type": ["string", "null"] }
+      }
+    },
+    "evidenceVersion": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "minLength": 1 }
+  }
+}

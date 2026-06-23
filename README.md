@@ -69,6 +69,8 @@ In your editor, start with `@construct`. Ask for the outcome, not the specialist
 | Add a custom specialist | [Add a custom specialist](https://geraldmaron.github.io/construct/cookbook/add-a-custom-agent) |
 | Fix a blocked commit or red CI | [Fix a policy violation](https://geraldmaron.github.io/construct/cookbook/fix-a-policy-violation) |
 | Plug in your own LLM | [Plug in your own LLM](https://geraldmaron.github.io/construct/cookbook/plug-in-your-own-llm) |
+| Run terminal chat on Construct's owned loop | [Construct chat](https://geraldmaron.github.io/construct/cookbook/construct-chat) |
+| Check fleet health (Oracle) | [Architecture — Oracle](https://geraldmaron.github.io/construct/concepts/architecture) |
 | Look up a CLI command | [CLI reference](https://geraldmaron.github.io/construct/reference/cli) |
 
 Works with Anthropic, OpenRouter, Ollama, and other OpenAI-compatible providers.
@@ -97,7 +99,7 @@ First run downloads `uv` and creates `.cx/runtime/docling/.venv` (~1.5 GB includ
 
 ## Hard gates
 
-Every code mutation runs through enforcement. No secrets committed, tests green, docs current, comments lint-clean, CI passes. Gates live in three places: write-time, commit-time, CI safety net. They can only be bypassed with explicit env vars so every exception leaves an audit trail. [Gates and enforcement](https://geraldmaron.github.io/construct/concepts/gates-and-enforcement).
+Every code mutation runs through enforcement. No secrets committed, tests green, docs current, comments lint-clean, CI passes. Gates live in three places: write-time, commit-time, CI safety net. Quality gates fire unconditionally; if a gate fires wrong, repair the policy — do not bypass it. [Gates and enforcement](https://geraldmaron.github.io/construct/concepts/gates-and-enforcement).
 
 ## Footprint contract
 
@@ -146,14 +148,15 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 | Command | What it does |
 |---|---|
+| `construct artifact` | Validate typed document artifacts against the release gate |
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
-| `construct demo` | Record reproducible terminal demos via VHS/asciinema (optional system binaries; ADR-0001) |
+| `construct demo` | Run guided demos via construct chat (default) or record VHS/asciinema tapes |
 | `construct diagram` | Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001) |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
-| `construct export` | Export markdown to PDF/DOCX/HTML via Pandoc + Typst (optional system binaries; ADR-0024) |
+| `construct export` | Export markdown to PDF, DOCX, HTML, and other Pandoc formats via Pandoc + Typst (optional system binaries; ADR-0024) |
 | `construct graph` | Task graph management |
 | `construct handoffs` | List and inspect session handoff files in .cx/handoffs/ |
 | `construct headhunt` | Create domain expertise overlays |
@@ -162,11 +165,13 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
+| `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback from chat session and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
 | `construct team` | Team review and template listing |
+| `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
 | `construct wireframe` | Generate wireframes from description |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
 | `construct workspace` | Manage PM workspaces for multi-PM signal routing |
@@ -177,6 +182,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 |---|---|
 | `construct acp` | Run Construct as an Agent Client Protocol (ACP) server over stdio for Zed/JetBrains/VS Code ACP clients |
 | `construct capability` | Describe what this Construct install can do (embedded contract; read-only, secret-free) |
+| `construct chat` | Interactive terminal chat on Construct's owned agent loop, with a multi-pane transparency surface (live token/cost/context usage, reasoning, tool timeline, and the planned specialist route); switch models, change settings, and see a token/cost breakdown in-session. Use --accessible or --plain for the linear, screen-reader-friendly renderer |
 | `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
 | `construct execution` | Resolve the execution-capability contract for an embedded workflow (orchestrated vs prompt-only; descriptive, not enforced) |
 | `construct hosts` | Show host support for Construct orchestration |
@@ -189,7 +195,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 | Command | What it does |
 |---|---|
-| `construct creds` | Manage provider credentials (set, rotate, revoke, list) |
+| `construct creds` | Manage provider credentials (login, set, rotate, revoke, list, test) |
 | `construct ollama` | Manage local Ollama models |
 | `construct providers` | Provider status, circuit-breaker reset, and resource discovery |
 
@@ -202,6 +208,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct evals` | Show evaluator catalog for prompt and agent experiments |
 | `construct feedback:history` | Show recorded outcome ratings |
 | `construct feedback:record` | Record an outcome rating for a recent specialist invocation |
+| `construct improvement` | Governed improvement loop — review, approve, and record apply/rollback for proposals |
 | `construct llm-judge` | Run LLM-as-a-judge evaluations on unscored traces for continuous quality feedback |
 | `construct optimize` | Prompt optimization using telemetry trace quality scores |
 | `construct review` | Generate agent performance review from the configured telemetry trace backend |
@@ -214,13 +221,16 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | Command | What it does |
 |---|---|
 | `construct audit` | Audit Construct internals and review the mutation trail |
+| `construct certify` | Inspect and run scenario-based certification under .cx/certification/ |
 | `construct cleanup` | Release dev-agent memory pressure by cleaning stale helper and bridge processes |
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct docs:check` | Check for missing how-to guides (alias for `docs check`) |
 | `construct docs:reconcile` | Reconcile docs against the registry |
-| `construct docs:site` | Manage the docs static site build |
+| `construct docs:site` | Regenerate generated reference pages under docs/reference/ |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
 | `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
+| `construct impact` | Change-impact analysis — map changed files to affected tests, capabilities, and workflows |
+| `construct rules` | Rule and hook reference telemetry rollup |
 
 ### Advanced
 
@@ -266,27 +276,27 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 <!-- AUTO:structure -->
 ```text
 construct/
-├── apps             User-facing apps shipped from this repo (e.g. apps/docs/, the Next.js docs site)
+├── apps             User-facing apps shipped from this repo (chat, dashboard, docs)
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
-├── config
-├── dashboard
-├── deploy
+├── config           Repo-wide controlled vocabulary (tag-vocabulary.json)
+├── deploy           Terraform and deployment configs
 ├── docs             Architecture notes, runbooks, and documentation contract
-├── examples
-├── lib              Core runtime: CLI, hooks, MCP, status, sync, workflow
-├── packages
+├── examples         Example projects and persona fixtures
+├── lib              Core runtime: CLI, hooks, MCP, providers, oracle, sync
+├── packages         Shared workspace packages (e.g. cx-ui)
 ├── personas         Persona prompt definitions
-├── platforms
-├── profiles
-├── providers
+├── platforms        Host adapter capability configs
+├── profiles         Profile catalog
+├── registry         Product capability registry
 ├── rules            Coding and quality standards
-├── schemas
-├── scripts
+├── schemas          Registry and config JSON Schema
+├── scripts          Audit, alignment, release, and sync scripts
 ├── skills           Reusable domain knowledge files
-├── specialists
-├── templates
+├── specialists      Org registry, contracts, and specialist prompts
+├── templates        Doc and workflow templates
 ├── tests            Test suite
+├── vendor
 ```
 <!-- /AUTO:structure -->
 

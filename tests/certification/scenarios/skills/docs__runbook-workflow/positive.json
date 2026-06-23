@@ -1,0 +1,22 @@
+{
+  "skillId": "docs/runbook-workflow",
+  "mode": "positive",
+  "activationTriggers": [
+    "Use when: creating operational procedures for services, alerts, or recurring operations.",
+    "creating operational procedures for services, alerts, or recurring operations."
+  ],
+  "inputs": [
+    "[service, incident]"
+  ],
+  "expectedOutputs": {
+    "artifactType": "runbook",
+    "name": "docs-runbook-workflow"
+  },
+  "verificationSteps": [
+    "skill file exists under skills/",
+    "inventory lists owners and workflowSkill=true"
+  ],
+  "owners": [
+    "cx-docs-keeper"
+  ]
+}

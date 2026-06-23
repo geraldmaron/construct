@@ -1,0 +1,15 @@
+{
+  "skillId": "security/threat-intel",
+  "mode": "negative",
+  "failureClass": "policy-denial",
+  "input": {
+    "missingPrerequisite": true,
+    "skillId": "security/threat-intel"
+  },
+  "expected": {
+    "graceful": true,
+    "errorType": "SKILL_PREREQUISITE_MISSING",
+    "silentSuccess": false
+  },
+  "note": "Hermetic fixture — runner classifies failure without filesystem writes"
+}

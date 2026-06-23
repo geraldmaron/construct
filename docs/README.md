@@ -21,6 +21,10 @@ Tracker hierarchy: external tracker (prefer Beads) for durable work, `plan.md` f
 All LLMs working in the repo, including Construct, must read these as project state, keep them current when work changes project reality, and prune stale sections instead of letting managed docs drift.
 <!-- /AUTO:core-docs -->
 
+## File format: `.md` vs `.mdx`
+
+Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.mdx`** only when a page embeds `@cx/ui` MDX components (`<FlowPipeline>`, `<RequestFlow>`, `<Callout>`, …). The docs site compiles both through the same pipeline: prose-only bodies are sanitized and rendered as Markdown; JSX pages stay on the MDX path (`apps/docs/lib/docs-source.ts` → `prepareDocBody`).
+
 ## Contents
 
 - [Start](./start/). Install, initialize a project, connect an editor, and run the first task
@@ -29,9 +33,11 @@ All LLMs working in the repo, including Construct, must read these as project st
 - [Deployment model](./concepts/deployment-model.mdx). Solo, team, and enterprise topology
 - [Prompt surface architecture](./concepts/prompt-surfaces.mdx). Persona, specialist, skill, rule, and fixture surfaces
 - [Knowledge layout](./concepts/knowledge-layout.md). `.cx/` directory structure, inbox routing, and durable knowledge lanes
+- [Project scopes](./concepts/project-scopes.md). `.construct` vs `.cx` vs user home — what belongs in git
 - [Intake and triage](./concepts/intake-and-triage.mdx). How dropped signals become owner-assigned work
 - [Gates and enforcement](./concepts/gates-and-enforcement.mdx). Write-time, commit-time, and CI guardrails
 - [Style](./STYLE.md). Voice, punctuation, structure rules (canonical reference for prose lint)
+- [Branding](./reference/branding.md). Visual identity, naming, voice, tone, and profile terminology
 - [Learning loops](./concepts/learning-loops.mdx). What is wired vs aspirational across A1-A4
 - [Profile lifecycle](./concepts/profile-lifecycle.md). Draft → promote → archive flow for org-type profiles
 - [Persona and skill research](./concepts/persona-research.md). Methodology grounded in Goodwin, Cooper, Galbraith STAR, Bloom
@@ -39,10 +45,19 @@ All LLMs working in the repo, including Construct, must read these as project st
 - [Release and deploy automation](./maintenance/release-and-deploy.md). What fires when you tag, plus the failure-mode lookup
 - [Templates and role anti-patterns](./templates/README.md)
 - [Runbooks](./runbooks/)
-- [ADRs](../.cx/decisions/). Session-context decisions (longer ADRs live in `docs/adr/`)
+- [ADRs](./adr/). Architecture decision records (public site lane)
 - [Skills](../skills/). Domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
-- [Tests audit](../tests/AUDIT.md). Category-by-category survey of the 188 test files
 - [Functional tests pattern](../tests/functional/README.md). When and how to add an end-to-end test
+
+## Maintainer lanes (not on the public site)
+
+These directories stay in git for Construct maintainers. They are excluded from the published docs site and not linked from README.
+
+- [Audit snapshots](./audit/). Dated alignment scorecards and baseline evidence
+- [Research notes](./research/). Competitive audits and synthesis reports; ADR-cited inputs in [decision-input](./research/decision-input/)
+- [PRDs](./prd/). Draft product requirements for this repo
+- [Roadmap](./roadmap.md). Generated placeholder (excluded from public site)
+- [Tests audit](../tests/AUDIT.md). Category-by-category survey of test files
 
 ## How-to guides
 
@@ -70,7 +85,7 @@ Use the generated [CLI reference](./reference/cli/) for exact flags and subcomma
 - Core: `construct docs`, `construct recommendations`, `construct sandbox`
 - Workflows and knowledge: `construct customer`, `construct graph`, `construct integrations`, `construct reflect`, `construct tags`, `construct workflow`, `construct workspace`
 - Models and integrations: `construct claude:allow`, `construct creds`, `construct ollama`
-- Observability and diagnostics: `construct llm-judge`, `construct telemetry`, `construct cleanup`
+- Observability and diagnostics: `construct audit`, `construct llm-judge`, `construct telemetry`, `construct cleanup`
 - Administration: `construct auth:status`, `construct backup`, `construct beads`, `construct completions`, `construct gates:audit`, `construct hooks:health`, `construct role`, `construct scheduler`, `construct uninstall`, `construct upgrade`
 
 ## Prompt surfaces
@@ -105,4 +120,4 @@ Parallel work rule: one writer per file. If multiple agent or harness sessions a
 ## Ownership
 
 Maintained by: Construct contributors
-Last updated: 2026-05-28
+Last updated: 2026-06-19

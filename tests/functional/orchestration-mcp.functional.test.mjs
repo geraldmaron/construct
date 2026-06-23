@@ -28,6 +28,9 @@ const PORT = 4352;
 
 let proc;
 let home;
+let priorHome;
+let priorPort;
+let priorBindHost;
 
 async function waitForServer(retries = 50) {
   for (let i = 0; i < retries; i += 1) {
@@ -44,8 +47,9 @@ test.before(async () => {
   home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-mcp-orch-'));
   fs.mkdirSync(path.join(home, '.construct'), { recursive: true });
   fs.writeFileSync(path.join(home, '.construct', 'config.env'), `CONSTRUCT_DASHBOARD_TOKEN=${TOKEN}\n`);
-  // The tool resolves HOME-scoped token + URL, so the whole test process runs
-  // under the isolated HOME and the daemon's loopback port.
+  priorHome = process.env.HOME;
+  priorPort = process.env.PORT;
+  priorBindHost = process.env.BIND_HOST;
   process.env.HOME = home;
   process.env.PORT = String(PORT);
   process.env.BIND_HOST = '127.0.0.1';
@@ -59,6 +63,12 @@ test.before(async () => {
 test.after(() => {
   try { proc?.kill(); } catch {}
   try { fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {}
+  if (priorHome === undefined) delete process.env.HOME;
+  else process.env.HOME = priorHome;
+  if (priorPort === undefined) delete process.env.PORT;
+  else process.env.PORT = priorPort;
+  if (priorBindHost === undefined) delete process.env.BIND_HOST;
+  else process.env.BIND_HOST = priorBindHost;
 });
 
 test('orchestration_run executes a real run via the daemon and returns task output', async () => {

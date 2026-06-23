@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/eval-dataset.schema.json",
+  "title": "EvalDatasetItem",
+  "description": "One provenance-backed evaluation dataset item for the governed AI improvement loop (construct-6zga.1.6). Preserves task input, capability snapshot, allowed tools, expected evidence and contract behavior, redaction state, source trace ids, human-label provenance, split assignment, and expiry, so a candidate can be evaluated on a held-out item that is provably not its own generating trace.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "id", "taskFamily", "taskInput", "capabilitySnapshot",
+    "allowedTools", "expectedEvidenceBehavior", "expectedContractResult",
+    "redaction", "sourceTraceIds", "humanLabel", "split", "expiry"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "taskFamily": { "type": "string", "minLength": 1 },
+    "taskInput": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["prompt"],
+      "properties": {
+        "prompt": { "type": "string" },
+        "intent": { "type": ["string", "null"] },
+        "risk": { "type": ["string", "null"] }
+      }
+    },
+    "capabilitySnapshot": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["capabilityClass"],
+      "properties": {
+        "capabilityClass": { "enum": ["hosted-direct", "hosted-routed", "local-capable", "local-constrained", "unknown"] },
+        "transport": { "type": ["string", "null"] },
+        "operatingProfileId": { "type": ["string", "null"] }
+      }
+    },
+    "allowedTools": { "type": "array", "items": { "type": "string" } },
+    "expectedEvidenceBehavior": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirement", "citationsRequired"],
+      "properties": {
+        "requirement": { "enum": ["none", "preferred", "required"] },
+        "citationsRequired": { "type": "boolean" }
+      }
+    },
+    "expectedContractResult": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["outcome"],
+      "properties": {
+        "outcome": { "enum": ["pass", "fail", "blocker", "handoff"] }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": {
+        "state": { "enum": ["raw", "redacted", "synthetic"] },
+        "fields": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "sourceTraceIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "humanLabel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provenance"],
+      "properties": {
+        "provenance": { "enum": ["human", "model-assisted", "unlabeled"] },
+        "labeledBy": { "type": ["string", "null"] },
+        "rubricVersion": { "type": ["string", "null"] },
+        "correctionId": { "type": ["string", "null"] }
+      }
+    },
+    "split": { "enum": ["train", "dev", "test"] },
+    "expiry": { "type": ["string", "null"], "description": "ISO 8601 date after which the item is stale, or null for non-expiring" }
+  }
+}

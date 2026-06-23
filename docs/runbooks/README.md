@@ -9,6 +9,10 @@
 - Documentation/bootstrap recovery
 - Release and validation checks
 
+## Starter templates
+
+- [_template.md](./templates/_template.md)
+
 ## Immediate operator checks
 
 - `construct status`

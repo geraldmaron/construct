@@ -3,6 +3,7 @@
   "pages": [
     "index",
     "cli",
+    "document-io",
     "config",
     "hooks",
     "hooks-inventory",
@@ -11,6 +12,8 @@
     "mcp-tools",
     "embed-api",
     "specialists",
+    "capabilities",
+    "naming",
     "providers",
     "dependencies",
     "standards",

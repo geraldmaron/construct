@@ -20,6 +20,8 @@ function walk(dir) {
     if (entry.isDirectory()) {
       // seed-observations/ contains plain markdown input data, not structured fixtures
       if (entry.name === 'seed-observations') continue;
+      // distribution/ holds publish sample sources, not prompt regression fixtures
+      if (entry.name === 'distribution') continue;
       results.push(...walk(fullPath));
       continue;
     }

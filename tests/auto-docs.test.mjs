@@ -1,6 +1,8 @@
 /**
  * tests/auto-docs.test.mjs — tests for lib/auto-docs.mjs region regeneration.
  *
+ * @capability document.auto-docs
+ *
  * Verifies that regenerateDocs() correctly writes/replaces managed regions,
  * is idempotent (second run produces no changes), and that --check mode
  * detects drift without writing files.

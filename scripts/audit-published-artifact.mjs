@@ -49,16 +49,21 @@ function die(label, detail) {
 
 console.log(`\nConsumer-perspective audit — packing @geraldmaron/construct and auditing as a downstream installer (level: ${auditLevel})\n`);
 
-const pack = run('npm', ['pack', '--json'], { cwd: root });
-if (!pack.ok) die('npm pack failed', pack.stderr || pack.stdout);
+const packDir = mkdtempSync(join(tmpdir(), 'cx-pack-'));
+const pack = run('npm', ['pack', '--json', '--pack-destination', packDir], { cwd: root });
+if (!pack.ok) {
+  rmSync(packDir, { recursive: true, force: true });
+  die('npm pack failed', pack.stderr || pack.stdout);
+}
 
 let tarballName;
 try {
   tarballName = JSON.parse(pack.stdout)[0].filename;
 } catch (err) {
+  rmSync(packDir, { recursive: true, force: true });
   die('could not parse npm pack output', err.message);
 }
-const tarballPath = resolve(root, tarballName);
+const tarballPath = join(packDir, tarballName);
 
 const work = mkdtempSync(join(tmpdir(), 'cx-consumer-audit-'));
 const localTarball = join(work, basename(tarballName));
@@ -89,5 +94,5 @@ try {
   );
 } finally {
   rmSync(work, { recursive: true, force: true });
-  rmSync(tarballPath, { force: true });
+  rmSync(packDir, { recursive: true, force: true });
 }

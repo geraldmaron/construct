@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # 60 — Third-Party Strategic Fit: Per-Integration Evaluation
 
 Date: 2026-06-09 · Branch: research/capability-registry · Bead: construct-hmv1

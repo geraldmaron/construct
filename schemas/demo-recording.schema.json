@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://construct.dev/schemas/demo-recording.schema.json",
+  "title": "Construct demo recording manifest",
+  "type": "object",
+  "required": ["spec"],
+  "properties": {
+    "name": { "type": "string" },
+    "title": { "type": "string" },
+    "engine": { "enum": ["playwright"] },
+    "workspace": { "type": "string", "default": "." },
+    "spec": { "type": "string" },
+    "playwrightConfig": { "type": "string" },
+    "baseUrl": { "type": "string", "format": "uri" },
+    "project": { "type": "string" },
+    "skipWebServer": { "type": "boolean" },
+    "timeout": { "type": "number" },
+    "webServer": {
+      "type": "object",
+      "properties": {
+        "command": { "type": "string" },
+        "url": { "type": "string" },
+        "cwd": { "type": "string" },
+        "timeout": { "type": "number" }
+      },
+      "required": ["command", "url"]
+    },
+    "artifactReveal": {
+      "type": "object",
+      "properties": {
+        "mode": { "enum": ["sameOrigin", "constructPreview"] },
+        "staticDir": { "type": "string" },
+        "file": { "type": "string" },
+        "path": { "type": "string" },
+        "scroll": { "type": "boolean" }
+      }
+    },
+    "output": {
+      "type": "object",
+      "properties": {
+        "format": { "enum": ["mp4", "webm"] },
+        "path": { "type": "string" }
+      }
+    }
+  }
+}

@@ -88,7 +88,7 @@ architect respects the user's model choice while still giving a cheap local exec
   cx-variant's real `num_ctx`; cutting it would make OpenCode compact mid-window and waste half the
   model's window.
 - **Escalation routing inside `orchestration_policy`.** The editor cannot call it; prompt-driven handoff
-  is more robust for small models.
+  is more reliable for small models.
 
 ## Consequences
 

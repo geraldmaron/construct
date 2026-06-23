@@ -123,3 +123,6 @@ export const saveProviderSubscription = (entry: { id: string; provider: string; 
 
 export const deleteProviderSubscription = (id: string) =>
   apiPost('/providers/subscriptions', { action: 'delete', id });
+
+export const postChatLoopPermission = (requestId: string, decision: string) =>
+  apiPost('/chat/loop/permission', { requestId, decision });

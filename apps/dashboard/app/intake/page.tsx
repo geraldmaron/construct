@@ -9,22 +9,28 @@ import { fetchIntakeConfig, apiGet } from '@/lib/api';
 type IntakeListPayload = {
   items?: { id: string; intakeType?: string; rdStage?: string; primaryOwner?: string; recommendedAction?: string; lane?: string; createdAt?: number }[];
   total?: number;
+  label?: string;
+  itemNoun?: string;
 };
 
 type IntakeConfigPayload = {
   config?: { parentDirs?: string[]; maxDepth?: number; includeProjectInbox?: boolean; includeDocsIntake?: boolean };
+  label?: string;
+  itemNoun?: string;
 };
 
 export default function IntakePage() {
   const items = useApi<IntakeListPayload>(() => apiGet('/intake/list'), 10000);
   const config = useApi<IntakeConfigPayload>(fetchIntakeConfig);
   const pending = items.data?.items ?? [];
+  const queueLabel = items.data?.label ?? config.data?.label ?? 'Intake queue';
+  const itemNoun = items.data?.itemNoun ?? config.data?.itemNoun ?? 'signal';
 
   return (
     <Page
       eyebrow="work · intake"
-      title="Intake queue"
-      lede="Signals dropped into .cx/inbox/ flow through the daemon's deterministic triage (type · stage · owner · chain) and surface here for the agent to action."
+      title={queueLabel}
+      lede={`${itemNoun.charAt(0).toUpperCase()}${itemNoun.slice(1)}s dropped into .cx/inbox/ flow through the daemon's deterministic triage (type · stage · owner · chain) and surface here for the agent to action.`}
       meta={<span className="pill">{items.data?.total ?? pending.length} pending</span>}
     >
       {items.loading && !items.data && <Spinner />}

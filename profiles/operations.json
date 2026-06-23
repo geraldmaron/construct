@@ -65,6 +65,16 @@
     "sessionOptimize": "on"
   },
   "defaultSkills": [],
+  "toneDefaults": {
+    "runbook": "blameless",
+    "incident-report": "blameless",
+    "memo": "direct"
+  },
+  "researchProfiles": {
+    "incident": "codebase",
+    "request": "external",
+    "change": "codebase"
+  },
   "rebrand": {
     "intakeQueueLabel": "Request queue",
     "signalNoun": "request"

@@ -17,6 +17,10 @@
 ## Success measure
 <!-- The single metric that tells us this worked. Numeric, time-bound. -->
 
+| Measure | Baseline | Target | By when |
+|---|---|---|---|
+| {metric} | {today} | {goal} | {YYYY-MM-DD} |
+
 ## Cost
 <!-- People, time, money. Rough order of magnitude. -->
 

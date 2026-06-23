@@ -75,6 +75,17 @@ A reader should be able to compare the current state (Background) to this
 section and see the delta in plain language.
 -->
 
+## User flow
+
+```mermaid
+flowchart TD
+  A[User starts] --> B{Current friction?}
+  B -->|Yes| C[Proposed path]
+  B -->|No| D[Existing path]
+  C --> E[Success outcome]
+  D --> E
+```
+
 ## In scope and out of scope
 
 | | Description |
@@ -162,6 +173,10 @@ accessibility, observability, compliance, cost. Numeric targets where possible.
 How we will know this worked in production over time, beyond the per-requirement
 acceptance criteria. Leading vs. lagging. Avoid vanity metrics.
 -->
+
+| Metric | Baseline | Target |
+|---|---|---|
+| {name} | {current} | {goal} |
 
 ## Constraints
 <!--

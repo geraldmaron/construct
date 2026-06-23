@@ -85,14 +85,39 @@ Converts a local document into a normalized markdown file placed in an indexed p
 | `sync` | boolean | No | Sync to SQL/vector storage after writing |
 
 ### `document_export`
-Converts a markdown file into a distributable PDF, DOCX, or HTML document via Pandoc (DOCX/HTML) and Typst (PDF engine). Both engines are optional system binaries discovered at runtime (ADR-0024); when tooling is absent, returns a structured `{ok:false, missing:[...], message:"Install pandoc..."}` instead of crashing. Use `detect_only=true` to check availability without running an export.
+Converts a markdown file into a distributable document — PDF, DOCX, legacy `.doc` (LibreOffice), deck HTML, PPTX, HTML, RTF, ODT, EPUB, LaTeX, plain text, or Markdown — via Pandoc and Typst (PDF engine). Optional pptxgenjs (PPTX) and LibreOffice (`.doc`) are discovered at runtime (ADR-0024); when tooling is absent, returns a structured `{ok:false, missing:[...], message:"Install pandoc..."}` instead of crashing. Use `detect_only=true` to check availability without running an export.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `format` | `pdf` \| `docx` \| `html` | Yes | Target format |
+| `format` | `pdf`, `docx`, `doc`, `deck`, `pptx`, `html`, `rtf`, `odt`, `epub`, `tex`, `txt`, `md`, `mdx` | Yes | Target format |
 | `input_path` | string | No (yes unless `detect_only`) | Absolute path to the markdown source |
 | `output_path` | string | No | Absolute output path; defaults to `<input>.<format>` next to the source |
 | `detect_only` | boolean | No | Report binary availability without exporting (default `false`) |
+
+### `publish_detect`
+Detects availability of the full publish pipeline: Pandoc/Typst export, pandoc-ext/diagram figure rendering, VHS terminal demos, and Playwright dashboard demos. Mirrors `construct tools detect` and `construct publish --detect`.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `format` | `pdf`, `docx`, `doc`, `deck`, `pptx`, `html`, `rtf`, `odt`, `epub`, `tex`, `txt`, `md`, `mdx` | No | Export format to probe (default `pdf`) |
+| `figures` | boolean | No | Include figure binaries (default `true`) |
+| `demo` | string | No | When set, require VHS/asciinema for terminal demo |
+| `dashboard_demo` | string | No | When set, require Playwright workspace for dashboard demo |
+
+### `publish_run`
+Runs the publish pipeline: export markdown with optional figure filter and optional demo recordings. Mirrors `construct publish`. Use `dry_run=true` to probe tooling only without writing output.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `input_path` | string | Yes | Absolute path to markdown research brief |
+| `output_path` | string | No | Optional output path for export |
+| `format` | `pdf`, `docx`, `doc`, `deck`, `pptx`, `html`, `rtf`, `odt`, `epub`, `tex`, `txt`, `md`, `mdx` | No | Target format (default `pdf`) |
+| `demo` | string | No | Terminal tape name to record |
+| `dashboard_demo` | string | No | Dashboard Playwright demo spec basename |
+| `figures` | boolean | No | Render diagrams (default `true`) |
+| `strict` | boolean | No | Fail when tooling missing (default `true`) |
+| `source_only` | boolean | No | Write sources only (default `false`) |
+| `dry_run` | boolean | No | Detect tooling only (default `false`) |
 
 ### `infer_document_schema`
 Infers a structured field schema from a document (or reconciles across multiple documents).

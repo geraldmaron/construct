@@ -35,8 +35,8 @@ Generated tooling (`.construct/`, `.claude/`, `.cx/`, `plan.md`) is gitignored; 
 
 Three intake paths, ordered by formality:
 
-1. **`.cx/inbox/`** (drop a file here (URL, screenshot, paste, anything). The embed daemon watches the directory; when a file lands, it ingests it into the local knowledge base within a second or two and writes a triage packet to `.cx/intake/pending/` describing the new content, its R&D classification (intake type, stage, owner persona, recommended chain), its suggested docs lane, and existing docs that overlap. The agent surfaces pending intake at the next session start and you can ask it to process them) propose updates to existing PRDs/RFCs/ADRs or scaffold new ones: based on the prepared context.
-2. **`docs/intake/`**: for proper intake batches (research notes, evidence from a meeting, raw source material). Has a template. Survives in git history.
+1. **`.cx/inbox/`** — drop a file here (URL, screenshot, paste, anything). The embed daemon watches the directory; when a file lands, it ingests it into the local knowledge base within a second or two and writes a triage packet to `.cx/intake/pending/` describing the new content, its classification (intake type, stage, owner persona, recommended chain), its suggested docs lane, and existing docs that overlap. The agent surfaces pending items at the next session start and you can ask it to process them.
+2. **`docs/intake/`** — for proper intake batches (research notes, evidence from a meeting, raw source material). Has a template. Survives in git history.
 3. **`AGENTS.md`**: for rules and conventions you want the agent to follow every time. "We prefer functional components. Don't introduce new dependencies without flagging." Read at session start.
 
 For URLs or quick notes, the easiest path is to drop a file into `~/Downloads` and run:
@@ -111,13 +111,13 @@ All ports bind to `127.0.0.1` only; nothing is reachable from other machines on 
 | `construct sync` | Regenerate platform adapters (Claude Code, OpenCode, Codex, Cursor) |
 | `construct dev` / `construct stop` | Start / stop local services |
 | `construct status` | Live runtime status (services, providers, daemons) |
-| `construct intake list / show / done / skip / reopen` | Drive the R&D intake queue produced from `.cx/inbox/` |
+| `construct intake list / show / done / skip / reopen` | Drive the active profile's intake queue (label varies — run `construct intake --help`) |
 | `construct graph from-intake <id>` | Generate a task graph from a triaged intake packet |
 | `construct drop` | Ingest the most recent downloaded file |
 | `construct search "..."` | Hybrid file + SQL + semantic search over project state |
 | `construct uninstall` | Interactive teardown: never touches Docker or your code |
 
-Full reference: <https://geraldmaron.github.io/construct/docs/reference/cli>
+Full reference: <https://geraldmaron.github.io/construct/reference/cli>
 
 ## Updating Construct
 
@@ -134,13 +134,13 @@ construct doctor              # most issues surface here with a fix hint
 construct stop && construct dev  # restart local services
 ```
 
-Troubleshooting guide: <https://geraldmaron.github.io/construct/docs/operations/troubleshooting>
+Troubleshooting guide: <https://geraldmaron.github.io/construct/runbooks/>
 
 ## Next steps
 
-- [Connect your editor](https://geraldmaron.github.io/construct/docs/start/connect-your-editor) if you haven't already.
-- [Run your first task](https://geraldmaron.github.io/construct/docs/start/first-task) to feel the flow.
-- Skim [the architecture](https://geraldmaron.github.io/construct/docs/concepts/architecture) when you have 10 minutes: it'll save you hours later.
+- [Connect your editor](https://geraldmaron.github.io/construct/start/connect-your-editor) if you haven't already.
+- [Run your first task](https://geraldmaron.github.io/construct/start/first-task) to feel the flow.
+- Skim [the architecture](https://geraldmaron.github.io/construct/concepts/architecture) when you have 10 minutes: it'll save you hours later.
 
 If you'd rather have a teammate walk you through it, the persona itself can:
 

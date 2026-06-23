@@ -331,8 +331,8 @@ test('PROVIDER_FAMILY_TIERS includes github-copilot family', async () => {
   const { PROVIDER_FAMILY_TIERS } = await import('../lib/model-router.mjs');
   const copilot = PROVIDER_FAMILY_TIERS.find(f => f.id === 'github-copilot');
   assert.ok(copilot, 'github-copilot family should exist');
-  assert.ok(copilot.test('github-copilot/gpt-5.1'), 'should match github-copilot/ prefix');
-  assert.ok(!copilot.test('openai/gpt-5.1'), 'should not match openai/');
+  assert.ok(copilot.test('github-copilot/gpt-5.4'), 'should match github-copilot/ prefix');
+  assert.ok(!copilot.test('openai/gpt-5.4'), 'should not match openai/');
   const tiers = copilot.resolve({});
   assert.ok(tiers.reasoning.startsWith('github-copilot/'));
 });
@@ -348,6 +348,6 @@ test('getProviderModelCatalog exposes provider defaults and tier dropdown option
 
   const copilot = catalog.providers.find((provider) => provider.id === 'github-copilot');
   assert.ok(copilot);
-  assert.equal(copilot.tiers.reasoning, 'github-copilot/gpt-5.4');
+  assert.equal(copilot.tiers.reasoning, 'github-copilot/gpt-5.5');
   assert.ok(copilot.options.reasoning.includes('github-copilot/gpt-5.4'));
 });

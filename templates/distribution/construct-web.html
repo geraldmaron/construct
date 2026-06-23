@@ -1,0 +1,92 @@
+<!--
+  templates/distribution/construct-web.html — Construct branded standalone HTML
+  template for `construct export --to=html`. Monochrome design mirroring the PDF
+  brand (construct-brand.typ): Space Grotesk webfont, masthead from frontmatter metadata,
+  bold-header hairline tables, callout blockquotes, framed figures. Pandoc fills
+  $title$/$subtitle$/$status$/$owner$/$date$/$artifactType$/$version$/$docId$/
+  $classification$ and $body$; export runs with --embed-resources so diagrams and
+  fonts inline into a single portable file.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>$if(title)$$title$$else$Construct document$endif$</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:#0a0c10; --ink-strong:#16191f; --ink-body:#23272e; --muted:#565c66; --faint:#9499a2;
+    --hairline:#e3e4e8; --hairline-strong:#cdd0d6; --surface:#fafafa; --surface-alt:#f3f4f6; --paper:#ffffff;
+    --sans:'Space Grotesk',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; background:var(--paper); color:var(--ink-body); font-family:var(--sans); font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .doc { max-width:760px; margin:0 auto; padding:64px 28px 120px; }
+
+  .masthead { margin-bottom:8px; }
+  .chips { font-size:12px; font-weight:700; letter-spacing:.08em; color:var(--ink); text-transform:uppercase; margin-bottom:14px; }
+  .chips .sep { color:var(--faint); font-weight:400; }
+  .masthead .title { font-size:38px; line-height:1.08; letter-spacing:-.022em; font-weight:600; color:var(--ink); margin:0; }
+  .masthead .subtitle { font-size:18px; color:var(--muted); margin:12px 0 0; letter-spacing:-.005em; }
+  .byline { display:flex; align-items:center; gap:10px; margin-top:20px; font-size:14px; color:var(--muted); }
+  .byline .sep { color:var(--faint); }
+  .pill { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:3px 8px; border-radius:4px; border:1px solid var(--hairline-strong); color:var(--muted); }
+  .rule { position:relative; height:1px; background:var(--hairline); margin:24px 0 6px; }
+  .rule::before { content:""; position:absolute; left:0; top:-1px; width:46px; height:3px; background:var(--ink); }
+
+  h1,h2,h3,h4 { font-family:var(--sans); }
+  h2 { font-size:24px; font-weight:600; letter-spacing:-.015em; color:var(--ink); margin:54px 0 4px; }
+  h2::after { content:""; display:block; width:26px; height:2px; background:var(--ink); margin-top:10px; }
+  h3 { font-size:18px; font-weight:600; color:var(--ink-strong); margin:34px 0 8px; }
+  h4 { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:28px 0 8px; }
+  p { margin:0 0 16px; }
+  strong { color:var(--ink); font-weight:600; }
+  em { font-style:italic; }
+  a { color:var(--ink); text-decoration:underline; text-decoration-color:var(--hairline-strong); text-underline-offset:2px; }
+  a:hover { text-decoration-color:var(--ink); }
+  ul,ol { padding-left:22px; margin:0 0 18px; }
+  li { margin:0 0 9px; }
+  li::marker { color:var(--ink); }
+
+  code { font-family:var(--mono); font-size:.86em; background:var(--surface-alt); padding:1px 5px; border-radius:4px; color:var(--ink-strong); }
+  pre { background:var(--surface); border:1px solid var(--hairline); border-radius:8px; padding:14px 16px; overflow:auto; }
+  pre code { background:none; padding:0; }
+
+  blockquote { margin:20px 0; padding:14px 18px; background:var(--surface-alt); border-left:3px solid var(--ink); border-radius:0 4px 4px 0; color:var(--ink-body); }
+  blockquote p:last-child { margin:0; }
+
+  table { width:100%; border-collapse:collapse; margin:20px 0; font-size:15px; }
+  th,td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--hairline); vertical-align:top; }
+  thead th { font-weight:700; color:var(--ink); border-bottom:2px solid var(--ink); }
+  tbody tr td:first-child { font-weight:600; color:var(--ink-strong); }
+
+  figure { margin:26px 0; text-align:center; }
+  figure img { max-width:58%; max-height:2.35in; width:auto; height:auto; object-fit:contain; border:1px solid var(--hairline); border-radius:6px; padding:8px; background:var(--paper); }
+  figcaption { font-size:13px; color:var(--muted); margin-top:8px; }
+  img { max-width:100%; }
+
+  .doc-foot { margin-top:64px; padding-top:16px; border-top:1px solid var(--hairline); font-size:12px; color:var(--faint); text-align:center; }
+  .doc-foot b { color:var(--ink); font-weight:600; }
+</style>
+</head>
+<body>
+<main class="doc">
+$if(title)$
+<header class="masthead">
+$if(artifactType)$  <div class="chips">$artifactType$$if(docId)$ <span class="sep">&middot;</span> $docId$$endif$$if(version)$ <span class="sep">&middot;</span> v$version$$endif$$if(classification)$ <span class="sep">&middot;</span> $classification$$endif$</div>
+$endif$  <div class="title">$title$</div>
+$if(subtitle)$  <p class="subtitle">$subtitle$</p>
+$endif$  <div class="byline">$if(status)$<span class="pill">$status$</span>$endif$$if(owner)$<span>$owner$</span>$endif$$if(date)$<span class="sep">&middot;</span><span>$date$</span>$endif$</div>
+</header>
+<div class="rule"></div>
+$endif$
+$body$
+<div class="doc-foot"><b>Construct</b>$if(classification)$ &middot; $classification$$endif$</div>
+</main>
+</body>
+</html>

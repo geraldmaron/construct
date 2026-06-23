@@ -29,6 +29,22 @@ npm ci               # deterministic install from the committed lockfile
 
 Without mise/asdf, install Node matching `.tool-versions` manually and run `npm ci`.
 
+### npm `devdir` warning (Cursor / npm 11.2+)
+
+If every `npm run` prints `npm warn Unknown env config "devdir"`, the cause is usually **Cursor sandbox** injecting `npm_config_devdir` for node-gyp cache routing — not a Construct repo setting. npm 11.2+ warns on unknown `npm_config_*` keys before your script runs.
+
+**Silence it in your shell:**
+
+```bash
+unset npm_config_devdir NPM_CONFIG_DEVDIR
+```
+
+Add that to `~/.zshrc` if the variable persists across Cursor sessions. Construct strips `devdir` from **nested** npm/npx spawns (`scripts/npm-run.mjs`, postinstall, upgrade); the outer `npm run` warning remains until you unset the variable. Prefer direct invocation when noisy: `node scripts/...`, `construct doctor`, or `npm test` (which runs `node scripts/run-tests.mjs` but still warns on the outer npm).
+
+### Brand prose (marketing voice and naming)
+
+`lib/hooks/brand-prose-lint.mjs` blocks edits to governed docs/templates that introduce marketing voice, retired fonts, or miscapitalized CLI references. Run `node scripts/audit/03d-brand.mjs` for a full-repo sweep. Refresh a stale `.cx/construct_guide.md` with `construct init:update` (proposal) or `construct init:update --apply-guide` (template replace with backup).
+
 ## Commit messages
 
 This repo uses [Conventional Commits](https://www.conventionalcommits.org/). A `.gitmessage` template is included. Wire it locally:

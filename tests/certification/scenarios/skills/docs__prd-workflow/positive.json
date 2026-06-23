@@ -1,0 +1,22 @@
+{
+  "skillId": "docs/prd-workflow",
+  "mode": "positive",
+  "activationTriggers": [
+    "Use when: the user asks to create a PRD, platform spec, business case, RFC, or requirements document.",
+    "the user asks to create a PRD, platform spec, business case, RFC, or requirements document."
+  ],
+  "inputs": [
+    "[research-question, evidence-brief]"
+  ],
+  "expectedOutputs": {
+    "artifactType": "prd",
+    "name": "docs-prd-workflow"
+  },
+  "verificationSteps": [
+    "skill file exists under skills/",
+    "inventory lists owners and workflowSkill=true"
+  ],
+  "owners": [
+    "cx-product-manager"
+  ]
+}

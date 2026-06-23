@@ -49,6 +49,7 @@ function loadPrefs(): Prefs {
 export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname() || '/';
+  const isChatRoute = pathname === '/chat' || pathname === '/chat/';
   const [prefs, setPrefs] = useState<Prefs>(DEFAULTS);
   const [hydrated, setHydrated] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -77,6 +78,7 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
   }, [scroll]);
 
   useEffect(() => {
+    if (isChatRoute) return undefined;
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
@@ -93,7 +95,7 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [paletteOpen]);
+  }, [isChatRoute, paletteOpen]);
 
   useEffect(() => {
     if (mainRef.current) mainRef.current.scrollTop = 0;
@@ -114,8 +116,9 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
   };
 
   return (
-    <div className={'shell' + (prefs.calmMode ? ' calm' : '')}>
+    <div className={'shell' + (prefs.calmMode ? ' calm' : '') + (isChatRoute ? ' shell--chat' : '')} data-testid="app-shell">
       <a className="skip-link" href="#main">Skip to content</a>
+      {!isChatRoute ? (
       <header className="topbar">
         <Link href="/" className="brand">
           <div className="mark" />
@@ -164,8 +167,10 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
         </div>
         <div className="progress" />
       </header>
+      ) : null}
 
       <div className="body-grid">
+        {!isChatRoute ? (
         <nav className="sidebar" aria-label="Dashboard sections">
           {nav.map((group) => (
             <div className="side-group" key={group.label}>
@@ -190,14 +195,15 @@ export function AppShellClient({ nav, children }: { nav: NavGroup[]; children: R
             Local dashboard for Construct. Theme + density preferences persist.
           </div>
         </nav>
+        ) : null}
 
-        <main className="main" id="main" tabIndex={-1} ref={mainRef} onScroll={onScroll}>
+        <main className={'main' + (isChatRoute ? ' main--chat' : '')} id="main" tabIndex={-1} ref={mainRef} onScroll={onScroll}>
           {children}
         </main>
       </div>
 
       <CommandPalette
-        open={paletteOpen}
+        open={paletteOpen && !isChatRoute}
         items={PALETTE}
         onClose={() => setPaletteOpen(false)}
         onNavigate={(href) => router.push(href)}
