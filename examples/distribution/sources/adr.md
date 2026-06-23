@@ -51,7 +51,7 @@ tokens -> dash
 
 ## Decision
 
-Adopt `lib/brand-tokens.mjs` as the single source of truth for visual brand primitives. Document naming, voice, tone, and profile rebrand in `docs/reference/branding.md`. Enforce retired-font drift with `scripts/audit/03d-brand.mjs` in the audit ratchet.
+Adopt `lib/brand-tokens.mjs` as the single source of truth for visual brand primitives. Document naming, voice, tone, and profile rebrand in `docs/guides/reference/branding.md`. Enforce retired-font drift with `scripts/audit/03d-brand.mjs` in the audit ratchet.
 
 ## Rationale
 
@@ -79,6 +79,6 @@ Two-way door for documentation and audit scope; one-way for shipped PDFs already
 
 ## References
 
-- `docs/reference/branding.md`
+- `docs/guides/reference/branding.md`
 - `lib/brand-tokens.mjs`
 - https://fonts.google.com/specimen/Space+Grotesk (accessed 2026-06-22)

@@ -52,7 +52,7 @@ Memory write-back: after updating docs, call `create_entities` or `add_observati
 
 Maintenance: keep `.cx/context.md` under 100 lines. Summarize and archive older entries. Check for documentation drift before work is declared complete.
 
-Doc structure: skills at skills/docs/ define the workflow for each doc type. Product Intelligence working artifacts live under .cx/knowledge/. Research: .cx/research/{slug}.md. ADRs: docs/adr/ADR-{NNN}-{slug}.md. PRDs: docs/prd/{date}-{slug}.md. Meta PRDs: docs/meta-prd/{date}-{slug}.md. Runbooks: docs/runbooks/{service}-{operation}.md. Always use the matching template as the starting structure.
+Doc structure: skills at skills/docs/ define the workflow for each doc type. Product Intelligence working artifacts live under .cx/knowledge/. Research: .cx/research/{slug}.md. ADRs: docs/decisions/adr/ADR-{NNN}-{slug}.md. PRDs: docs/specs/prd/{date}-{slug}.md. Meta PRDs: docs/meta-prd/{date}-{slug}.md. Runbooks: docs/operations/runbooks/{service}-{operation}.md. Always use the matching template as the starting structure.
 
 ## Document Quality Loop (Evaluator-Optimizer)
 

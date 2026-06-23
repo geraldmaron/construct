@@ -4,6 +4,9 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Changed
+- **Docs regrouped into an intent-revealing taxonomy** (ADR-0045 §A, `construct-9nja`). The ~25 type-named `docs/` subdirectories are consolidated under five buckets — `docs/decisions/` (adr, rfc), `docs/specs/` (prd), `docs/guides/` (concepts, cookbook, start, reference, contributing), `docs/operations/` (deploy, maintenance, runbooks, incidents, releases, audit), `docs/notes/` (memos, meetings, research) — while `docs/` stays the single source the docs site (`apps/docs`) build-time reads. Init-lane templates move out of the records tree into the shipped `templates/docs/` (`prds/`, `rfcs/`); the empty `changelog/` shadow of `changelog.md` is removed. Internal references, `apps/docs/lib/docs-source.ts`, doc-lane init paths, and the public docs-site routes are updated (routes now carry bucket prefixes, e.g. `/guides/concepts/…`, `/decisions/adr/…`). Role fences and artifact-path matchers accept both the bucketed (this repo) and flat (downstream `construct init`) layouts. `docs/intake/` is left for the intake-consolidation phase. First phase of ADR-0045.
+
 ## [1.2.1] - 2026-06-23
 
 ### Added

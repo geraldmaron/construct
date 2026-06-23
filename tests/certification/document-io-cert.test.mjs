@@ -21,7 +21,7 @@ test('document-io fixture catalog covers every category', () => {
 
 test('strict-mode error codes are documented in document-io reference', async () => {
   const doc = await import('node:fs/promises').then((fs) =>
-    fs.readFile(path.join(REPO, 'docs/reference/document-io.md'), 'utf8'),
+    fs.readFile(path.join(REPO, 'docs/guides/reference/document-io.md'), 'utf8'),
   );
   for (const code of ['ASR_REQUIRED', 'OFFICE_REQUIRES_DOCLING']) {
     assert.match(doc, new RegExp(code));

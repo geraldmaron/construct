@@ -1,7 +1,7 @@
 /**
  * tests/functional/docs-site-check.functional.test.mjs — Generated reference drift gate.
  *
- * Asserts construct docs:site --check passes so docs/reference/ stays aligned
+ * Asserts construct docs:site --check passes so docs/guides/reference/ stays aligned
  * with lib/cli-commands.mjs, lib/hooks/, and specialists/registry.json.
  * Also asserts maintainer-only lanes are excluded from the public site catalog.
  */
@@ -27,23 +27,38 @@ const MDX_COMPONENT_RE = new RegExp(
   `<(?:${MDX_COMPONENT_NAMES.join('|')})(?:\\s|\\/|>)`,
 );
 
-const SKIP_DIRS = new Set([
-  'templates', '_template', 'archive', 'meetings', 'memos', 'notes', 'incidents',
-  'prd', 'prds', 'audit', 'research', 'decisions', 'intake', 'rfc', 'rfcs',
+// Mirrors apps/docs/lib/docs-source.ts exclusion model after the docs/ bucket
+// regroup (ADR-0045): basename skips for scratch dirs, relative-path skips for
+// maintainer lanes now nested under buckets, and bucket-root index drops. A public
+// sibling in an otherwise-excluded bucket still renders (decisions/adr renders;
+// decisions/rfc and the decisions index do not).
+
+const SKIP_DIR_BASENAMES = new Set(['templates', '_template', 'archive']);
+const SKIP_REL_DIRS = new Set([
+  'specs', 'notes', 'intake', 'decisions/rfc', 'operations/audit', 'operations/incidents',
+]);
+const SKIP_REL_FILES = new Set([
+  'decisions/index.md', 'decisions/index.mdx', 'decisions/README.md', 'operations/audit.md',
 ]);
 
 const SKIP_FILE_PATTERNS = [/^roadmap\.md$/i];
+
+function relUnix(parts) {
+  return parts.join('/');
+}
 
 function walkUrls(dir, relParts = []) {
   const out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
-      if (entry.name.startsWith('.') || SKIP_DIRS.has(entry.name)) continue;
+      if (entry.name.startsWith('.') || SKIP_DIR_BASENAMES.has(entry.name)) continue;
+      if (SKIP_REL_DIRS.has(relUnix([...relParts, entry.name]))) continue;
       out.push(...walkUrls(path.join(dir, entry.name), [...relParts, entry.name]));
       continue;
     }
     if (!entry.isFile()) continue;
     if (SKIP_FILE_PATTERNS.some((p) => p.test(entry.name))) continue;
+    if (SKIP_REL_FILES.has(relUnix([...relParts, entry.name]))) continue;
     const ext = path.extname(entry.name).slice(1);
     if (ext !== 'md' && ext !== 'mdx') continue;
     const base = entry.name.replace(/\.mdx?$/, '');
@@ -55,17 +70,15 @@ function walkUrls(dir, relParts = []) {
 }
 
 const MAINTAINER_LANE_PREFIXES = [
-  '/research',
-  '/audit',
-  '/decisions',
+  '/notes/research',
+  '/operations/audit',
+  '/decisions/rfc',
   '/roadmap',
-  '/prd',
-  '/prds',
-  '/rfc',
-  '/rfcs',
-  '/memos',
+  '/specs/prd',
+  '/notes/memos',
+  '/notes/meetings',
   '/notes',
-  '/incidents',
+  '/operations/incidents',
   '/intake',
 ];
 
@@ -88,12 +101,13 @@ test('docs site catalog excludes maintainer-only lanes', () => {
 
 test('public docs: .mdx reserved for pages with @cx/ui JSX components', () => {
   const offenders = [];
-  function walk(dir) {
+  function walk(dir, relParts = []) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name.startsWith('.') || SKIP_DIRS.has(entry.name)) continue;
-        walk(full);
+        if (entry.name.startsWith('.') || SKIP_DIR_BASENAMES.has(entry.name)) continue;
+        if (SKIP_REL_DIRS.has(relUnix([...relParts, entry.name]))) continue;
+        walk(full, [...relParts, entry.name]);
         continue;
       }
       if (!entry.isFile() || !entry.name.endsWith('.mdx')) continue;

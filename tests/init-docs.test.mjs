@@ -240,21 +240,32 @@ test('init-docs scaffolds postmortems, changelogs, and onboarding lanes', () => 
 
 test('construct package repo keeps lane starters under templates/ only', () => {
   const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-  for (const dir of ['adr', 'memos', 'prds', 'rfcs', 'runbooks']) {
+
+  // Lane homes after the docs/ bucket regroup (ADR-0045): record lanes live
+  // under their bucket; init-lane template starters live under templates/docs/.
+
+  const laneDirs = [
+    path.join('docs', 'decisions', 'adr'),
+    path.join('docs', 'notes', 'memos'),
+    path.join('templates', 'docs', 'prds'),
+    path.join('templates', 'docs', 'rfcs'),
+    path.join('docs', 'operations', 'runbooks'),
+  ];
+  for (const dir of laneDirs) {
     assert.equal(
-      fs.existsSync(path.join(repoRoot, 'docs', dir, '_template.md')),
+      fs.existsSync(path.join(repoRoot, dir, '_template.md')),
       false,
-      `expected no docs/${dir}/_template.md — use docs/${dir}/templates/_template.md`,
+      `expected no ${dir}/_template.md — use ${dir}/templates/_template.md`,
     );
     assert.equal(
-      fs.existsSync(path.join(repoRoot, 'docs', dir, 'templates', '_template.md')),
+      fs.existsSync(path.join(repoRoot, dir, 'templates', '_template.md')),
       true,
-      `missing docs/${dir}/templates/_template.md`,
+      `missing ${dir}/templates/_template.md`,
     );
   }
-  for (const name of fs.readdirSync(path.join(repoRoot, 'docs', 'prds'))) {
+  for (const name of fs.readdirSync(path.join(repoRoot, 'templates', 'docs', 'prds'))) {
     if (name.endsWith('.template.md')) {
-      assert.fail(`docs/prds/${name} must live under docs/prds/templates/`);
+      assert.fail(`templates/docs/prds/${name} must live under templates/docs/prds/templates/`);
     }
   }
 });

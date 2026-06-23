@@ -1,7 +1,7 @@
 /**
  * tests/core-dependency-policy.test.mjs — enforce ADR 0001 (zero npm core).
  *
- * ADR 0001 (docs/adr/0001-zero-npm-core.md) restricts the published CLI's
+ * ADR 0001 (docs/decisions/adr/0001-zero-npm-core.md) restricts the published CLI's
  * runtime `dependencies` to Node.js built-ins plus a small sanctioned set; any
  * other core dependency requires a merged ADR. Without enforcement, unsanctioned
  * deps drift in unnoticed — and a heavy transitive chain can ship a vulnerable
@@ -45,7 +45,7 @@ test('core dependencies obey ADR 0001 (sanctioned, or tracked pending an ADR)', 
     [],
     `New core dependency without an ADR: ${unaccounted.join(', ')}. ` +
       `ADR 0001 limits runtime dependencies to ${[...SANCTIONED].join(', ')}. ` +
-      `Write docs/adr/NNNN-*.md (see docs/reference/dependencies.md) before adding it, or implement in-tree.`,
+      `Write docs/decisions/adr/NNNN-*.md (see docs/guides/reference/dependencies.md) before adding it, or implement in-tree.`,
   );
 });
 
@@ -70,7 +70,7 @@ test('the @xenova transformers chain is not reintroduced', () => {
 test('local-embedding ML stack stays optional, never forced into core', () => {
   assert.ok(
     !('@huggingface/transformers' in (pkg.dependencies || {})),
-    '@huggingface/transformers must live in optionalDependencies (see docs/adr/0014-local-embeddings-optional.md) — the in-tree hashing embedder is the zero-dependency default',
+    '@huggingface/transformers must live in optionalDependencies (see docs/decisions/adr/0014-local-embeddings-optional.md) — the in-tree hashing embedder is the zero-dependency default',
   );
   assert.ok(
     '@huggingface/transformers' in (pkg.optionalDependencies || {}),

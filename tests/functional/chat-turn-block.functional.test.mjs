@@ -50,11 +50,11 @@ test('finalizeTurn adds unverified notice when research required but no sources'
 
 test('tool events populate source ledger without fabrication', () => {
   const turn = createTurnBlock('q');
-  applyEventToTurn(turn, { type: 'tool_call', id: 'r1', title: 'read', input: { path: 'docs/adr/0015.md' } });
+  applyEventToTurn(turn, { type: 'tool_call', id: 'r1', title: 'read', input: { path: 'docs/decisions/adr/0015.md' } });
   assert.equal(turn.sources.length, 0);
   applyEventToTurn(turn, { type: 'tool_update', id: 'r1', status: 'completed', content: { ok: true } });
   assert.equal(turn.sources.length, 1);
-  assert.equal(turn.sources[0].ref, 'docs/adr/0015.md');
+  assert.equal(turn.sources[0].ref, 'docs/decisions/adr/0015.md');
 });
 
 test('transcript_block rows restore turn snapshots', () => {

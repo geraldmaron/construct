@@ -181,7 +181,7 @@ export default function HomePage() {
             <Link className="link" href="/workflow">Workflow</Link>,{' '}
             <Link className="link" href="/agents">Specialists</Link>,{' '}
             <Link className="link" href="/models">Models</Link>,{' '}
-            <Link className="link" href="/audit">Audit</Link>.
+            <Link className="link" href="/operations/audit">Audit</Link>.
           </p>
         </Callout>
       </Section>

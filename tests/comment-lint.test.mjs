@@ -144,7 +144,7 @@ test('lintFile: .md without markdown header still reports the error', () => {
 function artifactBody(extra) {
   return [
     '<!--',
-    'docs/prd/fixture.md — test fixture.',
+    'docs/specs/prd/fixture.md — test fixture.',
     '-->',
     '',
     '# Fixture PRD',
@@ -154,7 +154,7 @@ function artifactBody(extra) {
 }
 
 test('artifact lint: manufactured confidence in PRD prose is flagged', () => {
-  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Clearly the dashboard is the bottleneck.'));
+  const { dir, full } = makeTempFile('docs/specs/prd/fixture.md', artifactBody('Clearly the dashboard is the bottleneck.'));
   delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
   const result = lintFile(full, { rootDir: dir });
   assert.ok(
@@ -164,7 +164,7 @@ test('artifact lint: manufactured confidence in PRD prose is flagged', () => {
 });
 
 test('artifact lint: same banned phrase in docs/cookbook is NOT flagged (out of scope)', () => {
-  const { dir, full } = makeTempFile('docs/cookbook/fixture.md', artifactBody('Clearly this is intentional content for cookbook prose.'));
+  const { dir, full } = makeTempFile('docs/guides/cookbook/fixture.md', artifactBody('Clearly this is intentional content for cookbook prose.'));
   delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
   const result = lintFile(full, { rootDir: dir });
   assert.ok(
@@ -174,7 +174,7 @@ test('artifact lint: same banned phrase in docs/cookbook is NOT flagged (out of 
 });
 
 test('artifact lint: percentage with citation does NOT trigger', () => {
-  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Dashboard latency dropped 30% under load [source: bench-2026-04-12].'));
+  const { dir, full } = makeTempFile('docs/specs/prd/fixture.md', artifactBody('Dashboard latency dropped 30% under load [source: bench-2026-04-12].'));
   delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
   const result = lintFile(full, { rootDir: dir });
   assert.ok(
@@ -184,7 +184,7 @@ test('artifact lint: percentage with citation does NOT trigger', () => {
 });
 
 test('artifact lint: percentage without citation IS flagged', () => {
-  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Dashboard latency dropped 30% under load.'));
+  const { dir, full } = makeTempFile('docs/specs/prd/fixture.md', artifactBody('Dashboard latency dropped 30% under load.'));
   delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
   const result = lintFile(full, { rootDir: dir });
   assert.ok(
@@ -194,7 +194,7 @@ test('artifact lint: percentage without citation IS flagged', () => {
 });
 
 test('artifact lint: customer mind-reading requires citation', () => {
-  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Users want faster dashboards.'));
+  const { dir, full } = makeTempFile('docs/specs/prd/fixture.md', artifactBody('Users want faster dashboards.'));
   delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
   const result = lintFile(full, { rootDir: dir });
   assert.ok(
@@ -204,7 +204,7 @@ test('artifact lint: customer mind-reading requires citation', () => {
 });
 
 test('artifact lint: speculative projection requires source', () => {
-  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Latency will likely drop after rollout.'));
+  const { dir, full } = makeTempFile('docs/specs/prd/fixture.md', artifactBody('Latency will likely drop after rollout.'));
   delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
   const result = lintFile(full, { rootDir: dir });
   assert.ok(
@@ -216,7 +216,7 @@ test('artifact lint: speculative projection requires source', () => {
 test('artifact lint: code block content is skipped', () => {
   const body = [
     '<!--',
-    'docs/prd/fixture.md — fixture.',
+    'docs/specs/prd/fixture.md — fixture.',
     '-->',
     '',
     '# Fixture',
@@ -225,7 +225,7 @@ test('artifact lint: code block content is skipped', () => {
     'Clearly this is sample code, not narrative prose.',
     '```',
   ].join('\n');
-  const { dir, full } = makeTempFile('docs/prd/fixture.md', body);
+  const { dir, full } = makeTempFile('docs/specs/prd/fixture.md', body);
   delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
   const result = lintFile(full, { rootDir: dir });
   assert.ok(
@@ -237,7 +237,7 @@ test('artifact lint: code block content is skipped', () => {
 test('artifact lint: table rows are skipped (targets, not narrative)', () => {
   const body = [
     '<!--',
-    'docs/prd/fixture.md — fixture.',
+    'docs/specs/prd/fixture.md — fixture.',
     '-->',
     '',
     '# Metrics',
@@ -246,7 +246,7 @@ test('artifact lint: table rows are skipped (targets, not narrative)', () => {
     '|---|---|',
     '| Dashboard latency | <200ms p95 30% improvement |',
   ].join('\n');
-  const { dir, full } = makeTempFile('docs/prd/fixture.md', body);
+  const { dir, full } = makeTempFile('docs/specs/prd/fixture.md', body);
   delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
   const result = lintFile(full, { rootDir: dir });
   assert.ok(
@@ -256,7 +256,7 @@ test('artifact lint: table rows are skipped (targets, not narrative)', () => {
 });
 
 test('artifact lint: block mode routes hits to errors instead of warnings', () => {
-  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Clearly this works.'));
+  const { dir, full } = makeTempFile('docs/specs/prd/fixture.md', artifactBody('Clearly this works.'));
   process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
   try {
     const result = lintFile(full, { rootDir: dir });
@@ -274,7 +274,7 @@ test('artifact lint: block mode routes hits to errors instead of warnings', () =
 });
 
 test('artifact lint: construct-lint-ignore marker suppresses the hit on that line', () => {
-  const { dir, full } = makeTempFile('docs/prd/fixture.md', artifactBody('Clearly intentional. construct-lint-ignore'));
+  const { dir, full } = makeTempFile('docs/specs/prd/fixture.md', artifactBody('Clearly intentional. construct-lint-ignore'));
   delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
   const result = lintFile(full, { rootDir: dir });
   assert.ok(

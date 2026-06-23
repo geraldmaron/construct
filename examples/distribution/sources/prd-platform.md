@@ -157,5 +157,5 @@ https://langchain-ai.github.io/langgraph/ (accessed 2026-06-19).
 
 - Construct artifact manifest: `specialists/artifact-manifest.json`
 - PRD workflow skill: `skills/docs/prd-workflow.md`
-- Publish cookbook: `docs/cookbook/diagram-and-demo.md`
+- Publish cookbook: `docs/guides/cookbook/diagram-and-demo.md`
 - Golden D2 sources: `tests/fixtures/publish/diagrams/`

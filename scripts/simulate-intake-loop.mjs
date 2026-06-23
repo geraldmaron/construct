@@ -87,7 +87,7 @@ const relatedDocs = [
     relevance: 'Directly addresses session timeout architecture',
   },
   {
-    path: 'docs/prd/0003-authentication-improvements.md',
+    path: 'docs/specs/prd/0003-authentication-improvements.md',
     title: 'PRD: Authentication Improvements',
     score: 0.72,
     relevance: 'Related product requirements for auth flow',
@@ -236,7 +236,7 @@ const entities = [
     type: 'service',
     connectedDocs: [
       '.cx/inbox/login-feedback-20260518.md',
-      'docs/prd/0003-authentication-improvements.md',
+      'docs/specs/prd/0003-authentication-improvements.md',
     ],
     observations: ['obs-1'],
   },

@@ -36,9 +36,9 @@ describe('buildContextPacket', () => {
       request: 'product framing for notifications',
       role: 'product-manager',
       candidates: [
-        artifact({ path: 'docs/prd/notifications.md', kind: 'prd', title: 'PRD: notifications' }),
-        artifact({ path: 'docs/runbooks/oncall.md', kind: 'runbook', title: 'Runbook: oncall' }),
-        artifact({ path: 'docs/research/competitor.md', kind: 'research-brief', title: 'Competitor scan' }),
+        artifact({ path: 'docs/specs/prd/notifications.md', kind: 'prd', title: 'PRD: notifications' }),
+        artifact({ path: 'docs/operations/runbooks/oncall.md', kind: 'runbook', title: 'Runbook: oncall' }),
+        artifact({ path: 'docs/notes/research/competitor.md', kind: 'research-brief', title: 'Competitor scan' }),
       ],
     });
     const kinds = r.contextPacket.relatedArtifacts.map((a) => a.kind);
@@ -103,13 +103,13 @@ describe('buildContextPacket', () => {
       candidates: [
         artifact({ path: 'lib/auth.mjs', kind: 'target-file' }),
         artifact({ path: 'tests/auth.test.mjs', kind: 'test' }),
-        artifact({ path: 'docs/adr/0007-auth.md', kind: 'adr' }),
+        artifact({ path: 'docs/decisions/adr/0007-auth.md', kind: 'adr' }),
       ],
     });
     const paths = r.contextPacket.relevantFiles.map((f) => f.path);
     assert.ok(paths.includes('lib/auth.mjs'));
     assert.ok(paths.includes('tests/auth.test.mjs'));
-    assert.ok(!paths.includes('docs/adr/0007-auth.md'));
+    assert.ok(!paths.includes('docs/decisions/adr/0007-auth.md'));
   });
 
   it('passes through constraints, priorObservations, and verificationRequirements', () => {
@@ -129,7 +129,7 @@ describe('buildContextPacket', () => {
       request: 'unknown role test',
       role: 'imaginary-persona',
       candidates: [
-        artifact({ path: 'docs/adr/0001.md', kind: 'adr' }),
+        artifact({ path: 'docs/decisions/adr/0001.md', kind: 'adr' }),
       ],
     });
     assert.equal(r.contextPacket.relatedArtifacts.length, 1);

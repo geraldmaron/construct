@@ -1445,7 +1445,7 @@ function syncCursor(targetDir = null, wants = true) {
 
     // Glob-scoped language rules land as managed per-rule .mdc files only when
     // the project's own files match their globs — Cursor's native auto-attach
-    // convention. See docs/concepts/rules-delivery.md.
+    // convention. See docs/guides/concepts/rules-delivery.md.
     try {
       emitCursorRules({ rulesDir: path.join(root, "rules"), targetDir, dryRun: DRY_RUN });
     } catch (err) {
