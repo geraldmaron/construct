@@ -4,6 +4,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 import {
   realLlmOptInEnabled,
@@ -65,12 +68,23 @@ test('buildPrdPolishMessages encodes PRD structure and specialist context', () =
   assert.match(user, /Architect risks/);
 });
 
-test('resolveRealLlmProvider selects copilot only when explicitly requested', () => {
-  const env = {
-    [REAL_LLM_PROVIDER_ENV]: 'copilot',
-    OPENROUTER_API_KEY: 'sk-or-test',
-  };
-  const live = resolveRealLlmProvider(env);
-  assert.equal(live.provider, 'github-copilot');
-  assert.equal(live.requiresAsyncModel, true);
+test('resolveRealLlmProvider selects copilot only when explicitly requested', async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cert-copilot-'));
+  const originalHome = process.env.HOME;
+  process.env.HOME = home;
+  try {
+    const { persistOAuth } = await import('../../lib/providers/copilot-auth.mjs');
+    persistOAuth({ accessToken: 'ghu_TEST', refreshToken: 'ghr_TEST', expiresAt: null, user: 'cert' });
+
+    const env = {
+      [REAL_LLM_PROVIDER_ENV]: 'copilot',
+      OPENROUTER_API_KEY: 'sk-or-test',
+    };
+    const live = resolveRealLlmProvider(env);
+    assert.equal(live.provider, 'github-copilot');
+    assert.equal(live.requiresAsyncModel, true);
+  } finally {
+    process.env.HOME = originalHome;
+    fs.rmSync(home, { recursive: true, force: true });
+  }
 });
