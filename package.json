@@ -108,7 +108,8 @@
     "zod": "^4.4.3"
   },
   "overrides": {
-    "express-rate-limit": "8.5.1"
+    "express-rate-limit": "8.5.1",
+    "undici": "6.27.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
