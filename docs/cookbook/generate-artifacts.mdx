@@ -3,8 +3,13 @@ title: Generate artifacts (PRDs, ADRs, RFCs)
 description: Create structured documents from templates, stamp intake provenance, and keep the record clean.
 ---
 
-Construct produces four first-class artifact types: **PRD**, **ADR**, **RFC**, and **memo**.
-Each has a template under `docs/templates/` and a dedicated lane under `docs/`.
+Construct supports every document class registered in
+`specialists/artifact-manifest.json`, including PRDs, ADRs, RFCs, memos,
+runbooks, research briefs, and project-specific registered classes. Use
+`construct artifact workflow` when the request includes review, rewriting,
+validation, branding, or a distribution format; unknown classes ask for
+classification or registration instead of silently becoming PRDs. Each class
+has a template under `docs/templates/` and a dedicated lane under `docs/`.
 
 <FlowPipeline steps={[
   { label: 'docs/templates/', sub: 'PRD · ADR · RFC · memo' },

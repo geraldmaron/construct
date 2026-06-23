@@ -31,10 +31,10 @@ construct audit <skills|specialists|tests|trail>
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `skills` — Audit skill corpus coverage and metadata (`--inventory` checks certification skill inventory freshness)
+- `specialists` — Audit specialist/skill matrix and cross-checks
+- `tests` — Validate behavior-to-test capability traceability (`--corpus` checks test-file inventory)
+- `trail` — Review mutation audit trail
 
 ## construct certify
 
@@ -48,13 +48,13 @@ construct certify list|show|scenarios|models|demos|status|gate|run <scenario-id>
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `list` — List recorded certification run ids
+- `show` — Show one certification run record as JSON
+- `scenarios` — List available certification scenarios with model tier
+- `models` — List routable certification models (free by default)
+- `status` — Roll up certification posture across capabilities and surfaces
+- `gate` — Release candidate gate — stale or failing release-critical certification evidence blocks
+- `run` — Execute a scenario (live requires CONSTRUCT_CERTIFY_LIVE=1; paid requires CONSTRUCT_CERTIFY_ALLOW_PAID=1)
 
 ## construct cleanup
 

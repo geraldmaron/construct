@@ -1,7 +1,16 @@
 {
   "$schema": "./artifact-manifest.schema.json",
-  "version": 1,
-  "description": "Single source of truth for document types: template, owners, workflow skill, tone, structure, visuals, and release gates.",
+  "version": 2,
+  "description": "Single source of truth for registered document classes: template, author and reviewer chains, workflow skill, validation, output capability, tone, structure, visuals, and release gates.",
+  "workflowDefaults": {
+    "validation": {
+      "releaseGate": true
+    },
+    "outputs": {
+      "formats": ["pdf", "docx", "doc", "deck", "pptx", "html", "rtf", "odt", "epub", "tex", "txt", "md", "mdx"],
+      "branding": "construct"
+    }
+  },
   "artifacts": {
     "prd": {
       "template": "templates/docs/prd.md",

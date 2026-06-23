@@ -662,6 +662,23 @@ _No parameters._
 
 ## Embedded contract tools
 
+### `artifact_workflow`
+
+Plans a manifest-backed artifact workflow, or performs only locally observable
+validation/export after `approval_mode: allow-durable-write`. The response
+separates planned, executed, and skipped steps; it never presents a planned
+specialist review or rewrite as completed execution.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `input` | string | Natural-language artifact request. |
+| `artifact_type` | string | Registered manifest document class. |
+| `file_path` | string | Existing source document for local validation/export. |
+| `format` | string | Requested distribution format. |
+| `output_path` | string | Optional local export destination. |
+| `branding` | string | `construct` (default) or explicit `plain` opt-out. |
+| `approval_mode` | string | `allow-durable-write` is required for local validation/export. |
+
 ### `model_resolve`
 Resolve which model an embedded Construct workflow should use given the host/IDE provider context. Precedence: host model → same-provider-family fallback → Construct tier default → structured config error. Never reads or returns credential values (requiresCredential is a boolean) and never claims unverified provider health. Read-only; performs no writes.
 
@@ -763,4 +780,3 @@ Record a single CX telemetry trace for an agent invocation. Use to log start/end
 | `agent` | string | **required** — Agent or persona name being traced. |
 | `trace` | object | **required** — Trace record: start_ts, end_ts, model, tokens, verdict, notes, etc. |
 | `cwd` | string | Project root (default: server cwd). |
-

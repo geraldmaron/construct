@@ -60,9 +60,9 @@ construct docs check|verify|update
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `check` — Check for missing how-to guides
+- `verify` — Validate documentation quality
+- `update` — Regenerate AUTO-managed regions
 
 ## construct doctor
 
@@ -76,14 +76,14 @@ construct doctor [<status|logs|tick|report|consistency|watch|stop|credentials>] 
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `status` — Doctor daemon status
+- `logs` — Tail doctor daemon logs
+- `tick` — Run one doctor daemon check cycle now
+- `report` — Print the latest health report
+- `consistency` — Run cross-surface consistency checks
+- `watch` — Start the doctor daemon (continuous checks)
+- `stop` — Stop the doctor daemon
+- `credentials` — Diagnose provider credential resolution
 
 **Options**
 
@@ -155,13 +155,13 @@ construct intake list|show|done|skip|reopen|integrate|classify
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `list` — List pending packets
+- `show <id>` — Show one packet (triage, related docs, excerpt, tag suggestions)
+- `done <id> [--output=<path>]` — Mark processed; optionally stamp the produced artifact
+- `skip <id> [--reason=…]` — Drop without action; preserves audit trail
+- `reopen <id>` — Move a processed or skipped packet back to pending
+- `integrate <id> <github|jira|confluence> [--publish-issues]` — Create an external ticket from a packet (--publish-issues unlocks the demo-source gate)
+- `classify --json [--text|--file|<stdin>]` — Classify an artifact and return a role-aware plan without enqueuing (embedded contract)
 
 ## construct profile
 
@@ -175,13 +175,13 @@ construct profile show|list|set|create|drafts|archive|health
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `show` — Show the active profile
+- `list` — List curated profiles
+- `set <id>` — Switch the active profile (writes construct.config.json)
+- `create <id> [--display=…] [--role=…] [--department=…] [--yes|--dry-run]` — Scaffold a draft profile; previews and confirms by default, prompts interactively when no flags
+- `drafts` — List in-progress draft profiles
+- `archive <id> --reason="..."` — Move a curated profile into archive/profiles/<id>/
+- `health <id> [--days=N]` — Per-profile observation + outcome rollup
 
 ## construct recommendations
 
@@ -205,10 +205,10 @@ construct sandbox create|list|delete|prune [--profile=<id>]
 
 **Subcommands**
 
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
-- `[object Object]`
+- `create [--profile=<id>]` — Create a new sandbox under ~/.cx/sandboxes/
+- `list` — List existing sandboxes, newest first
+- `delete <id>` — Remove one sandbox by id
+- `prune [--days=N]` — Remove sandboxes older than N days (default 7)
 
 ## construct status
 

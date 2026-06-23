@@ -165,6 +165,14 @@
         }
       }
     },
+    "artifactWorkflow": {
+      "type": "object",
+      "description": "Project overrides for manifest-backed artifact workflows. Per-invocation overrides take precedence over these values, which take precedence over Construct defaults.",
+      "properties": {
+        "defaults": { "type": "object" },
+        "types": { "type": "object", "additionalProperties": { "type": "object" } }
+      }
+    },
     "models": {
       "type": "object",
       "description": "Model catalog visibility and live polling preferences.",

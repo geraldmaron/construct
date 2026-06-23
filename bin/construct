@@ -505,7 +505,7 @@ async function cmdDoctor() {
   add('registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'registry.json')));
   add('sync-specialists.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs')));
 
-  // Dashboard static build output. Skipped on published npm installs (#297).
+  // Dashboard static build output is absent from published npm installs.
 
   if (isSourceCheckout) {
     const dashboardIndex = path.join(ROOT_DIR, 'lib', 'server', 'static', 'index.html');
@@ -1569,17 +1569,18 @@ async function cmdExport(args) {
   const outFlag = args.find((a) => a.startsWith('--output='))?.split('=')[1];
   const detectOnly = args.includes('--detect');
   const figures = !args.includes('--no-figures');
+  const branding = args.includes('--plain') || args.includes('--no-brand') ? 'plain' : 'construct';
 
   const { detect, exportMarkdown, EXPORT_FORMATS } = await import('../lib/document-export.mjs');
 
   if (detectOnly) {
     const format = toFlag || 'pdf';
-    println(JSON.stringify(detect(format), null, 2));
+    println(JSON.stringify(detect(format, process.env, { branding }), null, 2));
     return;
   }
 
   if (!inputPath) {
-    errorln('Usage: construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>] [--figures|--no-figures] [--detect]');
+    errorln('Usage: construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>] [--figures|--no-figures] [--plain] [--detect]');
     process.exit(1);
   }
   if (!toFlag) {
@@ -1594,6 +1595,7 @@ async function cmdExport(args) {
     outputPath: resolvedOut,
     format: toFlag,
     figures: toFlag === 'pdf' ? figures : false,
+    branding,
     repoRoot: ROOT_DIR,
   });
   if (!result.ok) {
@@ -5790,7 +5792,24 @@ const handlers = new Map([
   ['artifact', async (args) => {
     const sub = args[0];
     if (sub === 'validate') return runArtifactValidateCli(args.slice(1));
-    errorln(`Unknown artifact subcommand: ${sub || '(none)'}. Available: validate`);
+    if (sub === 'workflow') {
+      const rest = args.slice(1);
+      const request = rest.filter((arg) => !arg.startsWith('--')).join(' ');
+      const read = (name) => rest.find((arg) => arg.startsWith(`${name}=`))?.slice(name.length + 1);
+      const { runArtifactWorkflow } = await import('../lib/artifact-workflow.mjs');
+      const result = runArtifactWorkflow({
+        input: request,
+        artifactType: read('--type'),
+        filePath: read('--file'),
+        format: read('--to'),
+        outputPath: read('--output'),
+        branding: rest.includes('--plain') ? 'plain' : undefined,
+        approvalMode: rest.includes('--apply') ? 'allow-durable-write' : (read('--approval-mode') || 'proposal-only'),
+      }, { cwd: process.cwd(), rootDir: ROOT_DIR });
+      println(JSON.stringify(result, null, 2));
+      return;
+    }
+    errorln(`Unknown artifact subcommand: ${sub || '(none)'}. Available: validate, workflow`);
     process.exit(1);
   }],
   ['doc', async (args) => {

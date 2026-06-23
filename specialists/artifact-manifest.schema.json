@@ -8,6 +8,7 @@
   "properties": {
     "version": { "type": "integer", "minimum": 1 },
     "description": { "type": "string" },
+    "workflowDefaults": { "$ref": "#/$defs/workflowDefaults" },
     "artifacts": {
       "type": "object",
       "additionalProperties": { "$ref": "#/$defs/artifactEntry" }
@@ -34,6 +35,29 @@
         "optionalReviewers": { "type": "array", "items": { "type": "string" } }
       }
     },
+    "workflowDefaults": {
+      "type": "object",
+      "properties": {
+        "authorChain": { "type": "array", "items": { "type": "string" } },
+        "reviewerChain": { "type": "array", "items": { "type": "string" } },
+        "validation": { "$ref": "#/$defs/validation" },
+        "outputs": { "$ref": "#/$defs/outputs" }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "releaseGate": { "type": "boolean" },
+        "requiredChecks": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "properties": {
+        "formats": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "branding": { "type": "string", "enum": ["construct", "plain"] }
+      }
+    },
     "artifactEntry": {
       "type": "object",
       "required": ["template", "primaryOwners", "toneDefault", "releaseGate"],
@@ -46,7 +70,13 @@
         "structureRequirements": { "type": "array", "items": { "type": "string" } },
         "visualRequirements": { "type": "array", "items": { "$ref": "#/$defs/visualRequirement" } },
         "researchProfile": { "type": ["string", "null"] },
-        "releaseGate": { "$ref": "#/$defs/releaseGate" }
+        "releaseGate": { "$ref": "#/$defs/releaseGate" },
+        "documentClass": { "type": "string" },
+        "aliases": { "type": "array", "items": { "type": "string" } },
+        "authorChain": { "type": "array", "items": { "type": "string" } },
+        "reviewerChain": { "type": "array", "items": { "type": "string" } },
+        "validation": { "$ref": "#/$defs/validation" },
+        "outputs": { "$ref": "#/$defs/outputs" }
       }
     }
   }
