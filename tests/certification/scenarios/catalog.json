@@ -641,9 +641,9 @@
         }
       ],
       "model": {
-        "provider": "github-copilot",
-        "requestedId": "github-copilot/auto",
-        "resolvedId": "github-copilot/auto",
+        "provider": "openrouter",
+        "requestedId": "openai/gpt-4o-mini",
+        "resolvedId": "openai/gpt-4o-mini",
         "tier": "free"
       },
       "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
@@ -663,9 +663,9 @@
         }
       ],
       "model": {
-        "provider": "github-copilot",
-        "requestedId": "github-copilot/auto",
-        "resolvedId": "github-copilot/auto",
+        "provider": "openrouter",
+        "requestedId": "openai/gpt-4o-mini",
+        "resolvedId": "openai/gpt-4o-mini",
         "tier": "free"
       },
       "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
