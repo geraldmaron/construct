@@ -3,6 +3,7 @@ name: docs-runbook-workflow
 description: "Use when: creating operational procedures for services, alerts, or recurring operations."
 inputs: [service, incident]
 artifactType: runbook
+verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
 ---
 # Runbook Workflow
 

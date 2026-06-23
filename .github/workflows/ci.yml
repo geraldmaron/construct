@@ -126,6 +126,7 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: npm install --no-save ink react
       - run: npm test
       - run: node bin/construct doctor
       - run: node bin/construct docs:verify
@@ -192,7 +193,9 @@ jobs:
         # public npm registry.
         env:
           DOCS_BASE_PATH: /construct
-        run: npm --prefix apps/docs run build
+        run: |
+          node ./bin/construct docs:site
+          npm --prefix apps/docs run build
       - name: gates audit
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         env:

@@ -1,0 +1,29 @@
+/**
+ * tests/fixtures/publish/diagrams/platform-actor-map.d2 — D2 actor map for golden PRD publish fixture.
+ *
+ * Complements the mermaid workflow chart in golden-prd-platform.md; rendered with sketch styling at export.
+ */
+
+direction: down
+
+developer: Application developer {
+  shape: person
+}
+
+security: Security admin {
+  shape: person
+}
+
+ops: Ops engineer {
+  shape: person
+}
+
+construct: Construct CLI
+gate: Release gate\nvalidate + citations
+export: Publish export\nPDF + figures
+
+developer -> construct: invoke + review plan
+security -> gate: citation + reviewer policy
+ops -> export: toolchain detect
+construct -> gate
+gate -> export

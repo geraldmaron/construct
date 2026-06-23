@@ -27,7 +27,7 @@ The gap is observed, not hypothetical: a user selected the `construct` agent in 
 
 - `lib/host-capabilities.mjs` classifies every supported host into three tiers: **full-native** (Claude Code, OpenCode) run the multi-specialist chain themselves; **mcp-orchestrated** (Codex, VS Code, Cursor, Copilot) have no native subagent primitive and reach the same outcome by calling the `orchestration_run` MCP tool against the daemon; **prompt-only** (no supported 2026 host).
 - [ADR 0022](0022-orchestration-daemon-api.md) provides the orchestration daemon as engine-as-service — the typed entrypoint an mcp-orchestrated host already targets.
-- The research brief (`.cx/research/doc-io-and-invocation-research.md`, 2026-06-04, Topic 4) establishes that MCP has no ambient primitive: tools are explicit and model-controlled (`tools/call`), prompts are user-controlled (slash commands), and "enact on demand" maps directly onto a single `tools/call`.
+- The research brief (`docs/research/decision-input/doc-io-and-invocation-research.md`, 2026-06-04, Topic 4) establishes that MCP has no ambient primitive: tools are explicit and model-controlled (`tools/call`), prompts are user-controlled (slash commands), and "enact on demand" maps directly onto a single `tools/call`.
 
 ## Decision
 
@@ -58,6 +58,6 @@ Two-way door on transport — a future ACP-native activation ([ADR 0023](0023-ac
 - [ADR 0020: Local orchestration runtime](0020-local-orchestration-runtime.md)
 - [ADR 0022: Orchestration daemon API](0022-orchestration-daemon-api.md)
 - [ADR 0023: ACP agent](0023-acp-agent.md)
-- Research brief: `.cx/research/doc-io-and-invocation-research.md` (2026-06-04)
+- Research brief: `docs/research/decision-input/doc-io-and-invocation-research.md` (2026-06-04)
 - `lib/host-capabilities.mjs`
 - Beads: `construct-6zqs` (activation model), `construct-f66u` (Copilot host gap), `construct-i1mt` (research)

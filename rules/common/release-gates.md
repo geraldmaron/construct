@@ -7,7 +7,7 @@ These are blocking gates. Every agent, persona, and harness session working in o
 
 The goal is simple: if a gate would fail in CI, it fails locally first. We never push and pray.
 
-## The five local gates
+## The six local gates
 
 Run these before declaring work done. Pasting the output into the PR body or `bd note` is the standard evidence.
 
@@ -18,8 +18,9 @@ Run these before declaring work done. Pasting the output into the PR body or `bd
 | Doc verification | `node bin/construct docs:verify` | "All documentation checks passed": no warnings either |
 | AUTO doc drift | `node bin/construct docs:update --check` | "Docs are up to date" |
 | Template policy | `npm run lint:templates` | "Template policy: clean." |
+| Certification RC gate | `node bin/construct certify gate` | Release-critical capabilities are not stale; hermetic certification scenarios pass; skipped live runs do not satisfy evidence |
 
-The shortcut for all five (plus dashboard sync) is:
+The shortcut for all six (plus dashboard sync) is:
 
 ```bash
 npm run release:check
@@ -33,7 +34,7 @@ Commit subjects must match `type(scope): subject`: type from {feat, fix, refacto
 
 PR descriptions must keep all six headings (Summary, Beads issue, Doc updates included, Local gates, Test plan, Risks / rollback) with at least one checked box in both the "Doc updates" and "Local gates" sections. Empty templates fail.
 
-Forbidden in commit messages: `Co-Authored-By: Claude*` trailers (unless the user explicitly asks), `--no-verify`, `--no-gpg-sign`. Forbidden in PR bodies: deleting the required headings, leaving every gate box unchecked.
+Forbidden in commit messages: any `Co-Authored-By:` trailer (including Cursor agent attribution) unless the user explicitly asks, `--no-verify`, `--no-gpg-sign`. Forbidden in PR bodies: deleting the required headings, leaving every gate box unchecked.
 
 ## The tracker contract
 

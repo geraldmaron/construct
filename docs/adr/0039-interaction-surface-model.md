@@ -4,7 +4,7 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 # ADR-0039: Interaction-surface model — CLI as substrate, agent/MCP/TUI/dashboard as the surfaces that get emphasized
 
 - **Date**: 2026-06-17
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Construct maintainers (cx-architect)
 - **Supersedes**: none
 

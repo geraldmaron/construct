@@ -8,7 +8,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SnapshotEngine, renderMarkdown } from '../lib/embed/snapshot.mjs';
-import { ProviderRegistry } from '../providers/lib/registry.mjs';
+import { ProviderRegistry } from '../lib/providers/contract/registry.mjs';
 import { normalize, DEFAULT_OPERATING_PROFILE } from '../lib/embed/config.mjs';
 
 function makeRegistry(providers = []) {

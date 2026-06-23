@@ -17,6 +17,8 @@ import { smokeFindings } from '../../scripts/audit/01-smoke.mjs';
 import { deadcodeFindings } from '../../scripts/audit/02-deadcode.mjs';
 import { docsFindings } from '../../scripts/audit/03-docs.mjs';
 import { namingFindings } from '../../scripts/audit/03b-naming.mjs';
+import { brandFindings } from '../../scripts/audit/03d-brand.mjs';
+import { rootLayoutFindings } from '../../scripts/audit/03c-root-layout.mjs';
 import { auditFindings } from '../../scripts/audit/06-audit.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
@@ -39,6 +41,8 @@ test('audit finders introduce no findings beyond the committed baseline', () => 
     ...idsFor('02-deadcode', deadcodeFindings()),
     ...idsFor('03-docs', docsFindings()),
     ...idsFor('03b-naming', namingFindings()),
+    ...idsFor('03d-brand', brandFindings()),
+    ...idsFor('03c-root-layout', rootLayoutFindings()),
     ...idsFor('06-audit', repoDeterministic(auditFindings())),
   ];
   const regressions = current.filter((id) => !accepted.has(id));

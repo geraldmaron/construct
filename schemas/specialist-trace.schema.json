@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://construct.dev/schemas/specialist-trace.schema.json",
+  "title": "SpecialistTrace",
+  "description": "One specialist execution trace for the governed improvement loop (construct-6zga.1.7). Captures enough provenance to attribute a failure causally — upstream context, provider execution, the specialist's own output, the handoff contract, the downstream consumer, or evaluator uncertainty — so a specialist is never blamed for an upstream or provider failure.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "id", "specialist", "versions", "upstream", "provider",
+    "specialistOutput", "handoff", "downstream", "evaluator"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "specialist": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["role"],
+      "properties": {
+        "role": { "type": "string" },
+        "profileId": { "type": ["string", "null"] },
+        "capabilityClass": { "type": ["string", "null"] }
+      }
+    },
+    "versions": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "taskPacket": { "type": ["string", "null"] },
+        "prompt": { "type": ["string", "null"] },
+        "skill": { "type": ["string", "null"] },
+        "roleFlavor": { "type": ["string", "null"] }
+      }
+    },
+    "upstream": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["evidenceComplete", "inputsPresent"],
+      "properties": {
+        "evidenceComplete": { "type": "boolean" },
+        "inputsPresent": { "type": "boolean" }
+      }
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["executionError", "degraded"],
+      "properties": {
+        "executionError": { "type": "boolean" },
+        "degraded": { "type": "boolean" }
+      }
+    },
+    "specialistOutput": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["evidenceVerdict"],
+      "properties": {
+        "evidenceVerdict": { "enum": ["pass", "fail", "unverified"] }
+      }
+    },
+    "handoff": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["inputValid", "schemaValid"],
+      "properties": {
+        "inputValid": { "type": "boolean" },
+        "schemaValid": { "type": "boolean" },
+        "output": { "type": ["object", "null"] }
+      }
+    },
+    "downstream": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["consumerError", "outcome"],
+      "properties": {
+        "consumerError": { "type": "boolean" },
+        "outcome": { "enum": ["accepted", "rejected", "unknown"] }
+      }
+    },
+    "evaluator": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["abstained"],
+      "properties": {
+        "abstained": { "type": "boolean" },
+        "confidence": { "type": ["number", "null"] }
+      }
+    },
+    "cost": { "type": ["number", "null"] },
+    "latencyMs": { "type": ["number", "null"] },
+    "toolTimeline": { "type": "array", "items": { "type": "object" } },
+    "sourceTraceIds": { "type": "array", "items": { "type": "string" } },
+    "humanCorrection": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["target"],
+          "properties": {
+            "target": { "enum": ["specialist", "upstream", "contract", "downstream", "provider"] }
+          }
+        }
+      ]
+    }
+  }
+}

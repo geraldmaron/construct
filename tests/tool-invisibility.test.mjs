@@ -69,13 +69,13 @@ describe('comment-lint flags tool-identity leaks in consuming-project deliverabl
     assert.equal(artifactWarnings(lintFile(fp, { rootDir: dir })).length, 0);
   });
 
-  it('does NOT flag unrelated cx-* npm packages (cx-oracle, cx-ray, cx-pro)', () => {
-    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nThe driver is cx-oracle; tracing via cx-ray; cx-pro handles the rest.\n');
+  it('does NOT flag unrelated cx-* npm packages (cx-ray, cx-pro, cx-widget)', () => {
+    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nThe driver is cx-widget; tracing via cx-ray; cx-pro handles the rest.\n');
     assert.equal(artifactWarnings(lintFile(fp, { rootDir: dir })).length, 0);
   });
 
   it('still flags a real role id when a lookalike package is on the same line', () => {
-    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nUses cx-oracle. Owner: cx-product-manager.\n');
+    const { dir, fp } = fixture('my-app', 'docs/strategy.md', '# S\n\nUses cx-ray. Owner: cx-product-manager.\n');
     assert.ok(artifactWarnings(lintFile(fp, { rootDir: dir })).length >= 1);
   });
 

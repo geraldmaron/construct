@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "specialistId": "cx-ux-researcher",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path",
+  "userPrompt": "Who specifically is the user, and what would success feel like to them — not to us?",
+  "roleCardRefs": [
+    "openingQuestion",
+    "humanEquivalent",
+    "skills"
+  ],
+  "hermeticChecks": [
+    "role-card-exists",
+    "registry-specialist-match",
+    "contract-audit-pass"
+  ],
+  "handoffEvidence": {
+    "required": false,
+    "artifactTypes": []
+  },
+  "liveScoring": {
+    "enabled": true,
+    "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+  }
+}

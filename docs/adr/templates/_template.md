@@ -37,6 +37,13 @@ Should reference:
 ## Context
 <!-- Forces at play beyond the core problem. What else is true today that bounds the decision space? Prior ADRs, architectural constraints, external commitments. -->
 
+```mermaid
+flowchart LR
+  A[Current state] --> B[Decision]
+  B --> C[Target state]
+  D[Rejected alt] -.-> B
+```
+
 ## Decision
 <!-- The position taken, in one or two sentences. State it as a commitment, not a proposal. -->
 

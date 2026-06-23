@@ -3,6 +3,7 @@ name: docs-evidence-ingest-workflow
 description: "Use when: the user pastes customer notes, Slack threads, support tickets, sales notes, research snippets, RFCs, analytics summaries, or competitor signals."
 inputs: [signal, document]
 artifactType: evidence-brief
+verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
 ---
 # Evidence Ingest Workflow
 

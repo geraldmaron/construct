@@ -224,10 +224,15 @@ describe('checkParity', () => {
     assert.equal(vscode.status, 'ok', JSON.stringify(vscode));
   });
 
-  it('reports drift when cursor mcp config has an extra server', () => {
+  it('tolerates a user-added non-registry MCP server (extra is not drift)', () => {
     resetSurfaces();
     const cursorDir = path.join(tmpHome, '.cursor');
     fs.mkdirSync(cursorDir, { recursive: true });
+    // 'orphan' is the user's own server. Construct ensures its registry servers
+    // are present but does not own the user's full MCP list, so an extra alone is
+    // not drift. The extra is still recorded for visibility; a MISSING registry
+    // server still drifts (covered by the vscode missing-server test above).
+
     fs.writeFileSync(
       path.join(cursorDir, 'mcp.json'),
       JSON.stringify({ mcpServers: { github: {}, context7: {}, orphan: {} } }),
@@ -235,7 +240,8 @@ describe('checkParity', () => {
 
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     const cursor = report.surfaces.find((s) => s.surface === 'cursor');
-    assert.equal(cursor.status, 'drift');
+    assert.equal(cursor.status, 'ok');
+    assert.deepEqual(cursor.missing, []);
     assert.deepEqual(cursor.extra, ['orphan']);
   });
 

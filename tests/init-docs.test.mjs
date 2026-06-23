@@ -238,6 +238,27 @@ test('init-docs scaffolds postmortems, changelogs, and onboarding lanes', () => 
   assert.match(onboardingTemplate, /Prerequisites/i);
 });
 
+test('construct package repo keeps lane starters under templates/ only', () => {
+  const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+  for (const dir of ['adr', 'memos', 'prds', 'rfcs', 'runbooks']) {
+    assert.equal(
+      fs.existsSync(path.join(repoRoot, 'docs', dir, '_template.md')),
+      false,
+      `expected no docs/${dir}/_template.md — use docs/${dir}/templates/_template.md`,
+    );
+    assert.equal(
+      fs.existsSync(path.join(repoRoot, 'docs', dir, 'templates', '_template.md')),
+      true,
+      `missing docs/${dir}/templates/_template.md`,
+    );
+  }
+  for (const name of fs.readdirSync(path.join(repoRoot, 'docs', 'prds'))) {
+    if (name.endsWith('.template.md')) {
+      assert.fail(`docs/prds/${name} must live under docs/prds/templates/`);
+    }
+  }
+});
+
 test('init-docs full preset includes postmortems, changelogs, and onboarding', () => {
   const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
   const cwd = tempDir('construct-init-docs-full-preset-');

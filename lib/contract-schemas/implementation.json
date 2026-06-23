@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Implementation",
+  "description": "Output from cx-engineer: summary of changes made",
+  "type": "object",
+  "required": ["type", "status", "filesChanged", "verificationChecklist"],
+  "properties": {
+    "type": { "type": "string", "enum": ["implementation"] },
+    "status": {
+      "type": "string",
+      "enum": ["DONE", "BLOCKED", "NEEDS_MAIN_INPUT"]
+    },
+    "filesChanged": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "action"],
+        "properties": {
+          "path": { "type": "string" },
+          "action": { "type": "string", "enum": ["created", "modified", "deleted"] },
+          "summary": { "type": "string" }
+        }
+      }
+    },
+    "verificationChecklist": {
+      "type": "object",
+      "properties": {
+        "compilesWithoutErrors": { "type": "boolean" },
+        "existingTestsPass": { "type": "boolean" },
+        "newBehaviorHasCoverage": { "type": "boolean" },
+        "noHardcodedSecrets": { "type": "boolean" },
+        "noFileOver800Lines": { "type": "boolean" }
+      },
+      "required": ["compilesWithoutErrors", "existingTestsPass", "newBehaviorHasCoverage", "noHardcodedSecrets", "noFileOver800Lines"]
+    },
+    "blockerDescription": {
+      "type": "string",
+      "description": "Required when status is BLOCKED or NEEDS_MAIN_INPUT"
+    },
+    "needsMainInput": {
+      "type": "object",
+      "description": "Required when status is NEEDS_MAIN_INPUT",
+      "properties": {
+        "taskKey": { "type": "string" },
+        "question": { "type": "string" },
+        "safeDefault": { "type": "string" }
+      }
+    }
+  },
+  "additionalProperties": false
+}

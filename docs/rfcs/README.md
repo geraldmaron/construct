@@ -18,5 +18,5 @@ Architecture and implementation proposals that need review before a decision.
 
 ## Starter templates
 
-- [_template.md](./_template.md)
-- [rfc-platform.template.md](./rfc-platform.template.md)
+- [_template.md](./templates/_template.md)
+- [rfc-platform.template.md](./templates/rfc-platform.template.md)

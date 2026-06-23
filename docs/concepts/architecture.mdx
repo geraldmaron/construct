@@ -11,7 +11,7 @@ Start with the diagrams. They're the fastest way to build a mental model of the 
 
 Construct is one front door (a persona) that you talk to in OpenCode, Claude Code, or your preferred editor. Behind that door is a team of specialists, shaped by your active org profile, who challenge each other and ship verified work. The default profile (`rnd`) is the software R&D team you would expect (architect, engineer, reviewer, security, QA, and others); `operations`, `creative`, and `research` are curated alternatives, and custom profiles drop into `.cx/profile.json`. A small CLI keeps the team installed, healthy, and aligned with your project state.
 
-While Construct provides deep integration with Claude Code and editor-based tools like Cursor and VS Code, **OpenCode** is our primary, heavily optimized surface. By leveraging OpenCode's native multi-model routing (OpenRouter, Ollama) and its robust plugin ecosystem, Construct delivers a first-class, terminal-native experience that prioritizes privacy, flexibility, and performance. The intake loop turns signals into outcomes: anything dropped into `.cx/inbox/` is classified against the active profile's taxonomy, owner-assigned, planned as a task graph, routed to the right persona with the right context, executed in a bounded worker, evidenced, evaluated, and persisted. That's the whole product. The rest of this page is wiring.
+While Construct provides deep integration with Claude Code and editor-based tools like Cursor and VS Code, **OpenCode** is our primary, heavily optimized surface. OpenCode's native multi-model routing (OpenRouter, Ollama) and its mature plugin ecosystem give Construct a first-class, terminal-native experience that prioritizes privacy, flexibility, and performance. The intake loop turns signals into outcomes: anything dropped into `.cx/inbox/` is classified against the active profile's taxonomy, owner-assigned, planned as a task graph, routed to the right persona with the right context, executed in a bounded worker, evidenced, evaluated, and persisted. That's the whole product. The rest of this page is wiring.
 
 ## Intake loop
 
@@ -42,25 +42,81 @@ The signal-to-memory path is deterministic where it should be (classification, r
 
 The loop is the differentiator. Other agent tools dispatch to specialists; Construct dispatches *and* gates *and* re-runs until verification passes or a real blocker surfaces.
 
+## Interaction surfaces
+
+The CLI registry is the substrate (~118 commands). Four surfaces are emphasized for everyday use ([ADR-0039](/adr/0039-interaction-surface-model)):
+
+| Surface | Entry | Role |
+|---|---|---|
+| Agent / MCP | `@construct` in Claude, OpenCode, Codex, Cursor, Copilot | Primary authoring — orchestration policy, skills, workflows |
+| Terminal chat | `construct chat` | Owned agent loop in a Tauri desktop window (or `--plain` linear) |
+| Dashboard chat | `construct chat --web` or `/chat` | Browser cockpit on the same owned loop (SSE) |
+| Thin CLI | `construct status`, `construct doctor`, `construct intake`, … | Operator diagnostics and queue inspection |
+
+Oracle (`construct oracle status`) sits alongside as an L0.5 bounded-auto health layer — not a user-facing chat surface.
+
+## Document I/O
+
+Ingestion and export are optional halves bound to external tooling ([ADR-0024](/adr/0024-document-io-optional-capability), [ADR-0036](/adr/0036-document-ingestion-docling-mcp-evaluation.md)):
+
+| Half | Entry | Engine |
+|------|-------|--------|
+| Ingest | `construct ingest` | Docling sidecar (high fidelity), unpdf/mammoth (fast), whisper (AV) |
+| Export | `construct export` / `construct publish` | Pandoc + Typst (PDF), branded HTML/deck, pptxgenjs (PPTX), LibreOffice (legacy `.doc`) |
+
+**In** accepts PDF, Office, email, AV, and plain text → normalized markdown. **Authoring** stays typed markdown artifacts. **Out** spans PDF, DOCX, DOC, HTML, deck, PPTX, RTF, ODT, EPUB, and more.
+
+Canonical format matrix: [Document I/O reference](/reference/document-io). Brand tokens live in `lib/brand-tokens.mjs` and flow to PDF/HTML/deck/PPTX/chat via `lib/publish-template.mjs` and `lib/chat/design-tokens.mjs`.
+
 ## Where things live
 
 <Cards>
   <Card title="core/ — orchestration brain">
-    `bin/construct` + `lib/cli-commands.mjs` · `lib/mcp/` MCP server + tools · `lib/orchestration-policy.mjs` routing · `lib/storage/` file + SQL + vector · `lib/hooks/` session-start, audit, guards
+    Physical: `bin/construct`, `lib/cli-commands.mjs`, `lib/mcp/`, `lib/orchestration-policy.mjs`, `lib/storage/`, `lib/hooks/`, `lib/oracle/`. ADR-0002 logical `core/` maps here — not a top-level directory.
   </Card>
   <Card title="providers/ — external systems">
-    Transport-agnostic adapters for GitHub, Atlassian Jira, Confluence, Slack, and Salesforce. Core dispatches through the interface; it never knows the transport.
+    Physical: `lib/providers/` (REST data-source adapters + credentials), `lib/providers/contract/` (transport-agnostic contract harness + CLI adapters), `lib/embed/providers/` (embed daemon). Root-level `providers/` was removed (ADR-0044).
   </Card>
   <Card title="runtime/ — keeps the lights on">
-    Embed daemon + supervisor · scheduler · `lib/storage/backup.mjs` timestamped archives with SHA-256 manifest
+    Physical: `lib/embed/` (daemon + supervisor), `lib/service-manager.mjs`, scheduler jobs under `lib/embed/`.
   </Card>
   <Card title="dashboard/ — the web app">
-    Chat (SSE streaming) · approval queue · knowledge panel · snapshot viewer · infrastructure tab
+    Physical: `apps/dashboard/` (Next.js source) → static export in `lib/server/static/`. Served by `construct dev`.
   </Card>
   <Card title="deploy/ — ship it">
     Multi-stage hardened Dockerfile · Terraform modules (ECS, ALB, RDS+pgvector) · `release.yml` SEA binaries, GHCR, npm publish
   </Card>
 </Cards>
+
+### Physical root map (tool repository)
+
+```text
+construct/
+├── apps/           chat, dashboard, docs (shipped UIs)
+├── bin/            CLI entrypoint
+├── lib/            runtime (hooks, MCP, providers, oracle, embed)
+├── docs/           human + generated reference
+├── deploy/         terraform / docker
+├── packages/       cx-ui shared workspace
+├── specialists/    org registry + prompts + contracts  ─┐
+├── registry/       product capability registry          │ org surface
+├── platforms/      host adapter capabilities            │ (see ADR-0044)
+├── schemas/        registry JSON Schema only            │
+├── profiles/       profile catalog                      │
+├── personas/       public persona                       │
+├── commands/       slash command assets                 │
+├── skills/         domain knowledge                     │
+├── rules/          coding standards                     │
+├── templates/      doc templates                        ─┘
+├── config/         tag-vocabulary.json
+├── scripts/        audit, alignment, release
+├── tests/
+└── examples/
+```
+
+Repo layout hygiene is enforced by audit phase `03c-root-layout` (ratchet + alignment census). Oracle consumes census `rootLayout` signals on the tool repo. See [ADR-0044](/adr/0044-tool-repo-root-layout).
+
+Two registries, two jobs: `registry/capabilities.json` (product capabilities + verification tests) vs `platforms/capabilities.json` (host adapter configs). Handoff artifact schemas live in `lib/contract-schemas/`; registry JSON Schema lives in `schemas/`.
 
 ## In human terms
 
@@ -81,12 +137,14 @@ A user request hits the Construct persona (`personas/construct.md`). The orchest
 
 ## Architecture layers
 
+ADR-0002 logical layers — physical paths in [ADR-0044](/adr/0044-tool-repo-root-layout):
+
 ```
-core/        . CLI, MCP server, orchestration, memory, sessions
-providers/   . abstract provider interface + per-system implementations
-runtime/     . Docker management, embed daemon, scheduler
-dashboard/   . full web app: auth, chat, approvals, config
-deploy/      . Dockerfile, Terraform modules, cloud configs
+core/        → bin/, lib/ (CLI, MCP, orchestration, memory, sessions)
+providers/   → lib/providers/, lib/providers/contract/, lib/embed/providers/
+runtime/     → lib/embed/, lib/service-manager.mjs
+dashboard/   → apps/dashboard/ → lib/server/static/
+deploy/      → deploy/
 ```
 
 ### Core
@@ -126,9 +184,9 @@ Transport-agnostic interface to external systems. Each provider implements a cap
 - Providers are stateless adapters. Durable state lives in core stores.
 - Auth is per-provider, configured in `.cx/providers.yaml` or environment.
 - A provider may support any subset of capabilities; unsupported capabilities return a typed error.
-- Provider implementations live in `providers/` with one directory per system.
+- Provider implementations live in `lib/providers/` (data-source adapters) and `lib/providers/contract/adapters/` (contract harness). See [ADR-0044](/adr/0044-tool-repo-root-layout).
 
-**Provider scope framing.** Every provider config carries an allowlist (`repoAllowlist`/`repoAllowGlob` for GitHub, `projectAllowlist` for Jira, `spaceAllowlist` for Confluence, `channelAllowlist` for Slack). Requests targeting out-of-scope resources return a typed `OUT_OF_SCOPE` error. `construct creds set|rotate|list|revoke|test <provider>` manages credentials in `~/.construct/config.env` (0600 enforced). `construct providers discover <name>` runs provider-specific discovery with TTL-cached results.
+**Provider scope framing.** Every provider config carries an allowlist (`repoAllowlist`/`repoAllowGlob` for GitHub, `projectAllowlist` for Jira, `spaceAllowlist` for Confluence, `channelAllowlist` for Slack). Requests targeting out-of-scope resources return a typed `OUT_OF_SCOPE` error. `construct creds set|rotate|list|revoke|test <provider>` manages credentials in `~/.construct/config.env` (0600 enforced), and `construct creds login copilot` runs the GitHub Copilot OAuth device flow (ADR-0042). Values may be plain keys or 1Password `op://` references, resolved at call time by `lib/providers/secret-resolver.mjs`. `construct providers discover <name>` runs provider-specific discovery with TTL-cached results.
 
 **Shipped providers:**
 
@@ -157,7 +215,7 @@ Full web application shipped and running.
 
 - **Auth**. Bearer token + session cookie. `CONSTRUCT_DASHBOARD_TOKEN` for single-token dev mode; `construct dashboard tokens issue` for multi-token production mode with per-token roles (admin/operator/viewer).
 - **Security middleware**. CSRF double-submit cookie (`lib/server/csrf.mjs`), CORS origin allowlist (`lib/server/cors.mjs`, configured via `CONSTRUCT_DASHBOARD_ORIGINS`), token-bucket rate limiting (`lib/server/rate-limit.mjs`: 60/10/5 req/min by endpoint class), structured JSON-line logger (`lib/logger.mjs`).
-- Chat interface. SSE-streaming Claude session; `/api/chat/stream`, `/api/chat`, `/api/chat/history`
+- Chat interface. Legacy SSE via `claude --print` at `/api/chat/stream`, `/api/chat`, `/api/chat/history`. Owned-loop web chat at dashboard `/chat` via `/api/chat/loop/stream` (driver event union), `/api/chat/loop/permission`, `/api/chat/loop/cancel`; default launch is `construct chat` (Tauri window); browser tab via `construct chat --web`. A required-evidence turn finishes with a versioned provenance verdict derived only from completed successful `read`/`grep`/`glob` results with concrete returned targets. The verdict and immutable source records flow through terminal, SSE, JSONL/resume, and export; old snapshots migrate conservatively. A matching answer citation is required for verification, and hiding the tool layer never creates verification.
 - Approval queue. approve/reject high-risk actions queued by the embed daemon
 - Config management. providers, embed settings, approval rules; reads/writes `config.env` and `embed.yaml`
 - Models page. editable per-tier (reasoning/standard/fast) primary + fallback selection backed by `getProviderModelCatalog()`; persists via `POST /api/registry/models`. Credentials sub-block is fully editable via the shared `CredentialsCard` component (LLM kind).
@@ -190,11 +248,12 @@ Every request flows through three structural layers:
 
 The goal is for Construct to run itself like a real organization. a department-style model where deterministic watchers handle the boring stuff and LLM personas are summoned only when judgment is needed. The user stays in the loop for novel decisions and explicit approval, not routine ops.
 
-Three layers:
+Four operational tiers:
 
 1. **L0. Deterministic agents (non-LLM, always-on).** The `construct-doctor` daemon (`lib/doctor/`) runs alongside the dashboard, holding watchers for process-pressure (extends `lib/runtime-pressure.mjs`), service-health (probes Postgres / dashboard / cm; auto-restarts docker services), disk (rotates `~/.cx/*.jsonl`, prunes `~/.construct/.runtime/`), cost (per-persona daily token ledger; the gateway hard-stops invocations at the cap), and `mcp-protocol` (performs a real MCP handshake against every configured MCP server in Claude Code and OpenCode configs, surfaces servers that fail `initialize` or `tools/list`). Recoverable actions are auto-taken and audit-logged to `~/.cx/doctor-log.jsonl`. L0 escalates a `service.down` role event when deterministic rules can't resolve the problem (e.g., 2 failed restarts or repeated pressure churn).
-2. **L1. LLM personas (event-driven, fenced, rate-limited).** The role framework in `lib/roles/`. Events published by hooks or L0 are routed by `lib/orchestration/routing-tables.mjs`, which resolves event ownership, doc-artifact ownership, and watch-condition triggers from declarative fields on `specialists/registry.json` (with optional project overlays under `.cx/specialists/`); the owning persona is then validated against `specialists/role-manifests.json`. The gateway applies threshold + cooldown + rate-ceiling, creates a bd issue, queues a pending invocation in `~/.cx/role-pending.jsonl`, and emits an SSE toast. Session-start drains the backlog (cap 5 per session) and surfaces invocations to Construct, which dispatches the persona via the existing Task path. Personas act inside a fence. allowed paths, allowed bd labels, `approvalRequired` list per role. Handoffs are recorded as `next:cx-<role>` bd labels.
-3. **L2. User.** Commits, pushes, novel decisions, budget overrides, kill switches. Approval-required actions per `rules/common/commit-approval.md` are always L2. The goal is to make L2 rare. not zero.
+2. **L0.5. Oracle meta-review (deterministic synthesis + bounded auto).** The `construct oracle` daemon (`lib/oracle/`) joins session observations, outcomes, contract violations, doctor log entries, alignment census, org graph (policy inventory, workflow gates, intake sign-offs), beads hygiene, and adapter parity into per-tick verdicts at `.cx/oracle/verdicts/<date>.json`. Auto actions (census, registry validate when needed, adapter sync in the tool repo) run without approval; high-severity **actionable** gaps auto-raise idempotent beads (persistent `gapId` dedup, open-bead check) when `CONSTRUCT_ORACLE_AUTO_RAISE` is not off — hygiene/meta gaps (`beads-hygiene`, `workflow-misaligned`, …) are verdict-only via `construct oracle gaps` and never file duplicate tracker beads; `detectBeadsDrift` excludes `[oracle/*]` meta beads from stuck/stale counts. Orchestration queues to `.cx/oracle/pending.jsonl` for explicit approval with sign-off metadata (`construct oracle approve <id>` executes by default). Routing artifacts land in `.cx/oracle/routing/`; duplicate hygiene beads: `construct oracle reconcile`. Oracle starts with `construct dev` unless `CONSTRUCT_ORACLE=off`. See [ADR 0043](/adr/0043-oracle-meta-controller).
+3. **L1. LLM personas (event-driven, fenced, rate-limited).** The role framework in `lib/roles/`. Events published by hooks or L0 are routed by `lib/orchestration/routing-tables.mjs`, which resolves event ownership, doc-artifact ownership, and watch-condition triggers from declarative fields on `specialists/registry.json` (with optional project overlays under `.cx/specialists/`); the owning persona is then validated against `specialists/role-manifests.json`. The gateway applies threshold + cooldown + rate-ceiling, creates a bd issue, queues a pending invocation in `~/.cx/role-pending.jsonl`, and emits an SSE toast. Session-start drains the backlog (cap 5 per session) and surfaces invocations to Construct, which dispatches the persona via the existing Task path. Personas act inside a fence. allowed paths, allowed bd labels, `approvalRequired` list per role. Handoffs are recorded as `next:cx-<role>` bd labels.
+4. **L2. User.** Commits, pushes, novel decisions, budget overrides, kill switches. Approval-required actions per `rules/common/commit-approval.md` are always L2. The goal is to make L2 rare. not zero.
 
 Kill switches throughout: `CONSTRUCT_ROLES=off` (global L1), `CONSTRUCT_ROLE_<NAME>=off` (per-persona L1). L0 watchers are individually toggleable when the doctor daemon ships.
 
@@ -209,7 +268,7 @@ Kill switches throughout: `CONSTRUCT_ROLES=off` (global L1), `CONSTRUCT_ROLE_<NA
 
 ## Footprint contract
 
-Construct's install and init paths are governed by a per-scope opt-in contract codified in [ADR 0029](/concepts/adr/0029-install-scopes-and-hook-budgets). Two scopes; project is the default; the user scope is opt-in.
+Construct's install and init paths are governed by a per-scope opt-in contract codified in [ADR 0029](/adr/0029-install-scopes-and-hook-budgets). Two scopes; project is the default; the user scope is opt-in.
 
 ### Project scope — `construct init` (per repository)
 
@@ -220,7 +279,7 @@ Project scope writes are confined to the project root and the project's `.git/` 
 | `.construct/` | Project-local Construct runtime state | construct init |
 | `.cx/` | Observations, sessions, traces, intake, task graphs (gitignored) | construct init |
 | `.claude/agents/` · `.claude/commands/` · `.claude/settings.json` | Claude Code adapter tree (agents + hooks + slash commands) | construct sync |
-| `.codex/`, `.vscode/`, `.opencode/`, `.cursor/` | Per-host adapters when the host is detected | construct sync |
+| `.codex/`, `.vscode/`, `.opencode/`, `.cursor/` | Per-host adapters when the host is detected (gitignored — run `npm run adapters` or `construct sync`) | construct sync |
 | `construct.config.json` | Project config + active profile | construct init |
 | `plan.md` | Local-only current plan (gitignored) | construct init |
 | `CLAUDE.md` · `AGENTS.md` | Marker-block injection — Construct's section only, preserving surrounding content | construct sync |
@@ -246,7 +305,7 @@ Machine scope writes are opt-in. The default `construct install` (no flag, or `-
 
 - `~/.bashrc`, `~/.zshrc`, or any other shell rc — Construct never writes to shell init files.
 - `npm` global config or registries.
-- `git config --global core.hooksPath` — explicitly prohibited by [ADR 0027](/concepts/adr/0027-host-project-footprint-and-non-destructive-scaffolding) §3.
+- `git config --global core.hooksPath` — explicitly prohibited by [ADR 0027](/adr/0027-host-project-footprint-and-non-destructive-scaffolding) §3.
 - Any path outside the table above without first appearing in `construct doctor` drift output and prompting for consent.
 
 ### Hook performance budgets
@@ -288,6 +347,20 @@ Invariants that make it safe to embed, especially for teams where auditability i
 
 See [Embedded contract layer](/concepts/embedded-contract) for the contract model and [Embedded contract API](/reference/embed-api) for request/response schemas.
 
+## Capability registry (alignment spine)
+
+`registry/capabilities.json` is the machine-readable index linking capabilities, workflows, document types, ingest strategies, and hot-path skills to their verification tests, interaction surfaces, and human gates. Validated by `construct registry:validate` and surfaced in `construct doctor`; reference docs are generated (`construct registry:generate-docs` → `docs/reference/capabilities.md`). Each entry declares ADR-0039 surfaces (`mcp`, `cli`, `opencode`, `claude`, …), optional `verification.functional` paths into the existing functional suite (ADR-0035 extend-not-rebuild), and `lastValidated` stamped by `node scripts/run-capability-tests.mjs --tier=P0 --stamp`. Capability-tier tests live at `tests/capabilities/<registry-id>/<surface>.test.mjs`. **`specialists/artifact-manifest.json`** is the parallel SSoT for typed document artifacts: template path, tone profile, structure/visual requirements, workflow skill, and release-gate policy (`construct artifact validate`, PostToolUse advisory hook, orchestration reviewer chain). Phase 0 alignment artifacts: `docs/audit/alignment-scorecard-2026-06-19.md`, `scripts/alignment/census.mjs`, and the bound-orphan consolidation proposal (maintainer approval before bind/merge/delete).
+
+Do not confuse this with `platforms/capabilities.json` (ADR-0033): that file describes **host platform** features (Claude/Codex/Cursor hook budgets, MCP allowlists) consumed by sync and init — not product capability verification.
+
+## Living dependency matrix (change-impact spine)
+
+Where the capability registry declares *what* connects to what, the dependency matrix (`lib/graph/`) makes the connections **traceable in both directions and keeps them current from code structure**, so a file change can be mapped to the workflows and tests it affects. It is a typed, directed graph hosted in the knowledge-graph layer at `.cx/graph/{nodes,edges}.jsonl` (gitignored, regenerated; the store is `lib/graph/store.mjs`). Node types: `file`, `module`, `test`, `capability`, `workflow`, `contract`, `surface`, `skill`, `rule`. Edge relations: `imports`, `realizes` (file→capability), `validates` (test→capability), `embeds` (capability→workflow), `uses`, `governed_by`, `exposes`, `contains`, `co_changes`.
+
+Population is hybrid (`construct matrix build`): (1) **registry ingest** (`build-from-registry.mjs`) seeds capability/workflow/test/contract/skill/surface nodes and their edges from `registry/capabilities.json`, `workflow-defs.mjs`, and `specialists/contracts.json`; (2) **static import derivation** (`build-import-graph.mjs`) walks `lib/`, `bin/`, `scripts/`, `tests/` for relative imports, adds `file`/`module` nodes with `imports` edges, and derives the otherwise-missing `realizes` (file→capability) edges from each capability's declared-test import closure; (3) **git co-change** (`build-co-change.mjs`) adds `module` nodes with `contains` and `co_changes` edges (reusing `captureDependencyPatterns`, which also feeds the entity store).
+
+`construct impact [files] [--stdin] [--run] [--json]` (`lib/graph/impact.mjs`) is Test Impact Analysis: a changed file selects the tests that transitively import it plus the tests validating any capability it realizes, rolls up impacted capabilities and workflows, and flags changed files that realize no capability. **Oracle is the overseer** — `collectDependencyGraph` (`lib/oracle/read-model.mjs`) feeds `synthesizeVerdict` three gaps with deterministic routes (`lib/oracle/routing.mjs`): `matrix-coverage-gap` (no impl/test edge → `cx-architect`/`cx-qa`), `impact-untested` (realizing files changed after `lastValidated` → `cx-qa`/`cx-engineer`), and `dependency-graph-stale` (seeds changed since last build → `cx-platform-engineer`). Advisory-first: gaps and the `impact` command surface signals; nothing blocks.
+
 ## Local orchestration runtime (host-independent)
 
 Hosts are front doors; Construct is the system. To stop the best orchestration experience from being coupled to whichever editor exposes native multi-agent execution, Construct owns a local orchestration runtime (`lib/orchestration/runtime.mjs` + `run-store.mjs`), surfaced as `construct orchestrate run|status [--json]`. A run intakes a request, plans a sequenced specialist chain (reusing `orchestration-policy.routeRequest`), resolves the execution-capability contract (`resolveExecution`), persists a durable, resumable run + task lifecycle, and emits lifecycle traces — returning the host-adapter metadata a thin host integration consumes (`executionMode`, `constructCapabilitiesActive`, `workerBackend`, `hostRole`, `degraded`, `selectedProvider`/`selectedModel`, `traceId`).
@@ -299,6 +372,10 @@ The runtime has two pluggable axes behind unchanged callers: a worker backend an
 **Run stores.** `resolveRunStore` (`lib/orchestration/store.mjs`) returns one `{ saveRun, loadRun, listRuns }` interface over three backends: **Mode-A** filesystem (zero-dependency default, `.cx/runtime/orchestration/runs/`, no Docker), **Mode-B** SQLite (`run-store-sqlite.mjs`, lazy `node:sqlite` with `sqliteAvailable()` — falls back on Node older than 22.5), and **Mode-C** Postgres (`run-store-postgres.mjs`, shared team/enterprise store). Selection follows `orchestration.store` config / `CONSTRUCT_ORCHESTRATION_STORE` env override, else deployment mode (solo→filesystem, team/enterprise→postgres), degrading to filesystem with a warning when a backend is unavailable. Filesystem + inline is the byte-for-byte-unchanged default. Decisions recorded in ADR-0020 and ADR-0021 (extending ADR-0019).
 
 **Engine-as-service.** The runtime is reachable as a local service so hosts can be thin clients — the pattern Claude Code, OpenCode, and Goose all use to deliver multi-agent inside editors that have no native subagent primitive (the editor's missing primitive is immaterial when the engine owns the loop). The existing local server (`lib/server/index.mjs`) exposes `POST /api/orchestration/runs` (starts a run in the **background**, returns `runId` immediately via `startRun`), `GET /api/orchestration/runs[/:id]`, `GET /api/orchestration/runs/:id/events` (an **SSE** lifecycle stream backed by the process-local `lib/orchestration/events.mjs` bus), and `POST …/:id/cancel` (cooperative between-task stop). Responses use the versioned, secret-free embedded-contract envelope; requests reuse the dashboard auth, with CSRF exempted for `Authorization`-header clients. `construct orchestrate run|status --remote` is the reference thin client; a VS Code/Copilot extension, OpenCode, or CI drives the same API. Decision: ADR-0022.
+
+## Terminal chat surface (own-the-loop, own-the-surface)
+
+`construct chat` is the interactive chat surface (ADR-0039 tier (c)/(d)). Construct runs the agent loop itself (ADR-0041): prompt → model → tool calls → tool results → repeat, on a provider-agnostic engine (Vercel AI SDK). The default surface is a **Tauri desktop window** (`apps/chat/desktop/`) loading dashboard `/chat/?surface=desktop` in a system WebView — full CSS layout, no browser tab. The same React cockpit (`apps/chat/web/`) also serves `construct chat --web` and dashboard `/chat` over SSE (`lib/server/chat-loop.mjs`). `--plain` routes to the linear, screen-reader-friendly renderer (`lib/chat/tui/render.mjs`) for SSH/CI only. Build the window binary with `npm run build:chat-desktop`. Settings persist to `.cx/chat-config.json`; transcripts to `.cx/chat-sessions/*.jsonl`. Decision: ADR-0041 (amended — Ink TUI replaced by desktop window + web cockpit).
 
 ## Project-state hierarchy
 
@@ -320,11 +397,12 @@ Hybrid: autonomous for low-risk, human-gated for high-risk.
 
 ## Policy enforcement. three layers
 
-Policy rules (comment convention, doc-update requirement, CI green before walk-away, branch hygiene) are enforced at three layers so violations cannot fall through the cracks. Every blocking layer has an explicit env-var bypass so legitimate exceptions leave an audit trail.
+Policy rules (comment convention, doc-update requirement, CI green before walk-away, branch hygiene) are enforced at three layers so violations cannot fall through the cracks. Quality gates fire unconditionally — no skip env vars on blocking checks. If a gate fires wrong, repair the policy at its source.
 
 **Layer 1. Real-time (write/edit time).** Catches at the source.
 
 - `comment-lint.mjs`. PostToolUse Write/Edit/MultiEdit, **blocking**. Banned patterns and missing required headers exit 2. No bypass — fix the comment or fix the policy in `lib/comment-lint.mjs`.
+- `artifact-release-gate.mjs`. PostToolUse Write/Edit/MultiEdit, **advisory**. Surfaces manifest structure/visual gaps on typed docs under `docs/**` and `.cx/research/**`; full gate via `construct artifact validate`. Artifacts may declare `cx_release_gate: bypass` with `cx_release_gate_reason` — Oracle read model surfaces these for review.
 - `doc-coupling-check.mjs`. PostToolUse, advisory. Counts code-file edits per session, prints stderr nudge at 3/5/10 when no doc files touched. Soft predecessor to the commit gate.
 - `ci-status-check.mjs`. UserPromptSubmit. Queries `gh run list` (60s cache) and injects red-CI status into agent observation.
 
@@ -405,7 +483,9 @@ body_hash:   sha256:<hex>          # SHA-256 of trimmed body
 
 ## Specialist roster
 
-28 specialists ship in the default profile. Each has a role, model tier (reasoning / standard / fast), and a prompt file in `specialists/prompts/`. The canonical source is `specialists/registry.json`.
+29 specialists ship in the default profile (including `cx-oracle`). Each has a role, model tier (reasoning / standard / fast), and a prompt file in `specialists/prompts/`. The canonical source is `specialists/registry.json`.
+
+**Single Front Door:** only `construct` appears in editor agent pickers. Internal specialists (`cx-*`) dispatch via `orchestration_policy` / `orchestration_run` — not as separate picker entries. Sync injects an orchestration micro-prompt instead of a static roster token block.
 
 Full roster with domain groupings: [Agents and personas](/concepts/agents-and-personas).
-Full reference with tier and purpose per specialist: [Specialist reference](/reference/agents).
+Full reference with tier and purpose per specialist: [Specialist reference](/reference/specialists).

@@ -1,0 +1,15 @@
+{
+  "skillId": "quality-gates/verify-security",
+  "mode": "negative",
+  "failureClass": "policy-denial",
+  "input": {
+    "missingPrerequisite": true,
+    "skillId": "quality-gates/verify-security"
+  },
+  "expected": {
+    "graceful": true,
+    "errorType": "SKILL_PREREQUISITE_MISSING",
+    "silentSuccess": false
+  },
+  "note": "Hermetic fixture — runner classifies failure without filesystem writes"
+}

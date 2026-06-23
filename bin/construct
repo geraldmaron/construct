@@ -12,10 +12,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { CLI_COMMANDS, CLI_COMMANDS_BY_CATEGORY, CATEGORY_ORDER, formatCommandHelp, isInternalCommand } from '../lib/cli-commands.mjs';
+import { CLI_COMMANDS, CATEGORY_ORDER, formatCommandHelp } from '../lib/cli-commands.mjs';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { validateRegistry } from '../lib/validator.mjs';
-import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setTierModel, setModelWithTierInference } from '../lib/model-router.mjs';
+import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setModelWithTierInference } from '../lib/model-router.mjs';
 import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
 import { cmdOllama } from '../lib/ollama-manager.mjs';
@@ -26,7 +26,8 @@ import { runUpdate } from '../lib/update.mjs';
 import { runUpgrade } from '../lib/upgrade.mjs';
 import { runUninstall } from '../lib/uninstall/uninstall.mjs';
 import { maybeFirstInvocationProbe } from '../lib/install/first-invocation.mjs';
-import { loadConstructEnv, getUserEnvPath, writeEnvValues, ensureUserConfigDir } from '../lib/env-config.mjs';
+import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
+import { ensureConstructCredentials } from '../lib/providers/credential-bootstrap.mjs';
 import {
   loadProjectConfig,
   writeProjectConfig,
@@ -39,30 +40,30 @@ import {
 import { validateProjectConfig } from '../lib/config/schema.mjs';
 import {
   DEPLOYMENT_MODES,
-  DEFAULT_DEPLOYMENT_MODE,
   DEPLOYMENT_MODE_ENV_KEY,
   describeDeploymentMode,
-  describeResourceLine,
   getDeploymentMode,
-  isValidDeploymentMode,
   resolveResourceMode,
 } from '../lib/deployment-mode.mjs';
 import { runDistillCli } from '../lib/distill.mjs';
 import { runIngestCli } from '../lib/document-ingest.mjs';
 import { runInferCli } from '../lib/schema-infer.mjs';
-import { COMPLETIONS_DIR, generateCompletions, getCompletionScript } from '../lib/completions.mjs';
+import { generateCompletions, getCompletionScript } from '../lib/completions.mjs';
 import { runHeadhunt, listTeamTemplates } from '../lib/headhunt.mjs';
 import {
   getLockStatus,
   cleanupStaleLock,
   cleanupStaleQueue,
   readQueue,
-  formatStatus,
 } from '../lib/beads-lock.mjs';
 import { runBd, getHumanStatus, acquireMergeSlot, releaseMergeSlot } from '../lib/beads-client.mjs';
 import { auditSkills, runAuditSkillsCli } from '../lib/audit-skills.mjs';
+import { auditSpecialists, runAuditSpecialistsCli } from '../lib/audit-specialists.mjs';
+import { runCapabilityLedgerAuditCli } from '../lib/capability-ledger.mjs';
+import { runCorpusInventoryAuditCli } from '../lib/test-corpus-inventory.mjs';
+import { runArtifactValidateCli } from '../lib/artifact-release-gate.mjs';
 import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
-import { readDashboardState, startDashboard, startServices } from '../lib/service-manager.mjs';
+import { startDashboard, startServices } from '../lib/service-manager.mjs';
 import { readCostLog, summarizeCostData, formatCostReport, clearCostLog } from '../lib/cost.mjs';
 import { readEfficiencyLog, summarizeEfficiencyData, formatEfficiencyReport } from '../lib/efficiency.mjs';
 import { resolveColors } from '../lib/term-format.mjs';
@@ -74,6 +75,7 @@ import { runPressureRelease } from '../lib/runtime-pressure.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const HOME = os.homedir();
+ensureConstructCredentials({ env: process.env, cwd: ROOT_DIR, home: HOME });
 const ENV = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME, env: process.env });
 for (const [key, value] of Object.entries(ENV)) {
   if (!(key in process.env)) process.env[key] = value;
@@ -170,41 +172,51 @@ function runNodeScript(scriptPath, args = [], extraEnv = {}, { exitOnError = tru
 }
 
 async function cmdRegistryStatus(args = []) {
-  const { readFileSync, existsSync } = await import('node:fs');
-  const { join } = await import('node:path');
-  const matrixPath = join(ROOT_DIR, 'tests', 'registry', 'capability-matrix.json');
-  
-  if (!existsSync(matrixPath)) {
-    errorln('Capability matrix not found. Run "construct sync" or ensure tests/registry/capability-matrix.json exists.');
-    process.exit(1);
-  }
+  const { runRegistryStatus } = await import('../lib/registry/cli.mjs');
+  const code = await runRegistryStatus(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
 
-  const { capabilities } = JSON.parse(readFileSync(matrixPath, 'utf8'));
-  const jsonOutput = args.includes('--json');
+async function cmdRegistryValidate(args = []) {
+  const { runRegistryValidate } = await import('../lib/registry/cli.mjs');
+  const code = await runRegistryValidate(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
 
-  if (jsonOutput) {
-    println(JSON.stringify(capabilities, null, 2));
+async function cmdRegistryGenerateDocs(args = []) {
+  const { runRegistryGenerateDocs } = await import('../lib/registry/cli.mjs');
+  const code = await runRegistryGenerateDocs(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdRulesUsage(args = []) {
+  const { summarizeRuleCalls } = await import('../lib/telemetry/rule-calls.mjs');
+  const { summarizeHookCalls } = await import('../lib/telemetry/hook-calls.mjs');
+  const sub = args[0] || 'usage';
+  const sinceFlag = args.find((a) => a.startsWith('--since='));
+  const since = sinceFlag ? sinceFlag.split('=')[1] : '30d';
+
+  if (sub === 'usage') {
+    const rules = summarizeRuleCalls({ since });
+    const hooks = summarizeHookCalls({ since });
+    println(`Rule references — last ${since} (${rules.total} events)\n`);
+    const ruleRows = Object.entries(rules.rules).sort((a, b) => b[1] - a[1]);
+    if (ruleRows.length === 0) println('  No rule reference events in the window.');
+    for (const [path, count] of ruleRows) println(`  ${path.padEnd(50)} refs=${count}`);
+    println('');
+    println(`Hook fires — last ${since} (${hooks.totalEvents ?? 0} events)\n`);
+    const hookEntries = Object.entries(hooks.hooks ?? {}).sort((a, b) => b[1].calls - a[1].calls);
+    if (!hookEntries.length) {
+      println('  No hook events in window.');
+    } else {
+      for (const [id, s] of hookEntries) {
+        println(`  ${id.padEnd(40)} calls=${s.calls} blocked=${s.blocked ?? 0} errors=${s.errors ?? 0}`);
+      }
+    }
     return;
   }
-
-  println(`${COLORS.bold}Workflow & Surface Capability Registry${COLORS.reset}`);
-  println('='.repeat(40));
-  println('');
-
-  for (const cap of capabilities) {
-    const tierColor = cap.criticality === 'P0' ? COLORS.red : cap.criticality === 'P1' ? COLORS.yellow : COLORS.blue;
-    println(`${tierColor}[${cap.criticality}]${COLORS.reset} ${COLORS.bold}${cap.name}${COLORS.reset} (${cap.id})`);
-    println(`  ${COLORS.dim}${cap.description}${COLORS.reset}`);
-    
-    const surfaces = Object.entries(cap.surfaces);
-    for (const [name, status] of surfaces) {
-      const icon = status.quality_score === null ? '⚪' : status.quality_score >= 0.9 ? '🟢' : status.quality_score >= 0.7 ? '🟡' : '🔴';
-      const score = status.quality_score !== null ? `${(status.quality_score * 100).toFixed(0)}%` : 'N/A';
-      const date = status.last_validated ? new Date(status.last_validated).toLocaleDateString() : 'never';
-      println(`    ${icon} ${name.padEnd(10)} | Score: ${score.padEnd(5)} | Validated: ${date}`);
-    }
-    println('');
-  }
+  errorln(`Unknown rules subcommand: ${sub}. Available: usage`);
+  process.exit(1);
 }
 
 async function cmdStatus() {
@@ -253,22 +265,6 @@ async function cmdStatus() {
     println(`  Outcome roles    ${outcomeRoles}`);
     println(`  Detail:          npm run learning:status`);
   } catch { /* best-effort surface; never block status */ }
-}
-
-async function cmdShow() {
-  const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
-  const dashboard = readDashboardState(HOME);
-  println('');
-  println('Construct Services');
-  println('══════════════════');
-  println('');
-  if (dashboard) println(`  • Managed dashboard PID ${dashboard.pid} on ${dashboard.url}`);
-  for (const service of status.system.services) {
-    const icon = service.status === 'healthy' ? '✓' : service.status === 'degraded' ? '⚠' : '✗';
-    const note = service.note ? ` (${service.note})` : '';
-    println(`  ${icon}  ${service.name.padEnd(28)} ${service.url}${note}`);
-  }
-  println('');
 }
 
 async function cmdSync(args) {
@@ -677,6 +673,14 @@ async function cmdDoctor() {
 
   add('Node.js 20+ (recommended)', Number.parseInt(process.versions.node.split('.')[0], 10) >= 20);
   add('npm available', true);
+  const npmDevdir = process.env.npm_config_devdir ?? process.env.NPM_CONFIG_DEVDIR;
+  if (npmDevdir) {
+    add(
+      'npm env: npm_config_devdir set (Cursor sandbox) — npm 11.2+ warns on every `npm run`. Unset: unset npm_config_devdir NPM_CONFIG_DEVDIR. Or run scripts directly: node scripts/... / construct ...',
+      false,
+      true,
+    );
+  }
   const constructOnPath = spawnSync('zsh', ['-lc', 'command -v construct'], { encoding: 'utf8', env: process.env });
   const constructPath = constructOnPath.status === 0 ? constructOnPath.stdout.trim() : '';
   const constructVersion = constructPath
@@ -854,6 +858,8 @@ async function cmdDoctor() {
     add('Headhunt classifier agents exist in registry', classifierOrphans.length === 0);
     const skillAudit = auditSkills({ rootDir: ROOT_DIR, silent: true });
     add('No declared skills missing on disk', skillAudit.pass, false);
+    const specialistAudit = auditSpecialists({ rootDir: ROOT_DIR, silent: true });
+    add('Specialist/skill audit cross-checks', specialistAudit.pass, false);
     const { lintResearchRepo } = await import('../lib/research-lint.mjs');
     const researchLintResults = lintResearchRepo({ rootDir: process.cwd() });
     add('Research artifacts meet minimum evidence structure', researchLintResults.every((entry) => entry.errors.length === 0), true);
@@ -917,6 +923,14 @@ async function cmdDoctor() {
     }
 
     try {
+      const { checkProjectAdaptersForDoctor } = await import('../lib/doctor/project-adapters.mjs');
+      const projectAdapters = checkProjectAdaptersForDoctor({ rootDir: ROOT_DIR, projectDir: process.cwd() });
+      add(projectAdapters.label, projectAdapters.ok, projectAdapters.warning);
+    } catch {
+      add('Project adapters', false, true);
+    }
+
+    try {
       const { validateSkills } = await import('../lib/validators/skills.mjs');
       const skillsRoot = path.join(ROOT_DIR, 'skills');
       const skillReport = validateSkills(skillsRoot);
@@ -926,6 +940,28 @@ async function cmdDoctor() {
       add(label, skillReport.valid, true);
     } catch {
       add('Skill structure', false, true);
+    }
+
+    try {
+      const { lintWorkflowSkillVerification } = await import('../lib/registry/skill-verification.mjs');
+      const wf = lintWorkflowSkillVerification(path.join(ROOT_DIR, 'skills'));
+      const wfLabel = wf.warnings.length
+        ? `Workflow skill verification (${wf.checked} checked, ${wf.warnings.length} missing bars)`
+        : `Workflow skill verification (${wf.checked} checked)`;
+      add(wfLabel, wf.valid && wf.warnings.length === 0, true);
+    } catch {
+      add('Workflow skill verification', false, true);
+    }
+
+    try {
+      const { validateCapabilityRegistry } = await import('../lib/registry/validate.mjs');
+      const reg = validateCapabilityRegistry({ rootDir: ROOT_DIR });
+      const regLabel = reg.warnings.length
+        ? `Capability registry (${reg.count} entries, ${reg.warnings.length} warnings)`
+        : `Capability registry (${reg.count} entries)`;
+      add(regLabel, reg.valid, reg.errors.length > 0);
+    } catch {
+      add('Capability registry', false, true);
     }
 
     try {
@@ -1036,7 +1072,7 @@ async function cmdDoctor() {
     }
 
     // Agent contracts integrity
-    const { getAllContracts, summarize } = await import('../lib/specialist-contracts.mjs');
+    const { getAllContracts } = await import('../lib/specialist-contracts.mjs');
     const contracts = getAllContracts();
     add('Agent contracts loaded', contracts.length > 0);
     if (contracts.length > 0) {
@@ -1242,7 +1278,7 @@ async function cmdDev(args = []) {
   opLog.event('selection', { services: selected ? [...selected] : 'all' });
 
   // Auto-magic health check — catch missing prerequisites before starting services
-  const { quickHealthCheck, detectCredentials, resolveCredentials } = await import('../lib/health-check.mjs');
+  const { quickHealthCheck, resolveCredentials } = await import('../lib/health-check.mjs');
 
   // Resolve credentials from env, .env files, and 1Password before starting services
   const resolvedCreds = await resolveCredentials({ homeDir: HOME });
@@ -1524,6 +1560,7 @@ async function cmdExport(args) {
   const toFlag = args.find((a) => a.startsWith('--to='))?.split('=')[1];
   const outFlag = args.find((a) => a.startsWith('--output='))?.split('=')[1];
   const detectOnly = args.includes('--detect');
+  const figures = !args.includes('--no-figures');
 
   const { detect, exportMarkdown, EXPORT_FORMATS } = await import('../lib/document-export.mjs');
 
@@ -1534,7 +1571,7 @@ async function cmdExport(args) {
   }
 
   if (!inputPath) {
-    errorln('Usage: construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>] [--detect]');
+    errorln('Usage: construct export <markdown-file> --to=<pdf|docx|html> [--output=<path>] [--figures|--no-figures] [--detect]');
     process.exit(1);
   }
   if (!toFlag) {
@@ -1544,12 +1581,48 @@ async function cmdExport(args) {
 
   const resolvedIn = path.resolve(process.cwd(), inputPath);
   const resolvedOut = outFlag ? path.resolve(process.cwd(), outFlag) : null;
-  const result = exportMarkdown({ inputPath: resolvedIn, outputPath: resolvedOut, format: toFlag });
+  const result = exportMarkdown({
+    inputPath: resolvedIn,
+    outputPath: resolvedOut,
+    format: toFlag,
+    figures: toFlag === 'pdf' ? figures : false,
+    repoRoot: ROOT_DIR,
+  });
   if (!result.ok) {
     errorln(result.message);
     process.exit(result.missing?.length ? 2 : 1);
   }
   ok(result.message);
+}
+
+async function cmdPublish(args) {
+  const { runPublishCli } = await import('../lib/publish.mjs');
+  const { exitCode } = await runPublishCli(args, { cwd: process.cwd(), repoRoot: ROOT_DIR });
+  process.exit(exitCode ?? 0);
+}
+
+async function cmdTools(args) {
+  const [sub, ...rest] = args;
+  if (sub !== 'detect') {
+    errorln('Usage: construct tools detect [--json] [--figures] [--no-figures] [--demo=NAME] [--dashboard-demo=NAME]');
+    process.exit(1);
+  }
+  const { detectPublishPipeline, formatToolsDetectReport } = await import('../lib/publish-tooling.mjs');
+  const json = rest.includes('--json');
+  const figures = !rest.includes('--no-figures');
+  const demos = rest.filter((a) => a.startsWith('--demo=')).map((a) => a.slice(7));
+  const dashboardDemos = rest.filter((a) => a.startsWith('--dashboard-demo=')).map((a) => a.slice(17));
+  const detection = detectPublishPipeline({
+    format: 'pdf',
+    includeFigures: figures,
+    includeTerminalDemo: demos.length > 0,
+    includeDashboardDemo: dashboardDemos.length > 0,
+    cwd: process.cwd(),
+    repoRoot: ROOT_DIR,
+  });
+  if (json) println(formatToolsDetectReport(detection, { json: true }));
+  else println(formatToolsDetectReport(detection));
+  process.exit(detection.present ? 0 : 2);
 }
 
 async function cmdInfer(args) {
@@ -1667,7 +1740,7 @@ async function cmdPrune(args) {
   println(`.cx/ now at ${Math.round(after.totalCxBytes / 1024 / 1024)}MB / ${Math.round(after.totalCxCap / 1024 / 1024)}MB cap (${Math.round(after.totalCxUsageRatio * 100)}%).`);
 }
 
-async function cmdCosts(args) {
+async function _cmdCosts(args) {
   const sub = args[0] || 'status';
   const {
     getDailySpend,
@@ -1882,7 +1955,7 @@ async function cmdOverrides(args) {
   process.exit(1);
 }
 
-async function cmdPricing(args) {
+async function _cmdPricing(args) {
   const sub = args[0] || 'status';
   const {
     describePricingCatalogFreshness,
@@ -2080,7 +2153,7 @@ async function cmdEmbeddedTriage(args) {
     input = fs.readFileSync(0, 'utf8');
   }
   if (!input.trim() && !ingestion?.error) {
-    // This is an embedded-contract verb: an embedder that pipes empty/no input
+    // Embedded-contract verb: an embedder that pipes empty/no input
     // must still get a parseable, versioned envelope — not a bare exit. Emit a
     // typed error envelope on stdout so the contract holds, and exit non-zero so
     // shell callers still see failure.
@@ -3078,7 +3151,7 @@ async function cmdWorkspace(args) {
   const sub = args[0];
   if (!sub || sub === '--help' || sub === '-h') { printWorkspaceHelp(); return; }
 
-  const { createWorkspace, getWorkspace, listWorkspaces, updateWorkspace } = await import('../lib/embed/workspaces.mjs');
+  const { createWorkspace, getWorkspace, listWorkspaces } = await import('../lib/embed/workspaces.mjs');
 
   if (sub === 'list') {
     const workspaces = listWorkspaces();
@@ -3192,7 +3265,6 @@ async function cmdRecommendations(args) {
     const reasonFlag = args.find(a => a.startsWith('--reason='))?.split('=').slice(1).join('=');
     const suppressDaysFlag = args.find(a => a.startsWith('--suppress-days='))?.split('=')[1];
     try {
-      const { dedupKey: computeKey } = await import('../lib/embed/recommendation-store.mjs');
       const key = `${recType}::${recTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60)}`;
       const { dismissRecommendation } = await import('../lib/embed/recommendation-store.mjs');
       dismissRecommendation(key, {
@@ -3602,6 +3674,7 @@ async function cmdModels(args) {
     return;
   }
   if (tier && setModel) {
+    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
     const preferFree = args.includes('--prefer-free');
     const preferFreeSameFamily = args.includes('--prefer-free-same-family');
     const inferred = setModelWithTierInference(envPath, tier, setModel, registry.models ?? {}, { preferFree, preferFreeSameFamily });
@@ -3647,7 +3720,7 @@ async function cmdModels(args) {
     return;
   }
   if (args.includes('--cheapest')) {
-    const { selectCheapestProvider, rankConfiguredProvidersByCost, formatCheapestProviderMessage, isCheapestProviderEnabled } =
+    const { selectCheapestProvider, formatCheapestProviderMessage, isCheapestProviderEnabled } =
       await import('../lib/model-cheapest-provider.mjs');
     const cheapestTier = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1] ?? 'standard';
     const verbose = args.includes('--verbose');
@@ -3659,7 +3732,7 @@ async function cmdModels(args) {
     return;
   }
   if (args.includes('--apply-cheapest')) {
-    const { selectCheapestForAllTiers, setCheapestProviderPreference } =
+    const { setCheapestProviderPreference } =
       await import('../lib/model-cheapest-provider.mjs');
     const allTiers = args.includes('--all-tiers') || !args.find((arg) => arg.startsWith('--tier='));
     const tierArg = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1];
@@ -3682,6 +3755,22 @@ async function cmdModels(args) {
     println('Written to ~/.construct/config.env. Running construct sync...');
     setCheapestProviderPreference(envPath, true);
     await cmdSync([]);
+    return;
+  }
+  if (args.includes('--list') || args[0] === 'list') {
+    const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
+    const { listChatModels } = await import('../apps/chat/engine/models.mjs');
+    const catalog = getProviderModelCatalog({ env: process.env, cwd: process.cwd() });
+    const models = listChatModels({ env: process.env, cwd: process.cwd() });
+    if (args.includes('--json')) {
+      println(JSON.stringify({ catalog, models }, null, 2));
+      return;
+    }
+    println('Visible models (filtered by construct.config.json models.visibility):');
+    for (const model of models) {
+      const flag = model.available ? 'ok' : '—';
+      println(`  ${flag}  ${model.id}${model.configured ? '' : ' (provider not configured)'}`);
+    }
     return;
   }
   const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
@@ -3937,10 +4026,21 @@ async function cmdCleanup() {
         println(`  ! ${err.step}: ${err.error}`);
       }
     }
+
+    // Reclaim orphaned Postgres containers/volumes from deleted home namespaces.
+    const { reclaimOrphanedDockerResources, formatReclaim } = await import('../lib/maintenance/docker-reclaim.mjs');
+    const reclaim = reclaimOrphanedDockerResources({ homeDir: HOME, env: process.env, dryRun });
+    if (!quiet) {
+      const line = formatReclaim(reclaim);
+      if (line) println(`  ${line}`);
+      for (const entry of reclaim.errors ?? []) {
+        println(`  ! docker reclaim ${entry.name}: ${entry.error}`);
+      }
+    }
   }
 }
 
-async function cmdCost(args) {
+async function _cmdCost(args) {
   const jsonOutput = args.includes('--json');
   const resetFlag = args.includes('--reset');
   const daysArg = args.find((a) => a.startsWith('--days='));
@@ -4191,8 +4291,21 @@ async function cmdDocsCheck(args) {
   }
 }
 
-async function cmdDocsSite() {
-  const { buildFumadocsReference } = await import('../lib/auto-docs.mjs');
+async function cmdDocsSite(args = []) {
+  const check = args.includes('--check');
+  const { buildFumadocsReference, checkFumadocsReferenceDrift } = await import('../lib/auto-docs.mjs');
+  if (check) {
+    const { drift } = checkFumadocsReferenceDrift({ rootDir: ROOT_DIR });
+    if (drift.length === 0) {
+      ok('docs/reference/ is up to date.');
+      return;
+    }
+    println('');
+    println('Generated reference docs are out of date. Run `construct docs:site` to regenerate:');
+    for (const f of drift) println(`  ✗  ${f}`);
+    process.exitCode = 1;
+    return;
+  }
   const { written } = buildFumadocsReference({ rootDir: ROOT_DIR });
   if (written.length === 0) {
     ok('docs/reference/ already up to date.');
@@ -4340,7 +4453,6 @@ async function cmdCiPreview(args) {
   const { readFileSync, existsSync } = await import('node:fs');
   const { join } = await import('node:path');
   const { spawnSync: spSync } = await import('node:child_process');
-  const YAML = await import('node:fs');
 
   const listOnly = args.includes('--list');
   const fullMode = args.includes('--full');
@@ -4838,7 +4950,7 @@ async function cmdTags(args) {
 
 async function cmdScheduler(args) {
   const sub = args[0];
-  const { registerJob, runJobOnce, listJobs } = await import('../lib/scheduler/index.mjs');
+  const { runJobOnce, listJobs } = await import('../lib/scheduler/index.mjs');
 
   if (!sub || sub === 'list') {
     const jobs = listJobs();
@@ -4876,18 +4988,30 @@ async function cmdScheduler(args) {
 
 async function cmdCreds(args) {
   const sub = args[0];
-  const { readCreds, writeCreds, deleteCreds, listCreds, checkCredsFileMode, credsFilePath } =
+  const { writeCreds, deleteCreds, listCreds, checkCredsFileMode, credsFilePath } =
     await import('../lib/providers/creds.mjs');
   const { createInterface } = await import('node:readline');
 
   if (!sub || sub === 'list') {
     const entries = listCreds();
-    if (entries.length === 0) { println('No provider credentials stored.'); return; }
-    println('Provider credentials\n');
-    println('  PROVIDER                  ACCOUNT                    ROTATED_AT             NEXT_ROTATION');
-    for (const e of entries) {
-      println(`  ${e.provider.padEnd(26)} ${(e.account || '—').padEnd(27)} ${(e.rotatedAt || '—').padEnd(23)} ${e.nextRotationDue || '—'}`);
+    if (entries.length === 0) {
+      println('No provider credentials stored in the rotation store.');
+    } else {
+      println('Provider credentials\n');
+      println('  PROVIDER                  ACCOUNT                    ROTATED_AT             NEXT_ROTATION');
+      for (const e of entries) {
+        println(`  ${e.provider.padEnd(26)} ${(e.account || '—').padEnd(27)} ${(e.rotatedAt || '—').padEnd(23)} ${e.nextRotationDue || '—'}`);
+      }
     }
+    try {
+      const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
+      const { providers } = getProviderModelCatalog({ env: process.env });
+      println('\nLLM provider readiness (op:// references resolve at call time)\n');
+      for (const p of providers) {
+        println(`  ${p.configured ? '✓' : '·'} ${p.id}`);
+      }
+      println('\n  Set keys as values or op:// refs in ~/.construct/config.env; run `construct creds login copilot` for GitHub Copilot.');
+    } catch { /* readiness view is informational */ }
     return;
   }
 
@@ -4926,7 +5050,68 @@ async function cmdCreds(args) {
     return;
   }
 
-  errorln(`Unknown creds subcommand: ${sub}. Available: list, set, rotate, revoke, test`);
+  if (sub === 'login') {
+    const provider = args[1] || 'copilot';
+    if (provider !== 'copilot' && provider !== 'github-copilot') {
+      errorln(`\`creds login\` currently supports only \`copilot\`. For API-key providers use \`construct creds set ${provider}\`.`);
+      process.exit(1);
+    }
+    const copilot = await import('../lib/providers/copilot-auth.mjs');
+    if (copilot.hasStoredCredential() && !args.includes('--force')) {
+      try {
+        await copilot.getCopilotToken();
+        println('GitHub Copilot is already authenticated and the session token exchanged successfully.');
+        println('Re-run with --force to authenticate a different account.');
+        return;
+      } catch {
+        println('A stored Copilot credential exists but the session exchange failed; re-authenticating.');
+      }
+    }
+    let device;
+    try {
+      device = await copilot.requestDeviceCode({});
+    } catch (err) {
+      errorln(err.message);
+      process.exit(1);
+    }
+    println('\nGitHub Copilot sign-in');
+    println(`  1. Open: ${device.verificationUri}`);
+    println(`  2. Enter code: ${device.userCode}`);
+    println('\nWaiting for authorization...');
+    let token;
+    try {
+      token = await copilot.pollForAccessToken({
+        deviceCode: device.deviceCode,
+        interval: device.interval,
+        expiresIn: device.expiresIn,
+        onPending: () => process.stdout.write('.'),
+      });
+      process.stdout.write('\n');
+    } catch (err) {
+      process.stdout.write('\n');
+      errorln(err.message);
+      process.exit(1);
+    }
+    copilot.persistOAuth({ accessToken: token.accessToken, refreshToken: token.refreshToken, expiresAt: token.expiresAt, user: null });
+    try {
+      await copilot.getCopilotToken();
+      println('GitHub Copilot authenticated. The session token exchanged successfully.');
+      println('Credentials stored in ~/.construct/auth/github-copilot.json and ~/.config/github-copilot/apps.json.');
+      try {
+        const models = await copilot.listCopilotModels({});
+        if (models.length) {
+          println('\nModels available to your account (use as github-copilot/<id>):');
+          for (const id of models) println(`  - github-copilot/${id}`);
+        }
+      } catch { /* model listing is informational; auth already succeeded */ }
+    } catch (err) {
+      errorln(`Authenticated with GitHub, but the Copilot token exchange failed: ${err.message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  errorln(`Unknown creds subcommand: ${sub}. Available: list, login, set, rotate, revoke, test`);
   process.exit(1);
 }
 
@@ -5149,7 +5334,7 @@ async function cmdTelemetryQuery(args) {
   println('  errors [--agent=<name>] [--since=24h]                error span summary');
   println('  trace <traceId>                                       full span tree');
   println('');
-  println('For Langfuse/Honeycomb/Grafana Tempo/Datadog, see docs/concepts/observability.mdx');
+  println('For Langfuse/Honeycomb/Grafana Tempo/Datadog, see docs/concepts/observability.md');
 }
 
 async function cmdHook(args) {
@@ -5233,13 +5418,18 @@ const handlers = new Map([
   ['distill', cmdDistill],
   ['ingest', cmdIngest],
   ['export', cmdExport],
+  ['publish', cmdPublish],
+  ['tools', cmdTools],
   ['infer', cmdInfer],
   ['search', cmdSearch],
   ['storage', cmdStorage],
   ['registry:status', cmdRegistryStatus],
+  ['registry:validate', cmdRegistryValidate],
+  ['registry:generate-docs', cmdRegistryGenerateDocs],
+  ['rules', cmdRulesUsage],
   // Pricing / cost readouts are stubbed out: the ledger writes, model-pricing
   // catalog, and per-turn accounting still run, but no CLI surface exposes
-  // them to the user. Handlers (cmdPricing, cmdCosts, cmdCost) remain in this
+  // them to the user. Handlers (_cmdPricing, _cmdCosts, _cmdCost) remain in this
   // file so the OTel + dashboard wiring (planned in Workstream J) can rewire
   // the surface without re-implementing the logic.
   ['overrides', cmdOverrides],
@@ -5262,7 +5452,7 @@ const handlers = new Map([
     if (sub === 'verify') return cmdDocsVerify(rest);
     if (sub === 'update') return cmdDocsUpdate(rest);
     if (sub === 'check') return cmdDocsCheck(rest);
-    if (sub === 'site') return cmdDocsSite();
+    if (sub === 'site') return cmdDocsSite(rest);
     if (sub === 'reconcile') return cmdDocsReconcile(rest);
     errorln(`Unknown docs subcommand: ${sub}. Available: check, verify, update, site, reconcile`);
     process.exit(1);
@@ -5276,6 +5466,10 @@ const handlers = new Map([
   ['acp', async () => {
     const { runAcpServer } = await import('../lib/acp/server.mjs');
     runAcpServer({ input: process.stdin, output: process.stdout, env: process.env, defaultCwd: process.cwd() });
+  }],
+  ['chat', async (args) => {
+    const { runChat } = await import('../lib/chat/cli.mjs');
+    process.exitCode = await runChat(args, { env: process.env, cwd: process.cwd() });
   }],
   ['beads:stats', async (args) => {
     const { getContentionStats, getHumanStatus } = await import('../lib/beads-optimistic.mjs');
@@ -5438,11 +5632,23 @@ const handlers = new Map([
   ['audit', async (args) => {
     const sub = args[0];
     if (sub === 'skills') return runAuditSkillsCli(args.slice(1));
+    if (sub === 'specialists') return runAuditSpecialistsCli(args.slice(1));
+    if (sub === 'tests') {
+      const rest = args.slice(1);
+      if (rest.includes('--corpus')) return runCorpusInventoryAuditCli(rest.filter((arg) => arg !== '--corpus'), { rootDir: ROOT_DIR });
+      return runCapabilityLedgerAuditCli(rest, { rootDir: ROOT_DIR });
+    }
     if (sub === 'trail' || !sub) {
       const { runAuditTrailCli } = await import('../lib/audit-trail.mjs');
       return runAuditTrailCli(args.slice(sub === 'trail' ? 1 : 0));
     }
-    errorln(`Unknown audit subcommand: ${sub}. Available: skills, trail`);
+    errorln(`Unknown audit subcommand: ${sub}. Available: skills, specialists, tests, trail`);
+    process.exit(1);
+  }],
+  ['artifact', async (args) => {
+    const sub = args[0];
+    if (sub === 'validate') return runArtifactValidateCli(args.slice(1));
+    errorln(`Unknown artifact subcommand: ${sub || '(none)'}. Available: validate`);
     process.exit(1);
   }],
   ['doc', async (args) => {
@@ -5889,6 +6095,30 @@ const handlers = new Map([
    ['embed', async (args) => {
      const { runEmbedCli } = await import('../lib/embed/cli.mjs');
      return runEmbedCli(args, { rootDir: new URL('..', import.meta.url).pathname });
+   }],
+   ['oracle', async (args) => {
+     const { runOracleCli } = await import('../lib/oracle/cli.mjs');
+     return runOracleCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd(), homeDir: HOME });
+   }],
+   ['certify', async (args) => {
+     const { runCertificationCli } = await import('../lib/certification/cli.mjs');
+     const code = await runCertificationCli(args, { projectDir: process.cwd(), repoRoot: ROOT_DIR });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
+   }],
+   ['improvement', async (args) => {
+     const { runImprovementCli } = await import('../lib/improvement/cli.mjs');
+     const code = await runImprovementCli(args, { projectDir: process.cwd() });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
+   }],
+   ['matrix', async (args) => {
+     const { runGraphCli } = await import('../lib/graph/cli.mjs');
+     const code = runGraphCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
+   }],
+   ['impact', async (args) => {
+     const { runImpactCli } = await import('../lib/graph/impact-cli.mjs');
+     const code = await runImpactCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
    ['reflect', async (args) => {
      const { runReflectCli } = await import('../lib/reflect.mjs');

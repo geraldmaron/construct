@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 <!--
 70-test-infra-verdict.md — Internal escape-analysis audit of Construct's test infrastructure.
 Renders an evidence-decides verdict (rebuild / restructure / extend) on the suite the maintainer

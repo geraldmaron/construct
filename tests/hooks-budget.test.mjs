@@ -32,10 +32,10 @@ const DEPRECATED_HOOKS = [
 ];
 
 // Maximum number of hook files allowed. Prevents unreviewed hook accumulation.
-const MAX_HOOK_COUNT = 40;
+const MAX_HOOK_COUNT = 41;
 
 // PostToolUse fires on every tool call — cap entries there to bound hot-path latency.
-const MAX_POST_TOOL_USE_ENTRIES = 20;
+const MAX_POST_TOOL_USE_ENTRIES = 21;
 
 const SETTINGS_TEMPLATE = path.join(ROOT_DIR, 'platforms', 'claude', 'settings.template.json');
 

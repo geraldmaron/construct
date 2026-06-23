@@ -21,16 +21,16 @@ construct init --with-all-docs
 ```
 
 Creates the requested documentation lanes such as `docs/prd/`, `docs/adr/`, `docs/rfc/`, `docs/memos/`, and `docs/runbooks/`. For a narrower setup, use flags such as `--with-adrs`, `--with-rfcs`, `--with-runbooks`, or `--with-docs=adrs,rfcs`.
-with `README.md` indices and `_template.md` starters. Safe to re-run on an existing repo.
+with `README.md` indices and starter templates under each lane's `templates/` directory. Safe to re-run on an existing repo.
 
 ## Generate a new artifact from a template
 
 ```bash
-# ADR
-cp docs/adr/_template.md docs/adr/adr-NNN-my-decision.md
+# ADR (numbered artifact in docs/adr/)
+cp docs/adr/templates/_template.md docs/adr/0045-my-decision.md
 
-# PRD
-cp docs/prd/_template.md docs/prd/my-feature.md
+# PRD (artifact in docs/prd/; starter lives in init lane docs/prds/templates/)
+cp docs/prds/templates/_template.md docs/prd/my-feature.md
 ```
 
 Fill in the template. Each template includes a required frontmatter block with `status`, `date`, and `deciders`. If this artifact traces to an intake packet, see "Stamp intake provenance" below.
@@ -62,6 +62,17 @@ intake: none
 ```
 
 `construct docs:verify` warns on any artifact in `docs/prd/**`, `docs/research/**`, or `.cx/knowledge/internal/**` that lacks either field. This keeps the corpus auditable: every document either traces to a source packet or consciously opted out.
+
+## Publish after validate passes
+
+Distribution is the last step. Specialists author from templates; **`construct workflow invoke` returns a plan only** — it does not draft the document.
+
+```bash
+construct artifact validate docs/prd/my-feature.md --type=prd
+construct publish docs/prd/my-feature.md --strict --figures
+```
+
+`construct publish` runs the release gate by default. Thin stubs exit 2 with remediation hints. Do not bypass with `--no-gate` for ship paths or demos.
 
 ## Verify artifact stamps
 
@@ -110,4 +121,4 @@ ls docs/memos/
 
 - [Concepts → Integrity and trust](/concepts/integrity-and-trust): the full four-layer trust model.
 - [Concepts → Intake and triage](/concepts/intake-and-triage): triage packet schema and the `--output` flow.
-- [`docs/adr/_template.md`](https://github.com/geraldmaron/construct/blob/main/docs/adr/_template.md)
+- [`docs/adr/templates/_template.md`](https://github.com/geraldmaron/construct/blob/main/docs/adr/templates/_template.md)

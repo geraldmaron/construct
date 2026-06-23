@@ -1,5 +1,13 @@
 # Research Brief: {title}
 
+Optional publish frontmatter (for `construct publish --strict`):
+
+```yaml
+publish:
+  demo: my-tape-name
+  dashboardDemo: cockpit-tour
+```
+
 - **Date**: {YYYY-MM-DD}
 - **Author**: {name}
 - **Domain**: {ai-tools | developer-tools | security | market | cloud-api | regulatory | academic | other}

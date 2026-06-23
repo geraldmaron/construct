@@ -192,7 +192,7 @@ test('extractDocumentText reads local text documents through the MCP helper', as
   fs.writeFileSync(filePath, '# Notes\n\nPDF fallback should not be required here.\n');
 
   const { extractDocumentText } = await import(`../lib/mcp/server.mjs?doc=${Date.now()}`);
-  const result = extractDocumentText({ file_path: filePath, max_chars: 200 });
+  const result = await extractDocumentText({ file_path: filePath, max_chars: 200 });
 
   assert.equal(result.file_path, filePath);
   assert.equal(result.extension, '.md');
@@ -208,7 +208,7 @@ test('extractDocumentText reads csv content through the shared document path', a
   fs.writeFileSync(filePath, 'service,availability\napi,99.95\nworker,99.90\n');
 
   const { extractDocumentText } = await import(`../lib/mcp/server.mjs?csv=${Date.now()}`);
-  const result = extractDocumentText({ file_path: filePath, max_chars: 200 });
+  const result = await extractDocumentText({ file_path: filePath, max_chars: 200 });
 
   assert.equal(result.extension, '.csv');
   assert.equal(result.extraction_method, 'utf8');

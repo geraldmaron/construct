@@ -12,6 +12,7 @@ import {
   getOrCreateConversation,
   handleChatHistory,
 } from '../lib/server/chat.mjs';
+import { listPendingPermissions } from '../lib/chat/web-session.mjs';
 
 // ── Conversation management ────────────────────────────────────────────────
 
@@ -120,4 +121,26 @@ test('handleChat returns cliMissing:true when CLI is not on PATH', async () => {
  // Asserting the conversation was created (reply content depends on CLI).
  // When PATH is empty, cliMissing branch fires.
  // Verifying the test didn't throw (CLI detection handled gracefully).
+});
+
+test('listPendingPermissions returns empty for unknown conversation', () => {
+  assert.deepEqual(listPendingPermissions('unknown-conv'), []);
+});
+
+test('handleChatLoopPermission rejects missing fields', async () => {
+  const { handleChatLoopPermission } = await import('../lib/server/chat-loop.mjs');
+  const res = await new Promise((resolve) => {
+    const out = fakeRes();
+    const req = {
+      on(event, cb) {
+        if (event === 'data') cb('{}');
+        if (event === 'end') cb();
+      },
+    };
+    const origEnd = out.end.bind(out);
+    out.end = (body) => { origEnd(body); resolve(out); };
+    handleChatLoopPermission(req, out);
+  });
+  assert.equal(res._status, 400);
+  assert.match(res.json.error, /requestId/);
 });

@@ -1,0 +1,42 @@
+# Distribution examples
+
+Branded PDF, HTML, deck, and PPTX samples generated from typed markdown sources. Use these to preview Construct's publish layouts (Space Grotesk, monochrome ink, hand-drawn figures).
+
+## Generate locally
+
+Prerequisites: `construct tools detect --figures` must report ready (pandoc, typst, d2, mmdc; pptxgenjs optional for PPTX). The platform PRD demo requires Playwright in `apps/dashboard` (`npm install`, `npx playwright install chromium`, and `ffmpeg` on PATH for MP4). If browsers are installed outside the sandbox cache, set `PLAYWRIGHT_BROWSERS_PATH` to your Playwright cache (e.g. `~/Library/Caches/ms-playwright` on macOS).
+
+```bash
+npm run examples:distribution
+open .tmp/distribution-examples/index.html
+```
+
+This exports PDF/HTML/deck artifacts with constrained figure sizing (58% max width, 2.35in max height) and records `agentic-platforms-prd.mp4` via the shipped Playwright recording manifest (`templates/demos/recordings/agentic-platforms-prd.json`) — cockpit walkthrough, then scroll through `prd-platform.pdf`.
+
+Deck-only (legacy):
+
+```bash
+npm run examples:deck
+```
+
+## Source layout
+
+| File | artifactType | Typst / HTML layout |
+|------|--------------|---------------------|
+| `sources/prd-platform.md` | prd-platform | construct-prd.typ |
+| `sources/adr.md` | adr | construct-decision.typ |
+| `sources/research-brief.md` | research-brief | construct-research.typ |
+| `sources/runbook.md` | runbook | construct-prd.typ |
+| `sources/rfc-platform.md` | rfc-platform | construct-decision.typ |
+| `sources/strategy.md` | strategy | construct-prd.typ |
+| `sources/deck-one-pager.md` | one-pager | construct-deck.html + PPTX |
+
+Edit sources, then re-run the generator. Outputs land in `.tmp/distribution-examples/` (gitignored).
+
+## Single-file export
+
+```bash
+node bin/construct export examples/distribution/sources/adr.md --to=pdf --figures
+```
+
+See [branding.md](../../docs/reference/branding.md) and [diagram-and-demo.md](../../docs/cookbook/diagram-and-demo.md).

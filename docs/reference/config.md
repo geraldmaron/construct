@@ -64,6 +64,30 @@ Keys under `orchestration` in `construct.config.json`. Read at runtime by `lib/o
 | `orchestration.store` | `filesystem` | `filesystem` \| `sqlite` \| `postgres`: where run and task-graph state is persisted. |
 | `orchestration.chainOfThought` | `hidden` | Disclosure of a provider-executed specialist's reasoning. `hidden`: reasoning is not requested or shown. `surface`: reasoning is requested (Anthropic extended thinking / OpenRouter `reasoning`) and attached to each task, so `construct orchestrate run`/`status`, the `orchestration_run` MCP tool, and the dashboard event stream display it. `telemetry_only`: reasoning is requested and written to the run trace (`.cx/traces/*.jsonl` `worker.completed` metadata) but never displayed. Inline runs never produce reasoning. See ADR-0030. |
 
+## Models (catalog visibility)
+
+Keys under `models` in `construct.config.json`. Consumed by `lib/models/catalog.mjs` and `getProviderModelCatalog()` in `lib/model-router.mjs`. Tier **assignments** (reasoning/standard/fast primaries) remain in `specialists/registry.json` and emergency overrides in `CX_MODEL_*` env vars — highest precedence unchanged.
+
+| Key | Default | Description |
+|---|---|---|
+| `models.visibility.mode` | `all_configured` | `all_configured` — all models from configured providers; `tier_defaults` — registry tier primaries + fallbacks only; `explicit` — `models.visibility.include` allowlist only (active chat pin always shown). |
+| `models.visibility.include` | `[]` | Model ids shown when `mode` is `explicit`. |
+| `models.visibility.exclude` | `[]` | Hidden from pickers; pinned model outside visibility shows a warning. |
+| `models.visibility.providers` | `{}` | Per provider-family toggles (`openrouter`, `github-copilot`, …); `false` hides the family. |
+| `models.catalog.liveOpenRouter` | `true` | Merge cached live OpenRouter free models into the catalog (`~/.cx/model-catalog-cache.json`, 10 min TTL). |
+| `models.catalog.maxLiveFree` | `24` | Cap on live free models merged from cache. |
+
+CLI:
+
+```bash
+construct config set models.visibility.mode explicit
+construct config set models.visibility.include '["anthropic/claude-sonnet-4-6"]'
+construct models list
+construct models list --json
+```
+
+Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CX_MODEL_*` (alias still honored for one release cycle).
+
 ## Intake queue
 
 | Variable | Default | Description |
@@ -108,6 +132,18 @@ Keys under `orchestration` in `construct.config.json`. Read at runtime by `lib/o
 |---|---|
 | `GITHUB_TOKEN` | GitHub personal access token. Alias: `GH_TOKEN`. Without this, unauthenticated rate limits apply (60 req/h). |
 | `GH_TOKEN` | Alias for `GITHUB_TOKEN`: checked when `GITHUB_TOKEN` is absent |
+
+### 1Password (`op://`) credentials
+
+Store provider keys in `~/.construct/config.env` as `op://vault/item/field` references (or plain values). Construct resolves them lazily via `op read` when a model call needs the plaintext.
+
+**Recommended (one auth per invocation):** wrap the CLI with `op run` and a shared env file (same pattern as OpenCode on this machine):
+
+```bash
+op run --no-masking --env-file="$HOME/.config/claude/.env.op" -- construct chat
+```
+
+When `op run` injects materialized keys into `process.env`, Construct keeps those values instead of overwriting them with stored `op://` refs from `config.env`. A local `~/bin/construct` wrapper is the usual setup; override with `CONSTRUCT_OP_ENV_FILE` and `CONSTRUCT_BIN`.
 | `GITHUB_REPOS` | Comma-separated `owner/repo` list surfaced as provider source hints at session start |
 | `JIRA_BASE_URL` | Atlassian Jira base URL (e.g. `https://yourorg.atlassian.net`) |
 | `JIRA_EMAIL` | Jira account email: used for Basic auth |
@@ -165,6 +201,8 @@ Keys under `orchestration` in `construct.config.json`. Read at runtime by `lib/o
 | `OPENROUTER_API_KEY` | OpenRouter key: enables free model fallback when primary provider is down |
 | `ANTHROPIC_API_KEY` | Anthropic key for Claude model calls |
 | `OPENAI_API_KEY` | OpenAI key: used for OpenAI model tier or openai embedding model |
+| `GITHUB_TOKEN` | GitHub PAT for integrations; may be a plain value or `op://` reference |
+| `CONSTRUCT_OP_ENV_FILE` | Override path for the 1Password env file used by a local `op run` wrapper (default on this machine: `~/.config/claude/.env.op`) |
 | `CX_MODEL_REASONING` | Override the reasoning-tier model id |
 | `CX_MODEL_STANDARD` | Override the standard-tier model id |
 | `CX_MODEL_FAST` | Override the fast-tier model id |

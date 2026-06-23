@@ -1,0 +1,187 @@
+{
+  "capturedAt": "2026-06-22T04:16:17.881Z",
+  "serverId": "memory",
+  "toolCount": 5,
+  "schemaTokens": 604,
+  "tools": [
+    {
+      "name": "cm_context",
+      "description": "Get relevant rules and history for a task",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "Task description"
+          },
+          "workspace": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Max rules to return"
+          },
+          "top": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "DEPRECATED: use limit"
+          },
+          "history": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "task"
+        ]
+      }
+    },
+    {
+      "name": "cm_feedback",
+      "description": "Record helpful/harmful feedback for a rule",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bulletId": {
+            "type": "string"
+          },
+          "helpful": {
+            "type": "boolean"
+          },
+          "harmful": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "session": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bulletId"
+        ]
+      }
+    },
+    {
+      "name": "cm_outcome",
+      "description": "Record a session outcome with rules used",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string",
+            "description": "success | failure | mixed | partial"
+          },
+          "rulesUsed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notes": {
+            "type": "string"
+          },
+          "task": {
+            "type": "string"
+          },
+          "durationSec": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "sessionId",
+          "outcome"
+        ]
+      }
+    },
+    {
+      "name": "memory_search",
+      "description": "Search playbook bullets and/or cass history",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query text"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "playbook",
+              "cass",
+              "both"
+            ],
+            "default": "both"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Limit cass search to lookback days"
+          },
+          "agent": {
+            "type": "string",
+            "description": "Filter cass search by agent"
+          },
+          "workspace": {
+            "type": "string",
+            "description": "Filter cass search by workspace"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "memory_reflect",
+      "description": "Trigger reflection on recent sessions to extract insights",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Look back this many days for sessions",
+            "default": 7
+          },
+          "maxSessions": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "description": "Maximum sessions to process",
+            "default": 20
+          },
+          "dryRun": {
+            "type": "boolean",
+            "description": "If true, return proposed changes without applying",
+            "default": false
+          },
+          "workspace": {
+            "type": "string",
+            "description": "Workspace path to limit session search"
+          },
+          "session": {
+            "type": "string",
+            "description": "Specific session path to reflect on"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -44,6 +44,13 @@ State what each level is responsible for so coverage gaps are visible.
 | End-to-end | <user-visible flows> | <reason> |
 | Manual / exploratory | <what automation cannot reach> | <reason> |
 
+## Coverage
+
+| Scenario | Type | Priority |
+|---|---|---|
+| TC-1 | unit / integration / e2e | P0 / P1 / P2 |
+| TC-2 | <...> | <...> |
+
 ## Key scenarios
 <!--
 The scenarios that prove the change works. Each scenario names the requirement

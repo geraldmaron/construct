@@ -1,56 +1,73 @@
 ---
 name: docs-research-workflow
-description: "Use when: the user asks to research a topic, investigate a question, or gather evidence for a decision."
+description: "Use when: cx-researcher must investigate external facts — CVEs, APIs, market data, regulations, or vendor behavior."
 inputs: [research-question]
 artifactType: research-brief
+toneDefault: direct
+toneAllowed: [direct]
+verificationBar: "Every load-bearing claim cites a verifiable primary source; label inference confidence; satisfy template structure requirements."
 ---
-# Research Workflow
+# External Research Workflow
 
-Use when: the user asks to research a topic, investigate a question, or gather evidence for a decision.
+Use when: cx-researcher investigates **external** facts — not user interviews or codebase exploration. For user evidence use `docs/user-research-workflow`; for repo exploration use `docs/codebase-research-workflow`.
 
 Follow [rules/common/research.md](../../rules/common/research.md) as the default policy.
 
 ## Steps
 
 1. **Clarify the question**: one specific, falsifiable question the research must answer.
-2. **Apply recency discipline**: always search from the most recent year backward. For fast-moving domains (AI tools, security, market data), treat anything older than 12 months as presumptively stale unless a newer source confirms it is still accurate.
-3. **Check internal evidence first**: search `.cx/research/`, `.cx/knowledge/`, `docs/prd/`, `docs/meta-prd/`, ADRs, runbooks, and ingested artifacts before going external.
-4. **Choose the research path and starting point** by domain:
+2. **Apply recency discipline**: search from the most recent year backward. For fast-moving domains, treat sources older than 12 months as presumptively stale unless confirmed.
+3. **Check internal evidence first**: `.cx/research/`, `.cx/knowledge/`, PRDs, ADRs, runbooks before going external.
+4. **Choose authoritative starting points** (external primary only):
 
-   | Domain | Authoritative starting points |
+   | Domain | Starting points |
    |---|---|
-   | AI tools / LLM behavior / multi-agent | arXiv (cs.AI, cs.SE, cs.CL), ACL Anthology, conference proceedings (NeurIPS, ICML, ICLR, HICSS) |
-   | Developer tools / IDE / adoption | Stack Overflow Developer Survey, JetBrains Developer Ecosystem Report, GitHub blog, editor changelogs |
-   | Security / CVEs / supply chain | NVD, GitHub Security Advisories, OWASP, vendor security blogs (Google Project Zero, Microsoft Security), ProjectDiscovery |
-   | Market data / ARR / adoption | Primary company announcements, SEC filings, then TechCrunch/Bloomberg citing company sources |
-   | Cloud / API / SDK / version | Official vendor docs for exact version, changelog, migration guide |
-   | Regulatory / compliance / privacy | Primary regulation text, then official agency guidance |
+   | AI / LLM / multi-agent | arXiv, ACL Anthology, NeurIPS/ICML/ICLR proceedings |
+   | Security / CVEs | NVD, GitHub Security Advisories, OWASP, vendor security blogs |
+   | Market / adoption | SEC filings, company announcements, then analyst reports citing primaries |
+   | Cloud / API / SDK | Official vendor docs for exact version, changelog, migration guide |
+   | Regulatory | Primary regulation text, official agency guidance |
 
-5. **Use a source hierarchy**:
-   - Primary: official docs, exact-version API references, standards, source code, peer-reviewed papers
-   - Secondary: changelogs, migration guides, maintainer issue comments, release notes
-   - Tertiary: blogs/forums/Q&A only to locate primaries: never cite tertiary alone for a load-bearing claim
-6. **Verify every URL**: fetch each URL cited and confirm it resolves and matches the cited claim. Mark unconfirmed URLs as `[unverified]`.
-7. **Structure findings** using the template from `get_template("research-brief")`: resolves `.cx/templates/docs/research-brief.md` (override) then `templates/docs/research-brief.md` (shipped)
-8. **Write to `.cx/research/{topic-slug}.md`**: cx-docs-keeper owns this
-9. **Reference the research doc** in the requesting agent's output (link by path)
+5. **Source hierarchy**: primary → secondary → tertiary (tertiary never alone for load-bearing claims).
+6. **Verify every URL** before citing. Mark unconfirmed as `[unverified]`.
+7. **Tone**: resolve from artifact manifest (`direct`). See `specialists/tone-profiles.json`.
+8. **Structure** with `get_template("research-brief")`; write to `.cx/research/{topic-slug}.md`.
+9. **Reference** the research doc in the requesting agent's output.
+
+## Distribution (publish pipeline)
+
+After the brief is written, **validate then publish** — the release gate is enforced by default:
+
+```bash
+node bin/construct artifact validate .cx/research/{topic-slug}.md --type=research-brief
+node bin/construct tools detect --json
+node bin/construct publish .cx/research/{topic-slug}.md --strict \
+  --demo=resource-guard-rails \
+  --dashboard-demo=cockpit-tour
+```
+
+Do **not** publish without a passing validate. Do **not** use `--no-gate` in demos or ship paths.
+
+Optional frontmatter in the brief:
+
+```yaml
+publish:
+  demo: resource-guard-rails
+  dashboardDemo: cockpit-tour
+```
+
+**Community patterns (do not hand-roll):**
+
+- **Figures in PDF**: fenced ` ```d2` / ` ```mermaid` blocks rendered at export time via vendored [pandoc-ext/diagram](https://github.com/pandoc-ext/diagram) (`construct export --figures` or `construct publish`).
+- **Terminal demos**: shipped `.tape` files under `templates/demos/tapes/`; project overrides in `.cx/demos/tapes/`; regenerate with `construct demo record <name>` or CI `charmbracelet/vhs-action`.
+- **Dashboard demos**: Playwright `e2e/demo/*.spec.ts` with `video: on` in `apps/dashboard`; run via `construct demo dashboard:<name>`.
+
+Install toolchain once: `brew install d2 graphviz pandoc typst vhs` and `npm install -g @mermaid-js/mermaid-cli`. Playwright: `cd apps/dashboard && npm install && npx playwright install chromium`.
+
+Do **not** claim PDF/demo done until `construct tools detect` reports ready or `--strict` publish succeeds.
 
 ## Verification bar
 
-- Every load-bearing claim must cite a verified source path, URL, or document reference.
-- Record publication date, version, or access date for each source. If no date is available, state `[undated]` and treat confidence as `low`.
-- Fetch and confirm every URL before including it in a committed document.
-- Separate observation from inference: label each finding's confidence as `high`, `medium`, or `low`.
-- Name contradictions and unresolved gaps.
-- Prefer two independent sources per load-bearing claim unless one authoritative primary source is sufficient.
-- State the strongest counter-evidence when one exists.
-
-## File naming
-- Topic slug: lowercase, hyphens, no spaces: e.g., `firebase-auth-v9-migration.md`
-- Date prefix for time-sensitive research: `2026-04-release-comparison.md`
-
-## When research feeds a decision
-→ Also create `.cx/decisions/ADR-{NNN}-{slug}.md` referencing the research doc
-
-## When research feeds a PRD
-→ Reference it in the PRD's References section
+- Two independent sources per load-bearing claim unless one authoritative primary suffices.
+- Admiralty grades on every source. Counter-evidence named when it exists.
+- cx-researcher must **not** answer UX preference questions or infer codebase behavior without reading code.

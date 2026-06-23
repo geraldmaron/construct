@@ -15,7 +15,9 @@ import path from 'node:path';
 import {
   measureUsage,
   reserveOrReject,
+  ensureDiskWrite,
   planPrune,
+  planEmergencyReclaim,
   executePrune,
   HARD_REJECT_CATEGORIES,
   SOFT_WARN_CATEGORIES,
@@ -110,6 +112,36 @@ describe('reserveOrReject', () => {
   it('returns ok for unknown categories without enforcing', () => {
     const r = reserveOrReject(projectRoot, 'some-other', 999_999_999);
     assert.equal(r.ok, true);
+  });
+});
+
+describe('ensureDiskWrite + planEmergencyReclaim', () => {
+  it('emergency-reclaims oldest hard-reject files to allow a trace write', () => {
+    writeConfig({ resources: { disk: { totalCxMaxMb: 1 } } });
+    const oldTrace = writeFile('.cx/traces/old.jsonl', 'x'.repeat(520_000), -7 * 24 * 60 * 60 * 1000);
+    writeFile('.cx/traces/new.jsonl', 'x'.repeat(520_000));
+    const gate = ensureDiskWrite(projectRoot, 'traces', 200_000);
+    assert.equal(gate.ok, true);
+    assert.ok((gate.reclaimed?.bytesFreed ?? 0) > 0);
+    assert.equal(fs.existsSync(oldTrace), false);
+  });
+
+  it('planEmergencyReclaim targets oldest traces and worker logs first', () => {
+    writeConfig({ resources: { disk: { totalCxMaxMb: 1 } } });
+    writeFile('.cx/traces/a.jsonl', 'a'.repeat(300_000), -3 * 24 * 60 * 60 * 1000);
+    writeFile('.cx/traces/b.jsonl', 'b'.repeat(300_000), -1 * 24 * 60 * 60 * 1000);
+    writeFile('.cx/runtime/worker/job.stdout.log', 'c'.repeat(300_000), -2 * 24 * 60 * 60 * 1000);
+    const actions = planEmergencyReclaim(projectRoot, 500_000);
+    assert.ok(actions.length >= 2);
+    assert.match(actions[0].path, /a\.jsonl$/);
+  });
+
+  it('still rejects when emergency reclaim cannot free enough space', () => {
+    writeConfig({ resources: { disk: { totalCxMaxMb: 1 } } });
+    writeFile('.cx/intake/processed/p1.json', 'x'.repeat(950_000));
+    const gate = ensureDiskWrite(projectRoot, 'traces', 200_000);
+    assert.equal(gate.ok, false);
+    assert.equal(gate.reason, 'budget-exceeded');
   });
 });
 

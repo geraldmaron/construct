@@ -1,0 +1,2931 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-22T18:56:54.319Z",
+  "generator": "lib/certification/skill-inventory.mjs",
+  "skillCount": 151,
+  "skills": [
+    {
+      "id": "ai/agent-dev",
+      "owners": [
+        "cx-ai-engineer",
+        "cx-rd-lead"
+      ],
+      "activationTriggers": [
+        "Use this skill when building AI agents, tool-use systems, or multi-agent workflows."
+      ],
+      "inputs": [
+        "[agent-spec, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "agent-implementation",
+        "name": "ai-agent-dev"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "ai/llm-security",
+      "owners": [
+        "cx-ai-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when securing LLM-powered applications against prompt injection, data leakage, and misuse."
+      ],
+      "inputs": [
+        "[prompt, model-output, agent-spec]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "ai-llm-security"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "ai/ml-ops",
+      "owners": [
+        "cx-ai-engineer"
+      ],
+      "activationTriggers": [
+        "Patterns, anti-patterns, and reference guidance for ML Operations (MLOps). Use when the task involves ml operations (mlops)."
+      ],
+      "inputs": [
+        "[eval-dataset, model-output]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "ai-ml-ops"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "ai/orchestration-workflow",
+      "owners": [
+        "cx-oracle",
+        "cx-orchestrator"
+      ],
+      "activationTriggers": [
+        "Use this skill when the request involves agent orchestration, phase transitions, task keys, handoff quality, workflow state, or project alignment."
+      ],
+      "inputs": [
+        "[agent-spec, workflow-state]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "ai-orchestration-workflow"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "ai/prompt-and-eval",
+      "owners": [
+        "cx-ai-engineer",
+        "cx-evaluator",
+        "cx-rd-lead"
+      ],
+      "activationTriggers": [
+        "Use this skill when designing prompts, evaluating model performance, or optimizing LLM behavior."
+      ],
+      "inputs": [
+        "[prompt, eval-dataset, model-output]"
+      ],
+      "outputs": {
+        "artifactType": "eval-report",
+        "name": "ai-prompt-and-eval"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "ai/prompt-optimizer",
+      "owners": [
+        "cx-ai-engineer",
+        "cx-trace-reviewer"
+      ],
+      "activationTriggers": [
+        "Closed-loop prompt auto-optimization guide. Use when the task matches the trigger conditions described in the body."
+      ],
+      "inputs": [
+        "[prompt, model-output, eval-dataset]"
+      ],
+      "outputs": {
+        "artifactType": "prompt",
+        "name": "ai-prompt-optimizer"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "ai/rag-system",
+      "owners": [
+        "cx-ai-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when building retrieval-augmented generation pipelines, vector search, or knowledge-grounded AI systems."
+      ],
+      "inputs": [
+        "[eval-dataset, prompt]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "ai-rag-system"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "ai/trace-triage",
+      "owners": [
+        "cx-trace-reviewer"
+      ],
+      "activationTriggers": [
+        "Use when: agent telemetry traces need triage to find where a run went wrong — the failing step, the cause category, and whether it is a regression or a one-off."
+      ],
+      "inputs": [
+        "[telemetry-traces]"
+      ],
+      "outputs": {
+        "artifactType": "trace-findings",
+        "name": "ai-trace-triage"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "architecture/api-design",
+      "owners": [
+        "cx-architect"
+      ],
+      "activationTriggers": [
+        "Use this skill when designing REST, GraphQL, or gRPC APIs."
+      ],
+      "inputs": [
+        "[system-design, requirements]"
+      ],
+      "outputs": {
+        "artifactType": "api-design",
+        "name": "architecture-api-design"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "architecture/caching",
+      "owners": [
+        "cx-architect"
+      ],
+      "activationTriggers": [
+        "Use this skill when designing caching strategies for applications, APIs, or infrastructure."
+      ],
+      "inputs": [
+        "[system-design, requirements]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "architecture-caching"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "architecture/cloud-native",
+      "owners": [
+        "cx-architect"
+      ],
+      "activationTriggers": [
+        "Use this skill when designing containerized, orchestrated, or microservice-based systems."
+      ],
+      "inputs": [
+        "[system-design, requirements]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "architecture-cloud-native"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "architecture/message-queue",
+      "owners": [
+        "cx-architect"
+      ],
+      "activationTriggers": [
+        "Use this skill when designing asynchronous communication, event-driven systems, or message-based integrations."
+      ],
+      "inputs": [
+        "[system-design, requirements]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "architecture-message-queue"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "architecture/security-arch",
+      "owners": [
+        "cx-architect",
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Use this skill when designing authentication, authorization, network security, or zero-trust architectures."
+      ],
+      "inputs": [
+        "[system-design, requirements]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "architecture-security-arch"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "compliance/ai-disclosure",
+      "owners": [
+        "cx-legal-compliance"
+      ],
+      "activationTriggers": [
+        "Use this skill when reviewing AI features for disclosure requirements, transparency obligations, or emerging AI regulation compliance."
+      ],
+      "inputs": [
+        "[artifact, data-flow]"
+      ],
+      "outputs": {
+        "artifactType": "privacy-assessment",
+        "name": "compliance-ai-disclosure"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "compliance/data-privacy",
+      "owners": [
+        "cx-legal-compliance"
+      ],
+      "activationTriggers": [
+        "Use this skill when reviewing data collection, storage, processing, or retention for privacy regulation compliance."
+      ],
+      "inputs": [
+        "[data-flow, artifact]"
+      ],
+      "outputs": {
+        "artifactType": "privacy-assessment",
+        "name": "compliance-data-privacy"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "compliance/license-audit",
+      "owners": [
+        "cx-legal-compliance"
+      ],
+      "activationTriggers": [
+        "Use this skill when auditing dependency licenses, evaluating OSS compliance risk, or preparing license inventories for legal review."
+      ],
+      "inputs": [
+        "[dependency-manifest]"
+      ],
+      "outputs": {
+        "artifactType": "license-report",
+        "name": "compliance-license-audit"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "compliance/regulatory-review",
+      "owners": [
+        "cx-legal-compliance"
+      ],
+      "activationTriggers": [
+        "Use this skill when conducting a compliance review before shipping features that handle user data, financial transactions, AI decisions, or regulated content."
+      ],
+      "inputs": [
+        "[artifact, data-flow, dependency-manifest]"
+      ],
+      "outputs": {
+        "artifactType": "compliance-review",
+        "name": "compliance-regulatory-review"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "development/cpp",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when writing, reviewing, or debugging C or C++ code."
+      ],
+      "inputs": [
+        "[code, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "development-cpp"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "development/go",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when writing, reviewing, or debugging Go code."
+      ],
+      "inputs": [
+        "[code, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "development-go"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "development/java",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when writing, reviewing, or debugging Java or Kotlin code on the JVM."
+      ],
+      "inputs": [
+        "[code, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "development-java"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "development/kotlin",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Patterns, anti-patterns, and reference guidance for Kotlin / Android Development. Use when the task involves kotlin / android development."
+      ],
+      "inputs": [
+        "[code, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "development-kotlin"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "development/mobile-crossplatform",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Before choosing a framework, answer:. Use when the task matches the trigger conditions described in the body."
+      ],
+      "inputs": [
+        "[requirements, code]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "development-mobile-crossplatform"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "development/python",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when writing, reviewing, or debugging Python code."
+      ],
+      "inputs": [
+        "[code, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "development-python"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "development/rust",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when writing, reviewing, or debugging Rust code."
+      ],
+      "inputs": [
+        "[code, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "development-rust"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "development/shell",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when writing, reviewing, or debugging Bash, Zsh, or POSIX shell scripts."
+      ],
+      "inputs": [
+        "[code, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "development-shell"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "development/swift",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Swift 6 enforces data-race safety at compile time. Annotate isolation boundary explicitly:. Use when the task matches the trigger conditions described in the body."
+      ],
+      "inputs": [
+        "[code, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "development-swift"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "development/typescript",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when writing, reviewing, or debugging TypeScript or JavaScript code."
+      ],
+      "inputs": [
+        "[code, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "development-typescript"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/ci-cd",
+      "owners": [
+        "cx-platform-engineer",
+        "cx-sre"
+      ],
+      "activationTriggers": [
+        "Use this skill when designing, debugging, or optimizing CI/CD pipelines."
+      ],
+      "inputs": [
+        "[pipeline-config, repo]"
+      ],
+      "outputs": {
+        "artifactType": "ci-pipeline",
+        "name": "devops-ci-cd"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/containerization",
+      "owners": [
+        "cx-platform-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when writing Dockerfiles, optimizing image size, or securing container builds."
+      ],
+      "inputs": [
+        "[service, repo]"
+      ],
+      "outputs": {
+        "artifactType": "dockerfile",
+        "name": "devops-containerization"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/cost-optimization",
+      "owners": [
+        "cx-platform-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when reducing cloud spend, right-sizing resources, or implementing FinOps practices."
+      ],
+      "inputs": [
+        "[service, cost-data]"
+      ],
+      "outputs": {
+        "artifactType": "cost-optimization-plan",
+        "name": "devops-cost-optimization"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/data-engineering",
+      "owners": [
+        "cx-data-engineer"
+      ],
+      "activationTriggers": [
+        "1. **Idempotency**: pipelines can run multiple times without duplicating data 2. **Observability**: every pipeline run logs row counts, latency, and anomalies 3. **Data contracts**: producers and consumers agree on schema and SLAs 4. **Lineage**: know where every column came from and what it feeds. Use when the task matches the trigger conditions described in the body."
+      ],
+      "inputs": [
+        "[pipeline-config, data-contract]"
+      ],
+      "outputs": {
+        "artifactType": "data-pipeline",
+        "name": "devops-data-engineering"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/database",
+      "owners": [
+        "cx-data-analyst",
+        "cx-data-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when designing schemas, writing migrations, optimizing queries, or selecting databases."
+      ],
+      "inputs": [
+        "[schema, query]"
+      ],
+      "outputs": {
+        "artifactType": "schema-design",
+        "name": "devops-database"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/dependency-management",
+      "owners": [
+        "cx-platform-engineer",
+        "cx-researcher"
+      ],
+      "activationTriggers": [
+        "Use this skill when managing package upgrades, resolving CVEs, or establishing lock file and versioning policy."
+      ],
+      "inputs": [
+        "[dependency-manifest, repo]"
+      ],
+      "outputs": {
+        "artifactType": "dependency-report",
+        "name": "devops-dependency-management"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/devsecops",
+      "owners": [
+        "cx-platform-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when integrating security into CI/CD pipelines, managing supply chain risk, or automating security scanning."
+      ],
+      "inputs": [
+        "[pipeline-config, service]"
+      ],
+      "outputs": {
+        "artifactType": "security-plan",
+        "name": "devops-devsecops"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/git-workflow",
+      "owners": [
+        "cx-release-manager"
+      ],
+      "activationTriggers": [
+        "Use this skill when establishing branching strategies, commit conventions, or code integration practices."
+      ],
+      "inputs": [
+        "[repo, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "devops-git-workflow"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/incident-response",
+      "owners": [
+        "cx-sre"
+      ],
+      "activationTriggers": [
+        "Define severity in your runbook and assign it early: it determines escalation and comms cadence. Use when the task matches the trigger conditions described in the body."
+      ],
+      "inputs": [
+        "[incident, alert]"
+      ],
+      "outputs": {
+        "artifactType": "incident-runbook",
+        "name": "devops-incident-response"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/monorepo",
+      "owners": [
+        "cx-platform-engineer"
+      ],
+      "activationTriggers": [
+        "Use this skill when selecting monorepo tooling, structuring packages, or optimizing affected-only builds."
+      ],
+      "inputs": [
+        "[repo, pipeline-config]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "devops-monorepo"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/observability",
+      "owners": [
+        "cx-data-analyst",
+        "cx-data-engineer",
+        "cx-debugger",
+        "cx-sre"
+      ],
+      "activationTriggers": [
+        "Use this skill when designing logging, tracing, metrics, or alerting systems."
+      ],
+      "inputs": [
+        "[service, metrics]"
+      ],
+      "outputs": {
+        "artifactType": "observability-plan",
+        "name": "devops-observability"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/performance",
+      "owners": [
+        "cx-debugger",
+        "cx-sre"
+      ],
+      "activationTriggers": [
+        "Use this skill when profiling, load testing, or optimizing application and infrastructure performance."
+      ],
+      "inputs": [
+        "[service, metrics]"
+      ],
+      "outputs": {
+        "artifactType": "performance-plan",
+        "name": "devops-performance"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "devops/testing",
+      "owners": [
+        "cx-qa",
+        "cx-test-automation"
+      ],
+      "activationTriggers": [
+        "Use this skill when planning test coverage, selecting test types, or establishing testing practices."
+      ],
+      "inputs": [
+        "[repo, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "test-plan",
+        "name": "devops-testing"
+      },
+      "verificationHooks": [],
+      "workflowSkill": true
+    },
+    {
+      "id": "docs/adr-workflow",
+      "owners": [
+        "cx-docs-keeper"
+      ],
+      "activationTriggers": [
+        "Use when: an architectural decision is made that affects the system structure, data model, API contracts, or technology choices.",
+        "an architectural decision is made that affects the system structure, data model, API contracts, or technology choices."
+      ],
+      "inputs": [
+        "[decision-context]"
+      ],
+      "outputs": {
+        "artifactType": "adr",
+        "name": "docs-adr-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "mcp",
+          "value": "get_template"
+        }
+      ],
+      "workflowSkill": true
+    },
+    {
+      "id": "docs/backlog-proposal-workflow",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Use when: product evidence should create or update Jira, Linear, GitHub Issues, or another tracker.",
+        "product evidence should create or update Jira, Linear, GitHub Issues, or another tracker."
+      ],
+      "inputs": [
+        "[evidence-brief, prd, signal]"
+      ],
+      "outputs": {
+        "artifactType": "backlog-proposal",
+        "name": "docs-backlog-proposal-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "mcp",
+          "value": "get_template"
+        }
+      ],
+      "workflowSkill": true
+    },
+    {
+      "id": "docs/codebase-research-workflow",
+      "owners": [
+        "cx-explorer"
+      ],
+      "activationTriggers": [
+        "Use when: cx-explorer maps the repo — entry points, dependencies, hot paths, or unfamiliar subsystems.",
+        "cx-explorer investigates **this repository** — structure, dependencies, behavior. Not for external vendor research or user interviews."
+      ],
+      "inputs": [
+        "[repository-path]"
+      ],
+      "outputs": {
+        "artifactType": "research-brief",
+        "name": "docs-codebase-research-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every claim cites file:line or command output; no assumed architecture."
+        },
+        {
+          "kind": "mcp",
+          "value": "get_template"
+        }
+      ],
+      "workflowSkill": false
+    },
+    {
+      "id": "docs/customer-profile-workflow",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Use when: customer evidence should update durable product memory.",
+        "customer evidence should update durable product memory."
+      ],
+      "inputs": [
+        "[signal, customer-profile]"
+      ],
+      "outputs": {
+        "artifactType": "customer-profile",
+        "name": "docs-customer-profile-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "mcp",
+          "value": "get_template"
+        }
+      ],
+      "workflowSkill": true
+    },
+    {
+      "id": "docs/document-ingest-workflow",
+      "owners": [
+        "cx-docs-keeper"
+      ],
+      "activationTriggers": [
+        "Use when: the user points at a PDF, Word doc, spreadsheet, slide deck, export, or mixed document folder and wants a markdown version that Construct can search efficiently later.",
+        "the user points at a PDF, Word doc, spreadsheet, slide deck, export, or mixed document folder and wants a markdown version that Construct can search efficiently later."
+      ],
+      "inputs": [
+        "[document]"
+      ],
+      "outputs": {
+        "artifactType": "ingested-markdown",
+        "name": "docs-document-ingest-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        }
+      ],
+      "workflowSkill": false
+    },
+    {
+      "id": "docs/evidence-ingest-workflow",
+      "owners": [
+        "cx-product-manager",
+        "cx-ux-researcher"
+      ],
+      "activationTriggers": [
+        "Use when: the user pastes customer notes, Slack threads, support tickets, sales notes, research snippets, RFCs, analytics summaries, or competitor signals.",
+        "the user pastes customer notes, Slack threads, support tickets, sales notes, research snippets, RFCs, analytics summaries, or competitor signals."
+      ],
+      "inputs": [
+        "[signal, document]"
+      ],
+      "outputs": {
+        "artifactType": "evidence-brief",
+        "name": "docs-evidence-ingest-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "mcp",
+          "value": "get_template"
+        }
+      ],
+      "workflowSkill": true
+    },
+    {
+      "id": "docs/init-docs",
+      "owners": [
+        "cx-docs-keeper"
+      ],
+      "activationTriggers": [
+        "`init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`. Use when the task matches the trigger conditions described in the body."
+      ],
+      "inputs": [
+        "[task-context]"
+      ],
+      "outputs": {
+        "artifactType": "docs-scaffold",
+        "name": "docs-init-docs"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "docs/init-project",
+      "owners": [
+        "cx-operations"
+      ],
+      "activationTriggers": [
+        "Use when: starting work on a new project or joining an existing one without doc structure.",
+        "starting work on a new project or joining an existing one without doc structure."
+      ],
+      "inputs": [
+        "[repo]"
+      ],
+      "outputs": {
+        "artifactType": "docs-scaffold",
+        "name": "docs-init-project"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "docs/memo-and-decision-capture",
+      "owners": [
+        "cx-docs-keeper",
+        "cx-release-manager"
+      ],
+      "activationTriggers": [
+        "Use when: a decision, status update, or announcement needs to be captured as a short, durable memo that states the decision, its rationale, and what changes."
+      ],
+      "inputs": [
+        "[decision-context]"
+      ],
+      "outputs": {
+        "artifactType": "memo",
+        "name": "docs-memo-and-decision-capture"
+      },
+      "verificationHooks": [],
+      "workflowSkill": true
+    },
+    {
+      "id": "docs/prd-workflow",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Use when: the user asks to create a PRD, platform spec, business case, RFC, or requirements document.",
+        "the user asks to create a PRD, platform spec, business case, RFC, or requirements document."
+      ],
+      "inputs": [
+        "[research-question, evidence-brief]"
+      ],
+      "outputs": {
+        "artifactType": "prd",
+        "name": "docs-prd-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
+        },
+        {
+          "kind": "mcp",
+          "value": "get_template"
+        }
+      ],
+      "workflowSkill": true
+    },
+    {
+      "id": "docs/prfaq-workflow",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Use when: the user asks for a PRFAQ, working-backwards doc, launch narrative, or FAQ grounded in product evidence.",
+        "the user asks for a PRFAQ, working-backwards doc, launch narrative, or FAQ grounded in product evidence."
+      ],
+      "inputs": [
+        "[prd, evidence-brief]"
+      ],
+      "outputs": {
+        "artifactType": "prfaq",
+        "name": "docs-prfaq-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "mcp",
+          "value": "get_template"
+        }
+      ],
+      "workflowSkill": true
+    },
+    {
+      "id": "docs/product-intelligence-review",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Use when: reviewing PRDs, Meta PRDs, PRFAQs, evidence briefs, signal briefs, customer profiles, or backlog proposals.",
+        "reviewing PRDs, Meta PRDs, PRFAQs, evidence briefs, signal briefs, customer profiles, or backlog proposals."
+      ],
+      "inputs": [
+        "[prd, evidence-brief]"
+      ],
+      "outputs": {
+        "artifactType": "review",
+        "name": "docs-product-intelligence-review"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "docs/product-intelligence-workflow",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Use when: the request involves customer evidence, PM synthesis, product requirements, PRDs, PRFAQs, customer profiles, product signals, or backlog proposals.",
+        "the request involves customer evidence, PM synthesis, product requirements, PRDs, PRFAQs, customer profiles, product signals, or backlog proposals."
+      ],
+      "inputs": [
+        "[signal, evidence-brief]"
+      ],
+      "outputs": {
+        "artifactType": "prd",
+        "name": "docs-product-intelligence-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        }
+      ],
+      "workflowSkill": true
+    },
+    {
+      "id": "docs/product-signal-workflow",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Use when: the user asks what customers are asking for, what themes are emerging, whether evidence is strong enough, or what should become a PRD.",
+        "the user asks what customers are asking for, what themes are emerging, whether evidence is strong enough, or what should become a PRD."
+      ],
+      "inputs": [
+        "[signal, evidence-brief]"
+      ],
+      "outputs": {
+        "artifactType": "signal-brief",
+        "name": "docs-product-signal-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        }
+      ],
+      "workflowSkill": false
+    },
+    {
+      "id": "docs/research-workflow",
+      "owners": [
+        "cx-rd-lead",
+        "cx-researcher"
+      ],
+      "activationTriggers": [
+        "Use when: cx-researcher must investigate external facts — CVEs, APIs, market data, regulations, or vendor behavior.",
+        "cx-researcher investigates **external** facts — not user interviews or codebase exploration. For user evidence use `docs/user-research-workflow`; for repo exploration use `docs/codebase-research-workflow`."
+      ],
+      "inputs": [
+        "[research-question]"
+      ],
+      "outputs": {
+        "artifactType": "research-brief",
+        "name": "docs-research-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a verifiable primary source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
+        },
+        {
+          "kind": "mcp",
+          "value": "get_template"
+        }
+      ],
+      "workflowSkill": true
+    },
+    {
+      "id": "docs/runbook-workflow",
+      "owners": [
+        "cx-docs-keeper"
+      ],
+      "activationTriggers": [
+        "Use when: creating operational procedures for services, alerts, or recurring operations.",
+        "creating operational procedures for services, alerts, or recurring operations."
+      ],
+      "inputs": [
+        "[service, incident]"
+      ],
+      "outputs": {
+        "artifactType": "runbook",
+        "name": "docs-runbook-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "mcp",
+          "value": "get_template"
+        }
+      ],
+      "workflowSkill": true
+    },
+    {
+      "id": "docs/strategy-workflow",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Use when: the user asks about product direction, strategic bets, what to prioritize, whether a signal aligns with strategy, or wants to update the strategy.",
+        "the user asks about product direction, strategic bets, what to prioritize, whether a signal aligns with strategy, or wants to update the strategy."
+      ],
+      "inputs": [
+        "[signal, decision-context]"
+      ],
+      "outputs": {
+        "artifactType": "strategy",
+        "name": "docs-strategy-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        }
+      ],
+      "workflowSkill": true
+    },
+    {
+      "id": "docs/transcript-synthesis",
+      "owners": [
+        "cx-researcher"
+      ],
+      "activationTriggers": [
+        "Use when: a meeting, call, or interview transcript needs to be turned into a summary, the decisions made, and concrete action items with owners."
+      ],
+      "inputs": [
+        "[transcript-text]"
+      ],
+      "outputs": {
+        "artifactType": "meeting-summary",
+        "name": "docs-transcript-synthesis"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "docs/user-research-workflow",
+      "owners": [
+        "cx-ux-researcher"
+      ],
+      "activationTriggers": [
+        "Use when: cx-ux-researcher synthesizes user evidence — interviews, support tickets, session replay, surveys, or field notes.",
+        "cx-ux-researcher gathers or synthesizes **user** evidence. Do not use for CVE lookups, API version facts, or repo structure — use `docs/research-workflow` (cx-researcher) or `docs/codebase-research-workflow` (cx-explorer) instead."
+      ],
+      "inputs": [
+        "[user-research, interview-data]"
+      ],
+      "outputs": {
+        "artifactType": "evidence-brief",
+        "name": "docs-user-research-workflow"
+      },
+      "verificationHooks": [
+        {
+          "kind": "verificationBar",
+          "value": "Observed behavior weighted over self-report; sample size stated; no invented quotes."
+        },
+        {
+          "kind": "mcp",
+          "value": "get_template"
+        }
+      ],
+      "workflowSkill": false
+    },
+    {
+      "id": "exploration/dependency-graph-reading",
+      "owners": [
+        "cx-engineer",
+        "cx-explorer",
+        "cx-oracle"
+      ],
+      "activationTriggers": [
+        "Use when assessing the risk surface of a project's dependencies, planning upgrades, or evaluating a new codebase's supply chain posture."
+      ],
+      "inputs": [
+        "[dependency-manifest, repo]"
+      ],
+      "outputs": {
+        "artifactType": "dependency-graph",
+        "name": "exploration-dependency-graph-reading"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "exploration/repo-map",
+      "owners": [
+        "cx-explorer"
+      ],
+      "activationTriggers": [
+        "Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.cx/codebase-map.md` artifact for future sessions."
+      ],
+      "inputs": [
+        "[repo, codebase]"
+      ],
+      "outputs": {
+        "artifactType": "repo-map",
+        "name": "exploration-repo-map"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "exploration/tracer-bullet-method",
+      "owners": [
+        "cx-engineer",
+        "cx-explorer"
+      ],
+      "activationTriggers": [
+        "Use when beginning implementation in a new system, new integration, or new architectural layer. A tracer bullet is not a prototype; it is the thinnest possible complete path through the real system."
+      ],
+      "inputs": [
+        "[codebase, system-design]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "exploration-tracer-bullet-method"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "exploration/unknown-codebase-onboarding",
+      "owners": [
+        "cx-engineer",
+        "cx-explorer"
+      ],
+      "activationTriggers": [
+        "Use when entering an unfamiliar codebase for the first time, or when the task requires understanding a system you haven't touched before."
+      ],
+      "inputs": [
+        "[codebase, repo]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "exploration-unknown-codebase-onboarding"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "frameworks/django",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Patterns, anti-patterns, and reference guidance for Django. Use when the task involves django."
+      ],
+      "inputs": [
+        "[code, feature-spec, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "frameworks-django"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "frameworks/nextjs",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Patterns, anti-patterns, and reference guidance for Next.js (App Router). Use when the task involves next.js (app router)."
+      ],
+      "inputs": [
+        "[code, feature-spec, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "frameworks-nextjs"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "frameworks/react",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "By default, components are **Server Components**: they run on the server, have no state, and can fetch data directly. Add `'use client'` only when you need interactivity, browser APIs, or hooks. Use when the task matches the trigger conditions described in the body."
+      ],
+      "inputs": [
+        "[code, feature-spec, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "frameworks-react"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "frameworks/spring-boot",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Patterns, anti-patterns, and reference guidance for Spring Boot. Use when the task involves spring boot."
+      ],
+      "inputs": [
+        "[code, feature-spec, repo]"
+      ],
+      "outputs": {
+        "artifactType": "code",
+        "name": "frameworks-spring-boot"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "frontend-design/accessibility",
+      "owners": [
+        "cx-accessibility",
+        "cx-designer"
+      ],
+      "activationTriggers": [
+        "Target **WCAG 2.1 AA** as the minimum for any public-facing product. WCAG 2.2 AA is the current standard (published October 2023) and required by many regulatory frameworks (EU Web Accessibility Directive, ADA, Section 508). Use when the task matches the trigger conditions described in the body."
+      ],
+      "inputs": [
+        "[ui-or-component]"
+      ],
+      "outputs": {
+        "artifactType": "accessibility-findings",
+        "name": "frontend-design-accessibility"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "frontend-design/component-patterns",
+      "owners": [
+        "cx-designer"
+      ],
+      "activationTriggers": [
+        "Use this skill when designing component architecture, building design systems, or structuring reusable UI."
+      ],
+      "inputs": [
+        "[ui-or-component, design-spec]"
+      ],
+      "outputs": {
+        "artifactType": "ui-implementation",
+        "name": "frontend-design-component-patterns"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "frontend-design/engineering",
+      "owners": [
+        "cx-designer"
+      ],
+      "activationTriggers": [
+        "Use this skill when working on build tooling, bundling, rendering strategies, or frontend infrastructure."
+      ],
+      "inputs": [
+        "[code, repo]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "frontend-design-engineering"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "frontend-design/screen-reader-testing",
+      "owners": [
+        "cx-accessibility"
+      ],
+      "activationTriggers": [
+        "Use when: a UI needs to be tested with a screen reader and keyboard to verify it is actually operable non-visually, not just compliant on paper."
+      ],
+      "inputs": [
+        "[ui-or-component]"
+      ],
+      "outputs": {
+        "artifactType": "accessibility-findings",
+        "name": "frontend-design-screen-reader-testing"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "frontend-design/state-management",
+      "owners": [
+        "cx-designer"
+      ],
+      "activationTriggers": [
+        "Use this skill when choosing state management tools, structuring application state, or debugging state issues."
+      ],
+      "inputs": [
+        "[ui-or-component, code]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "frontend-design-state-management"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "frontend-design/ui-aesthetics",
+      "owners": [
+        "cx-designer"
+      ],
+      "activationTriggers": [
+        "Use this skill when making visual design decisions: color, typography, layout, spacing, and visual hierarchy."
+      ],
+      "inputs": [
+        "[ui-or-component, design-spec]"
+      ],
+      "outputs": {
+        "artifactType": "ui-implementation",
+        "name": "frontend-design-ui-aesthetics"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "frontend-design/ux-principles",
+      "owners": [
+        "cx-designer"
+      ],
+      "activationTriggers": [
+        "Use this skill when designing user flows, evaluating usability, or planning information architecture."
+      ],
+      "inputs": [
+        "[ui-or-component, design-spec]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "frontend-design-ux-principles"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "operating/change-management",
+      "owners": [
+        "cx-operations",
+        "cx-orchestrator"
+      ],
+      "activationTriggers": [
+        "Use when a change needs to be categorized by reversibility, when designing rollout gates, or when the team is uncertain how much approval process a change warrants."
+      ],
+      "inputs": [
+        "[change-or-diff]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "operating-change-management"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "operating/incident-response",
+      "owners": [
+        "cx-operations"
+      ],
+      "activationTriggers": [
+        "Use when an issue is active in production, when building incident process from scratch, or when reviewing postmortems for quality."
+      ],
+      "inputs": [
+        "[task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "operating-incident-response"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "operating/oncall-rotation",
+      "owners": [
+        "cx-operations"
+      ],
+      "activationTriggers": [
+        "Use when setting up on-call, reviewing its health, or handling an escalation during a rotation."
+      ],
+      "inputs": [
+        "[task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "operating-oncall-rotation"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "operating/orchestration-reference",
+      "owners": [
+        "cx-orchestrator"
+      ],
+      "activationTriggers": [
+        "detailed orchestration reference loaded on demand. Use when the task matches the trigger conditions described in the body."
+      ],
+      "inputs": [
+        "[task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "operating-orchestration-reference"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "operating/raw-data-structuring",
+      "owners": [
+        "cx-data-analyst",
+        "cx-data-engineer"
+      ],
+      "activationTriggers": [
+        "Use when: a raw dataset (CSV, TSV, JSON export, log dump) needs to be parsed, validated, and profiled into a described, trustworthy shape before analysis."
+      ],
+      "inputs": [
+        "[raw-dataset]"
+      ],
+      "outputs": {
+        "artifactType": "data-profile",
+        "name": "operating-raw-data-structuring"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "operating/unstructured-triage",
+      "owners": [
+        "cx-orchestrator"
+      ],
+      "activationTriggers": [
+        "Use when: a brain-dump, rough notes, or free-form input has no clear type and needs to be structured into intents, candidate work items, and open questions before routing."
+      ],
+      "inputs": [
+        "[unstructured-text]"
+      ],
+      "outputs": {
+        "artifactType": "triage-summary",
+        "name": "operating-unstructured-triage"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "quality-gates/premortem",
+      "owners": [
+        "cx-devil-advocate"
+      ],
+      "activationTriggers": [
+        "Use when: a plan or design needs a premortem — imagining it has already failed and working backward to the failure modes — before committing to it."
+      ],
+      "inputs": [
+        "[plan-or-design]"
+      ],
+      "outputs": {
+        "artifactType": "risk-list",
+        "name": "quality-gates-premortem"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "quality-gates/review-work",
+      "owners": [
+        "cx-devil-advocate",
+        "cx-reviewer"
+      ],
+      "activationTriggers": [
+        "Use this methodology when a change needs rigorous pre-merge validation. Five independent review roles run concurrently. All must pass."
+      ],
+      "inputs": [
+        "[change-or-diff, acceptance-criteria]"
+      ],
+      "outputs": {
+        "artifactType": "review-report",
+        "name": "quality-gates-review-work"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "quality-gates/verify-change",
+      "owners": [
+        "cx-debugger",
+        "cx-engineer",
+        "cx-qa",
+        "cx-release-manager",
+        "cx-test-automation"
+      ],
+      "activationTriggers": [
+        "Use this skill to analyze the impact of code changes and verify documentation and tests are in sync."
+      ],
+      "inputs": [
+        "[change-or-diff]"
+      ],
+      "outputs": {
+        "artifactType": "review-report",
+        "name": "quality-gates-verify-change"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "quality-gates/verify-module",
+      "owners": [
+        "cx-qa",
+        "cx-reviewer",
+        "cx-test-automation"
+      ],
+      "activationTriggers": [
+        "Use this skill to check that a module or package is structurally complete and ready for use."
+      ],
+      "inputs": [
+        "[change-or-diff]"
+      ],
+      "outputs": {
+        "artifactType": "review-report",
+        "name": "quality-gates-verify-module"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "quality-gates/verify-quality",
+      "owners": [
+        "cx-evaluator",
+        "cx-reviewer"
+      ],
+      "activationTriggers": [
+        "Use this skill to check code quality, complexity, and maintainability after changes."
+      ],
+      "inputs": [
+        "[change-or-diff]"
+      ],
+      "outputs": {
+        "artifactType": "review-report",
+        "name": "quality-gates-verify-quality"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "quality-gates/verify-security",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Use this skill to scan code for security vulnerabilities before commits or releases."
+      ],
+      "inputs": [
+        "[change-or-diff]"
+      ],
+      "outputs": {
+        "artifactType": "vulnerability-report",
+        "name": "quality-gates-verify-security"
+      },
+      "verificationHooks": [],
+      "workflowSkill": true
+    },
+    {
+      "id": "roles/architect",
+      "owners": [
+        "cx-architect"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect role. Use when reviewing or generating work by cx-architect, cx-rd-lead, or when an agent is acting in the Architect role."
+      ],
+      "inputs": [
+        "[architecture-design, requirements]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-architect"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/architect.ai-systems",
+      "owners": [
+        "cx-architect"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — AI Systems role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — AI Systems role."
+      ],
+      "inputs": [
+        "[architecture-design, adr]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-architect-ai-systems"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/architect.data",
+      "owners": [
+        "cx-architect"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Data role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Data role."
+      ],
+      "inputs": [
+        "[data-model, architecture-design]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-architect-data"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/architect.enterprise",
+      "owners": [
+        "cx-architect"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Enterprise role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Enterprise role."
+      ],
+      "inputs": [
+        "[architecture-design, compliance-requirements]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-architect-enterprise"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/architect.integration",
+      "owners": [
+        "cx-architect"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Integration role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Integration role."
+      ],
+      "inputs": [
+        "[integration-design, sequence-diagram]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-architect-integration"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/architect.platform",
+      "owners": [
+        "cx-architect"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Platform role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Platform role."
+      ],
+      "inputs": [
+        "[platform-design, adr]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-architect-platform"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/data-analyst",
+      "owners": [
+        "cx-data-analyst"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst role."
+      ],
+      "inputs": [
+        "[dataset, metrics-analysis]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-data-analyst"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/data-analyst.experiment",
+      "owners": [
+        "cx-data-analyst"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Experiment role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst — Experiment role."
+      ],
+      "inputs": [
+        "[experiment-plan, metrics]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-data-analyst-experiment"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/data-analyst.product",
+      "owners": [
+        "cx-data-analyst"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst — Product role."
+      ],
+      "inputs": [
+        "[product-metrics, funnel-data]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-data-analyst-product"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/data-analyst.product-intelligence",
+      "owners": [
+        "cx-data-analyst"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product Intelligence role. Use when reviewing or generating work by cx-data-analyst, cx-product-manager, or when an agent is acting in the Data Analyst — Product Intelligence role."
+      ],
+      "inputs": [
+        "[customer-signals, telemetry]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-data-analyst-product-intelligence"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/data-analyst.telemetry",
+      "owners": [
+        "cx-data-analyst"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Telemetry role. Use when reviewing or generating work by cx-data-analyst, cx-sre, or when an agent is acting in the Data Analyst — Telemetry role."
+      ],
+      "inputs": [
+        "[telemetry, metrics]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-data-analyst-telemetry"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/data-engineer.pipeline",
+      "owners": [
+        "cx-data-engineer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Pipeline role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Pipeline role."
+      ],
+      "inputs": [
+        "[pipeline-design, data-contract]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-data-engineer-pipeline"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/data-engineer.vector-retrieval",
+      "owners": [
+        "cx-data-engineer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Vector Retrieval role. Use when reviewing or generating work by cx-data-engineer, cx-ai-engineer, or when an agent is acting in the Data Engineer — Vector Retrieval role."
+      ],
+      "inputs": [
+        "[retrieval-design, embeddings]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-data-engineer-vector-retrieval"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/data-engineer.warehouse",
+      "owners": [
+        "cx-data-engineer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Warehouse role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Warehouse role."
+      ],
+      "inputs": [
+        "[warehouse-model, metrics]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-data-engineer-warehouse"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/debugger",
+      "owners": [
+        "cx-debugger"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Debugger role. Use when reviewing or generating work by cx-debugger, or when an agent is acting in the Debugger role."
+      ],
+      "inputs": [
+        "[bug-report, failure-signal]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-debugger"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/designer",
+      "owners": [
+        "cx-designer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Designer role. Use when reviewing or generating work by cx-designer, cx-accessibility, or when an agent is acting in the Designer role."
+      ],
+      "inputs": [
+        "[ui-design]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-designer"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/designer.accessibility",
+      "owners": [
+        "cx-designer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Designer — Accessibility role. Use when reviewing or generating work by cx-accessibility, or when an agent is acting in the Designer — Accessibility role."
+      ],
+      "inputs": [
+        "[ui-design, component]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-designer-accessibility"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/engineer",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer role. Use when reviewing or generating work by cx-engineer, cx-ai-engineer, cx-data-engineer, cx-platform-engineer, or when an agent is acting in the Engineer role."
+      ],
+      "inputs": [
+        "[code-diff, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-engineer"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/engineer.ai",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — AI role. Use when reviewing or generating work by cx-ai-engineer, or when an agent is acting in the Engineer — AI role."
+      ],
+      "inputs": [
+        "[code-diff, prompt]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-engineer-ai"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/engineer.data",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Data role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Engineer — Data role."
+      ],
+      "inputs": [
+        "[code-diff, data-pipeline]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-engineer-data"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/engineer.platform",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Platform role. Use when reviewing or generating work by cx-platform-engineer, or when an agent is acting in the Engineer — Platform role."
+      ],
+      "inputs": [
+        "[code-diff, internal-tooling]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-engineer-platform"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/operator",
+      "owners": [
+        "profile-role:operator"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator role. Use when reviewing or generating work by cx-sre, cx-operations, cx-release-manager, cx-docs-keeper, or when an agent is acting in the Operator role."
+      ],
+      "inputs": [
+        "[runbook, deployment-plan]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-operator"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/operator.docs",
+      "owners": [
+        "profile-role:operator"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Docs role. Use when reviewing or generating work by cx-docs-keeper, or when an agent is acting in the Operator — Docs role."
+      ],
+      "inputs": [
+        "[docs, runbook]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-operator-docs"
+      },
+      "verificationHooks": [
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
+        }
+      ],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/operator.release",
+      "owners": [
+        "profile-role:operator"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Release role. Use when reviewing or generating work by cx-release-manager, or when an agent is acting in the Operator — Release role."
+      ],
+      "inputs": [
+        "[release-plan, changelog]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-operator-release"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/operator.sre",
+      "owners": [
+        "profile-role:operator"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — SRE role. Use when reviewing or generating work by cx-sre, or when an agent is acting in the Operator — SRE role."
+      ],
+      "inputs": [
+        "[alert-config, slo]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-operator-sre"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/orchestrator",
+      "owners": [
+        "cx-orchestrator"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Orchestrator role. Use when reviewing or generating work by cx-orchestrator, or when an agent is acting in the Orchestrator role."
+      ],
+      "inputs": [
+        "[task-context, request]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-orchestrator"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/product-manager",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager role. Use when reviewing or generating work by cx-product-manager, cx-business-strategist, or when an agent is acting in the Product Manager role."
+      ],
+      "inputs": [
+        "[prd, user-evidence]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-product-manager"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/product-manager.ai-product",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — AI Product role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — AI Product role."
+      ],
+      "inputs": [
+        "[prd, eval-criteria]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-product-manager-ai-product"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/product-manager.business-strategy",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Business Strategy role. Use when reviewing or generating work by cx-business-strategist, or when an agent is acting in the Product Manager — Business Strategy role."
+      ],
+      "inputs": [
+        "[strategy-doc, competitive-analysis]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-product-manager-business-strategy"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/product-manager.enterprise",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Enterprise role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Enterprise role."
+      ],
+      "inputs": [
+        "[prd, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-product-manager-enterprise"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/product-manager.growth",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Growth role. Use when reviewing or generating work by cx-product-manager, cx-business-strategist, or when an agent is acting in the Product Manager — Growth role."
+      ],
+      "inputs": [
+        "[prd, growth-metrics]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-product-manager-growth"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/product-manager.platform",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Platform role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Platform role."
+      ],
+      "inputs": [
+        "[prd, api-spec]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-product-manager-platform"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/product-manager.product",
+      "owners": [
+        "cx-product-manager"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Product role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Product role."
+      ],
+      "inputs": [
+        "[prd, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-product-manager-product"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/qa",
+      "owners": [
+        "cx-qa"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA role."
+      ],
+      "inputs": [
+        "[test-suite, code-diff]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-qa"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/qa.ai-eval",
+      "owners": [
+        "cx-qa"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — AI Eval role. Use when reviewing or generating work by cx-qa, cx-test-automation, cx-evaluator, or when an agent is acting in the QA — AI Eval role."
+      ],
+      "inputs": [
+        "[eval-set, model-output]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-qa-ai-eval"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/qa.api-contract",
+      "owners": [
+        "cx-qa"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — API Contract role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — API Contract role."
+      ],
+      "inputs": [
+        "[api-spec, test-suite]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-qa-api-contract"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/qa.data-pipeline",
+      "owners": [
+        "cx-qa"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Data Pipeline role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — Data Pipeline role."
+      ],
+      "inputs": [
+        "[pipeline, test-suite]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-qa-data-pipeline"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/qa.test-automation",
+      "owners": [
+        "cx-qa"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Test Automation role. Use when reviewing or generating work by cx-test-automation, or when an agent is acting in the QA — Test Automation role."
+      ],
+      "inputs": [
+        "[test-suite, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-qa-test-automation"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/qa.web-ui",
+      "owners": [
+        "cx-qa"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Web UI role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — Web UI role."
+      ],
+      "inputs": [
+        "[test-suite, ui]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-qa-web-ui"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/researcher",
+      "owners": [
+        "cx-researcher"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher role. Use when reviewing or generating work by cx-researcher, cx-ux-researcher, cx-explorer, or when an agent is acting in the Researcher role."
+      ],
+      "inputs": [
+        "[research-question, sources]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-researcher"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/researcher.explorer",
+      "owners": [
+        "cx-researcher"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — Explorer role. Use when reviewing or generating work by cx-explorer, or when an agent is acting in the Researcher — Explorer role."
+      ],
+      "inputs": [
+        "[repo, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-researcher-explorer"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/researcher.ux",
+      "owners": [
+        "cx-researcher"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — UX role. Use when reviewing or generating work by cx-ux-researcher, or when an agent is acting in the Researcher — UX role."
+      ],
+      "inputs": [
+        "[user-research, interview-data]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-researcher-ux"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/reviewer",
+      "owners": [
+        "cx-reviewer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer role. Use when reviewing or generating work by cx-reviewer, cx-devil-advocate, cx-evaluator, cx-trace-reviewer, or when an agent is acting in the Reviewer role."
+      ],
+      "inputs": [
+        "[code-diff, pull-request]"
+      ],
+      "outputs": {
+        "artifactType": "review-report",
+        "name": "roles-reviewer"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/reviewer.devil-advocate",
+      "owners": [
+        "cx-reviewer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Devil Advocate role. Use when reviewing or generating work by cx-devil-advocate, or when an agent is acting in the Reviewer — Devil Advocate role."
+      ],
+      "inputs": [
+        "[plan, proposal]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-reviewer-devil-advocate"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/reviewer.evaluator",
+      "owners": [
+        "cx-reviewer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Evaluator role. Use when reviewing or generating work by cx-evaluator, or when an agent is acting in the Reviewer — Evaluator role."
+      ],
+      "inputs": [
+        "[model-output, eval-set]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-reviewer-evaluator"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/reviewer.trace",
+      "owners": [
+        "cx-oracle",
+        "cx-reviewer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Trace role. Use when reviewing or generating work by cx-trace-reviewer, or when an agent is acting in the Reviewer — Trace role."
+      ],
+      "inputs": [
+        "[trace, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-reviewer-trace"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/security",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security role. Use when reviewing or generating work by cx-security, cx-legal-compliance, or when an agent is acting in the Security role."
+      ],
+      "inputs": [
+        "[code-diff, threat-model]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-security"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/security.ai",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — AI role. Use when reviewing or generating work by cx-security, cx-ai-engineer, or when an agent is acting in the Security — AI role."
+      ],
+      "inputs": [
+        "[ai-system, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-security-ai"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/security.appsec",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Appsec role. Use when reviewing or generating work by cx-security, or when an agent is acting in the Security — Appsec role."
+      ],
+      "inputs": [
+        "[code-diff, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-security-appsec"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/security.cloud",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Cloud role. Use when reviewing or generating work by cx-security, or when an agent is acting in the Security — Cloud role."
+      ],
+      "inputs": [
+        "[cloud-config, iam-policy]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-security-cloud"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/security.legal-compliance",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Legal Compliance role. Use when reviewing or generating work by cx-legal-compliance, or when an agent is acting in the Security — Legal Compliance role."
+      ],
+      "inputs": [
+        "[policy, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-security-legal-compliance"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/security.privacy",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Privacy role. Use when reviewing or generating work by cx-security, cx-legal-compliance, or when an agent is acting in the Security — Privacy role."
+      ],
+      "inputs": [
+        "[data-flow, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-security-privacy"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/security.supply-chain",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Supply Chain role. Use when reviewing or generating work by cx-security, cx-platform-engineer, or when an agent is acting in the Security — Supply Chain role."
+      ],
+      "inputs": [
+        "[dependencies, ci-config]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-security-supply-chain"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "security/blue-team",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Use this skill when defending systems, responding to incidents, or building detection and monitoring capabilities."
+      ],
+      "inputs": [
+        "[system-design]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "security-blue-team"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "security/code-audit",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Use this skill when reviewing source code for security vulnerabilities through static analysis."
+      ],
+      "inputs": [
+        "[code]"
+      ],
+      "outputs": {
+        "artifactType": "vulnerability-report",
+        "name": "security-code-audit"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "security/pentest",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Use this skill when testing web applications or APIs for security vulnerabilities."
+      ],
+      "inputs": [
+        "[system-design, binary]"
+      ],
+      "outputs": {
+        "artifactType": "pentest-report",
+        "name": "security-pentest"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "security/red-team",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Use this skill when planning or executing offensive security assessments, adversary emulation, or attack simulations."
+      ],
+      "inputs": [
+        "[system-design, binary]"
+      ],
+      "outputs": {
+        "artifactType": "pentest-report",
+        "name": "security-red-team"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "security/threat-intel",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Use this skill when performing OSINT, threat modeling, or building threat intelligence programs."
+      ],
+      "inputs": [
+        "[system-design]"
+      ],
+      "outputs": {
+        "artifactType": "threat-model",
+        "name": "security-threat-intel"
+      },
+      "verificationHooks": [],
+      "workflowSkill": true
+    },
+    {
+      "id": "security/vuln-research",
+      "owners": [
+        "cx-security"
+      ],
+      "activationTriggers": [
+        "Use this skill when analyzing binaries, fuzzing software, or developing exploits for security research."
+      ],
+      "inputs": [
+        "[target-binary-or-software]"
+      ],
+      "outputs": {
+        "artifactType": "vulnerability-report",
+        "name": "security-vuln-research"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "strategy/competitive-landscape",
+      "owners": [
+        "cx-business-strategist"
+      ],
+      "activationTriggers": [
+        "Use when the team needs a structured read on market positioning before committing direction."
+      ],
+      "inputs": [
+        "[competitor-data, market-signals]"
+      ],
+      "outputs": {
+        "artifactType": "competitive-analysis",
+        "name": "strategy-competitive-landscape"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "strategy/jobs-to-be-done",
+      "owners": [
+        "cx-ux-researcher"
+      ],
+      "activationTriggers": [
+        "Use when: user research needs to uncover the job a user is hiring a product to do — the underlying progress they seek — rather than feature requests or stated preferences."
+      ],
+      "inputs": [
+        "[user-signals-or-interviews]"
+      ],
+      "outputs": {
+        "artifactType": "jtbd-summary",
+        "name": "strategy-jobs-to-be-done"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "strategy/market-research-methods",
+      "owners": [
+        "cx-business-strategist"
+      ],
+      "activationTriggers": [
+        "Use when the team needs to validate assumptions before committing resources, or when a decision is being made on vibes rather than signal."
+      ],
+      "inputs": [
+        "[market-signals, user-signals]"
+      ],
+      "outputs": {
+        "artifactType": "market-brief",
+        "name": "strategy-market-research-methods"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "strategy/narrative-arc",
+      "owners": [
+        "cx-business-strategist"
+      ],
+      "activationTriggers": [
+        "Use when the argument must move people, not just inform them. Strategic narrative is the difference between a document that gets read and one that changes what people do."
+      ],
+      "inputs": [
+        "[market-signals, user-signals]"
+      ],
+      "outputs": {
+        "artifactType": "positioning",
+        "name": "strategy-narrative-arc"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "strategy/pricing-positioning",
+      "owners": [
+        "cx-business-strategist"
+      ],
+      "activationTriggers": [
+        "Use when the team needs to set price, adjust positioning, or defend either to stakeholders."
+      ],
+      "inputs": [
+        "[market-signals, competitor-data]"
+      ],
+      "outputs": {
+        "artifactType": "positioning",
+        "name": "strategy-pricing-positioning"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "utility/clean-code",
+      "owners": [
+        "cx-engineer"
+      ],
+      "activationTriggers": [
+        "Patterns and heuristics for identifying and removing AI-generated code smells. Use when cleaning up output from AI coding tools."
+      ],
+      "inputs": [
+        "[code]"
+      ],
+      "outputs": {
+        "artifactType": "refactor",
+        "name": "utility-clean-code"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    }
+  ],
+  "blockingFindings": [
+    {
+      "kind": "conflicting-output-contract",
+      "severity": "blocking",
+      "artifactType": "research-brief",
+      "skillIds": [
+        "docs/codebase-research-workflow",
+        "docs/research-workflow"
+      ],
+      "reason": "divergent verificationBar across workflow skills"
+    },
+    {
+      "kind": "conflicting-output-contract",
+      "severity": "blocking",
+      "artifactType": "evidence-brief",
+      "skillIds": [
+        "docs/evidence-ingest-workflow",
+        "docs/user-research-workflow"
+      ],
+      "reason": "divergent verificationBar across workflow skills"
+    },
+    {
+      "kind": "conflicting-output-contract",
+      "severity": "blocking",
+      "artifactType": "prd",
+      "skillIds": [
+        "docs/prd-workflow",
+        "docs/product-intelligence-workflow"
+      ],
+      "reason": "multiple workflow skills claim the same manifest artifact type"
+    }
+  ],
+  "digest": "91641d76f8be5f68956d63cf846f4eb9e5d1ba3d069609a11ee39b3eee8cd385"
+}

@@ -9,22 +9,19 @@
  * a runaway test can't bill the user.
  */
 
-import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
+import { resolveSecret, extractOpRef } from '../../../lib/providers/secret-resolver.mjs';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
-
 function loadKey() {
-  if (process.env.OPENROUTER_API_KEY) return process.env.OPENROUTER_API_KEY;
-  const envPath = join(homedir(), '.construct', 'config.env');
-  if (!existsSync(envPath)) return null;
-  const raw = readFileSync(envPath, 'utf8');
-  for (const line of raw.split('\n')) {
-    const m = line.match(/^OPENROUTER_API_KEY=(.+)$/);
-    if (m) return m[1].trim().replace(/^["']|["']$/g, '');
+  const direct = process.env.OPENROUTER_API_KEY;
+  if (direct && !extractOpRef(direct) && !direct.startsWith('op://')) {
+    return direct.trim().replace(/^["']|["']$/g, '');
   }
-  return null;
+  try {
+    return resolveSecret('OPENROUTER_API_KEY', { env: process.env }) || null;
+  } catch {
+    return null;
+  }
 }
 
 const PRICING_USD_PER_1K_TOKENS = {

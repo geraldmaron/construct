@@ -3,6 +3,7 @@ name: docs-prfaq-workflow
 description: "Use when: the user asks for a PRFAQ, working-backwards doc, launch narrative, or FAQ grounded in product evidence."
 inputs: [prd, evidence-brief]
 artifactType: prfaq
+verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
 ---
 # PRFAQ Workflow
 

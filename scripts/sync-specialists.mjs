@@ -13,8 +13,8 @@
  *       global so hooks fire in every Claude Code session.
  *
  *   Project scope (`<project>/.claude/`, `<project>/.codex/`, `<project>/.github/`, …)
- *     - `construct` + all 28 `cx-*` specialists, slash commands, skills, MCP
- *       wiring. Files version with the repo and travel with teammates via git.
+ *     - `construct` front door only (Single Front Door), slash commands, skills, MCP
+ *       wiring. Specialists dispatch internally via orchestration MCP tools.
  *
  * Flags:
  *   --dry-run             Print a diff of what would change without writing anything.
@@ -56,6 +56,7 @@ import {
 } from "../lib/mcp-platform-config.mjs";
 import { loadConstructEnv } from "../lib/env-config.mjs";
 import { inlineRoleAntiPatterns, PROMPT_WORD_CAP } from "../lib/role-preload.mjs";
+import { inlineValidationContract } from "../lib/prompt-validation-contract.mjs";
 import { loadManifest } from "../lib/roles/manifest.mjs";
 import { resolveActiveProfile } from "../lib/profiles/loader.mjs";
 import { resolveTiersForPrimary, resolveCapabilityTier, selectLocalEditorModel } from "../lib/model-router.mjs";
@@ -150,6 +151,16 @@ if (validationErrors.length > 0) {
   if (!contractsResult.ok) {
     console.error("Contract validation failed:");
     for (const err of contractsResult.errors) console.error(`  - ${err}`);
+    process.exit(1);
+  }
+}
+
+{
+  const { validatePromptFiles } = await import("../lib/specialists/prompt-schema.mjs");
+  const promptResult = validatePromptFiles({ rootDir: root, registry });
+  if (promptResult.errors.length > 0) {
+    console.error("Specialist prompt validation failed:");
+    for (const err of promptResult.errors) console.error(`  - ${err}`);
     process.exit(1);
   }
 }
@@ -518,10 +529,6 @@ function loadPersonaPrompt(persona) {
   return prompt;
 }
 
-export function buildAgentRoster(allEntries) {
-  return allEntries.map((e) => `- ${adapterName(e)}: ${e.when_to_use || e.description}`).join("\n");
-}
-
 function buildModelGuidanceBlock(entry) {
   const merged = { ...globalModelGuidance, ...(entry.modelGuidance ?? {}) };
   const families = Object.keys(merged);
@@ -675,7 +682,7 @@ function buildPrompt(entry, allEntries, platform, { capabilityTier = 'full' } = 
 
   if (capabilityTier && capabilityTier !== 'full' && entry.promptFile) {
     let slim = renderPersonaForTier(readPromptBody(entry.promptFile, root), capabilityTier);
-    if (entry.injectAgentRoster && capabilities.hasNativeSubagents) {
+    if (entry.injectAgentRoster) {
       slim = `${ORCHESTRATION_MICRO_PROMPT}\n\n${slim}`;
     }
     return enforcePromptWordCap(slim, entry);
@@ -688,19 +695,17 @@ function buildPrompt(entry, allEntries, platform, { capabilityTier = 'full' } = 
   }).prompt;
 
   prompt = inlineRoleAntiPatterns(prompt, root, entry.name, console.warn, { preload: entry.preloadRoleGuidance === true });
+  prompt = inlineValidationContract(prompt, root, entry.name);
 
-  // Platform-Native Orchestration Alignment (ADR-0002). Hosts with native subagent
-  // routing (OpenCode, VS Code, Cursor) do not get the static specialist roster
-  // injected — on a small-context local model the roster alone is ~3-4k tokens and,
-  // combined with MCP tool schemas, overruns the model's real context window and
-  // collapses output. Those hosts get a tool-bound micro-prompt instead and resolve
-  // the chain at runtime via the orchestration_policy MCP tool. Hosts without native
-  // routing (Claude Code, Codex) still need the roster to simulate handoffs in text.
+  // Platform-Native Orchestration Alignment (ADR-0002). All hosts receive the
+  // tool-bound micro-prompt when injectAgentRoster is set; the static 29-line
+  // roster was removed (construct-ymp5). Specialists resolve at runtime via
+  // orchestration_policy, which returns a lazy specialistCatalog.
 
-  if (entry.injectAgentRoster && allEntries && !capabilities.hasNativeSubagents) {
-    const roster = buildAgentRoster(allEntries);
-    prompt = `Available specialist agents:\n${roster}\n\n${prompt}`;
-  } else if (entry.injectAgentRoster && capabilities.hasNativeSubagents) {
+  // Single Front Door: all hosts resolve specialists at runtime via
+  // orchestration_policy / orchestration_run — never inject the static roster.
+
+  if (entry.injectAgentRoster) {
     prompt = `${ORCHESTRATION_MICRO_PROMPT}\n\n${prompt}`;
   }
 
@@ -1432,12 +1437,10 @@ function syncCursor(targetDir = null, wants = true) {
 
   if (targetDir) {
     const rulesPath = path.join(targetDir, ".cursor", "rules", "construct.mdc");
-    if (!fs.existsSync(rulesPath)) {
-      const body = `---\ndescription: Construct front-door — invoke \`construct\` for orchestration\nalwaysApply: false\n---\n\nThis project uses Construct (\`@geraldmaron/construct\`) as the single agent\nentry point. Route work through the \`construct\` persona; specialists are\ninternal and dispatched by Construct itself.\n\nSee \`.claude/agents/\` for the registered agents in this project.\n`;
-      if (!DRY_RUN) {
-        mkdirp(path.dirname(rulesPath));
-        fs.writeFileSync(rulesPath, body);
-      }
+    const body = `---\ndescription: Construct front-door — invoke \`construct\` for orchestration\nalwaysApply: false\n---\n\n<!-- Generated by construct sync — do not edit; re-run \`construct sync\` -->\n\nThis project uses Construct (\`@geraldmaron/construct\`) as the single agent\nentry point. Route work through the \`construct\` persona; specialists are\ninternal and dispatched via MCP \`orchestration_run\` (start \`construct dashboard\`).\n\nSkills load via MCP \`get_skill\`; see \`.claude/skills/\` for synced playbooks.\n`;
+    if (!DRY_RUN) {
+      mkdirp(path.dirname(rulesPath));
+      fs.writeFileSync(rulesPath, body);
     }
 
     // Glob-scoped language rules land as managed per-rule .mdc files only when
@@ -1646,7 +1649,8 @@ function syncOpencode(entries, targetDir = null, wants = true) {
       }
     }
 
-    // Heavy external MCP servers serialize ~12k tokens of schema into EVERY
+    // Heavy external MCP servers serialize a measured ~37k tokens of tool schema
+    // into EVERY agent's request — github ~30k alone (fixtures 2026-06-22) —
     // agent's request — including the built-in Build/Plan agents the per-agent
     // permission prune cannot reach. OpenCode 1.15.4 has no per-session tool
     // filter (chat.params carries no tool list), so disabling the whole server in
@@ -1774,11 +1778,20 @@ function syncOpencode(entries, targetDir = null, wants = true) {
   config.construct.models = { ...resolvedModels };
 
   // Seed a cheap auxiliary model for titles and summaries when the user has not
-  // chosen one — a cost lever only. The primary `model` stays the user's choice
-  // and is never written. Global scope only; project configs inherit it.
+  // chosen one — a cost lever only. Global scope only; project configs inherit it.
 
   if (!targetDir && config.small_model === undefined) {
     config.small_model = resolvedModels.fast || "anthropic/claude-haiku-4-5-20251001";
+  }
+
+  // Seed a text-capable primary model when the user has not pinned one, so chat
+  // and routing never fall through to a host provider-default that happens to be
+  // an image/non-text model. Seeds only when absent; an explicit user choice is
+  // never overwritten. resolvedModels.standard is family-/registry-aware and
+  // free-biased. Global scope only; project configs inherit it.
+
+  if (!targetDir && (config.model === undefined || config.model === null || config.model === "")) {
+    config.model = resolvedModels.standard || resolvedModels.reasoning || resolvedModels.fast || "openrouter/qwen/qwen3-coder:free";
   }
 
   writeOpenCodeConfig(config, configPath);

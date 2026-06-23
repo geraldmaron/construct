@@ -11,11 +11,14 @@ A snapshot of what the test suite covers, why each file exists, and where the ga
 
 ## At a glance
 
-- **1671 tests** across 292 suites, run in ~5.5 s on this machine.
-- **188 test files** total: 164 at `tests/` top level + 24 in subdirectories.
-- **Functional layer** (12 tests, 6 files) under `tests/functional/`. End-to-end checks that spawn the real binary or import the real module in an isolated tmpdir, no mocks.
-- **Profile / outcomes / flavors / hooks / knowledge / intake / roles / embed / doctor / integrations** subdirs (15 files) hold contract tests for the newer subsystems.
-- The remaining ~163 top-level files are a mix of unit, structural, and integration tests accumulated over the project's history.
+- **518 test files** total: 280 at `tests/` top level + 238 in subdirectories.
+- **Layers:** unit 316, live-provider 2, visual 6, integration 31, functional 163.
+- **Functional layer:** 163 file(s) under `tests/functional/` or `*.functional.test.mjs`. End-to-end checks spawn the real binary or import real modules in an isolated tmpdir.
+- **Contract subsystems:** 28 file(s) under profile/outcomes/hooks/knowledge/intake/graph/evals and related subdirs.
+- **Hook tests:** 9 file(s) (including `tests/hooks/`).
+- **Capability-marked:** 23 file(s) declare `@capability` markers.
+- **Skipped markers:** 0 file(s) contain `test.skip` / `describe.skip` (see inventory for paths).
+- **Regenerate inventory:** `node scripts/generate-test-corpus-inventory.mjs`.
 
 ## Categories
 

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "specialistId": "cx-docs-keeper",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path",
+  "userPrompt": "What did we decide, why did we decide it, and where will the next person find it?",
+  "roleCardRefs": [
+    "openingQuestion",
+    "humanEquivalent",
+    "skills"
+  ],
+  "hermeticChecks": [
+    "role-card-exists",
+    "registry-specialist-match",
+    "contract-audit-pass"
+  ],
+  "handoffEvidence": {
+    "required": true,
+    "artifactTypes": [
+      "changelog",
+      "memo"
+    ]
+  },
+  "liveScoring": {
+    "enabled": true,
+    "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+  }
+}

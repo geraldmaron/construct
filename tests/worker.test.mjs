@@ -151,6 +151,32 @@ describe('trace event log', () => {
     }
   });
 
+  it('skips local append when .cx/ disk budget is exceeded', () => {
+    fs.writeFileSync(
+      path.join(projectRoot, 'construct.config.json'),
+      JSON.stringify({ version: 1, resources: { disk: { totalCxMaxMb: 1 } } }),
+    );
+    fs.mkdirSync(path.join(projectRoot, '.cx', 'intake', 'processed'), { recursive: true });
+    fs.writeFileSync(
+      path.join(projectRoot, '.cx', 'intake', 'processed', 'p1.json'),
+      'x'.repeat(1_050_000),
+    );
+    const event = emitTraceEvent({
+      rootDir: projectRoot,
+      eventType: 'intake.received',
+      metadata: { blocked: true },
+      env: { ...process.env, CONSTRUCT_BUDGET_WARN_IN_TEST: '1' },
+    });
+    assert.equal(event.budgetSkipped, true);
+    const tracesDir = path.join(projectRoot, '.cx', 'traces');
+    if (fs.existsSync(tracesDir)) {
+      const files = fs.readdirSync(tracesDir);
+      for (const name of files) {
+        assert.equal(fs.readFileSync(path.join(tracesDir, name), 'utf8').includes('blocked'), false);
+      }
+    }
+  });
+
   it('is a no-op for telemetry when keys are not configured (solo mode default)', () => {
     _resetTelemetryClient();
     let fetchCalls = 0;

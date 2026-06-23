@@ -17,6 +17,9 @@ const buildId = `construct-${rootPkg.version}`;
 const config = {
   output: 'export',
   reactStrictMode: true,
+  experimental: {
+    externalDir: true,
+  },
   // The Construct CLI HTTP server (lib/server/index.mjs) hosts this app at /,
   // so no basePath. Trailing slash matches the docs site for consistency.
   trailingSlash: true,

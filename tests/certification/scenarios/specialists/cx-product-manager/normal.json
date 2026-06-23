@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "specialistId": "cx-product-manager",
+  "capabilityId": "specialist.prompt",
+  "mode": "normal",
+  "scenarioKind": "happy-path",
+  "userPrompt": "Who is this for, what are they trying to do, and how will we know they succeeded?",
+  "roleCardRefs": [
+    "openingQuestion",
+    "humanEquivalent",
+    "skills"
+  ],
+  "hermeticChecks": [
+    "role-card-exists",
+    "registry-specialist-match",
+    "contract-audit-pass"
+  ],
+  "handoffEvidence": {
+    "required": true,
+    "artifactTypes": [
+      "backlog-proposal",
+      "customer-profile",
+      "meta-prd",
+      "one-pager",
+      "prd",
+      "prd-business",
+      "prd-platform",
+      "prfaq"
+    ]
+  },
+  "liveScoring": {
+    "enabled": true,
+    "requiresEnv": "CONSTRUCT_CERTIFY_LIVE"
+  }
+}

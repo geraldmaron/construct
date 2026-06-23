@@ -3,6 +3,7 @@ name: docs-customer-profile-workflow
 description: "Use when: customer evidence should update durable product memory."
 inputs: [signal, customer-profile]
 artifactType: customer-profile
+verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
 ---
 # Customer Profile Workflow
 

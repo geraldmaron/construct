@@ -3,6 +3,7 @@ name: docs-product-signal-workflow
 description: "Use when: the user asks what customers are asking for, what themes are emerging, whether evidence is strong enough, or what should become a PRD."
 inputs: [signal, evidence-brief]
 artifactType: signal-brief
+verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
 ---
 # Product Signal Workflow
 

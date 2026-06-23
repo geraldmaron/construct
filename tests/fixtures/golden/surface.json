@@ -33,6 +33,10 @@
       "core": false
     },
     {
+      "name": "chat",
+      "core": false
+    },
+    {
       "name": "check",
       "core": true
     },
@@ -98,10 +102,6 @@
     },
     {
       "name": "diff",
-      "core": false
-    },
-    {
-      "name": "doc",
       "core": false
     },
     {
@@ -185,6 +185,14 @@
       "core": false
     },
     {
+      "name": "impact",
+      "core": false
+    },
+    {
+      "name": "improvement",
+      "core": false
+    },
+    {
       "name": "infer",
       "core": false
     },
@@ -249,6 +257,10 @@
       "core": false
     },
     {
+      "name": "matrix",
+      "core": false
+    },
+    {
       "name": "mcp",
       "core": false
     },
@@ -266,6 +278,10 @@
     },
     {
       "name": "optimize",
+      "core": false
+    },
+    {
+      "name": "oracle",
       "core": false
     },
     {
@@ -289,6 +305,10 @@
       "core": false
     },
     {
+      "name": "publish",
+      "core": false
+    },
+    {
       "name": "recommend --json [--text|--file|<stdin>]",
       "core": false
     },
@@ -297,7 +317,15 @@
       "core": false
     },
     {
+      "name": "registry:generate-docs",
+      "core": false
+    },
+    {
       "name": "registry:status",
+      "core": false
+    },
+    {
+      "name": "registry:validate",
       "core": false
     },
     {
@@ -322,6 +350,10 @@
     },
     {
       "name": "roles:set",
+      "core": false
+    },
+    {
+      "name": "rules",
       "core": false
     },
     {
@@ -385,6 +417,10 @@
       "core": false
     },
     {
+      "name": "tools",
+      "core": false
+    },
+    {
       "name": "trends",
       "core": true
     },
@@ -433,6 +469,7 @@
     "explorer",
     "legal-compliance",
     "operations",
+    "oracle",
     "orchestrator",
     "platform-engineer",
     "product-manager",
@@ -466,7 +503,10 @@
       "scan-secrets",
       "adaptive-lint",
       "comment-lint",
+      "brand-prose-lint",
+      "artifact-release-gate",
       "doc-coupling-check",
+      "graph-impact-advisory",
       "edit-accumulator",
       "registry-sync",
       "dep-audit",

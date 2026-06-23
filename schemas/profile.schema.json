@@ -90,6 +90,19 @@
       "maxItems": 30,
       "items": { "type": "string" }
     },
+    "toneDefaults": {
+      "type": "object",
+      "description": "Maps doc type id to tone profile id from specialists/tone-profiles.json",
+      "additionalProperties": { "type": "string" }
+    },
+    "researchProfiles": {
+      "type": "object",
+      "description": "Maps intake type id to research profile: external, user, codebase, market, compliance",
+      "additionalProperties": {
+        "type": "string",
+        "enum": ["external", "user", "codebase", "market", "compliance"]
+      }
+    },
     "rebrand": {
       "type": "object",
       "additionalProperties": true,

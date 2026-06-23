@@ -33,6 +33,19 @@ Per-tenant reconciliation completes without reading another tenant's data, and
 invoice generation latency stays within the current p95. Adoption is measured by
 the number of tenants migrated off the shared ledger over two release cycles.
 
+| Metric | Baseline | Target |
+|---|---|---|
+| Reconciliation isolation | shared ledger | per-tenant |
+| Invoice p95 latency | 420ms | ≤450ms |
+
+## User flow
+
+\`\`\`mermaid
+flowchart LR
+  A[Usage event] --> B[Tenant ledger]
+  B --> C[Invoice]
+\`\`\`
+
 ## Risks and mitigations
 
 The migration could double-bill during cutover; a dry-run reconciliation gates

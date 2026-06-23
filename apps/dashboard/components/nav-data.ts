@@ -18,6 +18,7 @@ export const NAV: NavGroup[] = [
     items: [
       { id: 'home', title: 'Home', href: '/' },
       { id: 'doctor', title: 'Doctor', href: '/doctor' },
+      { id: 'certification', title: 'Certification', href: '/certification' },
       { id: 'resources', title: 'Services', href: '/resources' },
     ],
   },
@@ -32,6 +33,7 @@ export const NAV: NavGroup[] = [
   {
     label: 'Work',
     items: [
+      { id: 'chat', title: 'Chat', href: '/chat' },
       { id: 'approvals', title: 'Approvals', href: '/approvals' },
       { id: 'workflow', title: 'Workflow', href: '/workflow' },
       { id: 'beads', title: 'Beads', href: '/beads' },
@@ -76,10 +78,13 @@ export const NAV: NavGroup[] = [
 export const PALETTE: PaletteItem[] = [
   { kind: 'page', title: 'Home', sub: '/', href: '/', glyph: 'H' },
   { kind: 'page', title: 'Doctor', sub: 'system diagnostics', href: '/doctor', glyph: 'D' },
+  { kind: 'page', title: 'Certification', sub: 'freshness grid', href: '/certification', glyph: 'C' },
+  { kind: 'page', title: 'Chat', sub: 'owned-loop agent', href: '/chat', glyph: 'C' },
   { kind: 'page', title: 'Approvals', sub: 'pending approval queue', href: '/approvals', glyph: 'A' },
   { kind: 'page', title: 'Models', sub: 'tier + provider config', href: '/models', glyph: 'M' },
   { kind: 'page', title: 'Knowledge', sub: 'ask the corpus', href: '/knowledge', glyph: 'K' },
   { kind: 'page', title: 'Audit', sub: 'tamper-evident trail', href: '/audit', glyph: 'L' },
+  { kind: 'page', title: 'Certification', sub: 'freshness grid', href: '/certification', glyph: 'C' },
   { kind: 'page', title: 'Specialists', sub: 'agent overrides', href: '/agents', glyph: 'S' },
   { kind: 'cmd', title: 'construct status', sub: 'runtime health', glyph: '$' },
   { kind: 'cmd', title: 'construct doctor', sub: 'installation checks', glyph: '$' },

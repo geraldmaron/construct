@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Vector search & embedding reconciliation — best practices (2024–2026)
 
 A cited research note grounding two architecture decisions in Construct's embedding/search layer.

@@ -1,0 +1,20 @@
+{
+  "id": "obs-mpohnx5s-f0940429",
+  "role": "cx-sre",
+  "category": "insight",
+  "summary": "Construct Postgres container was configured but never started",
+  "content": "The Docker compose file at ~/.construct/services/postgres/docker-compose.yml was written during construct init but the container was never brought up. Running 'docker compose up -d' resolved the SQL store being unreachable. Storage_sync then indexed 2 documents into both SQL and vector stores.",
+  "tags": [
+    "construct",
+    "postgres",
+    "docker",
+    "infrastructure"
+  ],
+  "project": "agentic-hq",
+  "confidence": 1,
+  "source": null,
+  "gitSha": null,
+  "extras": null,
+  "createdAt": "2026-05-27T20:00:26.272Z",
+  "updatedAt": "2026-05-27T20:00:26.272Z"
+}
