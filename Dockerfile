@@ -30,7 +30,9 @@ WORKDIR /build
 # from the image rather than suppressing it.  Patch npm's bundled undici to
 # 6.27.0+ (CVE-2026-12151) so the release Trivy gate passes.
 RUN npm install -g npm@latest --silent \
-  && npm install undici@6.27.0 --prefix /usr/local/lib/node_modules/npm/node_modules --no-save --silent
+  && rm -rf /usr/local/lib/node_modules/npm/node_modules/undici \
+           /usr/local/lib/node_modules/npm/node_modules/node_modules \
+  && npm install undici@6.27.0 --prefix /usr/local/lib/node_modules/npm --no-save --silent
 
 COPY package.json package-lock.json ./
 
