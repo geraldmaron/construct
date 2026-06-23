@@ -32,7 +32,11 @@ WORKDIR /build
 RUN npm install -g npm@latest --silent \
   && rm -rf /usr/local/lib/node_modules/npm/node_modules/undici \
            /usr/local/lib/node_modules/npm/node_modules/node_modules \
-  && npm install undici@6.27.0 --prefix /usr/local/lib/node_modules/npm --no-save --silent
+  && cd /tmp \
+  && npm pack undici@6.27.0 \
+  && tar -xzf undici-6.27.0.tgz \
+  && mv package /usr/local/lib/node_modules/npm/node_modules/undici \
+  && rm -f undici-6.27.0.tgz
 
 COPY package.json package-lock.json ./
 
