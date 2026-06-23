@@ -78,7 +78,7 @@ Required internal coverage:
 - Name the expected behavior in repo terms: branch confirmation, approval boundary, routing, verification, blocker surfacing, anti-pattern avoidance.
 - For bad examples, show the failure plainly and explain why it violates the surface contract.
 
-See `docs/concepts/prompt-surfaces.md` for the canonical public-vs-internal taxonomy.
+See `docs/guides/concepts/prompt-surfaces.md` for the canonical public-vs-internal taxonomy.
 
 ## Scope
 

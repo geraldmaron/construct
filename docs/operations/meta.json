@@ -5,6 +5,12 @@
     "monitoring",
     "backup-restore",
     "dr",
-    "troubleshooting"
+    "troubleshooting",
+    "deploy",
+    "maintenance",
+    "runbooks",
+    "releases",
+    "incidents",
+    "audit"
   ]
 }

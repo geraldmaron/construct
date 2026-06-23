@@ -55,7 +55,7 @@ describe('prepareIntakeForIngestedFile', () => {
   it('writes an intake packet with lane suggestion, related docs, excerpt, and triage', async () => {
     const fakeRelated = [
       { source_path: 'docs/postmortems/0003-checkout.md', title: 'Earlier checkout postmortem', score: 0.81, summary: 'Related incident.' },
-      { source_path: 'docs/adr/0012-retries.md', title: 'ADR: retry policy', score: 0.62, summary: '' },
+      { source_path: 'docs/decisions/adr/0012-retries.md', title: 'ADR: retry policy', score: 0.62, summary: '' },
     ];
     const result = await prepareIntakeForIngestedFile({
       rootDir: projectRoot,

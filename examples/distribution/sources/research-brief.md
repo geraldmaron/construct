@@ -32,7 +32,7 @@ Searched arXiv and vendor docs (2024–2026), reviewed three internal ADRs on in
 |---|---|---|---|---|---|---|---|
 | Multi-agent survey | secondary | B | 3 | 2023-08-01 | https://arxiv.org/abs/2308.08155 | yes | Patterns for specialist routing |
 | LangGraph overview | primary | A | 4 | 2025-01-15 | https://langchain-ai.github.io/langgraph/ | yes | Stateful agent graphs |
-| Construct architecture | primary | A | 5 | 2026-06-01 | docs/concepts/architecture.mdx | yes | Internal contract |
+| Construct architecture | primary | A | 5 | 2026-06-01 | docs/guides/concepts/architecture.mdx | yes | Internal contract |
 
 ## Findings
 
@@ -77,4 +77,4 @@ Ship distribution examples (`npm run examples:distribution`) so evaluators can c
 ## References
 
 - https://arxiv.org/abs/2308.08155 (accessed 2026-06-22)
-- `docs/cookbook/diagram-and-demo.md`
+- `docs/guides/cookbook/diagram-and-demo.md`

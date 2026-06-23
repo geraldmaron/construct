@@ -66,7 +66,7 @@ test('security scan finding routes to security', () => {
 
 test('ADR filename routes to architecture', () => {
   const triage = classifyRdIntake({
-    sourcePath: 'docs/adr/adr-0001-service-boundary.md',
+    sourcePath: 'docs/decisions/adr/adr-0001-service-boundary.md',
     extractedText: 'Context: we need to pick a service boundary for the payments domain.',
   });
   assert.equal(triage.intakeType, 'architecture');
@@ -75,7 +75,7 @@ test('ADR filename routes to architecture', () => {
 
 test('PRD filename routes to requirement', () => {
   const triage = classifyRdIntake({
-    sourcePath: 'docs/prd/prd-checkout-v2.md',
+    sourcePath: 'docs/specs/prd/prd-checkout-v2.md',
     extractedText: 'Acceptance criteria: must support guest checkout. Success metric: conversion +5pp.',
   });
   assert.equal(triage.intakeType, 'requirement');

@@ -60,6 +60,6 @@ One token set across all distributable formats:
 
 - Export: `construct export … --to=pptx`
 - Regenerate: `npm run examples:deck`
-- Matrix: [Document I/O reference](/reference/document-io)
+- Matrix: [Document I/O reference](/guides/reference/document-io)
 
 Review outputs in `.tmp/distribution-examples/`.

@@ -20,8 +20,8 @@ Site runs at http://localhost:3000/ (empty base path). Production build uses
 - **All other routes** — rendered from repo-root `docs/**/*.md(x)` via the catch-all
   `app/[...slug]/page.tsx`. Prose pages use `.md`; pages with `@cx/ui` components use `.mdx`.
   Catalog + sidebar come from `lib/docs-source.ts`.
-- **Generated reference** — `construct docs:site` writes `docs/reference/cli/*`,
-  `docs/reference/hooks.md`, and `docs/reference/specialists.md` from live registries.
+- **Generated reference** — `construct docs:site` writes `docs/guides/reference/cli/*`,
+  `docs/guides/reference/hooks.md`, and `docs/guides/reference/specialists.md` from live registries.
 - **Build:** `next build` static-exports to `apps/docs/out/`. Deployed by
   `.github/workflows/pages.yml` when `PAGES_ENABLED` is true.
 

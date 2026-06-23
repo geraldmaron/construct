@@ -100,7 +100,7 @@ Every alert MUST include:
 Alert: service_error_rate
 Trigger: error_rate > 1% for 5m
 Severity: critical
-Runbook: docs/runbooks/service-error-rate.md
+Runbook: docs/operations/runbooks/service-error-rate.md
 Immediate Action: Check error logs, verify dependencies
 Escalation: On-call SRE → Service owner → Incident commander
 Rollback: If deployment-related, revert to last known good

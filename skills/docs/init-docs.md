@@ -64,18 +64,18 @@ When run non-interactively (`--yes` or piped stdin), the lean default set is use
 
 | Lane         | Directory       | What goes here |
 |--------------|-----------------|----------------|
-| adrs         | `docs/adr/`         | Architecture decisions that have already been made |
+| adrs         | `docs/decisions/adr/`         | Architecture decisions that have already been made |
 | briefs       | `docs/briefs/`      | Research, evidence, signals, one-pagers, customer profiles |
 | changelogs   | `docs/changelogs/`  | User-facing release notes and version history entries |
 | intake       | `docs/intake/`      | Intake batch records that explain what arrived, why it matters, and how it should be ingested |
-| memos        | `docs/memos/`       | Decision memos and internal arguments for alignment |
-| meetings     | `docs/meetings/`    | Meeting notes, minutes, standups, retros, agendas, and session summaries |
+| memos        | `docs/notes/memos/`       | Decision memos and internal arguments for alignment |
+| meetings     | `docs/notes/meetings/`    | Meeting notes, minutes, standups, retros, agendas, and session summaries |
 | notes        | `docs/notes/`       | Working notes and lightweight durable context outside formal docs or meetings |
 | onboarding   | `docs/onboarding/`  | Runnable setup guides and first-day workflows |
 | postmortems  | `docs/postmortems/` | Blameless incident reports with root cause and corrective actions |
-| prds         | `docs/prds/`        | Product and capability requirement documents |
-| rfcs         | `docs/rfcs/`        | Architecture and implementation proposals needing review |
-| runbooks     | `docs/runbooks/`    | Operational procedures, diagnostics, escalation paths |
+| prds         | `templates/docs/prds/`        | Product and capability requirement documents |
+| rfcs         | `templates/docs/rfcs/`        | Architecture and implementation proposals needing review |
+| runbooks     | `docs/operations/runbooks/`    | Operational procedures, diagnostics, escalation paths |
 
 ### Guidance: which lanes to suggest
 
@@ -152,7 +152,7 @@ Last updated: [date]
 
 ## Key decisions
 
-Link to `docs/adr/` or the canonical project decision log used in this repo.
+Link to `docs/decisions/adr/` or the canonical project decision log used in this repo.
 ```
 
 ---
@@ -188,7 +188,7 @@ Stack: [stack]
 
 After completing the docs init:
 - If the user has architecture questions → `@cx-explorer` or `@cx-docs-keeper` to explore and update `docs/architecture/`
-- If the user wants to document a decision → record it in `docs/adr/` using the ADR template
+- If the user wants to document a decision → record it in `docs/decisions/adr/` using the ADR template
 - If the user wants to add API docs → `@cx-docs-keeper` to generate stubs from code
 - If the user wants to file an incident report → use `docs/postmortems/` with the incident-report template
 - If the user wants to document a release → use `docs/changelogs/` with the changelog-entry template

@@ -8,7 +8,7 @@
 # scratch on every `v*` tag push — it downloads sha256 sidecars from the
 # GitHub Release, fills in the version and per-platform URLs/SHAs, and pushes
 # directly to the tap. The placeholder SHAs below are only used when seeding
-# the tap by hand the first time (see docs/maintenance/homebrew-tap.md).
+# the tap by hand the first time (see docs/operations/maintenance/homebrew-tap.md).
 class Construct < Formula
   desc "Deployable AI R&D operating system for coding agents — runs locally or for teams"
   homepage "https://github.com/geraldmaron/construct"

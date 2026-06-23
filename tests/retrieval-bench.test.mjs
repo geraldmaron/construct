@@ -23,11 +23,11 @@ function fakeSearch(corpus) {
 }
 
 const CORPUS = [
-  { id: 'docs/adr/auth-flow.md', text: 'login redirect after auth callback authentication flow design' },
-  { id: 'docs/prd/login.md', text: 'login product requirements user flow signin' },
+  { id: 'docs/decisions/adr/auth-flow.md', text: 'login redirect after auth callback authentication flow design' },
+  { id: 'docs/specs/prd/login.md', text: 'login product requirements user flow signin' },
   { id: 'docs/runbook/auth.md', text: 'restart the auth service on incident' },
   { id: 'docs/postmortem/payment.md', text: 'payment outage rate limit ratelimit' },
-  { id: 'docs/concepts/architecture.md', text: 'overall architecture for the system' },
+  { id: 'docs/guides/concepts/architecture.md', text: 'overall architecture for the system' },
 ];
 
 describe('runRetrievalBench', () => {
@@ -38,7 +38,7 @@ describe('runRetrievalBench', () => {
   it('produces the canonical summary fields for a multi-query benchmark', async () => {
     const { summary, perQuery } = await runRetrievalBench({
       fixtures: [
-        { name: 'login bug', query: 'login redirect auth callback', expectedIds: ['docs/adr/auth-flow.md'] },
+        { name: 'login bug', query: 'login redirect auth callback', expectedIds: ['docs/decisions/adr/auth-flow.md'] },
         { name: 'payment outage', query: 'payment outage rate limit', expectedIds: ['docs/postmortem/payment.md'] },
       ],
       search: fakeSearch(CORPUS),
@@ -53,7 +53,7 @@ describe('runRetrievalBench', () => {
   it('reports regressions when recall@5 dips below the threshold', async () => {
     const { summary } = await runRetrievalBench({
       fixtures: [
-        { name: 'impossible', query: 'this query matches nothing zzzqqq', expectedIds: ['docs/adr/auth-flow.md'] },
+        { name: 'impossible', query: 'this query matches nothing zzzqqq', expectedIds: ['docs/decisions/adr/auth-flow.md'] },
       ],
       search: fakeSearch(CORPUS),
       thresholds: { minRecallAt5: 0.5 },
@@ -64,9 +64,9 @@ describe('runRetrievalBench', () => {
   it('flags a doc that mustNotInclude appears in results', async () => {
     const { summary } = await runRetrievalBench({
       fixtures: [
-        { name: 'auth ban', query: 'auth login', expectedIds: ['docs/adr/auth-flow.md'], mustNotInclude: ['docs/postmortem/payment.md'] },
+        { name: 'auth ban', query: 'auth login', expectedIds: ['docs/decisions/adr/auth-flow.md'], mustNotInclude: ['docs/postmortem/payment.md'] },
       ],
-      search: async () => ({ ids: ['docs/adr/auth-flow.md', 'docs/postmortem/payment.md'] }),
+      search: async () => ({ ids: ['docs/decisions/adr/auth-flow.md', 'docs/postmortem/payment.md'] }),
     });
     assert.ok(summary.regressed.some((r) => r.metric === 'mustNotInclude'));
   });

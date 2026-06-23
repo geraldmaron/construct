@@ -118,7 +118,7 @@ Every command in the catalog invoked in the sterile env with the safe-invocation
 
 **Executed:** `--help` resolved for **all 107** commands (Tier 2). Internal-command count (15) reconciled against the catalog.
 
-**Finding — generated reference docs had drifted from the catalog.** AUTO-docs regeneration during the run corrected `docs/reference/cli/*.md`: `construct dashboard` was **missing entirely** from the core reference table, and `construct install` carried the **pre-ADR-0029 description** ("Docker, cm/cass, config, embeddings") instead of the current scoped form. The generated docs now match `lib/cli-commands.mjs`. This is real README/reference-vs-catalog drift — the exact failure mode Tier 5 targets — caught and auto-fixed.
+**Finding — generated reference docs had drifted from the catalog.** AUTO-docs regeneration during the run corrected `docs/guides/reference/cli/*.md`: `construct dashboard` was **missing entirely** from the core reference table, and `construct install` carried the **pre-ADR-0029 description** ("Docker, cm/cass, config, embeddings") instead of the current scoped form. The generated docs now match `lib/cli-commands.mjs`. This is real README/reference-vs-catalog drift — the exact failure mode Tier 5 targets — caught and auto-fixed.
 
 **Completion parity (executed):**
 

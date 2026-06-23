@@ -4438,7 +4438,7 @@ async function cmdDocsCheck(args) {
     println('Commands with no linked how-to in docs/README.md:');
     for (const name of result.uncovered) println(`  ✗  construct ${name}`);
     println('');
-    println(`Add cookbook recipes under docs/cookbook/ and link them from the cookbook index.`);
+    println(`Add cookbook recipes under docs/guides/cookbook/ and link them from the cookbook index.`);
     process.exitCode = 1;
   }
 }
@@ -4449,7 +4449,7 @@ async function cmdDocsSite(args = []) {
   if (check) {
     const { drift } = checkFumadocsReferenceDrift({ rootDir: ROOT_DIR });
     if (drift.length === 0) {
-      ok('docs/reference/ is up to date.');
+      ok('docs/guides/reference/ is up to date.');
       return;
     }
     println('');
@@ -4460,9 +4460,9 @@ async function cmdDocsSite(args = []) {
   }
   const { written } = buildFumadocsReference({ rootDir: ROOT_DIR });
   if (written.length === 0) {
-    ok('docs/reference/ already up to date.');
+    ok('docs/guides/reference/ already up to date.');
   } else {
-    ok(`docs/reference/ regenerated (${written.length} file${written.length === 1 ? '' : 's'}).`);
+    ok(`docs/guides/reference/ regenerated (${written.length} file${written.length === 1 ? '' : 's'}).`);
   }
 }
 
@@ -5486,7 +5486,7 @@ async function cmdTelemetryQuery(args) {
   println('  errors [--agent=<name>] [--since=24h]                error span summary');
   println('  trace <traceId>                                       full span tree');
   println('');
-  println('For Langfuse/Honeycomb/Grafana Tempo/Datadog, see docs/concepts/observability.md');
+  println('For Langfuse/Honeycomb/Grafana Tempo/Datadog, see docs/guides/concepts/observability.md');
 }
 
 async function cmdHook(args) {
@@ -6553,7 +6553,7 @@ const handlers = new Map([
 
         println('');
         println(`Scaffolding a new profile draft. Three questions, then a preview.`);
-        println(`Background: docs/concepts/persona-research.md and docs/concepts/profile-lifecycle.md`);
+        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/profile-lifecycle.md`);
         println('');
         if (!displayName) displayName = await ask('Display name?', id);
         if (seedDepartments.length === 0) {
@@ -6612,7 +6612,7 @@ const handlers = new Map([
         println('');
         println(`✓ draft created at ${pathMod.relative(process.cwd(), result.dir)}`);
         println('');
-        println(`Next steps (in order, per docs/concepts/profile-lifecycle.md):`);
+        println(`Next steps (in order, per docs/guides/concepts/profile-lifecycle.md):`);
         println(`  1. Discover  (cx-ux-researcher): fill personas/<role>.md from interviews + primary sources.`);
         println(`  2. Frame     (cx-product-manager): fill departments/<dept>.md charters and intake taxonomy.`);
         println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in profile.json.`);

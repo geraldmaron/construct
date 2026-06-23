@@ -47,7 +47,7 @@ Start with the narrowest authoritative source that can answer the question:
 1. **Local project evidence first**
    - `.cx/research/`
    - `.cx/knowledge/`
-   - `docs/prd/`, `docs/meta-prd/`, `docs/adr/`, `docs/runbooks/`
+   - `docs/specs/prd/`, `docs/meta-prd/`, `docs/decisions/adr/`, `docs/operations/runbooks/`
    - ingested markdown artifacts under `.cx/knowledge/`
    - repo code, tests, configs, and existing decisions
 2. **Primary external sources second**

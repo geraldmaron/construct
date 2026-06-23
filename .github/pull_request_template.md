@@ -17,7 +17,7 @@ Refs: `construct-<XXX>` <!-- required for any non-trivial change; use `none - tr
 Tick what was updated in this same change. Tick `n/a` only when the concern genuinely did not change. Code-only PRs that should have updated docs but did not are incomplete.
 
 - [ ] `CHANGELOG.md` - entry added (or `n/a`: <reason>)
-- [ ] `docs/concepts/architecture.md` - runtime shape, contracts, or boundaries (or `n/a`)
+- [ ] `docs/guides/concepts/architecture.md` - runtime shape, contracts, or boundaries (or `n/a`)
 - [ ] `docs/README.md` - docs surface or maintenance contract (or `n/a`)
 - [ ] `.cx/context.md` / `.cx/context.json` - active work, decisions, assumptions (or `n/a`)
 - [ ] `plan.md` - local working plan reflects completed work (local-only, gitignored)

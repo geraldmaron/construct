@@ -1,0 +1,105 @@
+---
+title: Integrity and trust
+description: How Construct ensures that every artifact it produces traces to source, never invents, and surfaces uncertainty honestly.
+---
+
+Construct operates in the same workflow where decisions get made and shipped. That means fabricated claims, over-confident summaries, or embellished rationales don't stay in a chat window -- they end up in PRDs, ADRs, and handoffs that influence real work. Construct treats integrity as a hard requirement, not a soft preference.
+
+This page explains the four-layer system that enforces it.
+
+<FlowPipeline steps={[
+  { label: 'Canonical rule', badge: 'Layer 1', sub: 'rules/common/no-fabrication.md' },
+  { label: 'Artifact-prose lint', badge: 'Layer 2', sub: 'lib/comment-lint.mjs' },
+  { label: 'Intake traceability', badge: 'Layer 3', sub: 'intake_id in frontmatter' },
+  { label: 'Contract postconditions', badge: 'Layer 4', sub: 'specialists/contracts.json' },
+]} />
+
+## Layer 1: The canonical rule
+
+`rules/common/no-fabrication.md` is the policy every specialist reads. The short version:
+
+- Every load-bearing claim traces to a source. Cite with `[source: path#anchor]`, `[source: intake-<id>]`, or a fetched URL.
+- When a fact isn't in the source, write `unknown` or `[unverified]`. Don't paper over a gap with confident prose.
+- Never invent: customer names, quotes, ticket IDs, percentages, dates, file paths, function names.
+- Distinguish observation from inference. Observations carry a citation. Inferences are marked `[inferred]` and their supporting observations are cited.
+- When uncertain, surface the uncertainty as a question -- not an assertion dressed in hedging language.
+
+The rule applies to every output: intake summaries, classification rationales, PRDs, ADRs, RFCs, knowledge notes, handoffs, review verdicts, plan entries, MCP tool responses.
+
+## Layer 2: Artifact-prose lint
+
+`lib/comment-lint.mjs` enforces a pattern bank against artifact files at `docs/specs/prd/**`, `docs/decisions/adr/**`, `docs/decisions/rfc/**`, `docs/notes/research/**`, `.cx/knowledge/**`, `.cx/handoffs/**`, and `.cx/research/**`. Non-artifact markdown (READMEs, cookbooks, concepts) is not in scope.
+
+Blocked patterns in artifact prose:
+
+| Pattern | Example violation |
+|---|---|
+| Manufactured confidence | "The problem is *clearly* a scaling issue." |
+| Unattributed numeric claim | "Latency dropped 30%." (no `[source:...]`) |
+| Customer mind-reading | "Users want a faster dashboard." (no citation) |
+| Speculative projection | "This will likely improve retention." (no source) |
+
+Severity by context:
+
+- **PostToolUse hook** (real-time, while the agent is writing): warns but does not block. The advisory prints the offending line and the rule it violated.
+- **`construct lint:comments`** (CLI, release gate, CI): blocks with exit non-zero.
+
+## Layer 3: Intake traceability
+
+Every artifact produced from an intake packet carries verifiable provenance in its YAML frontmatter:
+
+```yaml
+---
+intake_id: construct-1779164832122-onxe
+intake_confidence: 0.82
+intake_rationale: Matched keywords: stack-trace, regression, auth
+---
+```
+
+`construct intake done <id> --output=<path>` stamps the artifact. The stamp is refused if the artifact already has a different `intake_id` -- preventing silent re-attribution.
+
+Artifacts that intentionally have no intake source declare it explicitly:
+
+```yaml
+---
+intake: none
+---
+```
+
+`construct docs:verify` warns when an artifact in an intake-fed location (`docs/specs/prd/**`, `docs/notes/research/**`, `.cx/knowledge/internal/**`) lacks either `intake_id` or `intake: none`. This surfaces drift rather than blocking, so the gate is informational, not destructive.
+
+## Layer 4: Contract postconditions
+
+`specialists/contracts.json` carries machine-checkable postconditions on the researcher-to-product-manager and product-manager-to-architect handoffs. These are the highest-leverage points: they're where intake-derived signals become committed artifacts.
+
+Three check kinds:
+
+| Check | What it enforces |
+|---|---|
+| `artifact-has-frontmatter-field` | Required fields present (e.g. `intake_id`) |
+| `artifact-has-section` | Required headings present (e.g. `## Sources`) |
+| `artifact-claims-cited` | Every paragraph with a numeric claim has a `[source:...]` reference |
+
+`lib/contracts/validate.mjs#validateHandoff` runs these at handoff time. When `CONSTRUCT_CONTRACT_ENFORCEMENT=block`, a failed postcondition blocks the handoff with `BLOCKED_CONTRACT` status and a list of the specific failures.
+
+## The design intent
+
+Fabrication in an agent system is insidious because it compounds. A fabricated customer quote in an intake summary becomes an assumed requirement in a PRD, becomes a design constraint in an ADR, becomes shipped behavior. The four layers above are designed to break that chain early:
+
+- The rule sets expectations before the work starts.
+- Lint catches violations in real time, while the specialist is still writing.
+- Traceability makes every artifact's origin queryable.
+- Postconditions verify structure before a handoff crosses a phase boundary.
+
+No layer is sufficient alone. Together they make the trust chain auditable.
+
+## When something is flagged
+
+| Symptom | Layer | Resolution |
+|---|---|---|
+| "Manufactured confidence" warning on an artifact | Layer 2 lint | Replace the unsupported assertion with a citation or remove the claim |
+| "Uncited numeric claim" warning | Layer 2 lint | Add `[source: ...]` after the number, or move it to a table (excluded from lint) |
+| `construct intake done` refuses with "different intake_id" | Layer 3 | The artifact was already attributed to a different intake. Use `intake reopen` + `intake done --output=` on the correct one |
+| `BLOCKED_CONTRACT` on a handoff | Layer 4 | Read `result.errors` for the failing check, fix the artifact, re-run the handoff |
+
+See `rules/common/no-fabrication.md` for the full policy and the bypass philosophy (there is none).

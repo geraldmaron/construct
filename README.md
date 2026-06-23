@@ -28,7 +28,7 @@ Bootstrap local services (once per machine, opt-in to machine-scope writes):
 construct install --scope=user --yes
 ```
 
-`construct install` defaults to `--scope=project`, which writes nothing and prints scope guidance — see the [footprint contract](#footprint-contract) below or [ADR 0029](docs/adr/0029-install-scopes-and-hook-budgets.md). Use `--scope=user` for machine setup, `--scope=both` for both.
+`construct install` defaults to `--scope=project`, which writes nothing and prints scope guidance — see the [footprint contract](#footprint-contract) below or [ADR 0029](docs/decisions/adr/0029-install-scopes-and-hook-budgets.md). Use `--scope=user` for machine setup, `--scope=both` for both.
 
 Initialize a project:
 
@@ -111,11 +111,11 @@ Construct's writes are scoped and disclosed up front. The default `construct ins
 | Machine | `construct install --scope=user` | `~/.construct/config.env`, `~/.construct/lib` (symlink), `~/.construct/services/`, `~/Library/LaunchAgents/` (macOS), MCP entries in `~/.config/opencode/opencode.json` and `~/.codex/config.toml`, marker block in `~/.claude/CLAUDE.md`, hook injection in `~/.claude/settings.json` (last two require interactive consent or `--yes`) |
 | Never touched | — | Shell rc files (`~/.bashrc`, `~/.zshrc`), npm global config, `git config --global` |
 
-Full table with file:line citations and the per-hook performance budget contract: [Architecture — Footprint contract](https://geraldmaron.github.io/construct/concepts/architecture#footprint-contract) and [ADR 0029](docs/adr/0029-install-scopes-and-hook-budgets.md).
+Full table with file:line citations and the per-hook performance budget contract: [Architecture — Footprint contract](https://geraldmaron.github.io/construct/concepts/architecture#footprint-contract) and [ADR 0029](docs/decisions/adr/0029-install-scopes-and-hook-budgets.md).
 
 ## Learning loops
 
-Construct gets smarter on its own. Every session ends with an automatic capture: tools used, files touched, what the final reply said. That goes into `.cx/observations/` and is searchable from the next session. See [`docs/concepts/learning-loops.mdx`](./docs/concepts/learning-loops.mdx) for what's wired, what's coming, and how to turn pieces off.
+Construct gets smarter on its own. Every session ends with an automatic capture: tools used, files touched, what the final reply said. That goes into `.cx/observations/` and is searchable from the next session. See [`docs/guides/concepts/learning-loops.mdx`](./docs/guides/concepts/learning-loops.mdx) for what's wired, what's coming, and how to turn pieces off.
 
 ## `.cx/` is local-only runtime state
 
@@ -226,7 +226,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct docs:check` | Check for missing how-to guides (alias for `docs check`) |
 | `construct docs:reconcile` | Reconcile docs against the registry |
-| `construct docs:site` | Regenerate generated reference pages under docs/reference/ |
+| `construct docs:site` | Regenerate generated reference pages under docs/guides/reference/ |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
 | `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
 | `construct impact` | Change-impact analysis — map changed files to affected tests, capabilities, and workflows |
@@ -269,7 +269,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md). Branch workflow, gates, review expectations.
 - [`CHANGELOG.md`](./CHANGELOG.md). Release history.
-- [`docs/concepts/architecture.mdx`](./docs/concepts/architecture.mdx). Canonical architecture.
+- [`docs/guides/concepts/architecture.mdx`](./docs/guides/concepts/architecture.mdx). Canonical architecture.
 - [`AGENTS.md`](./AGENTS.md). Agent operating contract.
 
 ## Project structure
