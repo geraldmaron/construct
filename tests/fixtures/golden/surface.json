@@ -381,6 +381,10 @@
       "core": false
     },
     {
+      "name": "sources",
+      "core": false
+    },
+    {
       "name": "specialist",
       "core": false
     },
@@ -423,10 +427,6 @@
     {
       "name": "trends",
       "core": true
-    },
-    {
-      "name": "uninstall",
-      "core": false
     },
     {
       "name": "update",

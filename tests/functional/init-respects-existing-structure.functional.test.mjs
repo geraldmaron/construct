@@ -105,13 +105,13 @@ test('issue #97: init defers to existing internal/meetings/, internal/memos/, cu
       '.cx/inbox/ must NOT be scaffolded — ./ingest custom script detected',
     );
 
-    const intakeConfigPath = join(f.dir, '.cx', 'intake-config.json');
-    assert.equal(existsSync(intakeConfigPath), true, '.cx/intake-config.json must still be written');
-    const intakeConfig = JSON.parse(readFileSync(intakeConfigPath, 'utf8'));
+    const projectConfigPath = join(f.dir, 'construct.config.json');
+    assert.equal(existsSync(projectConfigPath), true, 'construct.config.json must be written');
+    const projectConfig = JSON.parse(readFileSync(projectConfigPath, 'utf8'));
     assert.equal(
-      intakeConfig.includeProjectInbox,
+      projectConfig.intakePolicy?.zones?.projectInbox,
       false,
-      'includeProjectInbox must default to false when custom intake detected',
+      'projectInbox must default to false when custom intake detected',
     );
 
     const combinedOutput = result.stdout + result.stderr;
@@ -150,11 +150,11 @@ test('issue #97: --force scaffolds the full default tree even when project layou
       '--force must scaffold .cx/inbox/ even when ./ingest exists',
     );
 
-    const intakeConfig = JSON.parse(readFileSync(join(f.dir, '.cx', 'intake-config.json'), 'utf8'));
+    const projectConfig = JSON.parse(readFileSync(join(f.dir, 'construct.config.json'), 'utf8'));
     assert.notEqual(
-      intakeConfig.includeProjectInbox,
+      projectConfig.intakePolicy?.zones?.projectInbox,
       false,
-      '--force must not flip includeProjectInbox to false',
+      '--force must not flip projectInbox to false',
     );
 
     const combinedOutput = result.stdout + result.stderr;

@@ -257,6 +257,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct roles:set` | Activate a role contract |
 | `construct scheduler` | Manage scheduled background jobs (tag-mining, doc-hygiene, skill-rollup) |
 | `construct skills` | Skill relevance detection |
+| `construct sources` | Manage typed integration source targets in construct.config.json |
 | `construct uninstall` | Remove Construct state |
 | `construct update` | Reinstall this checkout |
 | `construct upgrade` | Upgrade to latest npm version |

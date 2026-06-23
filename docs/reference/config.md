@@ -88,6 +88,46 @@ construct models list --json
 
 Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CX_MODEL_*` (alias still honored for one release cycle).
 
+## Source targets (`construct.config.json`)
+
+Typed integration selectors under `sources.targets`. Consumed by embed auto-discovery (when `embed.yaml` is absent), `provider_fetch`, and session-start source hints. Legacy env lists merge additively; explicit `~/.construct/embed.yaml` remains a complete override.
+
+```json
+{
+  "sources": {
+    "targets": [
+      { "id": "gh-main", "provider": "github", "selector": { "repo": "org/repo" } },
+      { "id": "jira-plat", "provider": "jira", "selector": { "project": "PLAT" } },
+      { "id": "linear-eng", "provider": "linear", "selector": { "team": "ENG" } },
+      { "id": "slack-incidents", "provider": "slack", "selector": { "channel": "incidents", "intent": "risk" } }
+    ]
+  }
+}
+```
+
+CLI: `construct sources list`, `construct sources add <provider> <id> '<selector-json>'`, `construct sources remove <id>`, `construct sources validate`.
+
+| Env (legacy merge) | Maps to |
+|---|---|
+| `GITHUB_REPOS` | GitHub `selector.repo` entries |
+| `JIRA_PROJECTS` | Jira `selector.project` entries |
+| `LINEAR_TEAMS` | Linear `selector.team` entries |
+| `SLACK_CHANNELS` | Slack `selector.channel` (+ optional `:intent`) |
+
+## Intake policy (`construct.config.json`)
+
+Filesystem inbox watcher zones and depth under `intakePolicy`. Replaces `.cx/intake-config.json` (deprecated; migrate with `construct intake config migrate`).
+
+| Key | Default | Description |
+|---|---|---|
+| `intakePolicy.maxDepth` | `4` | Subdirectory scan depth per watched parent |
+| `intakePolicy.zones.rootInbox` | `true` | Watch `inbox/` at project root |
+| `intakePolicy.zones.projectInbox` | `true` | Watch `.cx/inbox/` |
+| `intakePolicy.zones.docsIntake` | `true` | Watch `docs/intake/` when present |
+| `intakePolicy.additionalDirs` | `[]` | Extra directories (opt-in only) |
+
+Env overrides: `CX_INBOX_DIRS` (colon-separated paths), `CX_INTAKE_MAX_DEPTH`.
+
 ## Intake queue
 
 | Variable | Default | Description |

@@ -3,7 +3,7 @@
   "generatedAt": "2026-06-23T05:29:38.070Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 518,
+    "testFiles": 521,
     "topLevelTestFiles": 280,
     "nestedTestFiles": 238,
     "skippedFiles": 0,
@@ -731,6 +731,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doctor/cost-ledger.test.mjs — daily budget tracking and enforcement."
+    },
+    {
+      "path": "tests/doctor-source-checkout.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor-source-checkout.test.mjs — published package vs source checkout for doctor gates."
     },
     {
       "path": "tests/document-extract-rtf.test.mjs",
@@ -2905,6 +2913,14 @@
       "maintainerNotes": "tests/intake-config.test.mjs — intake config schema, persistence, env merge."
     },
     {
+      "path": "tests/intake-policy.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/intake-policy.test.mjs — project-config intakePolicy resolution."
+    },
+    {
       "path": "tests/intake-eml-extraction.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3871,6 +3887,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "skills-apply.test.mjs — Regression coverage for per-host skill sidecar writers."
+    },
+    {
+      "path": "tests/source-targets.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/source-targets.test.mjs — typed source targets validation and resolution."
     },
     {
       "path": "tests/source-taxonomy.test.mjs",
