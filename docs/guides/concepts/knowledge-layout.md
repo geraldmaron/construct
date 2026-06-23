@@ -12,7 +12,7 @@ description: How .cx/, beads, the vector index, and SQL fit together to make con
 | Layer | Dirs | Purpose |
 |---|---|---|
 | **Knowledge** | `.cx/knowledge/` | Typed, persistent, human-curated or inbox-ingested documents |
-| **R&D loop** | `.cx/inbox/`, `.cx/intake/{pending,processed,skipped}/`, `.cx/task-graphs/`, `.cx/traces/` | Per-signal triage queue, per-signal execution plans, append-only trace event log |
+| **R&D loop** | `inbox/` (drop zone), `.cx/intake/{pending,processed,skipped}/`, `.cx/task-graphs/`, `.cx/traces/` | Per-signal drop zone + triage queue, per-signal execution plans, append-only trace event log |
 | **Runtime** | `.cx/observations/`, `.cx/sessions/`, `.cx/runtime/` | Machine-written, high-churn, agent working memory |
 
 Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable — but like the rest of `.cx/` they are local-only: `construct init` gitignores `.cx/` in full, so knowledge persists on the machine across sessions and is never committed to the repo (see the [README](../../README.md) section "`.cx/` is local-only runtime state"). R&D-loop dirs are written by the daemon and the CLI; agents update them via `construct intake` / `construct graph`, not by editing files.
@@ -35,7 +35,7 @@ Runtime dirs are **never** hand-edited. Knowledge dirs **are** hand-editable —
 
 ### Routing rules
 
-Files dropped in `.cx/inbox/` are automatically routed by filename convention:
+Files dropped in `inbox/` are automatically routed by filename convention:
 
 | Filename pattern | Routed to |
 |---|---|
@@ -68,7 +68,7 @@ These guidelines are aspirational; existing documents need not be refactored imm
 
 ## Using the Inbox
 
-Drop any supported file into `.cx/inbox/` and the embed daemon will:
+Drop any supported file into `inbox/` and the embed daemon will:
 
 1. Detect it on the next inbox-watcher cycle (reactive within a second or two; scheduler fallback every two minutes)
 2. Classify it using the filename rules above
@@ -157,7 +157,9 @@ Use these tags in `searchObservations` calls or the dashboard to filter by type.
   roadmap.md             ← generated hourly by roadmap.mjs
   context.md             ← human-readable project context (hand-maintained)
   context.json           ← machine-readable context (kept in sync with context.md)
-  inbox/                 ← drop zone (auto-created, files moved to knowledge/ after processing)
+  intake/                ← per-signal queue state: pending/processed/skipped/quarantine/dead-letter
+
+inbox/                   ← project-root drop zone (visible; files ingested then moved to knowledge/)
 ```
 
 ### Entity graph (GraphRAG)

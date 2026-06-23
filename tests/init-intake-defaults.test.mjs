@@ -9,9 +9,10 @@
  * commit, doc edit, and test file into a synthetic "intake signal" — the
  * R&D queue filled with false positives that drowned out real signals.
  *
- * Correct behavior: parentDirs is empty by default. The built-in
- * .cx/inbox/ and docs/intake/ zones are always watched. Extra dirs are
- * opt-in only via `construct intake config set --add-dir=<path>`.
+ * Correct behavior: additionalDirs is empty by default. The single canonical
+ * `inbox/` zone is always watched (ADR-0045 §C) and the project-root `inbox/`
+ * is scaffolded; there is no zones object. Extra dirs are opt-in only via
+ * `construct intake config set --add-dir=<path>`.
  */
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
@@ -73,14 +74,14 @@ describe('construct init --yes intake defaults', () => {
     );
   });
 
-  it('preserves rootInbox, projectInbox, and docsIntake zone defaults', () => {
+  it('writes the single-zone policy (no zones object) and scaffolds inbox/', () => {
     seedProjectDirs('src');
     const result = runInit();
     assert.equal(result.status, 0, `init failed: ${result.stderr}`);
     const cfg = readIntakePolicy();
-    assert.equal(cfg.zones.projectInbox, true, '.cx/inbox/ must remain watched by default');
-    assert.equal(cfg.zones.docsIntake, true, 'docs/intake/ must remain watched when it exists');
-    assert.equal(cfg.zones.rootInbox, true, 'inbox/ must be watched by default');
+    assert.equal('zones' in cfg, false, 'no zones object — inbox/ is unconditional');
+    assert.ok(fs.existsSync(path.join(tmpDir, 'inbox')), 'inbox/ is scaffolded at the project root');
+    assert.ok(!fs.existsSync(path.join(tmpDir, '.cx', 'inbox')), '.cx/inbox/ is never scaffolded');
   });
 
   it('writes no additionalDirs even when many preset directories exist', () => {

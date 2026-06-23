@@ -33,7 +33,7 @@ All storage paths are derived from `CX_DATA_DIR`:
 | Path | Purpose |
 |------|---------|
 | `$CX_DATA_DIR/.cx/knowledge/` | Knowledge base (internal, external, decisions, how-tos, reference) |
-| `$CX_DATA_DIR/.cx/inbox/` | Inbox watcher drop zone |
+| `$CX_DATA_DIR/inbox/` | Inbox watcher drop zone |
 | `$CX_DATA_DIR/.cx/snapshot.md` | Latest rendered snapshot |
 | `$CX_DATA_DIR/.cx/roadmap.md` | Latest generated roadmap |
 | `$CX_DATA_DIR/.cx/observations.jsonl` | Observation store |

@@ -68,7 +68,7 @@ These two are distinct from `bd` issues. Beads is the project-wide task tracker.
 
 | State | Lives in | Survives | Authoritative? |
 |---|---|---|---|
-| Incoming signal | `.cx/inbox/<file>` (input), `.cx/intake/pending/<id>.json` (after triage) | session end + clone (intake/) | yes |
+| Incoming signal | `inbox/<file>` (input), `.cx/intake/pending/<id>.json` (after triage) | session end + clone (intake/) | yes |
 | Per-signal execution plan | `.cx/task-graphs/<id>.json` | session end + clone | yes |
 | Evidence for a task graph node | nested inside `.cx/task-graphs/<id>.json` + linked via traceId | session end + clone | yes |
 | Trace events | `.cx/traces/<YYYY-MM-DD>.jsonl` | session end (rotated) | append-only, audit-grade |

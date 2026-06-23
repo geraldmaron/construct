@@ -6,7 +6,7 @@ description: Drop a file, watch the daemon classify it into R&D triage, drive th
 The inbox watcher monitors one or more directories and automatically ingests new files into your knowledge base. It runs every two minutes as part of the embed daemon.
 
 <FlowPipeline steps={[
-  { label: 'Drop a file', sub: '.cx/inbox/\nany supported format' },
+  { label: 'Drop a file', sub: 'inbox/\nany supported format' },
   { label: 'Embed daemon', sub: 'detects within ~1s\nextracts text' },
   { label: 'Classify', sub: 'filename routing rules\n+ R&D triage', via: 'classifyRdIntake' },
   { label: 'Knowledge store', sub: '.cx/knowledge/<subdir>/' },
@@ -15,15 +15,17 @@ The inbox watcher monitors one or more directories and automatically ingests new
 
 ## Default inbox directory
 
-The watcher always monitors:
+The single canonical drop zone is `inbox/` at the project root (ADR-0045 §C):
 
 ```
-~/.cx/inbox/
+inbox/
 ```
 
 Drop any file there and it will be processed within two minutes.
 
-If the project has a `docs/intake/` directory, that path is also treated as an inbox drop zone and scanned recursively.
+**Drop convention (atomic handoff).** To avoid the watcher reading a half-written file, assemble it under `inbox/.staging/` and then atomically `rename` it into `inbox/`. The watcher ignores dotfiles and `inbox/.staging/`, and skips any top-level file whose size is still changing — so a partial drop is never consumed.
+
+`inbox/` is the only drop zone. There is no `.cx/inbox/` or `docs/intake/` zone — drop everything into `inbox/`.
 
 ## Add extra directories
 
@@ -34,7 +36,7 @@ Set `CX_INBOX_DIRS` to a colon-separated list of additional paths:
 CX_INBOX_DIRS=/Users/you/Downloads/construct-inbox:/Volumes/shared/team-docs
 ```
 
-All directories are watched in addition to `~/.cx/inbox/`: you cannot disable the default.
+All directories are watched in addition to `inbox/`: you cannot disable the default.
 
 ## Supported file types
 
@@ -82,7 +84,7 @@ Or use the dashboard Knowledge tab.
 
 ## Docs lane promotion
 
-When a file lands in `docs/intake/`, Construct ingests it into `.cx/knowledge/` and observations as usual. If the repo already has a matching docs lane such as `docs/notes/meetings/`, `templates/docs/prds/`, or `templates/docs/rfcs/`, the watcher also writes a promoted markdown copy into that lane for review and incorporation.
+When a file lands in `inbox/`, Construct ingests it into `.cx/knowledge/` and observations as usual. If the repo already has a matching docs lane such as `docs/notes/meetings/`, `templates/docs/prds/`, or `templates/docs/rfcs/`, the watcher also writes a promoted markdown copy into that lane for review and incorporation.
 
 ## R&D triage on every file
 

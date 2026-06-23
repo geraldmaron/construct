@@ -56,7 +56,7 @@ The daemon runs ten scheduled jobs:
 | approval-expiry | Expires stale approval queue items | 1 hour |
   | eval-dataset-sync | Syncs scored telemetry traces to Dataset items | 1 hour |
 | prompt-regression-check | Detects low-quality score clusters per prompt | 1 hour |
-| inbox-watcher | Ingests new files from `.cx/inbox/` | 2 min |
+| inbox-watcher | Ingests new files from `inbox/` | 2 min |
 | roadmap | Reconciles open items + observations → `docs/roadmap.md` | 1 hour |
 | docs-lifecycle | Detects stale/missing docs, auto-fixes low-risk gaps, queues high-risk changes | 30 min |
 

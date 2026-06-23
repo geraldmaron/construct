@@ -151,18 +151,10 @@
     },
     "intakePolicy": {
       "type": "object",
-      "description": "Filesystem inbox watcher policy (zones, depth, extra directories).",
+      "description": "Filesystem inbox watcher policy. The canonical drop zone is inbox/ at the project root (always watched, ADR-0045 §C); maxDepth and additionalDirs tune the scan.",
       "properties": {
-        "maxDepth": { "type": "number", "default": 4 },
-        "additionalDirs": { "type": "array", "items": { "type": "string" } },
-        "zones": {
-          "type": "object",
-          "properties": {
-            "rootInbox": { "type": "boolean", "default": true, "description": "Watch inbox/ at project root" },
-            "projectInbox": { "type": "boolean", "default": true, "description": "Watch .cx/inbox/" },
-            "docsIntake": { "type": "boolean", "default": true, "description": "Watch docs/intake/ when present" }
-          }
-        }
+        "maxDepth": { "type": "number", "default": 4, "description": "Subdirectory scan depth per watched directory" },
+        "additionalDirs": { "type": "array", "items": { "type": "string" }, "description": "Extra directories to watch beyond inbox/ (opt-in)" }
       }
     },
     "artifactWorkflow": {

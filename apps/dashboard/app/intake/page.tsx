@@ -17,10 +17,6 @@ type IntakeConfigPayload = {
   config?: {
     parentDirs?: string[];
     maxDepth?: number;
-    includeProjectInbox?: boolean;
-    includeDocsIntake?: boolean;
-    includeRootInbox?: boolean;
-    includeArchetypeInbox?: boolean;
   };
   label?: string;
   itemNoun?: string;
@@ -37,7 +33,7 @@ export default function IntakePage() {
     <Page
       eyebrow="work · intake"
       title={queueLabel}
-      lede={`${itemNoun.charAt(0).toUpperCase()}${itemNoun.slice(1)}s dropped into .cx/inbox/ flow through the daemon's deterministic triage (type · stage · owner · chain) and surface here for the agent to action.`}
+      lede={`${itemNoun.charAt(0).toUpperCase()}${itemNoun.slice(1)}s dropped into inbox/ flow through the daemon's deterministic triage (type · stage · owner · chain) and surface here for the agent to action.`}
       meta={<span className="pill">{items.data?.total ?? pending.length} pending</span>}
     >
       {items.loading && !items.data && <Spinner />}
@@ -47,15 +43,14 @@ export default function IntakePage() {
         <>
           <CardGrid>
             <StatCard label="Pending" value={items.data.total ?? pending.length} sub="awaiting agent" />
-            <StatCard label="Max depth" value={config.data?.config?.maxDepth ?? 3} />
-            <StatCard label="Root inbox" value={(config.data?.config?.includeRootInbox ?? config.data?.config?.includeArchetypeInbox) ? 'on' : 'off'} />
-            <StatCard label="Project inbox" value={config.data?.config?.includeProjectInbox ? 'on' : 'off'} />
-            <StatCard label="Docs intake" value={config.data?.config?.includeDocsIntake ? 'on' : 'off'} />
+            <StatCard label="Max depth" value={config.data?.config?.maxDepth ?? 4} />
+            <StatCard label="inbox/" value="on" sub="canonical drop zone" />
+            <StatCard label="Extra dirs" value={config.data?.config?.parentDirs?.length ?? 0} sub="opt-in" />
           </CardGrid>
 
           {pending.length === 0 ? (
             <Callout label="No pending packets">
-              <p>Drop a file under <code>.cx/inbox/</code> (or a configured parent dir) to create one.</p>
+              <p>Drop a file under <code>inbox/</code> (or a configured parent dir) to create one.</p>
             </Callout>
           ) : (
             <Section num="01" title="Pending packets" defaultOpen tldr="Deterministic triage by the daemon — never an LLM call.">

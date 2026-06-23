@@ -116,15 +116,16 @@ CLI: `construct sources list`, `construct sources add <provider> <id> '<selector
 
 ## Intake policy (`construct.config.json`)
 
-Filesystem inbox watcher zones and depth under `intakePolicy`. Replaces `.cx/intake-config.json` (deprecated; migrate with `construct intake config migrate`).
+Filesystem inbox watcher depth and extra directories under `intakePolicy`. A legacy `.cx/intake-config.json` is read as a warned fallback for `maxDepth` and `additionalDirs` only.
+
+The single canonical drop zone is `inbox/` at the project root (ADR-0045 §C) — always watched. There are no other zones: `.cx/inbox/` and `docs/intake/` are not watched and not scaffolded. Machine/runtime intake state (pending, processed, skipped, quarantine, dead-letter) stays under the gitignored `.cx/intake/`.
 
 | Key | Default | Description |
 |---|---|---|
-| `intakePolicy.maxDepth` | `4` | Subdirectory scan depth per watched parent |
-| `intakePolicy.zones.rootInbox` | `true` | Watch `inbox/` at project root |
-| `intakePolicy.zones.projectInbox` | `true` | Watch `.cx/inbox/` |
-| `intakePolicy.zones.docsIntake` | `true` | Watch `docs/intake/` when present |
-| `intakePolicy.additionalDirs` | `[]` | Extra directories (opt-in only) |
+| `intakePolicy.maxDepth` | `4` | Subdirectory scan depth per watched directory |
+| `intakePolicy.additionalDirs` | `[]` | Extra directories to watch beyond `inbox/` (opt-in only) |
+
+**Drop convention (atomic handoff).** Writers assemble a file under `inbox/.staging/` (gitignored) and then atomically `rename` it into `inbox/`. The watcher enqueues only complete top-level files: it ignores dotfiles and `inbox/.staging/`, and skips any file whose size is still changing between two stats, so a partially-written drop is never consumed. Processed items move to `.cx/intake/processed/`.
 
 Env overrides: `CX_INBOX_DIRS` (colon-separated paths), `CX_INTAKE_MAX_DEPTH`.
 

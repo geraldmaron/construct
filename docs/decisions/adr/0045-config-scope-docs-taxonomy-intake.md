@@ -54,13 +54,13 @@ Three adjacent sources of confusion, each validated against community-adopted pa
 
    List-shaped settings (permission allowlists, `sources.targets`, intake dirs) **merge + dedupe** across tiers; scalars override.
 3. **Resolve `.env` shadowing**: document the precedence explicitly and warn on *every* shadowed key, not a hardcoded subset.
-4. **Back-compat shim**: read legacy `~/.construct/*` when present, one-time migrate to XDG paths with a notice, and keep reading legacy for a deprecation window (tracked bead).
+4. **Clean break (no back-compat)**: write XDG paths only; legacy `~/.construct/*` is not read. A user re-runs `construct install --scope=user` to repopulate user scope at the new paths.
 5. Document the full model in `docs/guides/reference/config.md`; update ADR-0029's user-scope paths.
 
 ### C. Intake — one visible root `inbox/`
 
 1. The single canonical human drop zone is root `inbox/` (visible, discoverable).
-2. Fold `.cx/inbox/` and `docs/intake/` into `inbox/`; deprecate the extra zones in `intakePolicy` (read legacy + warn during the window).
+2. Remove the `projectInbox` (`.cx/inbox/`) and `docsIntake` (`docs/intake/`) watch zones outright — no back-compat, no deprecation reads. `docs/intake/` was feature *documentation*, not drops, so it moves to `docs/guides/intake/`. `inbox/` is the sole, unconditional drop zone; `intakePolicy` keeps only `maxDepth` + opt-in `additionalDirs`.
 3. Machine/runtime state stays under gitignored `.cx/` (sessions, traces, lancedb, oracle, **processed** intake).
 4. Adopt **Maildir-style atomic handoff**: writers stage then rename into `inbox/`; the watcher consumes only complete files and moves processed items to `.cx/intake/processed/`.
 5. Update `lib/config/intake-policy.mjs` defaults + `schemas/project-config.schema.json`, `lib/init-unified.mjs`, the dashboard intake route, and docs.
@@ -70,14 +70,14 @@ Three adjacent sources of confusion, each validated against community-adopted pa
 Each phase is its own bead with a functional test in `tests/functional/`, `construct doctor` + `construct sync` green, docs updated, then merge.
 
 - **Phase 1 — docs taxonomy.** Pure maintainer/repo hygiene; no user-facing migration (ADR-0044 precedent). Lowest risk.
-- **Phase 2 — single intake.** Project-scoped; back-compat reads of the old three zones with a deprecation warning.
-- **Phase 3 — XDG + tiers.** User-machine migration; ships behind the shim with one-time migrate. Highest risk; last.
+- **Phase 2 — single intake.** Project-scoped clean break: the old zones are removed, not deprecated.
+- **Phase 3 — XDG + tiers.** User-machine clean break to XDG paths (no legacy read); a user re-runs `construct install`. Highest blast radius; last.
 
 ## Consequences
 
 - `release:check` / `03c-root-layout` ratchets extend to the docs taxonomy and a config-scope check in `construct doctor`.
 - ADR-0029 user-scope paths move to XDG; ADR-0044's physical root map gains `inbox/` and the `docs/` taxonomy.
-- Back-compat windows require dual-read code paths (legacy `~/.construct`, old intake zones) until deprecation completes (tracked bead).
+- Clean break: no dual-read or deprecation windows. Existing user-scope installs re-run `construct install` after the XDG move (Phase 3); existing `.cx/inbox/` drops are moved to `inbox/` by hand (Phase 2).
 
 ## Verification
 

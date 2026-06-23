@@ -26,10 +26,10 @@ For the operator's view of how to interact with this pipeline, see [Intake and t
 
 ### 1. Signal Ingestion
 
-**Input:** Files dropped into `.cx/inbox/`
+**Input:** Files dropped into `inbox/`
 
 ```
-.cx/inbox/
+inbox/
 ├── login-feedback-20260518.md      ← User signal (support ticket)
 ├── session-timeout-bug-20260517.md ← Bug report
 ├── feature-request-sso.md          ← Feature request
@@ -261,8 +261,8 @@ Results:
 │                                                             │
 │ Connected Documents:                                        │
 │   - .cx/knowledge/internal/adr-session-management.md       │
-│   - .cx/inbox/session-timeout-bug-20260517.md              │
-│   - .cx/inbox/login-feedback-20260518.md                   │
+│   - inbox/session-timeout-bug-20260517.md                  │
+│   - inbox/login-feedback-20260518.md                       │
 │                                                             │
 │ Related Observations:                                       │
 │   - obs-1: Login friction increases support volume 40%     │
@@ -275,7 +275,7 @@ Results:
 
 ```
 ┌──────────────┐
-│   SIGNAL     │  User drops file in .cx/inbox/
+│   SIGNAL     │  User drops file in inbox/
 └──────┬───────┘
        │
        ▼

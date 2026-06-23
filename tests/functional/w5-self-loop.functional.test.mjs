@@ -2,7 +2,7 @@
  * tests/functional/w5-self-loop.functional.test.mjs —
  *
  * Three self-loop closures: daemon safeguard contract, intake daemon
- * end-to-end (drop a file into .cx/inbox/, daemon emits packet within one
+ * end-to-end (drop a file into inbox/, daemon emits packet within one
  * tick), rule-verifier intent-based approval classification.
  */
 import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, readdirSync, existsSync, rmSync } from 'node:fs';
@@ -122,7 +122,7 @@ test('classifyPacket routes retry-exhausted packets to dead-letter', () => {
 test('processInboxFile classifies and writes a packet to .cx/intake/pending/', async () => {
   const { cwd, cleanup } = freshCwd();
   try {
-    const inbox = join(cwd, '.cx', 'inbox');
+    const inbox = join(cwd, 'inbox');
     mkdirSync(inbox, { recursive: true });
     const sourceFile = join(inbox, 'sample-bug-report.txt');
     writeFileSync(sourceFile, 'When I press the submit button it does nothing on Safari.');
@@ -139,6 +139,37 @@ test('processInboxFile classifies and writes a packet to .cx/intake/pending/', a
     assert.ok(packetFile, 'expected a pending packet file');
     const packet = JSON.parse(readFileSync(join(cwd, '.cx', 'intake', 'pending', packetFile), 'utf8'));
     assert.equal(packet.triage.intakeType, 'bug-report');
+  } finally { cleanup(); }
+});
+
+test('intake daemon enqueues only complete top-level files, ignoring .staging/ and dotfiles', async () => {
+  const { cwd, cleanup } = freshCwd();
+  try {
+    const inbox = join(cwd, 'inbox');
+    mkdirSync(join(inbox, '.staging'), { recursive: true });
+
+    // A complete top-level drop, a file a writer is still staging, and a
+    // dotfile. Only the first should ever reach a pending packet.
+
+    writeFileSync(join(inbox, 'real-drop.txt'), 'A complete, renamed-in signal.');
+    writeFileSync(join(inbox, '.staging', 'half-written.txt'), 'still assembling');
+    writeFileSync(join(inbox, '.in-progress.txt'), 'dotfile, not a drop');
+
+    const daemon = buildIntakeDaemon({
+      cwd,
+      intervalMs: 5,
+      classify: async () => ({ intakeType: 'note', rdStage: 'triage', primaryOwner: 'product-manager', recommendedAction: 'review' }),
+    });
+    await Promise.race([
+      daemon.run(),
+      new Promise((r) => setTimeout(() => { daemon.stop(); r({ reason: 'timeout' }); }, 300)),
+    ]);
+
+    const pendingDir = join(cwd, '.cx', 'intake', 'pending');
+    const packets = existsSync(pendingDir) ? readdirSync(pendingDir).filter((f) => f.endsWith('.json')) : [];
+    assert.equal(packets.length, 1, `exactly one packet from the top-level drop; got ${packets.length}`);
+    const packet = JSON.parse(readFileSync(join(pendingDir, packets[0]), 'utf8'));
+    assert.ok(packet.sourcePath.endsWith('real-drop.txt'), 'the staged/dotfile files must not be enqueued');
   } finally { cleanup(); }
 });
 

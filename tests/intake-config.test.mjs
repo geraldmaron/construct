@@ -33,62 +33,56 @@ afterEach(() => {
 });
 
 describe('loadIntakeConfig', () => {
-  it('returns defaults when no config exists', () => {
+  it('returns single-zone defaults (only inbox/) when no config exists', () => {
     const cfg = loadIntakeConfig(projectRoot, {});
     assert.equal(cfg.maxDepth, INTAKE_DEFAULT_MAX_DEPTH);
-    assert.equal(cfg.includeProjectInbox, true);
-    assert.equal(cfg.includeDocsIntake, true);
     assert.deepEqual(cfg.parentDirs, []);
+    assert.equal('includeProjectInbox' in cfg, false, 'no deprecated zone fields in the config shape');
+    assert.equal('includeDocsIntake' in cfg, false, 'no deprecated zone fields in the config shape');
   });
 
-  it('reads parentDirs and maxDepth from legacy saved file when project config has no intakePolicy', () => {
-    fs.writeFileSync(path.join(projectRoot, PROJECT_CONFIG_FILENAME), JSON.stringify({ version: 1 }));
-    fs.writeFileSync(
-      path.join(projectRoot, '.cx', 'intake-config.json'),
-      JSON.stringify({ parentDirs: ['/tmp/a'], maxDepth: 2, includeDocsIntake: false }),
-    );
+  it('reads parentDirs and maxDepth from project config intakePolicy', () => {
+    writeProjectConfig(path.join(projectRoot, PROJECT_CONFIG_FILENAME), {
+      version: 1,
+      intakePolicy: { additionalDirs: ['/tmp/a'], maxDepth: 2 },
+    });
     const cfg = loadIntakeConfig(projectRoot, {});
     assert.equal(cfg.maxDepth, 2);
-    assert.equal(cfg.includeDocsIntake, false);
     assert.deepEqual(cfg.parentDirs, ['/tmp/a']);
   });
 
   it('merges CX_INBOX_DIRS env into parentDirs without dupes', () => {
-    fs.writeFileSync(path.join(projectRoot, PROJECT_CONFIG_FILENAME), JSON.stringify({ version: 1 }));
-    fs.writeFileSync(
-      path.join(projectRoot, '.cx', 'intake-config.json'),
-      JSON.stringify({ parentDirs: ['/tmp/a'] }),
-    );
+    writeProjectConfig(path.join(projectRoot, PROJECT_CONFIG_FILENAME), {
+      version: 1,
+      intakePolicy: { additionalDirs: ['/tmp/a'] },
+    });
     const cfg = loadIntakeConfig(projectRoot, { CX_INBOX_DIRS: '/tmp/a:/tmp/b' });
     assert.deepEqual(cfg.parentDirs, ['/tmp/a', '/tmp/b']);
   });
 
-  it('CX_INTAKE_MAX_DEPTH env wins over saved file', () => {
-    fs.writeFileSync(path.join(projectRoot, PROJECT_CONFIG_FILENAME), JSON.stringify({ version: 1 }));
-    fs.writeFileSync(
-      path.join(projectRoot, '.cx', 'intake-config.json'),
-      JSON.stringify({ maxDepth: 1 }),
-    );
+  it('CX_INTAKE_MAX_DEPTH env wins over project config', () => {
+    writeProjectConfig(path.join(projectRoot, PROJECT_CONFIG_FILENAME), {
+      version: 1,
+      intakePolicy: { maxDepth: 1 },
+    });
     const cfg = loadIntakeConfig(projectRoot, { CX_INTAKE_MAX_DEPTH: '5' });
     assert.equal(cfg.maxDepth, 5);
   });
 
   it('clamps maxDepth to the hard limit', () => {
-    fs.writeFileSync(path.join(projectRoot, PROJECT_CONFIG_FILENAME), JSON.stringify({ version: 1 }));
-    fs.writeFileSync(
-      path.join(projectRoot, '.cx', 'intake-config.json'),
-      JSON.stringify({ maxDepth: 999 }),
-    );
+    writeProjectConfig(path.join(projectRoot, PROJECT_CONFIG_FILENAME), {
+      version: 1,
+      intakePolicy: { maxDepth: 999 },
+    });
     const cfg = loadIntakeConfig(projectRoot, {});
     assert.equal(cfg.maxDepth, INTAKE_HARD_MAX_DEPTH);
   });
 
   it('rejects negative depth (falls back to default)', () => {
-    fs.writeFileSync(path.join(projectRoot, PROJECT_CONFIG_FILENAME), JSON.stringify({ version: 1 }));
-    fs.writeFileSync(
-      path.join(projectRoot, '.cx', 'intake-config.json'),
-      JSON.stringify({ maxDepth: -3 }),
-    );
+    writeProjectConfig(path.join(projectRoot, PROJECT_CONFIG_FILENAME), {
+      version: 1,
+      intakePolicy: { maxDepth: -3 },
+    });
     const cfg = loadIntakeConfig(projectRoot, {});
     assert.equal(cfg.maxDepth, INTAKE_DEFAULT_MAX_DEPTH);
   });
@@ -105,11 +99,11 @@ describe('saveIntakeConfig', () => {
   });
 
   it('preserves untouched fields on a partial save', () => {
-    saveIntakeConfig(projectRoot, { maxDepth: 8, includeProjectInbox: false });
+    saveIntakeConfig(projectRoot, { maxDepth: 8, parentDirs: ['/tmp/keep'] });
     saveIntakeConfig(projectRoot, { maxDepth: 6 });
     const cfg = loadIntakeConfig(projectRoot, {});
     assert.equal(cfg.maxDepth, 6);
-    assert.equal(cfg.includeProjectInbox, false);
+    assert.deepEqual(cfg.parentDirs, ['/tmp/keep'], 'additionalDirs survive a depth-only save');
   });
 
   it('refuses to write in an uninitialized project', () => {
