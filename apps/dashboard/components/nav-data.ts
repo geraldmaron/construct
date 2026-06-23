@@ -20,6 +20,7 @@ export const NAV: NavGroup[] = [
       { id: 'doctor', title: 'Doctor', href: '/doctor' },
       { id: 'certification', title: 'Certification', href: '/certification' },
       { id: 'resources', title: 'Services', href: '/resources' },
+      { id: 'sources', title: 'Sources', href: '/sources' },
     ],
   },
   {

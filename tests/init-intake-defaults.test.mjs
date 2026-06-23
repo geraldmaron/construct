@@ -52,45 +52,46 @@ function runInit(extraEnv = {}) {
   });
 }
 
-function readIntakeConfig() {
-  const p = path.join(tmpDir, '.cx', 'intake-config.json');
-  if (!fs.existsSync(p)) return null;
-  return JSON.parse(fs.readFileSync(p, 'utf8'));
+function readIntakePolicy() {
+  const cfgPath = path.join(tmpDir, 'construct.config.json');
+  if (!fs.existsSync(cfgPath)) return null;
+  const raw = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+  return raw.intakePolicy ?? null;
 }
 
 describe('construct init --yes intake defaults', () => {
-  it('writes parentDirs as an empty list when the project contains src/ docs/ tests/', () => {
+  it('writes additionalDirs as an empty list when the project contains src/ docs/ tests/', () => {
     seedProjectDirs('src', 'docs', 'tests');
     const result = runInit();
     assert.equal(result.status, 0, `init failed: ${result.stderr}`);
-    const cfg = readIntakeConfig();
-    assert.ok(cfg, 'intake-config.json was not written');
+    const cfg = readIntakePolicy();
+    assert.ok(cfg, 'intakePolicy was not written to construct.config.json');
     assert.deepEqual(
-      cfg.parentDirs,
+      cfg.additionalDirs,
       [],
-      `parentDirs MUST be empty by default. Auto-including project artifact dirs ' +
-      'pollutes the intake queue with false positives. Saw: ${JSON.stringify(cfg.parentDirs)}`,
+      `additionalDirs MUST be empty by default. Saw: ${JSON.stringify(cfg.additionalDirs)}`,
     );
   });
 
-  it('preserves includeProjectInbox=true and includeDocsIntake=true as defaults', () => {
+  it('preserves rootInbox, projectInbox, and docsIntake zone defaults', () => {
     seedProjectDirs('src');
     const result = runInit();
     assert.equal(result.status, 0, `init failed: ${result.stderr}`);
-    const cfg = readIntakeConfig();
-    assert.equal(cfg.includeProjectInbox, true, '.cx/inbox/ must remain watched by default');
-    assert.equal(cfg.includeDocsIntake, true, 'docs/intake/ must remain watched when it exists');
+    const cfg = readIntakePolicy();
+    assert.equal(cfg.zones.projectInbox, true, '.cx/inbox/ must remain watched by default');
+    assert.equal(cfg.zones.docsIntake, true, 'docs/intake/ must remain watched when it exists');
+    assert.equal(cfg.zones.rootInbox, true, 'inbox/ must be watched by default');
   });
 
-  it('writes no parentDirs even when many preset directories exist', () => {
+  it('writes no additionalDirs even when many preset directories exist', () => {
     seedProjectDirs('src', 'lib', 'packages', 'apps', 'services', 'docs', 'tests', 'spec', 'infra', 'config', 'scripts', 'tools');
     const result = runInit();
     assert.equal(result.status, 0, `init failed: ${result.stderr}`);
-    const cfg = readIntakeConfig();
+    const cfg = readIntakePolicy();
     assert.deepEqual(
-      cfg.parentDirs,
+      cfg.additionalDirs,
       [],
-      'No preset directory should be auto-enabled. parentDirs is for explicit user opt-in only.',
+      'No preset directory should be auto-enabled. additionalDirs is for explicit user opt-in only.',
     );
   });
 });

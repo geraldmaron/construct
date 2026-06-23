@@ -14,7 +14,14 @@ type IntakeListPayload = {
 };
 
 type IntakeConfigPayload = {
-  config?: { parentDirs?: string[]; maxDepth?: number; includeProjectInbox?: boolean; includeDocsIntake?: boolean };
+  config?: {
+    parentDirs?: string[];
+    maxDepth?: number;
+    includeProjectInbox?: boolean;
+    includeDocsIntake?: boolean;
+    includeRootInbox?: boolean;
+    includeArchetypeInbox?: boolean;
+  };
   label?: string;
   itemNoun?: string;
 };
@@ -41,6 +48,7 @@ export default function IntakePage() {
           <CardGrid>
             <StatCard label="Pending" value={items.data.total ?? pending.length} sub="awaiting agent" />
             <StatCard label="Max depth" value={config.data?.config?.maxDepth ?? 3} />
+            <StatCard label="Root inbox" value={(config.data?.config?.includeRootInbox ?? config.data?.config?.includeArchetypeInbox) ? 'on' : 'off'} />
             <StatCard label="Project inbox" value={config.data?.config?.includeProjectInbox ? 'on' : 'off'} />
             <StatCard label="Docs intake" value={config.data?.config?.includeDocsIntake ? 'on' : 'off'} />
           </CardGrid>

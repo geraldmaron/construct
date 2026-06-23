@@ -2837,12 +2837,25 @@ async function cmdIntakeConfig(args) {
   const cwd = process.cwd();
 
   const action = args[0];
+  if (action === 'migrate') {
+    const { migrateLegacyIntakeConfig } = await import('../lib/intake/intake-config.mjs');
+    const result = migrateLegacyIntakeConfig(cwd);
+    if (!result.migrated) {
+      info(result.reason ?? 'nothing to migrate');
+      return;
+    }
+    info('Migrated .cx/intake-config.json → construct.config.json intakePolicy');
+    println(JSON.stringify(result.policy, null, 2));
+    return;
+  }
+
   if (!action || action === 'show') {
     const cfg = loadIntakeConfig(cwd, process.env);
     const desc = describeIntakeDepth(cfg.maxDepth);
     println(`Intake config (root: ${cwd})`);
     println('');
     println(`  includeProjectInbox: ${cfg.includeProjectInbox ? 'on' : 'off'} (.cx/inbox)`);
+    println(`  includeRootInbox:    ${(cfg.includeRootInbox ?? cfg.includeArchetypeInbox) ? 'on' : 'off'} (inbox/)`);
     println(`  includeDocsIntake:   ${cfg.includeDocsIntake ? 'on' : 'off'} (docs/intake)`);
     println(`  maxDepth:            ${cfg.maxDepth} — ${desc.label}`);
     println(`                       ${desc.detail}`);
@@ -2877,6 +2890,9 @@ async function cmdIntakeConfig(args) {
   const docsFlag = tail.find((a) => a.startsWith('--include-docs-intake='));
   if (docsFlag) patch.includeDocsIntake = /^(on|true|1|yes)$/i.test(docsFlag.split('=')[1] || '');
 
+  const rootFlag = tail.find((a) => a.startsWith('--include-root-inbox='));
+  if (rootFlag) patch.includeRootInbox = /^(on|true|1|yes)$/i.test(rootFlag.split('=')[1] || '');
+
   const addFlags = tail.filter((a) => a.startsWith('--add-dir='));
   const removeFlags = tail.filter((a) => a.startsWith('--remove-dir='));
 
@@ -2901,6 +2917,123 @@ async function cmdIntakeConfig(args) {
     errorln(err.message || 'failed to save intake config');
     process.exit(1);
   }
+}
+
+async function cmdSources(args) {
+  const {
+    validateSourceTargets,
+    normalizeConfigTarget,
+    resolveEffectiveSourceTargetsFromConfig,
+    legacyEnvSourceTargets,
+    SOURCE_PROVIDERS,
+  } = await import('../lib/config/source-targets.mjs');
+  const {
+    loadProjectConfig,
+    writeProjectConfig,
+    findProjectConfigPath,
+    PROJECT_CONFIG_FILENAME,
+  } = await import('../lib/config/project-config.mjs');
+
+  const cwd = process.cwd();
+  const action = args[0] ?? 'list';
+
+  if (action === 'list' || action === 'show') {
+    const { config, path: cfgPath } = loadProjectConfig(cwd, process.env);
+    const configTargets = (config.sources?.targets ?? []).map(normalizeConfigTarget);
+    const envTargets = legacyEnvSourceTargets(process.env);
+    const effective = resolveEffectiveSourceTargetsFromConfig(config, process.env);
+    println(`Source targets (config: ${cfgPath ?? 'default'})`);
+    println('');
+    if (configTargets.length === 0) println('  (no targets in construct.config.json)');
+    for (const t of configTargets) {
+      println(`  ${t.id} · ${t.provider} · ${JSON.stringify(t.selector)}`);
+    }
+    if (envTargets.length) {
+      println('');
+      println('Legacy env targets (merged at runtime):');
+      for (const t of envTargets) {
+        println(`  ${t.id} · ${t.provenance} · ${t.provider} · ${JSON.stringify(t.selector)}`);
+      }
+    }
+    println('');
+    println(`Effective targets: ${effective.length}`);
+    return;
+  }
+
+  if (action === 'validate') {
+    const loaded = loadProjectConfig(cwd, process.env);
+    const targetErrors = validateSourceTargets(loaded.raw?.sources?.targets ?? loaded.config?.sources?.targets ?? []);
+    const all = [...(loaded.errors ?? []), ...targetErrors];
+    if (!all.length) {
+      info(`${loaded.path ?? PROJECT_CONFIG_FILENAME}: source targets valid`);
+      return;
+    }
+    errorln(`Source target validation failed (${all.length}):`);
+    for (const e of all) errorln(`  - ${e}`);
+    process.exit(1);
+  }
+
+  if (action === 'add') {
+    const provider = args[1];
+    const id = args[2];
+    const selectorRaw = args[3];
+    if (!provider || !id || !selectorRaw) {
+      errorln('Usage: construct sources add <provider> <id> <selector-json>');
+      process.exit(1);
+    }
+    if (!SOURCE_PROVIDERS.includes(provider)) {
+      errorln(`Unknown provider: ${provider}. Expected: ${SOURCE_PROVIDERS.join(', ')}`);
+      process.exit(1);
+    }
+    let selector;
+    try { selector = JSON.parse(selectorRaw); } catch (err) {
+      errorln(`Invalid selector JSON: ${err.message}`);
+      process.exit(1);
+    }
+    const target = normalizeConfigTarget({ id, provider, selector });
+    const targetErrors = validateSourceTargets([target]);
+    if (targetErrors.length) {
+      for (const e of targetErrors) errorln(`  - ${e}`);
+      process.exit(1);
+    }
+    const cfgPath = findProjectConfigPath(cwd) || path.join(cwd, PROJECT_CONFIG_FILENAME);
+    const { config } = loadProjectConfig(cwd, process.env);
+    const existing = config.sources?.targets ?? [];
+    if (existing.some((t) => t.id === id)) {
+      errorln(`Target id already exists: ${id}`);
+      process.exit(1);
+    }
+    const next = {
+      ...config,
+      sources: { ...(config.sources ?? {}), targets: [...existing, target] },
+    };
+    writeProjectConfig(cfgPath, next);
+    info(`added source target ${id}`);
+    return;
+  }
+
+  if (action === 'remove') {
+    const id = args[1];
+    if (!id) {
+      errorln('Usage: construct sources remove <id>');
+      process.exit(1);
+    }
+    const cfgPath = findProjectConfigPath(cwd) || path.join(cwd, PROJECT_CONFIG_FILENAME);
+    const { config } = loadProjectConfig(cwd, process.env);
+    const existing = config.sources?.targets ?? [];
+    const nextTargets = existing.filter((t) => t.id !== id);
+    if (nextTargets.length === existing.length) {
+      errorln(`No target with id: ${id}`);
+      process.exit(1);
+    }
+    const next = { ...config, sources: { ...(config.sources ?? {}), targets: nextTargets } };
+    writeProjectConfig(cfgPath, next);
+    info(`removed source target ${id}`);
+    return;
+  }
+
+  errorln(`Unknown sources action: ${action}. Available: list, add, remove, validate`);
+  process.exit(1);
 }
 
 async function cmdIntakeMetrics() {
@@ -5400,6 +5533,7 @@ const handlers = new Map([
   ['status', cmdStatus],
   ['install', cmdInstall],
   ['config', cmdConfig],
+  ['sources', cmdSources],
   ['intake', cmdIntake],
   ['recommendations', cmdRecommendations],
   ['integrations', cmdIntegrations],

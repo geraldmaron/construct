@@ -131,6 +131,40 @@
       "description": "Provider-specific settings (e.g., Anthropic, OpenAI, GitHub). Values starting with '$' are interpolated from environment variables.",
       "additionalProperties": true
     },
+    "sources": {
+      "type": "object",
+      "description": "Typed integration source targets for embed auto-discovery and provider_fetch.",
+      "properties": {
+        "targets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "provider", "selector"],
+            "properties": {
+              "id": { "type": "string" },
+              "provider": { "type": "string", "enum": ["github", "jira", "linear", "slack"] },
+              "selector": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "intakePolicy": {
+      "type": "object",
+      "description": "Filesystem inbox watcher policy (zones, depth, extra directories).",
+      "properties": {
+        "maxDepth": { "type": "number", "default": 4 },
+        "additionalDirs": { "type": "array", "items": { "type": "string" } },
+        "zones": {
+          "type": "object",
+          "properties": {
+            "rootInbox": { "type": "boolean", "default": true, "description": "Watch inbox/ at project root" },
+            "projectInbox": { "type": "boolean", "default": true, "description": "Watch .cx/inbox/" },
+            "docsIntake": { "type": "boolean", "default": true, "description": "Watch docs/intake/ when present" }
+          }
+        }
+      }
+    },
     "models": {
       "type": "object",
       "description": "Model catalog visibility and live polling preferences.",

@@ -16,12 +16,16 @@ import {
   INTAKE_HARD_MAX_DEPTH,
   INTAKE_DEPTH_GUIDANCE,
 } from '../lib/intake/intake-config.mjs';
+import { writeProjectConfig, PROJECT_CONFIG_FILENAME } from '../lib/config/project-config.mjs';
+import { DEFAULT_PROJECT_CONFIG } from '../lib/config/schema.mjs';
 
 let projectRoot;
 
 beforeEach(() => {
   projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-intake-config-'));
   fs.mkdirSync(path.join(projectRoot, '.cx'), { recursive: true });
+  fs.mkdirSync(path.join(projectRoot, '.git'), { recursive: true });
+  writeProjectConfig(path.join(projectRoot, PROJECT_CONFIG_FILENAME), { ...DEFAULT_PROJECT_CONFIG });
 });
 
 afterEach(() => {
@@ -37,7 +41,8 @@ describe('loadIntakeConfig', () => {
     assert.deepEqual(cfg.parentDirs, []);
   });
 
-  it('reads parentDirs and maxDepth from saved file', () => {
+  it('reads parentDirs and maxDepth from legacy saved file when project config has no intakePolicy', () => {
+    fs.writeFileSync(path.join(projectRoot, PROJECT_CONFIG_FILENAME), JSON.stringify({ version: 1 }));
     fs.writeFileSync(
       path.join(projectRoot, '.cx', 'intake-config.json'),
       JSON.stringify({ parentDirs: ['/tmp/a'], maxDepth: 2, includeDocsIntake: false }),
@@ -49,6 +54,7 @@ describe('loadIntakeConfig', () => {
   });
 
   it('merges CX_INBOX_DIRS env into parentDirs without dupes', () => {
+    fs.writeFileSync(path.join(projectRoot, PROJECT_CONFIG_FILENAME), JSON.stringify({ version: 1 }));
     fs.writeFileSync(
       path.join(projectRoot, '.cx', 'intake-config.json'),
       JSON.stringify({ parentDirs: ['/tmp/a'] }),
@@ -58,6 +64,7 @@ describe('loadIntakeConfig', () => {
   });
 
   it('CX_INTAKE_MAX_DEPTH env wins over saved file', () => {
+    fs.writeFileSync(path.join(projectRoot, PROJECT_CONFIG_FILENAME), JSON.stringify({ version: 1 }));
     fs.writeFileSync(
       path.join(projectRoot, '.cx', 'intake-config.json'),
       JSON.stringify({ maxDepth: 1 }),
@@ -67,6 +74,7 @@ describe('loadIntakeConfig', () => {
   });
 
   it('clamps maxDepth to the hard limit', () => {
+    fs.writeFileSync(path.join(projectRoot, PROJECT_CONFIG_FILENAME), JSON.stringify({ version: 1 }));
     fs.writeFileSync(
       path.join(projectRoot, '.cx', 'intake-config.json'),
       JSON.stringify({ maxDepth: 999 }),
@@ -76,6 +84,7 @@ describe('loadIntakeConfig', () => {
   });
 
   it('rejects negative depth (falls back to default)', () => {
+    fs.writeFileSync(path.join(projectRoot, PROJECT_CONFIG_FILENAME), JSON.stringify({ version: 1 }));
     fs.writeFileSync(
       path.join(projectRoot, '.cx', 'intake-config.json'),
       JSON.stringify({ maxDepth: -3 }),
@@ -86,13 +95,13 @@ describe('loadIntakeConfig', () => {
 });
 
 describe('saveIntakeConfig', () => {
-  it('persists patch to .cx/intake-config.json', () => {
+  it('persists patch to construct.config.json intakePolicy', () => {
     saveIntakeConfig(projectRoot, { maxDepth: 2, parentDirs: ['/tmp/x'] });
     const saved = JSON.parse(
-      fs.readFileSync(path.join(projectRoot, '.cx', 'intake-config.json'), 'utf8'),
+      fs.readFileSync(path.join(projectRoot, PROJECT_CONFIG_FILENAME), 'utf8'),
     );
-    assert.equal(saved.maxDepth, 2);
-    assert.deepEqual(saved.parentDirs, ['/tmp/x']);
+    assert.equal(saved.intakePolicy.maxDepth, 2);
+    assert.deepEqual(saved.intakePolicy.additionalDirs, ['/tmp/x']);
   });
 
   it('preserves untouched fields on a partial save', () => {
