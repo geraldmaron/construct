@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-23T05:29:38.070Z",
+  "generatedAt": "2026-06-23T18:14:06.523Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 521,
-    "topLevelTestFiles": 280,
+    "testFiles": 525,
+    "topLevelTestFiles": 287,
     "nestedTestFiles": 238,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 23,
     "byLayer": {
-      "unit": 316,
+      "unit": 323,
       "live-provider": 2,
       "visual": 6,
       "integration": 31,
       "functional": 163
     },
     "byCategory": {
-      "unit": 277,
+      "unit": 284,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
@@ -77,6 +77,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/artifact-reviewers.test.mjs — manifest reviewer resolution and bypass markers."
+    },
+    {
+      "path": "tests/artifact-workflow.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/artifact-workflow.test.mjs — manifest intent planning and run provenance."
     },
     {
       "path": "tests/audit-rules.test.mjs",
@@ -469,6 +477,14 @@
       "maintainerNotes": "tests/cli-catalog-accuracy.test.mjs — CLI catalog vs handler-map parity."
     },
     {
+      "path": "tests/cli-service-inventory.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/cli-service-inventory.test.mjs — public dispatch/reference inventory parity."
+    },
+    {
       "path": "tests/cli-surface.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -717,6 +733,14 @@
       "maintainerNotes": "tests/doc-stamp.test.mjs — tests for lib/doc-stamp.mjs UUIDv7 identity, SHA-256 body hash, and frontmatter stamp verification."
     },
     {
+      "path": "tests/doctor-source-checkout.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor-source-checkout.test.mjs — published-package vs source-checkout detection."
+    },
+    {
       "path": "tests/doctor/audit.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -731,14 +755,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doctor/cost-ledger.test.mjs — daily budget tracking and enforcement."
-    },
-    {
-      "path": "tests/doctor-source-checkout.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/doctor-source-checkout.test.mjs — published package vs source checkout for doctor gates."
     },
     {
       "path": "tests/document-extract-rtf.test.mjs",
@@ -1165,6 +1181,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/execution-policy.test.mjs — capability-adaptive execution policy compiler"
+    },
+    {
+      "path": "tests/export-branding.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/export-branding.test.mjs — distribution branding policy coverage."
     },
     {
       "path": "tests/external-mcp-schema-cost.test.mjs",
@@ -2913,14 +2937,6 @@
       "maintainerNotes": "tests/intake-config.test.mjs — intake config schema, persistence, env merge."
     },
     {
-      "path": "tests/intake-policy.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/intake-policy.test.mjs — project-config intakePolicy resolution."
-    },
-    {
       "path": "tests/intake-eml-extraction.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -2935,6 +2951,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/intake-manifest.test.mjs — SHA-256 dedup manifest unit tests."
+    },
+    {
+      "path": "tests/intake-policy.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/intake-policy.test.mjs — project-config intakePolicy resolution."
     },
     {
       "path": "tests/intake-poll-lock.test.mjs",
@@ -3071,6 +3095,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/maintenance-cleanup.test.mjs — self-maintenance primitives."
+    },
+    {
+      "path": "tests/mcp-artifact-workflow.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp-artifact-workflow.test.mjs — MCP workflow provenance envelope."
     },
     {
       "path": "tests/mcp-broker.test.mjs",
