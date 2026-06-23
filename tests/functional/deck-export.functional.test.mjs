@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { exportMarkdown, detect } from '../../lib/document-export.mjs';
-import { pptxgenPresent } from '../../lib/deck-export-pptx.mjs';
+import { pptxgenPresent, auditDeckMarkdownLayout } from '../../lib/deck-export-pptx.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FIXTURE = path.join(REPO, 'tests', 'fixtures', 'publish', 'golden-deck-platform.md');
@@ -26,6 +26,12 @@ function exportFixture(format, filename) {
   });
   return { result, outputPath };
 }
+
+test('golden-deck-platform fixture passes layout audit before export', () => {
+  const body = fs.readFileSync(FIXTURE, 'utf8');
+  const audit = auditDeckMarkdownLayout(body, { title: 'Construct Platform Overview' });
+  assert.equal(audit.ok, true, JSON.stringify(audit.issues));
+});
 
 test('golden-deck-platform fixture exists with slide separators', () => {
   assert.ok(fs.existsSync(FIXTURE));
@@ -45,6 +51,7 @@ test('exportMarkdown pptx from golden fixture succeeds when pptxgenjs present', 
   try {
     assert.equal(result.ok, true, result.message);
     assert.equal(result.slideCount, 6);
+    assert.equal(result.layout?.ok, true, JSON.stringify(result.layout?.issues));
     assert.ok(fs.existsSync(outputPath));
     const buf = fs.readFileSync(outputPath);
     assert.ok(buf.length > 5000, 'PPTX should be non-trivial size');
