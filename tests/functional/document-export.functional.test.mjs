@@ -107,6 +107,17 @@ test('exportMarkdown returns missing+install hint when pandoc is absent (no thro
   assert.match(result.message, /Install pandoc/);
 });
 
+test('construct-branded docx export succeeds without a bundled reference doc (graceful, not blocked)', () => {
+  const { dir: stubDir } = stubPandocPath('cx-export-docx-stub-');
+  const work = tmpDir('cx-export-docx-work-');
+  const inputPath = writeMarkdown(work);
+  const env = { ...process.env, PATH: `${stubDir}${path.delimiter}${process.env.PATH || ''}` };
+  const result = exportMarkdown({ inputPath, format: 'docx', branding: 'construct', env });
+  assert.equal(result.ok, true, `expected ok; got: ${JSON.stringify(result)}`);
+  assert.equal(result.engine, 'pandoc');
+  assert.ok(fs.existsSync(result.outputPath), `output not written: ${result.outputPath}`);
+});
+
 test('happy path: stubbed pandoc on PATH is spawned and the output file is written', () => {
   const { dir: stubDir } = stubPandocPath();
   const work = tmpDir('cx-export-work-');
