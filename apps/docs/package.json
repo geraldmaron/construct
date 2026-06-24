@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/gen-redirect-stubs.mjs",
     "start": "next start"
   },
   "dependencies": {

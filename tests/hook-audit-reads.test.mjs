@@ -15,6 +15,8 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { describe, it, before, after, beforeEach } from 'node:test';
 
+import { doctorRoot } from '../lib/config/xdg.mjs';
+
 const HERE = path.dirname(new URL(import.meta.url).pathname);
 const ROOT = path.resolve(HERE, '..');
 const HOOK = path.join(ROOT, 'lib', 'hooks', 'audit-reads.mjs');
@@ -25,7 +27,7 @@ let target;
 
 before(() => {
   tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-audit-reads-'));
-  auditFile = path.join(tmpHome, '.cx', 'audit-reads.jsonl');
+  auditFile = path.join(doctorRoot(tmpHome), 'audit-reads.jsonl');
   target = path.join(tmpHome, 'sample.txt');
   fs.writeFileSync(target, 'hello world');
 });
@@ -41,8 +43,8 @@ beforeEach(() => {
 function runHook(input, { auditReads = '1' } = {}) {
   return spawnSync(process.execPath, [HOOK], {
     // cwd=tmpHome (which is also HOME for this test) so the project-root
-    // walker stops at $HOME and the writer falls back to ~/.cx — the
-    // legacy user-scope path this test asserts against. Without this, the
+    // walker stops at $HOME and the writer falls back to the global doctor
+    // root — the user-scope path this test asserts against. Without this, the
     // spawned hook inherits the construct repo cwd and routes its audit
     // record into the construct repo's own .cx/.
 

@@ -4,7 +4,7 @@
  *   - stops at $HOME (so ~ doesn't look like a project)
  *   - projectIdFor is deterministic + stable per absolute path
  *   - resolveProjectScopedPath returns project path when in a project,
- *     ~/.cx path otherwise
+ *     the global doctor-root path otherwise
  */
 
 import test from 'node:test';
@@ -14,6 +14,7 @@ import { tmpdir, homedir } from 'node:os';
 import { join } from 'node:path';
 
 import { findProjectRoot, projectIdFor, resolveProjectScope, resolveProjectScopedPath, _resetCache } from '../lib/project-root.mjs';
+import { doctorRoot } from '../lib/config/xdg.mjs';
 
 function makeTmp(prefix = 'cx-pr-test-') {
   const dir = mkdtempSync(join(tmpdir(), prefix));
@@ -104,7 +105,7 @@ test('resolveProjectScope returns null outside a project, scope object inside', 
   }
 });
 
-test('resolveProjectScopedPath returns project path inside a project, HOME path outside', () => {
+test('resolveProjectScopedPath returns project path inside a project, doctor-root path outside', () => {
   _resetCache();
   const outside = mkdtempSync(join(tmpdir(), 'cx-outside-'));
   const inside = mkdtempSync(join(tmpdir(), 'cx-inside-'));
@@ -115,7 +116,7 @@ test('resolveProjectScopedPath returns project path inside a project, HOME path 
     assert.equal(insideP, join(inside, '.cx', 'audit-reads.jsonl'));
 
     const outsideP = resolveProjectScopedPath('audit-reads.jsonl', { cwd: outside, ensureDir: false });
-    assert.equal(outsideP, join(homedir(), '.cx', 'audit-reads.jsonl'));
+    assert.equal(outsideP, join(doctorRoot(), 'audit-reads.jsonl'));
   } finally {
     rmSync(outside, { recursive: true, force: true });
     rmSync(inside, { recursive: true, force: true });

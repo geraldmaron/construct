@@ -19,6 +19,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { doctorRoot } from '../../lib/config/xdg.mjs';
+
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
 
@@ -105,7 +107,7 @@ test('doctor flags oversized embed daemon log and --fix-embed-log rotates it', {
 
   const env = makeEnv([], { CONSTRUCT_DOCTOR_EMBED_LOG_FORCE_MB: '2' });
   try {
-    const runtimeDir = join(env.home, '.cx', 'runtime');
+    const runtimeDir = join(doctorRoot(env.home), 'runtime');
     mkdirSync(runtimeDir, { recursive: true });
     const logPath = join(runtimeDir, 'embed-daemon.log');
     writeFileSync(logPath, 'x'.repeat(3 * 1024 * 1024));  // 3 MB > 2 MB threshold
@@ -125,14 +127,15 @@ test('doctor flags oversized embed daemon log and --fix-embed-log rotates it', {
 test('doctor flags legacy user-scope project-state files and --fix-migrate-state archives them', { timeout: 90_000 }, async () => {
   const env = makeEnv([]);
   try {
-    // Seed legacy ~/.cx/<project-scoped>.jsonl files (pre-isolation refactor).
+    // Seed legacy project-scoped .jsonl files at the user-scope doctor root
+    // (pre-isolation refactor).
 
-    const userCx = join(env.home, '.cx');
-    mkdirSync(userCx, { recursive: true });
-    writeFileSync(join(userCx, 'contract-violations.jsonl'), '{"contract":"x"}\n');
-    writeFileSync(join(userCx, 'audit-reads.jsonl'), '{"path":"y"}\n');
-    writeFileSync(join(userCx, 'agent-log.jsonl'), '{"agent":"z"}\n');
-    writeFileSync(join(userCx, 'intent-verifications.jsonl'), '{"specialist":"q"}\n');
+    const userState = doctorRoot(env.home);
+    mkdirSync(userState, { recursive: true });
+    writeFileSync(join(userState, 'contract-violations.jsonl'), '{"contract":"x"}\n');
+    writeFileSync(join(userState, 'audit-reads.jsonl'), '{"path":"y"}\n');
+    writeFileSync(join(userState, 'agent-log.jsonl'), '{"agent":"z"}\n');
+    writeFileSync(join(userState, 'intent-verifications.jsonl'), '{"specialist":"q"}\n');
 
     const before = env.runDoctor();
     assert.match(before.stdout, /Legacy user-scope project-state files: 4.*--fix-migrate-state/, `before-fix flags legacy state; stdout:\n${before.stdout}`);
@@ -143,11 +146,11 @@ test('doctor flags legacy user-scope project-state files and --fix-migrate-state
     // Originals removed.
 
     for (const name of ['contract-violations.jsonl', 'audit-reads.jsonl', 'agent-log.jsonl', 'intent-verifications.jsonl']) {
-      assert.equal(existsSync(join(userCx, name)), false, `${name} must be moved out of ~/.cx/`);
+      assert.equal(existsSync(join(userState, name)), false, `${name} must be moved out of the user-scope doctor root`);
     }
-    // Archive contains four files in ~/.cx/legacy/.
+    // Archive contains four files under the doctor root's legacy/ dir.
 
-    const archiveDir = join(userCx, 'legacy');
+    const archiveDir = join(userState, 'legacy');
     assert.ok(existsSync(archiveDir), 'archive dir must exist');
     const archived = readdirSync(archiveDir).filter((f) => f.endsWith('.jsonl'));
     assert.equal(archived.length, 4, `expected 4 archived files; got: ${archived.join(', ')}`);
