@@ -23,7 +23,7 @@ These are targets, not guarantees; an issue requiring an upstream fix is bounded
 
 ## Dependency vulnerabilities
 
-The published CLI keeps a deliberately small runtime dependency surface (see [docs/adr/0001-zero-npm-core.md](docs/adr/0001-zero-npm-core.md)). Two audit gates guard releases:
+The published CLI keeps a deliberately small runtime dependency surface (see [docs/decisions/adr/0001-zero-npm-core.md](docs/decisions/adr/0001-zero-npm-core.md)). Two audit gates guard releases:
 
 - `npm audit --omit=dev --audit-level=high` — the repository's own tree.
 - `npm run audit:published` — the **artifact a consumer installs**, packed and audited in a clean project with no `overrides` in scope. This is the gate that catches a transitive advisory a repo-local override would mask.

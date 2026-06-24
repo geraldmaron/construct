@@ -33,11 +33,10 @@ Generated tooling (`.construct/`, `.claude/`, `.cx/`, `plan.md`) is gitignored; 
 
 ## Where to drop information you want Construct to use
 
-Three intake paths, ordered by formality:
+Two intake paths, ordered by formality:
 
-1. **`.cx/inbox/`** — drop a file here (URL, screenshot, paste, anything). The embed daemon watches the directory; when a file lands, it ingests it into the local knowledge base within a second or two and writes a triage packet to `.cx/intake/pending/` describing the new content, its classification (intake type, stage, owner persona, recommended chain), its suggested docs lane, and existing docs that overlap. The agent surfaces pending items at the next session start and you can ask it to process them.
-2. **`docs/intake/`** — for proper intake batches (research notes, evidence from a meeting, raw source material). Has a template. Survives in git history.
-3. **`AGENTS.md`**: for rules and conventions you want the agent to follow every time. "We prefer functional components. Don't introduce new dependencies without flagging." Read at session start.
+1. **`inbox/`** — the single canonical drop zone. Drop a file here (URL, screenshot, paste, anything). The embed daemon watches the directory; when a file lands, it ingests it into the local knowledge base within a second or two and writes a triage packet to `.cx/intake/pending/` describing the new content, its classification (intake type, stage, owner persona, recommended chain), its suggested docs lane, and existing docs that overlap. The agent surfaces pending items at the next session start and you can ask it to process them. For large or slowly-written files, stage under `inbox/.staging/` and rename in so the watcher never sees a half-written file.
+2. **`AGENTS.md`**: for rules and conventions you want the agent to follow every time. "We prefer functional components. Don't introduce new dependencies without flagging." Read at session start.
 
 For URLs or quick notes, the easiest path is to drop a file into `~/Downloads` and run:
 

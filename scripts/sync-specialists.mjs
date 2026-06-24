@@ -55,6 +55,7 @@ import {
   getOpenCodeMcpId,
 } from "../lib/mcp-platform-config.mjs";
 import { loadConstructEnv } from "../lib/env-config.mjs";
+import { configDir } from "../lib/config/xdg.mjs";
 import { inlineRoleAntiPatterns, PROMPT_WORD_CAP } from "../lib/role-preload.mjs";
 import { inlineValidationContract } from "../lib/prompt-validation-contract.mjs";
 import { loadManifest } from "../lib/roles/manifest.mjs";
@@ -852,7 +853,7 @@ ${buildPrompt(entry, allEntries, "claude")}
 
 /**
  * Rewrite the home-mode hook command pattern
- *   node "$HOME/.construct/lib/hooks/<name>.mjs"
+ *   node "$HOME/.config/construct/lib/hooks/<name>.mjs"
  * into the project-portable form
  *   node .construct/run.mjs hook <name>
  * so the resulting settings.json works on any clone where the project ships
@@ -866,7 +867,7 @@ function makeHooksPortable(hooksJson) {
   // Operate on the in-memory object so we don't fight JSON string escaping.
   const replaceCommand = (cmd) => {
     if (typeof cmd !== 'string') return cmd;
-    const m = cmd.match(/^node\s+"?\$HOME\/\.construct\/lib\/hooks\/([a-z0-9-]+)\.mjs"?\s*(.*)$/);
+    const m = cmd.match(/^node\s+"?\$HOME\/\.config\/construct\/lib\/hooks\/([a-z0-9-]+)\.mjs"?\s*(.*)$/);
     if (!m) return cmd;
     const [, name, rest] = m;
     return `node .construct/run.mjs hook ${name}${rest ? ' ' + rest.trim() : ''}`;
@@ -1044,13 +1045,15 @@ ${personaList}
       if (fs.existsSync(templatePath)) {
         const template = JSON.parse(fs.readFileSync(templatePath, "utf8"));
         if (template.hooks) {
-          // Resolve $HOME/.construct to the real path so hook commands survive
-          // symlink traversal inside Claude Code's hook runner environment.
-          const constructReal = (() => {
-            try { return fs.realpathSync(path.join(home, ".construct")); } catch { return path.join(home, ".construct"); }
+          // Resolve the $HOME/.config/construct token to the real config dir so
+          // hook commands survive symlink traversal inside Claude Code's hook
+          // runner environment, and honor a custom XDG_CONFIG_HOME at sync time.
+          const configReal = (() => {
+            const dir = configDir(home);
+            try { return fs.realpathSync(dir); } catch { return dir; }
           })();
           const hookStr = JSON.stringify(filterGlobalClaudeHooks(template.hooks))
-            .replace(/\$HOME\/\.construct/g, constructReal.replace(/\\/g, "/"));
+            .replace(/\$HOME\/\.config\/construct/g, configReal.replace(/\\/g, "/"));
           settings.hooks = JSON.parse(hookStr);
         }
       }
@@ -1445,7 +1448,7 @@ function syncCursor(targetDir = null, wants = true) {
 
     // Glob-scoped language rules land as managed per-rule .mdc files only when
     // the project's own files match their globs — Cursor's native auto-attach
-    // convention. See docs/concepts/rules-delivery.md.
+    // convention. See docs/guides/concepts/rules-delivery.md.
     try {
       emitCursorRules({ rulesDir: path.join(root, "rules"), targetDir, dryRun: DRY_RUN });
     } catch (err) {

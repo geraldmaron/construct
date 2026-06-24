@@ -11,7 +11,7 @@
 | `.cx/context.md` | Human-readable resumable project context | Active work, decisions, architecture assumptions, or open questions change |
 | `.cx/context.json` | Machine-readable resumable context | Context state needs to stay in sync with `.cx/context.md` |
 | `docs/README.md` | Docs index and maintenance contract | Core docs set or maintenance expectations change |
-| `docs/concepts/architecture.mdx` | Canonical architecture and invariants | Runtime shape, contracts, boundaries, or major dependencies change |
+| `docs/guides/concepts/architecture.mdx` | Canonical architecture and invariants | Runtime shape, contracts, boundaries, or major dependencies change |
 
 `plan.md` is a local working document. `construct init` creates it for the active session, but it is gitignored and not committed; durable work belongs in the tracker (Beads or external).
 
@@ -27,25 +27,25 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 
 ## Contents
 
-- [Start](./start/). Install, initialize a project, connect an editor, and run the first task
-- [Architecture](./concepts/architecture.mdx). Runtime shape, boundaries, and system map
-- [Agents and personas](./concepts/agents-and-personas.mdx). One public persona with specialists behind it
-- [Deployment model](./concepts/deployment-model.mdx). Solo, team, and enterprise topology
-- [Prompt surface architecture](./concepts/prompt-surfaces.mdx). Persona, specialist, skill, rule, and fixture surfaces
-- [Knowledge layout](./concepts/knowledge-layout.md). `.cx/` directory structure, inbox routing, and durable knowledge lanes
-- [Project scopes](./concepts/project-scopes.md). `.construct` vs `.cx` vs user home — what belongs in git
-- [Intake and triage](./concepts/intake-and-triage.mdx). How dropped signals become owner-assigned work
-- [Gates and enforcement](./concepts/gates-and-enforcement.mdx). Write-time, commit-time, and CI guardrails
+- [Start](./guides/start/). Install, initialize a project, connect an editor, and run the first task
+- [Architecture](./guides/concepts/architecture.mdx). Runtime shape, boundaries, and system map
+- [Agents and personas](./guides/concepts/agents-and-personas.mdx). One public persona with specialists behind it
+- [Deployment model](./guides/concepts/deployment-model.mdx). Solo, team, and enterprise topology
+- [Prompt surface architecture](./guides/concepts/prompt-surfaces.mdx). Persona, specialist, skill, rule, and fixture surfaces
+- [Knowledge layout](./guides/concepts/knowledge-layout.md). `.cx/` directory structure, inbox routing, and durable knowledge lanes
+- [Project scopes](./guides/concepts/project-scopes.md). `.construct` vs `.cx` vs user home — what belongs in git
+- [Intake and triage](./guides/concepts/intake-and-triage.mdx). How dropped signals become owner-assigned work
+- [Gates and enforcement](./guides/concepts/gates-and-enforcement.mdx). Write-time, commit-time, and CI guardrails
 - [Style](./STYLE.md). Voice, punctuation, structure rules (canonical reference for prose lint)
-- [Branding](./reference/branding.md). Visual identity, naming, voice, tone, and profile terminology
-- [Learning loops](./concepts/learning-loops.mdx). What is wired vs aspirational across A1-A4
-- [Profile lifecycle](./concepts/profile-lifecycle.md). Draft → promote → archive flow for org-type profiles
-- [Persona and skill research](./concepts/persona-research.md). Methodology grounded in Goodwin, Cooper, Galbraith STAR, Bloom
-- [Release policy](./maintenance/release-policy.md). When to tag
-- [Release and deploy automation](./maintenance/release-and-deploy.md). What fires when you tag, plus the failure-mode lookup
-- [Templates and role anti-patterns](./templates/README.md)
-- [Runbooks](./runbooks/)
-- [ADRs](./adr/). Architecture decision records (public site lane)
+- [Branding](./guides/reference/branding.md). Visual identity, naming, voice, tone, and profile terminology
+- [Learning loops](./guides/concepts/learning-loops.mdx). What is wired vs aspirational across A1-A4
+- [Profile lifecycle](./guides/concepts/profile-lifecycle.md). Draft → promote → archive flow for org-type profiles
+- [Persona and skill research](./guides/concepts/persona-research.md). Methodology grounded in Goodwin, Cooper, Galbraith STAR, Bloom
+- [Release policy](./operations/maintenance/release-policy.md). When to tag
+- [Release and deploy automation](./operations/maintenance/release-and-deploy.md). What fires when you tag, plus the failure-mode lookup
+- [Templates and role anti-patterns](../templates/docs/README.md)
+- [Runbooks](./operations/runbooks/)
+- [ADRs](./decisions/adr/). Architecture decision records (public site lane)
 - [Skills](../skills/). Domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
 - [Functional tests pattern](../tests/functional/README.md). When and how to add an end-to-end test
 
@@ -53,9 +53,9 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 
 These directories stay in git for Construct maintainers. They are excluded from the published docs site and not linked from README.
 
-- [Audit snapshots](./audit/). Dated alignment scorecards and baseline evidence
-- [Research notes](./research/). Competitive audits and synthesis reports; ADR-cited inputs in [decision-input](./research/decision-input/)
-- [PRDs](./prd/). Draft product requirements for this repo
+- [Audit snapshots](./operations/audit/). Dated alignment scorecards and baseline evidence
+- [Research notes](./notes/research/). Competitive audits and synthesis reports; ADR-cited inputs in [decision-input](./notes/research/decision-input/)
+- [PRDs](./specs/prd/). Draft product requirements for this repo
 - [Roadmap](./roadmap.md). Generated placeholder (excluded from public site)
 - [Tests audit](../tests/AUDIT.md). Category-by-category survey of test files
 
@@ -63,24 +63,24 @@ These directories stay in git for Construct maintainers. They are excluded from 
 
 Step-by-step operator guides for common tasks:
 
-- [Quick start](./cookbook/quick-start.md)
-- [Use the inbox](./cookbook/use-the-inbox.mdx)
-- [Configure Slack](./cookbook/configure-slack.md)
-- [Configure GitHub](./cookbook/configure-github.md)
-- [Configure Jira and Confluence](./cookbook/configure-jira-confluence.md)
-- [Override the storage root (`CX_DATA_DIR`)](./cookbook/override-storage-root.md)
-- [Manage providers](./cookbook/manage-providers.md)
-- [Plug in your own LLM](./cookbook/plug-in-your-own-llm.mdx)
-- [Generate artifacts](./cookbook/generate-artifacts.mdx)
-- [Query the knowledge base](./cookbook/query-the-knowledge-base.md)
-- [Observability and cost](./cookbook/observability-and-cost.md)
-- [Wireframe and drop commands](./cookbook/wireframe-and-drop.md)
-- [Distill and infer commands](./cookbook/distill-and-infer.md)
-- [Sync the dashboard static bundle](./cookbook/sync-the-dashboard.md)
+- [Quick start](./guides/cookbook/quick-start.md)
+- [Use the inbox](./guides/cookbook/use-the-inbox.mdx)
+- [Configure Slack](./guides/cookbook/configure-slack.md)
+- [Configure GitHub](./guides/cookbook/configure-github.md)
+- [Configure Jira and Confluence](./guides/cookbook/configure-jira-confluence.md)
+- [Override the storage root (`CX_DATA_DIR`)](./guides/cookbook/override-storage-root.md)
+- [Manage providers](./guides/cookbook/manage-providers.md)
+- [Plug in your own LLM](./guides/cookbook/plug-in-your-own-llm.mdx)
+- [Generate artifacts](./guides/cookbook/generate-artifacts.mdx)
+- [Query the knowledge base](./guides/cookbook/query-the-knowledge-base.md)
+- [Observability and cost](./guides/cookbook/observability-and-cost.md)
+- [Wireframe and drop commands](./guides/cookbook/wireframe-and-drop.md)
+- [Distill and infer commands](./guides/cookbook/distill-and-infer.md)
+- [Sync the dashboard static bundle](./guides/cookbook/sync-the-dashboard.md)
 
 ## Command Coverage
 
-Use the generated [CLI reference](./reference/cli/) for exact flags and subcommands. The docs index intentionally points advanced commands to the reference when a dedicated tutorial would add little beyond the command help.
+Use the generated [CLI reference](./guides/reference/cli/) for exact flags and subcommands. The docs index intentionally points advanced commands to the reference when a dedicated tutorial would add little beyond the command help.
 
 - Core: `construct docs`, `construct recommendations`, `construct sandbox`
 - Workflows and knowledge: `construct customer`, `construct graph`, `construct integrations`, `construct reflect`, `construct tags`, `construct workflow`, `construct workspace`
@@ -90,7 +90,7 @@ Use the generated [CLI reference](./reference/cli/) for exact flags and subcomma
 
 ## Prompt surfaces
 
-`docs/concepts/prompt-surfaces.mdx` is the canonical reference for the prompt architecture.
+`docs/guides/concepts/prompt-surfaces.mdx` is the canonical reference for the prompt architecture.
 
 It defines:
 

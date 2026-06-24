@@ -10,7 +10,7 @@ test('loadManifest returns a manifest for sre', () => {
   const m = loadManifest('sre');
   assert.ok(m);
   assert.ok(m.events.length > 0);
-  assert.ok(m.fence.allowedPaths.includes('docs/runbooks/**'));
+  assert.ok(m.fence.allowedPaths.includes('docs/operations/runbooks/**'));
 });
 
 test('loadManifest accepts cx- prefix', () => {

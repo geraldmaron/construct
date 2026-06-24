@@ -38,6 +38,7 @@ import {
   PROJECT_CONFIG_FILENAME,
 } from '../lib/config/project-config.mjs';
 import { validateProjectConfig } from '../lib/config/schema.mjs';
+import { configDir } from '../lib/config/xdg.mjs';
 import {
   DEPLOYMENT_MODES,
   DEPLOYMENT_MODE_ENV_KEY,
@@ -400,7 +401,7 @@ async function cmdDoctor() {
       }
 
       // .env files
-      for (const envPath of [join(process.cwd(), '.env'), join(homedir(), '.env'), join(homedir(), '.construct', 'config.env')]) {
+      for (const envPath of [join(process.cwd(), '.env'), join(homedir(), '.env'), getUserEnvPath(homedir())]) {
         if (fs.existsSync(envPath)) {
           try {
             const content = fs.readFileSync(envPath, 'utf8');
@@ -739,7 +740,7 @@ async function cmdDoctor() {
     const vscodeSettingsOk = vscodeSettingsPaths.some((candidate) => fs.existsSync(candidate));
     if (vscodeSettingsOk) add('VS Code settings file', true, true);
   }
-  add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(path.join(HOME, '.construct')), true);
+  add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(configDir(HOME)), true);
   add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
   add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));
   add('specialists/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'prompts')));
@@ -765,33 +766,29 @@ async function cmdDoctor() {
 
   // Claude Code Stop-hook installation check. The settings template
   // wires several Stop hooks (policy-engine / stop-typecheck /
-  // stop-notify / readme-age-check) that reference
-  // $HOME/.construct/lib/hooks/*. If that path doesn't resolve, every
-  // Stop hook fails silently — including stop-notify, which is what
-  // appends session cost data. Result: the dashboard stops updating
-  // and the user sees stale data. Surface loudly so the fix is one
-  // command away.
+  // stop-notify / readme-age-check) whose commands sync resolves to the
+  // hook lib symlink. If those scripts don't resolve, every Stop hook
+  // fails silently — including stop-notify, which is what appends session
+  // cost data. Result: the dashboard stops updating and the user sees stale
+  // data. Surface loudly so the fix is one command away.
   try {
     const settingsPath = path.join(HOME, '.claude', 'settings.json');
     if (fs.existsSync(settingsPath)) {
       const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
       const stopHooks = settings?.hooks?.Stop || [];
-      const installRoot = path.join(HOME, '.construct', 'lib', 'hooks');
-      const installed = fs.existsSync(installRoot);
+      const installRoot = path.join(configDir(HOME), 'lib', 'hooks');
       const referenced = [];
       for (const group of stopHooks) {
         for (const h of (group?.hooks || [])) {
           const cmd = String(h?.command || '');
-          const m = cmd.match(/\.construct\/lib\/hooks\/([a-zA-Z0-9_-]+\.mjs)/);
+          const m = cmd.match(/(?:^|["\s])(\/[^"\s]*\/lib\/hooks\/[a-zA-Z0-9_-]+\.mjs)/);
           if (m) referenced.push(m[1]);
         }
       }
-      const missing = installed
-        ? referenced.filter((f) => !fs.existsSync(path.join(installRoot, f)))
-        : referenced;
+      const missing = referenced.filter((scriptPath) => !fs.existsSync(scriptPath));
       if (referenced.length > 0 && missing.length > 0) {
         add(
-          `Claude Stop hooks broken: ${missing.length} hook${missing.length === 1 ? '' : 's'} missing in ~/.construct/lib/hooks/. Symlink the install: ln -sfn ${ROOT_DIR}/lib ~/.construct/lib`,
+          `Claude Stop hooks broken: ${missing.length} hook${missing.length === 1 ? '' : 's'} do not resolve. Re-run \`construct install --scope=user\` (symlinks ${ROOT_DIR}/lib → ${installRoot.replace(/\/hooks$/, '')}).`,
           false,
           false,
         );
@@ -2116,15 +2113,13 @@ async function printIntakeHelp() {
   println('  construct intake metrics               Show pipeline volume, velocity, and processing stats.');
   println('  construct intake integrate <id> <system>    Push intake to external system (github, jira, confluence).');
   println('  construct intake integrate <id> <system> --create-issue  Create an issue from the intake packet.');
-  println('  construct intake config               Show current watch dirs + scan depth.');
+  println('  construct intake config               Show the inbox/ drop zone + scan depth.');
   println('  construct intake config set --depth=N [--add-dir=PATH] [--remove-dir=PATH]');
+  println('                                       Update intake config. --depth caps at the hard limit.');
   println('  construct intake extraction-warnings [--since=7d] [--kind=table] [--limit=50]');
   println('                                       Summarize ~/.cx/intake/extraction-warnings.jsonl (dropped content log).');
   println('  construct intake needs-asr list       List audio/video files awaiting ASR transcription.');
   println('  construct intake needs-asr show <id>  Show a specific ASR-pending packet.');
-  println('                                       Update intake config. --depth caps at the hard limit.');
-  println('  construct intake config set --include-project-inbox=on|off');
-  println('  construct intake config set --include-docs-intake=on|off');
 }
 
 function parseKvFlags(args, keys) {
@@ -2856,33 +2851,23 @@ async function cmdIntakeConfig(args) {
   const cwd = process.cwd();
 
   const action = args[0];
-  if (action === 'migrate') {
-    const { migrateLegacyIntakeConfig } = await import('../lib/intake/intake-config.mjs');
-    const result = migrateLegacyIntakeConfig(cwd);
-    if (!result.migrated) {
-      info(result.reason ?? 'nothing to migrate');
-      return;
-    }
-    info('Migrated .cx/intake-config.json → construct.config.json intakePolicy');
-    println(JSON.stringify(result.policy, null, 2));
-    return;
-  }
+
+  // Single-zone model (ADR-0045 §C): the canonical `inbox/` is always watched.
+  // Only maxDepth and additionalDirs are configurable.
 
   if (!action || action === 'show') {
     const cfg = loadIntakeConfig(cwd, process.env);
     const desc = describeIntakeDepth(cfg.maxDepth);
     println(`Intake config (root: ${cwd})`);
     println('');
-    println(`  includeProjectInbox: ${cfg.includeProjectInbox ? 'on' : 'off'} (.cx/inbox)`);
-    println(`  includeRootInbox:    ${(cfg.includeRootInbox ?? cfg.includeArchetypeInbox) ? 'on' : 'off'} (inbox/)`);
-    println(`  includeDocsIntake:   ${cfg.includeDocsIntake ? 'on' : 'off'} (docs/intake)`);
+    println('  drop zone:           inbox/ (always watched)');
     println(`  maxDepth:            ${cfg.maxDepth} — ${desc.label}`);
     println(`                       ${desc.detail}`);
     println(`  hardMaxDepth:        ${INTAKE_HARD_MAX_DEPTH}`);
     if (cfg.parentDirs.length === 0) {
-      println('  parentDirs:          (none — only the built-in zones are watched)');
+      println('  additionalDirs:      (none — only inbox/ is watched)');
     } else {
-      println('  parentDirs:');
+      println('  additionalDirs:');
       for (const dir of cfg.parentDirs) println(`    - ${dir}`);
     }
     println('');
@@ -2903,15 +2888,6 @@ async function cmdIntakeConfig(args) {
   const depthFlag = tail.find((a) => a.startsWith('--depth='));
   if (depthFlag) patch.maxDepth = Number(depthFlag.split('=')[1]);
 
-  const projectFlag = tail.find((a) => a.startsWith('--include-project-inbox='));
-  if (projectFlag) patch.includeProjectInbox = /^(on|true|1|yes)$/i.test(projectFlag.split('=')[1] || '');
-
-  const docsFlag = tail.find((a) => a.startsWith('--include-docs-intake='));
-  if (docsFlag) patch.includeDocsIntake = /^(on|true|1|yes)$/i.test(docsFlag.split('=')[1] || '');
-
-  const rootFlag = tail.find((a) => a.startsWith('--include-root-inbox='));
-  if (rootFlag) patch.includeRootInbox = /^(on|true|1|yes)$/i.test(rootFlag.split('=')[1] || '');
-
   const addFlags = tail.filter((a) => a.startsWith('--add-dir='));
   const removeFlags = tail.filter((a) => a.startsWith('--remove-dir='));
 
@@ -2924,7 +2900,7 @@ async function cmdIntakeConfig(args) {
   }
 
   if (Object.keys(patch).length === 0) {
-    errorln('Nothing to change. Pass --depth=N, --add-dir=PATH, --remove-dir=PATH, --include-project-inbox=on|off, or --include-docs-intake=on|off.');
+    errorln('Nothing to change. Pass --depth=N, --add-dir=PATH, or --remove-dir=PATH.');
     process.exit(1);
   }
 
@@ -4034,7 +4010,7 @@ async function cmdPluginEngine(args) {
   const [action = 'list', ...rest] = args;
   const isGlobal = rest.includes('--global');
   const targetPath = isGlobal
-    ? path.join(HOME, '.construct', 'plugins.json')
+    ? path.join(configDir(HOME), 'plugins.json')
     : path.join(process.cwd(), '.cx', 'plugins.json');
 
   function readPluginsJson() {
@@ -4438,7 +4414,7 @@ async function cmdDocsCheck(args) {
     println('Commands with no linked how-to in docs/README.md:');
     for (const name of result.uncovered) println(`  ✗  construct ${name}`);
     println('');
-    println(`Add cookbook recipes under docs/cookbook/ and link them from the cookbook index.`);
+    println(`Add cookbook recipes under docs/guides/cookbook/ and link them from the cookbook index.`);
     process.exitCode = 1;
   }
 }
@@ -4449,7 +4425,7 @@ async function cmdDocsSite(args = []) {
   if (check) {
     const { drift } = checkFumadocsReferenceDrift({ rootDir: ROOT_DIR });
     if (drift.length === 0) {
-      ok('docs/reference/ is up to date.');
+      ok('docs/guides/reference/ is up to date.');
       return;
     }
     println('');
@@ -4460,9 +4436,9 @@ async function cmdDocsSite(args = []) {
   }
   const { written } = buildFumadocsReference({ rootDir: ROOT_DIR });
   if (written.length === 0) {
-    ok('docs/reference/ already up to date.');
+    ok('docs/guides/reference/ already up to date.');
   } else {
-    ok(`docs/reference/ regenerated (${written.length} file${written.length === 1 ? '' : 's'}).`);
+    ok(`docs/guides/reference/ regenerated (${written.length} file${written.length === 1 ? '' : 's'}).`);
   }
 }
 
@@ -4961,7 +4937,7 @@ async function cmdProvider(args) {
       if (!id) { errorln(`Usage: construct provider plugins ${action} <id> [<package>]`); process.exit(1); }
       const isGlobal = args.includes('--global');
       const targetPath = isGlobal
-        ? path.join(HOME, '.construct', 'providers.json')
+        ? path.join(configDir(HOME), 'providers.json')
         : path.join(process.cwd(), '.cx', 'providers.json');
       let data = { providers: [] };
       try { data = JSON.parse(fs.readFileSync(targetPath, 'utf8')); } catch { /* fresh */ }
@@ -5486,7 +5462,7 @@ async function cmdTelemetryQuery(args) {
   println('  errors [--agent=<name>] [--since=24h]                error span summary');
   println('  trace <traceId>                                       full span tree');
   println('');
-  println('For Langfuse/Honeycomb/Grafana Tempo/Datadog, see docs/concepts/observability.md');
+  println('For Langfuse/Honeycomb/Grafana Tempo/Datadog, see docs/guides/concepts/observability.md');
 }
 
 async function cmdHook(args) {
@@ -6553,7 +6529,7 @@ const handlers = new Map([
 
         println('');
         println(`Scaffolding a new profile draft. Three questions, then a preview.`);
-        println(`Background: docs/concepts/persona-research.md and docs/concepts/profile-lifecycle.md`);
+        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/profile-lifecycle.md`);
         println('');
         if (!displayName) displayName = await ask('Display name?', id);
         if (seedDepartments.length === 0) {
@@ -6612,7 +6588,7 @@ const handlers = new Map([
         println('');
         println(`✓ draft created at ${pathMod.relative(process.cwd(), result.dir)}`);
         println('');
-        println(`Next steps (in order, per docs/concepts/profile-lifecycle.md):`);
+        println(`Next steps (in order, per docs/guides/concepts/profile-lifecycle.md):`);
         println(`  1. Discover  (cx-ux-researcher): fill personas/<role>.md from interviews + primary sources.`);
         println(`  2. Frame     (cx-product-manager): fill departments/<dept>.md charters and intake taxonomy.`);
         println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in profile.json.`);

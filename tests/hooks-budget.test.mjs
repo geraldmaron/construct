@@ -16,7 +16,7 @@ import { describe, it } from 'node:test';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const HOOKS_DIR = path.join(ROOT_DIR, 'lib', 'hooks');
-const DEPRECATED_LEDGER = path.join(ROOT_DIR, 'docs', 'reference', 'hooks-deprecated.md');
+const DEPRECATED_LEDGER = path.join(ROOT_DIR, 'docs', 'guides', 'reference', 'hooks-deprecated.md');
 
 // Hooks approved for removal — must not exist on disk.
 const DEPRECATED_HOOKS = [
@@ -160,7 +160,7 @@ describe('hooks budget', () => {
   it('deprecated ledger exists', () => {
     assert.ok(
       fs.existsSync(DEPRECATED_LEDGER),
-      'docs/reference/hooks-deprecated.md is missing — create it before removing hooks'
+      'docs/guides/reference/hooks-deprecated.md is missing — create it before removing hooks'
     );
   });
 

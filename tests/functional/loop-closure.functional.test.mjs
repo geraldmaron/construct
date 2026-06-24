@@ -2,7 +2,7 @@
  * tests/functional/loop-closure.functional.test.mjs
  *
  * Regression guards for the Construct learning loop — the claims an audit
- * (docs/audit/implementation-audit-20260601.md) validated empirically against a
+ * (docs/operations/audit/implementation-audit-20260601.md) validated empirically against a
  * clean, isolated instance. Each test pins one loop stage so a future change
  * that silently breaks closure fails CI instead of degrading in the field.
  *

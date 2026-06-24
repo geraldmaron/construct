@@ -105,7 +105,6 @@ test('intake process fails fast with exit 2 when the poll lock is held by a live
     mkdirSync(join(p.dir, 'inbox'), { recursive: true });
     mkdirSync(join(p.dir, '.cx', 'intake'), { recursive: true });
     writeFileSync(join(p.dir, '.cx', 'intake', 'manifest.json'), `${JSON.stringify({ version: 1, files: {} })}\n`, 'utf8');
-    writeFileSync(join(p.dir, '.cx', 'intake-config.json'), `${JSON.stringify({ parentDirs: [], maxDepth: 4, includeArchetypeInbox: true })}\n`, 'utf8');
     writeFileSync(join(p.dir, 'inbox', 'sample.md'), '# Sample\n', 'utf8');
 
     writeFakePollLock(p.dir, process.pid, 'fake-daemon');
@@ -127,7 +126,6 @@ test('intake process --wait acquires the lock once it is released', () => {
     mkdirSync(join(p.dir, 'inbox'), { recursive: true });
     mkdirSync(join(p.dir, '.cx', 'intake'), { recursive: true });
     writeFileSync(join(p.dir, '.cx', 'intake', 'manifest.json'), `${JSON.stringify({ version: 1, files: {} })}\n`, 'utf8');
-    writeFileSync(join(p.dir, '.cx', 'intake-config.json'), `${JSON.stringify({ parentDirs: [], maxDepth: 4, includeProjectInbox: false, includeArchetypeInbox: true })}\n`, 'utf8');
     writeFileSync(join(p.dir, 'inbox', 'sample.md'), '# Sample\n\nbody\n', 'utf8');
 
     writeFakePollLock(p.dir, process.pid, 'fake-daemon');
@@ -157,7 +155,6 @@ test('intake process clears a stale poll lock whose pid is gone, then runs', () 
     mkdirSync(join(p.dir, 'inbox'), { recursive: true });
     mkdirSync(join(p.dir, '.cx', 'intake'), { recursive: true });
     writeFileSync(join(p.dir, '.cx', 'intake', 'manifest.json'), `${JSON.stringify({ version: 1, files: {} })}\n`, 'utf8');
-    writeFileSync(join(p.dir, '.cx', 'intake-config.json'), `${JSON.stringify({ parentDirs: [], maxDepth: 4, includeProjectInbox: false, includeArchetypeInbox: true })}\n`, 'utf8');
     writeFileSync(join(p.dir, 'inbox', 'sample.md'), '# Sample\n\nbody\n', 'utf8');
 
     writeFakePollLock(p.dir, 999999, 'dead-pid');
@@ -175,7 +172,6 @@ test('intake process --dry-run is unaffected by the poll lock', () => {
   try {
     mkdirSync(join(p.dir, 'inbox'), { recursive: true });
     mkdirSync(join(p.dir, '.cx', 'intake'), { recursive: true });
-    writeFileSync(join(p.dir, '.cx', 'intake-config.json'), `${JSON.stringify({ parentDirs: [], maxDepth: 4, includeArchetypeInbox: true })}\n`, 'utf8');
 
     writeFakePollLock(p.dir, process.pid);
 
@@ -203,11 +199,6 @@ async function withArchetypeProject(fn) {
     writeFileSync(
       join(p.dir, '.cx', 'intake', 'manifest.json'),
       `${JSON.stringify({ version: 1, files: {} }, null, 2)}\n`,
-      'utf8',
-    );
-    writeFileSync(
-      join(p.dir, '.cx', 'intake-config.json'),
-      `${JSON.stringify({ parentDirs: [], maxDepth: 4, includeProjectInbox: false, includeDocsIntake: false, includeArchetypeInbox: true }, null, 2)}\n`,
       'utf8',
     );
     process.env.CONSTRUCT_AGENT_ID = 'test-agent';

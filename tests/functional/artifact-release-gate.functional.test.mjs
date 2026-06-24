@@ -80,7 +80,7 @@ Replay tooling becomes mandatory; migrations must be versioned.
 
 Reversible within one quarter if projection lag exceeds SLO.
 
-[source: docs/adr/prior-art.md]
+[source: docs/decisions/adr/prior-art.md]
 `,
     );
     const r = validateArtifactRelease({ filePath: f, type: 'adr', rootDir: REPO, cwd: dir });

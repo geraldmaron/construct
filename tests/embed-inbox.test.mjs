@@ -1,8 +1,13 @@
 /**
  * tests/embed-inbox.test.mjs — InboxWatcher unit tests.
+ *
+ * Single-zone model (ADR-0045 §C): the only drop zone is the project-root
+ * `inbox/`, always watched. There is no `.cx/inbox/` or `docs/intake/` zone.
+ * The `inbox/.staging/` assembly dir and dotfiles are never consumed, so a
+ * half-written drop stays invisible until it lands at a top-level name.
  */
 
-import { describe, it, before, after } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,21 +21,46 @@ function makeTmpDir() {
 }
 
 describe('resolveInboxDirs', () => {
-  it('always includes <rootDir>/.cx/inbox/', () => {
+  it('always includes the canonical project-root inbox/', () => {
     const root = makeTmpDir();
     try {
       const dirs = resolveInboxDirs(root, {});
-      assert.ok(dirs.some((d) => d.endsWith('.cx/inbox') || d.endsWith('.cx\\inbox')));
+      assert.ok(dirs.some((d) => d.endsWith(`${root}/inbox`) || d.endsWith('inbox')));
+      assert.ok(dirs.some((d) => d === join(root, 'inbox')));
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
   });
 
-  it('creates .cx/inbox/ if it does not exist', () => {
+  it('creates inbox/ and inbox/.staging/ if they do not exist', () => {
     const root = makeTmpDir();
     try {
       resolveInboxDirs(root, {});
-      assert.ok(existsSync(join(root, '.cx', 'inbox')));
+      assert.ok(existsSync(join(root, 'inbox')), 'inbox/ created');
+      assert.ok(existsSync(join(root, 'inbox', '.staging')), 'inbox/.staging/ created');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('never watches .cx/inbox/ even when it holds entries (zone removed)', () => {
+    const root = makeTmpDir();
+    try {
+      mkdirSync(join(root, '.cx', 'inbox'), { recursive: true });
+      writeFileSync(join(root, '.cx', 'inbox', 'stranded.md'), '# stranded drop');
+      const dirs = resolveInboxDirs(root, {});
+      assert.ok(!dirs.some((d) => d.endsWith(join('.cx', 'inbox'))), '.cx/inbox/ is not a zone');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('does NOT watch docs/intake/ even when it exists (zone removed)', () => {
+    const root = makeTmpDir();
+    try {
+      mkdirSync(join(root, 'docs', 'intake'), { recursive: true });
+      const dirs = resolveInboxDirs(root, {});
+      assert.ok(!dirs.some((d) => d.endsWith(join('docs', 'intake'))), 'docsIntake zone is gone');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -45,17 +75,6 @@ describe('resolveInboxDirs', () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
       rmSync(extra, { recursive: true, force: true });
-    }
-  });
-
-  it('includes docs/intake when it exists', () => {
-    const root = makeTmpDir();
-    try {
-      mkdirSync(join(root, 'docs', 'intake'), { recursive: true });
-      const dirs = resolveInboxDirs(root, {});
-      assert.ok(dirs.some((d) => d.endsWith('docs/intake') || d.endsWith('docs\\intake')));
-    } finally {
-      rmSync(root, { recursive: true, force: true });
     }
   });
 
@@ -83,10 +102,10 @@ describe('InboxWatcher', () => {
     }
   });
 
-  it('ingests a plain text file dropped into .cx/inbox/', async () => {
+  it('ingests a plain text file dropped into inbox/', async () => {
     const root = makeTmpDir();
     try {
-      const inboxDir = join(root, '.cx', 'inbox');
+      const inboxDir = join(root, 'inbox');
       mkdirSync(inboxDir, { recursive: true });
       writeFileSync(join(inboxDir, 'spec.md'), '# Test spec\n\nThis is a test specification for the inbox watcher.');
 
@@ -104,7 +123,7 @@ describe('InboxWatcher', () => {
   it('does not re-process the same file on second poll', async () => {
     const root = makeTmpDir();
     try {
-      const inboxDir = join(root, '.cx', 'inbox');
+      const inboxDir = join(root, 'inbox');
       mkdirSync(inboxDir, { recursive: true });
       writeFileSync(join(inboxDir, 'notes.txt'), 'Meeting notes: decided to use Postgres for session store.');
 
@@ -137,10 +156,10 @@ describe('InboxWatcher', () => {
     }
   });
 
-  it('ingests files recursively from docs/intake subdirectories', async () => {
+  it('ingests files recursively from inbox/ subdirectories', async () => {
     const root = makeTmpDir();
     try {
-      const meetingDir = join(root, 'docs', 'intake', 'meeting-notes');
+      const meetingDir = join(root, 'inbox', 'meeting-notes');
       mkdirSync(meetingDir, { recursive: true });
       writeFileSync(join(meetingDir, 'retro.md'), '# Retro\n\nWe agreed to simplify intake UX.');
 
@@ -154,14 +173,14 @@ describe('InboxWatcher', () => {
     }
   });
 
-  it('promotes intake docs into matching docs lanes when the lane exists', async () => {
+  it('promotes ingested files into matching docs lanes when the lane exists', async () => {
     const root = makeTmpDir();
     try {
-      const intakeDir = join(root, 'docs', 'intake');
+      const inboxDir = join(root, 'inbox');
       const meetingsDir = join(root, 'docs', 'meetings');
-      mkdirSync(intakeDir, { recursive: true });
+      mkdirSync(inboxDir, { recursive: true });
       mkdirSync(meetingsDir, { recursive: true });
-      writeFileSync(join(intakeDir, 'weekly-sync.md'), '# Weekly sync\n\nMeeting notes\n\nAttendees: team\n\nAction items: simplify UX.');
+      writeFileSync(join(inboxDir, 'weekly-sync.md'), '# Weekly sync\n\nMeeting notes\n\nAttendees: team\n\nAction items: simplify UX.');
 
       const watcher = new InboxWatcher({ rootDir: root, env: { CONSTRUCT_EMBEDDING_MODEL: 'hashing' }, cwd: root });
       const result = await watcher.poll();
@@ -170,6 +189,23 @@ describe('InboxWatcher', () => {
       assert.ok(result.processed[0].docsPath);
       assert.ok(result.processed[0].docsPath.endsWith('.md'));
       assert.ok(result.processed[0].docsPath.includes(join('docs', 'meetings')));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('never consumes files staged under inbox/.staging/', async () => {
+    const root = makeTmpDir();
+    try {
+      const stagingDir = join(root, 'inbox', '.staging');
+      mkdirSync(stagingDir, { recursive: true });
+      writeFileSync(join(stagingDir, 'half-written.md'), '# mid-write, not yet renamed');
+
+      const watcher = new InboxWatcher({ rootDir: root, env: { CONSTRUCT_EMBEDDING_MODEL: 'hashing' }, cwd: root });
+      const result = await watcher.poll();
+
+      assert.equal(result.processed.length, 0, 'staged file must not be ingested');
+      assert.equal(result.errors.length, 0);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -190,7 +226,7 @@ describe('InboxWatcher', () => {
   it('skips hidden files and unsupported extensions', async () => {
     const root = makeTmpDir();
     try {
-      const inboxDir = join(root, '.cx', 'inbox');
+      const inboxDir = join(root, 'inbox');
       mkdirSync(inboxDir, { recursive: true });
       writeFileSync(join(inboxDir, '.hidden.txt'), 'hidden');
       writeFileSync(join(inboxDir, 'data.bin'), Buffer.from([0x00, 0x01, 0x02]));

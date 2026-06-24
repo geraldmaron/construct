@@ -16,9 +16,9 @@ function candidates() {
   return [
     { id: 'A', path: 'lib/auth.mjs', title: 'auth middleware', kind: 'target-file', score: 0.40, summary: 'auth flow.' },
     { id: 'B', path: 'tests/auth.test.mjs', title: 'auth tests', kind: 'test', score: 0.35, summary: 'integration tests.' },
-    { id: 'C', path: 'docs/prd/login.md', title: 'PRD: login', kind: 'prd', score: 0.95, summary: 'product reqs.' },
-    { id: 'D', path: 'docs/runbooks/oncall.md', title: 'oncall runbook', kind: 'runbook', score: 0.70, summary: 'oncall.' },
-    { id: 'E', path: 'docs/adr/0007-auth.md', title: 'ADR-0007: auth', kind: 'adr', score: 0.55, summary: 'auth ADR.' },
+    { id: 'C', path: 'docs/specs/prd/login.md', title: 'PRD: login', kind: 'prd', score: 0.95, summary: 'product reqs.' },
+    { id: 'D', path: 'docs/operations/runbooks/oncall.md', title: 'oncall runbook', kind: 'runbook', score: 0.70, summary: 'oncall.' },
+    { id: 'E', path: 'docs/decisions/adr/0007-auth.md', title: 'ADR-0007: auth', kind: 'adr', score: 0.55, summary: 'auth ADR.' },
   ];
 }
 

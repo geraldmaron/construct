@@ -54,9 +54,9 @@ Load the core product-manager role guidance and the selected overlay before draf
 
 ## Storage
 
-Write working artifacts under `.cx/knowledge/` unless they are docs of record. Approved PRDs live in `docs/prd/`; approved Meta PRDs live in `docs/meta-prd/`.
+Write working artifacts under `.cx/knowledge/` unless they are docs of record. Approved PRDs live in `docs/specs/prd/`; approved Meta PRDs live in `docs/meta-prd/`.
 
-The hybrid storage layer indexes `.cx/knowledge/`, `docs/prd/`, and `docs/meta-prd/`. When Postgres is configured, `construct storage sync` can persist these artifacts into shared SQL rows. The vector layer scores the same documents for local, remote, or file-backed semantic retrieval.
+The hybrid storage layer indexes `.cx/knowledge/`, `docs/specs/prd/`, and `docs/meta-prd/`. When Postgres is configured, `construct storage sync` can persist these artifacts into shared SQL rows. The vector layer scores the same documents for local, remote, or file-backed semantic retrieval.
 
 ## Approval boundaries
 

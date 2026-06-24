@@ -18,6 +18,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, it, before, after, beforeEach } from 'node:test';
+import { configDir } from '../../lib/config/xdg.mjs';
 
 let tmpHome;
 let credsModule;
@@ -39,14 +40,14 @@ after(() => {
 });
 
 beforeEach(() => {
-  const fp = path.join(tmpHome, '.construct', 'config.env');
+  const fp = path.join(configDir(tmpHome), 'config.env');
   if (fs.existsSync(fp)) fs.unlinkSync(fp);
 });
 
 describe('credsFilePath', () => {
-  it('returns a path ending in .construct/config.env under HOME', () => {
+  it('returns a path ending in construct/config.env under the XDG config dir', () => {
     const fp = credsModule.credsFilePath();
-    assert.ok(fp.includes('.construct'));
+    assert.ok(fp.endsWith(path.join('construct', 'config.env')));
     assert.ok(fp.endsWith('config.env'));
     assert.ok(fp.startsWith(tmpHome));
   });

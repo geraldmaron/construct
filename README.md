@@ -28,7 +28,7 @@ Bootstrap local services (once per machine, opt-in to machine-scope writes):
 construct install --scope=user --yes
 ```
 
-`construct install` defaults to `--scope=project`, which writes nothing and prints scope guidance — see the [footprint contract](#footprint-contract) below or [ADR 0029](docs/adr/0029-install-scopes-and-hook-budgets.md). Use `--scope=user` for machine setup, `--scope=both` for both.
+`construct install` defaults to `--scope=project`, which writes nothing and prints scope guidance — see the [footprint contract](#footprint-contract) below or [ADR 0029](docs/decisions/adr/0029-install-scopes-and-hook-budgets.md). Use `--scope=user` for machine setup, `--scope=both` for both.
 
 Initialize a project:
 
@@ -87,7 +87,7 @@ Pick or change modes with `construct config mode [solo|team|enterprise]`. [Deplo
 
 ## Intake
 
-Anything dropped into `.cx/inbox/` (a bug report, a customer comment, a competitor PDF, a postmortem draft) is classified by the active profile's intake taxonomy. The default `rnd` profile uses bug, user-signal, experiment, architecture, incident, security, requirement, research, ops, eval-finding, launch-asset, legal-compliance. The `operations` profile uses request, incident, ops, security, docs. The `creative` profile uses brief, content-request, asset, experiment, report. The `research` profile uses question, study, synthesis, report.
+Anything dropped into `inbox/` (a bug report, a customer comment, a competitor PDF, a postmortem draft) is classified by the active profile's intake taxonomy. The default `rnd` profile uses bug, user-signal, experiment, architecture, incident, security, requirement, research, ops, eval-finding, launch-asset, legal-compliance. The `operations` profile uses request, incident, ops, security, docs. The `creative` profile uses brief, content-request, asset, experiment, report. The `research` profile uses question, study, synthesis, report.
 
 Each signal gets a primary owner and a recommended handoff chain. Inspect with `construct intake list` and `construct intake show <id>`. Generate a task graph with `construct graph from-intake <id>`. The classifier runs in the daemon and is deterministic. The agent in your editor does the actual analysis. [Intake and triage](https://geraldmaron.github.io/construct/concepts/intake-and-triage).
 
@@ -111,11 +111,11 @@ Construct's writes are scoped and disclosed up front. The default `construct ins
 | Machine | `construct install --scope=user` | `~/.construct/config.env`, `~/.construct/lib` (symlink), `~/.construct/services/`, `~/Library/LaunchAgents/` (macOS), MCP entries in `~/.config/opencode/opencode.json` and `~/.codex/config.toml`, marker block in `~/.claude/CLAUDE.md`, hook injection in `~/.claude/settings.json` (last two require interactive consent or `--yes`) |
 | Never touched | — | Shell rc files (`~/.bashrc`, `~/.zshrc`), npm global config, `git config --global` |
 
-Full table with file:line citations and the per-hook performance budget contract: [Architecture — Footprint contract](https://geraldmaron.github.io/construct/concepts/architecture#footprint-contract) and [ADR 0029](docs/adr/0029-install-scopes-and-hook-budgets.md).
+Full table with file:line citations and the per-hook performance budget contract: [Architecture — Footprint contract](https://geraldmaron.github.io/construct/concepts/architecture#footprint-contract) and [ADR 0029](docs/decisions/adr/0029-install-scopes-and-hook-budgets.md).
 
 ## Learning loops
 
-Construct gets smarter on its own. Every session ends with an automatic capture: tools used, files touched, what the final reply said. That goes into `.cx/observations/` and is searchable from the next session. See [`docs/concepts/learning-loops.mdx`](./docs/concepts/learning-loops.mdx) for what's wired, what's coming, and how to turn pieces off.
+Construct gets smarter on its own. Every session ends with an automatic capture: tools used, files touched, what the final reply said. That goes into `.cx/observations/` and is searchable from the next session. See [`docs/guides/concepts/learning-loops.mdx`](./docs/guides/concepts/learning-loops.mdx) for what's wired, what's coming, and how to turn pieces off.
 
 ## `.cx/` is local-only runtime state
 
@@ -226,7 +226,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct doc` | Verify or inspect auditability stamps on Construct-generated markdown files |
 | `construct docs:check` | Check for missing how-to guides (alias for `docs check`) |
 | `construct docs:reconcile` | Reconcile docs against the registry |
-| `construct docs:site` | Regenerate generated reference pages under docs/reference/ |
+| `construct docs:site` | Regenerate generated reference pages under docs/guides/reference/ |
 | `construct docs:update` | Regenerate AUTO-managed doc regions (alias for `docs update`) |
 | `construct docs:verify` | Validate documentation quality (alias for `docs verify`) |
 | `construct impact` | Change-impact analysis — map changed files to affected tests, capabilities, and workflows |
@@ -269,7 +269,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md). Branch workflow, gates, review expectations.
 - [`CHANGELOG.md`](./CHANGELOG.md). Release history.
-- [`docs/concepts/architecture.mdx`](./docs/concepts/architecture.mdx). Canonical architecture.
+- [`docs/guides/concepts/architecture.mdx`](./docs/guides/concepts/architecture.mdx). Canonical architecture.
 - [`AGENTS.md`](./AGENTS.md). Agent operating contract.
 
 ## Project structure

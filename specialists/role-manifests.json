@@ -6,7 +6,7 @@
       "events": ["push_gate.fail", "service.down", "mcp.unhealthy.persistent", "edit_loop.stuck"],
       "severityImmediate": ["service.down"],
       "fence": {
-        "allowedPaths": ["docs/runbooks/**", "docs/incidents/**", "docs/postmortems/**"],
+        "allowedPaths": ["docs/operations/runbooks/**", "docs/runbooks/**", "docs/operations/incidents/**", "docs/incidents/**", "docs/postmortems/**"],
         "allowedBdLabels": ["incident", "sre", "reliability"],
         "allowedCommands": ["bd create", "bd note", "bd update", "bd link", "bd label"],
         "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**", "edit:specialists/**"]
@@ -86,7 +86,7 @@
       "events": ["handoff.received", "adr.requested", "arch.boundary.violated"],
       "severityImmediate": [],
       "fence": {
-        "allowedPaths": ["docs/adr/**", "docs/rfc/**", "docs/concepts/architecture.md", "docs/system-design/**"],
+        "allowedPaths": ["docs/decisions/adr/**", "docs/adr/**", "docs/decisions/rfc/**", "docs/rfc/**", "docs/guides/concepts/architecture.md", "docs/concepts/architecture.md", "docs/system-design/**"],
         "allowedBdLabels": ["architecture", "adr", "rfc", "design"],
         "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
         "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**", "edit:specialists/**"]
@@ -112,7 +112,7 @@
       "events": ["handoff.received", "release.candidate", "version.bump.needed"],
       "severityImmediate": [],
       "fence": {
-        "allowedPaths": ["docs/releases/**", "CHANGELOG.md"],
+        "allowedPaths": ["docs/operations/releases/**", "docs/releases/**", "CHANGELOG.md"],
         "allowedBdLabels": ["release", "version", "shipping"],
         "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
         "approvalRequired": ["commit", "push", "edit:package.json", "edit:lib/**", "edit:bin/**"]
@@ -125,7 +125,7 @@
       "events": ["handoff.received", "backlog.stale", "prd.requested"],
       "severityImmediate": [],
       "fence": {
-        "allowedPaths": ["docs/prd/**", "docs/meta-prd/**", "docs/prfaq/**", "docs/one-pager/**", ".cx/knowledge/**"],
+        "allowedPaths": ["docs/specs/prd/**", "docs/prd/**", "docs/meta-prd/**", "docs/prfaq/**", "docs/one-pager/**", ".cx/knowledge/**"],
         "allowedBdLabels": ["product", "prd", "backlog", "feature"],
         "allowedCommands": ["bd create", "bd note", "bd update", "bd label", "bd priority"],
         "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**"]
@@ -197,7 +197,7 @@
       "events": ["handoff.received", "research.requested", "evidence.requested"],
       "severityImmediate": [],
       "fence": {
-        "allowedPaths": ["docs/research/**", ".cx/research/**", "docs/evidence-briefs/**", "docs/signal-briefs/**"],
+        "allowedPaths": ["docs/notes/research/**", "docs/research/**", ".cx/research/**", "docs/evidence-briefs/**", "docs/signal-briefs/**"],
         "allowedBdLabels": ["research", "evidence", "investigation"],
         "allowedCommands": ["bd create", "bd note", "bd update", "bd label"],
         "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**"]
@@ -210,7 +210,7 @@
     "explorer": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/explorations/**", ".cx/explorations/**"], "allowedBdLabels": ["exploration", "spike"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["exploration"], "docTypes": ["memo"] }, "handoffCandidates": ["engineer", "architect", "researcher"], "killSwitchEnv": "CONSTRUCT_ROLE_EXPLORER" },
     "operations": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/ops/**", "docs/operations/**"], "allowedBdLabels": ["ops", "operations"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["ops"], "docTypes": ["memo", "runbook"] }, "handoffCandidates": ["sre", "platform-engineer", "release-manager"], "killSwitchEnv": "CONSTRUCT_ROLE_OPERATIONS" },
     "orchestrator": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/**", "plan.md", ".cx/context.md"], "allowedBdLabels": ["orchestration", "workflow", "dispatch"], "allowedCommands": ["bd create", "bd note", "bd update", "bd label", "bd link"], "approvalRequired": ["commit", "push", "edit:lib/**", "edit:bin/**", "edit:specialists/**"] }, "outputs": { "bdLabels": ["orchestration", "dispatch"], "docTypes": ["memo"] }, "handoffCandidates": ["product-manager", "architect", "engineer", "security", "qa", "sre"], "killSwitchEnv": "CONSTRUCT_ROLE_ORCHESTRATOR" },
-    "rd-lead": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/research/**", "docs/experiments/**", ".cx/experiments/**"], "allowedBdLabels": ["rd", "research", "experiment"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["rd"], "docTypes": ["memo", "research-brief"] }, "handoffCandidates": ["researcher", "architect", "ai-engineer"], "killSwitchEnv": "CONSTRUCT_ROLE_RD_LEAD" },
+    "rd-lead": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/notes/research/**", "docs/research/**", "docs/experiments/**", ".cx/experiments/**"], "allowedBdLabels": ["rd", "research", "experiment"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["rd"], "docTypes": ["memo", "research-brief"] }, "handoffCandidates": ["researcher", "architect", "ai-engineer"], "killSwitchEnv": "CONSTRUCT_ROLE_RD_LEAD" },
     "legal-compliance": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/legal/**", "docs/compliance/**", "docs/security/**", ".cx/knowledge/**"], "allowedBdLabels": ["legal", "compliance", "privacy"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["legal", "compliance"], "docTypes": ["memo"] }, "handoffCandidates": ["security", "product-manager"], "killSwitchEnv": "CONSTRUCT_ROLE_LEGAL_COMPLIANCE" },
     "devil-advocate": { "events": ["handoff.received"], "severityImmediate": [], "fence": { "allowedPaths": ["docs/critiques/**"], "allowedBdLabels": ["critique", "devil-advocate"], "allowedCommands": ["bd create", "bd note", "bd update"], "approvalRequired": ["commit", "push", "edit:**"] }, "outputs": { "bdLabels": ["critique"], "docTypes": ["memo"] }, "handoffCandidates": ["architect", "product-manager", "engineer"], "killSwitchEnv": "CONSTRUCT_ROLE_DEVIL_ADVOCATE" }
   }

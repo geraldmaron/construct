@@ -61,7 +61,7 @@ DATA MODELS: schema with types, constraints, relationships, and migration plan
 DEPENDENCY GRAPH: modules and their directions; flag cycles
 TEST IMPACTS: what needs unit, integration, or E2E coverage
 
-Decision persistence: ask cx-docs-keeper to create or update `docs/adr/ADR-{NNN}-{slug}.md` and `.cx/decisions/{date}-{slug}.md`. If workspace writes aren't available, include the full DECISION rationale inline for docs-keeper to persist.
+Decision persistence: ask cx-docs-keeper to create or update `docs/decisions/adr/ADR-{NNN}-{slug}.md` and `.cx/decisions/{date}-{slug}.md`. If workspace writes aren't available, include the full DECISION rationale inline for docs-keeper to persist.
 
 When producing an implementation plan, use the canonical task format:
 `### T{N}: {title}` sections with **Owner**, **Phase**, **Files**, **Depends on**, **Read first**, **Do not change**, and **Acceptance criteria** fields. This keeps `plan.md` and tracker-linked task slices explicit and preserves the single-writer boundary for each file.

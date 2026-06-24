@@ -15,6 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test, { after } from 'node:test';
+import { configDir } from '../../lib/config/xdg.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const POSTINSTALL = path.resolve(__dirname, '..', '..', 'bin', 'construct-postinstall.mjs');
@@ -49,7 +50,7 @@ test('npm_config_global=true: postinstall prints scope guidance and writes nothi
   assert.match(res.stdout, /construct install --scope=user/);
   assert.equal(fs.existsSync(path.join(home, '.claude', 'settings.json')), false, 'postinstall must not write to ~/.claude/');
   assert.equal(fs.existsSync(path.join(home, '.claude', 'CLAUDE.md')), false, 'postinstall must not write to ~/.claude/CLAUDE.md');
-  assert.equal(fs.existsSync(path.join(home, '.construct', 'config.env')), false, 'postinstall must not write to ~/.construct/config.env');
+  assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false, 'postinstall must not write to configDir()/config.env');
 });
 
 test('CONSTRUCT_SKIP_POSTINSTALL=1 still short-circuits the postinstall', () => {

@@ -7,8 +7,8 @@
  * created in tmpdirs, each one prepared and torn down per test:
  *
  *   1) preexisting layout — init must skip docs/meetings/, docs/memos/, the
- *      project .cx/inbox/, and per-lane templates/ that are already covered
- *      by internal/, data/, and root templates/.
+ *      project-root inbox/ (custom intake detected), and per-lane templates/
+ *      that are already covered by internal/, data/, and root templates/.
  *   2) preexisting layout + --force — init must scaffold the full default
  *      tree anyway (power-user escape hatch).
  *   3) clean project — init's existing behavior is unchanged.
@@ -100,18 +100,23 @@ test('issue #97: init defers to existing internal/meetings/, internal/memos/, cu
       'docs/memos/ must NOT be scaffolded — internal/memos/ already exists',
     );
     assert.equal(
+      existsSync(join(f.dir, 'inbox')),
+      false,
+      'inbox/ must NOT be scaffolded — ./ingest custom script detected',
+    );
+    assert.equal(
       existsSync(join(f.dir, '.cx', 'inbox')),
       false,
-      '.cx/inbox/ must NOT be scaffolded — ./ingest custom script detected',
+      '.cx/inbox/ is never scaffolded under the single-zone model',
     );
 
     const projectConfigPath = join(f.dir, 'construct.config.json');
     assert.equal(existsSync(projectConfigPath), true, 'construct.config.json must be written');
     const projectConfig = JSON.parse(readFileSync(projectConfigPath, 'utf8'));
     assert.equal(
-      projectConfig.intakePolicy?.zones?.projectInbox,
+      'zones' in (projectConfig.intakePolicy ?? {}),
       false,
-      'projectInbox must default to false when custom intake detected',
+      'single-zone model writes no zones object — inbox/ is just not scaffolded when custom intake is detected',
     );
 
     const combinedOutput = result.stdout + result.stderr;
@@ -122,7 +127,7 @@ test('issue #97: init defers to existing internal/meetings/, internal/memos/, cu
     );
     assert.match(
       combinedOutput,
-      /skipping \.cx\/inbox\/ — custom intake script \.\/ingest/,
+      /skipping inbox\/ — custom intake script \.\/ingest/,
       'expected init to log inbox skip pointing at ./ingest',
     );
     assert.match(
@@ -145,16 +150,16 @@ test('issue #97: --force scaffolds the full default tree even when project layou
       '--force must scaffold docs/meetings/ even when internal/meetings/ exists',
     );
     assert.equal(
-      existsSync(join(f.dir, '.cx', 'inbox')),
+      existsSync(join(f.dir, 'inbox')),
       true,
-      '--force must scaffold .cx/inbox/ even when ./ingest exists',
+      '--force must scaffold inbox/ even when ./ingest exists',
     );
 
     const projectConfig = JSON.parse(readFileSync(join(f.dir, 'construct.config.json'), 'utf8'));
-    assert.notEqual(
-      projectConfig.intakePolicy?.zones?.projectInbox,
+    assert.equal(
+      'zones' in (projectConfig.intakePolicy ?? {}),
       false,
-      '--force must not flip projectInbox to false',
+      'single-zone model writes no zones object; --force scaffolds inbox/ unconditionally',
     );
 
     const combinedOutput = result.stdout + result.stderr;
@@ -173,8 +178,8 @@ test('issue #97 regression guard: clean project still gets the full default scaf
     assert.equal(result.status, 0, `init on clean project exited ${result.status}\nstderr:\n${result.stderr}`);
 
     // The lean preset includes meetings, memos, prds; verify at least one
-    // scaffolded lane and .cx/inbox/ landed normally.
+    // scaffolded lane and the canonical inbox/ landed normally.
     assert.equal(existsSync(join(f.dir, 'docs', 'meetings')), true, 'clean project must still get docs/meetings/');
-    assert.equal(existsSync(join(f.dir, '.cx', 'inbox')), true, 'clean project must still get .cx/inbox/');
+    assert.equal(existsSync(join(f.dir, 'inbox')), true, 'clean project must still get inbox/');
   } finally { f.cleanup(); }
 });

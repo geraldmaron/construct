@@ -1,0 +1,187 @@
+---
+title: Plug in a retrieval backend
+description: Swap the embedder, chunker, indexer, fuser, reranker, or compressor. Six plugin contracts, one source of truth.
+---
+
+Construct's retrieval pipeline is a six-layer plugin contract. Any layer can be replaced (embedder, chunker, indexer, fuser, reranker, compressor) without touching the others. Defaults work out of the box; swaps are config.
+
+## The six layers
+
+<FlowPipeline steps={[
+  { label: 'Document', sub: 'any text source' },
+  { label: 'Chunker', sub: 'splits into segments' },
+  { label: 'Embedder', sub: 'vector representation' },
+  { label: 'Indexer', sub: 'stores chunks + vectors' },
+  { label: 'Fuser', sub: 'merges BM25 + cosine' },
+  { label: 'Reranker', sub: 'cross-encoder rescore' },
+  { label: 'Compressor', sub: 'trims to token budget', highlight: true },
+]} />
+
+| Layer | Default | What it does |
+|---|---|---|
+| **Embedder** | `local` (Xenova all-MiniLM-L6-v2, 384d, ONNX) | Converts text to vectors |
+| **Chunker** | `heading-prefix` | Splits documents into retrieval-sized pieces |
+| **Indexer** | `pgvector` (or `json-file` fallback) | Stores vectors with metadata |
+| **Fuser** | `rrf` (Reciprocal Rank Fusion, k=60) | Merges BM25 + cosine rankings |
+| **Reranker** | `mmr` (Maximal Marginal Relevance, λ=0.7) | Picks diverse + relevant results |
+| **Compressor** | `tf-idf` heuristic | Reduces context to budget |
+
+## Inspect the active pipeline
+
+```bash
+construct evals retrieval
+```
+
+Reports Recall@k, MRR, NDCG@k against the project's fixture queries. If any number drops below baseline, retrieval quality has regressed.
+
+## Swap the embedder
+
+Easiest swap: embedder is just config.
+
+**Local (default):** `local`: uses `@huggingface/transformers` (Xenova/all-MiniLM-L6-v2).
+
+**OpenAI:**
+
+```bash
+export CONSTRUCT_EMBEDDING_MODEL=openai
+export OPENAI_API_KEY=sk-...
+```
+
+OpenAI's `text-embedding-3-small` (1536d). Higher quality, requires network, costs per call.
+
+**Ollama:**
+
+```bash
+export CONSTRUCT_EMBEDDING_MODEL=ollama
+# Ollama must be running locally with an embedding model loaded
+ollama pull nomic-embed-text
+```
+
+**Hashing (offline, deterministic):**
+
+```bash
+export CONSTRUCT_EMBEDDING_MODEL=hashing
+```
+
+SHA-256 bag-of-words. Lower quality but zero dependencies and zero network. Useful for CI fixtures and offline development.
+
+**Important:** if you swap embedders, vector dimensions change. The pgvector schema is dimension-locked. Run `construct doctor` after the swap: it'll report a dimension mismatch and tell you what to do. For Postgres, this means a schema migration.
+
+## Custom embedder plugin
+
+If you want an embedder that's not built in (a fine-tuned model, a hosted API, a custom inference server), write a plugin.
+
+**Minimal plugin shape:**
+
+```javascript
+// my-embedder.mjs
+export default {
+  layer: 'embedder',
+  name: 'my-embedder',
+  dimension: 768,
+  async embed(text) {
+    const vec = await callMyEmbeddingService(text);
+    return vec; // Float32Array or number[]
+  },
+  async embedBatch(texts) {
+    return Promise.all(texts.map((t) => this.embed(t)));
+  },
+};
+```
+
+Register it in `~/.construct/plugins.json` (user-level) or `.cx/plugins.json` (project-level):
+
+```json
+{
+  "embedder": "./path/to/my-embedder.mjs"
+}
+```
+
+Or set via env var:
+
+```bash
+export CONSTRUCT_PLUGIN_EMBEDDER=./path/to/my-embedder.mjs
+```
+
+`construct doctor` validates plugin contracts at startup.
+
+## Swap the chunker
+
+The chunker decides how documents are split before embedding. Default is heading-prefix (splits at `#` boundaries, prepends parent headings to each chunk for context).
+
+```javascript
+// my-chunker.mjs
+export default {
+  layer: 'chunker',
+  name: 'fixed-size',
+  async chunk(doc) {
+    const SIZE = 800; // characters
+    const chunks = [];
+    for (let i = 0; i < doc.text.length; i += SIZE) {
+      chunks.push({
+        id: `${doc.id}-${i}`,
+        text: doc.text.slice(i, i + SIZE),
+        metadata: doc.metadata,
+      });
+    }
+    return chunks;
+  },
+};
+```
+
+Common reasons to swap:
+
+- Your documents are code, not prose: use a syntax-aware chunker.
+- Your documents are very long: use a recursive chunker.
+- You want to experiment with contextual chunking (Anthropic's Sep 2024 technique): write a plugin that calls an LLM per chunk to prepend context.
+
+## Swap the indexer
+
+The indexer is what stores and retrieves vectors. Default uses Postgres + pgvector when available; falls back to a JSON file index in `~/.construct/vector/` when not.
+
+```javascript
+// my-indexer.mjs
+export default {
+  layer: 'indexer',
+  name: 'pinecone',
+  async upsert(chunks) {
+    await pineconeClient.upsert({ vectors: chunks });
+  },
+  async query(vec, { topK = 10, filters = {} } = {}) {
+    return pineconeClient.query({ vector: vec, topK, filter: filters });
+  },
+};
+```
+
+Most users don't swap the indexer: pgvector handles tens of millions of vectors at low latency without an external service. But for hosted retrieval (Pinecone, Weaviate, Qdrant), the contract is the same.
+
+## Swap the fuser, reranker, compressor
+
+These layers are smaller surface area:
+
+- **Fuser** combines two ranked lists into one (BM25 + cosine, by default via RRF).
+- **Reranker** reorders the top-K from the fuser (MMR by default, picking diverse + relevant).
+- **Compressor** trims the final result set to fit a token budget (TF-IDF heuristic by default; LLMLingua-2 is a future plugin slot).
+
+See [`lib/engine/`](https://github.com/geraldmaron/construct/tree/main/lib/engine) for reference implementations.
+
+## Verify swaps don't degrade quality
+
+After any swap:
+
+```bash
+construct evals retrieval
+```
+
+The eval harness uses a fixed query fixture and reports Recall@k, MRR, NDCG. If the new component is worse, the numbers will drop. The CI job `retrieval evals` runs the same fixture on every PR.
+
+## The whole point
+
+Construct ships opinionated defaults (they work) but it's plugin-shaped so external projects can absorb. If you have a custom embedder, a domain-specific chunker, or a hosted retrieval service, you swap one layer and keep everything else. The contracts are stable; the implementations are yours.
+
+## Reference
+
+- [Concepts → Embedding boundary](/guides/concepts/embedding-boundary): what stays local, what crosses the network.
+- [Concepts → Knowledge layout](/guides/concepts/knowledge-layout): how retrieval fits into Construct's state model.
+- [`lib/engine/contracts.mjs`](https://github.com/geraldmaron/construct/blob/main/lib/engine/contracts.mjs): the six interface definitions.
+- [`lib/engine/defaults.mjs`](https://github.com/geraldmaron/construct/blob/main/lib/engine/defaults.mjs): built-in implementations.

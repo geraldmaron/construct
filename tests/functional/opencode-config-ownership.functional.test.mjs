@@ -10,7 +10,7 @@
  * small_model) while every user-personal key (model, share, autoupdate, a user
  * agent, user openrouter models) survives byte-for-byte. A second run proves the
  * small_model seed never overrides a value the user has set. The host binary is
- * never executed. See docs/concepts/opencode-config-ownership.md.
+ * never executed. See docs/guides/concepts/opencode-config-ownership.md.
  */
 
 import { spawnSync } from "node:child_process";

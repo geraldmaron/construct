@@ -423,7 +423,7 @@ jobs:
   # Gated on a repository variable so the step is skipped until the tap repo
   # and its access token exist. Set the variable via repo Settings → Variables
   # once you have created github.com/geraldmaron/homebrew-construct and added
-  # the HOMEBREW_TAP_TOKEN secret. See docs/maintenance/homebrew-tap.md.
+  # the HOMEBREW_TAP_TOKEN secret. See docs/operations/maintenance/homebrew-tap.md.
   homebrew:
     name: bump homebrew formula
     needs: publish
