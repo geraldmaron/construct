@@ -14,6 +14,7 @@ import {
   mergeLiveModelsIntoProviders,
   writeLiveCatalogCache,
 } from '../../lib/models/catalog.mjs';
+import { doctorRoot } from '../../lib/config/xdg.mjs';
 
 function withProject(fn) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-catalog-'));
@@ -83,7 +84,7 @@ test('writeLiveCatalogCache persists models for sync read', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-cache-'));
   try {
     writeLiveCatalogCache([{ id: 'openrouter/openrouter/free', name: 'Free' }], { homeDir: home });
-    const file = path.join(home, '.cx', 'model-catalog-cache.json');
+    const file = path.join(doctorRoot(home), 'model-catalog-cache.json');
     assert.ok(fs.existsSync(file));
     const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
     assert.equal(parsed.models[0].id, 'openrouter/openrouter/free');

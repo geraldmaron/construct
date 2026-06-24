@@ -5,7 +5,7 @@
  *   - --dry-run reports the plan and changes nothing on disk.
  *   - --yes (default risk: auto) removes .construct/, agents listed in the
  *     manifest, the Construct hooks block + known mcpServers from settings.json,
- *     and the XDG state workspace dir and ~/.cx state dir.
+ *     and the XDG state workspace dir and the global doctor-root state dir.
  *   - User-added mcpServers and user-added top-level settings keys are preserved.
  *   - ask-risk items (.cx/, AGENTS.md/plan.md, embedding cache, config.env)
  *     are skipped unless --all is also passed.
@@ -20,7 +20,7 @@ import path from 'node:path';
 import { describe, it, beforeEach, afterEach } from 'node:test';
 
 import { runUninstall, parseArgs } from '../lib/uninstall/uninstall.mjs';
-import { configDir, stateDir, cacheDir } from '../lib/config/xdg.mjs';
+import { configDir, stateDir, cacheDir, doctorRoot } from '../lib/config/xdg.mjs';
 
 let projectDir;
 let homeDir;
@@ -97,8 +97,8 @@ function seedHome(dir) {
   fs.mkdirSync(path.join(configRoot, 'services', 'postgres'), { recursive: true });
   fs.writeFileSync(path.join(configRoot, 'services', 'postgres', 'docker-compose.yml'), 'version: "3"\n');
 
-  fs.mkdirSync(path.join(dir, '.cx'), { recursive: true });
-  fs.writeFileSync(path.join(dir, '.cx', 'log.jsonl'), '{"x":1}\n');
+  fs.mkdirSync(doctorRoot(dir), { recursive: true });
+  fs.writeFileSync(path.join(doctorRoot(dir), 'log.jsonl'), '{"x":1}\n');
 }
 
 function silently(fn) {
@@ -195,7 +195,7 @@ describe('runUninstall --yes (auto-risk only)', () => {
       false,
       'state vector dir removed'
     );
-    assert.equal(fs.existsSync(path.join(homeDir, '.cx')), false, '~/.cx removed');
+    assert.equal(fs.existsSync(path.join(doctorRoot(homeDir), 'log.jsonl')), false, 'doctor-root state removed');
   });
 
   it('preserves ask-risk items by default', async () => {
@@ -244,7 +244,7 @@ describe('runUninstall --scope=project', () => {
     );
     assert.equal(fs.existsSync(path.join(projectDir, '.construct')), false);
     assert.ok(fs.existsSync(path.join(stateDir(homeDir), 'workspace')), 'machine workspace untouched');
-    assert.ok(fs.existsSync(path.join(homeDir, '.cx')), '~/.cx untouched');
+    assert.ok(fs.existsSync(path.join(doctorRoot(homeDir), 'log.jsonl')), 'doctor-root state untouched');
   });
 });
 
@@ -255,7 +255,7 @@ describe('runUninstall --scope=machine', () => {
     );
     assert.ok(fs.existsSync(path.join(projectDir, '.construct')), '.construct untouched');
     assert.ok(fs.existsSync(path.join(projectDir, '.claude', 'agents', 'construct.md')), 'agents untouched');
-    assert.equal(fs.existsSync(path.join(homeDir, '.cx')), false);
+    assert.equal(fs.existsSync(path.join(doctorRoot(homeDir), 'log.jsonl')), false);
   });
 });
 
@@ -269,7 +269,7 @@ describe('runUninstall --keep-state', () => {
     assert.ok(fs.existsSync(path.join(projectDir, '.cx')), '.cx preserved');
     assert.ok(fs.existsSync(path.join(projectDir, 'AGENTS.md')), 'AGENTS.md preserved');
     assert.ok(fs.existsSync(path.join(stateDir(homeDir), 'workspace')), 'machine workspace preserved');
-    assert.ok(fs.existsSync(path.join(homeDir, '.cx')), '~/.cx preserved');
+    assert.ok(fs.existsSync(path.join(doctorRoot(homeDir), 'log.jsonl')), 'doctor-root state preserved');
   });
 });
 

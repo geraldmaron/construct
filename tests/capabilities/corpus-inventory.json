@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-24T00:54:11.368Z",
+  "generatedAt": "2026-06-24T03:19:40.858Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 526,
-    "topLevelTestFiles": 288,
-    "nestedTestFiles": 238,
+    "testFiles": 528,
+    "topLevelTestFiles": 289,
+    "nestedTestFiles": 239,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 23,
     "byLayer": {
-      "unit": 324,
+      "unit": 325,
       "live-provider": 2,
       "visual": 6,
       "integration": 31,
-      "functional": 163
+      "functional": 164
     },
     "byCategory": {
-      "unit": 285,
+      "unit": 286,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
       "visual": 6,
       "integration": 22,
-      "functional": 163,
+      "functional": 164,
       "hook": 9
     }
   },
@@ -1843,6 +1843,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "docling-remote-ingest.functional.test.mjs — opt-in remote conversion (ADR-0036, construct-n1f8)."
+    },
+    {
+      "path": "tests/functional/docs-redirect-stubs.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/docs-redirect-stubs.functional.test.mjs — ADR-0045 legacy URL redirects."
     },
     {
       "path": "tests/functional/docs-site-check.functional.test.mjs",
@@ -4281,6 +4289,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/xdg-config.test.mjs — XDG base-directory resolver contract."
+    },
+    {
+      "path": "tests/xdg-doctor-root.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/xdg-doctor-root.test.mjs — global doctor/telemetry/runtime root contract."
     }
   ]
 }

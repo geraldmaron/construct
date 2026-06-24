@@ -19,6 +19,8 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
+import { doctorRoot } from '../../lib/config/xdg.mjs';
+
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const HOOK = (name) => join(REPO_ROOT, 'lib', 'hooks', `${name}.mjs`);
 
@@ -55,7 +57,7 @@ test('default: a cx dispatch enqueues the role-pending handoff', (t) => {
   t.after(() => env.cleanup());
   const r = runHook('agent-tracker', TASK, env);
   assert.equal(r.status, 0, `hook must exit 0; stderr: ${r.stderr}`);
-  const pending = join(env.HOME, '.cx', 'role-pending.jsonl');
+  const pending = join(doctorRoot(env.HOME), 'role-pending.jsonl');
   assert.ok(existsSync(pending), 'role-pending.jsonl is written when roles are active');
   assert.match(readFileSync(pending, 'utf8'), /cx-engineer/, 'the handoff target is recorded');
 });
@@ -66,7 +68,7 @@ test('CONSTRUCT_ROLES=off: the same dispatch enqueues nothing (kill switch inert
   t.after(() => env.cleanup());
   const r = runHook('agent-tracker', TASK, env);
   assert.equal(r.status, 0, `hook must still exit 0 (never breaks the host); stderr: ${r.stderr}`);
-  const pending = join(env.HOME, '.cx', 'role-pending.jsonl');
+  const pending = join(doctorRoot(env.HOME), 'role-pending.jsonl');
   assert.ok(!existsSync(pending), 'no role-pending enqueue when CONSTRUCT_ROLES=off');
 });
 
@@ -82,6 +84,6 @@ test('a plain (non-cx) subagent is untouched — Construct only engages its own 
     tool_result: { result: 'Summary done. next:cx-engineer (should be ignored for a non-cx dispatch).' },
   }, env);
   assert.equal(r.status, 0, `hook must exit 0; stderr: ${r.stderr}`);
-  const pending = join(env.HOME, '.cx', 'role-pending.jsonl');
+  const pending = join(doctorRoot(env.HOME), 'role-pending.jsonl');
   assert.ok(!existsSync(pending), 'a non-cx subagent does not enqueue Construct role-pending');
 });
