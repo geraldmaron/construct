@@ -1,13 +1,45 @@
 <!--
 docs/guides/reference/config.md: Every environment variable and config key for Construct.
 
-Sensitive values live in ~/.construct/config.env (mode 0600). Non-sensitive
-project values go in .cx/env. Source: lib/env-config.mjs and individual modules.
+Sensitive values live in the XDG config dir config.env (mode 0600). Source:
+lib/config/xdg.mjs, lib/env-config.mjs, lib/config/project-config.mjs and
+individual modules.
 -->
 
 # Configuration Reference
 
 Construct follows a strict **Secrets vs. State** boundary for configuration, aligned with the [12-Factor App](https://12factor.net/config) principles.
+
+## User-scope layout (XDG)
+
+User-scope files follow the [XDG Base Directory specification](https://specifications.freedesktop.org/basedir-spec/latest/), split across three roots so config, state, and cache can be backed up and pruned independently. Each root honors its `$XDG_*_HOME` env var when the value is an **absolute** path, otherwise the default applies (a relative or empty value is ignored). Resolved by `lib/config/xdg.mjs`.
+
+| Root | Env var | Default | Holds |
+|---|---|---|---|
+| **config** | `$XDG_CONFIG_HOME` | `~/.config/construct` | `config.env`, `providers.json`, `embed.yaml`, `features.json`, `claude-ai-mcps.json`, `custom-credentials.json`, `provider-subscriptions.json`, `auth/`, `boundary.json`, `config.json`, `plugins.json`, the `lib` hook symlink |
+| **state** | `$XDG_STATE_HOME` | `~/.local/state/construct` | `vector/lancedb`, `doctor.json`, `dashboard.json`, `workspace/`, `runtime/`, `bin/`, `intake-daemon.heartbeat`, `.cleanup-stamp` |
+| **cache** | `$XDG_CACHE_HOME` | `~/.cache/construct` | `cache/embeddings`, `.runtime`, regenerable transients |
+
+> **Upgrade — clean break.** There is no read or migration of a legacy `~/.construct/*` tree. After upgrading, run `construct install --scope=user` once to repopulate the user-scope files at the XDG paths. `construct doctor` flags a missing user config until you do.
+
+## Config tiers and precedence
+
+Project configuration has two file tiers, most-specific wins:
+
+| Tier | File | Committed? | Merge rule |
+|---|---|---|---|
+| project-local | `construct.config.local.json` | No (gitignored) | merges **over** the committed config |
+| project | `construct.config.json` | Yes | base for the local overlay |
+
+When both exist, list-shaped settings (e.g. `sources.targets`, `intakePolicy.additionalDirs`, permission allowlists) **merge and dedupe** — object entries collapse on their `id` so a local re-declaration replaces the committed entry rather than duplicating it; scalars and objects **override** key-by-key. The local overlay is validated against the same schema (partial allowed — no `version` required).
+
+Full resolution order for a single setting (most-specific wins): **env var (if set) ▷ project-local config ▷ project config ▷ default**.
+
+## `.env` precedence and shadow warnings
+
+Environment values are loaded by `lib/env-config.mjs` from three sources, most-specific wins: **project `.env` ▷ user `config.env` (XDG config dir) ▷ shell exports**. A repo's local `.env` is closer to the work than a machine-wide default, so it takes the file-tier precedence. (Materialized `op run` credentials injected into `process.env` still win over stored `op://` references so one 1Password unlock per invocation is enough.)
+
+When a key is defined in **both** the project `.env` and the user `config.env` with different values, Construct prints a one-time shadow warning to stderr naming the key and the winning file, so a stale per-machine default is never silently authoritative. Remove the key from one file to silence it.
 
 ## The Boundary: Env vs. Config
 
@@ -45,7 +77,7 @@ The `construct.config.json` file is scaffolded with a `"$schema"` property. In s
 | `PORT` | `4242` | Dashboard HTTP port |
 | `BIND_HOST` | `127.0.0.1` | Dashboard bind address |
 | `NODE_ENV` | `development` | `production` disables stack traces in responses |
-| `HOME` | system | Used to resolve `~/.construct/` and `~/.cx/` paths |
+| `HOME` | system | Base for the XDG user dirs (`~/.config/construct`, `~/.local/state/construct`, `~/.cache/construct`) and `~/.cx/` |
 | `CX_DATA_DIR` | `$HOME` | Override root for `.cx/` data directories |
 
 ## Deployment mode
@@ -90,7 +122,7 @@ Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CX_MODEL_*` (alias still honor
 
 ## Source targets (`construct.config.json`)
 
-Typed integration selectors under `sources.targets`. Consumed by embed auto-discovery (when `embed.yaml` is absent), `provider_fetch`, and session-start source hints. Legacy env lists merge additively; explicit `~/.construct/embed.yaml` remains a complete override.
+Typed integration selectors under `sources.targets`. Consumed by embed auto-discovery (when `embed.yaml` is absent), `provider_fetch`, and session-start source hints. Legacy env lists merge additively; an explicit `embed.yaml` in the XDG config dir remains a complete override.
 
 ```json
 {
@@ -176,7 +208,7 @@ Env overrides: `CX_INBOX_DIRS` (colon-separated paths), `CX_INTAKE_MAX_DEPTH`.
 
 ### 1Password (`op://`) credentials
 
-Store provider keys in `~/.construct/config.env` as `op://vault/item/field` references (or plain values). Construct resolves them lazily via `op read` when a model call needs the plaintext.
+Store provider keys in `config.env` (the XDG config dir, default `~/.config/construct/config.env`) as `op://vault/item/field` references (or plain values). Construct resolves them lazily via `op read` when a model call needs the plaintext.
 
 **Recommended (one auth per invocation):** wrap the CLI with `op run` and a shared env file (same pattern as OpenCode on this machine):
 
@@ -262,7 +294,7 @@ When `op run` injects materialized keys into `process.env`, Construct keeps thos
 
 ## Bootstrap resource consent
 
-Each optional resource stores operator consent in `~/.construct/config.env` via a `BOOTSTRAP_<RESOURCE>` key (values: `yes`, `never`, blank = not yet asked).
+Each optional resource stores operator consent in `config.env` (the XDG config dir) via a `BOOTSTRAP_<RESOURCE>` key (values: `yes`, `never`, blank = not yet asked).
 
 | Key | Resource |
 |---|---|

@@ -23,11 +23,12 @@ import {
   stampPath,
   maybeRunCleanupOnUpgrade,
 } from '../lib/maintenance/cleanup.mjs';
+import { stateDir, cacheDir } from '../lib/config/xdg.mjs';
 
 function mkHome() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-cleanup-'));
   fs.mkdirSync(path.join(dir, '.cx', 'runtime'), { recursive: true });
-  fs.mkdirSync(path.join(dir, '.construct'), { recursive: true });
+  fs.mkdirSync(cacheDir(dir), { recursive: true });
   return dir;
 }
 
@@ -134,7 +135,7 @@ describe('cleanupJsonlLogs', () => {
 describe('cleanupCacheDir', () => {
   it('removes files older than maxAgeDays', () => {
     const home = mkHome();
-    const cache = path.join(home, '.construct', 'cache');
+    const cache = cacheDir(home);
     fs.mkdirSync(cache, { recursive: true });
     const oldFile = path.join(cache, 'old.json');
     const newFile = path.join(cache, 'new.json');
@@ -301,8 +302,8 @@ describe('version stamp and auto-upgrade trigger', () => {
 });
 
 describe('stampPath', () => {
-  it('resolves under ~/.construct/', () => {
+  it('resolves under the XDG state dir', () => {
     const p = stampPath('/tmp/fakehome');
-    assert.equal(p, '/tmp/fakehome/.construct/.cleanup-stamp');
+    assert.equal(p, path.join(stateDir('/tmp/fakehome'), '.cleanup-stamp'));
   });
 });

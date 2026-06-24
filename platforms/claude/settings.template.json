@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/session-start.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/session-start.mjs\"",
             "timeout": 10
           }
         ],
@@ -23,7 +23,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/policy-engine.mjs\" PreToolUse",
+            "command": "node \"$HOME/.config/construct/lib/hooks/policy-engine.mjs\" PreToolUse",
             "timeout": 10
           }
         ],
@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/orchestration-dispatch-guard.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/orchestration-dispatch-guard.mjs\"",
             "timeout": 5
           }
         ],
@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/block-no-verify.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/block-no-verify.mjs\"",
             "timeout": 5
           }
         ],
@@ -59,7 +59,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/pre-push-gate.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/pre-push-gate.mjs\"",
             "timeout": 180
           }
         ],
@@ -71,7 +71,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/guard-bash.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/guard-bash.mjs\"",
             "timeout": 5
           }
         ],
@@ -83,7 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/config-protection.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/config-protection.mjs\"",
             "timeout": 5
           }
         ],
@@ -95,7 +95,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/mcp-health-check.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/mcp-health-check.mjs\"",
             "timeout": 3
           }
         ],
@@ -107,7 +107,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/edit-guard.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/edit-guard.mjs\"",
             "timeout": 5
           }
         ],
@@ -133,7 +133,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/scan-secrets.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/scan-secrets.mjs\"",
             "timeout": 10
           }
         ],
@@ -145,7 +145,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/adaptive-lint.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/adaptive-lint.mjs\"",
             "timeout": 30,
             "async": true
           }
@@ -158,7 +158,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/comment-lint.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/comment-lint.mjs\"",
             "timeout": 15
           }
         ],
@@ -170,7 +170,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/brand-prose-lint.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/brand-prose-lint.mjs\"",
             "timeout": 15
           }
         ],
@@ -182,7 +182,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/artifact-release-gate.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/artifact-release-gate.mjs\"",
             "timeout": 15
           }
         ],
@@ -194,7 +194,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/doc-coupling-check.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/doc-coupling-check.mjs\"",
             "timeout": 5
           }
         ],
@@ -206,7 +206,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/graph-impact-advisory.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/graph-impact-advisory.mjs\"",
             "timeout": 10
           }
         ],
@@ -218,7 +218,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/edit-accumulator.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/edit-accumulator.mjs\"",
             "timeout": 3
           }
         ],
@@ -230,7 +230,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/registry-sync.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/registry-sync.mjs\"",
             "timeout": 15,
             "async": true
           }
@@ -243,7 +243,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/dep-audit.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/dep-audit.mjs\"",
             "timeout": 35,
             "async": true
           }
@@ -256,7 +256,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/audit-reads.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/audit-reads.mjs\"",
             "timeout": 3,
             "async": true
           }
@@ -269,7 +269,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/mcp-audit.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/mcp-audit.mjs\"",
             "timeout": 3,
             "async": true
           }
@@ -282,7 +282,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/agent-tracker.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/agent-tracker.mjs\"",
             "timeout": 3,
             "async": true
           }
@@ -295,7 +295,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/bash-output-logger.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/bash-output-logger.mjs\"",
             "timeout": 5
           }
         ],
@@ -307,7 +307,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/test-watch.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/test-watch.mjs\"",
             "timeout": 5,
             "async": true
           }
@@ -320,7 +320,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/post-merge-docs-check.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/post-merge-docs-check.mjs\"",
             "timeout": 5,
             "async": true
           }
@@ -333,7 +333,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/post-merge-tracking.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/post-merge-tracking.mjs\"",
             "timeout": 5,
             "async": true
           }
@@ -346,7 +346,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/audit-trail.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/audit-trail.mjs\"",
             "timeout": 5
           }
         ],
@@ -358,7 +358,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/orchestration-dispatch-guard.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/orchestration-dispatch-guard.mjs\"",
             "timeout": 5
           }
         ],
@@ -372,7 +372,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/model-fallback.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/model-fallback.mjs\"",
             "timeout": 130,
             "async": true
           }
@@ -385,7 +385,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/mcp-health-check.mjs\" --mark-failure",
+            "command": "node \"$HOME/.config/construct/lib/hooks/mcp-health-check.mjs\" --mark-failure",
             "timeout": 3
           }
         ],
@@ -397,7 +397,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/context-window-recovery.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/context-window-recovery.mjs\"",
             "timeout": 60,
             "async": true
           }
@@ -410,7 +410,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/edit-error-recovery.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/edit-error-recovery.mjs\"",
             "timeout": 15,
             "async": true
           }
@@ -425,7 +425,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/pre-compact.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/pre-compact.mjs\"",
             "timeout": 15
           }
         ],
@@ -439,7 +439,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/policy-engine.mjs\" Stop",
+            "command": "node \"$HOME/.config/construct/lib/hooks/policy-engine.mjs\" Stop",
             "timeout": 15
           }
         ],
@@ -451,7 +451,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/stop-typecheck.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/stop-typecheck.mjs\"",
             "timeout": 120,
             "async": true
           }
@@ -464,7 +464,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/readme-age-check.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/readme-age-check.mjs\"",
             "timeout": 5,
             "async": true
           }
@@ -477,7 +477,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/stop-notify.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/stop-notify.mjs\"",
             "timeout": 10,
             "async": true
           }
@@ -490,7 +490,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/pre-compact.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/pre-compact.mjs\"",
             "timeout": 15,
             "async": true
           }
@@ -503,7 +503,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/session-optimize.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/session-optimize.mjs\"",
             "timeout": 600,
             "async": true
           }
@@ -516,7 +516,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/session-reflect.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/session-reflect.mjs\"",
             "timeout": 5,
             "async": true
           }
@@ -529,7 +529,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/session-tracking-refresh.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/session-tracking-refresh.mjs\"",
             "timeout": 5,
             "async": true
           }
@@ -544,7 +544,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/context-watch.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/context-watch.mjs\"",
             "timeout": 5
           }
         ],
@@ -556,7 +556,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$HOME/.construct/lib/hooks/ci-status-check.mjs\"",
+            "command": "node \"$HOME/.config/construct/lib/hooks/ci-status-check.mjs\"",
             "timeout": 5
           }
         ],

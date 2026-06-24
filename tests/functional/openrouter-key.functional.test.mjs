@@ -21,6 +21,7 @@ import {
 import { API_KEY_CREDENTIALS } from '../../lib/providers/credential-catalog.mjs';
 import { hasSecret, __clearSecretCache } from '../../lib/providers/secret-resolver.mjs';
 import { isChatModelAvailable } from '../../lib/model-router.mjs';
+import { configDir } from '../../lib/config/xdg.mjs';
 
 function withTmpHome(fn) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-or-'));
@@ -55,7 +56,7 @@ test('readOpenRouterRawFromOpenCode reads apiKey and ignores placeholders', () =
 
 test('discoverAlternateRawForCredential finds creds rotation store key', () => {
   withTmpHome((home) => {
-    const constructDir = path.join(home, '.construct');
+    const constructDir = configDir(home);
     fs.mkdirSync(constructDir, { recursive: true });
     fs.writeFileSync(path.join(constructDir, 'config.env'), [
       '# CONSTRUCT_CREDS_OPENROUTER',
@@ -100,7 +101,7 @@ test('ensureConstructCredentials links 1Password items into config.env', () => {
 
 test('ensureConstructCredentials skips providers that already have keys', () => {
   withTmpHome((home) => {
-    const constructDir = path.join(home, '.construct');
+    const constructDir = configDir(home);
     fs.mkdirSync(constructDir, { recursive: true });
     fs.writeFileSync(path.join(constructDir, 'config.env'), 'OPENROUTER_API_KEY=fixture-plain-openrouter\n');
     __resetCredentialBootstrapCache();
@@ -124,7 +125,7 @@ test('ensureConstructCredentials does not call 1Password when autoLink is false'
 
 test('ensureConstructCredentials does not call 1Password when all keys are present', () => {
   withTmpHome((home) => {
-    const constructDir = path.join(home, '.construct');
+    const constructDir = configDir(home);
     fs.mkdirSync(constructDir, { recursive: true });
     fs.writeFileSync(path.join(constructDir, 'config.env'), [
       'OPENROUTER_API_KEY=fixture-plain-openrouter',

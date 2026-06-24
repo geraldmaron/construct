@@ -1,8 +1,8 @@
 /**
  * tests/embedding-engine.test.mjs — tests for lib/storage/embeddings-engine.mjs
  *
- * ONNX-dependent tests require the model to be pre-cached locally at
- * ~/.construct/cache/embeddings/Xenova/all-MiniLM-L6-v2/onnx/model_quantized.onnx.
+ * ONNX-dependent tests require the model to be pre-cached locally in the XDG
+ * cache dir at embeddings/Xenova/all-MiniLM-L6-v2/onnx/model_quantized.onnx.
  * They are skipped in CI (CI=true) or when the cache file is absent, because
  * downloading the model in CI yields a different quantized variant with
  * inconsistent output dimensions.
@@ -11,11 +11,11 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 
+import { cacheDir } from '../lib/config/xdg.mjs';
 import { embedText, embedBatch, getEmbeddingModelInfo, getAvailableModels } from '../lib/storage/embeddings-engine.mjs';
 
-const MODEL_CACHE = join(homedir(), '.construct', 'cache', 'embeddings', 'Xenova', 'all-MiniLM-L6-v2', 'onnx', 'model_quantized.onnx');
+const MODEL_CACHE = join(cacheDir(), 'embeddings', 'Xenova', 'all-MiniLM-L6-v2', 'onnx', 'model_quantized.onnx');
 const onnxAvailable = !process.env.CI && existsSync(MODEL_CACHE);
 
 describe('embeddings-engine', () => {

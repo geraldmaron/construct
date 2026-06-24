@@ -13,6 +13,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test, { after } from 'node:test';
+import { configDir } from '../../lib/config/xdg.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.resolve(__dirname, '..', '..', 'bin', 'construct');
@@ -38,5 +39,5 @@ test('install rejects an unknown flag with exit 1 and no machine setup', () => {
   });
   assert.equal(res.status, 1, `expected exit 1, got ${res.status} — stderr: ${res.stderr}`);
   assert.match(`${res.stdout}${res.stderr}`, /Unknown flag/i);
-  assert.equal(fs.existsSync(path.join(home, '.construct', 'config.env')), false, 'must not write config before validating flags');
+  assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false, 'must not write config before validating flags');
 });
