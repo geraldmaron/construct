@@ -13,28 +13,28 @@ inputs:
 
 artifacts:
   - template: prd.md
-    path: "docs/prd/${feature_name}.md"
+    path: "docs/specs/prd/${feature_name}.md"
     title: "PRD: ${feature_name}"
 
   - template: adr.md
-    path: "docs/adr/${feature_name}.md"
+    path: "docs/decisions/adr/${feature_name}.md"
     title: "ADR: ${feature_name}"
     depends_on:
-      - "docs/prd/${feature_name}.md"
+      - "docs/specs/prd/${feature_name}.md"
 
   - template: test-plan.md
     path: "docs/test-plans/${feature_name}.md"
     depends_on:
-      - "docs/adr/${feature_name}.md"
+      - "docs/decisions/adr/${feature_name}.md"
 
 beads_items:
   - type: feature
     title: "${feature_name}: spec"
-    link_to: "docs/prd/${feature_name}.md"
+    link_to: "docs/specs/prd/${feature_name}.md"
 
   - type: feature
     title: "${feature_name}: design"
-    link_to: "docs/adr/${feature_name}.md"
+    link_to: "docs/decisions/adr/${feature_name}.md"
     depends_on_prior: true
 
   - type: feature
@@ -49,5 +49,5 @@ checks:
   - name: prd-precedes-adr
     kind: file-order
     files:
-      - "docs/prd/${feature_name}.md"
-      - "docs/adr/${feature_name}.md"
+      - "docs/specs/prd/${feature_name}.md"
+      - "docs/decisions/adr/${feature_name}.md"

@@ -26,7 +26,7 @@ Host-native agents optimize for single-session chat. Enterprise platform teams n
 ## Goals
 
 1. **Prove value in five minutes** — `npm run examples:distribution` produces a browsable gallery with figures.
-2. **One brand contract** — `docs/reference/branding.md` + `03d-brand` audit ratchet.
+2. **One brand contract** — `docs/guides/reference/branding.md` + `03d-brand` audit ratchet.
 3. **Profile-aware language** — intake queue labels follow active profile rebrand in CLI, session prelude, and dashboard API.
 
 ## Non-goals

@@ -90,7 +90,7 @@ try {
   console.error(audit.stdout || audit.stderr);
   die(
     `Consumer-visible vulnerabilities at level "${auditLevel}".`,
-    'A repo `overrides` pin will NOT fix this for consumers. Remediate the published tree: bump, replace, or drop the offending direct dependency. See docs/reference/dependencies.md § Transitive vulnerability remediation.',
+    'A repo `overrides` pin will NOT fix this for consumers. Remediate the published tree: bump, replace, or drop the offending direct dependency. See docs/guides/reference/dependencies.md § Transitive vulnerability remediation.',
   );
 } finally {
   rmSync(work, { recursive: true, force: true });

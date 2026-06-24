@@ -68,7 +68,7 @@ async function waitForReady(url) {
 /**
  * Spawn the server. Returns { url, fetch, close, child, home } or null when
  * the server fails to come up. `seedHome(home)` runs before the spawn so
- * tests can drop config files (~/.construct/config.env, etc.) into the
+ * tests can drop config files (~/.config/construct/config.env, etc.) into the
  * isolated HOME the server will read.
  */
 export async function withDashboardServer(t, { extraEnv = {}, seedHome } = {}) {
@@ -79,7 +79,42 @@ export async function withDashboardServer(t, { extraEnv = {}, seedHome } = {}) {
   }
   const port = pickPort();
   const home = mkdtempSync(join(tmpdir(), 'cx-dash-server-'));
-  if (typeof seedHome === 'function') seedHome(home);
+
+  // The server resolves config/state/cache via lib/config/xdg.mjs, which honors
+  // an absolute XDG_CONFIG_HOME over the sandbox HOME. Pin the XDG base dirs
+  // inside `home` so config never escapes the per-test sandbox: an ambient
+  // XDG_CONFIG_HOME (set on CI) would otherwise route the server — and any
+  // seedHome write — to a shared real location, leaking a dashboard token
+  // across suites and gating unrelated endpoints with a spurious 401.
+
+  const xdg = {
+    XDG_CONFIG_HOME: join(home, '.config'),
+    XDG_STATE_HOME: join(home, '.local', 'state'),
+    XDG_CACHE_HOME: join(home, '.cache'),
+  };
+
+  // seedHome helpers resolve config paths through the same xdg helpers (reading
+  // process.env), so apply the sandbox XDG vars across the synchronous seed,
+  // then restore. No await runs between set and restore, so the swap stays
+  // atomic with respect to other concurrent suites.
+
+  if (typeof seedHome === 'function') {
+    const prior = {
+      XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME,
+      XDG_STATE_HOME: process.env.XDG_STATE_HOME,
+      XDG_CACHE_HOME: process.env.XDG_CACHE_HOME,
+    };
+    Object.assign(process.env, xdg);
+    try {
+      seedHome(home);
+    } finally {
+      for (const [k, v] of Object.entries(prior)) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+    }
+  }
+
   const cookies = new Map();
 
   const env = {
@@ -87,6 +122,7 @@ export async function withDashboardServer(t, { extraEnv = {}, seedHome } = {}) {
     PORT: String(port),
     BIND_HOST: '127.0.0.1',
     HOME: home,
+    ...xdg,
     NODE_ENV: 'test',
     CONSTRUCT_SKIP_POSTINSTALL: '1',
     ...extraEnv,

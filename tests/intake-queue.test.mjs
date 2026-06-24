@@ -47,7 +47,7 @@ function sampleEntry(overrides = {}) {
       rationale: 'Matched 2 keywords for bug: stack trace, regression.',
     },
     suggestion: { lane: 'rfcs', source: 'docs-routing.suggestDocsLaneForFile' },
-    related: [{ path: 'docs/rfcs/0007-x.md', title: 'Existing RFC', score: 0.78, summary: '...' }],
+    related: [{ path: 'templates/docs/rfcs/0007-x.md', title: 'Existing RFC', score: 0.78, summary: '...' }],
     excerpt: 'pretend extracted content',
     query: 'example pdf relevant context',
     ...overrides,
@@ -95,7 +95,7 @@ describe('FilesystemIntakeQueue.listPending + count', () => {
 describe('FilesystemIntakeQueue.markProcessed', () => {
   it('moves the entry from pending/ to processed/ with status=processed + metadata', () => {
     const { id } = queue.enqueue(sampleEntry());
-    queue.markProcessed(id, { processedBy: 'claude-code-session', notes: 'merged into docs/rfcs/0007-x.md' });
+    queue.markProcessed(id, { processedBy: 'claude-code-session', notes: 'merged into templates/docs/rfcs/0007-x.md' });
 
     assert.equal(fs.existsSync(path.join(pendingDir(projectRoot), `${id}.json`)), false, 'removed from pending');
     assert.equal(fs.existsSync(path.join(processedDir(projectRoot), `${id}.json`)), true, 'moved to processed');
@@ -103,7 +103,7 @@ describe('FilesystemIntakeQueue.markProcessed', () => {
     const entry = queue.read(id);
     assert.equal(entry.status, 'processed');
     assert.equal(entry.processedBy, 'claude-code-session');
-    assert.equal(entry.notes, 'merged into docs/rfcs/0007-x.md');
+    assert.equal(entry.notes, 'merged into templates/docs/rfcs/0007-x.md');
     assert.ok(entry.processedAt);
   });
 

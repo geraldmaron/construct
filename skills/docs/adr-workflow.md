@@ -18,14 +18,14 @@ Use when: an architectural decision is made that affects the system structure, d
 ## Steps
 
 1. **cx-architect** or **cx-engineer** identifies the decision
-2. **Write to `docs/adr/ADR-{NNN}-{slug}.md`** using the template from `get_template("adr")`: resolves `.cx/templates/docs/adr.md` (override) then `templates/docs/adr.md` (shipped)
+2. **Write to `docs/decisions/adr/ADR-{NNN}-{slug}.md`** using the template from `get_template("adr")`: resolves `.cx/templates/docs/adr.md` (override) then `templates/docs/adr.md` (shipped)
    - NNN = next sequential number (check existing files)
 3. **Also write a shorter entry to `.cx/decisions/`** for session context
 4. **cx-docs-keeper** updates `.cx/context.md` Architecture Notes with a one-line summary and link
 
 ## File naming
-- `docs/adr/ADR-001-use-postgres-over-mysql.md`
-- `docs/adr/ADR-002-jwt-auth-strategy.md`
+- `docs/decisions/adr/ADR-001-use-postgres-over-mysql.md`
+- `docs/decisions/adr/ADR-002-jwt-auth-strategy.md`
 
 ## Cross-referencing
 - If this ADR supersedes another: update the old ADR's status field

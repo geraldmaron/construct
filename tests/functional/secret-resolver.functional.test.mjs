@@ -21,6 +21,7 @@ import {
   extractOpRef,
   __clearSecretCache,
 } from '../../lib/providers/secret-resolver.mjs';
+import { configDir } from '../../lib/config/xdg.mjs';
 
 function withTmpHome(fn) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-secret-'));
@@ -37,8 +38,8 @@ function withTmpHome(fn) {
 }
 
 function writeConfigEnv(home, body) {
-  fs.mkdirSync(path.join(home, '.construct'), { recursive: true });
-  fs.writeFileSync(path.join(home, '.construct', 'config.env'), body);
+  fs.mkdirSync(configDir(home), { recursive: true });
+  fs.writeFileSync(path.join(configDir(home), 'config.env'), body);
 }
 
 test('extractOpRef recognizes bare and command-substitution forms', () => {

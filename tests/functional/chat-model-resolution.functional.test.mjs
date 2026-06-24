@@ -18,6 +18,7 @@ import {
   isChatModelAvailable,
   resolveValidatedChatModel,
 } from '../../lib/model-router.mjs';
+import { configDir } from '../../lib/config/xdg.mjs';
 
 function withIsolatedHome(fn) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-model-res-'));
@@ -49,8 +50,8 @@ test('isChatModelAvailable accepts op://-backed anthropic key', () => {
 
 test('isChatModelAvailable rejects stale copilot model id when copilot is configured', () => {
   withIsolatedHome((home) => {
-    fs.mkdirSync(path.join(home, '.construct', 'auth'), { recursive: true });
-    fs.writeFileSync(path.join(home, '.construct', 'auth', 'github-copilot.json'), JSON.stringify({ oauth_token: 'ghu_X' }));
+    fs.mkdirSync(path.join(configDir(home), 'auth'), { recursive: true });
+    fs.writeFileSync(path.join(configDir(home), 'auth', 'github-copilot.json'), JSON.stringify({ oauth_token: 'ghu_X' }));
     const check = isChatModelAvailable('github-copilot/gpt-5.1', { env: {} });
     assert.equal(check.ok, false);
     assert.equal(check.reason, 'model_not_available');

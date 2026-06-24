@@ -18,6 +18,7 @@ import {
   boundaryConfigPath,
   signBoundaryRequest,
 } from '../../lib/boundary.mjs';
+import { configDir } from '../../lib/config/xdg.mjs';
 
 const reachable = async () => ({ ok: true });
 const unreachable = async () => ({ ok: false, error: 'connect refused' });
@@ -163,9 +164,9 @@ test('rotates when override is allowed and archives the prior config', async () 
     assert.equal(second.ok, true);
     assert.equal(second.config.parentInstance, 'parent-2');
     assert.equal(second.config.rotatedFrom, 'parent-1');
-    const archives = readdirSync(join(home, '.construct')).filter((n) => n.startsWith('boundary.') && n !== 'boundary.json');
+    const archives = readdirSync(configDir(home)).filter((n) => n.startsWith('boundary.') && n !== 'boundary.json');
     assert.equal(archives.length, 1);
-    const archived = JSON.parse(readFileSync(join(home, '.construct', archives[0]), 'utf8'));
+    const archived = JSON.parse(readFileSync(join(configDir(home), archives[0]), 'utf8'));
     assert.equal(archived.parentInstance, 'parent-1');
   } finally { cleanup(); }
 });

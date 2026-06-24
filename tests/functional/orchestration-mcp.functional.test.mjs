@@ -3,7 +3,7 @@
  *
  * Drives the MCP `orchestration_run` / `orchestration_status` tools against a
  * real daemon spawned on an ephemeral port with an isolated HOME (so the token
- * resolves from the isolated ~/.construct/config.env and runs persist under the
+ * resolves from the isolated configDir()/config.env and runs persist under the
  * isolated ~/.cx). Proves an MCP host with no subagent primitive reaches a real
  * multi-specialist run through a tool, and that an unreachable daemon yields a
  * fail-fast error rather than a silent single-persona fallback. Uses the inline
@@ -19,6 +19,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { configDir } from '../../lib/config/xdg.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SERVER = path.join(HERE, '..', '..', 'lib', 'server', 'index.mjs');
@@ -45,8 +46,8 @@ async function waitForServer(retries = 50) {
 
 test.before(async () => {
   home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-mcp-orch-'));
-  fs.mkdirSync(path.join(home, '.construct'), { recursive: true });
-  fs.writeFileSync(path.join(home, '.construct', 'config.env'), `CONSTRUCT_DASHBOARD_TOKEN=${TOKEN}\n`);
+  fs.mkdirSync(configDir(home), { recursive: true });
+  fs.writeFileSync(path.join(configDir(home), 'config.env'), `CONSTRUCT_DASHBOARD_TOKEN=${TOKEN}\n`);
   priorHome = process.env.HOME;
   priorPort = process.env.PORT;
   priorBindHost = process.env.BIND_HOST;

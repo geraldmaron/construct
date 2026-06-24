@@ -15,6 +15,7 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 
 import { maybeFirstInvocationProbe, shouldSkipProbe } from '../lib/install/first-invocation.mjs';
 import { parseEnvFile } from '../lib/env-config.mjs';
+import { configDir } from '../lib/config/xdg.mjs';
 
 let tmpHome;
 
@@ -78,8 +79,8 @@ describe('shouldSkipProbe', () => {
 
 describe('maybeFirstInvocationProbe', () => {
   it('skips when BOOTSTRAP_CHECKED=1 cached in config.env (silent fast-path)', async () => {
-    fs.mkdirSync(path.join(tmpHome, '.construct'), { recursive: true });
-    fs.writeFileSync(path.join(tmpHome, '.construct', 'config.env'), 'BOOTSTRAP_CHECKED=1\n');
+    fs.mkdirSync(configDir(tmpHome), { recursive: true });
+    fs.writeFileSync(path.join(configDir(tmpHome), 'config.env'), 'BOOTSTRAP_CHECKED=1\n');
     let probeCalled = false;
     const result = await maybeFirstInvocationProbe({
       command: 'sync',
@@ -107,7 +108,7 @@ describe('maybeFirstInvocationProbe', () => {
     assert.equal(result.ran, true);
     assert.equal(result.reason, 'all-healthy');
     assert.deepEqual(writes, [], 'silent on success');
-    assert.equal(parseEnvFile(path.join(tmpHome, '.construct', 'config.env')).BOOTSTRAP_CHECKED, '1');
+    assert.equal(parseEnvFile(path.join(configDir(tmpHome), 'config.env')).BOOTSTRAP_CHECKED, '1');
   });
 
   it('missing-optional + non-TTY: prints table, sets cache, does not prompt', async () => {
@@ -124,7 +125,7 @@ describe('maybeFirstInvocationProbe', () => {
     assert.equal(result.reason, 'reported-non-tty');
     assert.equal(result.runSetup, undefined);
     assert.ok(writes.join('').includes('Resource check'));
-    assert.equal(parseEnvFile(path.join(tmpHome, '.construct', 'config.env')).BOOTSTRAP_CHECKED, '1');
+    assert.equal(parseEnvFile(path.join(configDir(tmpHome), 'config.env')).BOOTSTRAP_CHECKED, '1');
   });
 
   it('missing-required + TTY: prints table, prompts, returns runSetup based on answer', async () => {
@@ -146,7 +147,7 @@ describe('maybeFirstInvocationProbe', () => {
     assert.equal(result.reason, 'prompted');
     assert.equal(result.runSetup, true);
     assert.ok(writes.join('').includes('required resource(s) missing'));
-    assert.equal(parseEnvFile(path.join(tmpHome, '.construct', 'config.env')).BOOTSTRAP_CHECKED, '1');
+    assert.equal(parseEnvFile(path.join(configDir(tmpHome), 'config.env')).BOOTSTRAP_CHECKED, '1');
   });
 
   it('hook invocation: never runs probe regardless of state (silent for hooks)', async () => {

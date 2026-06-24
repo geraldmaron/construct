@@ -44,7 +44,7 @@ For artifacts that go through a review cycle (strategy, PRD, ADR, RFC), the fram
 - Writing a new rule that paraphrases an existing one.
 - Adding a new template alongside `templates/docs/strategy.md` because the existing one "needed a couple of tweaks."
 - Drafting an ADR for a decision already captured in an existing ADR.
-- Producing a recipe in `docs/cookbook/` for a workflow already documented in `docs/concepts/`.
+- Producing a recipe in `docs/guides/cookbook/` for a workflow already documented in `docs/guides/concepts/`.
 
 ## Related
 

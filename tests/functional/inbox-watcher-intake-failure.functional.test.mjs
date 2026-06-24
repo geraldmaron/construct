@@ -28,15 +28,10 @@ after(() => {
 function makeProject() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-k4bg-'));
   tmpDirs.push(dir);
-  fs.mkdirSync(path.join(dir, '.cx', 'inbox'), { recursive: true });
+  // The canonical project-root inbox/ is always watched (ADR-0045 §C); no
+  // intake-config is needed to enable a scan.
+  fs.mkdirSync(path.join(dir, 'inbox'), { recursive: true });
   fs.mkdirSync(path.join(dir, '.cx', 'intake', 'pending'), { recursive: true });
-  // Enable the project inbox scan; without intake-config the watcher's source
-  // list is empty and poll() is a no-op.
-  fs.writeFileSync(
-    path.join(dir, '.cx', 'intake-config.json'),
-    JSON.stringify({ includeProjectInbox: true, parentDirs: [], maxDepth: 2 }),
-    'utf8',
-  );
   // Seed an empty dedup manifest — its presence is the watcher's signal to
   // compute SHAs and consult the manifest gate at all. Mirrors what init does
   // for archetype profiles via intake/manifest.mjs:saveManifest.
@@ -49,7 +44,7 @@ function makeProject() {
 }
 
 function dropInboxFile(projectDir, name, content) {
-  const filePath = path.join(projectDir, '.cx', 'inbox', name);
+  const filePath = path.join(projectDir, 'inbox', name);
   fs.writeFileSync(filePath, content, 'utf8');
   return filePath;
 }

@@ -33,12 +33,12 @@ test('a footnote reference without a definition is dangling', () => {
 });
 
 test('a [source: repo-path] that exists is clean', () => {
-  const md = 'See the decision. [source: docs/adr/0015-affirm-hybrid-architecture.md]\n';
+  const md = 'See the decision. [source: docs/decisions/adr/0015-affirm-hybrid-architecture.md]\n';
   assert.equal(findDanglingCitations(md, { rootDir: REPO }).length, 0);
 });
 
 test('a [source: repo-path] that does not exist is flagged', () => {
-  const md = 'Per the study. [source: docs/research/does-not-exist.md]\n';
+  const md = 'Per the study. [source: docs/notes/research/does-not-exist.md]\n';
   const v = findDanglingCitations(md, { rootDir: REPO });
   assert.ok(v.some((x) => /source path not found/.test(x.label)));
 });
@@ -59,7 +59,7 @@ test('lintFile routes dangling citations to errors in block mode for artifact pa
   try {
     mkdirSync(join(dir, 'docs', 'research'), { recursive: true });
     const f = join(dir, 'docs', 'research', 'note.md');
-    writeFileSync(f, '<!--\ndocs/research/note.md — test note.\n\nA test research note.\n-->\n\n# Note\n\nFinding.[^7]\n');
+    writeFileSync(f, '<!--\ndocs/notes/research/note.md — test note.\n\nA test research note.\n-->\n\n# Note\n\nFinding.[^7]\n');
     process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
     const { errors } = lintFile(f, { rootDir: dir });
     assert.ok(errors.some((e) => /dangling footnote/.test(e.label)), 'dangling footnote is a blocking error');
