@@ -653,6 +653,21 @@ async function cmdDoctor() {
     );
   }
 
+  // Mirror model tier overrides stranded in the pre-XDG legacy config forward
+  // before resolving tiers, so an install upgraded across the XDG move reports
+  // configured without a manual copy. Applied to process.env too so the check
+  // below sees the just-migrated values in the same run.
+  try {
+    const { migrateLegacyModelConfig } = await import('../lib/config/legacy-config-migration.mjs');
+    const migration = migrateLegacyModelConfig({ homeDir: HOME });
+    if (migration.performed) {
+      Object.assign(process.env, migration.migrated);
+      println(`  fix: migrated ${Object.keys(migration.migrated).join(', ')} from ${migration.legacyPath} → ${migration.xdgPath}`);
+    }
+  } catch (err) {
+    add(`Models — legacy config migration failed: ${err.message}`, false, true);
+  }
+
   // Tier model selection. Construct ships with no default — at least
   // one tier must be configured (registry.json primary OR CX_MODEL_*
   // env override) before any LLM-backed workflow can run.
@@ -3773,7 +3788,15 @@ async function cmdOrchestrate(args) {
 }
 
 async function cmdModels(args) {
-  if (args[0] === 'resolve') {
+  const envPath = getUserEnvPath(HOME);
+  const sub = args[0] && !args[0].startsWith('-') ? args[0] : null;
+  const KNOWN_SUBCOMMANDS = new Set(['list', 'set', 'free', 'reset', 'resolve']);
+  if (sub && !KNOWN_SUBCOMMANDS.has(sub)) {
+    errorln(`Unknown models subcommand: ${sub}. Run \`construct models --help\` for the supported set.`);
+    process.exit(1);
+  }
+
+  if (sub === 'resolve') {
     const flag = (name) => { const i = args.indexOf(name); return i !== -1 ? args[i + 1] : undefined; };
     const { resolveEmbeddedModel } = await import('../lib/embedded-contract/model-resolve.mjs');
     const { wrapContractResult } = await import('../lib/embedded-contract/envelope.mjs');
@@ -3790,21 +3813,37 @@ async function cmdModels(args) {
     println(JSON.stringify(envelope, null, 2));
     return;
   }
+  // Legacy flag forms stay as compatibility aliases for the documented
+  // subcommands. Each emits a one-line deprecation notice on stderr so stdout
+  // stays clean while operators migrate to `models set|reset|free`.
   const tier = args.find((arg) => arg.startsWith('--tier='))?.split('=')[1] ?? '';
-  const setModel = args.find((arg) => arg.startsWith('--set='))?.split('=')[1] ?? '';
-  const envPath = getUserEnvPath(HOME);
-  if (args.includes('--reset')) {
+  const modelFlag = args.find((arg) => arg.startsWith('--model='))?.split('=')[1];
+  const legacySetFlag = args.find((arg) => arg.startsWith('--set='))?.split('=')[1];
+  const setModel = modelFlag ?? legacySetFlag ?? '';
+
+  if (sub === 'reset' || args.includes('--reset')) {
+    if (sub !== 'reset') errorln('Note: `construct models --reset` is a deprecated alias for `construct models reset`.');
     resetEnv(envPath);
-    println('Removed CX_MODEL_* overrides from ~/.construct/config.env.');
+    println(`Removed CX_MODEL_* overrides from ${envPath}.`);
     await cmdSync([]);
     return;
   }
-  if (tier && setModel) {
+  if (sub === 'set' || (sub === null && tier && setModel)) {
+    if (!tier || !setModel) {
+      errorln('Usage: construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id>');
+      process.exit(1);
+    }
+    if (modelFlag === undefined && legacySetFlag !== undefined) {
+      errorln('Note: `--set=<model>` is a deprecated alias for `--model=<model>`.');
+    }
+    if (sub === null) {
+      errorln('Note: `construct models --tier=… --set=…` is a deprecated alias for `construct models set --tier=… --model=…`.');
+    }
     const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
     const preferFree = args.includes('--prefer-free');
     const preferFreeSameFamily = args.includes('--prefer-free-same-family');
     const inferred = setModelWithTierInference(envPath, tier, setModel, registry.models ?? {}, { preferFree, preferFreeSameFamily });
-    println(`Set ${tier} -> ${setModel} in ~/.construct/config.env`);
+    println(`Set ${tier} -> ${setModel} in ${envPath}`);
     if (preferFreeSameFamily) println('Prefer-free-same-family mode: enabled');
     if (preferFree) println('Prefer-free mode: enabled');
     println(`Resolved tier set:`);
@@ -3814,7 +3853,8 @@ async function cmdModels(args) {
     await cmdSync([]);
     return;
   }
-  if (args.includes('--poll')) {
+  if (sub === 'free' || args.includes('--poll')) {
+    if (sub !== 'free') errorln('Note: `construct models --poll` is a deprecated alias for `construct models free`.');
     const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
     if (!apiKey) {
       errorln('Error: no OpenRouter API key found in OPENROUTER_API_KEY or OpenCode config.');
@@ -3841,7 +3881,7 @@ async function cmdModels(args) {
       if (id) selections[currentTier] = id;
     }
     applyToEnv(envPath, selections);
-    println('Written to ~/.construct/config.env. Running construct sync...');
+    println(`Written to ${envPath}. Running construct sync...`);
     await cmdSync([]);
     return;
   }
@@ -3878,12 +3918,12 @@ async function cmdModels(args) {
     for (const [tier, model] of Object.entries(selections)) {
       println(`  ${tier.padEnd(11)} ${model}`);
     }
-    println('Written to ~/.construct/config.env. Running construct sync...');
+    println(`Written to ${envPath}. Running construct sync...`);
     setCheapestProviderPreference(envPath, true);
     await cmdSync([]);
     return;
   }
-  if (args.includes('--list') || args[0] === 'list') {
+  if (args.includes('--list') || sub === 'list') {
     const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
     const { listChatModels } = await import('../apps/chat/engine/models.mjs');
     const catalog = getProviderModelCatalog({ env: process.env, cwd: process.cwd() });
@@ -3913,7 +3953,7 @@ async function cmdModels(args) {
     println('No tier has a model selected. Construct ships with no default.');
     println('Pick one of:');
     println('  • Dashboard → Models page (single source of truth)');
-    println('  • construct models --set=<provider/model-id> --tier=reasoning|standard|fast');
+    println('  • construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id>');
     println('  • construct models --apply           Poll OpenRouter free catalog and seed all tiers');
   }
 }

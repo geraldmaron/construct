@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "type": "module",
   "packageManager": "npm@11.5.1",
   "description": "Construct — agent orchestration layer for OpenCode, Claude Code, and other coding surfaces",
@@ -17,6 +17,7 @@
     "bin/construct",
     "bin/construct-postinstall.mjs",
     "lib/**",
+    "apps/chat/engine/**",
     "specialists/**",
     "examples/**",
     "personas/**",
@@ -52,7 +53,7 @@
   "scripts": {
     "mcp": "node lib/mcp/server.mjs",
     "test": "node scripts/run-tests.mjs",
-    "test:functional": "node --test --test-timeout=120000 --test-concurrency=1 tests/functional/*.functional.test.mjs",
+    "test:functional": "XDG_CONFIG_HOME= XDG_STATE_HOME= XDG_CACHE_HOME= node --test --test-timeout=120000 --test-concurrency=1 tests/functional/*.functional.test.mjs",
     "test:unit": "node scripts/run-tests.mjs --exclude=tests/functional",
     "lint:js": "eslint bin/construct \"lib/**/*.mjs\" \"scripts/**/*.mjs\" \"tests/**/*.mjs\"",
     "coverage": "c8 --reporter=text-summary --reporter=lcov --src=lib --src=bin node scripts/run-tests.mjs --exclude=tests/functional",
