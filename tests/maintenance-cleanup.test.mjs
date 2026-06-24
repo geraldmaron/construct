@@ -23,11 +23,11 @@ import {
   stampPath,
   maybeRunCleanupOnUpgrade,
 } from '../lib/maintenance/cleanup.mjs';
-import { stateDir, cacheDir } from '../lib/config/xdg.mjs';
+import { stateDir, cacheDir, doctorRoot } from '../lib/config/xdg.mjs';
 
 function mkHome() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-cleanup-'));
-  fs.mkdirSync(path.join(dir, '.cx', 'runtime'), { recursive: true });
+  fs.mkdirSync(path.join(doctorRoot(dir), 'runtime'), { recursive: true });
   fs.mkdirSync(cacheDir(dir), { recursive: true });
   return dir;
 }
@@ -48,7 +48,7 @@ describe('cleanupEmbedLog', () => {
 
   it('truncates the live log in place when oversized', () => {
     const home = mkHome();
-    const log = path.join(home, '.cx', 'runtime', 'embed-daemon.log');
+    const log = path.join(doctorRoot(home),'runtime', 'embed-daemon.log');
     writeSized(log, 2 * 1024 * 1024);
     const summary = cleanupEmbedLog({ homeDir: home, env: { CONSTRUCT_EMBED_LOG_MAX_MB: '1' } });
     assert.equal(summary.truncated.length, 1);
@@ -60,7 +60,7 @@ describe('cleanupEmbedLog', () => {
 
   it('drops rotated segments beyond the keep horizon', () => {
     const home = mkHome();
-    const dir = path.join(home, '.cx', 'runtime');
+    const dir = path.join(doctorRoot(home),'runtime');
     // Live log is small (under cap), but segments .1 through .5 exist
     writeSized(path.join(dir, 'embed-daemon.log'), 1024);
     for (let n = 1; n <= 5; n++) {
@@ -77,7 +77,7 @@ describe('cleanupEmbedLog', () => {
 
   it('removes individually oversized rotated segments', () => {
     const home = mkHome();
-    const dir = path.join(home, '.cx', 'runtime');
+    const dir = path.join(doctorRoot(home),'runtime');
     writeSized(path.join(dir, 'embed-daemon.log'), 1024);
     writeSized(path.join(dir, 'embed-daemon.log.1'), 2 * 1024 * 1024); // oversized
     writeSized(path.join(dir, 'embed-daemon.log.2'), 1024);            // small
@@ -91,7 +91,7 @@ describe('cleanupEmbedLog', () => {
 
   it('dry-run reports what would be freed without touching files', () => {
     const home = mkHome();
-    const log = path.join(home, '.cx', 'runtime', 'embed-daemon.log');
+    const log = path.join(doctorRoot(home),'runtime', 'embed-daemon.log');
     writeSized(log, 2 * 1024 * 1024);
     const summary = cleanupEmbedLog({
       homeDir: home,
@@ -107,7 +107,7 @@ describe('cleanupEmbedLog', () => {
 describe('cleanupJsonlLogs', () => {
   it('preserves recent records when truncating an oversized jsonl', () => {
     const home = mkHome();
-    const file = path.join(home, '.cx', 'audit.jsonl');
+    const file = path.join(doctorRoot(home),'audit.jsonl');
     // Build a jsonl that exceeds the 25 MB cap
     const recent = Buffer.from('{"event":"recent","ts":"2026-05-27T12:00:00Z"}\n');
     const padding = Buffer.alloc(26 * 1024 * 1024, 'x');
@@ -122,7 +122,7 @@ describe('cleanupJsonlLogs', () => {
 
   it('does not touch small jsonl files', () => {
     const home = mkHome();
-    const file = path.join(home, '.cx', 'audit.jsonl');
+    const file = path.join(doctorRoot(home),'audit.jsonl');
     fs.writeFileSync(file, '{"event":"a"}\n{"event":"b"}\n');
     const before = fs.statSync(file).size;
     const summary = cleanupJsonlLogs({ homeDir: home });
@@ -163,8 +163,8 @@ describe('cleanupCacheDir', () => {
 describe('runFullCleanup', () => {
   it('aggregates freedBytes across primitives', () => {
     const home = mkHome();
-    writeSized(path.join(home, '.cx', 'runtime', 'embed-daemon.log'), 2 * 1024 * 1024);
-    const audit = path.join(home, '.cx', 'audit.jsonl');
+    writeSized(path.join(doctorRoot(home),'runtime', 'embed-daemon.log'), 2 * 1024 * 1024);
+    const audit = path.join(doctorRoot(home),'audit.jsonl');
     fs.writeFileSync(audit, Buffer.concat([Buffer.alloc(26 * 1024 * 1024, 'x'), Buffer.from('{"e":"k"}\n')]));
 
     const summary = runFullCleanup({
@@ -185,8 +185,8 @@ describe('runFullCleanup', () => {
     // exist as a directory but expects to.
     const home = mkHome();
     // Replace the .cx/runtime dir with a file so primitives fail
-    fs.rmSync(path.join(home, '.cx', 'runtime'), { recursive: true });
-    fs.writeFileSync(path.join(home, '.cx', 'runtime'), 'i am a file');
+    fs.rmSync(path.join(doctorRoot(home),'runtime'), { recursive: true });
+    fs.writeFileSync(path.join(doctorRoot(home),'runtime'), 'i am a file');
     const summary = runFullCleanup({ homeDir: home, env: {} });
     // Should still complete, just with embedLog possibly degraded
     assert.ok(Array.isArray(summary.errors));
@@ -223,7 +223,7 @@ describe('version stamp and auto-upgrade trigger', () => {
 
   it('first run with no stamp triggers cleanup and writes the stamp', () => {
     const home = mkHome();
-    writeSized(path.join(home, '.cx', 'runtime', 'embed-daemon.log'), 2 * 1024 * 1024);
+    writeSized(path.join(doctorRoot(home),'runtime', 'embed-daemon.log'), 2 * 1024 * 1024);
     const result = maybeRunCleanupOnUpgrade({
       homeDir: home,
       env: { CONSTRUCT_EMBED_LOG_MAX_MB: '1' },
@@ -241,7 +241,7 @@ describe('version stamp and auto-upgrade trigger', () => {
   it('matching stamp version skips cleanup', () => {
     const home = mkHome();
     writeVersionStamp({ homeDir: home, version: '1.0.7', summary: { freedBytes: 0, durationMs: 0 } });
-    writeSized(path.join(home, '.cx', 'runtime', 'embed-daemon.log'), 2 * 1024 * 1024);
+    writeSized(path.join(doctorRoot(home),'runtime', 'embed-daemon.log'), 2 * 1024 * 1024);
     const result = maybeRunCleanupOnUpgrade({
       homeDir: home,
       env: { CONSTRUCT_EMBED_LOG_MAX_MB: '1' },
@@ -250,14 +250,14 @@ describe('version stamp and auto-upgrade trigger', () => {
     assert.equal(result.ran, false);
     assert.equal(result.reason, 'version matches stamp');
     // Log was NOT cleaned because stamp matched
-    assert.equal(fs.statSync(path.join(home, '.cx', 'runtime', 'embed-daemon.log')).size, 2 * 1024 * 1024);
+    assert.equal(fs.statSync(path.join(doctorRoot(home),'runtime', 'embed-daemon.log')).size, 2 * 1024 * 1024);
     fs.rmSync(home, { recursive: true, force: true });
   });
 
   it('version mismatch triggers cleanup and updates the stamp', () => {
     const home = mkHome();
     writeVersionStamp({ homeDir: home, version: '1.0.6', summary: { freedBytes: 0, durationMs: 0 } });
-    writeSized(path.join(home, '.cx', 'runtime', 'embed-daemon.log'), 2 * 1024 * 1024);
+    writeSized(path.join(doctorRoot(home),'runtime', 'embed-daemon.log'), 2 * 1024 * 1024);
     const result = maybeRunCleanupOnUpgrade({
       homeDir: home,
       env: { CONSTRUCT_EMBED_LOG_MAX_MB: '1' },
@@ -273,7 +273,7 @@ describe('version stamp and auto-upgrade trigger', () => {
 
   it('CONSTRUCT_DISABLE_AUTO_CLEANUP=1 skips the trigger entirely', () => {
     const home = mkHome();
-    writeSized(path.join(home, '.cx', 'runtime', 'embed-daemon.log'), 2 * 1024 * 1024);
+    writeSized(path.join(doctorRoot(home),'runtime', 'embed-daemon.log'), 2 * 1024 * 1024);
     const result = maybeRunCleanupOnUpgrade({
       homeDir: home,
       env: { CONSTRUCT_DISABLE_AUTO_CLEANUP: '1', CONSTRUCT_EMBED_LOG_MAX_MB: '1' },
@@ -288,7 +288,7 @@ describe('version stamp and auto-upgrade trigger', () => {
   it('force=true runs cleanup even when version matches', () => {
     const home = mkHome();
     writeVersionStamp({ homeDir: home, version: '1.0.7', summary: { freedBytes: 0, durationMs: 0 } });
-    writeSized(path.join(home, '.cx', 'runtime', 'embed-daemon.log'), 2 * 1024 * 1024);
+    writeSized(path.join(doctorRoot(home),'runtime', 'embed-daemon.log'), 2 * 1024 * 1024);
     const result = maybeRunCleanupOnUpgrade({
       homeDir: home,
       env: { CONSTRUCT_EMBED_LOG_MAX_MB: '1' },

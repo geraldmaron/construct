@@ -187,8 +187,11 @@ describe('InboxWatcher', () => {
 
       assert.equal(result.processed.length, 1);
       assert.ok(result.processed[0].docsPath);
-      assert.ok(result.processed[0].docsPath.endsWith('.md'));
       assert.ok(result.processed[0].docsPath.includes(join('docs', 'meetings')));
+
+      // A markdown source keeps its name; it must not gain a second extension
+      // (construct-niny: weekly-sync.md promotes to weekly-sync.md, never .md.md).
+      assert.match(result.processed[0].docsPath, /weekly-sync\.md$/);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

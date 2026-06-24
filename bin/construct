@@ -38,7 +38,7 @@ import {
   PROJECT_CONFIG_FILENAME,
 } from '../lib/config/project-config.mjs';
 import { validateProjectConfig } from '../lib/config/schema.mjs';
-import { configDir } from '../lib/config/xdg.mjs';
+import { configDir, doctorRoot } from '../lib/config/xdg.mjs';
 import {
   DEPLOYMENT_MODES,
   DEPLOYMENT_MODE_ENV_KEY,
@@ -593,7 +593,7 @@ async function cmdDoctor() {
   // minute at 50MB, but a freshly-upgraded install with a 34GB legacy
   // log shouldn't wait 60s. --fix-embed-log forces rotation now.
 
-  const embedLogPath = path.join(userHome, '.cx', 'runtime', 'embed-daemon.log');
+  const embedLogPath = path.join(doctorRoot(userHome), 'runtime', 'embed-daemon.log');
   if (fs.existsSync(embedLogPath)) {
     const sizeMb = fs.statSync(embedLogPath).size / 1024 / 1024;
     const FORCE_THRESHOLD_MB = Number(process.env.CONSTRUCT_DOCTOR_EMBED_LOG_FORCE_MB) || 500;
@@ -628,11 +628,11 @@ async function cmdDoctor() {
     'intent-verifications.jsonl',
   ];
   const legacyState = projectScopedNames
-    .map((name) => ({ name, path: path.join(userHome, '.cx', name) }))
+    .map((name) => ({ name, path: path.join(doctorRoot(userHome), name) }))
     .filter((p) => fs.existsSync(p.path) && fs.statSync(p.path).size > 0);
 
   if (legacyState.length > 0 && wantsFixMigrateState) {
-    const archiveDir = path.join(userHome, '.cx', 'legacy');
+    const archiveDir = path.join(doctorRoot(userHome), 'legacy');
     fs.mkdirSync(archiveDir, { recursive: true });
     const ts = new Date().toISOString().replace(/[:.]/g, '-');
     const moved = [];
@@ -745,8 +745,8 @@ async function cmdDoctor() {
   add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));
   add('specialists/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'prompts')));
   add('Hybrid storage env keys documented', fs.existsSync(path.join(ROOT_DIR, '.env.example')));
-  fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
-  add('~/.cx/performance-reviews/ ready', true);
+  fs.mkdirSync(path.join(doctorRoot(), 'performance-reviews'), { recursive: true });
+  add('performance-reviews/ ready', true);
 
   // construct.config.json — optional today (config is permitted to be absent;
   // env vars + defaults still work). The check enforces that when the file
@@ -1070,7 +1070,7 @@ async function cmdDoctor() {
     }
 
     try {
-      const failuresPath = path.join(HOME, '.cx', 'hook-failures.jsonl');
+      const failuresPath = path.join(doctorRoot(), 'hook-failures.jsonl');
       if (fs.existsSync(failuresPath)) {
         const lines = fs.readFileSync(failuresPath, 'utf8').trim().split('\n').filter(Boolean);
         const cutoff = Date.now() - 24 * 60 * 60 * 1000;
@@ -1516,7 +1516,7 @@ async function cmdMigrate(args) {
 }
 
 async function cmdReview(args) {
-  fs.mkdirSync(path.join(HOME, '.cx', 'performance-reviews'), { recursive: true });
+  fs.mkdirSync(path.join(doctorRoot(), 'performance-reviews'), { recursive: true });
   const sub = args[0];
 
   if (!sub || sub === 'run') {
@@ -2015,7 +2015,7 @@ async function _cmdPricing(args) {
     const f = describePricingCatalogFreshness();
     if (!f.present) { info(f.message); return; }
     try {
-      const cached = JSON.parse(fs.readFileSync(path.join(HOME, '.cx', 'pricing-cache.json'), 'utf8'));
+      const cached = JSON.parse(fs.readFileSync(path.join(doctorRoot(), 'pricing-cache.json'), 'utf8'));
       const divergences = checkPricingDivergence(cached.models || []);
       if (divergences.length === 0) { info('No pricing divergences (>25%) between LiteLLM and the static fallback.'); return; }
       println(`⚠  ${divergences.length} divergence(s):`);
@@ -2613,7 +2613,6 @@ async function cmdIntakeReroute(args, cwd) {
 
 async function cmdIntakeExtractionWarnings(args) {
   const { createReadStream, existsSync } = await import('node:fs');
-  const { homedir } = await import('node:os');
   const { join } = await import('node:path');
   const { createInterface } = await import('node:readline');
 
@@ -2631,7 +2630,7 @@ async function cmdIntakeExtractionWarnings(args) {
     }
   }
 
-  const logPath = join(homedir(), '.cx', 'intake', 'extraction-warnings.jsonl');
+  const logPath = join(doctorRoot(), 'intake', 'extraction-warnings.jsonl');
   if (!existsSync(logPath)) {
     println('No extraction warnings recorded yet.');
     return;
@@ -2682,11 +2681,10 @@ async function cmdIntakeExtractionWarnings(args) {
 
 async function cmdIntakeNeedsAsr(args) {
   const { existsSync, readdirSync, readFileSync } = await import('node:fs');
-  const { homedir } = await import('node:os');
   const { join } = await import('node:path');
 
   const sub = args[0] || 'list';
-  const asrDir = join(homedir(), '.cx', 'intake', 'needs-asr');
+  const asrDir = join(doctorRoot(), 'intake', 'needs-asr');
 
   if (sub === 'list') {
     if (!existsSync(asrDir)) { println('No audio/video files awaiting ASR.'); return; }
@@ -4217,7 +4215,7 @@ async function cmdEvals(args) {
     const report = await evaluateFixture(fixturePath);
 
     try {
-      const cacheDir = path.join(HOME, '.cx', 'evals');
+      const cacheDir = path.join(doctorRoot(), 'evals');
       fs.mkdirSync(cacheDir, { recursive: true });
       const ts = new Date().toISOString();
       fs.writeFileSync(
