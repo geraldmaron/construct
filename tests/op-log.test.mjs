@@ -1,8 +1,8 @@
 /**
  * tests/op-log.test.mjs — per-operation structured log file.
  *
- * Asserts startOpLog writes a correlation-id-stamped JSONL trace under
- * <home>/.cx/, that every line shares the op_id, that close() stamps the
+ * Asserts startOpLog writes a correlation-id-stamped JSONL trace under the
+ * global doctor root, that every line shares the op_id, that close() stamps the
  * final status, and that a non-writable home degrades to a silent no-op
  * instead of throwing (logging must never break the operation).
  */
@@ -14,6 +14,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { startOpLog } from '../lib/op-log.mjs';
+import { doctorRoot } from '../lib/config/xdg.mjs';
 
 function tmpHome(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -25,7 +26,7 @@ test('startOpLog writes a correlation-stamped JSONL trace and closes with status
     const opLog = startOpLog('dev', { homeDir: home });
     assert.ok(opLog.logPath, 'logPath must be set when the stream opened');
     assert.match(path.basename(opLog.logPath), /^dev-.*\.log$/);
-    assert.equal(path.dirname(opLog.logPath), path.join(home, '.cx'));
+    assert.equal(path.dirname(opLog.logPath), doctorRoot(home));
 
     opLog.event('services', { results: [{ name: 'Dashboard', status: 'started' }] });
     opLog.warn('embed', { status: 'failed' });
@@ -50,10 +51,13 @@ test('startOpLog writes a correlation-stamped JSONL trace and closes with status
 });
 
 test('startOpLog degrades to a no-op when the log file cannot be opened', () => {
-  // Point home at a path whose .cx is a *file*, so mkdir/createWriteStream fail.
+  // Plant a *file* at the doctor root's parent so the recursive mkdir of the
+  // log dir fails, exercising the silent-no-op fallback.
   const home = tmpHome('op-log-bad-');
   try {
-    fs.writeFileSync(path.join(home, '.cx'), 'not a directory');
+    const blocker = path.dirname(doctorRoot(home));
+    fs.mkdirSync(path.dirname(blocker), { recursive: true });
+    fs.writeFileSync(blocker, 'not a directory');
     let opLog;
     assert.doesNotThrow(() => { opLog = startOpLog('sync', { homeDir: home }); });
     assert.equal(opLog.logPath, null, 'logPath is null when the stream could not open');

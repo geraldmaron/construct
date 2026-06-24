@@ -16,6 +16,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { resolveHookOutputMode, writeHookContext, isNonInteractive } from '../lib/hooks/_lib/output-mode.mjs';
+import { doctorRoot } from '../lib/config/xdg.mjs';
 
 const NULL_CONFIG = null;
 
@@ -85,7 +86,7 @@ test('silent writes a debug log and touches neither stdout nor stderr', () => {
   assert.equal(used, 'silent');
   assert.equal(out, '');
   assert.equal(err, '');
-  const log = fs.readFileSync(path.join(home, '.cx', 'session-start-last.log'), 'utf8');
+  const log = fs.readFileSync(path.join(doctorRoot(home), 'session-start-last.log'), 'utf8');
   assert.equal(log, 'SUPPRESSED-CONTEXT');
   fs.rmSync(home, { recursive: true, force: true });
 });
