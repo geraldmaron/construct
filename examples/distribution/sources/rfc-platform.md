@@ -78,5 +78,5 @@ sequenceDiagram
 
 ## References
 
-- `docs/reference/branding.md`
+- `docs/guides/reference/branding.md`
 - `scripts/generate-deck-examples.mjs` (prior art)

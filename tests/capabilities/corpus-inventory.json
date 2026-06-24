@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-23T18:14:06.523Z",
+  "generatedAt": "2026-06-24T00:54:11.368Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 525,
-    "topLevelTestFiles": 287,
+    "testFiles": 526,
+    "topLevelTestFiles": 288,
     "nestedTestFiles": 238,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 23,
     "byLayer": {
-      "unit": 323,
+      "unit": 324,
       "live-provider": 2,
       "visual": 6,
       "integration": 31,
       "functional": 163
     },
     "byCategory": {
-      "unit": 284,
+      "unit": 285,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
@@ -4273,6 +4273,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/workflows/template-shape.test.mjs — Shape validation for workflow templates."
+    },
+    {
+      "path": "tests/xdg-config.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/xdg-config.test.mjs — XDG base-directory resolver contract."
     }
   ]
 }

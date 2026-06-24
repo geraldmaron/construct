@@ -10,7 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { loadConstructEnv, resolveDatabaseUrl } from '../lib/env-config.mjs';
+import { loadConstructEnv, resolveDatabaseUrl, getUserEnvPath } from '../lib/env-config.mjs';
 
 import { tempDir } from './helpers.mjs';
 
@@ -53,7 +53,7 @@ test('loadConstructEnv exposes composed DATABASE_URL for downstream callers', ()
 
 test('loadConstructEnv keeps op run injected credentials over config.env op refs', () => {
   const homeDir = tempDir('construct-env-op-run-');
-  const configPath = path.join(homeDir, '.construct', 'config.env');
+  const configPath = getUserEnvPath(homeDir);
   fs.mkdirSync(path.dirname(configPath), { recursive: true });
   fs.writeFileSync(
     configPath,
@@ -76,7 +76,7 @@ test('loadConstructEnv keeps op run injected credentials over config.env op refs
 
 test('loadConstructEnv still prefers config.env over stale shell op refs', () => {
   const homeDir = tempDir('construct-env-op-ref-');
-  const configPath = path.join(homeDir, '.construct', 'config.env');
+  const configPath = getUserEnvPath(homeDir);
   fs.mkdirSync(path.dirname(configPath), { recursive: true });
   fs.writeFileSync(
     configPath,
@@ -93,4 +93,57 @@ test('loadConstructEnv still prefers config.env over stale shell op refs', () =>
   });
 
   assert.equal(env.OPENAI_API_KEY, 'op://Dev/OpenAI/from-config');
+});
+
+function seedEnvFiles(prefix, { user = {}, project = {} } = {}) {
+  const homeDir = tempDir(prefix);
+  const rootDir = tempDir(`${prefix}root-`);
+  const userPath = getUserEnvPath(homeDir);
+  fs.mkdirSync(path.dirname(userPath), { recursive: true });
+  fs.writeFileSync(userPath, Object.entries(user).map(([k, v]) => `${k}=${v}`).join('\n') + '\n', 'utf8');
+  fs.writeFileSync(path.join(rootDir, '.env'), Object.entries(project).map(([k, v]) => `${k}=${v}`).join('\n') + '\n', 'utf8');
+  return { homeDir, rootDir };
+}
+
+test('project .env wins over user config.env for the same key', () => {
+  const { homeDir, rootDir } = seedEnvFiles('construct-env-precedence-', {
+    user: { SHARED: 'user_value', ONLY_USER: 'u' },
+    project: { SHARED: 'project_value', ONLY_PROJECT: 'p' },
+  });
+
+  const env = loadConstructEnv({ rootDir, homeDir, env: {}, warn: false });
+
+  assert.equal(env.SHARED, 'project_value');
+  assert.equal(env.ONLY_USER, 'u');
+  assert.equal(env.ONLY_PROJECT, 'p');
+});
+
+test('loadConstructEnv warns on every key shadowed between project .env and user config.env', () => {
+  const { homeDir, rootDir } = seedEnvFiles('construct-env-shadow-', {
+    user: { CUSTOM_SETTING: 'user', AGREE: 'same' },
+    project: { CUSTOM_SETTING: 'project', AGREE: 'same' },
+  });
+
+  let warned = '';
+  const original = process.stderr.write.bind(process.stderr);
+  process.stderr.write = (chunk) => { warned += chunk; return true; };
+  try {
+    loadConstructEnv({ rootDir, homeDir, env: {}, warn: true });
+  } finally {
+    process.stderr.write = original;
+  }
+
+  assert.match(warned, /CUSTOM_SETTING is set in both project \.env/);
+  assert.equal(/AGREE is set in both/.test(warned), false);
+});
+
+test('loadConstructEnv does not read a legacy ~/.construct/config.env', () => {
+  const homeDir = tempDir('construct-env-legacy-');
+  const legacyPath = path.join(homeDir, '.construct', 'config.env');
+  fs.mkdirSync(path.dirname(legacyPath), { recursive: true });
+  fs.writeFileSync(legacyPath, 'LEGACY_ONLY_KEY=should_not_load\n', 'utf8');
+
+  const env = loadConstructEnv({ homeDir, env: {}, warn: false });
+
+  assert.equal(env.LEGACY_ONLY_KEY, undefined);
 });

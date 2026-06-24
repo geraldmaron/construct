@@ -82,8 +82,6 @@ export const browseFilesystem = (path?: string) =>
 export const writeIntakeConfig = (config: {
   parentDirs?: string[];
   maxDepth?: number;
-  includeProjectInbox?: boolean;
-  includeDocsIntake?: boolean;
 }) => apiPost('/intake/config', config);
 export const fetchSessionUsage = () => apiGet('/session-usage');
 

@@ -5,7 +5,7 @@
  *   - --dry-run reports the plan and changes nothing on disk.
  *   - --yes (default risk: auto) removes .construct/, agents listed in the
  *     manifest, the Construct hooks block + known mcpServers from settings.json,
- *     and the ~/.construct/workspace and ~/.cx state dirs.
+ *     and the XDG state workspace dir and ~/.cx state dir.
  *   - User-added mcpServers and user-added top-level settings keys are preserved.
  *   - ask-risk items (.cx/, AGENTS.md/plan.md, embedding cache, config.env)
  *     are skipped unless --all is also passed.
@@ -20,6 +20,7 @@ import path from 'node:path';
 import { describe, it, beforeEach, afterEach } from 'node:test';
 
 import { runUninstall, parseArgs } from '../lib/uninstall/uninstall.mjs';
+import { configDir, stateDir, cacheDir } from '../lib/config/xdg.mjs';
 
 let projectDir;
 let homeDir;
@@ -83,15 +84,18 @@ function seedProject(dir) {
 }
 
 function seedHome(dir) {
-  const constructDir = path.join(dir, '.construct');
-  fs.mkdirSync(path.join(constructDir, 'workspace'), { recursive: true });
-  fs.mkdirSync(path.join(constructDir, 'vector'), { recursive: true });
-  fs.writeFileSync(path.join(constructDir, 'vector', 'index.json'), '{}');
-  fs.mkdirSync(path.join(constructDir, 'cache', 'embeddings'), { recursive: true });
-  fs.writeFileSync(path.join(constructDir, 'cache', 'embeddings', 'model.onnx'), 'pretend');
-  fs.writeFileSync(path.join(constructDir, 'config.env'), 'ANTHROPIC_API_KEY=sk-test\n');
-  fs.mkdirSync(path.join(constructDir, 'services', 'postgres'), { recursive: true });
-  fs.writeFileSync(path.join(constructDir, 'services', 'postgres', 'docker-compose.yml'), 'version: "3"\n');
+  const configRoot = configDir(dir);
+  const stateRoot = stateDir(dir);
+  const cacheRoot = cacheDir(dir);
+  fs.mkdirSync(path.join(stateRoot, 'workspace'), { recursive: true });
+  fs.mkdirSync(path.join(stateRoot, 'vector'), { recursive: true });
+  fs.writeFileSync(path.join(stateRoot, 'vector', 'index.json'), '{}');
+  fs.mkdirSync(path.join(cacheRoot, 'embeddings'), { recursive: true });
+  fs.writeFileSync(path.join(cacheRoot, 'embeddings', 'model.onnx'), 'pretend');
+  fs.mkdirSync(configRoot, { recursive: true });
+  fs.writeFileSync(path.join(configRoot, 'config.env'), 'ANTHROPIC_API_KEY=sk-test\n');
+  fs.mkdirSync(path.join(configRoot, 'services', 'postgres'), { recursive: true });
+  fs.writeFileSync(path.join(configRoot, 'services', 'postgres', 'docker-compose.yml'), 'version: "3"\n');
 
   fs.mkdirSync(path.join(dir, '.cx'), { recursive: true });
   fs.writeFileSync(path.join(dir, '.cx', 'log.jsonl'), '{"x":1}\n');
@@ -144,7 +148,7 @@ describe('runUninstall --dry-run', () => {
     assert.ok(fs.existsSync(path.join(projectDir, '.construct')));
     assert.ok(fs.existsSync(path.join(projectDir, '.claude', 'agents', 'construct.md')));
     assert.ok(fs.existsSync(path.join(projectDir, '.claude', 'settings.json')));
-    assert.ok(fs.existsSync(path.join(homeDir, '.construct', 'workspace')));
+    assert.ok(fs.existsSync(path.join(stateDir(homeDir), 'workspace')));
   });
 });
 
@@ -182,14 +186,14 @@ describe('runUninstall --yes (auto-risk only)', () => {
     assert.deepEqual(settings.userOnlyKey, { keepMe: true }, 'unrelated top-level key preserved');
 
     assert.equal(
-      fs.existsSync(path.join(homeDir, '.construct', 'workspace')),
+      fs.existsSync(path.join(stateDir(homeDir), 'workspace')),
       false,
-      '~/.construct/workspace removed'
+      'state workspace dir removed'
     );
     assert.equal(
-      fs.existsSync(path.join(homeDir, '.construct', 'vector')),
+      fs.existsSync(path.join(stateDir(homeDir), 'vector')),
       false,
-      '~/.construct/vector removed'
+      'state vector dir removed'
     );
     assert.equal(fs.existsSync(path.join(homeDir, '.cx')), false, '~/.cx removed');
   });
@@ -202,11 +206,11 @@ describe('runUninstall --yes (auto-risk only)', () => {
     assert.ok(fs.existsSync(path.join(projectDir, 'AGENTS.md')), 'AGENTS.md preserved');
     assert.ok(fs.existsSync(path.join(projectDir, 'plan.md')), 'plan.md preserved');
     assert.ok(
-      fs.existsSync(path.join(homeDir, '.construct', 'cache', 'embeddings', 'model.onnx')),
+      fs.existsSync(path.join(cacheDir(homeDir), 'embeddings', 'model.onnx')),
       'embedding cache preserved'
     );
     assert.ok(
-      fs.existsSync(path.join(homeDir, '.construct', 'config.env')),
+      fs.existsSync(path.join(configDir(homeDir), 'config.env')),
       'config.env preserved'
     );
   });
@@ -221,12 +225,12 @@ describe('runUninstall --yes --all', () => {
     assert.equal(fs.existsSync(path.join(projectDir, 'AGENTS.md')), false);
     assert.equal(fs.existsSync(path.join(projectDir, 'plan.md')), false);
     assert.equal(
-      fs.existsSync(path.join(homeDir, '.construct', 'cache', 'embeddings')),
+      fs.existsSync(path.join(cacheDir(homeDir), 'embeddings')),
       false,
       'embedding cache removed'
     );
     assert.equal(
-      fs.existsSync(path.join(homeDir, '.construct', 'config.env')),
+      fs.existsSync(path.join(configDir(homeDir), 'config.env')),
       false,
       'config.env removed'
     );
@@ -239,7 +243,7 @@ describe('runUninstall --scope=project', () => {
       runUninstall(['--yes', '--scope=project', `--cwd=${projectDir}`, `--home=${homeDir}`])
     );
     assert.equal(fs.existsSync(path.join(projectDir, '.construct')), false);
-    assert.ok(fs.existsSync(path.join(homeDir, '.construct', 'workspace')), 'machine workspace untouched');
+    assert.ok(fs.existsSync(path.join(stateDir(homeDir), 'workspace')), 'machine workspace untouched');
     assert.ok(fs.existsSync(path.join(homeDir, '.cx')), '~/.cx untouched');
   });
 });
@@ -264,7 +268,7 @@ describe('runUninstall --keep-state', () => {
     assert.equal(fs.existsSync(path.join(projectDir, '.claude', 'agents', 'cx-engineer.md')), false);
     assert.ok(fs.existsSync(path.join(projectDir, '.cx')), '.cx preserved');
     assert.ok(fs.existsSync(path.join(projectDir, 'AGENTS.md')), 'AGENTS.md preserved');
-    assert.ok(fs.existsSync(path.join(homeDir, '.construct', 'workspace')), 'machine workspace preserved');
+    assert.ok(fs.existsSync(path.join(stateDir(homeDir), 'workspace')), 'machine workspace preserved');
     assert.ok(fs.existsSync(path.join(homeDir, '.cx')), '~/.cx preserved');
   });
 });

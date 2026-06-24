@@ -1,6 +1,8 @@
 {
   "title": "Decisions",
   "pages": [
-    "index"
+    "index",
+    "adr",
+    "rfc"
   ]
 }

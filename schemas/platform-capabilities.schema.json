@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://construct.dev/schemas/platform-capabilities.schema.json",
   "title": "Platform Capability Registry",
-  "description": "Declarative source of truth for what each host platform (Claude Code, Codex, OpenCode, Cursor, VS Code, Copilot) can do. Consumed by the sync and init code so per-host behavior is declared data, not inline branches. See docs/adr/0033-platform-capability-registry.md.",
+  "description": "Declarative source of truth for what each host platform (Claude Code, Codex, OpenCode, Cursor, VS Code, Copilot) can do. Consumed by the sync and init code so per-host behavior is declared data, not inline branches. See docs/decisions/adr/0033-platform-capability-registry.md.",
   "type": "object",
   "required": ["version", "hosts"],
   "additionalProperties": false,

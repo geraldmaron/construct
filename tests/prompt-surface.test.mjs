@@ -50,7 +50,7 @@ test('construct persona delegates routing policy to code', () => {
 });
 
 test('prompt surface architecture states Construct is the sole public persona', () => {
-  const text = fs.readFileSync(path.join(root, 'docs/concepts/prompt-surfaces.mdx'), 'utf8');
+  const text = fs.readFileSync(path.join(root, 'docs/guides/concepts/prompt-surfaces.mdx'), 'utf8');
   assert.match(text, /sole public persona/);
   assert.match(text, /internal specialist prompts/);
   assert.match(text, /offline-only regression surfaces/);

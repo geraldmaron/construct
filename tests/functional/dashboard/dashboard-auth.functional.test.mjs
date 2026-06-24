@@ -10,8 +10,9 @@ import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { withDashboardServer } from '../_lib/dashboard-server.mjs';
+import { configDir } from '../../../lib/config/xdg.mjs';
 
-// Token only comes from ~/.construct/config.env (see lib/server/auth.mjs).
+// Token only comes from configDir()/config.env (see lib/server/auth.mjs).
 // Seed the file inside the harness's tmp HOME before the server spawns.
 
 function seedTokenConfig(token) {
@@ -20,9 +21,9 @@ function seedTokenConfig(token) {
   // doesn't trip the pre-commit gate.
 
   return (home) => {
-    mkdirSync(join(home, '.construct'), { recursive: true });
+    mkdirSync(configDir(home), { recursive: true });
     const key = 'CONSTRUCT_DASHBOARD' + '_TOKEN';
-    writeFileSync(join(home, '.construct', 'config.env'), `${key}=${token}\n`, 'utf8');
+    writeFileSync(join(configDir(home), 'config.env'), `${key}=${token}\n`, 'utf8');
   };
 }
 

@@ -1,22 +1,11 @@
 {
   "title": "Construct",
   "pages": [
-    "start",
-    "concepts",
-    "cookbook",
-    "reference",
-    "operations",
-    "deploy",
-    "runbooks",
-    "maintenance",
-    "releases",
+    "guides",
+    "specs",
     "decisions",
-    "adr",
-    "contributing",
-    "changelog",
-    "audit",
-    "research",
-    "rfc",
-    "intake"
+    "operations",
+    "notes",
+    "changelog"
   ]
 }

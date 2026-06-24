@@ -90,7 +90,7 @@ function toFindings(report) {
       severity: 'high',
       tier: 'mechanical',
       evidence: `Retired font reference: ${h.text}`,
-      recommendation: 'Use Space Grotesk + JetBrains Mono per lib/brand-tokens.mjs; see docs/reference/branding.md.',
+      recommendation: 'Use Space Grotesk + JetBrains Mono per lib/brand-tokens.mjs; see docs/guides/reference/branding.md.',
     });
   }
   for (const h of report.dashboardIntakeTitleDrift) {
@@ -120,7 +120,7 @@ function toFindings(report) {
       severity: 'medium',
       tier: 'mechanical',
       evidence: h.detail ? `${h.text} (${h.detail})` : h.text,
-      recommendation: 'Product name is Construct; CLI invocations use lowercase `construct` in backticks — see docs/reference/branding.md.',
+      recommendation: 'Product name is Construct; CLI invocations use lowercase `construct` in backticks — see docs/guides/reference/branding.md.',
     });
   }
   return rows;

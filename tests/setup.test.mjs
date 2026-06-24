@@ -7,6 +7,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { tempDir } from './helpers.mjs';
+import { stateDir } from '../lib/config/xdg.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
@@ -20,7 +21,7 @@ test("managed setup values configure local vector and local trace defaults", asy
   });
 
   assert.equal(values.CONSTRUCT_TRACE_BACKEND, "local");
-  assert.equal(values.CONSTRUCT_LANCEDB_PATH, path.join(home, ".construct", "vector", "lancedb"));
+  assert.equal(values.CONSTRUCT_LANCEDB_PATH, path.join(stateDir(home), "vector", "lancedb"));
   assert.equal(values.CONSTRUCT_VECTOR_MODEL, "hashing-bow-v1");
 });
 

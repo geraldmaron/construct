@@ -25,8 +25,8 @@ test('public CLI service inventory reconciles dispatch, generated reference, and
 });
 
 test('generated CLI reference contains rendered subcommands, not object coercions', () => {
-  for (const file of readdirSync(resolve(REPO, 'docs/reference/cli')).filter((name) => name.endsWith('.md'))) {
-    assert.doesNotMatch(readFileSync(resolve(REPO, 'docs/reference/cli', file), 'utf8'), /\[object Object\]/, file);
+  for (const file of readdirSync(resolve(REPO, 'docs/guides/reference/cli')).filter((name) => name.endsWith('.md'))) {
+    assert.doesNotMatch(readFileSync(resolve(REPO, 'docs/guides/reference/cli', file), 'utf8'), /\[object Object\]/, file);
   }
 });
 

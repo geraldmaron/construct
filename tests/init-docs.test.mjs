@@ -32,7 +32,7 @@ test('construct init bootstraps repo state without overwriting existing AGENTS.m
   assert.equal(fs.existsSync(path.join(cwd, '.cx', 'context.json')), true);
   assert.equal(fs.existsSync(path.join(cwd, '.cx', 'context.md')), true);
   assert.ok(fs.statSync(path.join(cwd, '.cx')).isDirectory());
-  assert.ok(fs.statSync(path.join(cwd, '.cx', 'inbox')).isDirectory());
+  assert.ok(fs.statSync(path.join(cwd, 'inbox', '.staging')).isDirectory());
 
   const plan = fs.readFileSync(path.join(cwd, 'plan.md'), 'utf8');
   const context = fs.readFileSync(path.join(cwd, '.cx', 'context.md'), 'utf8');
@@ -55,7 +55,7 @@ test('init-docs scaffolds selected doc lanes and preserves existing docs files',
     path.join(repoRoot, 'lib', 'init-docs.mjs'),
     cwd,
     '--yes',
-    '--docs=adrs,intake,memos,meetings,notes,prds,rfcs,runbooks',
+    '--docs=adrs,memos,meetings,notes,prds,rfcs,runbooks',
     '--with-architecture',
     '--extras=decision-notes',
   ], {
@@ -65,8 +65,7 @@ test('init-docs scaffolds selected doc lanes and preserves existing docs files',
 
   assert.equal(fs.readFileSync(path.join(cwd, 'docs', 'README.md'), 'utf8'), existingDocsReadme);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'architecture.md')), true);
-  assert.equal(fs.existsSync(path.join(cwd, 'docs', 'intake', 'templates', '_template.md')), true);
-  assert.ok(fs.statSync(path.join(cwd, '.cx', 'inbox')).isDirectory());
+  assert.ok(fs.statSync(path.join(cwd, 'inbox', '.staging')).isDirectory());
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'meetings', 'templates', '_template.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'notes', 'templates', '_template.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'prds', 'templates', '_template.md')), true);
@@ -78,14 +77,11 @@ test('init-docs scaffolds selected doc lanes and preserves existing docs files',
 
   const architectureDoc = fs.readFileSync(path.join(cwd, 'docs', 'architecture.md'), 'utf8');
   const customLane = fs.readFileSync(path.join(cwd, 'docs', 'decision-notes', 'README.md'), 'utf8');
-  const intakeReadme = fs.readFileSync(path.join(cwd, 'docs', 'intake', 'README.md'), 'utf8');
   const notesTemplate = fs.readFileSync(path.join(cwd, 'docs', 'notes', 'templates', '_template.md'), 'utf8');
   const meetingsTemplate = fs.readFileSync(path.join(cwd, 'docs', 'meetings', 'templates', '_template.md'), 'utf8');
 
   assert.match(architectureDoc, /single writer per file/i);
   assert.match(architectureDoc, /Beads/i);
-  assert.match(intakeReadme, /construct ingest \.\/\.cx\/inbox --sync/i);
-  assert.match(intakeReadme, /\.cx\/inbox\//i);
   assert.match(notesTemplate, /starter template for durable project notes/i);
   assert.match(meetingsTemplate, /starter template for meeting notes/i);
   assert.match(customLane, /custom documentation lane/i);
@@ -109,8 +105,7 @@ test('init-docs treats "all of them" as defaults and "nope" as no custom lanes',
 
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'prds', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'adr', 'README.md')), true);
-  assert.equal(fs.existsSync(path.join(cwd, 'docs', 'intake', 'README.md')), true);
-  assert.ok(fs.statSync(path.join(cwd, '.cx', 'inbox')).isDirectory());
+  assert.ok(fs.statSync(path.join(cwd, 'inbox', '.staging')).isDirectory(), 'init-docs scaffolds the canonical inbox/ with a staging dir, not .cx/inbox/');
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'meetings', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'memos', 'README.md')), true);
   assert.equal(fs.existsSync(path.join(cwd, 'docs', 'notes', 'README.md')), true);
@@ -140,7 +135,6 @@ test('init-docs lists lanes alphabetically in docs README', () => {
   const adrIndex = readme.indexOf('[ADRs]');
   const briefsIndex = readme.indexOf('[Briefs]');
   const changelogsIndex = readme.indexOf('[Changelogs]');
-  const intakeIndex = readme.indexOf('[Intake]');
   const memosIndex = readme.indexOf('[Memos]');
   const meetingsIndex = readme.indexOf('[Meetings]');
   const notesIndex = readme.indexOf('[Notes]');
@@ -152,8 +146,7 @@ test('init-docs lists lanes alphabetically in docs README', () => {
 
   assert.ok(adrIndex < briefsIndex);
   assert.ok(briefsIndex < changelogsIndex);
-  assert.ok(changelogsIndex < intakeIndex);
-  assert.ok(intakeIndex < meetingsIndex);
+  assert.ok(changelogsIndex < meetingsIndex);
   assert.ok(meetingsIndex < memosIndex);
   assert.ok(memosIndex < notesIndex);
   assert.ok(notesIndex < onboardingIndex);
@@ -240,21 +233,32 @@ test('init-docs scaffolds postmortems, changelogs, and onboarding lanes', () => 
 
 test('construct package repo keeps lane starters under templates/ only', () => {
   const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-  for (const dir of ['adr', 'memos', 'prds', 'rfcs', 'runbooks']) {
+
+  // Lane homes after the docs/ bucket regroup (ADR-0045): record lanes live
+  // under their bucket; init-lane template starters live under templates/docs/.
+
+  const laneDirs = [
+    path.join('docs', 'decisions', 'adr'),
+    path.join('docs', 'notes', 'memos'),
+    path.join('templates', 'docs', 'prds'),
+    path.join('templates', 'docs', 'rfcs'),
+    path.join('docs', 'operations', 'runbooks'),
+  ];
+  for (const dir of laneDirs) {
     assert.equal(
-      fs.existsSync(path.join(repoRoot, 'docs', dir, '_template.md')),
+      fs.existsSync(path.join(repoRoot, dir, '_template.md')),
       false,
-      `expected no docs/${dir}/_template.md — use docs/${dir}/templates/_template.md`,
+      `expected no ${dir}/_template.md — use ${dir}/templates/_template.md`,
     );
     assert.equal(
-      fs.existsSync(path.join(repoRoot, 'docs', dir, 'templates', '_template.md')),
+      fs.existsSync(path.join(repoRoot, dir, 'templates', '_template.md')),
       true,
-      `missing docs/${dir}/templates/_template.md`,
+      `missing ${dir}/templates/_template.md`,
     );
   }
-  for (const name of fs.readdirSync(path.join(repoRoot, 'docs', 'prds'))) {
+  for (const name of fs.readdirSync(path.join(repoRoot, 'templates', 'docs', 'prds'))) {
     if (name.endsWith('.template.md')) {
-      assert.fail(`docs/prds/${name} must live under docs/prds/templates/`);
+      assert.fail(`templates/docs/prds/${name} must live under templates/docs/prds/templates/`);
     }
   }
 });

@@ -16,6 +16,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test, { after } from 'node:test';
+import { configDir, stateDir } from '../../lib/config/xdg.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.resolve(__dirname, '..', '..', 'bin', 'construct');
@@ -46,8 +47,8 @@ test('default scope is project: prints guidance, writes nothing', () => {
   assert.equal(res.status, 0, `expected exit 0, got ${res.status} — stderr: ${res.stderr}`);
   assert.match(res.stdout, /scope: project/i);
   assert.match(res.stdout, /construct install --scope=user/);
-  assert.equal(fs.existsSync(path.join(home, '.construct', 'config.env')), false, 'project scope must not write config.env');
-  assert.equal(fs.existsSync(path.join(home, '.construct', 'lib')), false, 'project scope must not create the lib symlink');
+  assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false, 'project scope must not write config.env');
+  assert.equal(fs.existsSync(path.join(configDir(home), 'lib')), false, 'project scope must not create the lib symlink');
   assert.equal(fs.existsSync(path.join(home, '.claude', 'settings.json')), false, 'project scope must not touch ~/.claude/');
 });
 
@@ -56,8 +57,8 @@ test('--scope=project is explicit no-op for user-scope state', () => {
   const res = runInstall(['--scope=project'], { HOME: home });
   assert.equal(res.status, 0);
   assert.match(res.stdout, /scope: project/i);
-  assert.equal(fs.existsSync(path.join(home, '.construct', 'config.env')), false, 'must not write user-scope config.env');
-  assert.equal(fs.existsSync(path.join(home, '.construct', 'lib')), false, 'must not create lib symlink');
+  assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false, 'must not write user-scope config.env');
+  assert.equal(fs.existsSync(path.join(configDir(home), 'lib')), false, 'must not create lib symlink');
   assert.equal(fs.existsSync(path.join(home, '.construct', 'services')), false, 'must not stage Postgres compose');
   assert.equal(fs.existsSync(path.join(home, '.claude')), false, 'must not touch ~/.claude/');
 });
@@ -67,7 +68,7 @@ test('--scope=bogus fails fast with exit 1 before any setup', () => {
   const res = runInstall(['--scope=bogus'], { HOME: home });
   assert.equal(res.status, 1, `expected exit 1, got ${res.status} — stderr: ${res.stderr}`);
   assert.match(`${res.stdout}${res.stderr}`, /--scope=bogus/);
-  assert.equal(fs.existsSync(path.join(home, '.construct', 'config.env')), false, 'must not write config before validating scope');
+  assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false, 'must not write config before validating scope');
 });
 
 test('--scope (no value) fails fast with exit 1', () => {
@@ -75,7 +76,7 @@ test('--scope (no value) fails fast with exit 1', () => {
   const res = runInstall(['--scope'], { HOME: home });
   assert.equal(res.status, 1, `expected exit 1, got ${res.status} — stderr: ${res.stderr}`);
   assert.match(`${res.stdout}${res.stderr}`, /--scope/);
-  assert.equal(fs.existsSync(path.join(home, '.construct', 'config.env')), false);
+  assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false);
 });
 
 test('--scope=user --dry-run previews the plan and writes nothing', () => {
@@ -84,10 +85,10 @@ test('--scope=user --dry-run previews the plan and writes nothing', () => {
   assert.equal(res.status, 0, `expected exit 0, got ${res.status} — stderr: ${res.stderr}`);
   assert.match(res.stdout, /dry-run/i);
   assert.match(res.stdout, /No files were written/i);
-  assert.equal(fs.existsSync(path.join(home, '.construct', 'config.env')), false, 'dry-run must not write config.env');
-  assert.equal(fs.existsSync(path.join(home, '.construct', 'lib')), false, 'dry-run must not create the lib symlink');
-  assert.equal(fs.existsSync(path.join(home, '.construct', 'workspace')), false, 'dry-run must not scaffold the workspace');
-  assert.equal(fs.existsSync(path.join(home, '.construct', 'vector')), false, 'dry-run must not create the vector store dir');
+  assert.equal(fs.existsSync(path.join(configDir(home), 'config.env')), false, 'dry-run must not write config.env');
+  assert.equal(fs.existsSync(path.join(configDir(home), 'lib')), false, 'dry-run must not create the lib symlink');
+  assert.equal(fs.existsSync(path.join(stateDir(home), 'workspace')), false, 'dry-run must not scaffold the workspace');
+  assert.equal(fs.existsSync(path.join(stateDir(home), 'vector')), false, 'dry-run must not create the vector store dir');
   assert.equal(fs.existsSync(path.join(home, '.claude')), false, 'dry-run must not touch ~/.claude/');
   assert.equal(fs.existsSync(path.join(home, 'Library', 'LaunchAgents', 'dev.construct.pressure-release.plist')), false, 'dry-run must not register the LaunchAgent');
 });

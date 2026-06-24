@@ -18,13 +18,14 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { startDashboard, stopDashboard, readDashboardState } from '../../lib/service-manager.mjs';
+import { configDir } from '../../lib/config/xdg.mjs';
 
 test('startDashboard binds a live server when called with a project rootDir', async () => {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-dash-rootdir-'));
   const project = path.join(work, 'proj');
   const home = path.join(work, 'home');
   fs.mkdirSync(project, { recursive: true });
-  fs.mkdirSync(path.join(home, '.construct'), { recursive: true });
+  fs.mkdirSync(configDir(home), { recursive: true });
 
   try {
     const result = await startDashboard({ rootDir: project, homeDir: home, preferredPort: 4367 });

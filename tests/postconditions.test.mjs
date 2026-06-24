@@ -110,7 +110,7 @@ describe('validateBinaryPostconditions', () => {
     it('passes when both flag and named diff are present', () => {
       const r = validateBinaryPostconditions('cx-docs-keeper', {
         crossDocCoherenceCheckRan: true,
-        coherenceDiff: 'docs/concepts/architecture.md vs docs/README.md — 4 sections reconciled',
+        coherenceDiff: 'docs/guides/concepts/architecture.md vs docs/README.md — 4 sections reconciled',
       });
       assert.equal(r.ok, true);
     });

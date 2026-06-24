@@ -1,0 +1,11 @@
+{
+  "title": "Guides",
+  "pages": [
+    "start",
+    "concepts",
+    "cookbook",
+    "intake",
+    "reference",
+    "contributing"
+  ]
+}

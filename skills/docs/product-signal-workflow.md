@@ -57,7 +57,7 @@ After grouping evidence, check `.cx/knowledge/decisions/strategy/` for any decla
 |---|---|
 | Signal brief | `.cx/knowledge/internal/signals/` |
 | Evidence brief | `.cx/knowledge/internal/evidence-briefs/` |
-| PRD | `docs/prd/` |
+| PRD | `docs/specs/prd/` |
 | PRFAQ | `docs/prfaq/` |
 | Meta PRD | `docs/meta-prd/` |
 | Backlog proposal | pending approval gate: do not file until explicit user approval |

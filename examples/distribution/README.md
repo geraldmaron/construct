@@ -39,4 +39,4 @@ Edit sources, then re-run the generator. Outputs land in `.tmp/distribution-exam
 node bin/construct export examples/distribution/sources/adr.md --to=pdf --figures
 ```
 
-See [branding.md](../../docs/reference/branding.md) and [diagram-and-demo.md](../../docs/cookbook/diagram-and-demo.md).
+See [branding.md](../../docs/guides/reference/branding.md) and [diagram-and-demo.md](../../docs/guides/cookbook/diagram-and-demo.md).

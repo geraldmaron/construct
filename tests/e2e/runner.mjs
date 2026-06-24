@@ -60,7 +60,7 @@ export const SCENARIOS = {
     title: 'Research project',
     profile: 'research',
     reportFile: 'scenario-c-research-corpus.md',
-    fixture: 'three primary-source PDFs + five markdown notes dropped into .cx/inbox/',
+    fixture: 'three primary-source PDFs + five markdown notes dropped into inbox/',
     tier3Artifact: 'evidence brief synthesizing the corpus (cx-researcher → cx-evaluator)',
     peer: 'C',
   },

@@ -70,7 +70,7 @@ npm run lint:js
 npm run lint:profiles
 ```
 
-All eight must exit 0. The release pipeline in `docs/maintenance/release-and-deploy.md` runs the same checks before any artifact ships.
+All eight must exit 0. The release pipeline in `docs/operations/maintenance/release-and-deploy.md` runs the same checks before any artifact ships.
 
 `npm run test:functional` includes the **audit-phase ratchet** (`tests/functional/audit-ratchet.functional.test.mjs`): it regenerates the 01-smoke, 02-deadcode, 03-docs, 03b-naming, and 06-audit finders and fails on any finding absent from `scripts/audit/baseline.json` — a new dead module, undocumented flag, orphaned doc, retired-alias/handler-name drift, or a dereferenced audit hook. Fix the drift, or, if intentional, add the id to the baseline.
 
@@ -146,4 +146,4 @@ A PR description tells the reviewer what changed and how to evaluate it. No proc
 
 ## Releasing
 
-The canonical reference is `docs/maintenance/release-and-deploy.md`. Run `npm run release:preflight` locally, tag `vX.Y.Z`, push. The release workflow handles npm + Docker + binaries + Homebrew + GitHub Release. No manual steps.
+The canonical reference is `docs/operations/maintenance/release-and-deploy.md`. Run `npm run release:preflight` locally, tag `vX.Y.Z`, push. The release workflow handles npm + Docker + binaries + Homebrew + GitHub Release. No manual steps.

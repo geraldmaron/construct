@@ -12,7 +12,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 - **Never commit directly to main.** Branch, test, then merge.
 - **Run `construct doctor` after any structural change** to verify the system is healthy.
 - **Multi-component features require a functional test.** If a change touches more than one of: hook + observation, profile + classifier, CLI + durable state, then a test must live in `tests/functional/` that spawns the real binary or imports the real module in an isolated tmpdir and asserts on durable artifacts. CI is a backstop, not a primary gate. See `tests/functional/README.md`.
-- **Profiles are research artifacts, not JSON exercises.** Any new profile that lands in `profiles/` must go through the lifecycle in `docs/concepts/profile-lifecycle.md`: discover → frame → architect → validate → promote. The cx-ux-researcher, cx-product-manager, cx-architect, and cx-evaluator specialists each own a phase. `construct profile create <id>` scaffolds the draft and the requirements brief; drop-in JSON is allowed for experiments but not for the curated catalog.
+- **Profiles are research artifacts, not JSON exercises.** Any new profile that lands in `profiles/` must go through the lifecycle in `docs/guides/concepts/profile-lifecycle.md`: discover → frame → architect → validate → promote. The cx-ux-researcher, cx-product-manager, cx-architect, and cx-evaluator specialists each own a phase. `construct profile create <id>` scaffolds the draft and the requirements brief; drop-in JSON is allowed for experiments but not for the curated catalog.
 
 ## Protected files — edit with extra care
 
@@ -27,7 +27,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 
 - `personas/*.md` — persona prompts (run `construct sync` after)
 - `skills/**` — domain knowledge files (includes `skills/roles/` — role anti-patterns, inlined at sync time)
-- `templates/docs/**` — shipped doc templates; users override via `.cx/templates/docs/` (see [docs/templates/README.md](docs/templates/README.md))
+- `templates/docs/**` — shipped doc templates; users override via `.cx/templates/docs/` (see [templates/docs/README.md](templates/docs/README.md))
 - `rules/**` — coding standards
 - `lib/server/**` — dashboard only
 
@@ -37,7 +37,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 
 Before any commit, ensure the following are current:
 - `CHANGELOG.md` — new entry describing what changed and why
-- `docs/concepts/architecture.md` — if runtime shape, contracts, or boundaries changed
+- `docs/guides/concepts/architecture.md` — if runtime shape, contracts, or boundaries changed
 - `docs/README.md` — if core docs set or maintenance expectations changed
 - `.cx/context.md` / `.cx/context.json` — if active work, decisions, or architecture assumptions changed
 
@@ -68,7 +68,7 @@ This applies to every file construct touches and to all agents working in this p
 3. Run `construct sync` to regenerate platform files
 4. Verify with `construct list`
 5. Update documentation (see above)
-6. Run the full gate before commit: see `CONTRIBUTING.md` § "Before opening a PR" for the eight-check list. The release pipeline (`docs/maintenance/release-and-deploy.md`) runs the same checks.
+6. Run the full gate before commit: see `CONTRIBUTING.md` § "Before opening a PR" for the eight-check list. The release pipeline (`docs/operations/maintenance/release-and-deploy.md`) runs the same checks.
 
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->

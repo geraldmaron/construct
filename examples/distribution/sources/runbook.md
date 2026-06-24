@@ -99,5 +99,5 @@ Preserve `construct tools detect --json` output and the failing pandoc/typst std
 
 ## References
 
-- `docs/reference/document-io.md`
-- `docs/cookbook/diagram-and-demo.md`
+- `docs/guides/reference/document-io.md`
+- `docs/guides/cookbook/diagram-and-demo.md`

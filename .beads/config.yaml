@@ -37,7 +37,7 @@
 #     - ~/work-planning   # Work planning repo
 
 # Off-machine sync is git-native via the Dolt remote on refs/dolt/data
-# (see docs/adr/0026-beads-git-native-sync.md). issues.jsonl is gitignored and is only an
+# (see docs/decisions/adr/0026-beads-git-native-sync.md). issues.jsonl is gitignored and is only an
 # optional local export for viewers, never the source of truth — the Dolt remote is.
 # JSONL backup (periodic export for off-machine recovery)
 # Auto-enabled when a git remote exists. Override explicitly:

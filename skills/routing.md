@@ -126,11 +126,11 @@ Read the matching skill file before responding when the user's request matches t
 | product intelligence, customer notes, field notes, product signals, customer profile, evidence brief, signal brief, backlog proposal | `skills/docs/product-intelligence-workflow.md` | Product Intelligence workflow: evidence to product artifacts |
 | strategy, product strategy, strategic bet, non-bet, north star, time horizon, competitive positioning | `skills/docs/strategy-workflow.md` | Product strategy: read, update, and reason about the strategy store |
 | ingest evidence, ingest customer notes, ingest Slack thread, ingest support ticket, normalize field notes | `skills/docs/evidence-ingest-workflow.md` | Evidence ingest workflow: raw source to .cx/knowledge/ |
-| write a PRD, create requirements, spec out, requirements document, Meta PRD, platform PRD | `skills/docs/prd-workflow.md` | PRD workflow: requirements to docs/prd/ or docs/meta-prd/ |
+| write a PRD, create requirements, spec out, requirements document, Meta PRD, platform PRD | `skills/docs/prd-workflow.md` | PRD workflow: requirements to docs/specs/prd/ or docs/meta-prd/ |
 | write a PRFAQ, working backwards doc, press release FAQ | `skills/docs/prfaq-workflow.md` | PRFAQ workflow: launch narrative from PRD or evidence |
 | create Jira proposal, update Linear, backlog proposal, issue proposal | `skills/docs/backlog-proposal-workflow.md` | Backlog proposal workflow: approval-gated issue tracker changes |
-| record this decision, create an ADR, architecture decision | `skills/docs/adr-workflow.md` | ADR workflow: decision to docs/adr/ file |
-| write a runbook, document this operation, operational procedure | `skills/docs/runbook-workflow.md` | Runbook workflow: operation to docs/runbooks/ file |
+| record this decision, create an ADR, architecture decision | `skills/docs/adr-workflow.md` | ADR workflow: decision to docs/decisions/adr/ file |
+| write a runbook, document this operation, operational procedure | `skills/docs/runbook-workflow.md` | Runbook workflow: operation to docs/operations/runbooks/ file |
 | init project, new project setup, join project, set up doc structure | `skills/docs/init-project.md` | Project initialization via `construct init --docs-preset=*` |
 
 ## Routing Rules

@@ -24,6 +24,7 @@ import {
   setConfigValue,
   resolveSetting,
   PROJECT_CONFIG_FILENAME,
+  PROJECT_LOCAL_CONFIG_FILENAME,
 } from '../lib/config/project-config.mjs';
 import { DEFAULT_PROJECT_CONFIG, validateProjectConfig, CONFIG_SCHEMA_VERSION } from '../lib/config/schema.mjs';
 
@@ -246,6 +247,98 @@ describe('getConfigValue + setConfigValue', () => {
     assert.equal(after.deployment.mode, 'team');
     assert.equal(after.existing, true);
     assert.equal(before.deployment, undefined);
+  });
+});
+
+describe('project-local config tier', () => {
+  function writeBoth(committed, local) {
+    fs.writeFileSync(path.join(tmpRoot, PROJECT_CONFIG_FILENAME), JSON.stringify(committed));
+    if (local !== undefined) {
+      fs.writeFileSync(path.join(tmpRoot, PROJECT_LOCAL_CONFIG_FILENAME), JSON.stringify(local));
+    }
+  }
+  function cleanup() {
+    for (const f of [PROJECT_CONFIG_FILENAME, PROJECT_LOCAL_CONFIG_FILENAME]) {
+      try { fs.unlinkSync(path.join(tmpRoot, f)); } catch {}
+    }
+  }
+
+  it('overrides scalars and leaves untouched scalars intact', () => {
+    writeBoth(
+      { version: 1, alias: 'Committed', intakePolicy: { maxDepth: 4, additionalDirs: ['docs'] } },
+      { alias: 'LocalOverride' },
+    );
+    try {
+      const r = loadProjectConfig(tmpRoot, {});
+      assert.equal(r.source, 'file+local');
+      assert.equal(r.config.alias, 'LocalOverride');
+      assert.equal(r.config.intakePolicy.maxDepth, 4);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('merges and dedupes scalar list settings', () => {
+    writeBoth(
+      { version: 1, intakePolicy: { additionalDirs: ['docs', 'specs'] } },
+      { intakePolicy: { additionalDirs: ['inbox', 'docs'] } },
+    );
+    try {
+      const r = loadProjectConfig(tmpRoot, {});
+      assert.deepEqual(r.config.intakePolicy.additionalDirs, ['docs', 'specs', 'inbox']);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('merges object lists by id, with the local entry winning on collision', () => {
+    writeBoth(
+      { version: 1, sources: { targets: [{ id: 'gh-main', provider: 'github', selector: { repo: 'org/a' } }] } },
+      { sources: { targets: [
+        { id: 'gh-main', provider: 'github', selector: { repo: 'org/a-local' } },
+        { id: 'gh-extra', provider: 'github', selector: { repo: 'org/b' } },
+      ] } },
+    );
+    try {
+      const r = loadProjectConfig(tmpRoot, {});
+      const ids = r.config.sources.targets.map((t) => t.id);
+      assert.deepEqual(ids, ['gh-main', 'gh-extra']);
+      assert.equal(r.config.sources.targets.find((t) => t.id === 'gh-main').selector.repo, 'org/a-local');
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('accepts a partial local overlay without a version field', () => {
+    writeBoth({ version: 1, alias: 'Committed' }, { deployment: { mode: 'team' } });
+    try {
+      const r = loadProjectConfig(tmpRoot, {});
+      assert.equal(r.config.deployment.mode, 'team');
+      assert.equal(r.errors.length, 0);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('reports source=invalid when the local overlay fails schema validation', () => {
+    writeBoth({ version: 1 }, { deployment: { mode: 'bogus' } });
+    try {
+      const r = loadProjectConfig(tmpRoot, {});
+      assert.equal(r.source, 'invalid');
+      assert.ok(r.errors.some((e) => e.includes('deployment.mode')));
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('keeps source=file when no local overlay is present', () => {
+    writeBoth({ version: 1, alias: 'Committed' }, undefined);
+    try {
+      const r = loadProjectConfig(tmpRoot, {});
+      assert.equal(r.source, 'file');
+    } finally {
+      cleanup();
+    }
   });
 });
 

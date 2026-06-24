@@ -14,7 +14,7 @@ If a bet here looks wrong six months from now, I'd rather change the bet than re
 
 ## What was reviewed before writing this
 
-Per [`rules/common/review-before-change.md`](./rules/common/review-before-change.md), I audited existing artifacts first. The closest existing source was [`docs/prd/0001-construct-org-in-a-box.md`](./docs/prd/0001-construct-org-in-a-box.md), which captures goals (G1 to G7), functional requirements, and acceptance criteria. This document does something different: it states the Northstar and the bets that get us there, then points to the PRD for the spec layer underneath. The PRD continues to be the source of truth for FRs, NFRs, and acceptance criteria.
+Per [`rules/common/review-before-change.md`](./rules/common/review-before-change.md), I audited existing artifacts first. The closest existing source was [`docs/specs/prd/0001-construct-org-in-a-box.md`](./docs/specs/prd/0001-construct-org-in-a-box.md), which captures goals (G1 to G7), functional requirements, and acceptance criteria. This document does something different: it states the Northstar and the bets that get us there, then points to the PRD for the spec layer underneath. The PRD continues to be the source of truth for FRs, NFRs, and acceptance criteria.
 
 ## Northstar
 
@@ -39,7 +39,7 @@ The single test: can Construct run the construct repo without manual artifact au
 What is there:
 
 - One persona (`construct`) sits in front of a specialist team shaped by an org profile. The default `rnd` profile is wired, plus `operations`, `creative`, `research`.
-- Intake loop classifies signals in `.cx/inbox/` deterministically, assigns owners, and routes through typed contract chains.
+- Intake loop classifies signals in `inbox/` deterministically, assigns owners, and routes through typed contract chains.
 - Hard gates fire at write time, commit time, and CI. Bypasses are env-var only and audited.
 - Solo mode runs locally with filesystem queue, local pgvector, JSONL traces. Team and enterprise modes exist as a scaffold.
 - Dashboard is shipped: chat (owned-loop `/chat` cockpit), approvals, knowledge panel, providers, models, infra tab.
@@ -82,7 +82,7 @@ Why: lock-in kills open source projects. If everything works locally, the team m
 
 The persona stays the same; the org profile changes who is behind it. `rnd`, `operations`, `creative`, `research`, and custom profiles let the same Construct point at very different kinds of work without forking the project.
 
-Why: vertical agents are a feature, not a fork. The lifecycle in `docs/concepts/profile-lifecycle.md` keeps profiles from sprawling into low-quality JSON.
+Why: vertical agents are a feature, not a fork. The lifecycle in `docs/guides/concepts/profile-lifecycle.md` keeps profiles from sprawling into low-quality JSON.
 
 ### Bet 4: Hard gates over soft hooks
 
@@ -161,8 +161,8 @@ Work: harden the multi-tenant scaffold, exercise RBAC, validate the MCP broker u
 
 ## Related artifacts
 
-- [`docs/prd/0001-construct-org-in-a-box.md`](./docs/prd/0001-construct-org-in-a-box.md). The spec layer underneath this strategy.
-- [`docs/concepts/architecture.md`](./docs/concepts/architecture.md). Canonical architecture.
-- [`docs/concepts/profile-lifecycle.md`](./docs/concepts/profile-lifecycle.md). How profiles are built.
+- [`docs/specs/prd/0001-construct-org-in-a-box.md`](./docs/specs/prd/0001-construct-org-in-a-box.md). The spec layer underneath this strategy.
+- [`docs/guides/concepts/architecture.md`](./docs/guides/concepts/architecture.md). Canonical architecture.
+- [`docs/guides/concepts/profile-lifecycle.md`](./docs/guides/concepts/profile-lifecycle.md). How profiles are built.
 - [`templates/docs/strategy.md`](./templates/docs/strategy.md). The template projects use for their own strategies.
 - [`rules/common/review-before-change.md`](./rules/common/review-before-change.md). The audit that ran before this doc was written.

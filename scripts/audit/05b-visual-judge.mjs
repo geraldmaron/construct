@@ -11,7 +11,7 @@
  * The scores here are DETERMINISTIC PROXIES over the captured text — a re-runnable
  * first pass, not a substitute for an LLM judge. The capture artifact
  * (audit-artifacts/visual-judge-capture.json) is the judging input; the scorecard
- * (docs/audit/visual-maturity-scorecard.md) records the per-surface scores and the
+ * (docs/operations/audit/visual-maturity-scorecard.md) records the per-surface scores and the
  * rubric so a human or LLM judge can re-score the same surfaces.
  *
  * Read-only (spawns the real bin in an isolated HOME). Run: node scripts/audit/05b-visual-judge.mjs
@@ -171,7 +171,7 @@ function main() {
   const findings = toFindings(report);
   recordFindings('05b-visual-judge', findings);
   writeJson('visual-judge-capture.json', report);
-  writeText('../docs/audit/visual-maturity-scorecard.md', buildScorecard(report));
+  writeText('../docs/operations/audit/visual-maturity-scorecard.md', buildScorecard(report));
   const help = report.surfaces.filter((s) => s.kind === 'help');
   const errs = report.surfaces.filter((s) => s.kind === 'error');
   process.stdout.write(`[audit:05b] scored ${help.length} help + ${errs.length} error surfaces; ${findings.length} flagged for judge review.\n`);

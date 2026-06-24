@@ -55,10 +55,10 @@ export default function HomePage() {
           org profile. Hard gates. Runs locally — or deployed for teams.
         </p>
         <div className="hero-cta">
-          <Link href="/start" className="btn primary">
+          <Link href="/guides/start" className="btn primary">
             5-minute quickstart <ArrowRight />
           </Link>
-          <Link href="/concepts/architecture" className="btn">
+          <Link href="/guides/concepts/architecture" className="btn">
             See the architecture
           </Link>
           <a className="btn" href="https://github.com/geraldmaron/construct" target="_blank" rel="noreferrer">
@@ -76,7 +76,7 @@ export default function HomePage() {
           </div>
           <div className="hero-stat">
             <span className="k">Surfaces</span>
-            <span className="v">editors · <Link className="link" href="/cookbook/construct-chat">construct chat</Link> · dashboard /chat</span>
+            <span className="v">editors · <Link className="link" href="/guides/cookbook/construct-chat">construct chat</Link> · dashboard /chat</span>
           </div>
           <div className="hero-stat">
             <span className="k">Modes</span>
@@ -198,7 +198,7 @@ construct oracle status   # fleet health verdict and pending queue`}
         <CodeBlock>{`construct config mode [solo|team|enterprise]`}</CodeBlock>
         <Callout label="Same loop, different topology">
           The agent loop (persona, specialists, contracts, gates) is identical across all three
-          modes. Only the backend topology changes — read <Link className="link" href="/concepts/deployment-model">deployment model</Link> for the trade-offs.
+          modes. Only the backend topology changes — read <Link className="link" href="/guides/concepts/deployment-model">deployment model</Link> for the trade-offs.
         </Callout>
       </Section>
 
@@ -209,13 +209,13 @@ construct oracle status   # fleet health verdict and pending queue`}
         time="1 min"
       >
         <ul>
-          <li><Link className="link" href="/start">Get started</Link> — install, init, first task. ~5 minutes if Docker is running.</li>
-          <li><Link className="link" href="/concepts/architecture">Architecture</Link> — diagrams, the request lifecycle, where things live.</li>
-          <li><Link className="link" href="/concepts/deployment-model">Deployment model</Link> — pick solo, team, or enterprise.</li>
-          <li><Link className="link" href="/concepts/intake-and-triage">Intake and triage</Link> — how signals become triaged R&amp;D work.</li>
-          <li><Link className="link" href="/cookbook/construct-chat">Construct chat</Link> — owned-loop terminal and browser surfaces.</li>
-          <li><Link className="link" href="/cookbook">Cookbook</Link> — task-oriented recipes (custom agents, providers, retrieval backend, your own LLM).</li>
-          <li><Link className="link" href="/reference">Reference</Link> — every CLI command, hook, MCP tool, config option.</li>
+          <li><Link className="link" href="/guides/start">Get started</Link> — install, init, first task. ~5 minutes if Docker is running.</li>
+          <li><Link className="link" href="/guides/concepts/architecture">Architecture</Link> — diagrams, the request lifecycle, where things live.</li>
+          <li><Link className="link" href="/guides/concepts/deployment-model">Deployment model</Link> — pick solo, team, or enterprise.</li>
+          <li><Link className="link" href="/guides/concepts/intake-and-triage">Intake and triage</Link> — how signals become triaged R&amp;D work.</li>
+          <li><Link className="link" href="/guides/cookbook/construct-chat">Construct chat</Link> — owned-loop terminal and browser surfaces.</li>
+          <li><Link className="link" href="/guides/cookbook">Cookbook</Link> — task-oriented recipes (custom agents, providers, retrieval backend, your own LLM).</li>
+          <li><Link className="link" href="/guides/reference">Reference</Link> — every CLI command, hook, MCP tool, config option.</li>
         </ul>
       </Section>
     </div>
