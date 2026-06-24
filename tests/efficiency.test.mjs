@@ -11,6 +11,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { formatEfficiencyReport, readEfficiencyLog, summarizeEfficiencyData } from '../lib/efficiency.mjs';
+import { doctorRoot } from '../lib/config/xdg.mjs';
 
 function tempHome(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-efficiency-'));
@@ -19,7 +20,7 @@ function tempHome(t) {
 }
 
 function writeStats(homeDir, stats) {
-  const filePath = path.join(homeDir, '.cx', 'session-efficiency.json');
+  const filePath = path.join(doctorRoot(homeDir), 'session-efficiency.json');
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, `${JSON.stringify(stats, null, 2)}\n`);
 }

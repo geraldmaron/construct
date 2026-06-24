@@ -12,6 +12,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { collectReadModel } from '../../lib/oracle/read-model.mjs';
+import { doctorRoot } from '../../lib/config/xdg.mjs';
 
 function freshEnv() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-proj-'));
@@ -20,7 +21,7 @@ function freshEnv() {
   mkdirSync(join(projectDir, '.cx', 'observations'), { recursive: true });
   mkdirSync(join(projectDir, '.cx', 'outcomes'), { recursive: true });
   mkdirSync(join(rootDir, 'audit-artifacts'), { recursive: true });
-  mkdirSync(join(homeDir, '.cx'), { recursive: true });
+  mkdirSync(doctorRoot(homeDir), { recursive: true });
   mkdirSync(join(rootDir, 'specialists'), { recursive: true });
   cpSync(join(process.cwd(), 'specialists', 'registry.json'), join(rootDir, 'specialists', 'registry.json'));
   return {
@@ -68,7 +69,7 @@ test('collectReadModel ingests outcomes, violations, doctor log, and census', ()
     };
     writeFileSync(join(env.projectDir, '.cx', 'contract-violations.jsonl'), JSON.stringify(violation) + '\n');
 
-    writeFileSync(join(env.homeDir, '.cx', 'doctor-log.jsonl'), JSON.stringify({
+    writeFileSync(join(doctorRoot(env.homeDir), 'doctor-log.jsonl'), JSON.stringify({
       ts: Date.now(),
       kind: 'escalate',
       watcher: 'service-health',

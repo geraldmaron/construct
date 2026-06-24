@@ -16,6 +16,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 
+import { doctorRoot } from '../../lib/config/xdg.mjs';
+
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const TRACKER = path.join(REPO, 'lib', 'hooks', 'agent-tracker.mjs');
 
@@ -48,8 +50,9 @@ test('A3 end-to-end: record -> aggregate -> classifier tiebreaker, capped and no
 
 test('A3 production trigger: agent-tracker writes outcome JSONL on a Task SubagentStop event', () => {
   // The tracker writes BOTH the per-project outcome file (under args.cwd) AND
-  // a global ~/.cx/last-agent.json for fence coordination. Redirect HOME so
-  // the test cannot poison the developer's real fence state when run locally.
+  // a global last-agent.json (under the doctor root) for fence coordination.
+  // Redirect HOME so the test cannot poison the developer's real fence state
+  // when run locally.
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a3-tracker-'));
   const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'a3-tracker-home-'));
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
@@ -80,8 +83,8 @@ test('A3 production trigger: agent-tracker writes outcome JSONL on a Task Subage
   assert.equal(entry.source, 'agent-tracker');
 
   // The fence file should land in the FAKE home, not the developer's real home.
-  assert.ok(fs.existsSync(path.join(fakeHome, '.cx', 'last-agent.json')),
-    'last-agent.json should have been written to the fake HOME');
+  assert.ok(fs.existsSync(path.join(doctorRoot(fakeHome), 'last-agent.json')),
+    'last-agent.json should have been written under the fake HOME doctor root');
 
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
