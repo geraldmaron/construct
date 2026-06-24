@@ -1,12 +1,12 @@
 <!--
 cx_doc_id: pending
 created_at: 2026-06-23
-status: proposed
+status: accepted
 -->
 # ADR-0045: Local/global config boundary, docs taxonomy, and a single intake zone
 
 - **Date**: 2026-06-23
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Construct maintainers (operator + cx-architect)
 - **Relates to**: ADR-0002 (layered architecture), ADR-0027 (host footprint), ADR-0029 (install scopes & hook budgets), ADR-0044 (tool-repo root layout)
 

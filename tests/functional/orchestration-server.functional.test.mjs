@@ -19,6 +19,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { configDir } from '../../lib/config/xdg.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SERVER = path.join(HERE, '..', '..', 'lib', 'server', 'index.mjs');
@@ -44,10 +45,10 @@ async function waitForServer(retries = 50) {
 
 test.before(async () => {
   home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-srv-'));
-  // The dashboard token is sourced from ~/.construct/config.env, not the process
+  // The dashboard token is sourced from configDir()/config.env, not the process
   // env, so write it there in the isolated HOME before the server starts.
-  fs.mkdirSync(path.join(home, '.construct'), { recursive: true });
-  fs.writeFileSync(path.join(home, '.construct', 'config.env'), `CONSTRUCT_DASHBOARD_TOKEN=${TOKEN}\n`);
+  fs.mkdirSync(configDir(home), { recursive: true });
+  fs.writeFileSync(path.join(configDir(home), 'config.env'), `CONSTRUCT_DASHBOARD_TOKEN=${TOKEN}\n`);
   proc = spawn('node', [SERVER], {
     env: {
       ...process.env,

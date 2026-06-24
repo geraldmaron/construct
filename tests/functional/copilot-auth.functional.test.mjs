@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { configDir } from '../../lib/config/xdg.mjs';
 
 function withTmpHome(fn) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-copilot-'));
@@ -69,7 +70,7 @@ test('persist writes both stores and getCopilotToken exchanges + caches', async 
     };
     mod.persistOAuth({ accessToken: 'ghu_ACCESS', refreshToken: 'ghr_REFRESH', expiresAt: null, user: 'tester' });
 
-    assert.ok(fs.existsSync(path.join(home, '.construct', 'auth', 'github-copilot.json')));
+    assert.ok(fs.existsSync(path.join(configDir(home), 'auth', 'github-copilot.json')));
     assert.ok(fs.existsSync(path.join(home, '.config', 'github-copilot', 'apps.json')));
     assert.equal(mod.hasStoredCredential(), true);
 
@@ -85,8 +86,8 @@ test('refreshes an expired access token before exchange', async () => {
   await withTmpHome(async (home) => {
     const mod = await import('../../lib/providers/copilot-auth.mjs');
     mod.__resetCopilotCache();
-    fs.mkdirSync(path.join(home, '.construct', 'auth'), { recursive: true });
-    fs.writeFileSync(path.join(home, '.construct', 'auth', 'github-copilot.json'), JSON.stringify({
+    fs.mkdirSync(path.join(configDir(home), 'auth'), { recursive: true });
+    fs.writeFileSync(path.join(configDir(home), 'auth', 'github-copilot.json'), JSON.stringify({
       oauth_token: 'ghu_OLD',
       refresh_token: 'ghr_REFRESH',
       oauth_expires_at: 1,
@@ -124,8 +125,8 @@ test('normalizeToken strips whitespace from stored oauth before exchange', async
   await withTmpHome(async (home) => {
     const mod = await import('../../lib/providers/copilot-auth.mjs');
     mod.__resetCopilotCache();
-    fs.mkdirSync(path.join(home, '.construct', 'auth'), { recursive: true });
-    fs.writeFileSync(path.join(home, '.construct', 'auth', 'github-copilot.json'), JSON.stringify({ oauth_token: 'ghu_TEST\n' }));
+    fs.mkdirSync(path.join(configDir(home), 'auth'), { recursive: true });
+    fs.writeFileSync(path.join(configDir(home), 'auth', 'github-copilot.json'), JSON.stringify({ oauth_token: 'ghu_TEST\n' }));
     let authHeader = null;
     const fetchImpl = async (url, init) => {
       if (String(url).includes('copilot_internal/v2/token')) {
@@ -144,8 +145,8 @@ test('worker routes a github-copilot model through the session token', async () 
   await withTmpHome(async (home) => {
     const copilot = await import('../../lib/providers/copilot-auth.mjs');
     copilot.__resetCopilotCache();
-    fs.mkdirSync(path.join(home, '.construct', 'auth'), { recursive: true });
-    fs.writeFileSync(path.join(home, '.construct', 'auth', 'github-copilot.json'), JSON.stringify({ oauth_token: 'ghu_ACCESS' }));
+    fs.mkdirSync(path.join(configDir(home), 'auth'), { recursive: true });
+    fs.writeFileSync(path.join(configDir(home), 'auth', 'github-copilot.json'), JSON.stringify({ oauth_token: 'ghu_ACCESS' }));
     const { runTaskViaProvider } = await import('../../lib/orchestration/worker.mjs');
     const fetchImpl = async (url) => {
       const u = String(url);

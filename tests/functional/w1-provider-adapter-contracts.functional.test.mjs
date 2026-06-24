@@ -25,6 +25,7 @@ import {
   saveAuthState,
   withValidToken,
 } from '../../lib/providers/auth-manager.mjs';
+import { configDir } from '../../lib/config/xdg.mjs';
 
 test('Gemini cache strategy returns no annotation when no resolver is registered', async () => {
   setCachedContentResolver(null);
@@ -80,7 +81,7 @@ test('auth-manager refresh dispatches to a registered adapter and persists the r
   process.env.HOME = fakeHome;
 
   try {
-    const authDir = join(fakeHome, '.construct', 'auth');
+    const authDir = join(configDir(fakeHome), 'auth');
     mkdirSync(authDir, { recursive: true, mode: 0o700 });
     const expiredValue = 'expired';
     const rotatedValue = 'rotated';
@@ -120,7 +121,7 @@ test('auth-manager without a registered adapter returns the agnostic reauthentic
   const realHOMEenv = process.env.HOME;
   process.env.HOME = fakeHome;
   try {
-    const authDir = join(fakeHome, '.construct', 'auth');
+    const authDir = join(configDir(fakeHome), 'auth');
     mkdirSync(authDir, { recursive: true, mode: 0o700 });
     const exp = 'expired';
     const rfr = 'refresh';

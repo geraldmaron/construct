@@ -38,6 +38,7 @@ import {
   PROJECT_CONFIG_FILENAME,
 } from '../lib/config/project-config.mjs';
 import { validateProjectConfig } from '../lib/config/schema.mjs';
+import { configDir } from '../lib/config/xdg.mjs';
 import {
   DEPLOYMENT_MODES,
   DEPLOYMENT_MODE_ENV_KEY,
@@ -400,7 +401,7 @@ async function cmdDoctor() {
       }
 
       // .env files
-      for (const envPath of [join(process.cwd(), '.env'), join(homedir(), '.env'), join(homedir(), '.construct', 'config.env')]) {
+      for (const envPath of [join(process.cwd(), '.env'), join(homedir(), '.env'), getUserEnvPath(homedir())]) {
         if (fs.existsSync(envPath)) {
           try {
             const content = fs.readFileSync(envPath, 'utf8');
@@ -739,7 +740,7 @@ async function cmdDoctor() {
     const vscodeSettingsOk = vscodeSettingsPaths.some((candidate) => fs.existsSync(candidate));
     if (vscodeSettingsOk) add('VS Code settings file', true, true);
   }
-  add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(path.join(HOME, '.construct')), true);
+  add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(configDir(HOME)), true);
   add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
   add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));
   add('specialists/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'prompts')));
@@ -765,33 +766,29 @@ async function cmdDoctor() {
 
   // Claude Code Stop-hook installation check. The settings template
   // wires several Stop hooks (policy-engine / stop-typecheck /
-  // stop-notify / readme-age-check) that reference
-  // $HOME/.construct/lib/hooks/*. If that path doesn't resolve, every
-  // Stop hook fails silently — including stop-notify, which is what
-  // appends session cost data. Result: the dashboard stops updating
-  // and the user sees stale data. Surface loudly so the fix is one
-  // command away.
+  // stop-notify / readme-age-check) whose commands sync resolves to the
+  // hook lib symlink. If those scripts don't resolve, every Stop hook
+  // fails silently — including stop-notify, which is what appends session
+  // cost data. Result: the dashboard stops updating and the user sees stale
+  // data. Surface loudly so the fix is one command away.
   try {
     const settingsPath = path.join(HOME, '.claude', 'settings.json');
     if (fs.existsSync(settingsPath)) {
       const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
       const stopHooks = settings?.hooks?.Stop || [];
-      const installRoot = path.join(HOME, '.construct', 'lib', 'hooks');
-      const installed = fs.existsSync(installRoot);
+      const installRoot = path.join(configDir(HOME), 'lib', 'hooks');
       const referenced = [];
       for (const group of stopHooks) {
         for (const h of (group?.hooks || [])) {
           const cmd = String(h?.command || '');
-          const m = cmd.match(/\.construct\/lib\/hooks\/([a-zA-Z0-9_-]+\.mjs)/);
+          const m = cmd.match(/(?:^|["\s])(\/[^"\s]*\/lib\/hooks\/[a-zA-Z0-9_-]+\.mjs)/);
           if (m) referenced.push(m[1]);
         }
       }
-      const missing = installed
-        ? referenced.filter((f) => !fs.existsSync(path.join(installRoot, f)))
-        : referenced;
+      const missing = referenced.filter((scriptPath) => !fs.existsSync(scriptPath));
       if (referenced.length > 0 && missing.length > 0) {
         add(
-          `Claude Stop hooks broken: ${missing.length} hook${missing.length === 1 ? '' : 's'} missing in ~/.construct/lib/hooks/. Symlink the install: ln -sfn ${ROOT_DIR}/lib ~/.construct/lib`,
+          `Claude Stop hooks broken: ${missing.length} hook${missing.length === 1 ? '' : 's'} do not resolve. Re-run \`construct install --scope=user\` (symlinks ${ROOT_DIR}/lib → ${installRoot.replace(/\/hooks$/, '')}).`,
           false,
           false,
         );
@@ -4013,7 +4010,7 @@ async function cmdPluginEngine(args) {
   const [action = 'list', ...rest] = args;
   const isGlobal = rest.includes('--global');
   const targetPath = isGlobal
-    ? path.join(HOME, '.construct', 'plugins.json')
+    ? path.join(configDir(HOME), 'plugins.json')
     : path.join(process.cwd(), '.cx', 'plugins.json');
 
   function readPluginsJson() {
@@ -4940,7 +4937,7 @@ async function cmdProvider(args) {
       if (!id) { errorln(`Usage: construct provider plugins ${action} <id> [<package>]`); process.exit(1); }
       const isGlobal = args.includes('--global');
       const targetPath = isGlobal
-        ? path.join(HOME, '.construct', 'providers.json')
+        ? path.join(configDir(HOME), 'providers.json')
         : path.join(process.cwd(), '.cx', 'providers.json');
       let data = { providers: [] };
       try { data = JSON.parse(fs.readFileSync(targetPath, 'utf8')); } catch { /* fresh */ }

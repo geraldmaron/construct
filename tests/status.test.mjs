@@ -12,6 +12,7 @@ import test from 'node:test';
 
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { writeEnvValues } from '../lib/env-config.mjs';
+import { configDir } from '../lib/config/xdg.mjs';
 
 import { tempDir } from './helpers.mjs';
 
@@ -57,7 +58,7 @@ async function createFixture() {
   writeJson(path.join(homeDir, '.config', 'opencode', 'opencode.json'), {
     mcp: { memory: { type: 'remote', url: 'http://127.0.0.1:8765/' } },
   });
-  writeJson(path.join(homeDir, '.construct', 'features.json'), { enabled: ['github', 'memory'] });
+  writeJson(path.join(configDir(homeDir), 'features.json'), { enabled: ['github', 'memory'] });
   writeJson(path.join(homeDir, '.cx', 'session-efficiency.json'), {
     readCount: 6,
     uniqueFileCount: 4,
@@ -518,7 +519,7 @@ test('formatStatusReport shows explicit byte-budget warning when session bytes a
 
 test('buildStatus marks telemetry richness credentials-invalid when telemetry auth fails', async () => {
   const { rootDir, homeDir } = await createFixture();
-  writeEnvValues(path.join(homeDir, '.construct', 'config.env'), {
+  writeEnvValues(path.join(configDir(homeDir), 'config.env'), {
     CONSTRUCT_TRACE_BACKEND: 'langfuse',
     CONSTRUCT_TELEMETRY_URL: 'http://localhost:3000',
     CONSTRUCT_TELEMETRY_PUBLIC_KEY: 'pk-lf-test',
@@ -555,7 +556,8 @@ test('buildStatus marks telemetry richness credentials-invalid when telemetry au
 
 test('buildStatus uses managed dashboard port from user config when present', async () => {
   const { rootDir, homeDir } = await createFixture();
-  writeEnvValues(path.join(homeDir, '.construct', 'config.env'), { DASHBOARD_PORT: '4343' });
+  writeText(path.join(rootDir, '.env'), 'MEMORY_PORT=8765\nBRIDGE_PORT=5173\nCONSTRUCT_TELEMETRY_URL=https://telemetry.example.com\n');
+  writeEnvValues(path.join(configDir(homeDir), 'config.env'), { DASHBOARD_PORT: '4343' });
 
   const status = await buildStatus({
     rootDir,
@@ -578,7 +580,7 @@ test('buildStatus detects MCP configured via alias in settings.json', async () =
     hooks: {},
   });
   // Remove features.json so all features are implicitly enabled
-  fs.rmSync(path.join(homeDir, '.construct', 'features.json'), { force: true });
+  fs.rmSync(path.join(configDir(homeDir), 'features.json'), { force: true });
 
   const status = await buildStatus({
     rootDir,
@@ -600,7 +602,7 @@ test('buildStatus detects MCP configured via project .mcp.json', async () => {
   // Remove codex config to avoid cross-detection
   fs.rmSync(path.join(homeDir, '.codex'), { recursive: true, force: true });
   // Remove features.json so all features are implicitly enabled
-  fs.rmSync(path.join(homeDir, '.construct', 'features.json'), { force: true });
+  fs.rmSync(path.join(configDir(homeDir), 'features.json'), { force: true });
   // Add project-level .mcp.json with notion
   writeJson(path.join(rootDir, '.mcp.json'), {
     mcpServers: { notion: { command: 'npx', args: ['-y', '@anthropic-ai/notion-mcp'] } },
@@ -623,9 +625,9 @@ test('buildStatus detects MCP registered as Claude.ai server-side integration', 
   const { rootDir, homeDir } = await createFixture();
   writeJson(path.join(homeDir, '.claude', 'settings.json'), { mcpServers: {}, hooks: {} });
   fs.rmSync(path.join(homeDir, '.codex'), { recursive: true, force: true });
-  fs.rmSync(path.join(homeDir, '.construct', 'features.json'), { force: true });
+  fs.rmSync(path.join(configDir(homeDir), 'features.json'), { force: true });
   // Register notion as a Claude.ai managed MCP
-  writeJson(path.join(homeDir, '.construct', 'claude-ai-mcps.json'), { mcps: ['notion'] });
+  writeJson(path.join(configDir(homeDir), 'claude-ai-mcps.json'), { mcps: ['notion'] });
 
   const status = await buildStatus({
     rootDir,
@@ -646,7 +648,7 @@ test('buildStatus detects MCP from Claude marketplace plugins', async () => {
   writeJson(path.join(homeDir, '.claude', 'settings.json'), { mcpServers: {}, hooks: {} });
   fs.rmSync(path.join(homeDir, '.codex'), { recursive: true, force: true });
   // Remove features.json so all features are implicitly enabled
-  fs.rmSync(path.join(homeDir, '.construct', 'features.json'), { force: true });
+  fs.rmSync(path.join(configDir(homeDir), 'features.json'), { force: true });
   // Create marketplace plugin .mcp.json with linear
   const pluginDir = path.join(homeDir, '.claude', 'plugins', 'marketplaces', 'test-market', 'external_plugins', 'linear');
   writeJson(path.join(pluginDir, '.mcp.json'), {
