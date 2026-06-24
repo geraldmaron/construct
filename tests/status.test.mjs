@@ -12,7 +12,7 @@ import test from 'node:test';
 
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { writeEnvValues } from '../lib/env-config.mjs';
-import { configDir } from '../lib/config/xdg.mjs';
+import { configDir, doctorRoot } from '../lib/config/xdg.mjs';
 
 import { tempDir } from './helpers.mjs';
 
@@ -59,7 +59,7 @@ async function createFixture() {
     mcp: { memory: { type: 'remote', url: 'http://127.0.0.1:8765/' } },
   });
   writeJson(path.join(configDir(homeDir), 'features.json'), { enabled: ['github', 'memory'] });
-  writeJson(path.join(homeDir, '.cx', 'session-efficiency.json'), {
+  writeJson(path.join(doctorRoot(homeDir), 'session-efficiency.json'), {
     readCount: 6,
     uniqueFileCount: 4,
     repeatedReadCount: 2,
@@ -67,7 +67,7 @@ async function createFixture() {
     totalBytesRead: 24576,
     lastUpdatedAt: new Date().toISOString(),
   });
-  writeText(path.join(homeDir, '.cx', 'session-cost.jsonl'), [
+  writeText(path.join(doctorRoot(homeDir), 'session-cost.jsonl'), [
     JSON.stringify({ ts: '2026-04-18T00:00:00.000Z', input_tokens: 120, output_tokens: 30, reasoning_tokens: 10, total_tokens: 160, cost_usd: 0.00081 }),
     JSON.stringify({ ts: '2026-04-18T00:05:00.000Z', input_tokens: 80, output_tokens: 20, reasoning_tokens: 5, total_tokens: 105, cost_usd: 0.00054 }),
     '',
@@ -420,7 +420,7 @@ test('buildStatus reports missing context source in public health surface when n
 
 test('buildStatus reports unavailable session usage when no token log exists', async () => {
   const { rootDir, homeDir } = await createFixture();
-  fs.rmSync(path.join(homeDir, '.cx', 'session-cost.jsonl'));
+  fs.rmSync(path.join(doctorRoot(homeDir), 'session-cost.jsonl'));
 
   const status = await buildStatus({
     rootDir,
@@ -436,7 +436,7 @@ test('buildStatus reports unavailable session usage when no token log exists', a
 
 test('buildStatus reports canonical cache fields with bounded read rate', async () => {
   const { rootDir, homeDir } = await createFixture();
-  writeText(path.join(homeDir, '.cx', 'session-cost.jsonl'), [
+  writeText(path.join(doctorRoot(homeDir), 'session-cost.jsonl'), [
     JSON.stringify({
       ts: '2026-04-18T00:00:00.000Z',
       input_tokens: 100,
@@ -494,7 +494,7 @@ test('buildStatus reports telemetry unavailable when trace backend is unreachabl
 
 test('formatStatusReport shows explicit byte-budget warning when session bytes are high', async () => {
   const { rootDir, homeDir } = await createFixture();
-  writeJson(path.join(homeDir, '.cx', 'session-efficiency.json'), {
+  writeJson(path.join(doctorRoot(homeDir), 'session-efficiency.json'), {
     readCount: 18,
     uniqueFileCount: 9,
     repeatedReadCount: 6,

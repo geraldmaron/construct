@@ -9,8 +9,9 @@
  * prompts (which need a real model) are out of scope here; the gated real-LLM
  * layer covers artifact quality.
  *
- * Auditability: get_skill must record the load in ~/.cx/skill-calls.jsonl (under
- * the isolated HOME), so the suite proves a skill was loaded, not just returned.
+ * Auditability: get_skill must record the load in the doctor-root
+ * skill-calls.jsonl (under the isolated HOME), so the suite proves a skill was
+ * loaded, not just returned.
  *
  * Isolation: own HOME + CX_HOME_OVERRIDE + project tmpdir; the server resolves
  * skills/templates from the repo (ROOT_DIR) and writes telemetry into the sandbox.
@@ -24,6 +25,8 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+
+import { doctorRoot } from '../../lib/config/xdg.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SERVER = join(REPO_ROOT, 'lib', 'mcp', 'server.mjs');
@@ -90,8 +93,8 @@ test('a host drives construct over MCP: skills, templates, and specialist routin
   assert.equal(skill.content, onDisk, 'loaded skill matches the file on disk');
 
   // Audit: the skill load is recorded under the isolated HOME (proves "used").
-  const skillLog = join(env.HOME, '.cx', 'skill-calls.jsonl');
-  assert.ok(existsSync(skillLog), 'skill load is recorded in ~/.cx/skill-calls.jsonl');
+  const skillLog = join(doctorRoot(env.HOME), 'skill-calls.jsonl');
+  assert.ok(existsSync(skillLog), 'skill load is recorded in the doctor-root skill-calls.jsonl');
   assert.match(readFileSync(skillLog, 'utf8'), /roles\/architect/, 'the loaded skill id appears in the audit log');
 
   // Templates are resolvable by name (the skeleton a PRD/ADR is authored from).

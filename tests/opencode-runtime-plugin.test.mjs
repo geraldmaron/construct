@@ -20,6 +20,7 @@ import {
   _resetPreludeForTests,
 } from "../lib/opencode-runtime-plugin.mjs";
 import { resetPricingCatalog } from "../lib/telemetry/model-pricing-catalog.mjs";
+import { doctorRoot } from "../lib/config/xdg.mjs";
 
 test("buildRuntimeTracePayload creates deterministic OpenCode runtime trace metadata", () => {
   const payload = buildRuntimeTracePayload(
@@ -359,7 +360,7 @@ test("plugin applies model fallback and logs warning when rate limit error hits"
     },
   });
 
-  const state = JSON.parse(fs.readFileSync(path.join(home, ".cx", "construct-opencode-fallback.json"), "utf8"));
+  const state = JSON.parse(fs.readFileSync(path.join(doctorRoot(home), "construct-opencode-fallback.json"), "utf8"));
   assert.equal(state.targetModel, "openrouter/qwen/qwen3-coder:free");
   assert.ok(logs.some((entry) => entry.message.includes("applying model fallback toward")));
 });
@@ -421,7 +422,7 @@ test("plugin falls back to a new target model when the current provider is unava
     },
   });
 
-  const state = JSON.parse(fs.readFileSync(path.join(home, ".cx", "construct-opencode-fallback.json"), "utf8"));
+  const state = JSON.parse(fs.readFileSync(path.join(doctorRoot(home), "construct-opencode-fallback.json"), "utf8"));
   assert.equal(state.targetModel, "openrouter/qwen/qwen3-coder:free");
   assert.equal(state.targetTier, "standard");
   assert.ok(logs.some((entry) => entry.message.includes("openrouter/qwen/qwen3-coder:free")));
@@ -477,7 +478,7 @@ test("plugin no-ops when no safe fallback target exists", async (t) => {
     },
   });
 
-  assert.equal(fs.existsSync(path.join(home, ".cx", "construct-opencode-fallback.json")), false);
+  assert.equal(fs.existsSync(path.join(doctorRoot(home), "construct-opencode-fallback.json")), false);
   assert.ok(logs.some((entry) => entry.message.includes("no safe fallback target")));
 });
 
@@ -530,7 +531,7 @@ test("plugin continues fallback even when telemetry logging fails", async (t) =>
     },
   });
 
-  const state = JSON.parse(fs.readFileSync(path.join(home, ".cx", "construct-opencode-fallback.json"), "utf8"));
+  const state = JSON.parse(fs.readFileSync(path.join(doctorRoot(home), "construct-opencode-fallback.json"), "utf8"));
   assert.equal(state.reason, "opencode-session-error");
   assert.equal(state.targetModel, "openrouter/qwen/qwen3-coder:free");
 });
@@ -606,7 +607,7 @@ test("trackReadEfficiencyFromMessage updates shared session-efficiency store and
   }
   const { warnings } = trackReadEfficiencyFromMessage(makeEvent("c-dup-0", "/another.txt"), { env, cwd: home });
 
-  const stats = JSON.parse(fs.readFileSync(path.join(home, ".cx", "session-efficiency.json"), "utf8"));
+  const stats = JSON.parse(fs.readFileSync(path.join(doctorRoot(home), "session-efficiency.json"), "utf8"));
   assert.equal(stats.readCount, 7);
   assert.equal(stats.repeatedReadCount, 5);
   assert.ok(stats.warnings.repeatedReads);
@@ -631,7 +632,7 @@ test("trackReadEfficiencyFromMessage deduplicates by tool call id across message
   };
   trackReadEfficiencyFromMessage(event, { env, cwd: home });
   trackReadEfficiencyFromMessage(event, { env, cwd: home });
-  const stats = JSON.parse(fs.readFileSync(path.join(home, ".cx", "session-efficiency.json"), "utf8"));
+  const stats = JSON.parse(fs.readFileSync(path.join(doctorRoot(home), "session-efficiency.json"), "utf8"));
   assert.equal(stats.readCount, 1);
 });
 
