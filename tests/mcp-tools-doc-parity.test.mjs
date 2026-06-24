@@ -1,7 +1,7 @@
 /**
  * tests/mcp-tools-doc-parity.test.mjs — every registered MCP tool is documented.
  *
- * The MCP tool reference (docs/reference/mcp-tools.md) is hand-authored. This
+ * The MCP tool reference (docs/guides/reference/mcp-tools.md) is hand-authored. This
  * guard parses the full tool catalog from lib/mcp/server.mjs (ALL_TOOL_DEFS, a
  * pure data array — every tool, including the long tail reachable through the
  * construct_call gateway) and asserts each tool name appears as a `### `name``
@@ -35,7 +35,7 @@ function registeredToolNames() {
 }
 
 function documentedToolNames() {
-  const doc = readFileSync(join(ROOT, 'docs', 'reference', 'mcp-tools.md'), 'utf8');
+  const doc = readFileSync(join(ROOT, 'docs', 'guides', 'reference', 'mcp-tools.md'), 'utf8');
   return (doc.match(/^### `[a-z_]+`/gm) || []).map((h) => h.replace(/^### `/, '').replace(/`$/, ''));
 }
 

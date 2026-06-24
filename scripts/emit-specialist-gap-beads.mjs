@@ -21,7 +21,7 @@ const EPIC = {
   title: 'Skills & specialists remediation — Wave C role overlays',
   description: [
     'Follow-up from closed construct-hcr9. Raise adequate specialists and role overlays',
-    'to strong grade per docs/concepts/specialist-skill-audit.md gaps.',
+    'to strong grade per docs/guides/concepts/specialist-skill-audit.md gaps.',
     '',
     'Source: specialists/audit-enrichments.json + construct audit specialists matrix.',
     '',

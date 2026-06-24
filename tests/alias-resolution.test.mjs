@@ -13,6 +13,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { resolveAlias, applyAliasToTemplate, DEFAULT_ALIAS } from '../lib/config/alias.mjs';
+import { configDir } from '../lib/config/xdg.mjs';
 
 let projectRoot;
 let fakeHome;
@@ -36,8 +37,8 @@ function writeProjectAlias(value) {
 }
 
 function writeUserOverride(value) {
-  fs.mkdirSync(path.join(fakeHome, '.construct'), { recursive: true });
-  fs.writeFileSync(path.join(fakeHome, '.construct', 'config.json'), JSON.stringify({
+  fs.mkdirSync(configDir(fakeHome), { recursive: true });
+  fs.writeFileSync(path.join(configDir(fakeHome), 'config.json'), JSON.stringify({
     aliasOverride: value,
   }));
 }

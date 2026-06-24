@@ -56,7 +56,7 @@ export default function ResourcesPage() {
           </Section>
 
           {e.data && (
-            <Section num="02" title="Embed daemon" tldr="Watches .cx/inbox/, ingests files, runs deterministic triage. Optional — auto-started by `construct dev` when embed.yaml is present.">
+            <Section num="02" title="Embed daemon" tldr="Watches inbox/, ingests files, runs deterministic triage. Optional — auto-started by `construct dev` when embed.yaml is present.">
               <p>Running: <StatusPill status={e.data.running ? 'ok' : 'idle'} label={e.data.running ? 'yes' : 'no'} /></p>
               {e.data.lastTickAt && <p>Last tick: {new Date(e.data.lastTickAt).toLocaleString()}</p>}
               {e.data.backend && <p>Backend: <code>{e.data.backend}</code></p>}

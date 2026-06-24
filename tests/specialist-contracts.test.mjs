@@ -101,7 +101,7 @@ test('docs-keeper postcondition requires a coherence diff', () => {
 
   const withDiff = validatePacket('any-to-docs-keeper', {
     updatedDocs: ['CHANGELOG.md'],
-    crossReferencesAdded: ['docs/concepts/architecture.md'],
+    crossReferencesAdded: ['docs/guides/concepts/architecture.md'],
     crossDocCoherenceCheckRan: true,
     coherenceDiff: 'CHANGELOG bullet aligns with architecture.md service-manager paragraph',
   }, 'output');

@@ -2,7 +2,7 @@
  * tests/e2e/scenarios/scenario-c.mjs — Research project scenario executor.
  *
  * Builds a sterile env on the `research` profile, seeds a real primary-source
- * corpus into .cx/inbox/ (three arXiv PDFs on retrieval/embeddings plus five
+ * corpus into inbox/ (three arXiv PDFs on retrieval/embeddings plus five
  * markdown notes representing prior internal thinking), drives the intake loop,
  * and sets up the Tier-3 evidence brief produced by the host cx-researcher →
  * cx-evaluator chain.
@@ -42,7 +42,7 @@ export function setup({ repoRoot }) {
   const init = timedRun({ bin: process.execPath, args: [sterile.launcher, 'init', '--yes'], cwd: sterile.project, env: sterile.env });
   const profile = timedRun({ bin: process.execPath, args: [sterile.launcher, 'profile', 'set', 'research'], cwd: sterile.project, env: sterile.env });
 
-  const inbox = join(sterile.project, '.cx', 'inbox');
+  const inbox = join(sterile.project, 'inbox');
   mkdirSync(inbox, { recursive: true });
   for (const [name, content] of Object.entries(NOTES)) writeFileSync(join(inbox, name), content);
 

@@ -124,7 +124,7 @@ test('TurnContextBar renders route and external research badge', { skip: INK_SKI
       specialists: ['cx-researcher'],
       externalResearch: { required: true, shape: 'landscape' },
     },
-    sources: [{ tool: 'read', ref: 'docs/adr/0015.md' }],
+    sources: [{ tool: 'read', ref: 'docs/decisions/adr/0015.md' }],
   };
   const { lastFrame } = render(
     React.createElement(tui.TurnContextBar, {
@@ -141,7 +141,7 @@ test('TurnContextBar renders route and external research badge', { skip: INK_SKI
   assert.match(frame, /route/);
   assert.match(frame, /research/);
   assert.match(frame, /SOURCES/);
-  assert.match(frame, /docs\/adr\/0015.md/);
+  assert.match(frame, /docs\/decisions\/adr\/0015.md/);
 });
 
 test('TurnTranscript renders full thinking inline with phase labels', { skip: INK_SKIP }, async () => {

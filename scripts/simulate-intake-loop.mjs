@@ -22,7 +22,7 @@ console.log('╚═════════════════════�
 // Step 1: Process inbox files
 console.log('📥 STEP 1: Processing Inbox Files\n');
 
-const inboxDir = path.join(ROOT_DIR, '.cx/inbox');
+const inboxDir = path.join(ROOT_DIR, 'inbox');
 const inboxFiles = fs.readdirSync(inboxDir).filter(f => f.endsWith('.md'));
 
 for (const file of inboxFiles) {
@@ -87,7 +87,7 @@ const relatedDocs = [
     relevance: 'Directly addresses session timeout architecture',
   },
   {
-    path: 'docs/prd/0003-authentication-improvements.md',
+    path: 'docs/specs/prd/0003-authentication-improvements.md',
     title: 'PRD: Authentication Improvements',
     score: 0.72,
     relevance: 'Related product requirements for auth flow',
@@ -226,8 +226,8 @@ const entities = [
     type: 'component',
     connectedDocs: [
       '.cx/knowledge/internal/adr-session-management.md',
-      '.cx/inbox/session-timeout-bug-20260517.md',
-      '.cx/inbox/login-feedback-20260518.md',
+      'inbox/session-timeout-bug-20260517.md',
+      'inbox/login-feedback-20260518.md',
     ],
     observations: ['obs-1', 'obs-2', 'obs-3'],
   },
@@ -235,8 +235,8 @@ const entities = [
     name: 'authentication',
     type: 'service',
     connectedDocs: [
-      '.cx/inbox/login-feedback-20260518.md',
-      'docs/prd/0003-authentication-improvements.md',
+      'inbox/login-feedback-20260518.md',
+      'docs/specs/prd/0003-authentication-improvements.md',
     ],
     observations: ['obs-1'],
   },

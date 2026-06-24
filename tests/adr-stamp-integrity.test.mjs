@@ -16,7 +16,7 @@ import { dirname, resolve, join } from 'node:path';
 
 import { hasStamp, verifyStamp } from '../lib/doc-stamp.mjs';
 
-const ADR_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'adr');
+const ADR_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'decisions', 'adr');
 
 test('every stamped ADR passes body_hash verification', () => {
   const failures = [];

@@ -11,12 +11,13 @@ import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomBytes } from 'node:crypto';
+import { configDir } from '../lib/config/xdg.mjs';
 
 // ── Fixture helpers ────────────────────────────────────────────────────────
 
 function makeTmpHome() {
   const dir = join(tmpdir(), `cx-auth-test-${randomBytes(4).toString('hex')}`);
-  mkdirSync(join(dir, '.construct'), { recursive: true });
+  mkdirSync(configDir(dir), { recursive: true });
   return dir;
 }
 
@@ -53,7 +54,7 @@ test('setDashboardToken writes token and getDashboardToken reads it back', async
   const { setDashboardToken, getDashboardToken, generateToken } = await loadAuth(home);
   const token = generateToken();
   setDashboardToken(token);
-  const configPath = join(home, '.construct', 'config.env');
+  const configPath = join(configDir(home), 'config.env');
   assert.ok(existsSync(configPath), 'config.env should be created');
   assert.equal(getDashboardToken(), token);
   rmSync(home, { recursive: true });
@@ -61,7 +62,7 @@ test('setDashboardToken writes token and getDashboardToken reads it back', async
 
 test('setDashboardToken replaces an existing token without duplicating the line', async () => {
   const home = makeTmpHome();
-  const configPath = join(home, '.construct', 'config.env');
+  const configPath = join(configDir(home), 'config.env');
   writeFileSync(configPath, 'CONSTRUCT_DASHBOARD_TOKEN=old\nOTHER=val\n');
   const { setDashboardToken, getDashboardToken, generateToken } = await loadAuth(home);
   const token = generateToken();

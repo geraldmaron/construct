@@ -68,7 +68,7 @@ When querying search engines or paper indexes, always filter or sort by date: ne
 
 ### Step 4: Check internal evidence
 
-Before going external, search: `.cx/research/`, `.cx/knowledge/`, `docs/prd/`, `docs/meta-prd/`, ADRs, runbooks, and ingested artifacts. If a prior research brief exists for the topic, cite and extend it rather than redoing the search from scratch.
+Before going external, search: `.cx/research/`, `.cx/knowledge/`, `docs/specs/prd/`, `docs/meta-prd/`, ADRs, runbooks, and ingested artifacts. If a prior research brief exists for the topic, cite and extend it rather than redoing the search from scratch.
 
 ### Step 5: Verify every URL
 

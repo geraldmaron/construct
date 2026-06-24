@@ -7,14 +7,14 @@ import test from 'node:test';
 import { checkAction, globMatch } from '../../lib/roles/fence.mjs';
 
 test('globMatch handles ** and *', () => {
-  assert.equal(globMatch('docs/**', 'docs/runbooks/foo.md'), true);
+  assert.equal(globMatch('docs/**', 'docs/operations/runbooks/foo.md'), true);
   assert.equal(globMatch('docs/**', 'lib/foo.mjs'), false);
   assert.equal(globMatch('docs/*.md', 'docs/foo.md'), true);
   assert.equal(globMatch('docs/*.md', 'docs/sub/foo.md'), false);
 });
 
 test('sre may edit runbooks (in-fence)', () => {
-  const r = checkAction({ personaId: 'sre', action: 'edit', target: 'docs/runbooks/postgres.md' });
+  const r = checkAction({ personaId: 'sre', action: 'edit', target: 'docs/operations/runbooks/postgres.md' });
   assert.equal(r.allowed, true);
 });
 

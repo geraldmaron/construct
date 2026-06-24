@@ -38,7 +38,7 @@ export default function AgentsPage() {
           <Callout label="How specialists work">
             <p>
               Each specialist has a prompt, optional skills allowlist, and a model tier (reasoning / standard / fast).
-              Read <a className="link" href="/concepts/agents-and-personas" target="_blank">Agents and personas →</a>
+              Read <a className="link" href="/guides/concepts/agents-and-personas" target="_blank">Agents and personas →</a>
             </p>
           </Callout>
         </>

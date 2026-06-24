@@ -33,23 +33,47 @@ export type DocMeta = {
 };
 
 // Maintainer-only lanes stay in git but are excluded from the public docs site.
-const SKIP_DIRS = new Set([
+// Two skip layers after the docs/ bucket regroup (ADR-0045):
+//   - basename skip: template/scratch dirs at any depth
+//   - relative-path skip: maintainer lanes now nested under buckets, identified by
+//     their path from DOCS_ROOT so a public sibling in the same bucket still renders
+//     (decisions/adr renders; decisions/rfc does not — operations/deploy renders;
+//     operations/audit does not).
+
+const SKIP_DIR_BASENAMES = new Set([
   'templates',
   '_template',
   'archive',
-  'meetings',
-  'memos',
-  'notes',
-  'incidents',
-  'prd',
-  'prds',
-  'audit',
-  'research',
-  'decisions',
-  'intake',
-  'rfc',
-  'rfcs',
 ]);
+
+const SKIP_REL_DIRS = new Set([
+  'specs',
+  'notes',
+  'decisions/rfc',
+  'operations/audit',
+  'operations/incidents',
+]);
+
+// Bucket-root pages whose lane was excluded wholesale before the regroup; the bucket
+// itself must stay walkable to reach a public child (decisions → adr), so its own
+// index/README is dropped by exact relative path.
+
+const SKIP_REL_FILES = new Set([
+  'decisions/index.md',
+  'decisions/index.mdx',
+  'decisions/README.md',
+  'operations/audit.md',
+]);
+
+function relUnix(...parts: string[]): string {
+  return parts.join('/');
+}
+
+function shouldSkipDir(relParts: string[], name: string): boolean {
+  if (name.startsWith('.')) return true;
+  if (SKIP_DIR_BASENAMES.has(name)) return true;
+  return SKIP_REL_DIRS.has(relUnix(...relParts, name));
+}
 
 const SKIP_FILE_PATTERNS = [
   /^_template/i,
@@ -130,12 +154,13 @@ function walk(dir: string, relParts: string[] = []): DocPage[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name.startsWith('.') || SKIP_DIRS.has(entry.name)) continue;
+      if (shouldSkipDir(relParts, entry.name)) continue;
       out.push(...walk(fullPath, [...relParts, entry.name]));
       continue;
     }
     if (!entry.isFile()) continue;
     if (shouldSkipFile(entry.name)) continue;
+    if (SKIP_REL_FILES.has(relUnix(...relParts, entry.name))) continue;
     const ext = path.extname(entry.name).slice(1);
     if (ext !== 'md' && ext !== 'mdx') continue;
     files.push(entry.name);
@@ -222,14 +247,19 @@ export type SidebarSection = {
   items: SidebarItem[];
 };
 
+// Lane dir is the slug path from the site root. After the bucket regroup the
+// public lanes are nested one level under their bucket (guides/*, operations/*,
+// decisions/adr), so each entry is a two-segment path.
+
 const SIDEBAR_LAYOUT: { label: string; dir: string }[] = [
-  { label: 'Start', dir: 'start' },
-  { label: 'Concepts', dir: 'concepts' },
-  { label: 'Cookbook', dir: 'cookbook' },
-  { label: 'Reference', dir: 'reference' },
-  { label: 'Maintenance', dir: 'maintenance' },
-  { label: 'Contributing', dir: 'contributing' },
-  { label: 'ADRs', dir: 'adr' },
+  { label: 'Start', dir: 'guides/start' },
+  { label: 'Concepts', dir: 'guides/concepts' },
+  { label: 'Cookbook', dir: 'guides/cookbook' },
+  { label: 'Intake', dir: 'guides/intake' },
+  { label: 'Reference', dir: 'guides/reference' },
+  { label: 'Maintenance', dir: 'operations/maintenance' },
+  { label: 'Contributing', dir: 'guides/contributing' },
+  { label: 'ADRs', dir: 'decisions/adr' },
 ];
 
 export function buildSidebar(): SidebarSection[] {
@@ -242,13 +272,16 @@ export function buildSidebar(): SidebarSection[] {
   const sections: SidebarSection[] = [home];
   for (const layout of SIDEBAR_LAYOUT) {
     const laneRoot = '/' + layout.dir;
+    const laneParts = layout.dir.split('/');
 
     // Sidebar items = direct children of the lane only. Sub-pages nested
-    // more than one level under the lane (e.g. /reference/cli/advanced)
+    // more than one level under the lane (e.g. guides/reference/cli/advanced)
     // live inside their parent's body, not the sidebar. The lane-index
     // page itself becomes the group's clickable label, not a sibling item.
 
-    const inLane = docs.filter((d) => d.slug.length === 2 && d.slug[0] === layout.dir);
+    const inLane = docs.filter(
+      (d) => d.slug.length === laneParts.length + 1 && laneParts.every((p, i) => d.slug[i] === p),
+    );
     if (inLane.length === 0) continue;
 
     const meta = readMeta(layout.dir);

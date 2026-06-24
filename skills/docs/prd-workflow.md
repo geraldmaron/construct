@@ -33,12 +33,12 @@ Style constraint: do not produce a wall of bullets. Use paragraphs for reasoning
 
    | Template | Output path |
    |---|---|
-   | `prd` | `docs/prd/{YYYY-MM-DD}-{slug}.md` |
+   | `prd` | `docs/specs/prd/{YYYY-MM-DD}-{slug}.md` |
    | `prd-platform` | `docs/prd-platform/{YYYY-MM-DD}-{slug}.md` |
    | `prd-business` | `docs/prd-business/{YYYY-MM-DD}-{slug}.md` |
    | `meta-prd` | `docs/meta-prd/{YYYY-MM-DD}-{slug}.md` |
-   | `rfc` | `docs/rfc/{YYYY-MM-DD}-{slug}.md` |
-   | `rfc-platform` | `docs/rfc/{YYYY-MM-DD}-{slug}.md` |
+   | `rfc` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
+   | `rfc-platform` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
 5. **cx-devil-advocate** runs the FMEA challenge pass (`roles/reviewer.devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their specialist id must appear in `.cx/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types).
 6. **cx-docs-keeper** updates `.cx/context.md` with a link to the PRD
 
@@ -47,11 +47,11 @@ Run `construct artifact validate <path> --type=<type>` before marking the artifa
 ## File naming
 - `docs/{template-type}/{YYYY-MM-DD}-{slug}.md`
 - Examples:
-  - `docs/prd/2026-04-search-autocomplete.md`
+  - `docs/specs/prd/2026-04-search-autocomplete.md`
   - `docs/prd-platform/2026-04-events-api-v2.md`
   - `docs/prd-business/2026-04-enterprise-tier.md`
   - `docs/meta-prd/2026-04-product-intelligence-workflow.md`
-  - `docs/rfc/2026-04-storage-backend-migration.md`
+  - `docs/decisions/rfc/2026-04-storage-backend-migration.md`
 
 ## PRD lifecycle
 - Draft → stakeholder review → approved → link to implementation tasks

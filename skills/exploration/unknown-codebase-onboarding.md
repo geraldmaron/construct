@@ -71,7 +71,7 @@ grep -r 'process\.env\.\|os\.environ\|getenv' --include='*.js' --include='*.py' 
 - Leaf nodes are safe to modify; hub changes have blast radius.
 
 **Read the ADRs and postmortems:**
-- Architecture decisions (`docs/adr/`, `decisions/`, `DECISIONS.md`) explain why the code is shaped the way it is.
+- Architecture decisions (`docs/decisions/adr/`, `decisions/`, `DECISIONS.md`) explain why the code is shaped the way it is.
 - Postmortems explain what has already broken and how the system defends against it. Don't break a defense you don't understand.
 
 **Find the test coverage gaps:**

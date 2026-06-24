@@ -11,4 +11,4 @@ Structure:
 - ROLLBACK: how to undo if something goes wrong
 - ESCALATION: who to contact and when
 
-Save to `docs/runbooks/{service}-{operation}.md` if the directory exists.
+Save to `docs/operations/runbooks/{service}-{operation}.md` if the directory exists.
