@@ -110,7 +110,7 @@ Show or update model tier assignments
 **Usage**
 
 ```bash
-construct models <list|set|free|reset|usage|cost|resolve>
+construct models <list|set|free|reset|resolve>
 ```
 
 **Subcommands**
@@ -119,8 +119,6 @@ construct models <list|set|free|reset|usage|cost|resolve>
 - `set --tier=<reasoning|standard|fast> --model=<model>` — Set a model for a tier
 - `free` — List available free models
 - `reset` — Reset all tier assignments
-- `usage` — Show token usage per tier
-- `cost` — Show cost breakdown
 - `resolve --json` — Resolve the model for an embedded workflow given host context
 
 ## construct orchestrate
