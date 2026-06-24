@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-24T03:19:40.858Z",
+  "generatedAt": "2026-06-24T15:47:55.558Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 528,
-    "topLevelTestFiles": 289,
-    "nestedTestFiles": 239,
+    "testFiles": 532,
+    "topLevelTestFiles": 291,
+    "nestedTestFiles": 241,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 23,
     "byLayer": {
-      "unit": 325,
+      "unit": 327,
       "live-provider": 2,
       "visual": 6,
       "integration": 31,
-      "functional": 164
+      "functional": 166
     },
     "byCategory": {
-      "unit": 286,
+      "unit": 288,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
       "visual": 6,
       "integration": 22,
-      "functional": 164,
+      "functional": 166,
       "hook": 9
     }
   },
@@ -2175,6 +2175,22 @@
       "maintainerNotes": "tests/functional/model-resolver-no-defaults-chain.functional.test.mjs"
     },
     {
+      "path": "tests/functional/models-cli-contract.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/models-cli-contract.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/models-legacy-config-migration.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/models-legacy-config-migration.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/node-native-extraction.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3081,6 +3097,14 @@
       "maintainerNotes": "tests/knowledge/research-store.test.mjs — A2 research persistence contract."
     },
     {
+      "path": "tests/legacy-config-migration.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/legacy-config-migration.test.mjs"
+    },
+    {
       "path": "tests/libreoffice-export.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3423,6 +3447,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/overrides-resolver.test.mjs — single-helper override contract."
+    },
+    {
+      "path": "tests/packaging-published-files.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/packaging-published-files.test.mjs"
     },
     {
       "path": "tests/parity.test.mjs",

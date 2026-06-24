@@ -17,6 +17,7 @@
     "bin/construct",
     "bin/construct-postinstall.mjs",
     "lib/**",
+    "apps/chat/engine/**",
     "specialists/**",
     "examples/**",
     "personas/**",
