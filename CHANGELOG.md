@@ -5,6 +5,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 ## [Unreleased]
 
 ### Fixed
+- **`GRAPH_SEED_FILES` points at the unified registry** (`construct-5ytz`, split from `construct-iwfz.4`). The dependency-graph staleness seed list named `specialists/contracts.json` (slated for deletion). `lib/graph/staleness.mjs` now seeds on `specialists/unified-registry.json`; `lib/oracle/read-model.mjs` imports the single exported constant instead of duplicating it; `tests/graph/staleness.test.mjs` asserts the new path. 0 new failures vs baseline.
 - **Policy-inventory consumers read the unified registry** (`construct-raly`, split from `construct-iwfz.4`). `lib/embedded-contract/capability.mjs` (`buildPolicies`) and `lib/oracle/org-graph.mjs` (`collectPolicyInventory`) read `specialists/policy-inventory.json`, which was already deleted — `buildPolicies` threw on every call and the capability contract dropped its policies section. Both now read `registry.policies` via `loadRegistry()` (`lib/registry/loader.mjs`). No remaining runtime reads of `policy-inventory.json` (only the one-shot `scripts/migrate-unified-registry.mjs` references it, by design). Fixes 2 previously-failing capability tests; 0 new failures vs baseline.
 
 ### Changed
