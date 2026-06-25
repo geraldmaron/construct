@@ -16,7 +16,6 @@ import test from 'node:test';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const REGISTRY_PATH = join(REPO_ROOT, 'specialists', 'unified-registry.json');
-const CONTRACTS_PATH = join(REPO_ROOT, 'specialists', 'contracts.json');
 
 function readJson(p) { return JSON.parse(readFileSync(p, 'utf8')); }
 
@@ -26,9 +25,9 @@ function readJson(p) { return JSON.parse(readFileSync(p, 'utf8')); }
 // registry.
 const COVERAGE_EXEMPT = new Set(['orchestrator', 'oracle']);
 
-test('every specialist in registry.json appears as producer or consumer in contracts.json', () => {
+test('every specialist in unified registry appears as producer or consumer in contracts', () => {
   const registry = readJson(REGISTRY_PATH);
-  const contracts = readJson(CONTRACTS_PATH).contracts || [];
+  const contracts = Object.values(registry.contracts || {});
 
   const specialists = Object.values(registry.specialists || {})
     .map((a) => a.name || a.id)
@@ -53,7 +52,8 @@ test('every specialist in registry.json appears as producer or consumer in contr
 });
 
 test('contract ids are kebab-case and unique', () => {
-  const contracts = readJson(CONTRACTS_PATH).contracts || [];
+  const registry = readJson(REGISTRY_PATH);
+  const contracts = Object.values(registry.contracts || {});
   const seen = new Set();
   for (const c of contracts) {
     assert.match(c.id, /^[a-z0-9][a-z0-9-]*$/, `contract id not kebab-case: ${c.id}`);
@@ -64,7 +64,7 @@ test('contract ids are kebab-case and unique', () => {
 
 test('producer and consumer resolve against registry or well-known names', () => {
   const registry = readJson(REGISTRY_PATH);
-  const contracts = readJson(CONTRACTS_PATH).contracts || [];
+  const contracts = Object.values(registry.contracts || {});
 
   const known = new Set();
   for (const a of Object.values(registry.specialists || {})) {

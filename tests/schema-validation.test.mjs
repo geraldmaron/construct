@@ -336,8 +336,8 @@ describe('schemas/unified-registry.schema.json', () => {
             charter: 'A team.',
           },
           'team-a': {
-            // duplicate key in JSON — parser will silently keep only last one
-            // This test documents that JSON parsers handle it, but we should validate elsewhere
+            // Duplicate key in JSON — parser silently overwrites with final value.
+            // JSON spec permits this; duplicate-key detection belongs in external validators.
             id: 'team-a',
             name: 'Team A',
             owner: 'owner',
@@ -349,15 +349,15 @@ describe('schemas/unified-registry.schema.json', () => {
         contracts: {},
         policies: {},
       };
-      // JSON parser silently overwrites, so we only have one key
+      // JSON parser behavior: duplicate keys are overwritten; only final value remains.
       assert.equal(Object.keys(fixture.teams).length, 1);
     });
   });
 
   describe('schema preserves all fields from legacy files', () => {
-    it('team schema includes all properties from teams-registry.json', () => {
+    it('team schema includes all properties from teams', () => {
       const teamDef = schema.$defs.team.properties;
-      // From teams-registry.json:
+      // Teams consolidated into unified registry:
       assert.ok(teamDef.id, 'team must have id');
       assert.ok(teamDef.name, 'team must have name');
       assert.ok(teamDef.owner, 'team must have owner');
@@ -370,18 +370,18 @@ describe('schemas/unified-registry.schema.json', () => {
       assert.ok(teamDef.evidence, 'team must have evidence');
     });
 
-    it('specialist schema includes all properties from registry.json', () => {
+    it('specialist schema includes all properties from specialists', () => {
       const specDef = schema.$defs.specialist.properties;
-      // From registry.json:
+      // Specialists consolidated into unified registry:
       assert.ok(specDef.name, 'specialist must have name');
       assert.ok(specDef.displayName, 'specialist must have displayName');
       assert.ok(specDef.description, 'specialist must have description');
-      assert.ok(specDef.team, 'specialist must have team (NEW)');
+      assert.ok(specDef.team, 'specialist must have team');
       assert.ok(specDef.modelTier, 'specialist must have modelTier');
       assert.ok(specDef.reasoningEffort, 'specialist must have reasoningEffort');
       assert.ok(specDef.skills, 'specialist must have skills');
-      assert.ok(specDef.events, 'specialist must have events (from role-manifests)');
-      assert.ok(specDef.fence, 'specialist must have fence (from role-manifests)');
+      assert.ok(specDef.events, 'specialist must have events (from manifests)');
+      assert.ok(specDef.fence, 'specialist must have fence (from manifests)');
       assert.ok(specDef.docArtifacts, 'specialist must have docArtifacts');
       assert.ok(specDef.permissions, 'specialist must have permissions');
     });
@@ -396,7 +396,7 @@ describe('schemas/unified-registry.schema.json', () => {
       assert.ok(contractDef.output, 'contract must have output');
       assert.ok(contractDef.preconditions, 'contract must have preconditions');
       assert.ok(contractDef.postconditions, 'contract must have postconditions');
-      assert.ok(contractDef.teamBoundary, 'contract must have teamBoundary (NEW)');
+      assert.ok(contractDef.teamBoundary, 'contract must have teamBoundary');
     });
 
     it('policy schema includes owner, enforcement, decision rights', () => {

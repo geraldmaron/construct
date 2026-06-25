@@ -32,7 +32,11 @@ async function createFixture() {
 
   writeJson(path.join(rootDir, 'package.json'), { name: 'construct', version: '9.9.9' });
   writeJson(path.join(rootDir, 'agents', 'registry.json'), {
-    prefix: 'cx',
+    models: {
+      reasoning: { primary: 'claude-opus-4-1-20250805' },
+      standard: { primary: 'claude-3-5-sonnet-20241022' },
+      fast: { primary: 'claude-3-5-haiku-20241022' },
+    },
     personas: [{ name: 'construct', displayName: 'Construct', role: 'orchestrator', description: 'Public entry point' }],
     agents: [{ name: 'engineer', description: 'Implements changes' }],
   });

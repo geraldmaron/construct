@@ -2,7 +2,7 @@
  * tests/policy-engine.test.mjs — policy decision contract.
  *
  * Pins the precedence rules (explicit deny > approvalRequired > risk
- * tier > default), the role-manifest source mapping (fence.deniedActions,
+ * tier > default), the specialist manifest source mapping (fence.deniedActions,
  * fence.approvalRequired), the unknown-role denial in team / enterprise
  * mode, and the HIGH_RISK_AUTONOMOUS exception for sre / security /
  * release-manager.
@@ -92,10 +92,113 @@ describe('policyDecision', () => {
   });
 });
 
-describe('policyDecision against the real role-manifests.json', () => {
-  it('reads the shipped role manifests when no manifestPath override is supplied', () => {
+describe('policyDecision against the unified registry specialists', () => {
+  it('reads the shipped specialist manifests when no manifestPath override is supplied', () => {
     const d = policyDecision({ role: 'sre', tool: 'github', action: 'create_pr' });
     assert.equal(typeof d.allowed, 'boolean');
     assert.ok(d.reason);
+  });
+});
+
+describe('policyDecision with team-aware decision gates', () => {
+  it('blocks a decision forbidden by the role\'s team', () => {
+    // product-manager is in product-group which forbids product-scope (counter-intuitive but tests forbidding)
+    // security-override is forbidden by governance-group
+    const mockRegistry = {
+      teams: {
+        'governance-group': {
+          id: 'governance-group',
+          roles: ['security'],
+          forbiddenDecisions: ['security-override'],
+          decisionRights: ['security-approval'],
+        },
+      },
+    };
+    const manifestsWithRegistry = {
+      personas: {
+        security: { fence: {} },
+      },
+      registry: mockRegistry,
+    };
+    const d = policyDecision(
+      { role: 'security', tool: 'github', action: 'override', decision: 'security-override' },
+      { manifests: manifestsWithRegistry }
+    );
+    assert.equal(d.allowed, false);
+    assert.equal(d.source, 'team.forbiddenDecisions');
+    assert.match(d.reason, /forbidden/);
+  });
+
+  it('allows a decision authorized by the role\'s team', () => {
+    const mockRegistry = {
+      teams: {
+        'governance-group': {
+          id: 'governance-group',
+          roles: ['security'],
+          forbiddenDecisions: [],
+          decisionRights: ['security-approval'],
+        },
+      },
+    };
+    const manifestsWithRegistry = {
+      personas: {
+        security: { fence: {} },
+      },
+      registry: mockRegistry,
+    };
+    const d = policyDecision(
+      { role: 'security', tool: 'github', action: 'approve', decision: 'security-approval' },
+      { manifests: manifestsWithRegistry }
+    );
+    assert.equal(d.allowed, true);
+  });
+
+  it('allows a decision when no team restriction is set', () => {
+    const mockRegistry = {
+      teams: {
+        'governance-group': {
+          id: 'governance-group',
+          roles: ['security'],
+          forbiddenDecisions: [],
+          decisionRights: [],
+        },
+      },
+    };
+    const manifestsWithRegistry = {
+      personas: {
+        security: { fence: {} },
+      },
+      registry: mockRegistry,
+    };
+    const d = policyDecision(
+      { role: 'security', tool: 'github', action: 'anything', decision: 'random-decision' },
+      { manifests: manifestsWithRegistry }
+    );
+    // No explicit forbid, so should be allowed
+    assert.equal(d.allowed, true);
+  });
+
+  it('allows actions when no decision parameter is supplied', () => {
+    const manifestsWithRegistry = {
+      personas: {
+        engineer: { fence: {} },
+      },
+      registry: {
+        teams: {
+          'engineering-group': {
+            id: 'engineering-group',
+            roles: ['engineer'],
+            forbiddenDecisions: ['product-scope'],
+            decisionRights: ['architecture'],
+          },
+        },
+      },
+    };
+    const d = policyDecision(
+      { role: 'engineer', tool: 'github', action: 'create_pr' },
+      { manifests: manifestsWithRegistry }
+    );
+    // Without decision param, team gates don't apply
+    assert.equal(d.allowed, true);
   });
 });

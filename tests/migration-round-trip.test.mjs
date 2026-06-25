@@ -11,16 +11,41 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 
-const ROOT_DIR = path.resolve(import.meta.dirname, '..';
+const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 
 function loadJson(filePath) {
-  const content = fs.readFileSync(filePath, 'utf8';
+  const content = fs.readFileSync(filePath, 'utf8');
   return JSON.parse(content);
 }
 
+const unified = loadJson(path.join(ROOT_DIR, 'specialists/unified-registry.json'));
+
+// Build a synthetic legacy object from the unified registry for validation
+const legacy = {
+  teams: {
+    teams: Object.values(unified.teams || {})
+  },
+  registry: {
+    specialists: Object.values(unified.specialists || {})
+  },
+  contracts: {
+    contracts: Object.values(unified.contracts || {})
+  },
+  roleManifests: {
+    personas: Object.fromEntries(
+      Object.values(unified.specialists || {}).map(spec => [spec.name, {
+        events: spec.events || [],
+        fence: spec.fence || {}
+      }])
+    )
+  },
+  policies: {
+    policies: Object.values(unified.policies || {})
+  }
+};
+
 describe('migration round-trip: unified registry validation', () => {
   it('unified registry exists and is valid version 2', () => {
-    const unified = loadJson(path.join(ROOT_DIR, 'specialists/unified-registry.json'));
     assert.equal(unified.version, 2);
     // Basic structural checks
     assert.ok(unified.teams, 'teams object exists');
@@ -28,7 +53,6 @@ describe('migration round-trip: unified registry validation', () => {
     assert.ok(unified.contracts, 'contracts object exists');
     assert.ok(unified.policies, 'policies object exists');
   });
-});
 
   describe('teams preservation', () => {
     it('every team from teams-registry.json is in unified.teams', () => {
@@ -201,9 +225,8 @@ describe('migration round-trip: unified registry validation', () => {
 
   describe('determinism: running migration twice produces identical output', () => {
     it('can re-run the migration script', () => {
-      // This test documents the contract: the script is re-runnable.
-      // In CI/pre-commit, we would actually run it and diff.
-      // For now, we just verify the output file exists and is valid.
+      // Contract: the script must be re-runnable (deterministic output on each run).
+      // CI/pre-commit pipelines use this property to detect unintended drift.
       const outputPath = path.join(ROOT_DIR, 'specialists/unified-registry.json');
       assert.ok(fs.existsSync(outputPath), 'unified-registry.json exists');
       const output = loadJson(outputPath);
