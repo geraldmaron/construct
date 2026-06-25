@@ -4,6 +4,9 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+- **Policy-inventory consumers read the unified registry** (`construct-raly`, split from `construct-iwfz.4`). `lib/embedded-contract/capability.mjs` (`buildPolicies`) and `lib/oracle/org-graph.mjs` (`collectPolicyInventory`) read `specialists/policy-inventory.json`, which was already deleted — `buildPolicies` threw on every call and the capability contract dropped its policies section. Both now read `registry.policies` via `loadRegistry()` (`lib/registry/loader.mjs`). No remaining runtime reads of `policy-inventory.json` (only the one-shot `scripts/migrate-unified-registry.mjs` references it, by design). Fixes 2 previously-failing capability tests; 0 new failures vs baseline.
+
 ### Changed
 
 - **Bead gate review on `feature/team-redesign`** (2026-06-25). Tracker aligned with codebase reality before resuming implementation. Reopened `construct-iwfz.4`, `.5`, `.7`, `.8` (premature closes). Created epic children `construct-m7k2-fix-tests`, `-auth-primitives`, `-mcp-audit`, `-web-deprecation`. Superseded `construct-hdsf` → `construct-m7k2.5`. All `construct-m7k2.*` beads expanded to haiku-ready bodies with Pass A/B protocol in `rules/common/beads-hygiene.md`.
