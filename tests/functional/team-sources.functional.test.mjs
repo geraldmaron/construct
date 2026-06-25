@@ -9,6 +9,9 @@
  */
 
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
 import {
@@ -18,6 +21,7 @@ import {
 import { validate } from '../../lib/registry/validator.mjs';
 import { loadRegistry } from '../../lib/registry/loader.mjs';
 import { demandFetch } from '../../lib/embed/demand-fetch.mjs';
+import { listObservations, getObservation } from '../../lib/observation-store.mjs';
 
 const REGISTRY = {
   teams: {
@@ -68,4 +72,34 @@ test('provider_fetch rejects a target outside the team with a typed OUT_OF_SCOPE
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'OUT_OF_SCOPE');
   assert.equal(result.teamId, 'product-group');
+});
+
+test('demandFetch drives reads from the team\'s sources and tags observations team:/target:', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'team-fetch-'));
+  try {
+    // Injected mock provider returns one item per requested ref; injected
+    // registry supplies the team — fully hermetic, no real credentials/CLI.
+    const mockProvider = { read: async (ref) => [{ type: ref, id: `gh-${ref}`, title: `item ${ref}`, summary: `s-${ref}` }] };
+    const providerRegistry = { get: (name) => (name === 'github' ? mockProvider : null) };
+    const registry = { teams: { 'engineering-group': { sources: [
+      { id: 'main-repo', provider: 'github', selector: { repo: 'anthropic/construct' }, filters: { refs: ['prs', 'issues'], limit: 5 } },
+    ] } } };
+
+    const result = await demandFetch({ teamId: 'engineering-group', rootDir: tmp, env: {}, registry, providerRegistry });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.reason, 'team_fetched');
+    assert.equal(result.teamId, 'engineering-group');
+    assert.deepEqual(result.targetIds, ['main-repo']);
+    assert.equal(result.items.length, 2, 'honors the refs filter (prs, issues) rather than the 6 default refs');
+    assert.equal(result.written, 2);
+
+    const stored = listObservations(tmp, { limit: 50 }).map((e) => getObservation(tmp, e.id)).filter(Boolean);
+    assert.ok(stored.length >= 1, 'observations were persisted');
+    const tagged = stored.find((o) => (o.tags || []).includes('team:engineering-group'));
+    assert.ok(tagged, 'an observation is tagged team:engineering-group');
+    assert.ok((tagged.tags || []).includes('target:main-repo'), 'and tagged target:main-repo');
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
