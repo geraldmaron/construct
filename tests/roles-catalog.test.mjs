@@ -20,7 +20,7 @@ const registry = JSON.parse(readFileSync(join(__dirname, '..', 'specialists', 'u
 
 test('listRoles returns one descriptor per registry specialist', () => {
   const roles = listRoles();
-  assert.equal(roles.length, registry.specialists.length);
+  assert.equal(roles.length, Object.values(registry.specialists).length);
   assert.ok(roles.length >= 28, `expected at least 28 roles, got ${roles.length}`);
 });
 

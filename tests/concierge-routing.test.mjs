@@ -169,7 +169,7 @@ describe("registry: internal agent isolation", () => {
      const require = createRequire(import.meta.url);
      const registry = require("../specialists/unified-registry.json");
 
-     const exposed = Object.values(registry.specialists).filter((a) => !a.internal);
+     const exposed = Object.values(registry.specialists).filter((a) => a.role !== "orchestrator" && !a.internal);
      assert.deepEqual(
        exposed,
        [],
@@ -182,9 +182,10 @@ describe("registry: internal agent isolation", () => {
     const require = createRequire(import.meta.url);
     const registry = require("../specialists/unified-registry.json");
 
-    assert.ok(registry.orchestrator, "Expected orchestrator (construct)");
-    assert.equal(registry.orchestrator.name, "construct");
-    assert.equal(registry.orchestrator.internal, undefined, "Construct orchestrator must not be marked internal");
+    const orch = Object.values(registry.specialists || {}).find((s) => s.role === "orchestrator");
+    assert.ok(orch, "Expected specialist with role=orchestrator");
+    assert.equal(orch.name, "orchestrator");
+    assert.equal(orch.internal, undefined, "Construct orchestrator must not be marked internal");
   });
 });
 

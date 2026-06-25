@@ -57,6 +57,10 @@ const EXPECTED_EVENTS = {
   'strategy.required': 'cx-business-strategist',
   'plan.requested': 'cx-operations',
   'research.gate.required': 'cx-rd-lead',
+  'handoff.received': 'cx-orchestrator',
+  'incident.handoff': 'cx-engineer',
+  'bug.assigned': 'cx-engineer',
+  'feature.assigned': 'cx-engineer',
 };
 
 const EXPECTED_DOCS = {
@@ -86,6 +90,7 @@ const EXPECTED_DOCS = {
   'threat-model': 'cx-security',
   memo: 'cx-docs-keeper',
   changelog: 'cx-docs-keeper',
+  strategy: 'cx-business-strategist',
 };
 
 test('every expected event resolves to its declared specialist owner', () => {

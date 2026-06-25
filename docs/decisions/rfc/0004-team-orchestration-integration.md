@@ -328,9 +328,9 @@ The Oracle (`cx-oracle`) will gain a **team governance** watch domain alongside 
 New CLI commands:
 
 ```bash
-construct registry validate    # Validates unified-registry.json + overlays
-construct registry diff        # Shows what changed against last committed version
-construct registry prune       # Lists orphaned prompts/skills after a removal
+construct registry:validate    # Validates unified-registry.json + overlays
+construct registry:diff        # Shows what changed against last committed version
+construct registry:prune       # Lists orphaned prompts/skills after a removal
 construct team add <id>      # Guided wizard: prompts for charter, owner, roles
 construct team remove <id>   # Checks dependencies, fails if unsafe
 construct specialist add <id> --team <team> # Guided wizard
@@ -384,7 +384,7 @@ These are thin wrappers over the validator library; they do not edit the JSON di
 - Add tests for Oracle team oversight.
 
 ### Phase 6: Tooling and Documentation (Week 4)
-- Implement `construct registry validate`, `diff`, `prune`.
+- Implement `construct registry:validate`, `diff`, `prune`.
 - Implement `construct team add/remove` and `construct specialist add/remove`.
 - Update `docs/guides/concepts/teams.md`.
 - Mark old files as deprecated in CHANGELOG.
@@ -400,7 +400,7 @@ These are thin wrappers over the validator library; they do not edit the JSON di
 5. **Contract Boundary** — A contract with `teamBoundary.approvalRequired: true` between engineering-group and quality-group is validated successfully by `lib/contracts/validate.mjs`.
 6. **Fence Intersection** — A specialist on the engineering-group team with `allowedPaths: ["lib/api/**"]` is blocked from touching `lib/core/**` because the team fence is `allowedPaths: ["lib/api/**", "bin/**"]` and the path is outside both.
 7. **Oracle Signal** — After removing the last reviewer from the quality-group team, the Oracle emits `team-understaffed` with remediation route `cx-orchestrator`.
-8. **Add Specialist** — Adding `cx-new-specialist` to `engineering-group` in the unified registry and running `construct registry validate` passes with zero errors.
+8. **Add Specialist** — Adding `cx-new-specialist` to `engineering-group` in the unified registry and running `construct registry:validate` passes with zero errors.
 9. **Remove Specialist** — Removing `cx-engineer` from the unified registry fails validation if `cx-engineer` is a party to any contract, protecting contract integrity.
 10. **CI** — `npm test` passes including new tests for each acceptance criterion.
 
