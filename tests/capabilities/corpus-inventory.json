@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-24T23:17:50.784Z",
+  "generatedAt": "2026-06-25T14:02:05.427Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 536,
-    "topLevelTestFiles": 295,
-    "nestedTestFiles": 241,
+    "testFiles": 540,
+    "topLevelTestFiles": 298,
+    "nestedTestFiles": 242,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 23,
     "byLayer": {
-      "unit": 331,
+      "unit": 334,
       "live-provider": 2,
       "visual": 6,
       "integration": 31,
-      "functional": 166
+      "functional": 167
     },
     "byCategory": {
-      "unit": 292,
+      "unit": 295,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
       "visual": 6,
       "integration": 22,
-      "functional": 166,
+      "functional": 167,
       "hook": 9
     }
   },
@@ -554,7 +554,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/contracts-coverage.test.mjs — every specialist in specialists/registry.json"
+      "maintainerNotes": "tests/contracts-coverage.test.mjs — every specialist in specialists/unified-registry.json"
     },
     {
       "path": "tests/contracts-postconditions.test.mjs",
@@ -563,6 +563,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/contracts-postconditions.test.mjs — coverage for structured postcondition checks."
+    },
+    {
+      "path": "tests/contracts-team-boundaries.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/contracts-team-boundaries.test.mjs — Test Phase 3: team boundaries on contract handoffs."
     },
     {
       "path": "tests/contracts-violation-log.test.mjs",
@@ -2521,6 +2529,14 @@
       "maintainerNotes": "tests/functional/sync-respects-scope.functional.test.mjs"
     },
     {
+      "path": "tests/functional/team-aware-fence.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/team-aware-fence.functional.test.mjs — integration test for"
+    },
+    {
       "path": "tests/functional/telemetry-backend-agnostic.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3393,6 +3409,14 @@
       "maintainerNotes": "tests/orchestration-policy-task-graph.test.mjs"
     },
     {
+      "path": "tests/orchestration-policy-team-routing.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-policy-team-routing.test.mjs — Test Phase 2: team-aware orchestration policy."
+    },
+    {
       "path": "tests/orchestration-policy.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3750,7 +3774,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/registry-loader.test.mjs — Unified registry loader tests."
+      "maintainerNotes": "tests/registry-loader.test.mjs — Test the unified registry loader."
     },
     {
       "path": "tests/registry-validation.test.mjs",
@@ -3838,7 +3862,7 @@
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/roles/fence.test.mjs — action-vs-manifest fence check."
+      "maintainerNotes": "tests/roles/fence.test.mjs — action-vs-manifest fence check with team awareness."
     },
     {
       "path": "tests/roles/gateway.test.mjs",
