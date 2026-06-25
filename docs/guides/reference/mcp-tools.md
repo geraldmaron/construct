@@ -20,6 +20,17 @@ To keep the serialized tool schema small enough for any context window — a fla
 ### `construct_call`
 Invoke any non-core Construct tool by name. Pass the tool name in `tool` (constrained to the catalog of available tools) and its arguments in `args` — e.g. `construct_call({ tool: "workflow_status", args: { run_id } })`. Dispatches to the same handler as a direct call, so collapsing the surface costs no capability.
 
+## Host wiring policy
+
+The Construct MCP server (`construct-mcp`) is defined once in `specialists/unified-registry.json` (`mcpServers`) and wired into every selected host by `scripts/sync-specialists.mjs` — Claude Code (`.claude/settings.json` → `mcpServers`), OpenCode (`.opencode/opencode.json`), VS Code (`.vscode/mcp.json` → `servers`), Cursor (`.cursor/mcp.json` → `mcpServers`), and Codex (`.codex/config.toml` → `mcp_servers`). The `host-config-parity` functional test fails if any selected host drops it.
+
+Credential handling diverges because hosts resolve env references at different times:
+
+- **OpenCode — defer.** OpenCode keeps the `{env:VAR}` reference verbatim and resolves it at **runtime**. A server whose token env var is unset at sync time is still wired; it only fails to authenticate later if the variable is still missing when the host launches it.
+- **Codex — omit.** Codex has no runtime env interpolation, so it needs the credential at **sync time**. `codexMcpEnvResolves` checks each server's `bearer_token_env_var`; an entry whose token is unresolved is **omitted** from `.codex/config.toml` rather than written with a dangling reference. Servers with no credential requirement — including `construct-mcp` itself, a local stdio server — always pass.
+
+The result: OpenCode never blocks on a missing optional credential, and Codex never ships an entry that cannot authenticate.
+
 ## Project tools
 
 ### `agent_health`
