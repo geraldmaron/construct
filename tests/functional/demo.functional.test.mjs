@@ -134,13 +134,14 @@ test('buildDemoAttemptChain defaults to chat then tape (dashboard surface retire
   assert.ok(!chain.includes('dashboard'));
 });
 
-test('agentic-platforms-prd tape uses construct chat not raw Dracula shell', () => {
+test('agentic-platforms-prd tape uses the bare construct chat entry not raw Dracula shell', () => {
   const tapePath = path.join(REPO, 'templates', 'demos', 'tapes', 'agentic-platforms-prd.tape');
   const themePath = path.join(REPO, 'templates', 'demos', 'vhs', 'construct-cockpit.json');
   assert.ok(fs.existsSync(tapePath));
   assert.ok(fs.existsSync(themePath));
   const tape = fs.readFileSync(tapePath, 'utf8');
-  assert.match(tape, /construct chat --demo=agentic-platforms-prd/);
+  assert.match(tape, /construct --demo=agentic-platforms-prd/);
+  assert.doesNotMatch(tape, /construct chat/);
   assert.doesNotMatch(tape, /Set Theme "Dracula"/);
   const theme = JSON.parse(fs.readFileSync(themePath, 'utf8'));
   assert.equal(theme.name, 'Construct Cockpit');

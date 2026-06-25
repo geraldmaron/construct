@@ -3,14 +3,14 @@ title: Construct chat
 description: Run Construct's owned agent loop in a dedicated window or browser — transparency-first, provider-agnostic.
 ---
 
-`construct chat` runs Construct's own agent loop: prompt → model → tool calls → results → repeat. Every token, tool result, permission decision, and routing choice is first-party data — not whatever a host chose to stream.
+Running `construct` with no subcommand runs Construct's own agent loop: prompt → model → tool calls → results → repeat. Every token, tool result, permission decision, and routing choice is first-party data — not whatever a host chose to stream. (`construct chat` is a deprecated alias for the same entry and prints a notice.)
 
 ## Quick start
 
 ```bash
 construct dev                 # start local services (if not already running)
-construct chat                # dedicated Construct chat window (Tauri + system WebView)
-construct chat --plain        # linear terminal mode (SSH, CI, scripts only)
+construct                     # dedicated Construct chat window (Tauri + system WebView)
+construct --plain             # linear terminal mode (SSH, CI, scripts only)
 ```
 
 Build the desktop window binary once:
@@ -19,7 +19,7 @@ Build the desktop window binary once:
 npm run build:chat-desktop
 ```
 
-If the binary is missing, `construct chat` prints an install hint with the build command.
+If the binary is missing, `construct` prints an install hint with the build command.
 
 ## What you see
 
@@ -53,8 +53,8 @@ Models resolve through the shared router (`lib/model-router.mjs`). API keys in `
 
 ```bash
 construct creds list
-construct chat --list          # models available to chat
-construct chat --free          # poll OpenRouter free catalog (requires OPENROUTER_API_KEY)
+construct --list               # models available to chat
+construct --free               # poll OpenRouter free catalog (requires OPENROUTER_API_KEY)
 ```
 
 ## Dashboard parity

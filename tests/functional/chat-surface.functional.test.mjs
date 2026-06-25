@@ -84,3 +84,38 @@ test('construct chat --list smoke test', async () => {
   assert.match(result.stdout, /Owned loop/);
   assert.doesNotMatch(result.stderr, /desktop window is not installed/i);
 });
+
+// Bare-invoke entry: `stdio: ['ignore', ...]` gives the child an immediately-closed
+// stdin, so the linear chat loop reaches EOF and exits cleanly. The kill-guard
+// keeps a hung loop from wedging CI.
+function runBin(argv) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, ['bin/construct', ...argv], {
+      cwd: REPO_ROOT,
+      env: { ...process.env, CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    const guard = setTimeout(() => child.kill('SIGKILL'), 20_000);
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.on('error', (err) => { clearTimeout(guard); reject(err); });
+    child.on('close', (code) => { clearTimeout(guard); resolve({ code, stdout, stderr }); });
+  });
+}
+
+test('bare construct launches the chat session (no subcommand)', async () => {
+  const result = await runBin([]);
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /\/help for commands/);
+  assert.doesNotMatch(result.stdout, /Run 'construct --help' for available commands/);
+  assert.doesNotMatch(result.stderr, /construct chat is deprecated/);
+});
+
+test('construct chat alias prints a deprecation notice and still launches', async () => {
+  const result = await runBin(['chat']);
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stderr, /construct chat is deprecated/);
+  assert.match(result.stdout, /\/help for commands/);
+});
