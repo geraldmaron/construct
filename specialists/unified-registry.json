@@ -300,8 +300,8 @@
       "name": "oracle",
       "displayName": "Meta-controller — synthesizes fleet health gaps from the Oracle read model and routes remediation to owning specialists.",
       "description": "Meta-controller — synthesizes fleet health gaps from the Oracle read model and routes remediation to owning specialists.",
-      "team": "unknown",
-      "role": "unknown-role",
+      "team": "strategy-group",
+      "role": "oracle",
       "modelTier": "reasoning",
       "reasoningEffort": "high",
       "skills": [
