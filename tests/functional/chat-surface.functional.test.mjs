@@ -1,7 +1,7 @@
 /**
  * tests/functional/chat-surface.functional.test.mjs — construct chat surface routing.
  *
- * Asserts GUI sessions default to the desktop cockpit, with web and linear opt-ins.
+ * Asserts GUI sessions default to the desktop cockpit, with a linear opt-in (browser chat retired).
  */
 
 import { test } from 'node:test';
@@ -47,20 +47,13 @@ test('resolveChatSurface defaults to desktop on GUI TTY', () => {
   }), 'desktop');
 });
 
-test('resolveChatSurface uses web for --web and --no-window', () => {
+test('resolveChatSurface routes --no-window to linear (browser chat retired)', () => {
   assert.equal(resolveChatSurface({
-    flags: { plain: false, accessible: false, web: true, window: false, noWindow: false },
-    env: {},
+    flags: { plain: false, accessible: false, window: false, noWindow: true },
+    env: { ...GUI_TEST_ENV, CONSTRUCT_CHAT_WINDOW: '1' },
     output: tty,
     input: tty,
-  }), 'web');
-
-  assert.equal(resolveChatSurface({
-    flags: { plain: false, accessible: false, web: false, window: false, noWindow: true },
-    env: { CONSTRUCT_CHAT_WINDOW: '1' },
-    output: tty,
-    input: tty,
-  }), 'web');
+  }), 'linear');
 });
 
 test('resolveChatSurface routes non-TTY to linear', () => {
