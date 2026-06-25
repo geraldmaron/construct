@@ -377,6 +377,11 @@ These are thin wrappers over the validator library; they do not edit the JSON di
 - Update `lib/hooks/policy-engine.mjs` with team policy checks.
 - Add tests for team fence violation.
 
+**Phase 4 — implementation decisions (2026-06-25, `construct-iwfz.7`):**
+- **Fence split, not a single intersection inside `checkAction`.** `checkAction` (`lib/roles/fence.mjs`) enforces the specialist's *path / command / bd-label* fence from its manifest; *team decision gates* are enforced separately in `policyDecision` (`lib/policy/engine.mjs` → `canRoleDecide`), which the MCP broker calls before every brokered action. `computeEffectiveFence` bridges the two for callers that hold the registry — it folds each team `forbiddenDecision` into the specialist's `deniedActions` and strips team-forbidden entries from `approvalRequired`. Rationale: team boundaries are expressed as *decisions* (`decisionRights` / `forbiddenDecisions`), not file paths, so there is nothing to intersect at the path layer; the meaningful team gate lives at the decision layer.
+- **Team fence = `decisionRights` + `forbiddenDecisions`.** No separate `team.fence` path field was added — a team's fence is its decision matrix (policy-inventory was consolidated into the unified registry, so the original `policy-inventory.json` plan item is obsolete). `computeEffectiveFence` proves the invariant "a specialist is never broader than its team" by construction: team-forbidden decisions always land in the effective `deniedActions`.
+- **Pre-push team-policy enforcement is deferred.** Team decision gates fire at decision time through the broker / `policyDecision`, which is where high-risk actions surface for approval. A pre-push `.cx/policy-approvals/` batch-approval ledger is future work and not required for the gate to hold — the runtime path already blocks team-forbidden decisions. Coverage: `tests/functional/team-aware-fence.functional.test.mjs` (effective-fence bound + per-role decision gates) and `tests/policy-engine.test.mjs`.
+
 ### Phase 5: Oracle Integration (Week 4)
 - Add team health signals to Oracle read model.
 - Update `cx-oracle` prompt with team governance section.
