@@ -1,9 +1,22 @@
 # RFC-0004: Team-First Orchestration, Policy, and Handoff Integration
 
 - **Date**: 2026-06-24
-- **Status**: proposed
+- **Status**: accepted (all 6 phases complete as of 2026-06-24)
 - **Deciders**: cx-architect, cx-orchestrator, cx-oracle
 - **Supersedes**: docs/guides/concepts/teams.md (parts; the concept doc lives on as user-facing reference)
+
+## Status Summary
+
+RFC-0004 is **accepted and deployed**. All six implementation phases are complete:
+
+1. ✅ **Phase 1** (Week 1) — Unified registry foundation, migration script, validator
+2. ✅ **Phase 2** (Week 2) — Team-aware orchestration routing
+3. ✅ **Phase 3** (Week 2–3) — Contract team boundaries and handoff approval gates
+4. ✅ **Phase 4** (Week 3) — Policy ownership and team-level fence intersection
+5. ✅ **Phase 5** (Week 4) — Oracle team health oversight and governance signals
+6. ✅ **Phase 6** (Week 4) — CLI tooling (`registry diff/prune`, `team add/remove`, `specialist add/remove`) and user documentation
+
+See §Implementation Phases for phase-specific acceptance criteria.
 
 ## Problem
 
