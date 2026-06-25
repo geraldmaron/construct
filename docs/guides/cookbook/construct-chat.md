@@ -10,7 +10,6 @@ description: Run Construct's owned agent loop in a dedicated window or browser â
 ```bash
 construct dev                 # start local services (if not already running)
 construct chat                # dedicated Construct chat window (Tauri + system WebView)
-construct chat --web          # browser tab at /chat/ instead
 construct chat --plain        # linear terminal mode (SSH, CI, scripts only)
 ```
 
@@ -60,7 +59,7 @@ construct chat --free          # poll OpenRouter free catalog (requires OPENROUT
 
 ## Dashboard parity
 
-`construct chat --web` starts the dashboard and opens `/chat/` with the same owned-loop SSE stream (`GET /api/chat/loop/stream`). Rebuild the static bundle after dashboard changes:
+The dashboard serves the same React cockpit at `/chat/` with the owned-loop SSE stream (`GET /api/chat/loop/stream`); reach it via `construct dashboard`. The `construct chat --web` launcher shortcut was retired (see `construct-m7k2-web-deprecation`). Rebuild the static bundle after dashboard changes:
 
 ```bash
 construct dashboard:sync --build
