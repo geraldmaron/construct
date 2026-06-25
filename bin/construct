@@ -191,6 +191,42 @@ async function cmdRegistryGenerateDocs(args = []) {
   if (code) process.exit(code);
 }
 
+async function cmdRegistryDiff(args = []) {
+  const { runRegistryDiff } = await import('../lib/registry/cli.mjs');
+  const code = await runRegistryDiff(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdRegistryPrune(args = []) {
+  const { runRegistryPrune } = await import('../lib/registry/cli.mjs');
+  const code = await runRegistryPrune(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdTeamAdd(args = []) {
+  const { runTeamAdd } = await import('../lib/registry/cli.mjs');
+  const code = await runTeamAdd(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdTeamRemove(args = []) {
+  const { runTeamRemove } = await import('../lib/registry/cli.mjs');
+  const code = await runTeamRemove(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdSpecialistAdd(args = []) {
+  const { runSpecialistAdd } = await import('../lib/registry/cli.mjs');
+  const code = await runSpecialistAdd(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdSpecialistRemove(args = []) {
+  const { runSpecialistRemove } = await import('../lib/registry/cli.mjs');
+  const code = await runSpecialistRemove(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
 async function cmdRulesUsage(args = []) {
   const { summarizeRuleCalls } = await import('../lib/telemetry/rule-calls.mjs');
   const { summarizeHookCalls } = await import('../lib/telemetry/hook-calls.mjs');
@@ -5587,6 +5623,12 @@ const handlers = new Map([
   ['registry:status', cmdRegistryStatus],
   ['registry:validate', cmdRegistryValidate],
   ['registry:generate-docs', cmdRegistryGenerateDocs],
+  ['registry:diff', cmdRegistryDiff],
+  ['registry:prune', cmdRegistryPrune],
+  ['team:add', cmdTeamAdd],
+  ['team:remove', cmdTeamRemove],
+  ['specialist:add', cmdSpecialistAdd],
+  ['specialist:remove', cmdSpecialistRemove],
   ['rules', cmdRulesUsage],
   // Pricing / cost readouts are stubbed out: the ledger writes, model-pricing
   // catalog, and per-turn accounting still run, but no CLI surface exposes
