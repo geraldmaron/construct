@@ -132,6 +132,38 @@
           "items": {
             "type": "string"
           }
+        },
+        "sources": {
+          "type": "array",
+          "description": "Integration resources this team binds (GitHub repos, Jira/Linear projects, Slack channels) with typed selectors and optional filters. Resolved by resolveTeamSources() and threaded into embed/provider_fetch.",
+          "items": { "$ref": "#/$defs/sourceTarget" }
+        }
+      }
+    },
+    "sourceTarget": {
+      "type": "object",
+      "description": "A typed integration binding. Deep-validated at runtime by lib/config/source-targets.mjs validateSourceTarget.",
+      "required": ["id", "provider", "selector"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "description": "Stable id for this binding (unique within the team's sources)."
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["github", "jira", "linear", "slack"],
+          "description": "Integration provider."
+        },
+        "selector": {
+          "type": "object",
+          "description": "Provider-specific selector (github: {repo}, jira: {project}, linear: {team}, slack: {channel, intent?}).",
+          "minProperties": 1
+        },
+        "filters": {
+          "type": "object",
+          "description": "Optional per-target filters threaded into fetch (e.g., jira {jql}, github {refs, limit}, slack {oldest})."
         }
       }
     },
