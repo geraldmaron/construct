@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-25T14:15:33.506Z",
+  "generatedAt": "2026-06-25T14:22:38.886Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 541,
+    "testFiles": 542,
     "topLevelTestFiles": 298,
-    "nestedTestFiles": 243,
+    "nestedTestFiles": 244,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 23,
     "byLayer": {
@@ -13,7 +13,7 @@
       "live-provider": 2,
       "visual": 6,
       "integration": 31,
-      "functional": 168
+      "functional": 169
     },
     "byCategory": {
       "unit": 295,
@@ -22,7 +22,7 @@
       "live-provider": 2,
       "visual": 6,
       "integration": 22,
-      "functional": 168,
+      "functional": 169,
       "hook": 9
     }
   },
@@ -2543,6 +2543,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/team-aware-fence.functional.test.mjs — integration test for"
+    },
+    {
+      "path": "tests/functional/team-sources.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/team-sources.functional.test.mjs"
     },
     {
       "path": "tests/functional/telemetry-backend-agnostic.functional.test.mjs",
