@@ -13,15 +13,18 @@ import {
   validateSpecialistScenarioFixture,
   writeSpecialistScenarioFixtures,
 } from '../../lib/certification/specialist-scenarios.mjs';
+import { writeRoleCards } from '../../lib/certification/role-cards.mjs';
 import { listScenarios } from '../../lib/certification/scenarios.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
-// Writing the scenario catalog then reading it back via listScenarios races
-// other certification test files mutating the same catalog when pointed at the
-// live repo — the "58" count drifted intermittently. An isolated tmp seeded with
-// the registry, catalog, and role cards keeps the write/read deterministic and
-// the repo clean.
+// The "58" count must not read any file another certification test rewrites
+// mid-suite: role-cards.test.mjs rewrites the live role cards and several tests
+// rewrite the live catalog, so copying either into the tmp raced their writes and
+// the count drifted. Seed the tmp from the registry alone — the one input never
+// written live — then generate the role cards and an empty catalog in place. The
+// returned counts and the listScenarios prefix totals are independent of any
+// pre-existing catalog content, so the assertions are unchanged.
 
 test('writeSpecialistScenarioFixtures authors 58 scenarios (2 per specialist)', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'specialist-scenarios-'));
@@ -32,17 +35,14 @@ test('writeSpecialistScenarioFixtures authors 58 scenarios (2 per specialist)', 
       path.join(tmp, 'specialists', 'unified-registry.json'),
     );
     fs.mkdirSync(path.join(tmp, 'tests', 'certification', 'scenarios'), { recursive: true });
-    fs.copyFileSync(
-      path.join(REPO, 'tests', 'certification', 'scenarios', 'catalog.json'),
+    fs.writeFileSync(
       path.join(tmp, 'tests', 'certification', 'scenarios', 'catalog.json'),
+      `${JSON.stringify({ scenarios: [] }, null, 2)}\n`,
     );
     // Role cards gate which specialists get scenarios (the writer skips any
-    // specialist without one), so the tmp needs them to reach the full 29.
-    fs.cpSync(
-      path.join(REPO, 'tests', 'certification', 'specialists'),
-      path.join(tmp, 'tests', 'certification', 'specialists'),
-      { recursive: true },
-    );
+    // without one); generating them in the tmp from the copied registry yields one
+    // per specialist without reading the live cards role-cards.test.mjs rewrites.
+    writeRoleCards({ rootDir: tmp });
 
     const result = writeSpecialistScenarioFixtures({ rootDir: tmp });
     assert.equal(result.specialistCount, 29);
