@@ -228,7 +228,7 @@ test('every specialist prompt sits at or below 90% of the 1200-word cap (headroo
   const exceptions = new Map([
     ['specialists/prompts/cx-orchestrator.md', 'routing/handoff rules are the orchestrator\'s responsibility'],
   ]);
-  for (const agent of Object.values(registry.specialists)) {
+  for (const agent of Object.values(registry.specialists || {})) {
     if (!agent.promptFile) continue;
     if (exceptions.has(agent.promptFile)) continue;
     const text = fs.readFileSync(path.join(root, agent.promptFile), 'utf8');
@@ -284,7 +284,7 @@ test('every specialist in SPECIALIST_TEMPLATES has get_template + list_templates
   const registry = getRegistry();
   for (const specialist of Object.keys(SPECIALIST_TEMPLATES)) {
     const bare = specialist.replace(/^cx-/, '');
-    const agent = Object.values(registry.specialists).find((a) => a.name === bare || a.name === specialist);
+    const agent = Object.values(registry.specialists || {}).find((a) => a.name === bare || a.name === specialist);
     if (!agent) continue;
     const tools = String(agent.claudeTools || '').split(',').map((t) => t.trim());
     assert.ok(tools.includes('get_template'), `${specialist} references templates but lacks \`get_template\` in claudeTools — add it to specialists/unified-registry.json`);

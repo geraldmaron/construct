@@ -61,6 +61,7 @@ before(() => {
       playwright: { command: 'npx', args: ['-y', '@playwright/mcp@latest'] },
       'sequential-thinking': { command: 'npx', args: ['-y', '@modelcontextprotocol/server-sequential-thinking'] },
     },
+    hooks: {},
   }, null, 2) + '\n');
 });
 

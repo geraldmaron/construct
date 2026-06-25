@@ -5,7 +5,7 @@
  * pre-action queries. Solo mode short-circuits to `brokerActive: false`
  * (no manifest read, no policy enforcement) so agents don't waste
  * tokens consulting an inactive gate. Team / enterprise mode reads
- * specialists/role-manifests.json. Every call emits a `tool.called` trace
+ * specialists/unified-registry.json. Every call emits a `tool.called` trace
  * event for audit-trail parity.
  */
 import { describe, it, beforeEach, afterEach } from 'node:test';
@@ -45,11 +45,11 @@ describe('brokerCheck', () => {
     assert.match(r.reason, /broker inactive/);
   });
 
-  it('engages in team mode and reads the real role-manifests.json', async () => {
+  it('engages in team mode and reads the real unified registry', async () => {
     process.env.CONSTRUCT_DEPLOYMENT_MODE = 'team';
     const r = await brokerCheck({ role: 'engineer', tool: 'git', action: 'commit', risk: 'medium' });
     assert.equal(r.brokerActive, true);
-    // engineer manifest has `commit` in approvalRequired
+    // engineer specialist fence has `commit` in approvalRequired
     assert.equal(r.allowed, true);
     assert.equal(r.approvalRequired, true);
     assert.equal(r.source, 'manifest.approvalRequired');
