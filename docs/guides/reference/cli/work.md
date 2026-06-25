@@ -284,7 +284,7 @@ construct publish <markdown> [--to=pdf] [--type=DOC] [--demo=NAME] [--strict]
 | `--output=<path>` | Output path (default: .cx/publish/<name>.<format>) |
 | `--type=<doc-type>` | Manifest doc type for release gate (inferred when omitted) |
 | `--demo=<name>` | Terminal VHS tape to record (repeatable) |
-| `--dashboard-demo=<name>` | Playwright demo spec basename (repeatable) |
+| `--recording=<name>` | Playwright recording manifest (repeatable) |
 | `--figures` | Render d2/mermaid via diagram filter (default on) |
 | `--no-figures` | Skip diagram filter |
 | `--no-gate` | Skip artifact release gate (escape hatch only) |
@@ -361,7 +361,6 @@ construct tools detect [--json] [--figures] [--demo=NAME]
 | `--figures` | Include figure tooling (default on) |
 | `--no-figures` | Skip figure binaries |
 | `--demo=<name>` | Include terminal demo recorder check |
-| `--dashboard-demo=<name>` | Include dashboard Playwright check |
 
 ## construct wireframe
 

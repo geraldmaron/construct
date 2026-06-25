@@ -1,5 +1,5 @@
 /**
- * tests/demo-recording.test.mjs — recording manifest loader and legacy bridge.
+ * tests/demo-recording.test.mjs — recording manifest loader.
  */
 
 import assert from 'node:assert/strict';
@@ -14,7 +14,6 @@ import {
   loadDemoRecordingValidated,
   listDemoRecordings,
   normalizeArtifactReveal,
-  recordingFromDemoScript,
 } from '../lib/demo-recording.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -32,14 +31,6 @@ test('loadDemoRecording loads shipped manifest with artifactReveal', () => {
   assert.equal(rec.artifactReveal.mode, 'constructPreview');
   assert.equal(rec.artifactReveal.file, 'prd-platform.pdf');
   assert.ok(rec.spec.endsWith('agentic-platforms-prd.spec.ts'));
-});
-
-test('recordingFromDemoScript synthesizes legacy dashboard bridge', () => {
-  const rec = recordingFromDemoScript('agentic-platforms-prd', { cwd: REPO, repoRoot: REPO });
-  assert.ok(rec);
-  assert.equal(rec.workspace, 'apps/dashboard');
-  assert.equal(rec._legacy, true);
-  assert.equal(rec.artifactReveal.file, 'prd-platform.pdf');
 });
 
 test('loadDemoRecordingValidated rejects invalid JSON', () => {

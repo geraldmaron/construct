@@ -124,14 +124,14 @@ test('loadDemoScript loads agentic-platforms-prd with five steps', () => {
   assert.equal(script.artifactReveal?.file, 'prd-platform.pdf');
 });
 
-test('buildDemoAttemptChain defaults to chat then dashboard then tape', () => {
+test('buildDemoAttemptChain defaults to chat then tape (dashboard surface retired)', () => {
   const chain = buildDemoAttemptChain('chat', {
-    script: { fallbackSurface: 'tape', dashboardDemo: 'agentic-platforms-prd' },
+    script: { fallbackSurface: 'tape' },
     interactive: true,
   });
   assert.equal(chain[0], 'chat');
-  assert.ok(chain.includes('dashboard'));
   assert.ok(chain.includes('tape'));
+  assert.ok(!chain.includes('dashboard'));
 });
 
 test('agentic-platforms-prd tape uses construct chat not raw Dracula shell', () => {
