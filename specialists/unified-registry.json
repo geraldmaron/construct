@@ -228,8 +228,8 @@
   "specialists": {
     "cx-orchestrator": {
       "name": "orchestrator",
-      "displayName": "Sees the whole board — orchestrates by assembling the right perspectives in the right sequence, routing each request to the minds that will see what others miss.",
-      "description": "Sees the whole board — orchestrates by assembling the right perspectives in the right sequence, routing each request to the minds that will see what others miss.",
+      "displayName": "Sees the whole board \u2014 orchestrates by assembling the right perspectives in the right sequence, routing each request to the minds that will see what others miss.",
+      "description": "Sees the whole board \u2014 orchestrates by assembling the right perspectives in the right sequence, routing each request to the minds that will see what others miss.",
       "team": "strategy-group",
       "role": "orchestrator",
       "modelTier": "standard",
@@ -294,12 +294,21 @@
       },
       "wordCapOverride": 4200,
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,list_teams,get_team,memory_search,memory_add_observations,cx_trace,cx_score"
+      "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,list_teams,get_team,memory_search,memory_add_observations,cx_trace,cx_score",
+      "killSwitchEnv": "CONSTRUCT_ROLE_ORCHESTRATOR",
+      "handoffCandidates": [
+        "product-manager",
+        "architect",
+        "engineer",
+        "security",
+        "qa",
+        "sre"
+      ]
     },
     "cx-oracle": {
       "name": "oracle",
-      "displayName": "Meta-controller — synthesizes fleet health gaps from the Oracle read model and routes remediation to owning specialists.",
-      "description": "Meta-controller — synthesizes fleet health gaps from the Oracle read model and routes remediation to owning specialists.",
+      "displayName": "Meta-controller \u2014 synthesizes fleet health gaps from the Oracle read model and routes remediation to owning specialists.",
+      "description": "Meta-controller \u2014 synthesizes fleet health gaps from the Oracle read model and routes remediation to owning specialists.",
       "team": "strategy-group",
       "role": "oracle",
       "modelTier": "reasoning",
@@ -336,12 +345,14 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,list_teams,get_team,memory_search,memory_add_observations,cx_trace,cx_score"
+      "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,list_teams,get_team,memory_search,memory_add_observations,cx_trace,cx_score",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_ORACLE"
     },
     "cx-rd-lead": {
       "name": "rd-lead",
-      "displayName": "Slows the team down at the right moment — before architecture locks in assumptions that were never validated.",
-      "description": "Slows the team down at the right moment — before architecture locks in assumptions that were never validated.",
+      "displayName": "Slows the team down at the right moment \u2014 before architecture locks in assumptions that were never validated.",
+      "description": "Slows the team down at the right moment \u2014 before architecture locks in assumptions that were never validated.",
       "team": "strategy-group",
       "role": "rd-lead",
       "modelTier": "standard",
@@ -352,7 +363,7 @@
         "docs/research-workflow"
       ],
       "events": [
-        "handoff.received"
+        "research.gate.required"
       ],
       "fence": {
         "allowedPaths": [
@@ -400,12 +411,19 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_RD_LEAD",
+      "handoffCandidates": [
+        "researcher",
+        "architect",
+        "ai-engineer"
+      ]
     },
     "cx-product-manager": {
       "name": "product-manager",
-      "displayName": "Translates user reality into technical deliverables — skeptical of any requirement that can't be traced to observed user behavior.",
-      "description": "Translates user reality into technical deliverables — skeptical of any requirement that can't be traced to observed user behavior.",
+      "displayName": "Translates user reality into technical deliverables \u2014 skeptical of any requirement that can't be traced to observed user behavior.",
+      "description": "Translates user reality into technical deliverables \u2014 skeptical of any requirement that can't be traced to observed user behavior.",
       "team": "product-group",
       "role": "product-manager",
       "modelTier": "reasoning",
@@ -422,7 +440,6 @@
         "docs/strategy-workflow"
       ],
       "events": [
-        "handoff.received",
         "backlog.stale",
         "prd.requested"
       ],
@@ -460,7 +477,10 @@
         "meta-prd",
         "prfaq",
         "one-pager",
-        "backlog-proposal"
+        "backlog-proposal",
+        "prd-platform",
+        "prd-business",
+        "customer-profile"
       ],
       "watchConditions": [
         {
@@ -490,12 +510,20 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_PRODUCT_MANAGER",
+      "handoffCandidates": [
+        "architect",
+        "engineer",
+        "designer",
+        "researcher"
+      ]
     },
     "cx-ux-researcher": {
       "name": "ux-researcher",
-      "displayName": "Brings user reality into the room — guards against assumptions built on internal intuition rather than observed behavior.",
-      "description": "Brings user reality into the room — guards against assumptions built on internal intuition rather than observed behavior.",
+      "displayName": "Brings user reality into the room \u2014 guards against assumptions built on internal intuition rather than observed behavior.",
+      "description": "Brings user reality into the room \u2014 guards against assumptions built on internal intuition rather than observed behavior.",
       "team": "product-group",
       "role": "ux-researcher",
       "modelTier": "standard",
@@ -505,9 +533,7 @@
         "docs/evidence-ingest-workflow",
         "strategy/jobs-to-be-done"
       ],
-      "events": [
-        "handoff.received"
-      ],
+      "events": [],
       "fence": {
         "allowedPaths": [
           "docs/ux-research/**",
@@ -551,12 +577,19 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_UX_RESEARCHER",
+      "handoffCandidates": [
+        "product-manager",
+        "designer",
+        "researcher"
+      ]
     },
     "cx-operations": {
       "name": "operations",
-      "displayName": "The logistics mind who maps dependencies, sequences, and ownership — because hidden dependencies surface as blocked work.",
-      "description": "The logistics mind who maps dependencies, sequences, and ownership — because hidden dependencies surface as blocked work.",
+      "displayName": "The logistics mind who maps dependencies, sequences, and ownership \u2014 because hidden dependencies surface as blocked work.",
+      "description": "The logistics mind who maps dependencies, sequences, and ownership \u2014 because hidden dependencies surface as blocked work.",
       "team": "operations-group",
       "role": "operations",
       "modelTier": "standard",
@@ -568,7 +601,7 @@
         "operating/change-management"
       ],
       "events": [
-        "handoff.received"
+        "plan.requested"
       ],
       "fence": {
         "allowedPaths": [
@@ -613,12 +646,19 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,Write,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,Write,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_OPERATIONS",
+      "handoffCandidates": [
+        "sre",
+        "platform-engineer",
+        "release-manager"
+      ]
     },
     "cx-researcher": {
       "name": "researcher",
-      "displayName": "Never trusts recall alone — sources every claim with a primary reference and a date.",
-      "description": "Never trusts recall alone — sources every claim with a primary reference and a date.",
+      "displayName": "Never trusts recall alone \u2014 sources every claim with a primary reference and a date.",
+      "description": "Never trusts recall alone \u2014 sources every claim with a primary reference and a date.",
       "team": "product-group",
       "role": "researcher",
       "modelTier": "standard",
@@ -629,7 +669,6 @@
         "docs/transcript-synthesis"
       ],
       "events": [
-        "handoff.received",
         "research.requested",
         "evidence.requested"
       ],
@@ -687,12 +726,19 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_RESEARCHER",
+      "handoffCandidates": [
+        "product-manager",
+        "architect",
+        "engineer"
+      ]
     },
     "cx-business-strategist": {
       "name": "business-strategist",
-      "displayName": "Asks whether we're building the right thing for the right market at the right time — before momentum makes the question uncomfortable.",
-      "description": "Asks whether we're building the right thing for the right market at the right time — before momentum makes the question uncomfortable.",
+      "displayName": "Asks whether we're building the right thing for the right market at the right time \u2014 before momentum makes the question uncomfortable.",
+      "description": "Asks whether we're building the right thing for the right market at the right time \u2014 before momentum makes the question uncomfortable.",
       "team": "strategy-group",
       "role": "business-strategist",
       "modelTier": "standard",
@@ -704,7 +750,7 @@
         "strategy/narrative-arc"
       ],
       "events": [
-        "handoff.received"
+        "strategy.required"
       ],
       "fence": {
         "allowedPaths": [
@@ -751,12 +797,18 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_BUSINESS_STRATEGIST",
+      "handoffCandidates": [
+        "product-manager",
+        "researcher"
+      ]
     },
     "cx-data-analyst": {
       "name": "data-analyst",
-      "displayName": "Measures carefully because measurement shapes behavior — suspicious of metrics that can be hit without solving the problem.",
-      "description": "Measures carefully because measurement shapes behavior — suspicious of metrics that can be hit without solving the problem.",
+      "displayName": "Measures carefully because measurement shapes behavior \u2014 suspicious of metrics that can be hit without solving the problem.",
+      "description": "Measures carefully because measurement shapes behavior \u2014 suspicious of metrics that can be hit without solving the problem.",
       "team": "strategy-group",
       "role": "data-analyst",
       "modelTier": "standard",
@@ -766,9 +818,7 @@
         "devops/database",
         "operating/raw-data-structuring"
       ],
-      "events": [
-        "handoff.received"
-      ],
+      "events": [],
       "fence": {
         "allowedPaths": [
           "docs/analytics/**",
@@ -813,12 +863,18 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_DATA_ANALYST",
+      "handoffCandidates": [
+        "product-manager",
+        "engineer"
+      ]
     },
     "cx-evaluator": {
       "name": "evaluator",
-      "displayName": "Defines what 'better' means before the work is done — evaluations designed after implementation are confirmation, not measurement.",
-      "description": "Defines what 'better' means before the work is done — evaluations designed after implementation are confirmation, not measurement.",
+      "displayName": "Defines what 'better' means before the work is done \u2014 evaluations designed after implementation are confirmation, not measurement.",
+      "description": "Defines what 'better' means before the work is done \u2014 evaluations designed after implementation are confirmation, not measurement.",
       "team": "quality-group",
       "role": "evaluator",
       "modelTier": "standard",
@@ -828,7 +884,6 @@
         "quality-gates/verify-quality"
       ],
       "events": [
-        "handoff.received",
         "eval.regression"
       ],
       "fence": {
@@ -875,12 +930,18 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates"
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_EVALUATOR",
+      "handoffCandidates": [
+        "engineer",
+        "ai-engineer"
+      ]
     },
     "cx-ai-engineer": {
       "name": "ai-engineer",
-      "displayName": "Designs for failure before designing for success — 'it works in the demo' is the most dangerous phrase in AI development.",
-      "description": "Designs for failure before designing for success — 'it works in the demo' is the most dangerous phrase in AI development.",
+      "displayName": "Designs for failure before designing for success \u2014 'it works in the demo' is the most dangerous phrase in AI development.",
+      "description": "Designs for failure before designing for success \u2014 'it works in the demo' is the most dangerous phrase in AI development.",
       "team": "engineering-group",
       "role": "ai-engineer",
       "modelTier": "reasoning",
@@ -893,9 +954,7 @@
         "ai/prompt-optimizer",
         "ai/ml-ops"
       ],
-      "events": [
-        "handoff.received"
-      ],
+      "events": [],
       "fence": {
         "allowedPaths": [
           "docs/ai/**",
@@ -943,12 +1002,19 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score"
+      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_AI_ENGINEER",
+      "handoffCandidates": [
+        "engineer",
+        "architect",
+        "evaluator"
+      ]
     },
     "cx-architect": {
       "name": "architect",
-      "displayName": "Makes trade-offs explicit before implementation locks them in — permanently suspicious of clever solutions and unwritten interface contracts.",
-      "description": "Makes trade-offs explicit before implementation locks them in — permanently suspicious of clever solutions and unwritten interface contracts.",
+      "displayName": "Makes trade-offs explicit before implementation locks them in \u2014 permanently suspicious of clever solutions and unwritten interface contracts.",
+      "description": "Makes trade-offs explicit before implementation locks them in \u2014 permanently suspicious of clever solutions and unwritten interface contracts.",
       "team": "engineering-group",
       "role": "architect",
       "modelTier": "reasoning",
@@ -961,7 +1027,6 @@
         "architecture/security-arch"
       ],
       "events": [
-        "handoff.received",
         "adr.requested",
         "arch.boundary.violated"
       ],
@@ -1024,12 +1089,19 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_ARCHITECT",
+      "handoffCandidates": [
+        "engineer",
+        "platform-engineer",
+        "reviewer"
+      ]
     },
     "cx-engineer": {
       "name": "engineer",
-      "displayName": "Reads before writing — understanding the existing pattern matters more than having the better one.",
-      "description": "Reads before writing — understanding the existing pattern matters more than having the better one.",
+      "displayName": "Reads before writing \u2014 understanding the existing pattern matters more than having the better one.",
+      "description": "Reads before writing \u2014 understanding the existing pattern matters more than having the better one.",
       "team": "engineering-group",
       "role": "engineer",
       "modelTier": "standard",
@@ -1056,7 +1128,6 @@
         "exploration/dependency-graph-reading"
       ],
       "events": [
-        "handoff.received",
         "incident.handoff",
         "bug.assigned",
         "feature.assigned"
@@ -1121,12 +1192,20 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score"
+      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_ENGINEER",
+      "handoffCandidates": [
+        "qa",
+        "reviewer",
+        "security",
+        "sre"
+      ]
     },
     "cx-devil-advocate": {
       "name": "devil-advocate",
-      "displayName": "Makes the plan survive contact with reality — the person who was right about the thing nobody wanted to hear.",
-      "description": "Makes the plan survive contact with reality — the person who was right about the thing nobody wanted to hear.",
+      "displayName": "Makes the plan survive contact with reality \u2014 the person who was right about the thing nobody wanted to hear.",
+      "description": "Makes the plan survive contact with reality \u2014 the person who was right about the thing nobody wanted to hear.",
       "team": "quality-group",
       "role": "devil-advocate",
       "modelTier": "reasoning",
@@ -1135,9 +1214,7 @@
         "quality-gates/review-work",
         "quality-gates/premortem"
       ],
-      "events": [
-        "handoff.received"
-      ],
+      "events": [],
       "fence": {
         "allowedPaths": [
           "docs/critiques/**"
@@ -1185,12 +1262,19 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates"
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_DEVIL_ADVOCATE",
+      "handoffCandidates": [
+        "architect",
+        "product-manager",
+        "engineer"
+      ]
     },
     "cx-reviewer": {
       "name": "reviewer",
-      "displayName": "Finds bugs by looking at the conditions the author didn't test for — happy path review is not review.",
-      "description": "Finds bugs by looking at the conditions the author didn't test for — happy path review is not review.",
+      "displayName": "Finds bugs by looking at the conditions the author didn't test for \u2014 happy path review is not review.",
+      "description": "Finds bugs by looking at the conditions the author didn't test for \u2014 happy path review is not review.",
       "team": "quality-group",
       "role": "reviewer",
       "modelTier": "reasoning",
@@ -1201,7 +1285,6 @@
         "quality-gates/verify-module"
       ],
       "events": [
-        "handoff.received",
         "pr.opened",
         "pr.ready-for-review"
       ],
@@ -1248,12 +1331,19 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates"
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_REVIEWER",
+      "handoffCandidates": [
+        "engineer",
+        "architect",
+        "security"
+      ]
     },
     "cx-security": {
       "name": "security",
-      "displayName": "Thinks like an attacker — sees the attack surface the developer didn't know existed.",
-      "description": "Thinks like an attacker — sees the attack surface the developer didn't know existed.",
+      "displayName": "Thinks like an attacker \u2014 sees the attack surface the developer didn't know existed.",
+      "description": "Thinks like an attacker \u2014 sees the attack surface the developer didn't know existed.",
       "team": "governance-group",
       "role": "security",
       "modelTier": "reasoning",
@@ -1326,12 +1416,23 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates"
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+      "internal": true,
+      "severityImmediate": [
+        "dep.cve",
+        "secrets.detected"
+      ],
+      "killSwitchEnv": "CONSTRUCT_ROLE_SECURITY",
+      "handoffCandidates": [
+        "engineer",
+        "platform-engineer",
+        "reviewer"
+      ]
     },
     "cx-qa": {
       "name": "qa",
-      "displayName": "Asks whether the tests test what matters — coverage numbers are hypotheses about quality, not proof of it.",
-      "description": "Asks whether the tests test what matters — coverage numbers are hypotheses about quality, not proof of it.",
+      "displayName": "Asks whether the tests test what matters \u2014 coverage numbers are hypotheses about quality, not proof of it.",
+      "description": "Asks whether the tests test what matters \u2014 coverage numbers are hypotheses about quality, not proof of it.",
       "team": "quality-group",
       "role": "qa",
       "modelTier": "standard",
@@ -1396,12 +1497,19 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates"
+      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_QA",
+      "handoffCandidates": [
+        "engineer",
+        "debugger",
+        "test-automation"
+      ]
     },
     "cx-debugger": {
       "name": "debugger",
-      "displayName": "Traces to root cause before proposing a fix — the real bug is always one layer deeper than where it presents.",
-      "description": "Traces to root cause before proposing a fix — the real bug is always one layer deeper than where it presents.",
+      "displayName": "Traces to root cause before proposing a fix \u2014 the real bug is always one layer deeper than where it presents.",
+      "description": "Traces to root cause before proposing a fix \u2014 the real bug is always one layer deeper than where it presents.",
       "team": "engineering-group",
       "role": "debugger",
       "modelTier": "reasoning",
@@ -1412,7 +1520,6 @@
         "devops/performance"
       ],
       "events": [
-        "handoff.received",
         "regression.detected",
         "hang.detected"
       ],
@@ -1463,12 +1570,19 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates"
+      "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_DEBUGGER",
+      "handoffCandidates": [
+        "engineer",
+        "qa",
+        "sre"
+      ]
     },
     "cx-sre": {
       "name": "sre",
-      "displayName": "Plans for failure before it happens — reliability problems are designed in, not out.",
-      "description": "Plans for failure before it happens — reliability problems are designed in, not out.",
+      "displayName": "Plans for failure before it happens \u2014 reliability problems are designed in, not out.",
+      "description": "Plans for failure before it happens \u2014 reliability problems are designed in, not out.",
       "team": "operations-group",
       "role": "sre",
       "modelTier": "standard",
@@ -1521,7 +1635,7 @@
       "watchConditions": [
         {
           "watcher": "wide-blast-radius",
-          "reason": "wide blast radius — operational readiness review"
+          "reason": "wide blast radius \u2014 operational readiness review"
         }
       ],
       "permissions": {},
@@ -1545,12 +1659,22 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+      "internal": true,
+      "severityImmediate": [
+        "service.down"
+      ],
+      "killSwitchEnv": "CONSTRUCT_ROLE_SRE",
+      "handoffCandidates": [
+        "engineer",
+        "platform-engineer",
+        "debugger"
+      ]
     },
     "cx-platform-engineer": {
       "name": "platform-engineer",
-      "displayName": "Reduces the tax on the people doing the work — friction compounds, and platform debt is the kind nobody notices until it's critical.",
-      "description": "Reduces the tax on the people doing the work — friction compounds, and platform debt is the kind nobody notices until it's critical.",
+      "displayName": "Reduces the tax on the people doing the work \u2014 friction compounds, and platform debt is the kind nobody notices until it's critical.",
+      "description": "Reduces the tax on the people doing the work \u2014 friction compounds, and platform debt is the kind nobody notices until it's critical.",
       "team": "engineering-group",
       "role": "platform-engineer",
       "modelTier": "standard",
@@ -1564,7 +1688,6 @@
         "devops/cost-optimization"
       ],
       "events": [
-        "handoff.received",
         "infra.change.requested",
         "service.scale.event"
       ],
@@ -1617,12 +1740,19 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,Write,list_skills,get_skill,search_skills,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,Write,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_PLATFORM_ENGINEER",
+      "handoffCandidates": [
+        "sre",
+        "engineer",
+        "reviewer"
+      ]
     },
     "cx-legal-compliance": {
       "name": "legal-compliance",
-      "displayName": "Catches compliance risk before the architecture locks — legal remediation after shipping is always more expensive.",
-      "description": "Catches compliance risk before the architecture locks — legal remediation after shipping is always more expensive.",
+      "displayName": "Catches compliance risk before the architecture locks \u2014 legal remediation after shipping is always more expensive.",
+      "description": "Catches compliance risk before the architecture locks \u2014 legal remediation after shipping is always more expensive.",
       "team": "governance-group",
       "role": "legal-compliance",
       "modelTier": "standard",
@@ -1634,7 +1764,8 @@
         "compliance/regulatory-review"
       ],
       "events": [
-        "handoff.received"
+        "dep.license",
+        "privacy-policy.review"
       ],
       "fence": {
         "allowedPaths": [
@@ -1682,12 +1813,18 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates"
+      "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_LEGAL_COMPLIANCE",
+      "handoffCandidates": [
+        "security",
+        "product-manager"
+      ]
     },
     "cx-release-manager": {
       "name": "release-manager",
-      "displayName": "Guards the gap between 'verified' and 'safe to ship' — rollback procedures that were never tested don't exist.",
-      "description": "Guards the gap between 'verified' and 'safe to ship' — rollback procedures that were never tested don't exist.",
+      "displayName": "Guards the gap between 'verified' and 'safe to ship' \u2014 rollback procedures that were never tested don't exist.",
+      "description": "Guards the gap between 'verified' and 'safe to ship' \u2014 rollback procedures that were never tested don't exist.",
       "team": "operations-group",
       "role": "release-manager",
       "modelTier": "standard",
@@ -1698,7 +1835,6 @@
         "docs/memo-and-decision-capture"
       ],
       "events": [
-        "handoff.received",
         "release.candidate",
         "version.bump.needed"
       ],
@@ -1750,12 +1886,20 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,Write,list_skills,get_skill,search_skills,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,Write,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_RELEASE_MANAGER",
+      "handoffCandidates": [
+        "qa",
+        "engineer",
+        "reviewer",
+        "docs-keeper"
+      ]
     },
     "cx-docs-keeper": {
       "name": "docs-keeper",
-      "displayName": "Owns the record of why, not just what — undocumented decisions become tribal knowledge and then disappear.",
-      "description": "Owns the record of why, not just what — undocumented decisions become tribal knowledge and then disappear.",
+      "displayName": "Owns the record of why, not just what \u2014 undocumented decisions become tribal knowledge and then disappear.",
+      "description": "Owns the record of why, not just what \u2014 undocumented decisions become tribal knowledge and then disappear.",
       "team": "operations-group",
       "role": "docs-keeper",
       "modelTier": "standard",
@@ -1770,7 +1914,8 @@
       "events": [
         "pr.merged.no-docs",
         "changelog.missing",
-        "readme.stale"
+        "readme.stale",
+        "document.stale"
       ],
       "fence": {
         "allowedPaths": [
@@ -1824,12 +1969,17 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_DOCS_KEEPER",
+      "handoffCandidates": [
+        "engineer"
+      ]
     },
     "cx-designer": {
       "name": "designer",
-      "displayName": "Treats visual decisions as interaction decisions — a design that only exists in the happy state is incomplete.",
-      "description": "Treats visual decisions as interaction decisions — a design that only exists in the happy state is incomplete.",
+      "displayName": "Treats visual decisions as interaction decisions \u2014 a design that only exists in the happy state is incomplete.",
+      "description": "Treats visual decisions as interaction decisions \u2014 a design that only exists in the happy state is incomplete.",
       "team": "product-group",
       "role": "designer",
       "modelTier": "standard",
@@ -1843,7 +1993,6 @@
         "frontend-design/accessibility"
       ],
       "events": [
-        "handoff.received",
         "design.requested"
       ],
       "fence": {
@@ -1901,12 +2050,19 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations"
+      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_DESIGNER",
+      "handoffCandidates": [
+        "product-manager",
+        "engineer",
+        "accessibility"
+      ]
     },
     "cx-accessibility": {
       "name": "accessibility",
-      "displayName": "Tests with a screen reader and keyboard — accessibility is measured by using the product, not reading the spec.",
-      "description": "Tests with a screen reader and keyboard — accessibility is measured by using the product, not reading the spec.",
+      "displayName": "Tests with a screen reader and keyboard \u2014 accessibility is measured by using the product, not reading the spec.",
+      "description": "Tests with a screen reader and keyboard \u2014 accessibility is measured by using the product, not reading the spec.",
       "team": "product-group",
       "role": "accessibility",
       "modelTier": "standard",
@@ -1916,7 +2072,6 @@
         "frontend-design/screen-reader-testing"
       ],
       "events": [
-        "handoff.received",
         "a11y.violation"
       ],
       "fence": {
@@ -1962,12 +2117,19 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates"
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_ACCESSIBILITY",
+      "handoffCandidates": [
+        "engineer",
+        "designer",
+        "qa"
+      ]
     },
     "cx-explorer": {
       "name": "explorer",
-      "displayName": "Reads before concluding — assumptions about code are wrong more often than assumptions about code are right.",
-      "description": "Reads before concluding — assumptions about code are wrong more often than assumptions about code are right.",
+      "displayName": "Reads before concluding \u2014 assumptions about code are wrong more often than assumptions about code are right.",
+      "description": "Reads before concluding \u2014 assumptions about code are wrong more often than assumptions about code are right.",
       "team": "strategy-group",
       "role": "explorer",
       "modelTier": "fast",
@@ -1979,9 +2141,7 @@
         "exploration/tracer-bullet-method",
         "exploration/dependency-graph-reading"
       ],
-      "events": [
-        "handoff.received"
-      ],
+      "events": [],
       "fence": {
         "allowedPaths": [
           "docs/explorations/**",
@@ -2024,12 +2184,19 @@
         ]
       },
       "canEdit": false,
-      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates"
+      "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_EXPLORER",
+      "handoffCandidates": [
+        "engineer",
+        "architect",
+        "researcher"
+      ]
     },
     "cx-trace-reviewer": {
       "name": "trace-reviewer",
-      "displayName": "Tracks fleet-level performance patterns — stable median scores can hide high-variance agents that are failing silently.",
-      "description": "Tracks fleet-level performance patterns — stable median scores can hide high-variance agents that are failing silently.",
+      "displayName": "Tracks fleet-level performance patterns \u2014 stable median scores can hide high-variance agents that are failing silently.",
+      "description": "Tracks fleet-level performance patterns \u2014 stable median scores can hide high-variance agents that are failing silently.",
       "team": "quality-group",
       "role": "trace-reviewer",
       "modelTier": "reasoning",
@@ -2039,7 +2206,6 @@
         "ai/trace-triage"
       ],
       "events": [
-        "handoff.received",
         "trace.anomaly"
       ],
       "fence": {
@@ -2085,12 +2251,19 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates"
+      "claudeTools": "Read,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_TRACE_REVIEWER",
+      "handoffCandidates": [
+        "sre",
+        "ai-engineer",
+        "engineer"
+      ]
     },
     "cx-data-engineer": {
       "name": "data-engineer",
-      "displayName": "Builds pipelines that can be trusted — trust requires idempotency, observability, and a contract.",
-      "description": "Builds pipelines that can be trusted — trust requires idempotency, observability, and a contract.",
+      "displayName": "Builds pipelines that can be trusted \u2014 trust requires idempotency, observability, and a contract.",
+      "description": "Builds pipelines that can be trusted \u2014 trust requires idempotency, observability, and a contract.",
       "team": "engineering-group",
       "role": "data-engineer",
       "modelTier": "standard",
@@ -2101,9 +2274,7 @@
         "devops/observability",
         "operating/raw-data-structuring"
       ],
-      "events": [
-        "handoff.received"
-      ],
+      "events": [],
       "fence": {
         "allowedPaths": [
           "docs/data/**",
@@ -2149,12 +2320,19 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score"
+      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_DATA_ENGINEER",
+      "handoffCandidates": [
+        "engineer",
+        "platform-engineer",
+        "data-analyst"
+      ]
     },
     "cx-test-automation": {
       "name": "test-automation",
-      "displayName": "Knows that bad automation is worse than no automation — flaky tests teach teams to ignore red builds.",
-      "description": "Knows that bad automation is worse than no automation — flaky tests teach teams to ignore red builds.",
+      "displayName": "Knows that bad automation is worse than no automation \u2014 flaky tests teach teams to ignore red builds.",
+      "description": "Knows that bad automation is worse than no automation \u2014 flaky tests teach teams to ignore red builds.",
       "team": "quality-group",
       "role": "test-automation",
       "modelTier": "standard",
@@ -2164,9 +2342,7 @@
         "quality-gates/verify-change",
         "quality-gates/verify-module"
       ],
-      "events": [
-        "handoff.received"
-      ],
+      "events": [],
       "fence": {
         "allowedPaths": [
           "tests/**",
@@ -2211,7 +2387,14 @@
         ]
       },
       "canEdit": true,
-      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score"
+      "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score",
+      "internal": true,
+      "killSwitchEnv": "CONSTRUCT_ROLE_TEST_AUTOMATION",
+      "handoffCandidates": [
+        "qa",
+        "engineer",
+        "platform-engineer"
+      ]
     }
   },
   "contracts": {
@@ -2302,7 +2485,7 @@
         "type": "decision"
       },
       "preconditions": [
-        "≥2 independent primary sources cited per load-bearing claim",
+        "\u22652 independent primary sources cited per load-bearing claim",
         "Source classes tagged (internal/primary/secondary/tertiary)"
       ],
       "postconditions": [
@@ -2405,7 +2588,7 @@
       ],
       "postconditions": [
         "ADR Problem section traces to PRD Problem, not to tickets",
-        "ADR Rejected alternatives section present with ≥2 alternatives and specific rejection reasons",
+        "ADR Rejected alternatives section present with \u22652 alternatives and specific rejection reasons",
         "Reversibility section states whether one-way or two-way door",
         {
           "id": "adr-has-rejected-alternatives",
@@ -2591,7 +2774,7 @@
         "Verdict in {APPROVED, APPROVED_WITH_WARNINGS, BLOCKED}",
         "BLOCKED verdict stops downstream work until addressed",
         "CRITICAL findings prevent release",
-        "Either findings is non-empty or noIssuesFoundAt enumerates the inspected paths — prevents silent rubber-stamp reviews"
+        "Either findings is non-empty or noIssuesFoundAt enumerates the inspected paths \u2014 prevents silent rubber-stamp reviews"
       ],
       "description": "",
       "teamBoundary": {
@@ -2666,7 +2849,7 @@
       "postconditions": [
         "Attacker-perspective findings logged",
         "Threat model updated if architecture surface changed",
-        "threatModelUpdatedAt >= contractStart — prevents post-hoc threat models written after the architecture has shipped"
+        "threatModelUpdatedAt >= contractStart \u2014 prevents post-hoc threat models written after the architecture has shipped"
       ],
       "description": "",
       "teamBoundary": {
@@ -2782,9 +2965,9 @@
         "Implementation or decision is marked DONE"
       ],
       "postconditions": [
-        "Cross-doc coherence preserved (PRD ↔ ADR ↔ code)",
+        "Cross-doc coherence preserved (PRD \u2194 ADR \u2194 code)",
         "AUTO-managed regions regenerated via construct sync",
-        "crossDocCoherenceCheckRan=true with a named coherenceDiff — prevents stale-doc PRs that claim 'docs updated' without a real diff"
+        "crossDocCoherenceCheckRan=true with a named coherenceDiff \u2014 prevents stale-doc PRs that claim 'docs updated' without a real diff"
       ],
       "description": ""
     },
@@ -2822,7 +3005,7 @@
         "Bug reproduced or trace captured before proposing a fix"
       ],
       "postconditions": [
-        "rootCauseConfirmedVia in {reproduction, trace, test} — prevents symptom-only fixes that don't address the actual cause"
+        "rootCauseConfirmedVia in {reproduction, trace, test} \u2014 prevents symptom-only fixes that don't address the actual cause"
       ],
       "description": ""
     },
@@ -2855,7 +3038,7 @@
         "Affected surface scoped"
       ],
       "postconditions": [
-        "accessibilityCheckRan=true — prevents post-hoc a11y fixes by forcing a pre-ship check on every design deliverable"
+        "accessibilityCheckRan=true \u2014 prevents post-hoc a11y fixes by forcing a pre-ship check on every design deliverable"
       ],
       "description": ""
     },
@@ -4411,7 +4594,93 @@
       "escalatesTo": [],
       "decisionRights": [],
       "conditions": [],
-      "evidence": []
+      "evidence": [],
+      "source": "rules/common/tool-invisibility.md"
+    }
+  },
+  "sharedGuidance": [
+    "Session Resumption: start every new chat by grounding in project_context, memory_search, AGENTS.md, plan.md, and the relevant repo docs. Apply results silently \u2014 never ask the user to repeat information that memory already holds.",
+    "Memory recording: after meaningful work, call memory_add_observations to record patterns, decisions with rationale, anti-patterns, and open questions. Summaries must be specific and \u226530 characters \u2014 avoid placeholders.",
+    "Project Identification: identify the current project from the workspace or memory MCP, and focus on that target repository.",
+    "Loop guard: if the same command or tool call is attempted 3+ times with identical arguments and no state change, stop and surface what blocked progress.",
+    "Circuit breaker: after 3 failed attempts at the same approach, stop all edits. Revert to last known working state. Document what was tried and escalate to cx-orchestrator.",
+    "Worker task contract: specialists return exactly one terminal state \u2014 DONE (files + verification), BLOCKED (blocker + attempts), or NEEDS_MAIN_INPUT (question + options).",
+    "Tool naming contract: use the exact tool names exposed by the current host; never emit names from other vendors\u2019 catalogs.",
+    "Observability: you MUST call cx_trace at the start of every new task with your agent name and the user goal. Construct attaches prompt provenance automatically.",
+    "Quality scoring: after a significant deliverable, you MUST call cx_score with `name=quality`, a 0.0\u20131.0 value, a brief comment, and the `trace_id` returned by cx_trace.",
+    "Model failover: on rate-limit / quota / model-unavailability errors, the PostToolUseFailure hook may switch model assignments. Surface whether fallback occurred.",
+    "Detailed orchestration reference (execution contract, handoff template, intent/category classification, parallel dispatch, horizontal routing, efficiency tiers) lives in skills/ai/orchestration-workflow.md \u2014 read it before dispatching.",
+    "Agent contracts: typed producer\u2192consumer contracts live in `specialists/unified-registry.json`. Call the `agent_contract` MCP tool at handoff to fetch the current contract for a specialist.",
+    "Tool invisibility: a deliverable artifact is about the user\u2019s project, never about the tooling that produced it. In artifact content never name Construct, the `cx-*` specialist role ids, or internal orchestration mechanics \u2014 unless the subject project IS Construct itself. Provenance goes in a comment or handoff, not the deliverable\u2019s prose. See rules/common/tool-invisibility.md."
+  ],
+  "mcpServers": {
+    "memory": {
+      "command": "node",
+      "args": [
+        "__CX_TOOLKIT_DIR__/lib/mcp/memory-bridge.mjs"
+      ],
+      "env": {
+        "CONSTRUCT_MEMORY_BRIDGE_URL": "http://127.0.0.1:__MEMORY_PORT__/"
+      },
+      "description": "Stdio MCP bridge for cass-memory: persistent cross-session knowledge graph for agent memory and handoffs"
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@3.1.0"
+      ],
+      "description": "Library and framework documentation lookup"
+    },
+    "github": {
+      "type": "url",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer {env:GITHUB_TOKEN}"
+      },
+      "description": "GitHub API: issues, PRs, code search"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking@2025.12.18"
+      ],
+      "description": "Complex multi-step reasoning chains"
+    },
+    "construct-mcp": {
+      "command": "node",
+      "args": [
+        "__CX_TOOLKIT_DIR__/lib/mcp/server.mjs"
+      ],
+      "description": "Agent health, diff summary, file scanner, project context, telemetry trace write"
+    }
+  },
+  "providers": {
+    "openrouter": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OpenRouter",
+      "options": {
+        "baseURL": "https://openrouter.ai/api/v1",
+        "headers": {
+          "HTTP-Referer": "https://github.com/geraldmaron/construct",
+          "X-Title": "Construct"
+        }
+      },
+      "models": {
+        "google/gemma-3-27b-it:free": {
+          "name": "Google: Gemma 3 27B (free)"
+        },
+        "meta-llama/llama-3.3-70b-instruct:free": {
+          "name": "Meta: Llama 3.3 70B Instruct (free)"
+        },
+        "mistralai/mistral-7b-instruct:free": {
+          "name": "Mistral: Mistral 7B Instruct (free)"
+        },
+        "qwen/qwen3-coder:free": {
+          "name": "Qwen: Qwen3 Coder 480B A35B (free)"
+        }
+      }
     }
   }
 }

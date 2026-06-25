@@ -317,7 +317,15 @@
       "core": false
     },
     {
+      "name": "registry:diff",
+      "core": false
+    },
+    {
       "name": "registry:generate-docs",
+      "core": false
+    },
+    {
+      "name": "registry:prune",
       "core": false
     },
     {
@@ -389,6 +397,14 @@
       "core": false
     },
     {
+      "name": "specialist:add",
+      "core": false
+    },
+    {
+      "name": "specialist:remove",
+      "core": false
+    },
+    {
       "name": "status",
       "core": true
     },
@@ -410,6 +426,14 @@
     },
     {
       "name": "team",
+      "core": false
+    },
+    {
+      "name": "team:add",
+      "core": false
+    },
+    {
+      "name": "team:remove",
       "core": false
     },
     {

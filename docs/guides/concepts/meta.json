@@ -26,6 +26,7 @@
     "doc-quality-rubric",
     "doc-visual-matrix",
     "template-prompt-audit",
-    "specialist-skill-audit"
+    "specialist-skill-audit",
+    "teams"
   ]
 }

@@ -118,9 +118,9 @@ test("inlineRoleAntiPatterns is a no-op when no directive present", () => {
 });
 
 test("get_template shipped defaults all exist for template names referenced in prompts", () => {
-  const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+  const registry = loadRegistry({ rootDir: root });
   const names = new Set();
-  for (const agent of registry.specialists) {
+  for (const agent of Object.values(registry.specialists || {})) {
     if (!agent.promptFile) continue;
     const content = fs.readFileSync(path.join(root, agent.promptFile), "utf8");
     for (const m of content.matchAll(/get_template\("([^"]+)"\)/g)) {
@@ -135,11 +135,12 @@ test("get_template shipped defaults all exist for template names referenced in p
 });
 
 test("prompt source files stay within token-efficiency budgets", () => {
-  const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+  const registry = loadRegistry({ rootDir: root });
   const sharedGuidanceWords = wordCount((registry.sharedGuidance || []).join("\n"));
   assert.ok(sharedGuidanceWords <= 1500, `sharedGuidance too large: ${sharedGuidanceWords} words`);
 
-  for (const persona of [registry.orchestrator].filter(Boolean)) {
+  const orchestrator = Object.values(registry.specialists || {}).find((s) => s.role === "orchestrator");
+  for (const persona of [orchestrator].filter(Boolean)) {
     const content = fs.readFileSync(path.join(root, persona.promptFile), "utf8");
     const count = promptWordCount(content);
     // Persona cap is 1000 words. Baseline rule-of-thumb is 900 for an
@@ -154,7 +155,7 @@ test("prompt source files stay within token-efficiency budgets", () => {
   const allowlist = new Map([
     ["specialists/prompts/cx-orchestrator.md", "orchestration prompt owns routing and handoff rules"],
   ]);
-  for (const agent of registry.specialists) {
+  for (const agent of Object.values(registry.specialists || {})) {
     if (!agent.promptFile || allowlist.has(agent.promptFile)) continue;
     const content = fs.readFileSync(path.join(root, agent.promptFile), "utf8");
     const count = promptWordCount(content);

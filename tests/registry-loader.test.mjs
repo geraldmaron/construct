@@ -54,10 +54,10 @@ describe('registry loader', () => {
   });
 
   it('getContract returns the correct contract', () => {
-    const contract = getContract('user', 'cx-engineer');
+    const contract = getContract('user', 'construct');
     assert.ok(contract);
     assert.equal(contract.producer, 'user');
-    assert.equal(contract.consumer, 'cx-engineer');
+    assert.equal(contract.consumer, 'construct');
   });
 
   it('getContract returns null for unknown contract', () => {
@@ -116,9 +116,8 @@ describe('registry loader', () => {
   });
 
   it('validates the registry on load', () => {
-    // This test verifies that validation happens automatically
-    // If the registry is invalid, loadRegistry will throw
+    // loadRegistry throws on invalid registry; reaching the assertion confirms validation passed
     const registry = loadRegistry();
-    assert.ok(registry); // If we got here, validation passed
+    assert.ok(registry);
   });
 });

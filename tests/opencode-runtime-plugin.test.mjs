@@ -172,6 +172,11 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
         team: "engineering"
       }
     },
+    models: {
+      reasoning: { primary: "openrouter/deepseek/deepseek-r1" },
+      standard: { primary: "openrouter/qwen/qwen3-coder:free" },
+      fast: { primary: "openrouter/meta-llama/llama-3.3-70b-instruct:free" },
+    },
     contracts: {},
     policies: {}
   }, null, 2));
@@ -353,6 +358,11 @@ test("plugin applies model fallback and logs warning when rate limit error hits"
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
     specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
+    models: {
+      reasoning: { primary: "anthropic/claude-opus-4-6", fallback: ["openrouter/deepseek/deepseek-r1"] },
+      standard: { primary: "openrouter/qwen/qwen3-coder:free", fallback: ["anthropic/claude-sonnet-4-6"] },
+      fast: { primary: "openrouter/meta-llama/llama-3.3-70b-instruct:free" },
+    },
     contracts: {},
     policies: {}
   }, null, 2));
@@ -414,6 +424,11 @@ test("plugin falls back to a new target model when the current provider is unava
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
     specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
+    models: {
+      reasoning: { primary: "anthropic/claude-opus-4-6", fallback: ["openrouter/deepseek/deepseek-r1"] },
+      standard: { primary: "openrouter/qwen/qwen3-coder:free", fallback: ["anthropic/claude-sonnet-4-6"] },
+      fast: { primary: "openrouter/meta-llama/llama-3.3-70b-instruct:free" },
+    },
     contracts: {},
     policies: {}
   }, null, 2));
@@ -533,6 +548,11 @@ test("plugin continues fallback even when telemetry logging fails", async (t) =>
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
     specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
+    models: {
+      reasoning: { primary: "anthropic/claude-opus-4-6", fallback: ["openrouter/deepseek/deepseek-r1"] },
+      standard: { primary: "openrouter/qwen/qwen3-coder:free", fallback: ["anthropic/claude-sonnet-4-6"] },
+      fast: { primary: "openrouter/meta-llama/llama-3.3-70b-instruct:free" },
+    },
     contracts: {},
     policies: {}
   }, null, 2));

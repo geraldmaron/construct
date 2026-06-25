@@ -8,7 +8,10 @@
     "meta-prd",
     "prfaq",
     "one-pager",
-    "backlog-proposal"
+    "backlog-proposal",
+    "prd-platform",
+    "prd-business",
+    "customer-profile"
   ],
   "skills": [
     "docs/product-intelligence-workflow",

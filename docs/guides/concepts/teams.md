@@ -244,7 +244,7 @@ Every team must have at least one specialist. Add entries under the `specialists
 **Step 3: Validate**
 
 ```bash
-construct registry validate
+construct registry:validate
 ```
 
 The validator confirms:
@@ -263,7 +263,7 @@ The validator confirms:
 vim specialists/unified-registry.json
 
 # Then validate
-construct registry validate
+construct registry:validate
 ```
 
 If the team is referenced by any policy (as owner or required approver):
@@ -325,7 +325,7 @@ EOF
 **Step 4: Validate**
 
 ```bash
-construct registry validate
+construct registry:validate
 ```
 
 ### Removing a Specialist
@@ -337,7 +337,7 @@ construct registry validate
 vim specialists/unified-registry.json
 
 # Then validate
-construct registry validate
+construct registry:validate
 ```
 
 If the specialist is referenced by any contract:
@@ -365,7 +365,7 @@ These are informational; removal still succeeds. Address by adding another speci
 **Show changes since last commit:**
 
 ```bash
-construct registry diff
+construct registry:diff
 ```
 
 Output:
@@ -386,7 +386,7 @@ Contracts:
 **List orphaned prompts and skills:**
 
 ```bash
-construct registry prune
+construct registry:prune
 ```
 
 Output:
@@ -482,7 +482,7 @@ The original `departments[]` structure is retained in all profiles for backward 
 - ✅ **Phase 3**: Contract boundaries and team-aware handoffs
 - ✅ **Phase 4**: Policy gates and team-level fences
 - ✅ **Phase 5**: Oracle team health oversight
-- ✅ **Phase 6**: CLI tooling (`construct registry diff`, `prune`, `team add/remove`, `specialist add/remove`) and this documentation
+- ✅ **Phase 6**: CLI tooling (`construct registry:diff`, `prune`, `team add/remove`, `specialist add/remove`) and this documentation
 
 **Features deployed:**
 1. **Staffing recommendations** surface teams first, then individual roles
