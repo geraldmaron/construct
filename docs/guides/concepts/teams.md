@@ -104,6 +104,63 @@ A team is defined by:
 
 ---
 
+## Team-Aware Policy Gates
+
+Team decision boundaries are enforced by the policy engine (`lib/policy/engine.mjs`). When a tool or action is tagged with a **decision id**, the policy engine checks whether the requesting role's team is allowed to make that decision.
+
+### How It Works
+
+1. **Forbidden Decisions Block First**: If a team's `forbiddenDecisions` list includes the requested decision, the request is denied immediately with reason `team.forbiddenDecisions`.
+
+2. **Specialist Fence Bounded by Team**: A specialist's effective fence (`lib/roles/fence.mjs` `computeEffectiveFence`) intersects their own fence with their team's constraints. A specialist can never exceed their team's authority.
+
+3. **Audit Trail**: When a team-level decision succeeds or fails, it is recorded in `~/.local/state/construct/team-decisions.jsonl` via `recordTeamDecision` and `recordForbiddenDecision` (in `lib/roles/gateway.mjs`).
+
+### Example: Deployment Decision Gate
+
+The Operations Group owns deployments; Product Group cannot.
+
+```javascript
+import { policyDecision } from 'lib/policy/engine.mjs';
+
+// Product manager tries to deploy
+const decision = policyDecision({
+  role: 'product-manager',
+  tool: 'deploy',
+  action: 'ship',
+  decision: 'deployment'  // ← Team decision id
+}, { manifests: loadRoleManifests() });
+
+// Result: { allowed: false, reason: '...', source: 'team.forbiddenDecisions' }
+// because product-group forbids: ["deployment", "security-override", "infra-change"]
+```
+
+```javascript
+// SRE tries to deploy
+const decision = policyDecision({
+  role: 'sre',
+  tool: 'deploy',
+  action: 'ship',
+  decision: 'deployment'
+}, { manifests: loadRoleManifests() });
+
+// Result: { allowed: true, ... }
+// because operations-group has decisionRights: ["deployment", "rollback", ...]
+```
+
+### Integration with Fence Intersection
+
+When a specialist attempts an action that requires team-level decision authority, both gates apply:
+
+1. **Team decision gate** (`forbiddenDecisions` / `decisionRights`) — checked first
+2. **Specialist fence** (computed as team fence ∩ specialist fence) — checked on the manifest
+
+A specialist's effective fence is computed by `computeEffectiveFence(personaId, specialistFence, registry)`:
+- Team's `forbiddenDecisions` are added to the effective `deniedActions`
+- Specialist cannot edit, commit, or push anything the team forbids
+
+---
+
 ## Decision Matrix
 
 When a decision needs to be made, the relevant team has authority, **provided no other team holds veto rights**.
@@ -120,6 +177,231 @@ When a decision needs to be made, the relevant team has authority, **provided no
 | rollback | Operations Group | None |
 | incident-response | Operations Group | None |
 | strategic-prioritization | Strategy Group | None |
+
+---
+
+## Team Lifecycle: Adding and Removing Teams
+
+As of Phase 6 (RFC-0004 completion), team and specialist management is unified under a single registry. All team and specialist definitions live in `specialists/unified-registry.json`, and lifecycle operations are enforced by the validator.
+
+### Adding a Team
+
+**Step 1: Edit the unified registry**
+
+```bash
+vim specialists/unified-registry.json
+```
+
+Add a new entry under the `teams` object:
+
+```json
+{
+  "teams": {
+    "example-group": {
+      "name": "Example Group",
+      "owner": "example-owner",
+      "roles": ["example-owner", "example-member"],
+      "decisionRights": ["decision-1", "decision-2"],
+      "forbiddenDecisions": ["forbidden-1"],
+      "escalationPath": ["example-owner", "rd-lead", "orchestrator"],
+      "charter": "Team charter describing scope and responsibility.",
+      "contact": {
+        "slack": "#example",
+        "email": "example@company.com"
+      }
+    }
+  }
+}
+```
+
+**Step 2: Add at least two specialists to the team**
+
+Every team must have at least one specialist. Add entries under the `specialists` object, setting `"team": "example-group"` for each:
+
+```json
+{
+  "specialists": {
+    "cx-example-owner": {
+      "name": "example-owner",
+      "displayName": "Example Owner",
+      "team": "example-group",
+      "role": "owner",
+      "skills": ["docs/example-skill"],
+      "modelTier": "reasoning"
+    },
+    "cx-example-member": {
+      "name": "example-member",
+      "displayName": "Example Member",
+      "team": "example-group",
+      "role": "member",
+      "skills": ["docs/another-skill"],
+      "modelTier": "standard"
+    }
+  }
+}
+```
+
+**Step 3: Validate**
+
+```bash
+construct registry validate
+```
+
+The validator confirms:
+- Team exists with at least one specialist
+- Owner role has a specialist assigned
+- All decision rights reference valid policies
+- Escalation path roles are valid
+- No circular escalation loops
+
+### Removing a Team
+
+**Safe removal** — the validator prevents orphaning policies or contracts.
+
+```bash
+# Remove the team entry and all its specialists from specialists/unified-registry.json
+vim specialists/unified-registry.json
+
+# Then validate
+construct registry validate
+```
+
+If the team is referenced by any policy (as owner or required approver):
+
+```
+Error: Cannot remove team 'example-group' — it is referenced by:
+  Policies: deployment, release-gates
+  Contracts: construct-to-example
+```
+
+Resolve by:
+1. **Reassign the policies to another team**, or
+2. **Use --force to orphan** (logs warning but allows removal)
+
+### Adding a Specialist
+
+**Step 1: Verify the team exists**
+
+```bash
+jq '.teams | keys' specialists/unified-registry.json
+```
+
+**Step 2: Edit the unified registry**
+
+Add an entry under `specialists` with `"team": "<team-id>"`:
+
+```json
+{
+  "specialists": {
+    "cx-new-specialist": {
+      "name": "new-specialist",
+      "displayName": "New Specialist",
+      "team": "engineering-group",
+      "role": "engineer",
+      "skills": ["docs/prd-workflow", "docs/api-design"],
+      "modelTier": "reasoning",
+      "events": ["feature.requested", "code.review"],
+      "fence": {
+        "allowedPaths": ["lib/**", "tests/**"],
+        "allowedCommands": ["bd create", "bd update"],
+        "approvalRequired": ["commit"]
+      }
+    }
+  }
+}
+```
+
+**Step 3: Optionally create a specialist prompt**
+
+```bash
+mkdir -p specialists/prompts
+cat > specialists/prompts/cx-new-specialist.md << 'EOF'
+# cx-new-specialist
+
+...prompt content...
+EOF
+```
+
+**Step 4: Validate**
+
+```bash
+construct registry validate
+```
+
+### Removing a Specialist
+
+**Unsafe removal is blocked** — the validator prevents orphaning contracts.
+
+```bash
+# Remove the specialist from specialists/unified-registry.json
+vim specialists/unified-registry.json
+
+# Then validate
+construct registry validate
+```
+
+If the specialist is referenced by any contract:
+
+```
+Error: Cannot remove specialist 'cx-engineer' — it is referenced by contracts:
+  construct-to-engineer, engineer-to-reviewer
+```
+
+Resolve by:
+1. **Reassign the contracts to another specialist**, or
+2. **Use --force to orphan** (logs warning but allows removal)
+
+**Warnings you may see:**
+
+```
+WARNING: This is the last specialist on team 'engineering-group'. Team will be understaffed.
+WARNING: This specialist has the owner role for team 'engineering-group'. Team will have no owner.
+```
+
+These are informational; removal still succeeds. Address by adding another specialist to the team.
+
+### Registry Utilities
+
+**Show changes since last commit:**
+
+```bash
+construct registry diff
+```
+
+Output:
+
+```
+Teams:
+  + new-group
+  ~ existing-group
+
+Specialists:
+  + cx-new-specialist
+  - cx-removed-specialist
+
+Contracts:
+  ~ construct-to-new-spec
+```
+
+**List orphaned prompts and skills:**
+
+```bash
+construct registry prune
+```
+
+Output:
+
+```
+Orphaned specialist prompts:
+  rm specialists/prompts/cx-removed-specialist.md
+
+Orphaned skills:
+  rm skills/roles/old-role.md
+```
+
+Run the displayed commands to clean up after removals.
+
+---
 
 ## Team Escalation in Action
 
@@ -170,9 +452,12 @@ Teams in each profile mirror the department structure but add explicit decision 
 
 ## File Structure
 
-- `specialists/teams-registry.json` — Central registry of team definitions (for reference/audit)
-- `profiles/*.json` — Each profile lists its teams in the `teams[]` array
-- `schemas/team.schema.json` — JSON schema for team validation
+**Unified Registry (RFC-0004 Phase 1+):**
+- `specialists/unified-registry.json` — Single source of truth for teams, specialists, roles, contracts, and policies
+
+**Supporting runtime code:**
+- `lib/registry/loader.mjs` — Load and parse unified registry
+- `lib/registry/validator.mjs` — Validate registry schema and invariants
 - `lib/roles/gateway.mjs` — Team escalation lookup functions:
   - `findTeamByRoleOwner(roleId, registry)` — Find team by owner
   - `getTeamEscalationPath(teamId, registry)` — Get escalation chain
@@ -180,13 +465,29 @@ Teams in each profile mirror the department structure but add explicit decision 
   - `recordTeamDecision(decisionId, teamId, outcome, context)` — Audit trail
   - `recordForbiddenDecision(decisionId, teamId, reason, context)` — Block attempts
 
+**Deprecated (pre-Phase 1 layout):**
+- `specialists/teams-registry.json` — Deleted (content migrated to unified registry)
+- `specialists/registry.json` — Deleted (content migrated to unified registry)
+- `specialists/contracts.json` — Deleted (content migrated to unified registry)
+
 ## Backward Compatibility
 
 The original `departments[]` structure is retained in all profiles for backward compatibility. Teams are additive; existing code that reads departments continues to work unchanged. New code should prefer `teams[]`.
 
-## Next Steps
+## Current Implementation Status
 
-1. **Staffing recommendations** now surface teams first, then individual roles
+**RFC-0004 Phases:**
+- ✅ **Phase 1**: Unified registry created; legacy files deleted; all consumers migrated
+- ✅ **Phase 2**: Team-aware orchestration policy routing
+- ✅ **Phase 3**: Contract boundaries and team-aware handoffs
+- ✅ **Phase 4**: Policy gates and team-level fences
+- ✅ **Phase 5**: Oracle team health oversight
+- ✅ **Phase 6**: CLI tooling (`construct registry diff`, `prune`, `team add/remove`, `specialist add/remove`) and this documentation
+
+**Features deployed:**
+1. **Staffing recommendations** surface teams first, then individual roles
 2. **Policy gates** (intake approval, deployment, etc.) route to team owners via escalation paths
 3. **Forbidden decision blocking** is recorded in the audit trail
-4. **Team overlays** in headhunt can promote a temporary expertise into a permanent team capability
+4. **Team-aware contract handoffs** require approval when crossing team boundaries
+5. **Unified registry validator** enforces team/specialist/contract integrity on every change
+6. **Registry utilities** provide safety rails for team/specialist lifecycle operations
