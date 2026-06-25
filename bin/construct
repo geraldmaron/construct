@@ -954,7 +954,8 @@ async function cmdDoctor() {
     if (fs.existsSync(beadsPreCommit) && !inCI) {
       const hp = spawnSync('git', ['config', '--get', 'core.hooksPath'], { cwd: ROOT_DIR, encoding: 'utf8' });
       const value = hp.status === 0 ? (hp.stdout || '').trim() : '';
-      const wired = value === '.beads/hooks';
+      const absEquiv = path.join(ROOT_DIR, '.beads', 'hooks');
+      const wired = value === '.beads/hooks' || value === absEquiv;
       const label = wired
         ? 'Git hooks wired (core.hooksPath = .beads/hooks)'
         : value
