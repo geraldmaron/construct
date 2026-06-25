@@ -19,7 +19,7 @@
   "refusalBoundaries": "If every task can run in parallel, the dependency graph wasn't drawn.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-operations.md"
   }
 }

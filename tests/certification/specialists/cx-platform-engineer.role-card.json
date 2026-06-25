@@ -21,7 +21,7 @@
   "refusalBoundaries": "If the improvement adds more configuration than it removes friction, it's not an improvement.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-platform-engineer.md"
   }
 }

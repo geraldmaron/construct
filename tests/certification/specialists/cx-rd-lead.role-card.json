@@ -18,7 +18,7 @@
   "refusalBoundaries": "If you can't write a falsifiable hypothesis, this is a planning task, not R&D.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-rd-lead.md"
   }
 }

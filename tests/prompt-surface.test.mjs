@@ -177,7 +177,7 @@ test('every MCP-tool name in sharedGuidance is registered in lib/mcp/server.mjs'
 
 test('no specialist source prompt restates fence JSON (manifest is the source of truth)', () => {
   // Phase C extracted the Fence + Handoff section into a renderer in
-  // scripts/sync-specialists.mjs that reads specialists/role-manifests.json.
+  // scripts/sync-specialists.mjs that reads specialists/unified-registry.json.
   // The source prompts must not regrow the inline restatement; the renderer
   // produces the synced output. Allowed: discussion of the fence concept in
   // prose; banned: the literal structural markers below.
@@ -186,7 +186,7 @@ test('no specialist source prompt restates fence JSON (manifest is the source of
     /^\s*-\s*Allowed paths:/m,
     /^\s*-\s*Allowed bd labels:/m,
     /^\s*-\s*Approval required:/m,
-    /^\*\*Fence\*\*\s*\(.*specialists\/role-manifests\.json/m,
+    /^\*\*Fence\*\*\s*\(.*specialists\/unified-registry\.json/m,
   ];
   for (const file of candidates) {
     const rel = relPath(file);
@@ -195,7 +195,7 @@ test('no specialist source prompt restates fence JSON (manifest is the source of
     for (const re of bannedLines) {
       assert.ok(
         !re.test(text),
-        `${rel} restates fence JSON (matched ${re}). The renderer in scripts/sync-specialists.mjs reads specialists/role-manifests.json — do not duplicate the JSON in the prompt`,
+        `${rel} restates fence JSON (matched ${re}). The renderer in scripts/sync-specialists.mjs reads specialists/unified-registry.json — do not duplicate the JSON in the prompt`,
       );
     }
   }
@@ -205,7 +205,7 @@ test('renderRoleFrameworkSection produces a manifest-backed block for onboarded 
   const { renderRoleFrameworkSection } = await import('../scripts/sync-specialists.mjs');
   const rendered = renderRoleFrameworkSection({ name: 'cx-engineer' });
   assert.match(rendered, /## When invoked via the role framework/);
-  assert.match(rendered, /\*\*Fence\*\*.*role-manifests\.json.*engineer/);
+  assert.match(rendered, /\*\*Fence\*\*.*unified-registry\.json.*engineer/);
   // The engineer manifest carries these literals — drift catches any rename.
   assert.match(rendered, /`lib\/\*\*`/, 'engineer fence must include lib/** from the manifest');
   assert.match(rendered, /`next:cx-qa`/, 'engineer handoff candidates must include cx-qa');

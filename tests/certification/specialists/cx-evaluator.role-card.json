@@ -17,7 +17,7 @@
   "refusalBoundaries": "If you can't define a failing case before seeing results, you're rationalizing, not evaluating.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-evaluator.md"
   }
 }

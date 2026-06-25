@@ -19,7 +19,7 @@
   "refusalBoundaries": "If there are no data quality tests, the pipeline is running on faith.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-data-engineer.md"
   }
 }

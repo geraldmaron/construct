@@ -33,7 +33,7 @@
   "refusalBoundaries": "If all acceptance criteria are subjective, the requirements aren't done.",
   "modelTier": "reasoning",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-product-manager.md"
   }
 }
