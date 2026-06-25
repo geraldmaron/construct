@@ -199,3 +199,30 @@ test('synthesizeVerdict detects team-decision-violation signal', () => {
   const action = recommendedActions.find((a) => a.kind === 'specialist-review' && a.summary.includes('owner'));
   assert.ok(action);
 });
+
+test('synthesizeVerdict surfaces cross-team-handoff-blocked when an approver team is unstaffed', () => {
+  const readModel = {
+    teamGovernance: {
+      present: true,
+      teams: {},
+      crossTeamHandoffsBlocked: [
+        { contract: 'engineer-to-reviewer', producerTeam: 'engineering-group', consumerTeam: 'quality-group', blockedBy: ['quality-group'] },
+      ],
+    },
+    projectDir: '/tmp',
+  };
+  const { gaps, recommendedActions, verdict } = synthesizeVerdict(readModel);
+  const blocked = gaps.find((g) => g.id === 'cross-team-handoff-blocked');
+  assert.ok(blocked, 'cross-team-handoff-blocked gap should be present');
+  assert.equal(blocked.severity, 'high');
+  assert.equal(blocked.remediationRoute.primary, 'cx-rd-lead', 'cross-team handoff blocks route to rd-lead');
+  assert.ok(blocked.detail.includes('engineer-to-reviewer'));
+  assert.equal(verdict, 'degraded');
+  assert.ok(recommendedActions.some((a) => a.kind === 'specialist-review' && a.summary.includes('approver team')));
+});
+
+test('synthesizeVerdict emits no cross-team-handoff-blocked when no handoffs are blocked', () => {
+  const readModel = { teamGovernance: { present: true, teams: {}, crossTeamHandoffsBlocked: [] }, projectDir: '/tmp' };
+  const { gaps } = synthesizeVerdict(readModel);
+  assert.ok(!gaps.some((g) => g.id === 'cross-team-handoff-blocked'));
+});
