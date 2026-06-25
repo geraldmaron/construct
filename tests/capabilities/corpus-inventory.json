@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-25T14:22:38.886Z",
+  "generatedAt": "2026-06-25T19:48:22.373Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 542,
+    "testFiles": 543,
     "topLevelTestFiles": 298,
-    "nestedTestFiles": 244,
+    "nestedTestFiles": 245,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 23,
     "byLayer": {
@@ -13,7 +13,7 @@
       "live-provider": 2,
       "visual": 6,
       "integration": 31,
-      "functional": 169
+      "functional": 170
     },
     "byCategory": {
       "unit": 295,
@@ -22,7 +22,7 @@
       "live-provider": 2,
       "visual": 6,
       "integration": 22,
-      "functional": 169,
+      "functional": 170,
       "hook": 9
     }
   },
@@ -2157,6 +2157,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/loop-closure.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/mcp-core-tools.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-core-tools.functional.test.mjs — Construct MCP stdio smoke."
     },
     {
       "path": "tests/functional/mcp-ingest-resilience.functional.test.mjs",
