@@ -112,3 +112,90 @@ test('synthesizeVerdict attaches remediationRoute to gaps and actions', () => {
   const sync = recommendedActions.find((a) => a.kind === 'adapters-sync');
   assert.ok(sync?.remediationRoute?.primary);
 });
+
+test('synthesizeVerdict detects team-understaffed signal', () => {
+  const readModel = {
+    parity: { ok: true, skipped: false },
+    contractViolations: { recentCount: 0 },
+    doctorLog: { recent: [] },
+    outcomes: { present: true, roles: {} },
+    alignmentCensus: { present: true, generatedAt: new Date().toISOString(), stale: false, audit: { regressions: [] }, skills: {} },
+    registryValidate: { needsRun: false, warningCount: 0 },
+    observations: { present: true, count: 1 },
+    orgGraph: {},
+    teamGovernance: {
+      present: true,
+      teamCount: 2,
+      teams: {
+        'product-group': { id: 'product-group', name: 'Product Group', roleCount: 5, specialistCount: 1, understaffed: true, escalationPathBroken: false, ownerExists: true },
+        'engineering-group': { id: 'engineering-group', name: 'Engineering Group', roleCount: 6, specialistCount: 3, understaffed: false, escalationPathBroken: false, ownerExists: true },
+      },
+    },
+    projectDir: '/tmp',
+  };
+  const { gaps, recommendedActions } = synthesizeVerdict(readModel);
+  const staffGap = gaps.find((g) => g.id === 'team-understaffed');
+  assert.ok(staffGap);
+  assert.equal(staffGap.severity, 'high');
+  assert.ok(staffGap.detail.includes('product-group'));
+  const action = recommendedActions.find((a) => a.kind === 'specialist-review' && a.summary.includes('staffing'));
+  assert.ok(action);
+});
+
+test('synthesizeVerdict detects escalation-path-broken signal', () => {
+  const readModel = {
+    parity: { ok: true, skipped: false },
+    contractViolations: { recentCount: 0 },
+    doctorLog: { recent: [] },
+    outcomes: { present: true, roles: {} },
+    alignmentCensus: { present: true, generatedAt: new Date().toISOString(), stale: false, audit: { regressions: [] }, skills: {} },
+    registryValidate: { needsRun: false, warningCount: 0 },
+    observations: { present: true, count: 1 },
+    orgGraph: {},
+    teamGovernance: {
+      present: true,
+      teamCount: 1,
+      teams: {
+        'quality-group': { id: 'quality-group', name: 'Quality Group', roleCount: 6, specialistCount: 3, understaffed: false, escalationPathBroken: true, ownerExists: true },
+      },
+    },
+    projectDir: '/tmp',
+  };
+  const { gaps, recommendedActions } = synthesizeVerdict(readModel);
+  const escalGap = gaps.find((g) => g.id === 'escalation-path-broken');
+  assert.ok(escalGap);
+  assert.equal(escalGap.severity, 'high');
+  assert.ok(escalGap.detail.includes('quality-group'));
+  const action = recommendedActions.find((a) => a.kind === 'registry-validate');
+  assert.ok(action);
+});
+
+test('synthesizeVerdict detects team-decision-violation signal', () => {
+  const readModel = {
+    parity: { ok: true, skipped: false },
+    contractViolations: { recentCount: 0 },
+    doctorLog: { recent: [] },
+    outcomes: { present: true, roles: {} },
+    alignmentCensus: { present: true, generatedAt: new Date().toISOString(), stale: false, audit: { regressions: [] }, skills: {} },
+    registryValidate: { needsRun: false, warningCount: 0 },
+    observations: { present: true, count: 1 },
+    orgGraph: {},
+    teamGovernance: {
+      present: true,
+      teamCount: 2,
+      teams: {
+        'governance-group': { id: 'governance-group', name: 'Governance Group', owner: 'security', roleCount: 2, specialistCount: 0, understaffed: false, escalationPathBroken: false, ownerExists: false },
+        'operations-group': { id: 'operations-group', name: 'Operations Group', owner: 'sre', roleCount: 4, specialistCount: 2, understaffed: false, escalationPathBroken: false, ownerExists: true },
+      },
+    },
+    projectDir: '/tmp',
+  };
+  const { gaps, recommendedActions } = synthesizeVerdict(readModel);
+  const violGap = gaps.find((g) => g.id === 'team-decision-violation');
+  assert.ok(violGap);
+  assert.equal(violGap.severity, 'high');
+  assert.ok(violGap.detail.includes('governance-group'));
+  assert.ok(violGap.detail.includes('security'));
+  const action = recommendedActions.find((a) => a.kind === 'specialist-review' && a.summary.includes('owner'));
+  assert.ok(action);
+});
