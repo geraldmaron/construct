@@ -1,1032 +1,1671 @@
 {
-  "$schema": "./contracts.schema.json",
-  "version": 1,
-  "description": "Explicit service contracts between Construct agents. Each contract binds a producer→consumer pair to a typed handoff: what artifact, what preconditions, what postconditions, what the terminal state looks like. Consolidates doc ownership, routing map, output schemas, and framing/research/quality gates into one machine-readable source of truth.",
-  "terminalStates": ["DONE", "BLOCKED", "NEEDS_MAIN_INPUT"],
-  "severities": {
-    "blocking": ["BLOCKED_CONTRACT", "CRITICAL"],
-    "warning": ["HIGH", "APPROVED_WITH_WARNINGS"],
-    "info": ["MEDIUM", "LOW"]
+  "user-to-construct": {
+    "id": "user-to-construct",
+    "producer": "user",
+    "consumer": "construct",
+    "trigger": {
+      "always": true
+    },
+    "input": {
+      "shape": "natural-language-request",
+      "mustContain": [
+        "goal"
+      ]
+    },
+    "output": {
+      "shape": "routed-plan",
+      "mustContain": [
+        "track",
+        "specialists",
+        "dispatchPlan"
+      ]
+    },
+    "preconditions": [
+      "Session bootstrap completed: project_context and memory_search called, plus relevant repo docs read as needed"
+    ],
+    "postconditions": [
+      "Intent classified; work category tagged",
+      "Route decision surfaced as a single-sentence plan"
+    ],
+    "description": ""
   },
-  "contracts": [
-    {
-      "id": "user-to-construct",
-      "producer": "user",
-      "consumer": "construct",
-      "trigger": { "always": true },
-      "input": {
-        "shape": "natural-language-request",
-        "mustContain": ["goal"]
-      },
-      "output": {
-        "shape": "routed-plan",
-        "mustContain": ["track", "specialists", "dispatchPlan"]
-      },
-      "preconditions": [
-        "Session bootstrap completed: project_context and memory_search called, plus relevant repo docs read as needed"
-      ],
-      "postconditions": [
-        "Intent classified; work category tagged",
-        "Route decision surfaced as a single-sentence plan"
+  "construct-to-orchestrator": {
+    "id": "construct-to-orchestrator",
+    "producer": "construct",
+    "consumer": "cx-orchestrator",
+    "trigger": {
+      "track": "orchestrated"
+    },
+    "input": {
+      "shape": "task-packet",
+      "mustContain": [
+        "goal",
+        "intent",
+        "workCategory",
+        "riskFlags",
+        "acceptanceCriteria"
       ]
     },
-    {
-      "id": "construct-to-orchestrator",
-      "producer": "construct",
-      "consumer": "cx-orchestrator",
-      "trigger": { "track": "orchestrated" },
-      "input": {
-        "shape": "task-packet",
-        "mustContain": ["goal", "intent", "workCategory", "riskFlags", "acceptanceCriteria"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/decision.json",
-        "type": "decision"
-      },
-      "preconditions": [
-        "framingChallenge gate honored if required",
-        "externalResearch gate honored if required",
-        "docAuthoring.owner present if authoring a typed document"
-      ],
-      "postconditions": [
-        "Dispatch plan emitted with specialists in sequence",
-        "Parallel work marked with [parallel: ...] tags"
+    "output": {
+      "schema": "lib/contract-schemas/decision.json",
+      "type": "decision"
+    },
+    "preconditions": [
+      "framingChallenge gate honored if required",
+      "externalResearch gate honored if required",
+      "docAuthoring.owner present if authoring a typed document"
+    ],
+    "postconditions": [
+      "Dispatch plan emitted with specialists in sequence",
+      "Parallel work marked with [parallel: ...] tags"
+    ],
+    "description": ""
+  },
+  "researcher-to-architect": {
+    "id": "researcher-to-architect",
+    "producer": "cx-researcher",
+    "consumer": "cx-architect",
+    "trigger": {
+      "externalResearch.required": true,
+      "riskFlags": [
+        "architecture"
       ]
     },
-    {
-      "id": "researcher-to-architect",
-      "producer": "cx-researcher",
-      "consumer": "cx-architect",
-      "trigger": { "externalResearch.required": true, "riskFlags": ["architecture"] },
-      "input": {
-        "shape": "research-brief",
-        "mustContain": ["question", "method", "sources", "findings", "confidence"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/decision.json",
-        "type": "decision"
-      },
-      "preconditions": [
-        "≥2 independent primary sources cited per load-bearing claim",
-        "Source classes tagged (internal/primary/secondary/tertiary)"
-      ],
-      "postconditions": [
-        "Architect's ADR cites the primary sources provided",
-        "Any conflicting evidence surfaced, not suppressed"
+    "input": {
+      "shape": "research-brief",
+      "mustContain": [
+        "question",
+        "method",
+        "sources",
+        "findings",
+        "confidence"
       ]
     },
-    {
-      "id": "researcher-to-product-manager",
-      "producer": "cx-researcher",
-      "consumer": "cx-product-manager",
-      "trigger": { "docAuthoring.docType": ["prd", "meta-prd", "prfaq", "one-pager"] },
-      "input": {
-        "shape": "evidence-brief",
-        "mustContain": ["question", "findings", "sources", "confidence", "openQuestions"]
-      },
-      "output": {
-        "shape": "prd-handoff",
-        "mustContain": ["problem", "users", "functionalRequirements", "acceptanceCriteria"]
-      },
-      "preconditions": [
-        "Evidence threshold stated and met for each requirement"
-      ],
-      "postconditions": [
-        "PRD Problem section does not reference ticket IDs, roadmap items, or artifact filenames",
-        "Every functional requirement traces to observed user evidence",
-        {
-          "id": "prd-has-problem-section",
-          "description": "PRD must contain a Problem section",
-          "check": "artifact-has-section",
-          "section": "Problem"
-        },
-        {
-          "id": "prd-numeric-claims-cited",
-          "description": "Every numeric claim in the PRD body cites a source (no fabricated percentages or multipliers)",
-          "check": "artifact-claims-cited"
-        },
-        {
-          "id": "prd-manifest-reviewers",
-          "description": "Manifest required reviewers must appear in agent log before handoff",
-          "check": "artifact-reviewers-seen",
-          "fromManifest": true
-        }
-      ]
+    "output": {
+      "schema": "lib/contract-schemas/decision.json",
+      "type": "decision"
     },
-    {
-      "id": "product-manager-to-architect",
-      "producer": "cx-product-manager",
-      "consumer": "cx-architect",
-      "trigger": { "docAuthoring.docType": ["prd", "meta-prd", "adr", "rfc"] },
-      "input": {
-        "shape": "prd-handoff",
-        "mustContain": ["problem", "functionalRequirements", "nonFunctionalRequirements", "acceptanceCriteria", "constraints"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/decision.json",
-        "type": "decision"
-      },
-      "preconditions": [
-        "cx-devil-advocate framing challenge logged if riskFlags.architecture"
-      ],
-      "postconditions": [
-        "ADR Problem section traces to PRD Problem, not to tickets",
-        "ADR Rejected alternatives section present with ≥2 alternatives and specific rejection reasons",
-        "Reversibility section states whether one-way or two-way door",
-        {
-          "id": "adr-has-rejected-alternatives",
-          "description": "ADR must contain a Rejected Alternatives section",
-          "check": "artifact-has-section",
-          "section": "Rejected Alternatives"
-        },
-        {
-          "id": "adr-reversibility-stated",
-          "description": "ADR Reversibility section is present and non-empty",
-          "check": "artifact-section-nonempty",
-          "section": "Reversibility"
-        },
-        {
-          "id": "adr-consequences-stated",
-          "description": "ADR Consequences section is present and non-empty",
-          "check": "artifact-section-nonempty",
-          "section": "Consequences"
-        },
-        {
-          "id": "adr-numeric-claims-cited",
-          "description": "Every numeric claim in the ADR body cites a source",
-          "check": "artifact-claims-cited"
-        },
-        {
-          "id": "adr-manifest-reviewers",
-          "description": "Manifest required reviewers must appear in agent log before handoff",
-          "check": "artifact-reviewers-seen",
-          "fromManifest": true
-        }
-      ]
-    },
-    {
-      "id": "architect-to-devil-advocate",
-      "producer": "cx-architect",
-      "consumer": "cx-devil-advocate",
-      "trigger": { "framingChallenge.required": true },
-      "input": {
-        "shape": "framing-proposal",
-        "mustContain": ["problemStatement", "proposedApproach", "assumptions"]
-      },
-      "output": {
-        "shape": "challenge-report",
-        "mustContain": ["verdict", "counterevidence", "reframingProposals"]
-      },
-      "preconditions": [
-        "Problem statement stated independent of tickets/transcripts"
-      ],
-      "postconditions": [
-        "If verdict is BLOCKED, architect revises framing before proceeding",
-        "Challenge checkpoint logged to audit trail"
-      ]
-    },
-    {
-      "id": "architect-to-engineer",
-      "producer": "cx-architect",
-      "consumer": "cx-engineer",
-      "trigger": { "intent": ["implementation", "fix"] },
-      "input": {
-        "schema": "lib/contract-schemas/decision.json",
-        "mustContain": ["goal", "approach", "tasks", "acceptanceCriteria"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/implementation.json",
-        "type": "implementation"
-      },
-      "preconditions": [
-        "ADR approved (or fast-track noted); no pending CRITICAL review findings",
-        "Task packet contains readFirst and doNotChange lists"
-      ],
-      "postconditions": [
-        "Implementation cites the ADR tasks it completed",
-        "filesChanged matches tasks in the ADR",
-        "verificationChecklist evaluated before DONE"
-      ]
-    },
-    {
-      "id": "architect-to-ai-engineer",
-      "producer": "cx-architect",
-      "consumer": "cx-ai-engineer",
-      "trigger": { "riskFlags": ["ai"], "intent": ["implementation"] },
-      "input": {
-        "schema": "lib/contract-schemas/decision.json",
-        "mustContain": ["goal", "approach", "evalCriteria"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/implementation.json",
-        "type": "implementation"
-      },
-      "preconditions": [
-        "Eval set defined with failure cases before prompt/model changes ship"
-      ],
-      "postconditions": [
-        "Eval verdict from cx-evaluator before DONE"
-      ]
-    },
-    {
-      "id": "engineer-to-reviewer",
-      "producer": "cx-engineer",
-      "consumer": "cx-reviewer",
-      "trigger": { "always": true },
-      "input": {
-        "schema": "lib/contract-schemas/implementation.json",
-        "mustContain": ["filesChanged", "verificationChecklist"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/review-report.json",
-        "type": "review-report",
-        "mustContain": ["verdict"],
-        "mustContainOneOf": [["findings", "noIssuesFoundAt"]],
-        "mustMatchEnum": {
-          "verdict": ["APPROVED", "APPROVED_WITH_WARNINGS", "BLOCKED"]
-        }
-      },
-      "preconditions": [
-        "Engineer status is not BLOCKED",
-        "Tests compiled; static analysis run"
-      ],
-      "postconditions": [
-        "Verdict in {APPROVED, APPROVED_WITH_WARNINGS, BLOCKED}",
-        "BLOCKED verdict stops downstream work until addressed",
-        "CRITICAL findings prevent release",
-        "Either findings is non-empty or noIssuesFoundAt enumerates the inspected paths — prevents silent rubber-stamp reviews"
-      ]
-    },
-    {
-      "id": "engineer-to-qa",
-      "producer": "cx-engineer",
-      "consumer": "cx-qa",
-      "trigger": { "always": true },
-      "input": {
-        "schema": "lib/contract-schemas/implementation.json",
-        "mustContain": ["filesChanged", "tests"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/test-report.json",
-        "type": "test-report"
-      },
-      "preconditions": [
-        "Test plan exists or is derivable from acceptance criteria"
-      ],
-      "postconditions": [
-        "Verdict in {PASS, FAIL}",
-        "Coverage meets project threshold",
-        "FAIL blocks DONE in workflow"
-      ]
-    },
-    {
-      "id": "reviewer-to-security",
-      "producer": "cx-reviewer",
-      "consumer": "cx-security",
-      "trigger": { "riskFlags": ["security"] },
-      "input": {
-        "schema": "lib/contract-schemas/review-report.json",
-        "mustContain": ["target", "findings"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/review-report.json",
-        "type": "review-report",
-        "specialization": "security",
-        "mustContain": ["threatModelUpdatedAt", "contractStart"]
-      },
-      "preconditions": [
-        "Scope tagged as auth/secrets/payments/user-data"
-      ],
-      "postconditions": [
-        "Attacker-perspective findings logged",
-        "Threat model updated if architecture surface changed",
-        "threatModelUpdatedAt >= contractStart — prevents post-hoc threat models written after the architecture has shipped"
-      ]
-    },
-    {
-      "id": "qa-to-release-manager",
-      "producer": "cx-qa",
-      "consumer": "cx-release-manager",
-      "trigger": { "intent": ["implementation"], "workCategory": "deep" },
-      "input": {
-        "schema": "lib/contract-schemas/test-report.json",
-        "mustContain": ["verdict", "passed", "failed", "coverage"]
-      },
-      "output": {
-        "shape": "release-decision",
-        "mustContain": ["decision", "rolloutPlan", "rollbackPlan"]
-      },
-      "preconditions": [
-        "All upstream verdicts APPROVED; QA verdict PASS"
-      ],
-      "postconditions": [
-        "Rollback plan tested, not just described",
-        "Rollout plan has concrete checkpoint signals"
-      ]
-    },
-    {
-      "id": "sre-to-release-manager",
-      "producer": "cx-sre",
-      "consumer": "cx-release-manager",
-      "trigger": { "riskFlags": ["dataIntegrity"], "intent": ["implementation"] },
-      "input": {
-        "shape": "sre-readiness",
-        "mustContain": ["slos", "runbooks", "alerts", "dashboards"]
-      },
-      "output": {
-        "shape": "release-decision",
-        "mustContain": ["decision", "rollbackPlan"]
-      },
-      "preconditions": [
-        "Runbook exists for the new code path; rollback procedure verified"
-      ],
-      "postconditions": [
-        "On-call briefed; alert thresholds set"
-      ]
-    },
-    {
-      "id": "any-to-docs-keeper",
-      "producer": "*",
-      "consumer": "cx-docs-keeper",
-      "trigger": { "postConsumer": true, "changedCoreDocs": true },
-      "input": {
-        "shape": "doc-delta",
-        "mustContain": ["filesChanged", "decision"]
-      },
-      "output": {
-        "shape": "doc-sync",
-        "mustContain": ["updatedDocs", "crossReferencesAdded", "crossDocCoherenceCheckRan", "coherenceDiff"]
-      },
-      "preconditions": [
-        "Implementation or decision is marked DONE"
-      ],
-      "postconditions": [
-        "Cross-doc coherence preserved (PRD ↔ ADR ↔ code)",
-        "AUTO-managed regions regenerated via construct sync",
-        "crossDocCoherenceCheckRan=true with a named coherenceDiff — prevents stale-doc PRs that claim 'docs updated' without a real diff"
-      ]
-    },
-    {
-      "id": "any-to-debugger",
-      "producer": "*",
-      "consumer": "cx-debugger",
-      "trigger": { "intent": "investigation", "category": "bug" },
-      "input": {
-        "shape": "bug-signal",
-        "mustContain": ["symptoms", "scope"]
-      },
-      "output": {
-        "shape": "root-cause-report",
-        "mustContain": ["rootCause", "rootCauseConfirmedVia", "fix"],
-        "mustMatchEnum": {
-          "rootCauseConfirmedVia": ["reproduction", "trace", "test"]
-        }
-      },
-      "preconditions": [
-        "Bug reproduced or trace captured before proposing a fix"
-      ],
-      "postconditions": [
-        "rootCauseConfirmedVia in {reproduction, trace, test} — prevents symptom-only fixes that don't address the actual cause"
-      ]
-    },
-    {
-      "id": "any-to-designer",
-      "producer": "*",
-      "consumer": "cx-designer",
-      "trigger": { "riskFlags": ["ui", "accessibility"] },
-      "input": {
-        "shape": "design-brief",
-        "mustContain": ["surface", "users", "context"]
-      },
-      "output": {
-        "shape": "design-deliverable",
-        "mustContain": ["deliverable", "accessibilityCheckRan"]
-      },
-      "preconditions": [
-        "Affected surface scoped"
-      ],
-      "postconditions": [
-        "accessibilityCheckRan=true — prevents post-hoc a11y fixes by forcing a pre-ship check on every design deliverable"
-      ]
-    },
-    {
-      "id": "any-to-sre-incident",
-      "producer": "*",
-      "consumer": "cx-sre",
-      "trigger": { "intent": "investigation", "category": "incident" },
-      "input": {
-        "shape": "incident-signal",
-        "mustContain": ["symptoms", "scope", "firstObserved"]
-      },
-      "output": {
-        "shape": "incident-report",
-        "mustContain": ["rootCause", "timeline", "remediation", "preventions"]
-      },
-      "preconditions": [
-        "Blast radius assessed before remediation"
-      ],
-      "postconditions": [
-        "Blameless postmortem; no tickets in Problem statement"
-      ]
-    },
-    {
-      "id": "construct-to-rd-lead",
-      "producer": "construct",
-      "consumer": "cx-rd-lead",
-      "trigger": { "framingChallenge.required": true },
-      "input": {
-        "shape": "framing-request",
-        "mustContain": ["goal", "uncertainty", "assumptions"]
-      },
-      "output": {
-        "shape": "framing-brief",
-        "mustContain": ["problemStatement", "hypothesis", "keyUnknowns", "evidenceThreshold", "recommendation"]
-      },
-      "preconditions": [
-        "Framing gate fires before architecture work begins",
-        "Strategy bets and non-bets reviewed in `.cx/knowledge/decisions/strategy/`"
-      ],
-      "postconditions": [
-        "Hypothesis is falsifiable and stated as 'We believe [X] will result in [Y] because [Z].'",
-        "Evidence threshold names a specific result that would confirm or disconfirm",
-        {
-          "id": "rd-framing-has-problem-section",
-          "description": "Framing artifact must contain a Problem section",
-          "check": "artifact-has-section",
-          "section": "Problem"
-        },
-        {
-          "id": "rd-framing-has-constraints-section",
-          "description": "Framing artifact must contain a Constraints section",
-          "check": "artifact-has-section",
-          "section": "Constraints"
-        },
-        {
-          "id": "rd-framing-has-open-questions-section",
-          "description": "Framing artifact must contain an Open Questions section",
-          "check": "artifact-has-section",
-          "section": "Open Questions"
-        }
-      ]
-    },
-    {
-      "id": "rd-lead-to-architect",
-      "producer": "cx-rd-lead",
-      "consumer": "cx-architect",
-      "trigger": { "framingChallenge.required": true, "rdLead.verdict": "frame-approved" },
-      "input": {
-        "shape": "framing-brief",
-        "mustContain": ["problemStatement", "hypothesis", "keyUnknowns", "evidenceThreshold", "recommendation"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/decision.json",
-        "type": "decision"
-      },
-      "preconditions": [
-        "Framing artifact exists at `.cx/framing/<slug>.md`",
-        "Hypothesis cleared of unverified assumptions"
-      ],
-      "postconditions": [
-        "ADR cites the framing brief as the upstream source for its Problem statement",
-        "Architect does not productionize components listed under 'WHAT NOT TO PRODUCTIONIZE YET'"
-      ]
-    },
-    {
-      "id": "product-manager-to-ux-researcher",
-      "producer": "cx-product-manager",
-      "consumer": "cx-ux-researcher",
-      "trigger": { "docAuthoring.docType": ["prd", "meta-prd", "prfaq"], "riskFlags": ["ux"] },
-      "input": {
-        "shape": "ux-research-request",
-        "mustContain": ["surface", "userQuestion", "decisionPending"]
-      },
-      "output": {
-        "shape": "ux-brief",
-        "mustContain": ["userProfiles", "jobsToBeDone", "frictionMap", "assumptionsLog"]
-      },
-      "preconditions": [
-        "PRD has an open user-research question; PRD not finalized"
-      ],
-      "postconditions": [
-        "Every friction-map entry cites the observation or session it came from",
-        "Stated preferences are labeled distinctly from observed behaviors",
-        {
-          "id": "ux-research-has-sources-section",
-          "description": "UX research artifact must contain a Sources section",
-          "check": "artifact-has-section",
-          "section": "Sources"
-        },
-        {
-          "id": "ux-research-claims-cited",
-          "description": "Every numeric or generalization claim in the UX brief cites the research source",
-          "check": "artifact-claims-cited"
-        }
-      ]
-    },
-    {
-      "id": "architect-to-operations",
-      "producer": "cx-architect",
-      "consumer": "cx-operations",
-      "trigger": { "intent": ["implementation"], "workCategory": "deep" },
-      "input": {
-        "schema": "lib/contract-schemas/decision.json",
-        "mustContain": ["goal", "approach", "tasks", "acceptanceCriteria"]
-      },
-      "output": {
-        "shape": "ops-plan",
-        "mustContain": ["sequencedTasks", "dependencyGraph", "ownershipMatrix", "verificationGates"]
-      },
-      "preconditions": [
-        "Architect plan and devil-advocate feedback resolved",
-        "Tasks are atomic and individually verifiable"
-      ],
-      "postconditions": [
-        "Every task names a single owner",
-        "Every task names a verification gate and definition-of-done",
-        "Dependency graph identifies blockers; no task lies on a hidden critical path"
-      ]
-    },
-    {
-      "id": "any-to-business-strategist",
-      "producer": "*",
-      "consumer": "cx-business-strategist",
-      "trigger": { "strategy.required": true },
-      "input": {
-        "shape": "strategy-request",
-        "mustContain": ["goal", "marketContext", "decisionPending"]
-      },
-      "output": {
-        "shape": "strategic-memo",
-        "mustContain": ["strategicContext", "options", "recommendation", "evidence", "decisionDeadline"]
-      },
-      "preconditions": [
-        "Strategy documents in `.cx/knowledge/decisions/strategy/` reviewed for declared Bets and Non-bets"
-      ],
-      "postconditions": [
-        "Options section contains 2-4 genuinely distinct strategic paths, not implementation variants",
-        "Any recommendation that contradicts a declared Non-bet is surfaced explicitly with a user-decision marker",
-        {
-          "id": "strategic-memo-has-market-context",
-          "description": "Strategic memo must contain a Market Context section",
-          "check": "artifact-has-section",
-          "section": "Market Context"
-        },
-        {
-          "id": "strategic-memo-options-nonempty",
-          "description": "Strategic memo Options section is present and non-empty",
-          "check": "artifact-section-nonempty",
-          "section": "Options"
-        },
-        {
-          "id": "strategic-memo-has-strategic-risks",
-          "description": "Strategic memo must contain a Strategic Risks section",
-          "check": "artifact-has-section",
-          "section": "Strategic Risks"
-        },
-        {
-          "id": "strategic-memo-claims-cited",
-          "description": "Every market/competitive numeric claim cites a primary source with a date",
-          "check": "artifact-claims-cited"
-        }
-      ]
-    },
-    {
-      "id": "business-strategist-to-product-manager",
-      "producer": "cx-business-strategist",
-      "consumer": "cx-product-manager",
-      "trigger": { "strategy.required": true },
-      "input": {
-        "shape": "strategic-memo",
-        "mustContain": ["strategicContext", "recommendation", "evidence"]
-      },
-      "output": {
-        "shape": "prd-handoff",
-        "mustContain": ["problem", "users", "functionalRequirements", "acceptanceCriteria"]
-      },
-      "preconditions": [
-        "Strategic memo signed off; recommended option carried into PRD framing"
-      ],
-      "postconditions": [
-        "PRD Problem statement traces to the strategic memo's market context, not to internal roadmap items",
-        "PRD acknowledges the competitive dynamic named in the strategic memo"
-      ]
-    },
-    {
-      "id": "product-manager-to-data-analyst",
-      "producer": "cx-product-manager",
-      "consumer": "cx-data-analyst",
-      "trigger": { "docAuthoring.docType": ["prd", "meta-prd"], "riskFlags": ["metrics"] },
-      "input": {
-        "shape": "metrics-request",
-        "mustContain": ["successDefinition", "decisionPending"]
-      },
-      "output": {
-        "shape": "metrics-analysis",
-        "mustContain": ["metricDefinition", "baseline", "successThreshold", "dataQualityCaveats"]
-      },
-      "preconditions": [
-        "Success definition stated in writing before metric design begins"
-      ],
-      "postconditions": [
-        "Every percentage, multiplier, or magnitude cites the query, dashboard, or run that produced it",
-        "Baseline is a measured value or names the plan to establish one",
-        {
-          "id": "metrics-analysis-claims-cited",
-          "description": "Every numeric claim in the analysis cites the query or dashboard",
-          "check": "artifact-claims-cited"
-        }
-      ]
-    },
-    {
-      "id": "data-analyst-to-product-manager",
-      "producer": "cx-data-analyst",
-      "consumer": "cx-product-manager",
-      "trigger": { "docAuthoring.docType": ["prd", "meta-prd"], "riskFlags": ["metrics"] },
-      "input": {
-        "shape": "metrics-analysis",
-        "mustContain": ["metricDefinition", "baseline", "successThreshold"]
-      },
-      "output": {
-        "shape": "prd-handoff",
-        "mustContain": ["acceptanceCriteria", "successMetrics"]
-      },
-      "preconditions": [
-        "Metric definition reviewed for vanity-metric risk and for hit-without-solving-the-problem risk"
-      ],
-      "postconditions": [
-        "PRD success metrics carry the cited baseline and threshold from the analysis",
-        "Metrics that can be hit without solving the problem are flagged and replaced"
-      ]
-    },
-    {
-      "id": "architect-to-evaluator",
-      "producer": "cx-architect",
-      "consumer": "cx-evaluator",
-      "trigger": { "riskFlags": ["ai", "quality"], "intent": ["implementation"] },
-      "input": {
-        "schema": "lib/contract-schemas/decision.json",
-        "mustContain": ["goal", "approach", "evalCriteria"]
-      },
-      "output": {
-        "shape": "eval-spec",
-        "mustContain": ["evaluationCriteria", "scoringRubric", "testCases", "comparisonProtocol", "passFailThreshold"]
-      },
-      "preconditions": [
-        "What 'better' means is defined in writing before the work is done",
-        "Baseline run identified or scheduled before proposed change runs"
-      ],
-      "postconditions": [
-        "Failing case is defined before results are seen",
-        "Regression checks enumerated; not just success-path test cases",
-        {
-          "id": "eval-spec-has-success-criteria",
-          "description": "Eval spec must contain a Success Criteria section",
-          "check": "artifact-has-section",
-          "section": "Success Criteria"
-        },
-        {
-          "id": "eval-spec-has-baseline",
-          "description": "Eval spec must contain a Baseline section",
-          "check": "artifact-has-section",
-          "section": "Baseline"
-        }
-      ]
-    },
-    {
-      "id": "architect-to-platform-engineer",
-      "producer": "cx-architect",
-      "consumer": "cx-platform-engineer",
-      "trigger": { "riskFlags": ["platform", "infrastructure"], "intent": ["implementation"] },
-      "input": {
-        "schema": "lib/contract-schemas/decision.json",
-        "mustContain": ["goal", "approach", "platformDependencies"]
-      },
-      "output": {
-        "shape": "platform-plan",
-        "mustContain": ["problem", "solution", "impact", "migration", "rollback"]
-      },
-      "preconditions": [
-        "Observed friction quantified; not hypothetical future problems",
-        "Existing CI/CD and tooling surveyed before proposing new tooling"
-      ],
-      "postconditions": [
-        "Migration path described for existing workflows",
-        "Rollback procedure exists in case the change makes things worse",
-        "Improvement removes more configuration than it adds, or the added config is justified"
-      ]
-    },
-    {
-      "id": "platform-engineer-to-engineer",
-      "producer": "cx-platform-engineer",
-      "consumer": "cx-engineer",
-      "trigger": { "riskFlags": ["platform"] },
-      "input": {
-        "shape": "platform-plan",
-        "mustContain": ["solution", "migration", "rollback"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/implementation.json",
-        "type": "implementation"
-      },
-      "preconditions": [
-        "Platform deps available in CI; lockfile updates reviewed",
-        "Secrets confirmed absent from build logs"
-      ],
-      "postconditions": [
-        "Implementation cites the platform plan and applies the migration steps in order",
-        "Rollback procedure verified once on a non-production environment"
-      ]
-    },
-    {
-      "id": "architect-to-legal-compliance",
-      "producer": "cx-architect",
-      "consumer": "cx-legal-compliance",
-      "trigger": { "riskFlags": ["compliance", "privacy", "licensing"] },
-      "input": {
-        "schema": "lib/contract-schemas/decision.json",
-        "mustContain": ["goal", "approach", "dataFlows"]
-      },
-      "output": {
-        "shape": "compliance-memo",
-        "mustContain": ["risks", "severity", "remediation"]
-      },
-      "preconditions": [
-        "Data flows enumerated: what is collected, stored, processed, and exported",
-        "Dependency tree surfaced past the first layer for licensing review"
-      ],
-      "postconditions": [
-        "Every assertion cites the regulation, standard, or contract clause it rests on",
-        "AI-generated user-facing content has a disclosure strategy noted, or is marked not-applicable with reason",
-        {
-          "id": "compliance-memo-has-regulatory-citations",
-          "description": "Compliance memo must contain a Regulatory Citations section",
-          "check": "artifact-has-section",
-          "section": "Regulatory Citations"
-        },
-        {
-          "id": "compliance-memo-has-remediation-plan",
-          "description": "Compliance memo must contain a Remediation Plan section",
-          "check": "artifact-has-section",
-          "section": "Remediation Plan"
-        }
-      ]
-    },
-    {
-      "id": "legal-compliance-to-release-manager",
-      "producer": "cx-legal-compliance",
-      "consumer": "cx-release-manager",
-      "trigger": { "riskFlags": ["compliance"], "intent": ["implementation"] },
-      "input": {
-        "shape": "compliance-memo",
-        "mustContain": ["risks", "severity", "remediation"]
-      },
-      "output": {
-        "shape": "release-decision",
-        "mustContain": ["decision", "rolloutPlan", "rollbackPlan"]
-      },
-      "preconditions": [
-        "All must-fix compliance items closed or accepted in writing by the release owner"
-      ],
-      "postconditions": [
-        "Release blocks if any must-fix item is unresolved",
-        "Should-fix items carry a tracking issue and an owner"
-      ]
-    },
-    {
-      "id": "designer-to-accessibility",
-      "producer": "cx-designer",
-      "consumer": "cx-accessibility",
-      "trigger": { "riskFlags": ["ui", "accessibility"] },
-      "input": {
-        "shape": "design-deliverable",
-        "mustContain": ["surface", "deliverable", "accessibilityCheckRan"]
-      },
-      "output": {
-        "shape": "a11y-findings",
-        "mustContain": ["findings", "wcagCriterion", "userImpact", "fix"]
-      },
-      "preconditions": [
-        "Flow exercised with a keyboard and a screen reader; not just spec-read"
-      ],
-      "postconditions": [
-        "Every finding cites a WCAG criterion and a concrete repro step",
-        "Findings that weren't exercised with the assistive technology are labeled 'unverified'"
-      ]
-    },
-    {
-      "id": "accessibility-to-qa",
-      "producer": "cx-accessibility",
-      "consumer": "cx-qa",
-      "trigger": { "riskFlags": ["ui", "accessibility"] },
-      "input": {
-        "shape": "a11y-findings",
-        "mustContain": ["findings", "wcagCriterion", "userImpact"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/test-report.json",
-        "type": "test-report"
-      },
-      "preconditions": [
-        "A11y findings filed against specific elements (file:line) before QA verification"
-      ],
-      "postconditions": [
-        "QA test plan covers keyboard-only and screen-reader paths for each finding",
-        "Findings flagged 'unverified' by accessibility get a verified test in QA before close"
-      ]
-    },
-    {
-      "id": "any-to-explorer",
-      "producer": "*",
-      "consumer": "cx-explorer",
-      "trigger": { "intent": "investigation", "category": "exploration" },
-      "input": {
-        "shape": "exploration-request",
-        "mustContain": ["question", "scope"]
-      },
-      "output": {
-        "shape": "exploration-findings",
-        "mustContain": ["entryPoints", "executionPath", "keyFiles", "dataFlow", "gaps"]
-      },
-      "preconditions": [
-        "Scope tagged; investigation does not follow imports past two hops from named entry points"
-      ],
-      "postconditions": [
-        "Every claim about existing code cites file:line from a read actually performed",
-        "One match is not called a pattern; multi-callsite patterns cite each call site",
-        {
-          "id": "exploration-findings-claims-cited",
-          "description": "Every load-bearing claim cites file:line or a primary external reference",
-          "check": "artifact-claims-cited"
-        }
-      ]
-    },
-    {
-      "id": "explorer-to-engineer",
-      "producer": "cx-explorer",
-      "consumer": "cx-engineer",
-      "trigger": { "intent": ["implementation", "fix"], "explorer.findingsReady": true },
-      "input": {
-        "shape": "exploration-findings",
-        "mustContain": ["entryPoints", "keyFiles", "gaps"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/implementation.json",
-        "type": "implementation"
-      },
-      "preconditions": [
-        "Exploration findings reviewed; gaps and surprising dependencies surfaced"
-      ],
-      "postconditions": [
-        "Implementation reads the files cited in keyFiles before edits",
-        "Gaps named by explorer (missing tests, missing error handling) are addressed or filed"
-      ]
-    },
-    {
-      "id": "any-to-trace-reviewer",
-      "producer": "*",
-      "consumer": "cx-trace-reviewer",
-      "trigger": { "trace.anomaly": true },
-      "input": {
-        "shape": "trace-analysis-request",
-        "mustContain": ["scope", "window"]
-      },
-      "output": {
-        "shape": "trace-analysis",
-        "mustContain": ["flaggedAgents", "evidence", "recommendation"]
-      },
-      "preconditions": [
-        "Trace backend reachable via the configured `CONSTRUCT_TRACE_BACKEND` adapter"
-      ],
-      "postconditions": [
-        "Every performance claim cites the trace id and span",
-        "Promotion verdicts cite the staging-vs-production score delta, not a vibe",
-        "Variance and trend reported alongside median; stable medians that hide tail variance are surfaced"
-      ]
-    },
-    {
-      "id": "trace-reviewer-to-sre",
-      "producer": "cx-trace-reviewer",
-      "consumer": "cx-sre",
-      "trigger": { "trace.anomaly": true, "riskFlags": ["performance", "reliability"] },
-      "input": {
-        "shape": "trace-analysis",
-        "mustContain": ["flaggedAgents", "evidence"]
-      },
-      "output": {
-        "shape": "sre-readiness",
-        "mustContain": ["slos", "runbooks", "alerts"]
-      },
-      "preconditions": [
-        "Flagged agents meet the minimum trace threshold (20+); insufficient-trace agents deferred"
-      ],
-      "postconditions": [
-        "SRE adjusts alert thresholds or SLOs based on the cited trace evidence",
-        "Runbook updated for the failure pattern identified at fleet level"
-      ]
-    },
-    {
-      "id": "architect-to-data-engineer",
-      "producer": "cx-architect",
-      "consumer": "cx-data-engineer",
-      "trigger": { "riskFlags": ["data", "pipeline"], "intent": ["implementation"] },
-      "input": {
-        "schema": "lib/contract-schemas/decision.json",
-        "mustContain": ["goal", "approach", "dataContracts"]
-      },
-      "output": {
-        "shape": "pipeline-spec",
-        "mustContain": ["dataContract", "schema", "qualityGates", "retryPolicy"]
-      },
-      "preconditions": [
-        "Data volume, latency requirements, and existing stack clarified before architecture proposed",
-        "Existing schema inspected; column names and table relationships not invented"
-      ],
-      "postconditions": [
-        "Pipeline is idempotent and observable; not running on faith",
-        "Data contract is written down; quality gates defined as part of the design",
-        {
-          "id": "pipeline-spec-has-idempotency-plan",
-          "description": "Pipeline spec must contain an Idempotency Plan section",
-          "check": "artifact-has-section",
-          "section": "Idempotency Plan"
-        },
-        {
-          "id": "pipeline-spec-has-observability",
-          "description": "Pipeline spec must contain an Observability section",
-          "check": "artifact-has-section",
-          "section": "Observability"
-        }
-      ]
-    },
-    {
-      "id": "data-engineer-to-platform-engineer",
-      "producer": "cx-data-engineer",
-      "consumer": "cx-platform-engineer",
-      "trigger": { "riskFlags": ["data", "pipeline", "infrastructure"] },
-      "input": {
-        "shape": "pipeline-spec",
-        "mustContain": ["dataContract", "qualityGates"]
-      },
-      "output": {
-        "shape": "platform-plan",
-        "mustContain": ["problem", "solution", "migration", "rollback"]
-      },
-      "preconditions": [
-        "Pipeline operational requirements (alerts, retries, backfills) stated in pipeline spec"
-      ],
-      "postconditions": [
-        "Operational burden (who maintains, how to debug) accepted by platform owner",
-        "Pipeline observability surfaces appear on a named dashboard, not just in logs"
-      ]
-    },
-    {
-      "id": "qa-to-test-automation",
-      "producer": "cx-qa",
-      "consumer": "cx-test-automation",
-      "trigger": { "intent": ["implementation"], "automation.required": true },
-      "input": {
-        "schema": "lib/contract-schemas/test-report.json",
-        "mustContain": ["testStrategy", "verdict"]
-      },
-      "output": {
-        "shape": "automation-plan",
-        "mustContain": ["framework", "coverageTargets", "flakeBudget", "deterministicWaits"]
-      },
-      "preconditions": [
-        "Existing test infrastructure surveyed before proposing new frameworks",
-        "Flaky-test signal collected over N runs before calling a test flaky"
-      ],
-      "postconditions": [
-        "Tests use deterministic waits and stable selectors; not arbitrary sleeps",
-        "Coverage targets aim at behaviors that matter, not at line counts that pad the number",
-        {
-          "id": "automation-plan-has-flake-budget",
-          "description": "Automation plan must contain a Flake Budget section",
-          "check": "artifact-has-section",
-          "section": "Flake Budget"
-        }
-      ]
-    },
-    {
-      "id": "test-automation-to-engineer",
-      "producer": "cx-test-automation",
-      "consumer": "cx-engineer",
-      "trigger": { "automation.required": true },
-      "input": {
-        "shape": "automation-plan",
-        "mustContain": ["framework", "coverageTargets", "flakeBudget"]
-      },
-      "output": {
-        "schema": "lib/contract-schemas/implementation.json",
-        "type": "implementation"
-      },
-      "preconditions": [
-        "Test scaffolding lands before behavioral edits so the test fails for the right reason first"
-      ],
-      "postconditions": [
-        "Engineer adds at least one failing test that demonstrates the bug or missing behavior before implementing the fix",
-        "Quarantined flaky tests carry an owner and a remediation date"
-      ]
+    "preconditions": [
+      "≥2 independent primary sources cited per load-bearing claim",
+      "Source classes tagged (internal/primary/secondary/tertiary)"
+    ],
+    "postconditions": [
+      "Architect's ADR cites the primary sources provided",
+      "Any conflicting evidence surfaced, not suppressed"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "product-group",
+      "consumerTeam": "engineering-group",
+      "requiresApprovalFrom": []
     }
-  ]
+  },
+  "researcher-to-product-manager": {
+    "id": "researcher-to-product-manager",
+    "producer": "cx-researcher",
+    "consumer": "cx-product-manager",
+    "trigger": {
+      "docAuthoring.docType": [
+        "prd",
+        "meta-prd",
+        "prfaq",
+        "one-pager"
+      ]
+    },
+    "input": {
+      "shape": "evidence-brief",
+      "mustContain": [
+        "question",
+        "findings",
+        "sources",
+        "confidence",
+        "openQuestions"
+      ]
+    },
+    "output": {
+      "shape": "prd-handoff",
+      "mustContain": [
+        "problem",
+        "users",
+        "functionalRequirements",
+        "acceptanceCriteria"
+      ]
+    },
+    "preconditions": [
+      "Evidence threshold stated and met for each requirement"
+    ],
+    "postconditions": [
+      "PRD Problem section does not reference ticket IDs, roadmap items, or artifact filenames",
+      "Every functional requirement traces to observed user evidence",
+      {
+        "id": "prd-has-problem-section",
+        "description": "PRD must contain a Problem section",
+        "check": "artifact-has-section",
+        "section": "Problem"
+      },
+      {
+        "id": "prd-numeric-claims-cited",
+        "description": "Every numeric claim in the PRD body cites a source (no fabricated percentages or multipliers)",
+        "check": "artifact-claims-cited"
+      },
+      {
+        "id": "prd-manifest-reviewers",
+        "description": "Manifest required reviewers must appear in agent log before handoff",
+        "check": "artifact-reviewers-seen",
+        "fromManifest": true
+      }
+    ],
+    "description": ""
+  },
+  "product-manager-to-architect": {
+    "id": "product-manager-to-architect",
+    "producer": "cx-product-manager",
+    "consumer": "cx-architect",
+    "trigger": {
+      "docAuthoring.docType": [
+        "prd",
+        "meta-prd",
+        "adr",
+        "rfc"
+      ]
+    },
+    "input": {
+      "shape": "prd-handoff",
+      "mustContain": [
+        "problem",
+        "functionalRequirements",
+        "nonFunctionalRequirements",
+        "acceptanceCriteria",
+        "constraints"
+      ]
+    },
+    "output": {
+      "schema": "lib/contract-schemas/decision.json",
+      "type": "decision"
+    },
+    "preconditions": [
+      "cx-devil-advocate framing challenge logged if riskFlags.architecture"
+    ],
+    "postconditions": [
+      "ADR Problem section traces to PRD Problem, not to tickets",
+      "ADR Rejected alternatives section present with ≥2 alternatives and specific rejection reasons",
+      "Reversibility section states whether one-way or two-way door",
+      {
+        "id": "adr-has-rejected-alternatives",
+        "description": "ADR must contain a Rejected Alternatives section",
+        "check": "artifact-has-section",
+        "section": "Rejected Alternatives"
+      },
+      {
+        "id": "adr-reversibility-stated",
+        "description": "ADR Reversibility section is present and non-empty",
+        "check": "artifact-section-nonempty",
+        "section": "Reversibility"
+      },
+      {
+        "id": "adr-consequences-stated",
+        "description": "ADR Consequences section is present and non-empty",
+        "check": "artifact-section-nonempty",
+        "section": "Consequences"
+      },
+      {
+        "id": "adr-numeric-claims-cited",
+        "description": "Every numeric claim in the ADR body cites a source",
+        "check": "artifact-claims-cited"
+      },
+      {
+        "id": "adr-manifest-reviewers",
+        "description": "Manifest required reviewers must appear in agent log before handoff",
+        "check": "artifact-reviewers-seen",
+        "fromManifest": true
+      }
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "product-group",
+      "consumerTeam": "engineering-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "architect-to-devil-advocate": {
+    "id": "architect-to-devil-advocate",
+    "producer": "cx-architect",
+    "consumer": "cx-devil-advocate",
+    "trigger": {
+      "framingChallenge.required": true
+    },
+    "input": {
+      "shape": "framing-proposal",
+      "mustContain": [
+        "problemStatement",
+        "proposedApproach",
+        "assumptions"
+      ]
+    },
+    "output": {
+      "shape": "challenge-report",
+      "mustContain": [
+        "verdict",
+        "counterevidence",
+        "reframingProposals"
+      ]
+    },
+    "preconditions": [
+      "Problem statement stated independent of tickets/transcripts"
+    ],
+    "postconditions": [
+      "If verdict is BLOCKED, architect revises framing before proceeding",
+      "Challenge checkpoint logged to audit trail"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "engineering-group",
+      "consumerTeam": "quality-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "architect-to-engineer": {
+    "id": "architect-to-engineer",
+    "producer": "cx-architect",
+    "consumer": "cx-engineer",
+    "trigger": {
+      "intent": [
+        "implementation",
+        "fix"
+      ]
+    },
+    "input": {
+      "schema": "lib/contract-schemas/decision.json",
+      "mustContain": [
+        "goal",
+        "approach",
+        "tasks",
+        "acceptanceCriteria"
+      ]
+    },
+    "output": {
+      "schema": "lib/contract-schemas/implementation.json",
+      "type": "implementation"
+    },
+    "preconditions": [
+      "ADR approved (or fast-track noted); no pending CRITICAL review findings",
+      "Task packet contains readFirst and doNotChange lists"
+    ],
+    "postconditions": [
+      "Implementation cites the ADR tasks it completed",
+      "filesChanged matches tasks in the ADR",
+      "verificationChecklist evaluated before DONE"
+    ],
+    "description": ""
+  },
+  "architect-to-ai-engineer": {
+    "id": "architect-to-ai-engineer",
+    "producer": "cx-architect",
+    "consumer": "cx-ai-engineer",
+    "trigger": {
+      "riskFlags": [
+        "ai"
+      ],
+      "intent": [
+        "implementation"
+      ]
+    },
+    "input": {
+      "schema": "lib/contract-schemas/decision.json",
+      "mustContain": [
+        "goal",
+        "approach",
+        "evalCriteria"
+      ]
+    },
+    "output": {
+      "schema": "lib/contract-schemas/implementation.json",
+      "type": "implementation"
+    },
+    "preconditions": [
+      "Eval set defined with failure cases before prompt/model changes ship"
+    ],
+    "postconditions": [
+      "Eval verdict from cx-evaluator before DONE"
+    ],
+    "description": ""
+  },
+  "engineer-to-reviewer": {
+    "id": "engineer-to-reviewer",
+    "producer": "cx-engineer",
+    "consumer": "cx-reviewer",
+    "trigger": {
+      "always": true
+    },
+    "input": {
+      "schema": "lib/contract-schemas/implementation.json",
+      "mustContain": [
+        "filesChanged",
+        "verificationChecklist"
+      ]
+    },
+    "output": {
+      "schema": "lib/contract-schemas/review-report.json",
+      "type": "review-report",
+      "mustContain": [
+        "verdict"
+      ],
+      "mustContainOneOf": [
+        [
+          "findings",
+          "noIssuesFoundAt"
+        ]
+      ],
+      "mustMatchEnum": {
+        "verdict": [
+          "APPROVED",
+          "APPROVED_WITH_WARNINGS",
+          "BLOCKED"
+        ]
+      }
+    },
+    "preconditions": [
+      "Engineer status is not BLOCKED",
+      "Tests compiled; static analysis run"
+    ],
+    "postconditions": [
+      "Verdict in {APPROVED, APPROVED_WITH_WARNINGS, BLOCKED}",
+      "BLOCKED verdict stops downstream work until addressed",
+      "CRITICAL findings prevent release",
+      "Either findings is non-empty or noIssuesFoundAt enumerates the inspected paths — prevents silent rubber-stamp reviews"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "engineering-group",
+      "consumerTeam": "quality-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "engineer-to-qa": {
+    "id": "engineer-to-qa",
+    "producer": "cx-engineer",
+    "consumer": "cx-qa",
+    "trigger": {
+      "always": true
+    },
+    "input": {
+      "schema": "lib/contract-schemas/implementation.json",
+      "mustContain": [
+        "filesChanged",
+        "tests"
+      ]
+    },
+    "output": {
+      "schema": "lib/contract-schemas/test-report.json",
+      "type": "test-report"
+    },
+    "preconditions": [
+      "Test plan exists or is derivable from acceptance criteria"
+    ],
+    "postconditions": [
+      "Verdict in {PASS, FAIL}",
+      "Coverage meets project threshold",
+      "FAIL blocks DONE in workflow"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "engineering-group",
+      "consumerTeam": "quality-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "reviewer-to-security": {
+    "id": "reviewer-to-security",
+    "producer": "cx-reviewer",
+    "consumer": "cx-security",
+    "trigger": {
+      "riskFlags": [
+        "security"
+      ]
+    },
+    "input": {
+      "schema": "lib/contract-schemas/review-report.json",
+      "mustContain": [
+        "target",
+        "findings"
+      ]
+    },
+    "output": {
+      "schema": "lib/contract-schemas/review-report.json",
+      "type": "review-report",
+      "specialization": "security",
+      "mustContain": [
+        "threatModelUpdatedAt",
+        "contractStart"
+      ]
+    },
+    "preconditions": [
+      "Scope tagged as auth/secrets/payments/user-data"
+    ],
+    "postconditions": [
+      "Attacker-perspective findings logged",
+      "Threat model updated if architecture surface changed",
+      "threatModelUpdatedAt >= contractStart — prevents post-hoc threat models written after the architecture has shipped"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "quality-group",
+      "consumerTeam": "governance-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "qa-to-release-manager": {
+    "id": "qa-to-release-manager",
+    "producer": "cx-qa",
+    "consumer": "cx-release-manager",
+    "trigger": {
+      "intent": [
+        "implementation"
+      ],
+      "workCategory": "deep"
+    },
+    "input": {
+      "schema": "lib/contract-schemas/test-report.json",
+      "mustContain": [
+        "verdict",
+        "passed",
+        "failed",
+        "coverage"
+      ]
+    },
+    "output": {
+      "shape": "release-decision",
+      "mustContain": [
+        "decision",
+        "rolloutPlan",
+        "rollbackPlan"
+      ]
+    },
+    "preconditions": [
+      "All upstream verdicts APPROVED; QA verdict PASS"
+    ],
+    "postconditions": [
+      "Rollback plan tested, not just described",
+      "Rollout plan has concrete checkpoint signals"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "quality-group",
+      "consumerTeam": "operations-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "sre-to-release-manager": {
+    "id": "sre-to-release-manager",
+    "producer": "cx-sre",
+    "consumer": "cx-release-manager",
+    "trigger": {
+      "riskFlags": [
+        "dataIntegrity"
+      ],
+      "intent": [
+        "implementation"
+      ]
+    },
+    "input": {
+      "shape": "sre-readiness",
+      "mustContain": [
+        "slos",
+        "runbooks",
+        "alerts",
+        "dashboards"
+      ]
+    },
+    "output": {
+      "shape": "release-decision",
+      "mustContain": [
+        "decision",
+        "rollbackPlan"
+      ]
+    },
+    "preconditions": [
+      "Runbook exists for the new code path; rollback procedure verified"
+    ],
+    "postconditions": [
+      "On-call briefed; alert thresholds set"
+    ],
+    "description": ""
+  },
+  "any-to-docs-keeper": {
+    "id": "any-to-docs-keeper",
+    "producer": "*",
+    "consumer": "cx-docs-keeper",
+    "trigger": {
+      "postConsumer": true,
+      "changedCoreDocs": true
+    },
+    "input": {
+      "shape": "doc-delta",
+      "mustContain": [
+        "filesChanged",
+        "decision"
+      ]
+    },
+    "output": {
+      "shape": "doc-sync",
+      "mustContain": [
+        "updatedDocs",
+        "crossReferencesAdded",
+        "crossDocCoherenceCheckRan",
+        "coherenceDiff"
+      ]
+    },
+    "preconditions": [
+      "Implementation or decision is marked DONE"
+    ],
+    "postconditions": [
+      "Cross-doc coherence preserved (PRD ↔ ADR ↔ code)",
+      "AUTO-managed regions regenerated via construct sync",
+      "crossDocCoherenceCheckRan=true with a named coherenceDiff — prevents stale-doc PRs that claim 'docs updated' without a real diff"
+    ],
+    "description": ""
+  },
+  "any-to-debugger": {
+    "id": "any-to-debugger",
+    "producer": "*",
+    "consumer": "cx-debugger",
+    "trigger": {
+      "intent": "investigation",
+      "category": "bug"
+    },
+    "input": {
+      "shape": "bug-signal",
+      "mustContain": [
+        "symptoms",
+        "scope"
+      ]
+    },
+    "output": {
+      "shape": "root-cause-report",
+      "mustContain": [
+        "rootCause",
+        "rootCauseConfirmedVia",
+        "fix"
+      ],
+      "mustMatchEnum": {
+        "rootCauseConfirmedVia": [
+          "reproduction",
+          "trace",
+          "test"
+        ]
+      }
+    },
+    "preconditions": [
+      "Bug reproduced or trace captured before proposing a fix"
+    ],
+    "postconditions": [
+      "rootCauseConfirmedVia in {reproduction, trace, test} — prevents symptom-only fixes that don't address the actual cause"
+    ],
+    "description": ""
+  },
+  "any-to-designer": {
+    "id": "any-to-designer",
+    "producer": "*",
+    "consumer": "cx-designer",
+    "trigger": {
+      "riskFlags": [
+        "ui",
+        "accessibility"
+      ]
+    },
+    "input": {
+      "shape": "design-brief",
+      "mustContain": [
+        "surface",
+        "users",
+        "context"
+      ]
+    },
+    "output": {
+      "shape": "design-deliverable",
+      "mustContain": [
+        "deliverable",
+        "accessibilityCheckRan"
+      ]
+    },
+    "preconditions": [
+      "Affected surface scoped"
+    ],
+    "postconditions": [
+      "accessibilityCheckRan=true — prevents post-hoc a11y fixes by forcing a pre-ship check on every design deliverable"
+    ],
+    "description": ""
+  },
+  "any-to-sre-incident": {
+    "id": "any-to-sre-incident",
+    "producer": "*",
+    "consumer": "cx-sre",
+    "trigger": {
+      "intent": "investigation",
+      "category": "incident"
+    },
+    "input": {
+      "shape": "incident-signal",
+      "mustContain": [
+        "symptoms",
+        "scope",
+        "firstObserved"
+      ]
+    },
+    "output": {
+      "shape": "incident-report",
+      "mustContain": [
+        "rootCause",
+        "timeline",
+        "remediation",
+        "preventions"
+      ]
+    },
+    "preconditions": [
+      "Blast radius assessed before remediation"
+    ],
+    "postconditions": [
+      "Blameless postmortem; no tickets in Problem statement"
+    ],
+    "description": ""
+  },
+  "construct-to-rd-lead": {
+    "id": "construct-to-rd-lead",
+    "producer": "construct",
+    "consumer": "cx-rd-lead",
+    "trigger": {
+      "framingChallenge.required": true
+    },
+    "input": {
+      "shape": "framing-request",
+      "mustContain": [
+        "goal",
+        "uncertainty",
+        "assumptions"
+      ]
+    },
+    "output": {
+      "shape": "framing-brief",
+      "mustContain": [
+        "problemStatement",
+        "hypothesis",
+        "keyUnknowns",
+        "evidenceThreshold",
+        "recommendation"
+      ]
+    },
+    "preconditions": [
+      "Framing gate fires before architecture work begins",
+      "Strategy bets and non-bets reviewed in `.cx/knowledge/decisions/strategy/`"
+    ],
+    "postconditions": [
+      "Hypothesis is falsifiable and stated as 'We believe [X] will result in [Y] because [Z].'",
+      "Evidence threshold names a specific result that would confirm or disconfirm",
+      {
+        "id": "rd-framing-has-problem-section",
+        "description": "Framing artifact must contain a Problem section",
+        "check": "artifact-has-section",
+        "section": "Problem"
+      },
+      {
+        "id": "rd-framing-has-constraints-section",
+        "description": "Framing artifact must contain a Constraints section",
+        "check": "artifact-has-section",
+        "section": "Constraints"
+      },
+      {
+        "id": "rd-framing-has-open-questions-section",
+        "description": "Framing artifact must contain an Open Questions section",
+        "check": "artifact-has-section",
+        "section": "Open Questions"
+      }
+    ],
+    "description": ""
+  },
+  "rd-lead-to-architect": {
+    "id": "rd-lead-to-architect",
+    "producer": "cx-rd-lead",
+    "consumer": "cx-architect",
+    "trigger": {
+      "framingChallenge.required": true,
+      "rdLead.verdict": "frame-approved"
+    },
+    "input": {
+      "shape": "framing-brief",
+      "mustContain": [
+        "problemStatement",
+        "hypothesis",
+        "keyUnknowns",
+        "evidenceThreshold",
+        "recommendation"
+      ]
+    },
+    "output": {
+      "schema": "lib/contract-schemas/decision.json",
+      "type": "decision"
+    },
+    "preconditions": [
+      "Framing artifact exists at `.cx/framing/<slug>.md`",
+      "Hypothesis cleared of unverified assumptions"
+    ],
+    "postconditions": [
+      "ADR cites the framing brief as the upstream source for its Problem statement",
+      "Architect does not productionize components listed under 'WHAT NOT TO PRODUCTIONIZE YET'"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "strategy-group",
+      "consumerTeam": "engineering-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "product-manager-to-ux-researcher": {
+    "id": "product-manager-to-ux-researcher",
+    "producer": "cx-product-manager",
+    "consumer": "cx-ux-researcher",
+    "trigger": {
+      "docAuthoring.docType": [
+        "prd",
+        "meta-prd",
+        "prfaq"
+      ],
+      "riskFlags": [
+        "ux"
+      ]
+    },
+    "input": {
+      "shape": "ux-research-request",
+      "mustContain": [
+        "surface",
+        "userQuestion",
+        "decisionPending"
+      ]
+    },
+    "output": {
+      "shape": "ux-brief",
+      "mustContain": [
+        "userProfiles",
+        "jobsToBeDone",
+        "frictionMap",
+        "assumptionsLog"
+      ]
+    },
+    "preconditions": [
+      "PRD has an open user-research question; PRD not finalized"
+    ],
+    "postconditions": [
+      "Every friction-map entry cites the observation or session it came from",
+      "Stated preferences are labeled distinctly from observed behaviors",
+      {
+        "id": "ux-research-has-sources-section",
+        "description": "UX research artifact must contain a Sources section",
+        "check": "artifact-has-section",
+        "section": "Sources"
+      },
+      {
+        "id": "ux-research-claims-cited",
+        "description": "Every numeric or generalization claim in the UX brief cites the research source",
+        "check": "artifact-claims-cited"
+      }
+    ],
+    "description": ""
+  },
+  "architect-to-operations": {
+    "id": "architect-to-operations",
+    "producer": "cx-architect",
+    "consumer": "cx-operations",
+    "trigger": {
+      "intent": [
+        "implementation"
+      ],
+      "workCategory": "deep"
+    },
+    "input": {
+      "schema": "lib/contract-schemas/decision.json",
+      "mustContain": [
+        "goal",
+        "approach",
+        "tasks",
+        "acceptanceCriteria"
+      ]
+    },
+    "output": {
+      "shape": "ops-plan",
+      "mustContain": [
+        "sequencedTasks",
+        "dependencyGraph",
+        "ownershipMatrix",
+        "verificationGates"
+      ]
+    },
+    "preconditions": [
+      "Architect plan and devil-advocate feedback resolved",
+      "Tasks are atomic and individually verifiable"
+    ],
+    "postconditions": [
+      "Every task names a single owner",
+      "Every task names a verification gate and definition-of-done",
+      "Dependency graph identifies blockers; no task lies on a hidden critical path"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "engineering-group",
+      "consumerTeam": "operations-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "any-to-business-strategist": {
+    "id": "any-to-business-strategist",
+    "producer": "*",
+    "consumer": "cx-business-strategist",
+    "trigger": {
+      "strategy.required": true
+    },
+    "input": {
+      "shape": "strategy-request",
+      "mustContain": [
+        "goal",
+        "marketContext",
+        "decisionPending"
+      ]
+    },
+    "output": {
+      "shape": "strategic-memo",
+      "mustContain": [
+        "strategicContext",
+        "options",
+        "recommendation",
+        "evidence",
+        "decisionDeadline"
+      ]
+    },
+    "preconditions": [
+      "Strategy documents in `.cx/knowledge/decisions/strategy/` reviewed for declared Bets and Non-bets"
+    ],
+    "postconditions": [
+      "Options section contains 2-4 genuinely distinct strategic paths, not implementation variants",
+      "Any recommendation that contradicts a declared Non-bet is surfaced explicitly with a user-decision marker",
+      {
+        "id": "strategic-memo-has-market-context",
+        "description": "Strategic memo must contain a Market Context section",
+        "check": "artifact-has-section",
+        "section": "Market Context"
+      },
+      {
+        "id": "strategic-memo-options-nonempty",
+        "description": "Strategic memo Options section is present and non-empty",
+        "check": "artifact-section-nonempty",
+        "section": "Options"
+      },
+      {
+        "id": "strategic-memo-has-strategic-risks",
+        "description": "Strategic memo must contain a Strategic Risks section",
+        "check": "artifact-has-section",
+        "section": "Strategic Risks"
+      },
+      {
+        "id": "strategic-memo-claims-cited",
+        "description": "Every market/competitive numeric claim cites a primary source with a date",
+        "check": "artifact-claims-cited"
+      }
+    ],
+    "description": ""
+  },
+  "business-strategist-to-product-manager": {
+    "id": "business-strategist-to-product-manager",
+    "producer": "cx-business-strategist",
+    "consumer": "cx-product-manager",
+    "trigger": {
+      "strategy.required": true
+    },
+    "input": {
+      "shape": "strategic-memo",
+      "mustContain": [
+        "strategicContext",
+        "recommendation",
+        "evidence"
+      ]
+    },
+    "output": {
+      "shape": "prd-handoff",
+      "mustContain": [
+        "problem",
+        "users",
+        "functionalRequirements",
+        "acceptanceCriteria"
+      ]
+    },
+    "preconditions": [
+      "Strategic memo signed off; recommended option carried into PRD framing"
+    ],
+    "postconditions": [
+      "PRD Problem statement traces to the strategic memo's market context, not to internal roadmap items",
+      "PRD acknowledges the competitive dynamic named in the strategic memo"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "strategy-group",
+      "consumerTeam": "product-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "product-manager-to-data-analyst": {
+    "id": "product-manager-to-data-analyst",
+    "producer": "cx-product-manager",
+    "consumer": "cx-data-analyst",
+    "trigger": {
+      "docAuthoring.docType": [
+        "prd",
+        "meta-prd"
+      ],
+      "riskFlags": [
+        "metrics"
+      ]
+    },
+    "input": {
+      "shape": "metrics-request",
+      "mustContain": [
+        "successDefinition",
+        "decisionPending"
+      ]
+    },
+    "output": {
+      "shape": "metrics-analysis",
+      "mustContain": [
+        "metricDefinition",
+        "baseline",
+        "successThreshold",
+        "dataQualityCaveats"
+      ]
+    },
+    "preconditions": [
+      "Success definition stated in writing before metric design begins"
+    ],
+    "postconditions": [
+      "Every percentage, multiplier, or magnitude cites the query, dashboard, or run that produced it",
+      "Baseline is a measured value or names the plan to establish one",
+      {
+        "id": "metrics-analysis-claims-cited",
+        "description": "Every numeric claim in the analysis cites the query or dashboard",
+        "check": "artifact-claims-cited"
+      }
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "product-group",
+      "consumerTeam": "strategy-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "data-analyst-to-product-manager": {
+    "id": "data-analyst-to-product-manager",
+    "producer": "cx-data-analyst",
+    "consumer": "cx-product-manager",
+    "trigger": {
+      "docAuthoring.docType": [
+        "prd",
+        "meta-prd"
+      ],
+      "riskFlags": [
+        "metrics"
+      ]
+    },
+    "input": {
+      "shape": "metrics-analysis",
+      "mustContain": [
+        "metricDefinition",
+        "baseline",
+        "successThreshold"
+      ]
+    },
+    "output": {
+      "shape": "prd-handoff",
+      "mustContain": [
+        "acceptanceCriteria",
+        "successMetrics"
+      ]
+    },
+    "preconditions": [
+      "Metric definition reviewed for vanity-metric risk and for hit-without-solving-the-problem risk"
+    ],
+    "postconditions": [
+      "PRD success metrics carry the cited baseline and threshold from the analysis",
+      "Metrics that can be hit without solving the problem are flagged and replaced"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "strategy-group",
+      "consumerTeam": "product-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "architect-to-evaluator": {
+    "id": "architect-to-evaluator",
+    "producer": "cx-architect",
+    "consumer": "cx-evaluator",
+    "trigger": {
+      "riskFlags": [
+        "ai",
+        "quality"
+      ],
+      "intent": [
+        "implementation"
+      ]
+    },
+    "input": {
+      "schema": "lib/contract-schemas/decision.json",
+      "mustContain": [
+        "goal",
+        "approach",
+        "evalCriteria"
+      ]
+    },
+    "output": {
+      "shape": "eval-spec",
+      "mustContain": [
+        "evaluationCriteria",
+        "scoringRubric",
+        "testCases",
+        "comparisonProtocol",
+        "passFailThreshold"
+      ]
+    },
+    "preconditions": [
+      "What 'better' means is defined in writing before the work is done",
+      "Baseline run identified or scheduled before proposed change runs"
+    ],
+    "postconditions": [
+      "Failing case is defined before results are seen",
+      "Regression checks enumerated; not just success-path test cases",
+      {
+        "id": "eval-spec-has-success-criteria",
+        "description": "Eval spec must contain a Success Criteria section",
+        "check": "artifact-has-section",
+        "section": "Success Criteria"
+      },
+      {
+        "id": "eval-spec-has-baseline",
+        "description": "Eval spec must contain a Baseline section",
+        "check": "artifact-has-section",
+        "section": "Baseline"
+      }
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "engineering-group",
+      "consumerTeam": "quality-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "architect-to-platform-engineer": {
+    "id": "architect-to-platform-engineer",
+    "producer": "cx-architect",
+    "consumer": "cx-platform-engineer",
+    "trigger": {
+      "riskFlags": [
+        "platform",
+        "infrastructure"
+      ],
+      "intent": [
+        "implementation"
+      ]
+    },
+    "input": {
+      "schema": "lib/contract-schemas/decision.json",
+      "mustContain": [
+        "goal",
+        "approach",
+        "platformDependencies"
+      ]
+    },
+    "output": {
+      "shape": "platform-plan",
+      "mustContain": [
+        "problem",
+        "solution",
+        "impact",
+        "migration",
+        "rollback"
+      ]
+    },
+    "preconditions": [
+      "Observed friction quantified; not hypothetical future problems",
+      "Existing CI/CD and tooling surveyed before proposing new tooling"
+    ],
+    "postconditions": [
+      "Migration path described for existing workflows",
+      "Rollback procedure exists in case the change makes things worse",
+      "Improvement removes more configuration than it adds, or the added config is justified"
+    ],
+    "description": ""
+  },
+  "platform-engineer-to-engineer": {
+    "id": "platform-engineer-to-engineer",
+    "producer": "cx-platform-engineer",
+    "consumer": "cx-engineer",
+    "trigger": {
+      "riskFlags": [
+        "platform"
+      ]
+    },
+    "input": {
+      "shape": "platform-plan",
+      "mustContain": [
+        "solution",
+        "migration",
+        "rollback"
+      ]
+    },
+    "output": {
+      "schema": "lib/contract-schemas/implementation.json",
+      "type": "implementation"
+    },
+    "preconditions": [
+      "Platform deps available in CI; lockfile updates reviewed",
+      "Secrets confirmed absent from build logs"
+    ],
+    "postconditions": [
+      "Implementation cites the platform plan and applies the migration steps in order",
+      "Rollback procedure verified once on a non-production environment"
+    ],
+    "description": ""
+  },
+  "architect-to-legal-compliance": {
+    "id": "architect-to-legal-compliance",
+    "producer": "cx-architect",
+    "consumer": "cx-legal-compliance",
+    "trigger": {
+      "riskFlags": [
+        "compliance",
+        "privacy",
+        "licensing"
+      ]
+    },
+    "input": {
+      "schema": "lib/contract-schemas/decision.json",
+      "mustContain": [
+        "goal",
+        "approach",
+        "dataFlows"
+      ]
+    },
+    "output": {
+      "shape": "compliance-memo",
+      "mustContain": [
+        "risks",
+        "severity",
+        "remediation"
+      ]
+    },
+    "preconditions": [
+      "Data flows enumerated: what is collected, stored, processed, and exported",
+      "Dependency tree surfaced past the first layer for licensing review"
+    ],
+    "postconditions": [
+      "Every assertion cites the regulation, standard, or contract clause it rests on",
+      "AI-generated user-facing content has a disclosure strategy noted, or is marked not-applicable with reason",
+      {
+        "id": "compliance-memo-has-regulatory-citations",
+        "description": "Compliance memo must contain a Regulatory Citations section",
+        "check": "artifact-has-section",
+        "section": "Regulatory Citations"
+      },
+      {
+        "id": "compliance-memo-has-remediation-plan",
+        "description": "Compliance memo must contain a Remediation Plan section",
+        "check": "artifact-has-section",
+        "section": "Remediation Plan"
+      }
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "engineering-group",
+      "consumerTeam": "governance-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "legal-compliance-to-release-manager": {
+    "id": "legal-compliance-to-release-manager",
+    "producer": "cx-legal-compliance",
+    "consumer": "cx-release-manager",
+    "trigger": {
+      "riskFlags": [
+        "compliance"
+      ],
+      "intent": [
+        "implementation"
+      ]
+    },
+    "input": {
+      "shape": "compliance-memo",
+      "mustContain": [
+        "risks",
+        "severity",
+        "remediation"
+      ]
+    },
+    "output": {
+      "shape": "release-decision",
+      "mustContain": [
+        "decision",
+        "rolloutPlan",
+        "rollbackPlan"
+      ]
+    },
+    "preconditions": [
+      "All must-fix compliance items closed or accepted in writing by the release owner"
+    ],
+    "postconditions": [
+      "Release blocks if any must-fix item is unresolved",
+      "Should-fix items carry a tracking issue and an owner"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "governance-group",
+      "consumerTeam": "operations-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "designer-to-accessibility": {
+    "id": "designer-to-accessibility",
+    "producer": "cx-designer",
+    "consumer": "cx-accessibility",
+    "trigger": {
+      "riskFlags": [
+        "ui",
+        "accessibility"
+      ]
+    },
+    "input": {
+      "shape": "design-deliverable",
+      "mustContain": [
+        "surface",
+        "deliverable",
+        "accessibilityCheckRan"
+      ]
+    },
+    "output": {
+      "shape": "a11y-findings",
+      "mustContain": [
+        "findings",
+        "wcagCriterion",
+        "userImpact",
+        "fix"
+      ]
+    },
+    "preconditions": [
+      "Flow exercised with a keyboard and a screen reader; not just spec-read"
+    ],
+    "postconditions": [
+      "Every finding cites a WCAG criterion and a concrete repro step",
+      "Findings that weren't exercised with the assistive technology are labeled 'unverified'"
+    ],
+    "description": ""
+  },
+  "accessibility-to-qa": {
+    "id": "accessibility-to-qa",
+    "producer": "cx-accessibility",
+    "consumer": "cx-qa",
+    "trigger": {
+      "riskFlags": [
+        "ui",
+        "accessibility"
+      ]
+    },
+    "input": {
+      "shape": "a11y-findings",
+      "mustContain": [
+        "findings",
+        "wcagCriterion",
+        "userImpact"
+      ]
+    },
+    "output": {
+      "schema": "lib/contract-schemas/test-report.json",
+      "type": "test-report"
+    },
+    "preconditions": [
+      "A11y findings filed against specific elements (file:line) before QA verification"
+    ],
+    "postconditions": [
+      "QA test plan covers keyboard-only and screen-reader paths for each finding",
+      "Findings flagged 'unverified' by accessibility get a verified test in QA before close"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "product-group",
+      "consumerTeam": "quality-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "any-to-explorer": {
+    "id": "any-to-explorer",
+    "producer": "*",
+    "consumer": "cx-explorer",
+    "trigger": {
+      "intent": "investigation",
+      "category": "exploration"
+    },
+    "input": {
+      "shape": "exploration-request",
+      "mustContain": [
+        "question",
+        "scope"
+      ]
+    },
+    "output": {
+      "shape": "exploration-findings",
+      "mustContain": [
+        "entryPoints",
+        "executionPath",
+        "keyFiles",
+        "dataFlow",
+        "gaps"
+      ]
+    },
+    "preconditions": [
+      "Scope tagged; investigation does not follow imports past two hops from named entry points"
+    ],
+    "postconditions": [
+      "Every claim about existing code cites file:line from a read actually performed",
+      "One match is not called a pattern; multi-callsite patterns cite each call site",
+      {
+        "id": "exploration-findings-claims-cited",
+        "description": "Every load-bearing claim cites file:line or a primary external reference",
+        "check": "artifact-claims-cited"
+      }
+    ],
+    "description": ""
+  },
+  "explorer-to-engineer": {
+    "id": "explorer-to-engineer",
+    "producer": "cx-explorer",
+    "consumer": "cx-engineer",
+    "trigger": {
+      "intent": [
+        "implementation",
+        "fix"
+      ],
+      "explorer.findingsReady": true
+    },
+    "input": {
+      "shape": "exploration-findings",
+      "mustContain": [
+        "entryPoints",
+        "keyFiles",
+        "gaps"
+      ]
+    },
+    "output": {
+      "schema": "lib/contract-schemas/implementation.json",
+      "type": "implementation"
+    },
+    "preconditions": [
+      "Exploration findings reviewed; gaps and surprising dependencies surfaced"
+    ],
+    "postconditions": [
+      "Implementation reads the files cited in keyFiles before edits",
+      "Gaps named by explorer (missing tests, missing error handling) are addressed or filed"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "strategy-group",
+      "consumerTeam": "engineering-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "any-to-trace-reviewer": {
+    "id": "any-to-trace-reviewer",
+    "producer": "*",
+    "consumer": "cx-trace-reviewer",
+    "trigger": {
+      "trace.anomaly": true
+    },
+    "input": {
+      "shape": "trace-analysis-request",
+      "mustContain": [
+        "scope",
+        "window"
+      ]
+    },
+    "output": {
+      "shape": "trace-analysis",
+      "mustContain": [
+        "flaggedAgents",
+        "evidence",
+        "recommendation"
+      ]
+    },
+    "preconditions": [
+      "Trace backend reachable via the configured `CONSTRUCT_TRACE_BACKEND` adapter"
+    ],
+    "postconditions": [
+      "Every performance claim cites the trace id and span",
+      "Promotion verdicts cite the staging-vs-production score delta, not a vibe",
+      "Variance and trend reported alongside median; stable medians that hide tail variance are surfaced"
+    ],
+    "description": ""
+  },
+  "trace-reviewer-to-sre": {
+    "id": "trace-reviewer-to-sre",
+    "producer": "cx-trace-reviewer",
+    "consumer": "cx-sre",
+    "trigger": {
+      "trace.anomaly": true,
+      "riskFlags": [
+        "performance",
+        "reliability"
+      ]
+    },
+    "input": {
+      "shape": "trace-analysis",
+      "mustContain": [
+        "flaggedAgents",
+        "evidence"
+      ]
+    },
+    "output": {
+      "shape": "sre-readiness",
+      "mustContain": [
+        "slos",
+        "runbooks",
+        "alerts"
+      ]
+    },
+    "preconditions": [
+      "Flagged agents meet the minimum trace threshold (20+); insufficient-trace agents deferred"
+    ],
+    "postconditions": [
+      "SRE adjusts alert thresholds or SLOs based on the cited trace evidence",
+      "Runbook updated for the failure pattern identified at fleet level"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "quality-group",
+      "consumerTeam": "operations-group",
+      "requiresApprovalFrom": []
+    }
+  },
+  "architect-to-data-engineer": {
+    "id": "architect-to-data-engineer",
+    "producer": "cx-architect",
+    "consumer": "cx-data-engineer",
+    "trigger": {
+      "riskFlags": [
+        "data",
+        "pipeline"
+      ],
+      "intent": [
+        "implementation"
+      ]
+    },
+    "input": {
+      "schema": "lib/contract-schemas/decision.json",
+      "mustContain": [
+        "goal",
+        "approach",
+        "dataContracts"
+      ]
+    },
+    "output": {
+      "shape": "pipeline-spec",
+      "mustContain": [
+        "dataContract",
+        "schema",
+        "qualityGates",
+        "retryPolicy"
+      ]
+    },
+    "preconditions": [
+      "Data volume, latency requirements, and existing stack clarified before architecture proposed",
+      "Existing schema inspected; column names and table relationships not invented"
+    ],
+    "postconditions": [
+      "Pipeline is idempotent and observable; not running on faith",
+      "Data contract is written down; quality gates defined as part of the design",
+      {
+        "id": "pipeline-spec-has-idempotency-plan",
+        "description": "Pipeline spec must contain an Idempotency Plan section",
+        "check": "artifact-has-section",
+        "section": "Idempotency Plan"
+      },
+      {
+        "id": "pipeline-spec-has-observability",
+        "description": "Pipeline spec must contain an Observability section",
+        "check": "artifact-has-section",
+        "section": "Observability"
+      }
+    ],
+    "description": ""
+  },
+  "data-engineer-to-platform-engineer": {
+    "id": "data-engineer-to-platform-engineer",
+    "producer": "cx-data-engineer",
+    "consumer": "cx-platform-engineer",
+    "trigger": {
+      "riskFlags": [
+        "data",
+        "pipeline",
+        "infrastructure"
+      ]
+    },
+    "input": {
+      "shape": "pipeline-spec",
+      "mustContain": [
+        "dataContract",
+        "qualityGates"
+      ]
+    },
+    "output": {
+      "shape": "platform-plan",
+      "mustContain": [
+        "problem",
+        "solution",
+        "migration",
+        "rollback"
+      ]
+    },
+    "preconditions": [
+      "Pipeline operational requirements (alerts, retries, backfills) stated in pipeline spec"
+    ],
+    "postconditions": [
+      "Operational burden (who maintains, how to debug) accepted by platform owner",
+      "Pipeline observability surfaces appear on a named dashboard, not just in logs"
+    ],
+    "description": ""
+  },
+  "qa-to-test-automation": {
+    "id": "qa-to-test-automation",
+    "producer": "cx-qa",
+    "consumer": "cx-test-automation",
+    "trigger": {
+      "intent": [
+        "implementation"
+      ],
+      "automation.required": true
+    },
+    "input": {
+      "schema": "lib/contract-schemas/test-report.json",
+      "mustContain": [
+        "testStrategy",
+        "verdict"
+      ]
+    },
+    "output": {
+      "shape": "automation-plan",
+      "mustContain": [
+        "framework",
+        "coverageTargets",
+        "flakeBudget",
+        "deterministicWaits"
+      ]
+    },
+    "preconditions": [
+      "Existing test infrastructure surveyed before proposing new frameworks",
+      "Flaky-test signal collected over N runs before calling a test flaky"
+    ],
+    "postconditions": [
+      "Tests use deterministic waits and stable selectors; not arbitrary sleeps",
+      "Coverage targets aim at behaviors that matter, not at line counts that pad the number",
+      {
+        "id": "automation-plan-has-flake-budget",
+        "description": "Automation plan must contain a Flake Budget section",
+        "check": "artifact-has-section",
+        "section": "Flake Budget"
+      }
+    ],
+    "description": ""
+  },
+  "test-automation-to-engineer": {
+    "id": "test-automation-to-engineer",
+    "producer": "cx-test-automation",
+    "consumer": "cx-engineer",
+    "trigger": {
+      "automation.required": true
+    },
+    "input": {
+      "shape": "automation-plan",
+      "mustContain": [
+        "framework",
+        "coverageTargets",
+        "flakeBudget"
+      ]
+    },
+    "output": {
+      "schema": "lib/contract-schemas/implementation.json",
+      "type": "implementation"
+    },
+    "preconditions": [
+      "Test scaffolding lands before behavioral edits so the test fails for the right reason first"
+    ],
+    "postconditions": [
+      "Engineer adds at least one failing test that demonstrates the bug or missing behavior before implementing the fix",
+      "Quarantined flaky tests carry an owner and a remediation date"
+    ],
+    "description": "",
+    "teamBoundary": {
+      "crosses": true,
+      "producerTeam": "quality-group",
+      "consumerTeam": "engineering-group",
+      "requiresApprovalFrom": []
+    }
+  }
 }

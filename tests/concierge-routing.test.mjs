@@ -165,22 +165,22 @@ describe("dispatch plan persistence", () => {
 
 describe("registry: internal agent isolation", () => {
   it("all agents in registry have internal:true", async () => {
-    const { createRequire } = await import("node:module");
-    const require = createRequire(import.meta.url);
-    const registry = require("../specialists/registry.json");
+     const { createRequire } = await import("node:module");
+     const require = createRequire(import.meta.url);
+     const registry = require("../specialists/unified-registry.json");
 
-    const exposed = registry.specialists.filter((a) => !a.internal);
-    assert.deepEqual(
-      exposed,
-      [],
-      `These agents are not marked internal and will be visible in user-facing adapters: ${exposed.map((a) => a.name).join(", ")}`
-    );
-  });
+     const exposed = Object.values(registry.specialists).filter((a) => !a.internal);
+     assert.deepEqual(
+       exposed,
+       [],
+       `These agents are not marked internal and will be visible in user-facing adapters: ${exposed.map((a) => a.name).join(", ")}`
+     );
+   });
 
   it("only construct persona exists and is not internal", async () => {
     const { createRequire } = await import("node:module");
     const require = createRequire(import.meta.url);
-    const registry = require("../specialists/registry.json");
+    const registry = require("../specialists/unified-registry.json");
 
     assert.ok(registry.orchestrator, "Expected orchestrator (construct)");
     assert.equal(registry.orchestrator.name, "construct");

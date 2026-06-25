@@ -29,7 +29,7 @@ test('runReleaseCandidateGate fails when a release capability is stale', async (
   for (const rel of [
     'tests/capabilities/ledger.json',
     'tests/certification/scenarios/catalog.json',
-    'specialists/registry.json',
+    'specialists/unified-registry.json',
     'package.json',
   ]) {
     fs.copyFileSync(path.join(REPO, rel), path.join(root, rel));

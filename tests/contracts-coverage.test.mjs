@@ -1,5 +1,5 @@
 /**
- * tests/contracts-coverage.test.mjs — every specialist in specialists/registry.json
+ * tests/contracts-coverage.test.mjs — every specialist in specialists/unified-registry.json
  * must appear as a producer or consumer in at least one typed contract.
  *
  * Closes the Bet 5 contracts gap: dispatch is auditable only if every
@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const REGISTRY_PATH = join(REPO_ROOT, 'specialists', 'registry.json');
+const REGISTRY_PATH = join(REPO_ROOT, 'specialists', 'unified-registry.json');
 const CONTRACTS_PATH = join(REPO_ROOT, 'specialists', 'contracts.json');
 
 function readJson(p) { return JSON.parse(readFileSync(p, 'utf8')); }
@@ -30,7 +30,7 @@ test('every specialist in registry.json appears as producer or consumer in contr
   const registry = readJson(REGISTRY_PATH);
   const contracts = readJson(CONTRACTS_PATH).contracts || [];
 
-  const specialists = (registry.specialists || [])
+  const specialists = Object.values(registry.specialists || {})
     .map((a) => a.name || a.id)
     .filter((n) => typeof n === 'string' && n.length > 0)
     .map((n) => (n.startsWith('cx-') ? n : `cx-${n}`));
@@ -67,7 +67,7 @@ test('producer and consumer resolve against registry or well-known names', () =>
   const contracts = readJson(CONTRACTS_PATH).contracts || [];
 
   const known = new Set();
-  for (const a of registry.specialists || []) {
+  for (const a of Object.values(registry.specialists || {})) {
     if (a.name) {
       known.add(a.name);
       known.add(a.name.startsWith('cx-') ? a.name : `cx-${a.name}`);

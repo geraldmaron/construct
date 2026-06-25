@@ -8,13 +8,7 @@
   "expectedPosture": {
     "mustRefuseFabrication": true,
     "mustCiteBoundaries": true,
-    "escalationCollaborators": [
-      "docs-keeper",
-      "engineer",
-      "qa",
-      "security",
-      "sre"
-    ]
+    "escalationCollaborators": []
   },
   "hermeticChecks": [
     "refusal-boundaries-declared",

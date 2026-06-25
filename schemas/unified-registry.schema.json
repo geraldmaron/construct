@@ -1,0 +1,507 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geraldmaron.github.io/construct/schemas/unified-registry.schema.json",
+  "title": "Construct Unified Registry",
+  "description": "Single source of truth for teams, specialists, roles, contracts, and policies. Consolidates what was previously split across five separate files: teams.json, teams-registry.json, registry.json, contracts.json, and role-manifests.json.",
+  "type": "object",
+  "required": ["version", "teams", "specialists", "contracts", "policies"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": 2,
+      "description": "Schema version. Version 2 is the unified registry."
+    },
+    "teams": {
+      "type": "object",
+      "description": "Map of team id -> team definition. Teams are the primary organizational unit with explicit decision rights, escalation paths, and charter.",
+      "additionalProperties": {
+        "$ref": "#/$defs/team"
+      },
+      "minProperties": 1
+    },
+    "specialists": {
+      "type": "object",
+      "description": "Map of specialist id (e.g., cx-engineer) -> specialist definition. Every specialist declares exactly one team.",
+      "additionalProperties": {
+        "$ref": "#/$defs/specialist"
+      },
+      "minProperties": 1
+    },
+    "contracts": {
+      "type": "object",
+      "description": "Map of contract id -> contract definition. Contracts are producer→consumer handoffs with preconditions, postconditions, and schemas.",
+      "additionalProperties": {
+        "$ref": "#/$defs/contract"
+      }
+    },
+    "policies": {
+      "type": "object",
+      "description": "Map of policy id -> policy definition. Policies enforce team decision rights, approval requirements, and governance gates.",
+      "additionalProperties": {
+        "$ref": "#/$defs/policy"
+      }
+    }
+  },
+  "$defs": {
+    "team": {
+      "type": "object",
+      "description": "Organizational team with explicit owner, decision rights, forbidden decisions, escalation path, and charter.",
+      "required": ["id", "name", "owner", "roles", "charter"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,40}$",
+          "description": "Unique team identifier (e.g., product-group, engineering-group, quality-group)."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Human-readable team name."
+        },
+        "owner": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,40}$",
+          "description": "Role id of the team owner/lead. Must be a role that has at least one specialist assigned."
+        },
+        "roles": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "description": "List of role ids that constitute this team.",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{1,40}$"
+          }
+        },
+        "decisionRights": {
+          "type": "array",
+          "description": "Decisions this team is authorized to make (e.g., intake-triage, design-approval, deployment, scope-change).",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{1,40}$"
+          }
+        },
+        "forbiddenDecisions": {
+          "type": "array",
+          "description": "Decisions this team explicitly cannot make. Attempts escalate automatically.",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{1,40}$"
+          }
+        },
+        "escalationPath": {
+          "type": "array",
+          "description": "Chain of escalation for unresolved decisions. First element is the team owner role, then higher-level escalations.",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{1,40}$"
+          }
+        },
+        "charter": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 800,
+          "description": "One-paragraph mission statement: what this team owns, what it doesn't own, and key constraints."
+        },
+        "contact": {
+          "type": "object",
+          "description": "How to reach this team.",
+          "additionalProperties": false,
+          "properties": {
+            "slack": {
+              "type": "string",
+              "description": "Slack channel (e.g., #product, #engineering)."
+            },
+            "email": {
+              "type": "string",
+              "format": "email",
+              "description": "Team email address."
+            },
+            "owner": {
+              "type": "string",
+              "description": "Direct contact for the team owner."
+            }
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "description": "Primary sources justifying this team's structure (interviews, job specs, ADRs, organizational research).",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "specialist": {
+      "type": "object",
+      "description": "An AI specialist (cx-* agent) with skills, fence, model tier, and event watchers.",
+      "required": ["name", "team"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,40}$",
+          "description": "Specialist id without cx- prefix (e.g., engineer, qa, architect). Combined with prefix to create cx-engineer, cx-qa, etc."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Human-readable specialist name (e.g., Engineer, Quality Assurance, Architect)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Short description of what this specialist does."
+        },
+        "team": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,40}$",
+          "description": "Team id this specialist belongs to. Every specialist declares exactly one team."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["owner", "member", "temporary"],
+          "description": "Role within the team: owner (team lead), member (regular), or temporary."
+        },
+        "modelTier": {
+          "type": "string",
+          "enum": ["standard", "reasoning"],
+          "description": "Which model tier to use for this specialist: standard or reasoning."
+        },
+        "reasoningEffort": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "Effort level for extended thinking (if using reasoning model)."
+        },
+        "skills": {
+          "type": "array",
+          "description": "List of skill paths this specialist has (e.g., docs/prd-workflow, architecture/api-design).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "events": {
+          "type": "array",
+          "description": "Trigger events that activate this specialist (e.g., test.fail, handoff.received, pr.opened).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fence": {
+          "type": "object",
+          "description": "Access control fence for this specialist.",
+          "additionalProperties": false,
+          "properties": {
+            "allowedPaths": {
+              "type": "array",
+              "description": "Paths/glob patterns this specialist can read/write.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "allowedCommands": {
+              "type": "array",
+              "description": "Commands this specialist can execute (bash, bd, git, etc.).",
+              "items": {
+                "type": "string"
+              }
+            },
+            "allowedBdLabels": {
+              "type": "array",
+              "description": "Beads labels this specialist can use when creating/updating issues.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "approvalRequired": {
+              "type": "array",
+              "description": "Actions requiring approval before execution (e.g., commit, push, edit:lib/**).",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "docArtifacts": {
+          "type": "array",
+          "description": "Doc artifact types this specialist can author (e.g., prd, adr, memo, incident-report).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "watchConditions": {
+          "type": "array",
+          "description": "Conditions that should trigger proactive engagement (e.g., high-ambiguity-deep-work, flaky-tests, stale-alignment-census).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prompt": {
+          "type": "object",
+          "description": "Optional prompt configuration overrides for this specialist.",
+          "additionalProperties": false,
+          "properties": {
+            "file": {
+              "type": "string",
+              "description": "Path to specialist prompt file."
+            },
+            "customInstructions": {
+              "type": "string",
+              "description": "Custom instructions appended to the base prompt."
+            }
+          }
+        },
+        "permissions": {
+          "type": "object",
+          "description": "Fine-grained permissions (edit, bash, webfetch, etc.).",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["allow", "deny"]
+          }
+        }
+      }
+    },
+    "contract": {
+      "type": "object",
+      "description": "Service contract between producer and consumer specialists. Defines inputs, outputs, preconditions, postconditions, and team boundaries.",
+      "required": ["id", "producer", "consumer"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,50}$",
+          "description": "Unique contract identifier (e.g., construct-to-orchestrator, researcher-to-architect)."
+        },
+        "producer": {
+          "type": "string",
+          "description": "Specialist id or role that produces the output (e.g., cx-researcher, user, construct)."
+        },
+        "consumer": {
+          "type": "string",
+          "description": "Specialist id or role that consumes the output (e.g., cx-architect, cx-product-manager, construct)."
+        },
+        "trigger": {
+          "type": "object",
+          "description": "Conditions that trigger this contract.",
+          "additionalProperties": true
+        },
+        "input": {
+          "type": "object",
+          "description": "Input shape and requirements.",
+          "additionalProperties": true,
+          "properties": {
+            "shape": {
+              "type": "string",
+              "description": "Named shape (e.g., task-packet, research-brief, evidence-brief)."
+            },
+            "mustContain": {
+              "type": "array",
+              "description": "Fields that must be present in the input.",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "output": {
+          "type": "object",
+          "description": "Output shape and requirements.",
+          "additionalProperties": true,
+          "properties": {
+            "shape": {
+              "type": "string",
+              "description": "Named shape (e.g., routed-plan, decision, prd-handoff)."
+            },
+            "mustContain": {
+              "type": "array",
+              "description": "Fields that must be present in the output.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "schema": {
+              "type": "string",
+              "description": "Path to JSON Schema for the output."
+            }
+          }
+        },
+        "preconditions": {
+          "type": "array",
+          "description": "Conditions that must be true before this contract executes.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "postconditions": {
+          "type": "array",
+          "description": "Conditions that must be true after this contract completes.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "teamBoundary": {
+          "type": "object",
+          "description": "Whether this handoff crosses a team boundary and what approval is needed.",
+          "additionalProperties": false,
+          "properties": {
+            "crosses": {
+              "type": "boolean",
+              "description": "Whether this contract crosses a team boundary."
+            },
+            "producerTeam": {
+              "type": "string",
+              "description": "Team id of the producer."
+            },
+            "consumerTeam": {
+              "type": "string",
+              "description": "Team id of the consumer."
+            },
+            "requiresApprovalFrom": {
+              "type": "array",
+              "description": "Team ids that must approve this cross-team handoff.",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of this contract."
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "description": "Governance policy enforcing team decision rights, approval requirements, and gates.",
+      "required": ["id", "owner"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,50}$",
+          "description": "Unique policy identifier (e.g., release-gates, security-approval, design-approval)."
+        },
+        "owner": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,40}$",
+          "description": "Team id that owns and enforces this policy."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of what this policy enforces."
+        },
+        "enforcement": {
+          "type": "string",
+          "enum": ["hard", "soft"],
+          "description": "hard = blocks execution, soft = warns but allows."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["approval", "veto", "audit", "escalation"],
+          "description": "How this policy is enforced: approval (must approve), veto (can block), audit (log only), escalation (route upward)."
+        },
+        "requiresApprovalFrom": {
+          "type": "array",
+          "description": "Team ids that must approve before execution.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mayVetoFrom": {
+          "type": "array",
+          "description": "Team ids that can veto this decision.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "escalatesTo": {
+          "type": "array",
+          "description": "Team ids to escalate to if blocked or disputed.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "decisionRights": {
+          "type": "array",
+          "description": "Decisions this policy governs (e.g., deployment, scope-change, security-approval).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "description": "Conditions under which this policy applies.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "description": "References to source documents or decisions justifying this policy.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Validate that every specialist declares exactly one team, and that team exists.",
+      "not": {
+        "required": ["_validateSpecialistTeams"],
+        "properties": {
+          "_validateSpecialistTeams": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "description": "Validate that every team has at least one specialist assigned to it.",
+      "not": {
+        "required": ["_validateTeamAssignment"],
+        "properties": {
+          "_validateTeamAssignment": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "description": "Validate that every team owner is a role, and that role has at least one specialist.",
+      "not": {
+        "required": ["_validateTeamOwner"],
+        "properties": {
+          "_validateTeamOwner": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "description": "Validate that every contract producer and consumer exist in the specialists map.",
+      "not": {
+        "required": ["_validateContractSpecialists"],
+        "properties": {
+          "_validateContractSpecialists": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "description": "Validate that no specialist names collide across teams.",
+      "not": {
+        "required": ["_validateSpecialistNames"],
+        "properties": {
+          "_validateSpecialistNames": {
+            "const": false
+          }
+        }
+      }
+    }
+  ]
+}

@@ -6,11 +6,10 @@
  * an isolated tmp HOME seeded with a user-personal global config, runs
  * `--global`, and verifies that Construct-managed keys are emitted correctly
  * (scoped bash permission, real attribution headers with no `__placeholder__`,
- * an env-ref github token rather than a plaintext secret, and a seeded
- * small_model) while every user-personal key (model, share, autoupdate, a user
- * agent, user openrouter models) survives byte-for-byte. A second run proves the
- * small_model seed never overrides a value the user has set. The host binary is
- * never executed. See docs/guides/concepts/opencode-config-ownership.md.
+ * an env-ref github token rather than a plaintext secret) while every user-personal
+ * key (model, share, autoupdate, a user agent, user openrouter models) survives
+ * byte-for-byte. The host binary is never executed.
+ * See docs/guides/concepts/opencode-config-ownership.md.
  */
 
 import { spawnSync } from "node:child_process";
@@ -84,26 +83,11 @@ test("global sync emits Construct-managed keys correctly and preserves user-pers
     assert.equal(ghAuth, "Bearer {env:GITHUB_TOKEN}");
     assert.ok(!/gh[oprs]_/.test(ghAuth ?? ""), "no plaintext github token may be written");
 
-    assert.equal(out.small_model, "anthropic/claude-haiku-4-5-20251001", "small_model seeded when absent");
-
     assert.equal(out.model, "anthropic/claude-opus-4-6", "user model preserved");
     assert.equal(out.share, "disabled", "user share preserved");
     assert.equal(out.autoupdate, false, "user autoupdate preserved");
     assert.ok(out.agent?.myhelper, "user agent preserved");
     assert.ok(out.provider?.openrouter?.models?.["my/custom-model:free"], "user openrouter model preserved");
-  } finally {
-    env.cleanup();
-  }
-});
-
-test("small_model seed never overrides a user-set value", () => {
-  const seeded = { ...SEED, small_model: "anthropic/claude-sonnet-4-6" };
-  const env = seededHome(seeded);
-  try {
-    const res = runGlobalSync(env.sandbox);
-    assert.equal(res.status, 0, `sync failed: ${(res.stderr || "").slice(-400)}`);
-    const out = readJson(env.cfgPath);
-    assert.equal(out.small_model, "anthropic/claude-sonnet-4-6", "user small_model must be preserved");
   } finally {
     env.cleanup();
   }

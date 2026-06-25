@@ -14,6 +14,53 @@
     "reviewer",
     "product-lead"
   ],
+  "teams": [
+    {
+      "id": "triage-team",
+      "name": "Triage Team",
+      "owner": "product-lead",
+      "roles": ["operator", "product-lead"],
+      "decisionRights": ["intake-triage", "priority-setting", "routing"],
+      "forbiddenDecisions": ["implementation", "deployment"],
+      "escalationPath": ["product-lead"],
+      "charter": "Triage incoming requests and route them to the right team. Owns queue management, initial response, and prioritization. Does not own implementation or deployment decisions.",
+      "contact": {
+        "slack": "#intake",
+        "email": "triage@example.com",
+        "owner": "product-lead"
+      }
+    },
+    {
+      "id": "delivery-team",
+      "name": "Delivery Team",
+      "owner": "engineer",
+      "roles": ["engineer", "qa", "reviewer"],
+      "decisionRights": ["implementation", "testing", "review-approval"],
+      "forbiddenDecisions": ["deployment", "scope-change"],
+      "escalationPath": ["engineer"],
+      "charter": "Resolve requests and deliver fixes. Owns implementation, testing, and code review. Does not own deployment timing or scope changes.",
+      "contact": {
+        "slack": "#delivery",
+        "email": "delivery@example.com",
+        "owner": "engineer"
+      }
+    },
+    {
+      "id": "reliability-team",
+      "name": "Reliability Team",
+      "owner": "sre",
+      "roles": ["sre", "security", "docs-keeper"],
+      "decisionRights": ["deployment", "incident-response", "runbook-approval", "rollback"],
+      "forbiddenDecisions": ["implementation", "scope-change"],
+      "escalationPath": ["sre"],
+      "charter": "Keep the system up and the audit trail honest. Owns incident response, deployments, runbooks, and documentation. Does not own implementation decisions.",
+      "contact": {
+        "slack": "#reliability",
+        "email": "reliability@example.com",
+        "owner": "sre"
+      }
+    }
+  ],
   "departments": [
     {
       "id": "intake",

@@ -18,9 +18,9 @@
   "handoffEvidence": {
     "required": true,
     "artifactTypes": [
+      "runbook",
       "incident-report",
-      "postmortem",
-      "runbook"
+      "postmortem"
     ]
   },
   "liveScoring": {
