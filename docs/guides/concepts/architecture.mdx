@@ -49,7 +49,7 @@ The CLI registry is the substrate (~118 commands). Four surfaces are emphasized 
 | Surface | Entry | Role |
 |---|---|---|
 | Agent / MCP | `@construct` in Claude, OpenCode, Codex, Cursor, Copilot | Primary authoring — orchestration policy, skills, workflows |
-| Terminal chat | `construct chat` | Owned agent loop in a Tauri desktop window (or `--plain` linear) |
+| Terminal chat | `construct` (no subcommand; `construct chat` is a deprecated alias) | Owned agent loop in a Tauri desktop window (or `--plain` linear) |
 | Dashboard chat | `construct chat --web` or `/chat` | Browser cockpit on the same owned loop (SSE) |
 | Thin CLI | `construct status`, `construct doctor`, `construct intake`, … | Operator diagnostics and queue inspection |
 
@@ -375,7 +375,7 @@ The runtime has two pluggable axes behind unchanged callers: a worker backend an
 
 ## Terminal chat surface (own-the-loop, own-the-surface)
 
-`construct chat` is the interactive chat surface (ADR-0039 tier (c)/(d)). Construct runs the agent loop itself (ADR-0041): prompt → model → tool calls → tool results → repeat, on a provider-agnostic engine (Vercel AI SDK). The default surface is a **Tauri desktop window** (`apps/chat/desktop/`) loading dashboard `/chat/?surface=desktop` in a system WebView — full CSS layout, no browser tab. The same React cockpit (`apps/chat/web/`) also serves `construct chat --web` and dashboard `/chat` over SSE (`lib/server/chat-loop.mjs`). `--plain` routes to the linear, screen-reader-friendly renderer (`lib/chat/tui/render.mjs`) for SSH/CI only. Build the window binary with `npm run build:chat-desktop`. Settings persist to `.cx/chat-config.json`; transcripts to `.cx/chat-sessions/*.jsonl`. Decision: ADR-0041 (amended — Ink TUI replaced by desktop window + web cockpit).
+Running `construct` with no subcommand is the interactive chat surface (ADR-0039 tier (c)/(d); `construct chat` remains as a deprecated alias). Construct runs the agent loop itself (ADR-0041): prompt → model → tool calls → tool results → repeat, on a provider-agnostic engine (Vercel AI SDK). The default surface is a **Tauri desktop window** (`apps/chat/desktop/`) loading dashboard `/chat/?surface=desktop` in a system WebView — full CSS layout, no browser tab. The same React cockpit (`apps/chat/web/`) also serves `construct chat --web` and dashboard `/chat` over SSE (`lib/server/chat-loop.mjs`). `--plain` routes to the linear, screen-reader-friendly renderer (`lib/chat/tui/render.mjs`) for SSH/CI only. Build the window binary with `npm run build:chat-desktop`. Settings persist to `.cx/chat-config.json`; transcripts to `.cx/chat-sessions/*.jsonl`. Decision: ADR-0041 (amended — Ink TUI replaced by desktop window + web cockpit).
 
 ## Project-state hierarchy
 

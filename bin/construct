@@ -116,7 +116,8 @@ function usage(opts = {}) {
     println(`${COLORS.dim}Tip: Run ${COLORS.reset}construct --all${COLORS.dim} to see all commands · ${COLORS.reset}construct <cmd> --help${COLORS.dim} for details${COLORS.reset}`);
   }
 
-  println(`\n${COLORS.dim}Usage:${COLORS.reset} construct <command> [options]\n`);
+  println(`\n${COLORS.dim}Usage:${COLORS.reset} construct <command> [options]`);
+  println(`${COLORS.dim}Run ${COLORS.reset}construct${COLORS.dim} with no command to start a chat session (--plain for the terminal renderer).${COLORS.reset}\n`);
 
   for (const category of CATEGORY_ORDER) {
     const categoryCommands = commands.filter((c) => c.category === category);
@@ -126,39 +127,6 @@ function usage(opts = {}) {
       const emoji = command.emoji ?? '  ';
       println(`  ${iconColumn(emoji)}${command.name.padEnd(14)} ${command.description}`);
     }
-    println('');
-  }
-}
-
-// Bare-command landing — show the same core-command listing as `construct
-// --help`, prefixed with a context line so users know where they are, and
-// suffixed with the one next-step suggestion that applies to their state.
-
-async function showInteractiveMenu() {
-  const { existsSync } = await import('node:fs');
-  const { join } = await import('node:path');
-
-  const projectRoot = process.cwd();
-  const isConstructProject = existsSync(join(projectRoot, 'construct.config.json')) ||
-                             existsSync(join(projectRoot, '.cx'));
-
-  if (isConstructProject) {
-    const projectName = process.env.CX_PROJECT_NAME || path.basename(projectRoot);
-    println(`${COLORS.dim}Project:${COLORS.reset} ${projectName}`);
-    println('');
-  }
-
-  usage({ all: false });
-
-  if (isConstructProject) {
-    const { readDashboardState } = await import('../lib/service-manager.mjs');
-    const dashboard = readDashboardState(HOME);
-    if (!dashboard) {
-      println(`${COLORS.yellow}💡 Services not running. Start with:${COLORS.reset} ${COLORS.green}construct dev${COLORS.reset}`);
-      println('');
-    }
-  } else {
-    println(`${COLORS.yellow}💡 Not a Construct project. Initialize with:${COLORS.reset} ${COLORS.green}construct init${COLORS.reset}`);
     println('');
   }
 }
@@ -5670,6 +5638,7 @@ const handlers = new Map([
     runAcpServer({ input: process.stdin, output: process.stdout, env: process.env, defaultCwd: process.cwd() });
   }],
   ['chat', async (args) => {
+    errorln(`${COLORS.dim}construct chat is deprecated — run \`construct\` with no subcommand to start chat. The subcommand will be removed in a future release.${COLORS.reset}`);
     const { runChat } = await import('../lib/chat/cli.mjs');
     process.exitCode = await runChat(args, { env: process.env, cwd: process.cwd() });
   }],
@@ -6780,12 +6749,6 @@ const handlers = new Map([
   }],
 ]);
 
-// No command provided → show interactive menu
-if (!command) {
-  await showInteractiveMenu();
-  process.exit(0);
-}
-
 // Help flags → show usage
 if (command === '--help' || command === '-h' || command === 'help') {
   usage();
@@ -6804,6 +6767,16 @@ if (command === '--version' || command === '-V') {
   const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
   println(`construct v${pkg.version}`);
   process.exit(0);
+}
+
+// Bare invocation — or leading flags with no subcommand — drops into the
+// owned-loop chat: the claude/codex/gemini default entry. The global flags
+// above already short-circuited, so anything else starting with `-` is a chat
+// flag (--plain, --accessible, --model, --resume, --demo, …) forwarded verbatim.
+if (!command || command.startsWith('-')) {
+  const { runChat } = await import('../lib/chat/cli.mjs');
+  const code = await runChat(process.argv.slice(2), { env: process.env, cwd: process.cwd() });
+  process.exit(code || 0);
 }
 
 // Unknown-flag guidance for commands that fully declare their flags (strictFlags
