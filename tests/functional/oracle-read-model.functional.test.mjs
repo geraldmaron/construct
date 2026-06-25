@@ -23,7 +23,7 @@ function freshEnv() {
   mkdirSync(join(rootDir, 'audit-artifacts'), { recursive: true });
   mkdirSync(doctorRoot(homeDir), { recursive: true });
   mkdirSync(join(rootDir, 'specialists'), { recursive: true });
-  cpSync(join(process.cwd(), 'specialists', 'registry.json'), join(rootDir, 'specialists', 'registry.json'));
+  cpSync(join(process.cwd(), 'specialists', 'unified-registry.json'), join(rootDir, 'specialists', 'unified-registry.json'));
   return {
     projectDir,
     homeDir,

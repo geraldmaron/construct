@@ -61,8 +61,8 @@ test('applyFreePreferenceToTierSet does not invent a model when neither tierSet 
   assert.equal(resolved.fast, null);
 });
 
-test('shipped specialists/registry.json has no preselected primaries', () => {
-  const registryPath = path.resolve(new URL('.', import.meta.url).pathname, '../specialists/registry.json');
+test('shipped specialists/unified-registry.json has no preselected primaries', () => {
+  const registryPath = path.resolve(new URL('.', import.meta.url).pathname, '../specialists/unified-registry.json');
   const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
   for (const tier of ['reasoning', 'standard', 'fast']) {
     assert.equal(registry.models?.[tier]?.primary ?? null, null, `tier ${tier} ships with a primary — should be null`);

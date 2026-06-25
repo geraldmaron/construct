@@ -34,6 +34,98 @@
     "business-strategist",
     "orchestrator"
   ],
+  "teams": [
+    {
+      "id": "product-group",
+      "name": "Product Group",
+      "owner": "product-manager",
+      "roles": ["product-manager", "ux-researcher", "designer", "researcher", "accessibility"],
+      "decisionRights": ["intake-triage", "design-approval", "scope-change", "evidence-requirement"],
+      "forbiddenDecisions": ["deployment", "security-override", "infra-change"],
+      "escalationPath": ["product-manager", "rd-lead", "orchestrator"],
+      "charter": "Translate user reality into shippable change. Owns problem framing, requirements, evidence gathering, design decisions, and acceptance criteria. Does not own implementation choices, deployment decisions, or security policy. Escalates scope conflicts to R&D leadership.",
+      "contact": {
+        "slack": "#product",
+        "email": "product@example.com",
+        "owner": "product-manager"
+      }
+    },
+    {
+      "id": "engineering-group",
+      "name": "Engineering Group",
+      "owner": "architect",
+      "roles": ["architect", "engineer", "debugger", "ai-engineer", "data-engineer", "platform-engineer"],
+      "decisionRights": ["architecture", "technology-selection", "implementation-approach", "performance-optimization"],
+      "forbiddenDecisions": ["product-scope", "user-research", "deployment-timing"],
+      "escalationPath": ["architect", "rd-lead", "orchestrator"],
+      "charter": "Design, build, and harden the system. Owns architecture decisions, technology choices, code quality, debugging, AI integration, and the platform underneath. Does not own product framing, user research direction, or release timing. Escalates tech-debt conflicts to R&D leadership.",
+      "contact": {
+        "slack": "#engineering",
+        "email": "engineering@example.com",
+        "owner": "architect"
+      }
+    },
+    {
+      "id": "quality-group",
+      "name": "Quality Group",
+      "owner": "reviewer",
+      "roles": ["reviewer", "qa", "test-automation", "evaluator", "trace-reviewer", "devil-advocate"],
+      "decisionRights": ["quality-gate-approval", "test-strategy", "evaluation-design", "release-readiness"],
+      "forbiddenDecisions": ["scope-change", "deployment-timing", "architecture"],
+      "escalationPath": ["reviewer", "architect", "rd-lead"],
+      "charter": "Verify the system does what it claims and surface what is broken. Owns review, testing, evaluation, trace analysis, and devil's-advocate framing. Does not own implementation or product decisions. Escalates quality vs. schedule conflicts to architecture/R&D.",
+      "contact": {
+        "slack": "#quality",
+        "email": "quality@example.com",
+        "owner": "reviewer"
+      }
+    },
+    {
+      "id": "governance-group",
+      "name": "Governance Group",
+      "owner": "security",
+      "roles": ["security", "legal-compliance"],
+      "decisionRights": ["security-approval", "compliance-review", "risk-assessment", "policy-definition"],
+      "forbiddenDecisions": ["product-scope", "implementation-approach", "deployment-readiness"],
+      "escalationPath": ["security", "architect", "orchestrator"],
+      "charter": "Keep the system safe to operate and inside its legal envelope. Owns security review, compliance verification, risk assessment, and the audit trail. Does not own implementation or product decisions but can block deployments that violate policy. Escalates policy conflicts to orchestrator.",
+      "contact": {
+        "slack": "#governance",
+        "email": "governance@example.com",
+        "owner": "security"
+      }
+    },
+    {
+      "id": "operations-group",
+      "name": "Operations Group",
+      "owner": "sre",
+      "roles": ["release-manager", "sre", "operations", "docs-keeper"],
+      "decisionRights": ["deployment", "rollback", "incident-response", "runbook-approval", "ops-procedure"],
+      "forbiddenDecisions": ["architecture", "product-scope", "security-policy"],
+      "escalationPath": ["sre", "architect", "orchestrator"],
+      "charter": "Keep the system running and shipping. Owns release management, SRE response, ops runbooks, documentation upkeep, and deployment execution. Does not own architecture or product decisions. Escalates reliability vs. change-rate conflicts to architecture/leadership.",
+      "contact": {
+        "slack": "#operations",
+        "email": "operations@example.com",
+        "owner": "sre"
+      }
+    },
+    {
+      "id": "strategy-group",
+      "name": "Strategy Group",
+      "owner": "rd-lead",
+      "roles": ["rd-lead", "business-strategist", "data-analyst", "explorer", "orchestrator"],
+      "decisionRights": ["direction-setting", "strategic-prioritization", "measurement-design", "research-scope", "cross-team-orchestration"],
+      "forbiddenDecisions": ["implementation-details", "user-research-methods", "ops-procedures"],
+      "escalationPath": ["rd-lead", "orchestrator"],
+      "charter": "Hold the long view: what to build next, what to measure, what to retire. Owns R&D direction, strategic prioritization, measurement design, cross-team orchestration, and exploration. Does not own implementation or day-to-day operations. Arbitrates escalations from other groups.",
+      "contact": {
+        "slack": "#strategy",
+        "email": "strategy@example.com",
+        "owner": "rd-lead"
+      }
+    }
+  ],
   "departments": [
     {
       "id": "product",

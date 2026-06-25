@@ -18,8 +18,8 @@
   "handoffEvidence": {
     "required": true,
     "artifactTypes": [
-      "qa-strategy",
-      "test-plan"
+      "test-plan",
+      "qa-strategy"
     ]
   },
   "liveScoring": {

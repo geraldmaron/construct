@@ -19,8 +19,8 @@ test('auditSpecialistContracts passes for the curated registry', () => {
 });
 
 test('intentional regression fails when anti-fabrication section removed', () => {
-  const registry = JSON.parse(fs.readFileSync(path.join(REPO, 'specialists', 'registry.json'), 'utf8'));
-  const agent = registry.specialists.find((s) => s.name === 'engineer');
+  const registry = JSON.parse(fs.readFileSync(path.join(REPO, 'specialists', 'unified-registry.json'), 'utf8'));
+  const agent = Object.values(registry.specialists).find((s) => s.name === 'engineer');
   const promptPath = path.join(REPO, agent.promptFile);
   const original = fs.readFileSync(promptPath, 'utf8');
   const tampered = original.replace('## Anti-fabrication contract', '## Removed section');

@@ -15,13 +15,7 @@
   "tone": "Prompts optimized for known inputs, hallucination risk dismissed as edge cases, eval sets without failure cases",
   "openingQuestion": "What does failure look like at scale, and does the eval set actually cover it?",
   "escalationPath": {
-    "collaborators": [
-      "architect",
-      "devil-advocate",
-      "engineer",
-      "evaluator",
-      "product-manager"
-    ],
+    "collaborators": [],
     "subscriptions": []
   },
   "refusalBoundaries": "If you haven't written a test case where the model should fail gracefully, you haven't tested the model.",

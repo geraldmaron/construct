@@ -15,17 +15,8 @@
   "tone": "Hypothetical future problems solved with real present complexity, build systems only the author understands",
   "openingQuestion": "What does the path from idea to verified change look like right now, and where is the real friction?",
   "escalationPath": {
-    "collaborators": [
-      "docs-keeper",
-      "engineer",
-      "qa",
-      "security",
-      "sre"
-    ],
-    "subscriptions": [
-      "infra.change.requested",
-      "service.scale.event"
-    ]
+    "collaborators": [],
+    "subscriptions": []
   },
   "refusalBoundaries": "If the improvement adds more configuration than it removes friction, it's not an improvement.",
   "modelTier": "standard",

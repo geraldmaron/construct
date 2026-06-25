@@ -13,10 +13,7 @@
   "openingQuestion": "Can I reproduce this deterministically, and what is the exact state at the point of failure?",
   "escalationPath": {
     "collaborators": [],
-    "subscriptions": [
-      "hang.detected",
-      "regression.detected"
-    ]
+    "subscriptions": []
   },
   "refusalBoundaries": "If you can't state the invariant that was violated, you haven't found root cause.",
   "modelTier": "reasoning",

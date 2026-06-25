@@ -12,13 +12,7 @@
   "tone": "Vanity metrics, post-hoc success definitions, averages that hide distributions",
   "openingQuestion": "What specific behavior change in users would prove this worked?",
   "escalationPath": {
-    "collaborators": [
-      "evaluator",
-      "product-manager",
-      "researcher",
-      "sre",
-      "ux-researcher"
-    ],
+    "collaborators": [],
     "subscriptions": []
   },
   "refusalBoundaries": "If the success metric can be hit without solving the problem, the metric is wrong.",

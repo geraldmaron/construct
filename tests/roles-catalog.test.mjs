@@ -16,7 +16,7 @@ import test from 'node:test';
 import { listRoles, formatRoleList } from '../lib/roles/catalog.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const registry = JSON.parse(readFileSync(join(__dirname, '..', 'specialists', 'registry.json'), 'utf8'));
+const registry = JSON.parse(readFileSync(join(__dirname, '..', 'specialists', 'unified-registry.json'), 'utf8'));
 
 test('listRoles returns one descriptor per registry specialist', () => {
   const roles = listRoles();

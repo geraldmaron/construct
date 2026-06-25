@@ -53,7 +53,7 @@ before(async () => {
   tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-parity-home-'));
   fs.mkdirSync(path.join(tmpRoot, 'specialists'), { recursive: true });
   fs.mkdirSync(path.join(tmpRoot, 'personas'), { recursive: true });
-  fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
+  fs.writeFileSync(path.join(tmpRoot, 'specialists', 'unified-registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
   fs.writeFileSync(path.join(tmpRoot, 'personas', 'construct.md'), '# stub\n');
   ({ checkParity } = await import('../lib/parity.mjs'));
 });
@@ -284,12 +284,12 @@ describe('checkParity', () => {
         { ...FIXTURE_REGISTRY.specialists[1], internal: true },
       ],
     };
-    fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(registryWithInternal, null, 2));
+    fs.writeFileSync(path.join(tmpRoot, 'specialists', 'unified-registry.json'), JSON.stringify(registryWithInternal, null, 2));
     writeAllSurfaces();
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     const copilot = report.surfaces.find((s) => s.surface === 'copilot');
     assert.equal(copilot.status, 'ok', `copilot drift: missing=${copilot.missing}, extra=${copilot.extra}`);
-    fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
+    fs.writeFileSync(path.join(tmpRoot, 'specialists', 'unified-registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
   });
 
   it('entry.platforms allowlist still excludes a specialist from off-list surfaces', () => {
@@ -300,7 +300,7 @@ describe('checkParity', () => {
 
     resetSurfaces();
     fs.writeFileSync(
-      path.join(tmpRoot, 'specialists', 'registry.json'),
+      path.join(tmpRoot, 'specialists', 'unified-registry.json'),
       JSON.stringify({
         ...FIXTURE_REGISTRY,
         specialists: [
@@ -314,7 +314,7 @@ describe('checkParity', () => {
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     assert.equal(report.ok, true, `parity should be ok with only construct at user scope; got ${JSON.stringify(report.summary)}`);
 
-    fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
+    fs.writeFileSync(path.join(tmpRoot, 'specialists', 'unified-registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
   });
 
   it('reclassifies drift to legacy-install when all extras are known cx-* specialists', () => {

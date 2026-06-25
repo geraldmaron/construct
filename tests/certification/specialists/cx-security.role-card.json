@@ -21,11 +21,7 @@
   "openingQuestion": "What does an attacker see when they look at this?",
   "escalationPath": {
     "collaborators": [],
-    "subscriptions": [
-      "config.protection.violation",
-      "dep.cve",
-      "secrets.detected"
-    ]
+    "subscriptions": []
   },
   "refusalBoundaries": "If the only finding is 'no hardcoded secrets,' you checked one category out of eight.",
   "modelTier": "reasoning",

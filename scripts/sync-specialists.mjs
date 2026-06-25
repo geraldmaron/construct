@@ -72,8 +72,43 @@ for (const [key, value] of Object.entries(mergedEnv)) {
   if (!(key in process.env)) process.env[key] = value;
 }
 if (!process.env.CX_TOOLKIT_DIR) process.env.CX_TOOLKIT_DIR = root;
-const registryPath = path.join(root, "specialists", "registry.json");
-const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+
+function unifiedToLegacyRegistry(unified) {
+  const orchestrator = Object.values(unified.specialists || {}).find(s => s.role === 'orchestrator') || {};
+  const specialists = Object.values(unified.specialists || {}).filter(s => s.role !== 'orchestrator');
+  return {
+    version: 1,
+    system: 'construct',
+    prefix: 'cx',
+    orchestrator: {
+      name: orchestrator.name || 'construct',
+      displayName: orchestrator.displayName || orchestrator.description?.split('—')[0].trim() || 'Construct',
+      description: orchestrator.description || '',
+      promptFile: orchestrator.promptFile || 'specialists/prompts/cx-orchestrator.md',
+      modelTier: orchestrator.modelTier || 'standard',
+      skills: orchestrator.skills || [],
+    },
+    specialists: specialists.map(s => ({
+      name: s.name,
+      displayName: s.displayName || s.description?.split('—')[0].trim() || s.name,
+      description: s.description || '',
+      promptFile: s.promptFile,
+      modelTier: s.modelTier || 'standard',
+      skills: s.skills || [],
+      team: s.team,
+      role: s.role,
+      docArtifacts: s.docArtifacts || [],
+      subscriptions: s.events || [],
+      watchConditions: s.watchConditions || [],
+      fence: s.fence || {},
+    })),
+    mcpServers: unified.mcpServers || {},
+  };
+}
+
+const registryPath = path.join(root, "specialists", "unified-registry.json");
+const unified = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+const registry = unifiedToLegacyRegistry(unified);
 
 function validateRegistry(registry) {
   const errors = [];
@@ -1779,13 +1814,6 @@ function syncOpencode(entries, targetDir = null, wants = true) {
   // Pass current Construct model tiers to OpenCode config for native routing.
   config.construct = config.construct || {};
   config.construct.models = { ...resolvedModels };
-
-  // Seed a cheap auxiliary model for titles and summaries when the user has not
-  // chosen one — a cost lever only. Global scope only; project configs inherit it.
-
-  if (!targetDir && config.small_model === undefined) {
-    config.small_model = resolvedModels.fast || "anthropic/claude-haiku-4-5-20251001";
-  }
 
   // Seed a text-capable primary model when the user has not pinned one, so chat
   // and routing never fall through to a host provider-default that happens to be

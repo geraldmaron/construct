@@ -13,6 +13,53 @@
     "product-lead",
     "operator"
   ],
+  "teams": [
+    {
+      "id": "discovery-team",
+      "name": "Discovery Team",
+      "owner": "researcher",
+      "roles": ["researcher", "ux-researcher"],
+      "decisionRights": ["question-scoping", "methodology-selection", "protocol-design"],
+      "forbiddenDecisions": ["analysis", "synthesis", "recommendation"],
+      "escalationPath": ["researcher"],
+      "charter": "Pose the right question and design rigorous methods to answer it. Owns research scoping, methodology choice, and protocol design. Does not own analysis or recommendations.",
+      "contact": {
+        "slack": "#discovery",
+        "email": "discovery@example.com",
+        "owner": "researcher"
+      }
+    },
+    {
+      "id": "analysis-team",
+      "name": "Analysis Team",
+      "owner": "data-analyst",
+      "roles": ["data-analyst", "evaluator"],
+      "decisionRights": ["analysis", "evaluation-design", "finding-validation"],
+      "forbiddenDecisions": ["question-scoping", "recommendation"],
+      "escalationPath": ["data-analyst"],
+      "charter": "Turn evidence into findings. Owns data analysis, evaluation against hypotheses, and synthesis. Does not own research scoping or final recommendations.",
+      "contact": {
+        "slack": "#analysis",
+        "email": "analysis@example.com",
+        "owner": "data-analyst"
+      }
+    },
+    {
+      "id": "delivery-team",
+      "name": "Delivery Team",
+      "owner": "reviewer",
+      "roles": ["reviewer", "product-lead", "operator"],
+      "decisionRights": ["peer-review", "recommendation-framing", "dissemination"],
+      "forbiddenDecisions": ["analysis", "question-scoping"],
+      "escalationPath": ["reviewer"],
+      "charter": "Get findings into the hands that need them. Owns peer review, recommendation framing, and stakeholder communication. Does not own analysis or research design.",
+      "contact": {
+        "slack": "#delivery",
+        "email": "delivery@example.com",
+        "owner": "reviewer"
+      }
+    }
+  ],
   "departments": [
     {
       "id": "discovery",

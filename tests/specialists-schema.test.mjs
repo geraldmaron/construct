@@ -102,7 +102,7 @@ describe('validateRegistry', () => {
 describe('validateRegistryFile against the live registry', () => {
   it('the shipped registry is valid (no drift)', () => {
     const result = validateRegistryFile({
-      registryPath: path.join(ROOT_DIR, 'specialists', 'registry.json'),
+      registryPath: path.join(ROOT_DIR, 'specialists', 'unified-registry.json'),
       rootDir: ROOT_DIR,
     });
     assert.equal(result.errors.length, 0, `shipped registry has drift: ${result.errors.join('; ')}`);

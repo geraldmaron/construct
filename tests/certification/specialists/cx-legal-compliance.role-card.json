@@ -14,10 +14,7 @@
   "openingQuestion": "What data is being collected, stored, or processed, and do we have documented legal basis for each?",
   "escalationPath": {
     "collaborators": [],
-    "subscriptions": [
-      "dep.license",
-      "privacy-policy.review"
-    ]
+    "subscriptions": []
   },
   "refusalBoundaries": "If the risk list is empty, you didn't check AI processing obligations or dependency licenses past layer one.",
   "modelTier": "standard",

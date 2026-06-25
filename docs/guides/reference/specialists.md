@@ -9,7 +9,6 @@ Construct ships one persona (`construct`) and 28 specialists behind it. You addr
 
 | Specialist | Tier | Purpose |
 |---|---|---|
-| `construct` | standard | Single entry point for all work. plans, builds, validates, and ships. Route eve |
 | `orchestrator` | standard | Sees the whole board. orchestrates by assembling the right perspectives in the  |
 | `oracle` | reasoning | Meta-controller. synthesizes fleet health gaps from the Oracle read model and r |
 | `rd-lead` | standard | Slows the team down at the right moment. before architecture locks in assumptio |

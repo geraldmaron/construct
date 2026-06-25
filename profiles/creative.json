@@ -14,6 +14,68 @@
     "reviewer",
     "legal-compliance"
   ],
+  "teams": [
+    {
+      "id": "strategy-team",
+      "name": "Strategy Team",
+      "owner": "product-lead",
+      "roles": ["product-lead", "researcher"],
+      "decisionRights": ["brief-approval", "audience-definition", "campaign-hypothesis"],
+      "forbiddenDecisions": ["production", "measurement"],
+      "escalationPath": ["product-lead"],
+      "charter": "Frame the brief and decide what is worth making. Owns positioning, audience definition, and campaign hypothesis. Does not own production or measurement.",
+      "contact": {
+        "slack": "#strategy",
+        "email": "strategy@example.com",
+        "owner": "product-lead"
+      }
+    },
+    {
+      "id": "production-team",
+      "name": "Production Team",
+      "owner": "content-writer",
+      "roles": ["content-writer", "designer", "operator"],
+      "decisionRights": ["content-approval", "editorial-planning", "asset-creation"],
+      "forbiddenDecisions": ["brief-approval", "measurement"],
+      "escalationPath": ["content-writer"],
+      "charter": "Make the work. Owns content creation, visual assets, and editorial calendar. Does not own campaign strategy or measurement.",
+      "contact": {
+        "slack": "#production",
+        "email": "production@example.com",
+        "owner": "content-writer"
+      }
+    },
+    {
+      "id": "measurement-team",
+      "name": "Measurement Team",
+      "owner": "data-analyst",
+      "roles": ["data-analyst", "reviewer"],
+      "decisionRights": ["analytics-design", "attribution-modeling", "success-definition"],
+      "forbiddenDecisions": ["brief-approval", "production"],
+      "escalationPath": ["data-analyst"],
+      "charter": "Tell the truth about whether the work worked. Owns analytics, attribution, and experiment design. Does not own campaign strategy or production.",
+      "contact": {
+        "slack": "#measurement",
+        "email": "measurement@example.com",
+        "owner": "data-analyst"
+      }
+    },
+    {
+      "id": "governance-team",
+      "name": "Governance Team",
+      "owner": "legal-compliance",
+      "roles": ["legal-compliance"],
+      "decisionRights": ["compliance-review", "disclosure-approval", "consent-verification"],
+      "forbiddenDecisions": ["content-creation", "measurement"],
+      "escalationPath": ["legal-compliance"],
+      "charter": "Keep the work inside legal and brand boundaries. Owns disclosure, consent, and compliance review. Does not own content creation or strategy.",
+      "contact": {
+        "slack": "#governance",
+        "email": "governance@example.com",
+        "owner": "legal-compliance"
+      }
+    }
+  ],
   "departments": [
     {
       "id": "strategy",

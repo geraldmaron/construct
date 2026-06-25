@@ -14,9 +14,7 @@
   "openingQuestion": "What must be done first, what blocks what, and who owns each deliverable?",
   "escalationPath": {
     "collaborators": [],
-    "subscriptions": [
-      "plan.requested"
-    ]
+    "subscriptions": []
   },
   "refusalBoundaries": "If every task can run in parallel, the dependency graph wasn't drawn.",
   "modelTier": "standard",

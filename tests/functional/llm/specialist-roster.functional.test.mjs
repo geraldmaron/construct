@@ -1,7 +1,7 @@
 /**
  * Live LLM smoke for every cx-specialist that ships with Construct.
  *
- * For each entry in specialists/registry.json, load the prompt and run one
+ * For each entry in specialists/unified-registry.json, load the prompt and run one
  * cheap completion against a canonical input. Assert only that the response
  * is non-empty + bounded in length. Catches "this specialist's prompt is
  * broken / unloadable / unparseable" regressions.
@@ -21,11 +21,11 @@ import { createLlmHarness } from '../_lib/openrouter-llm.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..', '..');
-const registry = JSON.parse(readFileSync(join(REPO_ROOT, 'specialists', 'registry.json'), 'utf8'));
+const registry = JSON.parse(readFileSync(join(REPO_ROOT, 'specialists', 'unified-registry.json'), 'utf8'));
 
 const CANONICAL_PROMPT = 'A teammate proposes shipping a feature flag system. In one paragraph, what is your single most important first observation?';
 
-const specialists = (registry.specialists ?? [])
+const specialists = Object.values(registry.specialists ?? {})
   .filter((s) => s.promptFile && !s.skip_live_test)
   .map((s) => ({ name: s.name, promptFile: s.promptFile }));
 

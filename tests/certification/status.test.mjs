@@ -44,8 +44,8 @@ test('buildCertificationStatus marks stale capabilities distinctly', () => {
     path.join(root, 'tests', 'certification', 'skills', 'inventory.json'),
   );
   fs.copyFileSync(
-    path.join(REPO, 'specialists', 'registry.json'),
-    path.join(root, 'specialists', 'registry.json'),
+    path.join(REPO, 'specialists', 'unified-registry.json'),
+    path.join(root, 'specialists', 'unified-registry.json'),
   );
   fs.copyFileSync(
     path.join(REPO, 'package.json'),
