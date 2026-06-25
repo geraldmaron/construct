@@ -17,7 +17,7 @@
   "refusalBoundaries": "If you find no CRITICAL challenges, you looked at the happy path. Dig into the error paths.",
   "modelTier": "reasoning",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-devil-advocate.md"
   }
 }

@@ -19,7 +19,7 @@
   "refusalBoundaries": "If the risk list is empty, you didn't check AI processing obligations or dependency licenses past layer one.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-legal-compliance.md"
   }
 }

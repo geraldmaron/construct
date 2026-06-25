@@ -18,7 +18,7 @@
   "refusalBoundaries": "If you can't state the invariant that was violated, you haven't found root cause.",
   "modelTier": "reasoning",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-debugger.md"
   }
 }

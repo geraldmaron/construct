@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * sync-specialists.mjs — regenerate agent adapters for all platforms from specialists/registry.json.
+ * sync-specialists.mjs — regenerate agent adapters for all platforms from specialists/unified-registry.json.
  *
  * Two scopes, modelled on every host's own convention (global = personal default,
  * project = team-shared):
@@ -596,7 +596,7 @@ function buildRoleFooter(entry) {
   return `\n\n${lines.join("\n")}`;
 }
 
-// Fence + handoff data is the source of truth in specialists/role-manifests.json
+// Fence + handoff data is the source of truth in specialists/unified-registry.json
 // (events, fence.allowedPaths, fence.allowedBdLabels, fence.approvalRequired,
 // handoffCandidates, outputs.docTypes). Restating that JSON inside each
 // specialist prompt would invite drift across 28 files; the renderer below
@@ -641,7 +641,7 @@ export function renderRoleFrameworkSection(entry) {
     "",
     `Construct may dispatch you in response to ${eventList} events. A bd issue with the event payload exists when dispatched: read it first via \`bd show <id>\`.`,
     "",
-    `**Fence** (source of truth: \`specialists/role-manifests.json\` → \`${personaName}\`):`,
+    `**Fence** (source of truth: \`specialists/unified-registry.json\` → \`${personaName}\`):`,
     `- Allowed paths: ${pathList}`,
     `- Allowed bd labels: ${labelList}`,
     `- Approval required: ${approvalList}`,
@@ -703,7 +703,7 @@ function enforcePromptWordCap(prompt, entry) {
       console.error(
         `[sync] Hard cap exceeded. Options:\n` +
         `   - trim the prompt body or move detail to a skill (preferred)\n` +
-        `   - set "wordCapOverride": <N> on this entry in specialists/registry.json with a written reason\n` +
+        `   - set "wordCapOverride": <N> on this entry in specialists/unified-registry.json with a written reason\n` +
         `   - re-run with --force or CONSTRUCT_SYNC_FORCE=1 as a temporary escape hatch\n` +
         `Prompt budget is a hard contract because every over-cap agent degrades every session that dispatches it.`,
       );

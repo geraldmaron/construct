@@ -1,9 +1,9 @@
 ---
 title: Specialists
-description: The 28 specialists behind the construct persona. Generated from specialists/registry.json.
+description: The 28 specialists behind the construct persona. Generated from specialists/unified-registry.json.
 ---
 
-> Generated from `specialists/registry.json`. Re-run `construct docs:site` to refresh.
+> Generated from `specialists/unified-registry.json`. Re-run `construct docs:site` to refresh.
 
 Construct ships one persona (`construct`) and 28 specialists behind it. You address `@construct` for all everyday work; it routes to specialists internally. Each specialist has a role, model tier, and prompt file that defines its decision authority.
 

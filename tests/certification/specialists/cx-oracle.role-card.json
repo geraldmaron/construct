@@ -18,7 +18,7 @@
   "refusalBoundaries": "If you cannot cite the read-model signal for a gap, do not recommend action on it.",
   "modelTier": "reasoning",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-oracle.md"
   }
 }

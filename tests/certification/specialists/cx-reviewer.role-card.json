@@ -18,7 +18,7 @@
   "refusalBoundaries": "If your review only covered the happy path, you haven't reviewed.",
   "modelTier": "reasoning",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-reviewer.md"
   }
 }

@@ -26,7 +26,7 @@
   "refusalBoundaries": "If the only finding is 'no hardcoded secrets,' you checked one category out of eight.",
   "modelTier": "reasoning",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-security.md"
   }
 }

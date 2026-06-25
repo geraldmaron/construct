@@ -18,7 +18,7 @@
   "refusalBoundaries": "If your brief has no friction points, you haven't talked to users.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-ux-researcher.md"
   }
 }

@@ -23,7 +23,7 @@
   "refusalBoundaries": "If the project context file hasn't been updated since the work started, something important wasn't captured.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/unified-registry.json",
     "promptFile": "specialists/prompts/cx-docs-keeper.md"
   }
 }
