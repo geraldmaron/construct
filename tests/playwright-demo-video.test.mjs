@@ -1,5 +1,5 @@
 /**
- * tests/dashboard-demo.test.mjs — dashboard demo video finalize helpers.
+ * tests/playwright-demo-video.test.mjs — Playwright demo video finalize helpers.
  */
 
 import assert from 'node:assert/strict';
@@ -12,7 +12,7 @@ import {
   collectVideoFiles,
   newestVideo,
   finalizeDemoVideo,
-} from '../lib/dashboard-demo.mjs';
+} from '../lib/playwright-demo.mjs';
 
 test('newestVideo picks latest mtime', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dash-demo-'));

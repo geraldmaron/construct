@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-25T19:48:22.373Z",
+  "generatedAt": "2026-06-25T22:42:59.347Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
     "testFiles": 543,
@@ -9,18 +9,18 @@
     "skippedFiles": 0,
     "capabilityMarkedFiles": 23,
     "byLayer": {
-      "unit": 334,
+      "unit": 333,
       "live-provider": 2,
-      "visual": 6,
+      "visual": 7,
       "integration": 31,
       "functional": 170
     },
     "byCategory": {
-      "unit": 295,
+      "unit": 294,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
-      "visual": 6,
+      "visual": 7,
       "integration": 22,
       "functional": 170,
       "hook": 9
@@ -613,14 +613,6 @@
       "maintainerNotes": "tests/cost.test.mjs — validates token and cache accounting."
     },
     {
-      "path": "tests/dashboard-demo.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/dashboard-demo.test.mjs — dashboard demo video finalize helpers."
-    },
-    {
       "path": "tests/dashboard-static.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -674,7 +666,7 @@
       "category": "visual",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/demo-recording.test.mjs — recording manifest loader and legacy bridge."
+      "maintainerNotes": "tests/demo-recording.test.mjs — recording manifest loader."
     },
     {
       "path": "tests/deploy-contract.test.mjs",
@@ -2348,7 +2340,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/orchestration-mcp.functional.test.mjs — MCP orchestration client."
+      "maintainerNotes": "tests/functional/orchestration-mcp.functional.test.mjs — MCP orchestration, in-process."
     },
     {
       "path": "tests/functional/orchestration-mode-a.functional.test.mjs",
@@ -3551,6 +3543,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "capabilities.test.mjs — platform capability registry data contract (ADR-0033)."
+    },
+    {
+      "path": "tests/playwright-demo-video.test.mjs",
+      "layer": "visual",
+      "category": "visual",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/playwright-demo-video.test.mjs — Playwright demo video finalize helpers."
     },
     {
       "path": "tests/plugin-registry.test.mjs",
