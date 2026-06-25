@@ -67,3 +67,36 @@ There is no authorized bypass. Beads hygiene is a release gate. If the tooling i
 ## Automation
 
 Project-level automation is tracked in the beads queue: auto-close on merge, pre-push `bd preflight` gate, weekly drift report, memory-contradiction detection. Until that ships, hygiene is a per-session discipline.
+
+## Execution protocol (construct-m7k2 / feature/team-redesign)
+
+Every child bead under epic `construct-m7k2` uses **double validation** before close. Definitions are normative for agents on any model tier (including smaller models).
+
+### Pass A — implementer
+
+The agent that claimed the bead and wrote the code:
+
+1. Run scoped tests cited in the bead acceptance criteria (`npm test` or `node --test tests/...`).
+2. Run bead-specific grep or CLI assertions listed in the bead body.
+3. Record command output in `bd note <id>` or the close reason (exit codes, failure counts).
+
+Pass A is not done if tests were not executed in this environment.
+
+### Pass B — reviewer (different model or fresh session)
+
+A different agent, or the same agent in a new session with no assumed memory of Pass A:
+
+1. Re-run every Pass A command independently (do not trust prior transcripts).
+2. Run `npm run release:check`.
+3. Run `construct doctor` — no new team/auth/MCP warnings attributable to the change.
+4. Confirm no `CONSTRUCT_SKIP_*` / `CONSTRUCT_ALLOW_*` env vars were introduced.
+
+Pass B is not done if `release:check` was not run.
+
+### Bead body template
+
+Child beads must include sections: Goal, Read first, Out of scope, Steps, Acceptance criteria, Pass A checklist, Pass B checklist, Do not touch. See `construct-m7k2.9` for the gate bead that introduced this contract.
+
+### Gate bead
+
+Claim `construct-m7k2.9` first on the epic branch to land this section, then proceed to `construct-m7k2-fix-tests` and downstream work per the dependency graph.
