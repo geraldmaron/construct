@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { validateHandoff, validateContractsFile } from '../lib/contracts/validate.mjs';
 import { loadRegistry } from '../lib/registry/loader.mjs';
 
-test('validateContractsFile succeeds with valid team boundaries', { todo: 'contract producer does not resolve to a registry specialist — registry data gap, construct-oned' }, () => {
+test('validateContractsFile succeeds with valid team boundaries', () => {
   const result = validateContractsFile();
   assert.ok(result.ok || result.errors.length === 0, 'contracts file should be valid');
 });
@@ -134,7 +134,7 @@ test('validateHandoff enforces team boundary approvals', () => {
   }
 });
 
-test('all specialists map to valid teams', { todo: 'a specialist references a team not in registry.teams — registry data gap, construct-oned' }, () => {
+test('all specialists map to valid teams', () => {
   const registry = loadRegistry();
   const teams = new Set(Object.keys(registry.teams || {}));
   const specialists = Object.values(registry.specialists || {});
