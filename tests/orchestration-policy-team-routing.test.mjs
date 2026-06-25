@@ -10,7 +10,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { routeRequest } from '../lib/orchestration-policy.mjs';
+import { routeRequest, INTENT_TO_TEAM, INTENT_CLASSES } from '../lib/orchestration-policy.mjs';
 
 test('routeRequest includes teamRouting in output', () => {
   const route = routeRequest({ request: 'implement a feature' });
@@ -104,4 +104,59 @@ test('routeRequest with architecture request includes appropriate teams', () => 
     || route.specialists.some(s => s.includes('architect')),
     'architecture work should involve engineering'
   );
+});
+
+test('INTENT_TO_TEAM maps every intent class to a known team (RFC-0004 §2)', () => {
+  const knownTeams = new Set([
+    'product-group', 'engineering-group', 'quality-group',
+    'governance-group', 'operations-group', 'strategy-group',
+  ]);
+  for (const intent of Object.values(INTENT_CLASSES)) {
+    const team = INTENT_TO_TEAM[intent];
+    assert.ok(team, `INTENT_TO_TEAM must map intent "${intent}"`);
+    assert.ok(knownTeams.has(team), `INTENT_TO_TEAM["${intent}"] = "${team}" must be a known team`);
+  }
+});
+
+test('teamRouting.primaryTeam is intent-driven and matches INTENT_TO_TEAM', () => {
+  const requests = [
+    'implement a new feature end to end',
+    'research the competitive landscape',
+    'fix the failing login flow',
+    'investigate why the deploy hangs',
+    'design a microservice architecture',
+  ];
+  for (const request of requests) {
+    const route = routeRequest({ request });
+    assert.equal(
+      route.teamRouting.primaryTeam,
+      INTENT_TO_TEAM[route.intent],
+      `primaryTeam for intent "${route.intent}" must come from INTENT_TO_TEAM`,
+    );
+    assert.ok(
+      route.teamRouting.involvedTeams.includes(route.teamRouting.primaryTeam),
+      'primaryTeam must be among involvedTeams',
+    );
+  }
+});
+
+test('a forbidden decision returns blockedStatus with an escalation path', () => {
+  // engineering-group owns implementation but forbids deployment-timing.
+  const route = routeRequest({ request: 'implement the change and decide the deployment timing' });
+  assert.equal(route.teamRouting.primaryTeam, 'engineering-group');
+  assert.ok(route.teamRouting.blockedStatus, 'a forbidden decision must produce a blockedStatus');
+  assert.equal(route.teamRouting.blockedStatus.team, 'engineering-group');
+  assert.ok(
+    route.teamRouting.blockedStatus.forbiddenDecisions.includes('deployment-timing'),
+    'blocked decision must name deployment-timing',
+  );
+  assert.ok(
+    route.teamRouting.blockedStatus.escalationPath.length > 0,
+    'blockedStatus must populate escalationPath',
+  );
+});
+
+test('a request with no forbidden decision leaves blockedStatus null', () => {
+  const route = routeRequest({ request: 'implement a small helper function' });
+  assert.equal(route.teamRouting.blockedStatus, null, 'no forbidden decision means no block');
 });

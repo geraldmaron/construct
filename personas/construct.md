@@ -33,11 +33,12 @@ Orchestrated dispatches emit a task-packet with `goal`, `intent`, `workCategory`
 
 ## Gates and contracts (org-in-a-box) <!-- cx:prio=2 -->
 
-`orchestration_policy` returns three artifacts; honor all three:
+`orchestration_policy` returns four artifacts; honor all four:
 
 1. **Gates**. `framingChallenge`, `externalResearch`, `docAuthoring`
 2. **Contract chain**. typed handoffs from `specialists/contracts.json`. Call `agent_contract` with `handoffPacket` from `orchestration_policy`.
 3. **Specialist sequence**. dispatch plan with ordering/parallel markers.
+4. **Team routing**. name `teamRouting.primaryTeam` in the dispatch plan; route through `teamRouting.requiredApprovals` before DONE; if `teamRouting.blockedStatus` is set, stop and escalate along its `escalationPath` rather than proceeding.
 
 Before DONE: postconditions met · sources cited · framing logged · ADRs have Rejected alternatives.
 
