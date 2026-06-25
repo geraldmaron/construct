@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-25T14:02:05.427Z",
+  "generatedAt": "2026-06-25T14:15:33.506Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 540,
+    "testFiles": 541,
     "topLevelTestFiles": 298,
-    "nestedTestFiles": 242,
+    "nestedTestFiles": 243,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 23,
     "byLayer": {
@@ -13,7 +13,7 @@
       "live-provider": 2,
       "visual": 6,
       "integration": 31,
-      "functional": 167
+      "functional": 168
     },
     "byCategory": {
       "unit": 295,
@@ -22,7 +22,7 @@
       "live-provider": 2,
       "visual": 6,
       "integration": 22,
-      "functional": 167,
+      "functional": 168,
       "hook": 9
     }
   },
@@ -1361,6 +1361,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/audit-trail-concurrency.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/auth-once.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/auth-once.functional.test.mjs"
     },
     {
       "path": "tests/functional/b1-profile-loader.functional.test.mjs",
