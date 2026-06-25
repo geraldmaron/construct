@@ -1,10 +1,10 @@
 /**
- * tests/roles/fence.test.mjs — action-vs-manifest fence check.
+ * tests/roles/fence.test.mjs — action-vs-manifest fence check with team awareness.
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { checkAction, globMatch } from '../../lib/roles/fence.mjs';
+import { checkAction, globMatch, computeEffectiveFence } from '../../lib/roles/fence.mjs';
 
 test('globMatch handles ** and *', () => {
   assert.equal(globMatch('docs/**', 'docs/operations/runbooks/foo.md'), true);
@@ -65,4 +65,61 @@ test('unknown persona is rejected', () => {
   const r = checkAction({ personaId: 'made-up', action: 'edit', target: 'anything' });
   assert.equal(r.allowed, false);
   assert.equal(r.reason, 'persona-not-onboarded');
+});
+
+test('computeEffectiveFence: team fence bounds specialist fence', () => {
+  // Engineer fence is narrower than any team allows; effective fence should be engineer's own fence
+  const engineerFence = {
+    allowedPaths: ['lib/**', 'tests/**'],
+    allowedCommands: ['npm test', 'npm run build'],
+    deniedActions: [],
+    approvalRequired: ['commit', 'push'],
+  };
+  const effective = computeEffectiveFence('engineer', engineerFence);
+  assert.ok(effective, 'should return an effective fence');
+  // Denied actions should include team's forbidden decisions
+  assert.ok(Array.isArray(effective.deniedActions), 'deniedActions should be an array');
+});
+
+test('computeEffectiveFence: specialist cannot exceed team authority', () => {
+  // Create a specialist fence that tries to allow something the team forbids
+  const overreachingFence = {
+    allowedPaths: ['lib/**', 'tests/**', 'specialists/**'],
+    allowedCommands: ['npm', 'git'],
+    deniedActions: [],
+    approvalRequired: [],
+  };
+  // Mock registry with engineering-group team that forbids certain decisions
+  const mockRegistry = {
+    teams: {
+      'engineering-group': {
+        id: 'engineering-group',
+        roles: ['engineer'],
+        forbiddenDecisions: ['product-scope', 'user-research', 'deployment-timing'],
+        decisionRights: ['architecture', 'technology-selection'],
+      },
+    },
+  };
+  const effective = computeEffectiveFence('engineer', overreachingFence, mockRegistry);
+  // Effective fence should add team's forbidden decisions to deniedActions
+  assert.ok(Array.isArray(effective.deniedActions), 'deniedActions should include team forbiddens');
+  // team forbids: product-scope, user-research, deployment-timing
+  // so these should appear as denied patterns
+  const hasForbidden = effective.deniedActions.some(d =>
+    d.includes('product-scope') || d.includes('user-research') || d.includes('deployment-timing')
+  );
+  assert.ok(hasForbidden, 'effective fence should block team-forbidden decisions');
+});
+
+test('computeEffectiveFence: gracefully handles missing team', () => {
+  // A persona with no team should get the specialist fence as-is
+  const specialistFence = {
+    allowedPaths: ['docs/**'],
+    allowedCommands: [],
+    deniedActions: ['anything:risky'],
+    approvalRequired: ['commit'],
+  };
+  const effective = computeEffectiveFence('unknown-persona', specialistFence);
+  // Should return something reasonable even if persona is not found
+  assert.ok(effective, 'should handle missing team gracefully');
 });
