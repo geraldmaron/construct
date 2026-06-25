@@ -244,7 +244,8 @@ When `op run` injects materialized keys into `process.env`, Construct keeps thos
 
 | Variable | Default | Description |
 |---|---|---|
-| `CONSTRUCT_MCP_HTTP` | `0` | `1` to enable HTTP MCP transport (requires dashboard token) |
+| `CONSTRUCT_ORCHESTRATION_URL` | _(unset)_ | Point `orchestration_run`/`orchestration_status` at a remote/team orchestration service over HTTP. Unset = in-process (solo default — no daemon, no port, no token). |
+| `CONSTRUCT_ORCHESTRATION_TOKEN` | _(unset)_ | Bearer token for the remote orchestration service (falls back to `CONSTRUCT_DASHBOARD_TOKEN`). |
 
 ## Logging
 
