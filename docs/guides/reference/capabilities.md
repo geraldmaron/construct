@@ -11,7 +11,7 @@ description: Generated from registry/capabilities.json. Do not edit by hand.
 
 | ID | Name | Criticality | Surfaces | Human gate | Last validated |
 |---|---|---|---|---|---|
-| `chat.owned-loop` | Chat Owned Loop | P1 | cli:construct chat | proposal-only | never |
+| `chat.owned-loop` | Chat Owned Loop | P1 | cli:construct | proposal-only | never |
 | `local.model.tier` | Local Model Tier Detection | P1 | cli:construct models resolve | proposal-only | never |
 | `mcp.broker.connection` | MCP Broker Connectivity | P0 | mcp:primary, opencode, cursor, vscode, claude | autonomous | 2026-06-19 |
 | `mcp.tool-budget.trim` | MCP Tool Surface Trim | P2 | opencode | proposal-only | never |
