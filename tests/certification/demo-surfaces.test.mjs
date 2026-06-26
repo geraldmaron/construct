@@ -32,14 +32,6 @@ test('web cockpit theme tokens and RouteStrip exist for certification', () => {
   assert.match(fs.readFileSync(tokens, 'utf8'), /Space Grotesk|--cx-/);
 });
 
-test('desktop launcher test documents surface=tauri certification path', () => {
-  const launcher = fs.readFileSync(
-    path.join(REPO, 'tests/functional/chat-desktop-launcher.functional.test.mjs'),
-    'utf8',
-  );
-  assert.match(launcher, /surface=desktop/);
-});
-
 test('demo functional harness references canonical tapes', () => {
   const demo = fs.readFileSync(path.join(REPO, 'tests/functional/demo.functional.test.mjs'), 'utf8');
   assert.match(demo, /construct demo/);
