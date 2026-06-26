@@ -2458,6 +2458,10 @@
         "Dispatch plan emitted with specialists in sequence",
         "Parallel work marked with [parallel: ...] tags"
       ],
+      "skillHints": [
+        "ai/orchestration-workflow",
+        "operating/orchestration-reference"
+      ],
       "description": ""
     },
     "researcher-to-architect": {

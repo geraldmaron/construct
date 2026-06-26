@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-26T04:44:34.603Z",
+  "generatedAt": "2026-06-26T05:16:54.392Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 525,
-    "topLevelTestFiles": 294,
-    "nestedTestFiles": 231,
+    "testFiles": 531,
+    "topLevelTestFiles": 296,
+    "nestedTestFiles": 235,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 23,
+    "capabilityMarkedFiles": 24,
     "byLayer": {
-      "unit": 331,
+      "unit": 335,
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
-      "functional": 155
+      "functional": 157
     },
     "byCategory": {
-      "unit": 292,
+      "unit": 296,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
       "visual": 7,
       "integration": 21,
-      "functional": 155,
+      "functional": 157,
       "hook": 9
     }
   },
@@ -539,6 +539,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/context-state.test.mjs — context state prefers JSON and preserves markdown compatibility"
+    },
+    {
+      "path": "tests/contract-skill-hints.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/contract-skill-hints.test.mjs — Optional contract skillHints routing path."
     },
     {
       "path": "tests/contracts-construct-handoff.test.mjs",
@@ -1861,6 +1869,16 @@
       "maintainerNotes": "tests/functional/graphrag-ask.functional.test.mjs — End-to-end GraphRAG."
     },
     {
+      "path": "tests/functional/headhunt-profile-teams.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "orchestration.routing"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/headhunt-profile-teams.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/hook-telemetry.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1947,6 +1965,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/init-intake-archetype.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/init-no-project-secrets.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/init-no-project-secrets.functional.test.mjs"
     },
     {
       "path": "tests/functional/init-respects-existing-structure.functional.test.mjs",
@@ -3497,6 +3523,14 @@
       "maintainerNotes": "tests/profile-rebrand.test.mjs — exercises the `getRebrand` lookup helper"
     },
     {
+      "path": "tests/profiles-teams.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/profiles-teams.test.mjs — Profile team resolution helpers."
+    },
+    {
       "path": "tests/profiles/loader.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -3695,6 +3729,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/registry/capability-registry.test.mjs — registry/capabilities.json validation gate."
+    },
+    {
+      "path": "tests/registry/catalog.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/registry/catalog.test.mjs — Living capability catalog regen and validate."
+    },
+    {
+      "path": "tests/registry/docs-sync.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/registry/docs-sync.test.mjs — Catalog-driven docs AUTO region sync."
     },
     {
       "path": "tests/registry/skill-consolidation.test.mjs",

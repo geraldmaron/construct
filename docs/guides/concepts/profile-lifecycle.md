@@ -2,6 +2,8 @@
 
 Profiles describe how Construct shapes itself for a given org. The default is `rnd`. The other curated profiles are `operations`, `creative`, `research`. Anything else is a custom profile, which lives in `.cx/profile.json` with `custom: true`.
 
+Each curated profile may declare a `teams[]` collection alongside `departments[]`. Teams carry explicit decision rights, forbidden decisions, and escalation paths. At runtime, `lib/profiles/teams.mjs` resolves profile teams for headhunt (`construct headhunt`) and orchestration routing when `construct.config.json` selects a profile with teams (for example `operations` maps incident work to `reliability-team`). The unified registry group ids (`engineering-group`, etc.) remain the default for the `rnd` profile and for registry validation; profile teams are an overlay, not a second registry file.
+
 This page describes how a new profile gets made, how it ships, how it stays honest after it ships, and how it gets retired. The shape mirrors how mature scaffolding systems (Backstage software templates, Cookiecutter, Yeoman) handle template lifecycles, plus the standard user-research loop. Profiles are not a JSON exercise; they are a research artifact.
 
 ## Stages

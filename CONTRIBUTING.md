@@ -82,6 +82,8 @@ The few exceptions below are substrate-required and stay as `node ./bin/construc
 |---|---|---|
 | `registry:validate --unified` | `release:check` | Validates `specialists/unified-registry.json` invariants; called only in the release chain. |
 | `registry:generate-docs --check` | `release:check` | Regenerates `docs/guides/reference/capabilities.md` from the registry; release-chain-only drift check. |
+| `catalog:validate --check` | `release:check` | Validates living capability catalog edges on `registry/capabilities.json`; release-chain-only drift check. |
+| `docs:sync --check` | `release:check` | Regenerates `docs/README.md` `AUTO:catalog-sync` from the capability catalog; release-chain-only drift check. |
 | `certify gate` | `release:check` | Release-candidate certification gate; release-chain-only. |
 | `review` | `pr-review.yml` | Construct-on-Construct PR reviewer; advisory (`|| true`), with a `command -v construct` fallback to the installed binary. |
 
