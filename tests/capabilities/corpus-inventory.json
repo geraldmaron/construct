@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-26T02:36:01.725Z",
+  "generatedAt": "2026-06-26T03:25:17.183Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 521,
+    "testFiles": 522,
     "topLevelTestFiles": 293,
-    "nestedTestFiles": 228,
+    "nestedTestFiles": 229,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 22,
     "byLayer": {
@@ -13,7 +13,7 @@
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
-      "functional": 153
+      "functional": 154
     },
     "byCategory": {
       "unit": 290,
@@ -22,7 +22,7 @@
       "live-provider": 2,
       "visual": 7,
       "integration": 21,
-      "functional": 153,
+      "functional": 154,
       "hook": 9
     }
   },
@@ -1761,6 +1761,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/doctor-fixes-legacy-state.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/doctor-no-repo-mutation.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/doctor-no-repo-mutation.functional.test.mjs"
     },
     {
       "path": "tests/functional/doctor-warning-paths.functional.test.mjs",
