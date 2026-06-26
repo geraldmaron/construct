@@ -713,7 +713,7 @@
       "id": "chat.owned-loop",
       "kind": "capability",
       "name": "Chat Owned Loop",
-      "description": "construct chat tier-aware system prompt and owned-loop engine.",
+      "description": "Tier-aware system prompt and owned-loop engine behind the bare construct entry (the sole chat surface).",
       "criticality": "P1",
       "ownerSpecialists": [
         "orchestrator"
@@ -721,7 +721,7 @@
       "surfaces": {
         "cli": {
           "supported": true,
-          "command": "construct chat"
+          "command": "construct"
         }
       },
       "verification": {
