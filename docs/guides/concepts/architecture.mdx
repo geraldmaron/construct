@@ -80,9 +80,6 @@ Canonical format matrix: [Document I/O reference](/guides/reference/document-io)
   <Card title="runtime/ — keeps the lights on">
     Physical: `lib/embed/` (daemon + supervisor), `lib/service-manager.mjs`, scheduler jobs under `lib/embed/`.
   </Card>
-  <Card title="dashboard/ — the web app">
-    Physical: `apps/dashboard/` (Next.js source) → static export in `lib/server/static/`. Served by `construct dev`.
-  </Card>
   <Card title="deploy/ — ship it">
     Multi-stage hardened Dockerfile · Terraform modules (ECS, ALB, RDS+pgvector) · `release.yml` SEA binaries, GHCR, npm publish
   </Card>
@@ -92,7 +89,7 @@ Canonical format matrix: [Document I/O reference](/guides/reference/document-io)
 
 ```text
 construct/
-├── apps/           chat, dashboard, docs (shipped UIs)
+├── apps/           chat (engine), docs (shipped UIs)
 ├── bin/            CLI entrypoint
 ├── lib/            runtime (hooks, MCP, providers, oracle, embed)
 ├── docs/           human + generated reference
@@ -143,7 +140,6 @@ ADR-0002 logical layers — physical paths in [ADR-0044](/decisions/adr/0044-too
 core/        → bin/, lib/ (CLI, MCP, orchestration, memory, sessions)
 providers/   → lib/providers/, lib/providers/contract/, lib/embed/providers/
 runtime/     → lib/embed/, lib/service-manager.mjs
-dashboard/   → apps/dashboard/ → lib/server/static/
 deploy/      → deploy/
 ```
 
@@ -209,23 +205,9 @@ Docker service management, embed daemon, and scheduler.
 - **Resource bootstrap**. `lib/bootstrap/resources.mjs` probes optional resources (Postgres, ONNX model, Docker, git); `construct init` runs the full wizard.
 - **Backup**. `lib/storage/backup.mjs` creates timestamped tar.gz archives covering observations, sessions, config.env (secrets redacted), registry snapshot, and Postgres dump. SHA-256 manifest for tamper detection. `construct backup create|verify|restore|list|prune`. `create` auto-prunes to `CONSTRUCT_BACKUP_RETAIN` (default 10) unless `--no-prune` is passed. Optional embed-daemon job `auto-backup` runs every `CONSTRUCT_AUTO_BACKUP_DAYS` days (off by default).
 
-### Dashboard
+### Web surfaces (retired)
 
-Full web application shipped and running.
-
-- **Auth**. Bearer token + session cookie. `CONSTRUCT_DASHBOARD_TOKEN` for single-token dev mode; `construct dashboard tokens issue` for multi-token production mode with per-token roles (admin/operator/viewer).
-- **Security middleware**. CSRF double-submit cookie (`lib/server/csrf.mjs`), CORS origin allowlist (`lib/server/cors.mjs`, configured via `CONSTRUCT_DASHBOARD_ORIGINS`), token-bucket rate limiting (`lib/server/rate-limit.mjs`: 60/10/5 req/min by endpoint class), structured JSON-line logger (`lib/logger.mjs`).
-- Chat interface. Legacy SSE via `claude --print` at `/api/chat/stream`, `/api/chat`, `/api/chat/history`. Owned-loop web chat at dashboard `/chat` via `/api/chat/loop/stream` (driver event union), `/api/chat/loop/permission`, `/api/chat/loop/cancel`; default launch is `construct chat` (Tauri window); browser tab via `construct chat --web`. A required-evidence turn finishes with a versioned provenance verdict derived only from completed successful `read`/`grep`/`glob` results with concrete returned targets. The verdict and immutable source records flow through terminal, SSE, JSONL/resume, and export; old snapshots migrate conservatively. A matching answer citation is required for verification, and hiding the tool layer never creates verification.
-- Approval queue. approve/reject high-risk actions queued by the embed daemon
-- Config management. providers, embed settings, approval rules; reads/writes `config.env` and `embed.yaml`
-- Models page. editable per-tier (reasoning/standard/fast) primary + fallback selection backed by `getProviderModelCatalog()`; persists via `POST /api/registry/models`. Credentials sub-block is fully editable via the shared `CredentialsCard` component (LLM kind).
-- Providers page. lists built-in integration providers (`lib/providers/`) and operator overrides from `~/.construct/providers.json`. Add / edit / delete plugin overrides via `POST /api/providers/registry`; entries are validated by `validateProviderEntry()` (5s timeout) before persisting, and built-in IDs cannot be overridden. Credentials editor (integration kind) reuses the same `CredentialsCard`.
-- Provider health classification. `GET /api/providers?probe=1` returns `status: 'healthy' | 'not_configured' | 'unhealthy'`. A provider whose required env vars are all unset is `not_configured` (gray dot, no degradation); `unhealthy` (red) only fires when env vars are set but the probe fails. Eliminates the prior false-positive where missing Jira/Slack/Salesforce creds read as broken.
-- Credentials write path. `POST /api/providers/credentials` writes to `~/.construct/config.env` with mode 0600 via `writeEnvValues()`, hot-reloads `process.env`, and audit-logs `{ts, action, envVar}` (never the value) to `~/.cx/credential-audit.jsonl`. Allowlisted env vars only (central `CREDENTIAL_MAP`). Localhost binds rely on OS file permissions; non-localhost binds require `CONSTRUCT_DASHBOARD_TOKEN`.
-- Snapshot viewer. health reports, risk analysis, recommendations
-- Knowledge panel. Ask (RAG query), Trends (hot topics, patterns, risks, decision drift), Index (corpus breakdown)
-- Infrastructure tab. Terraform editor with validate + output buttons
-- Real-time updates. SSE for live status, new approvals, snapshot alerts
+The dashboard web app and the browser/desktop chat cockpits were retired with `lib/server` and `apps/dashboard` (construct-m7k2-web-deprecation). Construct is CLI/terminal-first: chat runs in the terminal renderer (`lib/chat/tui/render.mjs`); operator inspection is the thin CLI (`construct status`, `construct doctor`); credentials are managed via `construct creds` / `construct providers`; approvals route through the messaging provider, `construct oracle`, or `construct improvement`. The required-evidence provenance verdict — a versioned, secret-free verdict derived only from completed successful `read`/`grep`/`glob` results with concrete returned targets — still finishes every evidence turn and flows through the terminal renderer, JSONL/resume, and export. A matching answer citation is required for verification, and hiding the tool layer never creates verification.
 
 ### Deploy
 
@@ -250,7 +232,7 @@ The goal is for Construct to run itself like a real organization. a department-s
 
 Four operational tiers:
 
-1. **L0. Deterministic agents (non-LLM, always-on).** The `construct-doctor` daemon (`lib/doctor/`) runs alongside the dashboard, holding watchers for process-pressure (extends `lib/runtime-pressure.mjs`), service-health (probes Postgres / dashboard / cm; auto-restarts docker services), disk (rotates `~/.cx/*.jsonl`, prunes `~/.construct/.runtime/`), cost (per-persona daily token ledger; the gateway hard-stops invocations at the cap), and `mcp-protocol` (performs a real MCP handshake against every configured MCP server in Claude Code and OpenCode configs, surfaces servers that fail `initialize` or `tools/list`). Recoverable actions are auto-taken and audit-logged to `~/.cx/doctor-log.jsonl`. L0 escalates a `service.down` role event when deterministic rules can't resolve the problem (e.g., 2 failed restarts or repeated pressure churn).
+1. **L0. Deterministic agents (non-LLM, always-on).** The `construct-doctor` daemon (`lib/doctor/`) holds watchers for process-pressure (extends `lib/runtime-pressure.mjs`), service-health (probes Postgres / cm; auto-restarts docker services), disk (rotates `~/.cx/*.jsonl`, prunes `~/.construct/.runtime/`), cost (per-persona daily token ledger; the gateway hard-stops invocations at the cap), and `mcp-protocol` (performs a real MCP handshake against every configured MCP server in Claude Code and OpenCode configs, surfaces servers that fail `initialize` or `tools/list`). Recoverable actions are auto-taken and audit-logged to `~/.cx/doctor-log.jsonl`. L0 escalates a `service.down` role event when deterministic rules can't resolve the problem (e.g., 2 failed restarts or repeated pressure churn).
 2. **L0.5. Oracle meta-review (deterministic synthesis + bounded auto).** The `construct oracle` daemon (`lib/oracle/`) joins session observations, outcomes, contract violations, doctor log entries, alignment census, org graph (policy inventory, workflow gates, intake sign-offs), beads hygiene, and adapter parity into per-tick verdicts at `.cx/oracle/verdicts/<date>.json`. Auto actions (census, registry validate when needed, adapter sync in the tool repo) run without approval; high-severity **actionable** gaps auto-raise idempotent beads (persistent `gapId` dedup, open-bead check) when `CONSTRUCT_ORACLE_AUTO_RAISE` is not off — hygiene/meta gaps (`beads-hygiene`, `workflow-misaligned`, …) are verdict-only via `construct oracle gaps` and never file duplicate tracker beads; `detectBeadsDrift` excludes `[oracle/*]` meta beads from stuck/stale counts. Orchestration queues to `.cx/oracle/pending.jsonl` for explicit approval with sign-off metadata (`construct oracle approve <id>` executes by default). Routing artifacts land in `.cx/oracle/routing/`; duplicate hygiene beads: `construct oracle reconcile`. Oracle starts with `construct dev` unless `CONSTRUCT_ORACLE=off`. See [ADR 0043](/decisions/adr/0043-oracle-meta-controller).
 3. **L1. LLM personas (event-driven, fenced, rate-limited).** The role framework in `lib/roles/`. Events published by hooks or L0 are routed by `lib/orchestration/routing-tables.mjs`, which resolves event ownership, doc-artifact ownership, and watch-condition triggers from declarative fields on `specialists/registry.json` (with optional project overlays under `.cx/specialists/`); the owning persona is then validated against `specialists/role-manifests.json`. The gateway applies threshold + cooldown + rate-ceiling, creates a bd issue, queues a pending invocation in `~/.cx/role-pending.jsonl`, and emits an SSE toast. Session-start drains the backlog (cap 5 per session) and surfaces invocations to Construct, which dispatches the persona via the existing Task path. Personas act inside a fence. allowed paths, allowed bd labels, `approvalRequired` list per role. Handoffs are recorded as `next:cx-<role>` bd labels.
 4. **L2. User.** Commits, pushes, novel decisions, budget overrides, kill switches. Approval-required actions per `rules/common/commit-approval.md` are always L2. The goal is to make L2 rare. not zero.
@@ -371,11 +353,11 @@ The runtime has two pluggable axes behind unchanged callers: a worker backend an
 
 **Run stores.** `resolveRunStore` (`lib/orchestration/store.mjs`) returns one `{ saveRun, loadRun, listRuns }` interface over three backends: **Mode-A** filesystem (zero-dependency default, `.cx/runtime/orchestration/runs/`, no Docker), **Mode-B** SQLite (`run-store-sqlite.mjs`, lazy `node:sqlite` with `sqliteAvailable()` — falls back on Node older than 22.5), and **Mode-C** Postgres (`run-store-postgres.mjs`, shared team/enterprise store). Selection follows `orchestration.store` config / `CONSTRUCT_ORCHESTRATION_STORE` env override, else deployment mode (solo→filesystem, team/enterprise→postgres), degrading to filesystem with a warning when a backend is unavailable. Filesystem + inline is the byte-for-byte-unchanged default. Decisions recorded in ADR-0020 and ADR-0021 (extending ADR-0019).
 
-**Engine-as-service.** The runtime is reachable as a local service so hosts can be thin clients — the pattern Claude Code, OpenCode, and Goose all use to deliver multi-agent inside editors that have no native subagent primitive (the editor's missing primitive is immaterial when the engine owns the loop). The existing local server (`lib/server/index.mjs`) exposes `POST /api/orchestration/runs` (starts a run in the **background**, returns `runId` immediately via `startRun`), `GET /api/orchestration/runs[/:id]`, `GET /api/orchestration/runs/:id/events` (an **SSE** lifecycle stream backed by the process-local `lib/orchestration/events.mjs` bus), and `POST …/:id/cancel` (cooperative between-task stop). Responses use the versioned, secret-free embedded-contract envelope; requests reuse the dashboard auth, with CSRF exempted for `Authorization`-header clients. `construct orchestrate run|status --remote` is the reference thin client; a VS Code/Copilot extension, OpenCode, or CI drives the same API. Decision: ADR-0022.
+**Engine-as-service.** The runtime is reachable so hosts can be thin clients — the pattern Claude Code, OpenCode, and Goose all use to deliver multi-agent inside editors that have no native subagent primitive (the editor's missing primitive is immaterial when the engine owns the loop). Orchestration runs **in-process** by default (`lib/orchestration/runtime.mjs`): the `orchestration_run`/`orchestration_status` MCP tools and `construct orchestrate run|status` drive it directly — no daemon, no port, no token for the solo default. A remote orchestration service stays opt-in via `CONSTRUCT_ORCHESTRATION_URL` (bearer token from `CONSTRUCT_ORCHESTRATION_TOKEN`); `construct orchestrate run|status --remote` is the reference thin client, and a VS Code/Copilot extension, OpenCode, or CI drives the same API. Responses use the versioned, secret-free embedded-contract envelope. Decision: ADR-0022.
 
 ## Terminal chat surface (own-the-loop, own-the-surface)
 
-Running `construct` with no subcommand is the interactive chat surface (ADR-0039 tier (c)/(d); `construct chat` remains as a deprecated alias). Construct runs the agent loop itself (ADR-0041): prompt → model → tool calls → tool results → repeat, on a provider-agnostic engine (Vercel AI SDK). The default surface is a **Tauri desktop window** (`apps/chat/desktop/`) loading dashboard `/chat/?surface=desktop` in a system WebView — full CSS layout, no browser tab. The same React cockpit (`apps/chat/web/`) also serves `construct chat --web` and dashboard `/chat` over SSE (`lib/server/chat-loop.mjs`). `--plain` routes to the linear, screen-reader-friendly renderer (`lib/chat/tui/render.mjs`) for SSH/CI only. Build the window binary with `npm run build:chat-desktop`. Settings persist to `.cx/chat-config.json`; transcripts to `.cx/chat-sessions/*.jsonl`. Decision: ADR-0041 (amended — Ink TUI replaced by desktop window + web cockpit).
+Running `construct` with no subcommand is the interactive chat surface (ADR-0039 tier (c); `construct chat` remains as a deprecated alias). Construct runs the agent loop itself (ADR-0041): prompt → model → tool calls → tool results → repeat, on a provider-agnostic engine (Vercel AI SDK). Chat is **terminal-only**: the linear renderer (`lib/chat/tui/render.mjs`) is the sole surface after the desktop window and browser cockpit were retired with the dashboard server (construct-m7k2-web-deprecation). `--plain`/`--accessible` select the screen-reader-friendly mode explicitly. Settings persist to `.cx/chat-config.json`; transcripts to `.cx/chat-sessions/*.jsonl`. Decision: ADR-0041 (amended — desktop window + web cockpit retired; terminal-only).
 
 ## Project-state hierarchy
 
@@ -393,7 +375,7 @@ Hybrid: autonomous for low-risk, human-gated for high-risk.
 | Risk | Examples | Behavior |
 |---|---|---|
 | Low | Reading, analysis, draft generation, search | Autonomous |
-| High | Work item creation, merge, doc publish, config changes | Queued for approval (dashboard or messaging provider) |
+| High | Work item creation, merge, doc publish, config changes | Queued for approval (messaging provider or `construct oracle`) |
 
 ## Policy enforcement. three layers
 

@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-26T00:01:22.845Z",
+  "generatedAt": "2026-06-26T00:39:44.703Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 542,
-    "topLevelTestFiles": 298,
-    "nestedTestFiles": 244,
+    "testFiles": 525,
+    "topLevelTestFiles": 292,
+    "nestedTestFiles": 233,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 23,
+    "capabilityMarkedFiles": 22,
     "byLayer": {
-      "unit": 333,
+      "unit": 328,
       "live-provider": 2,
       "visual": 7,
-      "integration": 31,
-      "functional": 169
+      "integration": 30,
+      "functional": 158
     },
     "byCategory": {
-      "unit": 294,
+      "unit": 289,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
       "visual": 7,
-      "integration": 22,
-      "functional": 169,
+      "integration": 21,
+      "functional": 158,
       "hook": 9
     }
   },
@@ -611,14 +611,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/cost.test.mjs — validates token and cache accounting."
-    },
-    {
-      "path": "tests/dashboard-static.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/dashboard-static.test.mjs — Unit tests for dashboard static sync."
     },
     {
       "path": "tests/decisions-bindings.test.mjs",
@@ -1635,30 +1627,6 @@
       "maintainerNotes": "tests/functional/chat-turn-state.functional.test.mjs — pure turn-state reduction for chat."
     },
     {
-      "path": "tests/functional/chat-web-commands.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-web-commands.functional.test.mjs — web slash-command handler."
-    },
-    {
-      "path": "tests/functional/chat-web-picker-api.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-web-picker-api.functional.test.mjs — GET /api/chat/models in tmpdir."
-    },
-    {
-      "path": "tests/functional/chat-web-picker-keys.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-web-picker-keys.functional.test.mjs — web picker keyboard routing."
-    },
-    {
       "path": "tests/functional/claude-orchestration-prompt.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1733,62 +1701,12 @@
       "maintainerNotes": "cursor-rules-delivery.functional.test.mjs — project-evidence rule delivery (construct-bwis)."
     },
     {
-      "path": "tests/functional/dashboard-build.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "Static-export sanity. Asserts the dashboard build output has produced an"
-    },
-    {
-      "path": "tests/functional/dashboard/dashboard-auth.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "Auth flow smoke. With no token configured, /api/auth/status reports"
-    },
-    {
-      "path": "tests/functional/dashboard/dashboard-endpoints.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "Spawn lib/server/index.mjs at a random port and hit every documented"
-    },
-    {
-      "path": "tests/functional/dashboard/dashboard-sse.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "SSE channel smoke. Connects to /events and reads the initial bytes to"
-    },
-    {
-      "path": "tests/functional/dashboard/intake-rebrand.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/dashboard/intake-rebrand.functional.test.mjs — /api/intake/*"
-    },
-    {
       "path": "tests/functional/deck-export.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/deck-export.functional.test.mjs — branded deck HTML + PPTX export contract."
-    },
-    {
-      "path": "tests/functional/demo-preview-route.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [
-        "demo.terminal-fallback"
-      ],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/demo-preview-route.functional.test.mjs — /demo-preview/ gated static serve."
     },
     {
       "path": "tests/functional/demo-recording-loader.functional.test.mjs",
@@ -2011,14 +1929,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/ingest-tooling.functional.test.mjs — ingest pipeline detect contract."
-    },
-    {
-      "path": "tests/functional/init-dashboard-rootdir.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/init-dashboard-rootdir.functional.test.mjs"
     },
     {
       "path": "tests/functional/init-gitignores-cx.functional.test.mjs",
@@ -2341,14 +2251,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/orchestration-mode-a.functional.test.mjs — end-to-end Mode-A runtime."
-    },
-    {
-      "path": "tests/functional/orchestration-server.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/orchestration-server.functional.test.mjs — orchestration daemon API."
     },
     {
       "path": "tests/functional/post-merge-tracking.functional.test.mjs",
@@ -3297,14 +3199,6 @@
       "maintainerNotes": "model-router.test.mjs — Unit tests for lib/model-router.mjs tier resolution and failover logic."
     },
     {
-      "path": "tests/next-build-lock.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/next-build-lock.test.mjs — Contract for the cross-process next-build"
-    },
-    {
       "path": "tests/no-fabrication-coverage.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3935,38 +3829,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/schema-validation.test.mjs — Validate unified registry schema and test with fixtures."
-    },
-    {
-      "path": "tests/server-auth.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/server-auth.test.mjs — Unit tests for lib/server/auth.mjs."
-    },
-    {
-      "path": "tests/server-chat.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/server-chat.test.mjs — Unit tests for lib/server/chat.mjs."
-    },
-    {
-      "path": "tests/server-security.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/server-security.test.mjs — CSRF / CORS / rate-limit / logger tests."
-    },
-    {
-      "path": "tests/server-webhook.test.mjs",
-      "layer": "integration",
-      "category": "integration",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/server-webhook.test.mjs — Unit tests for lib/server/webhook.mjs."
     },
     {
       "path": "tests/service-manager-ollama-keepalive.test.mjs",

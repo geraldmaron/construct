@@ -1,8 +1,8 @@
 /**
  * 02-deadcode.mjs — Phase 2: lib modules with no inbound reference.
  *
- * Builds the import graph over the whole repo — including the buildable `apps/` surfaces
- * (dashboard, chat) whose source consumes lib contract modules — from static
+ * Builds the import graph over the whole repo — including the buildable `apps/chat`
+ * surface whose source consumes lib contract modules — from static
  * `from`/side-effect imports and dynamic `import('<literal>')`, and reports lib modules
  * nothing references. Construct
  * dispatches heavily through dynamic imports, so the graph must include those or it would
@@ -27,9 +27,7 @@ import { recordFindings } from './lib/findings.mjs';
 
 const SRC_DIRS = ['lib', 'bin', 'scripts', 'tests', 'apps'];
 
-// lib/server/static is the compiled Next.js dashboard (hashed build chunks), not source.
-
-const EXCLUDE = /(node_modules|\.git|audit-artifacts|lib\/server\/static|apps\/[^/]+\/out(?:\/|$)|apps\/[^/]+\/\.next(?:\/|$))/;
+const EXCLUDE = /(node_modules|\.git|audit-artifacts|apps\/[^/]+\/out(?:\/|$)|apps\/[^/]+\/\.next(?:\/|$))/;
 
 // bin/construct is the primary importer (124 dynamic imports) but has no extension, so it
 // must be added explicitly or every lazily-imported module looks dead.

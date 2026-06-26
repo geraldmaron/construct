@@ -20,11 +20,6 @@ afterEach(() => {
 });
 
 describe('isConstructSourceCheckout', () => {
-  it('returns true when apps/dashboard exists', () => {
-    fs.mkdirSync(path.join(tmp, 'apps', 'dashboard'), { recursive: true });
-    assert.equal(isConstructSourceCheckout(tmp), true);
-  });
-
   it('returns true when certification role cards exist', () => {
     fs.mkdirSync(path.join(tmp, 'tests', 'certification', 'specialists'), { recursive: true });
     assert.equal(isConstructSourceCheckout(tmp), true);

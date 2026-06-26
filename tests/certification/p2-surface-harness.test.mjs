@@ -14,7 +14,6 @@ import { measurePromptBudgetChains } from '../../lib/certification/prompt-budget
 import { validateAllArtifactProvenance } from '../../lib/certification/artifact-provenance.mjs';
 import { validateDocumentWorkflowCertification } from '../../lib/certification/document-workflow.mjs';
 import { buildDemoParityReport } from '../../lib/certification/demo-parity.mjs';
-import { buildCertificationDashboard } from '../../lib/certification/dashboard-api.mjs';
 import { realLlmSkipReason } from '../../lib/certification/real-llm-scenarios.mjs';
 import { listScenarios } from '../../lib/certification/scenarios.mjs';
 import { runCertificationScenario } from '../../lib/certification/runner.mjs';
@@ -51,14 +50,6 @@ test('demo parity report passes for canonical demos', () => {
   const report = buildDemoParityReport({ rootDir: REPO });
   assert.equal(report.pass, true);
   assert.ok(report.acceptableDivergences.length >= 1);
-});
-
-test('certification dashboard payload has no secret fields', () => {
-  const payload = buildCertificationDashboard({ rootDir: REPO });
-  const json = JSON.stringify(payload);
-  assert.doesNotMatch(json, /api[_-]?key|secret|token|password/i);
-  assert.ok(Array.isArray(payload.capabilities));
-  assert.ok(Array.isArray(payload.runs));
 });
 
 test('catalog includes P2 hermetic scenario ids', () => {

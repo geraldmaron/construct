@@ -64,7 +64,7 @@ import { runCapabilityLedgerAuditCli } from '../lib/capability-ledger.mjs';
 import { runCorpusInventoryAuditCli } from '../lib/test-corpus-inventory.mjs';
 import { runArtifactValidateCli } from '../lib/artifact-release-gate.mjs';
 import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
-import { startDashboard, startServices } from '../lib/service-manager.mjs';
+import { startServices } from '../lib/service-manager.mjs';
 import { readCostLog, summarizeCostData, formatCostReport, clearCostLog } from '../lib/cost.mjs';
 import { readEfficiencyLog, summarizeEfficiencyData, formatEfficiencyReport } from '../lib/efficiency.mjs';
 import { resolveColors } from '../lib/term-format.mjs';
@@ -509,15 +509,6 @@ async function cmdDoctor() {
   add('unified-registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'unified-registry.json')));
   add('sync-specialists.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs')));
 
-  // Dashboard static build output is absent from published npm installs.
-
-  if (isSourceCheckout) {
-    const dashboardIndex = path.join(ROOT_DIR, 'lib', 'server', 'static', 'index.html');
-    add('Dashboard built (lib/server/static/index.html)', fs.existsSync(dashboardIndex));
-  } else {
-    add('Dashboard built (skipped — published package)', true, true);
-  }
-
   // Project .gitignore must cover .cx/. Auto-fix via --fix-gitignore.
   // Only checks when cwd looks like a Construct project (has .cx/ or
   // .construct/); non-project cwds get no warning.
@@ -683,7 +674,7 @@ async function cmdDoctor() {
     if (resolved.complete && !resolved.errors) {
       add('Models — all tiers configured', true);
     } else if (resolved.configured === 0) {
-      add('Models — no tier configured (pick one in the dashboard or run `construct models --apply`)', false, true);
+      add('Models — no tier configured (run `construct models --apply`)', false, true);
     } else {
       const missing = Object.entries(resolved.models)
         .filter(([, v]) => !v)
@@ -1426,7 +1417,6 @@ async function cmdDev(args = []) {
   }
   
   println('');
-  println('Dashboard: http://127.0.0.1:4242');
   println('Run \x1b[32mconstruct\x1b[0m for commands');
   println('');
 
@@ -1451,29 +1441,6 @@ async function cmdStop() {
     const total = (cleanResult.moved?.length || 0) + (cleanResult.deleted?.length || 0);
     if (total > 0) info(`Handoff cleanup: ${cleanResult.moved?.length || 0} archived, ${cleanResult.deleted?.length || 0} deleted.`);
   } catch { /* best effort */ }
-}
-
-async function cmdDashboard() {
-  if (restArgsCache.includes('--token')) {
-    const { generateToken, setDashboardToken, getDashboardToken } = await import('../lib/server/auth.mjs');
-    const existing = getDashboardToken();
-    if (existing) {
-      println(`Dashboard token already set. To rotate it, remove CONSTRUCT_DASHBOARD_TOKEN from ~/.construct/config.env and re-run.`);
-      return;
-    }
-    const token = generateToken();
-    setDashboardToken(token);
-    println(`Dashboard token generated and saved to ~/.construct/config.env`);
-    println(`CONSTRUCT_DASHBOARD_TOKEN=${token}`);
-    println(`Pass this token in the dashboard login prompt or as: Authorization: Bearer <token>`);
-    return;
-  }
-  const dashboard = await startDashboard({ rootDir: ROOT_DIR, homeDir: HOME });
-  if (dashboard.reused) {
-    println(`Construct dashboard already running on ${dashboard.url} (pid ${dashboard.pid})`);
-  } else {
-    println(`Started Construct dashboard on ${dashboard.url} (pid ${dashboard.pid})`);
-  }
 }
 
 async function cmdVersion() {
@@ -3695,9 +3662,9 @@ async function cmdOrchestrate(args) {
   // running in-process, proving the engine-as-service contract editors/CI use.
   if (rest.includes('--remote')) {
     const remoteVal = flag('--remote');
-    const base = (remoteVal && /^https?:\/\//.test(remoteVal)) ? remoteVal.replace(/\/$/, '') : `http://${process.env.BIND_HOST || '127.0.0.1'}:${process.env.PORT || '4242'}`;
-    const { getDashboardToken } = await import('../lib/server/auth.mjs');
-    const token = getDashboardToken();
+    const base = (remoteVal && /^https?:\/\//.test(remoteVal)) ? remoteVal.replace(/\/$/, '') : (process.env.CONSTRUCT_ORCHESTRATION_URL || '').replace(/\/$/, '');
+    if (!base) { errorln('No orchestration service configured. Pass --remote <url> or set CONSTRUCT_ORCHESTRATION_URL.'); process.exit(1); }
+    const token = process.env.CONSTRUCT_ORCHESTRATION_TOKEN || process.env.CONSTRUCT_DASHBOARD_TOKEN || null;
     const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
     const positional = rest.filter((a) => !a.startsWith('--'));
     try {
@@ -3727,7 +3694,7 @@ async function cmdOrchestrate(args) {
         return;
       }
     } catch (err) {
-      errorln(`Could not reach the orchestration daemon at ${base}: ${err.message}. Start it with \`construct dashboard\`.`);
+      errorln(`Could not reach the orchestration service at ${base}: ${err.message}. Check CONSTRUCT_ORCHESTRATION_URL.`);
       process.exit(1);
     }
   }
@@ -3949,7 +3916,7 @@ async function cmdModels(args) {
     println('');
     println('No tier has a model selected. Construct ships with no default.');
     println('Pick one of:');
-    println('  • Dashboard → Models page (single source of truth)');
+    println('  • `construct models` (single source of truth)');
     println('  • construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id>');
     println('  • construct models --apply           Poll OpenRouter free catalog and seed all tiers');
   }
@@ -4475,12 +4442,6 @@ async function cmdDocsSite(args = []) {
   } else {
     ok(`docs/guides/reference/ regenerated (${written.length} file${written.length === 1 ? '' : 's'}).`);
   }
-}
-
-async function cmdDashboardSync(args) {
-  const { runDashboardStaticCli } = await import('../lib/dashboard-static.mjs');
-  const exitCode = await runDashboardStaticCli(args, { rootDir: ROOT_DIR });
-  if (exitCode) process.exit(exitCode);
 }
 
 async function cmdBootstrap(args) {
@@ -5558,7 +5519,6 @@ async function readStdin() {
 const handlers = new Map([
   // Core
   ['dev', cmdDev],
-  ['dashboard', cmdDashboard],
   ['stop', cmdStop],
   ['status', cmdStatus],
   ['install', cmdInstall],
@@ -5760,7 +5720,6 @@ const handlers = new Map([
   ['docs:update', cmdDocsUpdate],
   ['docs:check', cmdDocsCheck],
   ['docs:site', cmdDocsSite],
-  ['dashboard:sync', cmdDashboardSync],
   ['lint:comments', cmdLintComments],
   ['lint:templates', cmdLintTemplates],
   ['gates:audit', cmdGatesAudit],

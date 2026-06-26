@@ -69,14 +69,6 @@
       "core": false
     },
     {
-      "name": "dashboard",
-      "core": true
-    },
-    {
-      "name": "dashboard:sync",
-      "core": false
-    },
-    {
       "name": "decisions",
       "core": false
     },

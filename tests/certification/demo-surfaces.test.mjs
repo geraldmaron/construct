@@ -22,16 +22,6 @@ test('canonical demo catalog cites construct cockpit tapes and themes', () => {
   }
 });
 
-test('web cockpit theme tokens and RouteStrip exist for certification', () => {
-  const tokens = path.join(REPO, 'apps/chat/web/theme/tokens.css');
-  const routeStrip = path.join(REPO, 'apps/chat/web/components/route-strip.tsx');
-  assert.ok(fs.existsSync(tokens));
-  assert.ok(fs.existsSync(routeStrip));
-  const src = fs.readFileSync(routeStrip, 'utf8');
-  assert.match(src, /cx-cockpit-route-strip/);
-  assert.match(fs.readFileSync(tokens, 'utf8'), /Space Grotesk|--cx-/);
-});
-
 test('demo functional harness references canonical tapes', () => {
   const demo = fs.readFileSync(path.join(REPO, 'tests/functional/demo.functional.test.mjs'), 'utf8');
   assert.match(demo, /construct demo/);
