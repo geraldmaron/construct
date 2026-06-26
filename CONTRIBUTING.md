@@ -72,6 +72,19 @@ npm run lint:profiles
 
 All eight must exit 0. The release pipeline in `docs/operations/maintenance/release-and-deploy.md` runs the same checks before any artifact ships.
 
+### npm scripts wrap the gates; CI calls the scripts
+
+Every gate has one implementation. The `package.json` script is a thin wrapper over `bin/construct` (or a single canonical script under `scripts/`), and CI invokes the script — not a second copy of the command. So `.github/workflows/*.yml` runs `npm run lint:comments`, `npm run doctor`, `npm run docs:update -- --check`, `npm run gates:audit`, `npm run evals -- retrieval`, and friends; the workflow never re-spells `node ./bin/construct <cmd>` for a gate. Flags pass through after `--` (`npm run docs:update -- --check`). `release:check` chains the same wrappers in one command. Add or change a gate in `package.json`, and CI picks it up without a parallel edit.
+
+The few exceptions below are substrate-required and stay as `node ./bin/construct <cmd>` in `release:check`; they have no thin wrapper because `bin/construct` is the substrate (ADR-0039 — the CLI is the spine, every other surface is a thin client over it):
+
+| Command | Where it runs | Why it has no npm wrapper |
+|---|---|---|
+| `registry:validate --unified` | `release:check` | Validates `specialists/unified-registry.json` invariants; called only in the release chain. |
+| `registry:generate-docs --check` | `release:check` | Regenerates `docs/guides/reference/capabilities.md` from the registry; release-chain-only drift check. |
+| `certify gate` | `release:check` | Release-candidate certification gate; release-chain-only. |
+| `review` | `pr-review.yml` | Construct-on-Construct PR reviewer; advisory (`|| true`), with a `command -v construct` fallback to the installed binary. |
+
 `npm run test:functional` includes the **audit-phase ratchet** (`tests/functional/audit-ratchet.functional.test.mjs`): it regenerates the 01-smoke, 02-deadcode, 03-docs, 03b-naming, and 06-audit finders and fails on any finding absent from `scripts/audit/baseline.json` — a new dead module, undocumented flag, orphaned doc, retired-alias/handler-name drift, or a dereferenced audit hook. Fix the drift, or, if intentional, add the id to the baseline.
 
 If your change touches a hook + observation, a profile + classifier, a CLI + durable state, or any other multi-component path, also add a functional test under `tests/functional/`. See `tests/functional/README.md` for the pattern. If `docs:update --check` fails, regenerate and commit:
