@@ -506,7 +506,7 @@ async function cmdDoctor() {
   const add = (label, pass, optional = false) => checks.push({ label, pass, optional });
   const { isConstructSourceCheckout } = await import('../lib/doctor/source-checkout.mjs');
   const isSourceCheckout = isConstructSourceCheckout(ROOT_DIR);
-  add('unified-registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'unified-registry.json')));
+  add('specialists/org exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'org')));
   add('sync-specialists.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs')));
 
   // Project .gitignore must cover .cx/. Auto-fix via --fix-gitignore.
@@ -652,11 +652,16 @@ async function cmdDoctor() {
   // configured without a manual copy. Applied to process.env too so the check
   // below sees the just-migrated values in the same run.
   try {
-    const { migrateLegacyModelConfig } = await import('../lib/config/legacy-config-migration.mjs');
+    const { migrateLegacyModelConfig, migrateLegacyCredentialConfig } = await import('../lib/config/legacy-config-migration.mjs');
     const migration = migrateLegacyModelConfig({ homeDir: HOME });
     if (migration.performed) {
       Object.assign(process.env, migration.migrated);
       println(`  fix: migrated ${Object.keys(migration.migrated).join(', ')} from ${migration.legacyPath} → ${migration.xdgPath}`);
+    }
+    const credentialMigration = migrateLegacyCredentialConfig({ homeDir: HOME });
+    if (credentialMigration.performed) {
+      Object.assign(process.env, credentialMigration.migrated);
+      println(`  fix: migrated credentials ${Object.keys(credentialMigration.migrated).join(', ')} from ${credentialMigration.legacyPath} → ${credentialMigration.xdgPath}`);
     }
   } catch (err) {
     add(`Models — legacy config migration failed: ${err.message}`, false, true);
@@ -869,6 +874,15 @@ async function cmdDoctor() {
     const skillAudit = auditSkills({ rootDir: ROOT_DIR, silent: true });
     add('No declared skills missing on disk', skillAudit.pass, false);
     if (isSourceCheckout) {
+      const { scanRetiredRegistryPathReferences } = await import('../lib/registry/retired-paths.mjs');
+      const staleRegistryPaths = scanRetiredRegistryPathReferences(ROOT_DIR);
+      add(
+        staleRegistryPaths.length === 0
+          ? 'No retired registry path references'
+          : `Retired registry path references (${staleRegistryPaths.length}: ${staleRegistryPaths.slice(0, 3).map((h) => h.file).join(', ')}${staleRegistryPaths.length > 3 ? ', …' : ''})`,
+        staleRegistryPaths.length === 0,
+        false,
+      );
       const specialistAudit = auditSpecialists({ rootDir: ROOT_DIR, silent: true });
       add('Specialist/skill audit cross-checks', specialistAudit.pass, false);
 
@@ -5134,7 +5148,7 @@ async function cmdCreds(args) {
       for (const p of providers) {
         println(`  ${p.configured ? '✓' : '·'} ${p.id}`);
       }
-      println('\n  Set keys as values or op:// refs in ~/.construct/config.env; run `construct creds login copilot` for GitHub Copilot.');
+      println(`\n  Set keys as values or op:// refs in ${getUserEnvPath(HOME)}; run \`construct creds login copilot\` for GitHub Copilot.`);
     } catch { /* readiness view is informational */ }
     return;
   }
@@ -5597,11 +5611,6 @@ const handlers = new Map([
     const { runAcpServer } = await import('../lib/acp/server.mjs');
     runAcpServer({ input: process.stdin, output: process.stdout, env: process.env, defaultCwd: process.cwd() });
   }],
-  ['chat', async (args) => {
-    errorln(`${COLORS.dim}construct chat is deprecated — run \`construct\` with no subcommand to start chat. The subcommand will be removed in a future release.${COLORS.reset}`);
-    const { runChat } = await import('../lib/chat/cli.mjs');
-    process.exitCode = await runChat(args, { env: process.env, cwd: process.cwd() });
-  }],
   ['beads:stats', async (args) => {
     const { getContentionStats, getHumanStatus } = await import('../lib/beads-optimistic.mjs');
     const jsonOutput = args.includes('--json');
@@ -5809,7 +5818,12 @@ const handlers = new Map([
     const sub = args[0];
     if (sub === 'review') return runTeamReviewCli(args.slice(1));
     if (sub === 'templates') { listTeamTemplates(); return; }
-    errorln(`Unknown team subcommand: ${sub}. Available: review, templates`);
+    if (sub === 'list' || sub === 'show') {
+      const { runTeamList, runTeamShow } = await import('../lib/registry/cli.mjs');
+      if (sub === 'list') return runTeamList(args.slice(1), { rootDir: ROOT_DIR, println, errorln });
+      return runTeamShow(args.slice(1), { rootDir: ROOT_DIR, println, errorln });
+    }
+    errorln(`Unknown team subcommand: ${sub}. Available: list, show, review, templates`);
     process.exit(1);
   }],
   ['role', async (args) => {
@@ -6195,6 +6209,22 @@ const handlers = new Map([
   }],
   ['skills', async (args) => {
     const sub = args[0];
+    if (sub === 'suggest') {
+      const { suggestSkills } = await import('../lib/skills/router.mjs');
+      const query = args.slice(1).join(' ').trim();
+      if (!query) {
+        errorln('Usage: construct skills suggest <intent>');
+        process.exit(1);
+      }
+      const result = suggestSkills({ intent: query, rootDir: ROOT_DIR });
+      println(JSON.stringify(result, null, 2));
+      return;
+    }
+    if (sub === 'routing') {
+      const p = path.join(ROOT_DIR, 'skills', 'routing.json');
+      println(fs.readFileSync(p, 'utf8'));
+      return;
+    }
     if (sub === 'scope' || !sub) {
       const { runSkillsScopeCli } = await import('../lib/skills-scope.mjs');
       return runSkillsScopeCli(args.slice(sub === 'scope' ? 1 : 0));
@@ -6206,7 +6236,7 @@ const handlers = new Map([
     if (sub === 'usage' || sub === 'orphans' || sub === 'hot' || sub === 'correlate-quality' || sub === 'backfill-postgres') {
       return cmdSkillsUsage(sub, args.slice(1));
     }
-    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply, usage, orphans, hot, correlate-quality, backfill-postgres`);
+    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply, suggest, routing, usage, orphans, hot, correlate-quality, backfill-postgres`);
     process.exit(1);
   }],
   ['ask', async (args) => {
@@ -6801,6 +6831,11 @@ function validateKnownFlags(name, argv) {
 
 const handler = handlers.get(command);
 if (!handler) {
+  if (command === 'chat') {
+    errorln('Unknown command: chat');
+    errorln(`${COLORS.dim}Run ${COLORS.reset}construct${COLORS.dim} with no subcommand to start chat (e.g. construct --list).${COLORS.reset}`);
+    process.exit(1);
+  }
   errorln(`Unknown command: ${command}`);
   // Three-tier suggestion: prefix match → substring match → Levenshtein
   // distance ≤ 2. Catches single-letter typos, missing-letter typos, and

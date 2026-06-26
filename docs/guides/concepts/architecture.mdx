@@ -9,7 +9,7 @@ Start with the diagrams. They're the fastest way to build a mental model of the 
 
 ## The 30-second version
 
-Construct is one front door (a persona) that you talk to in OpenCode, Claude Code, or your preferred editor. Behind that door is a team of specialists, shaped by your active org profile, who challenge each other and ship verified work. The default profile (`rnd`) is the software R&D team you would expect (architect, engineer, reviewer, security, QA, and others); `operations`, `creative`, and `research` are curated alternatives, and custom profiles drop into `.cx/profile.json`. A small CLI keeps the team installed, healthy, and aligned with your project state.
+Construct is one front door (a persona) that you talk to in OpenCode, Claude Code, or your preferred editor. Behind that door is a team of specialists, shaped by your active org profile, who challenge each other and ship verified work. The default profile (`rnd`) is the software R&D team you would expect (architect, engineer, reviewer, security, QA, and others); `operations`, `creative`, and `research` are curated alternatives, and custom profiles drop into `.cx/scope.json`. A small CLI keeps the team installed, healthy, and aligned with your project state.
 
 While Construct provides deep integration with Claude Code and editor-based tools like Cursor and VS Code, **OpenCode** is our primary, heavily optimized surface. OpenCode's native multi-model routing (OpenRouter, Ollama) and its mature plugin ecosystem give Construct a first-class, terminal-native experience that prioritizes privacy, flexibility, and performance. The intake loop turns signals into outcomes: anything dropped into `inbox/` is classified against the active profile's taxonomy, owner-assigned, planned as a task graph, routed to the right persona with the right context, executed in a bounded worker, evidenced, evaluated, and persisted. That's the whole product. The rest of this page is wiring.
 
@@ -34,7 +34,7 @@ The signal-to-memory path is deterministic where it should be (classification, r
   { label: 'Persona', sub: 'personas/construct.md — the only public surface' },
   { label: 'Orchestration policy', sub: 'classifies intent + execution track' },
   { label: 'Gates', sub: 'framing · external research · doc owner', decision: true, exitLabel: 'preconditions met' },
-  { label: 'Contract chain', sub: 'specialists/contracts.json — typed handoffs with pre/post conditions' },
+  { label: 'Contract chain', sub: 'specialists/org/contracts/ — typed handoffs with pre/post conditions' },
   { label: 'Specialist sequence', sub: 'architect → engineer → reviewer → qa → security' },
   { label: 'Verification gates', sub: 'npm test · lint:comments · docs:verify · contract postconditions', decision: true, exitLabel: 'pass' },
   { label: 'Result', sub: 'back through the persona, in one voice', highlight: true },
@@ -49,7 +49,7 @@ The CLI registry is the substrate (~118 commands). Four surfaces are emphasized 
 | Surface | Entry | Role |
 |---|---|---|
 | Agent / MCP | `@construct` in Claude, OpenCode, Codex, Cursor, Copilot | Primary authoring — orchestration policy, skills, workflows |
-| Terminal chat | `construct` (no subcommand; `construct chat` is a deprecated alias) | Owned agent loop in the terminal renderer (`--plain`/`--accessible` for linear) |
+| Terminal chat | `construct` (no subcommand) | Owned agent loop in the terminal renderer (`--plain`/`--accessible` for linear) |
 | Thin CLI | `construct status`, `construct doctor`, `construct intake`, … | Operator diagnostics and queue inspection |
 
 Oracle (`construct oracle status`) sits alongside as an L0.5 bounded-auto health layer — not a user-facing chat surface.
@@ -94,7 +94,7 @@ construct/
 ├── docs/           human + generated reference
 ├── deploy/         terraform / docker
 ├── packages/       cx-ui shared workspace
-├── specialists/    org registry + prompts + contracts  ─┐
+├── specialists/    org under specialists/org/** (runtime merge) + prompts  ─┐
 ├── registry/       product capability registry          │ org surface
 ├── platforms/      host adapter capabilities            │ (see ADR-0044)
 ├── schemas/        registry JSON Schema only            │
@@ -120,7 +120,7 @@ Picture a small company. **You are the founder.** You walk in and say "fix the l
 
 ## In technical terms
 
-A user request hits the Construct persona (`personas/construct.md`). The orchestration policy (`lib/orchestration-policy.mjs`) classifies the intent and resolves the execution track (`immediate`, `focused`, or `orchestrated`), the gate set (`framingChallenge`, `externalResearch`, `docAuthoring`), the contract chain (`specialists/contracts.json`. typed producer→consumer handoffs with preconditions, postconditions, and input/output schemas validated at runtime by `lib/specialist-contracts.mjs`), and the specialist sequence (`specialists/prompts/cx-*.md`). Specialists dispatch through the MCP server (`lib/mcp/server.mjs`). Verification fires four hard gates locally before any commit (`npm test`, `lint:comments`, `docs:verify`, `docs:update --check`) plus contract postconditions on every handoff; failures get a chain-hashed JSONL entry in `~/.cx/contract-violations.jsonl`. Providers (`lib/providers/`) are stateless adapters with their own transport choice; durable state lives in `lib/storage/` and `~/.cx/`.
+A user request hits the Construct persona (`personas/construct.md`). The orchestration policy (`lib/orchestration-policy.mjs`) classifies the intent and resolves the execution track (`immediate`, `focused`, or `orchestrated`), the gate set (`framingChallenge`, `externalResearch`, `docAuthoring`), the contract chain (`specialists/org/contracts/` — typed producer→consumer handoffs with preconditions, postconditions, and input/output schemas validated at runtime by `lib/specialist-contracts.mjs`), and the specialist sequence (`specialists/prompts/cx-*.md`). Specialists dispatch through the MCP server (`lib/mcp/server.mjs`). Verification fires four hard gates locally before any commit (`npm test`, `lint:comments`, `docs:verify`, `docs:update --check`) plus contract postconditions on every handoff; failures get a chain-hashed JSONL entry in `~/.cx/contract-violations.jsonl`. Providers (`lib/providers/`) are stateless adapters with their own transport choice; durable state lives in `lib/storage/` and `~/.cx/`.
 
 ## Why it's built this way
 
@@ -149,7 +149,7 @@ The foundation. Handles orchestration, specialist dispatch, memory, sessions, an
 - **CLI surface**. `bin/construct` and `lib/cli-commands.mjs`
 - **MCP server**. `lib/mcp/server.mjs`, tools split across `lib/mcp/tools/`
 - **Orchestration policy**. `lib/orchestration-policy.mjs` (intent classification, execution track selection, gate evaluation, contract-chain resolution)
-- **Agent contracts**. `specialists/contracts.json` and `lib/specialist-contracts.mjs` (producer→consumer service contracts with preconditions, postconditions, input/output schemas)
+- **Agent contracts**. `specialists/org/contracts/` and `lib/specialist-contracts.mjs` (producer→consumer service contracts with preconditions, postconditions, input/output schemas)
 - **Observation store**. `.cx/observations/` (role-scoped, vectorized, capped insights for continuous learning)
 - **Session persistence**. `lib/session-store.mjs`, `.cx/sessions/` (distilled session records for resumption)
 - **Hybrid search**. `lib/storage/` (file-state source, SQL store, vector index, hybrid query facade). One consolidated path: `lib/storage/hybrid-query.mjs` runs file BM25 + native pgvector HNSW ANN (`<=>`, with `hnsw.iterative_scan` on pgvector ≥ 0.8) + keyword, and fuses them by Reciprocal Rank Fusion (`lib/storage/rrf.mjs`) so incompatible score scales merge by rank. `lib/knowledge/search.mjs` accepts `tags` + `tagMatch` for tag-filtered BM25 over file content.
@@ -222,7 +222,7 @@ Infrastructure as code and container packaging.
 Every request flows through three structural layers:
 
 1. **Gates** (`routeRequest` returns `framingChallenge`, `externalResearch`, `docAuthoring`): preconditions that must hold before work begins. Frame the problem independent of tickets; route authorship to the owning specialist; cx-researcher returns primary sources first.
-2. **Contract chain** (`routeRequest.contractChain`): ordered typed handoffs from `specialists/contracts.json`. Each contract names a producer→consumer pair, required input fields, preconditions, expected output shape, and postconditions.
+2. **Contract chain** (`routeRequest.contractChain`): ordered typed handoffs from `specialists/org/contracts/`. Each contract names a producer→consumer pair, required input fields, preconditions, expected output shape, and postconditions.
 3. **Specialist sequence**: dispatch plan with ordering and parallel markers. Gate-required specialists (cx-devil-advocate, cx-researcher, doc owner) are auto-prepended.
 
 ## Construct on Construct
@@ -233,7 +233,7 @@ Four operational tiers:
 
 1. **L0. Deterministic agents (non-LLM, always-on).** The `construct-doctor` daemon (`lib/doctor/`) holds watchers for process-pressure (extends `lib/runtime-pressure.mjs`), service-health (probes Postgres / cm; auto-restarts docker services), disk (rotates `~/.cx/*.jsonl`, prunes `~/.construct/.runtime/`), cost (per-persona daily token ledger; the gateway hard-stops invocations at the cap), and `mcp-protocol` (performs a real MCP handshake against every configured MCP server in Claude Code and OpenCode configs, surfaces servers that fail `initialize` or `tools/list`). Recoverable actions are auto-taken and audit-logged to `~/.cx/doctor-log.jsonl`. L0 escalates a `service.down` role event when deterministic rules can't resolve the problem (e.g., 2 failed restarts or repeated pressure churn).
 2. **L0.5. Oracle meta-review (deterministic synthesis + bounded auto).** The `construct oracle` daemon (`lib/oracle/`) joins session observations, outcomes, contract violations, doctor log entries, alignment census, org graph (policy inventory, workflow gates, intake sign-offs), beads hygiene, and adapter parity into per-tick verdicts at `.cx/oracle/verdicts/<date>.json`. Auto actions (census, registry validate when needed, adapter sync in the tool repo) run without approval; high-severity **actionable** gaps auto-raise idempotent beads (persistent `gapId` dedup, open-bead check) when `CONSTRUCT_ORACLE_AUTO_RAISE` is not off — hygiene/meta gaps (`beads-hygiene`, `workflow-misaligned`, …) are verdict-only via `construct oracle gaps` and never file duplicate tracker beads; `detectBeadsDrift` excludes `[oracle/*]` meta beads from stuck/stale counts. Orchestration queues to `.cx/oracle/pending.jsonl` for explicit approval with sign-off metadata (`construct oracle approve <id>` executes by default). Routing artifacts land in `.cx/oracle/routing/`; duplicate hygiene beads: `construct oracle reconcile`. Oracle starts with `construct dev` unless `CONSTRUCT_ORACLE=off`. See [ADR 0043](/decisions/adr/0043-oracle-meta-controller).
-3. **L1. LLM personas (event-driven, fenced, rate-limited).** The role framework in `lib/roles/`. Events published by hooks or L0 are routed by `lib/orchestration/routing-tables.mjs`, which resolves event ownership, doc-artifact ownership, and watch-condition triggers from declarative fields on `specialists/registry.json` (with optional project overlays under `.cx/specialists/`); the owning persona is then validated against `specialists/role-manifests.json`. The gateway applies threshold + cooldown + rate-ceiling, creates a bd issue, queues a pending invocation in `~/.cx/role-pending.jsonl`, and emits an SSE toast. Session-start drains the backlog (cap 5 per session) and surfaces invocations to Construct, which dispatches the persona via the existing Task path. Personas act inside a fence. allowed paths, allowed bd labels, `approvalRequired` list per role. Handoffs are recorded as `next:cx-<role>` bd labels.
+3. **L1. LLM personas (event-driven, fenced, rate-limited).** The role framework in `lib/roles/`. Events published by hooks or L0 are routed by `lib/orchestration/routing-tables.mjs`, which resolves event ownership, doc-artifact ownership, and watch-condition triggers from declarative fields on `specialists/org` (with optional project overlays under `.cx/specialists/`); the owning persona is then validated against `specialists/role-manifests.json`. The gateway applies threshold + cooldown + rate-ceiling, creates a bd issue, queues a pending invocation in `~/.cx/role-pending.jsonl`, and emits an SSE toast. Session-start drains the backlog (cap 5 per session) and surfaces invocations to Construct, which dispatches the persona via the existing Task path. Personas act inside a fence. allowed paths, allowed bd labels, `approvalRequired` list per role. Handoffs are recorded as `next:cx-<role>` bd labels.
 4. **L2. User.** Commits, pushes, novel decisions, budget overrides, kill switches. Approval-required actions per `rules/common/commit-approval.md` are always L2. The goal is to make L2 rare. not zero.
 
 Kill switches throughout: `CONSTRUCT_ROLES=off` (global L1), `CONSTRUCT_ROLE_<NAME>=off` (per-persona L1). L0 watchers are individually toggleable when the doctor daemon ships.
@@ -338,7 +338,7 @@ Do not confuse this with `platforms/capabilities.json` (ADR-0033): that file des
 
 Where the capability registry declares *what* connects to what, the dependency matrix (`lib/graph/`) makes the connections **traceable in both directions and keeps them current from code structure**, so a file change can be mapped to the workflows and tests it affects. It is a typed, directed graph hosted in the knowledge-graph layer at `.cx/graph/{nodes,edges}.jsonl` (gitignored, regenerated; the store is `lib/graph/store.mjs`). Node types: `file`, `module`, `test`, `capability`, `workflow`, `contract`, `surface`, `skill`, `rule`. Edge relations: `imports`, `realizes` (file→capability), `validates` (test→capability), `embeds` (capability→workflow), `uses`, `governed_by`, `exposes`, `contains`, `co_changes`.
 
-Population is hybrid (`construct matrix build`): (1) **registry ingest** (`build-from-registry.mjs`) seeds capability/workflow/test/contract/skill/surface nodes and their edges from `registry/capabilities.json`, `workflow-defs.mjs`, and `specialists/contracts.json`; (2) **static import derivation** (`build-import-graph.mjs`) walks `lib/`, `bin/`, `scripts/`, `tests/` for relative imports, adds `file`/`module` nodes with `imports` edges, and derives the otherwise-missing `realizes` (file→capability) edges from each capability's declared-test import closure; (3) **git co-change** (`build-co-change.mjs`) adds `module` nodes with `contains` and `co_changes` edges (reusing `captureDependencyPatterns`, which also feeds the entity store).
+Population is hybrid (`construct matrix build`): (1) **registry ingest** (`build-from-registry.mjs`) seeds capability/workflow/test/contract/skill/surface nodes and their edges from `registry/capabilities.json`, `workflow-defs.mjs`, and `specialists/org/`; (2) **static import derivation** (`build-import-graph.mjs`) walks `lib/`, `bin/`, `scripts/`, `tests/` for relative imports, adds `file`/`module` nodes with `imports` edges, and derives the otherwise-missing `realizes` (file→capability) edges from each capability's declared-test import closure; (3) **git co-change** (`build-co-change.mjs`) adds `module` nodes with `contains` and `co_changes` edges (reusing `captureDependencyPatterns`, which also feeds the entity store).
 
 `construct impact [files] [--stdin] [--run] [--json]` (`lib/graph/impact.mjs`) is Test Impact Analysis: a changed file selects the tests that transitively import it plus the tests validating any capability it realizes, rolls up impacted capabilities and workflows, and flags changed files that realize no capability. **Oracle is the overseer** — `collectDependencyGraph` (`lib/oracle/read-model.mjs`) feeds `synthesizeVerdict` three gaps with deterministic routes (`lib/oracle/routing.mjs`): `matrix-coverage-gap` (no impl/test edge → `cx-architect`/`cx-qa`), `impact-untested` (realizing files changed after `lastValidated` → `cx-qa`/`cx-engineer`), and `dependency-graph-stale` (seeds changed since last build → `cx-platform-engineer`). Advisory-first: gaps and the `impact` command surface signals; nothing blocks.
 
@@ -356,7 +356,7 @@ The runtime has two pluggable axes behind unchanged callers: a worker backend an
 
 ## Terminal chat surface (own-the-loop, own-the-surface)
 
-Running `construct` with no subcommand is the interactive chat surface (ADR-0039 tier (c); `construct chat` remains as a deprecated alias). Construct runs the agent loop itself (ADR-0041): prompt → model → tool calls → tool results → repeat, on a provider-agnostic engine (Vercel AI SDK). Chat is **terminal-only**: the linear renderer (`lib/chat/tui/render.mjs`) is the sole surface after the desktop window and browser cockpit were retired with the dashboard server (construct-m7k2-web-deprecation). `--plain`/`--accessible` select the screen-reader-friendly mode explicitly. Settings persist to `.cx/chat-config.json`; transcripts to `.cx/chat-sessions/*.jsonl`. Decision: ADR-0041 (amended — desktop window + web cockpit retired; terminal-only).
+Running `construct` with no subcommand is the interactive chat surface (ADR-0039 tier (c)). Construct runs the agent loop itself (ADR-0041): prompt → model → tool calls → tool results → repeat, on a provider-agnostic engine (Vercel AI SDK). Chat is **terminal-only**: the linear renderer (`lib/chat/tui/render.mjs`) is the sole surface after the desktop window and browser cockpit were retired with the dashboard server (construct-m7k2-web-deprecation). `--plain`/`--accessible` select the screen-reader-friendly mode explicitly. Settings persist to `.cx/chat-config.json`; transcripts to `.cx/chat-sessions/*.jsonl`. Decision: ADR-0041 (amended — desktop window + web cockpit retired; terminal-only).
 
 ## Project-state hierarchy
 
@@ -464,7 +464,7 @@ body_hash:   sha256:<hex>          # SHA-256 of trimmed body
 
 ## Specialist roster
 
-29 specialists ship in the default profile (including `cx-oracle`). Each has a role, model tier (reasoning / standard / fast), and a prompt file in `specialists/prompts/`. The canonical source is `specialists/registry.json`.
+29 specialists ship in the default profile (including `cx-oracle`). Each has a role, model tier (reasoning / standard / fast), and a prompt file in `specialists/prompts/`. The canonical source is `specialists/org`.
 
 **Single Front Door:** only `construct` appears in editor agent pickers. Internal specialists (`cx-*`) dispatch via `orchestration_policy` / `orchestration_run` — not as separate picker entries. Sync injects an orchestration micro-prompt instead of a static roster token block.
 

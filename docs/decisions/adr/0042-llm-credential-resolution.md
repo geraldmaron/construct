@@ -31,11 +31,13 @@ Two concrete failures, both verified on a live machine:
 ## Decision
 
 1. **One secret resolver for the LLM path** (`lib/providers/secret-resolver.mjs`).
-   Resolves a canonical var through env -> `~/.construct/config.env` -> `~/.env`
+   Resolves a canonical var through env -> `~/.config/construct/config.env` -> `~/.env`
    -> project `.env` -> shell rc, and resolves `op://` references (bare or
    `$(op read '...')`) through the `op` CLI, cached per reference for the process
    and never logged. `hasSecret` checks presence without invoking the CLI so a
    stored `op://` reference counts as configured with no biometric prompt.
+   When `CONSTRUCT_OP_ENV_FILE` points at an `op run` catalog, keys listed there
+   count as configured without duplicating refs into config.env.
    `worker.mjs`, the chat engine (`apps/chat/engine/ai-sdk-agent.mjs`), and the
    router's detection (`isProviderConfigured`) all resolve the same way.
 
@@ -64,7 +66,7 @@ Two concrete failures, both verified on a live machine:
 
 ## Consequences
 
-- API keys may be stored as `op://` references in `~/.construct/config.env` and
+- API keys may be stored as `op://` references in `~/.config/construct/config.env` and
   resolve everywhere; no secret is written to logs or committed.
 - Copilot works without a Copilot-entitled `gh` login; `construct creds login
   copilot` is the entry point and errors point operators to it.

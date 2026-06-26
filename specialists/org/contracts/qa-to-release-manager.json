@@ -1,0 +1,42 @@
+{
+  "id": "qa-to-release-manager",
+  "producer": "cx-qa",
+  "consumer": "cx-release-manager",
+  "trigger": {
+    "intent": [
+      "implementation"
+    ],
+    "workCategory": "deep"
+  },
+  "input": {
+    "schema": "lib/contract-schemas/test-report.json",
+    "mustContain": [
+      "verdict",
+      "passed",
+      "failed",
+      "coverage"
+    ]
+  },
+  "output": {
+    "shape": "release-decision",
+    "mustContain": [
+      "decision",
+      "rolloutPlan",
+      "rollbackPlan"
+    ]
+  },
+  "preconditions": [
+    "All upstream verdicts APPROVED; QA verdict PASS"
+  ],
+  "postconditions": [
+    "Rollback plan tested, not just described",
+    "Rollout plan has concrete checkpoint signals"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "quality-group",
+    "consumerTeam": "operations-group",
+    "requiresApprovalFrom": []
+  }
+}

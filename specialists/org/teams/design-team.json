@@ -1,0 +1,40 @@
+{
+  "id": "design-team",
+  "kind": "squad",
+  "groupId": "product-group",
+  "name": "Design",
+  "owner": "designer",
+  "roles": [
+    "designer"
+  ],
+  "collaborators": [
+    "product-management-team",
+    "ux-research-team",
+    "accessibility-team"
+  ],
+  "specialists": [
+    "cx-designer"
+  ],
+  "decisionRights": [
+    "intake-triage",
+    "design-approval",
+    "scope-change",
+    "evidence-requirement"
+  ],
+  "forbiddenDecisions": [
+    "deployment",
+    "security-override",
+    "infra-change"
+  ],
+  "escalationPath": [
+    "product-manager",
+    "rd-lead",
+    "orchestrator"
+  ],
+  "charter": "Own interaction and visual design decisions within product scope. Partners with Accessibility on inclusive patterns and with Product Management on acceptance criteria.",
+  "contact": {
+    "slack": "#product",
+    "email": "product@example.com",
+    "owner": "product-manager"
+  }
+}

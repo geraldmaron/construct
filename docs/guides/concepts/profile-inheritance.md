@@ -62,7 +62,7 @@ The built-in `research` profile covers academic and applied research workflows. 
 
 ```json
 {
-  "$schema": "https://geraldmaron.github.io/construct/schemas/profile.schema.json",
+  "$schema": "https://geraldmaron.github.io/construct/schemas/scope.schema.json",
   "id": "research-extended",
   "displayName": "Research (extended)",
   "tagline": "Research workflow with experiment tracking.",
@@ -106,13 +106,13 @@ The child's `roles` array appended `cx-experiment-lead` to the parent's three ro
 
 ## Where extends is defined
 
-The `extends` field is declared in `schemas/profile.schema.json`:
+The `extends` field is declared in `schemas/scope.schema.json`:
 
 ```json
 "extends": { "type": ["string", "null"] }
 ```
 
-The loader lives in `lib/profiles/`. Curated profiles (e.g. `profiles/research.json`) always have `"extends": null`. Custom profiles at `.cx/profile.json` may point at any curated id.
+The loader lives in `lib/scopes/`. Curated profiles (e.g. `profiles/research.json`) always have `"extends": null`. Custom profiles at `.cx/scope.json` may point at any curated id.
 
 ## Constraints
 

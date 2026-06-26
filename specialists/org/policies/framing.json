@@ -1,0 +1,13 @@
+{
+  "id": "framing",
+  "owner": "orchestrator",
+  "description": "Requires that execution artifacts cite their source; prevents specialists from treating their own output as ground truth.",
+  "enforcement": "(persona prompt)",
+  "mode": "honor-system",
+  "requiresApprovalFrom": [],
+  "mayVetoFrom": [],
+  "escalatesTo": [],
+  "decisionRights": [],
+  "conditions": [],
+  "evidence": []
+}

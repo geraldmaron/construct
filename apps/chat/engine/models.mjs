@@ -59,6 +59,25 @@ export function resolveChatModelSelection({ env = process.env, requested = null,
   return resolveValidatedChatModel({ env, requested, excludeFamilies });
 }
 
+export function resolveNextOpenRouterModel({ env = process.env, exclude = [], tier = 'standard' } = {}) {
+  const excludeSet = new Set(Array.isArray(exclude) ? exclude : []);
+  const { providers } = getProviderModelCatalog({ env });
+  const openrouter = providers.find((p) => p.id === 'openrouter');
+  if (!openrouter?.configured) return null;
+  const candidates = [];
+  for (const t of [tier, 'standard', 'fast', 'reasoning']) {
+    for (const id of openrouter.options?.[t] || []) {
+      if (!candidates.includes(id)) candidates.push(id);
+    }
+  }
+  for (const id of candidates) {
+    if (excludeSet.has(id)) continue;
+    const check = isChatModelAvailable(id, { env });
+    if (check.ok) return id;
+  }
+  return null;
+}
+
 export async function resolveFreeOpenRouterModel({ env = process.env, tier = 'standard', exclude = [] } = {}) {
   const apiKey = resolveFirstSecret(['OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY'], { env });
   if (!apiKey) return null;

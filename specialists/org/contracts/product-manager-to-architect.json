@@ -1,0 +1,71 @@
+{
+  "id": "product-manager-to-architect",
+  "producer": "cx-product-manager",
+  "consumer": "cx-architect",
+  "trigger": {
+    "docAuthoring.docType": [
+      "prd",
+      "meta-prd",
+      "adr",
+      "rfc"
+    ]
+  },
+  "input": {
+    "shape": "prd-handoff",
+    "mustContain": [
+      "problem",
+      "functionalRequirements",
+      "nonFunctionalRequirements",
+      "acceptanceCriteria",
+      "constraints"
+    ]
+  },
+  "output": {
+    "schema": "lib/contract-schemas/decision.json",
+    "type": "decision"
+  },
+  "preconditions": [
+    "cx-devil-advocate framing challenge logged if riskFlags.architecture"
+  ],
+  "postconditions": [
+    "ADR Problem section traces to PRD Problem, not to tickets",
+    "ADR Rejected alternatives section present with ≥2 alternatives and specific rejection reasons",
+    "Reversibility section states whether one-way or two-way door",
+    {
+      "id": "adr-has-rejected-alternatives",
+      "description": "ADR must contain a Rejected Alternatives section",
+      "check": "artifact-has-section",
+      "section": "Rejected Alternatives"
+    },
+    {
+      "id": "adr-reversibility-stated",
+      "description": "ADR Reversibility section is present and non-empty",
+      "check": "artifact-section-nonempty",
+      "section": "Reversibility"
+    },
+    {
+      "id": "adr-consequences-stated",
+      "description": "ADR Consequences section is present and non-empty",
+      "check": "artifact-section-nonempty",
+      "section": "Consequences"
+    },
+    {
+      "id": "adr-numeric-claims-cited",
+      "description": "Every numeric claim in the ADR body cites a source",
+      "check": "artifact-claims-cited"
+    },
+    {
+      "id": "adr-manifest-reviewers",
+      "description": "Manifest required reviewers must appear in agent log before handoff",
+      "check": "artifact-reviewers-seen",
+      "fromManifest": true
+    }
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "product-group",
+    "consumerTeam": "engineering-group",
+    "requiresApprovalFrom": []
+  }
+}

@@ -94,7 +94,7 @@ flowchart TB
 
 ## Decision
 
-We will consolidate the five fragmented registries into a single **Unified Registry** (`specialists/unified-registry.json`) that is the single source of truth for teams, specialists, roles, fences, skills, and contracts. We will then rewire orchestration policy, contract handoffs, fence checks, and policy gates to read from this unified registry. The Oracle's scope will expand to include team-level governance oversight. Teams and specialists will become first-class routing primitives. Addition or removal of a team or specialist will require edits to exactly one file plus validation by a deterministic registry validator.
+We will consolidate the five fragmented registries into a **Unified Registry** that is the single source of truth for teams, specialists, roles, fences, skills, and contracts. **Amendment (ADR-0046, 2026-06-26):** storage is modular under `specialists/org/**`; `lib/registry/loader.mjs` assembles the registry at runtime (v3). Orchestration and validation contracts are unchanged; the monolithic `specialists/unified-registry.json` is retired. We will then rewire orchestration policy, contract handoffs, fence checks, and policy gates to read from this unified registry. The Oracle's scope will expand to include team-level governance oversight. Teams and specialists will become first-class routing primitives. Addition or removal of a team or specialist will require edits to exactly one file plus validation by a deterministic registry validator.
 
 ## Rationale
 

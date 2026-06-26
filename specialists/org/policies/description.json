@@ -1,0 +1,14 @@
+{
+  "id": "description",
+  "description": "Decision: description",
+  "enforcement": "hard",
+  "mode": "approval",
+  "requiresApprovalFrom": [],
+  "mayVetoFrom": [],
+  "escalatesTo": [],
+  "decisionRights": [
+    "description"
+  ],
+  "conditions": [],
+  "evidence": []
+}

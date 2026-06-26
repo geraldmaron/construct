@@ -1,0 +1,38 @@
+{
+  "id": "architect-to-devil-advocate",
+  "producer": "cx-architect",
+  "consumer": "cx-devil-advocate",
+  "trigger": {
+    "framingChallenge.required": true
+  },
+  "input": {
+    "shape": "framing-proposal",
+    "mustContain": [
+      "problemStatement",
+      "proposedApproach",
+      "assumptions"
+    ]
+  },
+  "output": {
+    "shape": "challenge-report",
+    "mustContain": [
+      "verdict",
+      "counterevidence",
+      "reframingProposals"
+    ]
+  },
+  "preconditions": [
+    "Problem statement stated independent of tickets/transcripts"
+  ],
+  "postconditions": [
+    "If verdict is BLOCKED, architect revises framing before proceeding",
+    "Challenge checkpoint logged to audit trail"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "engineering-group",
+    "consumerTeam": "quality-group",
+    "requiresApprovalFrom": []
+  }
+}

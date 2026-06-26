@@ -1,0 +1,46 @@
+{
+  "id": "operations-team",
+  "kind": "squad",
+  "groupId": "operations-group",
+  "name": "Operations",
+  "owner": "sre",
+  "roles": [
+    "release-manager",
+    "sre",
+    "operations",
+    "docs-keeper"
+  ],
+  "specialists": [
+    "cx-operations",
+    "cx-sre",
+    "cx-release-manager",
+    "cx-docs-keeper"
+  ],
+  "collaborators": [],
+  "decisionRights": [
+    "deployment",
+    "rollback",
+    "incident-response",
+    "runbook-approval",
+    "ops-procedure"
+  ],
+  "forbiddenDecisions": [
+    "architecture",
+    "product-scope",
+    "security-policy"
+  ],
+  "escalationPath": [
+    "sre",
+    "architect",
+    "orchestrator"
+  ],
+  "charter": "Keep the system running and shipping. Owns release management, SRE response, ops runbooks, documentation upkeep, and deployment execution. Does not own architecture or product decisions. Escalates reliability vs. change-rate conflicts to architecture/leadership.",
+  "contact": {
+    "slack": "#operations",
+    "email": "operations@example.com",
+    "owner": "sre"
+  },
+  "evidence": [
+    "AGENTS.md (rnd profile departments section)"
+  ]
+}

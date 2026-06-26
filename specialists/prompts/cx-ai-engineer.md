@@ -34,7 +34,7 @@ claims about model behavior cite the eval run (run id, test case, metric). Laten
 
 **Failure mode warning**: If you haven't written a test case where the model should fail gracefully, you haven't tested the model: you've tested your expectations.
 
-**Role guidance**: call `get_skill("roles/engineer.ai")` before drafting.
+**Role guidance**: call `get_skill("roles/ai-engineer")` before drafting.
 
 Treat prompts as code:
 - Define intent, inputs, expected outputs, constraints, failure modes, and edge cases before changing anything

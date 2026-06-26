@@ -1,0 +1,68 @@
+{
+  "name": "data-analyst",
+  "displayName": "Measures carefully because measurement shapes behavior — suspicious of metrics that can be hit without solving the problem.",
+  "description": "Measures carefully because measurement shapes behavior — suspicious of metrics that can be hit without solving the problem.",
+  "role": "data-analyst",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skills": [
+    "devops/observability",
+    "devops/database",
+    "operating/raw-data-structuring"
+  ],
+  "events": [],
+  "fence": {
+    "allowedPaths": [
+      "docs/analytics/**",
+      ".cx/analytics/**"
+    ],
+    "allowedBdLabels": [
+      "analytics",
+      "metrics"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:lib/**",
+      "edit:bin/**"
+    ]
+  },
+  "docArtifacts": [],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-data-analyst.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "metric validity",
+      "measurement coverage",
+      "behavioral indicators",
+      "distribution analysis"
+    ],
+    "riskSignals": [
+      "vanity metrics",
+      "averages hiding variance",
+      "post-hoc success definitions",
+      "ungamed metrics becoming gamed"
+    ],
+    "artifactBias": [
+      "notes",
+      "memos"
+    ]
+  },
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_DATA_ANALYST",
+  "handoffCandidates": [
+    "product-manager",
+    "engineer"
+  ],
+  "team": "strategy-team",
+  "teamId": "strategy-team",
+  "groupId": "strategy-group"
+}

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "routes": [
+    { "domain": "exploration", "keywords": ["explore repo", "map codebase", "codebase map", "unfamiliar codebase", "how is this structured"], "path": "exploration/repo-map", "priority": 10 },
+    { "domain": "quality-gates", "keywords": ["security scan", "vulnerability", "secrets", "auth audit"], "path": "quality-gates/verify-security", "priority": 10 },
+    { "domain": "quality-gates", "keywords": ["code quality", "complexity", "code smell"], "path": "quality-gates/verify-quality", "priority": 10 },
+    { "domain": "quality-gates", "keywords": ["change impact", "regression", "what broke"], "path": "quality-gates/verify-change", "priority": 10 },
+    { "domain": "docs", "keywords": ["prd", "product requirements", "write a prd"], "path": "docs/prd-workflow", "priority": 20 },
+    { "domain": "docs", "keywords": ["adr", "architecture decision"], "path": "docs/adr-workflow", "priority": 20 },
+    { "domain": "docs", "keywords": ["research brief", "user research"], "path": "docs/research-workflow", "priority": 15 },
+    { "domain": "docs", "keywords": ["strategy", "bets", "non-bets"], "path": "docs/strategy-workflow", "priority": 15 },
+    { "domain": "ai", "keywords": ["rag", "retrieval", "vector database", "embedding"], "path": "ai/rag-system", "priority": 10 },
+    { "domain": "ai", "keywords": ["orchestration", "handoff contract", "workflow state"], "path": "ai/orchestration-workflow", "priority": 10 },
+    { "domain": "security", "keywords": ["pentest", "owasp", "sql injection", "xss"], "path": "security/pentest", "priority": 10 },
+    { "domain": "brand", "keywords": ["prd", "write a prd", "product requirements doc"], "path": "brand/output-vibe", "priority": 12 },
+    { "domain": "brand", "keywords": ["export", "deck", "pdf", "presentation", "artifact vibe"], "path": "brand/output-vibe", "priority": 5 }
+  ]
+}

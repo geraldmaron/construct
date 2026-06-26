@@ -159,7 +159,7 @@ Manage the active org profile and its lifecycle (draft, promote, archive, health
 **Usage**
 
 ```bash
-construct profile show|list|set|create|drafts|archive|health
+construct scope show|list|set|create|drafts|archive|health
 ```
 
 **Subcommands**

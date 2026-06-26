@@ -98,11 +98,11 @@ Keys under `orchestration` in `construct.config.json`. Read at runtime by `lib/o
 
 ## Models (catalog visibility)
 
-Keys under `models` in `construct.config.json`. Consumed by `lib/models/catalog.mjs` and `getProviderModelCatalog()` in `lib/model-router.mjs`. Tier **assignments** (reasoning/standard/fast primaries) remain in `specialists/registry.json` and emergency overrides in `CX_MODEL_*` env vars — highest precedence unchanged.
+Keys under `models` in `construct.config.json`. Consumed by `lib/models/catalog.mjs` and `getProviderModelCatalog()` in `lib/model-router.mjs`. Tier **assignments** (reasoning/standard/fast primaries) remain in `specialists/org` and emergency overrides in `CX_MODEL_*` env vars — highest precedence unchanged.
 
 | Key | Default | Description |
 |---|---|---|
-| `models.visibility.mode` | `all_configured` | `all_configured` — all models from configured providers; `tier_defaults` — registry tier primaries + fallbacks only; `explicit` — `models.visibility.include` allowlist only (active chat pin always shown). |
+| `models.visibility.mode` | `tier_defaults` | `tier_defaults` — registry tier primaries + fallbacks only (recommended for chat); `all_configured` — tier defaults plus a capped free OpenRouter slice; `explicit` — `models.visibility.include` allowlist only (active chat pin always shown). |
 | `models.visibility.include` | `[]` | Model ids shown when `mode` is `explicit`. |
 | `models.visibility.exclude` | `[]` | Hidden from pickers; pinned model outside visibility shows a warning. |
 | `models.visibility.providers` | `{}` | Per provider-family toggles (`openrouter`, `github-copilot`, …); `false` hides the family. |
@@ -120,7 +120,7 @@ construct models list --json
 
 Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CX_MODEL_*` (alias still honored for one release cycle).
 
-## Source targets (`construct.config.json`)
+**Chat model mode** (`.cx/chat-config.json`): Default is `follow-tier` — chat resolves `CX_MODEL_*` on each launch without persisting a slug. Use `/model` to pin a specific id (`modelMode: pinned`); `/follow` returns to tier following. Retired or unavailable pins migrate to `follow-tier` on load (the stale slug is cleared, not rewritten).
 
 Typed integration selectors under `sources.targets`. Consumed by embed auto-discovery (when `embed.yaml` is absent), `provider_fetch`, and session-start source hints. Legacy env lists merge additively; an explicit `embed.yaml` in the XDG config dir remains a complete override.
 

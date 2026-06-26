@@ -6,10 +6,9 @@ artifactType: guidance
 role: product-manager.growth
 applies_to:
   - cx-product-manager
-  - cx-business-strategist
 inherits: product-manager
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

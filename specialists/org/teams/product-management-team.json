@@ -1,0 +1,45 @@
+{
+  "id": "product-management-team",
+  "kind": "squad",
+  "groupId": "product-group",
+  "name": "Product Management",
+  "owner": "product-manager",
+  "roles": [
+    "product-manager",
+    "product-manager.product",
+    "product-manager.platform",
+    "product-manager.enterprise",
+    "product-manager.ai-product",
+    "product-manager.growth"
+  ],
+  "collaborators": [
+    "ux-research-team",
+    "design-team",
+    "research-team"
+  ],
+  "specialists": [
+    "cx-product-manager"
+  ],
+  "decisionRights": [
+    "intake-triage",
+    "design-approval",
+    "scope-change",
+    "evidence-requirement"
+  ],
+  "forbiddenDecisions": [
+    "deployment",
+    "security-override",
+    "infra-change"
+  ],
+  "escalationPath": [
+    "product-manager",
+    "rd-lead",
+    "orchestrator"
+  ],
+  "charter": "Own requirements, evidence-backed prioritization, and PRD-family artifacts. PM flavors (platform, growth, enterprise, AI product) are overlays — pick one per task. Escalates scope conflicts to Product Group leadership.",
+  "contact": {
+    "slack": "#product",
+    "email": "product@example.com",
+    "owner": "product-manager"
+  }
+}

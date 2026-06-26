@@ -1,0 +1,30 @@
+{
+  "id": "user-to-construct",
+  "producer": "user",
+  "consumer": "construct",
+  "trigger": {
+    "always": true
+  },
+  "input": {
+    "shape": "natural-language-request",
+    "mustContain": [
+      "goal"
+    ]
+  },
+  "output": {
+    "shape": "routed-plan",
+    "mustContain": [
+      "track",
+      "specialists",
+      "dispatchPlan"
+    ]
+  },
+  "preconditions": [
+    "Session bootstrap completed: project_context and memory_search called, plus relevant repo docs read as needed"
+  ],
+  "postconditions": [
+    "Intent classified; work category tagged",
+    "Route decision surfaced as a single-sentence plan"
+  ],
+  "description": ""
+}

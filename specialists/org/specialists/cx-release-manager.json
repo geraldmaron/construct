@@ -1,0 +1,77 @@
+{
+  "name": "release-manager",
+  "displayName": "Guards the gap between 'verified' and 'safe to ship' — rollback procedures that were never tested don't exist.",
+  "description": "Guards the gap between 'verified' and 'safe to ship' — rollback procedures that were never tested don't exist.",
+  "role": "release-manager",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skills": [
+    "devops/git-workflow",
+    "quality-gates/verify-change",
+    "docs/memo-and-decision-capture"
+  ],
+  "events": [
+    "release.candidate",
+    "version.bump.needed"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/operations/releases/**",
+      "docs/releases/**",
+      "CHANGELOG.md"
+    ],
+    "allowedBdLabels": [
+      "release",
+      "version",
+      "shipping"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:package.json",
+      "edit:lib/**",
+      "edit:bin/**"
+    ]
+  },
+  "docArtifacts": [],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-release-manager.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "release readiness",
+      "rollback viability",
+      "changelog completeness",
+      "migration safety"
+    ],
+    "riskSignals": [
+      "untested rollback",
+      "irreversible migrations",
+      "missing changelog entries",
+      "canary without rollback trigger"
+    ],
+    "artifactBias": [
+      "notes",
+      "adrs"
+    ]
+  },
+  "canEdit": true,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,Write,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_RELEASE_MANAGER",
+  "handoffCandidates": [
+    "qa",
+    "engineer",
+    "reviewer",
+    "docs-keeper"
+  ],
+  "team": "operations-team",
+  "teamId": "operations-team",
+  "groupId": "operations-group"
+}

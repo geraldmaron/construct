@@ -8,7 +8,7 @@ applies_to:
   - cx-architect
 inherits: architect
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

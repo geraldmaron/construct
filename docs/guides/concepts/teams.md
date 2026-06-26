@@ -2,7 +2,19 @@
 
 > **Problem:** The original profile system aggregated roles by department but lacked explicit accountability, decision rights, and escalation paths. This left teams ambiguous about what they could decide and where to escalate when they hit a boundary.
 >
-> **Solution:** Teams are the primary organizational unit. Each team has an explicit owner, defined decision rights, forbidden decisions, and escalation paths.
+> **Solution:** Teams are the primary organizational unit. Macro **groups** own decision rights; functional **squads** own day-to-day collaboration. Sources live under `specialists/org/` and assemble at runtime (ADR-0046).
+
+## Modular layout (v3)
+
+```
+specialists/org/groups/*.json     # macro groups (product-group, …)
+specialists/org/teams/*.json      # squads (product-management-team, …)
+specialists/org/specialists/*.json
+specialists/org/contracts/*.json
+specialists/org/policies/*.json
+```
+
+`construct registry:validate --unified` validates the assembled registry. `construct team list [--kind group|squad]` and `construct team show <id>` inspect squads.
 
 ## Team Structure
 
@@ -182,14 +194,14 @@ When a decision needs to be made, the relevant team has authority, **provided no
 
 ## Team Lifecycle: Adding and Removing Teams
 
-As of Phase 6 (RFC-0004 completion), team and specialist management is unified under a single registry. All team and specialist definitions live in `specialists/unified-registry.json`, and lifecycle operations are enforced by the validator.
+As of Phase 6 (RFC-0004 completion), team and specialist management is unified under a single registry. All team and specialist definitions live in `specialists/org`, and lifecycle operations are enforced by the validator.
 
 ### Adding a Team
 
 **Step 1: Edit the unified registry**
 
 ```bash
-vim specialists/unified-registry.json
+vim specialists/org
 ```
 
 Add a new entry under the `teams` object:
@@ -259,8 +271,8 @@ The validator confirms:
 **Safe removal** — the validator prevents orphaning policies or contracts.
 
 ```bash
-# Remove the team entry and all its specialists from specialists/unified-registry.json
-vim specialists/unified-registry.json
+# Remove the team entry and all its specialists from specialists/org
+vim specialists/org
 
 # Then validate
 construct registry:validate
@@ -283,7 +295,7 @@ Resolve by:
 **Step 1: Verify the team exists**
 
 ```bash
-jq '.teams | keys' specialists/unified-registry.json
+jq '.teams | keys' specialists/org
 ```
 
 **Step 2: Edit the unified registry**
@@ -333,8 +345,8 @@ construct registry:validate
 **Unsafe removal is blocked** — the validator prevents orphaning contracts.
 
 ```bash
-# Remove the specialist from specialists/unified-registry.json
-vim specialists/unified-registry.json
+# Remove the specialist from specialists/org
+vim specialists/org
 
 # Then validate
 construct registry:validate
@@ -448,12 +460,12 @@ Each curated profile defines a full set of teams for its operating context:
 - **research** (Question/gather/analyze): Three teams (discovery, analysis, delivery)
 - **creative** (Make content): Four teams (strategy, production, measurement, governance)
 
-Teams in each profile mirror the department structure but add explicit decision boundaries and escalation. Headhunt and orchestration read the active profile at runtime (`lib/profiles/teams.mjs`) so an `operations` project recommends `triage-team`, `delivery-team`, or `reliability-team` instead of the R&D registry group ids.
+Teams in each profile mirror the department structure but add explicit decision boundaries and escalation. Headhunt and orchestration read the active scope at runtime (`lib/scopes/teams.mjs`) so an `operations` project recommends `operations-team`, `engineering-team`, or `product-management-team` on the shared org.
 
 ## File Structure
 
 **Unified Registry (RFC-0004 Phase 1+):**
-- `specialists/unified-registry.json` — Single source of truth for teams, specialists, roles, contracts, and policies
+- `specialists/org` — Single source of truth for teams, specialists, roles, contracts, and policies
 
 **Supporting runtime code:**
 - `lib/registry/loader.mjs` — Load and parse unified registry
@@ -467,12 +479,29 @@ Teams in each profile mirror the department structure but add explicit decision 
 
 **Deprecated (pre-Phase 1 layout):**
 - `specialists/teams-registry.json` — Deleted (content migrated to unified registry)
-- `specialists/registry.json` — Deleted (content migrated to unified registry)
+- `specialists/org` — Deleted (content migrated to unified registry)
 - `specialists/contracts.json` — Deleted (content migrated to unified registry)
 
 ## Backward Compatibility
 
-The original `departments[]` structure is retained in all profiles for backward compatibility. Teams are additive; existing code that reads departments continues to work unchanged. New code should prefer `teams[]`.
+## Profile team resolution
+
+Curated **scopes** live in `specialists/org/scopes/`: intake taxonomy, doc templates, tone, hooks. The `construct.config.json` `profile` field selects the active scope (`rnd`, `operations`, `creative`, `research`).
+
+**One org for all scopes.** Teams and roles always load from `specialists/org` at runtime via `lib/scopes/enrich.mjs`. Scopes change how work is classified and labeled — not who exists on the org chart.
+
+Operations-scope routing maps objectives to existing squads (`operations-team`, `engineering-team`, `product-management-team`) via `lib/scopes/teams.mjs`.
+
+## Specialists vs role flavors (ADR-0047)
+
+| Mechanism | Location | Purpose |
+|-----------|----------|---------|
+| **Specialist** | `specialists/org/specialists/cx-*.json` | Dispatch target: fence, skills, handoffs |
+| **Role overlay** | `skills/roles/{name}[.{variant}].md` | Anti-patterns + methodology injected at compose time |
+
+**Naming:** overlay id matches specialist `name` (`ai-engineer`, `platform-engineer`, `business-strategist`). Generalists keep variants under their prefix (`architect.platform`, `qa.web-ui`). Split specialists get a base file; classifiers may add sub-flavors (`data-engineer.pipeline`).
+
+**Bindings:** `lib/roles/flavor-bindings.mjs` maps specialist → classifier key → overlay path. Routing swaps `cx-engineer` for `cx-ai-engineer` / `cx-platform-engineer` / `cx-data-engineer` when keywords match.
 
 ## Current Implementation Status
 

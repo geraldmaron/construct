@@ -50,7 +50,7 @@ Each profile ships a classification table at `lib/intake/tables/<profile>.mjs`. 
 - the **owner role** per intake type
 - the **recommended chain** of specialists for the handoff sequence
 
-`construct profile show` tells you which table is active. `construct profile set <id>` switches.
+`construct scope show` tells you which table is active. `construct scope set <id>` switches.
 
 ### Default: `rnd` (software R&D)
 
@@ -92,7 +92,7 @@ Intake types: `question`, `study`, `synthesis`, `report`, `experiment`, `ops`, `
 
 ### Custom
 
-Drop a `.cx/profile.json` with `custom: true` and an `intake.classificationTable` path that lives under `.cx/`. The validator at `lib/profiles/validate-custom.mjs` enforces the cap structure. See [Profile lifecycle](/guides/concepts/profile-lifecycle).
+Drop a `.cx/scope.json` with `custom: true` and an `intake.classificationTable` path that lives under `.cx/`. The validator at `lib/scopes/validate-custom.mjs` enforces the cap structure. See [Profile lifecycle](/guides/concepts/scope-lifecycle).
 
 ## Triage block schema (same across profiles)
 
@@ -102,7 +102,7 @@ Drop a `.cx/profile.json` with `custom: true` and an `intake.classificationTable
 |---|---|
 | `intakeType` | One of the profile's declared types |
 | `rdStage` | One of the profile's declared stages (the field name is historical; it's the active profile's stage) |
-| `primaryOwner` | Persona name from `specialists/registry.json` |
+| `primaryOwner` | Persona name from `specialists/org` |
 | `recommendedChain` | Ordered handoff sequence |
 | `recommendedAction` | Verb-led next step (`diagnose`, `draft-prd`, `create-runbook`, etc.) |
 | `risk` | `low`, `medium`, or `high` |
@@ -140,7 +140,7 @@ construct intake done <id> --output=<path>     # stamp intake_id + confidence in
 construct intake done <id> --no-output=rejected|deferred|merged  # close without an artifact
 construct intake skip <id> [--reason=…]        # move pending → skipped, audit trail preserved
 construct intake reopen <id>                   # processed or skipped → pending
-construct profile show                         # which taxonomy is currently active
+construct scope show                         # which taxonomy is currently active
 ```
 
 `--output=<path>` stamps the artifact at `<path>` with `intake_id`, `intake_confidence`, and `intake_rationale` in its YAML frontmatter. Every intake-derived artifact carries verifiable provenance back to the source packet. The stamp is refused if the artifact already has a different `intake_id`. Use `intake: none` frontmatter in an artifact that intentionally has no intake source.
@@ -149,7 +149,7 @@ In `solo` mode the queue is the filesystem (`.cx/intake/`). In `team` and `enter
 
 ## See also
 
-- [Profile lifecycle](/guides/concepts/profile-lifecycle). How the intake taxonomy is designed and validated per profile.
+- [Profile lifecycle](/guides/concepts/scope-lifecycle). How the intake taxonomy is designed and validated per profile.
 - [Persona and skill research](/guides/concepts/persona-research). The methodology behind the owners and chains each profile names.
 - [Intake loop](/guides/concepts/intake-loop). Implementation deep dive of the 8-step pipeline (that doc is the internals; this one is the operator's view).
 - [Deployment model](/guides/concepts/deployment-model). Solo vs team vs enterprise topology.

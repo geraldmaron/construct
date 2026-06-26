@@ -1,0 +1,34 @@
+{
+  "id": "engineer-to-qa",
+  "producer": "cx-engineer",
+  "consumer": "cx-qa",
+  "trigger": {
+    "always": true
+  },
+  "input": {
+    "schema": "lib/contract-schemas/implementation.json",
+    "mustContain": [
+      "filesChanged",
+      "tests"
+    ]
+  },
+  "output": {
+    "schema": "lib/contract-schemas/test-report.json",
+    "type": "test-report"
+  },
+  "preconditions": [
+    "Test plan exists or is derivable from acceptance criteria"
+  ],
+  "postconditions": [
+    "Verdict in {PASS, FAIL}",
+    "Coverage meets project threshold",
+    "FAIL blocks DONE in workflow"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "engineering-group",
+    "consumerTeam": "quality-group",
+    "requiresApprovalFrom": []
+  }
+}

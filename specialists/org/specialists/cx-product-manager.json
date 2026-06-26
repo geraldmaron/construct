@@ -1,0 +1,102 @@
+{
+  "name": "product-manager",
+  "displayName": "Translates user reality into technical deliverables — skeptical of any requirement that can't be traced to observed user behavior.",
+  "description": "Translates user reality into technical deliverables — skeptical of any requirement that can't be traced to observed user behavior.",
+  "role": "product-manager",
+  "modelTier": "reasoning",
+  "reasoningEffort": "high",
+  "skills": [
+    "docs/product-intelligence-workflow",
+    "docs/evidence-ingest-workflow",
+    "docs/product-signal-workflow",
+    "docs/customer-profile-workflow",
+    "docs/prd-workflow",
+    "docs/prfaq-workflow",
+    "docs/backlog-proposal-workflow",
+    "docs/product-intelligence-review",
+    "docs/strategy-workflow"
+  ],
+  "events": [
+    "backlog.stale",
+    "prd.requested"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/specs/prd/**",
+      "docs/prd/**",
+      "docs/meta-prd/**",
+      "docs/prfaq/**",
+      "docs/one-pager/**",
+      ".cx/knowledge/**"
+    ],
+    "allowedBdLabels": [
+      "product",
+      "prd",
+      "backlog",
+      "feature"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label",
+      "bd priority"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:lib/**",
+      "edit:bin/**"
+    ]
+  },
+  "docArtifacts": [
+    "prd",
+    "meta-prd",
+    "prfaq",
+    "one-pager",
+    "backlog-proposal",
+    "prd-platform",
+    "prd-business",
+    "customer-profile"
+  ],
+  "watchConditions": [
+    {
+      "watcher": "high-ambiguity-deep-work",
+      "reason": "clarify acceptance criteria (high ambiguity)"
+    }
+  ],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-product-manager.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "requirements coverage",
+      "delivery risk",
+      "user-facing gaps",
+      "scope clarity"
+    ],
+    "riskSignals": [
+      "untraced requirements",
+      "scope creep",
+      "blocked dependencies",
+      "missing acceptance criteria"
+    ],
+    "artifactBias": [
+      "prds",
+      "intake",
+      "memos"
+    ]
+  },
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_PRODUCT_MANAGER",
+  "handoffCandidates": [
+    "architect",
+    "engineer",
+    "designer",
+    "researcher"
+  ],
+  "team": "product-management-team",
+  "teamId": "product-management-team",
+  "groupId": "product-group"
+}

@@ -1,0 +1,94 @@
+{
+  "name": "sre",
+  "displayName": "Plans for failure before it happens — reliability problems are designed in, not out.",
+  "description": "Plans for failure before it happens — reliability problems are designed in, not out.",
+  "role": "sre",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skills": [
+    "devops/observability",
+    "devops/ci-cd",
+    "devops/performance",
+    "devops/incident-response"
+  ],
+  "events": [
+    "push_gate.fail",
+    "service.down",
+    "mcp.unhealthy.persistent",
+    "edit_loop.stuck"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/operations/runbooks/**",
+      "docs/runbooks/**",
+      "docs/operations/incidents/**",
+      "docs/incidents/**",
+      "docs/postmortems/**"
+    ],
+    "allowedBdLabels": [
+      "incident",
+      "sre",
+      "reliability"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd link",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:lib/**",
+      "edit:bin/**",
+      "edit:specialists/**"
+    ]
+  },
+  "docArtifacts": [
+    "runbook",
+    "incident-report",
+    "postmortem"
+  ],
+  "watchConditions": [
+    {
+      "watcher": "wide-blast-radius",
+      "reason": "wide blast radius — operational readiness review"
+    }
+  ],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-sre.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "reliability posture",
+      "observability coverage",
+      "incident readiness",
+      "SLO adherence"
+    ],
+    "riskSignals": [
+      "missing alerts",
+      "untested rollbacks",
+      "observability gaps",
+      "SLOs defined post-incident"
+    ],
+    "artifactBias": [
+      "adrs",
+      "notes"
+    ]
+  },
+  "canEdit": true,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+  "internal": true,
+  "severityImmediate": [
+    "service.down"
+  ],
+  "killSwitchEnv": "CONSTRUCT_ROLE_SRE",
+  "handoffCandidates": [
+    "engineer",
+    "platform-engineer",
+    "debugger"
+  ],
+  "team": "operations-team",
+  "teamId": "operations-team",
+  "groupId": "operations-group"
+}

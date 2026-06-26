@@ -9,7 +9,7 @@ applies_to:
   - cx-platform-engineer
 inherits: security
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

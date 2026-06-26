@@ -26,7 +26,7 @@ jobs:
       - name: Enforce comment policy
         run: npm run lint:comments
       - name: Validate profiles + flavor overlays
-        run: npm run lint:profiles -- --quiet
+        run: npm run lint:scopes -- --quiet
       - name: Functional tests
         run: npm run test:functional
       - name: npm audit (high+ only, production deps of published package)

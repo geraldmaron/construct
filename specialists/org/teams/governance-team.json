@@ -1,0 +1,41 @@
+{
+  "id": "governance-team",
+  "kind": "squad",
+  "groupId": "governance-group",
+  "name": "Governance",
+  "owner": "security",
+  "roles": [
+    "security",
+    "legal-compliance"
+  ],
+  "specialists": [
+    "cx-security",
+    "cx-legal-compliance"
+  ],
+  "collaborators": [],
+  "decisionRights": [
+    "security-approval",
+    "compliance-review",
+    "risk-assessment",
+    "policy-definition"
+  ],
+  "forbiddenDecisions": [
+    "product-scope",
+    "implementation-approach",
+    "deployment-readiness"
+  ],
+  "escalationPath": [
+    "security",
+    "architect",
+    "orchestrator"
+  ],
+  "charter": "Keep the system safe to operate and inside its legal envelope. Owns security review, compliance verification, risk assessment, and the audit trail. Does not own implementation or product decisions but can block deployments that violate policy. Escalates policy conflicts to orchestrator.",
+  "contact": {
+    "slack": "#governance",
+    "email": "governance@example.com",
+    "owner": "security"
+  },
+  "evidence": [
+    "AGENTS.md (rnd profile departments section)"
+  ]
+}

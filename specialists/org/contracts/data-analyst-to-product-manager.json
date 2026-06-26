@@ -1,0 +1,43 @@
+{
+  "id": "data-analyst-to-product-manager",
+  "producer": "cx-data-analyst",
+  "consumer": "cx-product-manager",
+  "trigger": {
+    "docAuthoring.docType": [
+      "prd",
+      "meta-prd"
+    ],
+    "riskFlags": [
+      "metrics"
+    ]
+  },
+  "input": {
+    "shape": "metrics-analysis",
+    "mustContain": [
+      "metricDefinition",
+      "baseline",
+      "successThreshold"
+    ]
+  },
+  "output": {
+    "shape": "prd-handoff",
+    "mustContain": [
+      "acceptanceCriteria",
+      "successMetrics"
+    ]
+  },
+  "preconditions": [
+    "Metric definition reviewed for vanity-metric risk and for hit-without-solving-the-problem risk"
+  ],
+  "postconditions": [
+    "PRD success metrics carry the cited baseline and threshold from the analysis",
+    "Metrics that can be hit without solving the problem are flagged and replaced"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "strategy-group",
+    "consumerTeam": "product-group",
+    "requiresApprovalFrom": []
+  }
+}

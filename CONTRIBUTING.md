@@ -67,7 +67,7 @@ node ./bin/construct docs:verify
 node ./bin/construct docs:update --check
 node ./bin/construct lint:comments
 npm run lint:js
-npm run lint:profiles
+npm run lint:scopes
 ```
 
 All eight must exit 0. The release pipeline in `docs/operations/maintenance/release-and-deploy.md` runs the same checks before any artifact ships.
@@ -80,7 +80,7 @@ The few exceptions below are substrate-required and stay as `node ./bin/construc
 
 | Command | Where it runs | Why it has no npm wrapper |
 |---|---|---|
-| `registry:validate --unified` | `release:check` | Validates `specialists/unified-registry.json` invariants; called only in the release chain. |
+| `registry:validate --unified` | `release:check` | Validates `specialists/org` invariants; called only in the release chain. |
 | `registry:generate-docs --check` | `release:check` | Regenerates `docs/guides/reference/capabilities.md` from the registry; release-chain-only drift check. |
 | `catalog:validate --check` | `release:check` | Validates living capability catalog edges on `registry/capabilities.json`; release-chain-only drift check. |
 | `docs:sync --check` | `release:check` | Regenerates `docs/README.md` `AUTO:catalog-sync` from the capability catalog; release-chain-only drift check. |
@@ -110,7 +110,7 @@ Do not edit these without reading the constraints in CLAUDE.md first:
 
 | File | Why |
 |---|---|
-| `specialists/registry.json` | Source of truth for all agents on all platforms |
+| `specialists/org` | Source of truth for all agents on all platforms |
 | `scripts/sync-specialists.mjs` | Regenerates every platform config |
 | `lib/hooks/*.mjs` | Run in every Claude Code session |
 | `platforms/claude/settings.template.json` | Controls all Claude Code hook config |
@@ -149,7 +149,7 @@ node ./bin/construct doctor
 node ./bin/construct sync
 ```
 
-`doctor` verifies the system is healthy. `sync` regenerates all platform adapters from `specialists/registry.json`.
+`doctor` verifies the system is healthy. `sync` regenerates all platform adapters from `specialists/org`.
 
 ## Tone
 

@@ -23,7 +23,7 @@ Distribution exports (PDF, HTML, deck, PPTX) and dashboard/chat surfaces drifted
 
 ## Context
 
-Construct ships a monochrome ink ramp and bundled OFL fonts under `templates/distribution/fonts/`. Chat and dashboard consume the same tokens via `lib/brand-tokens.mjs` and `lib/chat/design-tokens.mjs`. Profile-specific intake terminology flows through `lib/profiles/rebrand.mjs`.
+Construct ships a monochrome ink ramp and bundled OFL fonts under `templates/distribution/fonts/`. Chat and dashboard consume the same tokens via `lib/brand-tokens.mjs` and `lib/chat/design-tokens.mjs`. Profile-specific intake terminology flows through `lib/scopes/rebrand.mjs`.
 
 ```mermaid
 flowchart LR
