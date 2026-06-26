@@ -1,0 +1,76 @@
+{
+  "$schema": "https://construct.dev/schemas/agent-manifest.v1.json",
+  "version": 1,
+  "kind": "agent-execution-manifest",
+  "description": "How an agent should reach Construct: MCP-first tool surface, with bare `construct` as the human entry. Source-of-truth values (core tool set, long-tail dispatcher) are verified against lib/mcp/server.mjs by tests/agent-manifest.test.mjs.",
+  "sources": {
+    "coreTools": "lib/mcp/server.mjs (CORE_TOOL_NAMES)",
+    "longTail": "lib/mcp/server.mjs (CONSTRUCT_CALL_TOOL)",
+    "surfaceTiers": "lib/registry/surface-map.mjs (SURFACE_TIERS, COMMAND_SURFACE)",
+    "capabilities": "registry/capabilities.json",
+    "credentials": "lib/mcp/server.mjs (config.env injection), lib/providers/secret-resolver.mjs"
+  },
+  "toolSurface": {
+    "model": "core-plus-long-tail",
+    "rationale": "ListTools front-loads a small core; everything else collapses behind construct_call so the schema stays small and small models stop hallucinating tool names. The long tail is reachable, just not front-loaded.",
+    "core": [
+      {
+        "name": "orchestration_policy",
+        "use": "Classify intent and get the specialist routing policy for a request."
+      },
+      {
+        "name": "get_skill",
+        "use": "Fetch a role or domain skill playbook by id."
+      },
+      {
+        "name": "search_skills",
+        "use": "Find relevant skills by query."
+      },
+      {
+        "name": "knowledge_search",
+        "use": "Search the project knowledge base."
+      },
+      {
+        "name": "memory_search",
+        "use": "Search durable cross-session memory."
+      },
+      {
+        "name": "project_context",
+        "use": "Read the active project context and working state."
+      },
+      {
+        "name": "summarize_diff",
+        "use": "Summarize a code diff for review or handoff."
+      }
+    ],
+    "longTail": {
+      "tool": "construct_call",
+      "use": "Invoke any non-core Construct tool by name: put the tool name in `tool` and its arguments in `args`. The tool's description carries the compact catalog of available names.",
+      "rationale": "One dispatcher reuses the same handlers, so collapsing the surface costs no capability — every tool stays reachable by name. The manifest deliberately does not enumerate the full tool list; the live catalog lives in the construct_call enum in lib/mcp/server.mjs."
+    }
+  },
+  "humanEntry": {
+    "command": "construct",
+    "subcommand": null,
+    "use": "A human runs bare `construct` to start the interactive chat session. This is the primary human entry; agents use the MCP tool surface above, not the chat REPL.",
+    "rationale": "Bare `construct` is the sole chat entry after the dashboard removal and chat-subcommand deprecation."
+  },
+  "credentials": {
+    "policy": "mcp-mediated",
+    "guidance": "Agents never resolve secrets themselves. The Construct MCP server applies config.env to its process environment at startup, so provider credentials are present for every tool call. The shared secret resolver walks the trusted sources (process env, config.env, ~/.env, project .env, shell rc) and resolves any 1Password reference internally.",
+    "doNot": "Do not instruct or run manual `op read` / `op://` lookups, and do not ask the user to paste keys. MCP tool outputs expose only env-key names and a configured boolean, never credential values.",
+    "source": "lib/mcp/server.mjs config.env injection; lib/providers/secret-resolver.mjs; lib/providers/credential-bootstrap.mjs"
+  },
+  "mcpGaps": {
+    "note": "True gaps only: capabilities that declare MCP unsupported. Flag variants of an MCP-backed capability and retired commands are not gaps.",
+    "gaps": [
+      {
+        "id": "oracle.meta-review",
+        "name": "Oracle Meta-Review",
+        "mcp": "unsupported",
+        "cliFallback": "construct oracle review",
+        "reason": "Declares surfaces.mcp.supported=false in registry/capabilities.json; reach it via the CLI --json twin."
+      }
+    ]
+  }
+}

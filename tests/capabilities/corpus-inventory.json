@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-26T00:39:44.703Z",
+  "generatedAt": "2026-06-26T01:54:29.391Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 525,
-    "topLevelTestFiles": 292,
+    "testFiles": 527,
+    "topLevelTestFiles": 294,
     "nestedTestFiles": 233,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 22,
     "byLayer": {
-      "unit": 328,
+      "unit": 330,
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
       "functional": 158
     },
     "byCategory": {
-      "unit": 289,
+      "unit": 291,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
@@ -35,6 +35,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/adr-stamp-integrity.test.mjs — ADR body-hash drift gate."
+    },
+    {
+      "path": "tests/agent-manifest.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/agent-manifest.test.mjs — verify the agent execution manifest against live sources."
     },
     {
       "path": "tests/alias-resolution.test.mjs",
@@ -659,6 +667,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/demo-recording.test.mjs — recording manifest loader."
+    },
+    {
+      "path": "tests/demo-tour.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/demo-tour.test.mjs — guided demo tour: linear renderer + accessible path."
     },
     {
       "path": "tests/deploy-contract.test.mjs",
