@@ -46,7 +46,7 @@ Export does not accept PDF or DOCX as input — those are **ingest** sources. On
 
 Docling provisions on first use into `.cx/runtime/docling/.venv` (~1.5 GB). Eager provision: `construct install --with-docling`.
 
-On docling timeout or failure, Construct falls back to **node-native** extraction (not regex/CLI legacy paths). Legacy zip-xml and `pdftotext` paths require `CONSTRUCT_ALLOW_LEGACY_EXTRACT=1` for transitional debugging only.
+On docling timeout or failure, Construct falls back to **node-native** extraction (unpdf/mammoth) for PDF/DOCX. Office formats without a Node backend require docling.
 
 ### Supported intake formats
 

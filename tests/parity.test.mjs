@@ -172,6 +172,20 @@ describe('checkParity', () => {
     assert.deepEqual(opencode.extra, ['cx-orphan']);
   });
 
+  it('treats a lone legacy orchestrator OpenCode agent as construct (pre-rename install)', () => {
+    resetSurfaces();
+    const opencodeDir = path.join(tmpHome, '.config', 'opencode');
+    fs.mkdirSync(opencodeDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(opencodeDir, 'opencode.json'),
+      JSON.stringify({ agent: { orchestrator: {} } }),
+    );
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    const opencode = report.surfaces.find((s) => s.surface === 'opencode');
+    assert.equal(opencode.status, 'ok', JSON.stringify(opencode));
+    assert.deepEqual(opencode.extra, []);
+  });
+
   it('reports drift when copilot user-scope prompts are missing the construct front-door', () => {
     resetSurfaces();
     const promptsDir = path.join(tmpHome, '.github', 'prompts');

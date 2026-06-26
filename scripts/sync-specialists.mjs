@@ -1731,7 +1731,8 @@ function syncOpencode(entries, targetDir = null, wants = true) {
   for (const key of Object.keys(config.agent)) {
     const isManaged = prefixes.some((p) => key.startsWith(p));
     const isOrchestrator = registry.orchestrator?.name === key;
-    if ((isManaged || isOrchestrator) && !writeEntries.find((e) => adapterName(e) === key)) {
+    const isStaleOrchestratorAlias = key === 'orchestrator' && registry.orchestrator?.name === 'construct';
+    if ((isManaged || isOrchestrator || isStaleOrchestratorAlias) && !writeEntries.find((e) => adapterName(e) === key)) {
       delete config.agent[key];
     }
   }
