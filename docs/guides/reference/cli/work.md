@@ -105,6 +105,8 @@ construct demo <list|init|record|name> [--surface=chat|web|tape] [--format=gif|m
 | `--model=<id>` | Pin model for chat demo |
 | `--web` | Open web chat instead of terminal Ink |
 | `--plain` | Linear chat renderer (accessibility / non-TTY) |
+| `--accessible` | Screen-reader-friendly linear tour renderer |
+| `--skip-input` | Tour: auto-advance without waiting for Enter (headless/CI) |
 | `--free` | OpenRouter free-router mode for chat demo |
 | `--format=<f>` | gif (default) | mp4 | webm (tape surface only) |
 | `--out=<path>` | Output path (tape recording) |
