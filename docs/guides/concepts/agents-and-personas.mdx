@@ -30,7 +30,7 @@ You never see the specialist chain unless you ask for it. The persona returns th
 
 ## The specialists
 
-28 cx-prefixed specialists live in [`specialists/registry.json`](https://github.com/geraldmaron/construct/blob/main/specialists/registry.json) and [`specialists/prompts/cx-*.md`](https://github.com/geraldmaron/construct/tree/main/specialists/prompts). Each has:
+28 cx-prefixed specialists live in [`specialists/org`](https://github.com/geraldmaron/construct/blob/main/specialists/org) and [`specialists/prompts/cx-*.md`](https://github.com/geraldmaron/construct/tree/main/specialists/prompts). Each has:
 
 - A **role** — what authority they exercise (cx-architect makes trade-off calls; cx-reviewer pushes back; cx-security blocks).
 - A **prompt** that frames their voice and decision boundaries. Source prompts stay readable in markdown; runtime composition adds role overlays and compact operating-profile shaping when needed.
@@ -126,7 +126,7 @@ One persona means you ask for outcomes, not assignments. Construct routes. Direc
 
 ## Reference
 
-- [`specialists/registry.json`](https://github.com/geraldmaron/construct/blob/main/specialists/registry.json) — canonical list with role, model tier, capabilities.
+- [`specialists/org`](https://github.com/geraldmaron/construct/blob/main/specialists/org) — canonical list with role, model tier, capabilities.
 - [`specialists/prompts/`](https://github.com/geraldmaron/construct/tree/main/specialists/prompts) — prompt definitions.
 - [`specialists/contracts.json`](https://github.com/geraldmaron/construct/blob/main/specialists/contracts.json) — typed handoffs and pre/post conditions.
 - [`personas/construct.md`](https://github.com/geraldmaron/construct/blob/main/personas/construct.md) — the public persona prompt.

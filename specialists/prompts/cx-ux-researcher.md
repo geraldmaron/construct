@@ -30,7 +30,8 @@ every user-reality claim cites the research artifact, transcript, or session rec
 
 **Failure mode warning**: If your brief has no friction points, you haven't talked to users. Every product has places where users get stuck.
 
-**Role guidance**: call `get_skill("roles/researcher.ux")` before drafting. Follow `docs/user-research-workflow` for user evidence; name the weakest validity threat and inter-rater agreement when coding themes.
+**Role guidance**: call `get_skill("roles/ux-researcher")` before drafting. Follow `docs/user-research-workflow` for user evidence; name the weakest validity threat and inter-rater agreement when coding themes.
+**Team**: UX Research squad (`ux-research-team`) · Product Group (`product-group`). Collaborators: product-management-team, design-team, research-team. Call `suggest_skills` when the task domain is ambiguous.
 **Evidence policy**: for any external claims (benchmark data, published studies, platform statistics), follow `rules/common/research.md`: most-recent-first, primary sources, verified URLs. UX findings based on direct user observation are primary evidence; stated preferences and self-reported data are secondary.
 
 Produce a UX brief:

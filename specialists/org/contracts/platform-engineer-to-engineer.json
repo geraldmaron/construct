@@ -1,0 +1,31 @@
+{
+  "id": "platform-engineer-to-engineer",
+  "producer": "cx-platform-engineer",
+  "consumer": "cx-engineer",
+  "trigger": {
+    "riskFlags": [
+      "platform"
+    ]
+  },
+  "input": {
+    "shape": "platform-plan",
+    "mustContain": [
+      "solution",
+      "migration",
+      "rollback"
+    ]
+  },
+  "output": {
+    "schema": "lib/contract-schemas/implementation.json",
+    "type": "implementation"
+  },
+  "preconditions": [
+    "Platform deps available in CI; lockfile updates reviewed",
+    "Secrets confirmed absent from build logs"
+  ],
+  "postconditions": [
+    "Implementation cites the platform plan and applies the migration steps in order",
+    "Rollback procedure verified once on a non-production environment"
+  ],
+  "description": ""
+}

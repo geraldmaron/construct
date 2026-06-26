@@ -126,7 +126,7 @@ Caps are bounds, not targets. Most well-shaped profiles use a fraction.
 
 ## Where the methodology lives in the lifecycle
 
-The phases in `docs/guides/concepts/profile-lifecycle.md` map to this methodology:
+The phases in `docs/guides/concepts/scope-lifecycle.md` map to this methodology:
 
 - **Discover** runs the persona research method, owned by `cx-ux-researcher`.
 - **Frame** runs Galbraith STAR for departmental structure, owned by `cx-product-manager`.

@@ -8,7 +8,7 @@
     "tenantId": null
   },
   "providers": {},
-  "profile": "rnd",
+  "scope": "rnd",
   "autoEmbed": true,
   "telemetry": {
     "enabled": true

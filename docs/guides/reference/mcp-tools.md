@@ -22,7 +22,7 @@ Invoke any non-core Construct tool by name. Pass the tool name in `tool` (constr
 
 ## Host wiring policy
 
-The Construct MCP server (`construct-mcp`) is defined once in `specialists/unified-registry.json` (`mcpServers`) and wired into every selected host by `scripts/sync-specialists.mjs` — Claude Code (`.claude/settings.json` → `mcpServers`), OpenCode (`.opencode/opencode.json`), VS Code (`.vscode/mcp.json` → `servers`), Cursor (`.cursor/mcp.json` → `mcpServers`), and Codex (`.codex/config.toml` → `mcp_servers`). The `host-config-parity` functional test fails if any selected host drops it.
+The Construct MCP server (`construct-mcp`) is defined once in `specialists/org` (`mcpServers`) and wired into every selected host by `scripts/sync-specialists.mjs` — Claude Code (`.claude/settings.json` → `mcpServers`), OpenCode (`.opencode/opencode.json`), VS Code (`.vscode/mcp.json` → `servers`), Cursor (`.cursor/mcp.json` → `mcpServers`), and Codex (`.codex/config.toml` → `mcp_servers`). The `host-config-parity` functional test fails if any selected host drops it.
 
 Credential handling diverges because hosts resolve env references at different times:
 
@@ -559,7 +559,7 @@ Bulk-add tasks from a markdown plan to the current workflow. Parses headings and
 
 ## Profile, outcomes & learning tools
 
-### `profile_show`
+### `scope_show`
 Return the active Construct org profile (id, displayName, roles, departments, intake taxonomy, doc templates). Use when a specialist needs to know which role set, classification taxonomy, or doc templates apply before drafting work.
 
 | Parameter | Type | Description |
@@ -567,19 +567,19 @@ Return the active Construct org profile (id, displayName, roles, departments, in
 | `cwd` | string | Project root (default: server cwd). |
 | `id` | string | Force a specific profile id instead of resolving from config. |
 
-### `profile_list`
-List the curated org profile catalog (rnd, operations, creative, research) with role/department counts. Use to discover which profiles are available before suggesting `construct profile set`.
+### `scope_list`
+List the curated org profile catalog (rnd, operations, creative, research) with role/department counts. Use to discover which profiles are available before suggesting `construct scope set`.
 
 _No parameters._
 
-### `profile_drafts`
-List in-progress draft profiles under `.cx/profiles/draft-*` and any user-defined custom profile at `.cx/profile.json`. Use to see what profile work is pending before scaffolding another draft.
+### `scope_drafts`
+List in-progress draft profiles under `.cx/profiles/draft-*` and any user-defined custom profile at `.cx/scope.json`. Use to see what profile work is pending before scaffolding another draft.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `cwd` | string | Project root (default: server cwd). |
 
-### `profile_health`
+### `scope_health`
 Per-profile health rollup over a window: observation count, per-role outcome runs and success rates. Use to check whether a profile is producing data before recommending changes or archive.
 
 | Parameter | Type | Description |
@@ -588,8 +588,8 @@ Per-profile health rollup over a window: observation count, per-role outcome run
 | `id` | string | Profile id (default: active profile). |
 | `window_days` | number | Window in days (default 30). |
 
-### `profile_create`
-Scaffold a draft org profile under `.cx/profiles/draft-<id>/` (requirements.md + profile.json + persona stubs + department charters). Writes durable state — requires `confirm=true`. For curated catalog work, follow `docs/guides/concepts/profile-lifecycle.md` after creation.
+### `scope_create`
+Scaffold a draft org profile under `.cx/profiles/draft-<id>/` (requirements.md + profile.json + persona stubs + department charters). Writes durable state — requires `confirm=true`. For curated catalog work, follow `docs/guides/concepts/scope-lifecycle.md` after creation.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -600,7 +600,7 @@ Scaffold a draft org profile under `.cx/profiles/draft-<id>/` (requirements.md +
 | `seed_roles` | array | Role ids to scaffold persona files for (cap 80). |
 | `seed_departments` | array | Departments to scaffold charters for (cap 12). |
 
-### `profile_archive`
+### `scope_archive`
 Archive a curated profile: moves `profiles/<id>.json` and its intake table into `archive/profiles/<id>/` with an archive note. Destructive — requires `confirm=true` and a substantive `reason` (>=8 chars). Observations and outcomes are preserved.
 
 | Parameter | Type | Description |

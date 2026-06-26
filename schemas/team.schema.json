@@ -7,6 +7,11 @@
   "required": ["id", "name", "owner", "roles", "charter"],
   "additionalProperties": false,
   "properties": {
+    "kind": { "type": "string", "enum": ["group", "squad"] },
+    "groupId": { "type": "string" },
+    "squads": { "type": "array", "items": { "type": "string" } },
+    "collaborators": { "type": "array", "items": { "type": "string" } },
+    "specialists": { "type": "array", "items": { "type": "string" } },
     "id": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]{1,40}$",

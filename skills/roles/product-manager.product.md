@@ -8,7 +8,7 @@ applies_to:
   - cx-product-manager
 inherits: product-manager
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

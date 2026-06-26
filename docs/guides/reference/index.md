@@ -21,7 +21,7 @@ Generated from `lib/hooks/`; each entry shows what triggers the hook and what it
 
 [The construct persona + 28 specialists →](/guides/reference/specialists)
 
-Generated from `specialists/registry.json`; each entry shows the specialist's role, model tier, and one-line purpose.
+Generated from `specialists/org`; each entry shows the specialist's role, model tier, and one-line purpose.
 
 ## Config
 

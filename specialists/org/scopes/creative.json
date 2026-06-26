@@ -1,0 +1,54 @@
+{
+  "$schema": "../../../schemas/scope.schema.json",
+  "id": "creative",
+  "displayName": "Creative",
+  "tagline": "Brief, research, draft, review, publish, measure. Make and ship content.",
+  "experimental": true,
+  "intake": {
+    "types": [
+      "brief",
+      "content-request",
+      "asset",
+      "experiment",
+      "report",
+      "legal-compliance",
+      "ops",
+      "unknown"
+    ],
+    "stages": [
+      "brief",
+      "research",
+      "draft",
+      "review",
+      "publish",
+      "measure"
+    ],
+    "classificationTable": "lib/intake/tables/creative.mjs"
+  },
+  "docTemplates": [
+    "one-pager",
+    "memo",
+    "strategy",
+    "changelog-entry"
+  ],
+  "hooks": {
+    "sessionReflect": "on",
+    "sessionOptimize": "on"
+  },
+  "defaultSkills": [],
+  "toneDefaults": {
+    "one-pager": "friendly",
+    "memo": "friendly",
+    "prfaq": "friendly"
+  },
+  "researchProfiles": {
+    "brief": "user",
+    "research": "user",
+    "draft": "user",
+    "measure": "external"
+  },
+  "rebrand": {
+    "intakeQueueLabel": "Creative queue",
+    "signalNoun": "brief"
+  }
+}

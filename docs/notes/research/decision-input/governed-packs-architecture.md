@@ -18,7 +18,7 @@ Can Construct support multiple organizational and team structures through instal
 ## Method
 
 1. Inspected current repository contracts and implementations: profiles, profile loader and schema, specialist teams, role-policy engine, MCP broker, plugin registry, gate audit, research policy, and existing research-note conventions.
-2. Ran `construct profile list`, `construct profile show`, and `construct gates:audit` on 2026-06-24. The gate audit reported one critical gap: `review` is required by `main` branch protection but is not found in the active CI workflow.
+2. Ran `construct scope list`, `construct scope show`, and `construct gates:audit` on 2026-06-24. The gate audit reported one critical gap: `review` is required by `main` branch protection but is not found in the active CI workflow.
 3. Searched current primary sources first: NIST AI RMF and its Generative AI Profile, NIST SSDF community-profile guidance, SLSA provenance specification, and Open Policy Agent bundle documentation. URLs below were fetched and checked on 2026-06-24.
 4. Compared three options: retain profiles only; make packs general executable plugins; introduce declarative, governed capability packs above an invariant substrate. Marketing- and R&D-specific roles were intentionally not invented: no local user research or operating evidence establishes them.
 
@@ -27,7 +27,7 @@ Can Construct support multiple organizational and team structures through instal
 | ID | Title / Path | Class | Reliability | Credibility | Date | Verified | Relevance |
 |---|---|---|---|---|---|---|---|
 | I1 | `profiles/{rnd,creative,operations,research}.json` | internal | A | 1 | 2026-06-24 | n/a | Four curated organization profiles define roles, departments, intake, templates, and session hooks. |
-| I2 | `lib/profiles/loader.mjs`; `docs/guides/concepts/profile-inheritance.md` | internal | A | 1 | 2026-06-24 | n/a | Active resolution selects one raw profile; the guide describes inheritance that the inspected loader does not implement. |
+| I2 | `lib/scopes/loader.mjs`; `docs/guides/concepts/profile-inheritance.md` | internal | A | 1 | 2026-06-24 | n/a | Active resolution selects one raw profile; the guide describes inheritance that the inspected loader does not implement. |
 | I3 | `specialists/teams.json`; `lib/plugin-registry.mjs`; `lib/policy/engine.mjs`; `lib/mcp/broker.mjs`; `lib/gates-audit.mjs` | internal | A | 1 | 2026-06-24 | n/a | Current reusable team templates, integration plugin shape, policy enforcement, and gate-audit behavior. |
 | E1 | [NIST Secure Software Development Framework project](https://csrc.nist.gov/projects/ssdf) | primary | A | 1 | 2026-06-24 | yes | Defines SSDF community profiles as use-case enhancements used with, not instead of, the base framework; records provenance as an SSDF practice. |
 | E2 | [NIST AI RMF 1.0](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf) | primary | A | 1 | 2023-01-26 | yes | Defines GOVERN, MAP, MEASURE, and MANAGE, with governance cross-cutting the lifecycle. |
@@ -160,7 +160,7 @@ A pack should model work design, not simulate an entire department. For each dec
 2. **The documented profile inheritance contract is not present in the inspected active loader.** This means composition must be proven by tests before it is used as a foundation; documentation alone is not sufficient. [`I2`]
 3. **Policy signing alone is not execution isolation.** OPA demonstrates signed policy activation, not safe execution of arbitrary third-party code. This is why executable packs are excluded from the first version. [`E5`]
 4. **Gate audit is currently critical.** The observed `review` context mismatch must be repaired or explicitly explained before a pack certification claim is credible. [`I3`]
-5. **Organizational labels are not requirements.** “R&D,” “marketing,” and other pack names do not establish their workflows, authority boundaries, or evidence needs. Each candidate requires the profile-lifecycle discovery and validation evidence already prescribed by this repository. [`I1`]
+5. **Organizational labels are not requirements.** “R&D,” “marketing,” and other pack names do not establish their workflows, authority boundaries, or evidence needs. Each candidate requires the scope-lifecycle discovery and validation evidence already prescribed by this repository. [`I1`]
 
 ## Confidence summary
 

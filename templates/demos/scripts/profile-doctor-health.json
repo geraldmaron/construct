@@ -8,8 +8,8 @@
   "steps": [
     {
       "title": "Profiles — curated catalog",
-      "prompt": "Run construct profile list to show curated org profiles.",
-      "command": "node bin/construct profile list"
+      "prompt": "Run construct scope list to show curated org profiles.",
+      "command": "node bin/construct scope list"
     },
     {
       "title": "Consistency — cross-surface checks",

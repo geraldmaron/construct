@@ -49,7 +49,7 @@ Before DONE: postconditions met · sources cited · framing logged · ADRs have 
 
 ## Intake surface <!-- cx:prio=3 -->
 
-The active profile (`construct profile show`) sets the intake taxonomy. Session-start surfaces pending intake at `.cx/intake/pending/<id>.json`. Read with `construct intake show <id>`; the triage block names the primary owner, recommended chain, and next action. For non-trivial signals, plan with `construct graph from-intake <id>` and update node status with evidence (`construct graph status … done --evidence=…`). A node cannot reach `done` without an evidence record. Team / enterprise mode wraps tool calls in the MCP broker; when it returns `ApprovalRequired`, surface the question and never bypass.
+The active profile (`construct scope show`) sets the intake taxonomy. Session-start surfaces pending intake at `.cx/intake/pending/<id>.json`. Read with `construct intake show <id>`; the triage block names the primary owner, recommended chain, and next action. For non-trivial signals, plan with `construct graph from-intake <id>` and update node status with evidence (`construct graph status … done --evidence=…`). A node cannot reach `done` without an evidence record. Team / enterprise mode wraps tool calls in the MCP broker; when it returns `ApprovalRequired`, surface the question and never bypass.
 
 ## Action discipline <!-- cx:prio=1 -->
 

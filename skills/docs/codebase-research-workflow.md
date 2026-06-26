@@ -5,13 +5,13 @@ inputs: [repository-path]
 artifactType: research-brief
 toneDefault: pedagogical
 toneAllowed: [pedagogical, direct]
-verificationBar: "Every claim cites file:line or command output; no assumed architecture."
+verificationBar: "Every load-bearing claim cites a verifiable primary source; label inference confidence; satisfy template structure requirements."
 ---
 # Codebase Research Workflow
 
 Use when: cx-explorer investigates **this repository** — structure, dependencies, behavior. Not for external vendor research or user interviews.
 
-Call `get_skill("roles/researcher.explorer")` and `get_skill("exploration/repo-map")` before deep dives.
+Call `get_skill("roles/researcher")` and `get_skill("exploration/repo-map")` before deep dives.
 
 ## Steps
 
@@ -38,3 +38,6 @@ Call `get_skill("roles/researcher.explorer")` and `get_skill("exploration/repo-m
 - Every architectural claim traceable to file:line.
 - Unknown paths marked `[unverified]` until read.
 - cx-explorer must **not** answer product prioritization or user preference questions.
+## Release gate
+
+Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

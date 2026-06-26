@@ -3,7 +3,7 @@ name: docs-evidence-ingest-workflow
 description: "Use when: the user pastes customer notes, Slack threads, support tickets, sales notes, research snippets, RFCs, analytics summaries, or competitor signals."
 inputs: [signal, document]
 artifactType: evidence-brief
-verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+verificationBar: "Observed behavior weighted over self-report; sample size stated; no invented quotes; every load-bearing claim cites a verifiable source."
 ---
 # Evidence Ingest Workflow
 
@@ -34,3 +34,6 @@ Always preserve:
 ## Storage
 
 Files in `.cx/knowledge/` are indexed by Construct's hybrid retrieval path. The vector layer makes them semantically retrievable for future PRDs and Meta PRDs.
+## Release gate
+
+Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

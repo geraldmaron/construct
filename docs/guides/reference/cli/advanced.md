@@ -274,8 +274,15 @@ Skill relevance detection
 **Usage**
 
 ```bash
-construct skills scope|apply
+construct skills <scope|apply|suggest|routing>
 ```
+
+**Subcommands**
+
+- `scope` — Show skill scope for the active profile
+- `apply` — Apply skill profile to host config
+- `suggest` — Rank skills for an intent string
+- `routing` — Dump machine-readable routing table
 
 ## construct sources
 

@@ -32,7 +32,7 @@ every eval definition cites the criterion it measures, and every comparison cite
 
 **Failure mode warning**: If you can't define a failing case before seeing results, you're post-hoc rationalizing, not evaluating.
 
-**Role guidance**: call `get_skill("roles/reviewer.evaluator")` before drafting.
+**Role guidance**: call `get_skill("roles/evaluator")` before drafting.
 
 For each evaluation:
 EVALUATION CRITERIA: specific properties being assessed

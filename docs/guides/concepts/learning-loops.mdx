@@ -68,7 +68,7 @@ Every dispatched specialist writes a JSONL line to `.cx/outcomes/<role>.jsonl` v
 
 ### Prompt improvement (A4)
 
-`lib/evaluator-optimizer.mjs` generates unified diffs against `specialists/prompts/cx-*.md` when an agent's score drops below the threshold. Patches land at `~/.cx/performance-reviews/patches/<agent>-<ts>.diff`. Nothing auto-applies. `node scripts/optimize.mjs <agent> --apply` promotes a version; `--rollback` restores from `.bak` history. Versions live in `specialists/registry.json` under `promptHistory[]` (capped at 5). Rate-limited to one auto-generated patch per agent per week. Apply/rollback are CLI-only by design. Registry mutations stay on the operator path.
+`lib/evaluator-optimizer.mjs` generates unified diffs against `specialists/prompts/cx-*.md` when an agent's score drops below the threshold. Patches land at `~/.cx/performance-reviews/patches/<agent>-<ts>.diff`. Nothing auto-applies. `node scripts/optimize.mjs <agent> --apply` promotes a version; `--rollback` restores from `.bak` history. Versions live in `specialists/org` under `promptHistory[]` (capped at 5). Rate-limited to one auto-generated patch per agent per week. Apply/rollback are CLI-only by design. Registry mutations stay on the operator path.
 
 ### Evidence provenance in chat
 
@@ -76,7 +76,7 @@ When a chat turn requires repository evidence, a tool request is not itself proo
 
 ## Profile-aware learning
 
-The PR #67 surfaces (profile lifecycle, intake taxonomies, departments) feed the same loops. Each observation, outcome, and research finding carries the active profile id, so `construct profile health` and `learning_status` filter cleanly. Profiles themselves are research artifacts: `docs/guides/concepts/profile-lifecycle.md` walks the discover → frame → architect → validate → promote chain.
+The PR #67 surfaces (profile lifecycle, intake taxonomies, departments) feed the same loops. Each observation, outcome, and research finding carries the active profile id, so `construct scope health` and `learning_status` filter cleanly. Profiles themselves are research artifacts: `docs/guides/concepts/scope-lifecycle.md` walks the discover → frame → architect → validate → promote chain.
 
 ## Telemetry dashboard
 
@@ -88,14 +88,14 @@ Subagents talk to Construct through the `construct-mcp` stdio server, not the CL
 
 | Tool | Surface | Mutating |
 |---|---|---|
-| `profile_show`, `profile_list`, `profile_drafts`, `profile_health` | Profile state | no |
+| `scope_show`, `scope_list`, `scope_drafts`, `scope_health` | Profile state | no |
 | `outcomes_summary` | Outcome rollups | no |
 | `outcomes_record` | Outcome capture | yes (`confirm=true`) |
 | `knowledge_add` | Research persistence | yes (`confirm=true`) |
 | `learning_status` | Dashboard mirror | no |
 | `sandbox_list` | Isolated environments | no |
-| `profile_create` | Draft scaffold | yes (`confirm=true`) |
-| `profile_archive` | Curated archive | yes (`confirm=true`, destructive) |
+| `scope_create` | Draft scaffold | yes (`confirm=true`) |
+| `scope_archive` | Curated archive | yes (`confirm=true`, destructive) |
 
 `optimize_apply` and `optimize_rollback` stay CLI-only on purpose: prompt-version mutations belong to the operator, not to subagents.
 

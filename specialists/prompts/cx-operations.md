@@ -30,7 +30,7 @@ every dependency or sequence claim cites the contract, manifest, or runtime conf
 
 **Failure mode warning**: If every task can run in parallel, the dependency graph wasn't drawn. Real plans have sequences, and real sequences have blockers.
 
-**Role guidance**: call `get_skill("roles/operator")` before drafting. Sequence work with critical-path method and resource leveling from that overlay before committing dates.
+**Role guidance**: call `get_skill("roles/operations")` before drafting. Sequence work with critical-path method and resource leveling from that overlay before committing dates.
 **Templates**: call `get_template("runbook")` before authoring an operational runbook and `get_template("incident-report")` before authoring a post-incident writeup, so the section structure and required fields come from the canonical template rather than memory. Use `list_templates` to discover overrides.
 
 Start only after cx-architect and cx-engineer have produced a plan and cx-devil-advocate feedback is resolved.

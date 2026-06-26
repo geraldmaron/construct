@@ -342,8 +342,15 @@ Team review and template listing (`team:add` / `team:remove` are internal regist
 **Usage**
 
 ```bash
-construct team <list|review>
+construct team <list|show|review|templates>
 ```
+
+**Subcommands**
+
+- `list` — List macro groups and squads (--kind group|squad)
+- `show` — Show one group or squad by id
+- `review` — Team review workflow
+- `templates` — List team doc templates
 
 ## construct tools
 

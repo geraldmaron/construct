@@ -1,0 +1,39 @@
+{
+  "id": "research-team",
+  "kind": "squad",
+  "groupId": "product-group",
+  "name": "Research",
+  "owner": "researcher",
+  "roles": [
+    "researcher"
+  ],
+  "collaborators": [
+    "product-management-team",
+    "ux-research-team"
+  ],
+  "specialists": [
+    "cx-researcher"
+  ],
+  "decisionRights": [
+    "intake-triage",
+    "design-approval",
+    "scope-change",
+    "evidence-requirement"
+  ],
+  "forbiddenDecisions": [
+    "deployment",
+    "security-override",
+    "infra-change"
+  ],
+  "escalationPath": [
+    "product-manager",
+    "rd-lead",
+    "orchestrator"
+  ],
+  "charter": "Own exploratory research, codebase discovery, and knowledge synthesis that informs product framing. Does not own implementation or release timing.",
+  "contact": {
+    "slack": "#product",
+    "email": "product@example.com",
+    "owner": "product-manager"
+  }
+}

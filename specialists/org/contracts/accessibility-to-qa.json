@@ -1,0 +1,37 @@
+{
+  "id": "accessibility-to-qa",
+  "producer": "cx-accessibility",
+  "consumer": "cx-qa",
+  "trigger": {
+    "riskFlags": [
+      "ui",
+      "accessibility"
+    ]
+  },
+  "input": {
+    "shape": "a11y-findings",
+    "mustContain": [
+      "findings",
+      "wcagCriterion",
+      "userImpact"
+    ]
+  },
+  "output": {
+    "schema": "lib/contract-schemas/test-report.json",
+    "type": "test-report"
+  },
+  "preconditions": [
+    "A11y findings filed against specific elements (file:line) before QA verification"
+  ],
+  "postconditions": [
+    "QA test plan covers keyboard-only and screen-reader paths for each finding",
+    "Findings flagged 'unverified' by accessibility get a verified test in QA before close"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "product-group",
+    "consumerTeam": "quality-group",
+    "requiresApprovalFrom": []
+  }
+}

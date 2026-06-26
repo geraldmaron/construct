@@ -1,0 +1,59 @@
+{
+  "id": "architect-to-evaluator",
+  "producer": "cx-architect",
+  "consumer": "cx-evaluator",
+  "trigger": {
+    "riskFlags": [
+      "ai",
+      "quality"
+    ],
+    "intent": [
+      "implementation"
+    ]
+  },
+  "input": {
+    "schema": "lib/contract-schemas/decision.json",
+    "mustContain": [
+      "goal",
+      "approach",
+      "evalCriteria"
+    ]
+  },
+  "output": {
+    "shape": "eval-spec",
+    "mustContain": [
+      "evaluationCriteria",
+      "scoringRubric",
+      "testCases",
+      "comparisonProtocol",
+      "passFailThreshold"
+    ]
+  },
+  "preconditions": [
+    "What 'better' means is defined in writing before the work is done",
+    "Baseline run identified or scheduled before proposed change runs"
+  ],
+  "postconditions": [
+    "Failing case is defined before results are seen",
+    "Regression checks enumerated; not just success-path test cases",
+    {
+      "id": "eval-spec-has-success-criteria",
+      "description": "Eval spec must contain a Success Criteria section",
+      "check": "artifact-has-section",
+      "section": "Success Criteria"
+    },
+    {
+      "id": "eval-spec-has-baseline",
+      "description": "Eval spec must contain a Baseline section",
+      "check": "artifact-has-section",
+      "section": "Baseline"
+    }
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "engineering-group",
+    "consumerTeam": "quality-group",
+    "requiresApprovalFrom": []
+  }
+}

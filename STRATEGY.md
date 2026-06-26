@@ -82,7 +82,7 @@ Why: lock-in kills open source projects. If everything works locally, the team m
 
 The persona stays the same; the org profile changes who is behind it. `rnd`, `operations`, `creative`, `research`, and custom profiles let the same Construct point at very different kinds of work without forking the project.
 
-Why: vertical agents are a feature, not a fork. The lifecycle in `docs/guides/concepts/profile-lifecycle.md` keeps profiles from sprawling into low-quality JSON.
+Why: vertical agents are a feature, not a fork. The lifecycle in `docs/guides/concepts/scope-lifecycle.md` keeps profiles from sprawling into low-quality JSON.
 
 ### Bet 4: Hard gates over soft hooks
 
@@ -163,6 +163,6 @@ Work: harden the multi-tenant scaffold, exercise RBAC, validate the MCP broker u
 
 - [`docs/specs/prd/0001-construct-org-in-a-box.md`](./docs/specs/prd/0001-construct-org-in-a-box.md). The spec layer underneath this strategy.
 - [`docs/guides/concepts/architecture.md`](./docs/guides/concepts/architecture.md). Canonical architecture.
-- [`docs/guides/concepts/profile-lifecycle.md`](./docs/guides/concepts/profile-lifecycle.md). How profiles are built.
+- [`docs/guides/concepts/scope-lifecycle.md`](./docs/guides/concepts/scope-lifecycle.md). How profiles are built.
 - [`templates/docs/strategy.md`](./templates/docs/strategy.md). The template projects use for their own strategies.
 - [`rules/common/review-before-change.md`](./rules/common/review-before-change.md). The audit that ran before this doc was written.

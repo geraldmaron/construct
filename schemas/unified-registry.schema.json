@@ -8,8 +8,8 @@
   "additionalProperties": false,
   "properties": {
     "version": {
-      "const": 2,
-      "description": "Schema version. Version 2 is the unified registry."
+      "enum": [2, 3],
+      "description": "Schema version. Version 3 is the modular org assembly."
     },
     "teams": {
       "type": "object",

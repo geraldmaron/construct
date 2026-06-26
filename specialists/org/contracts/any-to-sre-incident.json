@@ -1,0 +1,33 @@
+{
+  "id": "any-to-sre-incident",
+  "producer": "*",
+  "consumer": "cx-sre",
+  "trigger": {
+    "intent": "investigation",
+    "category": "incident"
+  },
+  "input": {
+    "shape": "incident-signal",
+    "mustContain": [
+      "symptoms",
+      "scope",
+      "firstObserved"
+    ]
+  },
+  "output": {
+    "shape": "incident-report",
+    "mustContain": [
+      "rootCause",
+      "timeline",
+      "remediation",
+      "preventions"
+    ]
+  },
+  "preconditions": [
+    "Blast radius assessed before remediation"
+  ],
+  "postconditions": [
+    "Blameless postmortem; no tickets in Problem statement"
+  ],
+  "description": ""
+}

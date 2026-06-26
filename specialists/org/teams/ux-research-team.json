@@ -1,0 +1,39 @@
+{
+  "id": "ux-research-team",
+  "kind": "squad",
+  "groupId": "product-group",
+  "name": "UX Research",
+  "owner": "ux-researcher",
+  "roles": [
+    "ux-researcher"
+  ],
+  "collaborators": [
+    "product-management-team",
+    "design-team"
+  ],
+  "specialists": [
+    "cx-ux-researcher"
+  ],
+  "decisionRights": [
+    "intake-triage",
+    "design-approval",
+    "scope-change",
+    "evidence-requirement"
+  ],
+  "forbiddenDecisions": [
+    "deployment",
+    "security-override",
+    "infra-change"
+  ],
+  "escalationPath": [
+    "product-manager",
+    "rd-lead",
+    "orchestrator"
+  ],
+  "charter": "Own user research, usability findings, and evidence that grounds product decisions. Partners with Product Management on intake and with Design on interaction validation.",
+  "contact": {
+    "slack": "#product",
+    "email": "product@example.com",
+    "owner": "product-manager"
+  }
+}

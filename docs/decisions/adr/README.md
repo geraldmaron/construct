@@ -53,6 +53,8 @@ Architecture decision records for decisions that have already been made.
 | [0043](./0043-oracle-meta-controller.md) | Oracle meta-controller | accepted | |
 | [0044](./0044-tool-repo-root-layout.md) | Tool-repo root layout hygiene | accepted | |
 | [0045](./0045-config-scope-docs-taxonomy-intake.md) | Local/global config boundary, docs taxonomy, and a single intake zone | proposed | |
+| [0046](./0046-modular-org-runtime-merge.md) | Modular org layout with runtime registry merge | accepted | |
+| [0047](./0047-specialist-vs-flavor-model.md) | Specialist vs flavor taxonomy | accepted | |
 
 ## Starter templates
 

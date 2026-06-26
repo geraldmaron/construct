@@ -164,7 +164,7 @@ jobs:
         run: npm run lint:js
       - name: profile + flavor schema
         if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
-        run: npm run lint:profiles -- --quiet
+        run: npm run lint:scopes -- --quiet
       - name: agents registry schema
         if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.workflow == 'true'
         run: npm run lint:agents

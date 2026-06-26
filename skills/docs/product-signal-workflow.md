@@ -61,3 +61,6 @@ After grouping evidence, check `.cx/knowledge/decisions/strategy/` for any decla
 | PRFAQ | `docs/prfaq/` |
 | Meta PRD | `docs/meta-prd/` |
 | Backlog proposal | pending approval gate: do not file until explicit user approval |
+## Release gate
+
+Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

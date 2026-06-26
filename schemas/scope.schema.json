@@ -1,0 +1,197 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geraldmaron.github.io/construct/schemas/scope.schema.json",
+  "title": "Construct work scope",
+  "description": "A curated or user-defined work scope. Drives intake taxonomy, doc templates, hooks, and default skills. Teams and roles load from specialists/org at runtime — do not author them here.",
+  "type": "object",
+  "required": ["id", "displayName", "intake"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,30}$",
+      "description": "Lowercase id used in config and CLI flags."
+    },
+    "displayName": { "type": "string", "minLength": 1, "maxLength": 60 },
+    "tagline": { "type": "string", "maxLength": 120 },
+    "extends": { "type": ["string", "null"] },
+    "custom": { "type": "boolean", "default": false },
+    "experimental": {
+      "type": "boolean",
+      "description": "Scope borrows the shared org; excluded from certification until dedicated workflow agents exist."
+    },
+    "roles": {
+      "type": "array",
+      "maxItems": 80,
+      "description": "Custom profiles only. Curated scopes derive roles from specialists/org.",
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,40}$" }
+    },
+    "teams": {
+      "type": "array",
+      "maxItems": 12,
+      "description": "Custom profiles only. Curated scopes derive teams from specialists/org.",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "owner", "roles", "charter"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,40}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "owner": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,40}$", "description": "Primary owner/lead role for this team." },
+          "roles": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,40}$" }
+          },
+          "decisionRights": {
+            "type": "array",
+            "description": "Decisions this team is authorized to make.",
+            "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,40}$" }
+          },
+          "forbiddenDecisions": {
+            "type": "array",
+            "description": "Decisions this team explicitly cannot make.",
+            "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,40}$" }
+          },
+          "escalationPath": {
+            "type": "array",
+            "description": "Escalation chain for unresolved decisions.",
+            "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,40}$" }
+          },
+          "charter": { "type": "string", "minLength": 20, "maxLength": 800, "description": "Mission statement: what this team owns, what it doesn't, and key constraints." },
+          "contact": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "slack": { "type": "string" },
+              "email": { "type": "string", "format": "email" },
+              "owner": { "type": "string" }
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "description": "Primary sources justifying this team's structure.",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "departments": {
+      "type": "array",
+      "maxItems": 12,
+      "description": "Deprecated. Synthesized at runtime from teams when absent. Do not author in curated profiles.",
+      "items": {
+        "type": "object",
+        "required": ["id", "displayName", "charter", "roles"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,40}$" },
+          "displayName": { "type": "string", "minLength": 1, "maxLength": 60 },
+          "charter": { "type": "string", "minLength": 20, "maxLength": 600, "description": "One-paragraph mission statement: what this department owns, what it does not own, who it hands off to." },
+          "roles": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,40}$" }
+          },
+          "evidence": {
+            "type": "array",
+            "description": "Primary sources used to justify this department exists (interview transcripts, public job specs, ADRs). Required when promoting from draft.",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "intake": {
+      "type": "object",
+      "required": ["types", "stages"],
+      "additionalProperties": false,
+      "properties": {
+        "types": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,30}$" }
+        },
+        "stages": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,30}$" }
+        },
+        "classificationTable": {
+          "type": ["string", "null"],
+          "description": "Module path resolved relative to repo root. Optional. B2 ships per-profile tables for the curated set."
+        }
+      }
+    },
+    "docTemplates": {
+      "type": "array",
+      "maxItems": 30,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,40}$" }
+    },
+    "hooks": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sessionReflect": { "type": "string", "enum": ["on", "off"] },
+        "sessionOptimize": { "type": "string", "enum": ["on", "off"] }
+      }
+    },
+    "defaultSkills": {
+      "type": "array",
+      "maxItems": 30,
+      "items": { "type": "string" }
+    },
+    "toneDefaults": {
+      "type": "object",
+      "description": "Maps doc type id to tone profile id from specialists/tone-profiles.json",
+      "additionalProperties": { "type": "string" }
+    },
+    "researchProfiles": {
+      "type": "object",
+      "description": "Maps intake type id to research profile: external, user, codebase, market, compliance",
+      "additionalProperties": {
+        "type": "string",
+        "enum": ["external", "user", "codebase", "market", "compliance"]
+      }
+    },
+    "rebrand": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "intakeQueueLabel": { "type": "string", "maxLength": 60 },
+        "signalNoun": { "type": "string", "maxLength": 30 }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional capability flags. Each one toggles a generic Construct subsystem on for the profile. Adding a capability never changes the role set; it changes which scaffolding init applies and which runtime helpers are exposed.",
+      "properties": {
+        "intake": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "The project ingests raw files into structured artifacts. Init scaffolds inbox/, the dedup manifest, and stamps attribution metadata when this is on.",
+          "properties": {
+            "inbox": {
+              "type": "boolean",
+              "description": "Scaffold inbox/ at the project root with a permissive .gitignore (everything except the .gitignore itself) so raw drops never end up in source."
+            },
+            "dedup": {
+              "type": "string",
+              "enum": ["sha256", "none"],
+              "default": "sha256",
+              "description": "Content-hash dedup for processed files. sha256 is the default; none disables the manifest."
+            },
+            "attribution": {
+              "type": "boolean",
+              "description": "Stamp createdBy / createdByAgent / createdAt on every intake-produced artifact."
+            }
+          }
+        }
+      }
+    }
+  }
+}

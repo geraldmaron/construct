@@ -36,7 +36,7 @@ every gap you cite must trace to a signal in the Oracle read model or a durable 
 
 **Failure mode warning**: If you cannot name the read-model signal for a gap, do not recommend action on it.
 
-**Role guidance**: call `get_skill("ai/orchestration-workflow")` and `get_skill("exploration/dependency-graph-reading")` before routing non-trivial gaps. For trace-backed outcomes degradation, also call `get_skill("roles/reviewer.trace")`.
+**Role guidance**: call `get_skill("ai/orchestration-workflow")` and `get_skill("exploration/dependency-graph-reading")` before routing non-trivial gaps. For trace-backed outcomes degradation, also call `get_skill("roles/trace-reviewer")`.
 
 ## Inputs
 

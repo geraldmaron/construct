@@ -18,6 +18,7 @@ import { listChatModels } from './models.mjs';
 import { resolveLanguageModel } from './provider-adapters.mjs';
 import { resolveTurnControls } from './turn-controls.mjs';
 import { buildSystemPrompt } from '../../../lib/chat/system-prompt.mjs';
+import { configureAiSdkRuntime } from '../../../lib/chat/ai-sdk-runtime.mjs';
 import { applyToolBudget } from '../../../lib/mcp/tool-budget.mjs';
 import { recordPolicyTelemetry } from '../../../lib/chat/policy-telemetry.mjs';
 import { maybeCompact, estimateTextTokens, messageText } from '../../../lib/chat/context-compactor.mjs';
@@ -43,6 +44,7 @@ function makeSummarizer({ generateText, languageModel, signal }) {
 }
 
 export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(), model = null, handlers = {}, systemPrompt = '', tools = null, onTelemetry = recordPolicyTelemetry } = {}) {
+  configureAiSdkRuntime();
   const { streamText, stepCountIs, generateText } = await import('ai');
 
   const { buildAgentTools } = await import('./tools/registry.mjs');
@@ -114,11 +116,13 @@ export async function createAiSdkAgent({ env = process.env, cwd = process.cwd(),
           { role: 'system', content: systemText, providerOptions: { [providerNs]: { cacheControl: { type: 'ephemeral' } } } },
           ...messages,
         ];
+        request.allowSystemInMessages = true;
       } else {
         request.system = systemText;
         request.messages = messages;
       }
 
+      request.onError = () => {};
       const result = streamText(request);
 
       // The compaction trigger needs the current context SIZE, which is the last

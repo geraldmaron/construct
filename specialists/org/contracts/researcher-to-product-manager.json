@@ -1,0 +1,57 @@
+{
+  "id": "researcher-to-product-manager",
+  "producer": "cx-researcher",
+  "consumer": "cx-product-manager",
+  "trigger": {
+    "docAuthoring.docType": [
+      "prd",
+      "meta-prd",
+      "prfaq",
+      "one-pager"
+    ]
+  },
+  "input": {
+    "shape": "evidence-brief",
+    "mustContain": [
+      "question",
+      "findings",
+      "sources",
+      "confidence",
+      "openQuestions"
+    ]
+  },
+  "output": {
+    "shape": "prd-handoff",
+    "mustContain": [
+      "problem",
+      "users",
+      "functionalRequirements",
+      "acceptanceCriteria"
+    ]
+  },
+  "preconditions": [
+    "Evidence threshold stated and met for each requirement"
+  ],
+  "postconditions": [
+    "PRD Problem section does not reference ticket IDs, roadmap items, or artifact filenames",
+    "Every functional requirement traces to observed user evidence",
+    {
+      "id": "prd-has-problem-section",
+      "description": "PRD must contain a Problem section",
+      "check": "artifact-has-section",
+      "section": "Problem"
+    },
+    {
+      "id": "prd-numeric-claims-cited",
+      "description": "Every numeric claim in the PRD body cites a source (no fabricated percentages or multipliers)",
+      "check": "artifact-claims-cited"
+    },
+    {
+      "id": "prd-manifest-reviewers",
+      "description": "Manifest required reviewers must appear in agent log before handoff",
+      "check": "artifact-reviewers-seen",
+      "fromManifest": true
+    }
+  ],
+  "description": ""
+}

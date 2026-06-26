@@ -1,0 +1,13 @@
+{
+  "id": "session-efficiency",
+  "owner": "orchestrator",
+  "description": "Read discipline, probe-before-bulk-read, and tool parallelism rules. Read counts tracked per-file; the session-start efficiency digest surfaces files crossing the re-read threshold.",
+  "enforcement": "lib/read-tracker-store.mjs + session-start digest",
+  "mode": "deterministic",
+  "requiresApprovalFrom": [],
+  "mayVetoFrom": [],
+  "escalatesTo": [],
+  "decisionRights": [],
+  "conditions": [],
+  "evidence": []
+}

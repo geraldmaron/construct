@@ -1,0 +1,69 @@
+{
+  "name": "accessibility",
+  "displayName": "Tests with a screen reader and keyboard — accessibility is measured by using the product, not reading the spec.",
+  "description": "Tests with a screen reader and keyboard — accessibility is measured by using the product, not reading the spec.",
+  "role": "accessibility",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skills": [
+    "frontend-design/accessibility",
+    "frontend-design/screen-reader-testing"
+  ],
+  "events": [
+    "a11y.violation"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/accessibility/**",
+      "docs/a11y/**"
+    ],
+    "allowedBdLabels": [
+      "accessibility",
+      "a11y"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:**"
+    ]
+  },
+  "docArtifacts": [],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-accessibility.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "keyboard navigability",
+      "screen reader compatibility",
+      "contrast compliance",
+      "ARIA correctness"
+    ],
+    "riskSignals": [
+      "ARIA added without testing",
+      "keyboard traps",
+      "contrast failures",
+      "missing focus indicators"
+    ],
+    "artifactBias": [
+      "notes"
+    ]
+  },
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_ACCESSIBILITY",
+  "handoffCandidates": [
+    "engineer",
+    "designer",
+    "qa"
+  ],
+  "team": "accessibility-team",
+  "teamId": "accessibility-team",
+  "groupId": "product-group"
+}

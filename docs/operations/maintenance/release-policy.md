@@ -50,7 +50,7 @@ The project is explicitly pre-stable. Breaking changes are allowed in minor bump
 
 A `1.0.0` will land when:
 
-- The CLI surface, hook contract, and `specialists/registry.json` shape are stable enough that we want to commit to semver discipline.
+- The CLI surface, hook contract, and `specialists/org` shape are stable enough that we want to commit to semver discipline.
 - The dep-install path is exercised by several real downstream projects.
 - The release pipeline (`.github/workflows/release.yml`) has fired end-to-end and produced working binaries + a working `npm install`.
 

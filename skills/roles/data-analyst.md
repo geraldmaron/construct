@@ -8,7 +8,7 @@ applies_to:
   - cx-data-analyst
 inherits: null
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

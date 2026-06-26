@@ -19,7 +19,7 @@ Layer 3: Hooks              — enforcement at runtime events
 
 Two files own the behavioral contract:
 
-- **`specialists/registry.json`** — every specialist's allowed tools, skills, model tier, and collaborator set. Consumed by every platform sync (Claude Code, Codex, Copilot, OpenCode).
+- **`specialists/org`** — every specialist's allowed tools, skills, model tier, and collaborator set. Consumed by every platform sync (Claude Code, Codex, Copilot, OpenCode).
 - **`specialists/role-manifests.json`** — file-path fences and action allowlists per role. If a specialist is not in the allowlist, the action is blocked.
 
 JSON manifests are the single source of truth. When CI runs `construct lint:agents`, it validates the registry against its schema. Platform files are generated from the registry, not the reverse.

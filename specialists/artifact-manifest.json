@@ -13,12 +13,13 @@
   },
   "artifacts": {
     "prd": {
+      "vibeProfile": "construct-modern",
       "template": "templates/docs/prd.md",
       "primaryOwners": ["cx-product-manager"],
       "workflowSkill": "docs/prd-workflow",
       "toneDefault": "decision-forcing-direct",
       "toneAllowed": ["decision-forcing-direct", "executive-concise"],
-      "structureRequirements": ["Problem", "Goals", "Success metrics", "Risks and mitigations"],
+      "structureRequirements": ["Problem", "Goals", "Success metrics", "Phases", "Risks and mitigations"],
       "visualRequirements": [
         { "id": "prd-user-flow", "check": "artifact-has-mermaid", "diagram": "flowchart" },
         { "id": "prd-metrics-table", "check": "artifact-table-has-columns", "columns": ["Metric", "Baseline", "Target"] }

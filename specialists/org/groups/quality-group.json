@@ -1,0 +1,42 @@
+{
+  "id": "quality-group",
+  "name": "Quality Group",
+  "owner": "reviewer",
+  "roles": [
+    "reviewer",
+    "qa",
+    "test-automation",
+    "evaluator",
+    "trace-reviewer",
+    "devil-advocate"
+  ],
+  "decisionRights": [
+    "quality-gate-approval",
+    "test-strategy",
+    "evaluation-design",
+    "release-readiness"
+  ],
+  "forbiddenDecisions": [
+    "scope-change",
+    "deployment-timing",
+    "architecture"
+  ],
+  "escalationPath": [
+    "reviewer",
+    "architect",
+    "rd-lead"
+  ],
+  "charter": "Verify the system does what it claims and surface what is broken. Owns review, testing, evaluation, trace analysis, and devil's-advocate framing. Does not own implementation or product decisions. Escalates quality vs. schedule conflicts to architecture/R&D.",
+  "contact": {
+    "slack": "#quality",
+    "email": "quality@example.com",
+    "owner": "reviewer"
+  },
+  "evidence": [
+    "AGENTS.md (rnd profile departments section)"
+  ],
+  "kind": "group",
+  "squads": [
+    "quality-team"
+  ]
+}

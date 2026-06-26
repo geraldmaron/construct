@@ -14,7 +14,7 @@ It is a `style` rule by design. The precedence resolver (`rules/common/precedenc
 Two layers, treated differently:
 
 - **Presentation layer (human-facing)** — section titles, prose, help text, report narratives, guidance notes, error wording. This is what the rest of this rule shapes.
-- **Data layer (machine-readable)** — never reshape it for readability. Off-limits: any `--json` / `--plain` output; `specialists/registry.json`, `contracts.json`, `role-manifests.json`; the parsed tokens hooks emit (for example the session-start `## Working branch: **<name>**` line, the efficiency status enum `degraded` / `configured` / `healthy`, commit hashes, counts); auxiliary state JSON; any text one component parses out of another.
+- **Data layer (machine-readable)** — never reshape it for readability. Off-limits: any `--json` / `--plain` output; `specialists/org`, `contracts.json`, `role-manifests.json`; the parsed tokens hooks emit (for example the session-start `## Working branch: **<name>**` line, the efficiency status enum `degraded` / `configured` / `healthy`, commit hashes, counts); auxiliary state JSON; any text one component parses out of another.
 
 When a format choice would change a value, key, ordering, or token that something downstream parses, do not make it. Accessibility is presentation; it never edits the contract.
 

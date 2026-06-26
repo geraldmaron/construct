@@ -1,0 +1,20 @@
+{
+  "id": "deployment",
+  "owner": "operations-group",
+  "description": "Operations group executes deployments. Requires security and quality approval.",
+  "enforcement": "hard",
+  "mode": "approval",
+  "requiresApprovalFrom": [
+    "quality-gate-approval",
+    "security-approval"
+  ],
+  "mayVetoFrom": [],
+  "escalatesTo": [
+    "strategy-group"
+  ],
+  "decisionRights": [
+    "deployment"
+  ],
+  "conditions": [],
+  "evidence": []
+}
