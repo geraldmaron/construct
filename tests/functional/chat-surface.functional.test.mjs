@@ -1,7 +1,7 @@
 /**
  * tests/functional/chat-surface.functional.test.mjs — terminal-only chat entry.
  *
- * The desktop window and browser cockpit were retired with lib/server
+ * The desktop window and browser cockpit were retired with the dashboard server
  * (construct-m7k2-web-deprecation), so chat is terminal-only. Asserts bare
  * `construct` launches the linear renderer, the deprecated `chat` alias still
  * works, and the retired `--window` flag no-ops to the terminal.

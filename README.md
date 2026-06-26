@@ -130,7 +130,6 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 | Command | What it does |
 |---|---|
-| `construct dashboard` | Start the local dashboard/orchestration daemon (or --token to mint a dashboard token) |
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |

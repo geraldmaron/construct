@@ -7,7 +7,6 @@ description: Core commands for Construct.
 
 | Command | What it does |
 |---|---|
-| `construct dashboard` | Start the local dashboard/orchestration daemon (or --token to mint a dashboard token) |
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
@@ -21,16 +20,6 @@ description: Core commands for Construct.
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
 
-## construct dashboard
-
-Start the local dashboard/orchestration daemon (or --token to mint a dashboard token)
-
-**Usage**
-
-```bash
-construct dashboard [--token]
-```
-
 ## construct dev
 
 Start services for development
@@ -38,7 +27,7 @@ Start services for development
 **Usage**
 
 ```bash
-construct dev [--select] [--only=postgres,dashboard,...]
+construct dev [--select] [--only=postgres,...]
 ```
 
 **Options**
@@ -46,7 +35,7 @@ construct dev [--select] [--only=postgres,dashboard,...]
 | Flag | Description |
 |---|---|
 | `--select` | Pick which services to start from an interactive checklist |
-| `--only=<a,b,c>` | Start only the named services (postgres, dashboard, telemetry, memory, opencode) |
+| `--only=<a,b,c>` | Start only the named services (postgres, telemetry, memory, opencode) |
 
 ## construct docs
 

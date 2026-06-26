@@ -6,8 +6,8 @@
  * directly — no daemon, no port, no token. Proves an MCP host with no subagent
  * primitive reaches a real multi-specialist run through the tool, the run is
  * queryable in-process, a configured-but-unreachable remote service
- * (CONSTRUCT_ORCHESTRATION_URL) fails fast, and the tool carries no lib/server
- * dependency so the dashboard deletion (web-deprecation.4) cannot break it.
+ * (CONSTRUCT_ORCHESTRATION_URL) fails fast, and the tool carries no dashboard
+ * server dependency so the dashboard deletion (web-deprecation.4) cannot break it.
  *
  * @enforces ADR-0022
  */
@@ -71,7 +71,7 @@ test('orchestration_run fails fast when a configured remote service is unreachab
   }
 });
 
-test('the orchestration MCP tool carries no lib/server import', () => {
+test('the orchestration MCP tool carries no dashboard server import', () => {
   const src = fs.readFileSync(path.join(REPO_ROOT, 'lib', 'mcp', 'tools', 'orchestration-run.mjs'), 'utf8');
-  assert.doesNotMatch(src, /from\s+['"][^'"]*server\//, 'orchestration_run must not import from lib/server (dashboard-independent)');
+  assert.doesNotMatch(src, /from\s+['"][^'"]*server\//, 'orchestration_run must not import from a server module (dashboard-independent)');
 });

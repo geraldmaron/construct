@@ -67,7 +67,6 @@
     "lint:agents": "node ./bin/construct lint:agents",
     "build:sea": "esbuild bin/construct --bundle --platform=node --target=node20 --packages=external --outfile=dist/construct-bundle.cjs 2>&1 || (echo 'esbuild not found — install with: npm install -g esbuild' && exit 1)",
     "build:chat": "esbuild apps/chat/tui/index.jsx --bundle --platform=node --format=esm --packages=external --jsx=automatic --jsx-import-source=react --outfile=apps/chat/dist/tui.mjs",
-    "build:dashboard": "node scripts/npm-run.mjs npm install --prefix apps/dashboard && node scripts/npm-run.mjs npm --prefix apps/dashboard run build",
     "examples:deck": "node scripts/generate-deck-examples.mjs",
     "examples:distribution": "node scripts/generate-distribution-examples.mjs",
     "clean:artifacts": "node scripts/clean-artifacts.mjs",
