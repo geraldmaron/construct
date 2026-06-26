@@ -147,3 +147,20 @@ why it is recorded as a decision, not a default.
   launcher, event contract, linear renderer, config, commands)
 - `lib/model-router.mjs`, `lib/orchestration-policy.mjs`, `lib/worker/run.mjs`,
   `lib/mcp/server.mjs` (`dispatchToolByName`) — reused by the engine
+
+## Amendment (2026-06-25) — terminal-only; desktop window + web cockpit retired
+
+This ADR shipped two rich surfaces over the owned loop: a Tauri **desktop window**
+(`apps/chat/desktop/`) and a React **web cockpit** (`apps/chat/web/`) served at
+dashboard `/chat/`. Both are retired (`construct-m7k2-web-deprecation`) along with
+`lib/server/`, `apps/dashboard/`, and `apps/chat/web/`. The owned-loop engine
+(`apps/chat/engine/`) and the decision to own the loop are unchanged; only the
+**surface** narrows. Chat is now **terminal-only** — the linear renderer
+(`lib/chat/tui/render.mjs`, introduced by ADR-0040) is the sole chat face.
+
+- Bare `construct` (no subcommand) is the chat entry; `construct chat` remains as a
+  deprecated alias that prints a one-line notice (`construct-m7k2.16`).
+- `--plain` / `--accessible` select the screen-reader-friendly mode explicitly; the
+  retired `--web` / `--window` / `--no-window` flags print a notice and no-op.
+- The older Ink TUI (`apps/chat/tui/`) is dead-but-built; its retirement and the
+  cleanup of modules orphaned by the surface removal are tracked in `construct-596m`.
