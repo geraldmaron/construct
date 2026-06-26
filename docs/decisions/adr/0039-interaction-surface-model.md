@@ -82,15 +82,13 @@ where new capability of that shape should land:
 - **(c) TUI (interactive)** — review/triage/selection work that wants a stateful interactive loop,
   not a one-shot. The CLI verb stays as the non-interactive entry; the interactive flow is the
   emphasized face.
-- **(d) Dashboard** — visual/telemetry/observability. The HTTP daemon surface is canonical for
-  rendering; the CLI verbs stay as the headless/JSON data source.
 - **(internal)** — harness/CI only. Already correctly modeled by `internal: true`; no human or
   agent surface, by design.
 
 The rule going forward: **a command's primary surface is declared, and discovery follows the
 surface.** New daily-authoring capability lands as an MCP tool first (CLI `--json` twin for
-scripting); new visual capability lands on the dashboard first; only genuine setup/ops verbs grow
-the human CLI.
+scripting); observability and review verbs stay on the thin CLI with `--json` twins; only genuine
+setup/ops verbs grow the human CLI.
 
 ## Surface map
 
@@ -110,7 +108,7 @@ the human CLI), `promote-MCP` (MCP is/should be canonical, CLI is the `--json` t
 | `export`, `wireframe`, `headhunt` | (a) agent/MCP or (b) CLI | agent-authored, human-runnable | promote-MCP (`document_export` exists); CLI kept as headless twin |
 | `profile` (create/set/show/list/drafts/archive/health), `customer`, `workspace`, `tags`, `team`, `handoffs`, `recommendations` | (c) TUI for interactive, (a) MCP for read | human-interactive + agent-read | emphasize-TUI for create/assign/review; MCP read tools exist (`profile_*`) |
 | `intake` (list/show/done/skip/reopen), `sandbox` (create/list/delete) | (c) TUI | human, interactive triage/review | emphasize-TUI (one-shot CLI kept) |
-| `review`, `optimize`, `telemetry`, `telemetry-backfill`, `eval-datasets`, `llm-judge`, `evals`, `efficiency`, `feedback:*` | (d) dashboard | human review + CI; agent reads via MCP (`efficiency_snapshot`, `cx_trace`/`cx_score`) | emphasize-dashboard for visual; CLI/MCP stay as data source |
+| `review`, `optimize`, `telemetry`, `telemetry-backfill`, `eval-datasets`, `llm-judge`, `evals`, `efficiency`, `feedback:*` | (b) thin CLI | human review + CI; agent reads via MCP (`efficiency_snapshot`, `cx_trace`/`cx_score`) | keep-CLI — `--json` twins for scripting; external telemetry via OpenTelemetry/Langfuse |
 | `docs` (check/verify/update), `docs:*`, `audit`, `doc` (verify/inspect), `decisions`, `policy`, `gates:audit`, `deployment`, `ci`, `validate`, `diff`, `list`, `role`/`roles:*`, `skills`, `storage`, `plugin`, `acp`, `claude:allow`, `beads`/`beads:stats`, `hooks:health`, `version` | (b) thin CLI / CI | human ops + CI gates | keep-CLI |
 | `hook`, `lint:agents`, `lint:comments`, `lint:contracts`, `lint:research`, `lint:templates`, `lint:prompts`, `specialist`, `migrate`, `seed-traces`, `registry:status`, `evaluator:rubrics`, `activation:status`, `prune`, `overrides`, `resources` (17 `internal: true`) | internal | CI / harness | internal — no human or agent surface, correctly modeled |
 
@@ -121,9 +119,7 @@ One-line read per tier:
   integration verbs are what a human actually types.
 - **(c) TUI** — interactive triage, profile/workspace authoring, and sandbox/intake review want a
   stateful loop; the CLI one-shot stays underneath.
-- **(d) dashboard** — telemetry, evals, review, and feedback are visual/observability work; the CLI
-  and MCP forms remain the headless data source.
-- **internal** — 18 harness/CI verbs, already invisible to both human and agent by design.
+- **(internal)** — 18 harness/CI verbs, already invisible to both human and agent by design.
 
 ## Rationale
 

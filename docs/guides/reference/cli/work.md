@@ -94,16 +94,15 @@ Run guided demos via construct chat (default) or record VHS/asciinema tapes
 **Usage**
 
 ```bash
-construct demo <list|init|record|name> [--surface=chat|web|tape] [--format=gif|mp4|webm] [--out=<path>] [--source-only]
+construct demo <list|init|record|name> [--surface=chat|tape] [--format=gif|mp4|webm] [--out=<path>] [--source-only]
 ```
 
 **Options**
 
 | Flag | Description |
 |---|---|
-| `--surface=<s>` | chat (default) | web | tape |
+| `--surface=<s>` | chat (default) | tape |
 | `--model=<id>` | Pin model for chat demo |
-| `--web` | Open web chat instead of terminal Ink |
 | `--plain` | Linear chat renderer (accessibility / non-TTY) |
 | `--accessible` | Screen-reader-friendly linear tour renderer |
 | `--skip-input` | Tour: auto-advance without waiting for Enter (headless/CI) |
