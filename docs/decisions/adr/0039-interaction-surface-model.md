@@ -206,3 +206,7 @@ truth, there is no data migration to unwind and no external contract to break.
 - ADR-0022 (orchestration daemon API — engine owns orchestration, hosts are thin clients)
 - ADR-0033 (platform capability registry — the declarative, non-destructive precedent)
 - ADR-0038 / ADR-0032 (small-surface discipline applied to prompts/models)
+
+## Amendment (2026-06-25) — tier (d) Dashboard retired
+
+The **(d) Dashboard** tier is retired (`construct-m7k2-web-deprecation`). The HTTP daemon (`lib/server/`) and the Next.js cockpit (`apps/dashboard/`) are deleted; Construct is CLI/terminal-first. Visual, telemetry, and observability now surface through the thin human CLI (`construct status`, `construct doctor`, `construct oracle`) with `--json` twins for scripting, and through external telemetry backends (OpenTelemetry / Langfuse) configured via `CONSTRUCT_TELEMETRY_URL`. The surviving tiers are **(a) agent / MCP-native**, **(b) thin human CLI**, **(c) TUI / terminal chat**, and **(internal)**. The forward rule "new visual capability lands on the dashboard first" no longer applies — visual capability lands on the thin CLI (`--json`) or an external telemetry backend. Surface-map entries that named the dashboard tier are reclassified in `lib/registry/surface-map.mjs` as remediation lands (`construct-596m`).
