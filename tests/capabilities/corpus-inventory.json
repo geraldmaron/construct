@@ -1,19 +1,19 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-26T03:37:49.900Z",
+  "generatedAt": "2026-06-26T04:28:16.925Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 523,
+    "testFiles": 524,
     "topLevelTestFiles": 294,
-    "nestedTestFiles": 229,
+    "nestedTestFiles": 230,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 22,
+    "capabilityMarkedFiles": 23,
     "byLayer": {
       "unit": 330,
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
-      "functional": 154
+      "functional": 155
     },
     "byCategory": {
       "unit": 291,
@@ -22,7 +22,7 @@
       "live-provider": 2,
       "visual": 7,
       "integration": 21,
-      "functional": 154,
+      "functional": 155,
       "hook": 9
     }
   },
@@ -1683,6 +1683,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/deck-export.functional.test.mjs — branded deck HTML + PPTX export contract."
+    },
+    {
+      "path": "tests/functional/demo-plugin.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "demo.terminal-fallback"
+      ],
+      "skipped": false,
+      "maintainerNotes": "demo-plugin.functional.test.mjs — `construct demo init --from-project` plug-in layer."
     },
     {
       "path": "tests/functional/demo-recording-loader.functional.test.mjs",
