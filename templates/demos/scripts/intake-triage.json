@@ -1,0 +1,25 @@
+{
+  "name": "intake-triage",
+  "title": "Intake triage — queue, classify, recommend",
+  "summary": "Walk the intake path: list the active profile's pending packets, classify a raw artifact into a role-aware plan without enqueuing, then review open artifact recommendations.",
+  "systemOverlay": "Demo mode for intake triage. Run the exact construct CLI commands from each step using shell or construct_tool. classify is an embedded contract — it returns a role-aware plan and does not enqueue. Do not invent packet ids, classifications, or recommendations; report exactly what the commands emit.",
+  "tape": "intake-triage",
+  "fallbackSurface": "tape",
+  "steps": [
+    {
+      "title": "Queue — pending intake packets",
+      "prompt": "Run construct intake list to see the active profile's pending intake packets.",
+      "command": "node bin/construct intake list"
+    },
+    {
+      "title": "Classify — role-aware plan, no enqueue",
+      "prompt": "Run construct intake classify with --text to classify a raw artifact and return a role-aware plan without enqueuing it.",
+      "command": "node bin/construct intake classify --json --text 'Customers report the export job times out on large PRDs; we need a fix and a regression test'"
+    },
+    {
+      "title": "Recommend — open artifact recommendations",
+      "prompt": "Run construct recommendations list to review open artifact recommendations.",
+      "command": "node bin/construct recommendations list"
+    }
+  ]
+}

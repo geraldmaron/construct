@@ -23,6 +23,50 @@
         "templates/demos/tapes/resource-guard-rails.tape",
         "templates/demos/vhs/construct-cockpit.json"
       ]
+    },
+    {
+      "id": "architecture-review-adr",
+      "capabilityId": "demo.terminal-fallback",
+      "tape": "templates/demos/tapes/architecture-review-adr.tape",
+      "script": "templates/demos/scripts/architecture-review-adr.json",
+      "vhsTheme": "templates/demos/vhs/construct-cockpit.json",
+      "references": [
+        "templates/demos/tapes/architecture-review-adr.tape",
+        "templates/demos/scripts/architecture-review-adr.json"
+      ]
+    },
+    {
+      "id": "capability-contract",
+      "capabilityId": "demo.terminal-fallback",
+      "tape": "templates/demos/tapes/capability-contract.tape",
+      "script": "templates/demos/scripts/capability-contract.json",
+      "vhsTheme": "templates/demos/vhs/construct-cockpit.json",
+      "references": [
+        "templates/demos/tapes/capability-contract.tape",
+        "templates/demos/scripts/capability-contract.json"
+      ]
+    },
+    {
+      "id": "intake-triage",
+      "capabilityId": "demo.terminal-fallback",
+      "tape": "templates/demos/tapes/intake-triage.tape",
+      "script": "templates/demos/scripts/intake-triage.json",
+      "vhsTheme": "templates/demos/vhs/construct-cockpit.json",
+      "references": [
+        "templates/demos/tapes/intake-triage.tape",
+        "templates/demos/scripts/intake-triage.json"
+      ]
+    },
+    {
+      "id": "profile-doctor-health",
+      "capabilityId": "demo.terminal-fallback",
+      "tape": "templates/demos/tapes/profile-doctor-health.tape",
+      "script": "templates/demos/scripts/profile-doctor-health.json",
+      "vhsTheme": "templates/demos/vhs/construct-cockpit.json",
+      "references": [
+        "templates/demos/tapes/profile-doctor-health.tape",
+        "templates/demos/scripts/profile-doctor-health.json"
+      ]
     }
   ]
 }

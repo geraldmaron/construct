@@ -1,0 +1,25 @@
+{
+  "name": "profile-doctor-health",
+  "title": "Profile and health — list, consistency, skills audit",
+  "summary": "Walk the health path: list curated org profiles, run cross-surface consistency checks, then audit skill corpus coverage and metadata.",
+  "systemOverlay": "Demo mode for profile and system health. Run the exact construct CLI commands from each step using shell or construct_tool. Every command here is read-only. Do not invent profile ids, consistency findings, or skill coverage numbers; report exactly what the commands emit.",
+  "tape": "profile-doctor-health",
+  "fallbackSurface": "tape",
+  "steps": [
+    {
+      "title": "Profiles — curated catalog",
+      "prompt": "Run construct profile list to show curated org profiles.",
+      "command": "node bin/construct profile list"
+    },
+    {
+      "title": "Consistency — cross-surface checks",
+      "prompt": "Run construct doctor consistency to run cross-surface consistency checks.",
+      "command": "node bin/construct doctor consistency"
+    },
+    {
+      "title": "Skills — corpus coverage audit",
+      "prompt": "Run construct audit skills to audit skill corpus coverage and metadata.",
+      "command": "node bin/construct audit skills"
+    }
+  ]
+}
