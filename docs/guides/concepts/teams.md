@@ -448,7 +448,7 @@ Each curated profile defines a full set of teams for its operating context:
 - **research** (Question/gather/analyze): Three teams (discovery, analysis, delivery)
 - **creative** (Make content): Four teams (strategy, production, measurement, governance)
 
-Teams in each profile mirror the department structure but add explicit decision boundaries and escalation.
+Teams in each profile mirror the department structure but add explicit decision boundaries and escalation. Headhunt and orchestration read the active profile at runtime (`lib/profiles/teams.mjs`) so an `operations` project recommends `triage-team`, `delivery-team`, or `reliability-team` instead of the R&D registry group ids.
 
 ## File Structure
 

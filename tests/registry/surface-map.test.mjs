@@ -17,4 +17,10 @@ test('observability command groups map to thin-cli after dashboard retirement', 
     assert.equal(COMMAND_SURFACE[name], 'thin-cli', `${name} should be thin-cli`);
     assert.equal(surfaceForCommand(name), 'thin-cli');
   }
+  assert.equal(COMMAND_SURFACE.dashboard, undefined, 'retired dashboard command must not appear in COMMAND_SURFACE');
+});
+
+test('colon-namespaced commands default to internal surface tier', () => {
+  assert.equal(surfaceForCommand('team:add'), 'internal');
+  assert.equal(surfaceForCommand('registry:validate'), 'internal');
 });

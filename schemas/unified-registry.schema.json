@@ -401,6 +401,15 @@
         "description": {
           "type": "string",
           "description": "Human-readable description of this contract."
+        },
+        "skillHints": {
+          "type": "array",
+          "description": "Optional routing hints — skill ids that inform dispatch context. Producer/consumer ids remain authoritative.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maxItems": 12
         }
       }
     },
