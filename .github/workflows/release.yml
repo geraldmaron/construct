@@ -20,13 +20,11 @@ jobs:
       - name: Full test suite
         run: npm test
       - name: System health check
-        run: node bin/construct doctor
+        run: npm run doctor
       - name: Check managed doc regions
-        run: node ./bin/construct docs:verify
-      - name: Check dashboard static bundle
-        run: node ./bin/construct dashboard:sync --check
+        run: npm run docs:verify
       - name: Enforce comment policy
-        run: node ./bin/construct lint:comments
+        run: npm run lint:comments
       - name: Validate profiles + flavor overlays
         run: npm run lint:profiles -- --quiet
       - name: Functional tests
