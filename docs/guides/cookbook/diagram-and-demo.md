@@ -144,6 +144,19 @@ Fallback chain when chat is unavailable: **web chat → Playwright recording →
 
 Inside chat, use `/demo next` for the next prompt, `/demo steps` to replay the outline.
 
+## Self-demo guided tour
+
+Walk a demo script step by step in the terminal — no chat session, no recording:
+
+```bash
+construct demo tour                            # tour the first available script
+construct demo tour agentic-platforms-prd      # tour a named script
+construct demo tour --accessible               # linear, screen-reader-friendly output (no ANSI)
+construct demo tour --accessible --skip-input  # auto-advance for headless/CI
+```
+
+Each step prints `Step N of M` with its prompt and command; the tour ends with `Tour complete.` Interactive runs pause for Enter between steps, while `--skip-input` (and any non-TTY stdout) auto-advances so piped and CI runs never block. `--accessible` forces the linear renderer with color disabled for WCAG-plain output.
+
 ## Terminal demos (VHS recording)
 
 Project tapes live in `templates/demos/tapes/` (shipped) with optional overrides in `.cx/demos/tapes/` — **commit shipped tapes; regenerate MP4/GIF in CI or with `construct demo record`**.
