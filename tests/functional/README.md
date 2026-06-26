@@ -59,6 +59,15 @@ node --test tests/functional/a1-session-reflect.functional.test.mjs
 
 These run as part of `npm test` so the gate fails the same way locally as in CI.
 
+## Test runner
+
+`node --test` (via `scripts/run-tests.mjs`) is the sole supported test runner. The suite
+was fully ported off `ava` in `construct-m7k2-fix-tests`; do not reintroduce alternate
+runners or discovery globs that bypass `scripts/run-tests.mjs`.
+
+Beads concurrency is covered by `beads-concurrent-write.functional.test.mjs` (optimistic
+locking, no legacy file-lock fallback).
+
 ## Why this exists
 
 CI is a backstop, not a primary gate. If a learning loop only fails when components interact, a unit-test green checkmark gives a false sense of safety. The vector-index regression in A1's first commit is the canonical example: `addObservation` was async, the hook forgot to await it, every unit test passed, and the vector write was killed by `process.exit`. A functional test that asserted `vectors.json` exists would have caught it locally in seconds.
