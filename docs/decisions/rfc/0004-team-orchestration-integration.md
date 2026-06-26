@@ -1,22 +1,31 @@
 # RFC-0004: Team-First Orchestration, Policy, and Handoff Integration
 
 - **Date**: 2026-06-24
-- **Status**: accepted (all 6 phases complete as of 2026-06-24)
+- **Status**: accepted (phases 1–4 and 1.4 complete; phases 5–6 partially complete — see Status Summary)
 - **Deciders**: cx-architect, cx-orchestrator, cx-oracle
 - **Supersedes**: docs/guides/concepts/teams.md (parts; the concept doc lives on as user-facing reference)
 
 ## Status Summary
 
-RFC-0004 is **accepted and deployed**. All six implementation phases are complete:
+RFC-0004 is **accepted** and largely deployed. Phases were closed prematurely once and
+**reopened** (`construct-iwfz.4`, `.5`, `.7`, `.8` on 2026-06-25) until test evidence
+matched the claims; those beads are now closed with attached verification. Honest status
+as of 2026-06-26:
 
-1. ✅ **Phase 1** (Week 1) — Unified registry foundation, migration script, validator
-2. ✅ **Phase 2** (Week 2) — Team-aware orchestration routing
-3. ✅ **Phase 3** (Week 2–3) — Contract team boundaries and handoff approval gates
-4. ✅ **Phase 4** (Week 3) — Policy ownership and team-level fence intersection
-5. ✅ **Phase 5** (Week 4) — Oracle team health oversight and governance signals
-6. ✅ **Phase 6** (Week 4) — CLI tooling (`registry diff/prune`, `team add/remove`, `specialist add/remove`) and user documentation
+| Phase | Scope | Status | Evidence / tracker |
+|---|---|---|---|
+| 1 | Unified registry foundation, migration, validator | **Complete** | `construct registry:validate --unified` exits 0; `tests/registry-phase-1-4.test.mjs` |
+| 1.4 | Legacy file deletion, consumer migration | **Complete** | `construct-iwfz.4` + `construct-m7k2.0`; zero live readers of legacy five-file layout |
+| 2 | Team-aware orchestration routing | **Complete** | `construct-iwfz.5`; `tests/orchestration-policy-team-routing.test.mjs` |
+| 3 | Contract team boundaries | **Complete** | `construct-iwfz.6`; `tests/contracts-team-boundaries.test.mjs` (ava→node:test port in `construct-m7k2-fix-tests`) |
+| 4 | Policy ownership, team fence intersection | **Complete** | `construct-iwfz.7`; `tests/functional/team-aware-fence.functional.test.mjs`, `tests/policy-engine.test.mjs` |
+| 5 | Oracle team health oversight | **Partial** | `cross-team-handoff-blocked` + `team-understaffed` in `tests/functional/oracle-synthesis.functional.test.mjs` (`construct-iwfz.8`); MCP `list_teams`/`get_team` fixed (`construct-m7k2-mcp-audit`). **Open:** optional swarm dispatch when `involvedTeams.length > 1` (`construct-m7k2.7`). No dashboard team-health UI — signals surface via `construct oracle` and MCP read tools. |
+| 6 | Registry CLI tooling + docs | **Partial** | Handlers exist (`registry:diff/prune`, `team add/remove`, `specialist add/remove`; `construct-iwfz.9`). **Gap:** no dedicated `tests/registry-lifecycle.test.mjs` on disk; user docs updated in `docs/guides/concepts/teams.md`. |
 
-See §Implementation Phases for phase-specific acceptance criteria.
+The `construct-iwfz` epic is closed; remaining Phase 5/6 gaps are tracked under `construct-m7k2.7`
+and follow-up beads, not as "all phases complete."
+
+See §Implementation Phases for phase-specific acceptance criteria and implementation decisions.
 
 ## Problem
 
@@ -79,7 +88,7 @@ flowchart TB
     I2 --> F2
     I2 --> G2
     J2[Oracle] --> I2
-    J2 --> K2[Team Health Dashboard]
+    J2 --> K2[Oracle CLI + MCP read tools]
   end
 ```
 
@@ -383,16 +392,21 @@ These are thin wrappers over the validator library; they do not edit the JSON di
 - **Pre-push team-policy enforcement is deferred.** Team decision gates fire at decision time through the broker / `policyDecision`, which is where high-risk actions surface for approval. A pre-push `.cx/policy-approvals/` batch-approval ledger is future work and not required for the gate to hold — the runtime path already blocks team-forbidden decisions. Coverage: `tests/functional/team-aware-fence.functional.test.mjs` (effective-fence bound + per-role decision gates) and `tests/policy-engine.test.mjs`.
 
 ### Phase 5: Oracle Integration (Week 4)
-- Add team health signals to Oracle read model.
-- Update `cx-oracle` prompt with team governance section.
-- Add team-level routing table entries for Oracle.
-- Add tests for Oracle team oversight.
+- Add team health signals to Oracle read model. **Done** for `cross-team-handoff-blocked`
+  (`lib/oracle/read-model.mjs` `collectTeamGovernance`; `construct-iwfz.8`) and
+  `team-understaffed` (`tests/functional/oracle-synthesis.functional.test.mjs`).
+- Update `cx-oracle` prompt with team governance section. **Done** (prompt documents signal set).
+- Add team-level routing table entries for Oracle. **Done** (`lib/oracle/routing.mjs`).
+- Optional swarm dispatch when multiple teams involved. **Open** (`construct-m7k2.7`).
+- Add tests for Oracle team oversight. **Partial** — `oracle-synthesis.functional.test.mjs` (11/0);
+  no end-to-end test for every signal in §6 acceptance criterion 7.
 
 ### Phase 6: Tooling and Documentation (Week 4)
-- Implement `construct registry:validate`, `diff`, `prune`.
-- Implement `construct team add/remove` and `construct specialist add/remove`.
-- Update `docs/guides/concepts/teams.md`.
-- Mark old files as deprecated in CHANGELOG.
+- Implement `construct registry:validate`, `diff`, `prune`. **Done** (handlers on disk).
+- Implement `construct team add/remove` and `construct specialist add/remove`. **Done** (handlers on disk).
+- Update `docs/guides/concepts/teams.md`. **Done**.
+- Mark old files as deprecated in CHANGELOG. **Superseded** — legacy files deleted in Phase 1.4, not merely deprecated.
+- **Gap:** dedicated registry-lifecycle integration test not yet on disk (`construct-iwfz.9` note).
 
 ### Phase 1.4 — Cleanup & honest completion (2026-06-25, `construct-iwfz.4` + `construct-m7k2.0`)
 
@@ -429,16 +443,13 @@ Pinned by `tests/registry-phase-1-4.test.mjs`.
 
 ## References
 
-- `docs/guides/concepts/teams.md` — existing team model concept doc
-- `specialists/teams.json` — workflow templates (to be migrated)
-- `specialists/teams-registry.json` — organizational teams (to be migrated)
-- `specialists/registry.json` — specialist definitions (to be migrated)
-- `specialists/role-manifests.json` — per-role events and fences (to be migrated)
-- `specialists/contracts.json` — producer→consumer contracts (to be migrated)
-- `specialists/policy-inventory.json` — policy gate definitions (to be augmented)
-- `lib/orchestration-policy.mjs` — current routing logic
+- `docs/guides/concepts/teams.md` — user-facing team model reference
+- `specialists/unified-registry.json` — single source of truth (legacy five-file layout deleted Phase 1.4)
+- `lib/orchestration-policy.mjs` — team-aware routing logic
 - `lib/orchestration/routing-tables.mjs` — event/doc/watcher routing
 - `lib/roles/gateway.mjs` — team escalation functions
-- `lib/roles/fence.mjs` — action approval and path scoping
+- `lib/roles/fence.mjs` — action approval and path scoping; `computeEffectiveFence` for team decision gates
+- `lib/registry/validator.mjs`, `lib/registry/loader.mjs` — validation and overlay merge
 - `specialists/prompts/cx-oracle.md` — Oracle persona prompt
+- `tests/functional/oracle-synthesis.functional.test.mjs` — team governance signal coverage
 - RFC-0043 — Oracle Meta-Controller (prior art on Oracle design)

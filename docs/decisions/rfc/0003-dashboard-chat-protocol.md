@@ -13,7 +13,10 @@ verified_by: cx-docs-keeper · documentation alignment pass
 - **Author**: Construct-Engineer
 - **Status**: Superseded (primary path)
 
-> **Primary path (2026-06):** Dashboard and `construct chat --web` now stream the **owned-loop** protocol at `GET /api/chat/loop/stream` (ADR-0041). Legacy `/api/chat/*` (Claude `--print` delegation) remains for backward compatibility. This RFC documents the original delegation design.
+> **Superseded (2026-06-25):** The dashboard server (`lib/server/`), browser cockpit
+> (`apps/dashboard/`), and `construct chat --web` are **retired** (`construct-m7k2-web-deprecation`).
+> Terminal chat is bare `construct` (owned loop, ADR-0041). This RFC documents the original
+> dashboard delegation design for historical reference only.
 
 ## Summary
 

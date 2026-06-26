@@ -10,6 +10,7 @@ import test from 'node:test';
 
 import { synthesizeVerdict, isDoctorEscalation } from '../../lib/oracle/synthesize.mjs';
 import { autoRaiseEnabledForGap } from '../../lib/oracle/policy.mjs';
+import { resolveRemediationDispatch } from '../../lib/oracle/remediation-dispatch.mjs';
 
 test('isDoctorEscalation matches production doctor-log shapes', () => {
   assert.equal(isDoctorEscalation({ kind: 'escalation', result: 'escalated' }), true);
@@ -225,4 +226,45 @@ test('synthesizeVerdict emits no cross-team-handoff-blocked when no handoffs are
   const readModel = { teamGovernance: { present: true, teams: {}, crossTeamHandoffsBlocked: [] }, projectDir: '/tmp' };
   const { gaps } = synthesizeVerdict(readModel);
   assert.ok(!gaps.some((g) => g.id === 'cross-team-handoff-blocked'));
+});
+
+test('resolveRemediationDispatch uses static mode for single-team gaps', () => {
+  const dispatch = resolveRemediationDispatch({
+    id: 'outcomes-missing',
+    detail: 'No .cx/outcomes/_summary.json — learning tiebreakers are blind',
+    remediationRoute: { primary: 'cx-data-engineer' },
+  }, { cwd: process.cwd() });
+  assert.equal(dispatch.mode, 'static');
+  assert.deepEqual(dispatch.specialists, ['cx-data-engineer']);
+  assert.ok((dispatch.teamRouting?.involvedTeams ?? []).length <= 1);
+});
+
+test('resolveRemediationDispatch uses swarm mode when multiple teams are involved', () => {
+  const dispatch = resolveRemediationDispatch({
+    id: 'parity-drift',
+    detail: 'Project adapter parity check failed',
+    remediationRoute: { primary: 'cx-platform-engineer', secondary: 'cx-docs-keeper' },
+  }, { cwd: process.cwd() });
+  assert.equal(dispatch.mode, 'swarm');
+  assert.ok(dispatch.specialists.includes('cx-platform-engineer'));
+  assert.ok(dispatch.specialists.includes('cx-docs-keeper'));
+  assert.ok((dispatch.teamRouting?.involvedTeams ?? []).length > 1);
+});
+
+test('synthesizeVerdict attaches swarm dispatch metadata to cross-team gaps', () => {
+  const readModel = {
+    teamGovernance: {
+      present: true,
+      teams: {},
+      crossTeamHandoffsBlocked: [
+        { contract: 'engineer-to-reviewer', producerTeam: 'engineering-group', consumerTeam: 'quality-group', blockedBy: ['quality-group'] },
+      ],
+    },
+    projectDir: process.cwd(),
+  };
+  const { gaps } = synthesizeVerdict(readModel);
+  const blocked = gaps.find((g) => g.id === 'cross-team-handoff-blocked');
+  assert.ok(blocked?.remediationRoute?.mode);
+  assert.ok(Array.isArray(blocked?.remediationRoute?.specialists));
+  assert.ok(Array.isArray(blocked?.remediationRoute?.teamRouting?.involvedTeams));
 });
