@@ -26,7 +26,6 @@ You have Construct installed, a project initialized, agents synced, and you've d
 | Connect to GitHub, Jira, Slack, or Salesforce | [Configure providers](/guides/cookbook/manage-providers) |
 | Swap out the LLM or embedding model | [Plug in your own LLM](/guides/cookbook/plug-in-your-own-llm) |
 | Run terminal chat on Construct's owned loop | [Construct chat](/guides/cookbook/construct-chat) |
-| Use the browser chat cockpit | [Construct chat](/guides/cookbook/construct-chat) (see `--web` and dashboard `/chat`) |
 | Check fleet health with Oracle | `construct oracle status` — see [Architecture](/guides/concepts/architecture) |
 | Run Construct on AWS | [Deploy to AWS](/operations/deploy/aws) |
 

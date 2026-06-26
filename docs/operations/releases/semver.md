@@ -82,7 +82,6 @@ It runs:
 1. `construct doctor`: installation + parity checks pass.
 2. `npm test`: full test suite, including the retrieval-eval regression.
 3. `construct docs:update --check`: auto-generated doc regions are current.
-4. `construct dashboard:sync --check`: dashboard bundle is rebuilt.
-5. `construct lint:comments`: comment-policy compliance.
+4. `construct lint:comments`: comment-policy compliance.
 
 A failure in any step blocks the publish.
