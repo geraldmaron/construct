@@ -1,7 +1,7 @@
 <!--
 cx_doc_id and body_hash are stamped by construct on commit; omitted in this draft.
 -->
-# ADR-0039: Interaction-surface model — CLI as substrate, agent/MCP/TUI/dashboard as the surfaces that get emphasized
+# ADR-0039: Interaction-surface model — CLI as substrate, agent/MCP/TUI as the surfaces that get emphasized
 
 - **Date**: 2026-06-17
 - **Status**: accepted
@@ -45,8 +45,8 @@ for*, so that discovery, documentation, and future additions route to the right 
 
 - **The CLI is the substrate, by design.** ADR-0001 (zero-npm-core) makes the registry-driven
   dispatcher the spine; ADR-0022 explicitly frames every other surface as a *thin client* over
-  the engine ("the engine owns orchestration; the editor is a thin client"). The dashboard daemon
-  and `orchestrate run --remote` are already thin clients over the same runtime. So a tiered
+  the engine ("the engine owns orchestration; the editor is a thin client"). The retired dashboard
+  daemon and `orchestrate run --remote` were thin clients over the same runtime. So a tiered
   surface model is not a new architecture — it is naming a posture the codebase already half-holds.
 - **MCP is the daily-work surface today.** `lib/mcp/server.mjs` curates a **7-tool flat core**
   (`CORE_TOOL_NAMES`, server.mjs:1223-1226: `orchestration_policy`, `get_skill`, `search_skills`,
@@ -62,10 +62,12 @@ for*, so that discovery, documentation, and future additions route to the right 
   prompts and skills. The tooling scorecard (`docs/operations/audit/tooling-scorecard.md`) deferred the
   *prompt/visual* layer ("re-grade in Phase 5") and flagged the `tty-prompts` interactive layer as
   the open design question — i.e. the interactive surface is under-developed relative to the CLI.
-- **The interactive and visual surfaces exist but are thin.** `lib/tty-prompts.mjs` (menus,
-  multiselect) and `--select` flows (`construct dev --select`, `profile create` interactive,
-  `intake show`) are the embryonic TUI; `lib/server/` is the dashboard. Both are real but neither
-  is the primary documented path for the review/telemetry work they are best at.
+- **The interactive surface is the primary human path for review/triage work.** `lib/tty-prompts.mjs`
+  (menus, multiselect) and `--select` flows (`construct dev --select`, `profile create` interactive,
+  `intake show`, bare `construct` for terminal chat) are the TUI layer. The HTTP dashboard
+  (`lib/server/`, `apps/dashboard/`) was retired 2026-06-25 (`construct-m7k2-web-deprecation`);
+  visual/telemetry work routes through the thin CLI (`construct status`, `construct doctor`,
+  `construct oracle`) with `--json` twins or external telemetry backends.
 
 ## Decision
 
@@ -80,8 +82,12 @@ where new capability of that shape should land:
   this is the only tier a human is expected to type by hand. It stays the 13-ish `core: true` set
   plus lifecycle verbs.
 - **(c) TUI (interactive)** — review/triage/selection work that wants a stateful interactive loop,
-  not a one-shot. The CLI verb stays as the non-interactive entry; the interactive flow is the
-  emphasized face.
+  not a one-shot. Bare `construct` (terminal chat), intake/profile `--select` flows, and demo
+  tours are the primary human surfaces here; the CLI verb stays as the non-interactive entry
+  underneath.
+- **(d) Dashboard (deprecated, retired 2026-06-25)** — was the visual/telemetry cockpit
+  (`lib/server/`, `apps/dashboard/`). Deleted; do not assign new capability here. Historical
+  references in this ADR's surface map are superseded by the amendment below.
 - **(internal)** — harness/CI only. Already correctly modeled by `internal: true`; no human or
   agent surface, by design.
 
@@ -96,12 +102,12 @@ Classification of every command group. **Real caller** is derived from the regis
 (`core`/`internal` flags, description, usage), the `bin/construct` handler, and whether an
 equivalent MCP tool exists in `lib/mcp/server.mjs`. **Disposition**: `keep-CLI` (stays primary on
 the human CLI), `promote-MCP` (MCP is/should be canonical, CLI is the `--json` twin),
-`emphasize-TUI`, `emphasize-dashboard`, `internal`.
+`emphasize-TUI`, `internal`. (Historical disposition `emphasize-dashboard` retired — see amendment.)
 
 | Command group | Primary surface | Real caller | Disposition |
 |---|---|---|---|
 | `install`, `init`, `init:update`, `uninstall`, `update`, `upgrade`, `sync`, `completions`, `backup`, `config` | (b) thin CLI | human, one-shot setup/lifecycle | keep-CLI |
-| `dev`, `dashboard`, `stop`, `status`, `doctor`, `cleanup`, `embed`, `scheduler` | (b) thin CLI | human ops; some daemon-backed | keep-CLI (status/doctor also feed dashboard) |
+| `dev`, `stop`, `status`, `doctor`, `cleanup`, `embed`, `scheduler` | (b) thin CLI | human ops | keep-CLI (status/doctor/oracle for observability) |
 | `creds`, `providers`, `provider`, `auth:status`, `mcp`, `ollama`, `integrations`, `hosts`, `models`(set) | (b) thin CLI | human, credential/integration ops | keep-CLI |
 | `intake` (classify), `graph` (recommend), `workflow` (invoke), `capability` (describe), `execution` (resolve), `models` (resolve), `orchestrate` (run/status) | (a) agent/MCP | agent, daily authored work | promote-MCP — MCP tool canonical (`triage_recommend`, `workflow_invoke`, `capability_describe`, `construct_execution_resolve`, `model_resolve`, `orchestration_run/status`), CLI `--json` is the twin |
 | `search`, `ask`, `knowledge` (index/add/trends), `memory`, `distill`, `infer`, `ingest`, `drop`, `reflect`, `bootstrap` | (a) agent/MCP | agent + occasional human | promote-MCP where an MCP tool exists (`knowledge_search`, `memory_search`, `ingest_document`, `infer_document_schema`, `knowledge_add`); CLI stays for human one-shots |
@@ -117,8 +123,8 @@ One-line read per tier:
   form is the `--json` scripting twin, not the primary face.
 - **(b) thin human CLI** — setup/ops/lifecycle/CI-gate verbs; the ~13 `core` set plus lifecycle and
   integration verbs are what a human actually types.
-- **(c) TUI** — interactive triage, profile/workspace authoring, and sandbox/intake review want a
-  stateful loop; the CLI one-shot stays underneath.
+- **(c) TUI** — interactive triage, profile/workspace authoring, terminal chat (bare
+  `construct`), and sandbox/intake review want a stateful loop; the CLI one-shot stays underneath.
 - **(internal)** — 18 harness/CI verbs, already invisible to both human and agent by design.
 
 ## Rationale
@@ -171,13 +177,14 @@ turned scattered per-host facts into a declared registry without changing behavi
 - **A migration sketch, phased and non-breaking.** Phase 1: add a `surface` field (or derive it) to
   `lib/cli-commands.mjs` so the primary surface is declared data, not folklore — reuses the
   `core`/`internal` precedent. Phase 2: documentation and `--help` group by surface (human CLI tier
-  shown by default; agent/MCP, TUI, dashboard tiers cross-linked, not dumped). Phase 3: for the
+  shown by default; agent/MCP and TUI tiers cross-linked, not dumped). Phase 3: for the
   promote-MCP group, document the MCP tool as canonical and the CLI `--json` as the twin. Phase 4:
-  invest the emphasize-TUI / emphasize-dashboard groups into their interactive/visual surface as
-  capacity allows. At no phase is a verb removed; the CLI stays callable throughout.
+  invest the emphasize-TUI group into its interactive surface as capacity allows. At no phase is a
+  verb removed; the CLI stays callable throughout.
 - **A default home for new capability.** New daily-authoring capability lands as an MCP tool first;
-  new visual capability lands on the dashboard first; the human CLI grows only for genuine setup/ops
-  verbs. This is the durable effect — it stops the flat list from accreting.
+  new observability/visual capability lands on the thin CLI (`--json`) or an external telemetry
+  backend; the human CLI grows only for genuine setup/ops verbs. This is the durable effect — it
+  stops the flat list from accreting.
 - **New constraint.** The surface assignment must stay honest: if a command's primary caller
   changes, its declared surface must change with it, or the model rots back into a flat list with
   extra metadata. This is a maintenance obligation, enforceable later by an inventory check that the
@@ -195,7 +202,7 @@ truth, there is no data migration to unwind and no external contract to break.
 - `lib/cli-commands.mjs` (CLI_COMMANDS, ALL_COMMAND_NAMES, COMMAND_NAMES; `core`/`internal` flags)
 - `scripts/audit/00-inventory.mjs` (census: 110 commands, 13 core, 18 internal, 22 lazy-import handlers — verified this session)
 - `lib/mcp/server.mjs` (52 tools; 7-tool flat core `CORE_TOOL_NAMES`; `construct_call` long-tail collapse; embedded-contract tools `triage_recommend`, `workflow_invoke`, `capability_describe`, `construct_execution_resolve`, `model_resolve`, `orchestration_run`/`orchestration_status`)
-- `lib/tty-prompts.mjs`, `lib/server/` (the embryonic TUI and dashboard surfaces)
+- `lib/tty-prompts.mjs`, `lib/chat/**` (TUI / terminal chat surfaces; dashboard deleted)
 - `docs/operations/audit/tooling-scorecard.md` (interactive/visual layer flagged as the open design question)
 - `docs/notes/research/2026-06-construct-audit/80-synthesis.md` (item 2 — keep the always-on agent surface tiny, load the rest by trigger)
 - ADR-0001 (zero-npm-core registry dispatcher — the substrate)

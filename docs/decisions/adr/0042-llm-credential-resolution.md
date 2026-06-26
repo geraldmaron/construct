@@ -70,5 +70,16 @@ Two concrete failures, both verified on a live machine:
   copilot` is the entry point and errors point operators to it.
 - The Copilot bridge no longer force-maps the model to `gpt-4o`; the requested id
   is passed through and validated against the account's `models` endpoint.
-- Detection (`construct chat --list`, `construct creds list`, health) reports
+- Detection (bare `construct --list`, `construct creds list`, health) reports
   op:// providers and a stored Copilot credential as configured.
+
+## Auth-once contract (cross-reference)
+
+All LLM and integration paths that resolve `op://` references must route through
+`lib/providers/secret-resolver.mjs` so a single reference is materialized once per
+process and cached — no repeat `op read` spawn, no repeat biometric prompt. The
+contract is enforced by `tests/functional/auth-once.functional.test.mjs` (hermetic,
+injected `opRead`). Consumers include `worker.mjs`, the chat engine
+(`apps/chat/engine/ai-sdk-agent.mjs`), `isProviderConfigured` in
+`lib/model-router.mjs`, and intake integrations (`lib/integrations/intake-integrations.mjs`
+via `resolveOpRef`). See CHANGELOG (`construct-m7k2-auth-primitives`) for rollout status.

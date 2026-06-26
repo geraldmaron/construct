@@ -33,7 +33,8 @@ constraint that made delegation the safe default.
 
 ## Decision
 
-Ship `construct chat` as an **own-the-loop, own-the-surface** experience:
+Ship an **own-the-loop, own-the-surface** terminal chat experience (historically invoked as
+`construct chat`; see Amendment 2026-06-25 for the current entry):
 
 - **Owned loop (`apps/chat/engine/`).** Construct runs the agent loop itself on
   a provider-agnostic engine (Vercel AI SDK `ToolLoopAgent`): prompt -> model
@@ -115,7 +116,7 @@ contract, which remain built-in only.
   rewires from host resolution to the owned-loop driver; `commands.mjs` reads
   models from `lib/model-router.mjs` instead of a host's `listModels`.
 - New `optionalDependencies` (`ai`, `@ai-sdk/*`, `ink`, `react`, `zod`) ride the
-  existing optional-dependency pattern; `construct chat` detects missing extras
+  existing optional-dependency pattern; the chat launcher detects missing extras
   and prints an install hint. A JSX build step (esbuild, already present for
   `build:sea`) compiles the Ink surface; the launcher loads the built bundle.
 - Construct now owns a coding agent loop and file-edit/permission primitives,
@@ -148,18 +149,25 @@ why it is recorded as a decision, not a default.
 - `lib/model-router.mjs`, `lib/orchestration-policy.mjs`, `lib/worker/run.mjs`,
   `lib/mcp/server.mjs` (`dispatchToolByName`) — reused by the engine
 
-## Amendment (2026-06-25) — terminal-only; desktop window + web cockpit retired
+## Amendment (2026-06-25) — terminal-only entry; dashboard surfaces retired
 
 This ADR shipped two rich surfaces over the owned loop: a Tauri **desktop window**
 (`apps/chat/desktop/`) and a React **web cockpit** (`apps/chat/web/`) served at
 dashboard `/chat/`. Both are retired (`construct-m7k2-web-deprecation`) along with
 `lib/server/`, `apps/dashboard/`, and `apps/chat/web/`. The owned-loop engine
-(`apps/chat/engine/`) and the decision to own the loop are unchanged; only the
-**surface** narrows. Chat is now **terminal-only** — the linear renderer
+(`apps/chat/engine/`) and the decision to own the loop are **unchanged**; only the
+**surface and entry** narrow. Chat is now **terminal-only** — the linear renderer
 (`lib/chat/tui/render.mjs`, introduced by ADR-0040) is the sole chat face.
 
-- Bare `construct` (no subcommand) is the chat entry; `construct chat` remains as a
-  deprecated alias that prints a one-line notice (`construct-m7k2.16`).
+**Entry (current):**
+
+- **Bare `construct`** (no subcommand) is the canonical chat entry (`construct-m7k2.16`).
+- **`construct chat`** is a **deprecated alias** — it prints a one-line notice and
+  forwards to the same owned-loop driver; the subcommand will be removed in a future
+  release (not yet removed as of this amendment).
+
+**Retired flags and surfaces:**
+
 - `--plain` / `--accessible` select the screen-reader-friendly mode explicitly; the
   retired `--web` / `--window` / `--no-window` flags print a notice and no-op.
 - The older Ink TUI (`apps/chat/tui/`) is dead-but-built; its retirement and the
