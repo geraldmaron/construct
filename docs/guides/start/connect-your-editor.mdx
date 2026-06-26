@@ -31,7 +31,7 @@ Construct classifies every host honestly — no surface is cosmetic. `construct 
 |---|---|---|
 | Claude Code | `full-native` | Runs the multi-specialist chain natively (Agent Teams / subagent dispatch). |
 | OpenCode | `full-native` | Config-driven agents + subagents run the chain in OpenCode itself. |
-| Codex · VS Code · Cursor · Copilot | `mcp-orchestrated` | No native subagent primitive, but the host calls the `orchestration_run` MCP tool to reach the **same** orchestrated outcome via the local daemon (`construct dashboard`). |
+| Codex · VS Code · Cursor · Copilot | `mcp-orchestrated` | No native subagent primitive, but the host calls the `orchestration_run` MCP tool to reach the **same** orchestrated outcome in-process. |
 
 `mcp-orchestrated` hosts get genuine multi-specialist results — the engine owns orchestration, the editor is a thin client (see [orchestrated outcomes in VS Code](#orchestrated-outcomes-in-vs-code) and ADR-0022). A host would only be `prompt-only` if it had neither native dispatch nor MCP — none of the supported hosts are.
 
@@ -76,10 +76,10 @@ Construct writes `<project>/.vscode/mcp.json` (top-level `servers`) per the offi
 
 ### Orchestrated outcomes in VS Code
 
-VS Code/Copilot has no extension-facing subagent primitive, so the editor's own agent can't run a multi-specialist chain *in-process*. Construct closes that gap the way Claude Code and OpenCode do — **the engine runs the orchestration; the editor is a thin client.** Start the local daemon (`construct dashboard`), then reach it two ways:
+VS Code/Copilot has no extension-facing subagent primitive, so the editor's own agent can't run a multi-specialist chain itself. Construct closes that gap the way Claude Code and OpenCode do — **the engine runs the orchestration; the editor is a thin client.** Reach it two ways:
 
-- **From the editor's chat, via MCP** — the Construct MCP server exposes an `orchestration_run` tool that executes a real run on the daemon and returns per-specialist output, plus `orchestration_status` to inspect runs. MCP tools are exactly what VS Code/Copilot and Cursor *do* expose, so the host gets a genuine multi-specialist outcome through a tool it can actually call — no subagent primitive required. If the daemon isn't running, the tool fails fast with how to start it rather than silently degrading to a single-persona pass.
-- **From a script/CI, via HTTP+SSE** — `POST /api/orchestration/runs` starts a background run, `GET …/runs/:id` polls it, `GET …/runs/:id/events` streams the lifecycle over SSE. The bundled `construct orchestrate run --remote "<request>"` is a reference client.
+- **From the editor's chat, via MCP** — the Construct MCP server exposes an `orchestration_run` tool that executes a real run and returns per-specialist output, plus `orchestration_status` to inspect runs. Solo runs execute in-process — no daemon, no port, no token. MCP tools are exactly what VS Code/Copilot and Cursor *do* expose, so the host gets a genuine multi-specialist outcome through a tool it can actually call — no subagent primitive required.
+- **From a script/CI** — `construct orchestrate run "<request>"` runs in-process and stores runs in the current project's `.cx/`. For a shared team service, set `CONSTRUCT_ORCHESTRATION_URL` (and `CONSTRUCT_ORCHESTRATION_TOKEN`) and use `construct orchestrate run --remote "<request>"`, which proxies the same call over HTTP.
 
 A run executed with the `provider` worker backend (set `orchestration.workerBackend` and a provider key) returns real specialist output — the same outcome a Claude Code user gets. See [architecture → engine-as-service](/guides/concepts/architecture) and ADR-0022.
 

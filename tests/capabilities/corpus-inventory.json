@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-26T01:54:29.391Z",
+  "generatedAt": "2026-06-26T02:36:01.725Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 527,
-    "topLevelTestFiles": 294,
-    "nestedTestFiles": 233,
+    "testFiles": 521,
+    "topLevelTestFiles": 293,
+    "nestedTestFiles": 228,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 22,
     "byLayer": {
-      "unit": 330,
+      "unit": 329,
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
-      "functional": 158
+      "functional": 153
     },
     "byCategory": {
-      "unit": 291,
+      "unit": 290,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
       "visual": 7,
       "integration": 21,
-      "functional": 158,
+      "functional": 153,
       "hook": 9
     }
   },
@@ -43,14 +43,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/agent-manifest.test.mjs — verify the agent execution manifest against live sources."
-    },
-    {
-      "path": "tests/alias-resolution.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/alias-resolution.test.mjs — alias precedence + template."
     },
     {
       "path": "tests/artifact-capture.test.mjs",
@@ -1411,14 +1403,6 @@
       "maintainerNotes": "tests/functional/chat-color-scheme.functional.test.mjs — terminal theme detection."
     },
     {
-      "path": "tests/functional/chat-command-suggest.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-command-suggest.functional.test.mjs — slash command autocomplete."
-    },
-    {
       "path": "tests/functional/chat-config-commands.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1497,14 +1481,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/chat-model-resolution.functional.test.mjs — validated chat"
-    },
-    {
-      "path": "tests/functional/chat-ollama-fallback.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-ollama-fallback.functional.test.mjs — turn-time fallback when"
     },
     {
       "path": "tests/functional/chat-openrouter-fallback.functional.test.mjs",
@@ -1611,14 +1587,6 @@
       "maintainerNotes": "tests/functional/chat-tools.functional.test.mjs — the owned loop's tool"
     },
     {
-      "path": "tests/functional/chat-tui.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-tui.functional.test.mjs — the rich surface's pure state"
-    },
-    {
       "path": "tests/functional/chat-turn-block.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1633,14 +1601,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/chat-turn-present.functional.test.mjs — turn summary formatting."
-    },
-    {
-      "path": "tests/functional/chat-turn-state.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-turn-state.functional.test.mjs — pure turn-state reduction for chat."
     },
     {
       "path": "tests/functional/claude-orchestration-prompt.functional.test.mjs",
@@ -2485,14 +2445,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/uninstall-coverage.functional.test.mjs"
-    },
-    {
-      "path": "tests/functional/w1-boundary-handshake.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/w1-boundary-handshake.functional.test.mjs — Boundary handshake."
     },
     {
       "path": "tests/functional/w1-provider-adapter-contracts.functional.test.mjs",

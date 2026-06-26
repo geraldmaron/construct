@@ -112,7 +112,7 @@ the human CLI), `promote-MCP` (MCP is/should be canonical, CLI is the `--json` t
 | `intake` (list/show/done/skip/reopen), `sandbox` (create/list/delete) | (c) TUI | human, interactive triage/review | emphasize-TUI (one-shot CLI kept) |
 | `review`, `optimize`, `telemetry`, `telemetry-backfill`, `eval-datasets`, `llm-judge`, `evals`, `efficiency`, `feedback:*` | (d) dashboard | human review + CI; agent reads via MCP (`efficiency_snapshot`, `cx_trace`/`cx_score`) | emphasize-dashboard for visual; CLI/MCP stay as data source |
 | `docs` (check/verify/update), `docs:*`, `audit`, `doc` (verify/inspect), `decisions`, `policy`, `gates:audit`, `deployment`, `ci`, `validate`, `diff`, `list`, `role`/`roles:*`, `skills`, `storage`, `plugin`, `acp`, `claude:allow`, `beads`/`beads:stats`, `hooks:health`, `version` | (b) thin CLI / CI | human ops + CI gates | keep-CLI |
-| `hook`, `lint:agents`, `lint:comments`, `lint:contracts`, `lint:research`, `lint:templates`, `lint:prompts`, `specialist`, `migrate`, `dashboard:sync`, `seed-traces`, `registry:status`, `evaluator:rubrics`, `activation:status`, `prune`, `overrides`, `resources` (18 `internal: true`) | internal | CI / harness | internal — no human or agent surface, correctly modeled |
+| `hook`, `lint:agents`, `lint:comments`, `lint:contracts`, `lint:research`, `lint:templates`, `lint:prompts`, `specialist`, `migrate`, `seed-traces`, `registry:status`, `evaluator:rubrics`, `activation:status`, `prune`, `overrides`, `resources` (17 `internal: true`) | internal | CI / harness | internal — no human or agent surface, correctly modeled |
 
 One-line read per tier:
 - **(a) agent/MCP-native** — the daily authoring verbs already have canonical MCP tools; the CLI

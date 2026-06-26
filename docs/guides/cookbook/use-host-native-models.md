@@ -40,7 +40,7 @@ Bridges are started automatically when you run the standard Construct services:
 construct dev
 ```
 
-You can check the status of active bridges in the Construct Dashboard or via `construct doctor`.
+You can check the status of active bridges via `construct doctor`.
 
 ### Customizing Ports
 

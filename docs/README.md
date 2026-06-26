@@ -76,7 +76,6 @@ Step-by-step operator guides for common tasks:
 - [Observability and cost](./guides/cookbook/observability-and-cost.md)
 - [Wireframe and drop commands](./guides/cookbook/wireframe-and-drop.md)
 - [Distill and infer commands](./guides/cookbook/distill-and-infer.md)
-- [Sync the dashboard static bundle](./guides/cookbook/sync-the-dashboard.md)
 
 ## Command Coverage
 

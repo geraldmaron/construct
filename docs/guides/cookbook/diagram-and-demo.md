@@ -1,6 +1,6 @@
 ---
 title: Diagram and demo
-description: Render code-driven diagrams (D2/Graphviz), reproducible terminal demos (VHS), dashboard demos (Playwright), and publish research briefs to PDF.
+description: Render code-driven diagrams (D2/Graphviz), reproducible terminal demos (VHS), app demos (Playwright), and publish research briefs to PDF.
 ---
 
 Commands follow the optional **external system binaries** contract (ADR-0001).
@@ -27,7 +27,7 @@ node bin/construct publish docs/prd-platform/brief.md --strict --figures
 - Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **hand-drawn distribution styling** (D2 `--sketch`, Mermaid `handDrawn` look + bundled Caveat handwriting, monochrome ink accent)
 - PDF routes by `artifactType`: `construct-prd.typ` (product editorial), `construct-research.typ` (analytics), `construct-decision.typ` (ADR/RFC); override: `.cx/publish-theme.typ`
 - Typography ships bundled in `templates/distribution/fonts/` (Space Grotesk body + headings, JetBrains Mono code; Caveat handwriting for hand-drawn diagram labels). Success metrics tables in blockquotes render as **Key metrics** callouts.
-- Optional VHS terminal demo + Playwright dashboard demo via frontmatter or flags
+- Optional VHS terminal demo + Playwright app demo via frontmatter or flags
 
 Authoring conventions for richer PDFs:
 
@@ -104,7 +104,6 @@ Project-scoped manifests live under `.cx/demos/recordings/<name>.json`:
 
 | Archetype | `webServer` | `artifactReveal.mode` |
 |-----------|-------------|------------------------|
-| Construct cockpit | `lib/server` (dashboard config) | `constructPreview` → `/demo-preview/<file>` |
 | Next.js static export | `npx serve out` | `sameOrigin` → `{baseUrl}/<file>` |
 | External SaaS | `skipWebServer: true` | optional |
 
@@ -135,12 +134,11 @@ Demo scripts under `templates/demos/scripts/` drive **construct chat** by defaul
 
 ```bash
 construct demo list
-construct demo agentic-platforms-prd          # Ink chat with /demo next steps
-construct demo agentic-platforms-prd --web    # browser cockpit at /chat/
+construct demo agentic-platforms-prd          # terminal chat with /demo next steps
 construct demo agentic-platforms-prd --surface=tape --format mp4   # VHS fallback
 ```
 
-Fallback chain when chat is unavailable: **web chat → Playwright recording → dashboard → VHS tape → printed script steps**.
+Fallback chain when chat is unavailable: **terminal chat → Playwright recording → VHS tape → printed script steps**.
 
 Inside chat, use `/demo next` for the next prompt, `/demo steps` to replay the outline.
 
@@ -169,29 +167,6 @@ construct demo record resource-guard-rails --format mp4
 ```
 
 Scaffold templates: `quickstart`, `diagram`. CI: `.github/workflows/publish-media.yml` uses `charmbracelet/vhs-action`.
-
-## Dashboard demos (Playwright — cockpit + PDF scroll)
-
-The flagship `agentic-platforms-prd` demo records the **branded web terminal cockpit** at `/chat/`, then opens the exported PDF via `/demo-preview/` and scrolls through the artifact. Distribution gallery generation uses this surface by default.
-
-```bash
-cd apps/dashboard && npm install && npx playwright install chromium
-construct demo record agentic-platforms-prd --format mp4
-node bin/construct demo dashboard:agentic-platforms-prd
-```
-
-Playwright spec: `apps/dashboard/e2e/demo/agentic-platforms-prd.spec.ts` — Act 1 walks `/chat/` with `/demo` steps; Act 2 opens `prd-platform.pdf` from `CONSTRUCT_DEMO_ARTIFACT_DIR` and scrolls in Chrome's PDF viewer.
-
-When recording with a published artifact on disk:
-
-```bash
-CONSTRUCT_DEMO_ARTIFACT_DIR=.tmp/distribution-examples \
-DEMO_ARTIFACT_FILE=prd-platform.pdf \
-npx playwright test --config apps/dashboard/playwright.config.mjs \
-  apps/dashboard/e2e/demo/agentic-platforms-prd.spec.ts --project=demo-recording
-```
-
-The dashboard server exposes `GET /demo-preview/<filename>` only when `CONSTRUCT_DEMO_ARTIFACT_DIR` is set (path-traversal guarded). Config: `webServer` + `video: on`; output transcodes WebM → MP4 via ffmpeg when available.
 
 ## Terminal demos (VHS recording — CLI fallback)
 

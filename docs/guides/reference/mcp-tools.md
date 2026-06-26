@@ -757,7 +757,7 @@ Resolve the execution-capability contract for an embedded workflow before/at wor
 | `allow_cross_provider_fallback` | boolean | Permit model fallback outside the host provider family (default false). |
 
 ### `orchestration_run`
-Execute a real multi-specialist orchestration run via the local Construct daemon and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Requires a running daemon (`construct dashboard`); an unreachable daemon fails fast with how to start it rather than silently degrading to a single-persona pass. Real specialist output requires the daemon's `provider` worker backend (a provider key configured); the default `inline` backend prepares tasks only.
+Execute a real multi-specialist orchestration run and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Solo runs execute in-process — no daemon, no port, no token; a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`. Real specialist output requires the `provider` worker backend (a provider key configured); the default `inline` backend prepares tasks only.
 
 | Parameter | Type | Description |
 |---|---|---|

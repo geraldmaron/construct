@@ -1,10 +1,4 @@
 {
-  "note": "Accepted open audit findings (ratchet) for gated phases. Tightened as remediation lands. The entries below are collateral of the dashboard server + browser cockpit deletion (construct-m7k2-web-deprecation.4): three modules lost their only production importer and two doc references name removed commands. Their rehome-or-retire is tracked in construct-596m.",
-  "acceptedIds": [
-    "02-deadcode:module-test-only:lib/boundary.mjs",
-    "02-deadcode:module-test-only:lib/chat/tui/turn-state.mjs",
-    "02-deadcode:module-test-only:lib/config/alias.mjs",
-    "03-docs:review-doc-reference:dashboard",
-    "03-docs:review-doc-reference:dashboard_sync"
-  ]
+  "note": "Accepted open audit findings (ratchet) for gated phases. Tightened as remediation lands. Empty: the dashboard-deprecation collateral (three test-only modules and two stale doc references) was rehomed-or-retired in construct-596m, so the ratchet now accepts no open findings.",
+  "acceptedIds": []
 }

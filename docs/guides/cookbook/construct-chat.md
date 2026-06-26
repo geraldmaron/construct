@@ -1,37 +1,30 @@
 ---
 title: Construct chat
-description: Run Construct's owned agent loop in a dedicated window or browser — transparency-first, provider-agnostic.
+description: Run Construct's owned agent loop in the terminal — transparency-first, provider-agnostic.
 ---
 
 Running `construct` with no subcommand runs Construct's own agent loop: prompt → model → tool calls → results → repeat. Every token, tool result, permission decision, and routing choice is first-party data — not whatever a host chose to stream. (`construct chat` is a deprecated alias for the same entry and prints a notice.)
+
+Chat is terminal-only. The desktop window and browser cockpit were retired with the dashboard server (`construct-m7k2-web-deprecation`); the linear renderer (`lib/chat/tui/render.mjs`) is the sole surface. The retired `--web` / `--window` / `--no-window` flags print a one-line notice and no-op.
 
 ## Quick start
 
 ```bash
 construct dev                 # start local services (if not already running)
-construct                     # dedicated Construct chat window (Tauri + system WebView)
-construct --plain             # linear terminal mode (SSH, CI, scripts only)
+construct                     # interactive chat in the terminal
+construct --plain             # screen-reader-friendly linear mode
 ```
-
-Build the desktop window binary once:
-
-```bash
-npm run build:chat-desktop
-```
-
-If the binary is missing, `construct` prints an install hint with the build command.
 
 ## What you see
 
-The default **desktop window** loads the same React cockpit as dashboard `/chat/` — Space Grotesk and JetBrains Mono via `next/font`, full CSS layout freedom, no browser chrome.
+The terminal renderer prints each turn as a labeled, screen-reader-friendly transcript; meaning never depends on color (color is enhancement only, gated by `NO_COLOR`, non-TTY, and `TERM=dumb`).
 
-- **Conversation column** — turn cards with phased log lines (`YOU`, `ROUTE`, `THINK`, `TOOL`, `SRC`, `OUT`, `USAGE`)
-- **ROUTE strip** — full planned specialist chain inline (`cx-researcher → cx-architect → …`), intent, track, and gates — not just a specialist count
-- **Session rail** — model, context meter, session usage, transparency layer toggles, dispatch detail
-- **Permission prompts** — `y` / `a` / `n` (ask mode) or pre-set sandbox levels
-- **Keyboard shortcuts** — Ctrl+1–5 toggle layers, Ctrl+O expand tool detail, Escape cancel stream
+- **Turn phases** — labeled sections per turn (`[thinking]`, `[tool]`, `construct`, `[usage]`)
+- **Route** — the planned specialist chain, intent, and track for the turn
+- **Tools** — a status-aligned list of tool calls with results
+- **Usage** — a per-turn token/cost footer
 
-Use `--plain`, `--accessible`, `NO_COLOR`, or `TERM=dumb` only for headless or SSH workflows.
+`--plain` / `--accessible` select the linear mode explicitly; `NO_COLOR` and `TERM=dumb` also route there.
 
 ## In-session commands
 
@@ -56,16 +49,6 @@ construct creds list
 construct --list               # models available to chat
 construct --free               # poll OpenRouter free catalog (requires OPENROUTER_API_KEY)
 ```
-
-## Dashboard parity
-
-The dashboard serves the same React cockpit at `/chat/` with the owned-loop SSE stream (`GET /api/chat/loop/stream`); reach it via `construct dashboard`. The `construct chat --web` launcher shortcut was retired (see `construct-m7k2-web-deprecation`). Rebuild the static bundle after dashboard changes:
-
-```bash
-construct dashboard:sync --build
-```
-
-Legacy `/api/chat/*` (Claude `--print` delegation) remains for backward compatibility; new work targets the owned loop.
 
 ## Further reading
 

@@ -49,8 +49,7 @@ The CLI registry is the substrate (~118 commands). Four surfaces are emphasized 
 | Surface | Entry | Role |
 |---|---|---|
 | Agent / MCP | `@construct` in Claude, OpenCode, Codex, Cursor, Copilot | Primary authoring — orchestration policy, skills, workflows |
-| Terminal chat | `construct` (no subcommand; `construct chat` is a deprecated alias) | Owned agent loop in a Tauri desktop window (or `--plain` linear) |
-| Dashboard chat | `construct chat --web` or `/chat` | Browser cockpit on the same owned loop (SSE) |
+| Terminal chat | `construct` (no subcommand; `construct chat` is a deprecated alias) | Owned agent loop in the terminal renderer (`--plain`/`--accessible` for linear) |
 | Thin CLI | `construct status`, `construct doctor`, `construct intake`, … | Operator diagnostics and queue inspection |
 
 Oracle (`construct oracle status`) sits alongside as an L0.5 bounded-auto health layer — not a user-facing chat surface.

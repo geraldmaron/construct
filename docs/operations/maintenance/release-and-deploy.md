@@ -137,7 +137,6 @@ Exit 0 means safe to tag. Anything else: fix locally, do not push the tag and ho
 - `npm test` (full suite)
 - `node bin/construct doctor`
 - `node ./bin/construct docs:verify`
-- `node ./bin/construct dashboard:sync --check`
 - `node ./bin/construct lint:comments`
 - `npm run lint:profiles -- --quiet`
 - `npm run test:functional`
