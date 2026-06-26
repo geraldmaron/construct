@@ -328,7 +328,7 @@ The Oracle (`cx-oracle`) will gain a **team governance** watch domain alongside 
 New CLI commands:
 
 ```bash
-construct registry:validate    # Validates unified-registry.json + overlays
+construct registry:validate --unified  # Validates unified-registry.json + .cx overlay against its 13 invariants
 construct registry:diff        # Shows what changed against last committed version
 construct registry:prune       # Lists orphaned prompts/skills after a removal
 construct team add <id>      # Guided wizard: prompts for charter, owner, roles
@@ -393,6 +393,22 @@ These are thin wrappers over the validator library; they do not edit the JSON di
 - Implement `construct team add/remove` and `construct specialist add/remove`.
 - Update `docs/guides/concepts/teams.md`.
 - Mark old files as deprecated in CHANGELOG.
+
+### Phase 1.4 — Cleanup & honest completion (2026-06-25, `construct-iwfz.4` + `construct-m7k2.0`)
+
+The unified registry is the only registry. This phase replaced the "old files stay readable for one cycle" plan (Section 9) with a clean cut and a standing gate:
+
+- **Consumer migration.** Runtime consumers (orchestration policy, contract handoffs, fence/gateway resolution, MCP `listTeams`/`getTeam`, oracle graph seeds) read `specialists/unified-registry.json` through `lib/registry/loader.mjs`, which deep-merges a `.cx/unified-registry.json` overlay and validates on load.
+- **Legacy cleanup.** The five legacy files (`registry.json`, `teams.json`/`teams-registry.json`, `contracts.json`, `role-manifests.json`, `policy-inventory.json`) were deleted, not merely deprecated. The only file that still names the legacy shape is `lib/migrations/v2-unified-registry.mjs` — the by-design v1→v2 schema-stamp migration, not a runtime reader.
+- **Validation gating.** `construct registry:validate --unified` validates the unified registry (plus `.cx` overlay) against the 13 invariants in `lib/registry/validator.mjs`; `--json` emits a machine report. It exits 0 when valid, 1 on errors. This runs in the release gate, so a registry that breaks an invariant blocks release.
+
+**Acceptance (verified):**
+1. `specialists/unified-registry.json` exists and `construct registry:validate --unified` exits 0 (warnings only).
+2. `rg 'specialists/(registry|teams|contracts|policy-inventory|role-manifests)\.json' lib bin scripts` (excluding tests and migration tooling) returns no live readers.
+3. `construct registry:validate --unified` rejects a deliberately-invalid registry (exit 1).
+4. A `.cx/unified-registry.json` overlay merges over the canonical registry, overlay winning.
+
+Pinned by `tests/registry-phase-1-4.test.mjs`.
 
 ---
 

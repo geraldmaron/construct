@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-26T03:25:17.183Z",
+  "generatedAt": "2026-06-26T03:37:49.900Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 522,
-    "topLevelTestFiles": 293,
+    "testFiles": 523,
+    "topLevelTestFiles": 294,
     "nestedTestFiles": 229,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 22,
     "byLayer": {
-      "unit": 329,
+      "unit": 330,
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
       "functional": 154
     },
     "byCategory": {
-      "unit": 290,
+      "unit": 291,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
@@ -3661,6 +3661,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/registry-loader.test.mjs — Test the unified registry loader."
+    },
+    {
+      "path": "tests/registry-phase-1-4.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/registry-phase-1-4.test.mjs — RFC-0004 Phase 1.4 honest-completion acceptance."
     },
     {
       "path": "tests/registry-validation.test.mjs",
