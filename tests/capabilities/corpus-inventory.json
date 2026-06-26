@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-25T22:42:59.347Z",
+  "generatedAt": "2026-06-26T00:01:22.845Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 543,
+    "testFiles": 542,
     "topLevelTestFiles": 298,
-    "nestedTestFiles": 245,
+    "nestedTestFiles": 244,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 23,
     "byLayer": {
@@ -13,7 +13,7 @@
       "live-provider": 2,
       "visual": 7,
       "integration": 31,
-      "functional": 170
+      "functional": 169
     },
     "byCategory": {
       "unit": 294,
@@ -22,7 +22,7 @@
       "live-provider": 2,
       "visual": 7,
       "integration": 22,
-      "functional": 170,
+      "functional": 169,
       "hook": 9
     }
   },
@@ -1427,14 +1427,6 @@
       "maintainerNotes": "tests/functional/chat-design-tokens.functional.test.mjs — chat brand token wiring."
     },
     {
-      "path": "tests/functional/chat-desktop-launcher.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-desktop-launcher.functional.test.mjs — desktop window launcher."
-    },
-    {
       "path": "tests/functional/chat-export.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1592,7 +1584,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/chat-surface.functional.test.mjs — construct chat surface routing."
+      "maintainerNotes": "tests/functional/chat-surface.functional.test.mjs — terminal-only chat entry."
     },
     {
       "path": "tests/functional/chat-system-prompt-tier.functional.test.mjs",

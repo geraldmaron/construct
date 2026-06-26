@@ -144,107 +144,6 @@ jobs:
           path: dist/construct-*
           if-no-files-found: error
 
-  # ── Tauri chat desktop binary ─────────────────────────────────────────────
-  build-chat-desktop:
-    name: chat-desktop (${{ matrix.os }}-${{ matrix.arch }})
-    needs: gate
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: linux
-            arch: x64
-            runner: ubuntu-latest
-            rust_target: x86_64-unknown-linux-gnu
-            asset_name: construct-chat-linux-x64
-          - os: darwin
-            arch: arm64
-            runner: macos-15
-            rust_target: aarch64-apple-darwin
-            asset_name: construct-chat-darwin-arm64
-          - os: darwin
-            arch: x64
-            runner: macos-15
-            rust_target: x86_64-apple-darwin
-            asset_name: construct-chat-darwin-x64
-          - os: windows
-            arch: x64
-            runner: windows-latest
-            rust_target: x86_64-pc-windows-msvc
-            asset_name: construct-chat-windows-x64.exe
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: .tool-versions
-          cache: npm
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.rust_target }}
-
-      - name: Install Linux WebView dependencies
-        if: matrix.os == 'linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev
-
-      - name: Install npm dependencies (workspace)
-        run: npm ci --omit=dev
-
-      - name: Build frontend (chat web)
-        working-directory: apps/chat
-        run: npm ci && npm run build
-
-      - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: apps/chat/desktop/src-tauri -> target
-
-      - name: Build Tauri binary (Unix)
-        if: matrix.os != 'windows'
-        working-directory: apps/chat/desktop/src-tauri
-        run: cargo build --release --target ${{ matrix.rust_target }}
-
-      - name: Build Tauri binary (Windows)
-        if: matrix.os == 'windows'
-        working-directory: apps/chat/desktop/src-tauri
-        run: cargo build --release --target ${{ matrix.rust_target }}
-
-      - name: Stage binary (Unix)
-        if: matrix.os != 'windows'
-        shell: bash
-        run: |
-          mkdir -p dist-chat
-          cp "apps/chat/desktop/src-tauri/target/${{ matrix.rust_target }}/release/construct-chat" \
-             "dist-chat/${{ matrix.asset_name }}"
-          sha256sum "dist-chat/${{ matrix.asset_name }}" > "dist-chat/${{ matrix.asset_name }}.sha256"
-
-      - name: Stage binary (Windows)
-        if: matrix.os == 'windows'
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force dist-chat | Out-Null
-          Copy-Item "apps/chat/desktop/src-tauri/target/${{ matrix.rust_target }}/release/construct-chat.exe" `
-                    "dist-chat/${{ matrix.asset_name }}"
-          $hash = (Get-FileHash "dist-chat/${{ matrix.asset_name }}" -Algorithm SHA256).Hash.ToLower()
-          "$hash  ${{ matrix.asset_name }}" | Out-File "dist-chat/${{ matrix.asset_name }}.sha256"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: chat-desktop-${{ matrix.os }}-${{ matrix.arch }}
-          path: dist-chat/
-          if-no-files-found: error
-
   # ── Docker image ──────────────────────────────────────────────────────────
   docker:
     name: docker image
@@ -321,7 +220,7 @@ jobs:
   # ── GitHub Release + npm publish ──────────────────────────────────────────
   publish:
     name: publish
-    needs: [build-binary, build-chat-desktop, docker]
+    needs: [build-binary, docker]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -358,13 +257,6 @@ jobs:
         with:
           path: dist/
           pattern: binary-*
-          merge-multiple: true
-
-      - name: Download chat desktop binaries
-        uses: actions/download-artifact@v8
-        with:
-          path: dist/
-          pattern: chat-desktop-*
           merge-multiple: true
 
       - name: Detect pre-release channel
@@ -409,15 +301,7 @@ jobs:
             dist/construct-darwin-arm64 \
             dist/construct-darwin-arm64.sha256 \
             dist/construct-windows-x64.exe \
-            dist/construct-windows-x64.exe.sha256 \
-            dist/construct-chat-linux-x64 \
-            dist/construct-chat-linux-x64.sha256 \
-            dist/construct-chat-darwin-arm64 \
-            dist/construct-chat-darwin-arm64.sha256 \
-            dist/construct-chat-darwin-x64 \
-            dist/construct-chat-darwin-x64.sha256 \
-            dist/construct-chat-windows-x64.exe \
-            dist/construct-chat-windows-x64.exe.sha256 || true
+            dist/construct-windows-x64.exe.sha256 || true
 
   # ── Homebrew tap formula bump ─────────────────────────────────────────────
   # Gated on a repository variable so the step is skipped until the tap repo
