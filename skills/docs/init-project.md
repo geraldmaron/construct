@@ -37,7 +37,7 @@ docs/                   ← human-readable project documentation
 1. Treat `.cx/context.md`, `.cx/context.json`, `.cx/workflow.json`, `docs/README.md`, and `docs/architecture.md` as required project state.
 2. Read them at the start of every meaningful session.
 3. Update them whenever work changes active reality: decisions, workflow phase, architecture assumptions, or documentation contract.
-4. Run `construct dashboard` to see the project in the dashboard.
+4. Run `construct status` to review the project's current state (workflow phase, core docs, uncommitted changes).
 
 ## For cx-docs-keeper
 At session start, check the core docs set. If missing, suggest running `construct init --docs-preset=lean` (or `construct init --docs-preset=full` for the full lane set).
