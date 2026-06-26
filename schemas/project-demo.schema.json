@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://construct.dev/schemas/project-demo.schema.json",
+  "title": "Construct project demo plug-in manifest",
+  "description": "Schema for .cx/demos/<name>.project.json — a project-defined demo plug-in scaffolded by `construct demo init --from-project`. Declares a project-local demo and the chat-guided script + terminal tape it ships with. Project runtime state; gitignored in consuming projects.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "name", "title", "project", "script"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to the JSON Schema for this file."
+    },
+    "schema": {
+      "type": "string",
+      "description": "Schema identifier and version for this manifest.",
+      "const": "construct/project-demo/1"
+    },
+    "name": {
+      "type": "string",
+      "description": "Demo id (matches the scaffolded file basename).",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable demo title.",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "description": "One-line description of what the demo walks through."
+    },
+    "project": {
+      "type": "string",
+      "description": "The host project name this demo belongs to, seeded from real project signals (.cx/context.json, package.json, or directory name).",
+      "minLength": 1
+    },
+    "script": {
+      "type": "string",
+      "description": "Repo-relative path to the chat-guided demo script under .cx/demos/scripts/.",
+      "pattern": "^\\.cx/demos/scripts/.+\\.json$"
+    },
+    "tape": {
+      "type": "string",
+      "description": "Repo-relative path to the terminal VHS tape stub under .cx/demos/tapes/."
+    },
+    "fallbackSurface": {
+      "type": "string",
+      "description": "Surface to fall back to when chat is unavailable.",
+      "enum": ["tape", "playwright"],
+      "default": "tape"
+    },
+    "createdAt": {
+      "type": "string",
+      "description": "ISO-8601 timestamp the scaffold was written.",
+      "format": "date-time"
+    }
+  }
+}

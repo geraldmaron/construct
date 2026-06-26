@@ -111,6 +111,7 @@ construct demo <list|init|record|name> [--surface=chat|web|tape] [--format=gif|m
 | `--format=<f>` | gif (default) | mp4 | webm (tape surface only) |
 | `--out=<path>` | Output path (tape recording) |
 | `--from=<t>` | Template for init: quickstart | diagram |
+| `--from-project` | init: scaffold a project demo plug-in under .cx/demos/ |
 | `--source-only` | Tape: write .tape only; skip recording |
 
 ## construct diagram
