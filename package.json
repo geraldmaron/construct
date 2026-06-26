@@ -65,6 +65,7 @@
     "lint:comments": "node ./bin/construct lint:comments",
     "lint:contracts": "node ./bin/construct lint:contracts",
     "lint:agents": "node ./bin/construct lint:agents",
+    "certify:demos": "node ./bin/construct certify demos",
     "build:sea": "esbuild bin/construct --bundle --platform=node --target=node20 --packages=external --outfile=dist/construct-bundle.cjs 2>&1 || (echo 'esbuild not found — install with: npm install -g esbuild' && exit 1)",
     "examples:deck": "node scripts/generate-deck-examples.mjs",
     "examples:distribution": "node scripts/generate-distribution-examples.mjs",
