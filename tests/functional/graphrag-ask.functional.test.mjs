@@ -98,7 +98,7 @@ test('knowledge_graph_ask is registered as an MCP tool', async () => {
     // The context-budget tool gateway exposes only core tools flat; the long
     // tail is reachable through the construct_call dispatcher, so a registered
     // tool is either in the flat list or in the dispatcher's enum.
-    const dispatchable = tools.find((t) => t.name === 'construct_call')?.inputSchema?.properties?.tool?.enum || [];
+    const dispatchable = tools.find((t) => t.name === 'call')?.inputSchema?.properties?.tool?.enum || [];
     assert.ok(
       names.includes('knowledge_graph_ask') || dispatchable.includes('knowledge_graph_ask'),
       'knowledge_graph_ask must be registered (flat or via construct_call)',

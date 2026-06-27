@@ -48,7 +48,7 @@ test('every registered MCP tool has a doc entry', () => {
 
 test('no doc entry references a tool that is no longer registered', () => {
   const registered = new Set(registeredToolNames());
-  registered.add('construct_call'); // the gateway tool — documented, not a catalog entry
+  registered.add('call'); // the gateway tool — documented, not a catalog entry
   const stale = documentedToolNames().filter((name) => !registered.has(name));
   assert.equal(stale.length, 0, `stale MCP-tool doc entries: ${stale.join(', ')}`);
 });

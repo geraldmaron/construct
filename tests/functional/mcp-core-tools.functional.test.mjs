@@ -101,7 +101,7 @@ test('Construct MCP stdio server: core surface + per-tool round-trip + construct
     for (const core of CORE_TOOLS) {
       assert.ok(names.includes(core), `core tool ${core} must be exposed in tools/list`);
     }
-    assert.ok(names.includes('construct_call'), 'construct_call meta-tool must be exposed');
+    assert.ok(names.includes('call'), 'construct_call meta-tool must be exposed');
 
     for (const core of CORE_TOOLS) {
       const callId = ++id;

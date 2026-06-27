@@ -73,13 +73,14 @@ test('a host drives construct over MCP: skills, templates, and specialist routin
   // gateway's enum, not as flat entries.
   const { tools } = await client.listTools();
   const names = new Set(tools.map((x) => x.name));
-  const gateway = tools.find((x) => x.name === 'construct_call');
+  const gateway = tools.find((x) => x.name === 'call');
   const reachable = new Set(gateway?.inputSchema?.properties?.tool?.enum ?? []);
   for (const core of ['get_skill', 'orchestration_policy']) {
     assert.ok(names.has(core), `MCP server must expose core tool ${core} flat`);
   }
-  for (const deferred of ['list_skills', 'get_template', 'agent_contract']) {
-    assert.ok(reachable.has(deferred), `MCP server must keep ${deferred} reachable via construct_call`);
+  assert.ok(names.has('get_template'), 'get_template is a flat core tool');
+  for (const deferred of ['list_skills', 'agent_contract']) {
+    assert.ok(reachable.has(deferred), `MCP server must keep ${deferred} reachable via the call gateway`);
   }
 
   // Skills are discoverable + loadable, and the load is audited.

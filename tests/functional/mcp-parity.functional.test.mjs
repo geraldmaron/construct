@@ -86,7 +86,7 @@ test('the PR #67 scope/learning tools are reachable through the construct_call g
   // name through construct_call's enum, not as flat tools/list entries.
   await withServer(async (send) => {
     const list = await send('tools/list', {});
-    const gateway = list.result.tools.find((t) => t.name === 'construct_call');
+    const gateway = list.result.tools.find((t) => t.name === 'call');
     assert.ok(gateway, 'construct_call gateway is exposed');
     const reachable = new Set(gateway.inputSchema?.properties?.tool?.enum ?? []);
     for (const expected of [
