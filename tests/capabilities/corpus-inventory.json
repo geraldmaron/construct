@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-26T22:08:05.813Z",
+  "generatedAt": "2026-06-27T05:04:13.159Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 535,
-    "topLevelTestFiles": 296,
-    "nestedTestFiles": 239,
+    "testFiles": 541,
+    "topLevelTestFiles": 300,
+    "nestedTestFiles": 241,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 24,
     "byLayer": {
-      "unit": 337,
+      "unit": 341,
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
-      "functional": 159
+      "functional": 161
     },
     "byCategory": {
-      "unit": 298,
+      "unit": 302,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
       "visual": 7,
       "integration": 21,
-      "functional": 159,
+      "functional": 161,
       "hook": 9
     }
   },
@@ -437,12 +437,28 @@
       "maintainerNotes": "tests/certification/status.test.mjs — certification status rollup."
     },
     {
+      "path": "tests/chat-activity-ticker.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/chat-activity-ticker.test.mjs — in-turn activity zone footprint contract."
+    },
+    {
       "path": "tests/chat-evidence.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "chat-evidence.test.mjs — Provenance verdict regression coverage."
+    },
+    {
+      "path": "tests/chat-markdown-render.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/chat-markdown-render.test.mjs — chat markdown facelift contract."
     },
     {
       "path": "tests/ci-parity.test.mjs",
@@ -1643,6 +1659,14 @@
       "maintainerNotes": "cli-catalog-parity.functional.test.mjs — every handler in bin/construct"
     },
     {
+      "path": "tests/functional/cli-clickable-links.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/cli-clickable-links.functional.test.mjs — end-to-end link contract."
+    },
+    {
       "path": "tests/functional/cli-help-safety.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1875,6 +1899,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/execution-policy.functional.test.mjs — the live policy wiring"
+    },
+    {
+      "path": "tests/functional/find-tool.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/find-tool.functional.test.mjs"
     },
     {
       "path": "tests/functional/graphrag-ask.functional.test.mjs",
@@ -2310,7 +2342,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/profile-lifecycle.functional.test.mjs — Profile lifecycle."
+      "maintainerNotes": "tests/functional/profile-lifecycle.functional.test.mjs — Scope lifecycle."
     },
     {
       "path": "tests/functional/profile-ux-preview.functional.test.mjs",
@@ -2318,7 +2350,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/profile-ux-preview.functional.test.mjs. Mutating profile"
+      "maintainerNotes": "tests/functional/profile-ux-preview.functional.test.mjs. Mutating scope"
     },
     {
       "path": "tests/functional/project-parity.functional.test.mjs",
@@ -3128,7 +3160,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/mcp-profile-tools.test.mjs — Contract tests for lib/mcp/tools/profile.mjs."
+      "maintainerNotes": "tests/mcp-profile-tools.test.mjs — Contract tests for lib/mcp/tools/scope.mjs."
     },
     {
       "path": "tests/mcp-protocol-health.test.mjs",
@@ -4227,6 +4259,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/tracking-surfaces.test.mjs — unit coverage for lib/tracking-surfaces.mjs."
+    },
+    {
+      "path": "tests/ui-links.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/ui-links.test.mjs — contract for lib/ui/links.mjs, the shared OSC-8 layer."
+    },
+    {
+      "path": "tests/ui-theme.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/ui-theme.test.mjs — contract for lib/ui/theme.mjs semantic palette."
     },
     {
       "path": "tests/uninstall.test.mjs",
