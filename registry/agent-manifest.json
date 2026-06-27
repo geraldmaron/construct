@@ -23,6 +23,10 @@
         "use": "Fetch a role or domain skill playbook by id."
       },
       {
+        "name": "get_template",
+        "use": "Read a doc template (prd, adr, runbook, ...) by name before authoring an artifact."
+      },
+      {
         "name": "search_skills",
         "use": "Find relevant skills by query."
       },
@@ -41,10 +45,34 @@
       {
         "name": "summarize_diff",
         "use": "Summarize a code diff for review or handoff."
+      },
+      {
+        "name": "author_artifact",
+        "use": "Materialize a typed artifact you drafted (PRD/ADR/RFC/…) and run the release gate."
+      },
+      {
+        "name": "document_export",
+        "use": "Convert a markdown file to PDF/DOCX/HTML/deck and write it to a path."
+      },
+      {
+        "name": "publish_run",
+        "use": "Run the publish pipeline to export an artifact (figures and demos optional)."
+      },
+      {
+        "name": "artifact_workflow",
+        "use": "Plan a manifest-backed artifact workflow; validate or export locally."
+      },
+      {
+        "name": "workflow_invoke",
+        "use": "Invoke an embedded Construct workflow (prd-draft, architecture-review, …)."
+      },
+      {
+        "name": "triage_recommend",
+        "use": "Recommend intake triage — type, owner, and routing — for a new signal."
       }
     ],
     "longTail": {
-      "tool": "construct_call",
+      "tool": "call",
       "use": "Invoke any non-core Construct tool by name: put the tool name in `tool` and its arguments in `args`. The tool's description carries the compact catalog of available names.",
       "rationale": "One dispatcher reuses the same handlers, so collapsing the surface costs no capability — every tool stays reachable by name. The manifest deliberately does not enumerate the full tool list; the live catalog lives in the construct_call enum in lib/mcp/server.mjs."
     }

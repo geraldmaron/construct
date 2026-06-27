@@ -15,10 +15,10 @@ Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code,
 
 ## Tool surface (gateway)
 
-To keep the serialized tool schema small enough for any context window — a flat 71-tool surface (~10.6k tokens) overran a 32k local-model window — `ListTools` exposes only a **curated core** (`orchestration_policy`, `get_skill`, `search_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`) plus the `construct_call` **gateway**. Every other tool below stays reachable through `construct_call`.
+To keep the serialized tool schema small enough for any context window — a flat 71-tool surface (~10.6k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway**. The core front-loads the read/think tools (`orchestration_policy`, `get_skill`, `get_template`, `search_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `workflow_invoke`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool below stays reachable through `call`.
 
-### `construct_call`
-Invoke any non-core Construct tool by name. Pass the tool name in `tool` (constrained to the catalog of available tools) and its arguments in `args` — e.g. `construct_call({ tool: "workflow_status", args: { run_id } })`. Dispatches to the same handler as a direct call, so collapsing the surface costs no capability.
+### `call`
+Invoke any non-core Construct tool by name. Pass the tool name in `tool` (constrained to the catalog of available tools) and its arguments in `args` — e.g. `call({ tool: "workflow_status", args: { run_id } })`. Dispatches to the same handler as a direct call, so collapsing the surface costs no capability. The former name `construct_call` (and any `construct-mcp_`-prefixed tool name) is recovered tolerantly and the miss is recorded, so a stale or mis-typed name still resolves.
 
 ## Host wiring policy
 
@@ -674,6 +674,21 @@ List Construct sandboxes under `~/.cx/sandboxes/` (id, path, createdAt). Use to 
 _No parameters._
 
 ## Embedded contract tools
+
+### `author_artifact`
+
+Materializes a typed artifact you have drafted (PRD, ADR, RFC, meta-prd, runbook,
+research-brief, evidence-brief) to its canonical path and runs the release gate.
+The calling agent is the model: it drafts the markdown, this tool persists and
+validates it, then returns the path and a structured PASS/FAIL verdict with errors
+so the draft can be fixed and re-submitted. The opencode-reachable equivalent of
+the native chat `/loop` author pass.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `draft_markdown` | string | The complete artifact markdown — a single `#` title plus the type's required `##` sections. |
+| `artifact_type` | string | Artifact type (defaults to `prd`; inferred from `subject` when omitted). |
+| `subject` | string | Short subject/title hint used for the filename and type inference. |
 
 ### `artifact_workflow`
 

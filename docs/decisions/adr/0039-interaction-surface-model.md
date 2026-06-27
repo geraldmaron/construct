@@ -210,6 +210,14 @@ truth, there is no data migration to unwind and no external contract to break.
 - ADR-0033 (platform capability registry — the declarative, non-destructive precedent)
 - ADR-0038 / ADR-0032 (small-surface discipline applied to prompts/models)
 
+## Amendment (2026-06-27) — action tools join the flat core; gateway renamed `call`
+
+The tier (a) agent/MCP surface kept only read/think tools flat (`orchestration_policy`, `get_skill`, …) and collapsed everything else — including every *action* tool — behind the `construct_call` gateway. Field evidence showed this made the common case the failing case: agents (capable models included) could classify and read but not *act*, because the act tools were unreachable and the host-prefixed gateway name `construct-mcp_construct_call` was mis-typed (e.g. `construct-mcp_call`). Three corrections, preserving the small-surface discipline:
+
+- **High-value action tools are now flat core** alongside the read/think tools: `author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `workflow_invoke`, `triage_recommend`. Core is 14 tools; the genuinely rare/internal long tail stays behind the gateway. The token-budget guard (`< 6000`) still holds.
+- **The gateway is renamed `construct_call` → `call`** so the host-prefixed name is `construct-mcp_call` — the form agents actually guess. `construct_call` remains a tolerated alias.
+- **Dispatch is tolerant and observed**: an unknown name that is a gateway alias or a known tool wearing the `construct-mcp_` prefix is recovered, and every miss is recorded (`.cx/observations/tool-name-misses.jsonl`) so the discoverability gap is measurable (`lib/mcp/tool-recovery.mjs`). Host-layer rejections that never reach the server are tracked as a follow-up.
+
 ## Amendment (2026-06-25) — tier (d) Dashboard retired
 
 The **(d) Dashboard** tier is retired (`construct-m7k2-web-deprecation`). The HTTP daemon (`lib/server/`) and the Next.js cockpit (`apps/dashboard/`) are deleted; Construct is CLI/terminal-first. Visual, telemetry, and observability now surface through the thin human CLI (`construct status`, `construct doctor`, `construct oracle`) with `--json` twins for scripting, and through external telemetry backends (OpenTelemetry / Langfuse) configured via `CONSTRUCT_TELEMETRY_URL`. The surviving tiers are **(a) agent / MCP-native**, **(b) thin human CLI**, **(c) TUI / terminal chat**, and **(internal)**. The forward rule "new visual capability lands on the dashboard first" no longer applies — visual capability lands on the thin CLI (`--json`) or an external telemetry backend. Surface-map entries that named the dashboard tier are reclassified in `lib/registry/surface-map.mjs` as remediation lands (`construct-596m`).

@@ -59,10 +59,10 @@ headers and non-managed agents are explicitly preserved on merge.
 | `mcp.<your-server>` | user | Preserved on merge |
 | `provider.*` (npm/name/baseURL) | Construct | Regenerated from the registry |
 | `provider.openrouter` attribution headers (`HTTP-Referer`, `X-Title`) | Construct | Real constants from the registry — no `__placeholder__` |
-| `provider.*.options.headers.Authorization` | user | Preserved on merge (your API keys are never overwritten) |
+| `provider.*.options.headers.Authorization` | user | Preserved on merge — **except** an unresolved `op://`/`__placeholder__` ref, which `op run` cannot resolve inside config JSON; it is stripped so it can't override the working env-ref key and 401 OpenRouter |
 | `provider.openrouter.models` | shared | The registry's curated `:free` models are seeded; any models you add are preserved |
 | `provider.anthropic.models` | Construct (derived) | Derived from tier definitions; your custom entries preserved |
-| `plugin[]` (construct-fallback) | Construct | Regenerated |
+| `plugin[]` (construct-fallback) | Construct | Seeded; the array is normalized on write — deduped, with non-existent file paths and stray non-path tokens dropped |
 | `small_model` | Construct (cost) | **Seeded only when absent**; never overrides your choice |
 | `model` | user | Never written |
 | `share`, `autoupdate`, `enabled_providers` | user | Never written |
@@ -77,7 +77,15 @@ writes the result — it does not regenerate the file wholesale:
   current write set is deleted; everything else is left alone. So a user-authored
   agent survives untouched.
 - **Providers** merge: the registry definition is spread in, but an existing
-  `Authorization` header and any user-added models are merged back over it.
+  `Authorization` header and any user-added models are merged back over it. The
+  one exception is an *unresolved secret reference* (`op://…` or `__PLACEHOLDER__`)
+  in a credential field: `op run` only resolves the launch env-file, never config
+  JSON, so such a value would be sent verbatim and override the working key. It is
+  treated as no-auth — the broken header is stripped and the provider falls back to
+  `{env:OPENROUTER_API_KEY}`.
+- **The `plugin[]` array** is normalized on every write: deduped, with entries that
+  look like file paths but no longer exist (stale checkout locations) and stray
+  non-path tokens dropped, so a drifted entry can't break plugin loading.
 - **MCP servers** are only rewritten when the existing entry still carries a
   `__placeholder__`, has a transport mismatch, or is missing — otherwise the
   existing entry stands.
