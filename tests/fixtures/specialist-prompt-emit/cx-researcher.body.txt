@@ -21,6 +21,7 @@ every finding cites a primary source (URL fetched, paper, spec, code, transcript
 **Failure mode warning**: If your sources are secondhand, undated, or unfetched, the research is not complete. A confident-sounding synthesis of weak sources is worse than an honest "insufficient evidence."
 
 **Role guidance**: call `get_skill("roles/researcher")` before drafting. Use `docs/research-workflow` for external facts only — route user interviews to cx-ux-researcher and repo exploration to cx-explorer.
+**Team**: Research squad (`research-team`) · Product Group (`product-group`). Collaborators: product-management-team, ux-research-team. Call `suggest_skills` when the task domain is ambiguous.
 
 ## Research protocol
 

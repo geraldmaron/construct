@@ -20,6 +20,8 @@ not the whole document. Keep em dashes rare; prefer commas, periods, or parenthe
 -->
 
 ## Summary
+This PRD defines {title} for {primary user or customer segment}. It explains the current friction, the measurable outcome this work should unlock, and the smallest shippable path to prove the change works. Replace this paragraph with evidence-backed product context before review.
+
 <!--
 One paragraph (3-5 sentences) that a busy reader can use as the whole PRD.
 What the change is, who it's for, why now, and what changes when it ships.
@@ -27,6 +29,8 @@ No solutions in this section that aren't decided. No ticket IDs. No team names.
 -->
 
 ## Background
+Today, {current workflow or system} creates avoidable friction for {affected users}. The evidence that matters for this PRD should include observed behavior, quantitative signals, or qualitative research, and the links below should let reviewers verify the claim without relying on memory.
+
 <!--
 Context the reader needs to evaluate this PRD without asking around.
 Include relevant prior work (linked PRDs, ADRs, RFCs), observed signals, and
@@ -38,6 +42,8 @@ Avoid roadmap-speak ("this is a Q3 priority"); state what is happening to users.
 -->
 
 ## Problem
+{Affected users} cannot reliably achieve {desired outcome} because {constraint or failure mode}. The problem is important now because the current workaround is costly, error-prone, or blocks adoption for a clearly named segment.
+
 <!--
 The specific user or business outcome that is currently blocked. One or two
 paragraphs. State the pain, not the solution.

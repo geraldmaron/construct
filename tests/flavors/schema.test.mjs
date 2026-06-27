@@ -3,7 +3,7 @@
  *
  * Every file in skills/roles/ must:
  *   - Have parseable frontmatter
- *   - Declare profiles: [...] (non-empty)
+ *   - Declare scopes: [...] (non-empty)
  *   - Declare cap: 1
  *   - Pass the validator with no errors
  *
@@ -47,11 +47,11 @@ test('listAllFlavors returns 50+ entries after migration', () => {
   assert.ok(all.length >= 50, `only ${all.length} overlays parseable`);
 });
 
-test('every overlay declares profiles and cap', () => {
+test('every overlay declares scopes and cap', () => {
   for (const entry of listAllFlavors()) {
     assert.ok(
-      Array.isArray(entry.frontmatter.profiles) && entry.frontmatter.profiles.length > 0,
-      `${entry.file} missing profiles`,
+      Array.isArray(entry.frontmatter.scopes) && entry.frontmatter.scopes.length > 0,
+      `${entry.file} missing scopes`,
     );
     assert.equal(entry.frontmatter.cap, 1, `${entry.file} cap != 1`);
   }

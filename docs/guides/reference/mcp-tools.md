@@ -296,12 +296,14 @@ The intake, task-graph, and worker plane are surfaced through the `construct int
 ### `list_teams`
 Lists all available team templates with members, focus, and promotion gates.
 
-### `get_team`
-Returns the full definition of a named team template.
+### `suggest_skills`
+Ranks skills from the central catalog for a natural-language intent.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `name` | string | Yes | Team template name (e.g. `feature`, `incident`, `architecture`) |
+| `intent` | string | Yes | Task description or keywords |
+| `specialistId` | string | No | Optional cx-* id for entitlement hints |
+| `limit` | number | No | Max suggestions |
 
 ---
 
@@ -589,7 +591,7 @@ Per-profile health rollup over a window: observation count, per-role outcome run
 | `window_days` | number | Window in days (default 30). |
 
 ### `scope_create`
-Scaffold a draft org profile under `.cx/profiles/draft-<id>/` (requirements.md + profile.json + persona stubs + department charters). Writes durable state — requires `confirm=true`. For curated catalog work, follow `docs/guides/concepts/scope-lifecycle.md` after creation.
+Scaffold a draft org profile under `.cx/profiles/draft-<id>/` (requirements.md + profile.json + persona stubs + department charters). Writes durable state — requires `confirm=true`. For curated catalog work, follow `docs/guides/concepts/profile-lifecycle.md` after creation.
 
 | Parameter | Type | Description |
 |---|---|---|

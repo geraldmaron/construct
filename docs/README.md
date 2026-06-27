@@ -39,13 +39,14 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 - [Style](./STYLE.md). Voice, punctuation, structure rules (canonical reference for prose lint)
 - [Branding](./guides/reference/branding.md). Visual identity, naming, voice, tone, and profile terminology
 - [Learning loops](./guides/concepts/learning-loops.mdx). What is wired vs aspirational across A1-A4
-- [Profile lifecycle](./guides/concepts/scope-lifecycle.md). Draft → promote → archive flow for org-type profiles
+- [Profile lifecycle](./guides/concepts/profile-lifecycle.md). Draft → promote → archive flow for org-type profiles
 - [Persona and skill research](./guides/concepts/persona-research.md). Methodology grounded in Goodwin, Cooper, Galbraith STAR, Bloom
 - [Release policy](./operations/maintenance/release-policy.md). When to tag
 - [Release and deploy automation](./operations/maintenance/release-and-deploy.md). What fires when you tag, plus the failure-mode lookup
 - [Templates and role anti-patterns](../templates/docs/README.md)
 - [Runbooks](./operations/runbooks/)
 - [ADRs](./decisions/adr/). Architecture decision records (public site lane)
+- [PRD platform artifacts](./prd-platform/README.md). Draft and certified platform PRDs
 - [Skills](../skills/). Domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
 - [Functional tests pattern](../tests/functional/README.md). When and how to add an end-to-end test
 
@@ -122,7 +123,7 @@ Parallel work rule: one writer per file. If multiple agent or harness sessions a
 > Narrative docs index — this table is regenerated from `registry/capabilities.json`.
 > Run `npm run docs:sync` after catalog changes. Do not hand-edit inside the AUTO markers.
 
-Catalog census: 129 CLI commands, 38 npm scripts, 10 embedded workflows.
+Catalog census: 128 CLI commands, 43 npm scripts, 10 embedded workflows.
 
 | Capability | Criticality | CLI surface | Verification |
 |---|---|---|---|

@@ -38,13 +38,13 @@ test('config round-trips through the project file and merges defaults', () => {
   try {
     const before = loadChatConfig({ cwd });
     assert.equal(before.config.permissionMode, 'allow_once');
-    assert.equal(before.config.layers.thinking, true);
+    assert.equal(before.config.layers.thinking, false);
 
-    saveChatConfig({ ...before.config, model: 'openrouter/foo', layers: { ...before.config.layers, tools: false } }, { cwd });
+    saveChatConfig({ ...before.config, modelMode: 'pinned', model: 'openrouter/foo', layers: { ...before.config.layers, tools: false } }, { cwd });
     const after = loadChatConfig({ cwd });
     assert.equal(after.config.model, 'openrouter/foo');
     assert.equal(after.config.layers.tools, false);
-    assert.equal(after.config.layers.thinking, true, 'unset layers keep defaults');
+    assert.equal(after.config.layers.thinking, false, 'unset layers keep defaults');
     assert.ok(fs.existsSync(path.join(cwd, '.cx', 'chat-config.json')));
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });

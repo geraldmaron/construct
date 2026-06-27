@@ -70,7 +70,7 @@ const CI_ONLY_SUBCOMMANDS = [
   'lint:comments',
   'lint:agents',
   'lint:contracts',
-  'lint:profiles',
+  'lint:scopes',
   'lint:templates',
   'evals',
   'gates:audit',
@@ -95,7 +95,7 @@ test('every check stripped from local hooks is still covered by some CI job', ()
   // from the local hooks. Each gated subcommand should appear in
   // .github/workflows/ci.yml in one of:
   //   - `bin/construct <sub>`   — most construct subcommands
-  //   - `npm run <sub>`         — lint:profiles (script alias)
+  //   - `npm run <sub>`         — lint:scopes (script alias)
   //   - `scripts/<file>.mjs`    — lint:templates (CI runs the underlying
   //                               script directly via lint-commits-pr.mjs)
   // Exceptions: doctor (developer-facing diagnostic, not a CI gate).

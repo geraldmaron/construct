@@ -76,6 +76,7 @@ describe('prepareIntakeForIngestedFile', () => {
     assert.ok(entry.triage, 'triage block present');
     assert.equal(entry.triage.intakeType, 'incident', 'incident keywords (latency spike, outage) win the classification');
     assert.equal(entry.triage.primaryOwner, 'sre');
+    assert.equal(entry.triage.researchProfile, 'codebase');
     assert.ok(Array.isArray(entry.triage.recommendedChain));
   });
 

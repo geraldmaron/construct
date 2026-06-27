@@ -1,16 +1,16 @@
 /**
  * tests/test-registry-fixtures.mjs — Test fixtures extracted from unified registry.
  *
- * Provides test-friendly exports from specialists/unified-registry.json
+ * Provides test-friendly exports from specialists/org
  * so test files don't need to directly reference deleted legacy files.
  *
  * Usage:
  *   import { registry, specialists, contracts, policies, teams } from './test-registry-fixtures.mjs'
  */
 
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadRegistry } from '../lib/registry/loader.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -19,9 +19,7 @@ let _cached = null;
 function load() {
   if (_cached) return _cached;
   
-  const registryPath = path.join(ROOT_DIR, 'specialists', 'unified-registry.json');
-  const content = fs.readFileSync(registryPath, 'utf8');
-  const registry = JSON.parse(content);
+  const registry = loadRegistry({ rootDir: ROOT_DIR });
   
   _cached = {
     registry,
@@ -54,7 +52,7 @@ export function getSpecialists() {
 export function getContracts() {
   // Return legacy shape for backward compatibility
   return {
-    contracts: Object.values(load().registry.contracts || [])
+    contracts: Object.values(load().registry.contracts || {})
   };
 }
 

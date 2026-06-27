@@ -38,6 +38,19 @@ the number of tenants migrated off the shared ledger over two release cycles.
 | Reconciliation isolation | shared ledger | per-tenant |
 | Invoice p95 latency | 420ms | ≤450ms |
 
+## Requirements
+
+The billing service must write tenant-scoped ledger entries and expose a
+reconciliation API that rejects cross-tenant reads by construction. Migration
+must preserve invoice correctness during cutover and keep operator rollback
+within the current deployment window.
+
+## Acceptance criteria
+
+- Given a tenant-scoped reconciliation request, the job reads only that tenant's ledger.
+- Given a cutover dry run, any double-bill delta blocks the migration for that tenant.
+- Given a single-tenant workspace, invoice latency remains within the stated target.
+
 ## User flow
 
 \`\`\`mermaid
@@ -45,6 +58,13 @@ flowchart LR
   A[Usage event] --> B[Tenant ledger]
   B --> C[Invoice]
 \`\`\`
+
+## Phases
+
+Phase 1 introduces tenant-scoped ledger writes behind a feature flag and proves
+reconciliation parity in shadow mode. Phase 2 migrates eligible tenants in
+batches, with rollback held at the tenant level rather than the full billing
+service.
 
 ## Risks and mitigations
 

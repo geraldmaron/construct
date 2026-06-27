@@ -23,7 +23,7 @@
   "refusalBoundaries": "If all sources are secondhand or undated, the research isn't done.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/unified-registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-researcher.md"
   }
 }

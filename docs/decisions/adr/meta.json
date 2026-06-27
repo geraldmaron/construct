@@ -36,6 +36,8 @@
     "0042-llm-credential-resolution",
     "0043-oracle-meta-controller",
     "0044-tool-repo-root-layout",
-    "0045-config-scope-docs-taxonomy-intake"
+    "0045-config-scope-docs-taxonomy-intake",
+    "0046-modular-org-runtime-merge",
+    "0047-specialist-vs-flavor-model"
   ]
 }

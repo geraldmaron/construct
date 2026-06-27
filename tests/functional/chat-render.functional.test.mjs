@@ -52,8 +52,8 @@ test('renderer labels every channel and respects NO_COLOR', async () => {
 
   await renderTurn({ driver: fakeDriver(SAMPLE), text: 'hi', layers, output: out.stream, colors, env });
 
-  assert.ok(out.text.includes('THINKING'), 'thinking labeled');
-  assert.ok(out.text.includes('TOOLS'), 'tool labeled');
+  assert.ok(out.text.includes('reasoning:'), 'thinking labeled');
+  assert.ok(out.text.includes('using tools'), 'tool labeled');
   assert.ok(out.text.includes('construct'), 'assistant text labeled');
   assert.ok(out.text.includes('final answer'));
   assert.ok(!/\u001b\[/.test(out.text), 'no ANSI escapes under NO_COLOR');

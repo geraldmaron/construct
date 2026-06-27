@@ -9,7 +9,7 @@ import { checkGraphStaleness, GRAPH_SEED_FILES } from '../../lib/graph/staleness
 
 test('GRAPH_SEED_FILES lists registry contracts and workflow defs', () => {
   assert.ok(GRAPH_SEED_FILES.includes('registry/capabilities.json'));
-  assert.ok(GRAPH_SEED_FILES.includes('specialists/unified-registry.json'));
+  assert.ok(GRAPH_SEED_FILES.includes('specialists/org'));
 });
 
 test('checkGraphStaleness reports absent graph without throwing', () => {

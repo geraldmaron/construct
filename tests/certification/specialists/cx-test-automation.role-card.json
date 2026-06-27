@@ -18,7 +18,7 @@
   "refusalBoundaries": "If the test suite has never caught a production bug, the tests are testing the wrong things.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/unified-registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-test-automation.md"
   }
 }

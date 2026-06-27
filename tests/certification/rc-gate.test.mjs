@@ -29,11 +29,11 @@ test('runReleaseCandidateGate fails when a release capability is stale', async (
   for (const rel of [
     'tests/capabilities/ledger.json',
     'tests/certification/scenarios/catalog.json',
-    'specialists/unified-registry.json',
     'package.json',
   ]) {
     fs.copyFileSync(path.join(REPO, rel), path.join(root, rel));
   }
+  fs.cpSync(path.join(REPO, 'specialists', 'org'), path.join(root, 'specialists', 'org'), { recursive: true });
   applyStaleImpact({ rootDir: root, changedFiles: ['lib/artifact-release-gate.mjs'] });
   const result = await runReleaseCandidateGate({ rootDir: root, runHermetic: false });
   assert.equal(result.pass, false);

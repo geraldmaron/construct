@@ -19,7 +19,7 @@ as of 2026-06-26:
 | 2 | Team-aware orchestration routing | **Complete** | `construct-iwfz.5`; `tests/orchestration-policy-team-routing.test.mjs` |
 | 3 | Contract team boundaries | **Complete** | `construct-iwfz.6`; `tests/contracts-team-boundaries.test.mjs` (ava→node:test port in `construct-m7k2-fix-tests`) |
 | 4 | Policy ownership, team fence intersection | **Complete** | `construct-iwfz.7`; `tests/functional/team-aware-fence.functional.test.mjs`, `tests/policy-engine.test.mjs` |
-| 5 | Oracle team health oversight | **Partial** | `cross-team-handoff-blocked` + `team-understaffed` in `tests/functional/oracle-synthesis.functional.test.mjs` (`construct-iwfz.8`); MCP `list_teams`/`get_team` fixed (`construct-m7k2-mcp-audit`). **Open:** optional swarm dispatch when `involvedTeams.length > 1` (`construct-m7k2.7`). No dashboard team-health UI — signals surface via `construct oracle` and MCP read tools. |
+| 5 | Oracle team health oversight | **Partial** | `cross-team-handoff-blocked` + `team-understaffed` in `tests/functional/oracle-synthesis.functional.test.mjs` (`construct-iwfz.8`); MCP `list_teams`/`suggest_skills` fixed (`construct-m7k2-mcp-audit`). **Open:** optional swarm dispatch when `involvedTeams.length > 1` (`construct-m7k2.7`). No dashboard team-health UI — signals surface via `construct oracle` and MCP read tools. |
 | 6 | Registry CLI tooling + docs | **Partial** | Handlers exist (`registry:diff/prune`, `team add/remove`, `specialist add/remove`; `construct-iwfz.9`). **Gap:** no dedicated `tests/registry-lifecycle.test.mjs` on disk; user docs updated in `docs/guides/concepts/teams.md`. |
 
 The `construct-iwfz` epic is closed; remaining Phase 5/6 gaps are tracked under `construct-m7k2.7`

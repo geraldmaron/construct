@@ -3,7 +3,7 @@
  *
  * Validates:
  * - routeRequest returns teamRouting with primaryTeam, involvedTeams, requiredApprovals, escalationPath
- * - Team membership is resolved from specialists/unified-registry.json
+ * - Team membership is resolved from specialists/org
  * - Blocked decisions are detected when a team has that decision in forbiddenDecisions
  * - Escalation paths are properly concatenated from team escalationPath arrays
  */
@@ -108,8 +108,8 @@ test('routeRequest with architecture request includes appropriate teams', () => 
 
 test('INTENT_TO_TEAM maps every intent class to a known team (RFC-0004 §2)', () => {
   const knownTeams = new Set([
-    'product-group', 'engineering-group', 'quality-group',
-    'governance-group', 'operations-group', 'strategy-group',
+    'product-team', 'engineering-team', 'quality-team',
+    'governance-team', 'operations-team', 'strategy-team',
   ]);
   for (const intent of Object.values(INTENT_CLASSES)) {
     const team = INTENT_TO_TEAM[intent];
@@ -141,11 +141,11 @@ test('teamRouting.primaryTeam is intent-driven and matches INTENT_TO_TEAM', () =
 });
 
 test('a forbidden decision returns blockedStatus with an escalation path', () => {
-  // engineering-group owns implementation but forbids deployment-timing.
+  // engineering-team owns implementation but forbids deployment-timing.
   const route = routeRequest({ request: 'implement the change and decide the deployment timing' });
-  assert.equal(route.teamRouting.primaryTeam, 'engineering-group');
+  assert.equal(route.teamRouting.primaryTeam, 'engineering-team');
   assert.ok(route.teamRouting.blockedStatus, 'a forbidden decision must produce a blockedStatus');
-  assert.equal(route.teamRouting.blockedStatus.team, 'engineering-group');
+  assert.equal(route.teamRouting.blockedStatus.team, 'engineering-team');
   assert.ok(
     route.teamRouting.blockedStatus.forbiddenDecisions.includes('deployment-timing'),
     'blocked decision must name deployment-timing',

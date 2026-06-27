@@ -240,12 +240,12 @@ async function cmdStatus() {
   // to "is this thing actually learning?" without remembering a second
   // command. Cheap: just reads .cx/observations + .cx/outcomes summaries.
   try {
-    const { resolveActiveProfile } = await import('../lib/profiles/loader.mjs');
+    const { resolveActiveScope } = await import('../lib/scopes/loader.mjs');
     const { readSummary } = await import('../lib/outcomes/aggregate.mjs');
     const fs = await import('node:fs');
     const path = await import('node:path');
     const cwd = process.cwd();
-    const active = resolveActiveProfile(cwd);
+    const active = resolveActiveScope(cwd);
     const obsIdxPath = path.join(cwd, '.cx', 'observations', 'index.json');
     let obsTotal = 0;
     let obs24h = 0;
@@ -2087,7 +2087,7 @@ function printActiveConfig() {
 }
 
 async function printIntakeHelp() {
-  const { getRebrand } = await import('../lib/profiles/rebrand.mjs');
+  const { getRebrand } = await import('../lib/scopes/rebrand.mjs');
   const { intakeQueueLabel, signalNoun } = getRebrand(process.cwd());
   println(`Construct intake — inspect and process the ${intakeQueueLabel}.`);
   println('');
@@ -2205,7 +2205,7 @@ async function cmdIntake(args) {
   }
 
   const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
-  const { getRebrand } = await import('../lib/profiles/rebrand.mjs');
+  const { getRebrand } = await import('../lib/scopes/rebrand.mjs');
   const cwd = process.cwd();
   const rebrand = getRebrand(cwd);
   const queue = createIntakeQueue(cwd, process.env);
@@ -4795,14 +4795,15 @@ async function cmdLintResearch() {
 }
 
 async function cmdLintAgents() {
-  const { validateRegistryFile } = await import('../lib/specialists/schema.mjs');
-  const registryPath = path.join(ROOT_DIR, 'specialists', 'unified-registry.json');
-  const { errors, agentCount } = validateRegistryFile({ registryPath, rootDir: ROOT_DIR });
+  const { validateRegistry } = await import('../lib/specialists/schema.mjs');
+  const { loadRegistry } = await import('../lib/registry/loader.mjs');
+  const registry = loadRegistry({ rootDir: ROOT_DIR, skipValidation: true });
+  const { errors, agentCount } = validateRegistry(registry, { rootDir: ROOT_DIR });
   if (errors.length === 0) {
-    console.log(`specialists/unified-registry.json: 0 errors`);
+    console.log(`specialists/org: 0 errors`);
     return;
   }
-  console.error(`specialists/unified-registry.json: ${errors.length} error(s)`);
+  console.error(`specialists/org: ${errors.length} error(s)`);
   for (const err of errors) console.error(`  ${err}`);
   process.exit(1);
 }
@@ -5156,6 +5157,13 @@ async function cmdCreds(args) {
   if (sub === 'test') {
     const provider = args[1];
     if (!provider) { errorln('Usage: construct creds test <provider>'); process.exit(1); }
+    if (['openrouter', 'anthropic', 'openai'].includes(provider)) {
+      const { probeProviderConnection } = await import('../lib/providers/connection-probe.mjs');
+      const result = await probeProviderConnection(provider, { env: process.env, cwd: process.cwd() });
+      println(`${provider}: ${result.ok ? 'ok' : 'unhealthy'}`);
+      if (result.code) println(`  ${result.code}${result.status ? ` (${result.status})` : ''}`);
+      process.exit(result.ok ? 0 : 1);
+    }
     const { resolveProviders } = await import('../lib/providers/registry.mjs');
     const { providers } = await resolveProviders({ rootDir: ROOT_DIR, env: process.env });
     if (!providers[provider]) { errorln(`Unknown provider: ${provider}`); process.exit(1); }
@@ -6405,18 +6413,18 @@ const handlers = new Map([
     errorln(`Unknown sandbox subcommand: ${sub}. Available: create, list, delete, prune`);
     process.exit(1);
   }],
-  ['profile', async (args) => {
+  ['scope', async (args) => {
     const sub = args[0] || 'show';
-    const { listProfiles, loadProfile, resolveActiveProfile } = await import('../lib/profiles/loader.mjs');
+    const { listScopes, loadScope, resolveActiveScope } = await import('../lib/scopes/loader.mjs');
     if (sub === 'list') {
-      for (const id of listProfiles()) {
-        const p = loadProfile(id);
+      for (const id of listScopes()) {
+        const p = loadScope(id);
         process.stdout.write(`  ${id.padEnd(14)} ${p?.displayName || ''}\n`);
       }
       return;
     }
     if (sub === 'show') {
-      const active = resolveActiveProfile(process.cwd());
+      const active = resolveActiveScope(process.cwd());
       process.stdout.write(JSON.stringify({
         id: active.id,
         displayName: active.displayName,
@@ -6429,12 +6437,12 @@ const handlers = new Map([
     if (sub === 'set') {
       const id = args[1];
       if (!id) {
-        errorln('Usage: construct profile set <id> [--yes] [--dry-run]');
+        errorln('Usage: construct scope set <id> [--yes] [--dry-run]');
         process.exit(1);
       }
-      const target = loadProfile(id);
+      const target = loadScope(id);
       if (!target) {
-        errorln(`Unknown profile: ${id}. Available: ${listProfiles().join(', ')}`);
+        errorln(`Unknown scope: ${id}. Available: ${listScopes().join(', ')}`);
         process.exit(1);
       }
       const skipConfirm = args.includes('--yes') || args.includes('-y') || args.includes('--non-interactive');
@@ -6452,12 +6460,12 @@ const handlers = new Map([
       const cfg = loaded?.raw ? structuredClone(loaded.raw) : { version: 1 };
       if (!cfg.version) cfg.version = 1;
 
-      const currentId = cfg.profile || 'rnd';
+      const currentId = cfg.scope || 'rnd';
       if (currentId === id) {
-        println(`Profile already set to ${id} (${target.displayName}). Nothing to do.`);
+        println(`Scope already set to ${id} (${target.displayName}). Nothing to do.`);
         return;
       }
-      const current = loadProfile(currentId) || { id: currentId, displayName: currentId, roles: [], intake: { types: [], stages: [] }, departments: [] };
+      const current = loadScope(currentId) || { id: currentId, displayName: currentId, roles: [], intake: { types: [], stages: [] }, departments: [] };
 
       // Render a structural diff so the operator sees what loop they are switching into.
       const setDiff = (label, before, after) => {
@@ -6473,7 +6481,7 @@ const handlers = new Map([
       };
 
       println('');
-      println(`About to switch active profile:`);
+      println(`About to switch active scope:`);
       println(`  from:  ${currentId} (${current.displayName})`);
       println(`  to:    ${id} (${target.displayName})`);
       println('');
@@ -6486,10 +6494,10 @@ const handlers = new Map([
       setDiff('departments', cDept, tDept);
       println('');
       println(`Files that will change:`);
-      println(`  ${pathMod.relative(process.cwd(), cfgPath)}  (profile field: ${currentId} -> ${id})`);
+      println(`  ${pathMod.relative(process.cwd(), cfgPath)}  (scope field: ${currentId} -> ${id})`);
       println('');
-      println(`The change only writes the profile field. No specialists are added or removed.`);
-      println(`Sync runs against the new profile on next \`construct sync\`.`);
+      println(`The change only writes the scope field. No specialists are added or removed.`);
+      println(`Sync runs against the new scope on next \`construct sync\`.`);
       println('');
 
       if (dryRun) {
@@ -6499,7 +6507,7 @@ const handlers = new Map([
       if (!skipConfirm && isTTY) {
         const readline = await import('node:readline');
         const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        const answer = await new Promise((res) => rl.question(`Switch profile to ${id}? (Y/n) `, (a) => res(a.trim().toLowerCase())));
+        const answer = await new Promise((res) => rl.question(`Switch scope to ${id}? (Y/n) `, (a) => res(a.trim().toLowerCase())));
         rl.close();
         if (answer && answer !== 'y' && answer !== 'yes') {
           println('Aborted. No config was changed.');
@@ -6507,15 +6515,15 @@ const handlers = new Map([
         }
       }
 
-      cfg.profile = id;
+      cfg.scope = id;
       writeProjectConfig(cfgPath, cfg, { validate: true });
-      process.stdout.write(`✓ profile set to ${id} (${target.displayName})\n`);
+      process.stdout.write(`✓ scope set to ${id} (${target.displayName})\n`);
       return;
     }
     if (sub === 'create') {
       const id = args[1];
       if (!id) {
-        errorln('Usage: construct profile create <id> [--display="..."] [--role=<id>...] [--department=<id>:<displayName>...] [--yes]');
+        errorln('Usage: construct scope create <id> [--display="..."] [--role=<id>...] [--department=<id>:<displayName>...] [--yes]');
         errorln('  Run with no flags for interactive mode; pass --yes to skip the confirmation prompt.');
         process.exit(1);
       }
@@ -6553,8 +6561,8 @@ const handlers = new Map([
         const ask = (q, def = '') => new Promise((res) => rl.question(`${q}${def ? ` [${def}]` : ''} `, (a) => res(a.trim() || def)));
 
         println('');
-        println(`Scaffolding a new profile draft. Three questions, then a preview.`);
-        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/profile-lifecycle.md`);
+        println(`Scaffolding a new scope draft. Three questions, then a preview.`);
+        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/scope-lifecycle.md`);
         println('');
         if (!displayName) displayName = await ask('Display name?', id);
         if (seedDepartments.length === 0) {
@@ -6573,23 +6581,23 @@ const handlers = new Map([
       if (!displayName) displayName = id;
 
       const pathMod = await import('node:path');
-      const draftRoot = pathMod.join(process.cwd(), '.cx', 'profiles', `draft-${id}`);
+      const draftRoot = pathMod.join(process.cwd(), '.cx', 'scopes', `draft-${id}`);
 
       println('');
-      println(`About to scaffold a draft profile:`);
+      println(`About to scaffold a draft scope:`);
       println(`  id:           ${id}`);
       println(`  displayName:  ${displayName}`);
       println(`  departments:  ${seedDepartments.length}${seedDepartments.length ? ` (${seedDepartments.map((d) => d.id).join(', ')})` : ''}`);
       println(`  roles:        ${seedRoles.length}${seedRoles.length ? ` (${seedRoles.join(', ')})` : ''}`);
       println('');
       println(`Files that will be written under ${pathMod.relative(process.cwd(), draftRoot)}/:`);
-      println(`  profile.json                       structural manifest`);
+      println(`  scope.json                         structural manifest`);
       println(`  requirements.md                    research brief naming each cx-* specialist`);
       for (const r of seedRoles) println(`  personas/${r}.md`.padEnd(40) + `  persona artifact (filled during discover)`);
       for (const d of seedDepartments) println(`  departments/${d.id}.md`.padEnd(40) + `  department charter (filled during frame)`);
       println('');
-      println(`Nothing else is touched. No config is changed, no active profile is switched.`);
-      println(`To activate this profile after promotion: construct profile set ${id}`);
+      println(`Nothing else is touched. No config is changed, no active scope is switched.`);
+      println(`To activate this scope after promotion: construct scope set ${id}`);
       println('');
 
       if (dryRun) {
@@ -6607,16 +6615,16 @@ const handlers = new Map([
         }
       }
 
-      const { createDraftProfile } = await import('../lib/profiles/lifecycle.mjs');
+      const { createDraftScope } = await import('../lib/scopes/lifecycle.mjs');
       try {
-        const result = createDraftProfile({ cwd: process.cwd(), id, displayName, seedRoles, seedDepartments });
+        const result = createDraftScope({ cwd: process.cwd(), id, displayName, seedRoles, seedDepartments });
         println('');
         println(`✓ draft created at ${pathMod.relative(process.cwd(), result.dir)}`);
         println('');
-        println(`Next steps (in order, per docs/guides/concepts/profile-lifecycle.md):`);
+        println(`Next steps (in order, per docs/guides/concepts/scope-lifecycle.md):`);
         println(`  1. Discover  (cx-ux-researcher): fill personas/<role>.md from interviews + primary sources.`);
         println(`  2. Frame     (cx-product-manager): fill departments/<dept>.md charters and intake taxonomy.`);
-        println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in profile.json.`);
+        println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in scope.json.`);
         println(`  4. Validate  (cx-evaluator): run persona-eval and classifier-eval against representative signals.`);
         println('');
         println(`Inspect the brief:  open ${pathMod.relative(process.cwd(), result.briefPath)}`);
@@ -6627,11 +6635,11 @@ const handlers = new Map([
       }
     }
     if (sub === 'drafts') {
-      const { listDrafts } = await import('../lib/profiles/lifecycle.mjs');
+      const { listDrafts } = await import('../lib/scopes/lifecycle.mjs');
       const drafts = listDrafts(process.cwd());
       if (drafts.length === 0) { process.stdout.write('  (no drafts)\n'); return; }
       for (const d of drafts) {
-        const flags = [d.hasBrief ? 'brief' : null, d.hasProfile ? 'profile' : null].filter(Boolean).join(', ');
+        const flags = [d.hasBrief ? 'brief' : null, d.hasScope ? 'scope' : null].filter(Boolean).join(', ');
         process.stdout.write(`  ${d.id.padEnd(20)} ${flags}\n`);
       }
       return;
@@ -6641,7 +6649,7 @@ const handlers = new Map([
       const reasonArg = args.find((a) => a.startsWith('--reason='));
       let reason = reasonArg ? reasonArg.split('=')[1] : '';
       if (!id) {
-        errorln('Usage: construct profile archive <id> --reason="..." [--yes] [--dry-run]');
+        errorln('Usage: construct scope archive <id> --reason="..." [--yes] [--dry-run]');
         process.exit(1);
       }
       const skipConfirm = args.includes('--yes') || args.includes('-y') || args.includes('--non-interactive');
@@ -6650,18 +6658,18 @@ const handlers = new Map([
 
       const pathMod = await import('node:path');
       const fsMod = await import('node:fs');
-      const target = loadProfile(id);
+      const target = loadScope(id);
       if (!target) {
-        errorln(`Unknown profile: ${id}. Curated catalog: ${listProfiles().join(', ')}`);
+        errorln(`Unknown scope: ${id}. Curated catalog: ${listScopes().join(', ')}`);
         process.exit(1);
       }
       const fileURL = await import('node:url');
       const moduleDir = pathMod.dirname(fileURL.fileURLToPath(import.meta.url));
       const repoRoot = pathMod.resolve(moduleDir, '..');
-      const srcProfile = pathMod.join(repoRoot, 'profiles', `${id}.json`);
+      const srcScope = pathMod.join(repoRoot, 'specialists', 'org', 'scopes', `${id}.json`);
       const tableRel = typeof target?.intake?.classificationTable === 'string' ? target.intake.classificationTable : null;
       const srcTable = tableRel ? pathMod.join(repoRoot, tableRel) : null;
-      const dstDir = pathMod.join(repoRoot, 'archive', 'profiles', id);
+      const dstDir = pathMod.join(repoRoot, 'archive', 'scopes', id);
 
       // Gather reason interactively if missing. The lifecycle module already
       // enforces a >= 8 char reason, but the operator should see why before
@@ -6678,13 +6686,13 @@ const handlers = new Map([
       }
 
       println('');
-      println(`About to archive curated profile:`);
+      println(`About to archive curated scope:`);
       println(`  id:           ${id}`);
       println(`  displayName:  ${target.displayName || id}`);
       println(`  reason:       ${reason}`);
       println('');
       println(`Files that will move:`);
-      println(`  ${pathMod.relative(process.cwd(), srcProfile)}`);
+      println(`  ${pathMod.relative(process.cwd(), srcScope)}`);
       println(`    -> ${pathMod.relative(process.cwd(), pathMod.join(dstDir, `${id}.json`))}`);
       if (srcTable && fsMod.existsSync(srcTable)) {
         println(`  ${pathMod.relative(process.cwd(), srcTable)}`);
@@ -6695,7 +6703,7 @@ const handlers = new Map([
       println(`What stays:`);
       println(`  Observations under .cx/observations/ are not touched.`);
       println(`  Outcomes under .cx/outcomes/ are not touched.`);
-      println(`  Any project still configured with profile=${id} will fall back to rnd on next load.`);
+      println(`  Any project still configured with scope=${id} will fall back to rnd on next load.`);
       println('');
 
       if (dryRun) {
@@ -6713,9 +6721,9 @@ const handlers = new Map([
         }
       }
 
-      const { archiveProfile } = await import('../lib/profiles/lifecycle.mjs');
+      const { archiveScope } = await import('../lib/scopes/lifecycle.mjs');
       try {
-        const { archived } = archiveProfile({ id, reason });
+        const { archived } = archiveScope({ id, reason });
         process.stdout.write(`✓ archived ${id} to ${pathMod.relative(process.cwd(), archived)}\n`);
         return;
       } catch (err) {
@@ -6725,15 +6733,15 @@ const handlers = new Map([
     }
     if (sub === 'health') {
       const id = args[1];
-      if (!id) { errorln('Usage: construct profile health <id> [--days=N]'); process.exit(1); }
+      if (!id) { errorln('Usage: construct scope health <id> [--days=N]'); process.exit(1); }
       const daysArg = args.find((a) => a.startsWith('--days='));
       const windowDays = daysArg ? Number(daysArg.split('=')[1]) || 30 : 30;
-      const { profileHealth } = await import('../lib/profiles/lifecycle.mjs');
-      const report = profileHealth(process.cwd(), id, { windowDays });
+      const { scopeHealth } = await import('../lib/scopes/lifecycle.mjs');
+      const report = scopeHealth(process.cwd(), id, { windowDays });
       process.stdout.write(JSON.stringify(report, null, 2) + '\n');
       return;
     }
-    errorln(`Unknown profile subcommand: ${sub}. Available: list, show, set, create, drafts, archive, health`);
+    errorln(`Unknown scope subcommand: ${sub}. Available: list, show, set, create, drafts, archive, health`);
     process.exit(1);
   }],
 ]);

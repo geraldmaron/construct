@@ -10,6 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 import {
@@ -147,8 +148,14 @@ test('Forbidden decisions are mutually exclusive with decision rights', (t) => {
 });
 
 test('recordTeamDecision creates decision record', (t) => {
-  // This test verifies the function signature and basic functionality
+  // Verify the function signature and basic record shape.
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-team-decisions-'));
+  const previous = process.env.CONSTRUCT_ROLES_ROOT;
+  process.env.CONSTRUCT_ROLES_ROOT = root;
   const decision = recordTeamDecision('design-approval', 'product-group', 'approved', { issue: 'construct-123' });
+  if (previous == null) delete process.env.CONSTRUCT_ROLES_ROOT;
+  else process.env.CONSTRUCT_ROLES_ROOT = previous;
+  fs.rmSync(root, { recursive: true, force: true });
   
   assert.ok(decision.ts, 'Decision should have timestamp');
   assert.strictEqual(decision.decisionId, 'design-approval');
@@ -158,7 +165,13 @@ test('recordTeamDecision creates decision record', (t) => {
 });
 
 test('recordForbiddenDecision creates forbidden decision record', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-team-decisions-'));
+  const previous = process.env.CONSTRUCT_ROLES_ROOT;
+  process.env.CONSTRUCT_ROLES_ROOT = root;
   const decision = recordForbiddenDecision('deployment', 'product-group', 'Not authorized for ops decisions', { trigger: 'policy-gate' });
+  if (previous == null) delete process.env.CONSTRUCT_ROLES_ROOT;
+  else process.env.CONSTRUCT_ROLES_ROOT = previous;
+  fs.rmSync(root, { recursive: true, force: true });
   
   assert.ok(decision.ts, 'Decision should have timestamp');
   assert.strictEqual(decision.type, 'forbidden-decision');

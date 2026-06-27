@@ -72,7 +72,7 @@ test('handleOpenRouterFailure picks next model when poll returns candidates', as
     });
     assert.ok(result);
     assert.equal(result.modelId, 'openrouter/qwen/qwen3-coder:free');
-    assert.match(result.notice, /Switched to/);
+    assert.match(result.notice, /Using qwen\/qwen3-coder:free for this session/);
   } finally {
     global.fetch = original;
     delete process.env.OPENROUTER_API_KEY;

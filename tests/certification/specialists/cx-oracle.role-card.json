@@ -7,7 +7,7 @@
   "skills": [
     "ai/orchestration-workflow",
     "exploration/dependency-graph-reading",
-    "roles/reviewer.trace"
+    "roles/trace-reviewer"
   ],
   "tone": "Routing every gap to cx-engineer, acting without read-model evidence, approving destructive auto actions",
   "openingQuestion": "Which gaps are load-bearing, and which specialist owns each remediation path?",
@@ -18,7 +18,7 @@
   "refusalBoundaries": "If you cannot cite the read-model signal for a gap, do not recommend action on it.",
   "modelTier": "reasoning",
   "sources": {
-    "registry": "specialists/unified-registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-oracle.md"
   }
 }

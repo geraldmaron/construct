@@ -1,7 +1,7 @@
 /**
  * tests/registry-phase-1-4.test.mjs — RFC-0004 Phase 1.4 honest-completion acceptance.
  *
- * Phase 1.4 made the unified registry (specialists/unified-registry.json) the
+ * Phase 1.4 made the unified registry (specialists/org) the
  * single source of truth: runtime consumers read it via lib/registry/loader.mjs,
  * the legacy registry files were removed, and `registry:validate --unified` gates
  * its invariants. This test pins that acceptance so the migration cannot silently
@@ -67,10 +67,11 @@ function minimalValidRegistry() {
   };
 }
 
-function writeFixture(registry, overlay) {
+function writeFixture({ overlay, mutate } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-reg-1-4-'));
   fs.mkdirSync(path.join(dir, 'specialists'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'specialists', 'unified-registry.json'), JSON.stringify(registry, null, 2) + '\n');
+  fs.cpSync(path.join(ROOT_DIR, 'specialists', 'org'), path.join(dir, 'specialists', 'org'), { recursive: true });
+  if (mutate) mutate(dir);
   if (overlay) {
     fs.mkdirSync(path.join(dir, '.cx'), { recursive: true });
     fs.writeFileSync(path.join(dir, '.cx', 'unified-registry.json'), JSON.stringify(overlay, null, 2) + '\n');
@@ -80,8 +81,8 @@ function writeFixture(registry, overlay) {
 
 describe('RFC-0004 Phase 1.4 — unified registry honest completion', () => {
   it('(a) the real unified registry exists and validates clean', async () => {
-    const canonical = path.join(ROOT_DIR, 'specialists', 'unified-registry.json');
-    assert.ok(fs.existsSync(canonical), 'specialists/unified-registry.json must exist');
+    const canonical = path.join(ROOT_DIR, 'specialists', 'org');
+    assert.ok(fs.existsSync(canonical), 'specialists/org must exist');
 
     const { code, out, err } = await runValidate(['--unified'], ROOT_DIR);
     assert.equal(code, 0, `validate --unified should exit 0 on the real registry\nstderr:\n${err}`);
@@ -108,6 +109,7 @@ describe('RFC-0004 Phase 1.4 — unified registry honest completion', () => {
       'lib', 'bin', 'scripts',
       '--glob', '!*.test.*',
       '--glob', '!*migrate*',
+      '--glob', '!lib/registry/retired-paths.mjs',
       '--glob', '!lib/migrations/**',
     ], { cwd: ROOT_DIR, encoding: 'utf-8' });
 
@@ -126,20 +128,27 @@ describe('RFC-0004 Phase 1.4 — unified registry honest completion', () => {
     assert.ok(direct.errors.some((e) => e.id === 'team-no-owner-specialist'));
     assert.ok(direct.errors.some((e) => e.id === 'contract-unknown-producer'));
 
-    const dir = writeFixture(broken);
+    const dir = writeFixture({
+      mutate: (fixtureDir) => {
+        const file = path.join(fixtureDir, 'specialists', 'org', 'specialists', 'cx-engineer.json');
+        const specialist = JSON.parse(fs.readFileSync(file, 'utf8'));
+        specialist.team = 'missing-team';
+        specialist.teamId = 'missing-team';
+        fs.writeFileSync(file, JSON.stringify(specialist, null, 2) + '\n');
+      },
+    });
     try {
       const { code, err } = await runValidate(['--unified'], dir);
       assert.equal(code, 1, 'validate --unified must exit 1 on an invalid registry');
-      assert.match(err, /Unified registry invalid/);
+      assert.match(err, /Cannot assemble registry|Unified registry invalid/);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
 
   it('(d) a .cx/unified-registry.json overlay merges, overlay winning', async () => {
-    const base = minimalValidRegistry();
-    const overlay = { specialists: { 'cx-spec-a': { modelTier: 'reasoning' } } };
-    const dir = writeFixture(base, overlay);
+    const overlay = { specialists: { 'cx-engineer': { modelTier: 'reasoning' } } };
+    const dir = writeFixture({ overlay });
     try {
       const { code, out } = await runValidate(['--unified', '--json'], dir);
       assert.equal(code, 0, 'overlaid registry should still validate clean');

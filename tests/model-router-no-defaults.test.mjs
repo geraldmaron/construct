@@ -15,6 +15,7 @@ import {
   resolveExecutionContractModelMetadata,
   applyFreePreferenceToTierSet,
 } from '../lib/model-router.mjs';
+import { loadRegistry } from '../lib/registry/loader.mjs';
 
 function tempFile() {
   return path.join(os.tmpdir(), `cx-router-nodef-${Date.now()}-${Math.random().toString(36).slice(2)}.env`);
@@ -61,9 +62,8 @@ test('applyFreePreferenceToTierSet does not invent a model when neither tierSet 
   assert.equal(resolved.fast, null);
 });
 
-test('shipped specialists/unified-registry.json has no preselected primaries', () => {
-  const registryPath = path.resolve(new URL('.', import.meta.url).pathname, '../specialists/unified-registry.json');
-  const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+test('shipped specialists/org has no preselected primaries', () => {
+  const registry = loadRegistry({ rootDir: process.cwd() });
   for (const tier of ['reasoning', 'standard', 'fast']) {
     assert.equal(registry.models?.[tier]?.primary ?? null, null, `tier ${tier} ships with a primary — should be null`);
   }

@@ -17,7 +17,7 @@
   "refusalBoundaries": "If every finding is LOW severity, you're reading the spec without using the product.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/unified-registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-accessibility.md"
   }
 }

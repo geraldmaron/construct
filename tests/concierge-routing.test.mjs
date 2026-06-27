@@ -26,6 +26,7 @@ import {
   alignmentFindings,
 } from "../lib/workflow-state.mjs";
 import { routeRequest } from "../lib/orchestration-policy.mjs";
+import { loadRegistry } from "../lib/registry/loader.mjs";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -165,9 +166,7 @@ describe("dispatch plan persistence", () => {
 
 describe("registry: internal agent isolation", () => {
   it("all agents in registry have internal:true", async () => {
-     const { createRequire } = await import("node:module");
-     const require = createRequire(import.meta.url);
-     const registry = require("../specialists/unified-registry.json");
+     const registry = loadRegistry({ rootDir: join(import.meta.dirname, "..") });
 
      const exposed = Object.values(registry.specialists).filter((a) => a.role !== "orchestrator" && !a.internal);
      assert.deepEqual(
@@ -178,9 +177,7 @@ describe("registry: internal agent isolation", () => {
    });
 
   it("only construct persona exists and is not internal", async () => {
-    const { createRequire } = await import("node:module");
-    const require = createRequire(import.meta.url);
-    const registry = require("../specialists/unified-registry.json");
+    const registry = loadRegistry({ rootDir: join(import.meta.dirname, "..") });
 
     const orch = Object.values(registry.specialists || {}).find((s) => s.role === "orchestrator");
     assert.ok(orch, "Expected specialist with role=orchestrator");

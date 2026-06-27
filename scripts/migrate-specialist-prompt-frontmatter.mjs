@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/migrate-specialist-prompt-frontmatter.mjs — bulk-wrap legacy specialist
- * prompts with hybrid frontmatter from specialists/registry.json (ADR-0037 phase 2).
+ * prompts with hybrid frontmatter from specialists/org (ADR-0037 phase 2).
  *
  * Emit-neutral: preserves each prompt body byte-for-byte (plus trailing newline).
  * Writes golden body fixtures under tests/fixtures/specialist-prompt-emit/.
@@ -14,12 +14,13 @@ import { fileURLToPath } from 'node:url';
 
 import { convertLegacyPromptFile } from '../lib/specialists/scaffold.mjs';
 import { readPromptBody } from '../lib/prompt-composer.js';
+import { loadRegistry } from '../lib/registry/loader.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const writeGoldens = process.argv.includes('--write-goldens');
 
-const registry = JSON.parse(fs.readFileSync(path.join(ROOT, 'specialists', 'registry.json'), 'utf8'));
-const agents = registry.specialists || [];
+const registry = loadRegistry({ rootDir: ROOT });
+const agents = Object.values(registry.specialists || {});
 
 let converted = 0;
 let skipped = 0;

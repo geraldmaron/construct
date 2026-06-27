@@ -21,7 +21,7 @@
   "refusalBoundaries": "If you haven't written a test case where the model should fail gracefully, you haven't tested the model.",
   "modelTier": "reasoning",
   "sources": {
-    "registry": "specialists/unified-registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-ai-engineer.md"
   }
 }

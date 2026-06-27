@@ -20,6 +20,7 @@ test('cxTrace includes execution-contract model metadata parity', async (t) => {
     try { fs.rmSync(homeDir, { recursive: true, force: true }); } catch {}
   });
 
+  fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(rootDir, 'specialists', 'org'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, 'agents', 'prompts'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({
     models: {
@@ -102,6 +103,7 @@ test('projectContext exposes tracker-plus-plan public-health fields', async (t) 
     try { fs.rmSync(homeDir, { recursive: true, force: true }); } catch {}
   });
 
+  fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(rootDir, 'specialists', 'org'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, '.cx'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, 'agents', 'prompts'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({
@@ -151,6 +153,7 @@ test('status and MCP surfaces agree on public-health metadata presence semantics
     try { fs.rmSync(homeDir, { recursive: true, force: true }); } catch {}
   });
 
+  fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(rootDir, 'specialists', 'org'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, '.cx'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, 'agents'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'package.json'), JSON.stringify({ name: 'construct', version: '1.0.0' }, null, 2));

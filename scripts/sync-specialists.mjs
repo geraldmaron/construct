@@ -31,6 +31,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { fileURLToPath } from "node:url";
 import { generateCompletions } from "../lib/completions.mjs";
 import {
   buildCodexMcpEntry,
@@ -64,9 +65,11 @@ import { resolveTiersForPrimary, resolveCapabilityTier, selectLocalEditorModel }
 import { stampFrontmatter } from "../lib/doc-stamp.mjs";
 import { buildSkillFrontmatter, stripLeadingFrontmatter } from "../lib/sync/skill-frontmatter.mjs";
 import { loadRegistry, clearCache } from "../lib/registry/loader.mjs";
+import { loadPluginRegistry } from "../lib/plugin-registry.mjs";
 
 const home = os.homedir();
 const root = path.resolve(import.meta.dirname, "..");
+const isMain = process.argv[1] ? path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) : false;
 
 const mergedEnv = loadConstructEnv({ rootDir: root, homeDir: home, env: process.env });
 for (const [key, value] of Object.entries(mergedEnv)) {
@@ -474,6 +477,96 @@ function resolveArgs(args) {
   return args.map((a) => (typeof a === "string"
     ? a.replace(/__([A-Z0-9_]+)__/g, (_, name) => process.env[name] ?? `__${name}__`)
     : a));
+}
+
+function resolveTemplateStrings(value) {
+  if (typeof value === "string") {
+    return value.replace(/__([A-Z0-9_]+)__/g, (_, name) => {
+      if (process.env[name] !== undefined && process.env[name] !== "") return process.env[name];
+      if (name === "CX_TOOLKIT_DIR") return root;
+      if (name === "MEMORY_PORT") return process.env.MEMORY_PORT || "8765";
+      if (name === "CONSTRUCT_MEMORY_BRIDGE_URL") {
+        return process.env.CONSTRUCT_MEMORY_BRIDGE_URL || "http://127.0.0.1:8765/";
+      }
+      if (name === "GITHUB_TOKEN" && process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
+        return process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+      }
+      if (/(?:TOKEN|SECRET|API_KEY|PUBLIC_KEY|PRIVATE_KEY)$/.test(name)) {
+        return `{env:${name}}`;
+      }
+      return `__${name}__`;
+    });
+  }
+  if (Array.isArray(value)) return value.map((item) => resolveTemplateStrings(item));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, resolveTemplateStrings(item)]));
+  }
+  return value;
+}
+
+function constructMcpDefinition() {
+  return {
+    id: "construct-mcp",
+    name: "Construct MCP",
+    category: "core",
+    description: "Construct stdio MCP server for orchestration, skills, templates, and project context.",
+    command: "node",
+    args: ["__CX_TOOLKIT_DIR__/lib/mcp/server.mjs"],
+    env: {
+      CONSTRUCT_TRACE_BACKEND: "__CONSTRUCT_TRACE_BACKEND__",
+      CONSTRUCT_TELEMETRY_URL: "__CONSTRUCT_TELEMETRY_URL__",
+      CONSTRUCT_TELEMETRY_PUBLIC_KEY: "__CONSTRUCT_TELEMETRY_PUBLIC_KEY__",
+      CONSTRUCT_TELEMETRY_SECRET_KEY: "__CONSTRUCT_TELEMETRY_SECRET_KEY__",
+    },
+    requiredEnv: [],
+    setupModes: ["auto"],
+    hostSupport: {
+      claude: { mode: "managed" },
+      opencode: { mode: "managed" },
+      codex: { mode: "managed" },
+    },
+    usedBy: ["construct"],
+  };
+}
+
+function managedMcpDefs() {
+  const pluginRegistry = loadPluginRegistry({ cwd: root, homeDir: home, rootDir: root, env: process.env });
+  const defs = Object.fromEntries(
+    (pluginRegistry.mcps ?? []).map((mcp) => [mcp.id, {
+      type: mcp.type,
+      url: mcp.url,
+      command: mcp.command,
+      args: mcp.args,
+      env: mcp.env,
+      headers: mcp.headers,
+      hostSupport: mcp.hostSupport,
+      category: mcp.category,
+    }]),
+  );
+  defs["construct-mcp"] = constructMcpDefinition();
+  return { ...defs, ...(registry.mcpServers ?? {}) };
+}
+
+function scopedManagedMcpDefs({ projectScope = false } = {}) {
+  const defs = managedMcpDefs();
+  if (!projectScope) return defs;
+  return Object.fromEntries(
+    Object.entries(defs).filter(([id]) => PROJECT_DEFAULT_MCP_IDS.has(id)),
+  );
+}
+
+function mergeMissingObjectDefaults(current, defaults) {
+  if (Array.isArray(defaults)) {
+    return current === undefined ? [...defaults] : current;
+  }
+  if (!defaults || typeof defaults !== "object") {
+    return current === undefined ? defaults : current;
+  }
+  const next = current && typeof current === "object" && !Array.isArray(current) ? { ...current } : {};
+  for (const [key, value] of Object.entries(defaults)) {
+    next[key] = mergeMissingObjectDefaults(next[key], value);
+  }
+  return next;
 }
 
 function extractFallbackChain(tierDef) {
@@ -964,12 +1057,6 @@ function filterGlobalClaudeHooks(hooksJson) {
 
 function syncGlobalClaudeMcpServers(settings, registryMcp) {
   settings.mcpServers ??= {};
-  for (const id of Object.keys(settings.mcpServers)) {
-    if (id in registryMcp && !GLOBAL_CLAUDE_MCP_IDS.has(id)) {
-      delete settings.mcpServers[id];
-    }
-  }
-
   for (const [id, mcpDef] of Object.entries(registryMcp)) {
     if (!GLOBAL_CLAUDE_MCP_IDS.has(id)) continue;
     const existingEntry = settings.mcpServers[id];
@@ -1023,7 +1110,7 @@ function writeProjectClaudeSettings(targetDir) {
   // Claude Code as the only selected tool without the construct config. Merge the
   // registry on top of the template seed; existing entries win so user edits stick,
   // and buildClaudeMcpEntry resolves each server's path/env.
-  const registryMcp = registry.mcpServers ?? {};
+  const registryMcp = scopedManagedMcpDefs({ projectScope: true });
   existing.mcpServers ??= {};
   for (const [id, mcpDef] of Object.entries(registryMcp)) {
     if (existing.mcpServers[id]) continue;
@@ -1101,7 +1188,7 @@ ${personaList}
           settings.hooks = JSON.parse(hookStr);
         }
       }
-      const registryMcp = registry.mcpServers ?? {};
+      const registryMcp = scopedManagedMcpDefs({ projectScope: false });
       syncGlobalClaudeMcpServers(settings, registryMcp);
       if (!DRY_RUN) fs.writeFileSync(claudeSettingsPath, JSON.stringify(settings, null, 2) + "\n");
     }
@@ -1179,7 +1266,7 @@ function syncCodex(entries, targetDir = null, wants = true) {
     : getCodexConfigPath(home);
   const existing = removeDanglingConstructMcpMarkers(removeDanglingConstructMcpTimeouts(readCodexConfig(configPath)));
   const entryNames = writeEntries.map(adapterName);
-  const registryMcp = registry.mcpServers ?? {};
+  const registryMcp = scopedManagedMcpDefs({ projectScope: Boolean(targetDir) });
   // Seed every supported MCP server (parity with Claude/OpenCode/VS Code/Cursor),
   // not just tables already present — otherwise Codex never receives `construct-mcp`
   // and the orchestration tool is unreachable there. existingMcpIds still drives
@@ -1329,7 +1416,7 @@ function getVSCodeUserMcpPaths() {
 }
 
 function syncVSCode(targetDir = null, wants = true) {
-  const registryMcp = registry.mcpServers ?? {};
+  const registryMcp = scopedManagedMcpDefs({ projectScope: Boolean(targetDir) });
   if (Object.keys(registryMcp).length === 0) return false;
 
   // Project scope writes a dedicated `.vscode/mcp.json` (VS Code's documented
@@ -1413,7 +1500,7 @@ function syncVSCode(targetDir = null, wants = true) {
 // --- Cursor adapter ---
 
 function syncCursor(targetDir = null, wants = true) {
-  const registryMcp = registry.mcpServers ?? {};
+  const registryMcp = scopedManagedMcpDefs({ projectScope: Boolean(targetDir) });
   if (Object.keys(registryMcp).length === 0) return false;
 
   const cursorDir = targetDir
@@ -1611,15 +1698,71 @@ function syncOpencode(entries, targetDir = null, wants = true) {
 
   const writeEntries = globalEntries(entries);
 
+  const hadExistingConfig = fs.existsSync(configPath);
   const { config } = targetDir
-    ? { config: fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath, "utf8")) : {} }
+    ? { config: hadExistingConfig ? JSON.parse(fs.readFileSync(configPath, "utf8")) : {} }
     : readOpenCodeConfig();
+  const opencodeTemplatePath = path.join(root, "platforms", "opencode", "config.template.json");
+  const opencodeTemplate = fs.existsSync(opencodeTemplatePath)
+    ? JSON.parse(fs.readFileSync(opencodeTemplatePath, "utf8"))
+    : {};
   if (!config.agent) config.agent = {};
+  if (!config.mcp) config.mcp = {};
   if (!Array.isArray(config.plugin)) config.plugin = [];
   config.plugin = config.plugin.filter((entry) => {
     if (typeof entry !== "string") return true;
     return entry !== managedPluginPath && entry !== toolkitPluginPath;
   });
+
+  if (opencodeTemplate.$schema && !config.$schema) config.$schema = opencodeTemplate.$schema;
+  if (opencodeTemplate.model && !config.model && !config.defaultModel && !hadExistingConfig) {
+    config.model = opencodeTemplate.model;
+  }
+  if (Array.isArray(opencodeTemplate.enabled_providers) && !Array.isArray(config.enabled_providers)) {
+    config.enabled_providers = [...opencodeTemplate.enabled_providers];
+  }
+  if (opencodeTemplate.provider && typeof opencodeTemplate.provider === "object") {
+    config.provider ??= {};
+    for (const [id, providerDef] of Object.entries(opencodeTemplate.provider)) {
+      config.provider[id] = mergeMissingObjectDefaults(config.provider[id], resolveTemplateStrings(providerDef));
+    }
+  }
+  if (config.provider?.ollama?.options?.headers?.Authorization === "Bearer ollama") {
+    delete config.provider.ollama.options.headers.Authorization;
+    if (Object.keys(config.provider.ollama.options.headers).length === 0) {
+      delete config.provider.ollama.options.headers;
+    }
+  }
+
+  const templateMcp = opencodeTemplate.mcp && typeof opencodeTemplate.mcp === "object"
+    ? resolveTemplateStrings(opencodeTemplate.mcp)
+    : {};
+  for (const [id, entry] of Object.entries(templateMcp)) {
+    if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
+    if (!config.mcp[id]) config.mcp[id] = entry;
+  }
+  if (config.mcp["construct-mcp"]) {
+    config.mcp["construct-mcp"] = templateMcp["construct-mcp"] ?? config.mcp["construct-mcp"];
+  }
+
+  const memoryBridgeEntry = buildOpenCodeMcpEntry("memory", {
+    command: "node",
+    args: ["__CX_TOOLKIT_DIR__/lib/mcp/memory-bridge.mjs"],
+    env: { CONSTRUCT_MEMORY_BRIDGE_URL: "__CONSTRUCT_MEMORY_BRIDGE_URL__" },
+  }, {
+    ...process.env,
+    CONSTRUCT_MEMORY_BRIDGE_URL:
+      config.mcp.memory?.url
+      || config.mcp.cass?.url
+      || process.env.CONSTRUCT_MEMORY_BRIDGE_URL
+      || "http://127.0.0.1:8765/",
+  }).entry;
+  const staleMemoryRemote = config.mcp.memory && (config.mcp.memory.type === "remote" || config.mcp.memory.type === "http");
+  const staleCassRemote = config.mcp.cass && (config.mcp.cass.type === "remote" || config.mcp.cass.type === "http");
+  if (staleMemoryRemote || staleCassRemote) {
+    config.mcp.memory = memoryBridgeEntry;
+    delete config.mcp.cass;
+  }
 
   // Sync providers
   const registryProviders = registry.providers ?? {};
@@ -1633,8 +1776,10 @@ function syncOpencode(entries, targetDir = null, wants = true) {
         ...providerDef,
         options: {
           ...providerDef.options,
+          ...existing.options,
           headers: {
             ...providerDef.options?.headers,
+            ...existing.options?.headers,
             ...(existingAuth ? { Authorization: existingAuth } : {}),
           },
         },
@@ -1673,7 +1818,7 @@ function syncOpencode(entries, targetDir = null, wants = true) {
   }
 
   // Sync MCP servers
-  const registryMcp = registry.mcpServers ?? {};
+  const registryMcp = scopedManagedMcpDefs({ projectScope: Boolean(targetDir) });
   if (Object.keys(registryMcp).length > 0) {
     if (!config.mcp) config.mcp = {};
     for (const [id, mcpDef] of Object.entries(registryMcp)) {
@@ -1983,6 +2128,7 @@ function syncSkills(targetDir = null) {
 
 // --- Main ---
 
+if (isMain) {
 const entries = buildEntries();
 
 if (COMPRESS_PERSONAS) {
@@ -2074,4 +2220,5 @@ try {
   }
 } finally {
   releaseLock();
+}
 }

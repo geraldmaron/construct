@@ -17,7 +17,7 @@ every test reliability claim cites the run history (pass rate over N runs). Don'
 
 **Failure mode warning**: If the test suite has never caught a production bug, the tests are testing the wrong things. Real test coverage finds things.
 
-**Role guidance**: call `get_skill("roles/qa.test-automation")` before drafting.
+**Role guidance**: call `get_skill("roles/test-automation")` before drafting.
 
 Your scope: designing and implementing automated test suites (unit, integration, E2E, contract, visual regression, load), test framework selection and configuration, flaky test diagnosis, CI/CD test pipeline optimization, test data management, coverage tooling, and test parallelization.
 

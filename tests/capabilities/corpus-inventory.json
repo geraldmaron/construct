@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-26T05:16:54.392Z",
+  "generatedAt": "2026-06-26T22:08:05.813Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 531,
+    "testFiles": 535,
     "topLevelTestFiles": 296,
-    "nestedTestFiles": 235,
+    "nestedTestFiles": 239,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 24,
     "byLayer": {
-      "unit": 335,
+      "unit": 337,
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
-      "functional": 157
+      "functional": 159
     },
     "byCategory": {
-      "unit": 296,
+      "unit": 298,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
       "visual": 7,
       "integration": 21,
-      "functional": 157,
+      "functional": 159,
       "hook": 9
     }
   },
@@ -562,7 +562,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/contracts-coverage.test.mjs — every specialist in specialists/unified-registry.json"
+      "maintainerNotes": "tests/contracts-coverage.test.mjs — every specialist in specialists/org"
     },
     {
       "path": "tests/contracts-postconditions.test.mjs",
@@ -1609,6 +1609,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/chat-turn-present.functional.test.mjs — turn summary formatting."
+    },
+    {
+      "path": "tests/functional/chat-visual-live-anthropic.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/chat-visual-live-anthropic.functional.test.mjs — opt-in live depth tests."
+    },
+    {
+      "path": "tests/functional/chat-visual-suite.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/chat-visual-suite.functional.test.mjs — hermetic visual stages."
     },
     {
       "path": "tests/functional/claude-orchestration-prompt.functional.test.mjs",
@@ -3667,6 +3683,14 @@
       "maintainerNotes": "tests/providers-contract.test.mjs — provider contract + registry tests."
     },
     {
+      "path": "tests/providers/connection-probe.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/connection-probe.test.mjs — hermetic LLM provider credential probe."
+    },
+    {
       "path": "tests/providers/creds.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4251,6 +4275,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/vector-client.test.mjs — tests for lib/storage/vector-client.mjs"
+    },
+    {
+      "path": "tests/visual/depth-rubric.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/visual/depth-rubric.test.mjs — unit tests for output-depth scoring."
     },
     {
       "path": "tests/wireframe.test.mjs",

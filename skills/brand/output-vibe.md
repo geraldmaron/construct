@@ -1,6 +1,8 @@
 ---
 name: brand-output-vibe
 description: Use when drafting or exporting customer-facing artifacts (PRD, deck, brief, runbook). Sets typography, prose rhythm, sketch diagrams, and export consistency.
+inputs: [artifact-draft, export-target]
+artifactType: style-guide
 ---
 
 # Output vibe (construct-modern)

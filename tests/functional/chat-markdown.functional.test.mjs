@@ -17,8 +17,8 @@ test('parseMarkdownLines handles headings, lists, and code fences', () => {
 test('parseMarkdownLines renders pipe tables as aligned rows', () => {
   const md = '| A | B |\n| --- | --- |\n| 1 | 2 |';
   const parts = parseMarkdownLines(md, { width: 40 });
-  const rows = parts.filter((p) => p.type === 'paragraph' && p.text.includes('|'));
-  assert.ok(rows.length >= 1);
+  assert.ok(parts.some((p) => p.type === 'bullet' && p.text === 'A: B'));
+  assert.ok(parts.some((p) => p.type === 'bullet' && p.text === '1: 2'));
 });
 
 test('markdownToPlain never throws on odd input', () => {

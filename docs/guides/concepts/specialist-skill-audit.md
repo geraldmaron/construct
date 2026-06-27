@@ -85,7 +85,7 @@ Generated: 2026-06-19T05:15:50.476Z. Re-run `construct audit specialists --json`
 | roles/reviewer.devil-advocate | strong | — |
 | roles/reviewer.evaluator | strong | — |
 | roles/reviewer | strong | — |
-| roles/reviewer.trace | strong | — |
+| roles/trace-reviewer | strong | — |
 | roles/security.ai | strong | — |
 | roles/security.appsec | strong | — |
 | roles/security.cloud | strong | — |

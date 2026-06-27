@@ -3,7 +3,7 @@
  *
  * @capability orchestration.routing
  *
- * Operations profile teams resolve at headhunt time — incident objectives
+ * Operations scope teams resolve at headhunt time — incident objectives
  * recommend reliability-team instead of unified-registry engineering-group ids.
  */
 
@@ -20,7 +20,7 @@ function tempDir(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
-test('operations profile headhunt recommends reliability-team for incident objectives', async (t) => {
+test('operations scope headhunt recommends reliability-team for incident objectives', async (t) => {
   const cwd = tempDir('headhunt-profile-ops-');
   t.after(() => {
     try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {}
@@ -28,7 +28,7 @@ test('operations profile headhunt recommends reliability-team for incident objec
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(
     path.join(cwd, 'construct.config.json'),
-    `${JSON.stringify({ profile: 'operations' }, null, 2)}\n`,
+    `${JSON.stringify({ scope: 'operations' }, null, 2)}\n`,
     'utf8',
   );
 
@@ -38,18 +38,18 @@ test('operations profile headhunt recommends reliability-team for incident objec
     homeDir: tempDir('headhunt-profile-home-'),
   });
 
-  assert.equal(result.overlay.recommendedTeam, 'reliability-team');
-  assert.equal(result.overlay.teamFocus, 'reliability-team');
-  assert.equal(result.overlay.profileTeamSource, 'operations');
+  assert.equal(result.overlay.recommendedTeam, 'operations-team');
+  assert.equal(result.overlay.teamFocus, 'operations-team');
+  assert.equal(result.overlay.scopeTeamSource, 'operations');
 
   const route = routeRequest({
     cwd,
     request: 'investigate production outage and draft runbook',
   });
-  assert.equal(route.teamRouting.primaryTeam, 'reliability-team');
+  assert.equal(route.teamRouting.primaryTeam, 'operations-team');
 });
 
-test('operations profile routes implementation intent to delivery-team', (t) => {
+test('operations scope routes implementation intent to engineering-team', (t) => {
   const cwd = tempDir('headhunt-profile-delivery-');
   t.after(() => {
     try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {}
@@ -57,7 +57,7 @@ test('operations profile routes implementation intent to delivery-team', (t) => 
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(
     path.join(cwd, 'construct.config.json'),
-    `${JSON.stringify({ profile: 'operations' }, null, 2)}\n`,
+    `${JSON.stringify({ scope: 'operations' }, null, 2)}\n`,
     'utf8',
   );
 
@@ -65,6 +65,6 @@ test('operations profile routes implementation intent to delivery-team', (t) => 
     cwd,
     request: 'implement the queue retry fix and add regression tests',
   });
-  assert.equal(route.teamRouting.primaryTeam, 'delivery-team');
+  assert.equal(route.teamRouting.primaryTeam, 'engineering-team');
   assert.ok(['implementation', 'fix'].includes(route.intent));
 });

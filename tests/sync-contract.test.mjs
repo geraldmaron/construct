@@ -200,17 +200,22 @@ describe('sync-specialists contract tests', () => {
       ]);
     });
 
-    it('prunes Construct-managed MCPs from global ~/.claude/settings.json but keeps context7 and leaves opt-in MCPs alone', () => {
+    it('preserves global ~/.claude/settings.json MCP entries while syncing safety hooks', () => {
       const settingsPath = path.join(tmpHome, '.claude', 'settings.json');
       const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
 
-      // The prune only removes MCPs Construct manages in the registry and are
-      // not on the global allowlist (construct-mcp, github, memory,
-      // sequential-thinking). context7 stays as the allowlisted docs MCP.
-      // playwright is opt-in (not in the registry), so a user-added global
-      // entry is preserved, not deleted.
-      assert.deepEqual(Object.keys(settings.mcpServers ?? {}).sort(), ['context7', 'playwright']);
-      assert.deepEqual(settings.mcpServers.context7.args, ['-y', '@upstash/context7-mcp@3.1.0']);
+      // The modular org no longer declares global MCP servers in the specialist
+      // registry. Sync should not delete user/global MCP entries while installing
+      // Construct safety hooks.
+      assert.deepEqual(Object.keys(settings.mcpServers ?? {}).sort(), [
+        'construct-mcp',
+        'context7',
+        'github',
+        'memory',
+        'playwright',
+        'sequential-thinking',
+      ]);
+      assert.deepEqual(settings.mcpServers.context7.args, ['-y', '@upstash/context7-mcp@latest']);
     });
   });
 
