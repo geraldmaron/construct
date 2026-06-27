@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 import { validate } from '../lib/registry/validator.mjs';
+import { loadRegistry } from '../lib/registry/loader.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 
@@ -331,11 +332,9 @@ describe('registry validator', () => {
     });
   });
 
-  describe('smoke test: real unified registry', () => {
-    it('validates real unified-registry.json successfully', () => {
-      const regPath = path.join(ROOT_DIR, 'specialists/unified-registry.json');
-      const regText = fs.readFileSync(regPath, 'utf8');
-      const reg = JSON.parse(regText);
+  describe('smoke test: real modular registry', () => {
+    it('validates real modular registry successfully', () => {
+      const reg = loadRegistry({ rootDir: ROOT_DIR });
 
       const result = validate(reg);
       assert.equal(result.ok, true, `Real registry has errors: ${result.errors.map((e) => `${e.id}: ${e.message}`).join('; ')}`);

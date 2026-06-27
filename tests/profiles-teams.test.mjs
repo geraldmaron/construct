@@ -5,21 +5,21 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { loadProfile } from '../lib/profiles/loader.mjs';
+import { loadScope } from '../lib/scopes/loader.mjs';
 import {
-  classifyObjectiveForProfile,
-  resolveIntentTeamForProfile,
-} from '../lib/profiles/teams.mjs';
+  classifyObjectiveForScope,
+  resolveIntentTeamForScope,
+} from '../lib/scopes/teams.mjs';
 
-test('operations profile maps investigation intent to reliability-team', () => {
-  const profile = loadProfile('operations');
-  assert.equal(resolveIntentTeamForProfile('investigation', profile), 'reliability-team');
-  assert.equal(resolveIntentTeamForProfile('implementation', profile), 'delivery-team');
+test('operations scope maps investigation intent to reliability-team', () => {
+  const scope = loadScope('operations');
+  assert.equal(resolveIntentTeamForScope('investigation', scope), 'operations-team');
+  assert.equal(resolveIntentTeamForScope('implementation', scope), 'engineering-team');
 });
 
-test('operations profile classifies incident objectives to reliability-team', () => {
-  const profile = loadProfile('operations');
-  const match = classifyObjectiveForProfile('respond to production outage and rollback deploy', profile);
-  assert.equal(match.recommendedTeam, 'reliability-team');
-  assert.equal(match.profileTeamSource, 'operations');
+test('operations scope classifies incident objectives to operations-team', () => {
+  const scope = loadScope('operations');
+  const match = classifyObjectiveForScope('respond to production outage and rollback deploy', scope);
+  assert.equal(match.recommendedTeam, 'operations-team');
+  assert.equal(match.scopeTeamSource, 'operations');
 });

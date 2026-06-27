@@ -64,7 +64,7 @@ const unified = {
   policies: {},
 };
 
-// 1. Build teams from teams-registry.json, optionally merged with workflow templates
+// Build teams from teams-registry.json, optionally merged with workflow templates.
 console.error('[migrate] building teams...');
 for (const team of teamsRegistry.teams) {
    const workflowTemplate = teamsJson.templates && teamsJson.templates[team.id];
@@ -113,7 +113,7 @@ for (const teamId of requiredApprovalTeams) {
    }
 }
 
-// 2. Build specialists from registry.json, merging with role-manifests.json
+// Build specialists from registry.json, merging with role-manifests.json.
 console.error('[migrate] building specialists...');
 
 // Create a mapping from role name (without cx- prefix) to team id
@@ -183,7 +183,7 @@ for (const spec of registry.specialists) {
   }
 }
 
-// 3. Build contracts from contracts.json
+// Build contracts from contracts.json.
 console.error('[migrate] building contracts...');
 for (const contract of contracts.contracts) {
   unified.contracts[contract.id] = {
@@ -213,7 +213,7 @@ for (const contract of contracts.contracts) {
   }
 }
 
-// 4. Build policies from policy-inventory.json + teams-registry.json decision matrix
+// Build policies from policy-inventory.json + teams-registry.json decision matrix.
 console.error('[migrate] building policies...');
 
 // First, infer policies from the decision matrix

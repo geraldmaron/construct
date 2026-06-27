@@ -177,7 +177,7 @@ test('every MCP-tool name in sharedGuidance is registered in lib/mcp/server.mjs'
 
 test('no specialist source prompt restates fence JSON (manifest is the source of truth)', () => {
   // Phase C extracted the Fence + Handoff section into a renderer in
-  // scripts/sync-specialists.mjs that reads specialists/unified-registry.json.
+  // scripts/sync-specialists.mjs that reads specialists/org.
   // The source prompts must not regrow the inline restatement; the renderer
   // produces the synced output. Allowed: discussion of the fence concept in
   // prose; banned: the literal structural markers below.
@@ -195,7 +195,7 @@ test('no specialist source prompt restates fence JSON (manifest is the source of
     for (const re of bannedLines) {
       assert.ok(
         !re.test(text),
-        `${rel} restates fence JSON (matched ${re}). The renderer in scripts/sync-specialists.mjs reads specialists/unified-registry.json — do not duplicate the JSON in the prompt`,
+        `${rel} restates fence JSON (matched ${re}). The renderer in scripts/sync-specialists.mjs reads specialists/org — do not duplicate the JSON in the prompt`,
       );
     }
   }
@@ -205,7 +205,7 @@ test('renderRoleFrameworkSection produces a manifest-backed block for onboarded 
   const { renderRoleFrameworkSection } = await import('../scripts/sync-specialists.mjs');
   const rendered = renderRoleFrameworkSection({ name: 'cx-engineer' });
   assert.match(rendered, /## When invoked via the role framework/);
-  assert.match(rendered, /\*\*Fence\*\*.*unified-registry\.json.*engineer/);
+  assert.match(rendered, /\*\*Fence\*\*.*specialists\/org.*engineer/);
   // The engineer manifest carries these literals — drift catches any rename.
   assert.match(rendered, /`lib\/\*\*`/, 'engineer fence must include lib/** from the manifest');
   assert.match(rendered, /`next:cx-qa`/, 'engineer handoff candidates must include cx-qa');
@@ -287,8 +287,8 @@ test('every specialist in SPECIALIST_TEMPLATES has get_template + list_templates
     const agent = Object.values(registry.specialists || {}).find((a) => a.name === bare || a.name === specialist);
     if (!agent) continue;
     const tools = String(agent.claudeTools || '').split(',').map((t) => t.trim());
-    assert.ok(tools.includes('get_template'), `${specialist} references templates but lacks \`get_template\` in claudeTools — add it to specialists/unified-registry.json`);
-    assert.ok(tools.includes('list_templates'), `${specialist} references templates but lacks \`list_templates\` in claudeTools — add it to specialists/unified-registry.json`);
+    assert.ok(tools.includes('get_template'), `${specialist} references templates but lacks \`get_template\` in claudeTools — add it to specialists/org`);
+    assert.ok(tools.includes('list_templates'), `${specialist} references templates but lacks \`list_templates\` in claudeTools — add it to specialists/org`);
   }
 });
 

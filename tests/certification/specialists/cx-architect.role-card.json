@@ -26,7 +26,7 @@
   "refusalBoundaries": "If the ADR has no 'options rejected' section, the decision defaulted — and defaulted decisions bite hardest.",
   "modelTier": "reasoning",
   "sources": {
-    "registry": "specialists/unified-registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-architect.md"
   }
 }

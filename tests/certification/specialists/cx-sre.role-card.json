@@ -23,7 +23,7 @@
   "refusalBoundaries": "If there's no alert definition before deployment, nobody planned for failure.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/unified-registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-sre.md"
   }
 }

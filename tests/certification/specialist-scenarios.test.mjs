@@ -30,9 +30,10 @@ test('writeSpecialistScenarioFixtures authors 58 scenarios (2 per specialist)', 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'specialist-scenarios-'));
   try {
     fs.mkdirSync(path.join(tmp, 'specialists'), { recursive: true });
-    fs.copyFileSync(
-      path.join(REPO, 'specialists', 'unified-registry.json'),
-      path.join(tmp, 'specialists', 'unified-registry.json'),
+    fs.cpSync(
+      path.join(REPO, 'specialists', 'org'),
+      path.join(tmp, 'specialists', 'org'),
+      { recursive: true },
     );
     fs.mkdirSync(path.join(tmp, 'tests', 'certification', 'scenarios'), { recursive: true });
     fs.writeFileSync(

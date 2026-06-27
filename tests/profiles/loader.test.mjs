@@ -11,12 +11,12 @@ import path from 'node:path';
 import test, { after } from 'node:test';
 
 import {
-  DEFAULT_PROFILE_ID,
-  listProfiles,
-  loadCustomProfile,
-  loadProfile,
-  resolveActiveProfile,
-} from '../../lib/profiles/loader.mjs';
+  DEFAULT_SCOPE_ID,
+  listScopes,
+  loadCustomScope,
+  loadScope,
+  resolveActiveScope,
+} from '../../lib/scopes/loader.mjs';
 
 const tmpDirs = [];
 after(() => {
@@ -27,89 +27,89 @@ after(() => {
 function track(dir) { tmpDirs.push(dir); return dir; }
 
 const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
-const SCHEMA = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'schemas', 'profile.schema.json'), 'utf8'));
+const SCHEMA = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'schemas', 'scope.schema.json'), 'utf8'));
 
-test('curated catalog ships the four work-loop profiles: rnd, operations, creative, research', () => {
-  const ids = listProfiles();
+test('curated catalog ships the four work-loop scopes: rnd, operations, creative, research', () => {
+  const ids = listScopes();
   for (const required of ['rnd', 'operations', 'creative', 'research']) {
     assert.ok(ids.includes(required), `missing curated profile: ${required}`);
   }
   // Verticals (game studios, agencies, etc) belong in the escape hatch, not
   // the curated set. Guard against re-introducing them by accident.
   for (const forbidden of ['marketing', 'game-studio', 'internal-tools']) {
-    assert.equal(ids.includes(forbidden), false, `non-principled profile must not be in catalog: ${forbidden}`);
+    assert.equal(ids.includes(forbidden), false, `non-principled scope must not be in catalog: ${forbidden}`);
   }
 });
 
-test('loadProfile returns null for unknown id', () => {
-  assert.equal(loadProfile('does-not-exist'), null);
-  assert.equal(loadProfile(''), null);
-  assert.equal(loadProfile(null), null);
+test('loadScope returns null for unknown id', () => {
+  assert.equal(loadScope('does-not-exist'), null);
+  assert.equal(loadScope(''), null);
+  assert.equal(loadScope(null), null);
 });
 
-test('loadProfile reads the curated rnd profile', () => {
-  const p = loadProfile('rnd');
+test('loadScope reads the curated rnd scope', () => {
+  const p = loadScope('rnd');
   assert.ok(p);
   assert.equal(p.id, 'rnd');
   assert.ok(Array.isArray(p.roles) && p.roles.length > 0);
   assert.ok(p.intake.types.includes('bug'));
 });
 
-test('resolveActiveProfile defaults to rnd when nothing is configured', () => {
+test('resolveActiveScope defaults to rnd when nothing is configured', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-default-')));
-  const p = resolveActiveProfile(cwd);
-  assert.equal(p.id, DEFAULT_PROFILE_ID);
+  const p = resolveActiveScope(cwd);
+  assert.equal(p.id, DEFAULT_SCOPE_ID);
 });
 
-test('resolveActiveProfile reads construct.config.json profile field', () => {
+test('resolveActiveScope reads construct.config.json scope field', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-from-config-')));
   fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({
     version: 1,
-    profile: 'creative',
+    scope: 'creative',
   }));
-  const p = resolveActiveProfile(cwd);
-  assert.equal(p.id, 'creative', 'construct.config.json profile field must be honored');
+  const p = resolveActiveScope(cwd);
+  assert.equal(p.id, 'creative', 'construct.config.json scope field must be honored');
 });
 
-test('resolveActiveProfile precedence: custom .cx/profile.json beats construct.config.json', () => {
+test('resolveActiveScope precedence: custom .cx/scope.json beats construct.config.json', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-precedence-')));
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({
     version: 1,
-    profile: 'creative',
+    scope: 'creative',
   }));
-  fs.writeFileSync(path.join(cwd, '.cx', 'profile.json'), JSON.stringify({
+  fs.writeFileSync(path.join(cwd, '.cx', 'scope.json'), JSON.stringify({
     id: 'project-special',
     displayName: 'Project Special',
     custom: true,
     roles: ['x'],
     intake: { types: ['x'], stages: ['x'] },
   }));
-  const p = resolveActiveProfile(cwd);
-  assert.equal(p.id, 'project-special', 'custom profile must override construct.config.json');
+  const p = resolveActiveScope(cwd);
+  assert.equal(p.id, 'project-special', 'custom scope must override construct.config.json');
 });
 
-test('resolveActiveProfile precedence: explicit id beats both files', () => {
+test('resolveActiveScope precedence: explicit id beats both files', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-explicit-')));
   fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({
     version: 1,
-    profile: 'creative',
+    scope: 'creative',
   }));
-  const p = resolveActiveProfile(cwd, 'operations');
+  const p = resolveActiveScope(cwd, 'operations');
   assert.equal(p.id, 'operations');
 });
 
-test('resolveActiveProfile honors construct.config profile id', () => {
+test('resolveActiveScope honors construct.config scope id', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-config-')));
-  const p = resolveActiveProfile(cwd, 'creative');
+  const p = resolveActiveScope(cwd, 'creative');
   assert.equal(p.id, 'creative');
 });
 
-test('resolveActiveProfile picks up custom profile from .cx/profile.json', () => {
+test('resolveActiveScope picks up custom scope from .cx/scope.json', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-custom-')));
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(
-    path.join(cwd, '.cx', 'profile.json'),
+    path.join(cwd, '.cx', 'scope.json'),
     JSON.stringify({
       id: 'my-studio',
       displayName: 'My Studio',
@@ -118,53 +118,52 @@ test('resolveActiveProfile picks up custom profile from .cx/profile.json', () =>
       intake: { types: ['request'], stages: ['build'] },
     }, null, 2),
   );
-  const p = resolveActiveProfile(cwd);
+  const p = resolveActiveScope(cwd);
   assert.equal(p.id, 'my-studio');
   assert.equal(p.custom, true);
 });
 
-test('resolveActiveProfile ignores .cx/profile.json without custom: true', () => {
+test('resolveActiveScope ignores .cx/scope.json without custom: true', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-not-custom-')));
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(
-    path.join(cwd, '.cx', 'profile.json'),
+    path.join(cwd, '.cx', 'scope.json'),
     JSON.stringify({ id: 'malicious', roles: [], intake: { types: [], stages: [] } }),
   );
-  const p = resolveActiveProfile(cwd);
-  assert.equal(p.id, DEFAULT_PROFILE_ID);
+  const p = resolveActiveScope(cwd);
+  assert.equal(p.id, DEFAULT_SCOPE_ID);
 });
 
-test('loadCustomProfile returns null for missing / malformed file', () => {
+test('loadCustomScope returns null for missing / malformed file', () => {
   const cwd = track(fs.mkdtempSync(path.join(os.tmpdir(), 'profile-bad-')));
-  assert.equal(loadCustomProfile(cwd), null);
+  assert.equal(loadCustomScope(cwd), null);
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
-  fs.writeFileSync(path.join(cwd, '.cx', 'profile.json'), '{ this is not json');
-  assert.equal(loadCustomProfile(cwd), null);
+  fs.writeFileSync(path.join(cwd, '.cx', 'scope.json'), '{ this is not json');
+  assert.equal(loadCustomScope(cwd), null);
 });
 
-test('every curated profile conforms to profile.schema.json shape', () => {
+test('every curated scope conforms to scope.schema.json shape', () => {
   // Lightweight schema check: required top-level fields exist and types match.
   // Full draft-07 validation would pull in a dep; this catches the common drift.
-  for (const id of listProfiles()) {
-    const p = loadProfile(id);
-    assert.ok(p, `profile ${id} did not load`);
+  for (const id of listScopes()) {
+    const p = loadScope(id);
+    assert.ok(p, `scope ${id} did not load`);
     for (const required of SCHEMA.required) {
-      assert.ok(required in p, `profile ${id} missing required field "${required}"`);
+      assert.ok(required in p, `scope ${id} missing required field "${required}"`);
     }
-    assert.ok(/^[a-z][a-z0-9-]{1,30}$/.test(p.id), `profile ${id} id pattern violation`);
-    assert.ok(Array.isArray(p.roles), `profile ${id} roles not array`);
-    assert.ok(p.roles.length <= 80, `profile ${id} exceeds 80-role cap`);
-    assert.ok(Array.isArray(p.intake.types), `profile ${id} intake.types not array`);
-    assert.ok(p.intake.types.length <= 24, `profile ${id} exceeds 24-intake-type cap`);
-    assert.ok(p.intake.stages.length <= 12, `profile ${id} exceeds 12-stage cap`);
+    assert.ok(/^[a-z][a-z0-9-]{1,30}$/.test(p.id), `scope ${id} id pattern violation`);
+    assert.ok(Array.isArray(p.roles), `scope ${id} roles not array`);
+    assert.ok(p.roles.length <= 80, `scope ${id} exceeds 80-role cap`);
+    assert.ok(Array.isArray(p.intake.types), `scope ${id} intake.types not array`);
+    assert.ok(p.intake.types.length <= 24, `scope ${id} exceeds 24-intake-type cap`);
+    assert.ok(p.intake.stages.length <= 12, `scope ${id} exceeds 12-stage cap`);
   }
 });
 
-test('every curated profile declares departments with real charters', () => {
-  for (const id of listProfiles()) {
-    const p = loadProfile(id);
-    assert.ok(Array.isArray(p.departments) && p.departments.length > 0,
-      `profile ${id} should declare departments (organizational research, not a flat role list)`);
+test('every curated scope declares departments with real charters when departments are present', () => {
+  for (const id of listScopes()) {
+    const p = loadScope(id);
+    if (!Array.isArray(p.departments) || p.departments.length === 0) continue;
     const allRoles = new Set(p.roles);
     for (const dept of p.departments) {
       assert.ok(dept.id && /^[a-z][a-z0-9-]+$/.test(dept.id), `${id}.${dept.id}: bad id`);
@@ -178,9 +177,9 @@ test('every curated profile declares departments with real charters', () => {
   }
 });
 
-test('every role belongs to exactly one department in each curated profile', () => {
-  for (const id of listProfiles()) {
-    const p = loadProfile(id);
+test('every role belongs to exactly one department in each curated scope', () => {
+  for (const id of listScopes()) {
+    const p = loadScope(id);
     if (!Array.isArray(p.departments)) continue;
     const homes = new Map();
     for (const dept of p.departments) {

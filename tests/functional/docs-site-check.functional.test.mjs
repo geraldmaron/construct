@@ -2,7 +2,7 @@
  * tests/functional/docs-site-check.functional.test.mjs — Generated reference drift gate.
  *
  * Asserts construct docs:site --check passes so docs/guides/reference/ stays aligned
- * with lib/cli-commands.mjs, lib/hooks/, and specialists/unified-registry.json.
+ * with lib/cli-commands.mjs, lib/hooks/, and specialists/org.
  * Also asserts maintainer-only lanes are excluded from the public site catalog.
  */
 

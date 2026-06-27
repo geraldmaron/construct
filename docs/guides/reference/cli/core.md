@@ -13,9 +13,9 @@ description: Core commands for Construct.
 | `construct init` | Project setup (once per repo): scaffold .cx/, AGENTS.md, plan.md, adapters |
 | `construct install` | Machine setup (scoped per ADR-0029): --scope=project\|user\|both, default project |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
-| `construct profile` | Manage the active org profile and its lifecycle (draft, promote, archive, health) |
 | `construct recommendations` | View and manage artifact recommendations |
 | `construct sandbox` | Isolated tmpdir-based environment for QA / specialist dry-runs |
+| `construct scope` | Manage the active org scope and its lifecycle (draft, promote, archive, health) |
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
@@ -152,26 +152,6 @@ construct intake list|show|done|skip|reopen|integrate|classify
 - `integrate <id> <github|jira|confluence> [--publish-issues]` — Create an external ticket from a packet (--publish-issues unlocks the demo-source gate)
 - `classify --json [--text|--file|<stdin>]` — Classify an artifact and return a role-aware plan without enqueuing (embedded contract)
 
-## construct profile
-
-Manage the active org profile and its lifecycle (draft, promote, archive, health)
-
-**Usage**
-
-```bash
-construct scope show|list|set|create|drafts|archive|health
-```
-
-**Subcommands**
-
-- `show` — Show the active profile
-- `list` — List curated profiles
-- `set <id>` — Switch the active profile (writes construct.config.json)
-- `create <id> [--display=…] [--role=…] [--department=…] [--yes|--dry-run]` — Scaffold a draft profile; previews and confirms by default, prompts interactively when no flags
-- `drafts` — List in-progress draft profiles
-- `archive <id> --reason="..."` — Move a curated profile into archive/profiles/<id>/
-- `health <id> [--days=N]` — Per-profile observation + outcome rollup
-
 ## construct recommendations
 
 View and manage artifact recommendations
@@ -198,6 +178,26 @@ construct sandbox create|list|delete|prune [--profile=<id>]
 - `list` — List existing sandboxes, newest first
 - `delete <id>` — Remove one sandbox by id
 - `prune [--days=N]` — Remove sandboxes older than N days (default 7)
+
+## construct scope
+
+Manage the active org scope and its lifecycle (draft, promote, archive, health)
+
+**Usage**
+
+```bash
+construct scope show|list|set|create|drafts|archive|health
+```
+
+**Subcommands**
+
+- `show` — Show the active scope
+- `list` — List curated scopes
+- `set <id>` — Switch the active scope (writes construct.config.json)
+- `create <id> [--display=…] [--role=…] [--department=…] [--yes|--dry-run]` — Scaffold a draft scope; previews and confirms by default, prompts interactively when no flags
+- `drafts` — List in-progress draft scopes
+- `archive <id> --reason="..."` — Move a curated scope into archive/scopes/<id>/
+- `health <id> [--days=N]` — Per-scope observation + outcome rollup
 
 ## construct status
 

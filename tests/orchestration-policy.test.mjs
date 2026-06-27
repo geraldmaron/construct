@@ -302,7 +302,7 @@ test('formatOverlaySelection emits one line per non-null flavor with the cx-<rol
   assert.deepEqual(lines, [
     'cx-engineer: loaded engineer.platform overlay',
     'cx-architect: loaded architect.ai-systems overlay',
-    'cx-data-analyst: loaded dataAnalyst.experiment overlay',
+    'cx-data-analyst: loaded data-analyst.experiment overlay',
   ]);
 });
 

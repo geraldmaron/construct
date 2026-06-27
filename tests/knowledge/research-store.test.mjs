@@ -76,11 +76,11 @@ test('addResearchFinding rejects invalid confidence value', async (t) => {
   );
 });
 
-test('addResearchFinding stamps active profile id', async (t) => {
+test('addResearchFinding stamps active scope id', async (t) => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-research-profile-'));
   t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
-  fs.writeFileSync(path.join(cwd, '.cx', 'profile.json'), JSON.stringify({
+  fs.writeFileSync(path.join(cwd, '.cx', 'scope.json'), JSON.stringify({
     id: 'marketing',
     displayName: 'Test',
     custom: true,

@@ -92,11 +92,11 @@ Intake types: `question`, `study`, `synthesis`, `report`, `experiment`, `ops`, `
 
 ### Custom
 
-Drop a `.cx/scope.json` with `custom: true` and an `intake.classificationTable` path that lives under `.cx/`. The validator at `lib/scopes/validate-custom.mjs` enforces the cap structure. See [Profile lifecycle](/guides/concepts/scope-lifecycle).
+Drop a `.cx/scope.json` with `custom: true` and an `intake.classificationTable` path that lives under `.cx/`. The validator at `lib/scopes/validate-custom.mjs` enforces the cap structure. See [Profile lifecycle](/guides/concepts/profile-lifecycle).
 
 ## Triage block schema (same across profiles)
 
-`classifyRdIntake` returns a triage object with nine fields. The values vary by profile; the shape does not.
+`classifyRdIntake` returns the base triage object; `prepareIntake` adds the resolved `researchProfile` when the active scope maps the classified intake/artifact lane to one. The values vary by profile; the shape does not.
 
 | Field | Purpose |
 |---|---|
@@ -109,6 +109,7 @@ Drop a `.cx/scope.json` with `custom: true` and an `intake.classificationTable` 
 | `requiresApproval` | `true` for high-stakes actions |
 | `confidence` | `[0, 1]`, keyword-match density |
 | `rationale` | One-line explanation |
+| `researchProfile` | Optional scope-level research profile for downstream routing (`codebase`, `market`, etc.) |
 
 ## Classification heuristics
 
@@ -149,7 +150,7 @@ In `solo` mode the queue is the filesystem (`.cx/intake/`). In `team` and `enter
 
 ## See also
 
-- [Profile lifecycle](/guides/concepts/scope-lifecycle). How the intake taxonomy is designed and validated per profile.
+- [Profile lifecycle](/guides/concepts/profile-lifecycle). How the intake taxonomy is designed and validated per profile.
 - [Persona and skill research](/guides/concepts/persona-research). The methodology behind the owners and chains each profile names.
 - [Intake loop](/guides/concepts/intake-loop). Implementation deep dive of the 8-step pipeline (that doc is the internals; this one is the operator's view).
 - [Deployment model](/guides/concepts/deployment-model). Solo vs team vs enterprise topology.

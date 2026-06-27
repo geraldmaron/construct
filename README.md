@@ -136,9 +136,9 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct init` | Project setup (once per repo): scaffold .cx/, AGENTS.md, plan.md, adapters |
 | `construct install` | Machine setup (scoped per ADR-0029): --scope=project\|user\|both, default project |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
-| `construct profile` | Manage the active org profile and its lifecycle (draft, promote, archive, health) |
 | `construct recommendations` | View and manage artifact recommendations |
 | `construct sandbox` | Isolated tmpdir-based environment for QA / specialist dry-runs |
+| `construct scope` | Manage the active org scope and its lifecycle (draft, promote, archive, health) |
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |

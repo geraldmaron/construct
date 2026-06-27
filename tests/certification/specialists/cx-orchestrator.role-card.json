@@ -19,7 +19,7 @@
   "refusalBoundaries": "If every task routes to cx-engineer, you're relaying, not orchestrating.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/unified-registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-orchestrator.md"
   }
 }

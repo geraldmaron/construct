@@ -38,6 +38,11 @@ function validateAgainstSchema(data, schema, path = '#') {
     errors.push(`${path}: expected constant ${schema.const}, got ${data}`);
   }
 
+  // Check enum
+  if (schema.enum && !schema.enum.includes(data)) {
+    errors.push(`${path}: expected one of ${schema.enum.join(', ')}, got ${data}`);
+  }
+
   // Check required properties
   if (schema.required && typeof data === 'object' && data !== null) {
     for (const prop of schema.required) {
@@ -106,8 +111,8 @@ describe('schemas/unified-registry.schema.json', () => {
     assert.ok(schema.properties.policies);
   });
 
-  it('schema version is const 2', () => {
-    assert.equal(schema.properties.version.const, 2);
+  it('schema version accepts v2 and v3', () => {
+    assert.deepEqual(schema.properties.version.enum, [2, 3]);
   });
 
   it('schema defines $defs for team, specialist, contract, policy', () => {
@@ -274,7 +279,7 @@ describe('schemas/unified-registry.schema.json', () => {
         policies: {},
       };
       const errors = validateAgainstSchema(malformed, schema);
-      assert.ok(errors.some((e) => e.includes('constant') || e.includes('version')));
+      assert.ok(errors.some((e) => e.includes('enum') || e.includes('allowed') || e.includes('version')));
     });
 
     it('rejects team without required fields', () => {

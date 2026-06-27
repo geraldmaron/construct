@@ -21,7 +21,7 @@
   "refusalBoundaries": "If every test passes on the first run with no debugging, the tests weren't hard enough.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/unified-registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-qa.md"
   }
 }

@@ -69,8 +69,16 @@ test("product manager flavor overlays exist for Product Intelligence routing", (
 });
 
 test("domain role flavor overlays exist for routing metadata", () => {
+  const splitRoles = ["ai-engineer", "platform-engineer"];
+  for (const role of splitRoles) {
+    const p = path.join(root, "skills", "roles", `${role}.md`);
+    assert.ok(fs.existsSync(p), `Missing split role overlay: ${p}`);
+    const content = fs.readFileSync(p, "utf8");
+    assert.match(content, new RegExp(`role:\\s*${role}`));
+    assert.ok(content.length > 500, `${p} too short to provide useful guidance`);
+  }
+
   const overlays = {
-    engineer: ["ai", "data", "platform"],
     architect: ["platform", "integration", "data", "ai-systems", "enterprise"],
     qa: ["web-ui", "api-contract", "data-pipeline", "ai-eval"],
     security: ["appsec", "cloud", "ai", "privacy", "supply-chain"],
@@ -99,15 +107,15 @@ test("orchestrator role preload stays compact", () => {
 test("inlineRoleAntiPatterns expands the directive when preload: true", () => {
   // On-demand is the default (see rules/common/skill-composition.md). Preload
   // is opt-in for hosts without reliable runtime get_skill.
-  const src = '**Role guidance**: call `get_skill("roles/engineer.ai")` before drafting.';
+  const src = '**Role guidance**: call `get_skill("roles/ai-engineer")` before drafting.';
   const out = inlineRoleAntiPatterns(src, root, "cx-ai-engineer", () => {}, { preload: true });
   assert.ok(!/get_skill\("roles\//.test(out), "raw directive should be expanded");
   assert.match(out, /## Role guidance/);
-  assert.match(out, /ai overlay/i);
+  assert.match(out, /Prompt tuning without evals/i);
 });
 
 test("inlineRoleAntiPatterns defaults to on-demand (leaves directive in place)", () => {
-  const src = '**Role guidance**: call `get_skill("roles/engineer.ai")` before drafting.';
+  const src = '**Role guidance**: call `get_skill("roles/ai-engineer")` before drafting.';
   const out = inlineRoleAntiPatterns(src, root, "cx-ai-engineer", () => {});
   assert.strictEqual(out, src, "default should leave the directive untouched for runtime get_skill");
 });

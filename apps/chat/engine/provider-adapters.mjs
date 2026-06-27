@@ -22,7 +22,7 @@ import { providerGroupForModel } from '../../../lib/models/execution-capability-
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 
 function envKey(env, ...names) {
-  return resolveFirstSecret(names, { env });
+  return resolveFirstSecret(names, { env, allowAmbient: env === process.env });
 }
 
 function missingKey(provider, varName) {

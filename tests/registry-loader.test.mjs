@@ -17,7 +17,7 @@ describe('registry loader', () => {
   it('loads the canonical registry successfully', () => {
     const registry = loadRegistry();
     assert.ok(registry);
-    assert.equal(registry.version, 2);
+    assert.equal(registry.version, 3);
     assert.ok(registry.teams);
     assert.ok(registry.specialists);
     assert.ok(registry.contracts);

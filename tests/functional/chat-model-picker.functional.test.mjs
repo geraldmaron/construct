@@ -8,6 +8,7 @@ import {
   sortModelsForPicker,
   pickerStartIndex,
   FREE_ROUTER_ITEM_ID,
+  FOLLOW_TIER_ITEM_ID,
   configuredTierPickerItems,
 } from '../../lib/chat/model-picker.mjs';
 import { windowPickerItems } from '../../lib/chat/list-picker.mjs';
@@ -49,7 +50,8 @@ test('loadModelPickerItems groups live provider models with capability badges', 
 
   const items = await loadModelPickerItems(null, { env: {}, pollProviders });
 
-  assert.equal(items[0].id, '__free_router__', 'free-router stays on top');
+  assert.equal(items[0].id, FOLLOW_TIER_ITEM_ID, 'tier-following stays on top');
+  assert.equal(items[1].id, FREE_ROUTER_ITEM_ID, 'free-router remains directly available');
   const opus = items.find((i) => i.id === 'anthropic/claude-opus-4-8');
   assert.ok(opus, 'anthropic model present');
   assert.equal(opus.group, 'Anthropic');
@@ -70,7 +72,7 @@ test('loadModelPickerItems drops known tool-incapable models but keeps unknown o
       // provider reported no tool support → the chat loop would always error → filtered
       { id: 'openrouter/meta-llama/llama-3.2-3b-instruct:free', label: 'Llama 3.2 3B', provider: 'openrouter', free: true, pricing: { input: 0, output: 0 }, reasoning: false, tools: false, toolsKnown: true, vision: false, source: 'live' },
       // tool-capable → kept
-      { id: 'openrouter/anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet', provider: 'openrouter', free: false, pricing: { input: 3, output: 15 }, reasoning: true, tools: true, toolsKnown: true, vision: true, source: 'live' },
+      { id: 'openrouter/qwen/qwen3-coder:free', label: 'Qwen3 Coder', provider: 'openrouter', free: true, pricing: { input: 0, output: 0 }, reasoning: true, tools: true, toolsKnown: true, vision: false, source: 'live' },
     ] },
     { id: 'ollama', label: 'Ollama (local)', live: true, models: [
       // tool support unknown for a local tag → stays selectable
@@ -82,7 +84,7 @@ test('loadModelPickerItems drops known tool-incapable models but keeps unknown o
   const ids = items.map((i) => i.id);
 
   assert.ok(!ids.includes('openrouter/meta-llama/llama-3.2-3b-instruct:free'), 'known tool-incapable model is filtered out');
-  assert.ok(ids.includes('openrouter/anthropic/claude-3.5-sonnet'), 'tool-capable model is kept');
+  assert.ok(ids.includes('openrouter/qwen/qwen3-coder:free'), 'tool-capable allowlisted model is kept');
   assert.ok(ids.includes('ollama/llama3.1:8b'), 'unknown-capability local model is kept');
 });
 

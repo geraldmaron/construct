@@ -1,7 +1,7 @@
 /**
  * tests/functional/routing-tables.test.mjs — parity guard for declarative routing.
  *
- * Loads the real specialists/unified-registry.json via routing-tables.mjs and asserts
+ * Loads the real specialists/org via routing-tables.mjs and asserts
  * each route the orchestration layer depends on. Catches drift if a future
  * registry edit drops a subscription, mis-names a watcher, or strips an
  * artifact owner.

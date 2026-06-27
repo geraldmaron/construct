@@ -147,9 +147,10 @@ test("buildRuntimeTracePayload includes runtime-composed prompt and route metada
     try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
     try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {}
   });
+  fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(rootDir, "specialists", "org"), { recursive: true });
   fs.mkdirSync(path.join(rootDir, ".cx"), { recursive: true });
   fs.mkdirSync(path.join(rootDir, "specialists", "prompts"), { recursive: true });
-  fs.writeFileSync(path.join(rootDir, "specialists", "unified-registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(rootDir, ".cx", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: {
       "engineering": {
@@ -236,9 +237,10 @@ test("buildRuntimeTracePayload honors process env model overrides in execution-c
     try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
     try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {}
   });
+  fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(rootDir, "specialists", "org"), { recursive: true });
   fs.mkdirSync(path.join(rootDir, ".cx"), { recursive: true });
   fs.mkdirSync(path.join(rootDir, "specialists", "prompts"), { recursive: true });
-  fs.writeFileSync(path.join(rootDir, "specialists", "unified-registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(rootDir, ".cx", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: {
       "engineering": {
@@ -353,8 +355,9 @@ test("plugin applies model fallback and logs warning when rate limit error hits"
   fs.mkdirSync(path.join(toolkitDir, ".cx"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists", "prompts"), { recursive: true });
+  fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(toolkitDir, "specialists", "org"), { recursive: true });
   fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
-  fs.writeFileSync(path.join(toolkitDir, "specialists", "unified-registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(toolkitDir, ".cx", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
     specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
@@ -419,8 +422,9 @@ test("plugin falls back to a new target model when the current provider is unava
   fs.mkdirSync(path.join(toolkitDir, ".cx"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists", "prompts"), { recursive: true });
+  fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(toolkitDir, "specialists", "org"), { recursive: true });
   fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
-  fs.writeFileSync(path.join(toolkitDir, "specialists", "unified-registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(toolkitDir, ".cx", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
     specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
@@ -487,8 +491,9 @@ test("plugin no-ops when no safe fallback target exists", async (t) => {
   fs.mkdirSync(path.join(toolkitDir, ".cx"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists", "prompts"), { recursive: true });
+  fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(toolkitDir, "specialists", "org"), { recursive: true });
   fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
-  fs.writeFileSync(path.join(toolkitDir, "specialists", "unified-registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(toolkitDir, ".cx", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
     specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
@@ -543,8 +548,9 @@ test("plugin continues fallback even when telemetry logging fails", async (t) =>
   fs.mkdirSync(path.join(toolkitDir, ".cx"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists"), { recursive: true });
   fs.mkdirSync(path.join(toolkitDir, "specialists", "prompts"), { recursive: true });
+  fs.cpSync(path.join(process.cwd(), "specialists", "org"), path.join(toolkitDir, "specialists", "org"), { recursive: true });
   fs.writeFileSync(path.join(toolkitDir, ".env"), "CX_MODEL_STANDARD=anthropic/claude-sonnet-4-6\n");
-  fs.writeFileSync(path.join(toolkitDir, "specialists", "unified-registry.json"), JSON.stringify({
+  fs.writeFileSync(path.join(toolkitDir, ".cx", "unified-registry.json"), JSON.stringify({
     version: 2,
     teams: { "test": { id: "test", name: "Test", owner: "engineer", roles: ["engineer"], charter: "Test.", decisionRights: [], forbiddenDecisions: [], escalationPath: ["engineer"] } },
     specialists: { "engineer": { name: "engineer", displayName: "Engineer", team: "test", promptFile: "specialists/prompts/cx-engineer.md" } },
@@ -815,5 +821,3 @@ test("buildRuntimeTracePayload produces runtime_event kind for session.created",
   assert.equal(payload.output.status, "created");
   assert.equal(payload.output.traceQualityFlags.hasError, false);
 });
-
-

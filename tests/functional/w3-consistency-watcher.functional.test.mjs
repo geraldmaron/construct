@@ -58,7 +58,7 @@ test('hooks-drift fires when a hook command points at a missing .mjs file', asyn
         SessionStart: [{ hooks: [{ type: 'command', command: 'node "/abs/path/to/lib/hooks/nonexistent-hook.mjs"' }] }],
       },
     });
-    slice.writeJson('specialists/unified-registry.json', { specialists: [], orchestrator: null });
+    slice.writeJson('specialists/org', { specialists: [], orchestrator: null });
     slice.writeJson('specialists/contracts.json', {
       version: 1,
       terminalStates: ['DONE'],
@@ -79,7 +79,7 @@ test('roles-drift fires when role-manifests references a persona not in registry
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('specialists/unified-registry.json', {
+    slice.writeJson('specialists/org', {
       orchestrator: { name: 'construct' },
       specialists: [{ name: 'architect' }],
     });
@@ -103,7 +103,7 @@ test('prompt-files fires when a persona promptFile is missing on disk', async ()
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('specialists/unified-registry.json', {
+    slice.writeJson('specialists/org', {
       orchestrator: { name: 'fake', promptFile: 'specialists/prompts/never-existed.md' },
       specialists: [],
     });
@@ -128,7 +128,7 @@ test('contracts-drift fires when contracts reference an unresolvable producer', 
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
-    slice.writeJson('specialists/unified-registry.json', {
+    slice.writeJson('specialists/org', {
       orchestrator: { name: 'construct' },
       specialists: [{ name: 'architect' }],
     });

@@ -1,5 +1,5 @@
 /**
- * tests/contracts-coverage.test.mjs — every specialist in specialists/unified-registry.json
+ * tests/contracts-coverage.test.mjs — every specialist in specialists/org
  * must appear as a producer or consumer in at least one typed contract.
  *
  * Closes the Bet 5 contracts gap: dispatch is auditable only if every
@@ -9,15 +9,12 @@
  */
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { loadRegistry } from '../lib/registry/loader.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const REGISTRY_PATH = join(REPO_ROOT, 'specialists', 'unified-registry.json');
-
-function readJson(p) { return JSON.parse(readFileSync(p, 'utf8')); }
 
 // Specialists whose only routable shape is a fanout from a wildcard producer
 // (e.g. construct itself, the orchestrator entrypoint). Excluded from the
@@ -26,7 +23,7 @@ function readJson(p) { return JSON.parse(readFileSync(p, 'utf8')); }
 const COVERAGE_EXEMPT = new Set(['orchestrator', 'oracle']);
 
 test('every specialist in unified registry appears as producer or consumer in contracts', () => {
-  const registry = readJson(REGISTRY_PATH);
+  const registry = loadRegistry({ rootDir: REPO_ROOT, skipValidation: true });
   const contracts = Object.values(registry.contracts || {});
 
   const specialists = Object.values(registry.specialists || {})
@@ -52,7 +49,7 @@ test('every specialist in unified registry appears as producer or consumer in co
 });
 
 test('contract ids are kebab-case and unique', () => {
-  const registry = readJson(REGISTRY_PATH);
+  const registry = loadRegistry({ rootDir: REPO_ROOT, skipValidation: true });
   const contracts = Object.values(registry.contracts || {});
   const seen = new Set();
   for (const c of contracts) {
@@ -63,7 +60,7 @@ test('contract ids are kebab-case and unique', () => {
 });
 
 test('producer and consumer resolve against registry or well-known names', () => {
-  const registry = readJson(REGISTRY_PATH);
+  const registry = loadRegistry({ rootDir: REPO_ROOT, skipValidation: true });
   const contracts = Object.values(registry.contracts || {});
 
   const known = new Set();

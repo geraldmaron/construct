@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
+import { loadRegistry } from '../lib/registry/loader.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 
@@ -18,7 +19,7 @@ function loadJson(filePath) {
   return JSON.parse(content);
 }
 
-const unified = loadJson(path.join(ROOT_DIR, 'specialists/unified-registry.json'));
+const unified = loadRegistry({ rootDir: ROOT_DIR, skipValidation: true });
 
 // Build a synthetic legacy object from the unified registry for validation
 const legacy = {
@@ -45,8 +46,8 @@ const legacy = {
 };
 
 describe('migration round-trip: unified registry validation', () => {
-  it('unified registry exists and is valid version 2', () => {
-    assert.equal(unified.version, 2);
+  it('unified registry exists and is on a supported schema version', () => {
+    assert.ok(unified.version >= 2, `expected schema version >= 2, got ${unified.version}`);
     // Basic structural checks
     assert.ok(unified.teams, 'teams object exists');
     assert.ok(unified.specialists, 'specialists object exists');
@@ -227,10 +228,8 @@ describe('migration round-trip: unified registry validation', () => {
     it('can re-run the migration script', () => {
       // Contract: the script must be re-runnable (deterministic output on each run).
       // CI/pre-commit pipelines use this property to detect unintended drift.
-      const outputPath = path.join(ROOT_DIR, 'specialists/unified-registry.json');
-      assert.ok(fs.existsSync(outputPath), 'unified-registry.json exists');
-      const output = loadJson(outputPath);
-      assert.equal(output.version, 2);
+      const output = loadRegistry({ rootDir: ROOT_DIR, skipValidation: true });
+      assert.ok(output.version >= 2, `expected schema version >= 2, got ${output.version}`);
     });
   });
 

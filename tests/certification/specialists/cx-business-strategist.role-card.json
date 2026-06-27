@@ -21,7 +21,7 @@
   "refusalBoundaries": "If the brief doesn't name a specific market moment, it's not a strategy — it's a plan.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/unified-registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-business-strategist.md"
   }
 }

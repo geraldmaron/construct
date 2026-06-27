@@ -89,14 +89,14 @@ test('new recommendation record carries the enrichment state machine fields', as
   assert.equal(created.enrichedBy, null);
 });
 
-test('profile lifecycle emits profile.updated on draft creation', async () => {
+test('scope lifecycle emits scope.updated on draft creation', async () => {
   const cwd = mkdtempSync(join(tmpdir(), 'cx-profile-'));
   try {
-    const { createDraftProfile } = await import('../../lib/profiles/lifecycle.mjs');
-    createDraftProfile({ cwd, id: 'acme-research', displayName: 'Acme Research' });
+    const { createDraftScope } = await import('../../lib/scopes/lifecycle.mjs');
+    createDraftScope({ cwd, id: 'acme-research', displayName: 'Acme Research' });
     const events = readEvents();
-    const evt = events.find((e) => e.type === 'profile.updated');
-    assert.ok(evt, 'expected profile.updated on draft creation');
+    const evt = events.find((e) => e.type === 'scope.updated');
+    assert.ok(evt, 'expected scope.updated on draft creation');
     assert.equal(evt.context.id, 'acme-research');
     assert.equal(evt.context.stage, 'draft');
   } finally {
