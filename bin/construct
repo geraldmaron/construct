@@ -67,7 +67,11 @@ import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
 import { startServices } from '../lib/service-manager.mjs';
 import { readCostLog, summarizeCostData, formatCostReport, clearCostLog } from '../lib/cost.mjs';
 import { readEfficiencyLog, summarizeEfficiencyData, formatEfficiencyReport } from '../lib/efficiency.mjs';
-import { resolveColors } from '../lib/term-format.mjs';
+import { resolveUiColors } from '../lib/ui/theme.mjs';
+import { UNICODE_GLYPHS, ASCII_GLYPHS } from '../lib/ui/glyphs.mjs';
+import { formatPathLink, terminalLinksEnabled } from '../lib/ui/links.mjs';
+import { ok as uiOk, warn as uiWarn, info as uiInfo, fail as uiFail, section as uiSection } from '../lib/ui/components.mjs';
+import { getInstalledVersion } from '../lib/version.mjs';
 import { buildHybridSearchResultsAsync } from '../lib/storage/hybrid-query.mjs';
 import { createSqlClient, closeSqlClient } from '../lib/storage/backend.mjs';
 import { syncFileStateToSql } from '../lib/storage/sync.mjs';
@@ -83,13 +87,21 @@ for (const [key, value] of Object.entries(ENV)) {
   if (!(key in process.env)) process.env[key] = value;
 }
 
-const COLORS = resolveColors();
+const COLORS = resolveUiColors();
+const GLYPHS = process.env.CX_ASCII === '1' ? ASCII_GLYPHS : UNICODE_GLYPHS;
+const LINKS_ON = terminalLinksEnabled(process.env, { stream: process.stdout });
 
 function println(message = '') { process.stdout.write(`${message}\n`); }
 function errorln(message = '') { process.stderr.write(`${message}\n`); }
-function ok(message) { println(`  ${COLORS.green}✓${COLORS.reset}  ${message}`); }
-function warn(message) { println(`  ${COLORS.yellow}⚠${COLORS.reset}  ${message}`); }
-function info(message) { println(`  ${COLORS.cyan}→${COLORS.reset}  ${message}`); }
+function ok(message) { println(uiOk(message, { colors: COLORS, glyphs: GLYPHS })); }
+function warn(message) { println(uiWarn(message, { colors: COLORS })); }
+function info(message) { println(uiInfo(message, { colors: COLORS, glyphs: GLYPHS })); }
+
+// A repo path becomes an OSC-8 hyperlink where the terminal honors them; the
+// visible label stays the raw path so Terminal.app's own Cmd-click detection
+// still resolves it where OSC-8 is ignored.
+
+function linkPath(p) { return formatPathLink(p, COLORS, { enabled: LINKS_ON }); }
 
 // VS16-suffixed emojis (e.g. ⌨️, 🛠️, ⬆️) come from BMP "text symbol" Unicode
 // blocks and are commonly rendered as 1 visual column in macOS Terminal /
@@ -109,26 +121,34 @@ function usage(opts = {}) {
   const visible = CLI_COMMANDS.filter((c) => !c.internal);
   const commands = showAll ? visible : visible.filter((c) => c.core);
 
-  if (showAll) {
-    println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness (all commands)`);
-  } else {
-    println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
-    println(`${COLORS.dim}Tip: Run ${COLORS.reset}construct --all${COLORS.dim} to see all commands · ${COLORS.reset}construct <cmd> --help${COLORS.dim} for details${COLORS.reset}`);
+  const ver = getInstalledVersion().version;
+  const wordmark = `${COLORS.brandAccent}${COLORS.bold}construct${COLORS.reset}`;
+  const tagline = showAll ? 'AI agent harness · all commands' : 'AI agent harness';
+  println(`\n${wordmark} ${COLORS.dim}v${ver}${COLORS.reset}  ${COLORS.muted}${tagline}${COLORS.reset}`);
+  if (!showAll) {
+    println(`${COLORS.dim}Tip: ${COLORS.reset}construct --all${COLORS.dim} lists every command · ${COLORS.reset}construct <cmd> --help${COLORS.dim} for details${COLORS.reset}`);
   }
 
   println(`\n${COLORS.dim}Usage:${COLORS.reset} construct <command> [options]`);
-  println(`${COLORS.dim}Run ${COLORS.reset}construct${COLORS.dim} with no command to start a chat session (--plain for the terminal renderer).${COLORS.reset}\n`);
+  println(`${COLORS.dim}Run ${COLORS.reset}construct${COLORS.dim} with no command to start a chat session (--plain for the terminal renderer).${COLORS.reset}`);
+
+  // The name column sizes to the longest visible command (capped) so long names
+  // are never truncated and descriptions stay aligned regardless of the set shown.
+
+  const nameWidth = Math.min(18, Math.max(...commands.map((c) => c.name.length)));
 
   for (const category of CATEGORY_ORDER) {
     const categoryCommands = commands.filter((c) => c.category === category);
     if (!categoryCommands.length) continue;
-    println(`${COLORS.bold}${category}${COLORS.reset}`);
+    println(`\n${uiSection(category, { colors: COLORS })}`);
     for (const command of categoryCommands) {
       const emoji = command.emoji ?? '  ';
-      println(`  ${iconColumn(emoji)}${command.name.padEnd(14)} ${command.description}`);
+      const name = `${COLORS.bold}${command.name.padEnd(nameWidth)}${COLORS.reset}`;
+      println(`  ${iconColumn(emoji)}${name}  ${command.description}`);
     }
-    println('');
   }
+
+  println(`\n${COLORS.dim}Docs:${COLORS.reset} ${linkPath('docs/guides/reference/cli/')}`);
 }
 
 function runNodeScript(scriptPath, args = [], extraEnv = {}, { exitOnError = true } = {}) {
@@ -6844,7 +6864,7 @@ if (!handler) {
     errorln(`${COLORS.dim}Run ${COLORS.reset}construct${COLORS.dim} with no subcommand to start chat (e.g. construct --list).${COLORS.reset}`);
     process.exit(1);
   }
-  errorln(`Unknown command: ${command}`);
+  errorln(uiFail(`Unknown command: ${COLORS.bold}${command}${COLORS.reset}`, { colors: COLORS, glyphs: GLYPHS }));
   // Three-tier suggestion: prefix match → substring match → Levenshtein
   // distance ≤ 2. Catches single-letter typos, missing-letter typos, and
   // transpositions ('sycn' → 'sync') without dragging in a full fuzzy lib.
@@ -6875,9 +6895,9 @@ if (!handler) {
       if (d < bestDist) { bestDist = d; suggestion = name; }
     }
   }
-  if (suggestion) errorln(`Did you mean: construct ${suggestion}?`);
+  if (suggestion) errorln(`${COLORS.muted}Did you mean${COLORS.reset} ${COLORS.highlight}construct ${suggestion}${COLORS.reset}?`);
   println('');
-  println(`${COLORS.dim}Run 'construct --help' for available commands${COLORS.reset}`);
+  println(`${COLORS.dim}Run ${COLORS.reset}construct --help${COLORS.dim} for available commands${COLORS.reset}`);
   process.exit(1);
 }
 
