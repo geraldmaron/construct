@@ -16,7 +16,7 @@ status: draft
 
 ## Summary
 
-Platform teams need a single operational layer that routes work across specialist agents, grounds every artifact in verifiable evidence, and gates high-risk writes behind human approval. Construct already implements the core primitives (specialist registry, embedded workflow invoke, intake traceability, release gates, and publish-to-PDF distribution) per PRD-0001 (verified 2026-06-19). This PRD defines the **agentic platform** product surface: how enterprises adopt those primitives as a governed multi-agent system rather than a collection of disconnected chat sessions.
+Platform teams need a single operational layer that routes work across specialist agents, grounds every artifact in verifiable evidence, and gates high-risk writes behind human approval. Construct already implements the core primitives (specialist registry, embedded workflow invoke, intake traceability, release gates, and publish-to-PDF distribution) per PRD-0001 (verified 2026-06-19). This PRD defines the **agentic platform** product surface: how enterprises adopt those primitives as a governed multi-agent system rather than a collection of disconnected assistant sessions.
 
 ## Problem
 

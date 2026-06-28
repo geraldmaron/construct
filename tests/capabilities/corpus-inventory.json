@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-27T05:04:13.159Z",
+  "generatedAt": "2026-06-28T22:20:26.240Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 541,
-    "topLevelTestFiles": 300,
-    "nestedTestFiles": 241,
+    "testFiles": 502,
+    "topLevelTestFiles": 293,
+    "nestedTestFiles": 209,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 24,
     "byLayer": {
-      "unit": 341,
+      "unit": 333,
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
-      "functional": 161
+      "functional": 130
     },
     "byCategory": {
-      "unit": 302,
+      "unit": 294,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
       "visual": 7,
       "integration": 21,
-      "functional": 161,
+      "functional": 130,
       "hook": 9
     }
   },
@@ -437,30 +437,6 @@
       "maintainerNotes": "tests/certification/status.test.mjs — certification status rollup."
     },
     {
-      "path": "tests/chat-activity-ticker.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/chat-activity-ticker.test.mjs — in-turn activity zone footprint contract."
-    },
-    {
-      "path": "tests/chat-evidence.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "chat-evidence.test.mjs — Provenance verdict regression coverage."
-    },
-    {
-      "path": "tests/chat-markdown-render.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/chat-markdown-render.test.mjs — chat markdown facelift contract."
-    },
-    {
       "path": "tests/ci-parity.test.mjs",
       "layer": "unit",
       "category": "structural-guard",
@@ -523,22 +499,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/concierge-routing.test.mjs — Concierge routing regression harness."
-    },
-    {
-      "path": "tests/context-compactor.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/context-compactor.test.mjs — unit coverage for the live-context bridge"
-    },
-    {
-      "path": "tests/context-continuation.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/context-continuation.test.mjs — unit coverage for the context-continuation"
     },
     {
       "path": "tests/context-router.test.mjs",
@@ -1419,230 +1379,6 @@
       "maintainerNotes": "tests/functional/certification-runner.functional.test.mjs — end-to-end construct certify run."
     },
     {
-      "path": "tests/functional/chat-color-scheme.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-color-scheme.functional.test.mjs — terminal theme detection."
-    },
-    {
-      "path": "tests/functional/chat-config-commands.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-config-commands.functional.test.mjs — settings, usage, and"
-    },
-    {
-      "path": "tests/functional/chat-design-tokens.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-design-tokens.functional.test.mjs — chat brand token wiring."
-    },
-    {
-      "path": "tests/functional/chat-export.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-export.functional.test.mjs — plain markdown export."
-    },
-    {
-      "path": "tests/functional/chat-free-router-mode.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-free-router-mode.functional.test.mjs — modelMode persistence."
-    },
-    {
-      "path": "tests/functional/chat-list-picker.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-list-picker.functional.test.mjs — searchable list picker helpers."
-    },
-    {
-      "path": "tests/functional/chat-loop-overlay.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-loop-overlay.functional.test.mjs — SSE overlay shape for web cockpit."
-    },
-    {
-      "path": "tests/functional/chat-markdown.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-markdown.functional.test.mjs — terminal markdown subset."
-    },
-    {
-      "path": "tests/functional/chat-model-picker-terminal.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-model-picker-terminal.functional.test.mjs — linear /model picker."
-    },
-    {
-      "path": "tests/functional/chat-model-picker.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-model-picker.functional.test.mjs — model picker helpers."
-    },
-    {
-      "path": "tests/functional/chat-model-resolution.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-model-resolution.functional.test.mjs — validated chat"
-    },
-    {
-      "path": "tests/functional/chat-openrouter-fallback.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-openrouter-fallback.functional.test.mjs — OpenRouter fallback helpers."
-    },
-    {
-      "path": "tests/functional/chat-overhaul-devils-advocate.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-overhaul-devils-advocate.functional.test.mjs — encodes"
-    },
-    {
-      "path": "tests/functional/chat-owned-loop.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-owned-loop.functional.test.mjs — the owned-loop driver"
-    },
-    {
-      "path": "tests/functional/chat-permission-prompt.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-permission-prompt.functional.test.mjs — ask-mode decision parsing."
-    },
-    {
-      "path": "tests/functional/chat-policy-overlay.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-policy-overlay.functional.test.mjs — routeRequest overlay +"
-    },
-    {
-      "path": "tests/functional/chat-present-route.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-present-route.functional.test.mjs — route strip formatters."
-    },
-    {
-      "path": "tests/functional/chat-providers.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-providers.functional.test.mjs — isolated validation of OpenRouter, Copilot, Ollama."
-    },
-    {
-      "path": "tests/functional/chat-render.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-render.functional.test.mjs — verify the accessible chat"
-    },
-    {
-      "path": "tests/functional/chat-session-context.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-session-context.functional.test.mjs — planTurn session context."
-    },
-    {
-      "path": "tests/functional/chat-session-restore.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-session-restore.functional.test.mjs — session resume for chat."
-    },
-    {
-      "path": "tests/functional/chat-surface.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-surface.functional.test.mjs — terminal-only chat entry."
-    },
-    {
-      "path": "tests/functional/chat-system-prompt-tier.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "chat-system-prompt-tier.functional.test.mjs — tier-aware owned-loop prompts."
-    },
-    {
-      "path": "tests/functional/chat-tools.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-tools.functional.test.mjs — the owned loop's tool"
-    },
-    {
-      "path": "tests/functional/chat-turn-block.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-turn-block.functional.test.mjs — turn block model and reducer order."
-    },
-    {
-      "path": "tests/functional/chat-turn-present.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-turn-present.functional.test.mjs — turn summary formatting."
-    },
-    {
-      "path": "tests/functional/chat-visual-live-anthropic.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-visual-live-anthropic.functional.test.mjs — opt-in live depth tests."
-    },
-    {
-      "path": "tests/functional/chat-visual-suite.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/chat-visual-suite.functional.test.mjs — hermetic visual stages."
-    },
-    {
       "path": "tests/functional/claude-orchestration-prompt.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1681,24 +1417,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/construct-not-invoked-is-inert.functional.test.mjs"
-    },
-    {
-      "path": "tests/functional/context-compaction-wiring.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [
-        "chat.continuation.export"
-      ],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/context-compaction-wiring.functional.test.mjs — the live wiring"
-    },
-    {
-      "path": "tests/functional/context-continuation.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/context-continuation.functional.test.mjs — the live"
     },
     {
       "path": "tests/functional/copilot-auth.functional.test.mjs",
@@ -1757,7 +1475,7 @@
       "layer": "functional",
       "category": "functional",
       "capabilities": [
-        "demo.terminal-fallback"
+        "demo.tape-fallback"
       ],
       "skipped": false,
       "maintainerNotes": "demo.functional.test.mjs — `construct demo` smoke gate."
@@ -1891,14 +1609,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/event-bus-per-project.test.mjs — per-project event isolation."
-    },
-    {
-      "path": "tests/functional/execution-policy.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/execution-policy.functional.test.mjs — the live policy wiring"
     },
     {
       "path": "tests/functional/find-tool.functional.test.mjs",
@@ -2249,6 +1959,16 @@
       "maintainerNotes": "opencode-mcp-trim-scoping.functional.test.mjs — bead construct-0mnj (WS2)."
     },
     {
+      "path": "tests/functional/opencode-primary-surface.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "surfaces.opencode-primary"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/opencode-primary-surface.functional.test.mjs — OpenCode-first surface."
+    },
+    {
       "path": "tests/functional/opencode-tool-gateway.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2521,14 +2241,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/telemetry-backend-agnostic.functional.test.mjs"
-    },
-    {
-      "path": "tests/functional/turn-controls.functional.test.mjs",
-      "layer": "functional",
-      "category": "functional",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/functional/turn-controls.functional.test.mjs — the live control-wiring seam"
     },
     {
       "path": "tests/functional/uninstall-coverage.functional.test.mjs",
@@ -3635,14 +3347,6 @@
       "maintainerNotes": "tests/prompt-surface.test.mjs — prompt surface policy enforcement tests"
     },
     {
-      "path": "tests/provider-adapters.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/provider-adapters.test.mjs — centralized provider adapters (construct-6zga.1.3)."
-    },
-    {
       "path": "tests/provider-behavior-matrix.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4237,14 +3941,6 @@
       "maintainerNotes": "tests/test-isolation.test.mjs — regression guard for functional test HOME isolation."
     },
     {
-      "path": "tests/tool-budget.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/tool-budget.test.mjs — unit coverage for the owned-loop tool-budget filter"
-    },
-    {
       "path": "tests/tool-invisibility.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4323,14 +4019,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/vector-client.test.mjs — tests for lib/storage/vector-client.mjs"
-    },
-    {
-      "path": "tests/visual/depth-rubric.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/visual/depth-rubric.test.mjs — unit tests for output-depth scoring."
     },
     {
       "path": "tests/wireframe.test.mjs",

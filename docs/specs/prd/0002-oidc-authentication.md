@@ -37,7 +37,7 @@ Sources: `docs/specs/prd/0001-construct-org-in-a-box.md` OQ-2; `STRATEGY.md` Pha
 |---|---|---|---|
 | **Construct administrator** | Configures IdP, manages `cx/auth.yaml`, rotates secrets | Manually edits `.env`; no enforcement | 1 per deployment |
 | **Dashboard user** | Authenticates to the web dashboard; triggers approval-queue actions | No auth; any local user has full access | 1–50 per team deployment |
-| **CLI user** | Runs `construct chat`, `construct publish`, `construct embed` from a terminal | Shared env-var credentials; no per-user token | 1–10 per team deployment |
+| **Operator** | Runs `construct sync`, `construct publish`, and `construct embed`, then works through OpenCode or another supported host | Shared env-var credentials; no per-user token | 1–10 per team deployment |
 | **CI runner / Oracle daemon** | Headless; performs scheduled actions without a human in the loop | Static long-lived tokens in CI secrets | N runners per pipeline |
 | **Security admin** | Audits auth events, exports logs, enforces retention | No structured auth log exists | 1 per enterprise deployment |
 

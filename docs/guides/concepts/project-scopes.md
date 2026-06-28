@@ -12,7 +12,7 @@ Construct uses four storage roots. Mixing them is the usual source of “why is 
 | `templates/**` | Package (Construct repo) | Shipped demos, scripts, PDF themes, doc templates | Yes |
 | `docs/**` | Package / project docs | ADRs, cookbooks, durable research that informed decisions | Yes |
 | `.construct/` (project root) | Host project | Launcher staged by `construct init`; runs hooks via `.construct/run.mjs` | No (gitignored) |
-| `.cx/` (project root) | Host project runtime | Intake, oracle, observations, chat sessions, audit trails, project research briefs, recorded demos | No (gitignored) |
+| `.cx/` (project root) | Host project runtime | Intake, oracle, observations, audit trails, project research briefs, recorded demos | No (gitignored) |
 | `~/.construct/` | User machine | `config.env`, credentials, doctor state, auth tokens | No |
 | `~/.cx/` | User machine | Cross-project telemetry, role-pending queue, embed daemon logs when no project marker | No |
 
@@ -28,7 +28,6 @@ Construct uses four storage roots. Mixing them is the usual source of “why is 
 | `.cx/observations/` | Machine observations + entity graph | No |
 | `.cx/oracle/` | Oracle verdicts, routing, pending actions | No |
 | `.cx/traces/` | Session trace shards | No |
-| `.cx/chat-sessions/` | Construct chat transcripts | No |
 | `.cx/demos/` | Recorded demo outputs (`.mp4`, project `.tape` overrides) | Optional override tapes |
 | `.cx/context.md` | Session handoff context | Yes |
 | `.cx/publish/` | `construct publish` outputs | No |

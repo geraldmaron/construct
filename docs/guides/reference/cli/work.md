@@ -11,7 +11,7 @@ description: Work commands for Construct.
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
-| `construct demo` | Run guided demos via construct chat (default) or record VHS/asciinema tapes |
+| `construct demo` | Run guided tours or record VHS/asciinema tapes |
 | `construct diagram` | Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001) |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
@@ -25,7 +25,7 @@ description: Work commands for Construct.
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
-| `construct reflect` | Capture improvement feedback from chat session and update Construct core |
+| `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
@@ -89,24 +89,21 @@ construct customer list|show|add|update|search
 
 ## construct demo
 
-Run guided demos via construct chat (default) or record VHS/asciinema tapes
+Run guided tours or record VHS/asciinema tapes
 
 **Usage**
 
 ```bash
-construct demo <list|init|record|name> [--surface=chat|tape] [--format=gif|mp4|webm] [--out=<path>] [--source-only]
+construct demo <list|init|record|tour|name> [--surface=tape|playwright] [--format=gif|mp4|webm] [--out=<path>] [--source-only]
 ```
 
 **Options**
 
 | Flag | Description |
 |---|---|
-| `--surface=<s>` | chat (default) | tape |
-| `--model=<id>` | Pin model for chat demo |
-| `--plain` | Linear chat renderer (accessibility / non-TTY) |
+| `--surface=<s>` | tape (default) | playwright |
 | `--accessible` | Screen-reader-friendly linear tour renderer |
 | `--skip-input` | Tour: auto-advance without waiting for Enter (headless/CI) |
-| `--free` | OpenRouter free-router mode for chat demo |
 | `--format=<f>` | gif (default) | mp4 | webm (tape surface only) |
 | `--out=<path>` | Output path (tape recording) |
 | `--from=<t>` | Template for init: quickstart | diagram |
@@ -297,7 +294,7 @@ construct publish <markdown> [--to=pdf] [--type=DOC] [--demo=NAME] [--strict]
 
 ## construct reflect
 
-Capture improvement feedback from chat session and update Construct core
+Capture improvement feedback and update Construct core
 
 **Usage**
 

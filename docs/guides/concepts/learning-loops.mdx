@@ -70,9 +70,9 @@ Every dispatched specialist writes a JSONL line to `.cx/outcomes/<role>.jsonl` v
 
 `lib/evaluator-optimizer.mjs` generates unified diffs against `specialists/prompts/cx-*.md` when an agent's score drops below the threshold. Patches land at `~/.cx/performance-reviews/patches/<agent>-<ts>.diff`. Nothing auto-applies. `node scripts/optimize.mjs <agent> --apply` promotes a version; `--rollback` restores from `.bak` history. Versions live in `specialists/org` under `promptHistory[]` (capped at 5). Rate-limited to one auto-generated patch per agent per week. Apply/rollback are CLI-only by design. Registry mutations stay on the operator path.
 
-### Evidence provenance in chat
+### Evidence provenance in host runs
 
-When a chat turn requires repository evidence, a tool request is not itself proof. Construct records a versioned immutable source only after the matching `read`, `grep`, or `glob` result completed successfully with a concrete target; a search/glob pattern alone is not a source. At turn close it stores a deterministic verdict: `verified`, `partially_verified`, `uncited_evidence`, `insufficient_evidence`, or `not_applicable`, with reason codes. A required-evidence answer is verified only when an exact recorded target or its structured `repo:<target>` identifier is cited in the answer; denied, failed, pending, unrelated, and hidden-layer tools never count. The verdict persists through terminal, SSE/web, JSONL snapshots, resume, and export. Snapshots from before the schema existed migrate conservatively rather than being silently treated as verified.
+When a host run requires repository evidence, a tool request is not itself proof. Construct records a versioned immutable source only after the matching `read`, `grep`, or `glob` result completed successfully with a concrete target; a search/glob pattern alone is not a source. At turn close it stores a deterministic verdict: `verified`, `partially_verified`, `uncited_evidence`, `insufficient_evidence`, or `not_applicable`, with reason codes. A required-evidence answer is verified only when an exact recorded target or its structured `repo:<target>` identifier is cited in the answer; denied, failed, pending, unrelated, and hidden-layer tools never count.
 
 ## Profile-aware learning
 

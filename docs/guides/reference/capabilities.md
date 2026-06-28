@@ -11,12 +11,12 @@ description: Generated from registry/capabilities.json. Do not edit by hand.
 
 | ID | Name | Criticality | Surfaces | Human gate | Last validated |
 |---|---|---|---|---|---|
-| `chat.owned-loop` | Chat Owned Loop | P1 | cli:construct | proposal-only | 2026-06-26 |
 | `local.model.tier` | Local Model Tier Detection | P1 | cli:construct models resolve | proposal-only | 2026-06-26 |
 | `mcp.broker.connection` | MCP Broker Connectivity | P0 | mcp:primary, opencode, cursor, vscode, claude | autonomous | 2026-06-26 |
 | `mcp.tool-budget.trim` | MCP Tool Surface Trim | P2 | opencode | proposal-only | never |
 | `oracle.meta-review` | Oracle Meta-Review | P1 | cli:construct oracle review | approve-only | 2026-06-26 |
 | `orchestration.routing` | Orchestration Intent Routing | P0 | mcp:primary:orchestration_policy, cli:construct orchestrate run, opencode, claude, cursor | proposal-only | 2026-06-26 |
+| `surfaces.opencode-primary` | OpenCode Primary Surface | P1 | opencode:primary, mcp:orchestration_policy, cli:construct sync | proposal-only | never |
 
 ## document-type
 

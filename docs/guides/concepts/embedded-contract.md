@@ -3,7 +3,7 @@ title: Embedded contract layer
 description: The stable, versioned, secret-free surface another application uses to embed Construct as an orchestration layer — capability discovery, triage, model resolution, execution-capability resolution, and workflow invocation over CLI, MCP, and SDK.
 ---
 
-The **Embedded Contract Layer (ECL)** lets another product use Construct's reusable roles, skills, and workflows without driving an interactive chat session, hosting the editor, or depending on Construct's internal prompt structure. It is distinct from Embed *mode* (the ingestion daemon); the ECL is the app-facing API.
+The **Embedded Contract Layer (ECL)** lets another product use Construct's reusable roles, skills, and workflows without driving an interactive assistant session, hosting the editor, or depending on Construct's internal prompt structure. It is distinct from Embed *mode* (the ingestion daemon); the ECL is the app-facing API.
 
 It lives in `lib/embedded-contract/` and exposes five contracts over one shared core, on three interchangeable surfaces.
 

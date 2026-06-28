@@ -1847,7 +1847,7 @@ function syncOpencode(entries, targetDir = null, wants = true) {
     // into EVERY agent's request — github ~30k alone (fixtures 2026-06-22) —
     // agent's request — including the built-in Build/Plan agents the per-agent
     // permission prune cannot reach. OpenCode 1.15.4 has no per-session tool
-    // filter (chat.params carries no tool list), so disabling the whole server in
+    // filter (OpenCode chat.params carries no tool list), so disabling the whole server in
     // opencode.json is the only lever. The decision is INTENT-driven: trim only
     // when this config's own default model is local (or a local Ollama provider is
     // registered in it), so a cloud session on a machine that merely also has
@@ -1972,7 +1972,7 @@ function syncOpencode(entries, targetDir = null, wants = true) {
   config.construct = config.construct || {};
   config.construct.models = { ...resolvedModels };
 
-  // Seed a text-capable primary model when the user has not pinned one, so chat
+  // Seed a text-capable primary model when the user has not pinned one, so OpenCode
   // and routing never fall through to a host provider-default that happens to be
   // an image/non-text model. Seeds only when absent; an explicit user choice is
   // never overwritten. resolvedModels.standard is family-/registry-aware and

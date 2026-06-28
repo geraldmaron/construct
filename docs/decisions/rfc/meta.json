@@ -3,7 +3,6 @@
   "pages": [
     "0001-embed-yaml-schema",
     "0002-provider-capability-matrix",
-    "0003-dashboard-chat-protocol",
     "0004-team-orchestration-integration"
   ]
 }

@@ -2,7 +2,7 @@
   "$schema": "https://construct.dev/schemas/agent-manifest.v1.json",
   "version": 1,
   "kind": "agent-execution-manifest",
-  "description": "How an agent should reach Construct: MCP-first tool surface, with bare `construct` as the human entry. Source-of-truth values (core tool set, long-tail dispatcher) are verified against lib/mcp/server.mjs by tests/agent-manifest.test.mjs.",
+  "description": "How an agent should reach Construct: MCP-first tool surface, with OpenCode as the primary human conversation surface. Source-of-truth values (core tool set, long-tail dispatcher) are verified against lib/mcp/server.mjs by tests/agent-manifest.test.mjs.",
   "sources": {
     "coreTools": "lib/mcp/server.mjs (CORE_TOOL_NAMES)",
     "longTail": "lib/mcp/server.mjs (CONSTRUCT_CALL_TOOL)",
@@ -82,10 +82,11 @@
     }
   },
   "humanEntry": {
-    "command": "construct",
+    "command": "opencode",
     "subcommand": null,
-    "use": "A human runs bare `construct` to start the interactive chat session. This is the primary human entry; agents use the MCP tool surface above, not the chat REPL.",
-    "rationale": "Bare `construct` is the sole chat entry after the dashboard removal and chat-subcommand deprecation."
+    "use": "A human uses OpenCode as the primary conversation surface after `construct sync` installs the Construct front-door agent, MCP wiring, and runtime plugin. The `construct` CLI remains setup/admin/headless infrastructure.",
+    "rationale": "Construct no longer ships a local conversation UI; OpenCode is primary and other public hosts use generated adapters or MCP.",
+    "surface": "opencode"
   },
   "credentials": {
     "policy": "mcp-mediated",

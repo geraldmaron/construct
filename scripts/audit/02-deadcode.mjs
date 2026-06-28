@@ -1,8 +1,8 @@
 /**
  * 02-deadcode.mjs — Phase 2: lib modules with no inbound reference.
  *
- * Builds the import graph over the whole repo — including the buildable `apps/chat`
- * surface whose source consumes lib contract modules — from static
+ * Builds the import graph over the whole repo — including buildable app packages
+ * whose source consumes lib contract modules — from static
  * `from`/side-effect imports and dynamic `import('<literal>')`, and reports lib modules
  * nothing references. Construct
  * dispatches heavily through dynamic imports, so the graph must include those or it would

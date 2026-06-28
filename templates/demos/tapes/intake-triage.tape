@@ -8,7 +8,7 @@ Set Height 720
 Set Theme "Dracula"
 Set TypingSpeed 42ms
 
-Type "node bin/construct --demo=intake-triage --plain"
+Type "node bin/construct --demo=intake-triage"
 Sleep 800ms
 Enter
 Sleep 3s

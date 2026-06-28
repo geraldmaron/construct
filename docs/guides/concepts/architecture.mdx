@@ -44,15 +44,15 @@ The loop is the differentiator. Other agent tools dispatch to specialists; Const
 
 ## Interaction surfaces
 
-The CLI registry is the substrate (~118 commands). Four surfaces are emphasized for everyday use ([ADR-0039](/decisions/adr/0039-interaction-surface-model)):
+The CLI registry is the substrate (~118 commands). OpenCode is the first-class conversational surface; other supported hosts reach the same engine through MCP, ACP, or generated adapter files ([ADR-0039](/decisions/adr/0039-interaction-surface-model)):
 
 | Surface | Entry | Role |
 |---|---|---|
-| Agent / MCP | `@construct` in Claude, OpenCode, Codex, Cursor, Copilot | Primary authoring — orchestration policy, skills, workflows |
-| Terminal chat | `construct` (no subcommand) | Owned agent loop in the terminal renderer (`--plain`/`--accessible` for linear) |
-| Thin CLI | `construct status`, `construct doctor`, `construct intake`, … | Operator diagnostics and queue inspection |
+| OpenCode | `construct` agent in OpenCode | Primary conversational authoring surface |
+| Agent / MCP | `@construct` or MCP tools in Claude, Codex, Cursor, Copilot, VS Code | Orchestration policy, skills, workflows |
+| Thin CLI | `construct status`, `construct doctor`, `construct intake`, … | Operator diagnostics, setup, queue inspection, CI/headless contracts |
 
-Oracle (`construct oracle status`) sits alongside as an L0.5 bounded-auto health layer — not a user-facing chat surface.
+Oracle (`construct oracle status`) sits alongside as an L0.5 bounded-auto health layer — not a user-facing conversation surface.
 
 ## Document I/O
 
@@ -65,7 +65,7 @@ Ingestion and export are optional halves bound to external tooling ([ADR-0024](/
 
 **In** accepts PDF, Office, email, AV, and plain text → normalized markdown. **Authoring** stays typed markdown artifacts. **Out** spans PDF, DOCX, DOC, HTML, deck, PPTX, RTF, ODT, EPUB, and more.
 
-Canonical format matrix: [Document I/O reference](/guides/reference/document-io). Brand tokens live in `lib/brand-tokens.mjs` and flow to PDF/HTML/deck/PPTX/chat via `lib/publish-template.mjs` and `lib/chat/design-tokens.mjs`.
+Canonical format matrix: [Document I/O reference](/guides/reference/document-io). Brand tokens live in `lib/brand-tokens.mjs` and flow to PDF/HTML/deck/PPTX via `lib/publish-template.mjs`.
 
 ## Where things live
 
@@ -88,7 +88,7 @@ Canonical format matrix: [Document I/O reference](/guides/reference/document-io)
 
 ```text
 construct/
-├── apps/           chat (engine), docs (shipped UIs)
+├── apps/           docs (shipped UI)
 ├── bin/            CLI entrypoint
 ├── lib/            runtime (hooks, MCP, providers, oracle, embed)
 ├── docs/           human + generated reference
@@ -204,9 +204,9 @@ Docker service management, embed daemon, and scheduler.
 - **Resource bootstrap**. `lib/bootstrap/resources.mjs` probes optional resources (Postgres, ONNX model, Docker, git); `construct init` runs the full wizard.
 - **Backup**. `lib/storage/backup.mjs` creates timestamped tar.gz archives covering observations, sessions, config.env (secrets redacted), registry snapshot, and Postgres dump. SHA-256 manifest for tamper detection. `construct backup create|verify|restore|list|prune`. `create` auto-prunes to `CONSTRUCT_BACKUP_RETAIN` (default 10) unless `--no-prune` is passed. Optional embed-daemon job `auto-backup` runs every `CONSTRUCT_AUTO_BACKUP_DAYS` days (off by default).
 
-### Web surfaces (retired)
+### Conversational surfaces
 
-The dashboard web app and the browser/desktop chat cockpits were retired with `lib/server` and `apps/dashboard` (construct-m7k2-web-deprecation). Construct is CLI/terminal-first: chat runs in the terminal renderer (`lib/chat/tui/render.mjs`); operator inspection is the thin CLI (`construct status`, `construct doctor`); credentials are managed via `construct creds` / `construct providers`; approvals route through the messaging provider, `construct oracle`, or `construct improvement`. The required-evidence provenance verdict — a versioned, secret-free verdict derived only from completed successful `read`/`grep`/`glob` results with concrete returned targets — still finishes every evidence turn and flows through the terminal renderer, JSONL/resume, and export. A matching answer citation is required for verification, and hiding the tool layer never creates verification.
+Construct does not ship its own terminal conversation loop. OpenCode is the primary conversation surface; Claude Code, Codex, VS Code, Cursor, Copilot, and ACP clients remain supported through generated adapters and the Construct MCP server. Operator inspection stays in the thin CLI (`construct status`, `construct doctor`); credentials are managed via `construct creds` / `construct providers`; approvals route through the messaging provider, `construct oracle`, or the host's approval surface.
 
 ### Deploy
 
@@ -354,9 +354,9 @@ The runtime has two pluggable axes behind unchanged callers: a worker backend an
 
 **Engine-as-service.** The runtime is reachable so hosts can be thin clients — the pattern Claude Code, OpenCode, and Goose all use to deliver multi-agent inside editors that have no native subagent primitive (the editor's missing primitive is immaterial when the engine owns the loop). Orchestration runs **in-process** by default (`lib/orchestration/runtime.mjs`): the `orchestration_run`/`orchestration_status` MCP tools and `construct orchestrate run|status` drive it directly — no daemon, no port, no token for the solo default. A remote orchestration service stays opt-in via `CONSTRUCT_ORCHESTRATION_URL` (bearer token from `CONSTRUCT_ORCHESTRATION_TOKEN`); `construct orchestrate run|status --remote` is the reference thin client, and a VS Code/Copilot extension, OpenCode, or CI drives the same API. Responses use the versioned, secret-free embedded-contract envelope. Decision: ADR-0022.
 
-## Terminal chat surface (own-the-loop, own-the-surface)
+## OpenCode-first surface
 
-Running `construct` with no subcommand is the interactive chat surface (ADR-0039 tier (c)). Construct runs the agent loop itself (ADR-0041): prompt → model → tool calls → tool results → repeat, on a provider-agnostic engine (Vercel AI SDK). Chat is **terminal-only**: the linear renderer (`lib/chat/tui/render.mjs`) is the sole surface after the desktop window and browser cockpit were retired with the dashboard server (construct-m7k2-web-deprecation). `--plain`/`--accessible` select the screen-reader-friendly mode explicitly. Settings persist to `.cx/chat-config.json`; transcripts to `.cx/chat-sessions/*.jsonl`. Decision: ADR-0041 (amended — desktop window + web cockpit retired; terminal-only).
+Run `construct sync` to install the OpenCode front-door agent, runtime plugin, and MCP wiring. OpenCode owns the user conversation; Construct owns the reusable contracts behind it: orchestration policy, workflow invocation, artifact authoring, ingestion, memory, and knowledge tools. The same MCP tools keep other public hosts functional without reintroducing a Construct terminal UI.
 
 ## Project-state hierarchy
 

@@ -204,7 +204,7 @@ describe('sync-specialists contract tests', () => {
       const settingsPath = path.join(tmpHome, '.claude', 'settings.json');
       const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
 
-      // The modular org no longer declares global MCP servers in the specialist
+      // The modular org declares no global MCP servers in the specialist
       // registry. Sync should not delete user/global MCP entries while installing
       // Construct safety hooks.
       assert.deepEqual(Object.keys(settings.mcpServers ?? {}).sort(), [

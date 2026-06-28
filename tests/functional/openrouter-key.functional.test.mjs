@@ -20,7 +20,7 @@ import {
 } from '../../lib/providers/credential-sources.mjs';
 import { API_KEY_CREDENTIALS } from '../../lib/providers/credential-catalog.mjs';
 import { hasSecret, __clearSecretCache } from '../../lib/providers/secret-resolver.mjs';
-import { isChatModelAvailable } from '../../lib/model-router.mjs';
+import { isModelAvailable, listAvailableModels } from '../../lib/model-router.mjs';
 import { configDir } from '../../lib/config/xdg.mjs';
 
 function withTmpHome(fn) {
@@ -67,7 +67,7 @@ test('discoverAlternateRawForCredential finds creds rotation store key', () => {
     assert.equal(readRawFromCredsStore('openrouter'), 'fixture-creds-openrouter-canary');
     assert.equal(discoverAlternateRawForCredential(entry, { home }), 'fixture-creds-openrouter-canary');
     assert.equal(hasSecret('OPENROUTER_API_KEY', { env: {}, cwd: home }), true);
-    const check = isChatModelAvailable('openrouter/google/gemma-3-27b-it:free', { env: {}, cwd: home });
+    const check = isModelAvailable('openrouter/google/gemma-3-27b-it:free', { env: {}, cwd: home });
     assert.equal(check.ok, true);
   });
 });
@@ -141,16 +141,13 @@ test('ensureConstructCredentials does not call 1Password when all keys are prese
   });
 });
 
-test('loadModelPickerItems always includes free router entry', async () => {
+test('listAvailableModels exposes configured OpenRouter candidates', async () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-picker-'));
   const original = process.env.HOME;
   process.env.HOME = home;
   try {
-    const { loadModelPickerItems, FREE_ROUTER_ITEM_ID } = await import('../../lib/chat/model-picker.mjs');
-    const items = await loadModelPickerItems(null, { env: {} });
-    assert.ok(items.some((item) => item.id === FREE_ROUTER_ITEM_ID));
-    const router = items.find((item) => item.id === FREE_ROUTER_ITEM_ID);
-    assert.equal(router.disabled, true);
+    const items = listAvailableModels({ env: { OPENROUTER_API_KEY: 'fixture-key' }, cwd: home });
+    assert.ok(items.some((item) => item.provider === 'openrouter'));
   } finally {
     process.env.HOME = original;
     fs.rmSync(home, { recursive: true, force: true });

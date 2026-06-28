@@ -31,8 +31,6 @@
     "0037-specialist-prompt-format",
     "0038-adaptive-local-prompt-composition",
     "0039-interaction-surface-model",
-    "0040-terminal-chat-delegated-loop",
-    "0041-terminal-chat-owned-loop",
     "0042-llm-credential-resolution",
     "0043-oracle-meta-controller",
     "0044-tool-repo-root-layout",

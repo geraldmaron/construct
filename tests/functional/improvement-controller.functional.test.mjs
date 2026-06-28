@@ -4,7 +4,7 @@
  *
  * Drives a proposal through the real controller and the real 1.6 evaluation report
  * (buildEvaluationReport), proving the governance invariants:
- *   - only versioned artifacts are admitted; raw chat history is refused (AC1).
+ *   - only versioned artifacts are admitted; raw session history is refused (AC1).
  *   - missing provenance, held-out results, deterministic pass, approver, or
  *     dependency each refuses the proposal (AC2).
  *   - promotability is re-derived from the report's gates, so a tampered decision
@@ -63,7 +63,7 @@ function proposal(over = {}) {
 
 const KNOWN = ['gd', 'reviewer-2'];
 
-test('only versioned artifacts are admitted; raw chat history is refused (AC1)', () => {
+test('only versioned artifacts are admitted; raw session history is refused (AC1)', () => {
   assert.equal(admitArtifacts({ proposal: proposal(), dataset: ITEM, evaluationReport: cleanReport() }).admissible, true);
   const rawHistory = [{ role: 'user', content: 'please apply my change' }];
   const refused = admitArtifacts({ proposal: proposal(), dataset: rawHistory, evaluationReport: rawHistory });

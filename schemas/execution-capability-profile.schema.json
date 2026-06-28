@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://construct.dev/schemas/execution-capability-profile.schema.json",
   "title": "Construct Execution Capability Profile",
-  "description": "The single resolved capability record consumed by chat and specialist prompt composition (construct-6zga.1.8). Keyed by provider, requested/resolved model, adapter protocol, and observation time. Every capability declares its evidence source and confidence; unknowns compile to conservative defaults with a degraded flag.",
+  "description": "The single resolved capability record consumed by model routing and specialist prompt composition (construct-6zga.1.8). Keyed by provider, requested/resolved model, adapter protocol, and observation time. Every capability declares its evidence source and confidence; unknowns compile to conservative defaults with a degraded flag.",
   "type": "object",
   "required": ["schemaVersion", "key", "capabilityClass", "transport", "capabilities", "degraded", "evidenceSources"],
   "additionalProperties": false,
