@@ -18,6 +18,9 @@ import {
   palette,
   resolveColors,
   termWidth,
+  displayWidth,
+  clipToWidth,
+  padToWidth,
   wrapText,
   stripAnsi,
 } from '../lib/term-format.mjs';
@@ -68,6 +71,31 @@ describe('term-format enforces rules/common/neurodivergent-output.md', () => {
     assert.equal(termWidth({ isTTY: true, columns: 90 }), 90, 'normal widths pass through under the cap');
   });
 
+  it('displayWidth counts graphemes, fullwidth code points, and markup as visible width only', () => {
+    assert.equal(displayWidth('abc'), 3);
+    assert.equal(displayWidth('中'), 2);
+    assert.equal(displayWidth('👩‍👩‍👧‍👧'), 2);
+    assert.equal(displayWidth('e\u0301'), 1);
+    assert.equal(displayWidth('\x1b[31mred\x1b[0m'), 3);
+    assert.equal(displayWidth('before \x1b]8;;https://example.com\x07link\x1b]8;;\x07 after'), 17);
+  });
+
+  it('clipToWidth preserves markup while clipping by visible width', () => {
+    const colored = clipToWidth('\x1b[31mred\x1b[0m and more', 3);
+    assert.equal(stripAnsi(colored), 'red');
+    assert.equal(displayWidth(colored), 3);
+
+    const hyperlink = clipToWidth('before \x1b]8;;https://example.com\x07link\x1b]8;;\x07 after', 12);
+    assert.equal(stripAnsi(hyperlink), 'before link ');
+    assert.ok(displayWidth(hyperlink) <= 12, 'clipped hyperlink text must fit within the requested width');
+  });
+
+  it('padToWidth adds only the spaces needed to reach the requested width', () => {
+    assert.equal(padToWidth('abc', 5), 'abc  ');
+    assert.equal(displayWidth(padToWidth('中', 4)), 4);
+    assert.equal(padToWidth('\x1b[31mred\x1b[0m', 6), '\x1b[31mred\x1b[0m   ');
+  });
+
   it('wrapText respects width and never splits a single long word', () => {
     const wrapped = wrapText('the quick brown fox jumps over the lazy dog', 20);
     for (const line of wrapped.split('\n')) {
@@ -81,5 +109,7 @@ describe('term-format enforces rules/common/neurodivergent-output.md', () => {
   it('stripAnsi removes color codes so output meant for plain-text consumers is safe', () => {
     const colored = `\x1b[31mred\x1b[0m and \x1b[1mbold\x1b[0m`;
     assert.equal(stripAnsi(colored), 'red and bold');
+    const linked = 'before \x1b]8;;https://example.com\x07link\x1b]8;;\x07 after';
+    assert.equal(stripAnsi(linked), 'before link after');
   });
 });
