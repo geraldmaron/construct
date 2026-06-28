@@ -42,8 +42,7 @@ What is there:
 - Intake loop classifies signals in `inbox/` deterministically, assigns owners, and routes through typed contract chains.
 - Hard gates fire at write time, commit time, and CI. Bypasses are env-var only and audited.
 - Solo mode runs locally with filesystem queue, local pgvector, JSONL traces. Team and enterprise modes exist as a scaffold.
-- Dashboard is shipped: chat (owned-loop `/chat` cockpit), approvals, knowledge panel, providers, models, infra tab.
-- **`construct chat`** ships an owned-loop terminal and browser surface (ADR-0041) with transparency-first layout.
+- OpenCode is the first-class conversation surface. Construct supplies the front-door agent, MCP tools, workflows, and runtime plugin through generated host adapters.
 - **Oracle** L0.5 meta-controller collects signals, auto-executes safe maintenance, queues consequential fixes (`construct oracle`).
 - Doc auditability stamps land on every generated `.md` file.
 - A docs site is published at `geraldmaron.github.io/construct/`.

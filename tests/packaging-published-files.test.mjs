@@ -2,11 +2,9 @@
  * tests/packaging-published-files.test.mjs
  *
  * The npm `files` allowlist must cover every module that shipped code imports.
- * lib/chat and the models CLI import the owned-loop engine from apps/chat/engine
- * via relative paths; if those files are not in the allowlist they are absent
- * from the published tarball and the import throws ERR_MODULE_NOT_FOUND on a
- * packaged install. This walks the shipped surface, extracts each apps/ import,
- * and asserts the allowlist publishes it. Pure static analysis, no npm pack.
+ * Shipped code may import modules from apps/ only when those modules are listed
+ * in package.json files. This walks the shipped surface and checks any such
+ * imports. Pure static analysis, no npm pack.
  */
 
 import assert from 'node:assert/strict';
@@ -73,7 +71,6 @@ function collectAppsImports() {
 
 test('every apps/ module imported by shipped code is in the npm files allowlist', () => {
   const imports = collectAppsImports();
-  assert.ok(imports.size > 0, 'expected at least one apps/ import in shipped code');
   const offenders = [];
   for (const [rel, importer] of imports) {
     if (!isPublished(rel)) offenders.push(`${rel} (imported by ${path.relative(REPO, importer)})`);

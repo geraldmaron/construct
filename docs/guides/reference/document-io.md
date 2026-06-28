@@ -151,4 +151,4 @@ Reports export (Pandoc, Typst, LibreOffice for `.doc`, pptxgenjs, deck template)
 
 ## Brand consistency
 
-Distribution exports, chat UI, dashboard, and wireframe scaffolds share the Construct brand contract documented in [branding.md](./branding.md). Visual tokens live in [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) (monochrome ink ramp, Space Grotesk / JetBrains Mono). PPTX exports embed bundled TTF cuts via [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) when `pptx-embed-fonts` is installed.
+Distribution exports, dashboard, supported hosts, and wireframe scaffolds share the Construct brand contract documented in [branding.md](./branding.md). Visual tokens live in [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) (monochrome ink ramp, Space Grotesk / JetBrains Mono). PPTX exports embed bundled TTF cuts via [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) when `pptx-embed-fonts` is installed.

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://construct.dev/schemas/project-demo.schema.json",
   "title": "Construct project demo plug-in manifest",
-  "description": "Schema for .cx/demos/<name>.project.json — a project-defined demo plug-in scaffolded by `construct demo init --from-project`. Declares a project-local demo and the chat-guided script + terminal tape it ships with. Project runtime state; gitignored in consuming projects.",
+  "description": "Schema for .cx/demos/<name>.project.json — a project-defined demo plug-in scaffolded by `construct demo init --from-project`. Declares a project-local demo and the script plus terminal tape it ships with. Project runtime state; gitignored in consuming projects.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "name", "title", "project", "script"],
@@ -38,7 +38,7 @@
     },
     "script": {
       "type": "string",
-      "description": "Repo-relative path to the chat-guided demo script under .cx/demos/scripts/.",
+      "description": "Repo-relative path to the demo script under .cx/demos/scripts/.",
       "pattern": "^\\.cx/demos/scripts/.+\\.json$"
     },
     "tape": {
@@ -47,7 +47,7 @@
     },
     "fallbackSurface": {
       "type": "string",
-      "description": "Surface to fall back to when chat is unavailable.",
+      "description": "Surface to fall back to when the requested demo runner is unavailable.",
       "enum": ["tape", "playwright"],
       "default": "tape"
     },

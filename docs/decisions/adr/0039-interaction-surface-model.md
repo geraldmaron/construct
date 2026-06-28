@@ -62,12 +62,13 @@ for*, so that discovery, documentation, and future additions route to the right 
   prompts and skills. The tooling scorecard (`docs/operations/audit/tooling-scorecard.md`) deferred the
   *prompt/visual* layer ("re-grade in Phase 5") and flagged the `tty-prompts` interactive layer as
   the open design question — i.e. the interactive surface is under-developed relative to the CLI.
-- **The interactive surface is the primary human path for review/triage work.** `lib/tty-prompts.mjs`
-  (menus, multiselect) and `--select` flows (`construct dev --select`, `profile create` interactive,
-  `intake show`, bare `construct` for terminal chat) are the TUI layer. The HTTP dashboard
-  (`lib/server/`, `apps/dashboard/`) was retired 2026-06-25 (`construct-m7k2-web-deprecation`);
-  visual/telemetry work routes through the thin CLI (`construct status`, `construct doctor`,
-  `construct oracle`) with `--json` twins or external telemetry backends.
+- **OpenCode is the primary human conversation surface.** `construct sync` installs
+  the OpenCode front door, MCP wiring, and runtime plugin. `lib/tty-prompts.mjs`
+  still supports bounded CLI selection flows (`construct dev --select`, profile
+  creation, intake review), but Construct no longer ships its own local conversation
+  loop. The HTTP dashboard was retired; visual/telemetry work routes through the
+  thin CLI (`construct status`, `construct doctor`, `construct oracle`) with
+  `--json` twins or external telemetry backends.
 
 ## Decision
 
@@ -81,10 +82,10 @@ where new capability of that shape should land:
 - **(b) Thin human CLI** — setup, ops, lifecycle one-shots. The CLI verb is canonical and primary;
   this is the only tier a human is expected to type by hand. It stays the 13-ish `core: true` set
   plus lifecycle verbs.
-- **(c) TUI (interactive)** — review/triage/selection work that wants a stateful interactive loop,
-  not a one-shot. Bare `construct` (terminal chat), intake/profile `--select` flows, and demo
-  tours are the primary human surfaces here; the CLI verb stays as the non-interactive entry
-  underneath.
+- **(c) OpenCode / supported host UI** — human conversation and review work. OpenCode is
+  primary; Claude Code, Codex, VS Code, Cursor, Copilot, and ACP clients stay supported
+  through generated adapters and MCP. CLI `--select` flows remain for bounded setup/review
+  choices, not as a conversational product surface.
 - **(d) Dashboard (deprecated, retired 2026-06-25)** — was the visual/telemetry cockpit
   (`lib/server/`, `apps/dashboard/`). Deleted; do not assign new capability here. Historical
   references in this ADR's surface map are superseded by the amendment below.
@@ -123,8 +124,8 @@ One-line read per tier:
   form is the `--json` scripting twin, not the primary face.
 - **(b) thin human CLI** — setup/ops/lifecycle/CI-gate verbs; the ~13 `core` set plus lifecycle and
   integration verbs are what a human actually types.
-- **(c) TUI** — interactive triage, profile/workspace authoring, terminal chat (bare
-  `construct`), and sandbox/intake review want a stateful loop; the CLI one-shot stays underneath.
+- **(c) OpenCode / supported host UI** — human conversation happens in editor/agent hosts;
+  CLI one-shots stay underneath for setup, status, and headless contracts.
 - **(internal)** — 18 harness/CI verbs, already invisible to both human and agent by design.
 
 ## Rationale
@@ -202,7 +203,7 @@ truth, there is no data migration to unwind and no external contract to break.
 - `lib/cli-commands.mjs` (CLI_COMMANDS, ALL_COMMAND_NAMES, COMMAND_NAMES; `core`/`internal` flags)
 - `scripts/audit/00-inventory.mjs` (census: 110 commands, 13 core, 18 internal, 22 lazy-import handlers — verified this session)
 - `lib/mcp/server.mjs` (52 tools; 7-tool flat core `CORE_TOOL_NAMES`; `construct_call` long-tail collapse; embedded-contract tools `triage_recommend`, `workflow_invoke`, `capability_describe`, `construct_execution_resolve`, `model_resolve`, `orchestration_run`/`orchestration_status`)
-- `lib/tty-prompts.mjs`, `lib/chat/**` (TUI / terminal chat surfaces; dashboard deleted)
+- `lib/tty-prompts.mjs` (bounded CLI selection flows; legacy local-loop code deleted)
 - `docs/operations/audit/tooling-scorecard.md` (interactive/visual layer flagged as the open design question)
 - `docs/notes/research/2026-06-construct-audit/80-synthesis.md` (item 2 — keep the always-on agent surface tiny, load the rest by trigger)
 - ADR-0001 (zero-npm-core registry dispatcher — the substrate)
@@ -220,4 +221,4 @@ The tier (a) agent/MCP surface kept only read/think tools flat (`orchestration_p
 
 ## Amendment (2026-06-25) — tier (d) Dashboard retired
 
-The **(d) Dashboard** tier is retired (`construct-m7k2-web-deprecation`). The HTTP daemon (`lib/server/`) and the Next.js cockpit (`apps/dashboard/`) are deleted; Construct is CLI/terminal-first. Visual, telemetry, and observability now surface through the thin human CLI (`construct status`, `construct doctor`, `construct oracle`) with `--json` twins for scripting, and through external telemetry backends (OpenTelemetry / Langfuse) configured via `CONSTRUCT_TELEMETRY_URL`. The surviving tiers are **(a) agent / MCP-native**, **(b) thin human CLI**, **(c) TUI / terminal chat**, and **(internal)**. The forward rule "new visual capability lands on the dashboard first" no longer applies — visual capability lands on the thin CLI (`--json`) or an external telemetry backend. Surface-map entries that named the dashboard tier are reclassified in `lib/registry/surface-map.mjs` as remediation lands (`construct-596m`).
+The **(d) Dashboard** tier is retired (`construct-m7k2-web-deprecation`). The HTTP daemon (`lib/server/`) and the Next.js cockpit (`apps/dashboard/`) are deleted. Visual, telemetry, and observability now surface through the thin human CLI (`construct status`, `construct doctor`, `construct oracle`) with `--json` twins for scripting, and through external telemetry backends (OpenTelemetry / Langfuse) configured via `CONSTRUCT_TELEMETRY_URL`. The surviving tiers are **(a) agent / MCP-native**, **(b) thin human CLI**, **(c) OpenCode / supported host UI**, and **(internal)**. The forward rule "new visual capability lands on the dashboard first" no longer applies — visual capability lands on the thin CLI (`--json`) or an external telemetry backend.

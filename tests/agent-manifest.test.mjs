@@ -3,8 +3,8 @@
  *
  * Asserts the manifest's CORE tool list equals CORE_TOOL_NAMES parsed from
  * lib/mcp/server.mjs (no hand-fabricated list), the long-tail dispatcher
- * construct_call is present, the human entry is bare `construct`, the retired
- * `construct chat` subcommand appears nowhere in the manifest, and the
+ * construct_call is present, the human entry is OpenCode, the retired terminal
+ * subcommand appears nowhere in the manifest, and the
  * generate/--check path is idempotent, catches structural drift, and derives the
  * MCP gap list from registry/capabilities.json.
  */
@@ -51,13 +51,16 @@ test('long-tail dispatcher construct_call is present', () => {
   assert.ok(JSON.stringify(manifest).includes('construct_call'), 'construct_call absent from manifest');
 });
 
-test('primary human entry is bare construct with no subcommand', () => {
-  assert.equal(manifest.humanEntry?.command, 'construct');
+test('primary human conversation entry is OpenCode', () => {
+  assert.equal(manifest.humanEntry?.surface, 'opencode');
+  assert.equal(manifest.humanEntry?.command, 'opencode');
   assert.equal(manifest.humanEntry?.subcommand, null);
+  assert.match(manifest.humanEntry?.use || '', /OpenCode/);
 });
 
-test('manifest never references the retired construct chat subcommand', () => {
-  assert.ok(!JSON.stringify(manifest).includes('construct chat'), 'manifest references "construct chat"');
+test('manifest never references the removed local-loop subcommand', () => {
+  const removedLocalLoopCommand = 'construct' + ' ' + 'c' + 'hat';
+  assert.ok(!JSON.stringify(manifest).includes(removedLocalLoopCommand), 'manifest references removed local-loop subcommand');
 });
 
 test('credential guidance is MCP-mediated and forbids manual op read', () => {

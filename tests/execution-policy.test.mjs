@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import {
   EXECUTION_POLICY_SCHEMA_VERSION,
   compileExecutionPolicy,
-  compilePolicyFromOverlay,
+  compilePolicyFromRoutingOverlay,
   validateExecutionPolicy,
   normalizePolicyIntent,
   normalizePolicyRisk,
@@ -185,10 +185,10 @@ test('overlay normalization maps routing vocabulary onto policy inputs', () => {
   assert.equal(normalizeEvidenceRequirement({}), 'none');
 });
 
-test('compilePolicyFromOverlay threads a chat overlay through to a valid policy', () => {
+test('compilePolicyFromRoutingOverlay threads a routing overlay through to a valid policy', () => {
   const profile = resolveExecutionCapabilityProfile({ model: 'anthropic/claude-opus-4-6', now: NOW });
   const overlay = { intent: 'fix', riskFlags: { security: true }, externalResearch: { required: true }, assumptionsBlocked: false };
-  const policy = compilePolicyFromOverlay({ profile, overlay });
+  const policy = compilePolicyFromRoutingOverlay({ profile, overlay });
   assert.equal(policy.source.intent, 'code-change');
   assert.equal(policy.source.risk, 'high');
   assert.equal(policy.source.evidenceRequirement, 'required');

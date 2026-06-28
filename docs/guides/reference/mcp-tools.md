@@ -684,8 +684,8 @@ Materializes a typed artifact you have drafted (PRD, ADR, RFC, meta-prd, runbook
 research-brief, evidence-brief) to its canonical path and runs the release gate.
 The calling agent is the model: it drafts the markdown, this tool persists and
 validates it, then returns the path and a structured PASS/FAIL verdict with errors
-so the draft can be fixed and re-submitted. The opencode-reachable equivalent of
-the native chat `/loop` author pass.
+so the draft can be fixed and re-submitted. OpenCode and other supported hosts
+reach this contract through the synced Construct MCP server.
 
 | Parameter | Type | Description |
 |---|---|---|

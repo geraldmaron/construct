@@ -69,7 +69,7 @@ In your editor, start with `@construct`. Ask for the outcome, not the specialist
 | Add a custom specialist | [Add a custom specialist](https://geraldmaron.github.io/construct/cookbook/add-a-custom-agent) |
 | Fix a blocked commit or red CI | [Fix a policy violation](https://geraldmaron.github.io/construct/cookbook/fix-a-policy-violation) |
 | Plug in your own LLM | [Plug in your own LLM](https://geraldmaron.github.io/construct/cookbook/plug-in-your-own-llm) |
-| Run terminal chat on Construct's owned loop | [Construct chat](https://geraldmaron.github.io/construct/cookbook/construct-chat) |
+| Use Construct conversationally | [Connect your editor](https://geraldmaron.github.io/construct/start/connect-your-editor) |
 | Check fleet health (Oracle) | [Architecture — Oracle](https://geraldmaron.github.io/construct/concepts/architecture) |
 | Look up a CLI command | [CLI reference](https://geraldmaron.github.io/construct/reference/cli) |
 
@@ -151,7 +151,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
-| `construct demo` | Run guided demos via construct chat (default) or record VHS/asciinema tapes |
+| `construct demo` | Run guided tours or record VHS/asciinema tapes |
 | `construct diagram` | Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001) |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
@@ -165,7 +165,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
-| `construct reflect` | Capture improvement feedback from chat session and update Construct core |
+| `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
@@ -275,7 +275,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 <!-- AUTO:structure -->
 ```text
 construct/
-├── apps             User-facing apps shipped from this repo (chat, dashboard, docs)
+├── apps             User-facing apps shipped from this repo (dashboard, docs)
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
 ├── config           Repo-wide controlled vocabulary (tag-vocabulary.json)

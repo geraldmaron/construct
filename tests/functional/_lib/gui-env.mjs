@@ -7,5 +7,4 @@
 
 export const GUI_TEST_ENV = Object.freeze({
   DISPLAY: ':0',
-  CX_CHAT_NO_DISPLAY: '0',
 });

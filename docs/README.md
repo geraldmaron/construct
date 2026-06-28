@@ -123,17 +123,17 @@ Parallel work rule: one writer per file. If multiple agent or harness sessions a
 > Narrative docs index — this table is regenerated from `registry/capabilities.json`.
 > Run `npm run docs:sync` after catalog changes. Do not hand-edit inside the AUTO markers.
 
-Catalog census: 128 CLI commands, 43 npm scripts, 10 embedded workflows.
+Catalog census: 0 CLI commands, 0 npm scripts, 0 embedded workflows.
 
 | Capability | Criticality | CLI surface | Verification |
 |---|---|---|---|
-| `chat.owned-loop` | P1 | construct | `tests/functional/chat-owned-loop.functional.test.mjs` |
 | `ingest.adapter` | P0 | construct ingest | `tests/functional/node-native-extraction.functional.test.mjs` |
 | `ingest.docling` | P1 | construct ingest --legacy-extractor=false | `tests/functional/mcp-ingest-resilience.functional.test.mjs` |
-| `local.model.tier` | P1 | construct models resolve | `tests/functional/chat-free-router-mode.functional.test.mjs` |
+| `local.model.tier` | P1 | construct models resolve | `—` |
 | `mcp.broker.connection` | P0 | — | `tests/functional/mcp-parity.functional.test.mjs` |
 | `oracle.meta-review` | P1 | construct oracle review | `tests/functional/oracle-bounded-auto.functional.test.mjs` |
 | `orchestration.routing` | P0 | construct orchestrate run | `tests/functional/orchestration-mcp.functional.test.mjs` |
+| `surfaces.opencode-primary` | P1 | construct sync | `tests/functional/opencode-primary-surface.functional.test.mjs` |
 | `workflow.architecture-review` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
 | `workflow.evidence-ingest` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
 | `workflow.prd-draft` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |

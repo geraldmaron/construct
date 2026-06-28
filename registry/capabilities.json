@@ -889,7 +889,8 @@
         }
       },
       "verification": {
-        "functional": "tests/functional/chat-free-router-mode.functional.test.mjs"
+        "unit": "tests/capability-tier.test.mjs",
+        "integration": "tests/model-router-local.test.mjs"
       },
       "humanGate": "proposal-only",
       "lastValidated": "2026-06-26T20:01:41.876Z",
@@ -903,47 +904,39 @@
       }
     },
     {
-      "id": "chat.owned-loop",
+      "id": "surfaces.opencode-primary",
       "kind": "capability",
-      "name": "Chat Owned Loop",
-      "description": "Tier-aware system prompt and owned-loop engine behind the bare construct entry (the sole chat surface).",
+      "name": "OpenCode Primary Surface",
+      "description": "OpenCode is the first-class conversational surface; the construct CLI remains setup/admin/headless infrastructure.",
       "criticality": "P1",
       "ownerSpecialists": [
         "orchestrator"
       ],
       "surfaces": {
+        "opencode": {
+          "supported": true,
+          "primary": true
+        },
+        "mcp": {
+          "supported": true,
+          "tool": "orchestration_policy"
+        },
         "cli": {
           "supported": true,
-          "command": "construct"
+          "command": "construct sync"
         }
       },
       "verification": {
-        "functional": "tests/functional/chat-owned-loop.functional.test.mjs"
+        "functional": "tests/functional/opencode-primary-surface.functional.test.mjs",
+        "hostEmulation": "tests/functional/host-config-parity.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-26T20:01:41.992Z",
+      "lastValidated": null,
       "edges": {
         "cliCommands": [
-          "construct"
+          "sync"
         ],
-        "npmScripts": [
-          "build:sea",
-          "certify:demos",
-          "docs:init",
-          "docs:site",
-          "docs:update",
-          "docs:verify",
-          "doctor",
-          "evals",
-          "gates:audit",
-          "lint:agents",
-          "lint:comments",
-          "lint:contracts",
-          "lint:js",
-          "postinstall",
-          "release:check",
-          "version"
-        ],
+        "npmScripts": [],
         "workflows": []
       }
     },

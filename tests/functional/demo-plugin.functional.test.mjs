@@ -5,10 +5,10 @@
  *
  * Contract: in a project, `construct demo init <name> --from-project` scaffolds
  * a project demo plug-in under .cx/demos/ — a manifest (<name>.project.json), a
- * chat-guided script, and a terminal tape stub — seeded from real project
+ * guided script, and a terminal tape stub — seeded from real project
  * signals (no fabricated scenario content). The manifest must validate against
  * schemas/project-demo.schema.json, and the scaffolded script must load through
- * the same demo-script loader the chat surface uses. Hermetic: an isolated tmp
+ * the same demo-script loader shared with guided tours. Hermetic: an isolated tmp
  * project, the real binary, durable artifacts.
  */
 import assert from 'node:assert/strict';

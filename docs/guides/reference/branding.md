@@ -5,7 +5,7 @@ description: Canonical Construct brand contract — visual identity, naming, voi
 
 # Construct branding
 
-Single index for maintainers and agents. Generated surfaces (init scaffolding, platform sync, publish/export, dashboard, chat) must align with these rules.
+Single index for maintainers and agents. Generated surfaces (init scaffolding, platform sync, publish/export, dashboard, supported hosts) must align with these rules.
 
 ## Visual identity
 
@@ -13,8 +13,8 @@ Single index for maintainers and agents. Generated surfaces (init scaffolding, p
 |---------|-------|--------|
 | Sans / display | Space Grotesk (weights 400–700) | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) |
 | Monospace | JetBrains Mono | [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) |
-| Color | Monochrome ink ramp; pure-black (`#000`) chat canvas; white accent | [`templates/distribution/construct-brand.typ`](../../templates/distribution/construct-brand.typ) |
-| Chat / dashboard tokens | Same ink + typography via CSS vars | [`lib/chat/design-tokens.mjs`](../../lib/chat/design-tokens.mjs), [`packages/cx-ui/styles/theme.css`](../../packages/cx-ui/styles/theme.css) |
+| Color | Monochrome ink ramp; white accent | [`templates/distribution/construct-brand.typ`](../../templates/distribution/construct-brand.typ) |
+| Published artifact tokens | Same ink + typography via templates and CSS vars | [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs), [`packages/cx-ui/styles/theme.css`](../../packages/cx-ui/styles/theme.css) |
 
 Bundled fonts for offline export: [`templates/distribution/fonts/`](../../templates/distribution/fonts/). Typst export passes `--font-path`, `--ignore-system-fonts`, and `--ignore-embedded-fonts` so system fallbacks (Libertinus, DejaVu) never replace the brand faces.
 
@@ -88,7 +88,6 @@ Init templates and guides should use profile-neutral language and point readers 
 | `tests/brand-fonts.test.mjs` | Bundled TTF paths and family names |
 | `tests/brand-prose.test.mjs` | Marketing voice, Construct/cli naming, code-fence skipping |
 | `tests/functional/publish-template.functional.test.mjs` | Typst/HTML deck brand fonts |
-| `tests/functional/chat-design-tokens.functional.test.mjs` | Chat CSS vars vs brand tokens |
 | `scripts/audit/03d-brand.mjs` | Retired fonts, marketing voice, Construct/cli naming, hardcoded dashboard intake titles |
 | `lib/hooks/brand-prose-lint.mjs` | PostToolUse block on the same rules for governed paths |
 | `construct init:update` | Proposes or applies (`--apply-guide`) stale `.cx/construct_guide.md` refresh |

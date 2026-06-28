@@ -102,7 +102,7 @@ Keys under `models` in `construct.config.json`. Consumed by `lib/models/catalog.
 
 | Key | Default | Description |
 |---|---|---|
-| `models.visibility.mode` | `tier_defaults` | `tier_defaults` — registry tier primaries + fallbacks only (recommended for chat); `all_configured` — tier defaults plus a capped free OpenRouter slice; `explicit` — `models.visibility.include` allowlist only (active chat pin always shown). |
+| `models.visibility.mode` | `tier_defaults` | `tier_defaults` — registry tier primaries + fallbacks only; `all_configured` — tier defaults plus a capped free OpenRouter slice; `explicit` — `models.visibility.include` allowlist only. |
 | `models.visibility.include` | `[]` | Model ids shown when `mode` is `explicit`. |
 | `models.visibility.exclude` | `[]` | Hidden from pickers; pinned model outside visibility shows a warning. |
 | `models.visibility.providers` | `{}` | Per provider-family toggles (`openrouter`, `github-copilot`, …); `false` hides the family. |
@@ -119,8 +119,6 @@ construct models list --json
 ```
 
 Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CX_MODEL_*` (alias still honored for one release cycle).
-
-**Chat model mode** (`.cx/chat-config.json`): Default is `follow-tier` — chat resolves `CX_MODEL_*` on each launch without persisting a slug. Use `/model` to pin a specific id (`modelMode: pinned`); `/follow` returns to tier following. Retired or unavailable pins migrate to `follow-tier` on load (the stale slug is cleared, not rewritten).
 
 Typed integration selectors under `sources.targets`. Consumed by embed auto-discovery (when `embed.yaml` is absent), `provider_fetch`, and session-start source hints. Legacy env lists merge additively; an explicit `embed.yaml` in the XDG config dir remains a complete override.
 
@@ -213,10 +211,10 @@ Store provider keys in `config.env` (the XDG config dir, default `~/.config/cons
 **Recommended (one auth per invocation):** wrap the CLI with `op run` and a shared env file (same pattern as OpenCode on this machine):
 
 ```bash
-op run --no-masking --env-file="$HOME/.config/claude/.env.op" -- construct chat
+op run --no-masking --env-file="$HOME/.config/claude/.env.op" -- opencode
 ```
 
-When `op run` injects materialized keys into `process.env`, Construct keeps those values instead of overwriting them with stored `op://` refs from `config.env`. A local `~/bin/construct` wrapper is the usual setup; override with `CONSTRUCT_OP_ENV_FILE` and `CONSTRUCT_BIN`.
+When `op run` injects materialized keys into `process.env`, Construct keeps those values instead of overwriting them with stored `op://` refs from `config.env`. A local OpenCode wrapper is the usual setup; override with `CONSTRUCT_OP_ENV_FILE` and `CONSTRUCT_BIN`.
 | `GITHUB_REPOS` | Comma-separated `owner/repo` list surfaced as provider source hints at session start |
 | `JIRA_BASE_URL` | Atlassian Jira base URL (e.g. `https://yourorg.atlassian.net`) |
 | `JIRA_EMAIL` | Jira account email: used for Basic auth |

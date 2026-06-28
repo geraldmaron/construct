@@ -19,11 +19,11 @@ last_verified_at: 2026-06-22
 
 ## Problem
 
-Distribution exports (PDF, HTML, deck, PPTX) and dashboard/chat surfaces drifted when typography moved from retired font families to Space Grotesk and JetBrains Mono. Docs and templates cited stale names; some apps still declared unused npm font packages. Operators could not tell which file was canonical for brand behavior.
+Distribution exports (PDF, HTML, deck, PPTX) and interactive host surfaces drifted when typography moved from retired font families to Space Grotesk and JetBrains Mono. Docs and templates cited stale names; some apps still declared unused npm font packages. Operators could not tell which file was canonical for brand behavior.
 
 ## Context
 
-Construct ships a monochrome ink ramp and bundled OFL fonts under `templates/distribution/fonts/`. Chat and dashboard consume the same tokens via `lib/brand-tokens.mjs` and `lib/chat/design-tokens.mjs`. Profile-specific intake terminology flows through `lib/scopes/rebrand.mjs`.
+Construct ships a monochrome ink ramp and bundled OFL fonts under `templates/distribution/fonts/`. Published artifacts and interactive hosts consume the same tokens via `lib/brand-tokens.mjs`. Profile-specific intake terminology flows through `lib/scopes/rebrand.mjs`.
 
 ```mermaid
 flowchart LR

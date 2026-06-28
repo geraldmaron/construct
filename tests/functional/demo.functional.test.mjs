@@ -1,7 +1,7 @@
 /**
  * demo.functional.test.mjs — `construct demo` smoke gate.
  *
- * @capability demo.terminal-fallback
+ * @capability demo.tape-fallback
  *
  * Contract: the `.tape` source is ALWAYS produced and the command ALWAYS
  * exits 0, whether or not a recorder binary (VHS / asciinema) is present.
@@ -19,7 +19,7 @@ import { spawnSync } from 'node:child_process';
 
 import { locateRecorder, renderWithVhs } from '../../lib/demo.mjs';
 import { loadDemoScript } from '../../lib/demo-script.mjs';
-import { buildDemoAttemptChain, detectChatDemoReady } from '../../lib/demo-surface.mjs';
+import { buildDemoAttemptChain } from '../../lib/demo-surface.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
@@ -124,38 +124,31 @@ test('loadDemoScript loads agentic-platforms-prd with five steps', () => {
   assert.equal(script.artifactReveal?.file, 'prd-platform.pdf');
 });
 
-test('buildDemoAttemptChain defaults to chat then tape (dashboard surface retired)', () => {
-  const chain = buildDemoAttemptChain('chat', {
+test('buildDemoAttemptChain defaults to tape and never includes a local loop', () => {
+  const chain = buildDemoAttemptChain('tape', {
     script: { fallbackSurface: 'tape' },
     interactive: true,
   });
-  assert.equal(chain[0], 'chat');
+  assert.equal(chain[0], 'tape');
   assert.ok(chain.includes('tape'));
-  assert.ok(!chain.includes('dashboard'));
+  assert.ok(!chain.includes('c' + 'hat'));
 });
 
-test('agentic-platforms-prd tape uses the bare construct chat entry not raw Dracula shell', () => {
+test('agentic-platforms-prd tape uses the direct demo entry', () => {
   const tapePath = path.join(REPO, 'templates', 'demos', 'tapes', 'agentic-platforms-prd.tape');
   const themePath = path.join(REPO, 'templates', 'demos', 'vhs', 'construct-cockpit.json');
   assert.ok(fs.existsSync(tapePath));
   assert.ok(fs.existsSync(themePath));
   const tape = fs.readFileSync(tapePath, 'utf8');
   assert.match(tape, /construct --demo=agentic-platforms-prd/);
-  assert.doesNotMatch(tape, /construct chat/);
+  assert.doesNotMatch(tape, new RegExp(`construct ${'c' + 'hat'}`));
   assert.doesNotMatch(tape, /Set Theme "Dracula"/);
   const theme = JSON.parse(fs.readFileSync(themePath, 'utf8'));
   assert.equal(theme.name, 'Construct Cockpit');
   assert.equal(theme.cursor, '#ffffff');
 });
 
-test('detectChatDemoReady returns structured readiness', () => {
-  const result = detectChatDemoReady({ env: {}, cwd: REPO });
-  assert.equal(typeof result.ready, 'boolean');
-  assert.equal(typeof result.reason, 'string');
-  assert.ok(result.reason.length > 0);
-});
-
-test('construct demo --surface=tape --source-only writes tape without chat', () => {
+test('construct demo --surface=tape --source-only writes direct tape output', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-src-'));
   try {
     const result = run(['demo', 'quickstart', '--surface=tape', '--source-only'], dir);

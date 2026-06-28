@@ -15,7 +15,7 @@ import { spawnSync } from 'node:child_process';
 import { CLI_COMMANDS, CATEGORY_ORDER, formatCommandHelp } from '../lib/cli-commands.mjs';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { validateRegistry } from '../lib/validator.mjs';
-import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setModelWithTierInference } from '../lib/model-router.mjs';
+import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setModelWithTierInference, listAvailableModels } from '../lib/model-router.mjs';
 import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
 import { cmdOllama } from '../lib/ollama-manager.mjs';
@@ -130,7 +130,7 @@ function usage(opts = {}) {
   }
 
   println(`\n${COLORS.dim}Usage:${COLORS.reset} construct <command> [options]`);
-  println(`${COLORS.dim}Run ${COLORS.reset}construct${COLORS.dim} with no command to start a chat session (--plain for the terminal renderer).${COLORS.reset}`);
+  println(`${COLORS.dim}OpenCode is the primary conversation surface. Run ${COLORS.reset}construct sync${COLORS.dim} to install or refresh editor adapters.${COLORS.reset}`);
 
   // The name column sizes to the longest visible command (capped) so long names
   // are never truncated and descriptions stay aligned regardless of the set shown.
@@ -3924,9 +3924,8 @@ async function cmdModels(args) {
   }
   if (args.includes('--list') || sub === 'list') {
     const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
-    const { listChatModels } = await import('../apps/chat/engine/models.mjs');
     const catalog = getProviderModelCatalog({ env: process.env, cwd: process.cwd() });
-    const models = listChatModels({ env: process.env, cwd: process.cwd() });
+    const models = listAvailableModels({ env: process.env, cwd: process.cwd() });
     if (args.includes('--json')) {
       println(JSON.stringify({ catalog, models }, null, 2));
       return;
@@ -6786,14 +6785,17 @@ if (command === '--version' || command === '-V') {
   process.exit(0);
 }
 
-// Bare invocation — or leading flags with no subcommand — drops into the
-// owned-loop chat: the claude/codex/gemini default entry. The global flags
-// above already short-circuited, so anything else starting with `-` is a chat
-// flag (--plain, --accessible, --model, --resume, --demo, …) forwarded verbatim.
-if (!command || command.startsWith('-')) {
-  const { runChat } = await import('../lib/chat/cli.mjs');
-  const code = await runChat(process.argv.slice(2), { env: process.env, cwd: process.cwd() });
-  process.exit(code || 0);
+// Bare invocation stays non-interactive. OpenCode is the first-class
+// conversational surface; this CLI remains the setup/admin/headless substrate.
+if (!command) {
+  usage();
+  process.exit(0);
+}
+
+if (command.startsWith('-')) {
+  errorln(uiFail(`Unknown global flag: ${COLORS.bold}${command}${COLORS.reset}`, { colors: COLORS, glyphs: GLYPHS }));
+  errorln(`${COLORS.dim}OpenCode is the primary conversation surface; run ${COLORS.reset}construct sync${COLORS.dim} to refresh adapters, or ${COLORS.reset}construct --help${COLORS.dim} for CLI commands.${COLORS.reset}`);
+  process.exit(1);
 }
 
 // Unknown-flag guidance for commands that fully declare their flags (strictFlags
@@ -6861,7 +6863,7 @@ const handler = handlers.get(command);
 if (!handler) {
   if (command === 'chat') {
     errorln('Unknown command: chat');
-    errorln(`${COLORS.dim}Run ${COLORS.reset}construct${COLORS.dim} with no subcommand to start chat (e.g. construct --list).${COLORS.reset}`);
+    errorln(`${COLORS.dim}Construct's local conversation UI has been removed. Use OpenCode as the primary conversation surface after running ${COLORS.reset}construct sync${COLORS.dim}.${COLORS.reset}`);
     process.exit(1);
   }
   errorln(uiFail(`Unknown command: ${COLORS.bold}${command}${COLORS.reset}`, { colors: COLORS, glyphs: GLYPHS }));

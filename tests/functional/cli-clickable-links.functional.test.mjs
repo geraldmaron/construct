@@ -27,7 +27,12 @@ function run(args, env) {
 }
 
 test('help footer emits an OSC-8 doc link with the path as the visible label', () => {
-  const out = run(['doctor', '--help'], { TERM_PROGRAM: 'vscode' });
+  const out = run(['doctor', '--help'], {
+    TERM_PROGRAM: 'vscode',
+    NO_COLOR: '',
+    CX_PLAIN_COPY: '0',
+    CX_LINKS: '1',
+  });
   assert.ok(out.includes(OSC8_OPEN), 'expected an OSC-8 hyperlink in help output');
   assert.ok(out.includes('file://') && out.includes('docs/guides/reference/cli'), 'expected a file:// href to the cli docs');
 

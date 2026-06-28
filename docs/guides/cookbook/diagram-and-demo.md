@@ -128,23 +128,21 @@ Default D2 theme is **neutral** (clean geometry). Use `--theme sketch` for hand-
 
 Output: `.cx/diagrams/*.svg` (or `.d2` source when no renderer).
 
-## Terminal demos (chat-first)
+## Terminal demos
 
-Demo scripts under `templates/demos/scripts/` drive **construct chat** by default:
+Demo scripts under `templates/demos/scripts/` can be toured, printed, or paired with VHS/Playwright recordings:
 
 ```bash
 construct demo list
-construct demo agentic-platforms-prd          # terminal chat with /demo next steps
-construct demo agentic-platforms-prd --surface=tape --format mp4   # VHS fallback
+construct demo tour agentic-platforms-prd
+construct demo agentic-platforms-prd --surface=tape --format mp4
 ```
 
-Fallback chain when chat is unavailable: **terminal chat → Playwright recording → VHS tape → printed script steps**.
-
-Inside chat, use `/demo next` for the next prompt, `/demo steps` to replay the outline.
+Fallback chain when a recorder is unavailable: **Playwright recording → VHS tape → printed script steps**.
 
 ## Self-demo guided tour
 
-Walk a demo script step by step in the terminal — no chat session, no recording:
+Walk a demo script step by step in the terminal — no assistant session, no recording:
 
 ```bash
 construct demo tour                            # tour the first available script
