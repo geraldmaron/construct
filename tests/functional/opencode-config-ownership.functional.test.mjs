@@ -7,7 +7,7 @@
  * `--global`, and verifies that Construct-managed keys are emitted correctly
  * (scoped bash permission, real attribution headers with no `__placeholder__`,
  * an env-ref github token rather than a plaintext secret) while every user-personal
- * key (model, share, autoupdate, a user agent, user openrouter models) survives
+ * key (share, autoupdate, a user agent, user openrouter models) survives
  * byte-for-byte. The host binary is never executed.
  * See docs/guides/concepts/opencode-config-ownership.md.
  */
@@ -88,6 +88,43 @@ test("global sync emits Construct-managed keys correctly and preserves user-pers
     assert.equal(out.autoupdate, false, "user autoupdate preserved");
     assert.ok(out.agent?.myhelper, "user agent preserved");
     assert.ok(out.provider?.openrouter?.models?.["my/custom-model:free"], "user openrouter model preserved");
+  } finally {
+    env.cleanup();
+  }
+});
+
+test("global sync clears the legacy pinned OpenCode model and refreshes helper agents", () => {
+  const env = seededHome({
+    $schema: "https://opencode.ai/config.json",
+    model: "openrouter/qwen/qwen3-coder:free",
+    share: "disabled",
+    autoupdate: false,
+    agent: {
+      title: { model: "ollama/qwen2.5-coder:7b-cx32k" },
+      summary: { model: "ollama/qwen2.5-coder:7b-cx32k" },
+      compaction: { model: "ollama/qwen2.5-coder:7b-cx32k" },
+      myhelper: { description: "user agent", mode: "subagent", prompt: "mine" },
+    },
+    provider: {
+      openrouter: {
+        npm: "@ai-sdk/openai-compatible",
+        name: "OpenRouter",
+        options: { baseURL: "https://openrouter.ai/api/v1", headers: {} },
+        models: { "my/custom-model:free": { name: "My Custom Free Model" } },
+      },
+    },
+    mcp: {},
+  });
+  try {
+    const res = runGlobalSync(env.sandbox);
+    assert.equal(res.status, 0, `sync failed: ${(res.stderr || "").slice(-400)}`);
+    const out = readJson(env.cfgPath);
+
+    assert.equal(out.model, undefined, "legacy primary model pin should be removed");
+    assert.notEqual(out.agent?.title?.model, "ollama/qwen2.5-coder:7b-cx32k", "title helper should move off the weak legacy model");
+    assert.notEqual(out.agent?.summary?.model, "ollama/qwen2.5-coder:7b-cx32k", "summary helper should move off the weak legacy model");
+    assert.notEqual(out.agent?.compaction?.model, "ollama/qwen2.5-coder:7b-cx32k", "compaction helper should move off the weak legacy model");
+    assert.ok(out.agent?.myhelper, "user agent preserved");
   } finally {
     env.cleanup();
   }

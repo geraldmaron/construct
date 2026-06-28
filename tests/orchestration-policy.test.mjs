@@ -33,6 +33,23 @@ test('routeRequest classifies simple explanation as immediate research', () => {
   assert.deepEqual(route.specialists, []);
 });
 
+test('routeRequest sends external research requests through a workflow-backed research path', () => {
+  const route = routeRequest({ request: 'do research on oidc', fileCount: 1, moduleCount: 1 });
+  assert.equal(route.intent, INTENT_CLASSES.research);
+  assert.equal(route.track, EXECUTION_TRACKS.focused);
+  assert.equal(route.suggestedWorkflowType, 'research-synthesis');
+  assert.deepEqual(route.specialists, ['cx-researcher']);
+  assert.equal(route.dispatchPlan, 'Plan: cx-researcher.');
+});
+
+test('routeRequest routes typed artifact drafting through the matching workflow and owner', () => {
+  const route = routeRequest({ request: 'draft a PRD for onboarding', fileCount: 1, moduleCount: 1 });
+  assert.equal(route.track, EXECUTION_TRACKS.focused);
+  assert.equal(route.suggestedWorkflowType, 'prd-draft');
+  assert.ok(route.specialists.includes('cx-product-manager'));
+  assert.ok(route.specialists.includes('cx-devil-advocate'));
+});
+
 test('routeRequest classifies feature build as orchestrated implementation', () => {
   const route = routeRequest({ request: 'build this feature end to end and ship it', fileCount: 4, moduleCount: 2 });
   assert.equal(route.intent, INTENT_CLASSES.implementation);

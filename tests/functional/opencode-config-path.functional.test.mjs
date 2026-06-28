@@ -65,7 +65,11 @@ test('project sync writes .opencode/opencode.json (resolver-recognized) with age
     assert.ok(RESOLVER_PROJECT_PATHS.includes('.opencode/opencode.json'), 'written path is a resolver candidate');
 
     const config = JSON.parse(readFileSync(canonical, 'utf8'));
-    assert.ok(config.agent && Object.keys(config.agent).length === 1, 'agent table present with only the orchestrator');
+    assert.ok(config.agent && Object.keys(config.agent).length === 4, 'agent table present with orchestrator + helper agents');
+    assert.ok(config.agent.construct, 'orchestrator present');
+    assert.ok(config.agent.title, 'title helper present');
+    assert.ok(config.agent.summary, 'summary helper present');
+    assert.ok(config.agent.compaction, 'compaction helper present');
     assert.ok(config.mcp && Object.keys(config.mcp).length >= 1, 'mcp servers present');
   } finally {
     env.cleanup();
@@ -92,7 +96,7 @@ test('a stale .opencode/config.json from a prior install is migrated to opencode
 
     const config = JSON.parse(readFileSync(canonical, 'utf8'));
     assert.equal(config.provider?.custom?.note, 'user-kept', 'pre-existing content preserved through migration');
-    assert.ok(config.agent && Object.keys(config.agent).length === 1, 'only construct orchestrator merged in');
+    assert.ok(config.agent && Object.keys(config.agent).length === 4, 'construct orchestrator + helper agents merged in');
   } finally {
     env.cleanup();
   }
