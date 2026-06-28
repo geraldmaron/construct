@@ -28,24 +28,24 @@ re-runs against an existing one. All managed writes flow through `syncOpencode`
 in `scripts/sync-specialists.mjs`. TUI settings live in a **separate** file,
 `~/.config/opencode/tui.json`, which Construct never writes.
 
-## The doctrine: safety + cost only
+## The doctrine: safety + helper quality
 
 Construct is opinionated about exactly two things in a user's personal config,
 because both are about protecting the user rather than expressing taste:
 
 - **Safety** — the orchestrator's `bash` permission is scoped so destructive
   commands are denied and remote/history rewrites prompt.
-- **Cost** — `small_model` is seeded so cheap auxiliary work (titles, summaries)
-  doesn't run on an expensive model.
+- **Helper quality** — OpenCode's built-in `title`, `summary`, and `compaction`
+  agents are normalized onto a stronger auxiliary model so session naming and
+  summaries do not inherit a stale low-end coder default.
 
-Everything else that is a matter of preference — `model`, `share`, `autoupdate`,
-and the entire `tui.json` (theme, keybinds, notifications) — is the user's.
-Construct never writes it.
+Everything else that is a matter of preference — the primary `model`, `share`,
+`autoupdate`, and the entire `tui.json` (theme, keybinds, notifications) — is
+the user's. Construct never writes it.
 
-The rule that makes this safe is **non-destructive seeding**: Construct writes a
-managed default only when the key is *absent*. A value the user has set is never
-overridden. `small_model` seeding guards on `=== undefined`; provider auth
-headers and non-managed agents are explicitly preserved on merge.
+The rule that makes this safe is **non-destructive seeding** for user-owned
+keys: Construct only fills a managed default when the key is *absent*. Provider
+auth headers and non-managed agents are explicitly preserved on merge.
 
 ## Ownership table
 
@@ -63,8 +63,8 @@ headers and non-managed agents are explicitly preserved on merge.
 | `provider.openrouter.models` | shared | The registry's curated `:free` models are seeded; any models you add are preserved |
 | `provider.anthropic.models` | Construct (derived) | Derived from tier definitions; your custom entries preserved |
 | `plugin[]` (construct-fallback) | Construct | Seeded; the array is normalized on write — deduped, with non-existent file paths and stray non-path tokens dropped |
-| `small_model` | Construct (cost) | **Seeded only when absent**; never overrides your choice |
-| `model` | user | Never written |
+| `agent.title`, `agent.summary`, `agent.compaction` | Construct | Normalized to the managed auxiliary model so helper surfaces stay coherent |
+| `model` | user | Construct removes the legacy pinned default and never writes a new one |
 | `share`, `autoupdate`, `enabled_providers` | user | Never written |
 | `tui.json` (theme, attention, keybinds, scroll) | user | Never touched — separate file |
 
@@ -89,7 +89,10 @@ writes the result — it does not regenerate the file wholesale:
 - **MCP servers** are only rewritten when the existing entry still carries a
   `__placeholder__`, has a transport mismatch, or is missing — otherwise the
   existing entry stands.
-- **`small_model`** is set only when `config.small_model === undefined`.
+- **Helper agents** are normalized so `agent.title`, `agent.summary`, and
+  `agent.compaction` stay on the managed auxiliary model.
+- **`model`** is stripped only for the legacy Construct seed, so the user's
+  remembered selection can take effect instead of a stale pin.
 
 The one historical exception is the legacy top-level `construct` key, which
 OpenCode's strict schema rejects; `sanitizeOpenCodeConfig` strips it on write.
@@ -116,8 +119,9 @@ Because Construct never writes these, they are yours to set directly in
 }
 ```
 
-Construct will seed `small_model` if you have not set one; to keep your own
-choice, just set it — the seed only fills an empty slot.
+Construct keeps the built-in helper agents aligned to the managed auxiliary
+model and does not pin your primary `model`. If you want a different primary
+model, choose it in OpenCode and let the app remember it.
 
 ## See also
 

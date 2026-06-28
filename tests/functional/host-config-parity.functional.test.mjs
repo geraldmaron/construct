@@ -80,7 +80,11 @@ test('project sync writes each IDE surface at its canonical path + key + entry s
     assert.ok(!existsSync(p('.opencode/config.json')), 'OpenCode must not write the ignored config.json');
     const opencode = readJson(p('.opencode/opencode.json'));
     assert.ok(opencode.mcp && typeof opencode.mcp === 'object', 'OpenCode uses top-level `mcp`');
-    assert.ok(opencode.agent && Object.keys(opencode.agent).length === 1, 'OpenCode agent table present with only the orchestrator');
+    assert.ok(opencode.agent && Object.keys(opencode.agent).length === 4, 'OpenCode agent table present with orchestrator + helper agents');
+    assert.ok(opencode.agent.construct, 'OpenCode orchestrator present');
+    assert.ok(opencode.agent.title, 'OpenCode title helper present');
+    assert.ok(opencode.agent.summary, 'OpenCode summary helper present');
+    assert.ok(opencode.agent.compaction, 'OpenCode compaction helper present');
     const localEntry = Object.values(opencode.mcp).find((e) => e.type === 'local');
     if (localEntry) assert.ok(Array.isArray(localEntry.command), 'OpenCode local `command` is an array');
 

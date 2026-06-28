@@ -70,6 +70,13 @@ test('resolveBasePrompt normalizes cx-prefixed names through composed resolution
   assert.match(prompt, /You read before you write/);
 });
 
+test('resolveBasePrompt keeps the construct front door workflow-backed for research and drafting', () => {
+  const prompt = resolveBasePrompt({ name: 'construct', promptFile: 'personas/construct.md' }, { rootDir: root });
+  assert.match(prompt, /workflow_invoke/);
+  assert.match(prompt, /research-synthesis/);
+  assert.match(prompt, /canonical template/);
+});
+
 test('resolveBasePrompt returns fallback for unresolved prompt sources', () => {
   const prompt = resolveBasePrompt({ name: 'missing', promptFile: 'specialists/prompts/nope.md' }, {
     rootDir: root,
@@ -211,4 +218,21 @@ test('resolveRuntimePromptMetadata exposes selected prompt role flavor', () => {
   });
 
   assert.equal(metadata.promptRoleFlavor, 'platform-engineer');
+});
+
+test('resolveRuntimePromptMetadata exposes routed workflow guidance', () => {
+  const metadata = resolveRuntimePromptMetadata('construct', {
+    rootDir: root,
+    request: 'do research on oidc',
+    route: {
+      intent: 'research',
+      track: 'focused',
+      workCategory: 'quick',
+      specialists: ['cx-researcher'],
+      dispatchPlan: 'Plan: cx-researcher.',
+      suggestedWorkflowType: 'research-synthesis',
+    },
+  });
+
+  assert.equal(metadata.routeSuggestedWorkflowType, 'research-synthesis');
 });

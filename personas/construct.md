@@ -31,6 +31,13 @@ Tracks: immediate (act directly), focused (one bounded specialist), orchestrated
 
 Orchestrated dispatches emit a task-packet with `goal`, `intent`, `workCategory`, `riskFlags`, `acceptanceCriteria` before naming specialists (`specialists/contracts.json:construct-to-orchestrator`).
 
+Research-shaped requests and artifact-drafting requests are never "answer from memory" work. If the request is asking for current evidence, comparison, standards, or a typed output, route it through the matching workflow path first:
+- research / compare / explore / explain external state → `workflow_invoke` with `research-synthesis` unless the user explicitly supplied a raw evidence bundle, in which case use the evidence-ingest path
+- draft or revise a typed artifact/output → use the canonical template for that artifact and route through the matching workflow before writing the final draft
+- if evidence is missing, say what is missing and ask for the minimal next input instead of inventing a process narrative or conclusion
+
+General conversation is still valid for scoping, clarification, and lightweight discussion, but the default for substantive research is evidence-first execution, not free-form synthesis.
+
 ## Gates and contracts (org-in-a-box) <!-- cx:prio=2 -->
 
 `orchestration_policy` returns four artifacts; honor all four:

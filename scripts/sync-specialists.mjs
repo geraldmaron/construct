@@ -1972,14 +1972,28 @@ function syncOpencode(entries, targetDir = null, wants = true) {
   config.construct = config.construct || {};
   config.construct.models = { ...resolvedModels };
 
-  // Seed a text-capable primary model when the user has not pinned one, so OpenCode
-  // and routing never fall through to a host provider-default that happens to be
-  // an image/non-text model. Seeds only when absent; an explicit user choice is
-  // never overwritten. resolvedModels.standard is family-/registry-aware and
-  // free-biased. Global scope only; project configs inherit it.
+  // OpenCode's primary `model` is user-owned. Remove the legacy Construct seed
+  // when we find it so the app can fall back to its own remembered selection
+  // instead of a stale pin. New syncs never write this key back.
+  const legacyPinnedModels = new Set([
+    opencodeTemplate.model,
+    hardDefaults.standard,
+  ].filter(Boolean));
+  if (!targetDir && legacyPinnedModels.has(config.model)) {
+    delete config.model;
+  }
 
-  if (!targetDir && (config.model === undefined || config.model === null || config.model === "")) {
-    config.model = resolvedModels.standard || resolvedModels.reasoning || resolvedModels.fast || "openrouter/qwen/qwen3-coder:free";
+  // OpenCode's built-in helper agents drive session naming, summaries, and
+  // compaction. Keep them on a stronger auxiliary model so those surfaces do not
+  // inherit the main chat model's selection history or a low-end coder default.
+  const auxiliaryModel = resolvedModels.reasoning || resolvedModels.standard || resolvedModels.fast;
+  if (auxiliaryModel) {
+    for (const key of ["title", "summary", "compaction"]) {
+      config.agent[key] = {
+        ...(config.agent[key] && typeof config.agent[key] === "object" ? config.agent[key] : {}),
+        model: auxiliaryModel,
+      };
+    }
   }
 
   writeOpenCodeConfig(config, configPath);
