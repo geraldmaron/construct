@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T20:48:54.446Z",
+  "generatedAt": "2026-06-29T21:00:29.954Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 512,
+    "testFiles": 513,
     "topLevelTestFiles": 296,
-    "nestedTestFiles": 216,
+    "nestedTestFiles": 217,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 24,
     "byLayer": {
@@ -13,7 +13,7 @@
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
-      "functional": 137
+      "functional": 138
     },
     "byCategory": {
       "unit": 297,
@@ -22,7 +22,7 @@
       "live-provider": 2,
       "visual": 7,
       "integration": 21,
-      "functional": 137,
+      "functional": 138,
       "hook": 9
     }
   },
@@ -2353,6 +2353,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/w5-self-loop.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/web-search.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/web-search.functional.test.mjs"
     },
     {
       "path": "tests/gates-audit.test.mjs",
