@@ -9,7 +9,7 @@
  * tree.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, cpSync, writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, cpSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -75,16 +75,15 @@ test('hooks-drift fires when a hook command points at a missing .mjs file', asyn
   } finally { slice.cleanup(); }
 });
 
-test('roles-drift fires when role-manifests references a persona not in registry', async () => {
+test('roles-drift fires when normalized persona ids collide', async () => {
   const slice = freshRepoSlice();
   try {
     slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
     slice.writeJson('specialists/org', {
-      orchestrator: { name: 'construct' },
-      specialists: [{ name: 'architect' }],
-    });
-    slice.writeJson('specialists/role-manifests.json', {
-      'cx-imaginary': { events: [] },
+      orchestrator: { name: 'imaginary' },
+      specialists: {
+        'cx-imaginary': { name: 'imaginary', promptFile: 'specialists/prompts/imaginary.md' },
+      },
     });
     slice.writeJson('specialists/contracts.json', {
       version: 1, terminalStates: ['DONE'],
@@ -93,8 +92,8 @@ test('roles-drift fires when role-manifests references a persona not in registry
 
     const result = await runAllChecks({ repoRoot: slice.root });
     assert.ok(
-      result.findings.some((f) => f.category === 'roles-drift' && /cx-imaginary/.test(f.summary)),
-      'expected roles-drift finding for cx-imaginary',
+      result.findings.some((f) => f.category === 'roles-drift' && /imaginary/.test(f.summary) && /ambiguous/.test(f.summary)),
+      'expected roles-drift finding for ambiguous normalized persona id',
     );
   } finally { slice.cleanup(); }
 });

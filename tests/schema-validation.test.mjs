@@ -330,30 +330,28 @@ describe('schemas/unified-registry.schema.json', () => {
     });
 
     it('rejects duplicate keys in object maps', () => {
-      const fixture = {
-        version: 2,
-        teams: {
-          'team-a': {
-            id: 'team-a',
-            name: 'Team A',
-            owner: 'owner',
-            roles: ['owner'],
-            charter: 'A team.',
+      const fixture = JSON.parse(`{
+        "version": 2,
+        "teams": {
+          "team-a": {
+            "id": "team-a",
+            "name": "Team A",
+            "owner": "owner",
+            "roles": ["owner"],
+            "charter": "A team."
           },
-          'team-a': {
-            // Duplicate key in JSON — parser silently overwrites with final value.
-            // JSON spec permits this; duplicate-key detection belongs in external validators.
-            id: 'team-a',
-            name: 'Team A',
-            owner: 'owner',
-            roles: ['owner'],
-            charter: 'A team.',
-          },
+          "team-a": {
+            "id": "team-a",
+            "name": "Team A",
+            "owner": "owner",
+            "roles": ["owner"],
+            "charter": "A team."
+          }
         },
-        specialists: {},
-        contracts: {},
-        policies: {},
-      };
+        "specialists": {},
+        "contracts": {},
+        "policies": {}
+      }`);
       // JSON parser behavior: duplicate keys are overwritten; only final value remains.
       assert.equal(Object.keys(fixture.teams).length, 1);
     });

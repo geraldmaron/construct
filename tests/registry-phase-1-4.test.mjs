@@ -13,20 +13,49 @@
  *   (d) a .cx/unified-registry.json overlay merges, overlay winning.
  *
  * Hermetic: (a)/(c)/(d) drive lib/registry/cli.mjs against in-repo or tmpdir
- * fixtures; (b) shells out to ripgrep over tracked source only.
+ * fixtures; (b) scans tracked source directly with the same exclusion rules.
  */
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { describe, it } from 'node:test';
 
 import { runUnifiedRegistryValidate } from '../lib/registry/cli.mjs';
 import { validate } from '../lib/registry/validator.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
+
+function findLegacyRegistryReaders() {
+  const roots = ['lib', 'bin', 'scripts'];
+  const pattern = /specialists\/(registry|teams|contracts|policy-inventory|role-manifests)\.json/;
+  const hits = [];
+
+  function visit(relPath) {
+    const absPath = path.join(ROOT_DIR, relPath);
+    const stat = fs.statSync(absPath);
+    if (stat.isDirectory()) {
+      for (const entry of fs.readdirSync(absPath)) visit(path.join(relPath, entry));
+      return;
+    }
+
+    if (/\.(test|spec)\./.test(relPath)) return;
+    if (relPath.includes('migrate')) return;
+    if (relPath === 'lib/registry/retired-paths.mjs') return;
+    if (relPath.startsWith('lib/migrations/')) return;
+
+    const content = fs.readFileSync(absPath, 'utf8');
+    if (pattern.test(content)) hits.push(relPath);
+  }
+
+  for (const root of roots) {
+    const absRoot = path.join(ROOT_DIR, root);
+    if (fs.existsSync(absRoot)) visit(root);
+  }
+
+  return hits.sort();
+}
 
 // Capture a handler's stdout/stderr by injecting println/errorln, so assertions
 // can read the rendered human output without touching the process streams.
@@ -99,23 +128,12 @@ describe('RFC-0004 Phase 1.4 — unified registry honest completion', () => {
   });
 
   // The migration is honest only if no runtime code still reads the deleted
-  // legacy registry files. ripgrep over lib/bin/scripts, excluding tests and the
+  // legacy registry files. Scan lib/bin/scripts, excluding tests and the
   // by-design migration runner that names the legacy shape in its docstring.
 
   it('(b) no live legacy-registry readers remain in lib/bin/scripts', () => {
-    const result = spawnSync('rg', [
-      '-l',
-      'specialists/(registry|teams|contracts|policy-inventory|role-manifests)\\.json',
-      'lib', 'bin', 'scripts',
-      '--glob', '!*.test.*',
-      '--glob', '!*migrate*',
-      '--glob', '!lib/registry/retired-paths.mjs',
-      '--glob', '!lib/migrations/**',
-    ], { cwd: ROOT_DIR, encoding: 'utf-8' });
-
-    const hits = result.stdout.split('\n').map((l) => l.trim()).filter(Boolean);
+    const hits = findLegacyRegistryReaders();
     assert.deepEqual(hits, [], `legacy registry readers must be gone, found:\n${hits.join('\n')}`);
-    assert.equal(result.status, 1, 'rg should exit 1 (no matches)');
   });
 
   it('(c) the validator rejects a deliberately-invalid registry', async () => {
