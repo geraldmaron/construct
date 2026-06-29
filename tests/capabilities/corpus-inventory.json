@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T17:27:03.308Z",
+  "generatedAt": "2026-06-29T20:15:16.276Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 503,
-    "topLevelTestFiles": 294,
-    "nestedTestFiles": 209,
+    "testFiles": 511,
+    "topLevelTestFiles": 296,
+    "nestedTestFiles": 215,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 24,
     "byLayer": {
-      "unit": 334,
+      "unit": 336,
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
-      "functional": 130
+      "functional": 136
     },
     "byCategory": {
-      "unit": 295,
+      "unit": 297,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
       "visual": 7,
       "integration": 21,
-      "functional": 130,
+      "functional": 136,
       "hook": 9
     }
   },
@@ -1499,6 +1499,14 @@
       "maintainerNotes": "diagram.functional.test.mjs — `construct diagram` smoke gate."
     },
     {
+      "path": "tests/functional/doc-intake-approval.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/doc-intake-approval.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/docker-reclaim.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1645,6 +1653,14 @@
       "maintainerNotes": "hook-telemetry.functional.test.mjs — the real dispatcher records hook fires (construct-dcnb)."
     },
     {
+      "path": "tests/functional/host-capability-matrix.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/host-capability-matrix.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/host-config-parity.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1783,6 +1799,14 @@
       "maintainerNotes": "tests/functional/knowledge-search-project-scope.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/learning-loop-capture.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/learning-loop-capture.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/lifecycle-event-emission.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1845,6 +1869,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "mcp-ingest-resilience.functional.test.mjs — isolated MCP ingest failure repro."
+    },
+    {
+      "path": "tests/functional/mcp-output-contract.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-output-contract.functional.test.mjs"
     },
     {
       "path": "tests/functional/mcp-parity.functional.test.mjs",
@@ -2039,6 +2071,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/orchestration-mode-a.functional.test.mjs — end-to-end Mode-A runtime."
+    },
+    {
+      "path": "tests/functional/orchestration-readiness.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-readiness.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/orchestration-truth-negative.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-truth-negative.functional.test.mjs"
     },
     {
       "path": "tests/functional/post-merge-tracking.functional.test.mjs",
@@ -3107,6 +3155,14 @@
       "maintainerNotes": "tests/orchestration-policy.test.mjs — routeRequest dispatch classification tests"
     },
     {
+      "path": "tests/orchestration-readiness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-readiness.test.mjs — typed orchestration readiness contract."
+    },
+    {
       "path": "tests/orchestration-run-store-postgres.test.mjs",
       "layer": "integration",
       "category": "integration",
@@ -3465,6 +3521,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "reflect-salience.test.mjs — deterministic session salience (bead construct-k6lr)."
+    },
+    {
+      "path": "tests/registry-characterization.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/registry-characterization.test.mjs"
     },
     {
       "path": "tests/registry-loader.test.mjs",

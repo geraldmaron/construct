@@ -47,7 +47,7 @@ Init and setup write via skip-if-missing or marker blocks with one idempotent me
 - Auto-start services flag could be moved from init-unified.mjs hardcoded boolean to a registry entry (construct.config.json) or env var (CONSTRUCT_INIT_AUTO_START)
 - Dirty-repo handling behavior (silent vs warn vs error) could be configurable via construct.config.json scope-specific setting rather than --verbose only
 - .cx/ directory retention policy (what to preserve on upgrade, what to prune) could be expressed in schema rather than implicit skip-if-exists
-- Service startup config could be unified across init and construct dev: both could read a services.json manifest instead of hardcoding which services to start
+- Service startup config could be unified across init and `construct dev`: both could read a services.json manifest instead of hardcoding which services to start
 
 ## 6. Tests needed
 
@@ -67,7 +67,7 @@ Init and setup write via skip-if-missing or marker blocks with one idempotent me
 
 - Upgrade from pre-marker AGENTS.md (no version+hash block) to new marker-managed version: inject.mjs creates new block on first sync, but manual edits in old file are preserved outside marker boundaries
 - Legacy .opencode/config.json files are renamed to .opencode/opencode.json during sync; if both exist, legacy is dropped (line 1706) — users relying on old path may not notice
-- sync --global run twice (plain construct sync then construct sync --global per install.mjs line 575-576) both write to same .cx/sync.lock, may collide in parallel installs
+- sync --global run twice (plain `construct sync` then `construct sync --global` per install.mjs line 575-576) both write to same .cx/sync.lock, may collide in parallel installs
 
 ## 9. Questions for Opus
 

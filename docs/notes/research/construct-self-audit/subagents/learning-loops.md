@@ -34,7 +34,7 @@ The learning loops comprise four auto-capture pipelines (A1–A4) and supporting
 
 ## 3. Confirmed gaps
 
-- Tool-miss capture writes JSONL but is never read, analyzed, or surfaced as an alert or observation. Discoverability gap is documented as unseen by construct doctor.
+- Tool-miss capture writes JSONL but is never read, analyzed, or surfaced as an alert or observation. Discoverability gap is documented as unseen by `construct doctor`.
 - Failure capture (command timeouts, tool errors, gate denials) does not auto-generate anti-pattern observations. Only quality scores from explicit scoring trigger pattern/anti-pattern recording.
 - A2 (research persistence) documented but no auto-capture from specialist runs; only manual via knowledge_add MCP tool or construct reflect CLI. Research findings do not flow from session outcomes.
 - A4 (prompt improvement) documented but explicitly offline: patches generated weekly but never auto-applied. No feedback loop from prompt quality scores back to specialist prompts.

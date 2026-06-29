@@ -47,7 +47,7 @@ Four proposed ADRs (0018, 0019, 0020, 0021) are substantially implemented with t
 - Four proposed ADRs (0018, 0019, 0020, 0021) are substantially or fully shipped but still labeled 'proposed' — status should be updated to 'accepted'
 - ADR-0043 (Oracle) is registered as `internal: true` in CLI, contradicting ADR-0039 amendment (2026-06-25) which explicitly names it as an end-user observability surface alongside `construct status` and `construct doctor`
 - ADR-0045 docs taxonomy lacks automated enforcement check in `construct doctor` or audit scripts to ratchet the structure (ADR mentions extend audit but evidence unclear)
-- ADR-0046 migration script (scripts/migrate-org-modular.mjs) is mentioned in the ADR but no evidence of automatic migration in construct init/sync
+- ADR-0046 migration script (scripts/migrate-org-modular.mjs) is mentioned in the ADR but no evidence of automatic migration in `construct init/sync`
 
 ## 4. Unconfirmed concerns
 
@@ -91,6 +91,6 @@ _none reported_
 
 - Update ADR status (0018, 0019, 0020, 0021 proposed → accepted) via a single housekeeping bead to reflect ground truth
 - Audit and fix ADR-0043 oracle CLI surface registration (move from internal:true to core:true or surface:thin-cli) to align with ADR-0039 amendment intent
-- Validate ADR-0045 docs taxonomy enforcement: add ratchet checks to scripts/audit/ and construct doctor to detect and flag out-of-taxonomy files
+- Validate ADR-0045 docs taxonomy enforcement: add ratchet checks to scripts/audit/ and `construct doctor` to detect and flag out-of-taxonomy files
 - Document ADR-0046 modular org migration path: add construct migrate command or doctor lane to guide legacy unified-registry.json readers toward assembleRegistry() loader
 
