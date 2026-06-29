@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-06-29
+
 ### Fixed
 
 - Project-mode Claude Code hooks no longer crash when Claude Code runs a hook from a working directory other than the project root. The generated `.claude/settings.json` hook commands now anchor on `node "${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs"` instead of a bare relative `.construct/run.mjs`, which previously failed with `Cannot find module …/.construct/run.mjs` (cjs/loader) on every Bash tool call when the cwd was `$HOME`. Existing installs self-heal on `construct sync` / `construct upgrade`.
