@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Security
+
+- Remote MCP servers wired by `construct mcp add` / `construct sync` (e.g. GitHub) no longer embed the literal credential in host config files. Header secrets are emitted as a host-resolved environment reference instead of the resolved token value — Claude `${GITHUB_TOKEN}`, VS Code `${env:GITHUB_TOKEN}`, OpenCode `{env:GITHUB_TOKEN}` — so a live token is never duplicated across `~/.claude/settings.json`, `.claude/settings.json`, `~/.config/opencode/opencode.json`, or `.vscode/mcp.json`. The token stays in one place (`config.env` / the shell environment) and the host resolves it at launch. `lib/mcp-platform-config.mjs` builds the references; `tests/mcp-secret-ref.test.mjs` guards against literal-token leakage.
+
 ## [1.3.1] - 2026-06-29
 
 ### Fixed

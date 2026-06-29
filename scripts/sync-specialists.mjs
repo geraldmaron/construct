@@ -1481,7 +1481,7 @@ function syncVSCode(targetDir = null, wants = true) {
       const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
       const transportMismatch = registryWantsCommand && existingIsRemote;
       if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
-      config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
+      config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
     }
     if (!DRY_RUN) {
       mkdirp(path.dirname(mcpPath));
@@ -1505,7 +1505,7 @@ function syncVSCode(targetDir = null, wants = true) {
         const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
         const transportMismatch = registryWantsCommand && existingIsRemote;
         if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
-        config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
+        config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
       }
       if (!DRY_RUN) fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
       synced = true;
@@ -1575,7 +1575,7 @@ function syncCursor(targetDir = null, wants = true) {
     const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
     const transportMismatch = registryWantsCommand && existingIsRemote;
     if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
-    config.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
+    config.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
   }
   if (!DRY_RUN) {
     mkdirp(path.dirname(cursorMcpPath));
