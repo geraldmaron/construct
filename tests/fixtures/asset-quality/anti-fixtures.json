@@ -41,8 +41,7 @@
       "path": "anti/markdown/unresolved-placeholders.md",
       "audit": "lintDocPresentation",
       "expect": { "matches": "placeholder" },
-      "status": "pending",
-      "bead": "construct-cuxq.2.2"
+      "status": "enforced"
     },
     {
       "id": "md-empty-section",
@@ -50,8 +49,7 @@
       "path": "anti/markdown/empty-section.md",
       "audit": "lintDocPresentation",
       "expect": { "matches": "empty section" },
-      "status": "pending",
-      "bead": "construct-cuxq.2.2"
+      "status": "enforced"
     },
     {
       "id": "deck-dense-paragraph",

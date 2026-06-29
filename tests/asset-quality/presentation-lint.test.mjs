@@ -34,10 +34,10 @@ test('a clean document raises no errors', () => {
   assert.deepEqual(lintDocPresentation(clean, {}).errors, []);
 });
 
-test('flags unresolved placeholders', { skip: 'enforced by construct-cuxq.2.2' }, () => {
+test('flags unresolved placeholders', () => {
   assert.equal(hasError('# Draft\n\nStatus: {{STATUS}}; owner TBD.', 'placeholder'), true);
 });
 
-test('flags empty sections', { skip: 'enforced by construct-cuxq.2.2' }, () => {
+test('flags empty sections', () => {
   assert.equal(hasError('# Spec\n\n## Goals\n\n## Risks\n\nreal prose.', 'empty section'), true);
 });
