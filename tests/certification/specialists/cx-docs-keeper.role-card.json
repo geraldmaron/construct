@@ -4,8 +4,8 @@
   "registryName": "docs-keeper",
   "humanEquivalent": "Owns the record of why, not just what — undocumented decisions become tribal knowledge and then disappear.",
   "outputs": [
-    "changelog",
-    "memo"
+    "memo",
+    "changelog"
   ],
   "skills": [
     "docs/adr-workflow",
@@ -18,17 +18,12 @@
   "openingQuestion": "What did we decide, why did we decide it, and where will the next person find it?",
   "escalationPath": {
     "collaborators": [],
-    "subscriptions": [
-      "changelog.missing",
-      "document.stale",
-      "pr.merged.no-docs",
-      "readme.stale"
-    ]
+    "subscriptions": []
   },
   "refusalBoundaries": "If the project context file hasn't been updated since the work started, something important wasn't captured.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-docs-keeper.md"
   }
 }

@@ -1,0 +1,52 @@
+{
+  "id": "architect-to-data-engineer",
+  "producer": "cx-architect",
+  "consumer": "cx-data-engineer",
+  "trigger": {
+    "riskFlags": [
+      "data",
+      "pipeline"
+    ],
+    "intent": [
+      "implementation"
+    ]
+  },
+  "input": {
+    "schema": "lib/contract-schemas/decision.json",
+    "mustContain": [
+      "goal",
+      "approach",
+      "dataContracts"
+    ]
+  },
+  "output": {
+    "shape": "pipeline-spec",
+    "mustContain": [
+      "dataContract",
+      "schema",
+      "qualityGates",
+      "retryPolicy"
+    ]
+  },
+  "preconditions": [
+    "Data volume, latency requirements, and existing stack clarified before architecture proposed",
+    "Existing schema inspected; column names and table relationships not invented"
+  ],
+  "postconditions": [
+    "Pipeline is idempotent and observable; not running on faith",
+    "Data contract is written down; quality gates defined as part of the design",
+    {
+      "id": "pipeline-spec-has-idempotency-plan",
+      "description": "Pipeline spec must contain an Idempotency Plan section",
+      "check": "artifact-has-section",
+      "section": "Idempotency Plan"
+    },
+    {
+      "id": "pipeline-spec-has-observability",
+      "description": "Pipeline spec must contain an Observability section",
+      "check": "artifact-has-section",
+      "section": "Observability"
+    }
+  ],
+  "description": ""
+}

@@ -1,0 +1,39 @@
+{
+  "id": "any-to-explorer",
+  "producer": "*",
+  "consumer": "cx-explorer",
+  "trigger": {
+    "intent": "investigation",
+    "category": "exploration"
+  },
+  "input": {
+    "shape": "exploration-request",
+    "mustContain": [
+      "question",
+      "scope"
+    ]
+  },
+  "output": {
+    "shape": "exploration-findings",
+    "mustContain": [
+      "entryPoints",
+      "executionPath",
+      "keyFiles",
+      "dataFlow",
+      "gaps"
+    ]
+  },
+  "preconditions": [
+    "Scope tagged; investigation does not follow imports past two hops from named entry points"
+  ],
+  "postconditions": [
+    "Every claim about existing code cites file:line from a read actually performed",
+    "One match is not called a pattern; multi-callsite patterns cite each call site",
+    {
+      "id": "exploration-findings-claims-cited",
+      "description": "Every load-bearing claim cites file:line or a primary external reference",
+      "check": "artifact-claims-cited"
+    }
+  ],
+  "description": ""
+}

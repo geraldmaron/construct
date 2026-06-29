@@ -82,7 +82,7 @@ function pendingPackets(projectRoot) {
 test('intake process --dry-run lists candidate inboxes without ingesting', () => {
   const p = makeProject();
   try {
-    const init = runConstruct(p.dir, ['init', '--yes', '--profile=rnd']);
+    const init = runConstruct(p.dir, ['init', '--yes', '--scope=rnd']);
     assert.equal(init.status, 0, `init failed: ${init.stderr}`);
 
     writeFileSync(join(p.dir, 'inbox', 'sample.md'), '# Sample\n\nbody\n', 'utf8');

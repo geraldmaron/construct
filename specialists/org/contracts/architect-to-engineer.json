@@ -1,0 +1,34 @@
+{
+  "id": "architect-to-engineer",
+  "producer": "cx-architect",
+  "consumer": "cx-engineer",
+  "trigger": {
+    "intent": [
+      "implementation",
+      "fix"
+    ]
+  },
+  "input": {
+    "schema": "lib/contract-schemas/decision.json",
+    "mustContain": [
+      "goal",
+      "approach",
+      "tasks",
+      "acceptanceCriteria"
+    ]
+  },
+  "output": {
+    "schema": "lib/contract-schemas/implementation.json",
+    "type": "implementation"
+  },
+  "preconditions": [
+    "ADR approved (or fast-track noted); no pending CRITICAL review findings",
+    "Task packet contains readFirst and doNotChange lists"
+  ],
+  "postconditions": [
+    "Implementation cites the ADR tasks it completed",
+    "filesChanged matches tasks in the ADR",
+    "verificationChecklist evaluated before DONE"
+  ],
+  "description": ""
+}

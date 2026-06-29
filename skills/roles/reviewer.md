@@ -11,7 +11,7 @@ applies_to:
   - cx-trace-reviewer
 inherits: null
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

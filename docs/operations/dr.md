@@ -63,7 +63,7 @@ Regenerate the Claude Code settings, MCP server config, and any other platform a
 construct sync
 ```
 
-This rewrites platform config files from the current `specialists/registry.json` and Construct install.
+This rewrites platform config files from the current `specialists/org` and Construct install.
 
 ## Step 6: Re-index knowledge
 

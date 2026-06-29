@@ -11,7 +11,7 @@ Concept pages explain *why* Construct works the way it does. They're not how-to 
 
 - **Hard gates, not vibes.** Every code mutation runs through enforcement: no secrets, tests green, docs current, comments lint-clean, CI passes. Gates live in three places (write-time, commit-time, CI safety-net). Quality gates fire unconditionally; notice-only signals auto-suppress in CI and non-TTY contexts. [Read more →](/guides/concepts/gates-and-enforcement)
 
-- **Owned-loop chat.** `construct chat` runs Construct's own agent loop with a transparency-first terminal or browser surface — token/cost ledger, tool timeline, routing detail. Dashboard `/chat` mirrors the same loop. [Read more →](/guides/cookbook/construct-chat)
+- **OpenCode-first conversation.** OpenCode is the primary conversation surface. Construct supplies the front-door agent, MCP tools, skills, workflows, and runtime plugin through `construct sync`. [Read more →](/guides/start/connect-your-editor)
 
 - **Oracle health review.** The Oracle meta-controller collects project signals, synthesizes gaps, auto-executes safe maintenance, and queues consequential fixes for approval. [Read more →](/guides/concepts/architecture)
 

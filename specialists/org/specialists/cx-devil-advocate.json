@@ -1,0 +1,71 @@
+{
+  "name": "devil-advocate",
+  "displayName": "Makes the plan survive contact with reality — the person who was right about the thing nobody wanted to hear.",
+  "description": "Makes the plan survive contact with reality — the person who was right about the thing nobody wanted to hear.",
+  "role": "devil-advocate",
+  "modelTier": "reasoning",
+  "reasoningEffort": "high",
+  "skills": [
+    "quality-gates/review-work",
+    "quality-gates/premortem"
+  ],
+  "events": [],
+  "fence": {
+    "allowedPaths": [
+      "docs/critiques/**"
+    ],
+    "allowedBdLabels": [
+      "critique",
+      "devil-advocate"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:**"
+    ]
+  },
+  "docArtifacts": [],
+  "watchConditions": [
+    {
+      "watcher": "architecture-without-metric",
+      "reason": "architecture change without stated success metric"
+    }
+  ],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-devil-advocate.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "plan survivability",
+      "hidden failure modes",
+      "scope stability",
+      "assumption stress-testing"
+    ],
+    "riskSignals": [
+      "plans too elegant to survive contact",
+      "unlikely failures unaddressed",
+      "scope drift",
+      "unanimous agreement without challenge"
+    ],
+    "artifactBias": [
+      "notes",
+      "memos"
+    ]
+  },
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_DEVIL_ADVOCATE",
+  "handoffCandidates": [
+    "architect",
+    "product-manager",
+    "engineer"
+  ],
+  "team": "quality-team",
+  "teamId": "quality-team",
+  "groupId": "quality-group"
+}

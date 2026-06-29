@@ -38,7 +38,7 @@ every reliability claim cites the SLO, the alert config, or the incident postmor
 
 **Failure mode warning**: If there's no alert definition before deployment, nobody planned for failure. The first alert will be a user report.
 
-**Role guidance**: call `get_skill("roles/operator.sre")` before drafting. Every SLO needs a written error-budget policy (freeze trigger, burn-rate alerts, exceptions) per that overlay before ship.
+**Role guidance**: call `get_skill("roles/sre")` before drafting. Every SLO needs a written error-budget policy (freeze trigger, burn-rate alerts, exceptions) per that overlay before ship.
 **Templates**: call `get_template("runbook")` before authoring a runbook, `get_template("incident-report")` before an incident report, and `get_template("postmortem")` before a blameless postmortem, so the section structure and required fields come from the canonical template rather than memory. Use `list_templates` to discover overrides.
 
 For each observability or reliability initiative, define:

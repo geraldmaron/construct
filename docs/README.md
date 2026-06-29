@@ -46,6 +46,7 @@ Use **`.md`** for every prose page (CommonMark + YAML frontmatter). Reserve **`.
 - [Templates and role anti-patterns](../templates/docs/README.md)
 - [Runbooks](./operations/runbooks/)
 - [ADRs](./decisions/adr/). Architecture decision records (public site lane)
+- [PRD platform artifacts](./prd-platform/README.md). Draft and certified platform PRDs
 - [Skills](../skills/). Domain knowledge organized by area (compliance, architecture, AI, development, devops, etc.)
 - [Functional tests pattern](../tests/functional/README.md). When and how to add an end-to-end test
 
@@ -76,7 +77,6 @@ Step-by-step operator guides for common tasks:
 - [Observability and cost](./guides/cookbook/observability-and-cost.md)
 - [Wireframe and drop commands](./guides/cookbook/wireframe-and-drop.md)
 - [Distill and infer commands](./guides/cookbook/distill-and-infer.md)
-- [Sync the dashboard static bundle](./guides/cookbook/sync-the-dashboard.md)
 
 ## Command Coverage
 
@@ -116,6 +116,31 @@ After updating the Construct repo checkout itself, run `construct update` from i
 When a managed file stops reflecting repo reality, update it or prune the stale section. Managed docs are not archives.
 
 Parallel work rule: one writer per file. If multiple agent or harness sessions are active, coordinate ownership through the tracker and `plan.md` instead of editing the same file concurrently.
+
+<!-- AUTO:catalog-sync -->
+## Capability catalog (generated)
+
+> Narrative docs index — this table is regenerated from `registry/capabilities.json`.
+> Run `npm run docs:sync` after catalog changes. Do not hand-edit inside the AUTO markers.
+
+Catalog census: 128 CLI commands, 40 npm scripts, 10 embedded workflows.
+
+| Capability | Criticality | CLI surface | Verification |
+|---|---|---|---|
+| `ingest.adapter` | P0 | construct ingest | `tests/functional/node-native-extraction.functional.test.mjs` |
+| `ingest.docling` | P1 | construct ingest --legacy-extractor=false | `tests/functional/mcp-ingest-resilience.functional.test.mjs` |
+| `local.model.tier` | P1 | construct models resolve | `—` |
+| `mcp.broker.connection` | P0 | — | `tests/functional/mcp-parity.functional.test.mjs` |
+| `oracle.meta-review` | P1 | construct oracle review | `tests/functional/oracle-bounded-auto.functional.test.mjs` |
+| `orchestration.routing` | P0 | construct orchestrate run | `tests/functional/orchestration-mcp.functional.test.mjs` |
+| `surfaces.opencode-primary` | P1 | construct sync | `tests/functional/opencode-primary-surface.functional.test.mjs` |
+| `workflow.architecture-review` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
+| `workflow.evidence-ingest` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
+| `workflow.prd-draft` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
+| `workflow.proposal-review` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
+| `workflow.research-synthesis` | P1 | construct ask | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
+| `workflow.risk-review` | P1 | construct workflow invoke | `tests/functional/embedded-contract-workflow-invoke.functional.test.mjs` |
+<!-- /AUTO:catalog-sync -->
 
 ## Ownership
 

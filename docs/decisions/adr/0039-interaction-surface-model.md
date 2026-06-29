@@ -1,7 +1,7 @@
 <!--
 cx_doc_id and body_hash are stamped by construct on commit; omitted in this draft.
 -->
-# ADR-0039: Interaction-surface model — CLI as substrate, agent/MCP/TUI/dashboard as the surfaces that get emphasized
+# ADR-0039: Interaction-surface model — CLI as substrate, agent/MCP/TUI as the surfaces that get emphasized
 
 - **Date**: 2026-06-17
 - **Status**: accepted
@@ -45,8 +45,8 @@ for*, so that discovery, documentation, and future additions route to the right 
 
 - **The CLI is the substrate, by design.** ADR-0001 (zero-npm-core) makes the registry-driven
   dispatcher the spine; ADR-0022 explicitly frames every other surface as a *thin client* over
-  the engine ("the engine owns orchestration; the editor is a thin client"). The dashboard daemon
-  and `orchestrate run --remote` are already thin clients over the same runtime. So a tiered
+  the engine ("the engine owns orchestration; the editor is a thin client"). The retired dashboard
+  daemon and `orchestrate run --remote` were thin clients over the same runtime. So a tiered
   surface model is not a new architecture — it is naming a posture the codebase already half-holds.
 - **MCP is the daily-work surface today.** `lib/mcp/server.mjs` curates a **7-tool flat core**
   (`CORE_TOOL_NAMES`, server.mjs:1223-1226: `orchestration_policy`, `get_skill`, `search_skills`,
@@ -62,10 +62,13 @@ for*, so that discovery, documentation, and future additions route to the right 
   prompts and skills. The tooling scorecard (`docs/operations/audit/tooling-scorecard.md`) deferred the
   *prompt/visual* layer ("re-grade in Phase 5") and flagged the `tty-prompts` interactive layer as
   the open design question — i.e. the interactive surface is under-developed relative to the CLI.
-- **The interactive and visual surfaces exist but are thin.** `lib/tty-prompts.mjs` (menus,
-  multiselect) and `--select` flows (`construct dev --select`, `profile create` interactive,
-  `intake show`) are the embryonic TUI; `lib/server/` is the dashboard. Both are real but neither
-  is the primary documented path for the review/telemetry work they are best at.
+- **OpenCode is the primary human conversation surface.** `construct sync` installs
+  the OpenCode front door, MCP wiring, and runtime plugin. `lib/tty-prompts.mjs`
+  still supports bounded CLI selection flows (`construct dev --select`, profile
+  creation, intake review), but Construct no longer ships its own local conversation
+  loop. The HTTP dashboard was retired; visual/telemetry work routes through the
+  thin CLI (`construct status`, `construct doctor`, `construct oracle`) with
+  `--json` twins or external telemetry backends.
 
 ## Decision
 
@@ -79,18 +82,20 @@ where new capability of that shape should land:
 - **(b) Thin human CLI** — setup, ops, lifecycle one-shots. The CLI verb is canonical and primary;
   this is the only tier a human is expected to type by hand. It stays the 13-ish `core: true` set
   plus lifecycle verbs.
-- **(c) TUI (interactive)** — review/triage/selection work that wants a stateful interactive loop,
-  not a one-shot. The CLI verb stays as the non-interactive entry; the interactive flow is the
-  emphasized face.
-- **(d) Dashboard** — visual/telemetry/observability. The HTTP daemon surface is canonical for
-  rendering; the CLI verbs stay as the headless/JSON data source.
+- **(c) OpenCode / supported host UI** — human conversation and review work. OpenCode is
+  primary; Claude Code, Codex, VS Code, Cursor, Copilot, and ACP clients stay supported
+  through generated adapters and MCP. CLI `--select` flows remain for bounded setup/review
+  choices, not as a conversational product surface.
+- **(d) Dashboard (deprecated, retired 2026-06-25)** — was the visual/telemetry cockpit
+  (`lib/server/`, `apps/dashboard/`). Deleted; do not assign new capability here. Historical
+  references in this ADR's surface map are superseded by the amendment below.
 - **(internal)** — harness/CI only. Already correctly modeled by `internal: true`; no human or
   agent surface, by design.
 
 The rule going forward: **a command's primary surface is declared, and discovery follows the
 surface.** New daily-authoring capability lands as an MCP tool first (CLI `--json` twin for
-scripting); new visual capability lands on the dashboard first; only genuine setup/ops verbs grow
-the human CLI.
+scripting); observability and review verbs stay on the thin CLI with `--json` twins; only genuine
+setup/ops verbs grow the human CLI.
 
 ## Surface map
 
@@ -98,32 +103,30 @@ Classification of every command group. **Real caller** is derived from the regis
 (`core`/`internal` flags, description, usage), the `bin/construct` handler, and whether an
 equivalent MCP tool exists in `lib/mcp/server.mjs`. **Disposition**: `keep-CLI` (stays primary on
 the human CLI), `promote-MCP` (MCP is/should be canonical, CLI is the `--json` twin),
-`emphasize-TUI`, `emphasize-dashboard`, `internal`.
+`emphasize-TUI`, `internal`. (Historical disposition `emphasize-dashboard` retired — see amendment.)
 
 | Command group | Primary surface | Real caller | Disposition |
 |---|---|---|---|
 | `install`, `init`, `init:update`, `uninstall`, `update`, `upgrade`, `sync`, `completions`, `backup`, `config` | (b) thin CLI | human, one-shot setup/lifecycle | keep-CLI |
-| `dev`, `dashboard`, `stop`, `status`, `doctor`, `cleanup`, `embed`, `scheduler` | (b) thin CLI | human ops; some daemon-backed | keep-CLI (status/doctor also feed dashboard) |
+| `dev`, `stop`, `status`, `doctor`, `cleanup`, `embed`, `scheduler` | (b) thin CLI | human ops | keep-CLI (status/doctor/oracle for observability) |
 | `creds`, `providers`, `provider`, `auth:status`, `mcp`, `ollama`, `integrations`, `hosts`, `models`(set) | (b) thin CLI | human, credential/integration ops | keep-CLI |
 | `intake` (classify), `graph` (recommend), `workflow` (invoke), `capability` (describe), `execution` (resolve), `models` (resolve), `orchestrate` (run/status) | (a) agent/MCP | agent, daily authored work | promote-MCP — MCP tool canonical (`triage_recommend`, `workflow_invoke`, `capability_describe`, `construct_execution_resolve`, `model_resolve`, `orchestration_run/status`), CLI `--json` is the twin |
 | `search`, `ask`, `knowledge` (index/add/trends), `memory`, `distill`, `infer`, `ingest`, `drop`, `reflect`, `bootstrap` | (a) agent/MCP | agent + occasional human | promote-MCP where an MCP tool exists (`knowledge_search`, `memory_search`, `ingest_document`, `infer_document_schema`, `knowledge_add`); CLI stays for human one-shots |
 | `export`, `wireframe`, `headhunt` | (a) agent/MCP or (b) CLI | agent-authored, human-runnable | promote-MCP (`document_export` exists); CLI kept as headless twin |
 | `profile` (create/set/show/list/drafts/archive/health), `customer`, `workspace`, `tags`, `team`, `handoffs`, `recommendations` | (c) TUI for interactive, (a) MCP for read | human-interactive + agent-read | emphasize-TUI for create/assign/review; MCP read tools exist (`profile_*`) |
 | `intake` (list/show/done/skip/reopen), `sandbox` (create/list/delete) | (c) TUI | human, interactive triage/review | emphasize-TUI (one-shot CLI kept) |
-| `review`, `optimize`, `telemetry`, `telemetry-backfill`, `eval-datasets`, `llm-judge`, `evals`, `efficiency`, `feedback:*` | (d) dashboard | human review + CI; agent reads via MCP (`efficiency_snapshot`, `cx_trace`/`cx_score`) | emphasize-dashboard for visual; CLI/MCP stay as data source |
+| `review`, `optimize`, `telemetry`, `telemetry-backfill`, `eval-datasets`, `llm-judge`, `evals`, `efficiency`, `feedback:*` | (b) thin CLI | human review + CI; agent reads via MCP (`efficiency_snapshot`, `cx_trace`/`cx_score`) | keep-CLI — `--json` twins for scripting; external telemetry via OpenTelemetry/Langfuse |
 | `docs` (check/verify/update), `docs:*`, `audit`, `doc` (verify/inspect), `decisions`, `policy`, `gates:audit`, `deployment`, `ci`, `validate`, `diff`, `list`, `role`/`roles:*`, `skills`, `storage`, `plugin`, `acp`, `claude:allow`, `beads`/`beads:stats`, `hooks:health`, `version` | (b) thin CLI / CI | human ops + CI gates | keep-CLI |
-| `hook`, `lint:agents`, `lint:comments`, `lint:contracts`, `lint:research`, `lint:templates`, `lint:prompts`, `specialist`, `migrate`, `dashboard:sync`, `seed-traces`, `registry:status`, `evaluator:rubrics`, `activation:status`, `prune`, `overrides`, `resources` (18 `internal: true`) | internal | CI / harness | internal — no human or agent surface, correctly modeled |
+| `hook`, `lint:agents`, `lint:comments`, `lint:contracts`, `lint:research`, `lint:templates`, `lint:prompts`, `specialist`, `migrate`, `seed-traces`, `registry:status`, `evaluator:rubrics`, `activation:status`, `prune`, `overrides`, `resources` (17 `internal: true`) | internal | CI / harness | internal — no human or agent surface, correctly modeled |
 
 One-line read per tier:
 - **(a) agent/MCP-native** — the daily authoring verbs already have canonical MCP tools; the CLI
   form is the `--json` scripting twin, not the primary face.
 - **(b) thin human CLI** — setup/ops/lifecycle/CI-gate verbs; the ~13 `core` set plus lifecycle and
   integration verbs are what a human actually types.
-- **(c) TUI** — interactive triage, profile/workspace authoring, and sandbox/intake review want a
-  stateful loop; the CLI one-shot stays underneath.
-- **(d) dashboard** — telemetry, evals, review, and feedback are visual/observability work; the CLI
-  and MCP forms remain the headless data source.
-- **internal** — 18 harness/CI verbs, already invisible to both human and agent by design.
+- **(c) OpenCode / supported host UI** — human conversation happens in editor/agent hosts;
+  CLI one-shots stay underneath for setup, status, and headless contracts.
+- **(internal)** — 18 harness/CI verbs, already invisible to both human and agent by design.
 
 ## Rationale
 
@@ -175,13 +178,14 @@ turned scattered per-host facts into a declared registry without changing behavi
 - **A migration sketch, phased and non-breaking.** Phase 1: add a `surface` field (or derive it) to
   `lib/cli-commands.mjs` so the primary surface is declared data, not folklore — reuses the
   `core`/`internal` precedent. Phase 2: documentation and `--help` group by surface (human CLI tier
-  shown by default; agent/MCP, TUI, dashboard tiers cross-linked, not dumped). Phase 3: for the
+  shown by default; agent/MCP and TUI tiers cross-linked, not dumped). Phase 3: for the
   promote-MCP group, document the MCP tool as canonical and the CLI `--json` as the twin. Phase 4:
-  invest the emphasize-TUI / emphasize-dashboard groups into their interactive/visual surface as
-  capacity allows. At no phase is a verb removed; the CLI stays callable throughout.
+  invest the emphasize-TUI group into its interactive surface as capacity allows. At no phase is a
+  verb removed; the CLI stays callable throughout.
 - **A default home for new capability.** New daily-authoring capability lands as an MCP tool first;
-  new visual capability lands on the dashboard first; the human CLI grows only for genuine setup/ops
-  verbs. This is the durable effect — it stops the flat list from accreting.
+  new observability/visual capability lands on the thin CLI (`--json`) or an external telemetry
+  backend; the human CLI grows only for genuine setup/ops verbs. This is the durable effect — it
+  stops the flat list from accreting.
 - **New constraint.** The surface assignment must stay honest: if a command's primary caller
   changes, its declared surface must change with it, or the model rots back into a flat list with
   extra metadata. This is a maintenance obligation, enforceable later by an inventory check that the
@@ -199,10 +203,22 @@ truth, there is no data migration to unwind and no external contract to break.
 - `lib/cli-commands.mjs` (CLI_COMMANDS, ALL_COMMAND_NAMES, COMMAND_NAMES; `core`/`internal` flags)
 - `scripts/audit/00-inventory.mjs` (census: 110 commands, 13 core, 18 internal, 22 lazy-import handlers — verified this session)
 - `lib/mcp/server.mjs` (52 tools; 7-tool flat core `CORE_TOOL_NAMES`; `construct_call` long-tail collapse; embedded-contract tools `triage_recommend`, `workflow_invoke`, `capability_describe`, `construct_execution_resolve`, `model_resolve`, `orchestration_run`/`orchestration_status`)
-- `lib/tty-prompts.mjs`, `lib/server/` (the embryonic TUI and dashboard surfaces)
+- `lib/tty-prompts.mjs` (bounded CLI selection flows; legacy local-loop code deleted)
 - `docs/operations/audit/tooling-scorecard.md` (interactive/visual layer flagged as the open design question)
 - `docs/notes/research/2026-06-construct-audit/80-synthesis.md` (item 2 — keep the always-on agent surface tiny, load the rest by trigger)
 - ADR-0001 (zero-npm-core registry dispatcher — the substrate)
 - ADR-0022 (orchestration daemon API — engine owns orchestration, hosts are thin clients)
 - ADR-0033 (platform capability registry — the declarative, non-destructive precedent)
 - ADR-0038 / ADR-0032 (small-surface discipline applied to prompts/models)
+
+## Amendment (2026-06-27) — action tools join the flat core; gateway renamed `call`
+
+The tier (a) agent/MCP surface kept only read/think tools flat (`orchestration_policy`, `get_skill`, …) and collapsed everything else — including every *action* tool — behind the `construct_call` gateway. Field evidence showed this made the common case the failing case: agents (capable models included) could classify and read but not *act*, because the act tools were unreachable and the host-prefixed gateway name `construct-mcp_construct_call` was mis-typed (e.g. `construct-mcp_call`). Three corrections, preserving the small-surface discipline:
+
+- **High-value action tools are now flat core** alongside the read/think tools: `author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `workflow_invoke`, `triage_recommend`. Core is 14 tools; the genuinely rare/internal long tail stays behind the gateway. The token-budget guard (`< 6000`) still holds.
+- **The gateway is renamed `construct_call` → `call`** so the host-prefixed name is `construct-mcp_call` — the form agents actually guess. `construct_call` remains a tolerated alias.
+- **Dispatch is tolerant and observed**: an unknown name that is a gateway alias or a known tool wearing the `construct-mcp_` prefix is recovered, and every miss is recorded (`.cx/observations/tool-name-misses.jsonl`) so the discoverability gap is measurable (`lib/mcp/tool-recovery.mjs`). Host-layer rejections that never reach the server are tracked as a follow-up.
+
+## Amendment (2026-06-25) — tier (d) Dashboard retired
+
+The **(d) Dashboard** tier is retired (`construct-m7k2-web-deprecation`). The HTTP daemon (`lib/server/`) and the Next.js cockpit (`apps/dashboard/`) are deleted. Visual, telemetry, and observability now surface through the thin human CLI (`construct status`, `construct doctor`, `construct oracle`) with `--json` twins for scripting, and through external telemetry backends (OpenTelemetry / Langfuse) configured via `CONSTRUCT_TELEMETRY_URL`. The surviving tiers are **(a) agent / MCP-native**, **(b) thin human CLI**, **(c) OpenCode / supported host UI**, and **(internal)**. The forward rule "new visual capability lands on the dashboard first" no longer applies — visual capability lands on the thin CLI (`--json`) or an external telemetry backend.

@@ -16,14 +16,12 @@
   "openingQuestion": "What is the user doing, what are they feeling, and what should the interface show them?",
   "escalationPath": {
     "collaborators": [],
-    "subscriptions": [
-      "design.requested"
-    ]
+    "subscriptions": []
   },
   "refusalBoundaries": "If you don't have designed error and empty states, you have an incomplete design.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-designer.md"
   }
 }

@@ -76,7 +76,7 @@ export default function HomePage() {
           </div>
           <div className="hero-stat">
             <span className="k">Surfaces</span>
-            <span className="v">editors · <Link className="link" href="/guides/cookbook/construct-chat">construct chat</Link> · dashboard /chat</span>
+            <span className="v"><Link className="link" href="/guides/start/connect-your-editor">OpenCode first</Link> · MCP · ACP</span>
           </div>
           <div className="hero-stat">
             <span className="k">Modes</span>
@@ -146,7 +146,6 @@ export default function HomePage() {
         <CodeBlock>
 {`construct status          # confirm services and editor adapters are healthy
 construct sync            # refresh host adapters after registry or config changes
-construct chat            # owned-loop terminal session (optional)
 construct intake list     # review new signals, if your project uses the inbox
 construct doctor          # diagnose install, service, MCP, and adapter drift
 construct oracle status   # fleet health verdict and pending queue`}
@@ -213,7 +212,7 @@ construct oracle status   # fleet health verdict and pending queue`}
           <li><Link className="link" href="/guides/concepts/architecture">Architecture</Link> — diagrams, the request lifecycle, where things live.</li>
           <li><Link className="link" href="/guides/concepts/deployment-model">Deployment model</Link> — pick solo, team, or enterprise.</li>
           <li><Link className="link" href="/guides/concepts/intake-and-triage">Intake and triage</Link> — how signals become triaged R&amp;D work.</li>
-          <li><Link className="link" href="/guides/cookbook/construct-chat">Construct chat</Link> — owned-loop terminal and browser surfaces.</li>
+          <li><Link className="link" href="/guides/start/connect-your-editor">Connect your editor</Link> — OpenCode first, with MCP-backed support for the other public hosts.</li>
           <li><Link className="link" href="/guides/cookbook">Cookbook</Link> — task-oriented recipes (custom agents, providers, retrieval backend, your own LLM).</li>
           <li><Link className="link" href="/guides/reference">Reference</Link> — every CLI command, hook, MCP tool, config option.</li>
         </ul>

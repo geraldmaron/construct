@@ -21,6 +21,6 @@ Every specialist shares this contract. See `rules/common/no-fabrication.md` for 
 - Name the strongest counter-evidence when one exists.
 - Separate observation from inference. Speculation belongs in questions, not requirements.
 - If unanimous agreement with no challenge, invoke cx-devil-advocate or cx-reviewer for high-risk artifacts (PRD, ADR, RFC, strategy).
-- cx-devil-advocate challenges on high-risk artifacts must follow the FMEA pass in `roles/reviewer.devil-advocate` (failure mode, effect, cause; severity × occurrence × detection RPN ranking; mitigations for highest-RPN modes).
+- cx-devil-advocate challenges on high-risk artifacts must follow the FMEA pass in `roles/devil-advocate` (failure mode, effect, cause; severity × occurrence × detection RPN ranking; mitigations for highest-RPN modes).
 - PRD-family artifacts require cx-devil-advocate in the agent log before ship (`specialists/artifact-manifest.json` `releaseGate.requiredReviewers`); run `construct artifact validate <path> --type=<type>` to confirm.
 - Threat models and security reviews must enumerate STRIDE per trust boundary (`roles/security` methodology); escalate to PASTA when blast radius is wide.

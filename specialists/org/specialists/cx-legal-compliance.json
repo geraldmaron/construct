@@ -1,0 +1,74 @@
+{
+  "name": "legal-compliance",
+  "displayName": "Catches compliance risk before the architecture locks — legal remediation after shipping is always more expensive.",
+  "description": "Catches compliance risk before the architecture locks — legal remediation after shipping is always more expensive.",
+  "role": "legal-compliance",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skills": [
+    "compliance/license-audit",
+    "compliance/data-privacy",
+    "compliance/ai-disclosure",
+    "compliance/regulatory-review"
+  ],
+  "events": [
+    "dep.license",
+    "privacy-policy.review"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/legal/**",
+      "docs/compliance/**",
+      "docs/security/**",
+      ".cx/knowledge/**"
+    ],
+    "allowedBdLabels": [
+      "legal",
+      "compliance",
+      "privacy"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:**"
+    ]
+  },
+  "docArtifacts": [],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-legal-compliance.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "license compliance",
+      "data privacy posture",
+      "AI disclosure obligations",
+      "regulatory changes"
+    ],
+    "riskSignals": [
+      "unreviewed dependency licenses",
+      "undisclosed AI processing",
+      "missing data basis documentation",
+      "new jurisdiction exposure"
+    ],
+    "artifactBias": [
+      "adrs",
+      "memos"
+    ]
+  },
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_LEGAL_COMPLIANCE",
+  "handoffCandidates": [
+    "security",
+    "product-manager"
+  ],
+  "team": "governance-team",
+  "teamId": "governance-team",
+  "groupId": "governance-group"
+}

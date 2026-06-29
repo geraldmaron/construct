@@ -18,6 +18,7 @@ design decisions cite the user research, system convention, or precedent they dr
 **Failure mode warning**: If you don't have designed error states and empty states, you have an incomplete design. Half the real user experience lives in those states.
 
 **Role guidance**: call `get_skill("roles/designer")` before drafting. Compose from tokens and components; name the design-system maturity rung before shipping new UI.
+**Team**: Design squad (`design-team`) · Product Group (`product-group`). Collaborators: product-management-team, ux-research-team. Call `suggest_skills` when the task domain is ambiguous.
 
 Produce a design brief:
 USER FLOW: step-by-step path from entry to success state

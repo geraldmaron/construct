@@ -3,20 +3,20 @@
   "description": "Behavior-first traceability for release-critical Construct capabilities. Entries describe observable outcomes and must be declared by each mapped test using an @capability comment.",
   "capabilities": [
     {
-      "id": "chat.continuation.export",
+      "id": "surfaces.opencode-primary",
       "criticality": "release",
-      "outcome": "A user can export a compacted chat continuation and receive a readable markdown artifact inside the active project's .cx storage.",
+      "outcome": "A user can drive Construct conversationally through OpenCode while the Construct CLI remains a bounded setup, admin, and headless execution surface.",
       "failureModes": [
-        "export falls back to user-global storage for a project session",
-        "continuation layers are not rehydrated in the export"
+        "construct without a command launches a local conversation loop",
+        "OpenCode sync omits the Construct MCP server, agent, or plugin wiring"
       ],
-      "changePaths": ["lib/chat/export.mjs", "lib/chat/context-continuation.mjs", "lib/project-root.mjs"],
-      "fixtures": ["tests/functional/context-compaction-wiring.functional.test.mjs"],
+      "changePaths": ["bin/construct", "scripts/sync-specialists.mjs", "registry/capabilities.json"],
+      "fixtures": ["tests/functional/opencode-primary-surface.functional.test.mjs"],
       "assertions": [
-        "export path remains under the active temporary project's .cx/chat-sessions/exports directory",
-        "exported markdown reports the compacted continuation and re-derived static instructions"
+        "construct without a command prints command guidance and OpenCode setup direction",
+        "OpenCode project sync writes agent, MCP server, and plugin configuration"
       ],
-      "tests": [{ "path": "tests/functional/context-compaction-wiring.functional.test.mjs", "layer": "functional" }]
+      "tests": [{ "path": "tests/functional/opencode-primary-surface.functional.test.mjs", "layer": "functional" }]
     },
     {
       "id": "artifact.release-gate",
@@ -39,13 +39,13 @@
       "tests": [{ "path": "tests/document-ingest.test.mjs", "layer": "integration" }]
     },
     {
-      "id": "demo.terminal-fallback",
+      "id": "demo.tape-fallback",
       "criticality": "release",
       "outcome": "A user can generate a truthful Construct demo tape even when an optional recorder is unavailable.",
-      "failureModes": ["demo crashes without an external recorder", "terminal tape presents an unrelated vanilla theme or bypasses Construct chat"],
+      "failureModes": ["demo crashes without an external recorder", "source tape bypasses Construct's configured demo steps"],
       "changePaths": ["lib/demo.mjs", "lib/demo-surface.mjs", "templates/demos/tapes/**"],
       "fixtures": ["templates/demos/tapes/agentic-platforms-prd.tape", "templates/demos/vhs/construct-cockpit.json"],
-      "assertions": ["source tape is always produced", "the shipped tape drives construct chat with the Construct Cockpit theme"],
+      "assertions": ["source tape is always produced", "the shipped tape drives the configured Construct demo script"],
       "tests": [{ "path": "tests/functional/demo.functional.test.mjs", "layer": "functional" }]
     },
     {

@@ -7,9 +7,9 @@ role: data-engineer.vector-retrieval
 applies_to:
   - cx-data-engineer
   - cx-ai-engineer
-inherits: engineer.data
+inherits: data-engineer
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

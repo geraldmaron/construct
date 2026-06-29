@@ -5,6 +5,7 @@
   "humanEquivalent": "The logistics mind who maps dependencies, sequences, and ownership — because hidden dependencies surface as blocked work.",
   "outputs": [],
   "skills": [
+    "roles/operations",
     "docs/init-project",
     "operating/incident-response",
     "operating/oncall-rotation",
@@ -14,14 +15,12 @@
   "openingQuestion": "What must be done first, what blocks what, and who owns each deliverable?",
   "escalationPath": {
     "collaborators": [],
-    "subscriptions": [
-      "plan.requested"
-    ]
+    "subscriptions": []
   },
   "refusalBoundaries": "If every task can run in parallel, the dependency graph wasn't drawn.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-operations.md"
   }
 }

@@ -8,7 +8,7 @@
 
 #set page(
   paper: "a4",
-  margin: (x: 1.85cm, top: 1.75cm, bottom: 2.1cm),
+  margin: (x: 2cm, top: 1.9cm, bottom: 2.25cm),
   numbering: "1",
   header: construct-running-header(
     "$if(title)$$title$$endif$",

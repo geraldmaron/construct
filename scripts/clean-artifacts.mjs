@@ -12,11 +12,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const TARGETS = [
-  'apps/dashboard/.next',
-  'apps/dashboard/out',
   'apps/docs/.next',
   'apps/docs/out',
-  'lib/server/static',
   'coverage',
   '.nyc_output',
   'audit-artifacts',

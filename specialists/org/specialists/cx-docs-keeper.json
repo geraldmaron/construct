@@ -1,0 +1,82 @@
+{
+  "name": "docs-keeper",
+  "displayName": "Owns the record of why, not just what — undocumented decisions become tribal knowledge and then disappear.",
+  "description": "Owns the record of why, not just what — undocumented decisions become tribal knowledge and then disappear.",
+  "role": "docs-keeper",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skills": [
+    "docs/adr-workflow",
+    "docs/runbook-workflow",
+    "docs/init-docs",
+    "docs/memo-and-decision-capture",
+    "docs/document-ingest-workflow"
+  ],
+  "events": [
+    "pr.merged.no-docs",
+    "changelog.missing",
+    "readme.stale",
+    "document.stale"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/**",
+      "**/README.md",
+      "CHANGELOG.md"
+    ],
+    "allowedBdLabels": [
+      "docs",
+      "doc-drift",
+      "changelog"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:lib/**",
+      "edit:bin/**",
+      "edit:specialists/**"
+    ]
+  },
+  "docArtifacts": [
+    "memo",
+    "changelog"
+  ],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-docs-keeper.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "documentation freshness",
+      "decision traceability",
+      "context completeness",
+      "onboarding clarity"
+    ],
+    "riskSignals": [
+      "stale docs",
+      "undocumented decisions",
+      "missing context updates",
+      "tribal knowledge growing"
+    ],
+    "artifactBias": [
+      "adrs",
+      "notes",
+      "memos"
+    ]
+  },
+  "canEdit": true,
+  "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_DOCS_KEEPER",
+  "handoffCandidates": [
+    "engineer"
+  ],
+  "team": "operations-team",
+  "teamId": "operations-team",
+  "groupId": "operations-group"
+}

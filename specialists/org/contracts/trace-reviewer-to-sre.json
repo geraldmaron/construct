@@ -1,0 +1,41 @@
+{
+  "id": "trace-reviewer-to-sre",
+  "producer": "cx-trace-reviewer",
+  "consumer": "cx-sre",
+  "trigger": {
+    "trace.anomaly": true,
+    "riskFlags": [
+      "performance",
+      "reliability"
+    ]
+  },
+  "input": {
+    "shape": "trace-analysis",
+    "mustContain": [
+      "flaggedAgents",
+      "evidence"
+    ]
+  },
+  "output": {
+    "shape": "sre-readiness",
+    "mustContain": [
+      "slos",
+      "runbooks",
+      "alerts"
+    ]
+  },
+  "preconditions": [
+    "Flagged agents meet the minimum trace threshold (20+); insufficient-trace agents deferred"
+  ],
+  "postconditions": [
+    "SRE adjusts alert thresholds or SLOs based on the cited trace evidence",
+    "Runbook updated for the failure pattern identified at fleet level"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "quality-group",
+    "consumerTeam": "operations-group",
+    "requiresApprovalFrom": []
+  }
+}

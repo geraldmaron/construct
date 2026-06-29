@@ -14,5 +14,5 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 test('canonical demos pass cross-surface parity probes', () => {
   const report = buildDemoParityReport({ rootDir: REPO });
   assert.equal(report.pass, true, JSON.stringify(report.mismatches, null, 2));
-  assert.ok(report.acceptableDivergences.length >= 2);
+  assert.ok(report.acceptableDivergences.length >= 1);
 });

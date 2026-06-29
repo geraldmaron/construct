@@ -73,13 +73,14 @@ test('a host drives construct over MCP: skills, templates, and specialist routin
   // gateway's enum, not as flat entries.
   const { tools } = await client.listTools();
   const names = new Set(tools.map((x) => x.name));
-  const gateway = tools.find((x) => x.name === 'construct_call');
+  const gateway = tools.find((x) => x.name === 'call');
   const reachable = new Set(gateway?.inputSchema?.properties?.tool?.enum ?? []);
   for (const core of ['get_skill', 'orchestration_policy']) {
     assert.ok(names.has(core), `MCP server must expose core tool ${core} flat`);
   }
-  for (const deferred of ['list_skills', 'get_template', 'agent_contract']) {
-    assert.ok(reachable.has(deferred), `MCP server must keep ${deferred} reachable via construct_call`);
+  assert.ok(names.has('get_template'), 'get_template is a flat core tool');
+  for (const deferred of ['list_skills', 'agent_contract']) {
+    assert.ok(reachable.has(deferred), `MCP server must keep ${deferred} reachable via the call gateway`);
   }
 
   // Skills are discoverable + loadable, and the load is audited.
@@ -127,4 +128,36 @@ test('a trivial request does not over-orchestrate (track is not forced to orches
   }));
   const track = policy.track || policy.intent?.track || '';
   assert.notEqual(track, 'orchestrated', 'a one-file typo must not be classified orchestrated');
+});
+
+test('a host can execute a research-shaped request through orchestration_run after policy classification', async (t) => {
+  const env = sandbox();
+  t.after(() => env.cleanup());
+  const client = await connect(env);
+  t.after(() => client.close());
+
+  const policy = payload(await client.callTool({
+    name: 'orchestration_policy',
+    arguments: { request: 'compare oidc vs saml', fileCount: 1, moduleCount: 1, introducesContract: false },
+  }));
+  assert.equal(policy.track, 'focused');
+  assert.equal(policy.suggestedWorkflowType, 'research-synthesis');
+  assert.equal(policy.researchExecutionPolicy?.mode, 'evidence-first');
+
+  const run = payload(await client.callTool({
+    name: 'orchestration_run',
+    arguments: {
+      request: 'compare oidc vs saml',
+      workflow_type: policy.suggestedWorkflowType,
+      file_count: 1,
+      module_count: 1,
+      wait: true,
+      worker_backend: 'inline',
+    },
+  }));
+  assert.equal(run.intent, 'research');
+  assert.equal(run.track, 'focused');
+  assert.equal(run.suggestedWorkflowType, 'research-synthesis');
+  assert.deepEqual(run.specialists, ['cx-researcher']);
+  assert.equal(run.researchExecutionPolicy?.mode, 'evidence-first');
 });

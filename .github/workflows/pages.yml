@@ -45,7 +45,7 @@ jobs:
         # the repo root owns the hoisted shrinkwrap.
         run: npm audit --workspace=construct-docs --audit-level=high
       - name: Regenerate reference MDX from canonical sources
-        run: node ./bin/construct docs:site
+        run: npm run docs:site
       - name: Build static site
         env:
           DOCS_BASE_PATH: /construct

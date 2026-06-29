@@ -1,0 +1,45 @@
+{
+  "id": "architect-to-operations",
+  "producer": "cx-architect",
+  "consumer": "cx-operations",
+  "trigger": {
+    "intent": [
+      "implementation"
+    ],
+    "workCategory": "deep"
+  },
+  "input": {
+    "schema": "lib/contract-schemas/decision.json",
+    "mustContain": [
+      "goal",
+      "approach",
+      "tasks",
+      "acceptanceCriteria"
+    ]
+  },
+  "output": {
+    "shape": "ops-plan",
+    "mustContain": [
+      "sequencedTasks",
+      "dependencyGraph",
+      "ownershipMatrix",
+      "verificationGates"
+    ]
+  },
+  "preconditions": [
+    "Architect plan and devil-advocate feedback resolved",
+    "Tasks are atomic and individually verifiable"
+  ],
+  "postconditions": [
+    "Every task names a single owner",
+    "Every task names a verification gate and definition-of-done",
+    "Dependency graph identifies blockers; no task lies on a hidden critical path"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "engineering-group",
+    "consumerTeam": "operations-group",
+    "requiresApprovalFrom": []
+  }
+}

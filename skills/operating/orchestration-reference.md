@@ -118,7 +118,7 @@ If you reason about the same decision across two consecutive turns without a new
 
 ## Speculation rule
 
-When choosing between named options (SDK vs SDK, library vs library, pattern vs pattern), the answer comes from `context7_query-docs`, `WebFetch`, the user, or an explicit default: never from internal reasoning rounds alone.
+When choosing between named options (SDK vs SDK, library vs library, pattern vs pattern), the answer comes from the appropriate evidence path: Context7 for library/framework/API docs when available, direct fetch/search of official docs otherwise, local repo evidence when the question is project-local, the user, or an explicit default. Never from internal reasoning rounds alone.
 
 ## Dispatch-first test
 

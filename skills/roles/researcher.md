@@ -10,7 +10,7 @@ applies_to:
   - cx-explorer
 inherits: null
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

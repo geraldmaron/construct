@@ -1,0 +1,79 @@
+{
+  "name": "qa",
+  "displayName": "Asks whether the tests test what matters — coverage numbers are hypotheses about quality, not proof of it.",
+  "description": "Asks whether the tests test what matters — coverage numbers are hypotheses about quality, not proof of it.",
+  "role": "qa",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skills": [
+    "devops/testing",
+    "quality-gates/verify-change",
+    "quality-gates/verify-module"
+  ],
+  "events": [
+    "test.fail",
+    "test.flake",
+    "coverage.drop"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/qa/**",
+      "docs/test-plans/**"
+    ],
+    "allowedBdLabels": [
+      "bug",
+      "qa",
+      "test",
+      "flake"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:tests/**",
+      "edit:lib/**",
+      "edit:bin/**"
+    ]
+  },
+  "docArtifacts": [
+    "test-plan",
+    "qa-strategy"
+  ],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-qa.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "test effectiveness",
+      "behavioral coverage",
+      "regression risk",
+      "acceptance criteria traceability"
+    ],
+    "riskSignals": [
+      "tests that never fail",
+      "coverage without behavioral assertions",
+      "untested acceptance criteria",
+      "flaky tests ignored"
+    ],
+    "artifactBias": [
+      "notes"
+    ]
+  },
+  "canEdit": true,
+  "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_QA",
+  "handoffCandidates": [
+    "engineer",
+    "debugger",
+    "test-automation"
+  ],
+  "team": "quality-team",
+  "teamId": "quality-team",
+  "groupId": "quality-group"
+}

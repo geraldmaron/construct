@@ -4,7 +4,7 @@
  *
  * Creates realistic agent traces with a spread of quality scores so that
  * `construct review` and `construct optimize` have data to work with
- * immediately, without waiting for real chat sessions.
+ * immediately, without waiting for real host sessions.
  *
  * Usage:
  *   node scripts/seed-traces.mjs [--agents=cx-engineer,cx-architect] [--count=5] [--dry-run]

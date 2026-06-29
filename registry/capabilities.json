@@ -1,5 +1,884 @@
 {
   "version": 1,
+  "catalog": {
+    "generatedAt": "2026-06-29T00:02:43.405Z",
+    "npmScripts": [
+      "adapters",
+      "audit:published",
+      "build:sea",
+      "catalog:regen",
+      "catalog:validate",
+      "certify:demos",
+      "clean:artifacts",
+      "coverage",
+      "docs:build",
+      "docs:dev",
+      "docs:init",
+      "docs:site",
+      "docs:sync",
+      "docs:update",
+      "docs:verify",
+      "doctor",
+      "eval:routing",
+      "evals",
+      "examples:deck",
+      "examples:distribution",
+      "gates:audit",
+      "learning:status",
+      "lint:agents",
+      "lint:comments",
+      "lint:contracts",
+      "lint:js",
+      "lint:scopes",
+      "lint:templates",
+      "mcp",
+      "npm:publish",
+      "postinstall",
+      "release:check",
+      "release:gate",
+      "release:preflight",
+      "release:preflight:no-auth",
+      "test",
+      "test:functional",
+      "test:unit",
+      "test:visual",
+      "version"
+    ],
+    "cliCommands": [
+      {
+        "name": "acp",
+        "category": "Models & Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "activation:status",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "artifact",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "ask",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "audit",
+        "category": "Diagnostics",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "auth:status",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "backup",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "beads",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "beads:stats",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "bootstrap",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "capability",
+        "category": "Models & Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "certify",
+        "category": "Diagnostics",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "ci",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "claude:allow",
+        "category": "Models & Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "cleanup",
+        "category": "Diagnostics",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "completions",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "config",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "creds",
+        "category": "Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "customer",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "decisions",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "demo",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "deployment",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "dev",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
+        "name": "diagram",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "diff",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "distill",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "doc",
+        "category": "Diagnostics",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "docs",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
+        "name": "docs:check",
+        "category": "Diagnostics",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "docs:reconcile",
+        "category": "Diagnostics",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "docs:site",
+        "category": "Diagnostics",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "docs:update",
+        "category": "Diagnostics",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "docs:verify",
+        "category": "Diagnostics",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "doctor",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
+        "name": "drop",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "efficiency",
+        "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "embed",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "eval-datasets",
+        "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "evals",
+        "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "evaluator:rubrics",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "execution",
+        "category": "Models & Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "export",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "feedback:history",
+        "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "feedback:record",
+        "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "gates:audit",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "graph",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "handoffs",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "headhunt",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "hook",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "hooks:health",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "hosts",
+        "category": "Models & Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "impact",
+        "category": "Diagnostics",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "improvement",
+        "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "infer",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "ingest",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "init",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
+        "name": "init:update",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "install",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
+        "name": "intake",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
+        "name": "integrations",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "knowledge",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "lint:agents",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "lint:comments",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "lint:contracts",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "lint:prompts",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "lint:research",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "lint:templates",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "list",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "llm-judge",
+        "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "matrix",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "mcp",
+        "category": "Models & Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "memory",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "migrate",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "models",
+        "category": "Models & Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "ollama",
+        "category": "Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "optimize",
+        "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "oracle",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "orchestrate",
+        "category": "Models & Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "overrides",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "plugin",
+        "category": "Models & Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "policy",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "provider",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "providers",
+        "category": "Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "prune",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "publish",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "recommendations",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
+        "name": "reflect",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "registry:diff",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "registry:generate-docs",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "registry:prune",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "registry:status",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "registry:validate",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "resources",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "review",
+        "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "role",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "roles:list",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "roles:set",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "rules",
+        "category": "Diagnostics",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "sandbox",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
+        "name": "scheduler",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "scope",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
+        "name": "search",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "seed-traces",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "skills",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "sources",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "specialist",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "specialist:add",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "specialist:remove",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "status",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
+        "name": "stop",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
+        "name": "storage",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "sync",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
+        "name": "tags",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "team",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "team:add",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "team:remove",
+        "category": "Internal",
+        "core": false,
+        "internal": true
+      },
+      {
+        "name": "telemetry",
+        "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "telemetry-backfill",
+        "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "telemetry-setup",
+        "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "tools",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "uninstall",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "update",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "upgrade",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "validate",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "version",
+        "category": "Advanced",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "wireframe",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "workflow",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "workspace",
+        "category": "Work",
+        "core": false,
+        "internal": false
+      }
+    ],
+    "workflows": [
+      {
+        "type": "evidence-ingest",
+        "description": "Ingest and structure raw evidence (notes, documents, signals) into a normalized summary.",
+        "tier": "fast"
+      },
+      {
+        "type": "proposal-review",
+        "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance.",
+        "tier": "standard"
+      },
+      {
+        "type": "prd-draft",
+        "description": "Draft a product requirements document from a problem statement and supporting evidence.",
+        "tier": "standard"
+      },
+      {
+        "type": "architecture-review",
+        "description": "Review an architecture or design for trade-offs, failure modes, and security exposure.",
+        "tier": "reasoning"
+      },
+      {
+        "type": "risk-review",
+        "description": "Stress-test a plan for risk: failure modes, security, and compliance exposure.",
+        "tier": "reasoning"
+      },
+      {
+        "type": "research-synthesis",
+        "description": "Synthesize multiple sources into a cited, evidence-graded research summary.",
+        "tier": "reasoning"
+      },
+      {
+        "type": "transcript-process",
+        "description": "Process a meeting/call transcript into a summary, decisions, and action items.",
+        "tier": "fast"
+      },
+      {
+        "type": "data-structure",
+        "description": "Parse, validate, and profile a raw dataset into a structured, described shape.",
+        "tier": "standard"
+      },
+      {
+        "type": "memo-draft",
+        "description": "Draft a decision or status memo from a problem statement and context.",
+        "tier": "fast"
+      },
+      {
+        "type": "structure-notes",
+        "description": "Structure an unclassified brain-dump or rough notes into a normalized summary with extracted intents.",
+        "tier": "fast"
+      }
+    ],
+    "workflowTypes": [
+      "evidence-ingest",
+      "proposal-review",
+      "prd-draft",
+      "architecture-review",
+      "risk-review",
+      "research-synthesis",
+      "transcript-process",
+      "data-structure",
+      "memo-draft",
+      "structure-notes"
+    ]
+  },
   "capabilities": [
     {
       "id": "orchestration.routing",
@@ -50,7 +929,15 @@
         "hostEmulation": "tests/functional/host-mcp-emulation.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": "2026-06-19T01:07:58.535Z"
+      "lastValidated": "2026-06-26T20:01:14.659Z",
+      "edges": {
+        "cliCommands": [
+          "orchestrate",
+          "orchestrate run"
+        ],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "oracle.meta-review",
@@ -76,7 +963,7 @@
         "skills": [
           "ai/orchestration-workflow",
           "exploration/dependency-graph-reading",
-          "roles/reviewer.trace"
+          "roles/trace-reviewer"
         ],
         "rules": [
           "rules/common/no-fabrication.md"
@@ -86,7 +973,15 @@
         "functional": "tests/functional/oracle-bounded-auto.functional.test.mjs"
       },
       "humanGate": "approve-only",
-      "lastValidated": "2026-06-19T12:00:00.000Z"
+      "lastValidated": "2026-06-26T20:01:22.031Z",
+      "edges": {
+        "cliCommands": [
+          "oracle",
+          "oracle review"
+        ],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "mcp.broker.connection",
@@ -120,7 +1015,12 @@
         "hostEmulation": "tests/functional/host-mcp-emulation.functional.test.mjs"
       },
       "humanGate": "autonomous",
-      "lastValidated": "2026-06-19T01:08:09.548Z"
+      "lastValidated": "2026-06-26T20:01:32.913Z",
+      "edges": {
+        "cliCommands": [],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "workflow.evidence-ingest",
@@ -164,7 +1064,17 @@
         "verificationBar": "Source metadata preserved; no invented quotes; confidence labeled"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:33.468Z",
+      "edges": {
+        "cliCommands": [
+          "workflow",
+          "workflow invoke"
+        ],
+        "npmScripts": [],
+        "workflows": [
+          "evidence-ingest"
+        ]
+      }
     },
     {
       "id": "workflow.research-synthesis",
@@ -215,7 +1125,16 @@
         "verificationBar": "≥2 primary sources; URLs fetched; confidence labeled"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:34.007Z",
+      "edges": {
+        "cliCommands": [
+          "ask"
+        ],
+        "npmScripts": [],
+        "workflows": [
+          "research-synthesis"
+        ]
+      }
     },
     {
       "id": "workflow.prd-draft",
@@ -263,7 +1182,17 @@
         "verificationBar": "Template chosen before draft; rejected alternatives recorded for ADR/RFC paths"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:34.544Z",
+      "edges": {
+        "cliCommands": [
+          "workflow",
+          "workflow invoke"
+        ],
+        "npmScripts": [],
+        "workflows": [
+          "prd-draft"
+        ]
+      }
     },
     {
       "id": "workflow.architecture-review",
@@ -293,7 +1222,17 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "requires-human-approval",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:35.084Z",
+      "edges": {
+        "cliCommands": [
+          "workflow",
+          "workflow invoke"
+        ],
+        "npmScripts": [],
+        "workflows": [
+          "architecture-review"
+        ]
+      }
     },
     {
       "id": "workflow.proposal-review",
@@ -322,7 +1261,17 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "requires-human-approval",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:35.624Z",
+      "edges": {
+        "cliCommands": [
+          "workflow",
+          "workflow invoke"
+        ],
+        "npmScripts": [],
+        "workflows": [
+          "proposal-review"
+        ]
+      }
     },
     {
       "id": "workflow.risk-review",
@@ -352,7 +1301,17 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "requires-human-approval",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:36.161Z",
+      "edges": {
+        "cliCommands": [
+          "workflow",
+          "workflow invoke"
+        ],
+        "npmScripts": [],
+        "workflows": [
+          "risk-review"
+        ]
+      }
     },
     {
       "id": "workflow.structure-notes",
@@ -382,7 +1341,17 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:36.696Z",
+      "edges": {
+        "cliCommands": [
+          "intake",
+          "intake classify"
+        ],
+        "npmScripts": [],
+        "workflows": [
+          "structure-notes"
+        ]
+      }
     },
     {
       "id": "workflow.transcript-process",
@@ -411,7 +1380,17 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:37.237Z",
+      "edges": {
+        "cliCommands": [
+          "workflow",
+          "workflow invoke"
+        ],
+        "npmScripts": [],
+        "workflows": [
+          "transcript-process"
+        ]
+      }
     },
     {
       "id": "workflow.data-structure",
@@ -440,7 +1419,17 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:37.775Z",
+      "edges": {
+        "cliCommands": [
+          "workflow",
+          "workflow invoke"
+        ],
+        "npmScripts": [],
+        "workflows": [
+          "data-structure"
+        ]
+      }
     },
     {
       "id": "workflow.memo-draft",
@@ -469,7 +1458,17 @@
         "functional": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:38.314Z",
+      "edges": {
+        "cliCommands": [
+          "workflow",
+          "workflow invoke"
+        ],
+        "npmScripts": [],
+        "workflows": [
+          "memo-draft"
+        ]
+      }
     },
     {
       "id": "document-type.research-brief",
@@ -492,11 +1491,20 @@
         }
       },
       "verification": {
+        "functional": "tests/certification/artifact-gates.test.mjs",
         "structureRequirements": "research-brief",
         "verificationBar": "Sources section with dates; confidence summary; recommendation"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:38.464Z",
+      "edges": {
+        "cliCommands": [
+          "knowledge",
+          "knowledge add"
+        ],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "document-type.evidence-brief",
@@ -514,7 +1522,12 @@
         "verificationBar": "Signal, evidence, counter-signal; no invented customer quotes"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:39.007Z",
+      "edges": {
+        "cliCommands": [],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "document-type.prd",
@@ -527,11 +1540,17 @@
       "skill": "docs/prd-workflow",
       "template": "prd",
       "verification": {
+        "functional": "tests/certification/artifact-gates.test.mjs",
         "structureRequirements": "prd",
         "verificationBar": "Problem, goals, success metrics, risks and mitigations"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:39.154Z",
+      "edges": {
+        "cliCommands": [],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "document-type.adr",
@@ -545,11 +1564,17 @@
       "skill": "docs/adr-workflow",
       "template": "adr",
       "verification": {
+        "functional": "tests/certification/artifact-gates.test.mjs",
         "structureRequirements": "adr",
         "verificationBar": "Problem, decision, rejected alternatives, consequences, reversibility"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:39.305Z",
+      "edges": {
+        "cliCommands": [],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "document-type.ingested-markdown",
@@ -577,7 +1602,14 @@
         "verificationBar": "Source metadata preserved; droppedInfo surfaced; no invented structure"
       },
       "humanGate": "autonomous",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:39.495Z",
+      "edges": {
+        "cliCommands": [
+          "ingest"
+        ],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "ingest.adapter",
@@ -604,7 +1636,14 @@
         "functional": "tests/functional/node-native-extraction.functional.test.mjs"
       },
       "humanGate": "autonomous",
-      "lastValidated": "2026-06-19T01:08:09.791Z"
+      "lastValidated": "2026-06-26T20:01:39.686Z",
+      "edges": {
+        "cliCommands": [
+          "ingest"
+        ],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "ingest.docling",
@@ -623,7 +1662,15 @@
         "functional": "tests/functional/mcp-ingest-resilience.functional.test.mjs"
       },
       "humanGate": "autonomous",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:40.642Z",
+      "edges": {
+        "cliCommands": [
+          "ingest",
+          "ingest --legacy-extractor=false"
+        ],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "ingest.docling-remote",
@@ -642,7 +1689,14 @@
         "functional": "tests/functional/docling-remote-ingest.functional.test.mjs"
       },
       "humanGate": "requires-human-approval",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:40.816Z",
+      "edges": {
+        "cliCommands": [
+          "ingest"
+        ],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "skill.roles-engineer",
@@ -664,7 +1718,12 @@
         "hostEmulation": "tests/functional/host-mcp-emulation.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:41.286Z",
+      "edges": {
+        "cliCommands": [],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "skill.roles-architect-ai-systems",
@@ -686,7 +1745,12 @@
         "hostEmulation": "tests/functional/host-mcp-emulation.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:41.754Z",
+      "edges": {
+        "cliCommands": [],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
       "id": "local.model.tier",
@@ -704,31 +1768,61 @@
         }
       },
       "verification": {
-        "functional": "tests/functional/chat-free-router-mode.functional.test.mjs"
+        "unit": "tests/capability-tier.test.mjs",
+        "integration": "tests/model-router-local.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": "2026-06-26T20:01:41.876Z",
+      "edges": {
+        "cliCommands": [
+          "models",
+          "models resolve"
+        ],
+        "npmScripts": [],
+        "workflows": []
+      }
     },
     {
-      "id": "chat.owned-loop",
+      "id": "surfaces.opencode-primary",
       "kind": "capability",
-      "name": "Chat Owned Loop",
-      "description": "construct chat tier-aware system prompt and owned-loop engine.",
+      "name": "OpenCode Primary Surface",
+      "description": "OpenCode is the first-class conversational surface; the construct CLI remains setup/admin/headless infrastructure.",
       "criticality": "P1",
       "ownerSpecialists": [
         "orchestrator"
       ],
       "surfaces": {
+        "opencode": {
+          "supported": true,
+          "primary": true
+        },
+        "mcp": {
+          "supported": true,
+          "tool": "orchestration_policy"
+        },
         "cli": {
           "supported": true,
-          "command": "construct chat"
+          "command": "construct sync"
         }
       },
       "verification": {
-        "functional": "tests/functional/chat-owned-loop.functional.test.mjs"
+        "functional": "tests/functional/opencode-primary-surface.functional.test.mjs",
+        "hostEmulation": "tests/functional/host-config-parity.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": null,
+      "edges": {
+        "cliCommands": [
+          "sync"
+        ],
+        "npmScripts": [
+          "adapters",
+          "docs:sync",
+          "release:check",
+          "version"
+        ],
+        "workflows": []
+      }
     },
     {
       "id": "mcp.tool-budget.trim",
@@ -748,7 +1842,12 @@
         "functional": "tests/functional/host-config-parity.functional.test.mjs"
       },
       "humanGate": "proposal-only",
-      "lastValidated": null
+      "lastValidated": null,
+      "edges": {
+        "cliCommands": [],
+        "npmScripts": [],
+        "workflows": []
+      }
     }
   ]
 }

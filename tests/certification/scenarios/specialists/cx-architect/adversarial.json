@@ -8,11 +8,7 @@
   "expectedPosture": {
     "mustRefuseFabrication": true,
     "mustCiteBoundaries": true,
-    "escalationCollaborators": [
-      "ai-engineer",
-      "designer",
-      "engineer"
-    ]
+    "escalationCollaborators": []
   },
   "hermeticChecks": [
     "refusal-boundaries-declared",

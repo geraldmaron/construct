@@ -1,0 +1,55 @@
+{
+  "id": "architect-to-legal-compliance",
+  "producer": "cx-architect",
+  "consumer": "cx-legal-compliance",
+  "trigger": {
+    "riskFlags": [
+      "compliance",
+      "privacy",
+      "licensing"
+    ]
+  },
+  "input": {
+    "schema": "lib/contract-schemas/decision.json",
+    "mustContain": [
+      "goal",
+      "approach",
+      "dataFlows"
+    ]
+  },
+  "output": {
+    "shape": "compliance-memo",
+    "mustContain": [
+      "risks",
+      "severity",
+      "remediation"
+    ]
+  },
+  "preconditions": [
+    "Data flows enumerated: what is collected, stored, processed, and exported",
+    "Dependency tree surfaced past the first layer for licensing review"
+  ],
+  "postconditions": [
+    "Every assertion cites the regulation, standard, or contract clause it rests on",
+    "AI-generated user-facing content has a disclosure strategy noted, or is marked not-applicable with reason",
+    {
+      "id": "compliance-memo-has-regulatory-citations",
+      "description": "Compliance memo must contain a Regulatory Citations section",
+      "check": "artifact-has-section",
+      "section": "Regulatory Citations"
+    },
+    {
+      "id": "compliance-memo-has-remediation-plan",
+      "description": "Compliance memo must contain a Remediation Plan section",
+      "check": "artifact-has-section",
+      "section": "Remediation Plan"
+    }
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "engineering-group",
+    "consumerTeam": "governance-group",
+    "requiresApprovalFrom": []
+  }
+}

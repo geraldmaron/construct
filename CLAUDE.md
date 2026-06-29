@@ -4,7 +4,7 @@ This repo IS Construct. Changes here affect every session, every platform, every
 
 ## Critical rules
 
-- **Never fabricate.** Every load-bearing claim in any artifact (PRD, ADR, RFC, brief, knowledge note, handoff, review, summary, classification rationale) must trace to a source the reader can re-verify. Don't invent quotes, ticket IDs, customer names, percentages, dates, or file paths. When a fact isn't in the source, write `unknown` or `[unverified]`. See `rules/common/no-fabrication.md`. Enforced by `lib/comment-lint.mjs` on artifact paths and by `specialists/contracts.json` postconditions on specialist handoffs.
+- **Never fabricate.** Every load-bearing claim in any artifact (PRD, ADR, RFC, brief, knowledge note, handoff, review, summary, classification rationale) must trace to a source the reader can re-verify. Don't invent quotes, ticket IDs, customer names, percentages, dates, or file paths. When a fact isn't in the source, write `unknown` or `[unverified]`. See `rules/common/no-fabrication.md`. Enforced by `lib/comment-lint.mjs` on artifact paths and by `specialists/org/contracts/` postconditions on specialist handoffs.
 - **Confirm the working branch every session.** Session-start surfaces `## Working branch: <name>` at the top of the injected context. Restate it before any mutating operation.
 - **Never commit, push, or merge without asking first.** Before `git commit`, `git push`, or `gh pr merge`: state the branch, state what's about to happen, ask for confirmation, wait for yes. A yes in chat is the approval — no separate command or marker. See `rules/common/commit-approval.md`.
 - **Never edit running hook files** (`lib/hooks/*.mjs`) without testing them in isolation first. A broken hook blocks all tool use.
@@ -12,13 +12,13 @@ This repo IS Construct. Changes here affect every session, every platform, every
 - **Never commit directly to main.** Branch, test, then merge.
 - **Run `construct doctor` after any structural change** to verify the system is healthy.
 - **Multi-component features require a functional test.** If a change touches more than one of: hook + observation, profile + classifier, CLI + durable state, then a test must live in `tests/functional/` that spawns the real binary or imports the real module in an isolated tmpdir and asserts on durable artifacts. CI is a backstop, not a primary gate. See `tests/functional/README.md`.
-- **Profiles are research artifacts, not JSON exercises.** Any new profile that lands in `profiles/` must go through the lifecycle in `docs/guides/concepts/profile-lifecycle.md`: discover → frame → architect → validate → promote. The cx-ux-researcher, cx-product-manager, cx-architect, and cx-evaluator specialists each own a phase. `construct profile create <id>` scaffolds the draft and the requirements brief; drop-in JSON is allowed for experiments but not for the curated catalog.
+- **Profiles are research artifacts, not JSON exercises.** Any new profile that lands in `profiles/` must go through the lifecycle in `docs/guides/concepts/scope-lifecycle.md`: discover → frame → architect → validate → promote. The cx-ux-researcher, cx-product-manager, cx-architect, and cx-evaluator specialists each own a phase. `construct scope create <id>` scaffolds the draft and the requirements brief; drop-in JSON is allowed for experiments but not for the curated catalog.
 
 ## Protected files — edit with extra care
 
 | File | Why |
 |---|---|
-| `specialists/registry.json` | Source of truth for all agents on all platforms |
+| `specialists/org` | Source of truth for all agents on all platforms |
 | `lib/setup.mjs` / `bin/construct-postinstall.mjs` | Install/setup path — runs on user machines, a bug affects all installs |
 | `lib/hooks/*.mjs` | Run in every Claude Code session |
 | `claude/settings.template.json` | Controls all Claude Code hook config |

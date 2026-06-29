@@ -1,0 +1,53 @@
+{
+  "id": "construct-to-rd-lead",
+  "producer": "construct",
+  "consumer": "cx-rd-lead",
+  "trigger": {
+    "framingChallenge.required": true
+  },
+  "input": {
+    "shape": "framing-request",
+    "mustContain": [
+      "goal",
+      "uncertainty",
+      "assumptions"
+    ]
+  },
+  "output": {
+    "shape": "framing-brief",
+    "mustContain": [
+      "problemStatement",
+      "hypothesis",
+      "keyUnknowns",
+      "evidenceThreshold",
+      "recommendation"
+    ]
+  },
+  "preconditions": [
+    "Framing gate fires before architecture work begins",
+    "Strategy bets and non-bets reviewed in `.cx/knowledge/decisions/strategy/`"
+  ],
+  "postconditions": [
+    "Hypothesis is falsifiable and stated as 'We believe [X] will result in [Y] because [Z].'",
+    "Evidence threshold names a specific result that would confirm or disconfirm",
+    {
+      "id": "rd-framing-has-problem-section",
+      "description": "Framing artifact must contain a Problem section",
+      "check": "artifact-has-section",
+      "section": "Problem"
+    },
+    {
+      "id": "rd-framing-has-constraints-section",
+      "description": "Framing artifact must contain a Constraints section",
+      "check": "artifact-has-section",
+      "section": "Constraints"
+    },
+    {
+      "id": "rd-framing-has-open-questions-section",
+      "description": "Framing artifact must contain an Open Questions section",
+      "check": "artifact-has-section",
+      "section": "Open Questions"
+    }
+  ],
+  "description": ""
+}

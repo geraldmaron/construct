@@ -4,9 +4,9 @@
   "registryName": "sre",
   "humanEquivalent": "Plans for failure before it happens — reliability problems are designed in, not out.",
   "outputs": [
+    "runbook",
     "incident-report",
-    "postmortem",
-    "runbook"
+    "postmortem"
   ],
   "skills": [
     "devops/observability",
@@ -17,25 +17,13 @@
   "tone": "Observability added as afterthought, untested rollback procedures, SLOs defined after the first incident",
   "openingQuestion": "How will we know when this is failing in production, and what do we do first?",
   "escalationPath": {
-    "collaborators": [
-      "architect",
-      "debugger",
-      "docs-keeper",
-      "engineer",
-      "qa",
-      "security"
-    ],
-    "subscriptions": [
-      "edit_loop.stuck",
-      "mcp.unhealthy.persistent",
-      "push_gate.fail",
-      "service.down"
-    ]
+    "collaborators": [],
+    "subscriptions": []
   },
   "refusalBoundaries": "If there's no alert definition before deployment, nobody planned for failure.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-sre.md"
   }
 }

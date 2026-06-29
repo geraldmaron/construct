@@ -1,0 +1,38 @@
+{
+  "id": "rd-lead-to-architect",
+  "producer": "cx-rd-lead",
+  "consumer": "cx-architect",
+  "trigger": {
+    "framingChallenge.required": true,
+    "rdLead.verdict": "frame-approved"
+  },
+  "input": {
+    "shape": "framing-brief",
+    "mustContain": [
+      "problemStatement",
+      "hypothesis",
+      "keyUnknowns",
+      "evidenceThreshold",
+      "recommendation"
+    ]
+  },
+  "output": {
+    "schema": "lib/contract-schemas/decision.json",
+    "type": "decision"
+  },
+  "preconditions": [
+    "Framing artifact exists at `.cx/framing/<slug>.md`",
+    "Hypothesis cleared of unverified assumptions"
+  ],
+  "postconditions": [
+    "ADR cites the framing brief as the upstream source for its Problem statement",
+    "Architect does not productionize components listed under 'WHAT NOT TO PRODUCTIONIZE YET'"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "strategy-group",
+    "consumerTeam": "engineering-group",
+    "requiresApprovalFrom": []
+  }
+}

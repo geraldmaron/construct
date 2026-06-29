@@ -46,7 +46,7 @@ Export does not accept PDF or DOCX as input — those are **ingest** sources. On
 
 Docling provisions on first use into `.cx/runtime/docling/.venv` (~1.5 GB). Eager provision: `construct install --with-docling`.
 
-On docling timeout or failure, Construct falls back to **node-native** extraction (not regex/CLI legacy paths). Legacy zip-xml and `pdftotext` paths require `CONSTRUCT_ALLOW_LEGACY_EXTRACT=1` for transitional debugging only.
+On docling timeout or failure, Construct falls back to **node-native** extraction (unpdf/mammoth) for PDF/DOCX. Office formats without a Node backend require docling.
 
 ### Supported intake formats
 
@@ -151,4 +151,4 @@ Reports export (Pandoc, Typst, LibreOffice for `.doc`, pptxgenjs, deck template)
 
 ## Brand consistency
 
-Distribution exports, chat UI, dashboard, and wireframe scaffolds share the Construct brand contract documented in [branding.md](./branding.md). Visual tokens live in [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) (monochrome ink ramp, Space Grotesk / JetBrains Mono). PPTX exports embed bundled TTF cuts via [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) when `pptx-embed-fonts` is installed.
+Distribution exports, dashboard, supported hosts, and wireframe scaffolds share the Construct brand contract documented in [branding.md](./branding.md). Visual tokens live in [`lib/brand-tokens.mjs`](../../lib/brand-tokens.mjs) (monochrome ink ramp, Space Grotesk / JetBrains Mono). PPTX exports embed bundled TTF cuts via [`lib/brand-fonts.mjs`](../../lib/brand-fonts.mjs) when `pptx-embed-fonts` is installed.

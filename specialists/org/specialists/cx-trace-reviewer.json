@@ -1,0 +1,69 @@
+{
+  "name": "trace-reviewer",
+  "displayName": "Tracks fleet-level performance patterns — stable median scores can hide high-variance agents that are failing silently.",
+  "description": "Tracks fleet-level performance patterns — stable median scores can hide high-variance agents that are failing silently.",
+  "role": "trace-reviewer",
+  "modelTier": "reasoning",
+  "reasoningEffort": "high",
+  "skills": [
+    "ai/prompt-optimizer",
+    "ai/trace-triage"
+  ],
+  "events": [
+    "trace.anomaly"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/traces/**",
+      ".cx/traces/**"
+    ],
+    "allowedBdLabels": [
+      "trace",
+      "observability"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:**"
+    ]
+  },
+  "docArtifacts": [],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-trace-reviewer.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "agent performance trends",
+      "variance detection",
+      "degradation signals",
+      "fleet health"
+    ],
+    "riskSignals": [
+      "stable median hiding variance",
+      "silent degradation",
+      "promotion on few traces",
+      "unreviewed failure clusters"
+    ],
+    "artifactBias": [
+      "notes",
+      "memos"
+    ]
+  },
+  "canEdit": true,
+  "claudeTools": "Read,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_TRACE_REVIEWER",
+  "handoffCandidates": [
+    "sre",
+    "ai-engineer",
+    "engineer"
+  ],
+  "team": "quality-team",
+  "teamId": "quality-team",
+  "groupId": "quality-group"
+}

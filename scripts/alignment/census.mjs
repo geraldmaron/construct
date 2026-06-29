@@ -27,6 +27,7 @@ import { triageBoundOrphans } from '../../lib/registry/consolidation.mjs';
 import { getWorkflowDef, listWorkflowDefs, WORKFLOW_TYPES } from '../../lib/embedded-contract/workflow-defs.mjs';
 import { checkParity } from '../../lib/parity.mjs';
 import { loadCapabilities } from '../../lib/platforms/capabilities.mjs';
+import { loadRegistry } from '../../lib/registry/loader.mjs';
 
 const WORKFLOW_SKILL_MAP = {
   'evidence-ingest': 'docs/evidence-ingest-workflow',
@@ -154,7 +155,7 @@ export function runAlignmentCensus({ rootDir = REPO_ROOT, homeDir = process.env.
 
   const skills = auditSkills({ rootDir, silent: true });
   const bound = registryBoundOrphans(rootDir);
-  const contracts = JSON.parse(fs.readFileSync(path.join(rootDir, 'specialists', 'contracts.json'), 'utf8'));
+  const contractsCount = Object.keys(loadRegistry({ rootDir, skipValidation: true }).contracts || {}).length;
 
   let parity = null;
   try {
@@ -191,7 +192,7 @@ export function runAlignmentCensus({ rootDir = REPO_ROOT, homeDir = process.env.
       crossMap: workflowCrossMap(rootDir),
       embeddedList: listWorkflowDefs(),
     },
-    contracts: { count: contracts.contracts?.length ?? 0 },
+    contracts: { count: contractsCount },
     parity,
     platforms: platforms?.hosts ? { hostCount: platforms.hosts.length } : platforms,
     capabilities: capabilityTestCoverage(rootDir),

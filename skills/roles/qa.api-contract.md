@@ -9,7 +9,7 @@ applies_to:
   - cx-test-automation
 inherits: qa
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

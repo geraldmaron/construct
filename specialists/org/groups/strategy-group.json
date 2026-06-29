@@ -1,0 +1,41 @@
+{
+  "id": "strategy-group",
+  "name": "Strategy Group",
+  "owner": "rd-lead",
+  "roles": [
+    "rd-lead",
+    "business-strategist",
+    "data-analyst",
+    "explorer",
+    "orchestrator"
+  ],
+  "decisionRights": [
+    "direction-setting",
+    "strategic-prioritization",
+    "measurement-design",
+    "research-scope",
+    "cross-team-orchestration"
+  ],
+  "forbiddenDecisions": [
+    "implementation-details",
+    "user-research-methods",
+    "ops-procedures"
+  ],
+  "escalationPath": [
+    "rd-lead",
+    "orchestrator"
+  ],
+  "charter": "Hold the long view: what to build next, what to measure, what to retire. Owns R&D direction, strategic prioritization, measurement design, cross-team orchestration, and exploration. Does not own implementation or day-to-day operations. Arbitrates escalations from other groups.",
+  "contact": {
+    "slack": "#strategy",
+    "email": "strategy@example.com",
+    "owner": "rd-lead"
+  },
+  "evidence": [
+    "AGENTS.md (rnd profile departments section)"
+  ],
+  "kind": "group",
+  "squads": [
+    "strategy-team"
+  ]
+}

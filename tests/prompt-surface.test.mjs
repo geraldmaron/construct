@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import { getRegistry, getContracts } from './test-registry-fixtures.mjs';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 
@@ -153,7 +154,7 @@ test('no prompt outside the persona enumerates ≥3 detectRiskFlags keys inline 
 });
 
 test('every MCP-tool name in sharedGuidance is registered in lib/mcp/server.mjs', () => {
-  const registry = JSON.parse(fs.readFileSync(path.join(root, 'specialists/registry.json'), 'utf8'));
+  const registry = getRegistry();
   const guidance = (registry.sharedGuidance || []).join('\n');
   const server = fs.readFileSync(path.join(root, 'lib/mcp/server.mjs'), 'utf8');
 
@@ -176,7 +177,7 @@ test('every MCP-tool name in sharedGuidance is registered in lib/mcp/server.mjs'
 
 test('no specialist source prompt restates fence JSON (manifest is the source of truth)', () => {
   // Phase C extracted the Fence + Handoff section into a renderer in
-  // scripts/sync-specialists.mjs that reads specialists/role-manifests.json.
+  // scripts/sync-specialists.mjs that reads specialists/org.
   // The source prompts must not regrow the inline restatement; the renderer
   // produces the synced output. Allowed: discussion of the fence concept in
   // prose; banned: the literal structural markers below.
@@ -185,7 +186,7 @@ test('no specialist source prompt restates fence JSON (manifest is the source of
     /^\s*-\s*Allowed paths:/m,
     /^\s*-\s*Allowed bd labels:/m,
     /^\s*-\s*Approval required:/m,
-    /^\*\*Fence\*\*\s*\(.*specialists\/role-manifests\.json/m,
+    /^\*\*Fence\*\*\s*\(.*specialists\/unified-registry\.json/m,
   ];
   for (const file of candidates) {
     const rel = relPath(file);
@@ -194,7 +195,7 @@ test('no specialist source prompt restates fence JSON (manifest is the source of
     for (const re of bannedLines) {
       assert.ok(
         !re.test(text),
-        `${rel} restates fence JSON (matched ${re}). The renderer in scripts/sync-specialists.mjs reads specialists/role-manifests.json — do not duplicate the JSON in the prompt`,
+        `${rel} restates fence JSON (matched ${re}). The renderer in scripts/sync-specialists.mjs reads specialists/org — do not duplicate the JSON in the prompt`,
       );
     }
   }
@@ -204,7 +205,7 @@ test('renderRoleFrameworkSection produces a manifest-backed block for onboarded 
   const { renderRoleFrameworkSection } = await import('../scripts/sync-specialists.mjs');
   const rendered = renderRoleFrameworkSection({ name: 'cx-engineer' });
   assert.match(rendered, /## When invoked via the role framework/);
-  assert.match(rendered, /\*\*Fence\*\*.*role-manifests\.json.*engineer/);
+  assert.match(rendered, /\*\*Fence\*\*.*specialists\/org.*engineer/);
   // The engineer manifest carries these literals — drift catches any rename.
   assert.match(rendered, /`lib\/\*\*`/, 'engineer fence must include lib/** from the manifest');
   assert.match(rendered, /`next:cx-qa`/, 'engineer handoff candidates must include cx-qa');
@@ -219,7 +220,7 @@ test('renderRoleFrameworkSection returns the empty string for an unonboarded per
 });
 
 test('every specialist prompt sits at or below 90% of the 1200-word cap (headroom rule)', () => {
-  const registry = JSON.parse(fs.readFileSync(path.join(root, 'specialists/registry.json'), 'utf8'));
+  const registry = getRegistry();
   const cap = 1200;
   const headroom = Math.floor(cap * 0.9);
   // Named exceptions: each must have a written reason. cx-orchestrator's job
@@ -227,7 +228,7 @@ test('every specialist prompt sits at or below 90% of the 1200-word cap (headroo
   const exceptions = new Map([
     ['specialists/prompts/cx-orchestrator.md', 'routing/handoff rules are the orchestrator\'s responsibility'],
   ]);
-  for (const agent of registry.specialists) {
+  for (const agent of Object.values(registry.specialists || {})) {
     if (!agent.promptFile) continue;
     if (exceptions.has(agent.promptFile)) continue;
     const text = fs.readFileSync(path.join(root, agent.promptFile), 'utf8');
@@ -249,10 +250,10 @@ async function loadTemplateRegistry() {
 
 test('every (specialist, template) pair in SPECIALIST_TEMPLATES is referenced by the specialist prompt', async () => {
   const { SPECIALIST_TEMPLATES } = await loadTemplateRegistry();
-  const registry = JSON.parse(fs.readFileSync(path.join(root, 'specialists/registry.json'), 'utf8'));
+  const registry = getRegistry();
   for (const [specialist, templates] of Object.entries(SPECIALIST_TEMPLATES)) {
     const bare = specialist.replace(/^cx-/, '');
-    const agent = registry.specialists.find((a) => a.name === bare || a.name === specialist);
+    const agent = Object.values(registry.specialists).find((a) => a.name === bare || a.name === specialist);
     assert.ok(agent, `SPECIALIST_TEMPLATES names ${specialist} but no such specialist in registry`);
     if (!agent.promptFile) continue;
     const text = fs.readFileSync(path.join(root, agent.promptFile), 'utf8');
@@ -280,14 +281,14 @@ test('every template named in SPECIALIST_TEMPLATES resolves to a file in templat
 
 test('every specialist in SPECIALIST_TEMPLATES has get_template + list_templates in claudeTools', async () => {
   const { SPECIALIST_TEMPLATES } = await loadTemplateRegistry();
-  const registry = JSON.parse(fs.readFileSync(path.join(root, 'specialists/registry.json'), 'utf8'));
+  const registry = getRegistry();
   for (const specialist of Object.keys(SPECIALIST_TEMPLATES)) {
     const bare = specialist.replace(/^cx-/, '');
-    const agent = registry.specialists.find((a) => a.name === bare || a.name === specialist);
+    const agent = Object.values(registry.specialists || {}).find((a) => a.name === bare || a.name === specialist);
     if (!agent) continue;
     const tools = String(agent.claudeTools || '').split(',').map((t) => t.trim());
-    assert.ok(tools.includes('get_template'), `${specialist} references templates but lacks \`get_template\` in claudeTools — add it to specialists/registry.json`);
-    assert.ok(tools.includes('list_templates'), `${specialist} references templates but lacks \`list_templates\` in claudeTools — add it to specialists/registry.json`);
+    assert.ok(tools.includes('get_template'), `${specialist} references templates but lacks \`get_template\` in claudeTools — add it to specialists/org`);
+    assert.ok(tools.includes('list_templates'), `${specialist} references templates but lacks \`list_templates\` in claudeTools — add it to specialists/org`);
   }
 });
 
@@ -309,7 +310,7 @@ test('every shipped template is owned by a specialist or carries an ownership ex
 
 test('construct persona enumerates every field the construct-to-orchestrator contract requires', () => {
   const persona = fs.readFileSync(path.join(root, 'personas/construct.md'), 'utf8');
-  const contracts = JSON.parse(fs.readFileSync(path.join(root, 'specialists/contracts.json'), 'utf8'));
+  const contracts = getContracts();
   const c2o = contracts.contracts.find((c) => c.id === 'construct-to-orchestrator');
   assert.ok(c2o, 'construct-to-orchestrator contract must exist');
   // Persona must reference every mustContain field by name. Without this,

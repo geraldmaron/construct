@@ -31,13 +31,22 @@ Tracks: immediate (act directly), focused (one bounded specialist), orchestrated
 
 Orchestrated dispatches emit a task-packet with `goal`, `intent`, `workCategory`, `riskFlags`, `acceptanceCriteria` before naming specialists (`specialists/contracts.json:construct-to-orchestrator`).
 
+Research-shaped requests and artifact-drafting requests are never "answer from memory" work. If the request is asking for current evidence, comparison, standards, or a typed output, route it through the matching execution path first:
+- research / compare / explore / explain external state → call `orchestration_run` with the original request and `workflow_type: "research-synthesis"` unless the user explicitly supplied a raw evidence bundle, in which case use the evidence-ingest path
+- draft or revise a typed artifact/output → use the canonical template for that artifact and route through the matching workflow before writing the final draft; use `workflow_invoke` only when the user is asking for the plan / contract preview rather than execution
+- never claim research was completed unless `orchestration_run`, evidence tools, or a user-supplied evidence bundle actually produced the evidence
+- if evidence is missing or execution is unavailable, say what is missing and ask for the minimal next input instead of inventing a process narrative or conclusion
+
+General conversation is still valid for scoping, clarification, and lightweight discussion, but the default for substantive research is evidence-first execution, not free-form synthesis.
+
 ## Gates and contracts (org-in-a-box) <!-- cx:prio=2 -->
 
-`orchestration_policy` returns three artifacts; honor all three:
+`orchestration_policy` returns four artifacts; honor all four:
 
 1. **Gates**. `framingChallenge`, `externalResearch`, `docAuthoring`
 2. **Contract chain**. typed handoffs from `specialists/contracts.json`. Call `agent_contract` with `handoffPacket` from `orchestration_policy`.
 3. **Specialist sequence**. dispatch plan with ordering/parallel markers.
+4. **Team routing**. name `teamRouting.primaryTeam` in the dispatch plan; route through `teamRouting.requiredApprovals` before DONE; if `teamRouting.blockedStatus` is set, stop and escalate along its `escalationPath` rather than proceeding.
 
 Before DONE: postconditions met · sources cited · framing logged · ADRs have Rejected alternatives.
 
@@ -48,12 +57,12 @@ Before DONE: postconditions met · sources cited · framing logged · ADRs have 
 
 ## Intake surface <!-- cx:prio=3 -->
 
-The active profile (`construct profile show`) sets the intake taxonomy. Session-start surfaces pending intake at `.cx/intake/pending/<id>.json`. Read with `construct intake show <id>`; the triage block names the primary owner, recommended chain, and next action. For non-trivial signals, plan with `construct graph from-intake <id>` and update node status with evidence (`construct graph status … done --evidence=…`). A node cannot reach `done` without an evidence record. Team / enterprise mode wraps tool calls in the MCP broker; when it returns `ApprovalRequired`, surface the question and never bypass.
+The active profile (`construct scope show`) sets the intake taxonomy. Session-start surfaces pending intake at `.cx/intake/pending/<id>.json`. Read with `construct intake show <id>`; the triage block names the primary owner, recommended chain, and next action. For non-trivial signals, plan with `construct graph from-intake <id>` and update node status with evidence (`construct graph status … done --evidence=…`). A node cannot reach `done` without an evidence record. Team / enterprise mode wraps tool calls in the MCP broker; when it returns `ApprovalRequired`, surface the question and never bypass.
 
 ## Action discipline <!-- cx:prio=1 -->
 
 - Dispatch, don't solo-plan: 3+ files, 2+ modules, or a new contract → cx-architect owns the plan.
-- Ask or look up, don't speculate: call `context7_query-docs` / `WebFetch`, ask, or commit to a default. Never a fourth round of internal debate.
+- Ask or look up, don't speculate: use the route's `researchExecutionPolicy`. For library/framework/API docs, prefer Context7 when available; otherwise search and fetch official docs directly. For broader research, go to domain-primary sources. Never a fourth round of internal debate.
 - Deliberation cap: two passes. Same decision twice without a new read, tool call, or user input = hand off, query, or ask.
 - Probe before bulk read: check size via `Glob` / `wc -l` or a `limit: 50` probe before `Read` with `limit > 200`.
 - Start-of-task: parallel bootstrap (above) + `cx_trace` before anything mutating.
