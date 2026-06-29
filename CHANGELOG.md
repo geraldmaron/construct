@@ -6,6 +6,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Added
 
+- Seeded the generated-asset quality fixture corpus (`construct-cuxq.10.1`): intentionally-bad anti-fixtures under `tests/fixtures/asset-quality/` driven by a declarative registry (`anti-fixtures.json`), with `tests/asset-quality/anti-fixtures.test.mjs` asserting each anti-fixture is rejected by its target audit (`lintDocPresentation`, `auditDeckMarkdownLayout`). Placeholder and empty-section cases are explicitly skipped as pending `construct-cuxq.2.2`, so the coverage gap stays visible rather than silently passing. Known-good goldens are unchanged.
 - Added an orchestration readiness preflight for GitHub issue #323. `construct orchestrate preflight --json` and the flat MCP `orchestration_readiness` tool now report whether `orchestration_policy` and `orchestration_run` are attached/reachable, with a typed `reasonCode`, deterministic next step, redacted diagnostic bundle, and local readiness event.
 
 ## [1.3.2] - 2026-06-29
