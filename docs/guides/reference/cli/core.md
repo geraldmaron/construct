@@ -13,6 +13,7 @@ description: Core commands for Construct.
 | `construct init` | Project setup (once per repo): scaffold .cx/, AGENTS.md, plan.md, adapters |
 | `construct install` | Machine setup (scoped per ADR-0029): --scope=project\|user\|both, default project |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
+| `construct oracle` | Oracle meta-controller — fleet health review and bounded-auto maintenance |
 | `construct recommendations` | View and manage artifact recommendations |
 | `construct sandbox` | Isolated tmpdir-based environment for QA / specialist dry-runs |
 | `construct scope` | Manage the active org scope and its lifecycle (draft, promote, archive, health) |
@@ -151,6 +152,16 @@ construct intake list|show|done|skip|reopen|integrate|classify
 - `reopen <id>` — Move a processed or skipped packet back to pending
 - `integrate <id> <github|jira|confluence> [--publish-issues]` — Create an external ticket from a packet (--publish-issues unlocks the demo-source gate)
 - `classify --json [--text|--file|<stdin>]` — Classify an artifact and return a role-aware plan without enqueuing (embedded contract)
+
+## construct oracle
+
+Oracle meta-controller — fleet health review and bounded-auto maintenance
+
+**Usage**
+
+```bash
+construct oracle start|status|review|pending|approve|gaps|reconcile
+```
 
 ## construct recommendations
 
