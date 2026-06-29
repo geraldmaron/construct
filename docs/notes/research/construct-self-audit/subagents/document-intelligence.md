@@ -41,7 +41,7 @@ Construct's document intelligence system combines explicit lane-based scaffoldin
 
 - Whether STRUCTURE_REQUIREMENTS enforcement (ADR-0018) is actually integrated into artifact-gate postconditions or only documented
 - Whether init-docs --organize actually moves files in practice or only suggests (observation: code calls fs.renameSync but error handling may silently skip failures)
-- Whether existing projects with legacy .cx/inbox/ drops are migrated by construct doctor or left orphaned
+- Whether existing projects with legacy .cx/inbox/ drops are migrated by `construct doctor` or left orphaned
 - Whether rootTemplateCoversLane() helper is used anywhere outside tests (grep found only in test file)
 - Whether doc-type frontmatter fields (cx_doc_type, artifactType, doc_type) are standardized or audience varies by context
 
@@ -74,14 +74,14 @@ Construct's document intelligence system combines explicit lane-based scaffoldin
 
 ## 9. Questions for Opus
 
-- Is the ADR-0045 Phase 2 implementation (remove .cx/inbox/ and docs/intake/ zones) already complete, or is it still in progress? Does construct doctor detect orphaned .cx/inbox/ drops?
-- Should the explicit-approval workflow for doc-lane promotion be a separate feature, or bundled with intake rerouting (construct intake reroute)?
+- Is the ADR-0045 Phase 2 implementation (remove .cx/inbox/ and docs/intake/ zones) already complete, or is it still in progress? Does `construct doctor` detect orphaned .cx/inbox/ drops?
+- Should the explicit-approval workflow for doc-lane promotion be a separate feature, or bundled with intake rerouting (`construct intake reroute`)?
 - Is rootTemplateCoversLane() used anywhere in production code outside tests? If not, should it be removed or integrated into init's lane-filtering?
 - Should docs-routing.mjs hardcoded patterns (prdPatterns, adrPatterns, etc.) be moved into DOC_LANES metadata, or kept separate for decoupling content-classification from lane definitions?
 
 ## 10. Suggested bead updates (proposals only — Opus owns Beads)
 
-- Create a bead for explicit-approval intake-to-lanes workflow: add approval_required field to intake item schema, gate maybePromoteToDocs() on approval status, surface pending-approvals in construct intake list / dashboard
+- Create a bead for explicit-approval intake-to-lanes workflow: add approval_required field to intake item schema, gate maybePromoteToDocs() on approval status, surface pending-approvals in `construct intake list` / dashboard
 - Add rootTemplateCoversLane() call to init-unified.mjs and init-docs.mjs lane-filtering logic to skip per-lane templates/ scaffold when root templates/ already covers the lane
 - Extend detect-existing-structure.mjs to flag alias conflicts (incidents/ + postmortems/ both detected) and report ambiguity in formatDeferralSummary
 - Create migration script for ADR-0045 Phase 2: detect .cx/inbox/ and docs/intake/ in projects, move drops to inbox/, update intakePolicy config
