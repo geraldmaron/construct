@@ -149,7 +149,99 @@ test('contracts-drift fires when contracts reference an unresolvable producer', 
   } finally { slice.cleanup(); }
 });
 
-test('construct doctor consistency CLI exits 0 on a clean tree', () => {
+// A clean install must produce zero non-actionable warnings. The package-internal
+// drift families (mcp-drift, roles-drift) were both firing false positives — a
+// specialist's id self-colliding with its own name, and the xxxTool→'xxx' naming
+// convention reading as undispatched. Guard both at source.
+
+test('clean tree reports zero mcp-drift and zero roles-drift', async () => {
+  const result = await runAllChecks({ repoRoot: REPO_ROOT });
+  const internal = result.findings.filter((f) => f.category === 'mcp-drift' || f.category === 'roles-drift');
+  assert.equal(
+    internal.length, 0,
+    `expected no package-internal drift on a clean tree, got:\n${internal.map((f) => `  - [${f.category}] ${f.summary}`).join('\n')}`,
+  );
+});
+
+test('roles-drift does not fire when a specialist id and its own name normalize together', async () => {
+  const slice = freshRepoSlice();
+  try {
+    slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
+    slice.writeJson('specialists/org', {
+      orchestrator: { id: 'cx-construct', name: 'construct' },
+      specialists: {
+        'cx-architect': { name: 'architect' },
+        'cx-engineer': { name: 'engineer' },
+      },
+    });
+    slice.writeJson('specialists/contracts.json', {
+      version: 1, terminalStates: ['DONE'],
+      severities: { blocking: [], warning: [], info: [] }, contracts: [],
+    });
+
+    const result = await runAllChecks({ repoRoot: slice.root });
+    const rolesDrift = result.findings.filter((f) => f.category === 'roles-drift');
+    assert.equal(
+      rolesDrift.length, 0,
+      `id/name pairs of one specialist must not read as ambiguous, got:\n${rolesDrift.map((f) => '  - ' + f.summary).join('\n')}`,
+    );
+  } finally { slice.cleanup(); }
+});
+
+function writeMcpSlice(slice, { serverBody, tools }) {
+  slice.writeJson('platforms/claude/settings.template.json', { hooks: {} });
+  slice.writeJson('specialists/org', { specialists: [], orchestrator: null });
+  slice.writeJson('specialists/contracts.json', {
+    version: 1, terminalStates: ['DONE'],
+    severities: { blocking: [], warning: [], info: [] }, contracts: [],
+  });
+  mkdirSync(join(slice.root, 'lib', 'mcp', 'tools'), { recursive: true });
+  for (const [name, body] of Object.entries(tools)) slice.write(join('lib', 'mcp', 'tools', name), body);
+  slice.write(join('lib', 'mcp', 'server.mjs'), serverBody);
+}
+
+test('mcp-drift fires when a server-imported handler is never dispatched', async () => {
+  const slice = freshRepoSlice();
+  try {
+    writeMcpSlice(slice, {
+      tools: { 'widget.mjs': 'export function orphanWidget(args){ return args; }\n' },
+      serverBody:
+        "import { orphanWidget } from './tools/widget.mjs';\n" +
+        'export async function dispatchToolByName(name, args){\n' +
+        "  if (name === 'noop') return args;\n" +
+        '  return undefined;\n' +
+        '}\n',
+    });
+    const result = await runAllChecks({ repoRoot: slice.root });
+    assert.ok(
+      result.findings.some((f) => f.category === 'mcp-drift' && /orphanWidget/.test(f.summary)),
+      `expected mcp-drift for orphanWidget, got:\n${JSON.stringify(result.findings.filter((f) => f.category === 'mcp-drift'), null, 2)}`,
+    );
+  } finally { slice.cleanup(); }
+});
+
+test('mcp-drift ignores tool-module helpers the server never imports', async () => {
+  const slice = freshRepoSlice();
+  try {
+    writeMcpSlice(slice, {
+      tools: { 'widget.mjs': 'export function exec(cmd){ return cmd; }\nexport function widgetTool(args){ return args; }\n' },
+      serverBody:
+        "import { widgetTool } from './tools/widget.mjs';\n" +
+        'export async function dispatchToolByName(name, args){\n' +
+        "  if (name === 'widget') return widgetTool(args);\n" +
+        '  return undefined;\n' +
+        '}\n',
+    });
+    const result = await runAllChecks({ repoRoot: slice.root });
+    const mcp = result.findings.filter((f) => f.category === 'mcp-drift');
+    assert.equal(
+      mcp.length, 0,
+      `exec is an unimported helper and widgetTool is dispatched; expected no mcp-drift, got:\n${mcp.map((f) => '  - ' + f.summary).join('\n')}`,
+    );
+  } finally { slice.cleanup(); }
+});
+
+test('construct doctor consistency CLI exits 0 and is clean by default', () => {
   const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), 'doctor', 'consistency'], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
@@ -157,4 +249,16 @@ test('construct doctor consistency CLI exits 0 on a clean tree', () => {
   });
   assert.equal(result.status, 0, `expected exit 0, got ${result.status}\nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
   assert.match(result.stdout, /clean/);
+  assert.match(result.stdout, /0 warning\(s\)/);
+});
+
+test('construct doctor consistency --strict surfaces the internal tier', () => {
+  const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), 'doctor', 'consistency', '--strict'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    env: { ...process.env, CONSTRUCT_SKIP_PROMPT_LOOKUP: '1' },
+  });
+  assert.equal(result.status, 0, `expected exit 0, got ${result.status}\nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
+  assert.match(result.stdout, /mcp-drift/);
+  assert.match(result.stdout, /roles-drift/);
 });
