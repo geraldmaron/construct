@@ -295,8 +295,12 @@ describe('sync-specialists contract tests', () => {
         !/\$HOME\/\.construct/.test(allCommands),
         'project-mode settings must not reference $HOME/.construct paths'
       );
-      assert.match(allCommands, /node \.construct\/run\.mjs hook session-start/);
-      assert.match(allCommands, /node \.construct\/run\.mjs hook pre-push-gate/);
+      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\.\}\/\.construct\/run\.mjs.{0,4}hook session-start/);
+      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\.\}\/\.construct\/run\.mjs.{0,4}hook pre-push-gate/);
+      assert.ok(
+        !/node \.construct\/run\.mjs hook/.test(allCommands),
+        'hook commands must anchor on ${CLAUDE_PROJECT_DIR:-.} so they resolve from any cwd'
+      );
     });
 
     it('does not write the opt-in playwright MCP into project settings', () => {
