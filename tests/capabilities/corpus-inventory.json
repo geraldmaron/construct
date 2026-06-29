@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T20:15:16.276Z",
+  "generatedAt": "2026-06-29T20:48:54.446Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 511,
+    "testFiles": 512,
     "topLevelTestFiles": 296,
-    "nestedTestFiles": 215,
+    "nestedTestFiles": 216,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 24,
     "byLayer": {
@@ -13,7 +13,7 @@
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
-      "functional": 136
+      "functional": 137
     },
     "byCategory": {
       "unit": 297,
@@ -22,7 +22,7 @@
       "live-provider": 2,
       "visual": 7,
       "integration": 21,
-      "functional": 136,
+      "functional": 137,
       "hook": 9
     }
   },
@@ -2297,6 +2297,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/uninstall-coverage.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/upgrade-context-contract.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/upgrade-context-contract.functional.test.mjs"
     },
     {
       "path": "tests/functional/w1-provider-adapter-contracts.functional.test.mjs",
