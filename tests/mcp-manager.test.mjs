@@ -204,11 +204,12 @@ test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP
   const opencode = readJson(opencodePath);
   const claude = readJson(claudePath);
 
+  // Header carries a host-resolved env reference, never the literal token value.
   assert.deepEqual(opencode.mcp.github, {
     type: "remote",
     url: "https://api.githubcopilot.com/mcp/",
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: "Bearer {env:GITHUB_TOKEN}",
     },
   });
 
@@ -216,9 +217,15 @@ test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP
     type: "http",
     url: "https://api.githubcopilot.com/mcp/",
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: "Bearer ${GITHUB_TOKEN}",
     },
   });
+
+  assert.ok(
+    !fs.readFileSync(opencodePath, "utf8").includes(token) &&
+      !fs.readFileSync(claudePath, "utf8").includes(token),
+    "literal GitHub token must not be written into any host config file",
+  );
 
   if (fs.existsSync(codexPath)) {
     const codex = fs.readFileSync(codexPath, "utf8");
