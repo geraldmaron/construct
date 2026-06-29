@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Execution Matrix (Phase 3 Synthesis)
 
 Maps the 12 epics to waves, parallel-safety, fixture-owner locks, and executor models. Implementation beads (Waves 2–5) are drafted here but NOT yet in the tracker — they are created after this synthesis is reviewed and the contract (Epic 1) is ratified.

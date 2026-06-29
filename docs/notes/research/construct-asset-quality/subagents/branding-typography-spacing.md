@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Subagent Evidence Report: Branding, typography, spacing
 
 ## 1. Summary

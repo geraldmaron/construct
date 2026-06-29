@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Asset Quality Program — Bead Tree
 
 Status: **CREATED in tracker (2026-06-29).** Epic + 12 child epics + 11 audit beads + 1 synthesis gate are live. Implementation beads (Waves 2–5) remain undrafted pending the synthesis gate.

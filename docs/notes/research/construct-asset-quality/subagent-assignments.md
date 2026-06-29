@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Asset Quality Program — Parallel Subagent Assignments (READY, NOT DISPATCHED)
 
 These 11 read-only audit agents are scoped and ready. Per the selected **Plan & stop** scope, they are **not** dispatched in this run. Each is a bounded, read-only, single-report agent (Haiku preference). On approval, dispatch all 11 in one parallel batch.

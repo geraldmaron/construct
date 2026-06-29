@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Visual Quality Matrix (Phase 3 Synthesis)
 
 Splits checks into **deterministic** (machine-decidable, pass/fail, safe to block) and **judgment** (needs rubric + recorded reviewer evidence). Resolves Traffic-jam 5. Columns marked ✅ exist today (with evidence); ❌ are gaps.

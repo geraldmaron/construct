@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Subagent Evidence Report: Deck / PPTX quality
 
 ## 1. Summary

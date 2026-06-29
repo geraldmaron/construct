@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Asset Quality — Risk Register (Phase 3 Synthesis)
 
 Risks to the PROGRAM and to artifact consumers. Severity = (likelihood × consumer/visual impact). Each carries a mitigation tied to an epic.
