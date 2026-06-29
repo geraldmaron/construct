@@ -204,21 +204,23 @@ test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP
   const opencode = readJson(opencodePath);
   const claude = readJson(claudePath);
 
+  // OAuth is the default: the entry is URL-only with no header and no token,
+  // so the host runs the browser OAuth flow and keeps the credential off disk.
   assert.deepEqual(opencode.mcp.github, {
     type: "remote",
     url: "https://api.githubcopilot.com/mcp/",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   });
 
   assert.deepEqual(claude.mcpServers.github, {
     type: "http",
     url: "https://api.githubcopilot.com/mcp/",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   });
+
+  assert.ok(
+    !fs.readFileSync(opencodePath, "utf8").includes(token) &&
+      !fs.readFileSync(claudePath, "utf8").includes(token),
+    "no GitHub token must be written into any host config file under OAuth",
+  );
 
   if (fs.existsSync(codexPath)) {
     const codex = fs.readFileSync(codexPath, "utf8");
