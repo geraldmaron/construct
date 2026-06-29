@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- Added an orchestration readiness preflight for GitHub issue #323. `construct orchestrate preflight --json` and the flat MCP `orchestration_readiness` tool now report whether `orchestration_policy` and `orchestration_run` are attached/reachable, with a typed `reasonCode`, deterministic next step, redacted diagnostic bundle, and local readiness event.
+
 ## [1.3.2] - 2026-06-29
 
 ### Fixed

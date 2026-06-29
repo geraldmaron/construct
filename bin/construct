@@ -3690,7 +3690,61 @@ async function cmdOrchestrate(args) {
   const sub = args[0];
   const rest = args.slice(1);
   const flag = (name) => { const i = rest.indexOf(name); return i !== -1 ? rest[i + 1] : undefined; };
+  const eqFlag = (name) => {
+    const hit = rest.find((arg) => arg.startsWith(`${name}=`));
+    return hit ? hit.slice(name.length + 1) : flag(name);
+  };
   const wantsJson = rest.includes('--json') || args.includes('--json');
+
+  if (sub === 'preflight') {
+    const { buildOrchestrationReadiness, recordOrchestrationReadinessEvent, summarizeOrchestrationReadiness } = await import('../lib/orchestration/readiness.mjs');
+    const { probeStdioMcpTools } = await import('../lib/mcp/stdio-mcp-probe.mjs');
+    const splitCsv = (value) => value ? String(value).split(',').map((s) => s.trim()).filter(Boolean) : undefined;
+    const timeoutMs = Number(eqFlag('--timeout-ms') || 8000);
+    let observedTools = splitCsv(eqFlag('--observed-tools'));
+    let reachableTools = splitCsv(eqFlag('--reachable-tools'));
+    let probeError = null;
+
+    if (!rest.includes('--no-probe') && !observedTools && !reachableTools) {
+      try {
+        const tools = await probeStdioMcpTools(process.execPath, [path.join(ROOT_DIR, 'lib', 'mcp', 'server.mjs')], {
+          env: { CX_TOOLKIT_DIR: ROOT_DIR },
+          timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 8000,
+        });
+        observedTools = tools.map((tool) => tool.name);
+        reachableTools = tools.flatMap((tool) => (
+          tool.name === 'call' ? (tool.inputSchema?.properties?.tool?.enum ?? []) : []
+        ));
+      } catch (err) {
+        probeError = err.message || String(err);
+      }
+    }
+
+    const readiness = buildOrchestrationReadiness({
+      host: eqFlag('--host'),
+      sessionId: eqFlag('--session-id'),
+      observedTools,
+      reachableTools,
+      requiredTools: splitCsv(eqFlag('--required-tools')),
+      clientContractVersion: eqFlag('--client-contract-version'),
+      observationScope: eqFlag('--observation-scope') || (observedTools || reachableTools ? 'host-session' : 'local-config'),
+      probeError,
+      authRequired: rest.includes('--auth-required'),
+    }, { env: process.env, cwd: process.cwd() });
+    let eventResult = null;
+    try { eventResult = recordOrchestrationReadinessEvent(readiness, { homeDir: HOME }); } catch { /* telemetry must not break preflight */ }
+
+    if (wantsJson) {
+      println(JSON.stringify({ ...readiness, eventPath: eventResult?.path ?? null }, null, 2));
+      process.exit(readiness.attached ? 0 : 1);
+    }
+
+    println(summarizeOrchestrationReadiness(readiness));
+    println(`Reason: ${readiness.reasonCode}`);
+    println(`Next: ${readiness.nextStep}`);
+    println(`Diagnostic id: ${readiness.diagnosticBundle?.diagnosticId}`);
+    process.exit(readiness.attached ? 0 : 1);
+  }
 
   // Thin-client mode: drive the local orchestration daemon over HTTP instead of
   // running in-process, proving the engine-as-service contract editors/CI use.
@@ -3783,9 +3837,10 @@ async function cmdOrchestrate(args) {
     return;
   }
 
-  println('Usage: construct orchestrate <run|status> [options]');
+  println('Usage: construct orchestrate <run|status|preflight> [options]');
   println('  run "<request>" [--workflow-type T] [--strategy S] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]');
   println('  status [run-id] [--json]');
+  println('  preflight [--host H] [--json] [--no-probe] [--observed-tools=a,b] [--reachable-tools=a,b]');
 }
 
 async function cmdModels(args) {
