@@ -54,12 +54,31 @@ test('misses accumulate as an append-only JSONL log a consumer could aggregate',
   assert.deepEqual(misses.map((m) => m.name), ['construct-mcp_export', 'unknown_tool']);
 });
 
-// The gap: the data is captured but never consumed. No reader/aggregator exists. This pins the
-// write-only state so the Wave-4 consumer (doctor watcher / oracle action) is a visible addition.
+// The tool-miss capture is consumable (construct-rr63.9.2): summarizeToolNameMisses reads and
+// aggregates the JSONL by name, and learning-status surfaces the top misses. This pins that the
+// consumer exists and aggregates correctly.
 
-test('tool-miss capture is write-only today — no consumer/reader API is exported', () => {
-  const consumerNames = ['readToolNameMisses', 'aggregateToolNameMisses', 'consumeToolNameMisses', 'summarizeToolNameMisses', 'toolNameMissReport'];
-  for (const name of consumerNames) {
-    assert.equal(name in toolRecovery, false, `no consumer export "${name}" exists yet`);
-  }
+test('the tool-miss consumer aggregates recorded misses by name', () => {
+  assert.equal(typeof toolRecovery.summarizeToolNameMisses, 'function', 'consumer export exists');
+  const rootDir = root();
+  recordToolNameMiss(rootDir, { name: 'construct_call', recovered: 'call' });
+  recordToolNameMiss(rootDir, { name: 'construct_call', recovered: 'call' });
+  recordToolNameMiss(rootDir, { name: 'mystery_tool', recovered: null });
+  const summary = toolRecovery.summarizeToolNameMisses(rootDir);
+  assert.equal(summary.total, 3, 'all misses counted');
+  assert.equal(summary.recovered, 2, 'recovered misses counted');
+  assert.equal(summary.top[0].name, 'construct_call', 'most-missed name ranks first');
+  assert.equal(summary.top[0].count, 2);
+});
+
+test('failure capture records and aggregates tool failures into a learnable anti-pattern', () => {
+  assert.equal(typeof toolRecovery.recordToolFailure, 'function', 'failure capture export exists');
+  const rootDir = root();
+  toolRecovery.recordToolFailure(rootDir, { tool: 'ingest_document', code: 'TIMEOUT', message: 'docling timed out' });
+  toolRecovery.recordToolFailure(rootDir, { tool: 'ingest_document', code: 'TIMEOUT', message: 'again' });
+  toolRecovery.recordToolFailure(rootDir, { tool: 'publish_run', code: 'INVALID_INPUT', message: 'no artifact' });
+  const summary = toolRecovery.summarizeToolFailures(rootDir);
+  assert.equal(summary.total, 3, 'all failures counted');
+  assert.equal(summary.top[0].name, 'ingest_document', 'most-failed tool ranks first');
+  assert.equal(summary.top[0].count, 2);
 });
