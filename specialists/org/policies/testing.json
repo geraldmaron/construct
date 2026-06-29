@@ -1,0 +1,13 @@
+{
+  "id": "testing",
+  "owner": "orchestrator",
+  "description": "Tests must pass before push; multi-component features require a functional test in tests/functional/.",
+  "enforcement": "lib/hooks/pre-push-gate.mjs",
+  "mode": "deterministic",
+  "requiresApprovalFrom": [],
+  "mayVetoFrom": [],
+  "escalatesTo": [],
+  "decisionRights": [],
+  "conditions": [],
+  "evidence": []
+}

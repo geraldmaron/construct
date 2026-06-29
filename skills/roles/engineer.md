@@ -1,17 +1,14 @@
 ---
 name: roles-engineer
-description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer role. Use when reviewing or generating work by cx-engineer, cx-ai-engineer, cx-data-engineer, cx-platform-engineer, or when an agent is acting in the Engineer role.
+description: Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer role. Use when reviewing or generating work by cx-engineer, or when an agent is acting in the Engineer role.
 inputs: [code-diff, task-context]
 artifactType: role-guidance
 role: engineer
 applies_to:
   - cx-engineer
-  - cx-ai-engineer
-  - cx-data-engineer
-  - cx-platform-engineer
 inherits: null
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---
@@ -68,7 +65,7 @@ Load this before drafting. These are the failure modes that separate strong role
 ### 10. Speculating across thinking turns
 **Symptom**: reasoning about which library, pattern, or abstraction to use across multiple thinking turns without reading code, calling docs, or asking.
 **Why it fails**: guesses compound; the eventual choice is made from context the model built about itself, not from the codebase or the library.
-**Counter-move**: two unproductive passes is the cap. Next step is a targeted read, a docs lookup (`context7_query-docs`/`WebFetch`), a NEEDS_MAIN_INPUT packet, or a default with a noted assumption.
+**Counter-move**: two unproductive passes is the cap. Next step is a targeted read, the appropriate docs/evidence lookup path (Context7 for library docs when available, direct official-doc fetch otherwise), a NEEDS_MAIN_INPUT packet, or a default with a noted assumption.
 
 ### 11. Unbounded file reads
 **Symptom**: reading files with large `limit` values without checking size first, or offset reads that fail with "out of range".
@@ -118,4 +115,3 @@ Shortcut: `npm run release:check`.
 **Effective Action**: Before modifying a function, read the full file and grep for callers with `grep -r 'functionName' src/`...
 **Evidence**: Score 0.89, used 8 times, 2 projects
 *Last reinforced: 2026-05-04*
-

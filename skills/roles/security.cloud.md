@@ -8,7 +8,7 @@ applies_to:
   - cx-security
 inherits: security
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

@@ -1,0 +1,40 @@
+{
+  "id": "researcher-to-architect",
+  "producer": "cx-researcher",
+  "consumer": "cx-architect",
+  "trigger": {
+    "externalResearch.required": true,
+    "riskFlags": [
+      "architecture"
+    ]
+  },
+  "input": {
+    "shape": "research-brief",
+    "mustContain": [
+      "question",
+      "method",
+      "sources",
+      "findings",
+      "confidence"
+    ]
+  },
+  "output": {
+    "schema": "lib/contract-schemas/decision.json",
+    "type": "decision"
+  },
+  "preconditions": [
+    "≥2 independent primary sources cited per load-bearing claim",
+    "Source classes tagged (internal/primary/secondary/tertiary)"
+  ],
+  "postconditions": [
+    "Architect's ADR cites the primary sources provided",
+    "Any conflicting evidence surfaced, not suppressed"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "product-group",
+    "consumerTeam": "engineering-group",
+    "requiresApprovalFrom": []
+  }
+}

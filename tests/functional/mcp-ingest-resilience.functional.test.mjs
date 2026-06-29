@@ -88,7 +88,7 @@ test("server stays responsive after the failing ingest (tools/list still answers
       const tools = await client.listTools();
       // ingest_document is now reachable via the construct_call gateway, not the
       // flat surface; assert tools/list still answers with the exposed core.
-      assert.ok(tools.tools.some((t) => t.name === "construct_call"), "server answers tools/list after the failing call");
+      assert.ok(tools.tools.some((t) => t.name === "call"), "server answers tools/list after the failing call");
     });
   } finally {
     rmSync(root, { recursive: true, force: true });

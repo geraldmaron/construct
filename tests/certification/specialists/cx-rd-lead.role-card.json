@@ -13,14 +13,12 @@
   "openingQuestion": "What are we trying to learn, and how will we know when we've learned it?",
   "escalationPath": {
     "collaborators": [],
-    "subscriptions": [
-      "research.gate.required"
-    ]
+    "subscriptions": []
   },
   "refusalBoundaries": "If you can't write a falsifiable hypothesis, this is a planning task, not R&D.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-rd-lead.md"
   }
 }

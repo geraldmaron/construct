@@ -9,7 +9,6 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
-
 import { detectPublishPipeline } from '../../lib/publish-tooling.mjs';
 import { runPublish, formatGateFailureMessage } from '../../lib/publish.mjs';
 import { validateArtifactRelease } from '../../lib/artifact-release-gate.mjs';
@@ -32,6 +31,32 @@ function run(args, cwd, env = {}) {
       ...env,
     },
   });
+}
+
+function commandExists(name) {
+  const checker = process.platform === 'win32' ? 'where' : 'which';
+  return spawnSync(checker, [name], { stdio: 'ignore' }).status === 0;
+}
+
+function extractPdfPages(pdfPath) {
+  if (!commandExists('pdfinfo') || !commandExists('pdftotext')) return null;
+  const info = spawnSync('pdfinfo', [pdfPath], { encoding: 'utf8' });
+  if (info.status !== 0) return null;
+  const match = String(info.stdout || '').match(/^Pages:\s+(\d+)/m);
+  const pages = Number(match?.[1] || 0);
+  if (!pages) return null;
+  const out = [];
+  for (let page = 1; page <= pages; page += 1) {
+    const result = spawnSync('pdftotext', ['-f', String(page), '-l', String(page), pdfPath, '-'], { encoding: 'utf8' });
+    if (result.status !== 0) return null;
+    out.push(String(result.stdout || '').replace(/\s+/g, ' ').trim());
+  }
+  return out;
+}
+
+function extractPdfText(pdfPath) {
+  const pages = extractPdfPages(pdfPath);
+  return pages ? pages.join(' ') : '';
 }
 
 test('detectPublishPipeline returns structured missing list', () => {
@@ -183,6 +208,75 @@ test('runPublish exports golden fixture when toolchain present', () => {
     assert.equal(result.ok, true, result.message);
     assert.ok(fs.existsSync(out));
     assert.ok(fs.statSync(out).size > 1000);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('published PDFs preserve ordered-list numbering and render figures', (t) => {
+  const detection = detectPublishPipeline({ format: 'pdf', includeFigures: true, cwd: REPO, repoRoot: REPO });
+  if (!detection.present) return;
+  if (!commandExists('pdfinfo') || !commandExists('pdftotext')) {
+    t.skip('pdfinfo/pdftotext not installed');
+    return;
+  }
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'publish-polish-'));
+  try {
+    const input = path.join(dir, 'ordered-list.md');
+    const out = path.join(dir, 'ordered-list.pdf');
+    fs.writeFileSync(input, `---
+title: Ordered list regression
+artifactType: prd-platform
+status: draft
+owner: cx-product-manager
+last_verified_at: 2026-06-28
+---
+
+# Ordered list regression
+
+## Goals
+
+1. **Enable enterprise SSO**: Allow organizations to configure one or more OIDC providers so users authenticate via their corporate IdP.
+2. **Preserve local authorization**: Construct retains control over permissions, roles, and resource access; the IdP provides identity assertions only.
+3. **Minimize migration friction**: Existing local accounts remain functional; users can link OIDC identities to existing accounts.
+4. **Support compliance requirements**: Audit log captures IdP, subject, claims used, and authentication timestamp for compliance review.
+
+## User flow
+
+\`\`\`d2
+direction: down
+
+user: User navigates to Construct
+session: Session valid?
+granted: Access granted
+login: Login page
+
+user -> session
+session -> granted: yes
+session -> login: no
+\`\`\`
+`, 'utf8');
+
+    const result = runPublish({
+      inputPath: input,
+      outputPath: out,
+      strict: true,
+      gate: false,
+      artifactType: 'prd-platform',
+      figures: true,
+      cwd: dir,
+      repoRoot: REPO,
+    });
+    assert.equal(result.ok, true, result.message);
+    assert.ok(fs.existsSync(out));
+
+    const extracted = extractPdfText(out);
+    assert.match(extracted, /1\.\s+Enable enterprise SSO/i);
+    assert.match(extracted, /2\.\s+Preserve local authorization/i);
+    assert.match(extracted, /3\.\s+Minimize migration friction/i);
+    assert.match(extracted, /4\.\s+Support compliance requirements/i);
+    assert.doesNotMatch(extracted, /direction:\s+down/, 'diagram block should render as a figure, not remain literal source');
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

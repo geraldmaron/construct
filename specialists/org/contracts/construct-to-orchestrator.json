@@ -1,0 +1,36 @@
+{
+  "id": "construct-to-orchestrator",
+  "producer": "construct",
+  "consumer": "cx-orchestrator",
+  "trigger": {
+    "track": "orchestrated"
+  },
+  "input": {
+    "shape": "task-packet",
+    "mustContain": [
+      "goal",
+      "intent",
+      "workCategory",
+      "riskFlags",
+      "acceptanceCriteria"
+    ]
+  },
+  "output": {
+    "schema": "lib/contract-schemas/decision.json",
+    "type": "decision"
+  },
+  "preconditions": [
+    "framingChallenge gate honored if required",
+    "externalResearch gate honored if required",
+    "docAuthoring.owner present if authoring a typed document"
+  ],
+  "postconditions": [
+    "Dispatch plan emitted with specialists in sequence",
+    "Parallel work marked with [parallel: ...] tags"
+  ],
+  "skillHints": [
+    "ai/orchestration-workflow",
+    "operating/orchestration-reference"
+  ],
+  "description": ""
+}

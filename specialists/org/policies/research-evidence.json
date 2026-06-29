@@ -1,0 +1,13 @@
+{
+  "id": "research-evidence",
+  "owner": "orchestrator",
+  "description": "Enforces evidence hierarchy and citation discipline in research and analysis artifacts.",
+  "enforcement": "(persona prompt)",
+  "mode": "honor-system",
+  "requiresApprovalFrom": [],
+  "mayVetoFrom": [],
+  "escalatesTo": [],
+  "decisionRights": [],
+  "conditions": [],
+  "evidence": []
+}

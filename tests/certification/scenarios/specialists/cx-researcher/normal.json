@@ -18,10 +18,10 @@
   "handoffEvidence": {
     "required": true,
     "artifactTypes": [
-      "evidence-brief",
-      "product-intelligence-report",
       "research-brief",
-      "signal-brief"
+      "evidence-brief",
+      "signal-brief",
+      "product-intelligence-report"
     ]
   },
   "liveScoring": {

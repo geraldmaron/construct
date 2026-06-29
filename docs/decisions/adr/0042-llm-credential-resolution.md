@@ -31,13 +31,15 @@ Two concrete failures, both verified on a live machine:
 ## Decision
 
 1. **One secret resolver for the LLM path** (`lib/providers/secret-resolver.mjs`).
-   Resolves a canonical var through env -> `~/.construct/config.env` -> `~/.env`
+   Resolves a canonical var through env -> `~/.config/construct/config.env` -> `~/.env`
    -> project `.env` -> shell rc, and resolves `op://` references (bare or
    `$(op read '...')`) through the `op` CLI, cached per reference for the process
    and never logged. `hasSecret` checks presence without invoking the CLI so a
    stored `op://` reference counts as configured with no biometric prompt.
-   `worker.mjs`, the chat engine (`apps/chat/engine/ai-sdk-agent.mjs`), and the
-   router's detection (`isProviderConfigured`) all resolve the same way.
+   When `CONSTRUCT_OP_ENV_FILE` points at an `op run` catalog, keys listed there
+   count as configured without duplicating refs into config.env.
+   `worker.mjs`, OpenCode runtime integration, and the router's detection
+   (`isProviderConfigured`) all resolve the same way.
 
 2. **GitHub Copilot uses the community-standard OAuth device flow**
    (`lib/providers/copilot-auth.mjs`): the public Copilot app
@@ -59,16 +61,27 @@ Two concrete failures, both verified on a live machine:
   Adds a preview dependency and still requires a separate `copilot auth` login the
   operator does not have; the device flow reuses what editors/CLIs already store.
 - **Requiring `op run` at launch only.** Works but forces a wrapper for every
-  invocation; native resolution makes chat, worker, and router behave the same
+   invocation; native resolution makes OpenCode, worker, and router behave the same
   whether or not a wrapper is used.
 
 ## Consequences
 
-- API keys may be stored as `op://` references in `~/.construct/config.env` and
+- API keys may be stored as `op://` references in `~/.config/construct/config.env` and
   resolve everywhere; no secret is written to logs or committed.
 - Copilot works without a Copilot-entitled `gh` login; `construct creds login
   copilot` is the entry point and errors point operators to it.
 - The Copilot bridge no longer force-maps the model to `gpt-4o`; the requested id
   is passed through and validated against the account's `models` endpoint.
-- Detection (`construct chat --list`, `construct creds list`, health) reports
+- Detection (`construct models list`, `construct creds list`, health) reports
   op:// providers and a stored Copilot credential as configured.
+
+## Auth-once contract (cross-reference)
+
+All LLM and integration paths that resolve `op://` references must route through
+`lib/providers/secret-resolver.mjs` so a single reference is materialized once per
+process and cached — no repeat `op read` spawn, no repeat biometric prompt. The
+contract is enforced by `tests/functional/auth-once.functional.test.mjs` (hermetic,
+injected `opRead`). Consumers include `worker.mjs`, OpenCode runtime integration,
+`isProviderConfigured` in `lib/model-router.mjs`, and intake integrations
+(`lib/integrations/intake-integrations.mjs` via `resolveOpRef`). See CHANGELOG
+(`construct-m7k2-auth-primitives`) for rollout status.

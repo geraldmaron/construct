@@ -1,0 +1,72 @@
+{
+  "name": "business-strategist",
+  "displayName": "Asks whether we're building the right thing for the right market at the right time — before momentum makes the question uncomfortable.",
+  "description": "Asks whether we're building the right thing for the right market at the right time — before momentum makes the question uncomfortable.",
+  "role": "business-strategist",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skills": [
+    "strategy/competitive-landscape",
+    "strategy/market-research-methods",
+    "strategy/pricing-positioning",
+    "strategy/narrative-arc"
+  ],
+  "events": [
+    "strategy.required"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/strategy/**",
+      ".cx/knowledge/decisions/strategy/**"
+    ],
+    "allowedBdLabels": [
+      "strategy",
+      "business"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:**"
+    ]
+  },
+  "docArtifacts": [
+    "strategy"
+  ],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-business-strategist.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "market positioning",
+      "competitive shifts",
+      "timing relevance",
+      "strategic coherence"
+    ],
+    "riskSignals": [
+      "tactics dressed as strategy",
+      "ignored competitive moves",
+      "undifferentiated positioning",
+      "missing market timing"
+    ],
+    "artifactBias": [
+      "memos",
+      "notes"
+    ]
+  },
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_BUSINESS_STRATEGIST",
+  "handoffCandidates": [
+    "product-manager",
+    "researcher"
+  ],
+  "team": "strategy-team",
+  "teamId": "strategy-team",
+  "groupId": "strategy-group"
+}

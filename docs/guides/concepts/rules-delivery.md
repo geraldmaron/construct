@@ -17,7 +17,7 @@ Codex, and OpenCode, whose harnesses have no per-rule glob-attachment format Con
 Rules that declare `paths:` frontmatter globs (the language rules — golang/python/swift/
 typescript/web) are **delivered** on Cursor, the one supported host with a native per-rule
 convention: `.cursor/rules/*.mdc` with comma-separated `globs` frontmatter, auto-attached when a
-matching file enters the chat context.
+matching file enters the host context.
 
 Project-scope `construct sync` (`lib/rules-delivery.mjs`, wired from the Cursor adapter in
 `scripts/sync-specialists.mjs`):

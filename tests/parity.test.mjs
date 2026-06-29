@@ -51,9 +51,8 @@ const FIXTURE_REGISTRY = {
 before(async () => {
   tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-parity-root-'));
   tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-parity-home-'));
-  fs.mkdirSync(path.join(tmpRoot, 'specialists'), { recursive: true });
+  fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(tmpRoot, 'specialists', 'org'), { recursive: true });
   fs.mkdirSync(path.join(tmpRoot, 'personas'), { recursive: true });
-  fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
   fs.writeFileSync(path.join(tmpRoot, 'personas', 'construct.md'), '# stub\n');
   ({ checkParity } = await import('../lib/parity.mjs'));
 });
@@ -172,6 +171,20 @@ describe('checkParity', () => {
     assert.deepEqual(opencode.extra, ['cx-orphan']);
   });
 
+  it('treats a lone legacy orchestrator OpenCode agent as construct (pre-rename install)', () => {
+    resetSurfaces();
+    const opencodeDir = path.join(tmpHome, '.config', 'opencode');
+    fs.mkdirSync(opencodeDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(opencodeDir, 'opencode.json'),
+      JSON.stringify({ agent: { orchestrator: {} } }),
+    );
+    const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
+    const opencode = report.surfaces.find((s) => s.surface === 'opencode');
+    assert.equal(opencode.status, 'ok', JSON.stringify(opencode));
+    assert.deepEqual(opencode.extra, []);
+  });
+
   it('reports drift when copilot user-scope prompts are missing the construct front-door', () => {
     resetSurfaces();
     const promptsDir = path.join(tmpHome, '.github', 'prompts');
@@ -186,6 +199,11 @@ describe('checkParity', () => {
 
   it('reports drift when vscode mcp settings are missing a managed server', () => {
     resetSurfaces();
+    fs.mkdirSync(path.join(tmpRoot, '.cx'), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmpRoot, '.cx', 'unified-registry.json'),
+      JSON.stringify({ mcpServers: { github: {}, context7: {} } }, null, 2),
+    );
     const vscodeDir = getVsCodeUserDir(tmpHome);
     fs.mkdirSync(vscodeDir, { recursive: true });
     fs.writeFileSync(
@@ -226,6 +244,11 @@ describe('checkParity', () => {
 
   it('tolerates a user-added non-registry MCP server (extra is not drift)', () => {
     resetSurfaces();
+    fs.mkdirSync(path.join(tmpRoot, '.cx'), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmpRoot, '.cx', 'unified-registry.json'),
+      JSON.stringify({ mcpServers: { github: {}, context7: {} } }, null, 2),
+    );
     const cursorDir = path.join(tmpHome, '.cursor');
     fs.mkdirSync(cursorDir, { recursive: true });
     // 'orphan' is the user's own server. Construct ensures its registry servers
@@ -277,19 +300,10 @@ describe('checkParity', () => {
     // of the internal flag. The orchestrator alone is expected.
 
     resetSurfaces();
-    const registryWithInternal = {
-      ...FIXTURE_REGISTRY,
-      specialists: [
-        { ...FIXTURE_REGISTRY.specialists[0], internal: true },
-        { ...FIXTURE_REGISTRY.specialists[1], internal: true },
-      ],
-    };
-    fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(registryWithInternal, null, 2));
     writeAllSurfaces();
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     const copilot = report.surfaces.find((s) => s.surface === 'copilot');
     assert.equal(copilot.status, 'ok', `copilot drift: missing=${copilot.missing}, extra=${copilot.extra}`);
-    fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
   });
 
   it('entry.platforms allowlist still excludes a specialist from off-list surfaces', () => {
@@ -299,22 +313,11 @@ describe('checkParity', () => {
     // drift regardless of platform allowlist.
 
     resetSurfaces();
-    fs.writeFileSync(
-      path.join(tmpRoot, 'specialists', 'registry.json'),
-      JSON.stringify({
-        ...FIXTURE_REGISTRY,
-        specialists: [
-          ...FIXTURE_REGISTRY.specialists,
-          { name: 'claude-only', description: 'd', prompt: 'p', model: 'anthropic/claude-sonnet-4-6', platforms: ['claude'] },
-        ],
-      })
-    );
     writeAllSurfaces();
 
     const report = checkParity({ rootDir: tmpRoot, homeDir: tmpHome });
     assert.equal(report.ok, true, `parity should be ok with only construct at user scope; got ${JSON.stringify(report.summary)}`);
 
-    fs.writeFileSync(path.join(tmpRoot, 'specialists', 'registry.json'), JSON.stringify(FIXTURE_REGISTRY, null, 2));
   });
 
   it('reclassifies drift to legacy-install when all extras are known cx-* specialists', () => {

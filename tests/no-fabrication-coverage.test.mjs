@@ -73,7 +73,7 @@ describe('no-fabrication coverage', () => {
     const missingLink = [];
     for (const file of prompts) {
       const text = fs.readFileSync(file, 'utf8');
-      const match = text.match(/(?:\*\*Anti-fabrication contract\*\*:|## Anti-fabrication contract\n\n)([\s\S]*?)(?=\n\n)/);
+      const match = text.match(/(?:\*\*Anti-fabrication contract\*\*:|## Anti-fabrication contract[^\n]*\n\n)([\s\S]*?)(?=\n\n)/);
       if (!match) {
         missingLink.push(`${path.relative(root, file)} (no contract paragraph found at all)`);
         continue;

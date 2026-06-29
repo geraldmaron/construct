@@ -1,0 +1,17 @@
+{
+  "id": "security-approval",
+  "owner": "governance-group",
+  "description": "Governance group approves security posture. Can block deployments.",
+  "enforcement": "hard",
+  "mode": "approval",
+  "requiresApprovalFrom": [],
+  "mayVetoFrom": [],
+  "escalatesTo": [
+    "orchestrator"
+  ],
+  "decisionRights": [
+    "security-approval"
+  ],
+  "conditions": [],
+  "evidence": []
+}

@@ -12,14 +12,12 @@
   "openingQuestion": "Which agents have degraded since the last cycle, and what does the trace evidence say about why?",
   "escalationPath": {
     "collaborators": [],
-    "subscriptions": [
-      "trace.anomaly"
-    ]
+    "subscriptions": []
   },
   "refusalBoundaries": "If all agents look stable, you haven't checked variance and trend. Median hides deterioration.",
   "modelTier": "reasoning",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-trace-reviewer.md"
   }
 }

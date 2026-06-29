@@ -1,14 +1,14 @@
 ---
 intake: none
 intake_rationale: contract decision recorded from a footprint-and-hook-cost audit (plan ~/.claude/plans/thoroughly-review-the-configurations-silly-meadow.md) tracking as bd epic construct-7w69; primary evidence is repository code (file:line cites below) and Anthropic primary-source docs.
-last_verified_at: 2026-06-05
-verified_by: construct · code audit of lib/setup.mjs, scripts/sync-specialists.mjs, lib/hooks/*.mjs, platforms/claude/settings.template.json on branch fix/init-host-footprint-conflation
+last_verified_at: 2026-06-26
+verified_by: construct · install-scope + init-no-project-secrets functional tests on branch feature/team-redesign
 ---
 
 # ADR 0029: Install scopes and per-hook performance budgets
 
 - **Date**: 2026-06-05
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Construct·Architect
 - **Supersedes**: none
 - **Extends**: [ADR 0025](0025-explicit-activation-model.md) (explicit activation — extends the "aware, never ambient" doctrine from activation into install-scope opt-in), [ADR 0027](0027-host-project-footprint-and-non-destructive-scaffolding.md) (host-project footprint — completes the install/init boundary by adding scope opt-in for machine-side writes that ADR-0027 left as silent defaults).

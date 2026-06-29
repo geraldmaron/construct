@@ -30,3 +30,6 @@ Use when: an architectural decision is made that affects the system structure, d
 ## Cross-referencing
 - If this ADR supersedes another: update the old ADR's status field
 - If this ADR depends on another: add a References link
+## Release gate
+
+Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

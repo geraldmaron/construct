@@ -24,3 +24,6 @@ Use when: creating operational procedures for services, alerts, or recurring ope
 ## Review cadence
 - Runbooks should be tested (table-top or live) at least quarterly
 - Update `Last updated` field after each use or review
+## Release gate
+
+Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

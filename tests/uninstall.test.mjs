@@ -4,7 +4,7 @@
  * Verifies:
  *   - --dry-run reports the plan and changes nothing on disk.
  *   - --yes (default risk: auto) removes .construct/, agents listed in the
- *     manifest, the Construct hooks block + known mcpServers from settings.json,
+ *     manifest and the Construct hooks block from settings.json,
  *     and the XDG state workspace dir and the global doctor-root state dir.
  *   - User-added mcpServers and user-added top-level settings keys are preserved.
  *   - ask-risk items (.cx/, AGENTS.md/plan.md, embedding cache, config.env)
@@ -153,7 +153,7 @@ describe('runUninstall --dry-run', () => {
 });
 
 describe('runUninstall --yes (auto-risk only)', () => {
-  it('removes .construct, manifest entries, hooks block, known mcpServers, workspace, ~/.cx', async () => {
+  it('removes .construct, manifest entries, hooks block, workspace, ~/.cx', async () => {
     const { result } = await silently(() =>
       runUninstall(['--yes', `--cwd=${projectDir}`, `--home=${homeDir}`])
     );
@@ -180,8 +180,8 @@ describe('runUninstall --yes (auto-risk only)', () => {
       fs.readFileSync(path.join(projectDir, '.claude', 'settings.json'), 'utf8')
     );
     assert.equal(settings.hooks, undefined, 'hooks block removed');
-    assert.equal(settings.mcpServers.memory, undefined, 'known memory mcp removed');
-    assert.equal(settings.mcpServers.github, undefined, 'known github mcp removed');
+    assert.ok(settings.mcpServers.memory, 'memory mcp preserved by project uninstall');
+    assert.ok(settings.mcpServers.github, 'github mcp preserved by project uninstall');
     assert.ok(settings.mcpServers['user-private-server'], 'user mcp preserved');
     assert.deepEqual(settings.userOnlyKey, { keepMe: true }, 'unrelated top-level key preserved');
 
@@ -289,7 +289,7 @@ describe('runUninstall when nothing exists', () => {
 });
 
 describe('settings.json un-merge edge cases', () => {
-  it('deletes the file entirely when it is Construct-only', async () => {
+  it('keeps settings.json when non-registry MCP entries remain after hook removal', async () => {
     fs.writeFileSync(
       path.join(projectDir, '.claude', 'settings.json'),
       JSON.stringify(
@@ -306,8 +306,8 @@ describe('settings.json un-merge edge cases', () => {
     );
     assert.equal(
       fs.existsSync(path.join(projectDir, '.claude', 'settings.json')),
-      false,
-      'Construct-only settings.json removed entirely'
+      true,
+      'settings.json kept because mcpServers remain'
     );
   });
 

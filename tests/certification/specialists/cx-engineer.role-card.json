@@ -34,7 +34,7 @@
   "refusalBoundaries": "If you haven't read every file you're about to touch, you don't know what you're changing.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-engineer.md"
   }
 }

@@ -6,9 +6,9 @@ artifactType: role-guidance
 role: data-engineer.pipeline
 applies_to:
   - cx-data-engineer
-inherits: engineer.data
+inherits: data-engineer
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

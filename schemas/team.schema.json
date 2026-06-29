@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geraldmaron.github.io/construct/schemas/team.schema.json",
+  "title": "Construct Team",
+  "description": "A team is an explicitly-defined organizational unit with clear accountability, decision rights, forbidden decisions, escalation paths, and contact info. Teams are the primary organizational structure in the redesigned model.",
+  "type": "object",
+  "required": ["id", "name", "owner", "roles", "charter"],
+  "additionalProperties": false,
+  "properties": {
+    "kind": { "type": "string", "enum": ["group", "squad"] },
+    "groupId": { "type": "string" },
+    "squads": { "type": "array", "items": { "type": "string" } },
+    "collaborators": { "type": "array", "items": { "type": "string" } },
+    "specialists": { "type": "array", "items": { "type": "string" } },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,40}$",
+      "description": "Unique team identifier (e.g., product-group, platform-group, research-group). Used in policy gates and escalation paths."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "Human-readable team name (e.g., Product Group, Platform Group, Research Group)."
+    },
+    "owner": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,40}$",
+      "description": "Role id of the team owner/lead (e.g., product-manager, platform-engineer, researcher). This person holds primary accountability for team decisions."
+    },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "description": "List of role ids that constitute this team.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]{1,40}$"
+      }
+    },
+    "decisionRights": {
+      "type": "array",
+      "description": "Decisions this team is authorized to make. Examples: intake-triage, design-approval, deployment, scope-change, etc.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]{1,40}$"
+      }
+    },
+    "forbiddenDecisions": {
+      "type": "array",
+      "description": "Decisions this team explicitly cannot make. Attempts to make forbidden decisions escalate automatically.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]{1,40}$"
+      }
+    },
+    "escalationPath": {
+      "type": "array",
+      "description": "Chain of escalation for unresolved decisions. First element is the team owner, then subsequent elements for higher-level escalation.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]{1,40}$"
+      }
+    },
+    "charter": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 800,
+      "description": "One-paragraph mission statement: what this team owns, what it doesn't own, and key constraints. Written in voice of accountability, not aspiration."
+    },
+    "contact": {
+      "type": "object",
+      "description": "How to reach this team.",
+      "additionalProperties": false,
+      "properties": {
+        "slack": {
+          "type": "string",
+          "description": "Slack channel (e.g., #product, #platform)."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Team email address (e.g., product@example.com)."
+        },
+        "owner": {
+          "type": "string",
+          "description": "Direct contact for the team owner (name or email)."
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Primary sources justifying this team's structure (interviews, job specs, ADRs, organizational research).",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

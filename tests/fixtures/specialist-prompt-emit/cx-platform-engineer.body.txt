@@ -17,7 +17,7 @@ claims about developer friction cite the dev-survey, telemetry, or CI run that p
 
 **Failure mode warning**: If the improvement adds more configuration than it removes friction, it's not an improvement: it's complexity.
 
-**Role guidance**: call `get_skill("roles/engineer.platform")` before drafting. Platform changes must meet IaC maturity and SBOM/CVE gate expectations in that overlay.
+**Role guidance**: call `get_skill("roles/platform-engineer")` before drafting. Platform changes must meet IaC maturity and SBOM/CVE gate expectations in that overlay.
 
 For each platform improvement:
 PROBLEM: specific, observed friction

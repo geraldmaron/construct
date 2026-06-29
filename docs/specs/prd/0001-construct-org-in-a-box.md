@@ -32,7 +32,7 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 - G3: Embed mode allows Construct to continuously monitor configured sources, manage work items, propose doc changes, and produce periodic health snapshots.
 - G4: Construct runs on Construct: the construct repo is the first customer, with its own PRDs, ADRs, and RFCs managed by the system.
 - G5: Deployable as a single container with multi-user support and a hybrid approval model (autonomous for low-risk, human approval for high-risk).
-- G6: A full web dashboard for configuration, chat interaction, approval queues, and mode-aware views.
+- G6: A full web dashboard for configuration, approval queues, and mode-aware views.
 - G7: Continuous learning through RAG over historical decisions, trend detection, and a queryable knowledge base.
 
 ### Non-goals
@@ -53,11 +53,11 @@ Individual developers and small teams working with AI coding agents (Claude, Cod
 | FR-5 | **Docker service management**: `construct dev` spins up required local services Construct needs (database, observability, memory). Checks for Docker availability and installs/prompts if missing. |
 | FR-6 | **Self-hosting**: Construct manages its own docs, PRDs, ADRs, RFCs. Construct orchestrates its own development (proposes PRs, runs tests, updates plans). |
 | FR-7 | **Cloud deployment**: Single-container deployable (Docker image) with multi-user auth, persistent state, and webhook ingestion for embed mode event triggers. Infrastructure provisioned via Terraform (VPC, ECS/Fargate, RDS, secrets, DNS). |
-| FR-8 | **Dashboard**: Full web app with auth, real-time updates, chat interface, approval queue, config management, and mode-aware views (init, embed, point-at). |
+| FR-8 | **Dashboard**: Full web app with auth, real-time updates, approval queue, config management, and mode-aware views (init, embed, point-at). |
 | FR-9 | **Continuous learning**: RAG over accumulated observations, decisions, and artifacts. Trend detection across sessions. Queryable knowledge base ("what do we know about X?"). |
 | FR-10 | **Snapshot generation**: On-demand or scheduled reports summarizing project health, risks, alignment gaps, and actionable recommendations. Output to dashboard, any messaging provider, and/or markdown. |
 | FR-11 | **Hybrid approval model**: Low-risk actions (reading, analysis, draft generation) are autonomous. High-risk actions (work item creation, merge, doc publish, config changes) require human approval via dashboard or configured channel. |
-| FR-12 | **Owned-loop chat** (`construct chat`, ADR-0041): Terminal and browser surfaces run Construct's own agent loop with transparency-first layout, permission gates, and provider-agnostic model routing. |
+| FR-12 | **OpenCode-first conversation surface**: Construct syncs specialists, workflows, MCP tools, and artifact contracts into OpenCode while keeping CLI commands focused on bounded operations. |
 | FR-13 | **Oracle meta-controller** (ADR-0043): L0.5 daemon collects project health signals, synthesizes gaps, auto-executes safe maintenance, queues consequential remediation for approval. |
 | FR-14 | **Unified credential resolution** (ADR-0042): LLM keys resolve from env, config files, and `op://` 1Password references; GitHub Copilot uses OAuth device flow. |
 

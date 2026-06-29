@@ -65,12 +65,14 @@ function syncAndReadPrompt(config) {
 const MUST_KEEP = ["Anti-fabrication contract", "Branch + commit approval", "Loop guard"];
 const PRIO2 = "Quality gates";
 const PRIO3 = "Drive mode";
-const MICRO_PROMPT = "you MUST call the `orchestration_policy`";
+const MICRO_PROMPT = "call `construct-mcp_orchestration_policy`";
+const EXECUTION_PROMPT = "call `construct-mcp_orchestration_run`";
 
 test("small local default (7B) renders the floor tier", () => {
   const prompt = syncAndReadPrompt(seedConfig("ollama/qwen2.5-coder:7b-cx32k", true));
   for (const anchor of MUST_KEEP) assert.match(prompt, new RegExp(anchor.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `floor must keep: ${anchor}`);
   assert.match(prompt, new RegExp(MICRO_PROMPT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "orchestration micro-prompt present");
+  assert.match(prompt, new RegExp(EXECUTION_PROMPT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "execution handoff present");
   assert.doesNotMatch(prompt, /Drive mode/, "floor drops prio-3 Drive mode");
   assert.doesNotMatch(prompt, /## Quality gates/, "floor drops prio-2 Quality gates");
   assert.doesNotMatch(prompt, /cx:prio/, "section markers must not leak into the emitted prompt");

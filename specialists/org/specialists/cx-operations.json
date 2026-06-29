@@ -1,0 +1,72 @@
+{
+  "name": "operations",
+  "displayName": "The logistics mind who maps dependencies, sequences, and ownership — because hidden dependencies surface as blocked work.",
+  "description": "The logistics mind who maps dependencies, sequences, and ownership — because hidden dependencies surface as blocked work.",
+  "role": "operations",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skills": [
+    "roles/operations",
+    "docs/init-project",
+    "operating/incident-response",
+    "operating/oncall-rotation",
+    "operating/change-management"
+  ],
+  "events": [
+    "plan.requested"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/ops/**",
+      "docs/operations/**"
+    ],
+    "allowedBdLabels": [
+      "ops",
+      "operations"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:**"
+    ]
+  },
+  "docArtifacts": [],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-operations.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "dependency sequencing",
+      "ownership clarity",
+      "blocker resolution",
+      "delivery cadence"
+    ],
+    "riskSignals": [
+      "hidden dependencies",
+      "unowned tasks",
+      "blocked work aging",
+      "parallel plans with serial reality"
+    ],
+    "artifactBias": [
+      "notes",
+      "memos"
+    ]
+  },
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,Write,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_OPERATIONS",
+  "handoffCandidates": [
+    "sre",
+    "platform-engineer",
+    "release-manager"
+  ],
+  "team": "operations-team",
+  "teamId": "operations-team",
+  "groupId": "operations-group"
+}

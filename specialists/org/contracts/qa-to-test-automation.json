@@ -1,0 +1,42 @@
+{
+  "id": "qa-to-test-automation",
+  "producer": "cx-qa",
+  "consumer": "cx-test-automation",
+  "trigger": {
+    "intent": [
+      "implementation"
+    ],
+    "automation.required": true
+  },
+  "input": {
+    "schema": "lib/contract-schemas/test-report.json",
+    "mustContain": [
+      "testStrategy",
+      "verdict"
+    ]
+  },
+  "output": {
+    "shape": "automation-plan",
+    "mustContain": [
+      "framework",
+      "coverageTargets",
+      "flakeBudget",
+      "deterministicWaits"
+    ]
+  },
+  "preconditions": [
+    "Existing test infrastructure surveyed before proposing new frameworks",
+    "Flaky-test signal collected over N runs before calling a test flaky"
+  ],
+  "postconditions": [
+    "Tests use deterministic waits and stable selectors; not arbitrary sleeps",
+    "Coverage targets aim at behaviors that matter, not at line counts that pad the number",
+    {
+      "id": "automation-plan-has-flake-budget",
+      "description": "Automation plan must contain a Flake Budget section",
+      "check": "artifact-has-section",
+      "section": "Flake Budget"
+    }
+  ],
+  "description": ""
+}

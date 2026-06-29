@@ -27,3 +27,6 @@ Use when: the user asks for a PRFAQ, working-backwards doc, launch narrative, or
 ## Approval
 
 Stop before marking a PRFAQ approved or publishing it as a document of record.
+## Release gate
+
+Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

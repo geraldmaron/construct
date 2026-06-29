@@ -1,6 +1,7 @@
 {
   "title": "Product Requirements",
   "pages": [
-    "0001-construct-org-in-a-box"
+    "0001-construct-org-in-a-box",
+    "0002-oidc-authentication"
   ]
 }

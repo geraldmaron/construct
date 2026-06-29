@@ -25,7 +25,7 @@ test('composePrompt assembles prompt from core prompt, task packet, and context 
       owner: 'cx-engineer',
       acceptanceCriteria: ['tests pass', 'policy is code-backed'],
       readFirst: ['lib/orchestration-policy.mjs'],
-      doNotChange: ['specialists/registry.json'],
+      doNotChange: ['specialists/org'],
     },
     contextState: {
       source: 'test',
@@ -70,6 +70,14 @@ test('resolveBasePrompt normalizes cx-prefixed names through composed resolution
   assert.match(prompt, /You read before you write/);
 });
 
+test('resolveBasePrompt keeps the construct front door workflow-backed for research and drafting', () => {
+  const prompt = resolveBasePrompt({ name: 'construct', promptFile: 'personas/construct.md' }, { rootDir: root });
+  assert.match(prompt, /orchestration_run/);
+  assert.match(prompt, /workflow_invoke/);
+  assert.match(prompt, /research-synthesis/);
+  assert.match(prompt, /canonical template/);
+});
+
 test('resolveBasePrompt returns fallback for unresolved prompt sources', () => {
   const prompt = resolveBasePrompt({ name: 'missing', promptFile: 'specialists/prompts/nope.md' }, {
     rootDir: root,
@@ -112,25 +120,25 @@ test('composePrompt skips flavor overlay when no roleFlavors match agent', () =>
   assert.equal(flavorFragment, undefined, 'engineer should not get architect flavor');
 });
 
-test('composePrompt injects engineer flavor overlays for the general engineer', () => {
-  const result = composePrompt('cx-engineer', {
+test('composePrompt injects split specialist role overlays', () => {
+  const result = composePrompt('cx-platform-engineer', {
     rootDir: root,
     intent: 'implementation',
-    roleFlavors: { engineer: 'platform' },
+    roleFlavors: { platformEngineer: 'core' },
   });
 
   const flavorFragment = result.fragments.find((f) => f.type === 'role-flavor');
-  assert.ok(flavorFragment, 'should include engineer flavor guidance');
-  assert.match(flavorFragment.label, /engineer\.platform/);
-  assert.match(flavorFragment.content, /platform domain guidance/i);
-  assert.match(flavorFragment.content, /failure modes on top of the engineer core/i);
+  assert.ok(flavorFragment, 'should include platform-engineer role guidance');
+  assert.match(flavorFragment.label, /platform-engineer/);
+  assert.match(flavorFragment.content, /platform-engineer domain guidance/i);
+  assert.match(flavorFragment.content, /Tooling without adoption plan/i);
 });
 
 test('composePrompt switches to compact small-model mode when requested by execution contract', () => {
-  const result = composePrompt('cx-engineer', {
+  const result = composePrompt('cx-ai-engineer', {
     rootDir: root,
     task: { title: 'Implement retrieval-first compact mode for small local models' },
-    roleFlavors: { engineer: 'ai' },
+    roleFlavors: { aiEngineer: 'core' },
     executionContractModel: {
       profile: { id: 'small' },
       selectedModel: 'ollama/llama3.1:8b',
@@ -146,7 +154,7 @@ test('composePrompt switches to compact small-model mode when requested by execu
 });
 
 test('resolveRuntimePromptMetadata includes explicit task packet and routing summary', () => {
-  const metadata = resolveRuntimePromptMetadata('cx-engineer', {
+  const metadata = resolveRuntimePromptMetadata('cx-platform-engineer', {
     rootDir: root,
     task: {
       key: 'runtime-policy-contract',
@@ -156,7 +164,7 @@ test('resolveRuntimePromptMetadata includes explicit task packet and routing sum
       status: 'in-progress',
       acceptanceCriteria: ['Critical orchestration rules exist in code'],
       readFirst: ['lib/orchestration-policy.mjs'],
-      doNotChange: ['specialists/registry.json'],
+      doNotChange: ['specialists/org'],
     },
     contextState: {
       source: 'test',
@@ -189,16 +197,16 @@ test('resolveRuntimePromptMetadata includes explicit task packet and routing sum
 });
 
 test('resolveRuntimePromptMetadata exposes selected prompt role flavor', () => {
-  const metadata = resolveRuntimePromptMetadata('cx-engineer', {
+  const metadata = resolveRuntimePromptMetadata('cx-platform-engineer', {
     rootDir: root,
     request: 'tighten the CI and docker workflow for platform engineering',
     route: {
       intent: 'implementation',
       track: 'focused',
       workCategory: 'deep',
-      specialists: ['cx-engineer'],
-      dispatchPlan: 'Plan: cx-engineer.',
-      roleFlavors: { engineer: 'platform' },
+      specialists: ['cx-platform-engineer'],
+      dispatchPlan: 'Plan: cx-platform-engineer.',
+      roleFlavors: { platformEngineer: 'core' },
     },
     executionContractModel: {
       version: 'v1',
@@ -210,5 +218,22 @@ test('resolveRuntimePromptMetadata exposes selected prompt role flavor', () => {
     },
   });
 
-  assert.equal(metadata.promptRoleFlavor, 'engineer.platform');
+  assert.equal(metadata.promptRoleFlavor, 'platform-engineer');
+});
+
+test('resolveRuntimePromptMetadata exposes routed workflow guidance', () => {
+  const metadata = resolveRuntimePromptMetadata('construct', {
+    rootDir: root,
+    request: 'do research on oidc',
+    route: {
+      intent: 'research',
+      track: 'focused',
+      workCategory: 'quick',
+      specialists: ['cx-researcher'],
+      dispatchPlan: 'Plan: cx-researcher.',
+      suggestedWorkflowType: 'research-synthesis',
+    },
+  });
+
+  assert.equal(metadata.routeSuggestedWorkflowType, 'research-synthesis');
 });

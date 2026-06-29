@@ -75,7 +75,7 @@ Stamp: `node scripts/run-capability-tests.mjs --tier=P0 --stamp` · Regenerate: 
 |---|---:|---|
 | 1. Prompt economy | **3** | Single Front Door; composer-reachable role flavors documented |
 | 2. Tool surface design | **2** | MCP flat core + ADR-0039 surfaces |
-| 3. Local-model strategy | **2** | Local tier + chat TUI prompts |
+| 3. Local-model strategy | **2** | Local tier + host prompt profiles |
 | 4. Skill/knowledge architecture | **3** | 0 true orphans; B-composer metrics in census |
 | 5. Hook/gate philosophy | **2** | Unconditional gates; site copy aligned |
 | 6. Test strategy | **2** | `docs:site --check` in release gate; capability stamps |

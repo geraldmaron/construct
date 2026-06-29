@@ -1,0 +1,46 @@
+{
+  "id": "product-group",
+  "name": "Product Group",
+  "owner": "product-manager",
+  "roles": [
+    "product-manager",
+    "ux-researcher",
+    "designer",
+    "researcher",
+    "accessibility"
+  ],
+  "decisionRights": [
+    "intake-triage",
+    "design-approval",
+    "scope-change",
+    "evidence-requirement"
+  ],
+  "forbiddenDecisions": [
+    "deployment",
+    "security-override",
+    "infra-change"
+  ],
+  "escalationPath": [
+    "product-manager",
+    "rd-lead",
+    "orchestrator"
+  ],
+  "charter": "Translate user reality into shippable change. Owns problem framing, requirements, evidence gathering, design decisions, and acceptance criteria. Does not own implementation choices, deployment decisions, or security policy. Escalates scope conflicts to R&D leadership.",
+  "contact": {
+    "slack": "#product",
+    "email": "product@example.com",
+    "owner": "product-manager"
+  },
+  "evidence": [
+    "AGENTS.md (rnd profile departments section)",
+    "construct-u0ik (decision research on group charter pattern)"
+  ],
+  "kind": "group",
+  "squads": [
+    "product-management-team",
+    "ux-research-team",
+    "design-team",
+    "research-team",
+    "accessibility-team"
+  ]
+}

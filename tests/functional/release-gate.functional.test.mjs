@@ -105,16 +105,6 @@ test('release gate (W4): construct migrate --dry-run reports no migrations neede
   assert.equal(result.status, 0, `migrate --dry-run exited ${result.status}; stdout: ${result.stdout}`);
 });
 
-test('release gate (W1): boundary handshake module exposes the public contract', async (t) => {
-  if (!existsSync(join(REPO_ROOT, 'lib', 'boundary.mjs'))) {
-    return t.skip('W1 not merged: lib/boundary.mjs missing');
-  }
-  const mod = await import(`file://${join(REPO_ROOT, 'lib', 'boundary.mjs')}`);
-  assert.equal(typeof mod.registerBoundary, 'function');
-  assert.equal(typeof mod.boundaryConfigPath, 'function');
-  assert.equal(typeof mod.signBoundaryRequest, 'function');
-});
-
 test('release gate (W5): daemon safeguard contract exposes createDaemon + classifyPacket', async (t) => {
   if (!existsSync(join(REPO_ROOT, 'lib', 'daemons', 'contract.mjs'))) {
     return t.skip('W5 not merged: lib/daemons/contract.mjs missing');
@@ -135,10 +125,7 @@ test('release gate (W5): rule-verifier exports verifyTranscript with the documen
   assert.equal(typeof mod.findConsequentialActions, 'function');
 });
 
-test('release gate (W1): no misleading "future implementation" wording in source', (t) => {
-  if (!existsSync(join(REPO_ROOT, 'lib', 'boundary.mjs'))) {
-    return t.skip('W1 not merged: deferred-wording purge is part of that PR');
-  }
+test('release gate: no misleading "future implementation" wording in source', () => {
   const result = spawnSync('rg', [
     '-i',
     'phase [abc] follow-up|in a real implementation|would go here|coming soon|not yet supported',

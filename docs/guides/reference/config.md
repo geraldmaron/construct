@@ -98,11 +98,11 @@ Keys under `orchestration` in `construct.config.json`. Read at runtime by `lib/o
 
 ## Models (catalog visibility)
 
-Keys under `models` in `construct.config.json`. Consumed by `lib/models/catalog.mjs` and `getProviderModelCatalog()` in `lib/model-router.mjs`. Tier **assignments** (reasoning/standard/fast primaries) remain in `specialists/registry.json` and emergency overrides in `CX_MODEL_*` env vars — highest precedence unchanged.
+Keys under `models` in `construct.config.json`. Consumed by `lib/models/catalog.mjs` and `getProviderModelCatalog()` in `lib/model-router.mjs`. Tier **assignments** (reasoning/standard/fast primaries) remain in `specialists/org` and emergency overrides in `CX_MODEL_*` env vars — highest precedence unchanged.
 
 | Key | Default | Description |
 |---|---|---|
-| `models.visibility.mode` | `all_configured` | `all_configured` — all models from configured providers; `tier_defaults` — registry tier primaries + fallbacks only; `explicit` — `models.visibility.include` allowlist only (active chat pin always shown). |
+| `models.visibility.mode` | `tier_defaults` | `tier_defaults` — registry tier primaries + fallbacks only; `all_configured` — tier defaults plus a capped free OpenRouter slice; `explicit` — `models.visibility.include` allowlist only. |
 | `models.visibility.include` | `[]` | Model ids shown when `mode` is `explicit`. |
 | `models.visibility.exclude` | `[]` | Hidden from pickers; pinned model outside visibility shows a warning. |
 | `models.visibility.providers` | `{}` | Per provider-family toggles (`openrouter`, `github-copilot`, …); `false` hides the family. |
@@ -119,8 +119,6 @@ construct models list --json
 ```
 
 Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CX_MODEL_*` (alias still honored for one release cycle).
-
-## Source targets (`construct.config.json`)
 
 Typed integration selectors under `sources.targets`. Consumed by embed auto-discovery (when `embed.yaml` is absent), `provider_fetch`, and session-start source hints. Legacy env lists merge additively; an explicit `embed.yaml` in the XDG config dir remains a complete override.
 
@@ -213,10 +211,10 @@ Store provider keys in `config.env` (the XDG config dir, default `~/.config/cons
 **Recommended (one auth per invocation):** wrap the CLI with `op run` and a shared env file (same pattern as OpenCode on this machine):
 
 ```bash
-op run --no-masking --env-file="$HOME/.config/claude/.env.op" -- construct chat
+op run --no-masking --env-file="$HOME/.config/claude/.env.op" -- opencode
 ```
 
-When `op run` injects materialized keys into `process.env`, Construct keeps those values instead of overwriting them with stored `op://` refs from `config.env`. A local `~/bin/construct` wrapper is the usual setup; override with `CONSTRUCT_OP_ENV_FILE` and `CONSTRUCT_BIN`.
+When `op run` injects materialized keys into `process.env`, Construct keeps those values instead of overwriting them with stored `op://` refs from `config.env`. A local OpenCode wrapper is the usual setup; override with `CONSTRUCT_OP_ENV_FILE` and `CONSTRUCT_BIN`.
 | `GITHUB_REPOS` | Comma-separated `owner/repo` list surfaced as provider source hints at session start |
 | `JIRA_BASE_URL` | Atlassian Jira base URL (e.g. `https://yourorg.atlassian.net`) |
 | `JIRA_EMAIL` | Jira account email: used for Basic auth |
@@ -244,7 +242,8 @@ When `op run` injects materialized keys into `process.env`, Construct keeps thos
 
 | Variable | Default | Description |
 |---|---|---|
-| `CONSTRUCT_MCP_HTTP` | `0` | `1` to enable HTTP MCP transport (requires dashboard token) |
+| `CONSTRUCT_ORCHESTRATION_URL` | _(unset)_ | Point `orchestration_run`/`orchestration_status` at a remote/team orchestration service over HTTP. Unset = in-process (solo default — no daemon, no port, no token). |
+| `CONSTRUCT_ORCHESTRATION_TOKEN` | _(unset)_ | Bearer token for the remote orchestration service (falls back to `CONSTRUCT_DASHBOARD_TOKEN`). |
 
 ## Logging
 

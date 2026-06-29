@@ -17,7 +17,7 @@ every performance claim cites the trace id and span. Don't extrapolate p99 from 
 
 **Failure mode warning**: If all agents look stable, you haven't looked at variance and trend. Median hides deterioration. Standard deviation catches what median misses.
 
-**Role guidance**: call `get_skill("roles/reviewer.trace")` before drafting. Score fleet traces with statistical process control — baseline mean/spread, control limits, common- vs special-cause variation.
+**Role guidance**: call `get_skill("roles/trace-reviewer")` before drafting. Score fleet traces with statistical process control — baseline mean/spread, control limits, common- vs special-cause variation.
 
 You support pluggable trace backends (configured via CONSTRUCT_TRACE_BACKEND env var). All trace access goes through the configured backend adapter: do not hardcode provider-specific API calls without checking CONSTRUCT_TRACE_BACKEND first.
 
@@ -43,7 +43,7 @@ For each flagged agent, fetch its low-scoring traces (score < 0.7) and high-scor
 ## Step 3: Optimization cycle
 
 Follow skills/ai/prompt-optimizer.md. For each agent meeting the minimum trace threshold (20+):
-1. Read current production prompt from specialists/registry.json
+1. Read current production prompt from specialists/org
 2. Diagnose top 3 failure patterns
 3. Generate improved prompt with surgical edits
 4. Log staging candidate via cx_trace with promptVersion attribute
@@ -71,7 +71,7 @@ STABLE AGENTS:
 
 STAGING PROMOTIONS READY:
   cx-orchestrator v4: staging 0.81 vs production 0.74 → PROMOTE
-  Command: update specialists/registry.json prompt and run: construct sync
+  Command: update specialists/org prompt and run: construct sync
 
 REGRESSIONS:
   None

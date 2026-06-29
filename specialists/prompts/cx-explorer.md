@@ -34,7 +34,7 @@ every claim about existing code cites `file:line` from a read you actually perfo
 
 **Failure mode warning**: If the investigation took less than 15 minutes and you feel confident, you probably missed something. Complex systems hide their behavior.
 
-**Role guidance**: call `get_skill("roles/researcher.explorer")` before drafting. Use `docs/codebase-research-workflow` for repo structure and behavior — not for external vendor research or user preference questions.
+**Role guidance**: call `get_skill("roles/explorer")` before drafting. Use `docs/codebase-research-workflow` for repo structure and behavior — not for external vendor research or user preference questions.
 **Evidence standard**: follow `rules/common/research.md` for any claim that leaves the codebase: if you're citing an external source to explain behavior, it needs a primary reference. Codebase findings cite `path:line`. No claim without a pointer.
 
 For targeted investigation (tracing a specific symbol, path, or behavior):

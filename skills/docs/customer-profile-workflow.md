@@ -24,3 +24,6 @@ Profiles are product memory, not CRM records. Keep only information needed for p
 ## Retrieval
 
 Customer profiles are indexed by hybrid retrieval. Future PRDs, PRFAQs, evidence briefs, and backlog proposals should search them before drafting.
+## Release gate
+
+Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

@@ -309,32 +309,32 @@
       "grade": "strong",
       "gap": "—"
     },
-    "engineer.ai": {
+    "ai-engineer": {
       "grade": "strong",
       "gap": "—"
     },
-    "engineer.data": {
+    "data-engineer": {
       "grade": "strong",
       "gap": "—"
     },
-    "engineer.platform": {
+    "platform-engineer": {
       "grade": "strong",
       "gap": "—",
       "beadId": "construct-fb8s.7"
     },
-    "operator": {
+    "operations": {
       "grade": "strong",
       "gap": "—"
     },
-    "operator.docs": {
+    "docs-keeper": {
       "grade": "strong",
       "gap": "—"
     },
-    "operator.release": {
+    "release-manager": {
       "grade": "strong",
       "gap": "—"
     },
-    "operator.sre": {
+    "sre": {
       "grade": "strong",
       "gap": "—"
     },
@@ -350,7 +350,7 @@
       "grade": "strong",
       "gap": "—"
     },
-    "product-manager.business-strategy": {
+    "business-strategist": {
       "grade": "strong",
       "gap": "—"
     },
@@ -386,7 +386,7 @@
       "grade": "strong",
       "gap": "—"
     },
-    "qa.test-automation": {
+    "test-automation": {
       "grade": "strong",
       "gap": "—"
     },
@@ -398,11 +398,11 @@
       "grade": "strong",
       "gap": "—"
     },
-    "researcher.explorer": {
+    "explorer": {
       "grade": "strong",
       "gap": "—"
     },
-    "researcher.ux": {
+    "ux-researcher": {
       "grade": "strong",
       "gap": "—"
     },
@@ -410,15 +410,15 @@
       "grade": "strong",
       "gap": "—"
     },
-    "reviewer.devil-advocate": {
+    "devil-advocate": {
       "grade": "strong",
       "gap": "—"
     },
-    "reviewer.evaluator": {
+    "evaluator": {
       "grade": "strong",
       "gap": "—"
     },
-    "reviewer.trace": {
+    "trace-reviewer": {
       "grade": "strong",
       "gap": "—"
     },

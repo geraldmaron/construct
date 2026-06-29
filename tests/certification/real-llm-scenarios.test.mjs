@@ -39,7 +39,11 @@ test('resolveRealLlmProvider defaults to OpenRouter when key is present', () => 
 });
 
 test('resolveRealLlmProvider skips without OPENROUTER_API_KEY by default', () => {
-  const env = { ANTHROPIC_API_KEY: 'sk-ant' };
+  const env = {
+    ANTHROPIC_API_KEY: 'sk-ant',
+    OPENROUTER_API_KEY: '',
+    OPEN_ROUTER_API_KEY: '',
+  };
   const live = resolveRealLlmProvider(env);
   assert.match(live.skip, /OPENROUTER_API_KEY/);
 });

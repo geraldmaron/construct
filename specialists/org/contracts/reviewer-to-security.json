@@ -1,0 +1,41 @@
+{
+  "id": "reviewer-to-security",
+  "producer": "cx-reviewer",
+  "consumer": "cx-security",
+  "trigger": {
+    "riskFlags": [
+      "security"
+    ]
+  },
+  "input": {
+    "schema": "lib/contract-schemas/review-report.json",
+    "mustContain": [
+      "target",
+      "findings"
+    ]
+  },
+  "output": {
+    "schema": "lib/contract-schemas/review-report.json",
+    "type": "review-report",
+    "specialization": "security",
+    "mustContain": [
+      "threatModelUpdatedAt",
+      "contractStart"
+    ]
+  },
+  "preconditions": [
+    "Scope tagged as auth/secrets/payments/user-data"
+  ],
+  "postconditions": [
+    "Attacker-perspective findings logged",
+    "Threat model updated if architecture surface changed",
+    "threatModelUpdatedAt >= contractStart — prevents post-hoc threat models written after the architecture has shipped"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "quality-group",
+    "consumerTeam": "governance-group",
+    "requiresApprovalFrom": []
+  }
+}

@@ -3,7 +3,7 @@
  *
  * Boots the real construct-mcp stdio server as a child process, performs the
  * JSON-RPC initialize/tools-list/tools-call handshake, and asserts the PR #67
- * surfaces (profiles, outcomes, knowledge_add, learning_status) are reachable
+ * surfaces (scopes, outcomes, knowledge_add, learning_status) are reachable
  * over MCP — not just unit-callable. This is the loop that subagents take when
  * they talk to Construct.
  */
@@ -81,45 +81,45 @@ function callResult(response) {
   return text ? JSON.parse(text) : null;
 }
 
-test('the PR #67 profile/learning tools are reachable through the construct_call gateway', async () => {
+test('the PR #67 scope/learning tools are reachable through the construct_call gateway', async () => {
   // The gateway exposes a lean flat surface; long-tail tools stay reachable by
   // name through construct_call's enum, not as flat tools/list entries.
   await withServer(async (send) => {
     const list = await send('tools/list', {});
-    const gateway = list.result.tools.find((t) => t.name === 'construct_call');
+    const gateway = list.result.tools.find((t) => t.name === 'call');
     assert.ok(gateway, 'construct_call gateway is exposed');
     const reachable = new Set(gateway.inputSchema?.properties?.tool?.enum ?? []);
     for (const expected of [
-      'profile_show', 'profile_list', 'profile_drafts', 'profile_health',
+      'scope_show', 'scope_list', 'scope_drafts', 'scope_health',
       'outcomes_summary', 'outcomes_record', 'knowledge_add',
-      'profile_create', 'profile_archive', 'sandbox_list', 'learning_status',
+      'scope_create', 'scope_archive', 'sandbox_list', 'learning_status',
     ]) {
       assert.ok(reachable.has(expected), `MCP tool ${expected} not reachable via construct_call`);
     }
   });
 });
 
-test('profile_show + profile_list reach Construct state over MCP', async () => {
+test('scope_show + scope_list reach Construct state over MCP', async () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-parity-show-'));
-  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, profile: 'rnd' }, null, 2));
+  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, scope: 'rnd' }, null, 2));
 
   await withServer(async (send) => {
-    const show = await send('tools/call', { name: 'profile_show', arguments: { cwd } });
+    const show = await send('tools/call', { name: 'scope_show', arguments: { cwd } });
     const parsed = callResult(show);
     assert.equal(parsed.id, 'rnd');
     assert.ok(Array.isArray(parsed.roles));
 
-    const list = await send('tools/call', { name: 'profile_list', arguments: {} });
+    const list = await send('tools/call', { name: 'scope_list', arguments: {} });
     const catalog = callResult(list);
-    assert.ok(Array.isArray(catalog.profiles));
-    assert.ok(catalog.profiles.some((p) => p.id === 'rnd'));
+    assert.ok(Array.isArray(catalog.scopes));
+    assert.ok(catalog.scopes.some((p) => p.id === 'rnd'));
   });
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 test('outcomes_record refuses without confirm but writes JSONL when confirmed (via MCP)', async () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-parity-outcomes-'));
-  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, profile: 'rnd' }, null, 2));
+  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, scope: 'rnd' }, null, 2));
 
   await withServer(async (send) => {
     const reject = await send('tools/call', {
@@ -147,12 +147,12 @@ test('outcomes_record refuses without confirm but writes JSONL when confirmed (v
 
 test('learning_status delivers a structured dashboard over MCP', async () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-parity-learning-'));
-  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, profile: 'rnd' }, null, 2));
+  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, scope: 'rnd' }, null, 2));
 
   await withServer(async (send) => {
     const res = await send('tools/call', { name: 'learning_status', arguments: { cwd } });
     const body = callResult(res);
-    assert.equal(body.profile.id, 'rnd');
+    assert.equal(body.scope.id, 'rnd');
     assert.equal(body.research.count, 0);
     assert.equal(typeof body.observations.total, 'number');
   });
