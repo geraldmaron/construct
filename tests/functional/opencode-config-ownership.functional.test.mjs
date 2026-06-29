@@ -6,7 +6,7 @@
  * an isolated tmp HOME seeded with a user-personal global config, runs
  * `--global`, and verifies that Construct-managed keys are emitted correctly
  * (scoped bash permission, real attribution headers with no `__placeholder__`,
- * an env-ref github token rather than a plaintext secret) while every user-personal
+ * an OAuth-default github MCP entry that carries no token on disk) while every user-personal
  * key (share, autoupdate, a user agent, user openrouter models) survives
  * byte-for-byte. The host binary is never executed.
  * See docs/guides/concepts/opencode-config-ownership.md.
@@ -79,9 +79,11 @@ test("global sync emits Construct-managed keys correctly and preserves user-pers
       assert.ok(!String(v).includes("__"), `unresolved placeholder leaked into header: ${v}`);
     }
 
-    const ghAuth = out.mcp?.github?.headers?.Authorization;
-    assert.equal(ghAuth, "Bearer {env:GITHUB_TOKEN}");
-    assert.ok(!/gh[oprs]_/.test(ghAuth ?? ""), "no plaintext github token may be written");
+    const gh = out.mcp?.github;
+    assert.ok(gh, "github MCP must be wired");
+    assert.equal(gh.url, "https://api.githubcopilot.com/mcp/");
+    assert.equal(gh.headers, undefined, "OAuth default: no Authorization header / token on disk");
+    assert.ok(!/gh[oprs]_/.test(JSON.stringify(gh)), "no plaintext github token may be written");
 
     assert.equal(out.model, "anthropic/claude-opus-4-6", "user model preserved");
     assert.equal(out.share, "disabled", "user share preserved");
