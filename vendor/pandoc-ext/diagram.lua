@@ -166,6 +166,11 @@ local mermaid = {
         if mermaid_scale and mermaid_scale ~= '' then
           table.insert(mmdc_args, 1, '--scale=' .. mermaid_scale)
         end
+        local pptr_config = os.getenv('CONSTRUCT_MERMAID_PPTR_CONFIG')
+        if pptr_config and pptr_config ~= '' then
+          table.insert(mmdc_args, 1, pptr_config)
+          table.insert(mmdc_args, 1, '--puppeteerConfigFile')
+        end
         pipe(
           self.execpath or 'mmdc',
           mmdc_args,

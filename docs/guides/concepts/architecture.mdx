@@ -221,7 +221,7 @@ Infrastructure as code and container packaging.
 
 Every request flows through three structural layers:
 
-1. **Gates** (`routeRequest` returns `framingChallenge`, `externalResearch`, `docAuthoring`): preconditions that must hold before work begins. Frame the problem independent of tickets; route authorship to the owning specialist; cx-researcher returns primary sources first.
+1. **Gates** (`routeRequest` returns `framingChallenge`, `externalResearch`, `docAuthoring`, and for research-shaped asks `researchExecutionPolicy`): preconditions that must hold before work begins. Frame the problem independent of tickets; route authorship to the owning specialist; cx-researcher returns primary sources first; and the research policy tells every host whether to use local evidence, `knowledge_search`, Context7, official-doc web fetches, or other domain-primary sources.
 2. **Contract chain** (`routeRequest.contractChain`): ordered typed handoffs from `specialists/org/contracts/`. Each contract names a producer→consumer pair, required input fields, preconditions, expected output shape, and postconditions.
 3. **Specialist sequence**: dispatch plan with ordering and parallel markers. Gate-required specialists (cx-devil-advocate, cx-researcher, doc owner) are auto-prepended.
 

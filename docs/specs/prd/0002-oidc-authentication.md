@@ -57,60 +57,74 @@ Evidence: `README.md` §Enterprise ("RBAC and ABAC scaffolding, signed MCP allow
 
 ### Non-goals
 
-- SAML 2.0 — a separate protocol; add via an identity bridge if needed.
-- Fine-grained RBAC within Construct — follow-on PRD; OIDC provides identity, not authorization policy.
-- Building a custom IdP or user directory.
-- Social login for solo-tier personal use — GitHub Device Flow covers the solo developer case.
-- Back-Channel Logout (IdP-push session revocation) — deferred to Phase 3 or a follow-on.
+This PRD does not add SAML 2.0, fine-grained RBAC, a custom IdP or user directory, or social-login flows for solo-tier use. GitHub Device Flow continues to cover the solo developer path. IdP-push back-channel logout is also deferred to Phase 3 or a follow-on once the core relying-party contract is proven.
 
 ---
 
 ## Platform flow
 
+The platform has three distinct auth paths with different constraints. The dashboard flow is interactive and session-oriented, the CLI flow is user-approved but browser-independent, and the CI / Oracle flow is machine-scoped and non-user-bearing. Splitting them keeps each figure legible in the published artifact while preserving one end-to-end narrative.
+
+### Dashboard login flow
+
+The dashboard path is the highest-scrutiny human flow because it gates web access and approval-queue actions. It therefore carries PKCE, nonce validation, cookie hardening, and actor-attributed audit logging in the same sequence shown below.
+
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#f5f5f5', 'primaryBorderColor': '#1a1a1a', 'lineColor': '#333333', 'fontFamily': 'JetBrains Mono'}}}%%
 flowchart TD
-  subgraph dashboard ["Dashboard — Authorization Code + PKCE"]
-    A([User opens dashboard]) --> B{Session token valid?}
-    B -->|Yes| C([Dashboard loads])
-    B -->|No| D[Redirect to IdP /authorize with PKCE]
-    D --> E([User authenticates at IdP])
-    E --> F[IdP returns auth code to /callback]
-    F --> G[Construct exchanges code for id_token]
-    G --> H[Validate: sig · iss · aud · exp · nonce]
-    H --> I([Session created — HttpOnly cookie])
-    I --> J{High-risk action?}
-    J -->|Yes| K[Log event with verified sub]
-    J -->|No| L([Action proceeds])
-    K --> L
-  end
+A[User opens dashboard] --> B{Session token valid?}
+B -->|Yes| C[Dashboard loads]
+B -->|No| D[Redirect to IdP /authorize with PKCE]
+D --> E[User authenticates at IdP]
+E --> F[IdP returns auth code to /callback]
+F --> G[Construct exchanges code for id_token]
+G --> H[Validate sig, iss, aud, exp, nonce]
+H --> I[Session created - HttpOnly cookie]
+I --> J{High-risk action?}
+J -->|Yes| K[Log event with verified sub]
+J -->|No| L[Action proceeds]
+K --> L
+```
 
-  subgraph cli ["CLI — Device Authorization Grant RFC 8628"]
-    M([construct auth login]) --> N[POST /device_authorization]
-    N --> O[Display verification_uri + user_code]
-    O --> E
-    E --> P[Poll token endpoint]
-    P --> Q([Token stored in OS keychain])
-  end
+### CLI device flow
 
-  subgraph ci ["CI / Oracle — Client Credentials"]
-    R([CI runner / Oracle daemon]) --> S[POST /token client_credentials]
-    S --> T[Token scoped — no user claims]
-    T --> U([Logged: actor_type machine + client_id])
-  end
+The CLI flow deliberately avoids a localhost callback requirement. It matches the `gh auth login` ergonomics users already understand while still producing a short-lived token that never lands in plaintext project state.
+
+```mermaid
+flowchart TD
+A[construct auth login] --> B[POST /device_authorization]
+B --> C[Display verification_uri and user_code]
+C --> D[User approves in browser at IdP]
+D --> E[Poll token endpoint]
+E --> F{Approved before expiry?}
+F -->|Yes| G[Store token in OS keychain]
+F -->|No| H[Return actionable expiry or denial error]
+```
+
+### CI and Oracle machine flow
+
+The machine path is intentionally simpler because it carries no human identity claims. The contract here is strict scoping, short lifetime, and auditability, not interactive approval.
+
+```mermaid
+flowchart TD
+A[CI runner or Oracle daemon] --> B[POST /token client_credentials]
+B --> C[Receive machine-scoped token]
+C --> D[Run publish, embed, or scheduled action]
+D --> E[Write auth log with actor_type machine and client_id]
 ```
 
 ---
 
 ## API and interface contract
 
-- **C-1** `GET /.well-known/openid-configuration` — Construct discovers IdP endpoints from the provider's discovery document at startup. No provider-specific URLs hardcoded in core.
-- **C-2** `GET /api/auth/status` — Returns `{ authenticated: bool, sub?, email?, expires_at?, iss? }`. Already stubbed in `Dockerfile` health-check (`curl -fs http://localhost:4242/api/auth/status`).
-- **C-3** `GET /api/auth/callback` — Receives the auth code from IdP; performs token exchange; sets session cookie.
-- **C-4** `POST /api/auth/logout` — Clears the session cookie; optionally revokes token at the IdP revocation endpoint.
-- **C-5** `cx/auth.yaml` — Admin config file: `discovery_url`, `client_id`, `client_secret` (or `client_secret_ref` for `op://` resolution per FR-14), `allowed_domains`, `session_ttl_seconds`.
-- **C-6** Auth event log at `.cx/logs/auth-events.jsonl` — append-only JSONL; fields: `event`, `timestamp`, `sub`, `iss`, `session_id`, `actor_type`. No raw token bytes.
-- **C-7** OS keychain entry under the key `construct/auth/<issuer>` — stores access token + refresh token; absent from any `.cx/` plaintext file.
+| Contract | Interface | Requirement |
+|---|---|---|
+| C-1 | `GET /.well-known/openid-configuration` | Construct discovers IdP endpoints from the provider's discovery document at startup. No provider-specific URLs are hardcoded in core. |
+| C-2 | `GET /api/auth/status` | Returns `{ authenticated: bool, sub?, email?, expires_at?, iss? }`. Already stubbed in `Dockerfile` health-check (`curl -fs http://localhost:4242/api/auth/status`). |
+| C-3 | `GET /api/auth/callback` | Receives the auth code from the IdP, performs token exchange, and sets the session cookie. |
+| C-4 | `POST /api/auth/logout` | Clears the session cookie and optionally revokes the token at the IdP revocation endpoint. |
+| C-5 | `cx/auth.yaml` | Admin config file with `discovery_url`, `client_id`, `client_secret` (or `client_secret_ref` for `op://` resolution per FR-14), `allowed_domains`, and `session_ttl_seconds`. |
+| C-6 | `.cx/logs/auth-events.jsonl` | Append-only auth event log with `event`, `timestamp`, `sub`, `iss`, `session_id`, and `actor_type`. Raw token bytes are never written. |
+| C-7 | `construct/auth/<issuer>` | OS keychain entry that stores access and refresh tokens, with no plaintext copy in `.cx/`. |
 
 ---
 
@@ -119,37 +133,37 @@ flowchart TD
 ### Phase 1 — Dashboard OIDC Login (Authorization Code + PKCE)
 
 - **FR-1.1**: Unauthenticated requests to the dashboard must redirect to the IdP's `/authorize` endpoint using Authorization Code + PKCE (S256 code challenge method).
-  - *Acceptance*: `GET /` without a session cookie returns HTTP 302 to the IdP. A tampered `code_challenge` causes token exchange to fail with 400.
+  Acceptance: `GET /` without a session cookie returns HTTP 302 to the IdP. A tampered `code_challenge` causes token exchange to fail with 400.
 - **FR-1.2**: Construct must validate the `id_token` JWT: JWKS signature, `iss`, `aud`, `exp`, and `nonce` claims.
-  - *Acceptance*: An expired `exp` is rejected. An unknown signing key is rejected. A replayed nonce is rejected.
+  Acceptance: An expired `exp` is rejected. An unknown signing key is rejected. A replayed nonce is rejected.
 - **FR-1.3**: `cx/auth.yaml` must accept `discovery_url`, `client_id`, `client_secret` (or `client_secret_ref`), and `allowed_domains`.
-  - *Acceptance*: Pointing `discovery_url` at a mock OIDC server routes auth correctly without code changes.
+  Acceptance: Pointing `discovery_url` at a mock OIDC server routes auth correctly without code changes.
 - **FR-1.4**: Session tokens must be short-lived (default: 1 hour) and stored in an HttpOnly, Secure, SameSite=Strict cookie.
-  - *Acceptance*: Cookie is absent from `document.cookie`. A token past TTL triggers re-auth.
+  Acceptance: Cookie is absent from `document.cookie`. A token past TTL triggers re-auth.
 - **FR-1.5**: Auth events (login, validation failure, logout) must be appended to C-6 (`.cx/logs/auth-events.jsonl`).
-  - *Acceptance*: Successful login writes `{ event: "login", sub, iss, session_id, timestamp }`. No `id_token` bytes present.
+  Acceptance: Successful login writes `{ event: "login", sub, iss, session_id, timestamp }`. No `id_token` bytes present.
 
 ### Phase 2 — CLI Device Authorization Grant
 
 - **FR-2.1**: `construct auth login` must initiate RFC 8628: print `verification_uri` and `user_code`; poll the token endpoint until authorised or expired.
-  - *Acceptance*: Against a mock IdP, displays URL+code and resolves to a stored token on approval.
+  Acceptance: Against a mock IdP, displays URL+code and resolves to a stored token on approval.
 - **FR-2.2**: Resulting tokens must be stored in the OS keychain (C-7), absent from any `.cx/` plaintext file.
-  - *Acceptance*: `grep -r "access_token" .cx/` returns empty after `construct auth login`.
+  Acceptance: `grep -r "access_token" .cx/` returns empty after `construct auth login`.
 - **FR-2.3**: `construct auth logout` must delete the keychain entry and call the IdP revocation endpoint if advertised.
-  - *Acceptance*: Keychain entry gone; revocation request logged by mock IdP.
+  Acceptance: Keychain entry gone; revocation request logged by mock IdP.
 - **FR-2.4**: `construct auth status` must print `sub`, `email` (if present), `expires_at`, and `iss`; no raw token bytes.
-  - *Acceptance*: Output matches schema; raw token bytes absent.
+  Acceptance: Output matches schema; raw token bytes absent.
 - **FR-2.5**: CLI commands that require auth must fail with an actionable error when no valid token exists.
-  - *Acceptance*: `construct publish` exits 1 with `No valid session. Run: construct auth login`.
+  Acceptance: `construct publish` exits 1 with `No valid session. Run: construct auth login`.
 
 ### Phase 3 — Client Credentials for CI and Oracle
 
 - **FR-3.1**: Construct must support OAuth 2.0 Client Credentials for headless contexts. `client_id` and `client_secret` must be resolvable from env vars or `op://` references (FR-14).
-  - *Acceptance*: A CI job with `CX_CLIENT_ID` and `CX_CLIENT_SECRET` authenticates; `construct publish` runs without a device-flow prompt.
+  Acceptance: A CI job with `CX_CLIENT_ID` and `CX_CLIENT_SECRET` authenticates; `construct publish` runs without a device-flow prompt.
 - **FR-3.2**: Client-Credentials tokens must carry no user identity claims; approval log entries must include `actor_type: machine` and `client_id`.
-  - *Acceptance*: Log entry contains `actor_type: machine`; no `sub` claim.
+  Acceptance: Log entry contains `actor_type: machine`; no `sub` claim.
 - **FR-3.3**: Token rotation must be automatic — re-authenticate silently when within 60 seconds of expiry.
-  - *Acceptance*: A long-running `construct embed` session does not fail after the initial token TTL expires.
+  Acceptance: A long-running `construct embed` session does not fail after the initial token TTL expires.
 
 ---
 
@@ -191,14 +205,17 @@ Coordination required: dashboard team (Phase 1 middleware), platform engineer (P
 
 ## Operational requirements
 
-- **Auth event log** (`.cx/logs/auth-events.jsonl`): structured, append-only, queryable via `construct logs auth` (Phase 1 scope question — see Open Questions).
-- **JWKS cache**: persisted to `.cx/auth-cache.json`; refreshed on validation failure; TTL configurable (default 1 hour).
-- **Failure modes**:
-  - IdP discovery document unavailable at startup → cache last-known document; fail open on read, fail closed on write.
-  - JWKS key rotation → silent background refresh (NFR-3).
-  - Token expiry in headless context → automatic refresh (FR-3.3) with exponential backoff (NFR-7).
-- **Admin controls**: `construct auth revoke --sub <sub>` (Phase 2) invalidates all sessions for a given identity.
-- **Audit diagnostics**: `construct auth status --verbose` prints IdP issuer, token expiry, and last JWKS refresh timestamp without printing the token.
+The auth event log at `.cx/logs/auth-events.jsonl` must stay structured, append-only, and queryable via `construct logs auth` if that command lands in Phase 1.
+
+The JWKS cache persists at `.cx/auth-cache.json`, refreshes on validation failure, and defaults to a one-hour TTL.
+
+Failure handling follows three explicit branches:
+
+1. If the IdP discovery document is unavailable at startup, Construct caches the last-known document, fails open for reads, and fails closed for writes.
+2. If JWKS keys rotate, Construct performs a silent background refresh before surfacing an auth failure.
+3. If a headless token expires, Construct refreshes automatically under the FR-3.3 retry policy.
+
+Phase 2 admin controls include `construct auth revoke --sub <sub>` to invalidate all sessions for a given identity. Audit diagnostics via `construct auth status --verbose` print issuer, expiry, and last JWKS refresh time without exposing token bytes.
 
 ---
 
@@ -279,14 +296,14 @@ Coordination required: dashboard team (Phase 1 middleware), platform engineer (P
 
 ## References
 
-- `docs/specs/prd/0001-construct-org-in-a-box.md` — FR-4 (provider abstraction), FR-7 (cloud deployment), FR-8 (dashboard), FR-11 (hybrid approval), FR-14 (credential resolution), OQ-2 (auth provider choice)
-- `plan.md` — `construct-m7k2-auth-primitives` bead; auth-once contract; `secret-resolver` path
-- `STRATEGY.md` — Phase 4 (team mode with separate auth); Bet 2 (local-first, real path to multi-user)
-- `README.md` — Enterprise tier: RBAC/ABAC scaffolding, signed MCP allowlists, mandatory audit
-- `Dockerfile` — existing `/api/auth/status` health-check stub
-- `specialists/prompts/cx-security.md` — auth/JWT/session audit checklist
-- `skills/roles/architect.enterprise.md` — SSO, RBAC, audit, tenant isolation checklist
-- OpenID Connect Core 1.0 — https://openid.net/specs/openid-connect-core-1_0.html
-- RFC 7636: PKCE — https://datatracker.ietf.org/doc/html/rfc7636
-- RFC 8628: Device Authorization Grant — https://datatracker.ietf.org/doc/html/rfc8628
-- RFC 6749: OAuth 2.0 — https://datatracker.ietf.org/doc/html/rfc6749
+1. `docs/specs/prd/0001-construct-org-in-a-box.md` — FR-4 (provider abstraction), FR-7 (cloud deployment), FR-8 (dashboard), FR-11 (hybrid approval), FR-14 (credential resolution), OQ-2 (auth provider choice)
+2. `plan.md` — `construct-m7k2-auth-primitives` bead; auth-once contract; `secret-resolver` path
+3. `STRATEGY.md` — Phase 4 (team mode with separate auth); Bet 2 (local-first, real path to multi-user)
+4. `README.md` — Enterprise tier: RBAC/ABAC scaffolding, signed MCP allowlists, mandatory audit
+5. `Dockerfile` — existing `/api/auth/status` health-check stub
+6. `specialists/prompts/cx-security.md` — auth/JWT/session audit checklist
+7. `skills/roles/architect.enterprise.md` — SSO, RBAC, audit, tenant isolation checklist
+8. OpenID Connect Core 1.0 — https://openid.net/specs/openid-connect-core-1_0.html
+9. RFC 7636: PKCE — https://datatracker.ietf.org/doc/html/rfc7636
+10. RFC 8628: Device Authorization Grant — https://datatracker.ietf.org/doc/html/rfc8628
+11. RFC 6749: OAuth 2.0 — https://datatracker.ietf.org/doc/html/rfc6749

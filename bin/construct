@@ -1618,7 +1618,7 @@ async function cmdExport(args) {
     inputPath: resolvedIn,
     outputPath: resolvedOut,
     format: toFlag,
-    figures: toFlag === 'pdf' ? figures : false,
+    figures,
     branding,
     repoRoot: ROOT_DIR,
   });

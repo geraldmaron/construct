@@ -142,6 +142,7 @@ test('a host can execute a research-shaped request through orchestration_run aft
   }));
   assert.equal(policy.track, 'focused');
   assert.equal(policy.suggestedWorkflowType, 'research-synthesis');
+  assert.equal(policy.researchExecutionPolicy?.mode, 'evidence-first');
 
   const run = payload(await client.callTool({
     name: 'orchestration_run',
@@ -158,4 +159,5 @@ test('a host can execute a research-shaped request through orchestration_run aft
   assert.equal(run.track, 'focused');
   assert.equal(run.suggestedWorkflowType, 'research-synthesis');
   assert.deepEqual(run.specialists, ['cx-researcher']);
+  assert.equal(run.researchExecutionPolicy?.mode, 'evidence-first');
 });

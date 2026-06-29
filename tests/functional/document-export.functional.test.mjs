@@ -22,8 +22,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
-import { detect, exportMarkdown, EXPORT_FORMATS } from '../../lib/document-export.mjs';
+import { detect, exportMarkdown, EXPORT_FORMATS, docxRenderedDiagrams, htmlRenderedDiagrams } from '../../lib/document-export.mjs';
 
 const tmpDirs = [];
 
@@ -67,6 +68,11 @@ function stubPandocPath(prefix = 'cx-export-stub-') {
     fs.chmodSync(pandocPath, 0o755);
   }
   return { dir, pandocPath };
+}
+
+function zipCommandPresent() {
+  const checker = process.platform === 'win32' ? 'where' : 'which';
+  return spawnSync(checker, ['zip'], { stdio: 'ignore' }).status === 0;
 }
 
 test('detect reports unsupported format clearly without spawning', () => {
@@ -176,4 +182,42 @@ test('detect pptx format reports pptxgenjs when absent', () => {
   } else {
     assert.ok(result.missing.includes('pptxgenjs'));
   }
+});
+
+test('docxRenderedDiagrams rejects unresolved source and accepts embedded figure media', (t) => {
+  if (!zipCommandPresent()) {
+    t.skip('zip not installed');
+    return;
+  }
+  const dir = tmpDir('cx-docx-render-check-');
+  const src = '## Flow\n\n```mermaid\nflowchart TD\nA --> B\n```\n';
+  const root = path.join(dir, 'docx');
+  fs.mkdirSync(path.join(root, 'word', '_rels'), { recursive: true });
+  fs.mkdirSync(path.join(root, '_rels'), { recursive: true });
+  fs.writeFileSync(path.join(root, '[Content_Types].xml'), '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+  fs.writeFileSync(path.join(root, '_rels', '.rels'), '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+  fs.writeFileSync(path.join(root, 'word', 'document.xml'), '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>flowchart TD</w:t></w:r></w:p></w:body></w:document>');
+  fs.writeFileSync(path.join(root, 'word', '_rels', 'document.xml.rels'), '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>');
+  const unresolved = path.join(dir, 'unresolved.docx');
+  spawnSync('zip', ['-q', '-r', unresolved, '[Content_Types].xml', '_rels', 'word'], { cwd: root });
+  assert.equal(docxRenderedDiagrams(unresolved, src), false);
+
+  fs.mkdirSync(path.join(root, 'word', 'media'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'word', 'document.xml'), '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Rendered figure</w:t></w:r></w:p></w:body></w:document>');
+  fs.writeFileSync(path.join(root, 'word', '_rels', 'document.xml.rels'), '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/></Relationships>');
+  fs.writeFileSync(path.join(root, 'word', 'media', 'image1.png'), 'png');
+  const resolved = path.join(dir, 'resolved.docx');
+  spawnSync('zip', ['-q', '-r', resolved, '[Content_Types].xml', '_rels', 'word'], { cwd: root });
+  assert.equal(docxRenderedDiagrams(resolved, src), true);
+});
+
+test('htmlRenderedDiagrams rejects raw source and accepts rendered tags', () => {
+  const dir = tmpDir('cx-html-render-check-');
+  const src = '## Flow\n\n```mermaid\nflowchart TD\nA --> B\n```\n';
+  const unresolved = path.join(dir, 'unresolved.html');
+  const resolved = path.join(dir, 'resolved.html');
+  fs.writeFileSync(unresolved, '<html><body><pre>flowchart TD A --> B</pre></body></html>');
+  fs.writeFileSync(resolved, '<html><body><img src="data:image/png;base64,abc" alt="diagram"></body></html>');
+  assert.equal(htmlRenderedDiagrams(unresolved, src), false);
+  assert.equal(htmlRenderedDiagrams(resolved, src), true);
 });

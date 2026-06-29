@@ -271,6 +271,8 @@ Returns `{ allowed, reason, approvalRequired, source, brokerActive }`. Solo mode
 ### `orchestration_policy`
 Classifies a request into intent, execution track, specialists, and approval boundaries.
 
+For research-shaped requests, the response also carries `researchExecutionPolicy`: a surface-agnostic evidence ladder that says when to use local evidence, `knowledge_search`, Context7, direct official-doc web fetches, or other domain-primary sources. Hosts should follow that policy instead of assuming Context7 exists.
+
 | Parameter | Type | Description |
 |---|---|---|
 | `request` | string | User request or objective text |
