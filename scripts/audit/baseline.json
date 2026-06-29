@@ -1,10 +1,11 @@
 {
-  "note": "Accepted open audit findings (ratchet) for gated phases. Tightened as remediation lands. Empty: the dashboard-deprecation collateral (three test-only modules and two stale doc references) was rehomed-or-retired in construct-596m, so the ratchet now accepts no open findings.",
+  "note": "Accepted open audit findings (ratchet) for gated phases. Tightened as remediation lands. lib/mcp/tools/web-search.mjs is test-only until its MCP registration lands (construct-rr63.5.4, blocked by uncommitted server.mjs/mcp-tools.md WIP); construct-rr63.5.4 removes this id when web_search is wired into the dispatch.",
   "acceptedIds": [
     "03-docs:review-doc-reference:auth",
     "03-docs:review-doc-reference:chat",
     "03-docs:review-doc-reference:logs",
     "02-deadcode:module-test-only:lib/models/execution-policy.mjs",
-    "02-deadcode:module-test-only:lib/models/provider-poll.mjs"
+    "02-deadcode:module-test-only:lib/models/provider-poll.mjs",
+    "02-deadcode:module-test-only:lib/mcp/tools/web-search.mjs"
   ]
 }
