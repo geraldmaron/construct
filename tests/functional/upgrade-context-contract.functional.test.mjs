@@ -24,7 +24,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 
-import { refreshContextMd } from '../../lib/tracking-surfaces.mjs';
+import { refreshContextMd, reconvergeContextMd } from '../../lib/tracking-surfaces.mjs';
 
 const USER_SECTION = `## Hand-curated section
 
@@ -86,4 +86,35 @@ test('the managed-section structure survives refresh (refresh updates managed, n
   for (const heading of ['## Active Work', '## Recent Decisions', '## Architecture Notes', '## Hand-curated section']) {
     assert.ok(body.includes(heading), `${heading} present after refresh`);
   }
+});
+
+test('re-converge WITHOUT consent refuses and preserves the file (decision default)', async () => {
+  const rootDir = makeProject();
+  const before = extractUserSection(rootDir);
+  const result = await reconvergeContextMd({ rootDir });
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'consent-required');
+  assert.equal(result.preserved, true);
+  assert.equal(extractUserSection(rootDir), before, 'no consent means the file is untouched');
+});
+
+test('re-converge WITH consent resets to the scaffold, discarding user drift', async () => {
+  const rootDir = makeProject();
+  assert.ok(extractUserSection(rootDir), 'user content present before re-converge');
+  const result = await reconvergeContextMd({ rootDir, consent: true });
+  assert.equal(result.ok, true);
+  assert.equal(result.reconverged, true);
+  assert.equal(extractUserSection(rootDir), null, 'consented re-converge removes user drift');
+  const body = readFileSync(join(rootDir, '.cx', 'context.md'), 'utf8');
+  for (const heading of ['## Active Work', '## Recent Decisions', '## Architecture Notes', '## Open Questions']) {
+    assert.ok(body.includes(heading), `scaffold heading ${heading} present after re-converge`);
+  }
+});
+
+test('re-converge refuses cleanly when context.md is absent', async () => {
+  const rootDir = makeProject();
+  rmSync(join(rootDir, '.cx', 'context.md'));
+  const result = await reconvergeContextMd({ rootDir, consent: true });
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'no-context-md');
 });
