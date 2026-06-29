@@ -9,7 +9,9 @@
  *   - run.mjs respects CONSTRUCT_DEV_PATH and forwards to the local checkout.
  *   - run.mjs exits 127 with a useful error when no runtime is reachable.
  *   - The materialised `.claude/settings.json` references hook commands as
- *     `node .construct/run.mjs hook <name>` (no `$HOME/.construct` paths).
+ *     `node "${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs" hook <name>` — cwd-anchored
+ *     on the project root so they resolve when Claude Code runs a hook from any
+ *     directory (no `$HOME/.construct` paths).
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -96,13 +98,17 @@ describe('project-local launcher staging', () => {
 });
 
 describe('settings.json hook command shape', () => {
-  it('hook commands target node .construct/run.mjs hook <name>', () => {
+  it('hook commands anchor on ${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs', () => {
     const settingsPath = path.join(projectDir, '.claude', 'settings.json');
     assert.ok(fs.existsSync(settingsPath));
     const text = fs.readFileSync(settingsPath, 'utf8');
     assert.ok(!/\$HOME\/\.construct/.test(text), 'must not reference $HOME paths');
-    assert.match(text, /node \.construct\/run\.mjs hook session-start/);
-    assert.match(text, /node \.construct\/run\.mjs hook pre-push-gate/);
+    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\.\}\/\.construct\/run\.mjs.{0,4}hook session-start/);
+    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\.\}\/\.construct\/run\.mjs.{0,4}hook pre-push-gate/);
+    assert.ok(
+      !/node \.construct\/run\.mjs hook/.test(text),
+      'bare relative .construct/run.mjs breaks when the hook cwd is not the project root',
+    );
   });
 });
 
