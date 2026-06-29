@@ -4,6 +4,13 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Security
+
+- GitHub MCP wiring now defaults to **OAuth**, matching GitHub's hosted remote server (`https://api.githubcopilot.com/mcp/`) and the 2026 MCP standard (OAuth 2.1 + PKCE for remote HTTP servers). `construct mcp add github` writes a URL-only entry with **no Authorization header and no token on disk**; the host (Claude Code `claude mcp login github`, OpenCode `opencode mcp auth github`, VS Code/Cursor sign-in prompt) runs the one-click browser flow and stores the credential in its own secure store. This removes the previous behavior of embedding the literal `gh` token verbatim into every host config (`~/.claude/settings.json`, `.claude/settings.json`, `~/.config/opencode/opencode.json`, `.vscode/mcp.json`).
+- A PAT remains available as an explicit opt-in fallback for headless/CI via `construct mcp add github --token`. Even then the credential is emitted as a host-resolved env reference — Claude `${GITHUB_TOKEN}`, VS Code/Cursor `${env:GITHUB_TOKEN}`, OpenCode `{env:GITHUB_TOKEN}` — never the literal value. `lib/mcp-platform-config.mjs` builds the entries; `tests/mcp-secret-ref.test.mjs` guards both the OAuth (no-header) default and the no-literal-leak property of the PAT path.
+
+## [1.3.1] - 2026-06-29
+
 ### Fixed
 
 - Project-mode Claude Code hooks no longer crash when Claude Code runs a hook from a working directory other than the project root. The generated `.claude/settings.json` hook commands now anchor on `node "${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs"` instead of a bare relative `.construct/run.mjs`, which previously failed with `Cannot find module …/.construct/run.mjs` (cjs/loader) on every Bash tool call when the cwd was `$HOME`. Existing installs self-heal on `construct sync` / `construct upgrade`.
