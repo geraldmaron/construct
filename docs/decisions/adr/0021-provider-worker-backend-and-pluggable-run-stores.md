@@ -4,9 +4,10 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 # ADR-0021: The orchestration runtime gains a provider worker backend that executes specialist reasoning, and pluggable run stores
 
 - **Date**: 2026-06-03
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
 - **Supersedes**: none (this ADR partially refines the prior runtime decision for the provider backend only — see Decision; the prepare-only boundary stays in force for the inline backend)
+- **Status note (2026-06-29, self-audit construct-rr63.1.2)**: shipped and test-covered — implemented by `lib/orchestration/worker.mjs` (`runTaskViaProvider`) and `lib/orchestration/store.mjs` (`resolveRunStore`) with `tests/orchestration-run-store-sqlite.test.mjs` and `tests/orchestration-run-store-postgres.test.mjs`. Status corrected from `proposed` to reflect ground truth.
 
 <!-- Owning specialist: cx-architect. Part of the host-independent local orchestration runtime (epic construct-d6pf). -->
 
