@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-28T22:20:26.240Z",
+  "generatedAt": "2026-06-29T17:27:03.308Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 502,
-    "topLevelTestFiles": 293,
+    "testFiles": 503,
+    "topLevelTestFiles": 294,
     "nestedTestFiles": 209,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 24,
     "byLayer": {
-      "unit": 333,
+      "unit": 334,
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
       "functional": 130
     },
     "byCategory": {
-      "unit": 294,
+      "unit": 295,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
@@ -2881,6 +2881,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "mcp-protocol-health.test.mjs — verify the doctor mcp-protocol watcher."
+    },
+    {
+      "path": "tests/mcp-secret-ref.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp-secret-ref.test.mjs — remote MCP header secrets must be emitted as"
     },
     {
       "path": "tests/mcp-server-identity.test.mjs",
