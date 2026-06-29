@@ -20,25 +20,36 @@ const GITHUB_DEF = {
 
 const SENTINEL = 'sentinel-value-must-not-be-embedded';
 
-test('Claude entry references ${GITHUB_TOKEN}, not the literal token', () => {
-  const entry = buildClaudeMcpEntry('github', GITHUB_DEF, { GITHUB_TOKEN: SENTINEL });
+test('OAuth is the default: no auth header / token is written at all', () => {
+  const claude = buildClaudeMcpEntry('github', GITHUB_DEF, { GITHUB_TOKEN: SENTINEL });
+  const vscode = buildClaudeMcpEntry('github', GITHUB_DEF, { GITHUB_TOKEN: SENTINEL }, { host: 'vscode' });
+  const { entry: opencode } = buildOpenCodeMcpEntry('github', GITHUB_DEF, { GITHUB_TOKEN: SENTINEL });
+  for (const entry of [claude, vscode, opencode]) {
+    assert.equal(entry.headers, undefined, 'OAuth config must carry no headers');
+    assert.ok(!JSON.stringify(entry).includes(SENTINEL), 'no token value may appear in an OAuth entry');
+  }
+  assert.equal(claude.url, 'https://api.githubcopilot.com/mcp/');
+});
+
+test('PAT fallback (Claude) references ${GITHUB_TOKEN}, not the literal token', () => {
+  const entry = buildClaudeMcpEntry('github', GITHUB_DEF, { GITHUB_TOKEN: SENTINEL }, { auth: 'pat' });
   assert.equal(entry.headers.Authorization, 'Bearer ${GITHUB_TOKEN}');
   assert.ok(!JSON.stringify(entry).includes(SENTINEL), 'literal token must not appear in the Claude entry');
 });
 
-test('VS Code entry references ${env:GITHUB_TOKEN}', () => {
-  const entry = buildClaudeMcpEntry('github', GITHUB_DEF, { GITHUB_TOKEN: SENTINEL }, { host: 'vscode' });
+test('PAT fallback (VS Code) references ${env:GITHUB_TOKEN}', () => {
+  const entry = buildClaudeMcpEntry('github', GITHUB_DEF, { GITHUB_TOKEN: SENTINEL }, { host: 'vscode', auth: 'pat' });
   assert.equal(entry.headers.Authorization, 'Bearer ${env:GITHUB_TOKEN}');
   assert.ok(!JSON.stringify(entry).includes(SENTINEL), 'literal token must not appear in the VS Code entry');
 });
 
-test('OpenCode entry references {env:GITHUB_TOKEN}', () => {
-  const { entry } = buildOpenCodeMcpEntry('github', GITHUB_DEF, { GITHUB_TOKEN: SENTINEL });
+test('PAT fallback (OpenCode) references {env:GITHUB_TOKEN}', () => {
+  const { entry } = buildOpenCodeMcpEntry('github', GITHUB_DEF, { GITHUB_TOKEN: SENTINEL }, { auth: 'pat' });
   assert.equal(entry.headers.Authorization, 'Bearer {env:GITHUB_TOKEN}');
   assert.ok(!JSON.stringify(entry).includes(SENTINEL), 'literal token must not appear in the OpenCode entry');
 });
 
-test('header reference is emitted even when no token value is resolvable', () => {
-  const entry = buildClaudeMcpEntry('github', GITHUB_DEF, {});
+test('PAT fallback emits a reference even when no token value is resolvable', () => {
+  const entry = buildClaudeMcpEntry('github', GITHUB_DEF, {}, { auth: 'pat' });
   assert.equal(entry.headers.Authorization, 'Bearer ${GITHUB_TOKEN}');
 });
