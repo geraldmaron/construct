@@ -753,11 +753,21 @@ export function renderRoleFrameworkSection(entry) {
 // small local models' tool-use reliability sharply (bead construct-c16l). Shared by the
 // full path and the capability-tiered local path so both stay in sync.
 
-const ORCHESTRATION_MICRO_PROMPT =
-  `You are the primary orchestrator. To discover available specialist agents, you MUST call the \`orchestration_policy\` MCP tool. Do not guess agent names.\n\n` +
-  `Example — the user says "add rate limiting to the API". Your first action is a tool call, not prose:\n` +
-  `  call orchestration_policy { "task": "add rate limiting to the API" }\n` +
-  `Then dispatch the specialists it returns. Always call the tool before answering.`;
+function orchestrationToolName(platform, toolName) {
+  if (platform === "opencode") return `construct-mcp_${toolName}`;
+  return toolName;
+}
+
+function orchestrationMicroPrompt(platform) {
+  const policyTool = orchestrationToolName(platform, "orchestration_policy");
+  const runTool = orchestrationToolName(platform, "orchestration_run");
+  return (
+    `You are the primary orchestrator. Before any non-trivial answer, call \`${policyTool}\` with the user's \`request\`. Do not guess agent names or workflow types.\n\n` +
+    `Example — the user says "add rate limiting to the API". Your first action is a tool call, not prose:\n` +
+    `  call ${policyTool} { "request": "add rate limiting to the API" }\n` +
+    `If the route is focused/orchestrated specialist work, call \`${runTool}\` with the same request. If the route suggests a workflow such as \`research-synthesis\`, pass it as \`workflow_type\`. Do not narrate completed research unless \`${runTool}\` or evidence tools actually ran.`
+  );
+}
 
 // Directive for the local editor agent (construct-local). It executes bounded work on
 // the cheap local model and hands planning/reasoning back to the construct architect —
@@ -821,7 +831,7 @@ function buildPrompt(entry, allEntries, platform, { capabilityTier = 'full' } = 
   if (capabilityTier && capabilityTier !== 'full' && entry.promptFile) {
     let slim = renderPersonaForTier(readPromptBody(entry.promptFile, root), capabilityTier);
     if (entry.injectAgentRoster) {
-      slim = `${ORCHESTRATION_MICRO_PROMPT}\n\n${slim}`;
+      slim = `${orchestrationMicroPrompt(platform)}\n\n${slim}`;
     }
     return enforcePromptWordCap(slim, entry);
   }
@@ -844,7 +854,7 @@ function buildPrompt(entry, allEntries, platform, { capabilityTier = 'full' } = 
   // orchestration_policy / orchestration_run — never inject the static roster.
 
   if (entry.injectAgentRoster) {
-    prompt = `${ORCHESTRATION_MICRO_PROMPT}\n\n${prompt}`;
+    prompt = `${orchestrationMicroPrompt(platform)}\n\n${prompt}`;
   }
 
   prompt += buildRoleFooter(entry);

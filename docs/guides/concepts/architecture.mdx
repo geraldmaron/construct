@@ -466,7 +466,7 @@ body_hash:   sha256:<hex>          # SHA-256 of trimmed body
 
 29 specialists ship in the default profile (including `cx-oracle`). Each has a role, model tier (reasoning / standard / fast), and a prompt file in `specialists/prompts/`. The canonical source is `specialists/org`.
 
-**Single Front Door:** only `construct` appears in editor agent pickers. Internal specialists (`cx-*`) dispatch via `orchestration_policy` / `orchestration_run` — not as separate picker entries. Sync injects an orchestration micro-prompt instead of a static roster token block.
+**Single Front Door:** only `construct` appears in editor agent pickers. Internal specialists (`cx-*`) dispatch via `orchestration_policy` / `orchestration_run` — not as separate picker entries. Sync injects an orchestration micro-prompt instead of a static roster token block. Research-shaped host asks classify first, then execute via `orchestration_run`; `workflow_invoke` is the planning contract, not proof that evidence was gathered.
 
 Full roster with domain groupings: [Agents and personas](/guides/concepts/agents-and-personas).
 Full reference with tier and purpose per specialist: [Specialist reference](/guides/reference/specialists).

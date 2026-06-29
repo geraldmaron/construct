@@ -123,7 +123,7 @@ Parallel work rule: one writer per file. If multiple agent or harness sessions a
 > Narrative docs index — this table is regenerated from `registry/capabilities.json`.
 > Run `npm run docs:sync` after catalog changes. Do not hand-edit inside the AUTO markers.
 
-Catalog census: 0 CLI commands, 0 npm scripts, 0 embedded workflows.
+Catalog census: 128 CLI commands, 40 npm scripts, 10 embedded workflows.
 
 | Capability | Criticality | CLI surface | Verification |
 |---|---|---|---|
