@@ -4,6 +4,15 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- Project-mode Claude Code hooks no longer crash when Claude Code runs a hook from a working directory other than the project root. The generated `.claude/settings.json` hook commands now anchor on `node "${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs"` instead of a bare relative `.construct/run.mjs`, which previously failed with `Cannot find module …/.construct/run.mjs` (cjs/loader) on every Bash tool call when the cwd was `$HOME`. Existing installs self-heal on `construct sync` / `construct upgrade`.
+- `construct doctor consistency` no longer reports 38 non-actionable package-internal warnings on a clean init. `roles-drift` was counting a specialist's own `id` and `name` as two owners (every specialist read as "ambiguous after normalization"); `mcp-drift` was scraping every `export function` in `lib/mcp/tools/*.mjs` (sweeping in private helpers like `exec`/`read_json`) and matching against a brittle `name === '<tool>'` dispatch pattern that the `xxxTool`→`'xxx'` naming convention never satisfied. Both checks are now correct at the source, and a genuinely dead `getTeam` import was removed from the MCP server.
+
+### Changed
+
+- `construct doctor consistency` separates operator tiers: user-actionable findings show by default, while package/maintainer diagnostics (`mcp-drift`, `roles-drift`) are summarized as a count and surfaced in full only under `construct doctor consistency --strict` (`--all`/`--debug`). A clean tree now reads `0 warning(s)`.
+
 ## [1.3.0] - 2026-06-29
 
 This release makes OpenCode the primary conversation surface, retires the web/dashboard tier in favor of a terminal-first architecture, and consolidates the legacy registries into a single unified registry (RFC-0004). It contains two breaking changes — see **Removed**.

@@ -1002,13 +1002,20 @@ ${buildPrompt(entry, allEntries, "claude")}
  * Rewrite the home-mode hook command pattern
  *   node "$HOME/.config/construct/lib/hooks/<name>.mjs"
  * into the project-portable form
- *   node .construct/run.mjs hook <name>
+ *   node "${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs" hook <name>
  * so the resulting settings.json works on any clone where the project ships
  * the .construct/ launcher (committed by `npm install`'s postinstall or by
  * `construct init`). The launcher resolves Construct via node_modules → npx
  * → globally-installed CLI → cached binary → docker, in that order, so it
  * works for non-Node ecosystems too. Other commands (inline node -e
  * snippets, npx block-no-verify@…) are left untouched.
+ *
+ * The `${CLAUDE_PROJECT_DIR:-.}` anchor matters: Claude Code invokes hooks with
+ * a working directory that is not guaranteed to be the project root (observed:
+ * $HOME), and a bare relative `.construct/run.mjs` then fails with MODULE_NOT_FOUND
+ * at node:internal/modules/cjs/loader. CLAUDE_PROJECT_DIR is the project root Claude
+ * Code exports to every hook (same var lib/hooks/*.mjs already read); the `:-.`
+ * fallback preserves the prior relative behavior wherever the var is unset.
  */
 function makeHooksPortable(hooksJson) {
   // Operate on the in-memory object so we don't fight JSON string escaping.
@@ -1017,7 +1024,7 @@ function makeHooksPortable(hooksJson) {
     const m = cmd.match(/^node\s+"?\$HOME\/\.config\/construct\/lib\/hooks\/([a-z0-9-]+)\.mjs"?\s*(.*)$/);
     if (!m) return cmd;
     const [, name, rest] = m;
-    return `node .construct/run.mjs hook ${name}${rest ? ' ' + rest.trim() : ''}`;
+    return `node "\${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs" hook ${name}${rest ? ' ' + rest.trim() : ''}`;
   };
 
   const walk = (node) => {
