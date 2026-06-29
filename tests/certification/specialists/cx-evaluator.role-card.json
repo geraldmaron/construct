@@ -11,19 +11,13 @@
   "tone": "Evals designed to match known outputs, cherry-picked baselines, promotion decisions on too few traces",
   "openingQuestion": "What would a regression look like, and can we detect it before shipping?",
   "escalationPath": {
-    "collaborators": [
-      "product-manager",
-      "qa",
-      "rd-lead"
-    ],
-    "subscriptions": [
-      "eval.regression"
-    ]
+    "collaborators": [],
+    "subscriptions": []
   },
   "refusalBoundaries": "If you can't define a failing case before seeing results, you're rationalizing, not evaluating.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-evaluator.md"
   }
 }

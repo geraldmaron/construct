@@ -10,7 +10,7 @@
 
 Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. You talk to one persona called `construct`. Behind it is a team of specialists shaped by your **org profile**: software R&D by default, with curated profiles for operations, creative, and research orgs, plus a schema-validated escape hatch for custom profiles. Each profile organizes its specialists by department (Product, Engineering, Operations, etc.) and carries its own intake taxonomy, doc templates, and role set. Sessions survive boundary changes via durable state in `.cx/`, beads, and a local vector index. Solo by default. Can deploy centrally for teams that want shared memory, telemetry, queues, and policy.
 
-`construct profile show|list|set <id>` to switch. See [Profile lifecycle](https://geraldmaron.github.io/construct/concepts/profile-lifecycle) for how new profiles are built (it's a research process, not a JSON exercise).
+`construct scope show|list|set <id>` to switch. See [Profile lifecycle](https://geraldmaron.github.io/construct/concepts/scope-lifecycle) for how new profiles are built (it's a research process, not a JSON exercise).
 
 The team and enterprise modes exist because I wanted to learn what shipping a real multi-tenant tool would look like. The project is still open source, the code is still public, and the bar is still "does this help me learn." Run it solo if that's all you need.
 
@@ -69,7 +69,7 @@ In your editor, start with `@construct`. Ask for the outcome, not the specialist
 | Add a custom specialist | [Add a custom specialist](https://geraldmaron.github.io/construct/cookbook/add-a-custom-agent) |
 | Fix a blocked commit or red CI | [Fix a policy violation](https://geraldmaron.github.io/construct/cookbook/fix-a-policy-violation) |
 | Plug in your own LLM | [Plug in your own LLM](https://geraldmaron.github.io/construct/cookbook/plug-in-your-own-llm) |
-| Run terminal chat on Construct's owned loop | [Construct chat](https://geraldmaron.github.io/construct/cookbook/construct-chat) |
+| Use Construct conversationally | [Connect your editor](https://geraldmaron.github.io/construct/start/connect-your-editor) |
 | Check fleet health (Oracle) | [Architecture — Oracle](https://geraldmaron.github.io/construct/concepts/architecture) |
 | Look up a CLI command | [CLI reference](https://geraldmaron.github.io/construct/reference/cli) |
 
@@ -130,16 +130,15 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 | Command | What it does |
 |---|---|
-| `construct dashboard` | Start the local dashboard/orchestration daemon (or --token to mint a dashboard token) |
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
 | `construct init` | Project setup (once per repo): scaffold .cx/, AGENTS.md, plan.md, adapters |
 | `construct install` | Machine setup (scoped per ADR-0029): --scope=project\|user\|both, default project |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
-| `construct profile` | Manage the active org profile and its lifecycle (draft, promote, archive, health) |
 | `construct recommendations` | View and manage artifact recommendations |
 | `construct sandbox` | Isolated tmpdir-based environment for QA / specialist dry-runs |
+| `construct scope` | Manage the active org scope and its lifecycle (draft, promote, archive, health) |
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
@@ -152,7 +151,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
-| `construct demo` | Run guided demos via construct chat (default) or record VHS/asciinema tapes |
+| `construct demo` | Run guided tours or record VHS/asciinema tapes |
 | `construct diagram` | Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001) |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
@@ -166,11 +165,11 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
-| `construct reflect` | Capture improvement feedback from chat session and update Construct core |
+| `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
-| `construct team` | Team review and template listing |
+| `construct team` | Team review and template listing (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
 | `construct wireframe` | Generate wireframes from description |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
@@ -182,7 +181,6 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 |---|---|
 | `construct acp` | Run Construct as an Agent Client Protocol (ACP) server over stdio for Zed/JetBrains/VS Code ACP clients |
 | `construct capability` | Describe what this Construct install can do (embedded contract; read-only, secret-free) |
-| `construct chat` | Interactive terminal chat on Construct's owned agent loop, with a multi-pane transparency surface (live token/cost/context usage, reasoning, tool timeline, and the planned specialist route); switch models, change settings, and see a token/cost breakdown in-session. Use --accessible or --plain for the linear, screen-reader-friendly renderer |
 | `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
 | `construct execution` | Resolve the execution-capability contract for an embedded workflow (orchestrated vs prompt-only; descriptive, not enforced) |
 | `construct hosts` | Show host support for Construct orchestration |
@@ -277,7 +275,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 <!-- AUTO:structure -->
 ```text
 construct/
-├── apps             User-facing apps shipped from this repo (chat, dashboard, docs)
+├── apps             User-facing apps shipped from this repo (dashboard, docs)
 ├── bin              CLI entrypoint (`construct`)
 ├── commands         Command prompt assets
 ├── config           Repo-wide controlled vocabulary (tag-vocabulary.json)
@@ -288,7 +286,6 @@ construct/
 ├── packages         Shared workspace packages (e.g. cx-ui)
 ├── personas         Persona prompt definitions
 ├── platforms        Host adapter capability configs
-├── profiles         Profile catalog
 ├── registry         Product capability registry
 ├── rules            Coding and quality standards
 ├── schemas          Registry and config JSON Schema

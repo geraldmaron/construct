@@ -17,6 +17,7 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 import { lintFile, KNOWN_CX_ROLE_IDS } from '../lib/comment-lint.mjs';
+import { getRegistry } from './test-registry-fixtures.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -107,11 +108,11 @@ describe('tool-invisibility prevention is wired so it cannot be silently dropped
     assert.ok(fs.existsSync(path.join(ROOT, 'rules/common/tool-invisibility.md')));
   });
 
-  it('shared guidance carries the invisibility directive (reaches every specialist)', () => {
-    const registry = JSON.parse(fs.readFileSync(path.join(ROOT, 'specialists/registry.json'), 'utf8'));
-    const joined = (registry.sharedGuidance || []).join('\n');
-    assert.match(joined, /Tool invisibility/);
-    assert.match(joined, /tool-invisibility\.md/);
+  it('org policy carries the invisibility directive', () => {
+    const registry = getRegistry();
+    const policy = registry.policies?.['tool-invisibility'];
+    assert.match(`${policy?.id}\n${policy?.description}\n${policy?.enforcement}`, /tool-invisibility|invisibility/i);
+    assert.equal(policy?.source, 'rules/common/tool-invisibility.md');
   });
 
   it('the persona references the rule', () => {
@@ -120,13 +121,14 @@ describe('tool-invisibility prevention is wired so it cannot be silently dropped
   });
 
   it('the policy inventory registers the rule', () => {
-    const inv = JSON.parse(fs.readFileSync(path.join(ROOT, 'specialists/policy-inventory.json'), 'utf8'));
-    assert.ok(inv.policies.some((p) => p.id === 'tool-invisibility' && p.source === 'rules/common/tool-invisibility.md'));
+    const registry = getRegistry();
+    const policies = Object.values(registry.policies || {});
+    assert.ok(policies.some((p) => p.id === 'tool-invisibility' && p.source === 'rules/common/tool-invisibility.md'));
   });
 
-  it('KNOWN_CX_ROLE_IDS matches specialists/registry.json (drift guard for the anchored regex)', () => {
-    const registry = JSON.parse(fs.readFileSync(path.join(ROOT, 'specialists/registry.json'), 'utf8'));
-    const expected = registry.specialists.map((s) => s.name).sort();
+  it('KNOWN_CX_ROLE_IDS matches specialists/org (drift guard for the anchored regex)', () => {
+    const registry = getRegistry();
+    const expected = Object.values(registry.specialists || {}).map((s) => s.name).sort();
     assert.deepEqual([...KNOWN_CX_ROLE_IDS].sort(), expected);
   });
 });

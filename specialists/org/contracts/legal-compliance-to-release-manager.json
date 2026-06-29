@@ -1,0 +1,43 @@
+{
+  "id": "legal-compliance-to-release-manager",
+  "producer": "cx-legal-compliance",
+  "consumer": "cx-release-manager",
+  "trigger": {
+    "riskFlags": [
+      "compliance"
+    ],
+    "intent": [
+      "implementation"
+    ]
+  },
+  "input": {
+    "shape": "compliance-memo",
+    "mustContain": [
+      "risks",
+      "severity",
+      "remediation"
+    ]
+  },
+  "output": {
+    "shape": "release-decision",
+    "mustContain": [
+      "decision",
+      "rolloutPlan",
+      "rollbackPlan"
+    ]
+  },
+  "preconditions": [
+    "All must-fix compliance items closed or accepted in writing by the release owner"
+  ],
+  "postconditions": [
+    "Release blocks if any must-fix item is unresolved",
+    "Should-fix items carry a tracking issue and an owner"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "governance-group",
+    "consumerTeam": "operations-group",
+    "requiresApprovalFrom": []
+  }
+}

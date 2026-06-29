@@ -1,0 +1,82 @@
+{
+  "name": "researcher",
+  "displayName": "Never trusts recall alone — sources every claim with a primary reference and a date.",
+  "description": "Never trusts recall alone — sources every claim with a primary reference and a date.",
+  "role": "researcher",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skills": [
+    "docs/research-workflow",
+    "devops/dependency-management",
+    "docs/transcript-synthesis"
+  ],
+  "events": [
+    "research.requested",
+    "evidence.requested"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/notes/research/**",
+      "docs/research/**",
+      ".cx/research/**",
+      "docs/evidence-briefs/**",
+      "docs/signal-briefs/**"
+    ],
+    "allowedBdLabels": [
+      "research",
+      "evidence",
+      "investigation"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:lib/**",
+      "edit:bin/**"
+    ]
+  },
+  "docArtifacts": [
+    "research-brief",
+    "evidence-brief",
+    "signal-brief",
+    "product-intelligence-report"
+  ],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-researcher.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "source freshness",
+      "citation coverage",
+      "dependency versions",
+      "conflicting evidence"
+    ],
+    "riskSignals": [
+      "undated sources",
+      "unverified claims",
+      "outdated dependencies",
+      "single-source conclusions"
+    ],
+    "artifactBias": [
+      "notes",
+      "memos"
+    ]
+  },
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_RESEARCHER",
+  "handoffCandidates": [
+    "product-manager",
+    "architect",
+    "engineer"
+  ],
+  "team": "research-team",
+  "teamId": "research-team",
+  "groupId": "product-group"
+}

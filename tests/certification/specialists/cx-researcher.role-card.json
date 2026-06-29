@@ -4,10 +4,10 @@
   "registryName": "researcher",
   "humanEquivalent": "Never trusts recall alone — sources every claim with a primary reference and a date.",
   "outputs": [
-    "evidence-brief",
-    "product-intelligence-report",
     "research-brief",
-    "signal-brief"
+    "evidence-brief",
+    "signal-brief",
+    "product-intelligence-report"
   ],
   "skills": [
     "docs/research-workflow",
@@ -18,15 +18,12 @@
   "openingQuestion": "What is the version, the publication date, and the primary source?",
   "escalationPath": {
     "collaborators": [],
-    "subscriptions": [
-      "evidence.requested",
-      "research.requested"
-    ]
+    "subscriptions": []
   },
   "refusalBoundaries": "If all sources are secondhand or undated, the research isn't done.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-researcher.md"
   }
 }

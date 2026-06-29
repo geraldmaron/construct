@@ -98,7 +98,7 @@ Hooks that own audit-shaped data (audit-trail, audit-reads, mcp-audit) write via
 | `readme-age-check.mjs` | UserPromptSubmit | * | Emits `readme.stale` for READMEs not touched in 90+ days |
 | `ci-status-check.mjs` | UserPromptSubmit | * | Injects current-branch CI status into the agent's context |
 | `context-watch.mjs` | UserPromptSubmit | * | Token usage monitoring; compaction recommendation |
-| `registry-sync.mjs` | PostToolUse | Write\|Edit | Reminder to run `construct sync` after `specialists/registry.json` edits |
+| `registry-sync.mjs` | PostToolUse | Write\|Edit | Reminder to run `construct sync` after `specialists/org` edits |
 | `edit-error-recovery.mjs` | PostToolUseFailure | * | Targeted recovery guidance on Edit failure |
 | `context-window-recovery.mjs` | PostToolUseFailure | * | Detects context-limit errors; saves recovery snapshot |
 | `model-fallback.mjs` | PostToolUseFailure | * | Detects rate-limit / provider failures; selects fallback model |

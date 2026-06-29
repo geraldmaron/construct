@@ -1,0 +1,13 @@
+{
+  "id": "patterns",
+  "owner": "orchestrator",
+  "description": "Architectural pattern guidance (module boundaries, error handling, async contracts) applied at authoring time.",
+  "enforcement": "(persona prompt)",
+  "mode": "honor-system",
+  "requiresApprovalFrom": [],
+  "mayVetoFrom": [],
+  "escalatesTo": [],
+  "decisionRights": [],
+  "conditions": [],
+  "evidence": []
+}

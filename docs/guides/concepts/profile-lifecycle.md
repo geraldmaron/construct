@@ -1,6 +1,8 @@
 # Profile lifecycle
 
-Profiles describe how Construct shapes itself for a given org. The default is `rnd`. The other curated profiles are `operations`, `creative`, `research`. Anything else is a custom profile, which lives in `.cx/profile.json` with `custom: true`.
+Profiles describe how Construct shapes itself for a given org. The default is `rnd`. The other curated profiles are `operations`, `creative`, `research`. Anything else is a custom profile, which lives in `.cx/scope.json` with `custom: true`.
+
+Curated scopes live in `specialists/org/scopes/`. They declare intake taxonomy, templates, and tone — not teams or roles. The shared org in `specialists/org/` is the only org chart. `construct.config.json` `profile` selects which scope is active (default `rnd`). Headhunt and orchestration use enriched scopes via `lib/scopes/teams.mjs`.
 
 This page describes how a new profile gets made, how it ships, how it stays honest after it ships, and how it gets retired. The shape mirrors how mature scaffolding systems (Backstage software templates, Cookiecutter, Yeoman) handle template lifecycles, plus the standard user-research loop. Profiles are not a JSON exercise; they are a research artifact.
 
@@ -12,7 +14,7 @@ draft → active (curated or custom) → archived
             health monitoring
 ```
 
-A profile that never had a draft phase, or that skipped validation, is not legitimate. Drop-in JSON is allowed for experimentation, but a profile that lands in `profiles/` should have followed the discipline below.
+A scope that never had a draft phase, or that skipped validation, is not legitimate. Drop-in JSON is allowed for experimentation, but a scope that lands in `specialists/org/scopes/` should have followed the discipline below.
 
 ## Stage 1: discovery (cx-ux-researcher)
 
@@ -50,7 +52,7 @@ Define the role set and how it connects to the existing cx-* registry.
 - Identify ambiguous handoffs. Name the orchestrator role.
 - Validate against the per-role flavor cap of 6.
 
-Acceptance: every declared role either exists in `specialists/registry.json` or has a written scope statement.
+Acceptance: every declared role either exists in `specialists/org` or has a written scope statement.
 
 ## Stage 4: validation (cx-evaluator)
 
@@ -67,21 +69,21 @@ Move the draft into the active catalog.
 
 Curated path:
 
-1. Hand-edit `profiles/<id>.json` from the draft.
-2. Open a PR. Run `npm run lint:profiles`.
+1. Hand-edit `specialists/org/scopes/<id>.json` from the draft.
+2. Open a PR. Run `npm run lint:scopes`.
 3. Validation acceptance must already be met. The PR description cites it.
 
 Custom path:
 
-1. Copy `profile.json` to `<project>/.cx/profile.json` with `"custom": true`.
-2. Use `construct profile set <id>` only for switching among curated; custom is picked up automatically by the loader.
+1. Copy `profile.json` to `<project>/.cx/scope.json` with `"custom": true`.
+2. Use `construct scope set <id>` only for switching among curated; custom is picked up automatically by the loader.
 
 ## Stage 6: health monitoring (cx-evaluator + cx-trace-reviewer)
 
 Keep the profile honest after it ships.
 
 ```bash
-construct profile health <id> [--days=30]
+construct scope health <id> [--days=30]
 ```
 
 Reports per-profile observation counts and per-role outcome rates. Any role with success-rate < 0.5 across 10 or more runs is a signal to revisit. Health data is the input for the next profile revision; do not edit a profile without a health report first.
@@ -91,31 +93,31 @@ Reports per-profile observation counts and per-role outcome rates. Any role with
 Retire a profile cleanly without losing the learning.
 
 ```bash
-construct profile archive <id> --reason="..."
+construct scope archive <id> --reason="..."
 ```
 
 Moves `profiles/<id>.json` and its intake table into `archive/profiles/<id>/`, alongside an `archive-note.md` that records why. Observations and outcomes recorded under the archived profile remain in `.cx/observations/` and `.cx/outcomes/`. They are durable evidence.
 
-Restore: move the files back to their original paths and run `npm run lint:profiles`.
+Restore: move the files back to their original paths and run `npm run lint:scopes`.
 
 ## CLI
 
 ```bash
-construct profile show                        # active profile
-construct profile list                        # curated catalog
-construct profile set <id>                    # switch curated
-construct profile create <id> --display="..." # scaffold a draft + requirements brief
-construct profile drafts                      # in-progress drafts
-construct profile health <id> [--days=N]      # observation + outcome rollup
-construct profile archive <id> --reason="..." # retire a curated profile
+construct scope show                        # active profile
+construct scope list                        # curated catalog
+construct scope set <id>                    # switch curated
+construct scope create <id> --display="..." # scaffold a draft + requirements brief
+construct scope drafts                      # in-progress drafts
+construct scope health <id> [--days=N]      # observation + outcome rollup
+construct scope archive <id> --reason="..." # retire a curated profile
 ```
 
 ## Files involved
 
-- `profiles/<id>.json`. curated profile, source of truth
-- `schemas/profile.schema.json`. shape validator
+- `specialists/org/scopes/<id>.json` — curated scope, source of truth
+- `schemas/scope.schema.json`. shape validator
 - `lib/intake/tables/<id>.mjs`. per-profile classification table
-- `.cx/profile.json`. user-defined custom profile (escape hatch)
+- `.cx/scope.json`. user-defined custom profile (escape hatch)
 - `.cx/profiles/draft-<id>/`. draft + requirements brief
 - `archive/profiles/<id>/`. archived profile + archive-note
 

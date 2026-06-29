@@ -2,7 +2,7 @@
 name: docs-product-intelligence-workflow
 description: "Use when: the request involves customer evidence, PM synthesis, product requirements, PRDs, PRFAQs, customer profiles, product signals, or backlog proposals."
 inputs: [signal, evidence-brief]
-artifactType: prd
+artifactType: product-intelligence
 verificationBar: "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
 ---
 # Product Intelligence Workflow
@@ -73,3 +73,6 @@ Stop and ask the primary persona before:
 Product Intelligence output must cite evidence, distinguish observation from inference, name confidence, and avoid a wall of bullets. Keep em dashes rare. Use paragraphs for reasoning, tables for comparisons, and bullets for scanability.
 
 For time-sensitive or externally sourced claims, include the date basis. For load-bearing claims, prefer two independent sources unless one authoritative primary source is enough.
+## Release gate
+
+Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

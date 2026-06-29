@@ -39,7 +39,7 @@ Style constraint: do not produce a wall of bullets. Use paragraphs for reasoning
    | `meta-prd` | `docs/meta-prd/{YYYY-MM-DD}-{slug}.md` |
    | `rfc` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
    | `rfc-platform` | `docs/decisions/rfc/{YYYY-MM-DD}-{slug}.md` |
-5. **cx-devil-advocate** runs the FMEA challenge pass (`roles/reviewer.devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their specialist id must appear in `.cx/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types).
+5. **cx-devil-advocate** runs the FMEA challenge pass (`roles/devil-advocate`) on the draft; highest-RPN failure modes need a mitigation or explicit accept-with-rationale before ship. Their specialist id must appear in `.cx/agent-log.jsonl` (manifest `releaseGate.requiredReviewers` for PRD-family types).
 6. **cx-docs-keeper** updates `.cx/context.md` with a link to the PRD
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

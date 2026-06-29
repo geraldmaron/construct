@@ -1,0 +1,34 @@
+{
+  "id": "any-to-docs-keeper",
+  "producer": "*",
+  "consumer": "cx-docs-keeper",
+  "trigger": {
+    "postConsumer": true,
+    "changedCoreDocs": true
+  },
+  "input": {
+    "shape": "doc-delta",
+    "mustContain": [
+      "filesChanged",
+      "decision"
+    ]
+  },
+  "output": {
+    "shape": "doc-sync",
+    "mustContain": [
+      "updatedDocs",
+      "crossReferencesAdded",
+      "crossDocCoherenceCheckRan",
+      "coherenceDiff"
+    ]
+  },
+  "preconditions": [
+    "Implementation or decision is marked DONE"
+  ],
+  "postconditions": [
+    "Cross-doc coherence preserved (PRD ↔ ADR ↔ code)",
+    "AUTO-managed regions regenerated via construct sync",
+    "crossDocCoherenceCheckRan=true with a named coherenceDiff — prevents stale-doc PRs that claim 'docs updated' without a real diff"
+  ],
+  "description": ""
+}

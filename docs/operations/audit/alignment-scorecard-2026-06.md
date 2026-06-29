@@ -52,7 +52,7 @@ Proposal for bound-orphans: [`skill-consolidation-proposal-2026-06.md`](./skill-
 |---|---:|---|
 | 1. Prompt economy | **3** | Single Front Door: all hosts use orchestration micro-prompt; static roster removed from sync ([`scripts/sync-specialists.mjs`](../../scripts/sync-specialists.mjs)) |
 | 2. Tool surface design | **2** | MCP 7-tool flat core + `construct_call`; ADR-0039 `surface` field on CLI commands shipped |
-| 3. Local-model strategy | **2** | `local/*` tier detection; chat TUI tier prompts; probe + doctor local-model checks |
+| 3. Local-model strategy | **2** | `local/*` tier detection; host prompt profiles; probe + doctor local-model checks |
 | 4. Skill/knowledge architecture | **2** | 53 B-composer orphans documented in [`naming.md`](../../guides/reference/naming.md); A-bind workflows wired; consolidation proposal tracked |
 | 5. Hook/gate philosophy | **2** | 36 hooks wired; `hook-calls.jsonl` telemetry shipped; rule reference telemetry added (`rule-calls.jsonl`) |
 | 6. Test strategy | **2** | Extend-not-rebuild (ADR-0035); registry + capability test tier added; P0 `lastValidated` still null until `--stamp` run |

@@ -32,7 +32,11 @@ async function createFixture() {
 
   writeJson(path.join(rootDir, 'package.json'), { name: 'construct', version: '9.9.9' });
   writeJson(path.join(rootDir, 'agents', 'registry.json'), {
-    prefix: 'cx',
+    models: {
+      reasoning: { primary: 'claude-opus-4-1-20250805' },
+      standard: { primary: 'claude-3-5-sonnet-20241022' },
+      fast: { primary: 'claude-3-5-haiku-20241022' },
+    },
     personas: [{ name: 'construct', displayName: 'Construct', role: 'orchestrator', description: 'Public entry point' }],
     agents: [{ name: 'engineer', description: 'Implements changes' }],
   });
@@ -97,7 +101,6 @@ async function createFixture() {
 test('buildStatus separates runtime health from configured integrations', async () => {
   const { rootDir, homeDir } = await createFixture();
   const probeMap = new Map([
-    ['http://127.0.0.1:4242', { status: 'healthy', message: 'Reachable' }],
     ['https://telemetry.example.com/api/public/traces?limit=1', { status: 'unavailable', message: 'Connection refused' }],
     ['http://127.0.0.1:8765/', { status: 'healthy', message: 'Reachable' }],
     ['http://127.0.0.1:5173', { status: 'degraded', message: 'HTTP 503' }],
@@ -119,9 +122,8 @@ test('buildStatus separates runtime health from configured integrations', async 
     global.fetch = originalFetch;
   }
 
-  // Telemetry and memory are optional (impactsOverall: false) — dashboard healthy → overall healthy
+  // Telemetry and memory are optional (impactsOverall: false) — no required service down → overall healthy
   assert.equal(status.system.overall.status, 'healthy');
-  assert.equal(status.system.services.find((service) => service.id === 'dashboard').status, 'healthy');
   assert.equal(status.system.services.find((service) => service.id === 'telemetry').status, 'unavailable');
   assert.equal(status.features.find((feature) => feature.id === 'github').status, 'configured');
   // Memory MCP has all hosts unsupported — served through construct-mcp built-in, so it's 'configured'
@@ -552,22 +554,6 @@ test('buildStatus marks telemetry richness credentials-invalid when telemetry au
   } finally {
     global.fetch = originalFetch;
   }
-});
-
-test('buildStatus uses managed dashboard port from user config when present', async () => {
-  const { rootDir, homeDir } = await createFixture();
-  writeText(path.join(rootDir, '.env'), 'MEMORY_PORT=8765\nBRIDGE_PORT=5173\nCONSTRUCT_TELEMETRY_URL=https://telemetry.example.com\n');
-  writeEnvValues(path.join(configDir(homeDir), 'config.env'), { DASHBOARD_PORT: '4343' });
-
-  const status = await buildStatus({
-    rootDir,
-    homeDir,
-    cwd: rootDir,
-    probeService: async (service) => ({ status: 'healthy', message: service.url }),
-    env: {},
-  });
-
-  assert.equal(status.system.services.find((service) => service.id === 'dashboard').url, 'http://127.0.0.1:4343');
 });
 
 test('buildStatus detects MCP configured via alias in settings.json', async () => {

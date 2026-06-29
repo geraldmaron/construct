@@ -9,7 +9,6 @@
  */
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -17,9 +16,10 @@ import test from 'node:test';
 import { buildCapabilityContract } from '../lib/embedded-contract/capability.mjs';
 import { WORKFLOW_TYPES } from '../lib/embedded-contract/workflow-defs.mjs';
 import { collectSecretValues, assertNoSecrets } from '../lib/embedded-contract/redaction.mjs';
+import { loadRegistry } from '../lib/registry/loader.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const registry = JSON.parse(readFileSync(join(__dirname, '..', 'specialists', 'registry.json'), 'utf8'));
+const registry = loadRegistry({ rootDir: join(__dirname, '..'), skipValidation: true });
 
 test('capability contract carries versions and all sections', () => {
   const c = buildCapabilityContract({ env: {} });
@@ -34,7 +34,7 @@ test('capability contract carries versions and all sections', () => {
 test('roles do not drift from the registry specialists', () => {
   const c = buildCapabilityContract({ env: {} });
   const contractIds = c.roles.map((r) => r.id).sort();
-  const registryIds = registry.specialists.map((s) => s.name).sort();
+  const registryIds = Object.values(registry.specialists).map((s) => s.name).sort();
   assert.deepEqual(contractIds, registryIds);
 });
 

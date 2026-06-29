@@ -1,0 +1,60 @@
+{
+  "$schema": "../../../schemas/scope.schema.json",
+  "id": "research",
+  "displayName": "Research",
+  "tagline": "Question, gather, analyze, synthesize, recommend. Investigate and report.",
+  "intake": {
+    "types": [
+      "question",
+      "study",
+      "synthesis",
+      "report",
+      "experiment",
+      "ops",
+      "unknown"
+    ],
+    "stages": [
+      "question",
+      "gather",
+      "analyze",
+      "synthesize",
+      "recommend"
+    ],
+    "classificationTable": "lib/intake/tables/research.mjs"
+  },
+  "docTemplates": [
+    "research-brief",
+    "evidence-brief",
+    "one-pager",
+    "memo",
+    "strategy"
+  ],
+  "hooks": {
+    "sessionReflect": "on",
+    "sessionOptimize": "on"
+  },
+  "defaultSkills": [],
+  "toneDefaults": {
+    "research-brief": "direct",
+    "evidence-brief": "direct",
+    "memo": "executive-concise"
+  },
+  "researchProfiles": {
+    "question": "external",
+    "study": "user",
+    "synthesis": "external",
+    "report": "external",
+    "experiment": "external"
+  },
+  "rebrand": {
+    "intakeQueueLabel": "Research queue",
+    "signalNoun": "question"
+  },
+  "capabilities": {
+    "intake": {
+      "inbox": true,
+      "dedup": "sha256",
+      "attribution": true
+    }
+  }
+}

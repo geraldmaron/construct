@@ -1,0 +1,42 @@
+{
+  "id": "architect-to-platform-engineer",
+  "producer": "cx-architect",
+  "consumer": "cx-platform-engineer",
+  "trigger": {
+    "riskFlags": [
+      "platform",
+      "infrastructure"
+    ],
+    "intent": [
+      "implementation"
+    ]
+  },
+  "input": {
+    "schema": "lib/contract-schemas/decision.json",
+    "mustContain": [
+      "goal",
+      "approach",
+      "platformDependencies"
+    ]
+  },
+  "output": {
+    "shape": "platform-plan",
+    "mustContain": [
+      "problem",
+      "solution",
+      "impact",
+      "migration",
+      "rollback"
+    ]
+  },
+  "preconditions": [
+    "Observed friction quantified; not hypothetical future problems",
+    "Existing CI/CD and tooling surveyed before proposing new tooling"
+  ],
+  "postconditions": [
+    "Migration path described for existing workflows",
+    "Rollback procedure exists in case the change makes things worse",
+    "Improvement removes more configuration than it adds, or the added config is justified"
+  ],
+  "description": ""
+}

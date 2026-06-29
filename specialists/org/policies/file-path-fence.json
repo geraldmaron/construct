@@ -1,0 +1,13 @@
+{
+  "id": "file-path-fence",
+  "owner": "orchestrator",
+  "description": "Prevents specialists from touching files outside their declared path scope.",
+  "enforcement": "lib/roles/fence.mjs#checkAction",
+  "mode": "deterministic",
+  "requiresApprovalFrom": [],
+  "mayVetoFrom": [],
+  "escalatesTo": [],
+  "decisionRights": [],
+  "conditions": [],
+  "evidence": []
+}

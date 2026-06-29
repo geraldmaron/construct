@@ -18,8 +18,10 @@ test('route returns null for unknown events', () => {
   assert.equal(route({ type: 'unknown.event' }), null);
 });
 
-test('route returns null for events whose owner is not onboarded', () => {
-  assert.equal(route({ type: 'bug.assigned' }), null);
+test('route resolves bug.assigned to cx-engineer', () => {
+  const r = route({ type: 'bug.assigned' });
+  assert.ok(r, 'bug.assigned must route');
+  assert.equal(r.cxId, 'cx-engineer');
 });
 
 test('ownerOf reflects EVENT_OWNERSHIP regardless of onboarding state', () => {

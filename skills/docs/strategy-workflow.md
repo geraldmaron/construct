@@ -36,3 +36,6 @@ Given a product signal or PRD, check:
 |---|---|---|
 | User-global | `~/.cx/strategy.md` | No: local only |
 | Project-local | `.cx/strategy.md` | Yes: source of truth for this repo |
+## Release gate
+
+Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

@@ -109,7 +109,7 @@ Community benchmarks (2025–2026) rank docling highest on complex table extract
 - Default high-fidelity ingest unchanged (docling sidecar).
 - Fast tier (`--fidelity=fast`) uses unpdf/mammoth; office zip formats require docling.
 - Docling failure fallback is **node-native**, not regex/CLI legacy extractors.
-- Legacy zip-xml / pdftotext gated behind `CONSTRUCT_ALLOW_LEGACY_EXTRACT=1` for debugging only.
+- Legacy zip-xml / pdftotext paths removed; PDF/Office require docling or node-native unpdf/mammoth.
 
 **Still rejected as default:** docling-mcp remote (privacy), MarkItDown (fidelity), Unstructured (PDF table accuracy vs docling).
 

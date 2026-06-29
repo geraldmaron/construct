@@ -16,11 +16,12 @@ import { estimateToolTokens, HEAVY_EXTERNAL_MCP_IDS } from "../../lib/mcp/tool-b
 test("construct-mcp exposes a lean surface: core tools + construct_call, long tail behind the gateway", () => {
   const tools = exposedTools();
   const names = tools.map((t) => t.name);
-  assert.ok(names.includes("construct_call"), "construct_call gateway is exposed");
+  assert.ok(names.includes("call"), "construct_call gateway is exposed");
   assert.ok(names.includes("orchestration_policy") && names.includes("get_skill"), "core tools stay flat");
   assert.ok(!names.includes("workflow_status") && !names.includes("ingest_document"), "long-tail tools are not flat");
-  assert.ok(tools.length <= 10, `surface is small (got ${tools.length})`);
-  const cc = tools.find((t) => t.name === "construct_call");
+  assert.ok(names.includes("author_artifact") && names.includes("document_export"), "high-value action tools are flat");
+  assert.ok(tools.length <= 16, `surface stays small (got ${tools.length})`);
+  const cc = tools.find((t) => t.name === "call");
   assert.ok(cc.inputSchema.properties.tool.enum.includes("workflow_status"), "long-tail names are enumerated");
   assert.ok(estimateToolTokens(tools) < 6000, "exposed surface well under a small-window budget");
 });

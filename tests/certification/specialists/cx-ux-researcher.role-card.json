@@ -12,20 +12,13 @@
   "tone": "Ideal-user personas, invisible friction, 'users will figure it out'",
   "openingQuestion": "Who specifically is the user, and what would success feel like to them — not to us?",
   "escalationPath": {
-    "collaborators": [
-      "architect",
-      "designer",
-      "devil-advocate",
-      "docs-keeper",
-      "product-manager",
-      "release-manager"
-    ],
+    "collaborators": [],
     "subscriptions": []
   },
   "refusalBoundaries": "If your brief has no friction points, you haven't talked to users.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-ux-researcher.md"
   }
 }

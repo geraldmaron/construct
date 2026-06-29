@@ -132,10 +132,10 @@ test('distribution diagram defaults use compact hand-drawn sizing', () => {
   assert.equal(defaults.d2Sketch, true);
   assert.equal(defaults.d2Scale, 0.72);
   assert.equal(defaults.d2FontSize, 14);
-  assert.equal(defaults.figureMaxWidth, '58%');
+  assert.equal(defaults.figureMaxWidth, '92%');
   assert.equal(defaults.mermaidLook, 'handDrawn');
-  assert.equal(defaults.mermaidWidth, 480);
-  assert.equal(defaults.mermaidScale, 1);
+  assert.equal(defaults.mermaidWidth, 2400);
+  assert.equal(defaults.mermaidScale, 2);
   assert.equal(defaults.accent, '#0a0c10');
 });
 
@@ -143,6 +143,7 @@ test('injectMermaidBrandTheme adds handDrawn init with monochrome ink and handwr
   const out = injectMermaidBrandTheme('flowchart TD\n  A --> B');
   assert.match(out, /%%\{init:/);
   assert.match(out, /handDrawn/);
+  assert.match(out, /htmlLabels/);
   assert.match(out, /Caveat/);
   assert.match(out, /0a0c10/);
   assert.doesNotMatch(out, /8b5cf6/);
@@ -163,8 +164,10 @@ test('buildDistributionDiagramEnv sets CONSTRUCT_D2_THEME and sketch flag', () =
   assert.equal(env.CONSTRUCT_D2_SCALE, '0.72');
   assert.equal(env.CONSTRUCT_D2_SKETCH, '1');
   assert.equal(env.CONSTRUCT_MERMAID_THEME, 'construct');
-  assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '480');
-  assert.equal(env.CONSTRUCT_MERMAID_SCALE, '1');
+  assert.equal(env.CONSTRUCT_MERMAID_MIME, 'image/png');
+  assert.equal(env.CONSTRUCT_MERMAID_WIDTH, '2400');
+  assert.equal(env.CONSTRUCT_MERMAID_SCALE, '2');
+  assert.match(env.CONSTRUCT_MERMAID_PPTR_CONFIG || '', /templates\/distribution\/mermaid-puppeteer\.json$/);
 });
 
 test('construct-brand.typ uses Space Grotesk family names for body prose', () => {
@@ -172,9 +175,13 @@ test('construct-brand.typ uses Space Grotesk family names for body prose', () =>
   assert.match(brand, /construct-font-sans = \("Space Grotesk",\)/);
   assert.match(brand, /set text\(font: construct-font-sans[\s\S]*justify: false/);
   assert.doesNotMatch(brand, /Libertinus|SourceSerif|Geist|IBM Plex Sans|"Inter"/);
-  assert.match(brand, /construct-figure-max-width = 58%/);
-  assert.match(brand, /construct-figure-max-height = 2\.35in/);
+  assert.match(brand, /construct-figure-max-width = 92%/);
+  assert.match(brand, /construct-figure-max-height = 3\.4in/);
   assert.match(brand, /fit: "contain"/);
+  assert.match(brand, /set par\(justify: false, leading: 0\.9em, spacing: 1\.24em\)/);
+  assert.match(brand, /set enum\(numbering: "1\."/);
+  assert.match(brand, /#let horizontalrule = block/);
+  assert.doesNotMatch(brand, /show enum\.item:/, 'ordered lists must keep native Typst numbering context');
 });
 
 test('construct-deck.html and construct-web.html use Space Grotesk brand stack', () => {

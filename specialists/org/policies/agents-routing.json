@@ -1,0 +1,13 @@
+{
+  "id": "agents-routing",
+  "owner": "orchestrator",
+  "description": "Routing discipline: construct routes to specialists, specialists do not self-route except to adjacent roles.",
+  "enforcement": "(persona prompt)",
+  "mode": "honor-system",
+  "requiresApprovalFrom": [],
+  "mayVetoFrom": [],
+  "escalatesTo": [],
+  "decisionRights": [],
+  "conditions": [],
+  "evidence": []
+}

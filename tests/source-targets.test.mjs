@@ -11,6 +11,8 @@ import {
   resolveEffectiveSourceTargetsFromConfig,
   targetsToEmbedSources,
   targetSignature,
+  resolveTeamSources,
+  targetsToEmbedSourcesWithFilters,
 } from '../lib/config/source-targets.mjs';
 import { DEFAULT_PROJECT_CONFIG } from '../lib/config/schema.mjs';
 
@@ -92,5 +94,70 @@ describe('targetsToEmbedSources', () => {
     const sigA = targetSignature({ provider: 'slack', selector: { channel: 'eng', intent: 'risk' } });
     const sigB = targetSignature({ provider: 'slack', selector: { channel: 'eng', intent: 'internal' } });
     assert.notEqual(sigA, sigB);
+  });
+});
+
+describe('resolveTeamSources', () => {
+  const registry = {
+    teams: {
+      'engineering-group': {
+        sources: [
+          { id: 'main-repo', provider: 'github', selector: { repo: 'anthropic/construct' }, filters: { refs: ['prs'], limit: 10 } },
+          { id: 'plat-jira', provider: 'jira', selector: { project: 'PLAT' }, filters: { jql: 'status != Done' } },
+        ],
+      },
+    },
+  };
+
+  it('resolves a team\'s declared sources with provenance and filters preserved', () => {
+    const targets = resolveTeamSources('engineering-group', { registry, config: {}, env: {} });
+    assert.equal(targets.length, 2);
+    const gh = targets.find((t) => t.provider === 'github');
+    assert.equal(gh.provenance, 'team:engineering-group');
+    assert.deepEqual(gh.filters, { refs: ['prs'], limit: 10 });
+  });
+
+  it('returns no targets for an unknown team', () => {
+    assert.equal(resolveTeamSources('nope', { registry, config: {}, env: {} }).length, 0);
+  });
+
+  it('merges team bindings ahead of project config by typed signature', () => {
+    const config = { sources: { targets: [{ id: 'other-repo', provider: 'github', selector: { repo: 'acme/other' } }] } };
+    const targets = resolveTeamSources('engineering-group', { registry, config, env: {} });
+    const repos = targets.filter((t) => t.provider === 'github').map((t) => t.selector.repo);
+    assert.ok(repos.includes('anthropic/construct'));
+    assert.ok(repos.includes('acme/other'));
+  });
+});
+
+describe('targetsToEmbedSourcesWithFilters', () => {
+  it('honors per-target filters and tags records with teamId + targetId', () => {
+    const targets = resolveTeamSources('engineering-group', {
+      registry: {
+        teams: { 'engineering-group': { sources: [
+          { id: 'main-repo', provider: 'github', selector: { repo: 'anthropic/construct' }, filters: { refs: ['prs'], limit: 10 } },
+          { id: 'plat-jira', provider: 'jira', selector: { project: 'PLAT' }, filters: { jql: 'status != Done' } },
+        ] } },
+      },
+      config: {}, env: {},
+    });
+    const sources = targetsToEmbedSourcesWithFilters(targets, { teamId: 'engineering-group' });
+    const gh = sources.find((s) => s.provider === 'github');
+    assert.deepEqual(gh.refs, ['prs']);
+    assert.equal(gh.limit, 10);
+    assert.equal(gh.teamId, 'engineering-group');
+    assert.equal(gh.targetId, 'main-repo');
+    const jira = sources.find((s) => s.provider === 'jira');
+    assert.equal(jira.jql, 'status != Done');
+    assert.equal(jira.targetId, 'plat-jira');
+  });
+
+  it('falls back to default refs/limit when a target has no filters', () => {
+    const sources = targetsToEmbedSourcesWithFilters(
+      [{ id: 'r', provider: 'github', selector: { repo: 'a/b' } }],
+      {},
+    );
+    assert.deepEqual(sources[0].refs, ['prs', 'issues', 'commits']);
+    assert.equal(sources[0].limit, 25);
   });
 });

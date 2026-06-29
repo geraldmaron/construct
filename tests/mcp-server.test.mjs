@@ -20,12 +20,13 @@ test('cxTrace includes execution-contract model metadata parity', async (t) => {
     try { fs.rmSync(homeDir, { recursive: true, force: true }); } catch {}
   });
 
+  fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(rootDir, 'specialists', 'org'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, 'agents', 'prompts'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({
     models: {
-      reasoning: { primary: 'registry/reasoning' },
-      standard: { primary: 'registry/standard' },
-      fast: { primary: 'registry/fast' },
+      reasoning: { primary: 'claude-opus-4-1-20250805' },
+      standard: { primary: 'claude-3-5-sonnet-20241022' },
+      fast: { primary: 'claude-3-5-haiku-20241022' },
     },
     personas: [],
     agents: [{ name: 'engineer', promptFile: 'specialists/prompts/cx-engineer.md' }],
@@ -102,13 +103,14 @@ test('projectContext exposes tracker-plus-plan public-health fields', async (t) 
     try { fs.rmSync(homeDir, { recursive: true, force: true }); } catch {}
   });
 
+  fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(rootDir, 'specialists', 'org'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, '.cx'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, 'agents', 'prompts'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({
     models: {
-      reasoning: { primary: 'registry/reasoning' },
-      standard: { primary: 'registry/standard' },
-      fast: { primary: 'registry/fast' },
+      reasoning: { primary: 'claude-opus-4-1-20250805' },
+      standard: { primary: 'claude-3-5-sonnet-20241022' },
+      fast: { primary: 'claude-3-5-haiku-20241022' },
     },
     personas: [],
     agents: [],
@@ -151,10 +153,19 @@ test('status and MCP surfaces agree on public-health metadata presence semantics
     try { fs.rmSync(homeDir, { recursive: true, force: true }); } catch {}
   });
 
+  fs.cpSync(path.join(process.cwd(), 'specialists', 'org'), path.join(rootDir, 'specialists', 'org'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, '.cx'), { recursive: true });
   fs.mkdirSync(path.join(rootDir, 'agents'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'package.json'), JSON.stringify({ name: 'construct', version: '1.0.0' }, null, 2));
-  fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({ personas: [], agents: [] }, null, 2));
+  fs.writeFileSync(path.join(rootDir, 'agents', 'registry.json'), JSON.stringify({
+    models: {
+      reasoning: { primary: 'claude-opus-4-1-20250805' },
+      standard: { primary: 'claude-3-5-sonnet-20241022' },
+      fast: { primary: 'claude-3-5-haiku-20241022' },
+    },
+    personas: [],
+    agents: [],
+  }, null, 2));
   fs.writeFileSync(path.join(rootDir, 'plan.md'), '# Plan\n\n- Keep metadata parity between status and MCP.\n');
 
   const originalToolkit = process.env.CX_TOOLKIT_DIR;

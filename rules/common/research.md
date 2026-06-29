@@ -58,6 +58,8 @@ Start with the narrowest authoritative source that can answer the question:
 4. **Tertiary sources last**
    - blogs, forums, Q&A, analyst summaries, AI-generated summaries
 
+When the research is specifically about a library/framework/API/cloud-docs surface, a docs MCP such as Context7 is an acceptable way to reach the official documentation. It is a retrieval path, not the evidence standard. If that MCP is unavailable or incomplete, fall back to direct web search and fetch against the official docs, changelog, and release notes. Do not block research on the presence of a single docs integration.
+
 ## 4. Required metadata for every source
 
 Record:

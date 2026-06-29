@@ -10,7 +10,7 @@ import {
   isOllamaModelInstalled,
   runWithInstalledOllamaCacheForTests,
 } from '../lib/ollama/installed-models.mjs';
-import { isChatModelAvailable } from '../lib/model-router.mjs';
+import { isModelAvailable } from '../lib/model-router.mjs';
 
 test('toOllamaNativeModelId strips the ollama/ prefix once', () => {
   assert.equal(toOllamaNativeModelId('ollama/llama3.2:3b'), 'llama3.2:3b');
@@ -30,9 +30,9 @@ test('isOllamaModelInstalled uses cached tag list when listable', async () => {
   });
 });
 
-test('isChatModelAvailable rejects unpulled ollama model when tags are listable', async () => {
+test('isModelAvailable rejects unpulled ollama model when tags are listable', async () => {
   await runWithInstalledOllamaCacheForTests(['llama3.1:8b'], () => {
-    const check = isChatModelAvailable('ollama/llama3.2:3b', {
+    const check = isModelAvailable('ollama/llama3.2:3b', {
       env: { OLLAMA_BASE_URL: 'http://127.0.0.1:11434' },
     });
     assert.equal(check.ok, false);
@@ -41,9 +41,9 @@ test('isChatModelAvailable rejects unpulled ollama model when tags are listable'
   });
 });
 
-test('isChatModelAvailable accepts installed ollama model when tags are listable', async () => {
+test('isModelAvailable accepts installed ollama model when tags are listable', async () => {
   await runWithInstalledOllamaCacheForTests(['llama3.2:3b'], () => {
-    const check = isChatModelAvailable('ollama/llama3.2:3b', {
+    const check = isModelAvailable('ollama/llama3.2:3b', {
       env: { OLLAMA_BASE_URL: 'http://127.0.0.1:11434' },
     });
     assert.equal(check.ok, true);

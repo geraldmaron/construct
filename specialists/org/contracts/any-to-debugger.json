@@ -1,0 +1,38 @@
+{
+  "id": "any-to-debugger",
+  "producer": "*",
+  "consumer": "cx-debugger",
+  "trigger": {
+    "intent": "investigation",
+    "category": "bug"
+  },
+  "input": {
+    "shape": "bug-signal",
+    "mustContain": [
+      "symptoms",
+      "scope"
+    ]
+  },
+  "output": {
+    "shape": "root-cause-report",
+    "mustContain": [
+      "rootCause",
+      "rootCauseConfirmedVia",
+      "fix"
+    ],
+    "mustMatchEnum": {
+      "rootCauseConfirmedVia": [
+        "reproduction",
+        "trace",
+        "test"
+      ]
+    }
+  },
+  "preconditions": [
+    "Bug reproduced or trace captured before proposing a fix"
+  ],
+  "postconditions": [
+    "rootCauseConfirmedVia in {reproduction, trace, test} — prevents symptom-only fixes that don't address the actual cause"
+  ],
+  "description": ""
+}

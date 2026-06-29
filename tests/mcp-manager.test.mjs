@@ -62,10 +62,9 @@ function makeRepoCopy(t) {
       // does not need the beads DB; sync paths it exercises don't touch it.
       if (hasPathSegment(rel, ".beads")) return false;
 
-      // apps/*/.next and apps/*/out are Next.js build output. The
-      // dashboard-build functional test runs `next build` in parallel and
-      // overwrites these trees, so cpSync's readdir → lstat races and
-      // throws ENOENT on apps/dashboard/.next/export-detail.json mid-walk.
+      // apps/*/.next and apps/*/out are Next.js build output. A parallel
+      // `next build` (apps/docs) can overwrite these trees, so cpSync's
+      // readdir → lstat races and throws ENOENT on a build artifact mid-walk.
       // Sync paths under test don't read Next build artifacts.
 
       if (hasPathSegment(rel, ".next")) return false;

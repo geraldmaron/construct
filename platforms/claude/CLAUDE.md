@@ -2,7 +2,7 @@
 
 This file ships as a reference template alongside the Construct npm package. The canonical project-instructions file is `/CLAUDE.md` at your repo root — that's the file Claude Code actually reads at session start. The structure here mirrors that canonical file so users know what shape their own `/CLAUDE.md` should take after `construct init` scaffolds a project.
 
-Personas and specialists are defined in `specialists/registry.json` and rendered into Claude Code agents on every `construct sync`. The single user-facing persona is `construct`; the 28 specialists (cx-engineer, cx-security, cx-devil-advocate, …) are routed internally — you address Construct, Construct dispatches.
+Personas and specialists are defined in `specialists/org` and rendered into Claude Code agents on every `construct sync`. The single user-facing persona is `construct`; the 28 specialists (cx-engineer, cx-security, cx-devil-advocate, …) are routed internally — you address Construct, Construct dispatches.
 
 ## Critical rules (mirror in your project /CLAUDE.md)
 

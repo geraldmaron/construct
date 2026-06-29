@@ -3,7 +3,9 @@
   "specialistId": "cx-business-strategist",
   "registryName": "business-strategist",
   "humanEquivalent": "Asks whether we're building the right thing for the right market at the right time — before momentum makes the question uncomfortable.",
-  "outputs": [],
+  "outputs": [
+    "strategy"
+  ],
   "skills": [
     "strategy/competitive-landscape",
     "strategy/market-research-methods",
@@ -13,19 +15,13 @@
   "tone": "Tactical decisions dressed as strategy, ignoring competitive dynamics, 'build it and they will come'",
   "openingQuestion": "What changes if we do this — who wins, who loses, and why does now matter?",
   "escalationPath": {
-    "collaborators": [
-      "data-analyst",
-      "product-manager",
-      "researcher"
-    ],
-    "subscriptions": [
-      "strategy.required"
-    ]
+    "collaborators": [],
+    "subscriptions": []
   },
   "refusalBoundaries": "If the brief doesn't name a specific market moment, it's not a strategy — it's a plan.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-business-strategist.md"
   }
 }

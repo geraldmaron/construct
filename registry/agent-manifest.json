@@ -1,0 +1,109 @@
+{
+  "$schema": "https://construct.dev/schemas/agent-manifest.v1.json",
+  "version": 1,
+  "kind": "agent-execution-manifest",
+  "description": "How an agent should reach Construct: MCP-first tool surface, with OpenCode as the primary human conversation surface. Source-of-truth values (core tool set, long-tail dispatcher) are verified against lib/mcp/server.mjs by tests/agent-manifest.test.mjs.",
+  "sources": {
+    "coreTools": "lib/mcp/server.mjs (CORE_TOOL_NAMES)",
+    "longTail": "lib/mcp/server.mjs (CONSTRUCT_CALL_TOOL)",
+    "surfaceTiers": "lib/registry/surface-map.mjs (SURFACE_TIERS, COMMAND_SURFACE)",
+    "capabilities": "registry/capabilities.json",
+    "credentials": "lib/mcp/server.mjs (config.env injection), lib/providers/secret-resolver.mjs"
+  },
+  "toolSurface": {
+    "model": "core-plus-long-tail",
+    "rationale": "ListTools front-loads a small core; everything else is reachable through the `call` gateway or discovered by intent via `find_tool`, so the schema stays small and small models stop hallucinating tool names. The long tail is reachable, just not front-loaded.",
+    "core": [
+      {
+        "name": "orchestration_policy",
+        "use": "Classify intent and get the specialist routing policy for a request."
+      },
+      {
+        "name": "get_skill",
+        "use": "Fetch a role or domain skill playbook by id."
+      },
+      {
+        "name": "get_template",
+        "use": "Read a doc template (prd, adr, runbook, ...) by name before authoring an artifact."
+      },
+      {
+        "name": "search_skills",
+        "use": "Find relevant skills by query."
+      },
+      {
+        "name": "knowledge_search",
+        "use": "Search the project knowledge base."
+      },
+      {
+        "name": "memory_search",
+        "use": "Search durable cross-session memory."
+      },
+      {
+        "name": "project_context",
+        "use": "Read the active project context and working state."
+      },
+      {
+        "name": "summarize_diff",
+        "use": "Summarize a code diff for review or handoff."
+      },
+      {
+        "name": "find_tool",
+        "use": "Find tools by intent when you don't know the exact name; returns ranked tools with schemas."
+      },
+      {
+        "name": "author_artifact",
+        "use": "Materialize a typed artifact you drafted (PRD/ADR/RFC/…) and run the release gate."
+      },
+      {
+        "name": "document_export",
+        "use": "Convert a markdown file to PDF/DOCX/HTML/deck and write it to a path."
+      },
+      {
+        "name": "publish_run",
+        "use": "Run the publish pipeline to export an artifact (figures and demos optional)."
+      },
+      {
+        "name": "artifact_workflow",
+        "use": "Plan a manifest-backed artifact workflow; validate or export locally."
+      },
+      {
+        "name": "workflow_invoke",
+        "use": "Invoke an embedded Construct workflow (prd-draft, architecture-review, …)."
+      },
+      {
+        "name": "triage_recommend",
+        "use": "Recommend intake triage — type, owner, and routing — for a new signal."
+      }
+    ],
+    "longTail": {
+      "tool": "call",
+      "use": "Invoke any non-core Construct tool by name: put the tool name in `tool` and its arguments in `args`. Call find_tool to discover the right tool by intent; the catalog of valid names is the `tool` enum.",
+      "rationale": "One dispatcher reuses the same handlers, so collapsing the surface costs no capability — every tool stays reachable by name. The manifest deliberately does not enumerate the full tool list; the live catalog is the `call` enum in lib/mcp/server.mjs, and find_tool ranks it by intent. The former gateway name `construct_call` is recovered tolerantly, so a stale name still resolves."
+    }
+  },
+  "humanEntry": {
+    "command": "opencode",
+    "subcommand": null,
+    "use": "A human uses OpenCode as the primary conversation surface after `construct sync` installs the Construct front-door agent, MCP wiring, and runtime plugin. The `construct` CLI remains setup/admin/headless infrastructure.",
+    "rationale": "Construct no longer ships a local conversation UI; OpenCode is primary and other public hosts use generated adapters or MCP.",
+    "surface": "opencode"
+  },
+  "credentials": {
+    "policy": "mcp-mediated",
+    "guidance": "Agents never resolve secrets themselves. The Construct MCP server applies config.env to its process environment at startup, so provider credentials are present for every tool call. The shared secret resolver walks the trusted sources (process env, config.env, ~/.env, project .env, shell rc) and resolves any 1Password reference internally.",
+    "doNot": "Do not instruct or run manual `op read` / `op://` lookups, and do not ask the user to paste keys. MCP tool outputs expose only env-key names and a configured boolean, never credential values.",
+    "source": "lib/mcp/server.mjs config.env injection; lib/providers/secret-resolver.mjs; lib/providers/credential-bootstrap.mjs"
+  },
+  "mcpGaps": {
+    "note": "True gaps only: capabilities that declare MCP unsupported. Flag variants of an MCP-backed capability and retired commands are not gaps.",
+    "gaps": [
+      {
+        "id": "oracle.meta-review",
+        "name": "Oracle Meta-Review",
+        "mcp": "unsupported",
+        "cliFallback": "construct oracle review",
+        "reason": "Declares surfaces.mcp.supported=false in registry/capabilities.json; reach it via the CLI --json twin."
+      }
+    ]
+  }
+}

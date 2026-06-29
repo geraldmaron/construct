@@ -13,15 +13,12 @@
   "openingQuestion": "If this goes wrong 30 minutes after full rollout, what exactly do we do?",
   "escalationPath": {
     "collaborators": [],
-    "subscriptions": [
-      "release.candidate",
-      "version.bump.needed"
-    ]
+    "subscriptions": []
   },
   "refusalBoundaries": "If the rollback procedure isn't tested, it doesn't exist. You'll find out during an incident.",
   "modelTier": "standard",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-release-manager.md"
   }
 }

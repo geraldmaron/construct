@@ -1,0 +1,69 @@
+{
+  "name": "explorer",
+  "displayName": "Reads before concluding — assumptions about code are wrong more often than assumptions about code are right.",
+  "description": "Reads before concluding — assumptions about code are wrong more often than assumptions about code are right.",
+  "role": "explorer",
+  "modelTier": "fast",
+  "reasoningEffort": "medium",
+  "skills": [
+    "docs/codebase-research-workflow",
+    "exploration/repo-map",
+    "exploration/unknown-codebase-onboarding",
+    "exploration/tracer-bullet-method",
+    "exploration/dependency-graph-reading"
+  ],
+  "events": [],
+  "fence": {
+    "allowedPaths": [
+      "docs/explorations/**",
+      ".cx/explorations/**"
+    ],
+    "allowedBdLabels": [
+      "exploration",
+      "spike"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:**"
+    ]
+  },
+  "docArtifacts": [],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-explorer.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "codebase understanding",
+      "pattern discovery",
+      "dependency mapping",
+      "drift detection"
+    ],
+    "riskSignals": [
+      "assumptions without verification",
+      "incomplete investigation",
+      "outdated mental models",
+      "undiscovered code paths"
+    ],
+    "artifactBias": [
+      "notes"
+    ]
+  },
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,get_template,list_templates",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_EXPLORER",
+  "handoffCandidates": [
+    "engineer",
+    "architect",
+    "researcher"
+  ],
+  "team": "strategy-team",
+  "teamId": "strategy-team",
+  "groupId": "strategy-group"
+}

@@ -1,0 +1,75 @@
+{
+  "name": "debugger",
+  "displayName": "Traces to root cause before proposing a fix — the real bug is always one layer deeper than where it presents.",
+  "description": "Traces to root cause before proposing a fix — the real bug is always one layer deeper than where it presents.",
+  "role": "debugger",
+  "modelTier": "reasoning",
+  "reasoningEffort": "high",
+  "skills": [
+    "quality-gates/verify-change",
+    "devops/observability",
+    "devops/performance"
+  ],
+  "events": [
+    "regression.detected",
+    "hang.detected"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/debug/**",
+      "tests/**"
+    ],
+    "allowedBdLabels": [
+      "bug",
+      "regression",
+      "investigation"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:lib/**",
+      "edit:bin/**",
+      "edit:src/**",
+      "edit:app/**"
+    ]
+  },
+  "docArtifacts": [],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-debugger.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "root cause identification",
+      "reproduction reliability",
+      "fix verification",
+      "regression prevention"
+    ],
+    "riskSignals": [
+      "symptom fixes without root cause",
+      "non-reproducible bugs closed",
+      "missing regression tests",
+      "repeated failure patterns"
+    ],
+    "artifactBias": [
+      "notes"
+    ]
+  },
+  "canEdit": true,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,Edit,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_DEBUGGER",
+  "handoffCandidates": [
+    "engineer",
+    "qa",
+    "sre"
+  ],
+  "team": "engineering-team",
+  "teamId": "engineering-team",
+  "groupId": "engineering-group"
+}

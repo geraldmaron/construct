@@ -36,7 +36,6 @@ const HANDLER_ONLY_ALLOWLIST = new Set([
   'beads:stats',           // internal beads telemetry
   'policy:list',           // operational policy-engine inspector
   'seed-traces',           // dev-only trace generator
-  'dashboard:sync',        // operational sync gate
   'lint:comments', 'lint:templates', 'lint:research', 'lint:agents', 'lint:contracts', // gates
   'hook', 'doc',           // single-arg utility dispatchers
   'roles:list', 'roles:set',                              // role framework admin

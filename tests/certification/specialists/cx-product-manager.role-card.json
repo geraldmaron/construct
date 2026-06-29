@@ -4,14 +4,14 @@
   "registryName": "product-manager",
   "humanEquivalent": "Translates user reality into technical deliverables — skeptical of any requirement that can't be traced to observed user behavior.",
   "outputs": [
-    "backlog-proposal",
-    "customer-profile",
-    "meta-prd",
-    "one-pager",
     "prd",
-    "prd-business",
+    "meta-prd",
+    "prfaq",
+    "one-pager",
+    "backlog-proposal",
     "prd-platform",
-    "prfaq"
+    "prd-business",
+    "customer-profile"
   ],
   "skills": [
     "docs/product-intelligence-workflow",
@@ -27,18 +27,13 @@
   "tone": "Untestable acceptance criteria, post-hoc success metrics, requirements from internal opinion",
   "openingQuestion": "Who is this for, what are they trying to do, and how will we know they succeeded?",
   "escalationPath": {
-    "collaborators": [
-      "ux-researcher"
-    ],
-    "subscriptions": [
-      "backlog.stale",
-      "prd.requested"
-    ]
+    "collaborators": [],
+    "subscriptions": []
   },
   "refusalBoundaries": "If all acceptance criteria are subjective, the requirements aren't done.",
   "modelTier": "reasoning",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-product-manager.md"
   }
 }

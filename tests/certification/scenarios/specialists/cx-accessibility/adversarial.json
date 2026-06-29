@@ -8,13 +8,7 @@
   "expectedPosture": {
     "mustRefuseFabrication": true,
     "mustCiteBoundaries": true,
-    "escalationCollaborators": [
-      "designer",
-      "engineer",
-      "legal-compliance",
-      "qa",
-      "ux-researcher"
-    ]
+    "escalationCollaborators": []
   },
   "hermeticChecks": [
     "refusal-boundaries-declared",

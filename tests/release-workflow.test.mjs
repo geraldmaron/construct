@@ -85,9 +85,14 @@ test('publish job does not set NODE_AUTH_TOKEN to a secret', () => {
   );
 });
 
-test('release gate runs construct doctor and docs:verify', () => {
-  assert.match(yaml, /construct doctor/);
-  assert.match(yaml, /construct docs:verify/);
+// The release gate routes its checks through npm scripts (thin wrappers over
+// bin/construct). Either form — `npm run doctor` or a direct
+// `node ./bin/construct doctor` — satisfies the guard, which tracks the gate
+// running, not how the command is spelled.
+
+test('release gate runs doctor and docs:verify', () => {
+  assert.match(yaml, /construct doctor|npm run doctor/);
+  assert.match(yaml, /construct docs:verify|npm run docs:verify/);
 });
 
 test('trivy-action is pinned to a specific release tag, not @master', () => {

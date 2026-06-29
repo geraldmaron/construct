@@ -54,3 +54,6 @@ construct ingest ./data/export.xlsx --out=./notes/export.md
 ## Rules
 
 Do not overwrite an existing markdown artifact unless the user explicitly asks for replacement. Prefer creating a suffixed filename instead. Keep original source files untouched.
+## Release gate
+
+Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

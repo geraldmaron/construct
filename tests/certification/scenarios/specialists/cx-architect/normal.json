@@ -19,9 +19,9 @@
     "required": true,
     "artifactTypes": [
       "adr",
-      "architecture-overview",
       "rfc",
       "rfc-platform",
+      "architecture-overview",
       "system-design"
     ]
   },

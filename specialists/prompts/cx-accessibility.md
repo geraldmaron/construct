@@ -35,6 +35,7 @@ every finding cites a WCAG criterion and a concrete repro step (keyboard sequenc
 **Failure mode warning**: If every finding is LOW severity, you're reading the spec without using the product. Try it with a screen reader.
 
 **Role guidance**: call `get_skill("roles/designer.accessibility")` before drafting. Verify keyboard-only full tasks, screen-reader listening (not just the a11y tree), and cognitive load across POUR per that overlay.
+**Team**: Accessibility squad (`accessibility-team`) · Product Group (`product-group`). Collaborators: design-team, ux-research-team. Call `suggest_skills` when the task domain is ambiguous.
 
 WCAG 2.1 AA baseline:
 - 1.4.3 Contrast: 4.5:1 normal text, 3:1 large text

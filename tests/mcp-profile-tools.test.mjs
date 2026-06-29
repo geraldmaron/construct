@@ -1,5 +1,5 @@
 /**
- * tests/mcp-profile-tools.test.mjs — Contract tests for lib/mcp/tools/profile.mjs.
+ * tests/mcp-profile-tools.test.mjs — Contract tests for lib/mcp/tools/scope.mjs.
  *
  * Each MCP wrapper is exercised in an isolated tmpdir so a green run guarantees:
  *   - read-only tools return structured data for a fresh project
@@ -16,17 +16,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
-  profileShow,
-  profileList,
-  profileDrafts,
-  profileHealthTool,
+  scopeShow,
+  scopeList,
+  scopeDrafts,
+  scopeHealthTool,
   outcomesSummary,
   outcomesRecord,
   knowledgeAdd,
-  profileCreate,
+  scopeCreate,
   sandboxList,
   learningStatus,
-} from '../lib/mcp/tools/profile.mjs';
+} from '../lib/mcp/tools/scope.mjs';
 
 const tmpDirs = [];
 after(() => {
@@ -35,16 +35,16 @@ after(() => {
   }
 });
 
-function freshProject(profileId = 'rnd') {
+function freshProject(scopeId = 'rnd') {
   const dir = mkdtempSync(join(tmpdir(), 'cx-mcp-profile-'));
   tmpDirs.push(dir);
-  writeFileSync(join(dir, 'construct.config.json'), JSON.stringify({ version: 1, profile: profileId }, null, 2));
+  writeFileSync(join(dir, 'construct.config.json'), JSON.stringify({ version: 1, scope: scopeId }, null, 2));
   return dir;
 }
 
-test('profile_show returns the configured profile shape', () => {
+test('scope_show returns the configured scope shape', () => {
   const cwd = freshProject('rnd');
-  const res = profileShow({ cwd });
+  const res = scopeShow({ cwd });
   assert.equal(res.id, 'rnd');
   assert.ok(Array.isArray(res.roles));
   assert.ok(Array.isArray(res.intake.types));
@@ -52,34 +52,34 @@ test('profile_show returns the configured profile shape', () => {
   assert.equal(res.custom, false);
 });
 
-test('profile_show falls back to rnd when config is missing', () => {
+test('scope_show falls back to rnd when config is missing', () => {
   const cwd = mkdtempSync(join(tmpdir(), 'cx-mcp-profile-default-'));
   tmpDirs.push(cwd);
-  const res = profileShow({ cwd });
+  const res = scopeShow({ cwd });
   assert.equal(res.id, 'rnd');
 });
 
-test('profile_list returns the curated catalog with counts', () => {
-  const res = profileList();
-  assert.ok(Array.isArray(res.profiles));
-  const ids = res.profiles.map((p) => p.id);
+test('scope_list returns the curated catalog with counts', () => {
+  const res = scopeList();
+  assert.ok(Array.isArray(res.scopes));
+  const ids = res.scopes.map((p) => p.id);
   assert.ok(ids.includes('rnd'), 'rnd must be in the catalog');
-  for (const p of res.profiles) {
+  for (const p of res.scopes) {
     assert.equal(typeof p.id, 'string');
     assert.equal(typeof p.roleCount, 'number');
   }
 });
 
-test('profile_drafts returns empty arrays for a fresh project', () => {
+test('scope_drafts returns empty arrays for a fresh project', () => {
   const cwd = freshProject();
-  const res = profileDrafts({ cwd });
+  const res = scopeDrafts({ cwd });
   assert.deepEqual(res.drafts, []);
   assert.equal(res.custom, null);
 });
 
-test('profile_health returns a deterministic zero-state for a fresh project', () => {
+test('scope_health returns a deterministic zero-state for a fresh project', () => {
   const cwd = freshProject();
-  const res = profileHealthTool({ cwd, id: 'rnd', window_days: 7 });
+  const res = scopeHealthTool({ cwd, id: 'rnd', window_days: 7 });
   assert.equal(res.id, 'rnd');
   assert.equal(res.windowDays, 7);
   assert.equal(typeof res.observationCount, 'number');
@@ -165,15 +165,15 @@ test('knowledge_add enforces confirmed-needs-source guard', async () => {
   assert.ok(res.error && res.error.includes('at least one source'));
 });
 
-test('profile_create refuses without confirm=true', () => {
+test('scope_create refuses without confirm=true', () => {
   const cwd = freshProject();
-  const res = profileCreate({ cwd, id: 'mcp-smoke' });
+  const res = scopeCreate({ cwd, id: 'mcp-smoke' });
   assert.ok(res.error && res.error.includes('confirm=true'));
 });
 
-test('profile_create scaffolds a draft when confirmed', () => {
+test('scope_create scaffolds a draft when confirmed', () => {
   const cwd = freshProject();
-  const res = profileCreate({
+  const res = scopeCreate({
     cwd,
     confirm: true,
     id: 'mcp-smoke-draft',
@@ -182,8 +182,8 @@ test('profile_create scaffolds a draft when confirmed', () => {
     seed_departments: [{ id: 'craft', displayName: 'Craft' }],
   });
   assert.ok(res.ok, `expected ok, got ${JSON.stringify(res)}`);
-  assert.ok(existsSync(join(cwd, '.cx', 'profiles', 'draft-mcp-smoke-draft', 'profile.json')));
-  assert.ok(existsSync(join(cwd, '.cx', 'profiles', 'draft-mcp-smoke-draft', 'requirements.md')));
+  assert.ok(existsSync(join(cwd, '.cx', 'scopes', 'draft-mcp-smoke-draft', 'scope.json')));
+  assert.ok(existsSync(join(cwd, '.cx', 'scopes', 'draft-mcp-smoke-draft', 'requirements.md')));
   assert.equal(res.personaPaths.length, 2);
   assert.equal(res.departmentPaths.length, 1);
 });
@@ -202,7 +202,7 @@ test('learning_status returns a structured one-shot dashboard for a fresh projec
     JSON.stringify([{ createdAt: new Date().toISOString(), project: 'rnd' }]),
   );
   const res = learningStatus({ cwd });
-  assert.equal(res.profile.id, 'rnd');
+  assert.equal(res.scope.id, 'rnd');
   assert.equal(res.observations.total, 1);
   assert.equal(res.research.count, 0);
   assert.ok('roles' in res.outcomes);

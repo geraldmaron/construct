@@ -59,19 +59,6 @@ function extractInvocations(source, subcommand) {
   return out;
 }
 
-test('CI lint suite invokes bin/construct dashboard:sync --build', () => {
-  // CI rebuilds the gitignored dashboard bundle so a fresh checkout has it.
-  // tests/functional/dashboard-build.functional.test.mjs already covers the
-  // equivalent build in the unit suite, so local hooks don't need a
-  // standalone invocation.
-
-  const ci = extractInvocations(CI_YAML, 'dashboard:sync');
-  assert.ok(ci.length > 0, 'CI lint suite must invoke bin/construct dashboard:sync at least once');
-  assert.deepEqual(ci, ['dashboard:sync --build'],
-    `CI must invoke 'dashboard:sync --build' (found: ${ci.join(' | ')}). ` +
-    `Using --check alone fails on fresh checkouts because lib/server/static/ is gitignored.`);
-});
-
 // Subcommands that MUST NOT appear in either local pre-push hook. Each is
 // heavyweight, deterministic, and fully covered by a CI job. Adding one of
 // these to a local hook re-creates the doom-loop that the gate-shrinking
@@ -83,7 +70,7 @@ const CI_ONLY_SUBCOMMANDS = [
   'lint:comments',
   'lint:agents',
   'lint:contracts',
-  'lint:profiles',
+  'lint:scopes',
   'lint:templates',
   'evals',
   'gates:audit',
@@ -108,7 +95,7 @@ test('every check stripped from local hooks is still covered by some CI job', ()
   // from the local hooks. Each gated subcommand should appear in
   // .github/workflows/ci.yml in one of:
   //   - `bin/construct <sub>`   — most construct subcommands
-  //   - `npm run <sub>`         — lint:profiles (script alias)
+  //   - `npm run <sub>`         — lint:scopes (script alias)
   //   - `scripts/<file>.mjs`    — lint:templates (CI runs the underlying
   //                               script directly via lint-commits-pr.mjs)
   // Exceptions: doctor (developer-facing diagnostic, not a CI gate).

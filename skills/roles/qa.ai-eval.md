@@ -10,7 +10,7 @@ applies_to:
   - cx-evaluator
 inherits: qa
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

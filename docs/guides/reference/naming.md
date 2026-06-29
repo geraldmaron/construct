@@ -45,7 +45,7 @@ Regenerate adapters with `npm run adapters` or `construct sync --project`.
 
 ## Role-flavor skills (B-composer)
 
-Skills under `skills/roles/<specialist>.<flavor>` are **bound-orphans** in the registry sense — not listed in each specialist's `skills[]` array — but they are reachable at runtime via the **prompt composer** when a specialist's role flavor matches. Examples: `roles/engineer.platform` loads for `cx-engineer` platform work; `roles/reviewer.trace` loads for trace review.
+Skills under `skills/roles/<name>[.<flavor>].md` are **bound-orphans** in the registry sense — not listed in each specialist's `skills[]` array — but they are reachable at runtime via the **prompt composer** when a specialist's role flavor matches. Examples: `roles/platform-engineer` loads for `cx-platform-engineer`; `roles/architect.platform` loads for platform-product architecture work on `cx-architect`. See ADR-0047.
 
 Maintainers triage bound-orphans with `node -e "import('./lib/registry/consolidation.mjs').then(m => console.log(JSON.stringify(m.triageBoundOrphans(),null,2)))"`. The alignment census reports **composer-reachable** (B-composer) separately from **true orphans** (C-merge + D-review). Categories:
 

@@ -1,0 +1,91 @@
+{
+  "name": "security",
+  "displayName": "Thinks like an attacker — sees the attack surface the developer didn't know existed.",
+  "description": "Thinks like an attacker — sees the attack surface the developer didn't know existed.",
+  "role": "security",
+  "modelTier": "reasoning",
+  "reasoningEffort": "high",
+  "skills": [
+    "security/red-team",
+    "security/blue-team",
+    "security/pentest",
+    "security/code-audit",
+    "security/vuln-research",
+    "security/threat-intel",
+    "quality-gates/verify-security",
+    "architecture/security-arch"
+  ],
+  "events": [
+    "dep.cve",
+    "secrets.detected",
+    "config.protection.violation"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/security/**",
+      "docs/threat-models/**"
+    ],
+    "allowedBdLabels": [
+      "security",
+      "vulnerability",
+      "audit"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:**"
+    ]
+  },
+  "docArtifacts": [
+    "security-review",
+    "threat-model"
+  ],
+  "watchConditions": [
+    {
+      "watcher": "auth-payments-non-narrow",
+      "reason": "pre-dispatch threat model (auth/payments/PII + non-narrow blast radius)"
+    }
+  ],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-security.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "attack surface changes",
+      "dependency vulnerabilities",
+      "auth boundary integrity",
+      "secret exposure"
+    ],
+    "riskSignals": [
+      "new unauthed endpoints",
+      "unaudited dependencies",
+      "implicit trust boundaries",
+      "hardcoded credentials"
+    ],
+    "artifactBias": [
+      "adrs",
+      "notes"
+    ]
+  },
+  "canEdit": true,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+  "internal": true,
+  "severityImmediate": [
+    "dep.cve",
+    "secrets.detected"
+  ],
+  "killSwitchEnv": "CONSTRUCT_ROLE_SECURITY",
+  "handoffCandidates": [
+    "engineer",
+    "platform-engineer",
+    "reviewer"
+  ],
+  "team": "governance-team",
+  "teamId": "governance-team",
+  "groupId": "governance-group"
+}

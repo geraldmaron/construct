@@ -21,3 +21,6 @@ Use when: product evidence should create or update Jira, Linear, GitHub Issues, 
 ## Rules
 
 Never write externally from weak evidence without making the risk explicit. Never create duplicate issues when an existing issue can be updated.
+## Release gate
+
+Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.
