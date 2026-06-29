@@ -55,13 +55,17 @@
 #let construct-font-display = ("Space Grotesk",)
 #let construct-font-mono = ("JetBrains Mono",)
 
+#let horizontalrule = block(width: 100%, above: 0.85em, below: 0.95em)[
+  #line(length: 100%, stroke: 0.6pt + hairline-strong)
+]
+
 // Type scale. One modular ramp shared by every document type so sizing never
 // drifts between a PRD, a research brief, and a decision record.
 
 #let fs-micro = 8pt
 #let fs-small = 8.5pt
 #let fs-meta = 9pt
-#let fs-body = 10pt
+#let fs-body = 10.4pt
 #let fs-h4 = 8.5pt
 #let fs-h3 = 11pt
 #let fs-h2 = 13pt
@@ -76,8 +80,8 @@
 #let wt-semibold = 600
 #let wt-bold = 700
 
-#let construct-figure-max-width = 58%
-#let construct-figure-max-height = 2.35in
+#let construct-figure-max-width = 92%
+#let construct-figure-max-height = 3.4in
 
 // A document-type word maps to a compact badge so the masthead reads as a
 // labelled artifact rather than a bare title.
@@ -290,20 +294,18 @@
 
 #let construct-theme(body) = {
   set text(font: construct-font-sans, size: fs-body, fill: ink-body, lang: "en", tracking: 0.002em)
-  set par(justify: false, leading: 0.82em, spacing: 1.15em)
+  set par(justify: false, leading: 0.9em, spacing: 1.24em)
   set heading(numbering: none, outlined: true)
 
   show strong: set text(font: construct-font-sans, weight: wt-semibold, fill: ink)
   show emph: set text(style: "italic")
 
-  // Lists inherit the open body leading; a per-item block gap keeps a wrapped
-  // bullet from reading as two bullets, with the gap clearly wider than the
-  // line leading within an item.
+  // Lists need looser vertical rhythm than body prose, but ordered lists must
+  // preserve Typst's native counter context or every item will render as `1.`.
+  // Spacing belongs on the list container, not on a wrapped enum.item block.
 
-  show list.item: it => block(below: 0.6em, it)
-  show enum.item: it => block(below: 0.6em, it)
-  set list(marker: (text(fill: ink)[•], text(fill: ink-muted)[‣], text(fill: ink-faint)[–]), indent: 2pt, body-indent: 8pt, spacing: 0.9em)
-  set enum(indent: 2pt, body-indent: 8pt, spacing: 0.9em)
+  set list(marker: (text(fill: ink)[•], text(fill: ink-muted)[‣], text(fill: ink-faint)[–]), indent: 2pt, body-indent: 9pt, spacing: 1.02em)
+  set enum(numbering: "1.", indent: 2pt, body-indent: 9pt, spacing: 1.02em)
 
   // Links carry ink with a hairline underline so citations stay legible without
   // introducing color.
@@ -322,7 +324,7 @@
       text(font: construct-font-display, size: fs-h1, weight: wt-semibold, fill: ink, tracking: -0.015em)[#it.body]
       v(0.22em)
       line(length: 100%, stroke: 0.5pt + hairline)
-      v(0.55em, weak: true)
+      v(0.7em, weak: true)
     })
   }
   show heading.where(level: 2): it => {
@@ -331,14 +333,14 @@
       text(font: construct-font-display, size: fs-h2, weight: wt-semibold, fill: ink, tracking: -0.01em)[#it.body]
       v(0.4em)
       line(length: 26pt, stroke: 1.5pt + ink)
-      v(0.62em, weak: true)
+      v(0.78em, weak: true)
     })
   }
   show heading.where(level: 3): it => {
     v(1.15em, weak: true)
     block(sticky: true, {
       text(font: construct-font-sans, size: fs-h3, weight: wt-semibold, fill: ink-strong)[#it.body]
-      v(0.38em, weak: true)
+      v(0.48em, weak: true)
     })
   }
   show heading.where(level: 4): it => {
@@ -414,10 +416,13 @@
       radius: 4pt,
     )[
       #align(center)[
-        #box(width: construct-figure-max-width)[
-          #show image: img => image(img, width: 100%, height: construct-figure-max-height, fit: "contain")
-          #it.body
-        ]
+        #show image: img => image(
+          img,
+          width: construct-figure-max-width,
+          height: construct-figure-max-height,
+          fit: "contain",
+        )
+        #it.body
       ]
     ]
     if it.caption != none {

@@ -40,6 +40,16 @@ test('routeRequest sends external research requests through a workflow-backed re
   assert.equal(route.suggestedWorkflowType, 'research-synthesis');
   assert.deepEqual(route.specialists, ['cx-researcher']);
   assert.equal(route.dispatchPlan, 'Plan: cx-researcher.');
+  assert.equal(route.researchExecutionPolicy?.mode, 'evidence-first');
+  assert.equal(route.researchExecutionPolicy?.canResearchInsideOrOutsideProject, true);
+});
+
+test('routeRequest returns a docs fallback ladder for library research', () => {
+  const route = routeRequest({ request: 'research the latest Next.js caching docs', fileCount: 1, moduleCount: 1 });
+  assert.equal(route.intent, INTENT_CLASSES.research);
+  assert.equal(route.researchExecutionPolicy?.domain, 'library-docs');
+  assert.match(JSON.stringify(route.researchExecutionPolicy?.toolRouting || []), /Context7/i);
+  assert.match(JSON.stringify(route.researchExecutionPolicy?.toolRouting || []), /official docs/i);
 });
 
 test('routeRequest routes typed artifact drafting through the matching workflow and owner', () => {

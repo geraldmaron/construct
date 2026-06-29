@@ -68,6 +68,8 @@ test('orchestration_run preserves the research workflow hint for evidence-backed
     assert.equal(result.track, 'focused');
     assert.equal(result.suggestedWorkflowType, 'research-synthesis');
     assert.deepEqual(result.specialists, ['cx-researcher']);
+    assert.equal(result.researchExecutionPolicy?.mode, 'evidence-first');
+    assert.ok(Array.isArray(result.researchExecutionPolicy?.toolRouting));
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
   }

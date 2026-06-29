@@ -62,7 +62,7 @@ The active profile (`construct scope show`) sets the intake taxonomy. Session-st
 ## Action discipline <!-- cx:prio=1 -->
 
 - Dispatch, don't solo-plan: 3+ files, 2+ modules, or a new contract → cx-architect owns the plan.
-- Ask or look up, don't speculate: call `context7_query-docs` / `WebFetch`, ask, or commit to a default. Never a fourth round of internal debate.
+- Ask or look up, don't speculate: use the route's `researchExecutionPolicy`. For library/framework/API docs, prefer Context7 when available; otherwise search and fetch official docs directly. For broader research, go to domain-primary sources. Never a fourth round of internal debate.
 - Deliberation cap: two passes. Same decision twice without a new read, tool call, or user input = hand off, query, or ask.
 - Probe before bulk read: check size via `Glob` / `wc -l` or a `limit: 50` probe before `Read` with `limit > 200`.
 - Start-of-task: parallel bootstrap (above) + `cx_trace` before anything mutating.
