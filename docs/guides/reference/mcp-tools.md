@@ -778,6 +778,15 @@ Resolve the execution-capability contract for an embedded workflow before/at wor
 | `capabilities` | string[] | Optional required capabilities; unverifiable ones are returned as warnings. |
 | `allow_cross_provider_fallback` | boolean | Permit model fallback outside the host provider family (default false). |
 
+### `web_search`
+Search the public web and return CITED results — the only search surface that reaches the open web, kept distinct from `knowledge_search` / `provider_fetch` / repo search so it is never conflated or faked. Requires a governed provider (`WEB_SEARCH_URL`); without one it returns a typed degradation (`capability-unavailable`) and zero results, never source/repo results dressed as web. Every result carries a verifiable URL, a claim-relative class, and an Admiralty grade with derived confidence (ADR-0017; `high` is reserved for A1/A2/B1).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `query` | string | **required** — The search query string. |
+| `claim` | string | **required** — The claim the results support; drives claim-relative source classification (ADR-0017). |
+| `recency` | string | Optional freshness window hint (e.g. `30d`). |
+
 ### `orchestration_run`
 Execute a real multi-specialist orchestration run and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Solo runs execute in-process — no daemon, no port, no token; a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`. Real specialist output requires the `provider` worker backend (a provider key configured); the default `inline` backend prepares tasks only.
 
