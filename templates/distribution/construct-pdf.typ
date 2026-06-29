@@ -16,7 +16,7 @@
     version: "$if(version)$$version$$endif$",
   ),
   footer: construct-running-footer(
-    "Construct brief",
+    "Brief",
     classification: "$if(classification)$$classification$$endif$",
   ),
 )
