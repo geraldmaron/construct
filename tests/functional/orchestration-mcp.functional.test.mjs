@@ -56,6 +56,23 @@ test('orchestration_run plans a multi-specialist run in-process (no daemon)', as
   }
 });
 
+test('orchestration_run preserves the research workflow hint for evidence-backed requests', async () => {
+  const cwd = tmpProject();
+  try {
+    const result = await orchestrationRun(
+      { request: 'do research on oidc', workflow_type: 'research-synthesis', file_count: 1, module_count: 1, wait: true, worker_backend: 'inline' },
+      { cwd, env: soloEnv() },
+    );
+    assert.ok(!result.error, `expected a run, got error: ${result.error}`);
+    assert.equal(result.intent, 'research');
+    assert.equal(result.track, 'focused');
+    assert.equal(result.suggestedWorkflowType, 'research-synthesis');
+    assert.deepEqual(result.specialists, ['cx-researcher']);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
 test('orchestration_run fails fast when a configured remote service is unreachable', async () => {
   const cwd = tmpProject();
   try {

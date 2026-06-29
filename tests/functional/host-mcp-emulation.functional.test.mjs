@@ -129,3 +129,33 @@ test('a trivial request does not over-orchestrate (track is not forced to orches
   const track = policy.track || policy.intent?.track || '';
   assert.notEqual(track, 'orchestrated', 'a one-file typo must not be classified orchestrated');
 });
+
+test('a host can execute a research-shaped request through orchestration_run after policy classification', async (t) => {
+  const env = sandbox();
+  t.after(() => env.cleanup());
+  const client = await connect(env);
+  t.after(() => client.close());
+
+  const policy = payload(await client.callTool({
+    name: 'orchestration_policy',
+    arguments: { request: 'compare oidc vs saml', fileCount: 1, moduleCount: 1, introducesContract: false },
+  }));
+  assert.equal(policy.track, 'focused');
+  assert.equal(policy.suggestedWorkflowType, 'research-synthesis');
+
+  const run = payload(await client.callTool({
+    name: 'orchestration_run',
+    arguments: {
+      request: 'compare oidc vs saml',
+      workflow_type: policy.suggestedWorkflowType,
+      file_count: 1,
+      module_count: 1,
+      wait: true,
+      worker_backend: 'inline',
+    },
+  }));
+  assert.equal(run.intent, 'research');
+  assert.equal(run.track, 'focused');
+  assert.equal(run.suggestedWorkflowType, 'research-synthesis');
+  assert.deepEqual(run.specialists, ['cx-researcher']);
+});

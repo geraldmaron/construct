@@ -72,6 +72,7 @@ test('resolveBasePrompt normalizes cx-prefixed names through composed resolution
 
 test('resolveBasePrompt keeps the construct front door workflow-backed for research and drafting', () => {
   const prompt = resolveBasePrompt({ name: 'construct', promptFile: 'personas/construct.md' }, { rootDir: root });
+  assert.match(prompt, /orchestration_run/);
   assert.match(prompt, /workflow_invoke/);
   assert.match(prompt, /research-synthesis/);
   assert.match(prompt, /canonical template/);

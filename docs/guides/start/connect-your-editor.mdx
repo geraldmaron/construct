@@ -58,6 +58,8 @@ In Claude Code, address the persona with `@construct`. Internal specialists disp
 
 **Project** writes `<project>/.opencode/opencode.json` with the `construct` front door, optional `construct-local` for Ollama setups, providers, MCP servers, and the runtime plugin.
 
+For substantive external research, the front door classifies with `orchestration_policy` and then executes via `orchestration_run`. `workflow_invoke` remains the plan/contract preview surface, not the evidence-execution surface.
+
 ## Codex (CLI)
 
 **Global** writes `~/.codex/agents/construct.toml` and registers it in `~/.codex/config.toml` under `[agents.construct]`, plus any Construct MCP entries in the managed block.
