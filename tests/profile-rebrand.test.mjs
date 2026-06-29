@@ -1,6 +1,6 @@
 /**
  * tests/profile-rebrand.test.mjs — exercises the `getRebrand` lookup helper
- * and verifies `construct intake list` honors the active profile's rebrand
+ * and verifies `construct intake list` honors the active scope's rebrand
  * labels end-to-end.
  */
 
@@ -12,7 +12,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import { getRebrand, DEFAULT_REBRAND } from '../lib/profiles/rebrand.mjs';
+import { getRebrand, DEFAULT_REBRAND } from '../lib/scopes/rebrand.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -40,11 +40,11 @@ describe('getRebrand', () => {
 
   it('honors operations profile rebrand labels', () => {
     const root = mkTmp();
-    // Selecting the curated operations profile via construct.config.json
-    // means resolveActiveProfile reads profiles/operations.json from the repo.
+    // Selecting the curated operations scope via construct.config.json
+    // means resolveActiveScope reads specialists/org/scopes/operations.json from the repo.
     fs.writeFileSync(
       path.join(root, 'construct.config.json'),
-      JSON.stringify({ profile: 'operations' }, null, 2),
+      JSON.stringify({ scope: 'operations' }, null, 2),
     );
     const rb = getRebrand(root);
     assert.equal(rb.intakeQueueLabel, 'Request queue');
@@ -54,17 +54,17 @@ describe('getRebrand', () => {
   it('returns rnd profile rebrand when no override is configured', () => {
     const root = mkTmp();
     const rb = getRebrand(root);
-    // Default rnd profile carries "R&D intake queue" / "signal"
+    // Default rnd scope carries "R&D intake queue" / "signal"
     assert.match(rb.intakeQueueLabel, /intake|Intake/);
     assert.equal(rb.signalNoun, 'signal');
   });
 
-  it('falls back to defaults when profile.json is malformed', () => {
+  it('falls back to defaults when scope.json is malformed', () => {
     const root = mkTmp();
     fs.mkdirSync(path.join(root, '.cx'), { recursive: true });
-    fs.writeFileSync(path.join(root, '.cx', 'profile.json'), '{ this is not json');
+    fs.writeFileSync(path.join(root, '.cx', 'scope.json'), '{ this is not json');
     const rb = getRebrand(root);
-    // Malformed custom profile is ignored; we land on the rnd fallback,
+    // Malformed custom scope is ignored; we land on the rnd fallback,
     // which still produces non-empty strings.
     assert.ok(typeof rb.intakeQueueLabel === 'string' && rb.intakeQueueLabel.length > 0);
     assert.ok(typeof rb.signalNoun === 'string' && rb.signalNoun.length > 0);
@@ -72,11 +72,11 @@ describe('getRebrand', () => {
 });
 
 describe('construct intake list (rebrand integration)', () => {
-  it('uses operations profile labels in stdout', () => {
+  it('uses operations scope labels in stdout', () => {
     const root = mkTmp();
     fs.writeFileSync(
       path.join(root, 'construct.config.json'),
-      JSON.stringify({ profile: 'operations' }, null, 2),
+      JSON.stringify({ scope: 'operations' }, null, 2),
     );
 
     const result = spawnSync(process.execPath, [CLI_BIN, 'intake', 'list'], {

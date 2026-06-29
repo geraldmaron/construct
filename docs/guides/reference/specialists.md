@@ -1,15 +1,14 @@
 ---
 title: Specialists
-description: The 28 specialists behind the construct persona. Generated from specialists/registry.json.
+description: The 28 specialists behind the construct persona. Generated from specialists/org.
 ---
 
-> Generated from `specialists/registry.json`. Re-run `construct docs:site` to refresh.
+> Generated from `specialists/org`. Re-run `construct docs:site` to refresh.
 
 Construct ships one persona (`construct`) and 28 specialists behind it. You address `@construct` for all everyday work; it routes to specialists internally. Each specialist has a role, model tier, and prompt file that defines its decision authority.
 
 | Specialist | Tier | Purpose |
 |---|---|---|
-| `construct` | standard | Single entry point for all work. plans, builds, validates, and ships. Route eve |
 | `orchestrator` | standard | Sees the whole board. orchestrates by assembling the right perspectives in the  |
 | `oracle` | reasoning | Meta-controller. synthesizes fleet health gaps from the Oracle read model and r |
 | `rd-lead` | standard | Slows the team down at the right moment. before architecture locks in assumptio |

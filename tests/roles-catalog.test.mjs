@@ -8,19 +8,16 @@
  */
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { listRoles, formatRoleList } from '../lib/roles/catalog.mjs';
+import { loadRegistry } from '../lib/registry/loader.mjs';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const registry = JSON.parse(readFileSync(join(__dirname, '..', 'specialists', 'registry.json'), 'utf8'));
+const registry = loadRegistry({ rootDir: new URL('..', import.meta.url).pathname });
 
 test('listRoles returns one descriptor per registry specialist', () => {
   const roles = listRoles();
-  assert.equal(roles.length, registry.specialists.length);
+  assert.equal(roles.length, Object.values(registry.specialists).length);
   assert.ok(roles.length >= 28, `expected at least 28 roles, got ${roles.length}`);
 });
 

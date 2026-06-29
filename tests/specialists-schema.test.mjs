@@ -19,6 +19,7 @@ import {
   validateRegistry,
   validateRegistryFile,
 } from '../lib/specialists/schema.mjs';
+import { loadRegistry } from '../lib/registry/loader.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 
@@ -101,10 +102,7 @@ describe('validateRegistry', () => {
 
 describe('validateRegistryFile against the live registry', () => {
   it('the shipped registry is valid (no drift)', () => {
-    const result = validateRegistryFile({
-      registryPath: path.join(ROOT_DIR, 'specialists', 'registry.json'),
-      rootDir: ROOT_DIR,
-    });
+    const result = validateRegistry(loadRegistry({ rootDir: ROOT_DIR }), { rootDir: ROOT_DIR });
     assert.equal(result.errors.length, 0, `shipped registry has drift: ${result.errors.join('; ')}`);
     assert.ok(result.agentCount >= 25, 'sanity: registry should have the full persona set');
   });

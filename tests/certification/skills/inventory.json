@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-22T18:56:54.319Z",
+  "generatedAt": "2026-06-26T23:47:41.091Z",
   "generator": "lib/certification/skill-inventory.mjs",
-  "skillCount": 151,
+  "skillCount": 152,
   "skills": [
     {
       "id": "ai/agent-dev",
@@ -240,6 +240,24 @@
       "outputs": {
         "artifactType": "guidance",
         "name": "architecture-security-arch"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "brand/output-vibe",
+      "owners": [
+        "cx-docs-keeper"
+      ],
+      "activationTriggers": [
+        "Use when drafting or exporting customer-facing artifacts (PRD, deck, brief, runbook). Sets typography, prose rhythm, sketch diagrams, and export consistency."
+      ],
+      "inputs": [
+        "[artifact-draft, export-target]"
+      ],
+      "outputs": {
+        "artifactType": "style-guide",
+        "name": "brand-output-vibe"
       },
       "verificationHooks": [],
       "workflowSkill": false
@@ -760,6 +778,10 @@
           "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
         },
         {
+          "kind": "cli",
+          "value": "construct artifact validate"
+        },
+        {
           "kind": "mcp",
           "value": "get_template"
         }
@@ -788,6 +810,10 @@
           "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
         },
         {
+          "kind": "cli",
+          "value": "construct artifact validate"
+        },
+        {
           "kind": "mcp",
           "value": "get_template"
         }
@@ -813,7 +839,11 @@
       "verificationHooks": [
         {
           "kind": "verificationBar",
-          "value": "Every claim cites file:line or command output; no assumed architecture."
+          "value": "Every load-bearing claim cites a verifiable primary source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
         },
         {
           "kind": "mcp",
@@ -844,6 +874,10 @@
           "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
         },
         {
+          "kind": "cli",
+          "value": "construct artifact validate"
+        },
+        {
           "kind": "mcp",
           "value": "get_template"
         }
@@ -870,6 +904,10 @@
         {
           "kind": "verificationBar",
           "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
         }
       ],
       "workflowSkill": false
@@ -894,7 +932,11 @@
       "verificationHooks": [
         {
           "kind": "verificationBar",
-          "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+          "value": "Observed behavior weighted over self-report; sample size stated; no invented quotes; every load-bearing claim cites a verifiable source."
+        },
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
         },
         {
           "kind": "mcp",
@@ -1013,6 +1055,10 @@
           "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
         },
         {
+          "kind": "cli",
+          "value": "construct artifact validate"
+        },
+        {
           "kind": "mcp",
           "value": "get_template"
         }
@@ -1051,13 +1097,17 @@
         "[signal, evidence-brief]"
       ],
       "outputs": {
-        "artifactType": "prd",
+        "artifactType": "product-intelligence",
         "name": "docs-product-intelligence-workflow"
       },
       "verificationHooks": [
         {
           "kind": "verificationBar",
           "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
         }
       ],
       "workflowSkill": true
@@ -1082,6 +1132,10 @@
         {
           "kind": "verificationBar",
           "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
         }
       ],
       "workflowSkill": false
@@ -1141,6 +1195,10 @@
           "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
         },
         {
+          "kind": "cli",
+          "value": "construct artifact validate"
+        },
+        {
           "kind": "mcp",
           "value": "get_template"
         }
@@ -1167,6 +1225,10 @@
         {
           "kind": "verificationBar",
           "value": "Every load-bearing claim cites a verifiable source; label inference confidence; satisfy template structure requirements."
+        },
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
         }
       ],
       "workflowSkill": true
@@ -1208,7 +1270,11 @@
       "verificationHooks": [
         {
           "kind": "verificationBar",
-          "value": "Observed behavior weighted over self-report; sample size stated; no invented quotes."
+          "value": "Observed behavior weighted over self-report; sample size stated; no invented quotes; every load-bearing claim cites a verifiable source."
+        },
+        {
+          "kind": "cli",
+          "value": "construct artifact validate"
         },
         {
           "kind": "mcp",
@@ -1719,6 +1785,24 @@
       "workflowSkill": true
     },
     {
+      "id": "roles/ai-engineer",
+      "owners": [
+        "cx-ai-engineer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — AI role. Use when reviewing or generating work by cx-ai-engineer, or when an agent is acting in the Engineer — AI role."
+      ],
+      "inputs": [
+        "[code-diff, prompt]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-engineer-ai"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
       "id": "roles/architect",
       "owners": [
         "cx-architect"
@@ -1827,6 +1911,24 @@
       "workflowSkill": false
     },
     {
+      "id": "roles/business-strategist",
+      "owners": [
+        "cx-business-strategist"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Business Strategy role. Use when reviewing or generating work by cx-business-strategist, or when an agent is acting in the Product Manager — Business Strategy role."
+      ],
+      "inputs": [
+        "[strategy-doc, competitive-analysis]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-product-manager-business-strategy"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
       "id": "roles/data-analyst",
       "owners": [
         "cx-data-analyst"
@@ -1912,6 +2014,24 @@
       "outputs": {
         "artifactType": "role-guidance",
         "name": "roles-data-analyst-telemetry"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/data-engineer",
+      "owners": [
+        "cx-data-engineer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Data role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Engineer — Data role."
+      ],
+      "inputs": [
+        "[code-diff, data-pipeline]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-engineer-data"
       },
       "verificationHooks": [],
       "workflowSkill": false
@@ -2025,99 +2145,27 @@
       "workflowSkill": false
     },
     {
-      "id": "roles/engineer",
+      "id": "roles/devil-advocate",
       "owners": [
-        "cx-engineer"
+        "cx-devil-advocate"
       ],
       "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer role. Use when reviewing or generating work by cx-engineer, cx-ai-engineer, cx-data-engineer, cx-platform-engineer, or when an agent is acting in the Engineer role."
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Devil Advocate role. Use when reviewing or generating work by cx-devil-advocate, or when an agent is acting in the Reviewer — Devil Advocate role."
       ],
       "inputs": [
-        "[code-diff, task-context]"
+        "[plan, proposal]"
       ],
       "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-engineer"
+        "artifactType": "guidance",
+        "name": "roles-reviewer-devil-advocate"
       },
       "verificationHooks": [],
       "workflowSkill": false
     },
     {
-      "id": "roles/engineer.ai",
+      "id": "roles/docs-keeper",
       "owners": [
-        "cx-engineer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — AI role. Use when reviewing or generating work by cx-ai-engineer, or when an agent is acting in the Engineer — AI role."
-      ],
-      "inputs": [
-        "[code-diff, prompt]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-engineer-ai"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "roles/engineer.data",
-      "owners": [
-        "cx-engineer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Data role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Engineer — Data role."
-      ],
-      "inputs": [
-        "[code-diff, data-pipeline]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-engineer-data"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "roles/engineer.platform",
-      "owners": [
-        "cx-engineer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Platform role. Use when reviewing or generating work by cx-platform-engineer, or when an agent is acting in the Engineer — Platform role."
-      ],
-      "inputs": [
-        "[code-diff, internal-tooling]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-engineer-platform"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "roles/operator",
-      "owners": [
-        "profile-role:operator"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator role. Use when reviewing or generating work by cx-sre, cx-operations, cx-release-manager, cx-docs-keeper, or when an agent is acting in the Operator role."
-      ],
-      "inputs": [
-        "[runbook, deployment-plan]"
-      ],
-      "outputs": {
-        "artifactType": "role-guidance",
-        "name": "roles-operator"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "roles/operator.docs",
-      "owners": [
-        "profile-role:operator"
+        "cx-docs-keeper"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Docs role. Use when reviewing or generating work by cx-docs-keeper, or when an agent is acting in the Operator — Docs role."
@@ -2138,37 +2186,73 @@
       "workflowSkill": false
     },
     {
-      "id": "roles/operator.release",
+      "id": "roles/engineer",
       "owners": [
-        "profile-role:operator"
+        "cx-engineer"
       ],
       "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Release role. Use when reviewing or generating work by cx-release-manager, or when an agent is acting in the Operator — Release role."
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer role. Use when reviewing or generating work by cx-engineer, or when an agent is acting in the Engineer role."
       ],
       "inputs": [
-        "[release-plan, changelog]"
+        "[code-diff, task-context]"
       ],
       "outputs": {
         "artifactType": "role-guidance",
-        "name": "roles-operator-release"
+        "name": "roles-engineer"
       },
       "verificationHooks": [],
       "workflowSkill": false
     },
     {
-      "id": "roles/operator.sre",
+      "id": "roles/evaluator",
       "owners": [
-        "profile-role:operator"
+        "cx-evaluator"
       ],
       "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — SRE role. Use when reviewing or generating work by cx-sre, or when an agent is acting in the Operator — SRE role."
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Evaluator role. Use when reviewing or generating work by cx-evaluator, or when an agent is acting in the Reviewer — Evaluator role."
       ],
       "inputs": [
-        "[alert-config, slo]"
+        "[model-output, eval-set]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-reviewer-evaluator"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/explorer",
+      "owners": [
+        "cx-explorer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — Explorer role. Use when reviewing or generating work by cx-explorer, or when an agent is acting in the Researcher — Explorer role."
+      ],
+      "inputs": [
+        "[repo, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-researcher-explorer"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/operations",
+      "owners": [
+        "cx-operations"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator role. Use when reviewing or generating work by cx-sre, cx-operations, cx-release-manager, cx-docs-keeper, or when an agent is acting in the Operator role."
+      ],
+      "inputs": [
+        "[runbook, deployment-plan]"
       ],
       "outputs": {
         "artifactType": "role-guidance",
-        "name": "roles-operator-sre"
+        "name": "roles-operator"
       },
       "verificationHooks": [],
       "workflowSkill": false
@@ -2187,6 +2271,24 @@
       "outputs": {
         "artifactType": "role-guidance",
         "name": "roles-orchestrator"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/platform-engineer",
+      "owners": [
+        "cx-platform-engineer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Platform role. Use when reviewing or generating work by cx-platform-engineer, or when an agent is acting in the Engineer — Platform role."
+      ],
+      "inputs": [
+        "[code-diff, internal-tooling]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-engineer-platform"
       },
       "verificationHooks": [],
       "workflowSkill": false
@@ -2223,24 +2325,6 @@
       "outputs": {
         "artifactType": "role-guidance",
         "name": "roles-product-manager-ai-product"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "roles/product-manager.business-strategy",
-      "owners": [
-        "cx-product-manager"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Business Strategy role. Use when reviewing or generating work by cx-business-strategist, or when an agent is acting in the Product Manager — Business Strategy role."
-      ],
-      "inputs": [
-        "[strategy-doc, competitive-analysis]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-product-manager-business-strategy"
       },
       "verificationHooks": [],
       "workflowSkill": false
@@ -2390,24 +2474,6 @@
       "workflowSkill": false
     },
     {
-      "id": "roles/qa.test-automation",
-      "owners": [
-        "cx-qa"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Test Automation role. Use when reviewing or generating work by cx-test-automation, or when an agent is acting in the QA — Test Automation role."
-      ],
-      "inputs": [
-        "[test-suite, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-qa-test-automation"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
       "id": "roles/qa.web-ui",
       "owners": [
         "cx-qa"
@@ -2421,6 +2487,24 @@
       "outputs": {
         "artifactType": "guidance",
         "name": "roles-qa-web-ui"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/release-manager",
+      "owners": [
+        "cx-release-manager"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Release role. Use when reviewing or generating work by cx-release-manager, or when an agent is acting in the Operator — Release role."
+      ],
+      "inputs": [
+        "[release-plan, changelog]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-operator-release"
       },
       "verificationHooks": [],
       "workflowSkill": false
@@ -2444,42 +2528,6 @@
       "workflowSkill": false
     },
     {
-      "id": "roles/researcher.explorer",
-      "owners": [
-        "cx-researcher"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — Explorer role. Use when reviewing or generating work by cx-explorer, or when an agent is acting in the Researcher — Explorer role."
-      ],
-      "inputs": [
-        "[repo, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-researcher-explorer"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "roles/researcher.ux",
-      "owners": [
-        "cx-researcher"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — UX role. Use when reviewing or generating work by cx-ux-researcher, or when an agent is acting in the Researcher — UX role."
-      ],
-      "inputs": [
-        "[user-research, interview-data]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-researcher-ux"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
       "id": "roles/reviewer",
       "owners": [
         "cx-reviewer"
@@ -2493,61 +2541,6 @@
       "outputs": {
         "artifactType": "review-report",
         "name": "roles-reviewer"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "roles/reviewer.devil-advocate",
-      "owners": [
-        "cx-reviewer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Devil Advocate role. Use when reviewing or generating work by cx-devil-advocate, or when an agent is acting in the Reviewer — Devil Advocate role."
-      ],
-      "inputs": [
-        "[plan, proposal]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-reviewer-devil-advocate"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "roles/reviewer.evaluator",
-      "owners": [
-        "cx-reviewer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Evaluator role. Use when reviewing or generating work by cx-evaluator, or when an agent is acting in the Reviewer — Evaluator role."
-      ],
-      "inputs": [
-        "[model-output, eval-set]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-reviewer-evaluator"
-      },
-      "verificationHooks": [],
-      "workflowSkill": false
-    },
-    {
-      "id": "roles/reviewer.trace",
-      "owners": [
-        "cx-oracle",
-        "cx-reviewer"
-      ],
-      "activationTriggers": [
-        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Trace role. Use when reviewing or generating work by cx-trace-reviewer, or when an agent is acting in the Reviewer — Trace role."
-      ],
-      "inputs": [
-        "[trace, task-context]"
-      ],
-      "outputs": {
-        "artifactType": "guidance",
-        "name": "roles-reviewer-trace"
       },
       "verificationHooks": [],
       "workflowSkill": false
@@ -2674,6 +2667,79 @@
       "outputs": {
         "artifactType": "guidance",
         "name": "roles-security-supply-chain"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/sre",
+      "owners": [
+        "cx-sre"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — SRE role. Use when reviewing or generating work by cx-sre, or when an agent is acting in the Operator — SRE role."
+      ],
+      "inputs": [
+        "[alert-config, slo]"
+      ],
+      "outputs": {
+        "artifactType": "role-guidance",
+        "name": "roles-operator-sre"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/test-automation",
+      "owners": [
+        "cx-test-automation"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Test Automation role. Use when reviewing or generating work by cx-test-automation, or when an agent is acting in the QA — Test Automation role."
+      ],
+      "inputs": [
+        "[test-suite, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-qa-test-automation"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/trace-reviewer",
+      "owners": [
+        "cx-oracle",
+        "cx-trace-reviewer"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Trace role. Use when reviewing or generating work by cx-trace-reviewer, or when an agent is acting in the Reviewer — Trace role."
+      ],
+      "inputs": [
+        "[trace, task-context]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-reviewer-trace"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
+      "id": "roles/ux-researcher",
+      "owners": [
+        "cx-ux-researcher"
+      ],
+      "activationTriggers": [
+        "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — UX role. Use when reviewing or generating work by cx-ux-researcher, or when an agent is acting in the Researcher — UX role."
+      ],
+      "inputs": [
+        "[user-research, interview-data]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "roles-researcher-ux"
       },
       "verificationHooks": [],
       "workflowSkill": false
@@ -2895,37 +2961,7 @@
       "workflowSkill": false
     }
   ],
-  "blockingFindings": [
-    {
-      "kind": "conflicting-output-contract",
-      "severity": "blocking",
-      "artifactType": "research-brief",
-      "skillIds": [
-        "docs/codebase-research-workflow",
-        "docs/research-workflow"
-      ],
-      "reason": "divergent verificationBar across workflow skills"
-    },
-    {
-      "kind": "conflicting-output-contract",
-      "severity": "blocking",
-      "artifactType": "evidence-brief",
-      "skillIds": [
-        "docs/evidence-ingest-workflow",
-        "docs/user-research-workflow"
-      ],
-      "reason": "divergent verificationBar across workflow skills"
-    },
-    {
-      "kind": "conflicting-output-contract",
-      "severity": "blocking",
-      "artifactType": "prd",
-      "skillIds": [
-        "docs/prd-workflow",
-        "docs/product-intelligence-workflow"
-      ],
-      "reason": "multiple workflow skills claim the same manifest artifact type"
-    }
-  ],
-  "digest": "91641d76f8be5f68956d63cf846f4eb9e5d1ba3d069609a11ee39b3eee8cd385"
+  "blockingFindings": [],
+  "effectivenessFindings": [],
+  "digest": "c01c558bd7c6dd42e758ff5f75fc9c0cf94834d97015c61056dab23c46a874a9"
 }

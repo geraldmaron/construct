@@ -18,7 +18,14 @@ Follow [rules/common/research.md](../../rules/common/research.md) as the default
 1. **Clarify the question**: one specific, falsifiable question the research must answer.
 2. **Apply recency discipline**: search from the most recent year backward. For fast-moving domains, treat sources older than 12 months as presumptively stale unless confirmed.
 3. **Check internal evidence first**: `.cx/research/`, `.cx/knowledge/`, PRDs, ADRs, runbooks before going external.
-4. **Choose authoritative starting points** (external primary only):
+4. **Choose the tool path by intent, not habit**:
+
+   - Construct itself → `knowledge_search`
+   - Current repo / attached files / ingested artifacts → local evidence first
+   - Library / framework / API / cloud docs → Context7 when available, otherwise web-search and fetch official docs directly
+   - Everything else → domain-primary sources first, web search only as the locator
+
+5. **Choose authoritative starting points** (external primary only):
 
    | Domain | Starting points |
    |---|---|
@@ -28,11 +35,11 @@ Follow [rules/common/research.md](../../rules/common/research.md) as the default
    | Cloud / API / SDK | Official vendor docs for exact version, changelog, migration guide |
    | Regulatory | Primary regulation text, official agency guidance |
 
-5. **Source hierarchy**: primary → secondary → tertiary (tertiary never alone for load-bearing claims).
-6. **Verify every URL** before citing. Mark unconfirmed as `[unverified]`.
-7. **Tone**: resolve from artifact manifest (`direct`). See `specialists/tone-profiles.json`.
-8. **Structure** with `get_template("research-brief")`; write to `.cx/research/{topic-slug}.md`.
-9. **Reference** the research doc in the requesting agent's output.
+6. **Source hierarchy**: primary → secondary → tertiary (tertiary never alone for load-bearing claims).
+7. **Verify every URL** before citing. Mark unconfirmed as `[unverified]`.
+8. **Tone**: resolve from artifact manifest (`direct`). See `specialists/tone-profiles.json`.
+9. **Structure** with `get_template("research-brief")`; write to `.cx/research/{topic-slug}.md`.
+10. **Reference** the research doc in the requesting agent's output.
 
 ## Distribution (publish pipeline)
 

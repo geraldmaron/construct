@@ -1,0 +1,69 @@
+{
+  "name": "evaluator",
+  "displayName": "Defines what 'better' means before the work is done — evaluations designed after implementation are confirmation, not measurement.",
+  "description": "Defines what 'better' means before the work is done — evaluations designed after implementation are confirmation, not measurement.",
+  "role": "evaluator",
+  "modelTier": "standard",
+  "reasoningEffort": "medium",
+  "skills": [
+    "ai/prompt-and-eval",
+    "quality-gates/verify-quality"
+  ],
+  "events": [
+    "eval.regression"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/evals/**",
+      ".cx/evals/**",
+      "tests/evals/**"
+    ],
+    "allowedBdLabels": [
+      "eval",
+      "regression-eval"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:**"
+    ]
+  },
+  "docArtifacts": [],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-evaluator.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "eval coverage",
+      "regression detection",
+      "baseline drift",
+      "failure case representation"
+    ],
+    "riskSignals": [
+      "eval sets matching known outputs",
+      "cherry-picked baselines",
+      "missing failure cases",
+      "promotion on too few traces"
+    ],
+    "artifactBias": [
+      "notes",
+      "adrs"
+    ]
+  },
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_EVALUATOR",
+  "handoffCandidates": [
+    "engineer",
+    "ai-engineer"
+  ],
+  "team": "quality-team",
+  "teamId": "quality-team",
+  "groupId": "quality-group"
+}

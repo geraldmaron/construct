@@ -23,7 +23,7 @@ function freshEnv() {
   mkdirSync(join(rootDir, 'audit-artifacts'), { recursive: true });
   mkdirSync(doctorRoot(homeDir), { recursive: true });
   mkdirSync(join(rootDir, 'specialists'), { recursive: true });
-  cpSync(join(process.cwd(), 'specialists', 'registry.json'), join(rootDir, 'specialists', 'registry.json'));
+  cpSync(join(process.cwd(), 'specialists', 'org'), join(rootDir, 'specialists', 'org'), { recursive: true });
   return {
     projectDir,
     homeDir,
@@ -47,6 +47,8 @@ test('collectReadModel returns empty sections for a minimal project', () => {
     assert.equal(model.contractViolations.recentCount, 0);
     assert.equal(model.alignmentCensus.present, false);
     assert.equal(model.parity.skipped, false);
+    assert.equal(model.teamGovernance.present, true);
+    assert.ok(Number.isFinite(model.teamGovernance.teamCount));
   } finally {
     env.cleanup();
   }
@@ -95,6 +97,34 @@ test('collectReadModel ingests outcomes, violations, doctor log, and census', ()
     assert.equal(model.alignmentCensus.present, true);
     assert.equal(model.alignmentCensus.rootLayout?.clean, false);
     assert.deepEqual(model.alignmentCensus.rootLayout?.legacyDirs, ['providers']);
+  } finally {
+    env.cleanup();
+  }
+});
+
+test('collectReadModel collects team governance data from unified-registry', () => {
+  const env = freshEnv();
+  try {
+    const model = collectReadModel(env);
+    assert.equal(model.teamGovernance.present, true);
+    assert.ok(Number.isFinite(model.teamGovernance.teamCount));
+    assert.ok(model.teamGovernance.teamCount > 0);
+
+    // Verify team structure
+    const teams = model.teamGovernance.teams;
+    assert.ok(teams);
+    for (const [teamId, team] of Object.entries(teams)) {
+      assert.equal(team.id, teamId);
+      assert.ok(team.name);
+      assert.ok(team.owner);
+      assert.ok(Number.isFinite(team.roleCount));
+      assert.ok(Number.isFinite(team.specialistCount));
+      assert.ok(Number.isFinite(team.decisionRightsCount));
+      assert.ok(Number.isFinite(team.forbiddenDecisionsCount));
+      assert.equal(typeof team.escalationPathBroken, 'boolean');
+      assert.equal(typeof team.ownerExists, 'boolean');
+      assert.equal(typeof team.understaffed, 'boolean');
+    }
   } finally {
     env.cleanup();
   }

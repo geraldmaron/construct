@@ -30,17 +30,19 @@ function freshTmp() {
   };
 }
 
-test('CURRENT_SCHEMA_VERSION is exactly 1 at this release', () => {
-  assert.equal(CURRENT_SCHEMA_VERSION, 1);
+test('CURRENT_SCHEMA_VERSION is exactly 2 at this release', () => {
+  assert.equal(CURRENT_SCHEMA_VERSION, 2);
 });
 
-test('planMigrations from v0 to v1 returns one step; v1→v1 returns empty', () => {
-  const v0ToV1 = planMigrations(0);
-  assert.equal(Array.isArray(v0ToV1) && v0ToV1.length, 1);
-  assert.equal(v0ToV1[0].from, 0);
-  assert.equal(v0ToV1[0].to, 1);
+test('planMigrations from v0 to current returns two steps; v2→v2 returns empty', () => {
+  const v0ToCurrent = planMigrations(0);
+  assert.equal(Array.isArray(v0ToCurrent) && v0ToCurrent.length, 2);
+  assert.equal(v0ToCurrent[0].from, 0);
+  assert.equal(v0ToCurrent[0].to, 1);
+  assert.equal(v0ToCurrent[1].from, 1);
+  assert.equal(v0ToCurrent[1].to, 2);
 
-  const noop = planMigrations(1);
+  const noop = planMigrations(2);
   assert.deepEqual(noop, []);
 });
 
@@ -62,7 +64,7 @@ test('checkCompatibility surfaces needsUpgrade when artifact is newer', () => {
 });
 
 test('checkCompatibility is happy when versions match', () => {
-  assert.deepEqual(checkCompatibility(1), { compatible: true });
+  assert.deepEqual(checkCompatibility(2), { compatible: true });
 });
 
 test('runMigrations dry-run reports changes without writing', async () => {
@@ -72,7 +74,7 @@ test('runMigrations dry-run reports changes without writing', async () => {
     writeFileSync(artifact, JSON.stringify({ alias: 'demo' }));
     const result = await runMigrations({ artifactPath: artifact, fromVersion: 0, dryRun: true });
     assert.equal(result.ok, true);
-    assert.equal(result.applied.length, 1);
+    assert.equal(result.applied.length, 2);
     assert.equal(result.applied[0].changed, true);
     // dry-run must not write
     const onDisk = JSON.parse(readFileSync(artifact, 'utf8'));
@@ -80,7 +82,7 @@ test('runMigrations dry-run reports changes without writing', async () => {
   } finally { cleanup(); }
 });
 
-test('runMigrations write-mode stamps version: 1', async () => {
+test('runMigrations write-mode stamps version: 2', async () => {
   const { root, cleanup } = freshTmp();
   try {
     const artifact = join(root, 'config.json');
@@ -88,7 +90,7 @@ test('runMigrations write-mode stamps version: 1', async () => {
     const result = await runMigrations({ artifactPath: artifact, fromVersion: 0 });
     assert.equal(result.ok, true);
     const onDisk = JSON.parse(readFileSync(artifact, 'utf8'));
-    assert.equal(onDisk.version, 1);
+    assert.equal(onDisk.version, 2);
     assert.equal(onDisk.alias, 'demo');
   } finally { cleanup(); }
 });
@@ -99,7 +101,7 @@ test('runMigrations is idempotent — running twice does not double-stamp', asyn
     const artifact = join(root, 'config.json');
     writeFileSync(artifact, JSON.stringify({ alias: 'demo' }));
     await runMigrations({ artifactPath: artifact, fromVersion: 0 });
-    const result = await runMigrations({ artifactPath: artifact, fromVersion: 1 });
+    const result = await runMigrations({ artifactPath: artifact, fromVersion: CURRENT_SCHEMA_VERSION });
     assert.equal(result.ok, true);
     assert.deepEqual(result.applied, []);
   } finally { cleanup(); }

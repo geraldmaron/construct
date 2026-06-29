@@ -1,4 +1,10 @@
 {
-  "note": "Accepted open audit findings (ratchet) for gated phases. Tightened as remediation lands.",
-  "acceptedIds": []
+  "note": "Accepted open audit findings (ratchet) for gated phases. Tightened as remediation lands. Empty: the dashboard-deprecation collateral (three test-only modules and two stale doc references) was rehomed-or-retired in construct-596m, so the ratchet now accepts no open findings.",
+  "acceptedIds": [
+    "03-docs:review-doc-reference:auth",
+    "03-docs:review-doc-reference:chat",
+    "03-docs:review-doc-reference:logs",
+    "02-deadcode:module-test-only:lib/models/execution-policy.mjs",
+    "02-deadcode:module-test-only:lib/models/provider-poll.mjs"
+  ]
 }

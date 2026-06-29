@@ -18,14 +18,14 @@
   "handoffEvidence": {
     "required": true,
     "artifactTypes": [
-      "backlog-proposal",
-      "customer-profile",
-      "meta-prd",
-      "one-pager",
       "prd",
-      "prd-business",
+      "meta-prd",
+      "prfaq",
+      "one-pager",
+      "backlog-proposal",
       "prd-platform",
-      "prfaq"
+      "prd-business",
+      "customer-profile"
     ]
   },
   "liveScoring": {

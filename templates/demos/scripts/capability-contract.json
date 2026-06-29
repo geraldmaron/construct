@@ -1,0 +1,25 @@
+{
+  "name": "capability-contract",
+  "title": "Capability contract — describe, resolve, certify",
+  "summary": "Walk the read-only capability contract: describe what this install can do, resolve the execution-capability mode for an embedded workflow, then roll up certification posture across capabilities and surfaces.",
+  "systemOverlay": "Demo mode for the capability contract. Run the exact construct CLI commands from each step using shell or construct_tool. Every command here is read-only and secret-free; do not invent capability ids, execution modes, or certification verdicts — report exactly what the JSON emits.",
+  "tape": "capability-contract",
+  "fallbackSurface": "tape",
+  "steps": [
+    {
+      "title": "Describe — what this install can do",
+      "prompt": "Run construct capability describe --json to emit versions, interfaces, roles, skills, workflows, schemas, models, policies, and telemetry for this install.",
+      "command": "node bin/construct capability describe --json"
+    },
+    {
+      "title": "Resolve — execution-capability contract",
+      "prompt": "Run construct execution resolve --json to report the executionMode and active Construct capabilities for an embedded workflow given host and strategy context.",
+      "command": "node bin/construct execution resolve --json"
+    },
+    {
+      "title": "Certify — posture rollup",
+      "prompt": "Run construct certify status to roll up certification posture across capabilities and surfaces.",
+      "command": "node bin/construct certify status"
+    }
+  ]
+}

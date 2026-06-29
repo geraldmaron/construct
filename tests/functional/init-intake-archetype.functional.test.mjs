@@ -36,8 +36,8 @@ function makeProject() {
   return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) };
 }
 
-function runInit(cwd, { profile = 'rnd', extraEnv = {} } = {}) {
-  return spawnSync(process.execPath, [BIN, 'init', '--yes', `--profile=${profile}`], {
+function runInit(cwd, { scope = 'rnd', extraEnv = {} } = {}) {
+  return spawnSync(process.execPath, [BIN, 'init', '--yes', `--scope=${scope}`], {
     cwd,
     encoding: 'utf8',
     timeout: 120_000,
@@ -51,7 +51,7 @@ function runInit(cwd, { profile = 'rnd', extraEnv = {} } = {}) {
   });
 }
 
-test('init with rnd profile scaffolds inbox/, .gitignore, and the dedup manifest', () => {
+test('init with rnd scope scaffolds inbox/, .gitignore, and the dedup manifest', () => {
   const p = makeProject();
   try {
     const result = runInit(p.dir);

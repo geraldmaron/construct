@@ -8,7 +8,7 @@
  *   A1 reflect hook      .cx/observations/index.json + vectors.json
  *   A2 research          .cx/knowledge/external/research/*.md
  *   A3 outcomes          .cx/outcomes/_summary.json (after aggregateOutcomes)
- *   B1 profile           construct.config.json / .cx/profile.json
+ *   B1 scope             construct.config.json / .cx/scope.json
  *
  * Output is a tab-aligned table. No LLM, no network. Cheap to run on every
  * `construct status` invocation.
@@ -40,21 +40,21 @@ function readOutcomesSummary() {
   return safeRead(path.join(cwd, '.cx', 'outcomes', '_summary.json'));
 }
 
-function readActiveProfile() {
+function readActiveScope() {
   const config = safeRead(path.join(cwd, 'construct.config.json'));
-  if (config?.profile) return { id: config.profile, source: 'construct.config.json' };
-  const custom = safeRead(path.join(cwd, '.cx', 'profile.json'));
-  if (custom?.custom === true && custom.id) return { id: custom.id, source: '.cx/profile.json (custom)' };
+  if (config?.scope) return { id: config.scope, source: 'construct.config.json' };
+  const custom = safeRead(path.join(cwd, '.cx', 'scope.json'));
+  if (custom?.custom === true && custom.id) return { id: custom.id, source: '.cx/scope.json (custom)' };
   return { id: 'rnd (default)', source: 'fallback' };
 }
 
 const obs = countObservations();
 const research = countResearchFindings();
 const outcomes = readOutcomesSummary();
-const profile = readActiveProfile();
+const scope = readActiveScope();
 
 const rows = [
-  ['Active profile', `${profile.id}`, profile.source],
+  ['Active scope', `${scope.id}`, scope.source],
   ['Observations (A1)', `${obs.total} total, ${obs.last24h} in last 24h`, '.cx/observations/'],
   ['Research findings (A2)', `${research}`, '.cx/knowledge/external/research/'],
 ];

@@ -8,7 +8,7 @@ You want a `cx-performance-auditor` for your project (or any other specialist th
 ## The shape of a specialist
 
 <FlowPipeline steps={[
-  { label: 'specialists/registry.json', badge: 'required', sub: 'name · tier · platforms' },
+  { label: 'specialists/org', badge: 'required', sub: 'name · tier · platforms' },
   { label: 'specialists/prompts/cx-<name>.md', badge: 'required', sub: 'voice · authority · boundaries' },
   { label: 'specialists/contracts.json', badge: 'optional', sub: 'typed handoffs' },
   { label: 'construct sync', highlight: true },
@@ -17,7 +17,7 @@ You want a `cx-performance-auditor` for your project (or any other specialist th
 
 Every specialist has four pieces:
 
-1. **An entry in `specialists/registry.json`**: declares name, role, model tier, capability list, and (optionally) skills allowlist.
+1. **An entry in `specialists/org`**: declares name, role, model tier, capability list, and (optionally) skills allowlist.
 2. **A prompt file at `specialists/prompts/cx-<name>.md`**: defines the specialist's voice, decision authority, and operating boundaries.
 3. **(Optional) An entry in `specialists/contracts.json`**: typed input/output for handoffs from other specialists.
 4. **(Optional) A role manifest entry in `specialists/role-manifests.json`**: for personas that should also operate as an organizational role (with fences, allowed bd labels, event ownership).
@@ -26,7 +26,7 @@ For a basic specialist, only the first two are required.
 
 ## Step 1: Add the registry entry
 
-Open `specialists/registry.json` and add an object to the `agents` array:
+Open `specialists/org` and add an object to the `agents` array:
 
 ```json
 {
@@ -133,7 +133,7 @@ These are required for the role framework to dispatch your specialist on event-d
 
 ## Reference
 
-- [Specialist registry source: `specialists/registry.json`](https://github.com/geraldmaron/construct/blob/main/specialists/registry.json)
+- [Specialist registry source: `specialists/org`](https://github.com/geraldmaron/construct/blob/main/specialists/org)
 - [Prompt examples: `specialists/prompts/`](https://github.com/geraldmaron/construct/tree/main/specialists/prompts)
 - [Contract definitions: `specialists/contracts.json`](https://github.com/geraldmaron/construct/blob/main/specialists/contracts.json)
 - [Concepts → Agents and personas](/guides/concepts/agents-and-personas): the model behind one-persona, many-specialists.

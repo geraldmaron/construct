@@ -15,10 +15,24 @@ Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code,
 
 ## Tool surface (gateway)
 
-To keep the serialized tool schema small enough for any context window — a flat 71-tool surface (~10.6k tokens) overran a 32k local-model window — `ListTools` exposes only a **curated core** (`orchestration_policy`, `get_skill`, `search_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`) plus the `construct_call` **gateway**. Every other tool below stays reachable through `construct_call`.
+To keep the serialized tool schema small enough for any context window — a flat 71-tool surface (~10.6k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `get_skill`, `get_template`, `search_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `workflow_invoke`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
 
-### `construct_call`
-Invoke any non-core Construct tool by name. Pass the tool name in `tool` (constrained to the catalog of available tools) and its arguments in `args` — e.g. `construct_call({ tool: "workflow_status", args: { run_id } })`. Dispatches to the same handler as a direct call, so collapsing the surface costs no capability.
+### `find_tool`
+Find Construct tools by intent when you do not know the exact name. Pass a natural-language `query` (and optional `limit`) describing the task; returns the best-matching tools with their full input schemas, ranked by hybrid local-embedding semantic similarity merged with normalized BM25 — degrading to BM25-only when no semantic model is provisioned, so it works offline. Then invoke a result via `call` (or directly when it is a flat tool). E.g. `find_tool({ query: "export a markdown file to pdf" })` → `document_export`.
+
+### `call`
+Invoke any non-core Construct tool by name. Pass the tool name in `tool` (constrained to the catalog of available tools) and its arguments in `args` — e.g. `call({ tool: "workflow_status", args: { run_id } })`. The description lists namespaced tool groups and points to `find_tool` for intent-based discovery rather than enumerating every tool. Dispatches to the same handler as a direct call, so collapsing the surface costs no capability. The former name `construct_call` (and any `construct-mcp_`-prefixed tool name) is recovered tolerantly and the miss is recorded, so a stale or mis-typed name still resolves.
+
+## Host wiring policy
+
+The Construct MCP server (`construct-mcp`) is defined once in `specialists/org` (`mcpServers`) and wired into every selected host by `scripts/sync-specialists.mjs` — Claude Code (`.claude/settings.json` → `mcpServers`), OpenCode (`.opencode/opencode.json`), VS Code (`.vscode/mcp.json` → `servers`), Cursor (`.cursor/mcp.json` → `mcpServers`), and Codex (`.codex/config.toml` → `mcp_servers`). The `host-config-parity` functional test fails if any selected host drops it.
+
+Credential handling diverges because hosts resolve env references at different times:
+
+- **OpenCode — defer.** OpenCode keeps the `{env:VAR}` reference verbatim and resolves it at **runtime**. A server whose token env var is unset at sync time is still wired; it only fails to authenticate later if the variable is still missing when the host launches it.
+- **Codex — omit.** Codex has no runtime env interpolation, so it needs the credential at **sync time**. `codexMcpEnvResolves` checks each server's `bearer_token_env_var`; an entry whose token is unresolved is **omitted** from `.codex/config.toml` rather than written with a dangling reference. Servers with no credential requirement — including `construct-mcp` itself, a local stdio server — always pass.
+
+The result: OpenCode never blocks on a missing optional credential, and Codex never ships an entry that cannot authenticate.
 
 ## Project tools
 
@@ -257,6 +271,8 @@ Returns `{ allowed, reason, approvalRequired, source, brokerActive }`. Solo mode
 ### `orchestration_policy`
 Classifies a request into intent, execution track, specialists, and approval boundaries.
 
+For research-shaped requests, the response also carries `researchExecutionPolicy`: a surface-agnostic evidence ladder that says when to use local evidence, `knowledge_search`, Context7, direct official-doc web fetches, or other domain-primary sources. Hosts should follow that policy instead of assuming Context7 exists.
+
 | Parameter | Type | Description |
 |---|---|---|
 | `request` | string | User request or objective text |
@@ -285,12 +301,14 @@ The intake, task-graph, and worker plane are surfaced through the `construct int
 ### `list_teams`
 Lists all available team templates with members, focus, and promotion gates.
 
-### `get_team`
-Returns the full definition of a named team template.
+### `suggest_skills`
+Ranks skills from the central catalog for a natural-language intent.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `name` | string | Yes | Team template name (e.g. `feature`, `incident`, `architecture`) |
+| `intent` | string | Yes | Task description or keywords |
+| `specialistId` | string | No | Optional cx-* id for entitlement hints |
+| `limit` | number | No | Max suggestions |
 
 ---
 
@@ -548,7 +566,7 @@ Bulk-add tasks from a markdown plan to the current workflow. Parses headings and
 
 ## Profile, outcomes & learning tools
 
-### `profile_show`
+### `scope_show`
 Return the active Construct org profile (id, displayName, roles, departments, intake taxonomy, doc templates). Use when a specialist needs to know which role set, classification taxonomy, or doc templates apply before drafting work.
 
 | Parameter | Type | Description |
@@ -556,19 +574,19 @@ Return the active Construct org profile (id, displayName, roles, departments, in
 | `cwd` | string | Project root (default: server cwd). |
 | `id` | string | Force a specific profile id instead of resolving from config. |
 
-### `profile_list`
-List the curated org profile catalog (rnd, operations, creative, research) with role/department counts. Use to discover which profiles are available before suggesting `construct profile set`.
+### `scope_list`
+List the curated org profile catalog (rnd, operations, creative, research) with role/department counts. Use to discover which profiles are available before suggesting `construct scope set`.
 
 _No parameters._
 
-### `profile_drafts`
-List in-progress draft profiles under `.cx/profiles/draft-*` and any user-defined custom profile at `.cx/profile.json`. Use to see what profile work is pending before scaffolding another draft.
+### `scope_drafts`
+List in-progress draft profiles under `.cx/profiles/draft-*` and any user-defined custom profile at `.cx/scope.json`. Use to see what profile work is pending before scaffolding another draft.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `cwd` | string | Project root (default: server cwd). |
 
-### `profile_health`
+### `scope_health`
 Per-profile health rollup over a window: observation count, per-role outcome runs and success rates. Use to check whether a profile is producing data before recommending changes or archive.
 
 | Parameter | Type | Description |
@@ -577,7 +595,7 @@ Per-profile health rollup over a window: observation count, per-role outcome run
 | `id` | string | Profile id (default: active profile). |
 | `window_days` | number | Window in days (default 30). |
 
-### `profile_create`
+### `scope_create`
 Scaffold a draft org profile under `.cx/profiles/draft-<id>/` (requirements.md + profile.json + persona stubs + department charters). Writes durable state — requires `confirm=true`. For curated catalog work, follow `docs/guides/concepts/profile-lifecycle.md` after creation.
 
 | Parameter | Type | Description |
@@ -589,7 +607,7 @@ Scaffold a draft org profile under `.cx/profiles/draft-<id>/` (requirements.md +
 | `seed_roles` | array | Role ids to scaffold persona files for (cap 80). |
 | `seed_departments` | array | Departments to scaffold charters for (cap 12). |
 
-### `profile_archive`
+### `scope_archive`
 Archive a curated profile: moves `profiles/<id>.json` and its intake table into `archive/profiles/<id>/` with an archive note. Destructive — requires `confirm=true` and a substantive `reason` (>=8 chars). Observations and outcomes are preserved.
 
 | Parameter | Type | Description |
@@ -661,6 +679,21 @@ List Construct sandboxes under `~/.cx/sandboxes/` (id, path, createdAt). Use to 
 _No parameters._
 
 ## Embedded contract tools
+
+### `author_artifact`
+
+Materializes a typed artifact you have drafted (PRD, ADR, RFC, meta-prd, runbook,
+research-brief, evidence-brief) to its canonical path and runs the release gate.
+The calling agent is the model: it drafts the markdown, this tool persists and
+validates it, then returns the path and a structured PASS/FAIL verdict with errors
+so the draft can be fixed and re-submitted. OpenCode and other supported hosts
+reach this contract through the synced Construct MCP server.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `draft_markdown` | string | The complete artifact markdown — a single `#` title plus the type's required `##` sections. |
+| `artifact_type` | string | Artifact type (defaults to `prd`; inferred from `subject` when omitted). |
+| `subject` | string | Short subject/title hint used for the filename and type inference. |
 
 ### `artifact_workflow`
 
@@ -746,7 +779,7 @@ Resolve the execution-capability contract for an embedded workflow before/at wor
 | `allow_cross_provider_fallback` | boolean | Permit model fallback outside the host provider family (default false). |
 
 ### `orchestration_run`
-Execute a real multi-specialist orchestration run via the local Construct daemon and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Requires a running daemon (`construct dashboard`); an unreachable daemon fails fast with how to start it rather than silently degrading to a single-persona pass. Real specialist output requires the daemon's `provider` worker backend (a provider key configured); the default `inline` backend prepares tasks only.
+Execute a real multi-specialist orchestration run and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Solo runs execute in-process — no daemon, no port, no token; a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`. Real specialist output requires the `provider` worker backend (a provider key configured); the default `inline` backend prepares tasks only.
 
 | Parameter | Type | Description |
 |---|---|---|

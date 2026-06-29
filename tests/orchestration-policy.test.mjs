@@ -33,6 +33,33 @@ test('routeRequest classifies simple explanation as immediate research', () => {
   assert.deepEqual(route.specialists, []);
 });
 
+test('routeRequest sends external research requests through a workflow-backed research path', () => {
+  const route = routeRequest({ request: 'do research on oidc', fileCount: 1, moduleCount: 1 });
+  assert.equal(route.intent, INTENT_CLASSES.research);
+  assert.equal(route.track, EXECUTION_TRACKS.focused);
+  assert.equal(route.suggestedWorkflowType, 'research-synthesis');
+  assert.deepEqual(route.specialists, ['cx-researcher']);
+  assert.equal(route.dispatchPlan, 'Plan: cx-researcher.');
+  assert.equal(route.researchExecutionPolicy?.mode, 'evidence-first');
+  assert.equal(route.researchExecutionPolicy?.canResearchInsideOrOutsideProject, true);
+});
+
+test('routeRequest returns a docs fallback ladder for library research', () => {
+  const route = routeRequest({ request: 'research the latest Next.js caching docs', fileCount: 1, moduleCount: 1 });
+  assert.equal(route.intent, INTENT_CLASSES.research);
+  assert.equal(route.researchExecutionPolicy?.domain, 'library-docs');
+  assert.match(JSON.stringify(route.researchExecutionPolicy?.toolRouting || []), /Context7/i);
+  assert.match(JSON.stringify(route.researchExecutionPolicy?.toolRouting || []), /official docs/i);
+});
+
+test('routeRequest routes typed artifact drafting through the matching workflow and owner', () => {
+  const route = routeRequest({ request: 'draft a PRD for onboarding', fileCount: 1, moduleCount: 1 });
+  assert.equal(route.track, EXECUTION_TRACKS.focused);
+  assert.equal(route.suggestedWorkflowType, 'prd-draft');
+  assert.ok(route.specialists.includes('cx-product-manager'));
+  assert.ok(route.specialists.includes('cx-devil-advocate'));
+});
+
 test('routeRequest classifies feature build as orchestrated implementation', () => {
   const route = routeRequest({ request: 'build this feature end to end and ship it', fileCount: 4, moduleCount: 2 });
   assert.equal(route.intent, INTENT_CLASSES.implementation);
@@ -302,7 +329,7 @@ test('formatOverlaySelection emits one line per non-null flavor with the cx-<rol
   assert.deepEqual(lines, [
     'cx-engineer: loaded engineer.platform overlay',
     'cx-architect: loaded architect.ai-systems overlay',
-    'cx-data-analyst: loaded dataAnalyst.experiment overlay',
+    'cx-data-analyst: loaded data-analyst.experiment overlay',
   ]);
 });
 

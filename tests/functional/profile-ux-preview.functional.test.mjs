@@ -1,8 +1,8 @@
 /**
- * tests/functional/profile-ux-preview.functional.test.mjs. Mutating profile
+ * tests/functional/profile-ux-preview.functional.test.mjs. Mutating scope
  * subcommands must preview-then-confirm.
  *
- * Pins the UX contract for `profile set` and `profile archive`:
+ * Pins the UX contract for `scope set` and `scope archive`:
  *   --dry-run produces a structured preview and writes nothing.
  *   --yes bypasses the interactive prompt for scripts and CI.
  *   archive refuses when the reason is shorter than 8 chars.
@@ -17,9 +17,9 @@ import { spawnSync } from 'node:child_process';
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
 
-function freshProject(profileId = 'rnd') {
+function freshProject(scopeId = 'rnd') {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-ux-'));
-  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, profile: profileId }, null, 2) + '\n');
+  fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify({ version: 1, scope: scopeId }, null, 2) + '\n');
   return cwd;
 }
 
@@ -31,12 +31,12 @@ function run(args, { cwd, env = {} } = {}) {
   });
 }
 
-test('profile set --dry-run previews the structural diff without writing', () => {
+test('scope set --dry-run previews the structural diff without writing', () => {
   const cwd = freshProject('rnd');
   const before = fs.readFileSync(path.join(cwd, 'construct.config.json'), 'utf8');
-  const res = run(['profile', 'set', 'creative', '--dry-run'], { cwd });
+  const res = run(['scope', 'set', 'creative', '--dry-run'], { cwd });
   assert.equal(res.status, 0, `expected 0 exit, got ${res.status}. stderr: ${res.stderr}`);
-  assert.ok(res.stdout.includes('About to switch active profile'));
+  assert.ok(res.stdout.includes('About to switch active scope'));
   assert.ok(res.stdout.includes('from:  rnd'));
   assert.ok(res.stdout.includes('to:    creative'));
   assert.ok(res.stdout.includes('Structural diff'));
@@ -46,19 +46,19 @@ test('profile set --dry-run previews the structural diff without writing', () =>
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
-test('profile set --yes writes the new profile without prompting', () => {
+test('scope set --yes writes the new scope without prompting', () => {
   const cwd = freshProject('rnd');
-  const res = run(['profile', 'set', 'operations', '--yes'], { cwd });
+  const res = run(['scope', 'set', 'operations', '--yes'], { cwd });
   assert.equal(res.status, 0, `stderr: ${res.stderr}`);
   const after = JSON.parse(fs.readFileSync(path.join(cwd, 'construct.config.json'), 'utf8'));
-  assert.equal(after.profile, 'operations');
+  assert.equal(after.scope, 'operations');
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
-test('profile set is a no-op when the target equals the current profile', () => {
+test('scope set is a no-op when the target equals the current scope', () => {
   const cwd = freshProject('rnd');
   const before = fs.readFileSync(path.join(cwd, 'construct.config.json'), 'utf8');
-  const res = run(['profile', 'set', 'rnd', '--yes'], { cwd });
+  const res = run(['scope', 'set', 'rnd', '--yes'], { cwd });
   assert.equal(res.status, 0);
   assert.ok(res.stdout.includes('already set'));
   const after = fs.readFileSync(path.join(cwd, 'construct.config.json'), 'utf8');
@@ -66,24 +66,24 @@ test('profile set is a no-op when the target equals the current profile', () => 
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
-test('profile archive --dry-run shows what files would move without touching them', () => {
+test('scope archive --dry-run shows what files would move without touching them', () => {
   const cwd = freshProject('rnd');
-  const profileFile = path.join(REPO, 'profiles', 'creative.json');
-  const sizeBefore = fs.statSync(profileFile).size;
-  const res = run(['profile', 'archive', 'creative', '--reason=functional test preview', '--dry-run', '--yes'], { cwd });
+  const scopeFile = path.join(REPO, 'specialists', 'org', 'scopes', 'creative.json');
+  const sizeBefore = fs.statSync(scopeFile).size;
+  const res = run(['scope', 'archive', 'creative', '--reason=functional test preview', '--dry-run', '--yes'], { cwd });
   assert.equal(res.status, 0, `stderr: ${res.stderr}`);
-  assert.ok(res.stdout.includes('About to archive curated profile'));
+  assert.ok(res.stdout.includes('About to archive curated scope'));
   assert.ok(res.stdout.includes('reason:       functional test preview'));
   assert.ok(res.stdout.includes('Files that will move'));
   assert.ok(res.stdout.includes('What stays'));
   assert.ok(res.stdout.includes('[dry-run] No files were moved.'));
-  assert.equal(fs.statSync(profileFile).size, sizeBefore, 'profile file must not change under --dry-run');
+  assert.equal(fs.statSync(scopeFile).size, sizeBefore, 'scope file must not change under --dry-run');
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
-test('profile archive fails fast when reason is too short', () => {
+test('scope archive fails fast when reason is too short', () => {
   const cwd = freshProject('rnd');
-  const res = run(['profile', 'archive', 'creative', '--reason=too', '--yes'], { cwd });
+  const res = run(['scope', 'archive', 'creative', '--reason=too', '--yes'], { cwd });
   assert.notEqual(res.status, 0);
   assert.ok(res.stderr.includes('substantive --reason'));
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });

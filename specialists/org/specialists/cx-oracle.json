@@ -1,0 +1,46 @@
+{
+  "name": "oracle",
+  "displayName": "Meta-controller — synthesizes fleet health gaps from the Oracle read model and routes remediation to owning specialists.",
+  "description": "Meta-controller — synthesizes fleet health gaps from the Oracle read model and routes remediation to owning specialists.",
+  "role": "oracle",
+  "modelTier": "reasoning",
+  "reasoningEffort": "high",
+  "skills": [
+    "ai/orchestration-workflow",
+    "exploration/dependency-graph-reading",
+    "roles/trace-reviewer"
+  ],
+  "events": [],
+  "fence": {},
+  "docArtifacts": [],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-oracle.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "parity drift",
+      "contract violations",
+      "doctor escalations",
+      "alignment census staleness",
+      "outcomes degradation"
+    ],
+    "riskSignals": [
+      "unrouted systemic gaps",
+      "auto actions needing approval",
+      "stale alignment census",
+      "missing read-model signals"
+    ],
+    "artifactBias": [
+      "notes",
+      "memos",
+      "adrs"
+    ]
+  },
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,list_skills,get_skill,search_skills,list_teams,suggest_skills,memory_search,memory_add_observations,cx_trace,cx_score",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_ORACLE",
+  "team": "strategy-team",
+  "teamId": "strategy-team",
+  "groupId": "strategy-group"
+}

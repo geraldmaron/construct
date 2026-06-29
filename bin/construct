@@ -15,7 +15,7 @@ import { spawnSync } from 'node:child_process';
 import { CLI_COMMANDS, CATEGORY_ORDER, formatCommandHelp } from '../lib/cli-commands.mjs';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { validateRegistry } from '../lib/validator.mjs';
-import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setModelWithTierInference } from '../lib/model-router.mjs';
+import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setModelWithTierInference, listAvailableModels } from '../lib/model-router.mjs';
 import { pollFreeModels, topForTier, selectForTier } from '../lib/model-free-selector.mjs';
 import { cmdMcpList, cmdMcpAdd, cmdMcpRemove, cmdMcpInfo } from '../lib/mcp-manager.mjs';
 import { cmdOllama } from '../lib/ollama-manager.mjs';
@@ -64,15 +64,20 @@ import { runCapabilityLedgerAuditCli } from '../lib/capability-ledger.mjs';
 import { runCorpusInventoryAuditCli } from '../lib/test-corpus-inventory.mjs';
 import { runArtifactValidateCli } from '../lib/artifact-release-gate.mjs';
 import { runTeamReviewCli } from '../lib/telemetry/team-rollup.mjs';
-import { startDashboard, startServices } from '../lib/service-manager.mjs';
+import { startServices } from '../lib/service-manager.mjs';
 import { readCostLog, summarizeCostData, formatCostReport, clearCostLog } from '../lib/cost.mjs';
 import { readEfficiencyLog, summarizeEfficiencyData, formatEfficiencyReport } from '../lib/efficiency.mjs';
-import { resolveColors } from '../lib/term-format.mjs';
+import { resolveUiColors } from '../lib/ui/theme.mjs';
+import { UNICODE_GLYPHS, ASCII_GLYPHS } from '../lib/ui/glyphs.mjs';
+import { formatPathLink, terminalLinksEnabled } from '../lib/ui/links.mjs';
+import { ok as uiOk, warn as uiWarn, info as uiInfo, fail as uiFail, section as uiSection } from '../lib/ui/components.mjs';
+import { getInstalledVersion } from '../lib/version.mjs';
 import { buildHybridSearchResultsAsync } from '../lib/storage/hybrid-query.mjs';
 import { createSqlClient, closeSqlClient } from '../lib/storage/backend.mjs';
 import { syncFileStateToSql } from '../lib/storage/sync.mjs';
 import { deleteIngestedArtifacts, getStorageStatus, inferProjectName, resetStorage } from '../lib/storage/admin.mjs';
 import { runPressureRelease } from '../lib/runtime-pressure.mjs';
+import { loadRegistry, listSpecialists } from '../lib/registry/loader.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const HOME = os.homedir();
@@ -82,13 +87,21 @@ for (const [key, value] of Object.entries(ENV)) {
   if (!(key in process.env)) process.env[key] = value;
 }
 
-const COLORS = resolveColors();
+const COLORS = resolveUiColors();
+const GLYPHS = process.env.CX_ASCII === '1' ? ASCII_GLYPHS : UNICODE_GLYPHS;
+const LINKS_ON = terminalLinksEnabled(process.env, { stream: process.stdout });
 
 function println(message = '') { process.stdout.write(`${message}\n`); }
 function errorln(message = '') { process.stderr.write(`${message}\n`); }
-function ok(message) { println(`  ${COLORS.green}✓${COLORS.reset}  ${message}`); }
-function warn(message) { println(`  ${COLORS.yellow}⚠${COLORS.reset}  ${message}`); }
-function info(message) { println(`  ${COLORS.cyan}→${COLORS.reset}  ${message}`); }
+function ok(message) { println(uiOk(message, { colors: COLORS, glyphs: GLYPHS })); }
+function warn(message) { println(uiWarn(message, { colors: COLORS })); }
+function info(message) { println(uiInfo(message, { colors: COLORS, glyphs: GLYPHS })); }
+
+// A repo path becomes an OSC-8 hyperlink where the terminal honors them; the
+// visible label stays the raw path so Terminal.app's own Cmd-click detection
+// still resolves it where OSC-8 is ignored.
+
+function linkPath(p) { return formatPathLink(p, COLORS, { enabled: LINKS_ON }); }
 
 // VS16-suffixed emojis (e.g. ⌨️, 🛠️, ⬆️) come from BMP "text symbol" Unicode
 // blocks and are commonly rendered as 1 visual column in macOS Terminal /
@@ -108,58 +121,34 @@ function usage(opts = {}) {
   const visible = CLI_COMMANDS.filter((c) => !c.internal);
   const commands = showAll ? visible : visible.filter((c) => c.core);
 
-  if (showAll) {
-    println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness (all commands)`);
-  } else {
-    println(`${COLORS.bold}construct${COLORS.reset} — AI agent harness`);
-    println(`${COLORS.dim}Tip: Run ${COLORS.reset}construct --all${COLORS.dim} to see all commands · ${COLORS.reset}construct <cmd> --help${COLORS.dim} for details${COLORS.reset}`);
+  const ver = getInstalledVersion().version;
+  const wordmark = `${COLORS.brandAccent}${COLORS.bold}construct${COLORS.reset}`;
+  const tagline = showAll ? 'AI agent harness · all commands' : 'AI agent harness';
+  println(`\n${wordmark} ${COLORS.dim}v${ver}${COLORS.reset}  ${COLORS.muted}${tagline}${COLORS.reset}`);
+  if (!showAll) {
+    println(`${COLORS.dim}Tip: ${COLORS.reset}construct --all${COLORS.dim} lists every command · ${COLORS.reset}construct <cmd> --help${COLORS.dim} for details${COLORS.reset}`);
   }
 
-  println(`\n${COLORS.dim}Usage:${COLORS.reset} construct <command> [options]\n`);
+  println(`\n${COLORS.dim}Usage:${COLORS.reset} construct <command> [options]`);
+  println(`${COLORS.dim}OpenCode is the primary conversation surface. Run ${COLORS.reset}construct sync${COLORS.dim} to install or refresh editor adapters.${COLORS.reset}`);
+
+  // The name column sizes to the longest visible command (capped) so long names
+  // are never truncated and descriptions stay aligned regardless of the set shown.
+
+  const nameWidth = Math.min(18, Math.max(...commands.map((c) => c.name.length)));
 
   for (const category of CATEGORY_ORDER) {
     const categoryCommands = commands.filter((c) => c.category === category);
     if (!categoryCommands.length) continue;
-    println(`${COLORS.bold}${category}${COLORS.reset}`);
+    println(`\n${uiSection(category, { colors: COLORS })}`);
     for (const command of categoryCommands) {
       const emoji = command.emoji ?? '  ';
-      println(`  ${iconColumn(emoji)}${command.name.padEnd(14)} ${command.description}`);
+      const name = `${COLORS.bold}${command.name.padEnd(nameWidth)}${COLORS.reset}`;
+      println(`  ${iconColumn(emoji)}${name}  ${command.description}`);
     }
-    println('');
-  }
-}
-
-// Bare-command landing — show the same core-command listing as `construct
-// --help`, prefixed with a context line so users know where they are, and
-// suffixed with the one next-step suggestion that applies to their state.
-
-async function showInteractiveMenu() {
-  const { existsSync } = await import('node:fs');
-  const { join } = await import('node:path');
-
-  const projectRoot = process.cwd();
-  const isConstructProject = existsSync(join(projectRoot, 'construct.config.json')) ||
-                             existsSync(join(projectRoot, '.cx'));
-
-  if (isConstructProject) {
-    const projectName = process.env.CX_PROJECT_NAME || path.basename(projectRoot);
-    println(`${COLORS.dim}Project:${COLORS.reset} ${projectName}`);
-    println('');
   }
 
-  usage({ all: false });
-
-  if (isConstructProject) {
-    const { readDashboardState } = await import('../lib/service-manager.mjs');
-    const dashboard = readDashboardState(HOME);
-    if (!dashboard) {
-      println(`${COLORS.yellow}💡 Services not running. Start with:${COLORS.reset} ${COLORS.green}construct dev${COLORS.reset}`);
-      println('');
-    }
-  } else {
-    println(`${COLORS.yellow}💡 Not a Construct project. Initialize with:${COLORS.reset} ${COLORS.green}construct init${COLORS.reset}`);
-    println('');
-  }
+  println(`\n${COLORS.dim}Docs:${COLORS.reset} ${linkPath('docs/guides/reference/cli/')}`);
 }
 
 function runNodeScript(scriptPath, args = [], extraEnv = {}, { exitOnError = true } = {}) {
@@ -187,6 +176,42 @@ async function cmdRegistryValidate(args = []) {
 async function cmdRegistryGenerateDocs(args = []) {
   const { runRegistryGenerateDocs } = await import('../lib/registry/cli.mjs');
   const code = await runRegistryGenerateDocs(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdRegistryDiff(args = []) {
+  const { runRegistryDiff } = await import('../lib/registry/cli.mjs');
+  const code = await runRegistryDiff(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdRegistryPrune(args = []) {
+  const { runRegistryPrune } = await import('../lib/registry/cli.mjs');
+  const code = await runRegistryPrune(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdTeamAdd(args = []) {
+  const { runTeamAdd } = await import('../lib/registry/cli.mjs');
+  const code = await runTeamAdd(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdTeamRemove(args = []) {
+  const { runTeamRemove } = await import('../lib/registry/cli.mjs');
+  const code = await runTeamRemove(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdSpecialistAdd(args = []) {
+  const { runSpecialistAdd } = await import('../lib/registry/cli.mjs');
+  const code = await runSpecialistAdd(args, { rootDir: ROOT_DIR, println, errorln });
+  if (code) process.exit(code);
+}
+
+async function cmdSpecialistRemove(args = []) {
+  const { runSpecialistRemove } = await import('../lib/registry/cli.mjs');
+  const code = await runSpecialistRemove(args, { rootDir: ROOT_DIR, println, errorln });
   if (code) process.exit(code);
 }
 
@@ -235,12 +260,12 @@ async function cmdStatus() {
   // to "is this thing actually learning?" without remembering a second
   // command. Cheap: just reads .cx/observations + .cx/outcomes summaries.
   try {
-    const { resolveActiveProfile } = await import('../lib/profiles/loader.mjs');
+    const { resolveActiveScope } = await import('../lib/scopes/loader.mjs');
     const { readSummary } = await import('../lib/outcomes/aggregate.mjs');
     const fs = await import('node:fs');
     const path = await import('node:path');
     const cwd = process.cwd();
-    const active = resolveActiveProfile(cwd);
+    const active = resolveActiveScope(cwd);
     const obsIdxPath = path.join(cwd, '.cx', 'observations', 'index.json');
     let obsTotal = 0;
     let obs24h = 0;
@@ -349,15 +374,13 @@ async function cmdCompletions(args) {
 }
 
 async function cmdList() {
-  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
+  const registry = loadRegistry({ rootDir: ROOT_DIR });
   println('Construct Agents\n');
-  println('Personas:');
-  for (const persona of registry.personas ?? []) {
-    println(`  ${persona.displayName} [${persona.role}] ${persona.description}`);
-  }
-  println('\nSpecialists:');
-  for (const agent of registry.agents ?? []) {
-    println(`  ${registry.prefix}-${agent.name} ${agent.description}`);
+  println('Specialists:');
+  const specialists = Object.values(registry.specialists ?? {});
+  for (const specialist of specialists) {
+    const id = specialist.name.startsWith('cx-') ? specialist.name : `cx-${specialist.name}`;
+    println(`  ${id} ${specialist.displayName || ''}`);
   }
 }
 
@@ -503,17 +526,8 @@ async function cmdDoctor() {
   const add = (label, pass, optional = false) => checks.push({ label, pass, optional });
   const { isConstructSourceCheckout } = await import('../lib/doctor/source-checkout.mjs');
   const isSourceCheckout = isConstructSourceCheckout(ROOT_DIR);
-  add('registry.json exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'registry.json')));
+  add('specialists/org exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'org')));
   add('sync-specialists.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs')));
-
-  // Dashboard static build output is absent from published npm installs.
-
-  if (isSourceCheckout) {
-    const dashboardIndex = path.join(ROOT_DIR, 'lib', 'server', 'static', 'index.html');
-    add('Dashboard built (lib/server/static/index.html)', fs.existsSync(dashboardIndex));
-  } else {
-    add('Dashboard built (skipped — published package)', true, true);
-  }
 
   // Project .gitignore must cover .cx/. Auto-fix via --fix-gitignore.
   // Only checks when cwd looks like a Construct project (has .cx/ or
@@ -542,8 +556,8 @@ async function cmdDoctor() {
   // name across Claude / Codex / Copilot user-scope dirs.
 
   const userHome = HOME;
-  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
-  const specialistSet = new Set((registry.specialists ?? []).map((s) => `cx-${s.name}`));
+  const registry = loadRegistry({ rootDir: ROOT_DIR });
+  const specialistSet = new Set(Object.values(registry.specialists ?? {}).map((s) => `cx-${s.name}`));
   const legacyTargets = [
     { dir: path.join(userHome, '.claude', 'agents'), ext: '.md' },
     { dir: path.join(userHome, '.codex', 'agents'), ext: '.toml' },
@@ -658,11 +672,16 @@ async function cmdDoctor() {
   // configured without a manual copy. Applied to process.env too so the check
   // below sees the just-migrated values in the same run.
   try {
-    const { migrateLegacyModelConfig } = await import('../lib/config/legacy-config-migration.mjs');
+    const { migrateLegacyModelConfig, migrateLegacyCredentialConfig } = await import('../lib/config/legacy-config-migration.mjs');
     const migration = migrateLegacyModelConfig({ homeDir: HOME });
     if (migration.performed) {
       Object.assign(process.env, migration.migrated);
       println(`  fix: migrated ${Object.keys(migration.migrated).join(', ')} from ${migration.legacyPath} → ${migration.xdgPath}`);
+    }
+    const credentialMigration = migrateLegacyCredentialConfig({ homeDir: HOME });
+    if (credentialMigration.performed) {
+      Object.assign(process.env, credentialMigration.migrated);
+      println(`  fix: migrated credentials ${Object.keys(credentialMigration.migrated).join(', ')} from ${credentialMigration.legacyPath} → ${credentialMigration.xdgPath}`);
     }
   } catch (err) {
     add(`Models — legacy config migration failed: ${err.message}`, false, true);
@@ -680,7 +699,7 @@ async function cmdDoctor() {
     if (resolved.complete && !resolved.errors) {
       add('Models — all tiers configured', true);
     } else if (resolved.configured === 0) {
-      add('Models — no tier configured (pick one in the dashboard or run `construct models --apply`)', false, true);
+      add('Models — no tier configured (run `construct models --apply`)', false, true);
     } else {
       const missing = Object.entries(resolved.models)
         .filter(([, v]) => !v)
@@ -862,19 +881,28 @@ async function cmdDoctor() {
 
   // Validate promptFile references and skill bindings
   try {
-    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
-    const brokenPromptFiles = (registry.specialists ?? []).filter((s) => {
+    const registry = loadRegistry({ rootDir: ROOT_DIR });
+    const brokenPromptFiles = Object.values(registry.specialists ?? {}).filter((s) => {
       if (!s.promptFile) return false;
       return !fs.existsSync(path.join(ROOT_DIR, s.promptFile));
     });
     add('All specialist promptFiles resolve', brokenPromptFiles.length === 0);
     const headhuntClassifierAgents = ['cx-docs-keeper', 'cx-researcher', 'cx-architect', 'cx-security', 'cx-engineer'];
-    const registryNames = new Set((registry.specialists ?? []).map((s) => `cx-${s.name}`));
+    const registryNames = new Set(Object.values(registry.specialists ?? {}).map((s) => `cx-${s.name}`));
     const classifierOrphans = headhuntClassifierAgents.filter((n) => !registryNames.has(n));
     add('Headhunt classifier agents exist in registry', classifierOrphans.length === 0);
     const skillAudit = auditSkills({ rootDir: ROOT_DIR, silent: true });
     add('No declared skills missing on disk', skillAudit.pass, false);
     if (isSourceCheckout) {
+      const { scanRetiredRegistryPathReferences } = await import('../lib/registry/retired-paths.mjs');
+      const staleRegistryPaths = scanRetiredRegistryPathReferences(ROOT_DIR);
+      add(
+        staleRegistryPaths.length === 0
+          ? 'No retired registry path references'
+          : `Retired registry path references (${staleRegistryPaths.length}: ${staleRegistryPaths.slice(0, 3).map((h) => h.file).join(', ')}${staleRegistryPaths.length > 3 ? ', …' : ''})`,
+        staleRegistryPaths.length === 0,
+        false,
+      );
       const specialistAudit = auditSpecialists({ rootDir: ROOT_DIR, silent: true });
       add('Specialist/skill audit cross-checks', specialistAudit.pass, false);
 
@@ -919,7 +947,8 @@ async function cmdDoctor() {
     if (fs.existsSync(beadsPreCommit) && !inCI) {
       const hp = spawnSync('git', ['config', '--get', 'core.hooksPath'], { cwd: ROOT_DIR, encoding: 'utf8' });
       const value = hp.status === 0 ? (hp.stdout || '').trim() : '';
-      const wired = value === '.beads/hooks';
+      const absEquiv = path.join(ROOT_DIR, '.beads', 'hooks');
+      const wired = value === '.beads/hooks' || value === absEquiv;
       const label = wired
         ? 'Git hooks wired (core.hooksPath = .beads/hooks)'
         : value
@@ -1422,7 +1451,6 @@ async function cmdDev(args = []) {
   }
   
   println('');
-  println('Dashboard: http://127.0.0.1:4242');
   println('Run \x1b[32mconstruct\x1b[0m for commands');
   println('');
 
@@ -1449,29 +1477,6 @@ async function cmdStop() {
   } catch { /* best effort */ }
 }
 
-async function cmdDashboard() {
-  if (restArgsCache.includes('--token')) {
-    const { generateToken, setDashboardToken, getDashboardToken } = await import('../lib/server/auth.mjs');
-    const existing = getDashboardToken();
-    if (existing) {
-      println(`Dashboard token already set. To rotate it, remove CONSTRUCT_DASHBOARD_TOKEN from ~/.construct/config.env and re-run.`);
-      return;
-    }
-    const token = generateToken();
-    setDashboardToken(token);
-    println(`Dashboard token generated and saved to ~/.construct/config.env`);
-    println(`CONSTRUCT_DASHBOARD_TOKEN=${token}`);
-    println(`Pass this token in the dashboard login prompt or as: Authorization: Bearer <token>`);
-    return;
-  }
-  const dashboard = await startDashboard({ rootDir: ROOT_DIR, homeDir: HOME });
-  if (dashboard.reused) {
-    println(`Construct dashboard already running on ${dashboard.url} (pid ${dashboard.pid})`);
-  } else {
-    println(`Started Construct dashboard on ${dashboard.url} (pid ${dashboard.pid})`);
-  }
-}
-
 async function cmdVersion() {
   const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
   println(`construct v${pkg.version}`);
@@ -1486,9 +1491,7 @@ async function cmdMigrate(args) {
   const candidates = pathArg
     ? [pathArg]
     : [
-        path.join(ROOT_DIR, 'specialists', 'registry.json'),
-        path.join(ROOT_DIR, 'specialists', 'contracts.json'),
-        path.join(ROOT_DIR, 'specialists', 'role-manifests.json'),
+        path.join(ROOT_DIR, 'specialists', 'unified-registry.json'),
         path.join(process.cwd(), '.cx', 'config.json'),
       ];
 
@@ -1615,7 +1618,7 @@ async function cmdExport(args) {
     inputPath: resolvedIn,
     outputPath: resolvedOut,
     format: toFlag,
-    figures: toFlag === 'pdf' ? figures : false,
+    figures,
     branding,
     repoRoot: ROOT_DIR,
   });
@@ -1635,19 +1638,17 @@ async function cmdPublish(args) {
 async function cmdTools(args) {
   const [sub, ...rest] = args;
   if (sub !== 'detect') {
-    errorln('Usage: construct tools detect [--json] [--figures] [--no-figures] [--demo=NAME] [--dashboard-demo=NAME]');
+    errorln('Usage: construct tools detect [--json] [--figures] [--no-figures] [--demo=NAME]');
     process.exit(1);
   }
   const { detectPublishPipeline, formatToolsDetectReport } = await import('../lib/publish-tooling.mjs');
   const json = rest.includes('--json');
   const figures = !rest.includes('--no-figures');
   const demos = rest.filter((a) => a.startsWith('--demo=')).map((a) => a.slice(7));
-  const dashboardDemos = rest.filter((a) => a.startsWith('--dashboard-demo=')).map((a) => a.slice(17));
   const detection = detectPublishPipeline({
     format: 'pdf',
     includeFigures: figures,
     includeTerminalDemo: demos.length > 0,
-    includeDashboardDemo: dashboardDemos.length > 0,
     cwd: process.cwd(),
     repoRoot: ROOT_DIR,
   });
@@ -2106,7 +2107,7 @@ function printActiveConfig() {
 }
 
 async function printIntakeHelp() {
-  const { getRebrand } = await import('../lib/profiles/rebrand.mjs');
+  const { getRebrand } = await import('../lib/scopes/rebrand.mjs');
   const { intakeQueueLabel, signalNoun } = getRebrand(process.cwd());
   println(`Construct intake — inspect and process the ${intakeQueueLabel}.`);
   println('');
@@ -2224,7 +2225,7 @@ async function cmdIntake(args) {
   }
 
   const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
-  const { getRebrand } = await import('../lib/profiles/rebrand.mjs');
+  const { getRebrand } = await import('../lib/scopes/rebrand.mjs');
   const cwd = process.cwd();
   const rebrand = getRebrand(cwd);
   const queue = createIntakeQueue(cwd, process.env);
@@ -3652,7 +3653,7 @@ async function cmdUpgrade(args) {
   }
 }
 async function cmdValidate() {
-  const reg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
+  const reg = loadRegistry({ rootDir: ROOT_DIR });
   const result = validateRegistry(reg, { rootDir: ROOT_DIR });
   if (result.valid) {
     println(`✓ Registry valid (${result.summary})`);
@@ -3695,9 +3696,9 @@ async function cmdOrchestrate(args) {
   // running in-process, proving the engine-as-service contract editors/CI use.
   if (rest.includes('--remote')) {
     const remoteVal = flag('--remote');
-    const base = (remoteVal && /^https?:\/\//.test(remoteVal)) ? remoteVal.replace(/\/$/, '') : `http://${process.env.BIND_HOST || '127.0.0.1'}:${process.env.PORT || '4242'}`;
-    const { getDashboardToken } = await import('../lib/server/auth.mjs');
-    const token = getDashboardToken();
+    const base = (remoteVal && /^https?:\/\//.test(remoteVal)) ? remoteVal.replace(/\/$/, '') : (process.env.CONSTRUCT_ORCHESTRATION_URL || '').replace(/\/$/, '');
+    if (!base) { errorln('No orchestration service configured. Pass --remote <url> or set CONSTRUCT_ORCHESTRATION_URL.'); process.exit(1); }
+    const token = process.env.CONSTRUCT_ORCHESTRATION_TOKEN || process.env.CONSTRUCT_DASHBOARD_TOKEN || null;
     const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
     const positional = rest.filter((a) => !a.startsWith('--'));
     try {
@@ -3727,7 +3728,7 @@ async function cmdOrchestrate(args) {
         return;
       }
     } catch (err) {
-      errorln(`Could not reach the orchestration daemon at ${base}: ${err.message}. Start it with \`construct dashboard\`.`);
+      errorln(`Could not reach the orchestration service at ${base}: ${err.message}. Check CONSTRUCT_ORCHESTRATION_URL.`);
       process.exit(1);
     }
   }
@@ -3839,10 +3840,9 @@ async function cmdModels(args) {
     if (sub === null) {
       errorln('Note: `construct models --tier=… --set=…` is a deprecated alias for `construct models set --tier=… --model=…`.');
     }
-    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
     const preferFree = args.includes('--prefer-free');
     const preferFreeSameFamily = args.includes('--prefer-free-same-family');
-    const inferred = setModelWithTierInference(envPath, tier, setModel, registry.models ?? {}, { preferFree, preferFreeSameFamily });
+    const inferred = setModelWithTierInference(envPath, tier, setModel, {}, { preferFree, preferFreeSameFamily });
     println(`Set ${tier} -> ${setModel} in ${envPath}`);
     if (preferFreeSameFamily) println('Prefer-free-same-family mode: enabled');
     if (preferFree) println('Prefer-free mode: enabled');
@@ -3873,10 +3873,9 @@ async function cmdModels(args) {
   if (args.includes('--apply')) {
     const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
     const models = await pollFreeModels(apiKey);
-    const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
     const selections = {};
     for (const currentTier of ['reasoning', 'standard', 'fast']) {
-      const fallbacks = registry.models?.[currentTier]?.fallback ?? [];
+      const fallbacks = [];
       const id = selectForTier(models, currentTier, fallbacks);
       if (id) selections[currentTier] = id;
     }
@@ -3925,9 +3924,8 @@ async function cmdModels(args) {
   }
   if (args.includes('--list') || sub === 'list') {
     const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
-    const { listChatModels } = await import('../apps/chat/engine/models.mjs');
     const catalog = getProviderModelCatalog({ env: process.env, cwd: process.cwd() });
-    const models = listChatModels({ env: process.env, cwd: process.cwd() });
+    const models = listAvailableModels({ env: process.env, cwd: process.cwd() });
     if (args.includes('--json')) {
       println(JSON.stringify({ catalog, models }, null, 2));
       return;
@@ -3939,8 +3937,7 @@ async function cmdModels(args) {
     }
     return;
   }
-  const registry = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'specialists', 'registry.json'), 'utf8'));
-  const result = readCurrentModels(envPath, registry.models ?? {});
+  const result = readCurrentModels(envPath, {});
   const nothingSelected = ['reasoning', 'standard', 'fast'].every((t) => !result[t]);
   println('Current model assignments:');
   for (const currentTier of ['reasoning', 'standard', 'fast']) {
@@ -3952,7 +3949,7 @@ async function cmdModels(args) {
     println('');
     println('No tier has a model selected. Construct ships with no default.');
     println('Pick one of:');
-    println('  • Dashboard → Models page (single source of truth)');
+    println('  • `construct models` (single source of truth)');
     println('  • construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id>');
     println('  • construct models --apply           Poll OpenRouter free catalog and seed all tiers');
   }
@@ -4480,12 +4477,6 @@ async function cmdDocsSite(args = []) {
   }
 }
 
-async function cmdDashboardSync(args) {
-  const { runDashboardStaticCli } = await import('../lib/dashboard-static.mjs');
-  const exitCode = await runDashboardStaticCli(args, { rootDir: ROOT_DIR });
-  if (exitCode) process.exit(exitCode);
-}
-
 async function cmdBootstrap(args) {
   const verbose = args.includes('--verbose') || args.includes('-v');
   const { runBootstrap } = await import('../lib/bootstrap.mjs');
@@ -4823,14 +4814,15 @@ async function cmdLintResearch() {
 }
 
 async function cmdLintAgents() {
-  const { validateRegistryFile } = await import('../lib/specialists/schema.mjs');
-  const registryPath = path.join(ROOT_DIR, 'specialists', 'registry.json');
-  const { errors, agentCount } = validateRegistryFile({ registryPath, rootDir: ROOT_DIR });
+  const { validateRegistry } = await import('../lib/specialists/schema.mjs');
+  const { loadRegistry } = await import('../lib/registry/loader.mjs');
+  const registry = loadRegistry({ rootDir: ROOT_DIR, skipValidation: true });
+  const { errors, agentCount } = validateRegistry(registry, { rootDir: ROOT_DIR });
   if (errors.length === 0) {
-    console.log(`specialists/registry.json: ${agentCount} agents, 0 errors`);
+    console.log(`specialists/org: 0 errors`);
     return;
   }
-  console.error(`specialists/registry.json: ${errors.length} error(s) across ${agentCount} agents`);
+  console.error(`specialists/org: ${errors.length} error(s)`);
   for (const err of errors) console.error(`  ${err}`);
   process.exit(1);
 }
@@ -4839,10 +4831,10 @@ async function cmdLintContracts() {
   const { validateContractsFile } = await import('../lib/contracts/validate.mjs');
   const result = validateContractsFile({ repoRoot: ROOT_DIR });
   if (result.ok) {
-    console.log('specialists/contracts.json: 0 errors');
+    console.log('specialists/unified-registry.json contracts: 0 errors');
     return;
   }
-  console.error(`specialists/contracts.json: ${result.errors.length} error(s)`);
+  console.error(`specialists/unified-registry.json contracts: ${result.errors.length} error(s)`);
   for (const err of result.errors) console.error(`  ${err}`);
   process.exit(1);
 }
@@ -4870,7 +4862,7 @@ async function cmdSpecialist(args) {
     const { createSpecialistDraft } = await import('../lib/specialists/scaffold.mjs');
     try {
       const { relPath } = createSpecialistDraft({ rootDir: ROOT_DIR, role });
-      println(`Created ${relPath} — fill in the stubbed sections, add it to specialists/registry.json, then run \`construct specialist lint\`.`);
+      println(`Created ${relPath} — fill in the stubbed sections, add it to specialists/unified-registry.json, then run \`construct specialist lint\`.`);
     } catch (e) { errorln(e.message); process.exit(1); }
     return;
   }
@@ -5176,7 +5168,7 @@ async function cmdCreds(args) {
       for (const p of providers) {
         println(`  ${p.configured ? '✓' : '·'} ${p.id}`);
       }
-      println('\n  Set keys as values or op:// refs in ~/.construct/config.env; run `construct creds login copilot` for GitHub Copilot.');
+      println(`\n  Set keys as values or op:// refs in ${getUserEnvPath(HOME)}; run \`construct creds login copilot\` for GitHub Copilot.`);
     } catch { /* readiness view is informational */ }
     return;
   }
@@ -5184,6 +5176,13 @@ async function cmdCreds(args) {
   if (sub === 'test') {
     const provider = args[1];
     if (!provider) { errorln('Usage: construct creds test <provider>'); process.exit(1); }
+    if (['openrouter', 'anthropic', 'openai'].includes(provider)) {
+      const { probeProviderConnection } = await import('../lib/providers/connection-probe.mjs');
+      const result = await probeProviderConnection(provider, { env: process.env, cwd: process.cwd() });
+      println(`${provider}: ${result.ok ? 'ok' : 'unhealthy'}`);
+      if (result.code) println(`  ${result.code}${result.status ? ` (${result.status})` : ''}`);
+      process.exit(result.ok ? 0 : 1);
+    }
     const { resolveProviders } = await import('../lib/providers/registry.mjs');
     const { providers } = await resolveProviders({ rootDir: ROOT_DIR, env: process.env });
     if (!providers[provider]) { errorln(`Unknown provider: ${provider}`); process.exit(1); }
@@ -5561,7 +5560,6 @@ async function readStdin() {
 const handlers = new Map([
   // Core
   ['dev', cmdDev],
-  ['dashboard', cmdDashboard],
   ['stop', cmdStop],
   ['status', cmdStatus],
   ['install', cmdInstall],
@@ -5593,6 +5591,12 @@ const handlers = new Map([
   ['registry:status', cmdRegistryStatus],
   ['registry:validate', cmdRegistryValidate],
   ['registry:generate-docs', cmdRegistryGenerateDocs],
+  ['registry:diff', cmdRegistryDiff],
+  ['registry:prune', cmdRegistryPrune],
+  ['team:add', cmdTeamAdd],
+  ['team:remove', cmdTeamRemove],
+  ['specialist:add', cmdSpecialistAdd],
+  ['specialist:remove', cmdSpecialistRemove],
   ['rules', cmdRulesUsage],
   // Pricing / cost readouts are stubbed out: the ledger writes, model-pricing
   // catalog, and per-turn accounting still run, but no CLI surface exposes
@@ -5633,10 +5637,6 @@ const handlers = new Map([
   ['acp', async () => {
     const { runAcpServer } = await import('../lib/acp/server.mjs');
     runAcpServer({ input: process.stdin, output: process.stdout, env: process.env, defaultCwd: process.cwd() });
-  }],
-  ['chat', async (args) => {
-    const { runChat } = await import('../lib/chat/cli.mjs');
-    process.exitCode = await runChat(args, { env: process.env, cwd: process.cwd() });
   }],
   ['beads:stats', async (args) => {
     const { getContentionStats, getHumanStatus } = await import('../lib/beads-optimistic.mjs');
@@ -5686,14 +5686,8 @@ const handlers = new Map([
       return;
     }
     if (sub === 'show') {
-      const { readFileSync, existsSync } = await import('node:fs');
-      const { join } = await import('node:path');
-      const inventoryPath = join(ROOT_DIR, 'specialists', 'policy-inventory.json');
-      if (!existsSync(inventoryPath)) {
-        errorln('specialists/policy-inventory.json not found');
-        process.exit(1);
-      }
-      const { policies } = JSON.parse(readFileSync(inventoryPath, 'utf8'));
+      const registry = loadRegistry({ rootDir: ROOT_DIR });
+      const policies = Object.values(registry.policies ?? {});
       if (args.includes('--json')) {
         println(JSON.stringify(policies, null, 2));
         return;
@@ -5762,7 +5756,6 @@ const handlers = new Map([
   ['docs:update', cmdDocsUpdate],
   ['docs:check', cmdDocsCheck],
   ['docs:site', cmdDocsSite],
-  ['dashboard:sync', cmdDashboardSync],
   ['lint:comments', cmdLintComments],
   ['lint:templates', cmdLintTemplates],
   ['gates:audit', cmdGatesAudit],
@@ -5852,7 +5845,12 @@ const handlers = new Map([
     const sub = args[0];
     if (sub === 'review') return runTeamReviewCli(args.slice(1));
     if (sub === 'templates') { listTeamTemplates(); return; }
-    errorln(`Unknown team subcommand: ${sub}. Available: review, templates`);
+    if (sub === 'list' || sub === 'show') {
+      const { runTeamList, runTeamShow } = await import('../lib/registry/cli.mjs');
+      if (sub === 'list') return runTeamList(args.slice(1), { rootDir: ROOT_DIR, println, errorln });
+      return runTeamShow(args.slice(1), { rootDir: ROOT_DIR, println, errorln });
+    }
+    errorln(`Unknown team subcommand: ${sub}. Available: list, show, review, templates`);
     process.exit(1);
   }],
   ['role', async (args) => {
@@ -6238,6 +6236,22 @@ const handlers = new Map([
   }],
   ['skills', async (args) => {
     const sub = args[0];
+    if (sub === 'suggest') {
+      const { suggestSkills } = await import('../lib/skills/router.mjs');
+      const query = args.slice(1).join(' ').trim();
+      if (!query) {
+        errorln('Usage: construct skills suggest <intent>');
+        process.exit(1);
+      }
+      const result = suggestSkills({ intent: query, rootDir: ROOT_DIR });
+      println(JSON.stringify(result, null, 2));
+      return;
+    }
+    if (sub === 'routing') {
+      const p = path.join(ROOT_DIR, 'skills', 'routing.json');
+      println(fs.readFileSync(p, 'utf8'));
+      return;
+    }
     if (sub === 'scope' || !sub) {
       const { runSkillsScopeCli } = await import('../lib/skills-scope.mjs');
       return runSkillsScopeCli(args.slice(sub === 'scope' ? 1 : 0));
@@ -6249,7 +6263,7 @@ const handlers = new Map([
     if (sub === 'usage' || sub === 'orphans' || sub === 'hot' || sub === 'correlate-quality' || sub === 'backfill-postgres') {
       return cmdSkillsUsage(sub, args.slice(1));
     }
-    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply, usage, orphans, hot, correlate-quality, backfill-postgres`);
+    errorln(`Unknown skills subcommand: ${sub}. Available: scope, apply, suggest, routing, usage, orphans, hot, correlate-quality, backfill-postgres`);
     process.exit(1);
   }],
   ['ask', async (args) => {
@@ -6418,18 +6432,18 @@ const handlers = new Map([
     errorln(`Unknown sandbox subcommand: ${sub}. Available: create, list, delete, prune`);
     process.exit(1);
   }],
-  ['profile', async (args) => {
+  ['scope', async (args) => {
     const sub = args[0] || 'show';
-    const { listProfiles, loadProfile, resolveActiveProfile } = await import('../lib/profiles/loader.mjs');
+    const { listScopes, loadScope, resolveActiveScope } = await import('../lib/scopes/loader.mjs');
     if (sub === 'list') {
-      for (const id of listProfiles()) {
-        const p = loadProfile(id);
+      for (const id of listScopes()) {
+        const p = loadScope(id);
         process.stdout.write(`  ${id.padEnd(14)} ${p?.displayName || ''}\n`);
       }
       return;
     }
     if (sub === 'show') {
-      const active = resolveActiveProfile(process.cwd());
+      const active = resolveActiveScope(process.cwd());
       process.stdout.write(JSON.stringify({
         id: active.id,
         displayName: active.displayName,
@@ -6442,12 +6456,12 @@ const handlers = new Map([
     if (sub === 'set') {
       const id = args[1];
       if (!id) {
-        errorln('Usage: construct profile set <id> [--yes] [--dry-run]');
+        errorln('Usage: construct scope set <id> [--yes] [--dry-run]');
         process.exit(1);
       }
-      const target = loadProfile(id);
+      const target = loadScope(id);
       if (!target) {
-        errorln(`Unknown profile: ${id}. Available: ${listProfiles().join(', ')}`);
+        errorln(`Unknown scope: ${id}. Available: ${listScopes().join(', ')}`);
         process.exit(1);
       }
       const skipConfirm = args.includes('--yes') || args.includes('-y') || args.includes('--non-interactive');
@@ -6465,12 +6479,12 @@ const handlers = new Map([
       const cfg = loaded?.raw ? structuredClone(loaded.raw) : { version: 1 };
       if (!cfg.version) cfg.version = 1;
 
-      const currentId = cfg.profile || 'rnd';
+      const currentId = cfg.scope || 'rnd';
       if (currentId === id) {
-        println(`Profile already set to ${id} (${target.displayName}). Nothing to do.`);
+        println(`Scope already set to ${id} (${target.displayName}). Nothing to do.`);
         return;
       }
-      const current = loadProfile(currentId) || { id: currentId, displayName: currentId, roles: [], intake: { types: [], stages: [] }, departments: [] };
+      const current = loadScope(currentId) || { id: currentId, displayName: currentId, roles: [], intake: { types: [], stages: [] }, departments: [] };
 
       // Render a structural diff so the operator sees what loop they are switching into.
       const setDiff = (label, before, after) => {
@@ -6486,7 +6500,7 @@ const handlers = new Map([
       };
 
       println('');
-      println(`About to switch active profile:`);
+      println(`About to switch active scope:`);
       println(`  from:  ${currentId} (${current.displayName})`);
       println(`  to:    ${id} (${target.displayName})`);
       println('');
@@ -6499,10 +6513,10 @@ const handlers = new Map([
       setDiff('departments', cDept, tDept);
       println('');
       println(`Files that will change:`);
-      println(`  ${pathMod.relative(process.cwd(), cfgPath)}  (profile field: ${currentId} -> ${id})`);
+      println(`  ${pathMod.relative(process.cwd(), cfgPath)}  (scope field: ${currentId} -> ${id})`);
       println('');
-      println(`The change only writes the profile field. No specialists are added or removed.`);
-      println(`Sync runs against the new profile on next \`construct sync\`.`);
+      println(`The change only writes the scope field. No specialists are added or removed.`);
+      println(`Sync runs against the new scope on next \`construct sync\`.`);
       println('');
 
       if (dryRun) {
@@ -6512,7 +6526,7 @@ const handlers = new Map([
       if (!skipConfirm && isTTY) {
         const readline = await import('node:readline');
         const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        const answer = await new Promise((res) => rl.question(`Switch profile to ${id}? (Y/n) `, (a) => res(a.trim().toLowerCase())));
+        const answer = await new Promise((res) => rl.question(`Switch scope to ${id}? (Y/n) `, (a) => res(a.trim().toLowerCase())));
         rl.close();
         if (answer && answer !== 'y' && answer !== 'yes') {
           println('Aborted. No config was changed.');
@@ -6520,15 +6534,15 @@ const handlers = new Map([
         }
       }
 
-      cfg.profile = id;
+      cfg.scope = id;
       writeProjectConfig(cfgPath, cfg, { validate: true });
-      process.stdout.write(`✓ profile set to ${id} (${target.displayName})\n`);
+      process.stdout.write(`✓ scope set to ${id} (${target.displayName})\n`);
       return;
     }
     if (sub === 'create') {
       const id = args[1];
       if (!id) {
-        errorln('Usage: construct profile create <id> [--display="..."] [--role=<id>...] [--department=<id>:<displayName>...] [--yes]');
+        errorln('Usage: construct scope create <id> [--display="..."] [--role=<id>...] [--department=<id>:<displayName>...] [--yes]');
         errorln('  Run with no flags for interactive mode; pass --yes to skip the confirmation prompt.');
         process.exit(1);
       }
@@ -6566,8 +6580,8 @@ const handlers = new Map([
         const ask = (q, def = '') => new Promise((res) => rl.question(`${q}${def ? ` [${def}]` : ''} `, (a) => res(a.trim() || def)));
 
         println('');
-        println(`Scaffolding a new profile draft. Three questions, then a preview.`);
-        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/profile-lifecycle.md`);
+        println(`Scaffolding a new scope draft. Three questions, then a preview.`);
+        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/scope-lifecycle.md`);
         println('');
         if (!displayName) displayName = await ask('Display name?', id);
         if (seedDepartments.length === 0) {
@@ -6586,23 +6600,23 @@ const handlers = new Map([
       if (!displayName) displayName = id;
 
       const pathMod = await import('node:path');
-      const draftRoot = pathMod.join(process.cwd(), '.cx', 'profiles', `draft-${id}`);
+      const draftRoot = pathMod.join(process.cwd(), '.cx', 'scopes', `draft-${id}`);
 
       println('');
-      println(`About to scaffold a draft profile:`);
+      println(`About to scaffold a draft scope:`);
       println(`  id:           ${id}`);
       println(`  displayName:  ${displayName}`);
       println(`  departments:  ${seedDepartments.length}${seedDepartments.length ? ` (${seedDepartments.map((d) => d.id).join(', ')})` : ''}`);
       println(`  roles:        ${seedRoles.length}${seedRoles.length ? ` (${seedRoles.join(', ')})` : ''}`);
       println('');
       println(`Files that will be written under ${pathMod.relative(process.cwd(), draftRoot)}/:`);
-      println(`  profile.json                       structural manifest`);
+      println(`  scope.json                         structural manifest`);
       println(`  requirements.md                    research brief naming each cx-* specialist`);
       for (const r of seedRoles) println(`  personas/${r}.md`.padEnd(40) + `  persona artifact (filled during discover)`);
       for (const d of seedDepartments) println(`  departments/${d.id}.md`.padEnd(40) + `  department charter (filled during frame)`);
       println('');
-      println(`Nothing else is touched. No config is changed, no active profile is switched.`);
-      println(`To activate this profile after promotion: construct profile set ${id}`);
+      println(`Nothing else is touched. No config is changed, no active scope is switched.`);
+      println(`To activate this scope after promotion: construct scope set ${id}`);
       println('');
 
       if (dryRun) {
@@ -6620,16 +6634,16 @@ const handlers = new Map([
         }
       }
 
-      const { createDraftProfile } = await import('../lib/profiles/lifecycle.mjs');
+      const { createDraftScope } = await import('../lib/scopes/lifecycle.mjs');
       try {
-        const result = createDraftProfile({ cwd: process.cwd(), id, displayName, seedRoles, seedDepartments });
+        const result = createDraftScope({ cwd: process.cwd(), id, displayName, seedRoles, seedDepartments });
         println('');
         println(`✓ draft created at ${pathMod.relative(process.cwd(), result.dir)}`);
         println('');
-        println(`Next steps (in order, per docs/guides/concepts/profile-lifecycle.md):`);
+        println(`Next steps (in order, per docs/guides/concepts/scope-lifecycle.md):`);
         println(`  1. Discover  (cx-ux-researcher): fill personas/<role>.md from interviews + primary sources.`);
         println(`  2. Frame     (cx-product-manager): fill departments/<dept>.md charters and intake taxonomy.`);
-        println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in profile.json.`);
+        println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in scope.json.`);
         println(`  4. Validate  (cx-evaluator): run persona-eval and classifier-eval against representative signals.`);
         println('');
         println(`Inspect the brief:  open ${pathMod.relative(process.cwd(), result.briefPath)}`);
@@ -6640,11 +6654,11 @@ const handlers = new Map([
       }
     }
     if (sub === 'drafts') {
-      const { listDrafts } = await import('../lib/profiles/lifecycle.mjs');
+      const { listDrafts } = await import('../lib/scopes/lifecycle.mjs');
       const drafts = listDrafts(process.cwd());
       if (drafts.length === 0) { process.stdout.write('  (no drafts)\n'); return; }
       for (const d of drafts) {
-        const flags = [d.hasBrief ? 'brief' : null, d.hasProfile ? 'profile' : null].filter(Boolean).join(', ');
+        const flags = [d.hasBrief ? 'brief' : null, d.hasScope ? 'scope' : null].filter(Boolean).join(', ');
         process.stdout.write(`  ${d.id.padEnd(20)} ${flags}\n`);
       }
       return;
@@ -6654,7 +6668,7 @@ const handlers = new Map([
       const reasonArg = args.find((a) => a.startsWith('--reason='));
       let reason = reasonArg ? reasonArg.split('=')[1] : '';
       if (!id) {
-        errorln('Usage: construct profile archive <id> --reason="..." [--yes] [--dry-run]');
+        errorln('Usage: construct scope archive <id> --reason="..." [--yes] [--dry-run]');
         process.exit(1);
       }
       const skipConfirm = args.includes('--yes') || args.includes('-y') || args.includes('--non-interactive');
@@ -6663,18 +6677,18 @@ const handlers = new Map([
 
       const pathMod = await import('node:path');
       const fsMod = await import('node:fs');
-      const target = loadProfile(id);
+      const target = loadScope(id);
       if (!target) {
-        errorln(`Unknown profile: ${id}. Curated catalog: ${listProfiles().join(', ')}`);
+        errorln(`Unknown scope: ${id}. Curated catalog: ${listScopes().join(', ')}`);
         process.exit(1);
       }
       const fileURL = await import('node:url');
       const moduleDir = pathMod.dirname(fileURL.fileURLToPath(import.meta.url));
       const repoRoot = pathMod.resolve(moduleDir, '..');
-      const srcProfile = pathMod.join(repoRoot, 'profiles', `${id}.json`);
+      const srcScope = pathMod.join(repoRoot, 'specialists', 'org', 'scopes', `${id}.json`);
       const tableRel = typeof target?.intake?.classificationTable === 'string' ? target.intake.classificationTable : null;
       const srcTable = tableRel ? pathMod.join(repoRoot, tableRel) : null;
-      const dstDir = pathMod.join(repoRoot, 'archive', 'profiles', id);
+      const dstDir = pathMod.join(repoRoot, 'archive', 'scopes', id);
 
       // Gather reason interactively if missing. The lifecycle module already
       // enforces a >= 8 char reason, but the operator should see why before
@@ -6691,13 +6705,13 @@ const handlers = new Map([
       }
 
       println('');
-      println(`About to archive curated profile:`);
+      println(`About to archive curated scope:`);
       println(`  id:           ${id}`);
       println(`  displayName:  ${target.displayName || id}`);
       println(`  reason:       ${reason}`);
       println('');
       println(`Files that will move:`);
-      println(`  ${pathMod.relative(process.cwd(), srcProfile)}`);
+      println(`  ${pathMod.relative(process.cwd(), srcScope)}`);
       println(`    -> ${pathMod.relative(process.cwd(), pathMod.join(dstDir, `${id}.json`))}`);
       if (srcTable && fsMod.existsSync(srcTable)) {
         println(`  ${pathMod.relative(process.cwd(), srcTable)}`);
@@ -6708,7 +6722,7 @@ const handlers = new Map([
       println(`What stays:`);
       println(`  Observations under .cx/observations/ are not touched.`);
       println(`  Outcomes under .cx/outcomes/ are not touched.`);
-      println(`  Any project still configured with profile=${id} will fall back to rnd on next load.`);
+      println(`  Any project still configured with scope=${id} will fall back to rnd on next load.`);
       println('');
 
       if (dryRun) {
@@ -6726,9 +6740,9 @@ const handlers = new Map([
         }
       }
 
-      const { archiveProfile } = await import('../lib/profiles/lifecycle.mjs');
+      const { archiveScope } = await import('../lib/scopes/lifecycle.mjs');
       try {
-        const { archived } = archiveProfile({ id, reason });
+        const { archived } = archiveScope({ id, reason });
         process.stdout.write(`✓ archived ${id} to ${pathMod.relative(process.cwd(), archived)}\n`);
         return;
       } catch (err) {
@@ -6738,24 +6752,18 @@ const handlers = new Map([
     }
     if (sub === 'health') {
       const id = args[1];
-      if (!id) { errorln('Usage: construct profile health <id> [--days=N]'); process.exit(1); }
+      if (!id) { errorln('Usage: construct scope health <id> [--days=N]'); process.exit(1); }
       const daysArg = args.find((a) => a.startsWith('--days='));
       const windowDays = daysArg ? Number(daysArg.split('=')[1]) || 30 : 30;
-      const { profileHealth } = await import('../lib/profiles/lifecycle.mjs');
-      const report = profileHealth(process.cwd(), id, { windowDays });
+      const { scopeHealth } = await import('../lib/scopes/lifecycle.mjs');
+      const report = scopeHealth(process.cwd(), id, { windowDays });
       process.stdout.write(JSON.stringify(report, null, 2) + '\n');
       return;
     }
-    errorln(`Unknown profile subcommand: ${sub}. Available: list, show, set, create, drafts, archive, health`);
+    errorln(`Unknown scope subcommand: ${sub}. Available: list, show, set, create, drafts, archive, health`);
     process.exit(1);
   }],
 ]);
-
-// No command provided → show interactive menu
-if (!command) {
-  await showInteractiveMenu();
-  process.exit(0);
-}
 
 // Help flags → show usage
 if (command === '--help' || command === '-h' || command === 'help') {
@@ -6775,6 +6783,19 @@ if (command === '--version' || command === '-V') {
   const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'package.json'), 'utf8'));
   println(`construct v${pkg.version}`);
   process.exit(0);
+}
+
+// Bare invocation stays non-interactive. OpenCode is the first-class
+// conversational surface; this CLI remains the setup/admin/headless substrate.
+if (!command) {
+  usage();
+  process.exit(0);
+}
+
+if (command.startsWith('-')) {
+  errorln(uiFail(`Unknown global flag: ${COLORS.bold}${command}${COLORS.reset}`, { colors: COLORS, glyphs: GLYPHS }));
+  errorln(`${COLORS.dim}OpenCode is the primary conversation surface; run ${COLORS.reset}construct sync${COLORS.dim} to refresh adapters, or ${COLORS.reset}construct --help${COLORS.dim} for CLI commands.${COLORS.reset}`);
+  process.exit(1);
 }
 
 // Unknown-flag guidance for commands that fully declare their flags (strictFlags
@@ -6840,7 +6861,12 @@ function validateKnownFlags(name, argv) {
 
 const handler = handlers.get(command);
 if (!handler) {
-  errorln(`Unknown command: ${command}`);
+  if (command === 'chat') {
+    errorln('Unknown command: chat');
+    errorln(`${COLORS.dim}Construct's local conversation UI has been removed. Use OpenCode as the primary conversation surface after running ${COLORS.reset}construct sync${COLORS.dim}.${COLORS.reset}`);
+    process.exit(1);
+  }
+  errorln(uiFail(`Unknown command: ${COLORS.bold}${command}${COLORS.reset}`, { colors: COLORS, glyphs: GLYPHS }));
   // Three-tier suggestion: prefix match → substring match → Levenshtein
   // distance ≤ 2. Catches single-letter typos, missing-letter typos, and
   // transpositions ('sycn' → 'sync') without dragging in a full fuzzy lib.
@@ -6871,9 +6897,9 @@ if (!handler) {
       if (d < bestDist) { bestDist = d; suggestion = name; }
     }
   }
-  if (suggestion) errorln(`Did you mean: construct ${suggestion}?`);
+  if (suggestion) errorln(`${COLORS.muted}Did you mean${COLORS.reset} ${COLORS.highlight}construct ${suggestion}${COLORS.reset}?`);
   println('');
-  println(`${COLORS.dim}Run 'construct --help' for available commands${COLORS.reset}`);
+  println(`${COLORS.dim}Run ${COLORS.reset}construct --help${COLORS.dim} for available commands${COLORS.reset}`);
   process.exit(1);
 }
 

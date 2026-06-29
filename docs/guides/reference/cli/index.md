@@ -7,9 +7,9 @@ description: Every construct command, grouped by category. Generated from lib/cl
 
 Commands are grouped by what they do. Pick a category below.
 
-- [Core](/guides/reference/cli/core) — 13 commands
+- [Core](/guides/reference/cli/core) — 12 commands
 - [Work](/guides/reference/cli/work) — 27 commands
-- [Models & Integrations](/guides/reference/cli/models-and-integrations) — 10 commands
+- [Models & Integrations](/guides/reference/cli/models-and-integrations) — 9 commands
 - [Integrations](/guides/reference/cli/integrations) — 3 commands
 - [Observability](/guides/reference/cli/observability) — 12 commands
 - [Diagnostics](/guides/reference/cli/diagnostics) — 11 commands

@@ -11,7 +11,7 @@ description: Work commands for Construct.
 | `construct ask` | One-shot ask against the active knowledge index |
 | `construct bootstrap` | Import seed observation corpus into local memory store for cold-start acceleration |
 | `construct customer` | Manage customer profiles for product intelligence |
-| `construct demo` | Run guided demos via construct chat (default) or record VHS/asciinema tapes |
+| `construct demo` | Run guided tours or record VHS/asciinema tapes |
 | `construct diagram` | Render code-driven diagrams via D2/Graphviz (optional system binaries; ADR-0001) |
 | `construct distill` | Distill documents with query-focused chunking |
 | `construct drop` | Ingest file from Downloads/Desktop |
@@ -25,11 +25,11 @@ description: Work commands for Construct.
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
-| `construct reflect` | Capture improvement feedback from chat session and update Construct core |
+| `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
 | `construct storage` | Manage storage backend |
 | `construct tags` | Manage the controlled tag vocabulary (propose, add, deprecate, audit) |
-| `construct team` | Team review and template listing |
+| `construct team` | Team review and template listing (`team:add` / `team:remove` are internal registry editors) |
 | `construct tools` | Detect optional publish pipeline binaries (Pandoc, D2, VHS, Playwright) |
 | `construct wireframe` | Generate wireframes from description |
 | `construct workflow` | Instantiate workflow templates (PRD-to-review chains, onboarding, handoffs) |
@@ -89,26 +89,25 @@ construct customer list|show|add|update|search
 
 ## construct demo
 
-Run guided demos via construct chat (default) or record VHS/asciinema tapes
+Run guided tours or record VHS/asciinema tapes
 
 **Usage**
 
 ```bash
-construct demo <list|init|record|name> [--surface=chat|web|tape|dashboard] [--format=gif|mp4|webm] [--out=<path>] [--source-only]
+construct demo <list|init|record|tour|name> [--surface=tape|playwright] [--format=gif|mp4|webm] [--out=<path>] [--source-only]
 ```
 
 **Options**
 
 | Flag | Description |
 |---|---|
-| `--surface=<s>` | chat (default) | web | tape | dashboard |
-| `--model=<id>` | Pin model for chat demo |
-| `--web` | Open web chat (/chat/) instead of terminal Ink |
-| `--plain` | Linear chat renderer (accessibility / non-TTY) |
-| `--free` | OpenRouter free-router mode for chat demo |
+| `--surface=<s>` | tape (default) | playwright |
+| `--accessible` | Screen-reader-friendly linear tour renderer |
+| `--skip-input` | Tour: auto-advance without waiting for Enter (headless/CI) |
 | `--format=<f>` | gif (default) | mp4 | webm (tape surface only) |
 | `--out=<path>` | Output path (tape recording) |
 | `--from=<t>` | Template for init: quickstart | diagram |
+| `--from-project` | init: scaffold a project demo plug-in under .cx/demos/ |
 | `--source-only` | Tape: write .tape only; skip recording |
 
 ## construct diagram
@@ -284,7 +283,7 @@ construct publish <markdown> [--to=pdf] [--type=DOC] [--demo=NAME] [--strict]
 | `--output=<path>` | Output path (default: .cx/publish/<name>.<format>) |
 | `--type=<doc-type>` | Manifest doc type for release gate (inferred when omitted) |
 | `--demo=<name>` | Terminal VHS tape to record (repeatable) |
-| `--dashboard-demo=<name>` | Playwright demo spec basename (repeatable) |
+| `--recording=<name>` | Playwright recording manifest (repeatable) |
 | `--figures` | Render d2/mermaid via diagram filter (default on) |
 | `--no-figures` | Skip diagram filter |
 | `--no-gate` | Skip artifact release gate (escape hatch only) |
@@ -295,7 +294,7 @@ construct publish <markdown> [--to=pdf] [--type=DOC] [--demo=NAME] [--strict]
 
 ## construct reflect
 
-Capture improvement feedback from chat session and update Construct core
+Capture improvement feedback and update Construct core
 
 **Usage**
 
@@ -335,13 +334,20 @@ construct tags <audit|propose|add|deprecate|archive|list|proposed>
 
 ## construct team
 
-Team review and template listing
+Team review and template listing (`team:add` / `team:remove` are internal registry editors)
 
 **Usage**
 
 ```bash
-construct team <list|review>
+construct team <list|show|review|templates>
 ```
+
+**Subcommands**
+
+- `list` — List macro groups and squads (--kind group|squad)
+- `show` — Show one group or squad by id
+- `review` — Team review workflow
+- `templates` — List team doc templates
 
 ## construct tools
 
@@ -361,7 +367,6 @@ construct tools detect [--json] [--figures] [--demo=NAME]
 | `--figures` | Include figure tooling (default on) |
 | `--no-figures` | Skip figure binaries |
 | `--demo=<name>` | Include terminal demo recorder check |
-| `--dashboard-demo=<name>` | Include dashboard Playwright check |
 
 ## construct wireframe
 

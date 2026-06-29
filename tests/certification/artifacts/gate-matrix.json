@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-23T05:56:26.139Z",
+  "generatedAt": "2026-06-29T02:43:42.849Z",
   "matrix": [
     {
       "type": "prd",
@@ -7,6 +7,7 @@
         "Problem",
         "Goals",
         "Success metrics",
+        "Phases",
         "Risks and mitigations"
       ],
       "visualRequirements": [

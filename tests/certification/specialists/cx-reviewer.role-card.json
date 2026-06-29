@@ -13,15 +13,12 @@
   "openingQuestion": "Does this do what it's supposed to do under the conditions it wasn't designed for?",
   "escalationPath": {
     "collaborators": [],
-    "subscriptions": [
-      "pr.opened",
-      "pr.ready-for-review"
-    ]
+    "subscriptions": []
   },
   "refusalBoundaries": "If your review only covered the happy path, you haven't reviewed.",
   "modelTier": "reasoning",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-reviewer.md"
   }
 }

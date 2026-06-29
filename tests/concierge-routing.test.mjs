@@ -26,6 +26,7 @@ import {
   alignmentFindings,
 } from "../lib/workflow-state.mjs";
 import { routeRequest } from "../lib/orchestration-policy.mjs";
+import { loadRegistry } from "../lib/registry/loader.mjs";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -165,26 +166,23 @@ describe("dispatch plan persistence", () => {
 
 describe("registry: internal agent isolation", () => {
   it("all agents in registry have internal:true", async () => {
-    const { createRequire } = await import("node:module");
-    const require = createRequire(import.meta.url);
-    const registry = require("../specialists/registry.json");
+     const registry = loadRegistry({ rootDir: join(import.meta.dirname, "..") });
 
-    const exposed = registry.specialists.filter((a) => !a.internal);
-    assert.deepEqual(
-      exposed,
-      [],
-      `These agents are not marked internal and will be visible in user-facing adapters: ${exposed.map((a) => a.name).join(", ")}`
-    );
-  });
+     const exposed = Object.values(registry.specialists).filter((a) => a.role !== "orchestrator" && !a.internal);
+     assert.deepEqual(
+       exposed,
+       [],
+       `These agents are not marked internal and will be visible in user-facing adapters: ${exposed.map((a) => a.name).join(", ")}`
+     );
+   });
 
   it("only construct persona exists and is not internal", async () => {
-    const { createRequire } = await import("node:module");
-    const require = createRequire(import.meta.url);
-    const registry = require("../specialists/registry.json");
+    const registry = loadRegistry({ rootDir: join(import.meta.dirname, "..") });
 
-    assert.ok(registry.orchestrator, "Expected orchestrator (construct)");
-    assert.equal(registry.orchestrator.name, "construct");
-    assert.equal(registry.orchestrator.internal, undefined, "Construct orchestrator must not be marked internal");
+    const orch = Object.values(registry.specialists || {}).find((s) => s.role === "orchestrator");
+    assert.ok(orch, "Expected specialist with role=orchestrator");
+    assert.equal(orch.name, "orchestrator");
+    assert.equal(orch.internal, undefined, "Construct orchestrator must not be marked internal");
   });
 });
 

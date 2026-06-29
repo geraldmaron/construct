@@ -19,6 +19,7 @@
     "observability",
     "policy-architecture",
     "profile-inheritance",
+    "profile-lifecycle",
     "rules-delivery",
     "hooks",
     "intake-loop",
@@ -26,6 +27,8 @@
     "doc-quality-rubric",
     "doc-visual-matrix",
     "template-prompt-audit",
-    "specialist-skill-audit"
+    "skill-effectiveness",
+    "specialist-skill-audit",
+    "teams"
   ]
 }

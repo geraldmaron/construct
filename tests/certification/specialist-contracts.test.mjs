@@ -9,6 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { auditSpecialistContracts, checkSpecialistContract } from '../../lib/certification/specialist-contracts.mjs';
+import { loadRegistry } from '../../lib/registry/loader.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -19,8 +20,8 @@ test('auditSpecialistContracts passes for the curated registry', () => {
 });
 
 test('intentional regression fails when anti-fabrication section removed', () => {
-  const registry = JSON.parse(fs.readFileSync(path.join(REPO, 'specialists', 'registry.json'), 'utf8'));
-  const agent = registry.specialists.find((s) => s.name === 'engineer');
+  const registry = loadRegistry({ rootDir: REPO });
+  const agent = Object.values(registry.specialists).find((s) => s.name === 'engineer');
   const promptPath = path.join(REPO, agent.promptFile);
   const original = fs.readFileSync(promptPath, 'utf8');
   const tampered = original.replace('## Anti-fabrication contract', '## Removed section');

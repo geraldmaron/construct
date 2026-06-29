@@ -18,8 +18,8 @@
   "handoffEvidence": {
     "required": true,
     "artifactTypes": [
-      "changelog",
-      "memo"
+      "memo",
+      "changelog"
     ]
   },
   "liveScoring": {

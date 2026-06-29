@@ -6,7 +6,7 @@ are tagged `vMAJOR.MINOR.PATCH` and published to npm under
 
 ## What counts as a breaking change (MAJOR bump)
 
-- A change to the schema of `specialists/registry.json`. Adding optional fields
+- A change to the schema of `specialists/org`. Adding optional fields
   is non-breaking; removing fields, renaming fields, or changing the
   meaning of existing fields is.
 - Removing or renaming any CLI subcommand or flag (`construct foo`,
@@ -82,7 +82,6 @@ It runs:
 1. `construct doctor`: installation + parity checks pass.
 2. `npm test`: full test suite, including the retrieval-eval regression.
 3. `construct docs:update --check`: auto-generated doc regions are current.
-4. `construct dashboard:sync --check`: dashboard bundle is rebuilt.
-5. `construct lint:comments`: comment-policy compliance.
+4. `construct lint:comments`: comment-policy compliance.
 
 A failure in any step blocks the publish.

@@ -30,7 +30,7 @@ Architecture decision records for decisions that have already been made.
 | [0020](./0020-local-orchestration-runtime.md) | Local orchestration runtime | proposed | |
 | [0021](./0021-provider-worker-backend-and-pluggable-run-stores.md) | Provider worker backend and pluggable run stores | proposed | |
 | [0022](./0022-orchestration-daemon-api.md) | Orchestration daemon API | proposed | |
-| [0023](./0023-acp-agent.md) | Construct as ACP server | proposed | Chat delegate path retired by ADR-0041; server scope deferred |
+| [0023](./0023-acp-agent.md) | Construct as ACP server | proposed | Server scope deferred |
 | [0024](./0024-document-io-optional-capability.md) | Document I/O optional capability | accepted | |
 | [0025](./0025-explicit-activation-model.md) | Explicit activation model | accepted | |
 | [0026](./0026-beads-git-native-sync.md) | Beads git-native sync | accepted | |
@@ -47,12 +47,12 @@ Architecture decision records for decisions that have already been made.
 | [0037](./0037-specialist-prompt-format.md) | Specialist prompt format | proposed | |
 | [0038](./0038-adaptive-local-prompt-composition.md) | Adaptive local-model prompt composition | accepted | |
 | [0039](./0039-interaction-surface-model.md) | Interaction-surface model | accepted | |
-| [0040](./0040-terminal-chat-delegated-loop.md) | Terminal chat — delegate loop | superseded | By ADR-0041 |
-| [0041](./0041-terminal-chat-owned-loop.md) | Terminal chat — own the loop | accepted | |
 | [0042](./0042-llm-credential-resolution.md) | LLM credential resolution | accepted | |
 | [0043](./0043-oracle-meta-controller.md) | Oracle meta-controller | accepted | |
 | [0044](./0044-tool-repo-root-layout.md) | Tool-repo root layout hygiene | accepted | |
 | [0045](./0045-config-scope-docs-taxonomy-intake.md) | Local/global config boundary, docs taxonomy, and a single intake zone | proposed | |
+| [0046](./0046-modular-org-runtime-merge.md) | Modular org layout with runtime registry merge | accepted | |
+| [0047](./0047-specialist-vs-flavor-model.md) | Specialist vs flavor taxonomy | accepted | |
 
 ## Starter templates
 

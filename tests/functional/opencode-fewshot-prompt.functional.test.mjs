@@ -38,7 +38,9 @@ test("opencode construct micro-prompt carries the few-shot example, within the w
     assert.equal(r.status, 0, `sync must pass the word cap without --force: ${r.stderr}`);
 
     const prompt = JSON.parse(readFileSync(cfgPath, "utf8")).agent?.construct?.prompt || "";
-    assert.match(prompt, /orchestration_policy/, "micro-prompt names the orchestration tool");
+    assert.match(prompt, /construct-mcp_orchestration_policy/, "micro-prompt names the OpenCode orchestration tool");
+    assert.match(prompt, /construct-mcp_orchestration_run/, "micro-prompt names the OpenCode execution tool");
+    assert.match(prompt, /"request": "add rate limiting to the API"/, "few-shot uses the real orchestration_policy argument name");
     assert.match(prompt, /add rate limiting to the API/, "micro-prompt carries the worked few-shot example");
     assert.doesNotMatch(prompt, /Available specialist agents:/, "native-subagent host gets the micro-prompt, not the roster");
 

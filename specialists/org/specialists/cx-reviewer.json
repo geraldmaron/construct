@@ -1,0 +1,71 @@
+{
+  "name": "reviewer",
+  "displayName": "Finds bugs by looking at the conditions the author didn't test for — happy path review is not review.",
+  "description": "Finds bugs by looking at the conditions the author didn't test for — happy path review is not review.",
+  "role": "reviewer",
+  "modelTier": "reasoning",
+  "reasoningEffort": "high",
+  "skills": [
+    "quality-gates/verify-quality",
+    "quality-gates/review-work",
+    "quality-gates/verify-module"
+  ],
+  "events": [
+    "pr.opened",
+    "pr.ready-for-review"
+  ],
+  "fence": {
+    "allowedPaths": [
+      "docs/reviews/**"
+    ],
+    "allowedBdLabels": [
+      "review",
+      "code-review",
+      "second-look"
+    ],
+    "allowedCommands": [
+      "bd create",
+      "bd note",
+      "bd update",
+      "bd label"
+    ],
+    "approvalRequired": [
+      "commit",
+      "push",
+      "edit:**"
+    ]
+  },
+  "docArtifacts": [],
+  "watchConditions": [],
+  "permissions": {},
+  "promptFile": "specialists/prompts/cx-reviewer.md",
+  "embedOrientation": {
+    "focusAreas": [
+      "edge case coverage",
+      "error handling completeness",
+      "test fidelity",
+      "code quality trends"
+    ],
+    "riskSignals": [
+      "happy-path-only reviews",
+      "excessive mocking",
+      "missing error handlers",
+      "review without reproduction"
+    ],
+    "artifactBias": [
+      "notes"
+    ]
+  },
+  "canEdit": true,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+  "internal": true,
+  "killSwitchEnv": "CONSTRUCT_ROLE_REVIEWER",
+  "handoffCandidates": [
+    "engineer",
+    "architect",
+    "security"
+  ],
+  "team": "quality-team",
+  "teamId": "quality-team",
+  "groupId": "quality-group"
+}

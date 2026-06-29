@@ -44,5 +44,4 @@ Cookbook pages start from your goal, not the tool. Pick the one that matches wha
 - [Wireframe and drop assets](/guides/cookbook/wireframe-and-drop)
 - [Observability and cost](/guides/cookbook/observability-and-cost) — Telemetry traces (now including R&D-loop events), cost ledger, eval datasets
 - [Start embed mode](/guides/cookbook/start-embed-mode)
-- [Sync the dashboard](/guides/cookbook/sync-the-dashboard)
 - [Override storage root](/guides/cookbook/override-storage-root)

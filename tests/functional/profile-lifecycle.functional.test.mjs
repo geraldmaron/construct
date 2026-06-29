@@ -1,5 +1,5 @@
 /**
- * tests/functional/profile-lifecycle.functional.test.mjs — Profile lifecycle.
+ * tests/functional/profile-lifecycle.functional.test.mjs — Scope lifecycle.
  *
  * Verifies the full discipline:
  *   create -> draft scaffolded with requirements brief
@@ -7,8 +7,8 @@
  *   health  -> returns a rollup (zero when no data yet)
  *   archive -> only allowed with a substantive reason; moves files into archive/
  *
- * Archiving touches the real repo paths under profiles/ + lib/intake/tables/,
- * so the archive test stages a sacrificial profile under a fake repo to avoid
+ * Archiving touches the real repo paths under scopes/ + lib/intake/tables/,
+ * so the archive test stages a sacrificial scope under a fake repo to avoid
  * mutating the project's own curated catalog mid-test.
  */
 import assert from 'node:assert/strict';
@@ -17,11 +17,11 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { createDraftProfile, listDrafts, profileHealth } from '../../lib/profiles/lifecycle.mjs';
+import { createDraftScope, listDrafts, scopeHealth } from '../../lib/scopes/lifecycle.mjs';
 
-test('lifecycle: createDraftProfile scaffolds requirements brief + draft profile', () => {
+test('lifecycle: createDraftScope scaffolds requirements brief + draft scope', () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-create-'));
-  const { briefPath, draftPath } = createDraftProfile({ cwd, id: 'media-agency', displayName: 'Media Agency' });
+  const { briefPath, draftPath } = createDraftScope({ cwd, id: 'media-agency', displayName: 'Media Agency' });
 
   assert.ok(fs.existsSync(briefPath));
   assert.ok(fs.existsSync(draftPath));
@@ -41,50 +41,50 @@ test('lifecycle: createDraftProfile scaffolds requirements brief + draft profile
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
-test('lifecycle: createDraftProfile rejects id collisions with the curated catalog', () => {
+test('lifecycle: createDraftScope rejects id collisions with the curated catalog', () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-collide-'));
   assert.throws(
-    () => createDraftProfile({ cwd, id: 'rnd' }),
+    () => createDraftScope({ cwd, id: 'rnd' }),
     /already exists in the curated catalog/,
   );
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
-test('lifecycle: createDraftProfile refuses to overwrite an existing draft', () => {
+test('lifecycle: createDraftScope refuses to overwrite an existing draft', () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-overwrite-'));
-  createDraftProfile({ cwd, id: 'studio-x' });
+  createDraftScope({ cwd, id: 'studio-x' });
   assert.throws(
-    () => createDraftProfile({ cwd, id: 'studio-x' }),
+    () => createDraftScope({ cwd, id: 'studio-x' }),
     /already exists/,
   );
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
-test('lifecycle: listDrafts surfaces in-progress drafts under .cx/profiles/', () => {
+test('lifecycle: listDrafts surfaces in-progress drafts under .cx/scopes/', () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-list-drafts-'));
-  createDraftProfile({ cwd, id: 'one' });
-  createDraftProfile({ cwd, id: 'two' });
+  createDraftScope({ cwd, id: 'one' });
+  createDraftScope({ cwd, id: 'two' });
   const drafts = listDrafts(cwd);
   const ids = drafts.map((d) => d.id).sort();
   assert.deepEqual(ids, ['one', 'two']);
   for (const d of drafts) {
     assert.equal(d.hasBrief, true);
-    assert.equal(d.hasProfile, true);
+    assert.equal(d.hasScope, true);
   }
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
-test('lifecycle: profileHealth returns a zero-shaped report when no data exists', () => {
+test('lifecycle: scopeHealth returns a zero-shaped report when no data exists', () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-health-empty-'));
-  const report = profileHealth(cwd, 'rnd');
-  assert.equal(report.profile, 'rnd');
-  assert.equal(report.profileExists, true);
+  const report = scopeHealth(cwd, 'rnd');
+  assert.equal(report.scope, 'rnd');
+  assert.equal(report.scopeExists, true);
   assert.equal(report.observationCount, 0);
   assert.deepEqual(report.roles, {});
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
-test('lifecycle: profileHealth counts per-role outcomes filtered by profile', () => {
+test('lifecycle: scopeHealth counts per-role outcomes filtered by scope', () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-health-data-'));
   const outDir = path.join(cwd, '.cx', 'outcomes');
   fs.mkdirSync(outDir, { recursive: true });
@@ -95,26 +95,26 @@ test('lifecycle: profileHealth counts per-role outcomes filtered by profile', ()
   ];
   fs.writeFileSync(path.join(outDir, 'engineer.jsonl'), lines.map(JSON.stringify).join('\n') + '\n');
 
-  const report = profileHealth(cwd, 'rnd');
+  const report = scopeHealth(cwd, 'rnd');
   assert.equal(report.roles.engineer.runs, 2);
   assert.equal(report.roles.engineer.successRate, 0.5);
 
-  const creative = profileHealth(cwd, 'creative');
+  const creative = scopeHealth(cwd, 'creative');
   assert.equal(creative.roles.engineer.runs, 1);
   assert.equal(creative.roles.engineer.successRate, 1);
 
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
-test('lifecycle: archiveProfile refuses an empty or trivial reason', async () => {
-  const { archiveProfile } = await import('../../lib/profiles/lifecycle.mjs');
-  assert.throws(() => archiveProfile({ id: 'rnd', reason: '' }), /substantive reason/);
-  assert.throws(() => archiveProfile({ id: 'rnd', reason: 'idk' }), /substantive reason/);
+test('lifecycle: archiveScope refuses an empty or trivial reason', async () => {
+  const { archiveScope } = await import('../../lib/scopes/lifecycle.mjs');
+  assert.throws(() => archiveScope({ id: 'rnd', reason: '' }), /substantive reason/);
+  assert.throws(() => archiveScope({ id: 'rnd', reason: 'idk' }), /substantive reason/);
 });
 
-test('lifecycle: createDraftProfile seeds persona + department artifacts when supplied', () => {
+test('lifecycle: createDraftScope seeds persona + department artifacts when supplied', () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-seeded-'));
-  const result = createDraftProfile({
+  const result = createDraftScope({
     cwd,
     id: 'studio-y',
     displayName: 'Studio Y',

@@ -1,0 +1,38 @@
+{
+  "id": "explorer-to-engineer",
+  "producer": "cx-explorer",
+  "consumer": "cx-engineer",
+  "trigger": {
+    "intent": [
+      "implementation",
+      "fix"
+    ],
+    "explorer.findingsReady": true
+  },
+  "input": {
+    "shape": "exploration-findings",
+    "mustContain": [
+      "entryPoints",
+      "keyFiles",
+      "gaps"
+    ]
+  },
+  "output": {
+    "schema": "lib/contract-schemas/implementation.json",
+    "type": "implementation"
+  },
+  "preconditions": [
+    "Exploration findings reviewed; gaps and surprising dependencies surfaced"
+  ],
+  "postconditions": [
+    "Implementation reads the files cited in keyFiles before edits",
+    "Gaps named by explorer (missing tests, missing error handling) are addressed or filed"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "strategy-group",
+    "consumerTeam": "engineering-group",
+    "requiresApprovalFrom": []
+  }
+}

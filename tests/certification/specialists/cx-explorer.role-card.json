@@ -20,7 +20,7 @@
   "refusalBoundaries": "If the investigation took less than 15 minutes and you feel confident, you probably missed something.",
   "modelTier": "fast",
   "sources": {
-    "registry": "specialists/registry.json",
+    "registry": "specialists/org",
     "promptFile": "specialists/prompts/cx-explorer.md"
   }
 }

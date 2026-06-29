@@ -23,7 +23,7 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Heavy jobs (test matrix, evals, audit, dashboard-integration) only run when code or
+# Heavy jobs (test matrix, evals, audit) only run when code or
 # workflow files change. Doc-only PRs skip them and still get the cheap policy checks
 # (lint-comments, lint-templates, docs drift, gates audit, secret scan).
 
@@ -128,8 +128,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm install --no-save ink react
       - run: npm test
-      - run: node bin/construct doctor
-      - run: node bin/construct docs:verify
+      - run: npm run doctor
+      - run: npm run docs:verify
       - name: coverage (report-only, main pushes)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         continue-on-error: true
@@ -158,31 +158,22 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: comment policy
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
-        run: node ./bin/construct lint:comments
+        run: npm run lint:comments
       - name: eslint (real-bug rules)
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         run: npm run lint:js
       - name: profile + flavor schema
         if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
-        run: npm run lint:profiles -- --quiet
+        run: npm run lint:scopes -- --quiet
       - name: agents registry schema
         if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.workflow == 'true'
-        run: node ./bin/construct lint:agents
+        run: npm run lint:agents
       - name: agent contracts schema
         if: needs.changes.outputs.agents == 'true' || needs.changes.outputs.workflow == 'true'
-        run: node ./bin/construct lint:contracts
+        run: npm run lint:contracts
       - name: docs drift check
         if: needs.changes.outputs.docs == 'true' || needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
-        run: node ./bin/construct docs:update --check
-      - name: dashboard bundle drift
-        if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
-        # Build + copy + parity check in one shot via the construct CLI.
-        # Same command runs in .beads/hooks/pre-push and the Claude Code
-        # pre-push-gate.mjs hook locally — tests/ci-parity.test.mjs asserts
-        # the three invocations stay identical. Earlier the step ran
-        # `build:next` (next build only, no copy to lib/server/static/)
-        # which always tripped --check on fresh CI checkouts.
-        run: node ./bin/construct dashboard:sync --build
+        run: npm run docs:update -- --check
       - name: docs site build
         if: needs.changes.outputs.docssite == 'true' || needs.changes.outputs.workflow == 'true'
         # PR-time guard for the Pages deploy. apps/docs depends on the
@@ -194,13 +185,13 @@ jobs:
         env:
           DOCS_BASE_PATH: /construct
         run: |
-          node ./bin/construct docs:site
+          npm run docs:site
           npm --prefix apps/docs run build
       - name: gates audit
         if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node ./bin/construct gates:audit
+        run: npm run gates:audit
       # Advisory gate: PR-body shape has no local-pre-flight equivalent (the
       # body doesn't exist until `gh pr create` runs), so a hard failure forces
       # a close+reopen to retrigger CI after a body fix. Step `continue-on-error`
@@ -213,7 +204,7 @@ jobs:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_BASE_REF: ${{ github.event.pull_request.base.ref || github.base_ref }}
           PR_BODY: ${{ github.event.pull_request.body }}
-        run: node scripts/lint-commits-pr.mjs
+        run: npm run lint:templates
 
   evals:
     name: retrieval evals
@@ -230,7 +221,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - name: Retrieval-quality regression
-        run: node bin/construct evals retrieval
+        run: npm run evals -- retrieval
 
   audit:
     name: dependency CVE audit
@@ -244,9 +235,9 @@ jobs:
           node-version-file: .tool-versions
       - run: npm ci --ignore-scripts
       - name: npm audit (high+ only)
-        # Scope to root deps only. Workspace packages (apps/docs, apps/dashboard,
-        # packages/cx-ui) are build-time tooling for the docs site and dashboard,
-        # not runtime deps of the published @geraldmaron/construct CLI. Their
+        # Scope to root deps only. Workspace packages (apps/docs, packages/cx-ui)
+        # are build-time tooling for the docs site, not runtime deps of the
+        # published @geraldmaron/construct CLI. Their
         # advisories are tracked separately; this gate guards the npm-published
         # surface. Mirrors the pre-push gate in lib/hooks/pre-push-gate.mjs.
         run: npm audit --omit=dev --audit-level=high --workspaces=false
@@ -270,23 +261,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  dashboard-integration:
-    needs: changes
-    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
-    name: dashboard server + build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: .tool-versions
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - name: Dashboard build
-        run: node --test --test-timeout=180000 tests/functional/dashboard-build.functional.test.mjs
-      - name: Dashboard server endpoint + auth + SSE tests
-        run: node --test --test-timeout=60000 tests/functional/dashboard/*.functional.test.mjs
-
   # Aggregator job. Branch protection requires `ci-required` instead of the
   # individual conditional jobs above. This always runs, sees the result of
   # every needed job (success / skipped / failure / cancelled), and fails only
@@ -297,7 +271,7 @@ jobs:
     name: ci-required
     runs-on: ubuntu-latest
     if: always()
-    needs: [changes, test, lint, evals, audit, secret-scan, dashboard-integration]
+    needs: [changes, test, lint, evals, audit, secret-scan]
     steps:
       - name: Verify required jobs passed or skipped
         env:

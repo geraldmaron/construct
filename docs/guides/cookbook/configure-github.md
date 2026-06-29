@@ -58,20 +58,12 @@ Once `@construct` knows about GitHub, it can:
 - Pull issue context for a referenced ticket (`@construct look at issue #123`).
 - Search code across visible repos (`@construct find usages of foo_bar in our org`).
 - Read PR diff + comments (`@construct review the changes in PR #456`).
-- Watch webhook events (issue opened, PR ready for review) if you wire the webhook on the GitHub side.
 
 The provider is read-only by default. Write actions (create issue, comment on PR) only happen when you've granted the scope AND the specialist's fence allows the action.
 
 ## Webhook (optional)
 
-For real-time event ingestion, set up a webhook in your repo settings:
-
-- Payload URL: your Construct dashboard's `/api/webhooks/github` route (when self-hosted).
-- Content type: `application/json`.
-- Secret: set `GITHUB_WEBHOOK_SECRET` to a strong random value in `config.env`.
-- Events: at minimum `issues`, `pull_request`, `pull_request_review`.
-
-The webhook handler verifies the signature, normalizes the payload, and emits the appropriate role event (e.g., `pr.ready-for-review` routes to `cx-reviewer`).
+The bundled HTTP webhook receiver was retired with the dashboard server (`construct-m7k2-web-deprecation`); Construct no longer ships an endpoint to point a GitHub webhook at. Use the read-only provider above — Construct reads PR diffs, comments, and issues on demand (`@construct review the changes in PR #456`).
 
 ## Common gotchas
 

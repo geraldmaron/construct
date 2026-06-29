@@ -8,7 +8,7 @@ applies_to:
   - cx-accessibility
 inherits: designer
 version: 2
-profiles:
+scopes:
   - rnd
 cap: 1
 ---

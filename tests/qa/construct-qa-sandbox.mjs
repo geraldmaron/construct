@@ -593,7 +593,7 @@ async function runRegistryIntegrityTests() {
       const mp = path.join(ROOT, 'specialists', 'role-manifests.json');
       const reg = JSON.parse(fs.readFileSync(rp, 'utf8'));
       const manifest = JSON.parse(fs.readFileSync(mp, 'utf8'));
-      const validNames = new Set(reg.specialists.map(s => s.name));
+      const validNames = new Set(Object.values(reg.specialists).map(s => s.name));
       validNames.add(reg.orchestrator.name);
       const personas = manifest.personas || {};
       const personaKeys = Object.keys(personas);
@@ -612,7 +612,7 @@ async function runRegistryIntegrityTests() {
       const cp = path.join(ROOT, 'specialists', 'contracts.json');
       const reg = JSON.parse(fs.readFileSync(rp, 'utf8'));
       const contracts = JSON.parse(fs.readFileSync(cp, 'utf8'));
-      const knownNames = new Set(reg.specialists.map(s => s.name));
+      const knownNames = new Set(Object.values(reg.specialists).map(s => s.name));
       knownNames.add(reg.orchestrator.name);
       knownNames.add('user');
       knownNames.add('oncall');

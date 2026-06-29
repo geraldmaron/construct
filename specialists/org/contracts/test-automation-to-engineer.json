@@ -1,0 +1,34 @@
+{
+  "id": "test-automation-to-engineer",
+  "producer": "cx-test-automation",
+  "consumer": "cx-engineer",
+  "trigger": {
+    "automation.required": true
+  },
+  "input": {
+    "shape": "automation-plan",
+    "mustContain": [
+      "framework",
+      "coverageTargets",
+      "flakeBudget"
+    ]
+  },
+  "output": {
+    "schema": "lib/contract-schemas/implementation.json",
+    "type": "implementation"
+  },
+  "preconditions": [
+    "Test scaffolding lands before behavioral edits so the test fails for the right reason first"
+  ],
+  "postconditions": [
+    "Engineer adds at least one failing test that demonstrates the bug or missing behavior before implementing the fix",
+    "Quarantined flaky tests carry an owner and a remediation date"
+  ],
+  "description": "",
+  "teamBoundary": {
+    "crosses": true,
+    "producerTeam": "quality-group",
+    "consumerTeam": "engineering-group",
+    "requiresApprovalFrom": []
+  }
+}

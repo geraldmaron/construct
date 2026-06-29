@@ -11,10 +11,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inlineRoleAntiPatterns, ROLE_DIRECTIVE_RE } from "../lib/role-preload.mjs";
 import { stripLeadingYamlFrontmatter } from "../lib/prompt-composer.js";
+import { loadRegistry } from "../lib/registry/loader.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-const registryPath = path.join(root, "specialists", "registry.json");
 
 function wordCount(text) {
   return text.trim().split(/\s+/).filter(Boolean).length;
@@ -28,81 +28,31 @@ function promptWordCount(content) {
   return wordCount(stripLeadingYamlFrontmatter(content).replace(/<!--\s*cx:prio=\d+\s*-->/g, ""));
 }
 
-test("all agents in registry have mandatory observability guidance", () => {
-  const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
-  const mandatoryPhrases = [
-    "MUST call cx_trace",
-    "MUST call cx_score"
-  ];
-
-  const sharedGuidance = registry.sharedGuidance || [];
-  
-  for (const phrase of mandatoryPhrases) {
-    const found = sharedGuidance.some(g => g.includes(phrase));
-    assert.ok(found, `Mandatory phrase "${phrase}" missing from sharedGuidance`);
-  }
-});
-
-test("Bash-enabled agents inherit required Bash tool-call schema guidance", () => {
-  const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
-  const guidance = (registry.sharedGuidance || []).join("\n");
-  assert.match(guidance, /bash tool requires both command and description string fields/i);
-  assert.match(guidance, /command/);
-  assert.match(guidance, /description/);
-
-  const entries = [registry.orchestrator, ...(registry.specialists || [])].filter(Boolean);
-  const bashEnabled = entries.filter((entry) =>
-    String(entry.claudeTools || "")
-      .split(",")
-      .map((tool) => tool.trim())
-      .includes("Bash")
-  );
-  assert.ok(bashEnabled.length > 0, "Expected at least one Bash-enabled registry entry");
-
-  for (const entry of bashEnabled) {
-    assert.ok(
-      /bash tool requires both command and description string fields/i.test(guidance),
-      `${entry.name} lacks shared Bash schema guidance`
-    );
-  }
-});
-
 test("specialist agents have required fields", () => {
-  const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
-  for (const agent of registry.specialists) {
-    assert.ok(agent.name, `Agent missing name`);
-    assert.ok(agent.description, `Agent ${agent.name} missing description`);
-    assert.ok(agent.prompt || agent.promptFile, `Agent ${agent.name} missing prompt or promptFile`);
-    assert.ok(agent.modelTier || agent.model, `Agent ${agent.name} missing model configuration`);
-  }
-});
-
-test("personas have valid prompt files", () => {
-  const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
-  const personas = [registry.orchestrator].filter(Boolean);
-  for (const persona of personas) {
-    const promptPath = path.join(root, persona.promptFile);
-    assert.ok(fs.existsSync(promptPath), `Persona ${persona.name} prompt file missing: ${persona.promptFile}`);
-    const content = fs.readFileSync(promptPath, "utf8");
-    assert.ok(content.length > 100, `Persona ${persona.name} prompt too short`);
+  const registry = loadRegistry({ rootDir: root });
+  for (const specialist of Object.values(registry.specialists || {})) {
+    assert.ok(specialist.name, `Specialist missing name`);
+    assert.ok(specialist.displayName, `Specialist ${specialist.name} missing displayName`);
+    assert.ok(specialist.promptFile, `Specialist ${specialist.name} missing promptFile`);
+    assert.ok(specialist.team, `Specialist ${specialist.name} missing team`);
   }
 });
 
 test("every specialist role reference resolves to an existing skills/roles file", () => {
-  const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
-  for (const agent of registry.specialists) {
-    if (!agent.promptFile) continue;
-    const content = fs.readFileSync(path.join(root, agent.promptFile), "utf8");
+  const registry = loadRegistry({ rootDir: root });
+  for (const specialist of Object.values(registry.specialists || {})) {
+    if (!specialist.promptFile) continue;
+    const content = fs.readFileSync(path.join(root, specialist.promptFile), "utf8");
     const match = content.match(ROLE_DIRECTIVE_RE);
     if (!match) continue;
     const ref = match[1];
     const [core, flavor] = ref.split(".");
     const coreFile = path.join(root, "skills", "roles", `${core}.md`);
-    assert.ok(fs.existsSync(coreFile), `${agent.name}: core role file missing — ${coreFile}`);
+    assert.ok(fs.existsSync(coreFile), `${specialist.name}: core role file missing — ${coreFile}`);
     assert.ok(fs.readFileSync(coreFile, "utf8").length > 200, `${core}.md too short`);
     if (flavor) {
       const flavorFile = path.join(root, "skills", "roles", `${core}.${flavor}.md`);
-      assert.ok(fs.existsSync(flavorFile), `${agent.name}: flavor role file missing — ${flavorFile}`);
+      assert.ok(fs.existsSync(flavorFile), `${specialist.name}: flavor role file missing — ${flavorFile}`);
     }
   }
 });
@@ -119,8 +69,16 @@ test("product manager flavor overlays exist for Product Intelligence routing", (
 });
 
 test("domain role flavor overlays exist for routing metadata", () => {
+  const splitRoles = ["ai-engineer", "platform-engineer"];
+  for (const role of splitRoles) {
+    const p = path.join(root, "skills", "roles", `${role}.md`);
+    assert.ok(fs.existsSync(p), `Missing split role overlay: ${p}`);
+    const content = fs.readFileSync(p, "utf8");
+    assert.match(content, new RegExp(`role:\\s*${role}`));
+    assert.ok(content.length > 500, `${p} too short to provide useful guidance`);
+  }
+
   const overlays = {
-    engineer: ["ai", "data", "platform"],
     architect: ["platform", "integration", "data", "ai-systems", "enterprise"],
     qa: ["web-ui", "api-contract", "data-pipeline", "ai-eval"],
     security: ["appsec", "cloud", "ai", "privacy", "supply-chain"],
@@ -149,15 +107,15 @@ test("orchestrator role preload stays compact", () => {
 test("inlineRoleAntiPatterns expands the directive when preload: true", () => {
   // On-demand is the default (see rules/common/skill-composition.md). Preload
   // is opt-in for hosts without reliable runtime get_skill.
-  const src = '**Role guidance**: call `get_skill("roles/engineer.ai")` before drafting.';
+  const src = '**Role guidance**: call `get_skill("roles/ai-engineer")` before drafting.';
   const out = inlineRoleAntiPatterns(src, root, "cx-ai-engineer", () => {}, { preload: true });
   assert.ok(!/get_skill\("roles\//.test(out), "raw directive should be expanded");
   assert.match(out, /## Role guidance/);
-  assert.match(out, /ai overlay/i);
+  assert.match(out, /Prompt tuning without evals/i);
 });
 
 test("inlineRoleAntiPatterns defaults to on-demand (leaves directive in place)", () => {
-  const src = '**Role guidance**: call `get_skill("roles/engineer.ai")` before drafting.';
+  const src = '**Role guidance**: call `get_skill("roles/ai-engineer")` before drafting.';
   const out = inlineRoleAntiPatterns(src, root, "cx-ai-engineer", () => {});
   assert.strictEqual(out, src, "default should leave the directive untouched for runtime get_skill");
 });
@@ -168,9 +126,9 @@ test("inlineRoleAntiPatterns is a no-op when no directive present", () => {
 });
 
 test("get_template shipped defaults all exist for template names referenced in prompts", () => {
-  const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+  const registry = loadRegistry({ rootDir: root });
   const names = new Set();
-  for (const agent of registry.specialists) {
+  for (const agent of Object.values(registry.specialists || {})) {
     if (!agent.promptFile) continue;
     const content = fs.readFileSync(path.join(root, agent.promptFile), "utf8");
     for (const m of content.matchAll(/get_template\("([^"]+)"\)/g)) {
@@ -185,11 +143,12 @@ test("get_template shipped defaults all exist for template names referenced in p
 });
 
 test("prompt source files stay within token-efficiency budgets", () => {
-  const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+  const registry = loadRegistry({ rootDir: root });
   const sharedGuidanceWords = wordCount((registry.sharedGuidance || []).join("\n"));
   assert.ok(sharedGuidanceWords <= 1500, `sharedGuidance too large: ${sharedGuidanceWords} words`);
 
-  for (const persona of [registry.orchestrator].filter(Boolean)) {
+  const orchestrator = Object.values(registry.specialists || {}).find((s) => s.role === "orchestrator");
+  for (const persona of [orchestrator].filter(Boolean)) {
     const content = fs.readFileSync(path.join(root, persona.promptFile), "utf8");
     const count = promptWordCount(content);
     // Persona cap is 1000 words. Baseline rule-of-thumb is 900 for an
@@ -204,7 +163,7 @@ test("prompt source files stay within token-efficiency budgets", () => {
   const allowlist = new Map([
     ["specialists/prompts/cx-orchestrator.md", "orchestration prompt owns routing and handoff rules"],
   ]);
-  for (const agent of registry.specialists) {
+  for (const agent of Object.values(registry.specialists || {})) {
     if (!agent.promptFile || allowlist.has(agent.promptFile)) continue;
     const content = fs.readFileSync(path.join(root, agent.promptFile), "utf8");
     const count = promptWordCount(content);

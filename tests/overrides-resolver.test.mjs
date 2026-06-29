@@ -65,12 +65,13 @@ describe('resolveOverride', () => {
     assert.equal(r.path, null);
   });
 
-  it('handles singleFile categories (contracts, role-manifests)', () => {
-    fs.mkdirSync(path.join(projectRoot, 'specialists'));
-    fs.writeFileSync(path.join(projectRoot, 'specialists', 'contracts.json'), '{}');
-    const r = resolveOverride(projectRoot, 'contracts', 'ignored-name');
-    assert.equal(r.source, 'original');
-    assert.ok(r.path.endsWith('specialists/contracts.json'));
+  it('no longer supports the deleted contracts/role-manifests categories', () => {
+    assert.ok(!SUPPORTED_CATEGORIES.includes('contracts'));
+    assert.ok(!SUPPORTED_CATEGORIES.includes('role-manifests'));
+    assert.throws(
+      () => resolveOverride(projectRoot, 'contracts', 'ignored-name'),
+      /unknown override category/,
+    );
   });
 
   it('throws on unknown category', () => {
