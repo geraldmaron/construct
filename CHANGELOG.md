@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-06-29
+
 ### Fixed
 
 - `tests/certification/artifacts/gate-matrix.json` no longer churns on every run. `writeArtifactGateMatrixDoc` stamped a `generatedAt: new Date().toISOString()` into this tracked artifact, so the artifact-gates test rewrote it with a fresh timestamp each run — producing a perpetual timestamp-only diff. The field was write-only (never read; the matrix content is the signal), so it's dropped and the committed file is now deterministic.
