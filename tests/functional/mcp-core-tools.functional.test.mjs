@@ -30,7 +30,7 @@ const SERVER = path.join(REPO, 'lib', 'mcp', 'server.mjs');
 
 const CORE_TOOLS = [
   'orchestration_policy', 'get_skill', 'search_skills', 'knowledge_search',
-  'memory_search', 'project_context', 'summarize_diff',
+  'memory_search', 'project_context', 'summarize_diff', 'orchestration_readiness',
 ];
 
 const SAMPLE_ARGS = {
@@ -41,6 +41,7 @@ const SAMPLE_ARGS = {
   memory_search: { query: 'registry' },
   project_context: {},
   summarize_diff: { diff: 'diff --git a/x.txt b/x.txt\n--- a/x.txt\n+++ b/x.txt\n@@ -0,0 +1 @@\n+hello\n' },
+  orchestration_readiness: { host: 'test-host', session_id: 'mcp-core-test' },
 };
 
 function mcpClient(home) {

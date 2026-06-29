@@ -14,7 +14,7 @@ description: Models & Integrations commands for Construct.
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
 | `construct models` | Show or update model tier assignments |
-| `construct orchestrate` | Construct-owned local orchestration runtime, in-process or against the local daemon (--remote) |
+| `construct orchestrate` | Construct-owned local orchestration runtime and readiness preflight |
 | `construct plugin` | Manage external Construct plugin manifests |
 
 ## construct acp
@@ -112,18 +112,19 @@ construct models <list|set|free|reset|resolve>
 
 ## construct orchestrate
 
-Construct-owned local orchestration runtime, in-process or against the local daemon (--remote)
+Construct-owned local orchestration runtime and readiness preflight
 
 **Usage**
 
 ```bash
-construct orchestrate <run|status> [options] [--remote]
+construct orchestrate <run|status|preflight> [options] [--remote]
 ```
 
 **Subcommands**
 
 - `run "<request>" [--strategy S] [--host H] [--worker-backend provider] [--no-construct] [--no-execute] [--json] [--remote]` — Plan and run a request through a Construct-owned specialist chain; --remote drives the local daemon over HTTP
 - `status [run-id] [--json] [--remote]` — Inspect a run, or list recent runs (locally or from the daemon)
+- `preflight [--host H] [--json] [--no-probe]` — Verify orchestration tool attachment/readiness and return a typed reason plus recovery step
 
 ## construct plugin
 

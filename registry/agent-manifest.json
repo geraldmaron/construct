@@ -73,6 +73,10 @@
       {
         "name": "triage_recommend",
         "use": "Recommend intake triage — type, owner, and routing — for a new signal."
+      },
+      {
+        "name": "orchestration_readiness",
+        "use": "Verify that the active MCP session has Construct orchestration tools attached; returns a typed failure reason and next step."
       }
     ],
     "longTail": {

@@ -136,6 +136,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct init` | Project setup (once per repo): scaffold .cx/, AGENTS.md, plan.md, adapters |
 | `construct install` | Machine setup (scoped per ADR-0029): --scope=project\|user\|both, default project |
 | `construct intake` | View and process the active profile's intake queue (queue label varies by profile) |
+| `construct oracle` | Oracle meta-controller — fleet health review and bounded-auto maintenance |
 | `construct recommendations` | View and manage artifact recommendations |
 | `construct sandbox` | Isolated tmpdir-based environment for QA / specialist dry-runs |
 | `construct scope` | Manage the active org scope and its lifecycle (draft, promote, archive, health) |
@@ -186,7 +187,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
 | `construct models` | Show or update model tier assignments |
-| `construct orchestrate` | Construct-owned local orchestration runtime, in-process or against the local daemon (--remote) |
+| `construct orchestrate` | Construct-owned local orchestration runtime and readiness preflight |
 | `construct plugin` | Manage external Construct plugin manifests |
 
 ### Integrations

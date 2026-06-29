@@ -45,6 +45,7 @@ test('interactive: context goes to stdout, exit 0', () => {
   const r = driveHook();
   assert.equal(r.status, 0);
   assert.ok(r.stdout.length > 0, 'stdout carries the context payload');
+  assert.match(r.stdout, /Orchestration readiness: not checked/, 'session start points to explicit orchestration preflight');
 });
 
 test('explicit silent: stdout stays empty, payload preserved in the debug log', () => {
