@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T21:00:29.954Z",
+  "generatedAt": "2026-06-29T21:10:01.429Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 513,
+    "testFiles": 514,
     "topLevelTestFiles": 296,
-    "nestedTestFiles": 217,
+    "nestedTestFiles": 218,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 24,
     "byLayer": {
@@ -13,7 +13,7 @@
       "live-provider": 2,
       "visual": 7,
       "integration": 30,
-      "functional": 138
+      "functional": 139
     },
     "byCategory": {
       "unit": 297,
@@ -22,7 +22,7 @@
       "live-provider": 2,
       "visual": 7,
       "integration": 21,
-      "functional": 138,
+      "functional": 139,
       "hook": 9
     }
   },
@@ -2217,6 +2217,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/secret-resolver.functional.test.mjs — the shared LLM secret"
+    },
+    {
+      "path": "tests/functional/self-hosting-cert.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/self-hosting-cert.functional.test.mjs"
     },
     {
       "path": "tests/functional/session-start-output-mode.functional.test.mjs",
