@@ -13,20 +13,15 @@ import assert from 'node:assert/strict';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runArtifactWorkflow } from '../../lib/artifact-workflow.mjs';
+import { COMPLETION_STATES, completionRank } from '../../lib/artifact-completion-states.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 // States that must never be reachable from planning or skipped specialist work alone — each
-// requires a stored evidence object the local command cannot produce on its own.
+// requires stored evidence the local command cannot produce. Derived from the canonical ladder
+// (screenshot-captured and above) so this guard tracks the single source, not a copy of it.
 
-const FORGED_STATES = [
-  'reviewed',
-  'visually-rendered',
-  'visual-reviewed',
-  'accessibility-reviewed',
-  'approved',
-  'completed',
-];
+const FORGED_STATES = COMPLETION_STATES.slice(completionRank('screenshot-captured'));
 
 test('status is never a forged review/visual/approval state when only specialist work is planned', () => {
   for (const approvalMode of [undefined, 'allow-durable-write']) {
