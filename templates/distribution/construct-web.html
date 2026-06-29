@@ -1,18 +1,16 @@
 <!--
-  templates/distribution/construct-web.html — Construct branded standalone HTML
-  template for `construct export --to=html`. Monochrome design mirroring the PDF
-  brand (construct-brand.typ): Space Grotesk webfont, masthead from frontmatter metadata,
-  bold-header hairline tables, callout blockquotes, framed figures. Pandoc fills
-  $title$/$subtitle$/$status$/$owner$/$date$/$artifactType$/$version$/$docId$/
-  $classification$ and $body$; export runs with --embed-resources so diagrams and
-  fonts inline into a single portable file.
+  Standalone branded HTML export template. Monochrome design: Space Grotesk
+  webfont, masthead from frontmatter metadata, bold-header hairline tables, callout
+  blockquotes, framed figures. Pandoc fills the title, subtitle, status, owner,
+  date, artifactType, version, docId, classification, and document body; export
+  runs with --embed-resources so diagrams and fonts inline into one portable file.
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>$if(title)$$title$$else$Construct document$endif$</title>
+<title>$if(title)$$title$$else$Document$endif$</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -79,14 +77,14 @@
 $if(title)$
 <header class="masthead">
 $if(artifactType)$  <div class="chips">$artifactType$$if(docId)$ <span class="sep">&middot;</span> $docId$$endif$$if(version)$ <span class="sep">&middot;</span> v$version$$endif$$if(classification)$ <span class="sep">&middot;</span> $classification$$endif$</div>
-$endif$  <div class="title">$title$</div>
+$endif$  <h1 class="title">$title$</h1>
 $if(subtitle)$  <p class="subtitle">$subtitle$</p>
 $endif$  <div class="byline">$if(status)$<span class="pill">$status$</span>$endif$$if(owner)$<span>$owner$</span>$endif$$if(date)$<span class="sep">&middot;</span><span>$date$</span>$endif$</div>
 </header>
 <div class="rule"></div>
 $endif$
 $body$
-<div class="doc-foot"><b>Construct</b>$if(classification)$ &middot; $classification$$endif$</div>
+<div class="doc-foot">$if(classification)$<b>$classification$</b>$endif$$if(date)$$if(classification)$ &middot; $endif$$date$$endif$</div>
 </main>
 </body>
 </html>

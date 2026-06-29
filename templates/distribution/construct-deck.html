@@ -1,15 +1,14 @@
 <!--
-  templates/distribution/construct-deck.html — Construct branded 16:9 slide deck
-  HTML for `construct export --to=deck`. Pandoc emits section divs (--section-divs)
-  from markdown slides separated by ---; Space Grotesk via Google Fonts; monochrome ink
-  tokens mirror construct-brand.typ. Metadata variables fill the title slide.
+  Standalone 16:9 slide-deck HTML export template. Pandoc emits section divs
+  (--section-divs) from markdown slides separated by ---; Space Grotesk via Google
+  Fonts; monochrome ink tokens. Metadata variables fill the title slide.
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>$if(title)$$title$$else$Construct deck$endif$</title>
+<title>$if(title)$$title$$else$Slides$endif$</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -86,7 +85,7 @@ $if(artifactType)$<div class="meta">$artifactType$$if(docId)$ <span class="sep">
 <h1>$title$</h1>
 $if(subtitle)$<p class="subtitle">$subtitle$</p>$endif$
 $if(owner)$<p class="meta">$owner$$if(date)$ <span class="sep">&middot;</span> $date$$endif$$if(status)$ <span class="sep">&middot;</span> $status$$endif$</p>$endif$
-<div class="slide-foot"><span><b>Construct</b>$if(classification)$ &middot; $classification$$endif$</span></div>
+<div class="slide-foot"><span>$if(classification)$<b>$classification$</b>$endif$$if(date)$$if(classification)$ &middot; $endif$$date$$endif$</span></div>
 </section>
 $endif$
 $body$
