@@ -1,12 +1,14 @@
 {
   "title": "Synthesis",
   "pages": [
+    "best-practice-alignment",
     "consolidated-findings",
-    "risk-register",
     "execution-matrix",
     "final-bead-tree",
     "host-capability-matrix",
     "registry-extraction-inventory",
+    "risk-register",
+    "self-hosting-certification",
     "web-search-capability-contract"
   ]
 }
