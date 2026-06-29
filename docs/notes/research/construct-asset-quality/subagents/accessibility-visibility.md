@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Subagent Evidence Report: Accessibility & visibility
 
 ## 1. Summary

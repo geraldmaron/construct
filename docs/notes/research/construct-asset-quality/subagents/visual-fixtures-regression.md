@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Subagent Evidence Report: Visual fixtures & regression
 
 ## 1. Summary

@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Subagent Evidence Report: Artifact surface & manifest
 
 ## 1. Summary

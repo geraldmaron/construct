@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Subagent Evidence Report: Workflow truth & completion state
 
 ## 1. Summary

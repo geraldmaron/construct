@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Asset Quality Program — Traffic Jams & Selected Resolutions
 
 Grounded against the Phase 0 baseline. Each jam states the risk, the resolution adopted for this program, and the Construct-specific anchor that makes the resolution concrete (so it is not generic advice).

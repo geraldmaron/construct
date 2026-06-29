@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Asset Quality Program — Phase 0 Baseline
 
 Status: read-only baseline. No code changed. No Beads created. No agents dispatched.

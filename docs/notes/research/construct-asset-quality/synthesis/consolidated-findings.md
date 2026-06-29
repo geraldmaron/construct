@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Asset Quality — Consolidated Findings (Phase 3 Synthesis)
 
 Source: 11 read-only audit reports under `../subagents/`. Every claim traces to a report; report claims trace to file:line. Date: 2026-06-29.

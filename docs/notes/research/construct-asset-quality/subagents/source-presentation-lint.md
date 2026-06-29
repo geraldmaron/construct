@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Subagent Evidence Report: Source presentation lint
 
 ## 1. Summary

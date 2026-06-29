@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Asset Completion Contract (Phase 3 Synthesis — DRAFT proposal)
 
 A registry-first definition of "complete" per artifact, per output format. Grounded in Agent A (manifest), Agent I (workflow truth), Agent C (gates). This is a **proposal for the synthesis gate**, not yet implemented.

@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Subagent Evidence Report: Asset-quality CLI & UX
 
 **Agent:** K (Asset-quality CLI & UX)  
