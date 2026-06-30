@@ -1,17 +1,14 @@
 /**
  * tests/audit/f01-mcp-safety/delete-traversal.red.mjs — F01 [R11]+[R10] destructive path-traversal proof.
  *
- * RED fixture (must FAIL against current code). deleteIngestedArtifacts joins each
- * model-supplied `files` entry onto the ingested dir with `path.join(internalDir, f)`
- * and deletes the result, with no containment check. A `files` entry like
- * `../../OUTSIDE.txt` therefore escapes `.cx/knowledge/internal` and deletes an
- * arbitrary file on disk — a destructive variant of the scanFile read-traversal,
- * compounding the confirm=true self-authorization in storage.mjs.
+ * Regression guard for CX-AUDIT-MCP-SAFETY-003. deleteIngestedArtifacts resolves each
+ * model-supplied `files` entry against the ingested-artifact root via resolveWithinRoot,
+ * so an entry like `../../../OUTSIDE.txt` that escapes `.cx/knowledge/internal` is refused
+ * before any deletion rather than removing an arbitrary file on disk — the destructive
+ * twin of the scanFile read-traversal, alongside the confirm=true self-authorization.
  *
- * Contract (CX-AUDIT-MCP-SAFETY-003/-004): file targets must be contained to the
- * ingested-artifact root after symlink resolution; an escaping entry must be refused,
- * not deleted. The test asserts an out-of-root file survives the call — it passes once
- * containment is enforced.
+ * The test asserts an out-of-root file survives a model-supplied `files[]` traversal entry:
+ * the call either throws on the escape or leaves the file untouched.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
