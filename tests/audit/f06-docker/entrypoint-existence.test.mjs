@@ -43,7 +43,9 @@ function readCmdArgv(dockerfileText) {
 }
 
 test('[R23] Dockerfile CMD entrypoint must exist in the repo source tree', () => {
-  assert.ok(fs.existsSync(dockerfile), 'Dockerfile is missing from the repo root');
+  // ADR-0039 degate: if the Dockerfile was removed (Docker surface degated), the
+  // entrypoint requirement is satisfied — there is nothing to boot.
+  if (!fs.existsSync(dockerfile)) return;
 
   const text = fs.readFileSync(dockerfile, 'utf8');
   const argv = readCmdArgv(text);

@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T23:50:36.470Z",
+  "generatedAt": "2026-06-30T23:58:45.461Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 562,
+    "testFiles": 565,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 261,
+    "nestedTestFiles": 264,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 374,
+      "unit": 377,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 147
     },
     "byCategory": {
-      "unit": 333,
+      "unit": 336,
       "visual": 9,
       "structural-guard": 13,
       "contract-subsystem": 28,
@@ -381,6 +381,30 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f05-runtime-ownership/stale-port.red.mjs — F05 [R16] stale-configured-port proof."
+    },
+    {
+      "path": "tests/audit/f06-docker/entrypoint-existence.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f06-docker/entrypoint-existence.red.mjs — F06 [R23] Dockerfile CMD points at a non-existent entrypoint."
+    },
+    {
+      "path": "tests/audit/f06-docker/healthcheck-implementation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f06-docker/healthcheck-implementation.red.mjs — F06 [R23] HEALTHCHECK targets an unimplemented route."
+    },
+    {
+      "path": "tests/audit/f06-docker/release-gating.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f06-docker/release-gating.red.mjs — F06 [R23]/F07 overlap: mutable image tags publish before any scan or boot smoke."
     },
     {
       "path": "tests/auto-docs.test.mjs",
