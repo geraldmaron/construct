@@ -58,6 +58,22 @@
       "audit": "auditDeckMarkdownLayout",
       "expect": { "code": "text_dense" },
       "status": "enforced"
+    },
+    {
+      "id": "deck-over-dense-bullets",
+      "family": "deck",
+      "path": "anti/deck/over-dense-bullets.md",
+      "audit": "auditDeckMarkdownLayout",
+      "expect": { "code": "bullet_density" },
+      "status": "enforced"
+    },
+    {
+      "id": "deck-sub-floor-density",
+      "family": "deck",
+      "path": "anti/deck/sub-floor-density.md",
+      "audit": "auditDeckMarkdownLayout",
+      "expect": { "code": "font_below_floor" },
+      "status": "enforced"
     }
   ]
 }
