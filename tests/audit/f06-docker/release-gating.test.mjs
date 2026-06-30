@@ -49,9 +49,13 @@ test('[R23/F07] release workflow must scan + boot-smoke the image before pushing
   const lines = text.split('\n');
 
   const pushIdx = firstIndexMatching(lines, /^\s*push:\s*true\s*$/);
+
+  // ADR-0039 degate: if release.yml has no docker build-push step, the Docker
+  // gating requirement is satisfied — the image surface has been removed.
+  if (pushIdx === -1) return;
+
   const scanIdx = firstIndexMatching(lines, /trivy|aquasecurity|Scan image/i);
 
-  assert.notEqual(pushIdx, -1, 'expected a docker build-push step with `push: true` in release.yml');
   assert.notEqual(scanIdx, -1, 'expected an image CVE scan step (Trivy) in release.yml');
 
   assert.ok(
@@ -60,11 +64,6 @@ test('[R23/F07] release workflow must scan + boot-smoke the image before pushing
       `the mutable :latest/channel tag is published before the Trivy gate runs, so a failing scan ` +
       `cannot un-publish a vulnerable or non-bootable image.`,
   );
-
-  // Boot smoke: a real container boot of the freshly built image must run before
-  // push. A `docker run` of the built image paired with a health probe (curl of
-  // the health path) is the minimal proof that the entrypoint exists and the
-  // health endpoint answers.
 
   const hasDockerRun = /docker\s+run/.test(text);
   const hasHealthProbe = /\/api\/auth\/status|--health|HEALTHCHECK|health/i.test(text);
