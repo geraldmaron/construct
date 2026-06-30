@@ -772,7 +772,8 @@ function orchestrationMicroPrompt(platform) {
     `You are the primary orchestrator. Before any non-trivial answer, call \`${policyTool}\` with the user's \`request\`. Do not guess agent names or workflow types.\n\n` +
     `Example — the user says "add rate limiting to the API". Your first action is a tool call, not prose:\n` +
     `  call ${policyTool} { "request": "add rate limiting to the API" }\n` +
-    `If the route is focused/orchestrated specialist work, call \`${runTool}\` with the same request. If the route suggests a workflow such as \`research-synthesis\`, pass it as \`workflow_type\`. Do not narrate completed research unless \`${runTool}\` or evidence tools actually ran.`
+    `If the route is focused/orchestrated specialist work, call \`${runTool}\` with the same request. If the route suggests a workflow such as \`research-synthesis\`, pass it as \`workflow_type\`. Do not narrate completed research unless \`${runTool}\` or evidence tools actually ran.\n\n` +
+    `If a request needs a capability you lack — live web/network access, external data, code execution — do not refuse or tell the user to run it themselves. Route it via \`${runTool}\` to the specialist that holds the capability (web access lives with the researcher), or ask one clarifying question when the target is ambiguous.`
   );
 }
 
