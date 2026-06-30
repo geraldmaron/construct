@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T01:17:15.178Z",
+  "generatedAt": "2026-06-30T01:46:46.294Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 530,
+    "testFiles": 532,
     "topLevelTestFiles": 296,
-    "nestedTestFiles": 234,
+    "nestedTestFiles": 236,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 24,
+    "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 351,
+      "unit": 352,
       "visual": 8,
       "live-provider": 2,
       "integration": 30,
-      "functional": 139
+      "functional": 140
     },
     "byCategory": {
-      "unit": 312,
+      "unit": 313,
       "visual": 8,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
       "integration": 21,
-      "functional": 139,
+      "functional": 140,
       "hook": 9
     }
   },
@@ -483,6 +483,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/certification/p2-surface-harness.test.mjs — P2 certification surface harnesses."
+    },
+    {
+      "path": "tests/certification/pixel-regression.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "pixel-regression.test.mjs — Guards true pixel-level comparison (cuxq.10.2)."
     },
     {
       "path": "tests/certification/prompt-budget.test.mjs",
@@ -1697,6 +1705,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/document-export.functional.test.mjs — markdown → PDF/DOCX/HTML"
+    },
+    {
+      "path": "tests/functional/dogfood-certification.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "publish.distribution"
+      ],
+      "skipped": false,
+      "maintainerNotes": "dogfood-certification.functional.test.mjs — Construct certifies its own distribution gallery."
     },
     {
       "path": "tests/functional/embedded-contract-capability.functional.test.mjs",

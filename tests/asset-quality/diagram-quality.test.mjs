@@ -40,10 +40,10 @@ test('an over-long node label trips label_too_long', () => {
   assert.ok(codes(result).includes('label_too_long'), JSON.stringify(result.findings));
 });
 
-test('a mostly-unlabeled flowchart trips unlabeled_edges', () => {
+test('unlabeled edges are idiomatic and never flagged (dependency/data-flow graphs)', () => {
   const src = 'flowchart LR\n  A --> B\n  B --> C\n  C --> D\n  D --> E\n';
   const result = analyzeDiagramQuality(src, { lang: 'mermaid' });
-  assert.ok(codes(result).includes('unlabeled_edges'), JSON.stringify(result.findings));
+  assert.equal(result.ok, true, JSON.stringify(result.findings));
 });
 
 test('a single-participant sequence trips sequence_too_few_participants', () => {
