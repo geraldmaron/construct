@@ -1447,6 +1447,22 @@ function getVSCodeUserMcpPaths() {
     .filter((file) => fs.existsSync(file));
 }
 
+// A merged mcp.json preserves existing entries so user customizations survive a
+// re-sync. A construct-owned server path is a fully-resolved, non-placeholder
+// path, so the preserve rule keeps it even when it points at a different toolkit
+// root than the current one — and VS Code then launches a server that may not
+// exist. Treat a construct toolkit path outside the current root as stale so the
+// sync refreshes it; user-owned servers carry no lib/mcp toolkit path and stay.
+
+export function mcpEntryPointsOutsideToolkit(entry, root) {
+  const args = Array.isArray(entry?.args) ? entry.args : [];
+  return args.some(
+    (arg) => typeof arg === "string"
+      && /\/lib\/mcp\/[a-z0-9-]+\.mjs$/.test(arg)
+      && !arg.startsWith(`${root}/`),
+  );
+}
+
 function syncVSCode(targetDir = null, wants = true) {
   const registryMcp = scopedManagedMcpDefs({ projectScope: Boolean(targetDir) });
   if (Object.keys(registryMcp).length === 0) return false;
@@ -1495,7 +1511,8 @@ function syncVSCode(targetDir = null, wants = true) {
       const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
       const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
       const transportMismatch = registryWantsCommand && existingIsRemote;
-      if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
+      const staleToolkitPath = mcpEntryPointsOutsideToolkit(existingEntry, root);
+      if (existingEntry && !hasPlaceholder && !transportMismatch && !staleToolkitPath) continue;
       config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
     }
     if (!DRY_RUN) {
@@ -1519,7 +1536,8 @@ function syncVSCode(targetDir = null, wants = true) {
         const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
         const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
         const transportMismatch = registryWantsCommand && existingIsRemote;
-        if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
+        const staleToolkitPath = mcpEntryPointsOutsideToolkit(existingEntry, root);
+        if (existingEntry && !hasPlaceholder && !transportMismatch && !staleToolkitPath) continue;
         config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
       }
       if (!DRY_RUN) fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
