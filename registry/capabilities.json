@@ -1,7 +1,7 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-06-29T00:02:43.405Z",
+    "generatedAt": "2026-06-30T00:29:27.879Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -503,9 +503,9 @@
       },
       {
         "name": "oracle",
-        "category": "Internal",
-        "core": false,
-        "internal": true
+        "category": "Core",
+        "core": true,
+        "internal": false
       },
       {
         "name": "orchestrate",
