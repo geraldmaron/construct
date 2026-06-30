@@ -10,7 +10,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert';
-import { requiresExternalResearch, classifyResearchShape } from '../lib/orchestration-policy.mjs';
+import { requiresExternalResearch, classifyResearchShape, requiresLiveWebAccess, determineExecutionTrack, routeRequest } from '../lib/orchestration-policy.mjs';
 
 const fires = (request) => requiresExternalResearch({ request });
 
@@ -60,4 +60,35 @@ test('the pre-existing triggers still take precedence', () => {
   const entity = requiresExternalResearch({ request: 'evaluate whether to adopt Temporal for workflows' });
   assert.equal(entity.required, true);
   assert.equal(entity.reason, 'named-entities', 'a proper noun still wins the reason');
+});
+
+test('live web access engages external research and routes off the immediate track', () => {
+  const webAsks = [
+    'try to connect to the internet',
+    'fetch the contents of example.com and summarize them',
+    'download the file from https://example.com/data.csv',
+    'check if our status page is online',
+    'curl the health endpoint',
+  ];
+  for (const request of webAsks) {
+    assert.equal(requiresLiveWebAccess(request), true, `should need web access: ${request}`);
+    const gate = requiresExternalResearch({ request });
+    assert.equal(gate.required, true, `gate fires: ${request}`);
+    assert.equal(gate.reason, 'web-access', `reason is web-access: ${request}`);
+    assert.notEqual(determineExecutionTrack({ request }), 'immediate', `must dispatch, not answer directly: ${request}`);
+    assert.ok(routeRequest({ request }).specialists.includes('cx-researcher'), `cx-researcher is dispatched: ${request}`);
+  }
+});
+
+test('local work is not mistaken for live web access (precision floor)', () => {
+  const notWeb = [
+    'fetch the user record from the database',
+    'explain how the retrieval path works',
+    'open the config file and add a flag',
+    'load the fixture into the test',
+    'pull the latest changes and rebase',
+  ];
+  for (const request of notWeb) {
+    assert.equal(requiresLiveWebAccess(request), false, `should not trigger web access: ${request}`);
+  }
 });

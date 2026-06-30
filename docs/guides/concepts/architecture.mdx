@@ -468,5 +468,7 @@ body_hash:   sha256:<hex>          # SHA-256 of trimmed body
 
 **Single Front Door:** only `construct` appears in editor agent pickers. Internal specialists (`cx-*`) dispatch via `orchestration_policy` / `orchestration_run` — not as separate picker entries. Sync injects an orchestration micro-prompt instead of a static roster token block. Research-shaped host asks classify first, then execute via `orchestration_run`; `workflow_invoke` is the planning contract, not proof that evidence was gathered.
 
+Both dispatch tools (`orchestration_policy`, `orchestration_run`) are part of the flat core MCP surface (`CORE_TOOL_NAMES` in `lib/mcp/server.mjs`, ADR-0048), so they are advertised on every host rather than buried behind the `call` gateway. Because Claude Code enforces an agent's `tools:` frontmatter as a hard allowlist (unlike OpenCode's allow-by-default permission map or Codex's no-per-agent-gate model), sync must name the orchestrator's dispatch tools explicitly there: `ORCHESTRATOR_DISPATCH_TOOLS` in `scripts/sync-specialists.mjs` is the single source that keeps the grant in parity across hosts. Without it the orchestrator can neither reach a capability itself nor route it to a specialist, and degrades to refusing the request.
+
 Full roster with domain groupings: [Agents and personas](/guides/concepts/agents-and-personas).
 Full reference with tier and purpose per specialist: [Specialist reference](/guides/reference/specialists).

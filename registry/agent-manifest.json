@@ -19,6 +19,10 @@
         "use": "Classify intent and get the specialist routing policy for a request."
       },
       {
+        "name": "orchestration_run",
+        "use": "Dispatch the routed specialist chain for a request after classifying it."
+      },
+      {
         "name": "get_skill",
         "use": "Fetch a role or domain skill playbook by id."
       },

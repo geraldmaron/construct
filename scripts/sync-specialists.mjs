@@ -448,6 +448,13 @@ const standardConstructTools = [
   "cx_trace",
   "cx_score",
 ].join(",");
+
+// The orchestrator's atomic contract is classify-then-dispatch: orchestration_policy
+// then orchestration_run. On allowlist hosts (Claude) these must be named in the
+// agent's tools list or the call is blocked, leaving the orchestrator unable to route.
+// Single source of truth so every host's orchestrator grant stays in parity.
+
+const ORCHESTRATOR_DISPATCH_TOOLS = ["orchestration_policy", "orchestration_run"];
 const managedStart = `# BEGIN ${systemName.toUpperCase()} AGENTS`;
 const managedEnd = `# END ${systemName.toUpperCase()} AGENTS`;
 const mdManagedStart = `<!-- BEGIN ${systemName.toUpperCase()} AGENTS -->`;
@@ -765,7 +772,8 @@ function orchestrationMicroPrompt(platform) {
     `You are the primary orchestrator. Before any non-trivial answer, call \`${policyTool}\` with the user's \`request\`. Do not guess agent names or workflow types.\n\n` +
     `Example — the user says "add rate limiting to the API". Your first action is a tool call, not prose:\n` +
     `  call ${policyTool} { "request": "add rate limiting to the API" }\n` +
-    `If the route is focused/orchestrated specialist work, call \`${runTool}\` with the same request. If the route suggests a workflow such as \`research-synthesis\`, pass it as \`workflow_type\`. Do not narrate completed research unless \`${runTool}\` or evidence tools actually ran.`
+    `If the route is focused/orchestrated specialist work, call \`${runTool}\` with the same request. If the route suggests a workflow such as \`research-synthesis\`, pass it as \`workflow_type\`. Do not narrate completed research unless \`${runTool}\` or evidence tools actually ran.\n\n` +
+    `If a request needs a capability you lack — live web/network access, external data, code execution — do not refuse or tell the user to run it themselves. Route it via \`${runTool}\` to the specialist that holds the capability (web access lives with the researcher), or ask one clarifying question when the target is ambiguous.`
   );
 }
 
@@ -984,6 +992,13 @@ function claudeAgentMarkdown(entry, allEntries) {
     ...baseTools.split(",").map((t) => t.trim()),
     ...standardConstructTools.split(","),
   ]);
+
+  // Claude's tools list is a hard allowlist; the orchestrator can only route if its
+  // dispatch tools are named here.
+
+  if (entry.isOrchestrator) {
+    for (const tool of ORCHESTRATOR_DISPATCH_TOOLS) toolSet.add(tool);
+  }
   const tools = Array.from(toolSet).filter(Boolean).join(",");
 
   return `---
@@ -1346,6 +1361,40 @@ When using this prompt, stay within the role above and adapt to the current repo
 `;
 }
 
+// VS Code reads custom agents (the renamed successor to chat modes) from
+// .github/agents/<name>.agent.md, and tool grants must use its namespaced ids:
+// <server>/* for an MCP server's tools, web/fetch for outbound web, search/read
+// for repo awareness. The Claude-format tools in .claude/agents/*.md are not
+// recognized here, so the orchestrator needs its own VS Code agent or it lists
+// in the picker with no usable tools.
+
+const COPILOT_AGENT_TOOLS = [
+  "construct-mcp/*",
+  "web/fetch",
+  "web/githubRepo",
+  "search/codebase",
+  "search/usages",
+  "search/fileSearch",
+  "read/problems",
+  "edit/editFiles",
+];
+
+function copilotAgentFile(entry, allEntries) {
+  const name = adapterName(entry);
+  return `---
+description: ${entry.description}
+name: ${name}
+tools: ${JSON.stringify(COPILOT_AGENT_TOOLS)}
+---
+
+${generatedMarkdownNote}
+
+# ${name}
+
+${buildPrompt(entry, allEntries, "copilot")}
+`;
+}
+
 function syncCopilot(entries, targetDir = null, wants = true) {
   const promptsDir = targetDir
     ? path.join(targetDir, ".github", "prompts")
@@ -1362,15 +1411,20 @@ function syncCopilot(entries, targetDir = null, wants = true) {
     sweepLegacyPrefixedFiles(promptsDir, ".prompt.md", writeEntries.map((e) => `${adapterName(e)}.prompt.md`));
   }
 
-  // VS Code / Copilot agent mode reads the project's `.claude/agents/*.md`
-  // natively (Claude-format custom agents), so Construct does NOT write a
-  // separate `.github/agents/` set — doing so duplicated every agent in the
-  // picker. A pre-existing `.github/agents/` from an earlier sync is swept.
+  // VS Code reads custom agents from `.github/agents/*.agent.md`. The Claude
+  // tool names in `.claude/agents/*.md` are not recognized there, so the front
+  // door ships as a VS Code agent with namespaced tool grants (construct-mcp/*,
+  // web/fetch, search/read) — selecting it in the dropdown then scopes those
+  // tools in. The Claude-format set stays for Claude Code.
 
-  if (targetDir) {
-    const staleAgentsDir = path.join(targetDir, ".github", "agents");
-    if (!DRY_RUN && fs.existsSync(staleAgentsDir)) fs.rmSync(staleAgentsDir, { recursive: true, force: true });
+  const agentsDir = targetDir
+    ? path.join(targetDir, ".github", "agents")
+    : path.join(home, ".github", "agents");
+  if (!DRY_RUN && wants) mkdirp(agentsDir);
+  for (const entry of writeEntries) {
+    writeFile(path.join(agentsDir, `${adapterName(entry)}.agent.md`), copilotAgentFile(entry, entries), { stamp: false });
   }
+  if (fs.existsSync(agentsDir)) removeStaleAdapters(agentsDir, ".agent.md", writeEntries);
 
   const instructionsPath = targetDir
     ? path.join(targetDir, ".github", "copilot-instructions.md")
@@ -1387,7 +1441,7 @@ function syncCopilot(entries, targetDir = null, wants = true) {
   const list = listEntries.map((e) => `- \`${adapterName(e)}\`: use \`${promptPathPrefix}/${adapterName(e)}.prompt.md\`.`).join("\n");
   const note = `## ${systemName.charAt(0).toUpperCase() + systemName.slice(1)} Agent Prompts
 
-For a real multi-specialist run, Copilot agent mode calls the \`orchestration_run\` MCP tool (start the engine with \`construct dashboard\`). The prompts below are reusable role profiles for single-pass work:
+Select \`${systemName}\` from the chat mode dropdown to enter the orchestrator: describe an outcome and it classifies the request and dispatches the right specialists through the \`construct-mcp\` tools (\`orchestration_policy\` then \`orchestration_run\`). You ask for outcomes, not specialists — it routes internally. Requires the \`construct-mcp\` server (wired in \`.vscode/mcp.json\`); if its tools are unavailable, the mode cannot route and will say so rather than guess.
 
 ${list || "(no front-door prompts to surface)"}`;
 
@@ -1430,6 +1484,45 @@ function getVSCodeUserMcpPaths() {
   return getVSCodeUserDirs()
     .map((dir) => path.join(dir, "mcp.json"))
     .filter((file) => fs.existsSync(file));
+}
+
+// A merged mcp.json preserves existing entries so user customizations survive a
+// re-sync. A construct-owned server path is a fully-resolved, non-placeholder
+// path, so the preserve rule keeps it even when it points at a different toolkit
+// root than the current one — and VS Code then launches a server that may not
+// exist. Treat a construct toolkit path outside the current root as stale so the
+// sync refreshes it; user-owned servers carry no lib/mcp toolkit path and stay.
+
+export function mcpEntryPointsOutsideToolkit(entry, root) {
+  const args = Array.isArray(entry?.args) ? entry.args : [];
+  return args.some(
+    (arg) => typeof arg === "string"
+      && /\/lib\/mcp\/[a-z0-9-]+\.mjs$/.test(arg)
+      && !arg.startsWith(`${root}/`),
+  );
+}
+
+// VS Code scans both `.github/agents` and `.claude/agents`, so the orchestrator
+// would list twice — once with VS Code tools (.github/agents) and once with
+// Claude tool names VS Code ignores (.claude/agents). `chat.agentFilesLocations`
+// is the documented lever to pin the scan; its power over the built-in
+// `.claude/agents` compatibility scan is version-dependent, so this is a
+// best-effort hint, not a guarantee. Merge only into a strictly-parseable file
+// and never overwrite an existing choice, so a commented (JSONC) or
+// user-customized settings.json is left untouched.
+
+export function pinVscodeAgentLocations(targetDir) {
+  if (DRY_RUN) return;
+  const settingsPath = path.join(targetDir, ".vscode", "settings.json");
+  let settings = {};
+  if (fs.existsSync(settingsPath)) {
+    try { settings = JSON.parse(fs.readFileSync(settingsPath, "utf8")) || {}; }
+    catch { return; }
+  }
+  if (settings["chat.agentFilesLocations"]) return;
+  settings["chat.agentFilesLocations"] = { ".github/agents": true, ".claude/agents": false };
+  mkdirp(path.dirname(settingsPath));
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
 }
 
 function syncVSCode(targetDir = null, wants = true) {
@@ -1480,13 +1573,15 @@ function syncVSCode(targetDir = null, wants = true) {
       const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
       const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
       const transportMismatch = registryWantsCommand && existingIsRemote;
-      if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
+      const staleToolkitPath = mcpEntryPointsOutsideToolkit(existingEntry, root);
+      if (existingEntry && !hasPlaceholder && !transportMismatch && !staleToolkitPath) continue;
       config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
     }
     if (!DRY_RUN) {
       mkdirp(path.dirname(mcpPath));
       fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
     }
+    pinVscodeAgentLocations(targetDir);
     return true;
   }
 
@@ -1504,7 +1599,8 @@ function syncVSCode(targetDir = null, wants = true) {
         const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
         const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
         const transportMismatch = registryWantsCommand && existingIsRemote;
-        if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
+        const staleToolkitPath = mcpEntryPointsOutsideToolkit(existingEntry, root);
+        if (existingEntry && !hasPlaceholder && !transportMismatch && !staleToolkitPath) continue;
         config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
       }
       if (!DRY_RUN) fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");

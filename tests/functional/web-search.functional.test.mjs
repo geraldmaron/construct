@@ -96,3 +96,39 @@ test('confidence high is reserved for A1/A2/B1 (ADR-0017 Admiralty mapping)', as
   assert.equal(conf['E4'], 'low');
   assert.equal(conf['C3*'], 'low', 'an ungraded result defaults to C3 and needsGrading');
 });
+
+test('results carry a normalized date and a 12-month staleness flag', async () => {
+  const now = Date.parse('2026-06-30');
+  const res = await webSearch({ query: 'q', claim: 'c' }, {
+    env: PROVIDER_ENV,
+    now,
+    fetchImpl: fetchReturning([
+      { url: 'https://example.com/fresh', date: '2026-05-01' },
+      { url: 'https://example.com/old', publishedAt: '2021-01-01' },
+      { url: 'https://example.com/undated' },
+    ]),
+  });
+  const byUrl = Object.fromEntries(res.results.map((r) => [r.url, r]));
+  assert.equal(byUrl['https://example.com/fresh'].date, '2026-05-01');
+  assert.equal(byUrl['https://example.com/fresh'].stale, false);
+  assert.equal(byUrl['https://example.com/old'].date, '2021-01-01');
+  assert.equal(byUrl['https://example.com/old'].stale, true, 'older than 12 months is stale');
+  assert.equal(byUrl['https://example.com/undated'].date, null);
+  assert.equal(byUrl['https://example.com/undated'].stale, false, 'undated is not stale, just dateless');
+});
+
+test('results are ordered most-recent-first, not in provider (relevance/authority) order', async () => {
+  const now = Date.parse('2026-06-30');
+  const res = await webSearch({ query: 'q', claim: 'c' }, {
+    env: PROVIDER_ENV,
+    now,
+    fetchImpl: fetchReturning([
+      { url: 'https://example.com/old', date: '2020-01-01', admiralty: 'A1' },
+      { url: 'https://example.com/undated' },
+      { url: 'https://example.com/newer', date: '2026-03-01', admiralty: 'C3' },
+    ]),
+  });
+  const order = res.results.map((r) => r.url);
+  assert.equal(order[0], 'https://example.com/newer', 'a fresh source leads even over an older A1 authority');
+  assert.equal(order[order.length - 1], 'https://example.com/old', 'a stale source is demoted to last');
+});
