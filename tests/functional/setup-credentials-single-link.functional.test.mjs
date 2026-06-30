@@ -48,10 +48,15 @@ function installFakeOp(binDir, logPath) {
   fs.chmodSync(opPath, 0o755);
 }
 
-test('setup-credentials runs op item list exactly once per invocation', () => {
+test('setup-credentials runs op item list exactly once per invocation', (t) => {
   const home = makeTmpDir('cx-setup-cred-home-');
   const cwd = makeTmpDir('cx-setup-cred-cwd-');
   const binDir = makeTmpDir('cx-setup-cred-bin-');
+  t.after(() => {
+    for (const d of [home, cwd, binDir]) {
+      try { fs.rmSync(d, { recursive: true, force: true }); } catch {}
+    }
+  });
   const logPath = path.join(binDir, 'op-calls.log');
   fs.writeFileSync(logPath, '');
   installFakeOp(binDir, logPath);

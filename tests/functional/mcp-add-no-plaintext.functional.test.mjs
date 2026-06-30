@@ -72,11 +72,15 @@ function configEnvPath(home) {
   return path.join(home, '.config', 'construct', 'config.env');
 }
 
-function freshDirs() {
-  return {
-    home: fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-add-home-')),
-    cwd: fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-add-cwd-')),
-  };
+function freshDirs(t) {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-add-home-'));
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-add-cwd-'));
+  t.after(() => {
+    for (const d of [home, cwd]) {
+      try { fs.rmSync(d, { recursive: true, force: true }); } catch {}
+    }
+  });
+  return { home, cwd };
 }
 
 function assertConfigEnvSecure(home, expectedValue) {
@@ -87,8 +91,8 @@ function assertConfigEnvSecure(home, expectedValue) {
   assert.equal(mode, 0o600, `config.env must be chmod 0600, got ${mode.toString(8)}`);
 }
 
-test('an op:// reference never lands in any host config; config.env stays 0600', () => {
-  const { home, cwd } = freshDirs();
+test('an op:// reference never lands in any host config; config.env stays 0600', (t) => {
+  const { home, cwd } = freshDirs(t);
   const result = runMcpAdd(home, cwd, opRefCanary);
   assert.equal(result.status, 0, `cmdMcpAdd should exit cleanly: ${result.stderr || result.stdout}`);
 
@@ -106,8 +110,8 @@ test('an op:// reference never lands in any host config; config.env stays 0600',
 // current behavior keeps the residual visible and the test honest until a confirmed
 // per-host env-ref path lands.
 
-test('resolved literal still materializes into host configs (deferred flip residual)', () => {
-  const { home, cwd } = freshDirs();
+test('resolved literal still materializes into host configs (deferred flip residual)', (t) => {
+  const { home, cwd } = freshDirs(t);
   const result = runMcpAdd(home, cwd, canaryNotAKey);
   assert.equal(result.status, 0, `cmdMcpAdd should exit cleanly: ${result.stderr || result.stdout}`);
 
