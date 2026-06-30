@@ -5,6 +5,15 @@
     "03-docs:review-doc-reference:chat",
     "03-docs:review-doc-reference:logs",
     "02-deadcode:module-test-only:lib/models/execution-policy.mjs",
-    "02-deadcode:module-test-only:lib/models/provider-poll.mjs"
+    "02-deadcode:module-test-only:lib/models/provider-poll.mjs",
+    "02-deadcode:module-test-only:lib/brand-contrast.mjs",
+    "02-deadcode:module-test-only:lib/export-validate.mjs",
+    "02-deadcode:module-test-only:lib/render-evidence.mjs",
+    "02-deadcode:module-test-only:lib/visual-review.mjs",
+    "03-docs:review-doc-reference:lint_presentation",
+    "03-docs:review-doc-reference:loop",
+    "03-docs:unnavigated-doc-dir:docs/notes/research/construct-asset-quality",
+    "03-docs:unnavigated-doc-dir:docs/notes/research/construct-asset-quality/subagents",
+    "03-docs:unnavigated-doc-dir:docs/notes/research/construct-asset-quality/synthesis"
   ]
 }
