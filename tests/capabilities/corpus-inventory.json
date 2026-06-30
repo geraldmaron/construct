@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T18:50:04.969Z",
+  "generatedAt": "2026-06-30T22:46:01.899Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 543,
+    "testFiles": 548,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 242,
+    "nestedTestFiles": 247,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 356,
+      "unit": 361,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 146
     },
     "byCategory": {
-      "unit": 316,
+      "unit": 321,
       "visual": 9,
       "structural-guard": 12,
       "contract-subsystem": 28,
@@ -237,6 +237,46 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit-specialists.test.mjs — specialist corpus audit matrix."
+    },
+    {
+      "path": "tests/audit/f01-mcp-safety/delete-traversal.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f01-mcp-safety/delete-traversal.red.mjs — F01 [R11]+[R10] destructive path-traversal proof."
+    },
+    {
+      "path": "tests/audit/f01-mcp-safety/destructive-confirm.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f01-mcp-safety/destructive-confirm.red.mjs — F01 [R11] self-authorizing-destruction proof."
+    },
+    {
+      "path": "tests/audit/f01-mcp-safety/malicious-ref.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f01-mcp-safety/malicious-ref.red.mjs — F01 [R9] shell-injection proof for summarizeDiff."
+    },
+    {
+      "path": "tests/audit/f01-mcp-safety/safety-envelope.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f01-mcp-safety/safety-envelope.red.mjs — F01 missing per-tool safety-envelope proof."
+    },
+    {
+      "path": "tests/audit/f01-mcp-safety/scanfile-containment.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f01-mcp-safety/scanfile-containment.red.mjs — F01 [R10] root-containment proof for scanFile."
     },
     {
       "path": "tests/auto-docs.test.mjs",

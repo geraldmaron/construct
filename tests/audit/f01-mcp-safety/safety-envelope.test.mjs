@@ -1,18 +1,12 @@
 /**
  * tests/audit/f01-mcp-safety/safety-envelope.red.mjs — F01 missing per-tool safety-envelope proof.
  *
- * RED fixtures (must FAIL against current code). Every tool def in the MCP catalog
- * carries an inputSchema and a description but no safety envelope: no declared
- * outputSchema, no safety class (read/write/destructive), and no filesystem/network/
- * process scope. A host therefore cannot validate tool output, cannot reason about a
- * tool's blast radius, and cannot gate destructive tools differently from read-only
- * ones — the metadata that would let it simply does not exist.
- *
- * Contract these encode (CX-AUDIT-MCP-SAFETY-001/-005): each tool def gains
- * `outputSchema` and a `safety` block ({ class, filesystem, network, process } at
- * minimum). The assertions check two representative tools from this family —
- * summarize_diff (executes git; write/exec class) and storage_reset (destructive) —
- * and pass once the envelope is present.
+ * Regression guard for CX-AUDIT-MCP-SAFETY-001. Every tool def in the MCP catalog
+ * carries a declared `outputSchema` and a `safety` block ({ class, filesystem,
+ * network, process }) via withSafetyEnvelope / lib/mcp/tool-safety.mjs, so a host
+ * can validate tool output, reason about a tool's blast radius, and gate destructive
+ * tools differently from read-only ones. The assertions check summarize_diff
+ * specifically, then every exposed tool.
  *
  * exposedTools() is the exported flat surface (core tools + the `call` gateway), so
  * summarize_diff is asserted there directly; storage_reset is long-tail and is read off
