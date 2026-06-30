@@ -1502,16 +1502,24 @@ export function mcpEntryPointsOutsideToolkit(entry, root) {
   );
 }
 
-// VS Code scans both `.github/agents` and `.claude/agents`, so the orchestrator
-// would list twice — once with VS Code tools (.github/agents) and once with
-// Claude tool names VS Code ignores (.claude/agents). `chat.agentFilesLocations`
-// is the documented lever to pin the scan; its power over the built-in
-// `.claude/agents` compatibility scan is version-dependent, so this is a
-// best-effort hint, not a guarantee. Merge only into a strictly-parseable file
-// and never overwrite an existing choice, so a commented (JSONC) or
-// user-customized settings.json is left untouched.
+// Workspace defaults Construct manages for VS Code chat. `chat.agentFilesLocations`
+// pins the agent scan to `.github/agents` so the orchestrator does not list twice
+// (VS Code also scans `.claude/agents`, whose Claude tool names it ignores); its
+// power over that built-in compatibility scan is version-dependent, so it is a
+// best-effort hint. `chat.mcp.autostart` (VS Code ≥1.105, string enum) set to
+// `always` eager-starts MCP servers so `construct-mcp` is live without a manual
+// Start each session — the orchestrator's first move is an MCP call, so a dormant
+// server otherwise reads as "enable the MCP server". Neither removes the one-time
+// per-developer MCP trust grant, which VS Code stores locally, not in committed
+// config. Each key is applied only when unset, and a settings.json that is not
+// strict JSON (commented/JSONC or user-customized) is left untouched.
 
-export function pinVscodeAgentLocations(targetDir) {
+const VSCODE_MANAGED_SETTINGS = {
+  "chat.agentFilesLocations": { ".github/agents": true, ".claude/agents": false },
+  "chat.mcp.autostart": "always",
+};
+
+export function pinVscodeChatSettings(targetDir) {
   if (DRY_RUN) return;
   const settingsPath = path.join(targetDir, ".vscode", "settings.json");
   let settings = {};
@@ -1519,8 +1527,11 @@ export function pinVscodeAgentLocations(targetDir) {
     try { settings = JSON.parse(fs.readFileSync(settingsPath, "utf8")) || {}; }
     catch { return; }
   }
-  if (settings["chat.agentFilesLocations"]) return;
-  settings["chat.agentFilesLocations"] = { ".github/agents": true, ".claude/agents": false };
+  let changed = false;
+  for (const [key, value] of Object.entries(VSCODE_MANAGED_SETTINGS)) {
+    if (settings[key] === undefined) { settings[key] = value; changed = true; }
+  }
+  if (!changed) return;
   mkdirp(path.dirname(settingsPath));
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
 }
@@ -1581,7 +1592,7 @@ function syncVSCode(targetDir = null, wants = true) {
       mkdirp(path.dirname(mcpPath));
       fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
     }
-    pinVscodeAgentLocations(targetDir);
+    pinVscodeChatSettings(targetDir);
     return true;
   }
 

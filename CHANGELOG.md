@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- Made `construct-mcp` start by default in VS Code / GitHub Copilot so the orchestrator is usable on open instead of asking the user to "enable the MCP server." VS Code does not auto-start `.vscode/mcp.json` servers unless `chat.mcp.autostart` is set, and the orchestrator's first action is an MCP call (`orchestration_policy`), so a dormant server made it refuse or stall until manually started. `syncCopilot`/`syncVSCode` (`scripts/sync-specialists.mjs`) now write `"chat.mcp.autostart": "always"` (VS Code ≥1.105, string enum) into the generated `.vscode/settings.json` alongside the existing agent-scan pin, via the renamed `pinVscodeChatSettings` helper that applies each managed key only when unset and never clobbers a non-strict-JSON (commented) settings file. This is Copilot-specific — Claude Code, OpenCode, and Codex already auto-start their declared MCP servers (verified). Note: VS Code still requires a one-time per-developer MCP *trust* grant on first launch, which it stores locally and cannot be pre-granted from committed config — `autostart` removes the recurring per-session Start click, not that first trust. Covered by `tests/vscode-mcp-toolkit-path.test.mjs`.
+
 ## [1.4.1] - 2026-06-30
 
 ### Fixed
