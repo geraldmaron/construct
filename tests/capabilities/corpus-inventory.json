@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T22:46:01.899Z",
+  "generatedAt": "2026-06-30T22:52:48.963Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 548,
+    "testFiles": 549,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 247,
+    "nestedTestFiles": 248,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
@@ -13,7 +13,7 @@
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
-      "functional": 146
+      "functional": 147
     },
     "byCategory": {
       "unit": 321,
@@ -22,7 +22,7 @@
       "contract-subsystem": 28,
       "live-provider": 2,
       "integration": 21,
-      "functional": 146,
+      "functional": 147,
       "hook": 9
     }
   },
@@ -2095,6 +2095,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/mcp-parity.functional.test.mjs — End-to-end MCP parity."
+    },
+    {
+      "path": "tests/functional/mcp-tool-rate-audit.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-tool-rate-audit.functional.test.mjs"
     },
     {
       "path": "tests/functional/model-catalog-visibility.functional.test.mjs",
