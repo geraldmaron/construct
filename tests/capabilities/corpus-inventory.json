@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T01:46:46.294Z",
+  "generatedAt": "2026-06-30T03:47:42.999Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 532,
-    "topLevelTestFiles": 296,
-    "nestedTestFiles": 236,
+    "testFiles": 541,
+    "topLevelTestFiles": 300,
+    "nestedTestFiles": 241,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 352,
+      "unit": 356,
       "visual": 8,
       "live-provider": 2,
       "integration": 30,
-      "functional": 140
+      "functional": 145
     },
     "byCategory": {
-      "unit": 313,
+      "unit": 316,
       "visual": 8,
-      "structural-guard": 11,
+      "structural-guard": 12,
       "contract-subsystem": 28,
       "live-provider": 2,
       "integration": 21,
-      "functional": 140,
+      "functional": 145,
       "hook": 9
     }
   },
@@ -731,6 +731,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/cost.test.mjs — validates token and cache accounting."
+    },
+    {
+      "path": "tests/credential-precedence-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/credential-precedence-parity.test.mjs"
     },
     {
       "path": "tests/decisions-bindings.test.mjs",
@@ -1563,6 +1571,14 @@
       "maintainerNotes": "tests/functional/copilot-auth.functional.test.mjs — the GitHub Copilot OAuth"
     },
     {
+      "path": "tests/functional/credentials-diagnostics-no-leak.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/credentials-diagnostics-no-leak.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/cross-project-state-isolation.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2001,6 +2017,14 @@
       "maintainerNotes": "tests/functional/loop-closure.functional.test.mjs"
     },
     {
+      "path": "tests/functional/mcp-add-no-plaintext.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-add-no-plaintext.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/mcp-core-tools.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2357,6 +2381,14 @@
       "maintainerNotes": "tests/functional/routing-tables.test.mjs — parity guard for declarative routing."
     },
     {
+      "path": "tests/functional/secret-resolver-real-op.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/secret-resolver-real-op.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/secret-resolver.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2371,6 +2403,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/self-hosting-cert.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/service-op-run-wiring.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "service-op-run-wiring.functional.test.mjs — proves the service tree launches under"
     },
     {
       "path": "tests/functional/session-start-output-mode.functional.test.mjs",
@@ -2395,6 +2435,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/setup-arg-validation.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/setup-credentials-single-link.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/setup-credentials-single-link.functional.test.mjs"
     },
     {
       "path": "tests/functional/specialist-loop.functional.test.mjs",
@@ -2603,6 +2651,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "headhunt.test.mjs — Unit tests for lib/headhunt.mjs domain overlay lifecycle."
+    },
+    {
+      "path": "tests/health-check-resolve-credentials.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/health-check-resolve-credentials.test.mjs"
     },
     {
       "path": "tests/helpers/sterile-host-env.test.mjs",
@@ -3883,6 +3939,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/schema-validation.test.mjs — Validate unified registry schema and test with fixtures."
+    },
+    {
+      "path": "tests/secret-audit-wiring.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/secret-audit-wiring.test.mjs"
+    },
+    {
+      "path": "tests/secret-resolver-audit.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/secret-resolver-audit.test.mjs"
     },
     {
       "path": "tests/service-manager-ollama-keepalive.test.mjs",
