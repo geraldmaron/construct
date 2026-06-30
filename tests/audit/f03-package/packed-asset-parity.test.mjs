@@ -1,21 +1,16 @@
 /**
  * tests/audit/f03-package/packed-asset-parity.red.mjs — F03 [R1] packed-tarball asset parity.
  *
- * RED fixtures (must FAIL against current code). package.json `files` (L16-32) ships
- * bin/lib/specialists/examples/personas/commands/skills/rules/platforms/templates/scripts
- * but OMITS the repo-root `schemas/` and `registry/` directories. Yet runtime code loads
- * data files out of both:
- *   - lib/registry/validate.mjs:37  reads <root>/registry/capabilities.json
- *   - lib/registry/agent-manifest.mjs:34,40  reads <root>/registry/agent-manifest.json
- *   - lib/embedded-contract/capability.mjs:78  reads <root>/schemas/*.json
- * A consumer `npm install @geraldmaron/construct` therefore gets a package whose
- * registry+schema validation and capability inventory are broken on first run.
- *
- * Contract these encode (CX-AUDIT-PACKAGE-001/-002): every directory the runtime loads
- * must be present in the packed artifact, OR the runtime must stop loading it. Each test
- * packs the EXACT artifact with `npm pack`, extracts it, and asserts a runtime-loaded path
- * resolves inside the extraction. Today schemas/ and registry/ are absent, so the asserts
- * fail until `files` includes them (or the loaders move off the repo root).
+ * Regression guard for CX-AUDIT-PACKAGE-001/-002. Runtime code loads data files out of
+ * the repo-root registry/ and schemas/ directories:
+ *   - lib/registry/validate.mjs  reads <root>/registry/capabilities.json
+ *   - lib/registry/agent-manifest.mjs  reads <root>/registry/agent-manifest.json
+ *   - lib/embedded-contract/capability.mjs  reads <root>/schemas/*.json
+ * so package.json `files` ships both, and a consumer `npm install` gets a package whose
+ * registry+schema validation and capability inventory work on first run. Each test packs
+ * the EXACT artifact with `npm pack`, extracts it, and asserts every runtime-loaded
+ * repo-root directory resolves inside the extraction — the manifest-vs-loads parity the
+ * audit requires.
  *
  * Hermetic: pack destination and extraction both live under fs.mkdtemp(os.tmpdir()).
  * No network: `npm pack` of a local path is offline. The repo root is resolved from this

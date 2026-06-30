@@ -26,6 +26,10 @@
     "platforms/**",
     "templates/**",
     "templates/distribution/**",
+    "schemas/**",
+    "registry/**",
+    "config/**",
+    "vendor/**",
     "scripts/sync-specialists.mjs",
     "README.md",
     ".env.example"
