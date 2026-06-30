@@ -1361,6 +1361,40 @@ When using this prompt, stay within the role above and adapt to the current repo
 `;
 }
 
+// VS Code reads custom agents (the renamed successor to chat modes) from
+// .github/agents/<name>.agent.md, and tool grants must use its namespaced ids:
+// <server>/* for an MCP server's tools, web/fetch for outbound web, search/read
+// for repo awareness. The Claude-format tools in .claude/agents/*.md are not
+// recognized here, so the orchestrator needs its own VS Code agent or it lists
+// in the picker with no usable tools.
+
+const COPILOT_AGENT_TOOLS = [
+  "construct-mcp/*",
+  "web/fetch",
+  "web/githubRepo",
+  "search/codebase",
+  "search/usages",
+  "search/fileSearch",
+  "read/problems",
+  "edit/editFiles",
+];
+
+function copilotAgentFile(entry, allEntries) {
+  const name = adapterName(entry);
+  return `---
+description: ${entry.description}
+name: ${name}
+tools: ${JSON.stringify(COPILOT_AGENT_TOOLS)}
+---
+
+${generatedMarkdownNote}
+
+# ${name}
+
+${buildPrompt(entry, allEntries, "copilot")}
+`;
+}
+
 function syncCopilot(entries, targetDir = null, wants = true) {
   const promptsDir = targetDir
     ? path.join(targetDir, ".github", "prompts")
@@ -1377,15 +1411,20 @@ function syncCopilot(entries, targetDir = null, wants = true) {
     sweepLegacyPrefixedFiles(promptsDir, ".prompt.md", writeEntries.map((e) => `${adapterName(e)}.prompt.md`));
   }
 
-  // VS Code / Copilot agent mode reads the project's `.claude/agents/*.md`
-  // natively (Claude-format custom agents), so Construct does NOT write a
-  // separate `.github/agents/` set — doing so duplicated every agent in the
-  // picker. A pre-existing `.github/agents/` from an earlier sync is swept.
+  // VS Code reads custom agents from `.github/agents/*.agent.md`. The Claude
+  // tool names in `.claude/agents/*.md` are not recognized there, so the front
+  // door ships as a VS Code agent with namespaced tool grants (construct-mcp/*,
+  // web/fetch, search/read) — selecting it in the dropdown then scopes those
+  // tools in. The Claude-format set stays for Claude Code.
 
-  if (targetDir) {
-    const staleAgentsDir = path.join(targetDir, ".github", "agents");
-    if (!DRY_RUN && fs.existsSync(staleAgentsDir)) fs.rmSync(staleAgentsDir, { recursive: true, force: true });
+  const agentsDir = targetDir
+    ? path.join(targetDir, ".github", "agents")
+    : path.join(home, ".github", "agents");
+  if (!DRY_RUN && wants) mkdirp(agentsDir);
+  for (const entry of writeEntries) {
+    writeFile(path.join(agentsDir, `${adapterName(entry)}.agent.md`), copilotAgentFile(entry, entries), { stamp: false });
   }
+  if (fs.existsSync(agentsDir)) removeStaleAdapters(agentsDir, ".agent.md", writeEntries);
 
   const instructionsPath = targetDir
     ? path.join(targetDir, ".github", "copilot-instructions.md")

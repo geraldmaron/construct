@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- Ship `construct` as a real GitHub Copilot / VS Code custom agent. VS Code reads custom agents from `.github/agents/*.agent.md` and grants tools by its own namespaced ids (`<server>/*`, `web/fetch`, `search/codebase`, …); the Claude-format tool names in `.claude/agents/construct.md` (`Read,Grep,…,orchestration_policy`) are not recognized there, so selecting construct in VS Code surfaced an agent with no usable tools — it would refuse internet/orchestration requests because none of its tools were actually granted. `syncCopilot` (`scripts/sync-specialists.mjs`) now emits `.github/agents/construct.agent.md` with VS-Code-namespaced grants (`construct-mcp/*`, `web/fetch`, `web/githubRepo`, `search/*`, `read/problems`, `edit/editFiles`) and the orchestration prompt as its body, so the picker entry actually scopes in the construct-mcp orchestration tools and live web access. Verified by `tests/functional/host-config-parity.functional.test.mjs`. Note: VS Code also lists the `.claude/agents` copy, and MCP servers must be started in the session (`.vscode/mcp.json`) — both are VS Code runtime behaviors to confirm in-editor.
+
 ### Fixed
 
 - Corrected the generated GitHub Copilot front-door framing. `.github/copilot-instructions.md` described `construct.prompt.md` as a "reusable role profile for single-pass work" and pointed "real" multi-specialist runs at a separately-invoked `orchestration_run` MCP tool — framing `construct` as a single-pass profile *beside* the orchestrator when selecting the `construct` mode is meant to *be* the orchestrator. The block now states that selecting `construct` from the chat-mode dropdown enters the orchestrator, which classifies the request and dispatches specialists through the `construct-mcp` tools (`orchestration_policy` then `orchestration_run`), names the `.vscode/mcp.json` server dependency, and notes it routes rather than guesses when those tools are unavailable. Emitted from `syncCopilot` in `scripts/sync-specialists.mjs`.

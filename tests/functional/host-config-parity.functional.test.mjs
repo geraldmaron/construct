@@ -100,11 +100,14 @@ test('project sync writes each IDE surface at its canonical path + key + entry s
     const claudeSettings = readJson(p('.claude/settings.json'));
     assert.ok(claudeSettings.mcpServers && typeof claudeSettings.mcpServers === 'object', 'Claude uses `mcpServers`');
 
-    // Copilot — prompt files. VS Code/Copilot agent mode reads the project's
-    // .claude/agents natively, so Construct does not write a duplicate
-    // .github/agents set (it duplicated every agent in the picker).
+    // Copilot — a /construct prompt plus a VS Code custom agent. The agent file
+    // carries VS-Code-namespaced tool grants (`<server>/*`, `web/fetch`); the
+    // Claude-format names in .claude/agents are ignored by VS Code, so a picker
+    // entry sourced from there alone has no usable tools.
     assert.ok(existsSync(p('.github/prompts/construct.prompt.md')), 'Copilot orchestrator prompt present');
-    assert.ok(!existsSync(p('.github/agents')), 'no duplicate .github/agents set (VS Code reads .claude/agents)');
+    const copilotAgent = readFileSync(p('.github/agents/construct.agent.md'), 'utf8');
+    assert.match(copilotAgent, /^tools:.*construct-mcp\/\*/m, 'VS Code agent grants the construct-mcp tools');
+    assert.match(copilotAgent, /web\/fetch/, 'VS Code agent grants web fetch for live network access');
   } finally {
     env.cleanup();
   }
