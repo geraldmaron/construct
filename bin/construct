@@ -399,7 +399,6 @@ async function cmdDoctor() {
     println(`${COLORS.bold}Credential diagnostics${COLORS.reset}`);
     println('');
 
-    const { execSync } = await import('node:child_process');
     const { homedir } = await import('node:os');
     const { join } = await import('node:path');
     const fs = await import('node:fs');
@@ -420,7 +419,7 @@ async function cmdDoctor() {
 
       // process.env
       if (process.env[varName]) {
-        sources.push(`process.env (${process.env[varName].slice(0, 8)}…)`);
+        sources.push('process.env (set)');
       }
 
       // .env files
@@ -443,13 +442,7 @@ async function cmdDoctor() {
           const opRe = new RegExp(`export\\s+${varName}=["']?\\$\\(op read '([^']+)'\\)["']?`, 'm');
           const opMatch = content.match(opRe);
           if (opMatch) {
-            try {
-              const r = execSync(`op read '${opMatch[1]}'`, { encoding: 'utf8', timeout: 5000 });
-              sources.push(`${rcPath.replace(homedir(), '~')} → op read ✓ (${r.stdout?.trim()?.slice(0, 8)}…)`);
-            } catch (e) {
-              const err = (e.stderr || e.message || '').slice(0, 120);
-              sources.push(`${rcPath.replace(homedir(), '~')} → op read ✗: ${err}`);
-            }
+            sources.push(`${rcPath.replace(homedir(), '~')} → op:// reference (run \`op read\` to verify)`);
           }
           // Check for direct export (allow leading whitespace for indented rc files)
           const directRe = new RegExp(`^\\s*export\\s+${varName}=(.+)$`, 'm');
@@ -464,11 +457,7 @@ async function cmdDoctor() {
       println(`  ${pip}${COLORS.reset} ${COLORS.bold}${varName}${COLORS.reset}`);
       if (sources.length) {
         for (const s of sources.slice(0, 3)) {
-          if (s.includes('op read ✗')) {
-            println(`       ${COLORS.red}⚠${COLORS.reset} ${s}`);
-          } else {
-            println(`       ${s}`);
-          }
+          println(`       ${s}`);
         }
         if (sources.length > 3) println(`       … +${sources.length - 3} more`);
       } else {
