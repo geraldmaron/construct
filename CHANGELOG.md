@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-06-30
+
 ### Added
 
 - Real-process secret-resolution test coverage (`construct-trxz.9`). A functional test exercises the resolver against a real `op` subprocess (a fake binary on PATH) rather than an injected stub: it proves a repeated `op://` reference spawns `op` exactly once within a process (the in-process cache holds) and that a fresh process re-resolves from a cold cache — pinning the cross-process re-prompt behavior as observed reality. This complements the real-boundary tests added per epic (setup-credentials single-link, credential diagnostics no-leak, service op-run wiring, MCP add no-plaintext, cache-first poll). The true single-prompt-across-processes guarantee depends on 1Password's own session and remains tracked for real-`op` validation.
