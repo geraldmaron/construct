@@ -1,20 +1,14 @@
 /**
  * tests/audit/f01-mcp-safety/scanfile-containment.red.mjs — F01 [R10] root-containment proof for scanFile.
  *
- * RED fixtures (must FAIL against current code). scanFile resolves a model-supplied
- * file_path with `resolve(args.file_path)` and reads it with no MCP-root enforcement,
- * so a relative `../` chain, an absolute out-of-root path, a symlink that points
- * outside the project, or a Windows backslash/UNC variant all read arbitrary files.
+ * Regression guard for CX-AUDIT-MCP-SAFETY-003. scanFile resolves a model-supplied
+ * file_path against a declared root via resolveWithinRoot and returns a typed refusal for
+ * a `../` chain, an absolute out-of-root path, a symlink pointing outside the project, or
+ * a backslash/UNC variant — never the file's scan result.
  *
- * Contract these encode (CX-AUDIT-MCP-SAFETY-003): scanFile must resolve against a
- * declared root, reject any path that escapes it (symlink-safe via realpath), and
- * return a typed refusal — never the file's scan result. Each test passes once scanFile
- * refuses the escape instead of reading it.
- *
- * `refused()` is the post-fix predicate: an error result whose message names a
- * containment/root/outside-project denial. A successful read (no `error`, or an
- * `error` that is merely "cannot read") is treated as NOT refused, so today's
- * behavior fails the assertion.
+ * `refused()` is the predicate: an error result whose message names a containment/root/
+ * outside-project denial. A bare "cannot read" error is an accident of the host
+ * filesystem, not an enforced boundary, so it does not count as a refusal.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
