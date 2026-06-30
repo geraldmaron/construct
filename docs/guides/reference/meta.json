@@ -10,6 +10,7 @@
     "hooks-deprecated",
     "in-tree-implementations",
     "mcp-tools",
+    "artifact-completion-states",
     "embed-api",
     "specialists",
     "capabilities",
