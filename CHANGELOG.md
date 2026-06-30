@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-06-30
+
 ### Fixed
 
 - Stopped the nightly `hook performance budgets` workflow (`.github/workflows/hook-budgets.yml`, cron `17 7 * * *`) from failing every night. The `guard-bash` PreToolUse hook declared `@p95ms 5`, a target set before it grew the role-fence path (`doctorRoot` lookup, last-agent file reads, lazy `manifest`/`fence`/`approval` imports); the variance-heavy CI bench measured ~17-19ms marginal, so the gate failed persistently from 2026-06-29. The hook and the gate are both load-bearing (it blocks `rm -rf /`, force-push-to-main, fork bombs, destructive DDL, and enforces role fences) and the budget lane is deliberately nightly-only (ADR-0029), so neither was removed — instead the budget is re-baselined to `@p95ms 15` to reflect the hook's real fence-enforcement cost, with the gate's ×2 tolerance still catching a true regression. Per the no-skip-vars rule, the declared budget is raised rather than a skip variable added.
