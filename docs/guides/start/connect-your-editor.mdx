@@ -58,7 +58,7 @@ In Claude Code, address the persona with `@construct`. Internal specialists disp
 
 **Project** writes `<project>/.opencode/opencode.json` with the `construct` front door, optional `construct-local` for Ollama setups, providers, MCP servers, and the runtime plugin.
 
-For substantive external research, the front door classifies with `orchestration_policy` and then executes via `orchestration_run`. `workflow_invoke` remains the plan/contract preview surface, not the evidence-execution surface.
+For substantive external research, first verify attachment with `orchestration_readiness` (or `construct orchestrate preflight --json` from the shell), then classify with `orchestration_policy`, then execute via `orchestration_run`. `workflow_invoke` remains the plan/contract preview surface, not the evidence-execution surface.
 
 ## Codex (CLI)
 
@@ -80,7 +80,7 @@ Construct writes `<project>/.vscode/mcp.json` (top-level `servers`) per the offi
 
 VS Code/Copilot has no extension-facing subagent primitive, so the editor's own agent can't run a multi-specialist chain itself. Construct closes that gap the way Claude Code and OpenCode do — **the engine runs the orchestration; the editor is a thin client.** Reach it two ways:
 
-- **From the editor's chat, via MCP** — the Construct MCP server exposes an `orchestration_run` tool that executes a real run and returns per-specialist output, plus `orchestration_status` to inspect runs. Solo runs execute in-process — no daemon, no port, no token. MCP tools are exactly what VS Code/Copilot and Cursor *do* expose, so the host gets a genuine multi-specialist outcome through a tool it can actually call — no subagent primitive required.
+- **From the editor's chat, via MCP** — the Construct MCP server exposes `orchestration_readiness` to verify attachment, `orchestration_run` to execute a real run and return per-specialist output, and `orchestration_status` to inspect runs. Solo runs execute in-process — no daemon, no port, no token. MCP tools are exactly what VS Code/Copilot and Cursor *do* expose, so the host gets a genuine multi-specialist outcome through a tool it can actually call — no subagent primitive required.
 - **From a script/CI** — `construct orchestrate run "<request>"` runs in-process and stores runs in the current project's `.cx/`. For a shared team service, set `CONSTRUCT_ORCHESTRATION_URL` (and `CONSTRUCT_ORCHESTRATION_TOKEN`) and use `construct orchestrate run --remote "<request>"`, which proxies the same call over HTTP.
 
 A run executed with the `provider` worker backend (set `orchestration.workerBackend` and a provider key) returns real specialist output — the same outcome a Claude Code user gets. See [architecture → engine-as-service](/guides/concepts/architecture) and ADR-0022.

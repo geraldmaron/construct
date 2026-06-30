@@ -4,9 +4,10 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 # ADR-0018: Document quality standard — a research-grade bar with an enforced structural floor
 
 - **Date**: 2026-06-03
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
 - **Supersedes**: none
+- **Status note (2026-06-29, self-audit construct-rr63.1.2)**: shipped and test-covered — enforced by `lib/templates/visual-requirements.mjs` (`STRUCTURE_REQUIREMENTS`) with `tests/structure-requirements.test.mjs`. Status corrected from `proposed` to reflect ground truth.
 
 <!-- Owning specialist: cx-docs-keeper. Part of the template & prompt research-grade remediation (epic construct-7zrh). -->
 

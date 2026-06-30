@@ -74,7 +74,7 @@ test('exportMarkdown deck html uses Construct brand tokens when pandoc present',
     const html = fs.readFileSync(outputPath, 'utf8');
     assert.match(html, /--ink:#0a0c10|var\(--ink\)/);
     assert.match(html, /Space Grotesk/);
-    assert.match(html, /section\.slide|class="slide"/);
+    assert.match(html, /\.deck > section|class="slide title-slide"/);
   } finally {
     try { fs.unlinkSync(outputPath); } catch { /* skip */ }
   }

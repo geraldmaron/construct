@@ -262,7 +262,7 @@
     },
     {
       "name": "oracle",
-      "core": false
+      "core": true
     },
     {
       "name": "overrides",

@@ -4,9 +4,10 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 # ADR-0020: Construct owns a local orchestration runtime; the Mode-A backend prepares, it does not fake, specialist execution
 
 - **Date**: 2026-06-03
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
 - **Supersedes**: none
+- **Status note (2026-06-29, self-audit construct-rr63.1.2)**: shipped and test-covered — implemented by `lib/orchestration/runtime.mjs` (+ `run-store.mjs`, `worker.mjs`) with `tests/functional/orchestration-mode-a.functional.test.mjs` and `tests/orchestration-runtime.test.mjs`. Status corrected from `proposed` to reflect ground truth.
 
 <!-- Owning specialist: cx-architect. Part of the host-independent local orchestration runtime (epic construct-d6pf). -->
 

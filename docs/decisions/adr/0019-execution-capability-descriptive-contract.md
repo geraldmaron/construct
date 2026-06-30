@@ -4,9 +4,10 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 # ADR-0019: Execution-capability is a descriptive contract, not an observation of host execution
 
 - **Date**: 2026-06-03
-- **Status**: proposed
+- **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
 - **Supersedes**: none
+- **Status note (2026-06-29, self-audit construct-rr63.1.2)**: shipped and test-covered — implemented by `lib/embedded-contract/execution.mjs` (`resolveExecution`, `EXECUTION_SEMANTICS`) with `tests/embedded-contract-execution.test.mjs`. Status corrected from `proposed` to reflect ground truth.
 
 <!-- Owning specialist: cx-architect. Part of the embedded execution-capability contract (epic construct-1txt, GH #206/#203). -->
 

@@ -5,8 +5,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { isTitleOnlyChunk, exportDeckPptx, pptxgenPresent, auditDeckMarkdownLayout, auditPptxFile, readPptxSlideSizeIn, SLIDE_CONTENT_BUDGET_IN, SLIDE_W_IN, SLIDE_H_IN } from '../lib/deck-export-pptx.mjs';
-import { exportMarkdown } from '../lib/document-export.mjs';
+import { isTitleOnlyChunk, exportDeckPptx, pptxgenPresent, auditDeckMarkdownLayout, auditPptxFile, readPptxSlideSizeIn, SLIDE_CONTENT_BUDGET_IN, SLIDE_W_IN, SLIDE_H_IN, DECK_FONT_FLOOR_PT, MAX_BULLETS_PER_SLIDE } from '../lib/deck-export-pptx.mjs';
+import { exportMarkdown, whichBin } from '../lib/document-export.mjs';
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -63,6 +64,70 @@ test('exportDeckPptx writes non-trivial file with table slide content', () => {
 
 // Regression: the pre-export estimate must match the render closely enough that a
 // table taller than the content band is rejected, not silently shipped bleeding.
+
+// A `#`-delimited deck (pandoc slide-level 1, no `---` rules) must split per heading and
+// treat a fenced diagram as a bounded image, not dense body text that overflows.
+
+test('heading-delimited deck with a mermaid fence splits per slide and fits the budget', () => {
+  const md = [
+    '# Problem', '', '- one', '- two', '',
+    '# Diagram slide', '',
+    '```mermaid', 'flowchart LR', '  A[Client] --> B[Gateway]', '  B --> C[Acquirer]', '```', '',
+    '# Closing', '', 'A short closing line.',
+  ].join('\n');
+  const audit = auditDeckMarkdownLayout(md, { title: 'Deck' });
+  assert.equal(audit.ok, true, JSON.stringify(audit.issues, null, 2));
+  assert.equal(audit.slides.length, 3);
+  for (const slide of audit.slides) {
+    assert.ok(slide.estimatedHeightIn <= SLIDE_CONTENT_BUDGET_IN, `slide ${slide.slideIndex} height ${slide.estimatedHeightIn}`);
+  }
+});
+
+test('mermaid fence renders to an embedded slide image', () => {
+  if (!pptxgenPresent() || !whichBin('mmdc')) return;
+  const md = ['# Flow', '', '```mermaid', 'flowchart LR', '  A[Client] --> B[Gateway]', '```', ''].join('\n');
+  const src = path.join(REPO, '.tmp', 'deck-diagram-src.md');
+  const out = path.join(REPO, '.tmp', 'deck-diagram-test.pptx');
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(src, '---\ntitle: Deck\n---\n\n' + md);
+  try {
+    const result = exportDeckPptx({ inputPath: src, outputPath: out });
+    if (!result.ok && /diagram\(s\) rendered/.test(result.message || '')) return;
+    assert.equal(result.ok, true, result.message);
+    const listing = execSync(`unzip -l ${JSON.stringify(out)}`, { encoding: 'utf8' });
+    assert.ok(/ppt\/media\/image[^\n]+\.png/.test(listing), 'expected an embedded diagram image');
+    assert.equal(auditPptxFile(out).ok, true);
+  } finally {
+    try { fs.unlinkSync(out); } catch { /* skip */ }
+    try { fs.unlinkSync(src); } catch { /* skip */ }
+  }
+});
+
+// E4-1: a deck must not stack more bullets than a viewer can hold, and must not pack so much
+// that fitting it implies a sub-floor font. Both are flagged before export, not at render time.
+
+test('over-dense bullet slide is flagged (bullet_density)', () => {
+  let md = '# Deck\n\n---\n\n# Dense\n';
+  for (let i = 0; i < MAX_BULLETS_PER_SLIDE + 3; i += 1) md += `- point number ${i} for the audience\n`;
+  const audit = auditDeckMarkdownLayout(md, { title: 'Deck' });
+  assert.equal(audit.ok, false);
+  assert.ok(audit.issues.some((i) => i.code === 'bullet_density'), JSON.stringify(audit.issues));
+});
+
+test('a slide that can only fit below the font floor is flagged (font_below_floor)', () => {
+  const para = 'A long uninterrupted paragraph of slide prose well past the readable limit that consumes a large share of the fixed vertical budget. ';
+  const md = `# Deck\n\n---\n\n# Wall\n\n${para}\n\n${para}\n\n${para}\n\n${para}\n\n${para}\n\n${para}\n\n${para}\n`;
+  const audit = auditDeckMarkdownLayout(md, { title: 'Deck' });
+  assert.equal(audit.ok, false);
+  assert.ok(audit.issues.some((i) => i.code === 'font_below_floor'), JSON.stringify(audit.issues));
+});
+
+test('font floor is 8pt and a well-formed deck never trips the floor', () => {
+  assert.equal(DECK_FONT_FLOOR_PT, 8);
+  const md = '# Deck\n\n---\n\n# Clean\n\n- one tight point\n- two tight point\n- three tight point\n';
+  const audit = auditDeckMarkdownLayout(md, { title: 'Deck' });
+  assert.ok(!audit.issues.some((i) => i.code === 'font_below_floor' || i.code === 'bullet_density'), JSON.stringify(audit.issues));
+});
 
 test('oversized table is rejected by the pre-export audit (fail-closed)', () => {
   let md = '# Big\n\n---\n\n## Overflowing table\n\n| Col A | Col B |\n|--|--|\n';

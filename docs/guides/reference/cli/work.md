@@ -286,6 +286,7 @@ construct publish <markdown> [--to=pdf] [--type=DOC] [--demo=NAME] [--strict]
 | `--recording=<name>` | Playwright recording manifest (repeatable) |
 | `--figures` | Render d2/mermaid via diagram filter (default on) |
 | `--no-figures` | Skip diagram filter |
+| `--preview` | Render the export to images and report what was verified |
 | `--no-gate` | Skip artifact release gate (escape hatch only) |
 | `--source-only` | Write sources only |
 | `--strict` | Exit 2 when toolchain or release gate fails (default) |

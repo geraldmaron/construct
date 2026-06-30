@@ -22,10 +22,12 @@
     "distill-and-infer",
     "wireframe-and-drop",
     "diagram-and-demo",
+    "export-audit",
     "observability-and-cost",
     "start-embed-mode",
     "embed-construct-in-your-app",
     "override-storage-root",
-    "run-local-models"
+    "run-local-models",
+    "visual-review-checklist"
   ]
 }
