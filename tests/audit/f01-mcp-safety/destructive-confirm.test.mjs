@@ -1,21 +1,14 @@
 /**
  * tests/audit/f01-mcp-safety/destructive-confirm.red.mjs — F01 [R11] self-authorizing-destruction proof.
  *
- * RED fixtures (must FAIL against current code). storageReset and
- * deleteIngestedArtifactsTool gate destruction on `confirm: true` carried inside the
- * same model-callable JSON argument object. A model error, a prompt injection, or a
- * replayed argument blob therefore self-authorizes irreversible deletion — there is no
- * out-of-band approval token the model cannot mint.
+ * Regression guard for CX-AUDIT-MCP-SAFETY-004. storageReset and deleteIngestedArtifactsTool
+ * gate destruction on `confirm: true` plus a one-time out-of-band approval token verified
+ * server-side. A bare `confirm: true` — which a model error, a prompt injection, or a
+ * replayed argument blob can mint — is rejected, because the model cannot supply a valid
+ * token through its own argument channel.
  *
- * Contract these encode (CX-AUDIT-MCP-SAFETY-004): destructive tools must require an
- * out-of-band approval token (issued outside the model's argument channel and verified
- * server-side); a bare `confirm: true` must be rejected. Each test asserts that an
- * argument object containing only `confirm: true` does NOT perform deletion — it passes
- * once a missing/invalid token blocks the operation.
- *
- * `tokenRejected()` is the post-fix predicate: an error result naming an approval/token
- * requirement. Today both tools return a success/`status` payload instead, so the
- * assertions fail — proving the vector.
+ * `tokenRejected()` is the predicate: an error result naming an approval/token requirement.
+ * Each test asserts an argument object carrying only `confirm: true` performs no deletion.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
