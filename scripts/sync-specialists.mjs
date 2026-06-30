@@ -448,6 +448,13 @@ const standardConstructTools = [
   "cx_trace",
   "cx_score",
 ].join(",");
+
+// The orchestrator's atomic contract is classify-then-dispatch: orchestration_policy
+// then orchestration_run. On allowlist hosts (Claude) these must be named in the
+// agent's tools list or the call is blocked, leaving the orchestrator unable to route.
+// Single source of truth so every host's orchestrator grant stays in parity.
+
+const ORCHESTRATOR_DISPATCH_TOOLS = ["orchestration_policy", "orchestration_run"];
 const managedStart = `# BEGIN ${systemName.toUpperCase()} AGENTS`;
 const managedEnd = `# END ${systemName.toUpperCase()} AGENTS`;
 const mdManagedStart = `<!-- BEGIN ${systemName.toUpperCase()} AGENTS -->`;
@@ -984,6 +991,13 @@ function claudeAgentMarkdown(entry, allEntries) {
     ...baseTools.split(",").map((t) => t.trim()),
     ...standardConstructTools.split(","),
   ]);
+
+  // Claude's tools list is a hard allowlist; the orchestrator can only route if its
+  // dispatch tools are named here.
+
+  if (entry.isOrchestrator) {
+    for (const tool of ORCHESTRATOR_DISPATCH_TOOLS) toolSet.add(tool);
+  }
   const tools = Array.from(toolSet).filter(Boolean).join(",");
 
   return `---
