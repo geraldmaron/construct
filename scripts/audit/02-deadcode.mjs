@@ -62,6 +62,7 @@ const ACCEPTED_TEST_ONLY = {
   'lib/providers/contract/contract-tests.mjs': 'contract harness: imported by tests/provider-*.test.mjs for ADR-0003 provider interface validation',
   'lib/providers/contract/registry.mjs': 'contract harness: ProviderRegistry for embed-snapshot and provider-framework tests',
   'lib/visual-review.mjs': 'human visual-review verdict recorder for the human-reviewed gate level; its no-forgery contract is asserted from tests, and auto-calling it would forge a verdict, so the interactive review entry is staged (not wired in solo)',
+  'lib/pixel-regression.mjs': 'pixel-diff harness for the full-certification gate; gated to that level (never fast/standard) and asserted from tests/certification, with golden regeneration as the only sanctioned writer',
 };
 
 function walk(dir, exts) {
