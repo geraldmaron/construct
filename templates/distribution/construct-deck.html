@@ -23,57 +23,58 @@
   }
   * { box-sizing:border-box; }
   html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
-  body { margin:0; background:#e8e9ec; color:var(--ink-body); font-family:var(--sans); font-size:22px; line-height:1.45; -webkit-font-smoothing:antialiased; }
+  body { margin:0; background:#e8e9ec; color:var(--ink-body); font-family:var(--sans); font-size:17px; line-height:1.5; -webkit-font-smoothing:antialiased; }
   .deck { display:flex; flex-direction:column; align-items:center; gap:32px; padding:40px 24px 80px; }
-  section.slide {
+  .deck > section {
     width:min(100%, var(--slide-w));
     aspect-ratio:16/9;
     background:var(--paper);
     border:1px solid var(--hairline);
     border-radius:8px;
     box-shadow:0 18px 48px rgba(10,12,16,.08);
-    padding:56px 64px 48px;
+    padding:48px 56px 40px;
     overflow:hidden;
     display:flex;
     flex-direction:column;
     position:relative;
   }
-  section.slide::after {
+  .deck > section::after {
     content:"";
     position:absolute;
     left:0; right:0; bottom:0;
     height:4px;
     background:linear-gradient(90deg, var(--ink) 46px, var(--hairline) 46px);
   }
-  section.slide.title-slide { justify-content:center; }
-  section.slide.title-slide h1 { font-size:52px; line-height:1.06; letter-spacing:-.024em; margin:0 0 16px; color:var(--ink); font-weight:600; }
-  section.slide.title-slide .subtitle { font-size:26px; color:var(--muted); margin:0 0 28px; letter-spacing:-.005em; }
-  section.slide.title-slide .meta { font-size:15px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; font-weight:600; }
-  section.slide.title-slide .meta .sep { color:var(--faint); font-weight:400; }
-  section.slide h1 { font-size:40px; line-height:1.08; letter-spacing:-.02em; margin:0 0 20px; color:var(--ink); font-weight:600; }
-  section.slide h1::after { content:""; display:block; width:36px; height:3px; background:var(--ink); margin-top:14px; }
-  section.slide h2 { font-size:28px; font-weight:600; color:var(--ink-strong); margin:28px 0 12px; letter-spacing:-.01em; }
-  section.slide h3 { font-size:22px; font-weight:600; color:var(--ink-strong); margin:20px 0 8px; }
-  section.slide p { margin:0 0 14px; max-width:52em; }
-  section.slide ul, section.slide ol { margin:0 0 16px; padding-left:1.2em; }
-  section.slide li { margin:0 0 10px; }
-  section.slide li::marker { color:var(--ink); }
-  section.slide strong { color:var(--ink); font-weight:600; }
-  section.slide code { font-family:var(--mono); font-size:.84em; background:var(--surface-alt); padding:1px 6px; border-radius:4px; }
-  section.slide pre { background:var(--surface); border:1px solid var(--hairline); border-radius:8px; padding:16px 18px; overflow:auto; font-size:17px; }
-  section.slide pre code { background:none; padding:0; }
-  section.slide blockquote { margin:16px 0; padding:14px 18px; background:var(--surface-alt); border-left:3px solid var(--ink); border-radius:0 4px 4px 0; }
-  section.slide table { width:100%; border-collapse:collapse; font-size:18px; margin:12px 0; }
-  section.slide th, section.slide td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--hairline); }
-  section.slide thead th { font-weight:700; color:var(--ink); border-bottom:2px solid var(--ink); }
-  section.slide figure { margin:16px 0; text-align:center; }
-  section.slide figure img { max-width:58%; max-height:42vh; width:auto; height:auto; object-fit:contain; border:1px solid var(--hairline); border-radius:6px; padding:8px; }
+  .deck > section.title-slide { justify-content:center; }
+  .deck > section.title-slide h1 { font-size:38px; line-height:1.1; letter-spacing:-.022em; margin:0 0 14px; color:var(--ink); font-weight:600; }
+  .deck > section.title-slide .subtitle { font-size:19px; color:var(--muted); margin:0 0 24px; letter-spacing:-.005em; }
+  .deck > section.title-slide .meta { font-size:13px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; font-weight:600; }
+  .deck > section.title-slide .meta .sep { color:var(--faint); font-weight:400; }
+  .deck > section h1 { font-size:28px; line-height:1.12; letter-spacing:-.018em; margin:0 0 16px; color:var(--ink); font-weight:600; }
+  .deck > section h1::after { content:""; display:block; width:30px; height:2px; background:var(--ink); margin-top:12px; }
+  .deck > section h2 { font-size:20px; font-weight:600; color:var(--ink-strong); margin:22px 0 10px; letter-spacing:-.01em; }
+  .deck > section h3 { font-size:16px; font-weight:600; color:var(--ink-strong); margin:16px 0 6px; }
+  .deck > section p { margin:0 0 12px; max-width:54em; }
+  .deck > section ul, .deck > section ol { margin:0 0 12px; padding-left:1.2em; }
+  .deck > section li { margin:0 0 7px; }
+  .deck > section li::marker { color:var(--ink); }
+  .deck > section strong { color:var(--ink); font-weight:600; }
+  .deck > section code { font-family:var(--mono); font-size:.84em; background:var(--surface-alt); padding:1px 6px; border-radius:4px; }
+  .deck > section pre { background:var(--surface); border:1px solid var(--hairline); border-radius:8px; padding:14px 16px; overflow:auto; font-size:13.5px; }
+  .deck > section pre code { background:none; padding:0; }
+  .deck > section blockquote { margin:16px 0; padding:14px 18px; background:var(--surface-alt); border-left:3px solid var(--ink); border-radius:0 4px 4px 0; }
+  .deck > section table { width:100%; border-collapse:collapse; font-size:15px; margin:10px 0; }
+  .deck > section th, .deck > section td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--hairline); }
+  .deck > section thead th { font-weight:700; color:var(--ink); border-bottom:2px solid var(--ink); }
+  .deck > section figure { margin:12px 0; text-align:center; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .deck > section figure img { max-width:80%; max-height:100%; width:auto; height:auto; object-fit:contain; border:1px solid var(--hairline); border-radius:6px; padding:8px; }
+  .deck > section > img { display:block; margin:12px auto; flex:1 1 auto; min-height:0; max-width:84%; max-height:100%; width:auto; height:auto; object-fit:contain; border:1px solid var(--hairline); border-radius:6px; padding:8px; }
   .slide-foot { margin-top:auto; padding-top:16px; font-size:13px; color:var(--faint); display:flex; justify-content:space-between; align-items:center; }
   .slide-foot b { color:var(--ink); font-weight:600; }
   @media print {
     body { background:var(--paper); }
     .deck { gap:0; padding:0; }
-    section.slide { box-shadow:none; border:none; border-radius:0; page-break-after:always; width:100%; height:100vh; }
+    .deck > section { box-shadow:none; border:none; border-radius:0; page-break-after:always; width:100%; height:100vh; }
   }
 </style>
 </head>
