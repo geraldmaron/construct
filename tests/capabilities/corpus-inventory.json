@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T23:13:32.202Z",
+  "generatedAt": "2026-06-30T23:17:36.694Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 550,
+    "testFiles": 551,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 249,
+    "nestedTestFiles": 250,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 362,
+      "unit": 363,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
@@ -18,7 +18,7 @@
     "byCategory": {
       "unit": 322,
       "visual": 9,
-      "structural-guard": 12,
+      "structural-guard": 13,
       "contract-subsystem": 28,
       "live-provider": 2,
       "integration": 21,
@@ -285,6 +285,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f02-secrets/config-env-mode.red.mjs — F02 [R13] config.env file-mode contract."
+    },
+    {
+      "path": "tests/audit/f03-package/packed-asset-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f03-package/packed-asset-parity.red.mjs — F03 [R1] packed-tarball asset parity."
     },
     {
       "path": "tests/auto-docs.test.mjs",
