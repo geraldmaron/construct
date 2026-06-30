@@ -133,3 +133,28 @@ describe('auditGates', () => {
     assert.match(out, /Summary:/);
   });
 });
+
+describe('artifact gate config drift', () => {
+  let auditArtifactGateConfig;
+  const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+
+  before(async () => {
+    ({ auditArtifactGateConfig } = await import('../lib/gates-audit.mjs'));
+  });
+
+  it('validates the real manifest gate config without drift', () => {
+    const result = auditArtifactGateConfig(REPO);
+    assert.equal(result.ok, true, JSON.stringify(result.errors));
+  });
+
+  it('skips a repo with no manifest rather than failing', () => {
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'gates-no-manifest-'));
+    try {
+      const result = auditArtifactGateConfig(empty);
+      assert.equal(result.ok, true);
+      assert.equal(result.skipped, 'no manifest');
+    } finally {
+      fs.rmSync(empty, { recursive: true, force: true });
+    }
+  });
+});
