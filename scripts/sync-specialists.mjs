@@ -1402,7 +1402,7 @@ function syncCopilot(entries, targetDir = null, wants = true) {
   const list = listEntries.map((e) => `- \`${adapterName(e)}\`: use \`${promptPathPrefix}/${adapterName(e)}.prompt.md\`.`).join("\n");
   const note = `## ${systemName.charAt(0).toUpperCase() + systemName.slice(1)} Agent Prompts
 
-For a real multi-specialist run, Copilot agent mode calls the \`orchestration_run\` MCP tool (start the engine with \`construct dashboard\`). The prompts below are reusable role profiles for single-pass work:
+Select \`${systemName}\` from the chat mode dropdown to enter the orchestrator: describe an outcome and it classifies the request and dispatches the right specialists through the \`construct-mcp\` tools (\`orchestration_policy\` then \`orchestration_run\`). You ask for outcomes, not specialists — it routes internally. Requires the \`construct-mcp\` server (wired in \`.vscode/mcp.json\`); if its tools are unavailable, the mode cannot route and will say so rather than guess.
 
 ${list || "(no front-door prompts to surface)"}`;
 
