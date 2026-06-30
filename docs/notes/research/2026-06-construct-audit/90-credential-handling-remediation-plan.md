@@ -1,3 +1,7 @@
+---
+intake: none
+---
+
 # Credential & Secrets Handling — Remediation Plan
 
 Status: draft plan (no code changes). Branch lineage: `audit/full-surface-staging` → `audit/best-practice-alignment`.
