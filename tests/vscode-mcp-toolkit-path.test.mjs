@@ -9,7 +9,10 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mcpEntryPointsOutsideToolkit } from '../scripts/sync-specialists.mjs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { mcpEntryPointsOutsideToolkit, pinVscodeAgentLocations } from '../scripts/sync-specialists.mjs';
 
 const ROOT = '/Users/dev/Developer/Projects/construct';
 
@@ -34,4 +37,53 @@ test('a user-owned server with no toolkit path is preserved', () => {
 test('the memory bridge path under a foreign root is stale too', () => {
   const entry = { command: 'node', args: ['/opt/old/construct/lib/mcp/memory-bridge.mjs'] };
   assert.equal(mcpEntryPointsOutsideToolkit(entry, ROOT), true);
+});
+
+// pinVscodeAgentLocations writes the documented chat.agentFilesLocations hint so
+// VS Code prefers .github/agents over the .claude/agents compatibility scan,
+// without ever clobbering a settings file it cannot strictly parse (JSONC).
+
+test('writes the agent-location pin when no settings.json exists', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
+  try {
+    pinVscodeAgentLocations(dir);
+    const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
+    assert.equal(s['chat.agentFilesLocations']['.github/agents'], true);
+    assert.equal(s['chat.agentFilesLocations']['.claude/agents'], false);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('merges into valid JSON settings, preserving existing keys', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
+  try {
+    mkdirSync(join(dir, '.vscode'), { recursive: true });
+    writeFileSync(join(dir, '.vscode', 'settings.json'), JSON.stringify({ 'editor.tabSize': 2 }));
+    pinVscodeAgentLocations(dir);
+    const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
+    assert.equal(s['editor.tabSize'], 2, 'existing keys survive');
+    assert.ok(s['chat.agentFilesLocations'], 'pin added');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('does not clobber a JSONC settings.json it cannot strictly parse', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
+  try {
+    mkdirSync(join(dir, '.vscode'), { recursive: true });
+    const original = '{\n  // user comment\n  "editor.tabSize": 4\n}\n';
+    writeFileSync(join(dir, '.vscode', 'settings.json'), original);
+    pinVscodeAgentLocations(dir);
+    assert.equal(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'), original, 'commented file left untouched');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('respects an existing chat.agentFilesLocations choice', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
+  try {
+    mkdirSync(join(dir, '.vscode'), { recursive: true });
+    const existing = { 'chat.agentFilesLocations': { 'custom/agents': true } };
+    writeFileSync(join(dir, '.vscode', 'settings.json'), JSON.stringify(existing));
+    pinVscodeAgentLocations(dir);
+    const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
+    assert.deepEqual(s['chat.agentFilesLocations'], { 'custom/agents': true }, 'user choice preserved');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

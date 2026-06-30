@@ -1502,6 +1502,29 @@ export function mcpEntryPointsOutsideToolkit(entry, root) {
   );
 }
 
+// VS Code scans both `.github/agents` and `.claude/agents`, so the orchestrator
+// would list twice — once with VS Code tools (.github/agents) and once with
+// Claude tool names VS Code ignores (.claude/agents). `chat.agentFilesLocations`
+// is the documented lever to pin the scan; its power over the built-in
+// `.claude/agents` compatibility scan is version-dependent, so this is a
+// best-effort hint, not a guarantee. Merge only into a strictly-parseable file
+// and never overwrite an existing choice, so a commented (JSONC) or
+// user-customized settings.json is left untouched.
+
+export function pinVscodeAgentLocations(targetDir) {
+  if (DRY_RUN) return;
+  const settingsPath = path.join(targetDir, ".vscode", "settings.json");
+  let settings = {};
+  if (fs.existsSync(settingsPath)) {
+    try { settings = JSON.parse(fs.readFileSync(settingsPath, "utf8")) || {}; }
+    catch { return; }
+  }
+  if (settings["chat.agentFilesLocations"]) return;
+  settings["chat.agentFilesLocations"] = { ".github/agents": true, ".claude/agents": false };
+  mkdirp(path.dirname(settingsPath));
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
+}
+
 function syncVSCode(targetDir = null, wants = true) {
   const registryMcp = scopedManagedMcpDefs({ projectScope: Boolean(targetDir) });
   if (Object.keys(registryMcp).length === 0) return false;
@@ -1558,6 +1581,7 @@ function syncVSCode(targetDir = null, wants = true) {
       mkdirp(path.dirname(mcpPath));
       fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
     }
+    pinVscodeAgentLocations(targetDir);
     return true;
   }
 
