@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T03:47:42.999Z",
+  "generatedAt": "2026-06-30T15:54:57.591Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 541,
+    "testFiles": 542,
     "topLevelTestFiles": 300,
-    "nestedTestFiles": 241,
+    "nestedTestFiles": 242,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
@@ -13,7 +13,7 @@
       "visual": 8,
       "live-provider": 2,
       "integration": 30,
-      "functional": 145
+      "functional": 146
     },
     "byCategory": {
       "unit": 316,
@@ -22,7 +22,7 @@
       "contract-subsystem": 28,
       "live-provider": 2,
       "integration": 21,
-      "functional": 145,
+      "functional": 146,
       "hook": 9
     }
   },
@@ -2257,6 +2257,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/orchestration-truth-negative.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/orchestrator-dispatch-grant.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestrator-dispatch-grant.functional.test.mjs"
     },
     {
       "path": "tests/functional/post-merge-tracking.functional.test.mjs",
