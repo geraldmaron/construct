@@ -55,8 +55,8 @@ test('[R7] pinVscodeChatSettings must merge managed keys into a JSONC settings.j
   );
   assert.match(
     after,
-    /chat\.mcp\.autostart/,
-    'managed chat.mcp.autostart key was not written into the JSONC settings.json',
+    /chat\.mcp\.autoStart/,
+    'managed chat.mcp.autoStart key was not written into the JSONC settings.json',
   );
   assert.match(
     after,

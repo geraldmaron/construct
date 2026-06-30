@@ -1369,14 +1369,14 @@ When using this prompt, stay within the role above and adapt to the current repo
 // in the picker with no usable tools.
 
 const COPILOT_AGENT_TOOLS = [
-  "construct-mcp/*",
-  "web/fetch",
+  "construct-mcp/orchestration_policy",
+  "construct-mcp/orchestration_run",
+  "construct-mcp/orchestration_readiness",
   "web/githubRepo",
   "search/codebase",
   "search/usages",
   "search/fileSearch",
   "read/problems",
-  "edit/editFiles",
 ];
 
 function copilotAgentFile(entry, allEntries) {
@@ -1495,11 +1495,13 @@ function getVSCodeUserMcpPaths() {
 
 export function mcpEntryPointsOutsideToolkit(entry, root) {
   const args = Array.isArray(entry?.args) ? entry.args : [];
-  return args.some(
-    (arg) => typeof arg === "string"
-      && /\/lib\/mcp\/[a-z0-9-]+\.mjs$/.test(arg)
-      && !arg.startsWith(`${root}/`),
-  );
+  return args.some((arg) => {
+    if (typeof arg !== "string") return false;
+    const normalArg = arg.replace(/\\/g, "/");
+    const normalRoot = root.replace(/\\/g, "/");
+    return /\/lib\/mcp\/[a-z0-9-]+\.mjs$/i.test(normalArg)
+      && !normalArg.startsWith(`${normalRoot}/`);
+  });
 }
 
 // Workspace defaults Construct manages for VS Code chat. `chat.agentFilesLocations`
@@ -1516,15 +1518,31 @@ export function mcpEntryPointsOutsideToolkit(entry, root) {
 
 const VSCODE_MANAGED_SETTINGS = {
   "chat.agentFilesLocations": { ".github/agents": true, ".claude/agents": false },
-  "chat.mcp.autostart": "always",
+  "chat.mcp.autoStart": "always",
 };
+
+// Strip full-line JSONC comments (`// …`) and trailing commas before JSON.parse.
+// Handles the common VS Code settings.json patterns (line comments, trailing commas);
+// does not attempt to handle inline comments after values.
+
+function parseJsoncContent(text) {
+  const stripped = text
+    .split('\n')
+    .map((line) => {
+      const t = line.trimStart();
+      return t.startsWith('//') ? '' : line;
+    })
+    .join('\n')
+    .replace(/,(\s*[}\]])/g, '$1');
+  return JSON.parse(stripped);
+}
 
 export function pinVscodeChatSettings(targetDir) {
   if (DRY_RUN) return;
   const settingsPath = path.join(targetDir, ".vscode", "settings.json");
   let settings = {};
   if (fs.existsSync(settingsPath)) {
-    try { settings = JSON.parse(fs.readFileSync(settingsPath, "utf8")) || {}; }
+    try { settings = parseJsoncContent(fs.readFileSync(settingsPath, "utf8")) || {}; }
     catch { return; }
   }
   let changed = false;

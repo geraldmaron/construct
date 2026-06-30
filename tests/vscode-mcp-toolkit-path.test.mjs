@@ -65,14 +65,15 @@ test('merges into valid JSON settings, preserving existing keys', () => {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('does not clobber a JSONC settings.json it cannot strictly parse', () => {
+test('merges managed keys into a JSONC settings.json, preserving existing keys (comments are stripped on rewrite)', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
   try {
     mkdirSync(join(dir, '.vscode'), { recursive: true });
-    const original = '{\n  // user comment\n  "editor.tabSize": 4\n}\n';
-    writeFileSync(join(dir, '.vscode', 'settings.json'), original);
+    writeFileSync(join(dir, '.vscode', 'settings.json'), '{\n  // user comment\n  "editor.tabSize": 4\n}\n');
     pinVscodeChatSettings(dir);
-    assert.equal(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'), original, 'commented file left untouched');
+    const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
+    assert.equal(s['editor.tabSize'], 4, 'existing key preserved');
+    assert.ok(s['chat.mcp.autoStart'] !== undefined, 'managed MCP autostart key added');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -88,12 +89,12 @@ test('respects an existing chat.agentFilesLocations choice', () => {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('eager-starts MCP servers via chat.mcp.autostart so construct-mcp is live without a manual Start', () => {
+test('eager-starts MCP servers via chat.mcp.autoStart (camelCase, VS Code id) so construct-mcp is live without a manual Start', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
   try {
     pinVscodeChatSettings(dir);
     const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
-    assert.equal(s['chat.mcp.autostart'], 'always');
+    assert.equal(s['chat.mcp.autoStart'], 'always');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -105,6 +106,6 @@ test('applies each managed setting independently — an existing agent pin still
     pinVscodeChatSettings(dir);
     const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
     assert.deepEqual(s['chat.agentFilesLocations'], { 'custom/agents': true }, 'user agent pin preserved');
-    assert.equal(s['chat.mcp.autostart'], 'always', 'mcp autostart still added independently');
+    assert.equal(s['chat.mcp.autoStart'], 'always', 'mcp autostart still added independently');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
