@@ -117,6 +117,45 @@ test('pollConfiguredProviders resolves a plain API key with no 1Password involve
   assert.deepEqual(openai.models.map((m) => m.id).sort(), ['openai/gpt-4o', 'openai/o3-mini']);
 });
 
+test('pollConfiguredProviders serves a fresh cache without polling (no secret resolution)', async (t) => {
+  let fetchCalls = 0;
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => { fetchCalls += 1; throw new Error('must not poll when cache is fresh'); };
+  t.after(() => { globalThis.fetch = realFetch; });
+
+  const os = await import('node:os');
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-poll-fresh-'));
+  t.after(() => fs.rmSync(homeDir, { recursive: true, force: true }));
+
+  const env = { OPENAI_API_KEY: 'sk-plain-test' };
+  const { getProviderModelCatalog } = await import('../../lib/model-router.mjs');
+  const { providers } = getProviderModelCatalog({ env, cwd: homeDir });
+  const gids = [...new Set(
+    providers.filter((p) => p.configured).map((p) => (p.id.startsWith('openrouter') ? 'openrouter' : p.id)),
+  )];
+
+  const { pollConfiguredProviders, writeProviderCatalogCache } = await import('../../lib/models/provider-poll.mjs');
+  writeProviderCatalogCache(
+    gids.map((gid) => ({
+      id: gid,
+      label: gid,
+      models: [{ id: `${gid}/cached-model`, label: 'cached-model', provider: gid, source: 'live' }],
+    })),
+    { homeDir },
+  );
+
+  const groups = await pollConfiguredProviders({ env, cwd: homeDir, homeDir });
+
+  const openai = groups.find((g) => g.id === 'openai');
+  assert.ok(openai, 'openai group served from fresh cache');
+  assert.deepEqual(openai.models.map((m) => m.id), ['openai/cached-model']);
+  assert.equal(openai.models[0].source, 'cached');
+  assert.equal(openai.live, false);
+  assert.equal(fetchCalls, 0, 'a fresh cache must not trigger any live poll');
+});
+
 test('pollConfiguredProviders never fabricates: unreachable provider yields a disabled hint', async (t) => {
   const realFetch = globalThis.fetch;
   globalThis.fetch = async () => { throw new Error('offline'); };
