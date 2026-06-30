@@ -133,8 +133,53 @@ test('loadConstructEnv warns on every key shadowed between project .env and user
     process.stderr.write = original;
   }
 
-  assert.match(warned, /CUSTOM_SETTING is set in both project \.env/);
-  assert.equal(/AGREE is set in both/.test(warned), false);
+  assert.match(warned, /CUSTOM_SETTING is set to different values in project \.env/);
+  assert.equal(/AGREE is set to different values/.test(warned), false);
+});
+
+function captureWarnings(run) {
+  let warned = '';
+  const original = process.stderr.write.bind(process.stderr);
+  process.stderr.write = (chunk) => { warned += chunk; return true; };
+  try {
+    run();
+  } finally {
+    process.stderr.write = original;
+  }
+  return warned;
+}
+
+test('shadow warnings name the key but never echo any secret value bytes', () => {
+  const userSecret = 'sk-USERVALUE-must-not-appear';
+  const projectSecret = 'sk-PROJVALUE-must-not-appear';
+  const { homeDir, rootDir } = seedEnvFiles('construct-env-shadow-noleak-', {
+    user: { OPENROUTER_API_KEY: userSecret },
+    project: { OPENROUTER_API_KEY: projectSecret },
+  });
+
+  const warned = captureWarnings(() => loadConstructEnv({ rootDir, homeDir, env: {}, warn: true }));
+
+  assert.match(warned, /OPENROUTER_API_KEY/);
+  assert.equal(warned.includes('USERVALUE'), false);
+  assert.equal(warned.includes('PROJVALUE'), false);
+  assert.equal(warned.includes(userSecret.slice(0, 6)), false);
+  assert.equal(warned.includes(projectSecret.slice(0, 6)), false);
+});
+
+test('process.env shadow warning never echoes the shell or file secret value', () => {
+  const shellSecret = 'sk-SHELLVALUE-must-not-appear';
+  const fileSecret = 'sk-FILEVALUE-must-not-appear';
+  const { homeDir, rootDir } = seedEnvFiles('construct-env-shadow-proc-', {
+    project: { ANTHROPIC_API_KEY: fileSecret },
+  });
+
+  const warned = captureWarnings(() => loadConstructEnv({
+    rootDir, homeDir, env: { ANTHROPIC_API_KEY: shellSecret }, warn: true,
+  }));
+
+  assert.match(warned, /process\.env\.ANTHROPIC_API_KEY/);
+  assert.equal(warned.includes('SHELLVALUE'), false);
+  assert.equal(warned.includes('FILEVALUE'), false);
 });
 
 test('loadConstructEnv does not read a legacy ~/.construct/config.env', () => {
