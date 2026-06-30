@@ -28,6 +28,7 @@ import { runUninstall } from '../lib/uninstall/uninstall.mjs';
 import { maybeFirstInvocationProbe } from '../lib/install/first-invocation.mjs';
 import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
 import { ensureConstructCredentials } from '../lib/providers/credential-bootstrap.mjs';
+import { enableSecretAuditTrail } from '../lib/providers/secret-audit-wiring.mjs';
 import {
   loadProjectConfig,
   writeProjectConfig,
@@ -81,6 +82,7 @@ import { loadRegistry, listSpecialists } from '../lib/registry/loader.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const HOME = os.homedir();
+enableSecretAuditTrail();
 ensureConstructCredentials({ env: process.env, cwd: ROOT_DIR, home: HOME });
 const ENV = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME, env: process.env });
 for (const [key, value] of Object.entries(ENV)) {
