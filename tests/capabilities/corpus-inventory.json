@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T23:33:05.260Z",
+  "generatedAt": "2026-06-30T23:45:21.747Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 554,
+    "testFiles": 559,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 253,
+    "nestedTestFiles": 258,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 366,
+      "unit": 371,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 147
     },
     "byCategory": {
-      "unit": 325,
+      "unit": 330,
       "visual": 9,
       "structural-guard": 13,
       "contract-subsystem": 28,
@@ -317,6 +317,46 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f03-package/postinstall-mutation-manifest.red.mjs — F03 [R3][R4] postinstall mutation receipt."
+    },
+    {
+      "path": "tests/audit/f04-host-readiness/jsonc-safe-merge.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f04-host-readiness/jsonc-safe-merge.red.mjs — F04 [R7] JSONC silent-skip proof."
+    },
+    {
+      "path": "tests/audit/f04-host-readiness/least-privilege-grants.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f04-host-readiness/least-privilege-grants.red.mjs — F04 [R35] over-grant proof."
+    },
+    {
+      "path": "tests/audit/f04-host-readiness/readiness-state-machine.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f04-host-readiness/readiness-state-machine.red.mjs — F04 host-readiness state proof (OUTLINE)."
+    },
+    {
+      "path": "tests/audit/f04-host-readiness/setting-key-case.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f04-host-readiness/setting-key-case.red.mjs — F04 [R6] setting-key casing proof."
+    },
+    {
+      "path": "tests/audit/f04-host-readiness/windows-path-stale.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f04-host-readiness/windows-path-stale.red.mjs — F04 [R8] POSIX-only stale-path proof."
     },
     {
       "path": "tests/auto-docs.test.mjs",
