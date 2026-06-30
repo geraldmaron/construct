@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T22:52:48.963Z",
+  "generatedAt": "2026-06-30T23:13:32.202Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 549,
+    "testFiles": 550,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 248,
+    "nestedTestFiles": 249,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 361,
+      "unit": 362,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 147
     },
     "byCategory": {
-      "unit": 321,
+      "unit": 322,
       "visual": 9,
       "structural-guard": 12,
       "contract-subsystem": 28,
@@ -277,6 +277,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f01-mcp-safety/scanfile-containment.red.mjs — F01 [R10] root-containment proof for scanFile."
+    },
+    {
+      "path": "tests/audit/f02-secrets/config-env-mode.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f02-secrets/config-env-mode.red.mjs — F02 [R13] config.env file-mode contract."
     },
     {
       "path": "tests/auto-docs.test.mjs",

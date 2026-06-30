@@ -1,24 +1,11 @@
 /**
  * tests/audit/f02-secrets/config-env-mode.red.mjs — F02 [R13] config.env file-mode contract.
  *
- * RED fixture (must FAIL against current code). writeEnvValues
- * (lib/env-config.mjs:47-56) writes config.env via fs.writeFileSync with no explicit
- * mode, so the file is created at the process umask default (0644 on a typical host:
- * group- and world-readable). config.env can hold a plaintext API key, so a 0644 file
- * exposes the credential to every local account. Several callers
- * (mcp-manager / health-check / credential-bootstrap) chmod 0600 afterward, but
- * writeEnvValues itself carries no contract — callers that skip the chmod
- * (lib/setup.mjs:545,609, lib/service-manager.mjs:329,
- * lib/config/legacy-config-migration.mjs:93,121, lib/roles/preference.mjs:53)
- * leave the file world-readable.
- *
- * Two failures are pinned: (1) a fresh write must be 0600; (2) a rewrite must PRESERVE
- * restrictive mode rather than silently widening it back to umask default.
- *
- * Turns GREEN once writeEnvValues itself creates config.env with mode 0600 and
- * re-applies 0600 on rewrite, per CX-AUDIT-SECRETS-003 / plan Epic 8
- * (docs/notes/research/2026-06-construct-audit/90-credential-handling-remediation-plan.md
- * §Epic 8: "every credential write chmods 0o600").
+ * Regression guard for CX-AUDIT-SECRETS-003. config.env can hold a plaintext API key,
+ * so writeEnvValues (lib/env-config.mjs) creates it with mode 0600 and re-applies 0600
+ * on every rewrite — a credential file is never group/world readable, regardless of
+ * which caller writes it. Two properties are pinned: a fresh write is 0600, and a
+ * rewrite tightens a pre-existing 0644 file rather than inheriting the loose inode mode.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
