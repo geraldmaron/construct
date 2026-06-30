@@ -35,7 +35,7 @@ process; nothing proves auth-once across process boundaries, and the design cann
 
 Alongside the prompt problem, source review confirmed a set of secret-exposure defects: `--no-masking` hardcoded as
 the only `op run` mode; 6-char secret prefixes printed in env-shadow warnings; 8-char prefixes printed (and a live
-`op read` executed) by `construct credentials`; **local/stdio MCP credentials (`linear`/`slack`/`notion`) materialized
+`op read` executed) by `construct doctor credentials`; **local/stdio MCP credentials (`linear`/`slack`/`notion`) materialized
 as plaintext into four host config files plus `~/.env`**; two divergent precedence ladders; no audit trail for secret
 resolution; and plaintext tokens at rest protected only by file mode.
 
@@ -90,7 +90,7 @@ code path.
   into `~/.claude/settings.json`, `~/.config/opencode/opencode.json`, `~/.codex/config.toml`, written via
   `mcp-manager.mjs:423/436/439`, plus a plaintext fan-out to `~/.env` (`mcp-manager.mjs:445-447`).
 - **Logged / printed:** env-shadow warnings print 6-char value prefixes (`env-config.mjs:131-132,148-149`);
-  `construct credentials` prints 8-char prefixes (`bin/construct:423,448`); `SecretResolutionError` embeds the `op://`
+  `construct doctor credentials` prints 8-char prefixes (`bin/construct:423,448`); `SecretResolutionError` embeds the `op://`
   ref and a 160-char `op` stderr slice (`secret-resolver.mjs:62,67,69,72`).
 - **Masked:** never — `op run` always `--no-masking`; no redaction layer exists on any path.
 - **Audited:** never — zero structured audit/observation events on the resolve path (`secret-resolver.mjs` has no
@@ -207,12 +207,12 @@ value-prefix + `op read` with a non-resolving presence/source report (use `hasSe
 to error code + source tier; keep the ref out of the message or gate it behind a debug flag that is never on by default.
 
 **Test plan.** Assert shadow-warning output contains no substring of the value (feed a known sentinel value, assert
-absent). Assert `construct credentials` performs no `op read` and prints no value bytes. Snapshot error messages.
+absent). Assert `construct doctor credentials` performs no `op read` and prints no value bytes. Snapshot error messages.
 
 **Regression risks.** Diagnostics become less "helpful" for debugging a wrong key — mitigate with last-4 of a salted
 hash, never raw bytes.
 
-**Acceptance criteria.** No code path prints any byte of a secret value. `construct credentials` triggers no biometric
+**Acceptance criteria.** No code path prints any byte of a secret value. `construct doctor credentials` triggers no biometric
 prompt.
 
 **Beads.** `2.1` shadow-warning redaction; `2.2` diagnostics no-resolve/no-print; `2.3` error-message scrub; `2.4` tests.

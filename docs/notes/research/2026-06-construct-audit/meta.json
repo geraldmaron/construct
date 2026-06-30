@@ -10,6 +10,7 @@
     "60-third-party-strategic-eval",
     "70-test-infra-verdict",
     "80-synthesis",
+    "90-credential-handling-remediation-plan",
     "skills-consolidation-report"
   ]
 }
