@@ -702,6 +702,8 @@ validation/export after `approval_mode: allow-durable-write`. The response
 separates planned, executed, and skipped steps; it never presents a planned
 specialist review or rewrite as completed execution.
 
+Every artifact-workflow run reports a **completion ledger** — a chronological record of evidence backing each state advancement. An artifact's completionState is the highest rung of the 12-state ladder (planned → authored → structurally-valid → source-linted → exported → file-valid → renderable → screenshot-captured → visually-reviewed → accessibility-reviewed → approved → completed) for which it holds re-verifiable evidence. A state advances only with an explicit evidence object; missing tools are recorded as typed degradations (missing-dependency, unavailable-renderer, etc.) without advancing the ladder. See **[Artifact Completion States](artifact-completion-states.md)** for the full ladder and no-forgery invariant.
+
 | Parameter | Type | Description |
 |---|---|---|
 | `input` | string | Natural-language artifact request. |
