@@ -281,3 +281,29 @@ session -> login: no
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// K-1: --preview forces a render so the user can inspect output and see what was verified, even
+// when the artifact's own gate level would not otherwise capture screenshots.
+
+test('runPublish --preview captures render evidence and a validation report', (t) => {
+  const detection = detectPublishPipeline({ format: 'pdf', includeFigures: true, cwd: REPO, repoRoot: REPO });
+  if (!detection.present || !commandExists('pdftoppm')) {
+    t.skip('pdf toolchain not installed');
+    return;
+  }
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'publish-preview-'));
+  try {
+    const input = path.join(dir, 'note.md');
+    const out = path.join(dir, 'note.pdf');
+    fs.writeFileSync(input, '---\ntitle: Preview Note\n---\n\n## Summary\n\nA short note with an image-free body.\n');
+    const result = runPublish({ inputPath: input, outputPath: out, format: 'pdf', gate: false, preview: true, cwd: dir, repoRoot: REPO });
+    assert.equal(result.ok, true, result.message);
+    const validation = result.ledger.validation;
+    assert.ok(validation, 'expected a validation report');
+    assert.ok(validation.render?.evidence, 'preview must capture render evidence');
+    assert.ok(validation.render.result.images.length >= 1, 'preview must produce at least one screenshot');
+    assert.ok(validation.a11y?.coverage, 'report states a11y coverage');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

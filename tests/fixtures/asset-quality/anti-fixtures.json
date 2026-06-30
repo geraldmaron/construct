@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "description": "Declarative registry of asset-quality anti-fixtures. Each entry is an intentionally-bad artifact that MUST be rejected by the audit it targets. Enforced entries assert the audit fires today; pending entries name the bead that will enforce them. Driven by tests/asset-quality/anti-fixtures.test.mjs.",
+  "families": ["markdown-presentation", "deck"],
+  "fixtures": [
+    {
+      "id": "md-multiple-h1",
+      "family": "markdown-presentation",
+      "path": "anti/markdown/multiple-h1.md",
+      "audit": "lintDocPresentation",
+      "expect": { "matches": "multiple H1" },
+      "status": "enforced"
+    },
+    {
+      "id": "md-bullet-wall",
+      "family": "markdown-presentation",
+      "path": "anti/markdown/bullet-wall.md",
+      "audit": "lintDocPresentation",
+      "expect": { "matches": "bullet wall" },
+      "status": "enforced"
+    },
+    {
+      "id": "md-missing-blank-before-heading",
+      "family": "markdown-presentation",
+      "path": "anti/markdown/missing-blank-before-heading.md",
+      "audit": "lintDocPresentation",
+      "expect": { "matches": "missing blank line before heading" },
+      "status": "enforced"
+    },
+    {
+      "id": "md-empty-alt-text",
+      "family": "markdown-presentation",
+      "path": "anti/markdown/empty-alt-text.md",
+      "audit": "lintDocPresentation",
+      "expect": { "matches": "image missing alt text" },
+      "status": "enforced"
+    },
+    {
+      "id": "md-unresolved-placeholders",
+      "family": "markdown-presentation",
+      "path": "anti/markdown/unresolved-placeholders.md",
+      "audit": "lintDocPresentation",
+      "expect": { "matches": "placeholder" },
+      "status": "enforced"
+    },
+    {
+      "id": "md-empty-section",
+      "family": "markdown-presentation",
+      "path": "anti/markdown/empty-section.md",
+      "audit": "lintDocPresentation",
+      "expect": { "matches": "empty section" },
+      "status": "enforced"
+    },
+    {
+      "id": "deck-dense-paragraph",
+      "family": "deck",
+      "path": "anti/deck/dense-paragraph.md",
+      "audit": "auditDeckMarkdownLayout",
+      "expect": { "code": "text_dense" },
+      "status": "enforced"
+    },
+    {
+      "id": "deck-over-dense-bullets",
+      "family": "deck",
+      "path": "anti/deck/over-dense-bullets.md",
+      "audit": "auditDeckMarkdownLayout",
+      "expect": { "code": "bullet_density" },
+      "status": "enforced"
+    },
+    {
+      "id": "deck-sub-floor-density",
+      "family": "deck",
+      "path": "anti/deck/sub-floor-density.md",
+      "audit": "auditDeckMarkdownLayout",
+      "expect": { "code": "font_below_floor" },
+      "status": "enforced"
+    }
+  ]
+}

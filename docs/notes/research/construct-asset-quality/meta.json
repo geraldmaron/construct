@@ -1,0 +1,10 @@
+{
+  "title": "Construct Asset Quality",
+  "pages": [
+    "baseline",
+    "subagent-assignments",
+    "traffic-jams",
+    "subagents",
+    "synthesis"
+  ]
+}

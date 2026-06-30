@@ -28,6 +28,7 @@ import { runUninstall } from '../lib/uninstall/uninstall.mjs';
 import { maybeFirstInvocationProbe } from '../lib/install/first-invocation.mjs';
 import { loadConstructEnv, getUserEnvPath } from '../lib/env-config.mjs';
 import { ensureConstructCredentials } from '../lib/providers/credential-bootstrap.mjs';
+import { enableSecretAuditTrail } from '../lib/providers/secret-audit-wiring.mjs';
 import {
   loadProjectConfig,
   writeProjectConfig,
@@ -81,6 +82,7 @@ import { loadRegistry, listSpecialists } from '../lib/registry/loader.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const HOME = os.homedir();
+enableSecretAuditTrail();
 ensureConstructCredentials({ env: process.env, cwd: ROOT_DIR, home: HOME });
 const ENV = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME, env: process.env });
 for (const [key, value] of Object.entries(ENV)) {
@@ -399,7 +401,6 @@ async function cmdDoctor() {
     println(`${COLORS.bold}Credential diagnostics${COLORS.reset}`);
     println('');
 
-    const { execSync } = await import('node:child_process');
     const { homedir } = await import('node:os');
     const { join } = await import('node:path');
     const fs = await import('node:fs');
@@ -420,7 +421,7 @@ async function cmdDoctor() {
 
       // process.env
       if (process.env[varName]) {
-        sources.push(`process.env (${process.env[varName].slice(0, 8)}…)`);
+        sources.push('process.env (set)');
       }
 
       // .env files
@@ -443,13 +444,7 @@ async function cmdDoctor() {
           const opRe = new RegExp(`export\\s+${varName}=["']?\\$\\(op read '([^']+)'\\)["']?`, 'm');
           const opMatch = content.match(opRe);
           if (opMatch) {
-            try {
-              const r = execSync(`op read '${opMatch[1]}'`, { encoding: 'utf8', timeout: 5000 });
-              sources.push(`${rcPath.replace(homedir(), '~')} → op read ✓ (${r.stdout?.trim()?.slice(0, 8)}…)`);
-            } catch (e) {
-              const err = (e.stderr || e.message || '').slice(0, 120);
-              sources.push(`${rcPath.replace(homedir(), '~')} → op read ✗: ${err}`);
-            }
+            sources.push(`${rcPath.replace(homedir(), '~')} → op:// reference (run \`op read\` to verify)`);
           }
           // Check for direct export (allow leading whitespace for indented rc files)
           const directRe = new RegExp(`^\\s*export\\s+${varName}=(.+)$`, 'm');
@@ -464,11 +459,7 @@ async function cmdDoctor() {
       println(`  ${pip}${COLORS.reset} ${COLORS.bold}${varName}${COLORS.reset}`);
       if (sources.length) {
         for (const s of sources.slice(0, 3)) {
-          if (s.includes('op read ✗')) {
-            println(`       ${COLORS.red}⚠${COLORS.reset} ${s}`);
-          } else {
-            println(`       ${s}`);
-          }
+          println(`       ${s}`);
         }
         if (sources.length > 3) println(`       … +${sources.length - 3} more`);
       } else {
@@ -3690,7 +3681,61 @@ async function cmdOrchestrate(args) {
   const sub = args[0];
   const rest = args.slice(1);
   const flag = (name) => { const i = rest.indexOf(name); return i !== -1 ? rest[i + 1] : undefined; };
+  const eqFlag = (name) => {
+    const hit = rest.find((arg) => arg.startsWith(`${name}=`));
+    return hit ? hit.slice(name.length + 1) : flag(name);
+  };
   const wantsJson = rest.includes('--json') || args.includes('--json');
+
+  if (sub === 'preflight') {
+    const { buildOrchestrationReadiness, recordOrchestrationReadinessEvent, summarizeOrchestrationReadiness } = await import('../lib/orchestration/readiness.mjs');
+    const { probeStdioMcpTools } = await import('../lib/mcp/stdio-mcp-probe.mjs');
+    const splitCsv = (value) => value ? String(value).split(',').map((s) => s.trim()).filter(Boolean) : undefined;
+    const timeoutMs = Number(eqFlag('--timeout-ms') || 8000);
+    let observedTools = splitCsv(eqFlag('--observed-tools'));
+    let reachableTools = splitCsv(eqFlag('--reachable-tools'));
+    let probeError = null;
+
+    if (!rest.includes('--no-probe') && !observedTools && !reachableTools) {
+      try {
+        const tools = await probeStdioMcpTools(process.execPath, [path.join(ROOT_DIR, 'lib', 'mcp', 'server.mjs')], {
+          env: { CX_TOOLKIT_DIR: ROOT_DIR },
+          timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 8000,
+        });
+        observedTools = tools.map((tool) => tool.name);
+        reachableTools = tools.flatMap((tool) => (
+          tool.name === 'call' ? (tool.inputSchema?.properties?.tool?.enum ?? []) : []
+        ));
+      } catch (err) {
+        probeError = err.message || String(err);
+      }
+    }
+
+    const readiness = buildOrchestrationReadiness({
+      host: eqFlag('--host'),
+      sessionId: eqFlag('--session-id'),
+      observedTools,
+      reachableTools,
+      requiredTools: splitCsv(eqFlag('--required-tools')),
+      clientContractVersion: eqFlag('--client-contract-version'),
+      observationScope: eqFlag('--observation-scope') || (observedTools || reachableTools ? 'host-session' : 'local-config'),
+      probeError,
+      authRequired: rest.includes('--auth-required'),
+    }, { env: process.env, cwd: process.cwd() });
+    let eventResult = null;
+    try { eventResult = recordOrchestrationReadinessEvent(readiness, { homeDir: HOME }); } catch { /* telemetry must not break preflight */ }
+
+    if (wantsJson) {
+      println(JSON.stringify({ ...readiness, eventPath: eventResult?.path ?? null }, null, 2));
+      process.exit(readiness.attached ? 0 : 1);
+    }
+
+    println(summarizeOrchestrationReadiness(readiness));
+    println(`Reason: ${readiness.reasonCode}`);
+    println(`Next: ${readiness.nextStep}`);
+    println(`Diagnostic id: ${readiness.diagnosticBundle?.diagnosticId}`);
+    process.exit(readiness.attached ? 0 : 1);
+  }
 
   // Thin-client mode: drive the local orchestration daemon over HTTP instead of
   // running in-process, proving the engine-as-service contract editors/CI use.
@@ -3783,9 +3828,10 @@ async function cmdOrchestrate(args) {
     return;
   }
 
-  println('Usage: construct orchestrate <run|status> [options]');
+  println('Usage: construct orchestrate <run|status|preflight> [options]');
   println('  run "<request>" [--workflow-type T] [--strategy S] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]');
   println('  status [run-id] [--json]');
+  println('  preflight [--host H] [--json] [--no-probe] [--observed-tools=a,b] [--reachable-tools=a,b]');
 }
 
 async function cmdModels(args) {

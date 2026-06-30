@@ -53,6 +53,8 @@ Architecture decision records for decisions that have already been made.
 | [0045](./0045-config-scope-docs-taxonomy-intake.md) | Local/global config boundary, docs taxonomy, and a single intake zone | proposed | |
 | [0046](./0046-modular-org-runtime-merge.md) | Modular org layout with runtime registry merge | accepted | |
 | [0047](./0047-specialist-vs-flavor-model.md) | Specialist vs flavor taxonomy | accepted | |
+| [0048](./0048-semantic-tool-discovery.md) | Semantic tool discovery | accepted | |
+| [0049](./0049-cross-process-auth-once.md) | Cross-process auth-once for 1Password resolution | accepted | |
 
 ## Starter templates
 

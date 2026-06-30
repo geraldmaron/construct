@@ -15,7 +15,7 @@ Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code,
 
 ## Tool surface (gateway)
 
-To keep the serialized tool schema small enough for any context window — a flat 71-tool surface (~10.6k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `get_skill`, `get_template`, `search_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `workflow_invoke`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
+To keep the serialized tool schema small enough for any context window — a flat 71-tool surface (~10.6k tokens) overran a 32k local-model window — `ListTools` exposes a **curated core** plus the `call` **gateway** and the `find_tool` **discovery** tool. The core front-loads the read/think tools (`orchestration_policy`, `orchestration_readiness`, `get_skill`, `get_template`, `search_skills`, `knowledge_search`, `memory_search`, `project_context`, `summarize_diff`, `find_tool`) **and the high-value action tools agents reach for directly** (`author_artifact`, `document_export`, `publish_run`, `artifact_workflow`, `workflow_invoke`, `triage_recommend`), since burying those behind the gateway made the common case the failing case. Every other tool stays reachable through `call`, and `find_tool` ranks the whole catalog by intent so the surface scales without a hand-maintained list (ADR-0048).
 
 ### `find_tool`
 Find Construct tools by intent when you do not know the exact name. Pass a natural-language `query` (and optional `limit`) describing the task; returns the best-matching tools with their full input schemas, ranked by hybrid local-embedding semantic similarity merged with normalized BM25 — degrading to BM25-only when no semantic model is provisioned, so it works offline. Then invoke a result via `call` (or directly when it is a flat tool). E.g. `find_tool({ query: "export a markdown file to pdf" })` → `document_export`.
@@ -702,6 +702,8 @@ validation/export after `approval_mode: allow-durable-write`. The response
 separates planned, executed, and skipped steps; it never presents a planned
 specialist review or rewrite as completed execution.
 
+Every artifact-workflow run reports a **completion ledger** — a chronological record of evidence backing each state advancement. An artifact's completionState is the highest rung of the 12-state ladder (planned → authored → structurally-valid → source-linted → exported → file-valid → renderable → screenshot-captured → visually-reviewed → accessibility-reviewed → approved → completed) for which it holds re-verifiable evidence. A state advances only with an explicit evidence object; missing tools are recorded as typed degradations (missing-dependency, unavailable-renderer, etc.) without advancing the ladder. See **[Artifact Completion States](artifact-completion-states.md)** for the full ladder and no-forgery invariant.
+
 | Parameter | Type | Description |
 |---|---|---|
 | `input` | string | Natural-language artifact request. |
@@ -778,6 +780,15 @@ Resolve the execution-capability contract for an embedded workflow before/at wor
 | `capabilities` | string[] | Optional required capabilities; unverifiable ones are returned as warnings. |
 | `allow_cross_provider_fallback` | boolean | Permit model fallback outside the host provider family (default false). |
 
+### `web_search`
+Search the public web and return CITED results — the only search surface that reaches the open web, kept distinct from `knowledge_search` / `provider_fetch` / repo search so it is never conflated or faked. Requires a governed provider (`WEB_SEARCH_URL`); without one it returns a typed degradation (`capability-unavailable`) and zero results, never source/repo results dressed as web. Every result carries a verifiable URL, a claim-relative class, and an Admiralty grade with derived confidence (ADR-0017; `high` is reserved for A1/A2/B1).
+
+| Parameter | Type | Description |
+|---|---|---|
+| `query` | string | **required** — The search query string. |
+| `claim` | string | **required** — The claim the results support; drives claim-relative source classification (ADR-0017). |
+| `recency` | string | Optional freshness window hint (e.g. `30d`). |
+
 ### `orchestration_run`
 Execute a real multi-specialist orchestration run and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Solo runs execute in-process — no daemon, no port, no token; a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`. Real specialist output requires the `provider` worker backend (a provider key configured); the default `inline` backend prepares tasks only.
 
@@ -794,6 +805,23 @@ Execute a real multi-specialist orchestration run and return per-specialist outp
 | `module_count` | number | Optional planning hint: number of modules in scope. |
 | `wait` | boolean | Wait for a terminal state and return task output (default true); `false` returns the runId to poll. |
 | `timeout_ms` | number | Max wait when `wait=true` (default 120000); on timeout the runId is returned to poll. |
+
+### `orchestration_readiness`
+Report whether this MCP session has Construct orchestration tools attached and reachable now. Returns a pass/fail verdict, typed `reasonCode`, one deterministic `nextStep`, required/observed/missing tools, and a redacted diagnostic bundle. This is an observed attachment check, unlike `construct_execution_resolve`, which remains a descriptive planning/model-resolution contract.
+
+Default required tools are `orchestration_policy` and `orchestration_run`. `orchestration_run` may be either flat or reachable through the `call` gateway enum.
+
+Reason codes: `attached`, `host_not_attached`, `server_unreachable`, `auth_unavailable`, `profile_mismatch`, `capability_negotiation_failed`, `version_mismatch`, `tool_unlisted`, `unknown`.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `host` | string | Host/IDE identifier, if known. |
+| `session_id` | string | Host session/thread id, if known. |
+| `observed_tools` | array | Optional tool names observed by the host in `tools/list`. Defaults to this server catalog when called through MCP. |
+| `reachable_tools` | array | Optional long-tail tool names reachable through a gateway enum. |
+| `required_tools` | array | Required orchestration tools. Defaults to `orchestration_policy`, `orchestration_run`. |
+| `client_contract_version` | string | Client contract version for compatibility checks. |
+| `observation_scope` | string | `host-session` or `local-config`. MCP calls normally use `host-session`. |
 
 ### `orchestration_status`
 Inspect orchestration runs on the local Construct daemon: pass `run_id` for the full record (status, per-task status/executor/output/error), or omit it for a list of recent runs. Fails fast if the daemon is unreachable.

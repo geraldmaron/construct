@@ -280,8 +280,7 @@
     #v(0.28em)
     #set text(font: construct-font-sans, size: fs-micro, fill: ink-faint)
     #align(center)[
-      #text(weight: wt-bold, fill: ink, tracking: 0.04em)[Construct]
-      #text[ #sym.dot.c #footer-label]
+      #text(weight: wt-bold, fill: ink, tracking: 0.04em)[#footer-label]
       #if classification != "" [ #sym.dot.c #upper(classification)]
     ]
   ]

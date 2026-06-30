@@ -1,0 +1,16 @@
+{
+  "title": "Subagent Audit Reports",
+  "pages": [
+    "accessibility-visibility",
+    "artifact-release-gates",
+    "artifact-surface-manifest",
+    "artifact-workflow-truth",
+    "asset-quality-cli-ux",
+    "branding-typography-spacing",
+    "deck-pptx-quality",
+    "diagram-quality",
+    "document-export-quality",
+    "source-presentation-lint",
+    "visual-fixtures-regression"
+  ]
+}

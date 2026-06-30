@@ -41,7 +41,8 @@
         "authorChain": { "type": "array", "items": { "type": "string" } },
         "reviewerChain": { "type": "array", "items": { "type": "string" } },
         "validation": { "$ref": "#/$defs/validation" },
-        "outputs": { "$ref": "#/$defs/outputs" }
+        "outputs": { "$ref": "#/$defs/outputs" },
+        "qualityContract": { "$ref": "#/$defs/qualityContract" }
       }
     },
     "validation": {
@@ -56,6 +57,48 @@
       "properties": {
         "formats": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
         "branding": { "type": "string", "enum": ["construct", "plain"] }
+      }
+    },
+    "gateLevel": {
+      "type": "string",
+      "enum": ["fast", "standard", "render-smoke", "full-certification", "human-reviewed"]
+    },
+    "completionState": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "authored",
+        "structurally-valid",
+        "source-linted",
+        "exported",
+        "file-valid",
+        "renderable",
+        "screenshot-captured",
+        "visually-reviewed",
+        "accessibility-reviewed",
+        "approved",
+        "completed"
+      ]
+    },
+    "qualityContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gateLevel": { "$ref": "#/$defs/gateLevel" },
+        "requiredStates": { "type": "array", "items": { "$ref": "#/$defs/completionState" } },
+        "perFormat": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "gateLevel": { "$ref": "#/$defs/gateLevel" },
+              "requiredStates": { "type": "array", "items": { "$ref": "#/$defs/completionState" } },
+              "a11y": { "type": "string" },
+              "fontFloorPt": { "type": "number" }
+            }
+          }
+        }
       }
     },
     "artifactEntry": {
@@ -76,7 +119,8 @@
         "authorChain": { "type": "array", "items": { "type": "string" } },
         "reviewerChain": { "type": "array", "items": { "type": "string" } },
         "validation": { "$ref": "#/$defs/validation" },
-        "outputs": { "$ref": "#/$defs/outputs" }
+        "outputs": { "$ref": "#/$defs/outputs" },
+        "qualityContract": { "$ref": "#/$defs/qualityContract" }
       }
     }
   }

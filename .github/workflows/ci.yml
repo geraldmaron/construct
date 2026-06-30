@@ -192,6 +192,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run gates:audit
+      - name: certification gate
+        if: needs.changes.outputs.code == 'true' || needs.changes.outputs.agents == 'true' || needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
+        run: node ./bin/construct certify gate
       # Advisory gate: PR-body shape has no local-pre-flight equivalent (the
       # body doesn't exist until `gh pr create` runs), so a hard failure forces
       # a close+reopen to retrigger CI after a body fix. Step `continue-on-error`

@@ -9,6 +9,10 @@
     "outputs": {
       "formats": ["pdf", "docx", "doc", "deck", "pptx", "html", "rtf", "odt", "epub", "tex", "txt", "md", "mdx"],
       "branding": "construct"
+    },
+    "qualityContract": {
+      "gateLevel": "standard",
+      "requiredStates": ["exported"]
     }
   },
   "artifacts": {
@@ -31,6 +35,13 @@
         "proseMinimum": 3,
         "requiredReviewers": ["cx-devil-advocate"],
         "optionalReviewers": ["cx-ux-researcher"]
+      },
+      "qualityContract": {
+        "gateLevel": "render-smoke",
+        "requiredStates": ["exported", "file-valid", "renderable"],
+        "perFormat": {
+          "pdf": { "requiredStates": ["file-valid", "renderable"], "a11y": "wcag-2.1-aa" }
+        }
       }
     },
     "prd-platform": {
@@ -318,6 +329,13 @@
         "proseMinimum": 2,
         "requiredReviewers": ["cx-devil-advocate"],
         "optionalReviewers": []
+      },
+      "qualityContract": {
+        "gateLevel": "render-smoke",
+        "requiredStates": ["exported", "file-valid", "renderable"],
+        "perFormat": {
+          "pdf": { "requiredStates": ["file-valid", "renderable"] }
+        }
       }
     },
     "customer-profile": {

@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T17:27:03.308Z",
+  "generatedAt": "2026-06-30T03:47:42.999Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 503,
-    "topLevelTestFiles": 294,
-    "nestedTestFiles": 209,
+    "testFiles": 541,
+    "topLevelTestFiles": 300,
+    "nestedTestFiles": 241,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 24,
+    "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 334,
+      "unit": 356,
+      "visual": 8,
       "live-provider": 2,
-      "visual": 7,
       "integration": 30,
-      "functional": 130
+      "functional": 145
     },
     "byCategory": {
-      "unit": 295,
-      "structural-guard": 11,
+      "unit": 316,
+      "visual": 8,
+      "structural-guard": 12,
       "contract-subsystem": 28,
       "live-provider": 2,
-      "visual": 7,
       "integration": 21,
-      "functional": 130,
+      "functional": 145,
       "hook": 9
     }
   },
@@ -85,6 +85,134 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/artifact-workflow.test.mjs — manifest intent planning and run provenance."
+    },
+    {
+      "path": "tests/asset-quality/a11y-audit.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/a11y-audit.test.mjs — Guards per-format accessibility checks (cuxq.8.1)."
+    },
+    {
+      "path": "tests/asset-quality/anti-fixtures.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/anti-fixtures.test.mjs — Asserts the asset-quality anti-fixture corpus."
+    },
+    {
+      "path": "tests/asset-quality/brand-contrast.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/brand-contrast.test.mjs — Guards brand legibility and the spacing scale."
+    },
+    {
+      "path": "tests/asset-quality/completion-evidence.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/completion-evidence.test.mjs — Evidence objects and the no-forgery ledger."
+    },
+    {
+      "path": "tests/asset-quality/completion-states.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/completion-states.test.mjs — Keeps the completion-state vocabulary single."
+    },
+    {
+      "path": "tests/asset-quality/completion-truth.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/completion-truth.test.mjs — Guards the artifact completion-state truth model."
+    },
+    {
+      "path": "tests/asset-quality/diagram-quality.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/diagram-quality.test.mjs — Guards diagram quality heuristics (cuxq.6.1)."
+    },
+    {
+      "path": "tests/asset-quality/export-validate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/export-validate.test.mjs — Guards post-export validity checks."
+    },
+    {
+      "path": "tests/asset-quality/gate-levels.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/gate-levels.test.mjs — Guards the gate-level registry and level-aware gate."
+    },
+    {
+      "path": "tests/asset-quality/output-quality.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/output-quality.test.mjs — Guards the post-export output-quality pass."
+    },
+    {
+      "path": "tests/asset-quality/presentation-lint.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/presentation-lint.test.mjs — Isolated coverage for lintDocPresentation."
+    },
+    {
+      "path": "tests/asset-quality/quality-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/quality-contract.test.mjs — Guards the manifest qualityContract surface."
+    },
+    {
+      "path": "tests/asset-quality/render-degradation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/render-degradation.test.mjs — Guards typed render degradation."
+    },
+    {
+      "path": "tests/asset-quality/render-evidence.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/render-evidence.test.mjs — Render evidence ties rendering to the ledger."
+    },
+    {
+      "path": "tests/asset-quality/render-pipeline.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/render-pipeline.test.mjs — Guards the render pipeline contract."
+    },
+    {
+      "path": "tests/asset-quality/visual-review.test.mjs",
+      "layer": "visual",
+      "category": "visual",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/visual-review.test.mjs — Guards the visually-reviewed contract."
     },
     {
       "path": "tests/audit-rules.test.mjs",
@@ -357,6 +485,14 @@
       "maintainerNotes": "tests/certification/p2-surface-harness.test.mjs — P2 certification surface harnesses."
     },
     {
+      "path": "tests/certification/pixel-regression.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "pixel-regression.test.mjs — Guards true pixel-level comparison (cuxq.10.2)."
+    },
+    {
       "path": "tests/certification/prompt-budget.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -595,6 +731,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/cost.test.mjs — validates token and cache accounting."
+    },
+    {
+      "path": "tests/credential-precedence-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/credential-precedence-parity.test.mjs"
     },
     {
       "path": "tests/decisions-bindings.test.mjs",
@@ -1427,6 +1571,14 @@
       "maintainerNotes": "tests/functional/copilot-auth.functional.test.mjs — the GitHub Copilot OAuth"
     },
     {
+      "path": "tests/functional/credentials-diagnostics-no-leak.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/credentials-diagnostics-no-leak.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/cross-project-state-isolation.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1499,6 +1651,14 @@
       "maintainerNotes": "diagram.functional.test.mjs — `construct diagram` smoke gate."
     },
     {
+      "path": "tests/functional/doc-intake-approval.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/doc-intake-approval.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/docker-reclaim.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1561,6 +1721,16 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/document-export.functional.test.mjs — markdown → PDF/DOCX/HTML"
+    },
+    {
+      "path": "tests/functional/dogfood-certification.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "publish.distribution"
+      ],
+      "skipped": false,
+      "maintainerNotes": "dogfood-certification.functional.test.mjs — Construct certifies its own distribution gallery."
     },
     {
       "path": "tests/functional/embedded-contract-capability.functional.test.mjs",
@@ -1643,6 +1813,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "hook-telemetry.functional.test.mjs — the real dispatcher records hook fires (construct-dcnb)."
+    },
+    {
+      "path": "tests/functional/host-capability-matrix.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/host-capability-matrix.functional.test.mjs"
     },
     {
       "path": "tests/functional/host-config-parity.functional.test.mjs",
@@ -1783,6 +1961,14 @@
       "maintainerNotes": "tests/functional/knowledge-search-project-scope.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/learning-loop-capture.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/learning-loop-capture.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/lifecycle-event-emission.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1831,6 +2017,14 @@
       "maintainerNotes": "tests/functional/loop-closure.functional.test.mjs"
     },
     {
+      "path": "tests/functional/mcp-add-no-plaintext.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-add-no-plaintext.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/mcp-core-tools.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -1845,6 +2039,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "mcp-ingest-resilience.functional.test.mjs — isolated MCP ingest failure repro."
+    },
+    {
+      "path": "tests/functional/mcp-output-contract.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-output-contract.functional.test.mjs"
     },
     {
       "path": "tests/functional/mcp-parity.functional.test.mjs",
@@ -2041,6 +2243,22 @@
       "maintainerNotes": "tests/functional/orchestration-mode-a.functional.test.mjs — end-to-end Mode-A runtime."
     },
     {
+      "path": "tests/functional/orchestration-readiness.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-readiness.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/orchestration-truth-negative.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-truth-negative.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/post-merge-tracking.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2163,12 +2381,36 @@
       "maintainerNotes": "tests/functional/routing-tables.test.mjs — parity guard for declarative routing."
     },
     {
+      "path": "tests/functional/secret-resolver-real-op.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/secret-resolver-real-op.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/secret-resolver.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/secret-resolver.functional.test.mjs — the shared LLM secret"
+    },
+    {
+      "path": "tests/functional/self-hosting-cert.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/self-hosting-cert.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/service-op-run-wiring.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "service-op-run-wiring.functional.test.mjs — proves the service tree launches under"
     },
     {
       "path": "tests/functional/session-start-output-mode.functional.test.mjs",
@@ -2193,6 +2435,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/setup-arg-validation.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/setup-credentials-single-link.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/setup-credentials-single-link.functional.test.mjs"
     },
     {
       "path": "tests/functional/specialist-loop.functional.test.mjs",
@@ -2251,6 +2501,14 @@
       "maintainerNotes": "tests/functional/uninstall-coverage.functional.test.mjs"
     },
     {
+      "path": "tests/functional/upgrade-context-contract.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/upgrade-context-contract.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/w1-provider-adapter-contracts.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2297,6 +2555,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/w5-self-loop.functional.test.mjs —"
+    },
+    {
+      "path": "tests/functional/web-search.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/web-search.functional.test.mjs"
     },
     {
       "path": "tests/gates-audit.test.mjs",
@@ -2385,6 +2651,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "headhunt.test.mjs — Unit tests for lib/headhunt.mjs domain overlay lifecycle."
+    },
+    {
+      "path": "tests/health-check-resolve-credentials.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/health-check-resolve-credentials.test.mjs"
     },
     {
       "path": "tests/helpers/sterile-host-env.test.mjs",
@@ -3107,6 +3381,14 @@
       "maintainerNotes": "tests/orchestration-policy.test.mjs — routeRequest dispatch classification tests"
     },
     {
+      "path": "tests/orchestration-readiness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-readiness.test.mjs — typed orchestration readiness contract."
+    },
+    {
       "path": "tests/orchestration-run-store-postgres.test.mjs",
       "layer": "integration",
       "category": "integration",
@@ -3467,6 +3749,14 @@
       "maintainerNotes": "reflect-salience.test.mjs — deterministic session salience (bead construct-k6lr)."
     },
     {
+      "path": "tests/registry-characterization.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/registry-characterization.test.mjs"
+    },
+    {
       "path": "tests/registry-loader.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3649,6 +3939,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/schema-validation.test.mjs — Validate unified registry schema and test with fixtures."
+    },
+    {
+      "path": "tests/secret-audit-wiring.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/secret-audit-wiring.test.mjs"
+    },
+    {
+      "path": "tests/secret-resolver-audit.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/secret-resolver-audit.test.mjs"
     },
     {
       "path": "tests/service-manager-ollama-keepalive.test.mjs",

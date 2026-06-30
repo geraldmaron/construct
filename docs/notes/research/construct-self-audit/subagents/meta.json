@@ -1,0 +1,15 @@
+{
+  "title": "Subagent Evidence Reports",
+  "pages": [
+    "adr-drift",
+    "document-intelligence",
+    "host-parity",
+    "install-init-sync-upgrade",
+    "learning-loops",
+    "mcp-tools",
+    "orchestration-truth",
+    "registry-hardcoding",
+    "research-search",
+    "test-coverage"
+  ]
+}

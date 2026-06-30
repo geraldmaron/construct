@@ -75,7 +75,7 @@ test('a host drives construct over MCP: skills, templates, and specialist routin
   const names = new Set(tools.map((x) => x.name));
   const gateway = tools.find((x) => x.name === 'call');
   const reachable = new Set(gateway?.inputSchema?.properties?.tool?.enum ?? []);
-  for (const core of ['get_skill', 'orchestration_policy']) {
+  for (const core of ['get_skill', 'orchestration_policy', 'orchestration_readiness']) {
     assert.ok(names.has(core), `MCP server must expose core tool ${core} flat`);
   }
   assert.ok(names.has('get_template'), 'get_template is a flat core tool');
@@ -114,6 +114,14 @@ test('a host drives construct over MCP: skills, templates, and specialist routin
   assert.ok(typeof track === 'string' && track.length > 0, 'orchestration_policy returns a track');
   const specialists = policy.specialists || policy.specialistSequence || policy.dispatch || [];
   assert.ok(JSON.stringify(specialists).length > 2, 'orchestration_policy names a specialist sequence');
+
+  const readiness = payload(await client.callTool({
+    name: 'orchestration_readiness',
+    arguments: { host: 'host-emulation-test', session_id: 'functional-test' },
+  }));
+  assert.equal(readiness.reasonCode, 'attached');
+  assert.equal(readiness.attached, true);
+  assert.deepEqual(readiness.missingTools, []);
 });
 
 test('a trivial request does not over-orchestrate (track is not forced to orchestrated)', async (t) => {

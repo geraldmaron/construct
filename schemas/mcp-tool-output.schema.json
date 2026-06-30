@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://construct.dev/schemas/mcp-tool-output.schema.json",
+  "title": "Construct MCP tool output/error envelope (target contract)",
+  "description": "Target, additive contract for MCP tool results (self-audit construct-rr63.6.1). Tools today return ad-hoc shapes: a success payload, or { error: string }. There is no outputSchema and no structured error vocabulary. This contract defines the typed error and degradation shape a Wave-4 implementation migrates toward. It is intentionally not yet wired into the 75 tool registrations; the migration accepts the legacy string error OR the structured object so it can land tool-by-tool without breaking callers.",
+  "type": "object",
+  "properties": {
+    "error": {
+      "description": "Absent on success. Legacy ad-hoc string OR the structured target object.",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Legacy ad-hoc error message (current behaviour, to be migrated)."
+        },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Stable, machine-branchable discriminant.",
+              "enum": [
+                "INVALID_INPUT",
+                "NOT_FOUND",
+                "CAPABILITY_UNAVAILABLE",
+                "PROVIDER_EXECUTION_FAILED",
+                "SERVER_UNREACHABLE",
+                "INTERNAL"
+              ]
+            },
+            "message": {
+              "type": "string",
+              "description": "Human-readable explanation."
+            },
+            "details": {
+              "type": "object",
+              "description": "Optional structured context (offending field, path, provider, etc.)."
+            }
+          }
+        }
+      ]
+    },
+    "degraded": {
+      "type": "boolean",
+      "description": "True when the tool returned a reduced result instead of failing — e.g. a capability the host could not provide."
+    },
+    "degradationReason": {
+      "type": "string",
+      "description": "Typed reason a result is degraded. Shared vocabulary with the host capability matrix (construct-rr63.4.1).",
+      "enum": [
+        "not-installed",
+        "config-missing",
+        "mcp-unresolvable",
+        "token-unset",
+        "server-unreachable",
+        "capability-unavailable"
+      ]
+    }
+  }
+}

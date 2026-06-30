@@ -7,6 +7,7 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner), Construct maintainers (cx-architect)
 - **Relates to**: ADR-0035 (extend-not-rebuild), ADR-0039 (surface model), alignment program (Phase 0–3)
+- **Surface note (2026-06-29, self-audit construct-rr63.1.3)**: `construct oracle` is registered as a user-facing **Core** observability command beside `construct status` / `construct doctor` (`lib/cli-commands.mjs`), aligning with the ADR-0039 amendment (2026-06-25) that lists it as a thin-human-CLI observability surface. The prior `internal: true` registration is removed.
 
 > **Note**: ADR-0042 covers LLM credential resolution. Oracle meta-controller is ADR-0043 to preserve monotonic ADR numbering.
 

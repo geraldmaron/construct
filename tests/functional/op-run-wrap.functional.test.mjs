@@ -46,7 +46,7 @@ test('wrapWithOpRun wraps in op run when opted in and op is present', (t) => {
   const r = wrapWithOpRun('/usr/bin/node', ['server.mjs'], { env: { CONSTRUCT_OP_ENV_FILE: file }, hasOp: () => true });
   assert.equal(r.wrapped, true);
   assert.equal(r.command, 'op');
-  assert.deepEqual(r.args, ['run', '--no-masking', `--env-file=${file}`, '--', '/usr/bin/node', 'server.mjs']);
+  assert.deepEqual(r.args, ['run', `--env-file=${file}`, '--', '/usr/bin/node', 'server.mjs']);
 });
 
 test('resolveOpEnvFile expands a leading ~ against the home dir', (t) => {

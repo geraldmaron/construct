@@ -16,6 +16,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { summarizeToolNameMisses, summarizeToolFailures } from '../lib/mcp/tool-recovery.mjs';
+
 const cwd = process.cwd();
 
 function safeRead(p) {
@@ -53,10 +55,15 @@ const research = countResearchFindings();
 const outcomes = readOutcomesSummary();
 const scope = readActiveScope();
 
+const misses = summarizeToolNameMisses(cwd);
+const failures = summarizeToolFailures(cwd);
+
 const rows = [
   ['Active scope', `${scope.id}`, scope.source],
   ['Observations (A1)', `${obs.total} total, ${obs.last24h} in last 24h`, '.cx/observations/'],
   ['Research findings (A2)', `${research}`, '.cx/knowledge/external/research/'],
+  ['Tool-name misses', misses.total === 0 ? 'none' : `${misses.total} (top: ${misses.top.map((m) => `${m.name}×${m.count}`).join(', ')})`, '.cx/observations/tool-name-misses.jsonl'],
+  ['Tool failures', failures.total === 0 ? 'none' : `${failures.total} (top: ${failures.top.map((m) => `${m.name}×${m.count}`).join(', ')})`, '.cx/observations/tool-failures.jsonl'],
 ];
 
 if (outcomes && outcomes.roles && Object.keys(outcomes.roles).length > 0) {
