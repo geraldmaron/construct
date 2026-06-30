@@ -1,19 +1,13 @@
 /**
  * tests/audit/f03-package/half-stage-recovery.red.mjs — F03 [R4] half-staged project recovery.
  *
- * RED fixtures (must FAIL against current code). lib/install/stage-project.mjs:27-50 can
- * return { staged:true, synced:false }: it stages the `.construct/` launcher and mutates the
- * filesystem, then bails before `sync-specialists.mjs --project` populates `.claude/`, either
- * because the sync script is missing (L28-31) or sync exits non-zero (L46-49). The project is
- * left half-built: launcher present, agents/settings absent. Neither the postinstall hook
- * (bin/construct-postinstall.mjs:112-118, which discards the return value) nor `construct init`
- * (lib/init-unified.mjs:927, same) records this state, and no doctor lane repairs it.
- *
- * Contract these encode (CX-AUDIT-PACKAGE-005): a half-stage must be detectable and repairable
- * — stageProjectAdapters must drop a durable marker when synced=false, and a programmatic repair
- * entry point must exist to drive the project to a synced state (or fully roll back). Each test
- * forces the half-stage branch in a tmp project and asserts the marker / repair contract that
- * does not exist today.
+ * Regression guard for CX-AUDIT-PACKAGE-005. lib/install/stage-project.mjs can return
+ * { staged:true, synced:false } when it stages the `.construct/` launcher but bails before
+ * `sync-specialists.mjs --project` populates `.claude/` (the sync script is missing, or sync
+ * exits non-zero), leaving the project half-built. stageProjectAdapters now records the outcome
+ * in a durable `.construct/stage-state.json` marker and exports repairStagedProject to re-drive
+ * a half-staged project to a synced state. Each test forces the half-stage branch in a tmp
+ * project and asserts the marker exists and a repair entry point is callable.
  *
  * Hermetic: every write is under fs.mkdtemp(os.tmpdir()). The sync-missing branch is forced by
  * pointing packageRoot at a tmp dir whose templates/distribution exists but scripts/ does not, so

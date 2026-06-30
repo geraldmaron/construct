@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T23:17:36.694Z",
+  "generatedAt": "2026-06-30T23:21:14.697Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 551,
+    "testFiles": 552,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 250,
+    "nestedTestFiles": 251,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 363,
+      "unit": 364,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 147
     },
     "byCategory": {
-      "unit": 322,
+      "unit": 323,
       "visual": 9,
       "structural-guard": 13,
       "contract-subsystem": 28,
@@ -285,6 +285,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f02-secrets/config-env-mode.red.mjs — F02 [R13] config.env file-mode contract."
+    },
+    {
+      "path": "tests/audit/f03-package/half-stage-recovery.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f03-package/half-stage-recovery.red.mjs — F03 [R4] half-staged project recovery."
     },
     {
       "path": "tests/audit/f03-package/packed-asset-parity.test.mjs",
