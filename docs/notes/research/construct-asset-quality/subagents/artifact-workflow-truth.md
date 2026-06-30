@@ -295,7 +295,7 @@ Example:
 Currently, no mechanism exists to feed render failures back into the authoring loop. Proposed:
 
 1. If export fails, capture error in a `render_failures.jsonl` file
-2. On next `construct loop` run, include render errors in the authoring prompt
+2. On the next authoring-loop run, include render errors in the authoring prompt
 3. Mark artifact as `render-failed` state so it's not distributed until re-exported successfully
 
 ## 11. Questions for Opus
@@ -316,7 +316,7 @@ Currently, no mechanism exists to feed render failures back into the authoring l
    - Currently: Trusts external source entirely
    - Risk: Log spoofing; unknown how to audit
 
-5. **Re-render automation:** Should `construct loop` automatically re-export artifacts if source changes, or should user explicitly request it?
+5. **Re-render automation:** Should the authoring loop automatically re-export artifacts if source changes, or should the user explicitly request it?
    - Currently: Manual `construct publish` required
    - Tradeoff: Automation vs. cost (re-rendering expensive)
 

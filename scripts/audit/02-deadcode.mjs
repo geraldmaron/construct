@@ -61,6 +61,7 @@ const ACCEPTED_TEST_ONLY = {
   'lib/task-graph/schema.mjs': 'task-graph node/edge schema constants with a validation test; retained for the task-graph store',
   'lib/providers/contract/contract-tests.mjs': 'contract harness: imported by tests/provider-*.test.mjs for ADR-0003 provider interface validation',
   'lib/providers/contract/registry.mjs': 'contract harness: ProviderRegistry for embed-snapshot and provider-framework tests',
+  'lib/visual-review.mjs': 'human visual-review verdict recorder for the human-reviewed gate level; its no-forgery contract is asserted from tests, and auto-calling it would forge a verdict, so the interactive review entry is staged (not wired in solo)',
 };
 
 function walk(dir, exts) {

@@ -178,7 +178,7 @@ However, two cross-phase checks matter:
    - Link to the artifact manifest schema.
 
 3. **Update `CONTRIBUTING.md`** to include presentation lint in the pre-PR checklist:
-   - "Run `construct lint:presentation <file>` to check spacing and readability."
+   - Note that the artifact release gate runs presentation lint (spacing and readability) on every typed artifact, so authors see failures when they validate or publish.
 
 4. **Update `skills/brand/output-vibe.md`** to cross-link to presentation requirements:
    - Restate which output-vibe principles are enforced at source level (presentation lint) vs. export time (Typst).
