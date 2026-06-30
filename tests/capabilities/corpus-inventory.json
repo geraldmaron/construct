@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T23:45:21.747Z",
+  "generatedAt": "2026-06-30T23:50:36.470Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 559,
+    "testFiles": 562,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 258,
+    "nestedTestFiles": 261,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 371,
+      "unit": 374,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 147
     },
     "byCategory": {
-      "unit": 330,
+      "unit": 333,
       "visual": 9,
       "structural-guard": 13,
       "contract-subsystem": 28,
@@ -357,6 +357,30 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f04-host-readiness/windows-path-stale.red.mjs — F04 [R8] POSIX-only stale-path proof."
+    },
+    {
+      "path": "tests/audit/f05-runtime-ownership/non-owner-refusal.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f05-runtime-ownership/non-owner-refusal.red.mjs — F05 [R16] blind-kill proof."
+    },
+    {
+      "path": "tests/audit/f05-runtime-ownership/owned-stop.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f05-runtime-ownership/owned-stop.red.mjs — F05 [R16] missing ownership-record proof."
+    },
+    {
+      "path": "tests/audit/f05-runtime-ownership/stale-port.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f05-runtime-ownership/stale-port.red.mjs — F05 [R16] stale-configured-port proof."
     },
     {
       "path": "tests/auto-docs.test.mjs",
