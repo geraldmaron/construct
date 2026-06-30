@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T00:32:16.240Z",
+  "generatedAt": "2026-06-30T00:56:51.180Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 527,
+    "testFiles": 528,
     "topLevelTestFiles": 296,
-    "nestedTestFiles": 231,
+    "nestedTestFiles": 232,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 24,
     "byLayer": {
-      "unit": 348,
+      "unit": 349,
       "visual": 8,
       "live-provider": 2,
       "integration": 30,
       "functional": 139
     },
     "byCategory": {
-      "unit": 309,
+      "unit": 310,
       "visual": 8,
       "structural-guard": 11,
       "contract-subsystem": 28,
@@ -141,6 +141,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/asset-quality/gate-levels.test.mjs — Guards the gate-level registry and level-aware gate."
+    },
+    {
+      "path": "tests/asset-quality/output-quality.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/output-quality.test.mjs — Guards the post-export output-quality pass."
     },
     {
       "path": "tests/asset-quality/presentation-lint.test.mjs",
