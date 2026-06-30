@@ -31,11 +31,16 @@ Two concrete failures, both verified on a live machine:
 ## Decision
 
 1. **One secret resolver for the LLM path** (`lib/providers/secret-resolver.mjs`).
-   Resolves a canonical var through env -> `~/.config/construct/config.env` -> `~/.env`
-   -> project `.env` -> shell rc, and resolves `op://` references (bare or
-   `$(op read '...')`) through the `op` CLI, cached per reference for the process
-   and never logged. `hasSecret` checks presence without invoking the CLI so a
-   stored `op://` reference counts as configured with no biometric prompt.
+   Resolves a canonical var through a direct env value -> project `.env` ->
+   `~/.config/construct/config.env` -> `~/.env` -> alternate provider stores
+   (Construct creds, OpenCode provider config) -> the `CONSTRUCT_OP_ENV_FILE`
+   catalog -> shell rc, and resolves `op://` references (bare or `$(op read '...')`)
+   through the `op` CLI, cached per reference for the process and never logged.
+   The file tier (project `.env` over `config.env`) is reconciled with
+   `loadConstructEnv` so a key resolves the same on both paths (construct-trxz.5).
+   `hasSecret` checks presence without invoking the CLI so a stored `op://`
+   reference counts as configured with no biometric prompt. Resolution emits a
+   value-free audit event (construct-trxz.6).
    When `CONSTRUCT_OP_ENV_FILE` points at an `op run` catalog, keys listed there
    count as configured without duplicating refs into config.env.
    `worker.mjs`, OpenCode runtime integration, and the router's detection
@@ -81,7 +86,14 @@ All LLM and integration paths that resolve `op://` references must route through
 `lib/providers/secret-resolver.mjs` so a single reference is materialized once per
 process and cached — no repeat `op read` spawn, no repeat biometric prompt. The
 contract is enforced by `tests/functional/auth-once.functional.test.mjs` (hermetic,
-injected `opRead`). Consumers include `worker.mjs`, OpenCode runtime integration,
+injected `opRead`).
+
+**Superseded for the cross-process dimension by ADR-0049.** The cache here is a
+module-level Map that lives for one process, so "auth once" holds per process, not
+per user session. ADR-0049 resolves at a stable parent (`op run` wiring in the
+service tree) and keeps short-lived paths presence-first/cache-first. A real-`op`
+cross-process test (`tests/functional/secret-resolver-real-op.functional.test.mjs`)
+pins the per-process behavior. Consumers include `worker.mjs`, OpenCode runtime integration,
 `isProviderConfigured` in `lib/model-router.mjs`, and intake integrations
 (`lib/integrations/intake-integrations.mjs` via `resolveOpRef`). See CHANGELOG
 (`construct-m7k2-auth-primitives`) for rollout status.
