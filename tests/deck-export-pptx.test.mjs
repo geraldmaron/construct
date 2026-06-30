@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { isTitleOnlyChunk, exportDeckPptx, pptxgenPresent, auditDeckMarkdownLayout, auditPptxFile, readPptxSlideSizeIn, SLIDE_CONTENT_BUDGET_IN, SLIDE_W_IN, SLIDE_H_IN } from '../lib/deck-export-pptx.mjs';
+import { isTitleOnlyChunk, exportDeckPptx, pptxgenPresent, auditDeckMarkdownLayout, auditPptxFile, readPptxSlideSizeIn, SLIDE_CONTENT_BUDGET_IN, SLIDE_W_IN, SLIDE_H_IN, DECK_FONT_FLOOR_PT, MAX_BULLETS_PER_SLIDE } from '../lib/deck-export-pptx.mjs';
 import { exportMarkdown, whichBin } from '../lib/document-export.mjs';
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -101,6 +101,32 @@ test('mermaid fence renders to an embedded slide image', () => {
     try { fs.unlinkSync(out); } catch { /* skip */ }
     try { fs.unlinkSync(src); } catch { /* skip */ }
   }
+});
+
+// E4-1: a deck must not stack more bullets than a viewer can hold, and must not pack so much
+// that fitting it implies a sub-floor font. Both are flagged before export, not at render time.
+
+test('over-dense bullet slide is flagged (bullet_density)', () => {
+  let md = '# Deck\n\n---\n\n# Dense\n';
+  for (let i = 0; i < MAX_BULLETS_PER_SLIDE + 3; i += 1) md += `- point number ${i} for the audience\n`;
+  const audit = auditDeckMarkdownLayout(md, { title: 'Deck' });
+  assert.equal(audit.ok, false);
+  assert.ok(audit.issues.some((i) => i.code === 'bullet_density'), JSON.stringify(audit.issues));
+});
+
+test('a slide that can only fit below the font floor is flagged (font_below_floor)', () => {
+  const para = 'A long uninterrupted paragraph of slide prose well past the readable limit that consumes a large share of the fixed vertical budget. ';
+  const md = `# Deck\n\n---\n\n# Wall\n\n${para}\n\n${para}\n\n${para}\n\n${para}\n\n${para}\n\n${para}\n\n${para}\n`;
+  const audit = auditDeckMarkdownLayout(md, { title: 'Deck' });
+  assert.equal(audit.ok, false);
+  assert.ok(audit.issues.some((i) => i.code === 'font_below_floor'), JSON.stringify(audit.issues));
+});
+
+test('font floor is 8pt and a well-formed deck never trips the floor', () => {
+  assert.equal(DECK_FONT_FLOOR_PT, 8);
+  const md = '# Deck\n\n---\n\n# Clean\n\n- one tight point\n- two tight point\n- three tight point\n';
+  const audit = auditDeckMarkdownLayout(md, { title: 'Deck' });
+  assert.ok(!audit.issues.some((i) => i.code === 'font_below_floor' || i.code === 'bullet_density'), JSON.stringify(audit.issues));
 });
 
 test('oversized table is rejected by the pre-export audit (fail-closed)', () => {
