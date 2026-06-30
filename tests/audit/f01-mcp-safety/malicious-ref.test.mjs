@@ -1,15 +1,12 @@
 /**
  * tests/audit/f01-mcp-safety/malicious-ref.red.mjs — F01 [R9] shell-injection proof for summarizeDiff.
  *
- * RED fixture (must FAIL against current code). summarizeDiff interpolates a
- * model-controlled base_ref into `git diff --stat ${baseRef}` and runs it through
- * execSync with a shell, so a base_ref carrying shell metacharacters executes
- * arbitrary commands. This drives a payload that writes a sentinel file inside an
- * isolated temp dir; if the sentinel appears, the injection vector is live.
- *
- * Turns GREEN once summarizeDiff stops interpolating base_ref into a shell string
- * (execFile/spawn with allowlisted argv, per CX-AUDIT-MCP-SAFETY-002): the shell
- * never evaluates the payload, so no sentinel is written.
+ * Regression guard for CX-AUDIT-MCP-SAFETY-002 (promoted from a red fixture). The
+ * earlier summarizeDiff interpolated a model-controlled base_ref into
+ * `git diff --stat ${baseRef}` through execSync with a shell, so a base_ref carrying
+ * shell metacharacters executed arbitrary commands. The fix runs git via execFile with
+ * allowlisted argv. This drives a command-substitution payload through summarizeDiff and
+ * asserts no sentinel file is written, i.e. the shell never evaluates the ref.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

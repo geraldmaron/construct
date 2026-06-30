@@ -12,6 +12,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 - Made `construct-mcp` start by default in VS Code / GitHub Copilot so the orchestrator is usable on open instead of asking the user to "enable the MCP server." VS Code does not auto-start `.vscode/mcp.json` servers unless `chat.mcp.autostart` is set, and the orchestrator's first action is an MCP call (`orchestration_policy`), so a dormant server made it refuse or stall until manually started. `syncCopilot`/`syncVSCode` (`scripts/sync-specialists.mjs`) now write `"chat.mcp.autostart": "always"` (VS Code ≥1.105, string enum) into the generated `.vscode/settings.json` alongside the existing agent-scan pin, via the renamed `pinVscodeChatSettings` helper that applies each managed key only when unset and never clobbers a non-strict-JSON (commented) settings file. This is Copilot-specific — Claude Code, OpenCode, and Codex already auto-start their declared MCP servers (verified). Note: VS Code still requires a one-time per-developer MCP *trust* grant on first launch, which it stores locally and cannot be pre-granted from committed config — `autostart` removes the recurring per-session Start click, not that first trust. Covered by `tests/vscode-mcp-toolkit-path.test.mjs`.
 
+### Security
+
+- Closed a shell-injection vector in the `summarize_diff` MCP tool (F01 / CX-AUDIT-MCP-SAFETY-002). A model-supplied `base_ref` was interpolated into `git diff --stat ${baseRef}` and run through `execSync` with a shell (`lib/mcp/tools/project.mjs`), so a value like `HEAD$(touch …)` executed arbitrary commands on the host — reachable by any prompt-injection that reaches the tool's arguments. The git calls now run via `execFile` with an allowlisted argv (`runGit`), passing the ref as one literal argument the shell never evaluates; refs that start with `-` (git option injection) or carry control characters are rejected. The static `git log`/`git status` calls in `project_context` moved to the same shell-free path. Proven by `tests/audit/f01-mcp-safety/malicious-ref.test.mjs` (a command-substitution payload writes no sentinel after the fix).
+
 ## [1.4.1] - 2026-06-30
 
 ### Fixed
