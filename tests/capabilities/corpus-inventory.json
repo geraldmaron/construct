@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T00:56:51.180Z",
+  "generatedAt": "2026-06-30T01:12:22.975Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 528,
+    "testFiles": 529,
     "topLevelTestFiles": 296,
-    "nestedTestFiles": 232,
+    "nestedTestFiles": 233,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 24,
     "byLayer": {
-      "unit": 349,
+      "unit": 350,
       "visual": 8,
       "live-provider": 2,
       "integration": 30,
       "functional": 139
     },
     "byCategory": {
-      "unit": 310,
+      "unit": 311,
       "visual": 8,
       "structural-guard": 11,
       "contract-subsystem": 28,
@@ -125,6 +125,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/asset-quality/completion-truth.test.mjs — Guards the artifact completion-state truth model."
+    },
+    {
+      "path": "tests/asset-quality/diagram-quality.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/diagram-quality.test.mjs — Guards diagram quality heuristics (cuxq.6.1)."
     },
     {
       "path": "tests/asset-quality/export-validate.test.mjs",
