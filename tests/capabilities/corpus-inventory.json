@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-29T21:10:01.429Z",
+  "generatedAt": "2026-06-30T00:32:16.240Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 514,
+    "testFiles": 527,
     "topLevelTestFiles": 296,
-    "nestedTestFiles": 218,
+    "nestedTestFiles": 231,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 24,
     "byLayer": {
-      "unit": 336,
+      "unit": 348,
+      "visual": 8,
       "live-provider": 2,
-      "visual": 7,
       "integration": 30,
       "functional": 139
     },
     "byCategory": {
-      "unit": 297,
+      "unit": 309,
+      "visual": 8,
       "structural-guard": 11,
       "contract-subsystem": 28,
       "live-provider": 2,
-      "visual": 7,
       "integration": 21,
       "functional": 139,
       "hook": 9
@@ -85,6 +85,110 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/artifact-workflow.test.mjs — manifest intent planning and run provenance."
+    },
+    {
+      "path": "tests/asset-quality/anti-fixtures.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/anti-fixtures.test.mjs — Asserts the asset-quality anti-fixture corpus."
+    },
+    {
+      "path": "tests/asset-quality/brand-contrast.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/brand-contrast.test.mjs — Guards brand legibility and the spacing scale."
+    },
+    {
+      "path": "tests/asset-quality/completion-evidence.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/completion-evidence.test.mjs — Evidence objects and the no-forgery ledger."
+    },
+    {
+      "path": "tests/asset-quality/completion-states.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/completion-states.test.mjs — Keeps the completion-state vocabulary single."
+    },
+    {
+      "path": "tests/asset-quality/completion-truth.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/completion-truth.test.mjs — Guards the artifact completion-state truth model."
+    },
+    {
+      "path": "tests/asset-quality/export-validate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/export-validate.test.mjs — Guards post-export validity checks."
+    },
+    {
+      "path": "tests/asset-quality/gate-levels.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/gate-levels.test.mjs — Guards the gate-level registry and level-aware gate."
+    },
+    {
+      "path": "tests/asset-quality/presentation-lint.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/presentation-lint.test.mjs — Isolated coverage for lintDocPresentation."
+    },
+    {
+      "path": "tests/asset-quality/quality-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/quality-contract.test.mjs — Guards the manifest qualityContract surface."
+    },
+    {
+      "path": "tests/asset-quality/render-degradation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/render-degradation.test.mjs — Guards typed render degradation."
+    },
+    {
+      "path": "tests/asset-quality/render-evidence.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/render-evidence.test.mjs — Render evidence ties rendering to the ledger."
+    },
+    {
+      "path": "tests/asset-quality/render-pipeline.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/render-pipeline.test.mjs — Guards the render pipeline contract."
+    },
+    {
+      "path": "tests/asset-quality/visual-review.test.mjs",
+      "layer": "visual",
+      "category": "visual",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/asset-quality/visual-review.test.mjs — Guards the visually-reviewed contract."
     },
     {
       "path": "tests/audit-rules.test.mjs",
