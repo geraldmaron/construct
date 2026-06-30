@@ -46,7 +46,7 @@ test('construct orchestrate preflight --json probes local MCP readiness', () => 
     assert.equal(payload.reasonCode, 'attached');
     assert.equal(payload.attached, true);
     assert.ok(payload.observedTools.includes('orchestration_readiness'));
-    assert.ok(payload.reachableTools.includes('orchestration_run'));
+    assert.ok(payload.observedTools.includes('orchestration_run'), 'dispatch tool is flat (observed), not behind the gateway');
     assert.ok(payload.eventPath, 'preflight records a local readiness event');
   } finally {
     ctx.cleanup();
