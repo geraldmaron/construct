@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-01T02:16:53.968Z",
+  "generatedAt": "2026-07-01T02:39:15.135Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 596,
+    "testFiles": 597,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 295,
+    "nestedTestFiles": 296,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
@@ -13,7 +13,7 @@
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
-      "functional": 147
+      "functional": 148
     },
     "byCategory": {
       "unit": 365,
@@ -22,7 +22,7 @@
       "contract-subsystem": 28,
       "live-provider": 2,
       "integration": 21,
-      "functional": 147,
+      "functional": 148,
       "hook": 9
     }
   },
@@ -2811,6 +2811,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/routing-tables.test.mjs — parity guard for declarative routing."
+    },
+    {
+      "path": "tests/functional/secret-audit-daemon-wiring.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/secret-audit-daemon-wiring.functional.test.mjs"
     },
     {
       "path": "tests/functional/secret-resolver-real-op.functional.test.mjs",
