@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-01T02:39:15.135Z",
+  "generatedAt": "2026-07-01T04:46:11.931Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 597,
-    "topLevelTestFiles": 301,
+    "testFiles": 600,
+    "topLevelTestFiles": 304,
     "nestedTestFiles": 296,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 408,
+      "unit": 411,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 148
     },
     "byCategory": {
-      "unit": 365,
+      "unit": 368,
       "visual": 9,
       "structural-guard": 15,
       "contract-subsystem": 28,
@@ -3829,6 +3829,14 @@
       "maintainerNotes": "tests/orchestration-readiness.test.mjs — typed orchestration readiness contract."
     },
     {
+      "path": "tests/orchestration-remote-web-guard.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-remote-web-guard.test.mjs — fail-closed remote ingress guard (ADR-0050)."
+    },
+    {
       "path": "tests/orchestration-run-store-postgres.test.mjs",
       "layer": "integration",
       "category": "integration",
@@ -3859,6 +3867,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-store-resolver.test.mjs — run-store resolver selection."
+    },
+    {
+      "path": "tests/orchestration-web-capability.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-web-capability.test.mjs — WebGrant resolver priority (ADR-0050)."
+    },
+    {
+      "path": "tests/orchestration-worker-web.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-worker-web.test.mjs — worker web-capable execution (ADR-0050)."
     },
     {
       "path": "tests/orchestration-worker.test.mjs",

@@ -772,7 +772,7 @@ function orchestrationMicroPrompt(platform) {
     `Example — the user says "add rate limiting to the API". Your first action is a tool call, not prose:\n` +
     `  call ${policyTool} { "request": "add rate limiting to the API" }\n` +
     `If the route is focused/orchestrated specialist work, call \`${runTool}\` with the same request. If the route suggests a workflow such as \`research-synthesis\`, pass it as \`workflow_type\`. Do not narrate completed research unless \`${runTool}\` or evidence tools actually ran.\n\n` +
-    `If a request needs a capability you lack — live web/network access, external data, code execution — do not refuse or tell the user to run it themselves. Route it via \`${runTool}\` to the specialist that holds the capability (web access lives with the researcher), or ask one clarifying question when the target is ambiguous.`
+    `If a request needs a capability you lack — live web/network access, external data, code execution — route it via \`${runTool}\` to the specialist that holds it (the researcher performs live web retrieval when a web path is available). Do not tell the user to run it themselves. But if \`${runTool}\` reports the capability was unavailable (degraded with \`capability-unavailable\`, or a prepare-only result), say plainly it could not be reached and return an insufficient-evidence result — never fabricate URLs, dates, quotes, or citations. Ask one clarifying question when the target is ambiguous.`
   );
 }
 
