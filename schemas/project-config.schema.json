@@ -22,9 +22,9 @@
       "maxLength": 120,
       "default": "Construct"
     },
-    "profile": {
+    "scope": {
       "type": "string",
-      "description": "The active organizational profile ID. Determines which specialists and capabilities are available.",
+      "description": "The active organizational scope ID. Determines which specialists and capabilities are available.",
       "enum": ["rnd", "operations", "creative", "research"],
       "default": "rnd"
     },

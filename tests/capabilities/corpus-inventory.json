@@ -1,24 +1,24 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-01T00:26:25.374Z",
+  "generatedAt": "2026-07-01T01:11:51.904Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 573,
+    "testFiles": 580,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 272,
+    "nestedTestFiles": 279,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 385,
+      "unit": 392,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 147
     },
     "byCategory": {
-      "unit": 344,
+      "unit": 350,
       "visual": 9,
-      "structural-guard": 13,
+      "structural-guard": 14,
       "contract-subsystem": 28,
       "live-provider": 2,
       "integration": 21,
@@ -469,6 +469,62 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f08-prompt-injection/untrusted-ingest-labeling.red.mjs —"
+    },
+    {
+      "path": "tests/audit/f10-registry-drift/catalog-semantic-drift.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f10-registry-drift/catalog-semantic-drift.red.mjs — F10 [R32] catalog drift is blind."
+    },
+    {
+      "path": "tests/audit/f10-registry-drift/fail-closed-validation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f10-registry-drift/fail-closed-validation.red.mjs — F10 [R33] registry fails open."
+    },
+    {
+      "path": "tests/audit/f10-registry-drift/registry-bridge-smell.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f10-registry-drift/registry-bridge-smell.red.mjs — F10 [R34] unified→legacy bridge."
+    },
+    {
+      "path": "tests/audit/f10-registry-drift/schema-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f10-registry-drift/schema-parity.red.mjs — F10 [R15] config schema vocabulary split."
+    },
+    {
+      "path": "tests/audit/f11-disposition/contradiction.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "contradiction.red.mjs — F11 (durable source vs generated local state)."
+    },
+    {
+      "path": "tests/audit/f11-disposition/coverage.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "coverage.red.mjs — F11 (durable source vs generated local state)."
+    },
+    {
+      "path": "tests/audit/f11-disposition/mis-disposition.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "mis-disposition.red.mjs — F11 (durable source vs generated local state)."
     },
     {
       "path": "tests/auto-docs.test.mjs",
