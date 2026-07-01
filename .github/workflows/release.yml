@@ -5,14 +5,17 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
   # ── Quality gate ──────────────────────────────────────────────────────────
   gate:
     name: release:check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -73,16 +76,17 @@ jobs:
             node_arch: x64
 
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .tool-versions
           architecture: ${{ matrix.node_arch }}
           cache: npm
-      - run: npm ci --omit=dev
+      - run: npm ci
 
-      - name: Install esbuild
-        run: npm install -g esbuild
+      - name: Add devDep bins to PATH
+        shell: bash
+        run: echo "$(pwd)/node_modules/.bin" >> $GITHUB_PATH
 
       - name: Bundle
         shell: bash
@@ -119,7 +123,7 @@ jobs:
         run: |
           BIN_NAME="construct-${{ matrix.os }}-${{ matrix.arch }}"
           cp "$(which node)" "dist/${BIN_NAME}"
-          npx postject "dist/${BIN_NAME}" NODE_SEA_BLOB dist/sea-prep.blob \
+          postject "dist/${BIN_NAME}" NODE_SEA_BLOB dist/sea-prep.blob \
             --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
           chmod +x "dist/${BIN_NAME}"
           sha256sum "dist/${BIN_NAME}" > "dist/${BIN_NAME}.sha256"
@@ -130,13 +134,13 @@ jobs:
         run: |
           $BIN_NAME = "construct-windows-x64.exe"
           Copy-Item (Get-Command node).Source "dist\$BIN_NAME"
-          npx postject "dist\$BIN_NAME" NODE_SEA_BLOB dist\sea-prep.blob `
+          postject "dist\$BIN_NAME" NODE_SEA_BLOB dist\sea-prep.blob `
             --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
           $hash = (Get-FileHash "dist\$BIN_NAME" -Algorithm SHA256).Hash.ToLower()
           "$hash  $BIN_NAME" | Out-File "dist\$BIN_NAME.sha256"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: binary-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/construct-*
@@ -154,14 +158,14 @@ jobs:
       contents: write
       id-token: write  # for npm provenance
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
 
       # Node 24 ships with npm 11+. npm CLI 11.5.1+ is required for Trusted
       # Publishers OIDC (https://docs.npmjs.com/trusted-publishers). Node 22
       # ships with npm 10.x which does not support OIDC-first auth and fell back
       # to the github.token injected by setup-node, causing a 404. With npm 11+,
       # OIDC is tried before any token fallback — registry-url is safe to use.
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
@@ -181,7 +185,7 @@ jobs:
           echo "Trusted Publishers exchange will happen inside npm publish."
 
       - name: Download all binaries
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           path: dist/
           pattern: binary-*
