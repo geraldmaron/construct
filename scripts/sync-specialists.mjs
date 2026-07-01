@@ -1367,7 +1367,7 @@ When using this prompt, stay within the role above and adapt to the current repo
 // recognized here, so the orchestrator needs its own VS Code agent or it lists
 // in the picker with no usable tools.
 
-const COPILOT_AGENT_TOOLS = [
+export const COPILOT_AGENT_TOOLS = [
   "construct-mcp/orchestration_policy",
   "construct-mcp/orchestration_run",
   "construct-mcp/orchestration_readiness",

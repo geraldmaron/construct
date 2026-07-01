@@ -25,6 +25,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
+import { COPILOT_AGENT_TOOLS } from '../../../scripts/sync-specialists.mjs';
+
 const AGENT_FILE = path.resolve(import.meta.dirname, '../../../.github/agents/construct.agent.md');
 
 // Tool ids whose presence in a single agent's grant constitutes excessive agency:
@@ -41,11 +43,12 @@ function parseToolsGrant(markdown) {
 }
 
 test('[R35] generated front-door agent grant must be scoped, not an MCP wildcard + broad web/search/edit bundle', () => {
-  assert.ok(fs.existsSync(AGENT_FILE), `expected generated agent file at ${AGENT_FILE}`);
-  const markdown = fs.readFileSync(AGENT_FILE, 'utf8');
-
-  const tools = parseToolsGrant(markdown);
-  assert.ok(Array.isArray(tools), 'could not parse a tools grant array from the agent frontmatter');
+  // Audit the grant SOURCE (COPILOT_AGENT_TOOLS), which copilotAgentFile emits verbatim as the
+  // agent's `tools:`. The committed .github/agents/construct.agent.md is regenerated/pruned by
+  // concurrent repo-root syncs (including the tool-repo postinstall on a host without Copilot),
+  // so reading that shared file races; host-config-parity separately verifies the file matches.
+  const tools = COPILOT_AGENT_TOOLS;
+  assert.ok(Array.isArray(tools) && tools.length > 0, 'COPILOT_AGENT_TOOLS must be a non-empty grant array');
 
   const wildcardGrants = tools.filter((t) => WILDCARD_PATTERN.test(String(t)));
   const highAgencyGrants = tools.filter((t) => HIGH_AGENCY_IDS.has(String(t)));
@@ -67,4 +70,13 @@ test('[R35] generated front-door agent grant must be scoped, not an MCP wildcard
     [],
     `front-door agent grants broad agency ${JSON.stringify(highAgencyGrants)} alongside MCP access — scope these per task instead`,
   );
+
+  // Defense in depth: when the generated file is present and fully written, it must match the
+  // source grant. Guarded on presence + parseability so a concurrent regeneration never flakes.
+  if (fs.existsSync(AGENT_FILE)) {
+    const parsed = parseToolsGrant(fs.readFileSync(AGENT_FILE, 'utf8'));
+    if (Array.isArray(parsed)) {
+      assert.deepEqual(parsed, tools, 'generated agent file tools grant drifted from COPILOT_AGENT_TOOLS');
+    }
+  }
 });

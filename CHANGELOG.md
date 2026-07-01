@@ -8,6 +8,7 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ### Fixed
 
+- Made the F08 `[R35]` excessive-agency audit test hermetic: it now asserts on the exported grant source (`COPILOT_AGENT_TOOLS`) instead of reading the committed `.github/agents/construct.agent.md`, which is regenerated/pruned by concurrent repo-root syncs (including the tool-repo `npm ci` postinstall on a runner without Copilot) and so raced during the release gate. Host-config-parity still verifies the generated file matches the source; the test keeps a presence-guarded cross-check.
 - Keyed the registry loader cache on `rootDir` (`lib/registry/loader.mjs`), fixing an intermittent CI failure where the certification scenario fixtures reported a specialist (cx-engineer) missing its `refusalBoundaries`. The module-level cache was keyed only on the org dir's mtime and the legacy-overlay mtime — two roots (the repo and a tmpdir test root) can share those, so one root's registry could bleed into a later `loadRegistry` call for a different root, yielding a specialist without its `promptFile` and therefore without the prompt-derived `perspective.failureMode`. The cache key (and `clearCache`) now include `rootDir`, so a load for a different root can never return another root's cached registry. Tracked as the flaky-cert bead.
 
 ### Added
