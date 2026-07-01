@@ -15,6 +15,7 @@ paths = [
   '''docs/security\.md''',
   '''docs/reference/config\.md''',
   '''.*\.test\.mjs''',
+  '''.*\.red\.mjs''',
   '''examples/.*''',
 ]
 
