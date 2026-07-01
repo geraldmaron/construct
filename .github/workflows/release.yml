@@ -134,7 +134,7 @@ jobs:
         run: |
           $BIN_NAME = "construct-windows-x64.exe"
           Copy-Item (Get-Command node).Source "dist\$BIN_NAME"
-          postject "dist\$BIN_NAME" NODE_SEA_BLOB dist\sea-prep.blob `
+          npx --no-install postject "dist\$BIN_NAME" NODE_SEA_BLOB dist\sea-prep.blob `
             --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
           $hash = (Get-FileHash "dist\$BIN_NAME" -Algorithm SHA256).Hash.ToLower()
           "$hash  $BIN_NAME" | Out-File "dist\$BIN_NAME.sha256"
