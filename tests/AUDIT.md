@@ -11,9 +11,9 @@ A snapshot of what the test suite covers, why each file exists, and where the ga
 
 ## At a glance
 
-- **596 test files** total: 301 at `tests/` top level + 295 in subdirectories.
-- **Layers:** unit 408, visual 9, live-provider 2, integration 30, functional 147.
-- **Functional layer:** 147 file(s) under `tests/functional/` or `*.functional.test.mjs`. End-to-end checks spawn the real binary or import real modules in an isolated tmpdir.
+- **597 test files** total: 301 at `tests/` top level + 296 in subdirectories.
+- **Layers:** unit 408, visual 9, live-provider 2, integration 30, functional 148.
+- **Functional layer:** 148 file(s) under `tests/functional/` or `*.functional.test.mjs`. End-to-end checks spawn the real binary or import real modules in an isolated tmpdir.
 - **Contract subsystems:** 28 file(s) under profile/outcomes/hooks/knowledge/intake/graph/evals and related subdirs.
 - **Hook tests:** 9 file(s) (including `tests/hooks/`).
 - **Capability-marked:** 25 file(s) declare `@capability` markers.
@@ -60,7 +60,7 @@ Verify Stop / SessionStart / PreToolUse hooks: `session-start-hook`, `session-re
 
 Keep. Hooks are protected files per `CLAUDE.md`; a regression here can block every tool call.
 
-### 5. Functional layer (147 tests, 147 files)
+### 5. Functional layer (148 tests, 148 files)
 
 New in this PR. Pattern documented at `tests/functional/README.md`:
 
