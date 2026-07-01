@@ -4,6 +4,8 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-07-01
+
 ### Fixed
 
 - Keyed the registry loader cache on `rootDir` (`lib/registry/loader.mjs`), fixing an intermittent CI failure where the certification scenario fixtures reported a specialist (cx-engineer) missing its `refusalBoundaries`. The module-level cache was keyed only on the org dir's mtime and the legacy-overlay mtime — two roots (the repo and a tmpdir test root) can share those, so one root's registry could bleed into a later `loadRegistry` call for a different root, yielding a specialist without its `promptFile` and therefore without the prompt-derived `perspective.failureMode`. The cache key (and `clearCache`) now include `rootDir`, so a load for a different root can never return another root's cached registry. Tracked as the flaky-cert bead.
