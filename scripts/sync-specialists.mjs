@@ -118,7 +118,6 @@ function unifiedToLegacyRegistry(unified) {
 }
 
 clearCache();
-clearCache();
 const unified = loadRegistry({ rootDir: root });
 const registry = unifiedToLegacyRegistry(unified);
 
@@ -773,7 +772,7 @@ function orchestrationMicroPrompt(platform) {
     `Example — the user says "add rate limiting to the API". Your first action is a tool call, not prose:\n` +
     `  call ${policyTool} { "request": "add rate limiting to the API" }\n` +
     `If the route is focused/orchestrated specialist work, call \`${runTool}\` with the same request. If the route suggests a workflow such as \`research-synthesis\`, pass it as \`workflow_type\`. Do not narrate completed research unless \`${runTool}\` or evidence tools actually ran.\n\n` +
-    `If a request needs a capability you lack — live web/network access, external data, code execution — do not refuse or tell the user to run it themselves. Route it via \`${runTool}\` to the specialist that holds the capability (web access lives with the researcher), or ask one clarifying question when the target is ambiguous.`
+    `If a request needs a capability you lack — live web/network access, external data, code execution — route it via \`${runTool}\` to the specialist that holds it (the researcher performs live web retrieval when a web path is available). Do not tell the user to run it themselves. But if \`${runTool}\` reports the capability was unavailable (degraded with \`capability-unavailable\`, or a prepare-only result), say plainly it could not be reached and return an insufficient-evidence result — never fabricate URLs, dates, quotes, or citations. Ask one clarifying question when the target is ambiguous.`
   );
 }
 
@@ -1369,14 +1368,13 @@ When using this prompt, stay within the role above and adapt to the current repo
 // in the picker with no usable tools.
 
 const COPILOT_AGENT_TOOLS = [
-  "construct-mcp/*",
-  "web/fetch",
-  "web/githubRepo",
+  "construct-mcp/orchestration_policy",
+  "construct-mcp/orchestration_run",
+  "construct-mcp/orchestration_readiness",
   "search/codebase",
   "search/usages",
   "search/fileSearch",
   "read/problems",
-  "edit/editFiles",
 ];
 
 function copilotAgentFile(entry, allEntries) {
@@ -1495,32 +1493,61 @@ function getVSCodeUserMcpPaths() {
 
 export function mcpEntryPointsOutsideToolkit(entry, root) {
   const args = Array.isArray(entry?.args) ? entry.args : [];
-  return args.some(
-    (arg) => typeof arg === "string"
-      && /\/lib\/mcp\/[a-z0-9-]+\.mjs$/.test(arg)
-      && !arg.startsWith(`${root}/`),
-  );
+  return args.some((arg) => {
+    if (typeof arg !== "string") return false;
+    const normalArg = arg.replace(/\\/g, "/");
+    const normalRoot = root.replace(/\\/g, "/");
+    return /\/lib\/mcp\/[a-z0-9-]+\.mjs$/i.test(normalArg)
+      && !normalArg.startsWith(`${normalRoot}/`);
+  });
 }
 
-// VS Code scans both `.github/agents` and `.claude/agents`, so the orchestrator
-// would list twice — once with VS Code tools (.github/agents) and once with
-// Claude tool names VS Code ignores (.claude/agents). `chat.agentFilesLocations`
-// is the documented lever to pin the scan; its power over the built-in
-// `.claude/agents` compatibility scan is version-dependent, so this is a
-// best-effort hint, not a guarantee. Merge only into a strictly-parseable file
-// and never overwrite an existing choice, so a commented (JSONC) or
-// user-customized settings.json is left untouched.
+// Workspace defaults Construct manages for VS Code chat. `chat.agentFilesLocations`
+// pins the agent scan to `.github/agents` so the orchestrator does not list twice
+// (VS Code also scans `.claude/agents`, whose Claude tool names it ignores); its
+// power over that built-in compatibility scan is version-dependent, so it is a
+// best-effort hint. `chat.mcp.autostart` (VS Code ≥1.105, string enum) set to
+// `always` eager-starts MCP servers so `construct-mcp` is live without a manual
+// Start each session — the orchestrator's first move is an MCP call, so a dormant
+// server otherwise reads as "enable the MCP server". Neither removes the one-time
+// per-developer MCP trust grant, which VS Code stores locally, not in committed
+// config. Each key is applied only when unset, and a settings.json that is not
+// strict JSON (commented/JSONC or user-customized) is left untouched.
 
-export function pinVscodeAgentLocations(targetDir) {
+const VSCODE_MANAGED_SETTINGS = {
+  "chat.agentFilesLocations": { ".github/agents": true, ".claude/agents": false },
+  "chat.mcp.autoStart": "always",
+};
+
+// Strip full-line JSONC comments (`// …`) and trailing commas before JSON.parse.
+// Handles the common VS Code settings.json patterns (line comments, trailing commas);
+// does not attempt to handle inline comments after values.
+
+function parseJsoncContent(text) {
+  const stripped = text
+    .split('\n')
+    .map((line) => {
+      const t = line.trimStart();
+      return t.startsWith('//') ? '' : line;
+    })
+    .join('\n')
+    .replace(/,(\s*[}\]])/g, '$1');
+  return JSON.parse(stripped);
+}
+
+export function pinVscodeChatSettings(targetDir) {
   if (DRY_RUN) return;
   const settingsPath = path.join(targetDir, ".vscode", "settings.json");
   let settings = {};
   if (fs.existsSync(settingsPath)) {
-    try { settings = JSON.parse(fs.readFileSync(settingsPath, "utf8")) || {}; }
+    try { settings = parseJsoncContent(fs.readFileSync(settingsPath, "utf8")) || {}; }
     catch { return; }
   }
-  if (settings["chat.agentFilesLocations"]) return;
-  settings["chat.agentFilesLocations"] = { ".github/agents": true, ".claude/agents": false };
+  let changed = false;
+  for (const [key, value] of Object.entries(VSCODE_MANAGED_SETTINGS)) {
+    if (settings[key] === undefined) { settings[key] = value; changed = true; }
+  }
+  if (!changed) return;
   mkdirp(path.dirname(settingsPath));
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
 }
@@ -1581,7 +1608,7 @@ function syncVSCode(targetDir = null, wants = true) {
       mkdirp(path.dirname(mcpPath));
       fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
     }
-    pinVscodeAgentLocations(targetDir);
+    pinVscodeChatSettings(targetDir);
     return true;
   }
 

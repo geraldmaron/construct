@@ -13,8 +13,14 @@
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
+// The conventional `type(scope):` prefix is enforced; the subject itself is kept
+// deliberately permissive so a descriptive, family-scoped subject can name the finding
+// and the fix on one line and may lead with an acronym or label (P1, JSONC, ADR-0050,
+// MCP). Only a leading space and an over-140-char subject are rejected; richer detail
+// belongs in the body.
+
 const COMMIT_SUBJECT_RE =
-  /^(feat|fix|refactor|perf|docs|test|chore|ci|build|style)(\([\w/.,:-]+\))?(!)?: [^A-Z].{1,70}$/;
+  /^(feat|fix|refactor|perf|docs|test|chore|ci|build|style)(\([\w/.,:-]+\))?(!)?: \S.{0,139}$/;
 
 const FORBIDDEN_TRAILER_RE = /^Co-[Aa]uthored-[Bb]y:/im;
 
@@ -99,7 +105,7 @@ function lintCommits() {
     const merge = subject?.startsWith("Merge ") || subject?.startsWith("Revert ");
     if (merge) continue;
     if (!COMMIT_SUBJECT_RE.test(subject ?? "")) {
-      violations.push(`${sha.slice(0, 9)}: subject does not match \`type(scope): subject\` (≤72 chars, imperative, no period): ${JSON.stringify(subject)}`);
+      violations.push(`${sha.slice(0, 9)}: subject does not match \`type(scope): subject\` (≤140 chars, no leading space): ${JSON.stringify(subject)}`);
     }
     if (FORBIDDEN_TRAILER_RE.test(body ?? "")) {
       violations.push(`${sha.slice(0, 9)}: forbidden Co-Authored-By trailer detected`);

@@ -11,6 +11,8 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
+permissions: {}
+
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: construct
@@ -32,17 +34,17 @@ jobs:
     outputs:
       image_uri: ${{ steps.push.outputs.image_uri }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64
 
       - name: Build, tag, and push image
         id: push
@@ -68,14 +70,14 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
 
-      - uses: hashicorp/setup-terraform@v4
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e
         with:
           terraform_version: '~> 1.9'
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -102,19 +104,21 @@ jobs:
       - name: Post plan to PR
         # Always post — even when the plan step failed — so reviewers see the error output.
         if: always()
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         with:
           script: |
             const fs = require('fs');
             const planPath = '${{ env.TF_WORKING_DIR }}/plan.txt';
             const plan = fs.existsSync(planPath) ? fs.readFileSync(planPath, 'utf8') : '(plan output unavailable)';
             const truncated = plan.length > 60000 ? plan.slice(0, 60000) + '\n... (truncated)' : plan;
+            // redact env var values from ECS container definitions so secrets do not appear in PR comments
+            const redacted = truncated.replace(/(,\s*value\s*=\s*)"[^"]*"/g, '$1"***"');
             const status = '${{ steps.plan.outcome }}' === 'success' ? '✅ Plan succeeded' : '❌ Plan failed';
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## Terraform Plan — ${status}\n\`\`\`\n${truncated}\n\`\`\``
+              body: `## Terraform Plan — ${status}\n\`\`\`\n${redacted}\n\`\`\``
             });
 
   # ── Deploy ──────────────────────────────────────────────────────────────
@@ -128,14 +132,14 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
 
-      - uses: hashicorp/setup-terraform@v4
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e
         with:
           terraform_version: '~> 1.9'
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
