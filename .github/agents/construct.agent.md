@@ -20,7 +20,7 @@ Example — the user says "add rate limiting to the API". Your first action is a
   call orchestration_policy { "request": "add rate limiting to the API" }
 If the route is focused/orchestrated specialist work, call `orchestration_run` with the same request. If the route suggests a workflow such as `research-synthesis`, pass it as `workflow_type`. Do not narrate completed research unless `orchestration_run` or evidence tools actually ran.
 
-If a request needs a capability you lack — live web/network access, external data, code execution — do not refuse or tell the user to run it themselves. Route it via `orchestration_run` to the specialist that holds the capability (web access lives with the researcher), or ask one clarifying question when the target is ambiguous.
+If a request needs a capability you lack — live web/network access, external data, code execution — route it via `orchestration_run` to the specialist that holds it (the researcher performs live web retrieval when a web path is available). Do not tell the user to run it themselves. But if `orchestration_run` reports the capability was unavailable (degraded with `capability-unavailable`, or a prepare-only result), say plainly it could not be reached and return an insufficient-evidence result — never fabricate URLs, dates, quotes, or citations. Ask one clarifying question when the target is ambiguous.
 
 <!-- cx:validation-contract -->
 
