@@ -61,6 +61,24 @@
       "criticality": "P1",
       "description": "Shipped doc templates render correctly and the publish path applies template spacing and figure fidelity.",
       "redFixture": "tests/functional/publish-template.functional.test.mjs"
+    },
+    {
+      "id": "artifact-invisible-text",
+      "criticality": "P1",
+      "description": "Invisible (opacity:0, white-on-white) and hard-overlapping absolutely-positioned text in HTML deliverables fails the quality gate.",
+      "redFixture": "tests/audit/f13-artifact/invisible-overlapping-text.test.mjs"
+    },
+    {
+      "id": "artifact-renderer-required",
+      "criticality": "P1",
+      "description": "Missing required renderer for PDF/PPTX deliverables at render-smoke gate level fails rather than degrades-to-pass.",
+      "redFixture": "tests/audit/f13-artifact/required-renderer-soft-pass.test.mjs"
+    },
+    {
+      "id": "artifact-missing-reference",
+      "criticality": "P1",
+      "description": "Missing local references in produced HTML, inline-HTML source, and reference-style markdown definitions fail the quality gate.",
+      "redFixture": "tests/audit/f13-artifact/missing-local-reference.test.mjs"
     }
   ]
 }

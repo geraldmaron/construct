@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-01T01:35:17.990Z",
+  "generatedAt": "2026-07-01T01:48:08.636Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 587,
+    "testFiles": 590,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 286,
+    "nestedTestFiles": 289,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 399,
+      "unit": 402,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 147
     },
     "byCategory": {
-      "unit": 357,
+      "unit": 360,
       "visual": 9,
       "structural-guard": 14,
       "contract-subsystem": 28,
@@ -581,6 +581,30 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f12-gates/gate-red-fixture-inventory.red.mjs — R28/R31/R33 gate-trust gap."
+    },
+    {
+      "path": "tests/audit/f13-artifact/invisible-overlapping-text.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f13-artifact/invisible-overlapping-text.red.mjs — F13 [R21] visual-gate blind-spot proof."
+    },
+    {
+      "path": "tests/audit/f13-artifact/missing-local-reference.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f13-artifact/missing-local-reference.red.mjs — F13 [R21] unvalidated-reference proof."
+    },
+    {
+      "path": "tests/audit/f13-artifact/required-renderer-soft-pass.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f13-artifact/required-renderer-soft-pass.red.mjs — F13 [R21] required-renderer soft-pass proof."
     },
     {
       "path": "tests/auto-docs.test.mjs",
