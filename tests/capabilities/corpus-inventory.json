@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-01T01:11:51.904Z",
+  "generatedAt": "2026-07-01T01:24:13.439Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 580,
+    "testFiles": 584,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 279,
+    "nestedTestFiles": 283,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 392,
+      "unit": 396,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 147
     },
     "byCategory": {
-      "unit": 350,
+      "unit": 354,
       "visual": 9,
       "structural-guard": 14,
       "contract-subsystem": 28,
@@ -469,6 +469,38 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f08-prompt-injection/untrusted-ingest-labeling.red.mjs —"
+    },
+    {
+      "path": "tests/audit/f09-orchestration/error-persistence.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/error-persistence.red.mjs — F09 [R18] lost-failure proof."
+    },
+    {
+      "path": "tests/audit/f09-orchestration/inline-truthfulness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/inline-truthfulness.red.mjs — F09 [R17] prepared-vs-executed proof."
+    },
+    {
+      "path": "tests/audit/f09-orchestration/provider-timeout.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/provider-timeout.red.mjs — F09 [R19] unbounded-provider proof."
+    },
+    {
+      "path": "tests/audit/f09-orchestration/remote-per-request-timeout.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/remote-per-request-timeout.red.mjs — F09 [R20] proof."
     },
     {
       "path": "tests/audit/f10-registry-drift/catalog-semantic-drift.test.mjs",
