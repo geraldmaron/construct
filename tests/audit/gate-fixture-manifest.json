@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "description": "Maps every P0/P1 release gate to the red/forced-failure fixture that proves it detects its target defect. All redFixture paths must be *.test.mjs (wired into npm test) — a *.red.mjs path means the fix has not landed.",
+  "gates": [
+    {
+      "id": "mcp-safety",
+      "criticality": "P0",
+      "description": "MCP tools carry output schema, safety class, root containment, approval model, rate budget, and audit log.",
+      "redFixture": "tests/audit/f01-mcp-safety/safety-envelope.test.mjs"
+    },
+    {
+      "id": "secret-scan",
+      "criticality": "P0",
+      "description": "Credentials are not written in plain text to tracked files; audit trail covers all resolution tiers.",
+      "redFixture": "tests/audit/f02-secrets/config-env-mode.test.mjs"
+    },
+    {
+      "id": "consumer-dependency-audit",
+      "criticality": "P0",
+      "description": "Package ships all runtime-loaded data directories; postinstall writes a mutation manifest.",
+      "redFixture": "tests/audit/f03-package/packed-asset-parity.test.mjs"
+    },
+    {
+      "id": "host-readiness",
+      "criticality": "P0",
+      "description": "Host adapter settings (VS Code, Copilot) are correct, JSONC-safe, and classified by typed readiness state.",
+      "redFixture": "tests/audit/f04-host-readiness/readiness-state-machine.test.mjs"
+    },
+    {
+      "id": "runtime-ownership",
+      "criticality": "P0",
+      "description": "Service manager kills only Construct-owned processes; stale or foreign PIDs are never signalled.",
+      "redFixture": "tests/audit/f05-runtime-ownership/owned-stop.test.mjs"
+    },
+    {
+      "id": "docker-runtime-smoke",
+      "criticality": "P1",
+      "description": "Docker surface is degated per ADR-0039; no Dockerfile or docker-push job is present.",
+      "redFixture": "tests/audit/f06-docker/entrypoint-existence.test.mjs"
+    },
+    {
+      "id": "cicd-permissions",
+      "criticality": "P0",
+      "description": "CI/CD pipelines pin action SHAs and restrict job permissions to least privilege.",
+      "redFixture": "tests/audit/f07-cicd/permissions.test.mjs"
+    },
+    {
+      "id": "prompt-injection",
+      "criticality": "P0",
+      "description": "Web search results and intake packets carry trust:untrusted; front-door agent grant is least privilege.",
+      "redFixture": "tests/audit/f08-prompt-injection/adversarial-corpus.test.mjs"
+    },
+    {
+      "id": "registry-validate-p0p1",
+      "criticality": "P1",
+      "description": "P0/P1 capabilities with no test or stale lastValidated fail the registry gate (errors, not warnings).",
+      "redFixture": "tests/audit/f10-registry-drift/fail-closed-validation.test.mjs"
+    },
+    {
+      "id": "template-policy",
+      "criticality": "P1",
+      "description": "Shipped doc templates render correctly and the publish path applies template spacing and figure fidelity.",
+      "redFixture": "tests/functional/publish-template.functional.test.mjs"
+    },
+    {
+      "id": "artifact-invisible-text",
+      "criticality": "P1",
+      "description": "Invisible (opacity:0, white-on-white) and hard-overlapping absolutely-positioned text in HTML deliverables fails the quality gate.",
+      "redFixture": "tests/audit/f13-artifact/invisible-overlapping-text.test.mjs"
+    },
+    {
+      "id": "artifact-renderer-required",
+      "criticality": "P1",
+      "description": "Missing required renderer for PDF/PPTX deliverables at render-smoke gate level fails rather than degrades-to-pass.",
+      "redFixture": "tests/audit/f13-artifact/required-renderer-soft-pass.test.mjs"
+    },
+    {
+      "id": "artifact-missing-reference",
+      "criticality": "P1",
+      "description": "Missing local references in produced HTML, inline-HTML source, and reference-style markdown definitions fail the quality gate.",
+      "redFixture": "tests/audit/f13-artifact/missing-local-reference.test.mjs"
+    },
+    {
+      "id": "tool-description-overlap",
+      "criticality": "P1",
+      "description": "Overlapping retrieval-cluster tools carry a machine-readable category discriminator; every tool description is substantive and unique.",
+      "redFixture": "tests/audit/f14-tools/description-overlap.test.mjs"
+    },
+    {
+      "id": "tool-surface-parity",
+      "criticality": "P1",
+      "description": "Flat core plus call-gateway enum partition the catalog exactly once; an automated parity check rejects a core name absent from the catalog.",
+      "redFixture": "tests/audit/f14-tools/exposure-parity.test.mjs"
+    },
+    {
+      "id": "tool-output-schema",
+      "criticality": "P1",
+      "description": "Every machine-consumed MCP tool declares an output schema in the catalog literal.",
+      "redFixture": "tests/audit/f14-tools/output-schema-coverage.test.mjs"
+    },
+    {
+      "id": "tool-token-budget",
+      "criticality": "P1",
+      "description": "The documented flat-surface tool count tracks the live catalog and the CallTool dispatcher instruments calls via a GenAI span.",
+      "redFixture": "tests/audit/f14-tools/token-budget-instrumentation.test.mjs"
+    }
+  ]
+}

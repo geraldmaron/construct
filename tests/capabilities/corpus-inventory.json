@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T17:24:03.540Z",
+  "generatedAt": "2026-07-01T04:46:11.931Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 543,
-    "topLevelTestFiles": 301,
-    "nestedTestFiles": 242,
+    "testFiles": 600,
+    "topLevelTestFiles": 304,
+    "nestedTestFiles": 296,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 356,
+      "unit": 411,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
-      "functional": 146
+      "functional": 148
     },
     "byCategory": {
-      "unit": 316,
+      "unit": 368,
       "visual": 9,
-      "structural-guard": 12,
+      "structural-guard": 15,
       "contract-subsystem": 28,
       "live-provider": 2,
       "integration": 21,
-      "functional": 146,
+      "functional": 148,
       "hook": 9
     }
   },
@@ -237,6 +237,422 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit-specialists.test.mjs — specialist corpus audit matrix."
+    },
+    {
+      "path": "tests/audit/f01-mcp-safety/delete-traversal.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f01-mcp-safety/delete-traversal.red.mjs — F01 [R11]+[R10] destructive path-traversal proof."
+    },
+    {
+      "path": "tests/audit/f01-mcp-safety/destructive-confirm.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f01-mcp-safety/destructive-confirm.red.mjs — F01 [R11] self-authorizing-destruction proof."
+    },
+    {
+      "path": "tests/audit/f01-mcp-safety/malicious-ref.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f01-mcp-safety/malicious-ref.red.mjs — F01 [R9] shell-injection proof for summarizeDiff."
+    },
+    {
+      "path": "tests/audit/f01-mcp-safety/safety-envelope.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f01-mcp-safety/safety-envelope.red.mjs — F01 missing per-tool safety-envelope proof."
+    },
+    {
+      "path": "tests/audit/f01-mcp-safety/scanfile-containment.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f01-mcp-safety/scanfile-containment.red.mjs — F01 [R10] root-containment proof for scanFile."
+    },
+    {
+      "path": "tests/audit/f02-secrets/audit-source-tier.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f02-secrets/audit-source-tier.red.mjs — F02 audit-trail records source TIER,"
+    },
+    {
+      "path": "tests/audit/f02-secrets/config-env-mode.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f02-secrets/config-env-mode.red.mjs — F02 [R13] config.env file-mode contract."
+    },
+    {
+      "path": "tests/audit/f02-secrets/generated-file-leak-scan.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f02-secrets/generated-file-leak-scan.red.mjs — F02 [R12] synthetic-secret"
+    },
+    {
+      "path": "tests/audit/f02-secrets/precedence-divergence.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f02-secrets/precedence-divergence.red.mjs — F02 [R14] credential-precedence"
+    },
+    {
+      "path": "tests/audit/f03-package/half-stage-recovery.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f03-package/half-stage-recovery.red.mjs — F03 [R4] half-staged project recovery."
+    },
+    {
+      "path": "tests/audit/f03-package/packed-asset-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f03-package/packed-asset-parity.red.mjs — F03 [R1] packed-tarball asset parity."
+    },
+    {
+      "path": "tests/audit/f03-package/postinstall-mutation-manifest.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f03-package/postinstall-mutation-manifest.red.mjs — F03 [R3][R4] postinstall mutation receipt."
+    },
+    {
+      "path": "tests/audit/f04-host-readiness/jsonc-safe-merge.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f04-host-readiness/jsonc-safe-merge.red.mjs — F04 [R7] JSONC silent-skip proof."
+    },
+    {
+      "path": "tests/audit/f04-host-readiness/least-privilege-grants.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f04-host-readiness/least-privilege-grants.red.mjs — F04 [R35] over-grant proof."
+    },
+    {
+      "path": "tests/audit/f04-host-readiness/readiness-state-machine.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f04-host-readiness/readiness-state-machine.red.mjs — F04 host-readiness state proof (OUTLINE)."
+    },
+    {
+      "path": "tests/audit/f04-host-readiness/setting-key-case.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f04-host-readiness/setting-key-case.red.mjs — F04 [R6] setting-key casing proof."
+    },
+    {
+      "path": "tests/audit/f04-host-readiness/windows-path-stale.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f04-host-readiness/windows-path-stale.red.mjs — F04 [R8] POSIX-only stale-path proof."
+    },
+    {
+      "path": "tests/audit/f05-runtime-ownership/non-owner-refusal.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f05-runtime-ownership/non-owner-refusal.red.mjs — F05 [R16] blind-kill proof."
+    },
+    {
+      "path": "tests/audit/f05-runtime-ownership/owned-stop.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f05-runtime-ownership/owned-stop.red.mjs — F05 [R16] missing ownership-record proof."
+    },
+    {
+      "path": "tests/audit/f05-runtime-ownership/stale-port.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f05-runtime-ownership/stale-port.red.mjs — F05 [R16] stale-configured-port proof."
+    },
+    {
+      "path": "tests/audit/f06-docker/entrypoint-existence.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f06-docker/entrypoint-existence.red.mjs — F06 [R23] Dockerfile CMD points at a non-existent entrypoint."
+    },
+    {
+      "path": "tests/audit/f06-docker/healthcheck-implementation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f06-docker/healthcheck-implementation.red.mjs — F06 [R23] HEALTHCHECK targets an unimplemented route."
+    },
+    {
+      "path": "tests/audit/f06-docker/release-gating.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f06-docker/release-gating.red.mjs — F06 [R23]/F07 overlap: mutable image tags publish before any scan or boot smoke."
+    },
+    {
+      "path": "tests/audit/f07-cicd/action-pin.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f07-cicd/action-pin.red.mjs — F07/R25/R27 mutable-action-tag proof."
+    },
+    {
+      "path": "tests/audit/f07-cicd/permissions.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f07-cicd/permissions.red.mjs — F07/R25/R29 least-privilege GITHUB_TOKEN proof."
+    },
+    {
+      "path": "tests/audit/f07-cicd/policy-gate-blocking.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f07-cicd/policy-gate-blocking.red.mjs — F07/R28 advisory-policy-gate proof."
+    },
+    {
+      "path": "tests/audit/f07-cicd/release-tooling-pin.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f07-cicd/release-tooling-pin.red.mjs — F07/R26 release-time tool-fetch proof."
+    },
+    {
+      "path": "tests/audit/f07-cicd/terraform-plan-redaction.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f07-cicd/terraform-plan-redaction.red.mjs — F07/R29 plan-comment secret-leak proof."
+    },
+    {
+      "path": "tests/audit/f08-prompt-injection/adversarial-corpus.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f08-prompt-injection/adversarial-corpus.red.mjs —"
+    },
+    {
+      "path": "tests/audit/f08-prompt-injection/excessive-agency-grants.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f08-prompt-injection/excessive-agency-grants.red.mjs —"
+    },
+    {
+      "path": "tests/audit/f08-prompt-injection/untrusted-ingest-labeling.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f08-prompt-injection/untrusted-ingest-labeling.red.mjs —"
+    },
+    {
+      "path": "tests/audit/f09-orchestration/error-persistence.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/error-persistence.red.mjs — F09 [R18] lost-failure proof."
+    },
+    {
+      "path": "tests/audit/f09-orchestration/inline-truthfulness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/inline-truthfulness.red.mjs — F09 [R17] prepared-vs-executed proof."
+    },
+    {
+      "path": "tests/audit/f09-orchestration/provider-timeout.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/provider-timeout.red.mjs — F09 [R19] unbounded-provider proof."
+    },
+    {
+      "path": "tests/audit/f09-orchestration/remote-per-request-timeout.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/remote-per-request-timeout.red.mjs — F09 [R20] proof."
+    },
+    {
+      "path": "tests/audit/f10-registry-drift/catalog-semantic-drift.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f10-registry-drift/catalog-semantic-drift.red.mjs — F10 [R32] catalog drift is blind."
+    },
+    {
+      "path": "tests/audit/f10-registry-drift/fail-closed-validation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f10-registry-drift/fail-closed-validation.red.mjs — F10 [R33] registry fails open."
+    },
+    {
+      "path": "tests/audit/f10-registry-drift/registry-bridge-smell.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f10-registry-drift/registry-bridge-smell.red.mjs — F10 [R34] unified→legacy bridge."
+    },
+    {
+      "path": "tests/audit/f10-registry-drift/schema-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f10-registry-drift/schema-parity.red.mjs — F10 [R15] config schema vocabulary split."
+    },
+    {
+      "path": "tests/audit/f11-disposition/contradiction.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "contradiction.red.mjs — F11 (durable source vs generated local state)."
+    },
+    {
+      "path": "tests/audit/f11-disposition/coverage.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "coverage.red.mjs — F11 (durable source vs generated local state)."
+    },
+    {
+      "path": "tests/audit/f11-disposition/mis-disposition.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "mis-disposition.red.mjs — F11 (durable source vs generated local state)."
+    },
+    {
+      "path": "tests/audit/f12-gates/audit-doc-staleness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f12-gates/audit-doc-staleness.red.mjs — R22 stale internal audit doc."
+    },
+    {
+      "path": "tests/audit/f12-gates/doctor-specificity.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f12-gates/doctor-specificity.red.mjs — doctor must classify failure states."
+    },
+    {
+      "path": "tests/audit/f12-gates/gate-red-fixture-inventory.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f12-gates/gate-red-fixture-inventory.red.mjs — R28/R31/R33 gate-trust gap."
+    },
+    {
+      "path": "tests/audit/f13-artifact/invisible-overlapping-text.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f13-artifact/invisible-overlapping-text.red.mjs — F13 [R21] visual-gate blind-spot proof."
+    },
+    {
+      "path": "tests/audit/f13-artifact/missing-local-reference.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f13-artifact/missing-local-reference.red.mjs — F13 [R21] unvalidated-reference proof."
+    },
+    {
+      "path": "tests/audit/f13-artifact/required-renderer-soft-pass.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f13-artifact/required-renderer-soft-pass.red.mjs — F13 [R21] required-renderer soft-pass proof."
+    },
+    {
+      "path": "tests/audit/f14-tools/description-overlap.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f14-tools/description-overlap.red.mjs — F14 [S2][S15] overlap & description quality."
+    },
+    {
+      "path": "tests/audit/f14-tools/exposure-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f14-tools/exposure-parity.red.mjs — F14 [R36] tool-surface partition invariant."
+    },
+    {
+      "path": "tests/audit/f14-tools/output-schema-coverage.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f14-tools/output-schema-coverage.red.mjs — F14 [S2][S15] structured outputs."
+    },
+    {
+      "path": "tests/audit/f14-tools/token-budget-instrumentation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f14-tools/token-budget-instrumentation.red.mjs — F14 [S2][S15] budget + telemetry."
     },
     {
       "path": "tests/auto-docs.test.mjs",
@@ -2057,6 +2473,14 @@
       "maintainerNotes": "tests/functional/mcp-parity.functional.test.mjs — End-to-end MCP parity."
     },
     {
+      "path": "tests/functional/mcp-tool-rate-audit.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-tool-rate-audit.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/model-catalog-visibility.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2387,6 +2811,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/routing-tables.test.mjs — parity guard for declarative routing."
+    },
+    {
+      "path": "tests/functional/secret-audit-daemon-wiring.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/secret-audit-daemon-wiring.functional.test.mjs"
     },
     {
       "path": "tests/functional/secret-resolver-real-op.functional.test.mjs",
@@ -3397,6 +3829,14 @@
       "maintainerNotes": "tests/orchestration-readiness.test.mjs — typed orchestration readiness contract."
     },
     {
+      "path": "tests/orchestration-remote-web-guard.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-remote-web-guard.test.mjs — fail-closed remote ingress guard (ADR-0050)."
+    },
+    {
       "path": "tests/orchestration-run-store-postgres.test.mjs",
       "layer": "integration",
       "category": "integration",
@@ -3427,6 +3867,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-store-resolver.test.mjs — run-store resolver selection."
+    },
+    {
+      "path": "tests/orchestration-web-capability.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-web-capability.test.mjs — WebGrant resolver priority (ADR-0050)."
+    },
+    {
+      "path": "tests/orchestration-worker-web.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-worker-web.test.mjs — worker web-capable execution (ADR-0050)."
     },
     {
       "path": "tests/orchestration-worker.test.mjs",

@@ -5,6 +5,7 @@
     "03-docs:review-doc-reference:chat",
     "03-docs:review-doc-reference:logs",
     "02-deadcode:module-test-only:lib/models/execution-policy.mjs",
-    "02-deadcode:module-test-only:lib/models/provider-poll.mjs"
+    "02-deadcode:module-test-only:lib/models/provider-poll.mjs",
+    "02-deadcode:module-test-only:lib/host/readiness.mjs"
   ]
 }

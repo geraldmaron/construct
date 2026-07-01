@@ -19,7 +19,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, statSync, readFileSync } from 'node:fs';
+import { existsSync, statSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -109,13 +109,19 @@ if (consumerPkg.name === '@geraldmaron/construct') {
   process.exit(0);
 }
 
+// Track every project mutation for the itemized receipt written at the end.
+// npm has no uninstall lifecycle hook so the manifest is the only machine-readable
+// record of what the hook touched and how to revert it (CX-AUDIT-PACKAGE-004).
+const mutations = [];
+
 try {
-  stageProjectAdapters({
+  const stageResult = stageProjectAdapters({
     projectRoot: initCwd,
     packageRoot: PKG_ROOT,
     pkgVersion: PKG_VERSION,
     log,
   });
+  mutations.push({ path: '.construct', type: 'stage', synced: stageResult.synced });
 
   // ADR-0027: Ensure .gitignore covers the newly staged adapters (construct-f6l6).
   // Idempotent: missingIgnorePatterns returns only patterns not already present.
@@ -129,8 +135,27 @@ try {
     const block = `${prefix}\n${HEADER}\n${SUBHEADER}\n${missing.join('\n')}\n`;
     const { appendFileSync } = await import('node:fs');
     appendFileSync(giPath, block, 'utf8');
+    mutations.push({ path: '.gitignore', type: 'append', patterns: missing });
     log(`appended ${missing.length} Construct ignore pattern(s) to .gitignore`);
   }
+
+  // Write the itemized mutation receipt so consumers can audit and revert what the
+  // hook touched. Write is best-effort: a manifest failure must never break an install.
+  try {
+    mkdirSync(path.join(initCwd, '.construct'), { recursive: true });
+    const manifest = {
+      pkgVersion: PKG_VERSION,
+      ts: new Date().toISOString(),
+      files: mutations.map((m) => m.path),
+      mutations,
+      recovery: 'npx construct init --repair',
+    };
+    writeFileSync(
+      path.join(initCwd, '.construct', 'install-manifest.json'),
+      JSON.stringify(manifest, null, 2) + '\n',
+    );
+    log('wrote .construct/install-manifest.json');
+  } catch { /* manifest write must not fail the install */ }
 } catch (err) {
   fail(`Adapter staging failed: ${err.message}`, 'The package is installed; run `npx construct init` in this project to complete setup.');
   // Intentionally exit 0: staging is best-effort completion, and a non-zero exit

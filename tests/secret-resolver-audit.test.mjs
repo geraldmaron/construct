@@ -32,7 +32,9 @@ test('op:// resolution emits resolve + op_read events without the value, and cac
   const opRead = () => RESOLVED;
   const env = { ANTHROPIC_API_KEY: 'op://Vault/Item/credential' };
 
-  const first = resolveSecret('ANTHROPIC_API_KEY', { env, opRead });
+  // Hermetic: the injected env is the only source, so a real config.env on the host
+  // (which, per the unified precedence ladder, would otherwise win) cannot shadow it.
+  const first = resolveSecret('ANTHROPIC_API_KEY', { env, opRead, allowAmbient: false });
   assert.equal(first, RESOLVED);
 
   const resolveEvt = events.find((e) => e.event === 'secret.resolve');
@@ -48,7 +50,7 @@ test('op:// resolution emits resolve + op_read events without the value, and cac
   assert.equal(opEvt.cacheHit, false);
   assert.equal(opEvt.ok, true);
 
-  const second = resolveSecret('ANTHROPIC_API_KEY', { env, opRead });
+  const second = resolveSecret('ANTHROPIC_API_KEY', { env, opRead, allowAmbient: false });
   assert.equal(second, RESOLVED);
   const cacheHits = events.filter((e) => e.event === 'secret.op_read' && e.cacheHit === true);
   assert.equal(cacheHits.length, 1, 'the second resolve is a cache hit');
@@ -61,7 +63,7 @@ test('plain value resolution records source and op-ref flag, never the value', (
   t.after(() => { __resetSecretAuditSink(); __clearSecretCache(); });
 
   const plain = 'plain-canary-value-xx';
-  const value = resolveSecret('OPENAI_API_KEY', { env: { OPENAI_API_KEY: plain } });
+  const value = resolveSecret('OPENAI_API_KEY', { env: { OPENAI_API_KEY: plain }, allowAmbient: false });
   assert.equal(value, plain);
 
   const evt = events.find((e) => e.event === 'secret.resolve');
