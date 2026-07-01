@@ -105,17 +105,17 @@ test('an op:// reference never lands in any host config; config.env stays 0600',
   assertConfigEnvSecure(home, opRefCanary);
 });
 
-// Deferred-flip residual: a resolved plaintext literal still materializes into host
-// configs because the value-to-reference flip is not yet applied. Asserting the
-// current behavior keeps the residual visible and the test honest until a confirmed
-// per-host env-ref path lands.
+// Value-to-reference flip (Epic 4): a resolved plaintext secret is emitted into the
+// Claude config as a ${NAME} env-reference rather than the literal, so the live value
+// stays only in the 0600 config.env store.
 
-test('resolved literal still materializes into host configs (deferred flip residual)', (t) => {
+test('resolved secret flips to a host env-reference in the Claude config, never the literal', (t) => {
   const { home, cwd } = freshDirs(t);
   const result = runMcpAdd(home, cwd, canaryNotAKey);
   assert.equal(result.status, 0, `cmdMcpAdd should exit cleanly: ${result.stderr || result.stdout}`);
 
   const claude = readIfExists(path.join(home, '.claude', 'settings.json'));
-  assert.ok(claude.includes(canaryNotAKey), 'documents the known residual: literal lands in Claude config');
+  assert.ok(!claude.includes(canaryNotAKey), 'the literal secret must not land in the Claude config');
+  assert.ok(claude.includes('${LINEAR_API_KEY}'), 'the Claude config must carry a ${LINEAR_API_KEY} env-reference');
   assertConfigEnvSecure(home, canaryNotAKey);
 });

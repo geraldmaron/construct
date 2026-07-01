@@ -35,8 +35,10 @@ test('enableSecretAuditTrail records actual op reads without the value, skips ca
   const opRead = () => RESOLVED;
   const env = { ANTHROPIC_API_KEY: 'op://Vault/Item/credential' };
 
-  resolveSecret('ANTHROPIC_API_KEY', { env, opRead });
-  resolveSecret('ANTHROPIC_API_KEY', { env, opRead });
+  // Hermetic: the injected env is the only source, so a real host config.env cannot
+  // shadow the op:// reference under the unified env-vs-file precedence ladder.
+  resolveSecret('ANTHROPIC_API_KEY', { env, opRead, allowAmbient: false });
+  resolveSecret('ANTHROPIC_API_KEY', { env, opRead, allowAmbient: false });
 
   const lines = fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
   const reads = lines.filter((r) => r.tool === 'secret-resolver' && r.action === 'op_read');

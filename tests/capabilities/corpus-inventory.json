@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-01T02:00:45.757Z",
+  "generatedAt": "2026-07-01T02:16:53.968Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 594,
+    "testFiles": 596,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 293,
+    "nestedTestFiles": 295,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 406,
+      "unit": 408,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 147
     },
     "byCategory": {
-      "unit": 363,
+      "unit": 365,
       "visual": 9,
       "structural-guard": 15,
       "contract-subsystem": 28,
@@ -293,6 +293,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f02-secrets/config-env-mode.red.mjs — F02 [R13] config.env file-mode contract."
+    },
+    {
+      "path": "tests/audit/f02-secrets/generated-file-leak-scan.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f02-secrets/generated-file-leak-scan.red.mjs — F02 [R12] synthetic-secret"
+    },
+    {
+      "path": "tests/audit/f02-secrets/precedence-divergence.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f02-secrets/precedence-divergence.red.mjs — F02 [R14] credential-precedence"
     },
     {
       "path": "tests/audit/f03-package/half-stage-recovery.test.mjs",
