@@ -1372,7 +1372,6 @@ const COPILOT_AGENT_TOOLS = [
   "construct-mcp/orchestration_policy",
   "construct-mcp/orchestration_run",
   "construct-mcp/orchestration_readiness",
-  "web/githubRepo",
   "search/codebase",
   "search/usages",
   "search/fileSearch",
