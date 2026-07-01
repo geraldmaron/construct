@@ -1,7 +1,7 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-06-30T00:29:27.879Z",
+    "generatedAt": "2026-07-01T01:09:33.824Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -937,7 +937,8 @@
         ],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Classifies user intent and dispatches to the correct specialist chain.\",\"criticality\":\"P0\",\"verification\":{\"functional\":\"tests/functional/orchestration-mcp.functional.test.mjs\",\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}"
     },
     {
       "id": "oracle.meta-review",
@@ -981,7 +982,8 @@
         ],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Deterministic read-model synthesis and bounded-auto maintenance for fleet health gaps.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/oracle-bounded-auto.functional.test.mjs\"}}"
     },
     {
       "id": "mcp.broker.connection",
@@ -1020,7 +1022,8 @@
         "cliCommands": [],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Reliable MCP tool discovery and dispatch across hosts.\",\"criticality\":\"P0\",\"verification\":{\"functional\":\"tests/functional/mcp-parity.functional.test.mjs\",\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}"
     },
     {
       "id": "workflow.evidence-ingest",
@@ -1074,7 +1077,8 @@
         "workflows": [
           "evidence-ingest"
         ]
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Ingest and structure raw evidence into a normalized summary.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"verificationBar\":\"Source metadata preserved; no invented quotes; confidence labeled\"}}"
     },
     {
       "id": "workflow.research-synthesis",
@@ -1134,7 +1138,8 @@
         "workflows": [
           "research-synthesis"
         ]
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Synthesize multiple sources into a cited, evidence-graded research summary.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"structureRequirements\":\"research-brief\",\"verificationBar\":\"≥2 primary sources; URLs fetched; confidence labeled\"}}"
     },
     {
       "id": "workflow.prd-draft",
@@ -1192,7 +1197,8 @@
         "workflows": [
           "prd-draft"
         ]
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Draft a product requirements document from a problem statement and evidence.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"structureRequirements\":\"prd\",\"verificationBar\":\"Template chosen before draft; rejected alternatives recorded for ADR/RFC paths\"}}"
     },
     {
       "id": "workflow.architecture-review",
@@ -1232,7 +1238,8 @@
         "workflows": [
           "architecture-review"
         ]
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Review an architecture for trade-offs, failure modes, and security exposure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
     },
     {
       "id": "workflow.proposal-review",
@@ -1271,7 +1278,8 @@
         "workflows": [
           "proposal-review"
         ]
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Review a proposal for correctness, risk, and hidden assumptions before acceptance.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
     },
     {
       "id": "workflow.risk-review",
@@ -1311,7 +1319,8 @@
         "workflows": [
           "risk-review"
         ]
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Stress-test a plan for failure modes, security, and compliance exposure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
     },
     {
       "id": "workflow.structure-notes",
@@ -1351,7 +1360,8 @@
         "workflows": [
           "structure-notes"
         ]
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Structure unclassified notes into a normalized summary with extracted intents.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
     },
     {
       "id": "workflow.transcript-process",
@@ -1390,7 +1400,8 @@
         "workflows": [
           "transcript-process"
         ]
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Process a meeting or call transcript into summary, decisions, and action items.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
     },
     {
       "id": "workflow.data-structure",
@@ -1429,7 +1440,8 @@
         "workflows": [
           "data-structure"
         ]
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Parse, validate, and profile a raw dataset into a structured, described shape.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
     },
     {
       "id": "workflow.memo-draft",
@@ -1468,7 +1480,8 @@
         "workflows": [
           "memo-draft"
         ]
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Draft a decision or status memo from a problem statement and context.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
     },
     {
       "id": "document-type.research-brief",
@@ -1504,7 +1517,8 @@
         ],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Cited research findings with confidence summary and recommendation.\",\"criticality\":\"\",\"verification\":{\"functional\":\"tests/certification/artifact-gates.test.mjs\",\"structureRequirements\":\"research-brief\",\"verificationBar\":\"Sources section with dates; confidence summary; recommendation\"}}"
     },
     {
       "id": "document-type.evidence-brief",
@@ -1527,7 +1541,8 @@
         "cliCommands": [],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Product evidence synthesis before decisions.\",\"criticality\":\"\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\",\"verificationBar\":\"Signal, evidence, counter-signal; no invented customer quotes\"}}"
     },
     {
       "id": "document-type.prd",
@@ -1550,7 +1565,8 @@
         "cliCommands": [],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Customer-facing product capabilities and requirements.\",\"criticality\":\"\",\"verification\":{\"functional\":\"tests/certification/artifact-gates.test.mjs\",\"structureRequirements\":\"prd\",\"verificationBar\":\"Problem, goals, success metrics, risks and mitigations\"}}"
     },
     {
       "id": "document-type.adr",
@@ -1574,7 +1590,8 @@
         "cliCommands": [],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Record of an architecture decision with rejected alternatives.\",\"criticality\":\"\",\"verification\":{\"functional\":\"tests/certification/artifact-gates.test.mjs\",\"structureRequirements\":\"adr\",\"verificationBar\":\"Problem, decision, rejected alternatives, consequences, reversibility\"}}"
     },
     {
       "id": "document-type.ingested-markdown",
@@ -1609,7 +1626,8 @@
         ],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Normalized markdown from external documents with extraction metadata.\",\"criticality\":\"\",\"verification\":{\"functional\":\"tests/functional/node-native-extraction.functional.test.mjs\",\"verificationBar\":\"Source metadata preserved; droppedInfo surfaced; no invented structure\"}}"
     },
     {
       "id": "ingest.adapter",
@@ -1643,7 +1661,8 @@
         ],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Local extraction via unpdf/mammoth with docling/whisper for fidelity paths.\",\"criticality\":\"P0\",\"verification\":{\"functional\":\"tests/functional/node-native-extraction.functional.test.mjs\"}}"
     },
     {
       "id": "ingest.docling",
@@ -1670,7 +1689,8 @@
         ],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Offline docling Python sidecar for layout-aware PDF/Office and OCR.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/mcp-ingest-resilience.functional.test.mjs\"}}"
     },
     {
       "id": "ingest.docling-remote",
@@ -1696,7 +1716,8 @@
         ],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Opt-in remote conversion via DOCLING_SERVE_URL (explicit user choice).\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/docling-remote-ingest.functional.test.mjs\"}}"
     },
     {
       "id": "skill.roles-engineer",
@@ -1723,7 +1744,8 @@
         "cliCommands": [],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Engineer role playbook — hot path per skill telemetry.\",\"criticality\":\"\",\"verification\":{\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}"
     },
     {
       "id": "skill.roles-architect-ai-systems",
@@ -1750,7 +1772,8 @@
         "cliCommands": [],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Architect AI systems flavor — hot path per skill telemetry.\",\"criticality\":\"\",\"verification\":{\"hostEmulation\":\"tests/functional/host-mcp-emulation.functional.test.mjs\"}}"
     },
     {
       "id": "local.model.tier",
@@ -1769,7 +1792,8 @@
       },
       "verification": {
         "unit": "tests/capability-tier.test.mjs",
-        "integration": "tests/model-router-local.test.mjs"
+        "integration": "tests/model-router-local.test.mjs",
+        "untestableRationale": "Tier detection is covered by unit (capability-tier.test.mjs) and integration (model-router-local.test.mjs) tests; no functional binary spawn is needed since the logic has no cross-component side effects."
       },
       "humanGate": "proposal-only",
       "lastValidated": "2026-06-26T20:01:41.876Z",
@@ -1780,7 +1804,8 @@
         ],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"resolveCapabilityTier and isLocalModel include local/ OpenAI-compatible models.\",\"criticality\":\"P1\",\"verification\":{\"unit\":\"tests/capability-tier.test.mjs\",\"integration\":\"tests/model-router-local.test.mjs\",\"untestableRationale\":\"Tier detection is covered by unit (capability-tier.test.mjs) and integration (model-router-local.test.mjs) tests; no functional binary spawn is needed since the logic has no cross-component side effects.\"}}"
     },
     {
       "id": "surfaces.opencode-primary",
@@ -1822,7 +1847,8 @@
           "version"
         ],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"OpenCode is the first-class conversational surface; the construct CLI remains setup/admin/headless infrastructure.\",\"criticality\":\"P1\",\"verification\":{\"functional\":\"tests/functional/opencode-primary-surface.functional.test.mjs\",\"hostEmulation\":\"tests/functional/host-config-parity.functional.test.mjs\"}}"
     },
     {
       "id": "mcp.tool-budget.trim",
@@ -1847,7 +1873,8 @@
         "cliCommands": [],
         "npmScripts": [],
         "workflows": []
-      }
+      },
+      "_semanticDigest": "{\"description\":\"Heavy external MCP servers disabled when default model is local.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/host-config-parity.functional.test.mjs\"}}"
     }
   ]
 }

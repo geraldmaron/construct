@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mcpEntryPointsOutsideToolkit, pinVscodeAgentLocations } from '../scripts/sync-specialists.mjs';
+import { mcpEntryPointsOutsideToolkit, pinVscodeChatSettings } from '../scripts/sync-specialists.mjs';
 
 const ROOT = '/Users/dev/Developer/Projects/construct';
 
@@ -39,14 +39,14 @@ test('the memory bridge path under a foreign root is stale too', () => {
   assert.equal(mcpEntryPointsOutsideToolkit(entry, ROOT), true);
 });
 
-// pinVscodeAgentLocations writes the documented chat.agentFilesLocations hint so
+// pinVscodeChatSettings writes the documented chat.agentFilesLocations hint so
 // VS Code prefers .github/agents over the .claude/agents compatibility scan,
 // without ever clobbering a settings file it cannot strictly parse (JSONC).
 
 test('writes the agent-location pin when no settings.json exists', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
   try {
-    pinVscodeAgentLocations(dir);
+    pinVscodeChatSettings(dir);
     const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
     assert.equal(s['chat.agentFilesLocations']['.github/agents'], true);
     assert.equal(s['chat.agentFilesLocations']['.claude/agents'], false);
@@ -58,21 +58,22 @@ test('merges into valid JSON settings, preserving existing keys', () => {
   try {
     mkdirSync(join(dir, '.vscode'), { recursive: true });
     writeFileSync(join(dir, '.vscode', 'settings.json'), JSON.stringify({ 'editor.tabSize': 2 }));
-    pinVscodeAgentLocations(dir);
+    pinVscodeChatSettings(dir);
     const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
     assert.equal(s['editor.tabSize'], 2, 'existing keys survive');
     assert.ok(s['chat.agentFilesLocations'], 'pin added');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('does not clobber a JSONC settings.json it cannot strictly parse', () => {
+test('merges managed keys into a JSONC settings.json, preserving existing keys (comments are stripped on rewrite)', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
   try {
     mkdirSync(join(dir, '.vscode'), { recursive: true });
-    const original = '{\n  // user comment\n  "editor.tabSize": 4\n}\n';
-    writeFileSync(join(dir, '.vscode', 'settings.json'), original);
-    pinVscodeAgentLocations(dir);
-    assert.equal(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'), original, 'commented file left untouched');
+    writeFileSync(join(dir, '.vscode', 'settings.json'), '{\n  // user comment\n  "editor.tabSize": 4\n}\n');
+    pinVscodeChatSettings(dir);
+    const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
+    assert.equal(s['editor.tabSize'], 4, 'existing key preserved');
+    assert.ok(s['chat.mcp.autoStart'] !== undefined, 'managed MCP autostart key added');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -82,8 +83,29 @@ test('respects an existing chat.agentFilesLocations choice', () => {
     mkdirSync(join(dir, '.vscode'), { recursive: true });
     const existing = { 'chat.agentFilesLocations': { 'custom/agents': true } };
     writeFileSync(join(dir, '.vscode', 'settings.json'), JSON.stringify(existing));
-    pinVscodeAgentLocations(dir);
+    pinVscodeChatSettings(dir);
     const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
     assert.deepEqual(s['chat.agentFilesLocations'], { 'custom/agents': true }, 'user choice preserved');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('eager-starts MCP servers via chat.mcp.autoStart (camelCase, VS Code id) so construct-mcp is live without a manual Start', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
+  try {
+    pinVscodeChatSettings(dir);
+    const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
+    assert.equal(s['chat.mcp.autoStart'], 'always');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('applies each managed setting independently — an existing agent pin still gets the mcp autostart', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'cx-vscode-settings-'));
+  try {
+    mkdirSync(join(dir, '.vscode'), { recursive: true });
+    writeFileSync(join(dir, '.vscode', 'settings.json'), JSON.stringify({ 'chat.agentFilesLocations': { 'custom/agents': true } }));
+    pinVscodeChatSettings(dir);
+    const s = JSON.parse(readFileSync(join(dir, '.vscode', 'settings.json'), 'utf8'));
+    assert.deepEqual(s['chat.agentFilesLocations'], { 'custom/agents': true }, 'user agent pin preserved');
+    assert.equal(s['chat.mcp.autoStart'], 'always', 'mcp autostart still added independently');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

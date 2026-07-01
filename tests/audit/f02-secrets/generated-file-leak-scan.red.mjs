@@ -1,0 +1,57 @@
+/**
+ * tests/audit/f02-secrets/generated-file-leak-scan.red.mjs — F02 [R12] synthetic-secret
+ * leak scan over all generated MCP host-config outputs.
+ *
+ * RED fixture (must FAIL against current code). buildLocalEnvironment
+ * (lib/mcp-platform-config.mjs:72-74) materializes the RESOLVED value of a stdio MCP
+ * env var into the host entry it returns. When a synthetic secret value is supplied as
+ * the resolved value, that literal lands verbatim in the Claude entry's `env` block and
+ * the OpenCode entry's `environment` block. The remote-URL path already emits host
+ * env-references (mcp-secret-ref.test.mjs proves that), so this fixture pins the
+ * local/stdio gap the audit calls out: a live credential is forwarded into generated
+ * config on disk.
+ *
+ * Turns GREEN once local/stdio env emits the host env-reference form (or launch-time
+ * injection) instead of the materialized value, per CX-AUDIT-SECRETS-002 / plan Epic 4
+ * (docs/notes/research/2026-06-construct-audit/90-credential-handling-remediation-plan.md
+ * §Epic 4): no SENTINEL value appears in any generated host entry.
+ */
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import { buildClaudeMcpEntry, buildOpenCodeMcpEntry } from '../../../lib/mcp-platform-config.mjs';
+
+// A value that cannot occur by accident, so a substring hit over serialized config is
+// unambiguous proof the literal secret was written rather than a reference to it.
+
+const SENTINEL_SECRET = 'SENTINEL_SECRET_a1b2c3';
+
+// Shape mirrors a real stdio MCP catalog entry (linear/slack/notion): a command plus a
+// templated secret env var that the builder fills from resolvedValues.
+
+const STDIO_DEF = {
+  command: 'npx',
+  args: ['-y', '@example/stdio-mcp'],
+  env: { EXAMPLE_API_KEY: '__EXAMPLE_API_KEY__' },
+};
+
+test('[R12] no resolved stdio MCP secret value lands in any generated host config', () => {
+  const resolved = { EXAMPLE_API_KEY: SENTINEL_SECRET };
+
+  const claude = buildClaudeMcpEntry('example', STDIO_DEF, resolved);
+  const vscode = buildClaudeMcpEntry('example', STDIO_DEF, resolved, { host: 'vscode' });
+  const { entry: opencode } = buildOpenCodeMcpEntry('example', STDIO_DEF, resolved);
+
+  const generated = {
+    'claude/claude_desktop_config.json': { mcpServers: { example: claude } },
+    'vscode/mcp.json': { servers: { example: vscode } },
+    'opencode/opencode.json': { mcp: { example: opencode } },
+  };
+
+  for (const [file, payload] of Object.entries(generated)) {
+    assert.ok(
+      !JSON.stringify(payload).includes(SENTINEL_SECRET),
+      `resolved secret value leaked into generated ${file}`,
+    );
+  }
+});
