@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-01T00:15:33.812Z",
+  "generatedAt": "2026-07-01T00:26:25.374Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 570,
+    "testFiles": 573,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 269,
+    "nestedTestFiles": 272,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 382,
+      "unit": 385,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 147
     },
     "byCategory": {
-      "unit": 341,
+      "unit": 344,
       "visual": 9,
       "structural-guard": 13,
       "contract-subsystem": 28,
@@ -445,6 +445,30 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f07-cicd/terraform-plan-redaction.red.mjs — F07/R29 plan-comment secret-leak proof."
+    },
+    {
+      "path": "tests/audit/f08-prompt-injection/adversarial-corpus.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f08-prompt-injection/adversarial-corpus.red.mjs —"
+    },
+    {
+      "path": "tests/audit/f08-prompt-injection/excessive-agency-grants.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f08-prompt-injection/excessive-agency-grants.red.mjs —"
+    },
+    {
+      "path": "tests/audit/f08-prompt-injection/untrusted-ingest-labeling.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f08-prompt-injection/untrusted-ingest-labeling.red.mjs —"
     },
     {
       "path": "tests/auto-docs.test.mjs",

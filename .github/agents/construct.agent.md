@@ -1,7 +1,7 @@
 ---
 description: Sees the whole board — orchestrates by assembling the right perspectives in the right sequence, routing each request to the minds that will see what others miss.
 name: construct
-tools: ["construct-mcp/*","web/fetch","web/githubRepo","search/codebase","search/usages","search/fileSearch","read/problems","edit/editFiles"]
+tools: ["construct-mcp/orchestration_policy","construct-mcp/orchestration_run","construct-mcp/orchestration_readiness","search/codebase","search/usages","search/fileSearch","read/problems"]
 ---
 
 <!--
