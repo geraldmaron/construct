@@ -11,9 +11,9 @@ A snapshot of what the test suite covers, why each file exists, and where the ga
 
 ## At a glance
 
-- **543 test files** total: 301 at `tests/` top level + 242 in subdirectories.
-- **Layers:** unit 356, visual 9, live-provider 2, integration 30, functional 146.
-- **Functional layer:** 146 file(s) under `tests/functional/` or `*.functional.test.mjs`. End-to-end checks spawn the real binary or import real modules in an isolated tmpdir.
+- **600 test files** total: 304 at `tests/` top level + 296 in subdirectories.
+- **Layers:** unit 411, visual 9, live-provider 2, integration 30, functional 148.
+- **Functional layer:** 148 file(s) under `tests/functional/` or `*.functional.test.mjs`. End-to-end checks spawn the real binary or import real modules in an isolated tmpdir.
 - **Contract subsystems:** 28 file(s) under profile/outcomes/hooks/knowledge/intake/graph/evals and related subdirs.
 - **Hook tests:** 9 file(s) (including `tests/hooks/`).
 - **Capability-marked:** 25 file(s) declare `@capability` markers.
@@ -60,7 +60,7 @@ Verify Stop / SessionStart / PreToolUse hooks: `session-start-hook`, `session-re
 
 Keep. Hooks are protected files per `CLAUDE.md`; a regression here can block every tool call.
 
-### 5. Functional layer (12 tests, 6 files)
+### 5. Functional layer (148 tests, 148 files)
 
 New in this PR. Pattern documented at `tests/functional/README.md`:
 
@@ -73,9 +73,9 @@ New in this PR. Pattern documented at `tests/functional/README.md`:
 
 Expand. Every multi-component change must land with a functional test going forward (rule in `CLAUDE.md`).
 
-### 6. Skipped (5)
+### 6. Skipped (0)
 
-Five tests are marked `skip` in the suite, all pre-existing. Each has an inline comment explaining the skip condition (Docker not available, OS-specific path, network). Not blocking.
+No tests are currently marked `skip` in the suite. Previously-skipped tests have been addressed or removed.
 
 ## Coverage gaps
 

@@ -17,9 +17,7 @@ on:
         required: false
         default: "release: promote staging → main"
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 concurrency:
   group: promote-staging-to-main
@@ -28,9 +26,12 @@ concurrency:
 jobs:
   open-promotion-pr:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
           token: ${{ secrets.SYNC_PR_TOKEN || secrets.GITHUB_TOKEN }}

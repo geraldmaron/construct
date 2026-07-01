@@ -55,6 +55,7 @@ Architecture decision records for decisions that have already been made.
 | [0047](./0047-specialist-vs-flavor-model.md) | Specialist vs flavor taxonomy | accepted | |
 | [0048](./0048-semantic-tool-discovery.md) | Semantic tool discovery | accepted | |
 | [0049](./0049-cross-process-auth-once.md) | Cross-process auth-once for 1Password resolution | accepted | |
+| [0050](./0050-worker-scoped-governed-web-capability.md) | Worker-scoped governed web capability (unified WebGrant) | accepted | |
 
 ## Starter templates
 

@@ -106,8 +106,9 @@ test('project sync writes each IDE surface at its canonical path + key + entry s
     // entry sourced from there alone has no usable tools.
     assert.ok(existsSync(p('.github/prompts/construct.prompt.md')), 'Copilot orchestrator prompt present');
     const copilotAgent = readFileSync(p('.github/agents/construct.agent.md'), 'utf8');
-    assert.match(copilotAgent, /^tools:.*construct-mcp\/\*/m, 'VS Code agent grants the construct-mcp tools');
-    assert.match(copilotAgent, /web\/fetch/, 'VS Code agent grants web fetch for live network access');
+    assert.match(copilotAgent, /construct-mcp\/orchestration_policy/, 'VS Code agent grants the orchestration_policy tool');
+    assert.match(copilotAgent, /construct-mcp\/orchestration_run/, 'VS Code agent grants the orchestration_run tool');
+    assert.ok(!copilotAgent.includes('construct-mcp/*'), 'VS Code agent must not use a wildcard grant — least-privilege');
   } finally {
     env.cleanup();
   }

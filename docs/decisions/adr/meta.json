@@ -38,6 +38,7 @@
     "0046-modular-org-runtime-merge",
     "0047-specialist-vs-flavor-model",
     "0048-semantic-tool-discovery",
-    "0049-cross-process-auth-once"
+    "0049-cross-process-auth-once",
+    "0050-worker-scoped-governed-web-capability"
   ]
 }

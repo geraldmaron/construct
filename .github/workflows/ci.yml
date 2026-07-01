@@ -23,6 +23,9 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+permissions:
+  contents: read
+
 # Heavy jobs (test matrix, evals, audit) only run when code or
 # workflow files change. Doc-only PRs skip them and still get the cheap policy checks
 # (lint-comments, lint-templates, docs drift, gates audit, secret scan).
@@ -44,8 +47,8 @@ jobs:
       templates: ${{ steps.filter.outputs.templates }}
       workflow: ${{ steps.filter.outputs.workflow }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d
         id: filter
         with:
           # `code` is the widest filter — any change to source / tests /
@@ -120,8 +123,8 @@ jobs:
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -148,10 +151,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -202,7 +205,6 @@ jobs:
       # adds a local `construct lint:pr` pre-flight so devs catch this pre-push.
       - name: template policy
         if: needs.changes.outputs.templates == 'true' || needs.changes.outputs.workflow == 'true'
-        continue-on-error: true
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_BASE_REF: ${{ github.event.pull_request.base.ref || github.base_ref }}
@@ -217,8 +219,8 @@ jobs:
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .tool-versions
           cache: npm
@@ -232,8 +234,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.deps == 'true' || needs.changes.outputs.workflow == 'true'
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version-file: .tool-versions
       - run: npm ci --ignore-scripts
@@ -256,11 +258,11 @@ jobs:
     name: secret scanning
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           fetch-depth: 0
       - name: gitleaks
-        uses: gitleaks/gitleaks-action@v3
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

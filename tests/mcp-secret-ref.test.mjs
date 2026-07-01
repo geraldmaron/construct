@@ -7,10 +7,11 @@
  * must instead emit each host's env-reference syntax so the token stays in one place
  * and the host resolves it at launch.
  *
- * For local/stdio MCPs the value-to-reference flip is deferred (no confirmed per-host
- * env-block interpolation), but the builders must still never persist an op:// reference
- * or an unresolved __NAME__ template into a host env block. These cases cover the local
- * env path for Claude, OpenCode, and Codex.
+ * For local/stdio MCPs on Claude, VS Code, and OpenCode the value-to-reference flip is
+ * applied: a whole-value secret template (`__NAME__`) is emitted as the host's
+ * env-reference form, so a live value, an op:// reference, and an unresolved template
+ * all resolve to a reference rather than landing on disk. Codex has no env-block
+ * interpolation, so its builder keeps the deferred materialize/strip behavior.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -68,20 +69,26 @@ test('PAT fallback emits a reference even when no token value is resolvable', ()
   assert.equal(entry.headers.Authorization, 'Bearer ${GITHUB_TOKEN}');
 });
 
-test('local/stdio env: an op:// reference is never written into the env block', () => {
+test('local/stdio env (Claude): a whole-value secret template flips to a ${NAME} reference, never op:// or a literal', () => {
   const claude = buildClaudeMcpEntry('example', LOCAL_DEF, { EXAMPLE_API_KEY: OP_REF });
-  const { entry: opencode } = buildOpenCodeMcpEntry('example', LOCAL_DEF, { EXAMPLE_API_KEY: OP_REF });
-  assert.equal(claude.env, undefined, 'op:// must be stripped, leaving no Claude env block');
-  assert.equal(opencode.environment, undefined, 'op:// must be stripped, leaving no OpenCode env block');
+  assert.equal(claude.env.EXAMPLE_API_KEY, '${EXAMPLE_API_KEY}', 'the secret env var must be a host env-reference');
   assert.ok(!JSON.stringify(claude).includes('op://'), 'no op:// reference may appear in the Claude entry');
+  assert.ok(!JSON.stringify(claude).includes(SENTINEL), 'no literal secret value may appear in the Claude entry');
+});
+
+test('local/stdio env (OpenCode): a whole-value secret template flips to a {env:NAME} reference', () => {
+  const { entry: opencode } = buildOpenCodeMcpEntry('example', LOCAL_DEF, { EXAMPLE_API_KEY: OP_REF });
+  assert.equal(opencode.environment.EXAMPLE_API_KEY, '{env:EXAMPLE_API_KEY}', 'the secret env var must be a host env-reference');
   assert.ok(!JSON.stringify(opencode).includes('op://'), 'no op:// reference may appear in the OpenCode entry');
 });
 
-test('local/stdio env: an unresolved __NAME__ template is never written into the env block', () => {
+test('local/stdio env: an unresolved secret template still emits a reference, never the raw __NAME__ template', () => {
   const claude = buildClaudeMcpEntry('example', LOCAL_DEF, {});
   const { entry: opencode } = buildOpenCodeMcpEntry('example', LOCAL_DEF, {});
-  assert.equal(claude.env, undefined, 'unresolved template must be stripped from the Claude env block');
-  assert.equal(opencode.environment, undefined, 'unresolved template must be stripped from the OpenCode env block');
+  assert.equal(claude.env.EXAMPLE_API_KEY, '${EXAMPLE_API_KEY}', 'Claude emits a reference regardless of resolvability');
+  assert.equal(opencode.environment.EXAMPLE_API_KEY, '{env:EXAMPLE_API_KEY}', 'OpenCode emits a reference regardless of resolvability');
+  assert.ok(!JSON.stringify(claude).includes('__EXAMPLE_API_KEY__'), 'no raw template may appear in the Claude entry');
+  assert.ok(!JSON.stringify(opencode).includes('__EXAMPLE_API_KEY__'), 'no raw template may appear in the OpenCode entry');
 });
 
 test('Codex stdio env drops both op:// references and unresolved templates', () => {
