@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-30T23:58:45.461Z",
+  "generatedAt": "2026-07-01T00:15:33.812Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 565,
+    "testFiles": 570,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 264,
+    "nestedTestFiles": 269,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 377,
+      "unit": 382,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 147
     },
     "byCategory": {
-      "unit": 336,
+      "unit": 341,
       "visual": 9,
       "structural-guard": 13,
       "contract-subsystem": 28,
@@ -405,6 +405,46 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f06-docker/release-gating.red.mjs — F06 [R23]/F07 overlap: mutable image tags publish before any scan or boot smoke."
+    },
+    {
+      "path": "tests/audit/f07-cicd/action-pin.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f07-cicd/action-pin.red.mjs — F07/R25/R27 mutable-action-tag proof."
+    },
+    {
+      "path": "tests/audit/f07-cicd/permissions.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f07-cicd/permissions.red.mjs — F07/R25/R29 least-privilege GITHUB_TOKEN proof."
+    },
+    {
+      "path": "tests/audit/f07-cicd/policy-gate-blocking.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f07-cicd/policy-gate-blocking.red.mjs — F07/R28 advisory-policy-gate proof."
+    },
+    {
+      "path": "tests/audit/f07-cicd/release-tooling-pin.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f07-cicd/release-tooling-pin.red.mjs — F07/R26 release-time tool-fetch proof."
+    },
+    {
+      "path": "tests/audit/f07-cicd/terraform-plan-redaction.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f07-cicd/terraform-plan-redaction.red.mjs — F07/R29 plan-comment secret-leak proof."
     },
     {
       "path": "tests/auto-docs.test.mjs",
