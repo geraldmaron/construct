@@ -118,7 +118,6 @@ function unifiedToLegacyRegistry(unified) {
 }
 
 clearCache();
-clearCache();
 const unified = loadRegistry({ rootDir: root });
 const registry = unifiedToLegacyRegistry(unified);
 
