@@ -79,6 +79,30 @@
       "criticality": "P1",
       "description": "Missing local references in produced HTML, inline-HTML source, and reference-style markdown definitions fail the quality gate.",
       "redFixture": "tests/audit/f13-artifact/missing-local-reference.test.mjs"
+    },
+    {
+      "id": "tool-description-overlap",
+      "criticality": "P1",
+      "description": "Overlapping retrieval-cluster tools carry a machine-readable category discriminator; every tool description is substantive and unique.",
+      "redFixture": "tests/audit/f14-tools/description-overlap.test.mjs"
+    },
+    {
+      "id": "tool-surface-parity",
+      "criticality": "P1",
+      "description": "Flat core plus call-gateway enum partition the catalog exactly once; an automated parity check rejects a core name absent from the catalog.",
+      "redFixture": "tests/audit/f14-tools/exposure-parity.test.mjs"
+    },
+    {
+      "id": "tool-output-schema",
+      "criticality": "P1",
+      "description": "Every machine-consumed MCP tool declares an output schema in the catalog literal.",
+      "redFixture": "tests/audit/f14-tools/output-schema-coverage.test.mjs"
+    },
+    {
+      "id": "tool-token-budget",
+      "criticality": "P1",
+      "description": "The documented flat-surface tool count tracks the live catalog and the CallTool dispatcher instruments calls via a GenAI span.",
+      "redFixture": "tests/audit/f14-tools/token-budget-instrumentation.test.mjs"
     }
   ]
 }
