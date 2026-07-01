@@ -514,7 +514,8 @@ async function cmdDoctor() {
   const wantsFixMigrateState = wantsFixAll || args.includes('--fix-migrate-state');
 
   const checks = [];
-  const add = (label, pass, optional = false) => checks.push({ label, pass, optional });
+  const { DOCTOR_STATES } = await import('../lib/doctor/diagnosis.mjs');
+  const add = (label, pass, optional = false, failureState = pass ? DOCTOR_STATES.healthy : null) => checks.push({ label, pass, optional, failureState });
   const { isConstructSourceCheckout } = await import('../lib/doctor/source-checkout.mjs');
   const isSourceCheckout = isConstructSourceCheckout(ROOT_DIR);
   add('specialists/org exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'org')));

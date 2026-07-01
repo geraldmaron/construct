@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-01T01:24:13.439Z",
+  "generatedAt": "2026-07-01T01:35:17.990Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 584,
+    "testFiles": 587,
     "topLevelTestFiles": 301,
-    "nestedTestFiles": 283,
+    "nestedTestFiles": 286,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 396,
+      "unit": 399,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 147
     },
     "byCategory": {
-      "unit": 354,
+      "unit": 357,
       "visual": 9,
       "structural-guard": 14,
       "contract-subsystem": 28,
@@ -557,6 +557,30 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "mis-disposition.red.mjs — F11 (durable source vs generated local state)."
+    },
+    {
+      "path": "tests/audit/f12-gates/audit-doc-staleness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f12-gates/audit-doc-staleness.red.mjs — R22 stale internal audit doc."
+    },
+    {
+      "path": "tests/audit/f12-gates/doctor-specificity.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f12-gates/doctor-specificity.red.mjs — doctor must classify failure states."
+    },
+    {
+      "path": "tests/audit/f12-gates/gate-red-fixture-inventory.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f12-gates/gate-red-fixture-inventory.red.mjs — R28/R31/R33 gate-trust gap."
     },
     {
       "path": "tests/auto-docs.test.mjs",

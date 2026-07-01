@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "description": "Maps every P0/P1 release gate to the red/forced-failure fixture that proves it detects its target defect. All redFixture paths must be *.test.mjs (wired into npm test) — a *.red.mjs path means the fix has not landed.",
+  "gates": [
+    {
+      "id": "mcp-safety",
+      "criticality": "P0",
+      "description": "MCP tools carry output schema, safety class, root containment, approval model, rate budget, and audit log.",
+      "redFixture": "tests/audit/f01-mcp-safety/safety-envelope.test.mjs"
+    },
+    {
+      "id": "secret-scan",
+      "criticality": "P0",
+      "description": "Credentials are not written in plain text to tracked files; audit trail covers all resolution tiers.",
+      "redFixture": "tests/audit/f02-secrets/config-env-mode.test.mjs"
+    },
+    {
+      "id": "consumer-dependency-audit",
+      "criticality": "P0",
+      "description": "Package ships all runtime-loaded data directories; postinstall writes a mutation manifest.",
+      "redFixture": "tests/audit/f03-package/packed-asset-parity.test.mjs"
+    },
+    {
+      "id": "host-readiness",
+      "criticality": "P0",
+      "description": "Host adapter settings (VS Code, Copilot) are correct, JSONC-safe, and classified by typed readiness state.",
+      "redFixture": "tests/audit/f04-host-readiness/readiness-state-machine.test.mjs"
+    },
+    {
+      "id": "runtime-ownership",
+      "criticality": "P0",
+      "description": "Service manager kills only Construct-owned processes; stale or foreign PIDs are never signalled.",
+      "redFixture": "tests/audit/f05-runtime-ownership/owned-stop.test.mjs"
+    },
+    {
+      "id": "docker-runtime-smoke",
+      "criticality": "P1",
+      "description": "Docker surface is degated per ADR-0039; no Dockerfile or docker-push job is present.",
+      "redFixture": "tests/audit/f06-docker/entrypoint-existence.test.mjs"
+    },
+    {
+      "id": "cicd-permissions",
+      "criticality": "P0",
+      "description": "CI/CD pipelines pin action SHAs and restrict job permissions to least privilege.",
+      "redFixture": "tests/audit/f07-cicd/permissions.test.mjs"
+    },
+    {
+      "id": "prompt-injection",
+      "criticality": "P0",
+      "description": "Web search results and intake packets carry trust:untrusted; front-door agent grant is least privilege.",
+      "redFixture": "tests/audit/f08-prompt-injection/adversarial-corpus.test.mjs"
+    },
+    {
+      "id": "registry-validate-p0p1",
+      "criticality": "P1",
+      "description": "P0/P1 capabilities with no test or stale lastValidated fail the registry gate (errors, not warnings).",
+      "redFixture": "tests/audit/f10-registry-drift/fail-closed-validation.test.mjs"
+    },
+    {
+      "id": "template-policy",
+      "criticality": "P1",
+      "description": "Shipped doc templates render correctly and the publish path applies template spacing and figure fidelity.",
+      "redFixture": "tests/functional/publish-template.functional.test.mjs"
+    }
+  ]
+}
