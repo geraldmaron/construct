@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-01T04:46:11.931Z",
+  "generatedAt": "2026-07-02T03:24:14.226Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 600,
+    "testFiles": 602,
     "topLevelTestFiles": 304,
-    "nestedTestFiles": 296,
+    "nestedTestFiles": 298,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 411,
+      "unit": 413,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 148
     },
     "byCategory": {
-      "unit": 368,
+      "unit": 370,
       "visual": 9,
       "structural-guard": 15,
       "contract-subsystem": 28,
@@ -503,6 +503,14 @@
       "maintainerNotes": "tests/audit/f09-orchestration/inline-truthfulness.red.mjs — F09 [R17] prepared-vs-executed proof."
     },
     {
+      "path": "tests/audit/f09-orchestration/provider-timeout-default.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/provider-timeout-default.test.mjs — construct-o6t8.1 proof."
+    },
+    {
       "path": "tests/audit/f09-orchestration/provider-timeout.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -517,6 +525,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f09-orchestration/remote-per-request-timeout.red.mjs — F09 [R20] proof."
+    },
+    {
+      "path": "tests/audit/f09-orchestration/remote-status-timeout.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/remote-status-timeout.test.mjs — construct-o6t8.2 proof."
     },
     {
       "path": "tests/audit/f10-registry-drift/catalog-semantic-drift.test.mjs",

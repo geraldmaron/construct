@@ -24,9 +24,14 @@ import test from 'node:test';
 
 import { orchestrationRun } from '../../../lib/mcp/tools/orchestration-run.mjs';
 
+// Pin an explicit small per-request timeout so this proof of the per-request bound is
+// deterministic regardless of the production default (construct-o6t8.2 / construct-neq9.6):
+// the test must not depend on — nor silently re-manufacture — the client's default value.
+
 const REMOTE_ENV = {
   CONSTRUCT_ORCHESTRATION_URL: 'http://remote.invalid',
   CONSTRUCT_ORCHESTRATION_TOKEN: 'test-token',
+  CONSTRUCT_ORCHESTRATION_TIMEOUT_MS: '150',
 };
 
 // A fetch that records options and never settles — a remote service that accepts the
