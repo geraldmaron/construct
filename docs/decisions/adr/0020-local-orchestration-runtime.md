@@ -9,6 +9,7 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 - **Supersedes**: none
 - **Status note (2026-06-29, self-audit construct-rr63.1.2)**: shipped and test-covered — implemented by `lib/orchestration/runtime.mjs` (+ `run-store.mjs`, `worker.mjs`) with `tests/functional/orchestration-mode-a.functional.test.mjs` and `tests/orchestration-runtime.test.mjs`. Status corrected from `proposed` to reflect ground truth.
 - **Status note (2026-07-02, construct-fbxv.1)**: extended with honest terminal state taxonomy — runs that resolve no model, prepare zero tasks, and set `degraded:true` now persist and report an explicit `degraded` terminal status instead of bare `completed`.
+- **Status note (2026-07-02, construct-fbxv AP5 validation)**: the `degraded` terminal state was widened to any degraded run that is not prepare-only — a run that executed with a capability gap (e.g. `webUnavailable`) reports `degraded`, not bare `completed`. The runtime and the MCP `shapeRun` read-model now derive identical terminal statuses, the remote poll-loop `TERMINAL` set recognizes `degraded`/`completed-prepare-only`, and the ACP/CLI/`hostAdapterMetadata` surfaces reflect the shaped status and top-level `run.degraded`.
 
 <!-- Owning specialist: cx-architect. Part of the host-independent local orchestration runtime (epic construct-d6pf). -->
 
@@ -32,14 +33,14 @@ A run's persisted `status` field is one of:
 |--------|---------|-----------------|
 | `planned` | Run persisted after planning, before execution | `planRun` return |
 | `running` | Execution in progress | `executeRun` started |
-| `completed` | Normal success — tasks executed (provider) or prepared (inline) with at least one task | `anyFailed === false && !cancelled && !(degraded && tasks.length === 0) && !(allPrepared && tasks.length > 0)` |
-| `completed-prepare-only` | All tasks prepared, none executed (inline backend) | `tasks.length > 0 && tasks.every(t => t.status === 'prepared')` |
-| `degraded` | **Explicit terminal state** — run resolved no model, prepared zero tasks, and `degraded === true` (e.g., capability-unavailable) | `run.degraded === true && run.tasks.length === 0` |
+| `completed` | Normal success — tasks executed cleanly, not degraded | `!cancelled && !anyFailed && !(allPrepared) && !degraded` |
+| `completed-prepare-only` | All tasks prepared, none executed (inline backend); the more specific "no specialist ran" signal, so it is checked before `degraded` | `tasks.length > 0 && tasks.every(t => t.status === 'prepared')` |
+| `degraded` | **Explicit terminal state** — `degraded === true` and not prepare-only: a run that resolved no model (zero tasks) *or* executed with a capability gap (e.g. `webUnavailable`) | `!cancelled && !anyFailed && !allPrepared && degraded === true` |
 | `completed-with-failures` | One or more tasks failed, run continued | `anyFailed === true && !cancelled` |
 | `cancelled` | Run cancelled mid-execution | `isCancelRequested(runId)` |
 | `error` | Run-level failure (store error, contract resolution failure) | `catch` block in `executeRun` |
 
-The `degraded` terminal state is new (construct-fbxv.1). It ensures a run that could not resolve a model and therefore prepared zero tasks never reports bare `completed` — the degraded capability is surfaced as a first-class terminal status in every surface (stored run, MCP tool shape, CLI `status`, `orchestration_status`).
+The `degraded` terminal state (construct-fbxv.1) ensures a run that could not resolve a model, or reached no live-web path for a web-capable task, never reports bare `completed` — the degraded capability is a first-class terminal status on every surface (stored run, MCP `shapeRun`, CLI `status`, `orchestration_status`, ACP summary, `hostAdapterMetadata`). `executeRun` and the read-model `shapeRun` derive the status identically; `shapeRun` additionally re-derives it for legacy runs persisted as bare `completed` before this taxonomy, and the remote poll-loop `TERMINAL` set includes `degraded` and `completed-prepare-only` so a finished remote run is never misreported as still executing.
 
 ## Rationale
 
