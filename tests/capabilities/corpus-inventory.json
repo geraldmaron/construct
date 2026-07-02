@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-02T15:11:18.603Z",
+  "generatedAt": "2026-07-02T20:14:27.681Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 613,
-    "topLevelTestFiles": 306,
-    "nestedTestFiles": 307,
+    "testFiles": 625,
+    "topLevelTestFiles": 308,
+    "nestedTestFiles": 317,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 422,
+      "unit": 428,
       "visual": 9,
       "live-provider": 2,
-      "integration": 30,
-      "functional": 150
+      "integration": 31,
+      "functional": 155
     },
     "byCategory": {
-      "unit": 379,
+      "unit": 385,
       "visual": 9,
       "structural-guard": 15,
       "contract-subsystem": 28,
       "live-provider": 2,
-      "integration": 21,
-      "functional": 150,
+      "integration": 22,
+      "functional": 155,
       "hook": 9
     }
   },
@@ -317,6 +317,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f02-secrets/resolver-bypass-consumers.test.mjs — secret-resolver bypass regression."
+    },
+    {
+      "path": "tests/audit/f02-secrets/sync-template-leak.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f02-secrets/sync-template-leak.test.mjs — F02 regression guard for the"
     },
     {
       "path": "tests/audit/f03-package/half-stage-recovery.test.mjs",
@@ -1759,6 +1767,14 @@
       "maintainerNotes": "tests/env-config.test.mjs — Unit tests for lib/env-config.mjs."
     },
     {
+      "path": "tests/env-config/shadow-warning.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/env-config/shadow-warning.test.mjs — construct-xj96.12 proof."
+    },
+    {
       "path": "tests/evals-dataset.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -2043,6 +2059,14 @@
       "maintainerNotes": "tests/functional/copilot-auth.functional.test.mjs — the GitHub Copilot OAuth"
     },
     {
+      "path": "tests/functional/copilot-proxy-auth.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "copilot-proxy-auth.functional.test.mjs — the Copilot bridge must authenticate its"
+    },
+    {
       "path": "tests/functional/credentials-diagnostics-no-leak.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2111,6 +2135,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/dependency-matrix.functional.test.mjs — end-to-end coverage"
+    },
+    {
+      "path": "tests/functional/deployment-mode-single-resolver.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "deployment-mode-single-resolver.functional.test.mjs — every surface resolves"
     },
     {
       "path": "tests/functional/diagram.functional.test.mjs",
@@ -2537,6 +2569,14 @@
       "maintainerNotes": "tests/functional/mcp-parity.functional.test.mjs — End-to-end MCP parity."
     },
     {
+      "path": "tests/functional/mcp-secret-resolution-nonblocking.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "mcp-secret-resolution-nonblocking.functional.test.mjs — the MCP CallTool secret"
+    },
+    {
       "path": "tests/functional/mcp-tool-rate-audit.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2590,7 +2630,7 @@
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/functional/op-run-wrap.functional.test.mjs — opt-in `op run` service wrapping."
+      "maintainerNotes": "tests/functional/op-run-wrap.functional.test.mjs — opt-in `op run` wrapping."
     },
     {
       "path": "tests/functional/opencode-adaptive-prompt.functional.test.mjs",
@@ -2699,6 +2739,14 @@
       "maintainerNotes": "tests/functional/oracle-hygiene-policy.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/oracle-liveness.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "oracle-liveness.functional.test.mjs — surface a stalled oracle producer."
+    },
+    {
       "path": "tests/functional/oracle-noise-filter.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2777,6 +2825,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/postinstall-global-scope.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/preflight-scope-label.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/preflight-scope-label.functional.test.mjs"
     },
     {
       "path": "tests/functional/profile-lifecycle.functional.test.mjs",
@@ -3253,6 +3309,14 @@
       "maintainerNotes": "tests/hooks/no-skip-vars.test.mjs — pins the no-skip-vars principle."
     },
     {
+      "path": "tests/hooks/orchestration-dispatch-guard-degraded.test.mjs",
+      "layer": "integration",
+      "category": "integration",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/hooks/orchestration-dispatch-guard-degraded.test.mjs — degraded dispatch"
+    },
+    {
       "path": "tests/hooks/orchestration-dispatch-guard.test.mjs",
       "layer": "integration",
       "category": "integration",
@@ -3501,6 +3565,14 @@
       "maintainerNotes": "tests/intake-queue.test.mjs — `.cx/intake/` storage contract via FilesystemIntakeQueue."
     },
     {
+      "path": "tests/intake-session-prelude-staleness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/intake-session-prelude-staleness.test.mjs — verdict age/staleness"
+    },
+    {
       "path": "tests/intake-session-prelude.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3691,6 +3763,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/mcp-server.test.mjs — MCP server tool contract and trace metadata tests"
+    },
+    {
+      "path": "tests/mcp-stale-managed-reconcile.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp-stale-managed-reconcile.test.mjs — the second-pass reconcile that"
     },
     {
       "path": "tests/mcp-tools-doc-parity.test.mjs",
@@ -4261,12 +4341,28 @@
       "maintainerNotes": "tests/providers/connection-probe.test.mjs — hermetic LLM provider credential probe."
     },
     {
+      "path": "tests/providers/credential-sources-placeholder.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/credential-sources-placeholder.test.mjs — placeholder"
+    },
+    {
       "path": "tests/providers/creds.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/providers/creds.test.mjs — credential management utility tests."
+    },
+    {
+      "path": "tests/providers/op-discovery.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/op-discovery.test.mjs — op CLI discovery tiers."
     },
     {
       "path": "tests/providers/scope-validators.test.mjs",
