@@ -1156,6 +1156,7 @@ function writeProjectClaudeSettings(targetDir) {
     if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
     existing.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
   }
+  reconcileStaleManagedEntries(existing.mcpServers, { registryMcp, rebuildEntry: (id, def) => buildClaudeMcpEntry(id, def, process.env) });
 
   if (DRY_RUN) return;
   mkdirp(path.dirname(settingsPath));
@@ -1510,6 +1511,29 @@ export function mcpEntryPointsOutsideToolkit(entry, root) {
   });
 }
 
+// The desired-set loop only visits registryMcp ids, so a construct-managed entry
+// present in the host config but OUTSIDE the current sync set (an optional server
+// like `memory` the user opted into) is never revisited — a stale toolkit path in it
+// becomes immortal. This second pass rewrites those in place: the double guard (id is
+// construct-managed AND its path points outside the toolkit) never touches an
+// unmanaged/user entry, and rewriting to a path under root makes it idempotent (a
+// second run finds nothing stale). Rewrite, never delete, never seed — opt-in sticks.
+
+export function reconcileStaleManagedEntries(configMap, { registryMcp, rebuildEntry }) {
+  if (!configMap) return false;
+  const managed = managedMcpDefs();
+  let changed = false;
+  for (const [id, entry] of Object.entries(configMap)) {
+    if (id in registryMcp) continue;
+    const mcpDef = managed[id];
+    if (!mcpDef) continue;
+    if (!mcpEntryPointsOutsideToolkit(entry, root)) continue;
+    configMap[id] = rebuildEntry(id, mcpDef);
+    changed = true;
+  }
+  return changed;
+}
+
 // Workspace defaults Construct manages for VS Code chat. `chat.agentFilesLocations`
 // pins the agent scan to `.github/agents` so the orchestrator does not list twice
 // (VS Code also scans `.claude/agents`, whose Claude tool names it ignores); its
@@ -1612,6 +1636,7 @@ function syncVSCode(targetDir = null, wants = true) {
       if (existingEntry && !hasPlaceholder && !transportMismatch && !staleToolkitPath) continue;
       config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
     }
+    reconcileStaleManagedEntries(config.servers, { registryMcp, rebuildEntry: (id, def) => buildClaudeMcpEntry(id, def, process.env, { host: "vscode" }) });
     if (!DRY_RUN) {
       mkdirp(path.dirname(mcpPath));
       fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
@@ -1708,6 +1733,7 @@ function syncCursor(targetDir = null, wants = true) {
     if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
     config.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
   }
+  reconcileStaleManagedEntries(config.mcpServers, { registryMcp, rebuildEntry: (id, def) => buildClaudeMcpEntry(id, def, process.env, { host: "vscode" }) });
   if (!DRY_RUN) {
     mkdirp(path.dirname(cursorMcpPath));
     fs.writeFileSync(cursorMcpPath, JSON.stringify(config, null, 2) + "\n");
