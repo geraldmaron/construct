@@ -3791,7 +3791,7 @@ async function cmdOrchestrate(args) {
     if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
     const shaped = shapeRun(run);
     println(`Run ${run.runId} — ${shaped.status} · executionMode=${run.execution.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
-    if (run.execution.degraded) println(`  degraded: ${run.execution.degradationReason}`);
+    if (shaped.degraded) println(`  degraded: ${shaped.degradationReason}`);
     if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
     else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
     for (const t of run.tasks) {

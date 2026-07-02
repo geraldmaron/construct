@@ -18,7 +18,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { runTaskViaProvider } from '../../../lib/orchestration/worker.mjs';
+import { runTaskViaProvider, PROVIDER_TIMEOUT_DEFAULT_MS } from '../../../lib/orchestration/worker.mjs';
+import { resolveNonNegativeSetting } from '../../../lib/env-config.mjs';
 
 const MODEL = 'openai/gpt-4o-mini';
 const ENV = { OPENROUTER_API_KEY: 'sk-test-not-a-real-key' };
@@ -40,10 +41,21 @@ function delayedFetch(delayMs) {
   };
 }
 
-test('[construct-o6t8.1] resolved provider timeout with no override env is minute-scale, not 200ms', () => {
-  const rawTimeout = ENV.CONSTRUCT_PROVIDER_TIMEOUT_MS;
-  const resolved = rawTimeout === undefined || rawTimeout === '' ? 120000 : Number(rawTimeout);
-  assert.ok(resolved >= 60000, `default provider timeout must be >= 60000ms, not 200ms. resolved=${resolved}`);
+test('[construct-o6t8.1] production provider timeout default is minute-scale, not 200ms', () => {
+  // Asserts the real exported constant and the worker's shared resolver, not a value
+  // recomputed inside the test — a regression that lowered the default would fail here.
+  assert.ok(PROVIDER_TIMEOUT_DEFAULT_MS >= 60000, `default provider timeout must be >= 60000ms, not 200ms. default=${PROVIDER_TIMEOUT_DEFAULT_MS}`);
+  const resolvedNoEnv = resolveNonNegativeSetting({}, 'CONSTRUCT_PROVIDER_TIMEOUT_MS', PROVIDER_TIMEOUT_DEFAULT_MS);
+  assert.equal(resolvedNoEnv, PROVIDER_TIMEOUT_DEFAULT_MS, 'unset env must resolve to the production default');
+});
+
+test('[construct-o6t8.1] garbage or negative provider timeout falls back to the default (no NaN AbortSignal)', () => {
+  const garbage = resolveNonNegativeSetting({ CONSTRUCT_PROVIDER_TIMEOUT_MS: 'abc' }, 'CONSTRUCT_PROVIDER_TIMEOUT_MS', PROVIDER_TIMEOUT_DEFAULT_MS);
+  assert.equal(garbage, PROVIDER_TIMEOUT_DEFAULT_MS, 'non-numeric env must fall back, not become NaN (AbortSignal.timeout(NaN) aborts instantly)');
+  const negative = resolveNonNegativeSetting({ CONSTRUCT_PROVIDER_TIMEOUT_MS: '-100' }, 'CONSTRUCT_PROVIDER_TIMEOUT_MS', PROVIDER_TIMEOUT_DEFAULT_MS);
+  assert.equal(negative, PROVIDER_TIMEOUT_DEFAULT_MS, 'negative env must fall back');
+  const explicit = resolveNonNegativeSetting({ CONSTRUCT_PROVIDER_TIMEOUT_MS: '5000' }, 'CONSTRUCT_PROVIDER_TIMEOUT_MS', PROVIDER_TIMEOUT_DEFAULT_MS);
+  assert.equal(explicit, 5000, 'a valid positive override must be honored');
 });
 
 test('[construct-o6t8.1] runTaskViaProvider does not abort a provider that responds after ~1s with no timeout env set', async () => {

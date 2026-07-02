@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-02T06:03:32.812Z",
+  "generatedAt": "2026-07-02T14:07:14.272Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 609,
+    "testFiles": 611,
     "topLevelTestFiles": 305,
-    "nestedTestFiles": 304,
+    "nestedTestFiles": 306,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 418,
+      "unit": 420,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 150
     },
     "byCategory": {
-      "unit": 375,
+      "unit": 377,
       "visual": 9,
       "structural-guard": 15,
       "contract-subsystem": 28,
@@ -493,6 +493,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f08-prompt-injection/untrusted-ingest-labeling.red.mjs —"
+    },
+    {
+      "path": "tests/audit/f09-orchestration/degraded-flag-propagation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/degraded-flag-propagation.test.mjs — construct-fbxv.5 proof."
     },
     {
       "path": "tests/audit/f09-orchestration/error-persistence.test.mjs",
@@ -1098,7 +1106,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/config/env-number-defaults.test.mjs — resolveMsSetting env number parsing."
+      "maintainerNotes": "tests/config/env-number-defaults.test.mjs — resolveNonNegativeSetting env parsing."
     },
     {
       "path": "tests/context-router.test.mjs",
@@ -4267,6 +4275,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/providers/scope-validators.test.mjs — allowlist scope validation tests."
+    },
+    {
+      "path": "tests/publish/flag-parsing.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/publish/flag-parsing.test.mjs — construct-xj96.11 proof."
     },
     {
       "path": "tests/read-tracker-store.test.mjs",

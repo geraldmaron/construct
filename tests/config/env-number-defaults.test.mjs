@@ -1,18 +1,20 @@
 /**
- * tests/config/env-number-defaults.test.mjs — resolveMsSetting env number parsing.
+ * tests/config/env-number-defaults.test.mjs — resolveNonNegativeSetting env parsing.
  *
- * Verifies the shared helper `resolveMsSetting(env, key, fallback)` correctly
+ * Verifies the shared helper `resolveNonNegativeSetting(env, key, fallback)` correctly
  * parses numeric environment variables: explicit 0 is preserved (not coerced to
- * fallback), unset/missing/non-numeric values fall back, and positive values
- * pass through. Integration assertions confirm each converted call site honors
- * the same semantics (construct-o6t8.3).
+ * fallback), unset/missing/blank/non-numeric/negative values fall back, and positive
+ * values pass through. A real integration assertion confirms an actual call site
+ * (resolveWebCapability) routes its env through the helper rather than a bare
+ * `Number(env) || literal` (construct-o6t8.3).
  */
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { resolveMsSetting } from '../../lib/env-config.mjs';
+import { resolveNonNegativeSetting } from '../../lib/env-config.mjs';
+import { resolveWebCapability } from '../../lib/orchestration/web-capability.mjs';
 
-describe('resolveMsSetting(env, key, fallback)', () => {
+describe('resolveNonNegativeSetting(env, key, fallback)', () => {
   const unitTests = [
     { name: 'undefined env returns fallback', env: undefined, key: 'KEY', fallback: 100, expected: 100 },
     { name: 'null env returns fallback', env: null, key: 'KEY', fallback: 100, expected: 100 },
@@ -35,126 +37,45 @@ describe('resolveMsSetting(env, key, fallback)', () => {
 
   for (const { name, env, key, fallback, expected } of unitTests) {
     test(name, () => {
-      const result = resolveMsSetting(env, key, fallback);
+      const result = resolveNonNegativeSetting(env, key, fallback);
       assert.strictEqual(result, expected);
     });
   }
 });
 
-describe('resolveMsSetting integration: worker.mjs CONSTRUCT_WORKER_TOOL_ROUNDS', () => {
-  test('CONSTRUCT_WORKER_TOOL_ROUNDS=0 disables rounds', () => {
-    const env = { CONSTRUCT_WORKER_TOOL_ROUNDS: '0' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_WORKER_TOOL_ROUNDS', 4);
-    assert.strictEqual(result, 0);
+// Real call-site integration: resolveWebCapability is a pure function whose observable
+// output (maxUses / max_results) is produced by routing the env through the shared
+// helper. These assertions fail if the site reverts to `Number(env) || literal`, which
+// would coerce an explicit 0 back to the default — the exact regression o6t8.3 guards.
+
+describe('resolveNonNegativeSetting integration: resolveWebCapability call site', () => {
+  test('CONSTRUCT_WORKER_WEB_MAX_USES=0 flows through to grant.maxUses (explicit 0 honored)', () => {
+    const grant = resolveWebCapability({ family: 'anthropic', env: { CONSTRUCT_WORKER_WEB_MAX_USES: '0' } });
+    assert.strictEqual(grant.maxUses, 0);
   });
 
-  test('CONSTRUCT_WORKER_TOOL_ROUNDS=10 uses 10', () => {
-    const env = { CONSTRUCT_WORKER_TOOL_ROUNDS: '10' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_WORKER_TOOL_ROUNDS', 4);
-    assert.strictEqual(result, 10);
+  test('CONSTRUCT_WORKER_WEB_MAX_USES=10 flows through to grant.maxUses', () => {
+    const grant = resolveWebCapability({ family: 'anthropic', env: { CONSTRUCT_WORKER_WEB_MAX_USES: '10' } });
+    assert.strictEqual(grant.maxUses, 10);
   });
 
-  test('missing CONSTRUCT_WORKER_TOOL_ROUNDS defaults to 4', () => {
-    const env = {};
-    const result = resolveMsSetting(env, 'CONSTRUCT_WORKER_TOOL_ROUNDS', 4);
-    assert.strictEqual(result, 4);
-  });
-});
-
-describe('resolveMsSetting integration: worker.mjs CONSTRUCT_WORKER_WEB_LOOP_CAP', () => {
-  test('CONSTRUCT_WORKER_WEB_LOOP_CAP=0 disables loop cap', () => {
-    const env = { CONSTRUCT_WORKER_WEB_LOOP_CAP: '0' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_WORKER_WEB_LOOP_CAP', 4);
-    assert.strictEqual(result, 0);
+  test('unset CONSTRUCT_WORKER_WEB_MAX_USES falls back to the default (5)', () => {
+    const grant = resolveWebCapability({ family: 'anthropic', env: {} });
+    assert.strictEqual(grant.maxUses, 5);
   });
 
-  test('CONSTRUCT_WORKER_WEB_LOOP_CAP=20 uses 20', () => {
-    const env = { CONSTRUCT_WORKER_WEB_LOOP_CAP: '20' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_WORKER_WEB_LOOP_CAP', 4);
-    assert.strictEqual(result, 20);
-  });
-});
-
-describe('resolveMsSetting integration: web-capability.mjs CONSTRUCT_WORKER_WEB_MAX_USES', () => {
-  test('CONSTRUCT_WORKER_WEB_MAX_USES=0 disables max uses', () => {
-    const env = { CONSTRUCT_WORKER_WEB_MAX_USES: '0' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_WORKER_WEB_MAX_USES', 5);
-    assert.strictEqual(result, 0);
+  test('garbage CONSTRUCT_WORKER_WEB_MAX_USES falls back to the default (5)', () => {
+    const grant = resolveWebCapability({ family: 'anthropic', env: { CONSTRUCT_WORKER_WEB_MAX_USES: 'lots' } });
+    assert.strictEqual(grant.maxUses, 5);
   });
 
-  test('CONSTRUCT_WORKER_WEB_MAX_USES=10 uses 10', () => {
-    const env = { CONSTRUCT_WORKER_WEB_MAX_USES: '10' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_WORKER_WEB_MAX_USES', 5);
-    assert.strictEqual(result, 10);
-  });
-});
-
-describe('resolveMsSetting integration: web-capability.mjs CONSTRUCT_WORKER_WEB_MAX_RESULTS', () => {
-  test('CONSTRUCT_WORKER_WEB_MAX_RESULTS=0 disables max results', () => {
-    const env = { CONSTRUCT_WORKER_WEB_MAX_RESULTS: '0' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_WORKER_WEB_MAX_RESULTS', 5);
-    assert.strictEqual(result, 0);
+  test('CONSTRUCT_WORKER_WEB_MAX_RESULTS=0 flows through to the openrouter tool spec', () => {
+    const grant = resolveWebCapability({ family: 'openrouter', env: { CONSTRUCT_WORKER_WEB_MAX_RESULTS: '0' } });
+    assert.strictEqual(grant.toolSpec.parameters.max_results, 0);
   });
 
-  test('CONSTRUCT_WORKER_WEB_MAX_RESULTS=20 uses 20', () => {
-    const env = { CONSTRUCT_WORKER_WEB_MAX_RESULTS: '20' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_WORKER_WEB_MAX_RESULTS', 5);
-    assert.strictEqual(result, 20);
-  });
-});
-
-describe('resolveMsSetting integration: session-reflect.mjs CONSTRUCT_REFLECT_BUDGET_MS', () => {
-  test('CONSTRUCT_REFLECT_BUDGET_MS=0 disables budget', () => {
-    const env = { CONSTRUCT_REFLECT_BUDGET_MS: '0' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_REFLECT_BUDGET_MS', 500);
-    assert.strictEqual(result, 0);
-  });
-
-  test('CONSTRUCT_REFLECT_BUDGET_MS=1000 uses 1000', () => {
-    const env = { CONSTRUCT_REFLECT_BUDGET_MS: '1000' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_REFLECT_BUDGET_MS', 500);
-    assert.strictEqual(result, 1000);
-  });
-});
-
-describe('resolveMsSetting integration: daemon.mjs CONSTRUCT_EMBED_LOG_MAX_MB', () => {
-  test('CONSTRUCT_EMBED_LOG_MAX_MB=0 sets cap to 0', () => {
-    const env = { CONSTRUCT_EMBED_LOG_MAX_MB: '0' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_EMBED_LOG_MAX_MB', 50);
-    assert.strictEqual(result, 0);
-  });
-
-  test('CONSTRUCT_EMBED_LOG_MAX_MB=100 uses 100', () => {
-    const env = { CONSTRUCT_EMBED_LOG_MAX_MB: '100' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_EMBED_LOG_MAX_MB', 50);
-    assert.strictEqual(result, 100);
-  });
-});
-
-describe('resolveMsSetting integration: daemon.mjs CONSTRUCT_EMBED_LOG_MAX_SEGMENTS', () => {
-  test('CONSTRUCT_EMBED_LOG_MAX_SEGMENTS=0 sets segments to 0', () => {
-    const env = { CONSTRUCT_EMBED_LOG_MAX_SEGMENTS: '0' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_EMBED_LOG_MAX_SEGMENTS', 5);
-    assert.strictEqual(result, 0);
-  });
-
-  test('CONSTRUCT_EMBED_LOG_MAX_SEGMENTS=10 uses 10', () => {
-    const env = { CONSTRUCT_EMBED_LOG_MAX_SEGMENTS: '10' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_EMBED_LOG_MAX_SEGMENTS', 5);
-    assert.strictEqual(result, 10);
-  });
-});
-
-describe('resolveMsSetting integration: docling-remote.mjs CONSTRUCT_DOCLING_TIMEOUT_MS', () => {
-  test('CONSTRUCT_DOCL_DOCLING_TIMEOUT_MS=0 disables timeout', () => {
-    const env = { CONSTRUCT_DOCLING_TIMEOUT_MS: '0' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_DOCLING_TIMEOUT_MS', 600_000);
-    assert.strictEqual(result, 0);
-  });
-
-  test('CONSTRUCT_DOCLING_TIMEOUT_MS=120000 uses 120000', () => {
-    const env = { CONSTRUCT_DOCLING_TIMEOUT_MS: '120000' };
-    const result = resolveMsSetting(env, 'CONSTRUCT_DOCLING_TIMEOUT_MS', 600_000);
-    assert.strictEqual(result, 120000);
+  test('CONSTRUCT_WORKER_WEB_MAX_RESULTS=20 flows through to the openrouter tool spec', () => {
+    const grant = resolveWebCapability({ family: 'openrouter', env: { CONSTRUCT_WORKER_WEB_MAX_RESULTS: '20' } });
+    assert.strictEqual(grant.toolSpec.parameters.max_results, 20);
   });
 });

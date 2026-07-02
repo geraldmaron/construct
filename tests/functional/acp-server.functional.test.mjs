@@ -109,32 +109,30 @@ test('ACP server: prepare-only honesty — default inline run summary discloses 
 
 test('ACP server: backend resolution honors config — provider backend shows in summary', async () => {
   const project = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-acp-provider-'));
-  
-  // Write config with provider backend
+
+  // construct.config.json at the project root is the file loadConfig reads
+  // (lib/config/project-config.mjs PROJECT_CONFIG_FILENAME).
   const configPath = path.join(project, 'construct.config.json');
   fs.writeFileSync(configPath, JSON.stringify({
     version: 1,
     orchestration: { workerBackend: 'provider', store: 'filesystem', chainOfThought: 'hidden' }
   }, null, 2));
-  
-  // Use a minimal prompt that won't require actual provider keys
-  // The orchestration should still plan and show workerBackend=provider in summary
-  // even if it falls back to inline due to missing keys
-  const { updates } = await runAcpTest(project, {}, 'hello world');
-  
+
+  // Clearing the model tiers and keys forces a degraded, zero-task run so no real
+  // provider call is made — but the resolved workerBackend is recorded before
+  // execution, so a config-driven 'provider' must still surface in the summary.
+  // Pre-fix ACP hardcoded workerBackend=inline, so this assertion caught the deviation.
+  const { updates } = await runAcpTest(project, {
+    CX_MODEL_REASONING: '', CX_MODEL_STANDARD: '', CX_MODEL_FAST: '',
+    OPENROUTER_API_KEY: '', ANTHROPIC_API_KEY: '',
+  });
+
   const summaryUpdate = updates.find((u) => u.params.update?.content?.text?.includes('Orchestration'));
   assert.ok(summaryUpdate, 'summary update should be present');
-  
+
   const summaryText = summaryUpdate.params.update.content.text;
-  // Should show workerBackend=provider (or at least show the config was read)
-  // Note: if provider keys missing, it may fall back to inline but the config was read
   assert.ok(
-    summaryText.includes('workerBackend=provider') || 
-    summaryText.includes('workerBackend=inline'),
-    `Summary should show workerBackend: ${summaryText}`
+    summaryText.includes('workerBackend=provider'),
+    `config workerBackend=provider must drive the resolved backend, not the old hardcoded inline: ${summaryText}`,
   );
-  
-  // The key assertion: config-driven resolution was used (not hardcoded inline)
-  // Verified by the summary including workerBackend at all
-  assert.ok(summaryText.includes('workerBackend='), `Summary must include workerBackend field: ${summaryText}`);
 });
