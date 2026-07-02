@@ -426,13 +426,13 @@ test("sync rewrites a stale OpenCode HTTP memory entry to the stdio bridge", (t)
     }, null, 2)}\n`,
   );
 
-  const repoCopy = runSync({ home, cwd, t });
+  const repoCopy = runSync({ home, cwd, env: { MEMORY_PORT: "9901" }, t });
 
   const config = readJson(opencodePath);
   assert.deepEqual(config.mcp.memory, {
     type: "local",
     command: ["node", path.join(repoCopy, "lib", "mcp", "memory-bridge.mjs")],
-    environment: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:8765/" },
+    environment: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:9901/" },
   });
 });
 
@@ -455,14 +455,14 @@ test("sync drops the legacy OpenCode cass entry and writes the stdio bridge", (t
     }, null, 2)}\n`,
   );
 
-  const repoCopy = runSync({ home, cwd, t });
+  const repoCopy = runSync({ home, cwd, env: { MEMORY_PORT: "9901" }, t });
 
   const config = readJson(opencodePath);
   assert.equal(config.mcp.cass, undefined);
   assert.deepEqual(config.mcp.memory, {
     type: "local",
     command: ["node", path.join(repoCopy, "lib", "mcp", "memory-bridge.mjs")],
-    environment: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:8765/" },
+    environment: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:9901/" },
   });
 });
 
