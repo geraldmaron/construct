@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-02T14:24:38.967Z",
+  "generatedAt": "2026-07-02T15:11:18.603Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 612,
+    "testFiles": 613,
     "topLevelTestFiles": 306,
-    "nestedTestFiles": 306,
+    "nestedTestFiles": 307,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 421,
+      "unit": 422,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 150
     },
     "byCategory": {
-      "unit": 378,
+      "unit": 379,
       "visual": 9,
       "structural-guard": 15,
       "contract-subsystem": 28,
@@ -4523,6 +4523,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "service-manager-ollama-keepalive.test.mjs — guards Ollama keep-alive resolution."
+    },
+    {
+      "path": "tests/service-manager/spawn-env.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/service-manager/spawn-env.test.mjs — construct-192h.8 proof."
     },
     {
       "path": "tests/session-start-hook.test.mjs",
