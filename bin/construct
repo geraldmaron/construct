@@ -474,7 +474,7 @@ async function cmdDoctor() {
     println('    to see the correct field name, then update your .zshrc.');
     println('  - If op read fails with "not signed in": run `op signin` or enable the');
     println('    1Password desktop app CLI integration (Settings → Developer).');
-    println('  - Set env vars directly in ~/.construct/config.env to bypass shell rc.');
+    println('  - Set env vars directly in ~/.config/construct/config.env to bypass shell rc.');
     return;
   }
 
@@ -495,7 +495,7 @@ async function cmdDoctor() {
     }
     if (missingOptional.length) {
       println(`${missingOptional.length} optional resource(s) absent — Construct runs in degraded mode.`);
-      println('Run `construct setup` to install on consent.');
+      println('Run `construct install` to install on consent.');
     } else {
       ok('All resources present.');
     }
@@ -691,7 +691,7 @@ async function cmdDoctor() {
     if (resolved.complete && !resolved.errors) {
       add('Models — all tiers configured', true);
     } else if (resolved.configured === 0) {
-      add('Models — no tier configured (run `construct models --apply`)', false, true);
+      add('Models — no tier configured (run `construct models free`, then `construct models set`)', false, true);
     } else {
       const missing = Object.entries(resolved.models)
         .filter(([, v]) => !v)
@@ -1358,16 +1358,6 @@ async function cmdDev(args = []) {
     else warn(`${svc.name}: ${svc.note}`);
   }
 
-  // Show Langfuse credentials guidance after first start
-  const langfuseService = results.find(r => r.name === 'Langfuse');
-  if (langfuseService && langfuseService.status === 'started' && langfuseService.note?.includes('auto-configured')) {
-    println('');
-    info('Langfuse credentials:');
-    info('  Dashboard: http://localhost:54330 (login: admin@construct.local / construct-admin)');
-    info('  API keys auto-saved to ~/.construct/config.env');
-    info('  Run `construct status` anytime to view credentials');
-  }
-
   if (recovery) {
     println('');
     info(`Recovery: ${recovery.message}`);
@@ -1540,7 +1530,7 @@ async function cmdReview(args) {
   if (sub === 'legacy') {
     if (!ENV.CONSTRUCT_TELEMETRY_PUBLIC_KEY || !ENV.CONSTRUCT_TELEMETRY_SECRET_KEY) {
       errorln('Error: CONSTRUCT_TELEMETRY_PUBLIC_KEY and CONSTRUCT_TELEMETRY_SECRET_KEY must be set.');
-      errorln('Configure telemetry credentials in ~/.construct/config.env or .env.');
+      errorln('Configure telemetry credentials in ~/.config/construct/config.env or .env.');
       process.exit(1);
     }
     runNodeScript(path.join(ROOT_DIR, 'scripts', 'review.mjs'), args.slice(1), ENV);
@@ -2705,7 +2695,7 @@ async function cmdIntakeNeedsAsr(args) {
         println(`  ${p.id}  ${p.extension}  ${p.sourcePath}`);
       } catch { println(`  ${f} (malformed packet)`); }
     }
-    println('\nTo process: set CONSTRUCT_ASR_BACKEND=whisper|assemblyai and re-run construct embed start.');
+    println('\nTo process: install a local whisper ASR (brew install whisper-cpp, see docs/guides/intake/audio-video.md) and re-run construct embed start.');
     return;
   }
 
@@ -3918,6 +3908,7 @@ async function cmdModels(args) {
     return;
   }
   if (args.includes('--apply')) {
+    errorln('Note: `construct models --apply` is a deprecated alias; run `construct models free` to see options, then `construct models set --tier=… --model=…` per tier.');
     const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
     const models = await pollFreeModels(apiKey);
     const selections = {};
@@ -3998,7 +3989,7 @@ async function cmdModels(args) {
     println('Pick one of:');
     println('  • `construct models` (single source of truth)');
     println('  • construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id>');
-    println('  • construct models --apply           Poll OpenRouter free catalog and seed all tiers');
+    println('  • construct models free              Poll the OpenRouter free catalog, then `models set` per tier');
   }
 }
 
@@ -5308,7 +5299,7 @@ async function cmdCreds(args) {
     try {
       await copilot.getCopilotToken();
       println('GitHub Copilot authenticated. The session token exchanged successfully.');
-      println('Credentials stored in ~/.construct/auth/github-copilot.json and ~/.config/github-copilot/apps.json.');
+      println('Credentials stored in ~/.config/construct/auth/github-copilot.json and ~/.config/github-copilot/apps.json.');
       try {
         const models = await copilot.listCopilotModels({});
         if (models.length) {
@@ -6628,7 +6619,7 @@ const handlers = new Map([
 
         println('');
         println(`Scaffolding a new scope draft. Three questions, then a preview.`);
-        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/scope-lifecycle.md`);
+        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/profile-lifecycle.md`);
         println('');
         if (!displayName) displayName = await ask('Display name?', id);
         if (seedDepartments.length === 0) {
@@ -6687,7 +6678,7 @@ const handlers = new Map([
         println('');
         println(`✓ draft created at ${pathMod.relative(process.cwd(), result.dir)}`);
         println('');
-        println(`Next steps (in order, per docs/guides/concepts/scope-lifecycle.md):`);
+        println(`Next steps (in order, per docs/guides/concepts/profile-lifecycle.md):`);
         println(`  1. Discover  (cx-ux-researcher): fill personas/<role>.md from interviews + primary sources.`);
         println(`  2. Frame     (cx-product-manager): fill departments/<dept>.md charters and intake taxonomy.`);
         println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in scope.json.`);

@@ -125,7 +125,7 @@ construct install [--scope=project|user|both] [--yes] [--dry-run] [--no-docker] 
 
 | Flag | Description |
 |---|---|
-| `--scope=<s>` | project (default, no-op + guidance) | user (writes ~/.construct/, MCP, ~/.claude/* via consent) | both |
+| `--scope=<s>` | project (default, no-op + guidance) | user (writes ~/.config/construct/, MCP, ~/.claude/* via consent) | both |
 | `--yes` | Apply defaults without prompts (only meaningful with --scope=user|both) |
 | `--dry-run` | Preview the install plan (scopes, files, services) without writing anything |
 | `--no-docker` | Skip Docker-based service setup (local Postgres) |

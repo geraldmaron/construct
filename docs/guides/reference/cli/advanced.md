@@ -318,7 +318,7 @@ construct uninstall [--dry-run] [--yes] [--all] [--keep-state] [--scope=project|
 | `--dry-run` | Print the plan and exit; change nothing |
 | `--yes` | Remove auto-risk (✓) categories without prompting |
 | `--all` | Combined with --yes: also remove ask-risk (◐) categories (project data, machine config) |
-| `--keep-state` | Only remove the launcher + adapters; preserve .cx/, ~/.construct, Postgres |
+| `--keep-state` | Only remove the launcher + adapters; preserve .cx/, ~/.config/construct, Postgres |
 | `--scope=<...>` | Limit to project | machine | all (default: all) |
 
 ## construct update
