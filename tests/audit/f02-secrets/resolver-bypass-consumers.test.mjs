@@ -14,7 +14,7 @@ import test from 'node:test';
 const UNRESOLVED_REF = 'op://vault/item/field';
 const BAD_PATH = path.join(os.tmpdir(), 'cx-no-op-bin');
 
-function withPatchedEnv(vars, fn) {
+async function withPatchedEnv(vars, fn) {
   const previous = new Map();
   for (const [key, value] of Object.entries(vars)) {
     previous.set(key, Object.prototype.hasOwnProperty.call(process.env, key) ? process.env[key] : undefined);
@@ -22,7 +22,7 @@ function withPatchedEnv(vars, fn) {
     else process.env[key] = value;
   }
   try {
-    return fn();
+    return await fn();
   } finally {
     for (const [key, value] of previous.entries()) {
       if (value === undefined) delete process.env[key];
@@ -31,11 +31,11 @@ function withPatchedEnv(vars, fn) {
   }
 }
 
-function withPatchedCwd(nextCwd, fn) {
+async function withPatchedCwd(nextCwd, fn) {
   const previous = process.cwd();
   process.chdir(nextCwd);
   try {
-    return fn();
+    return await fn();
   } finally {
     process.chdir(previous);
   }
@@ -87,6 +87,10 @@ test('resolver-bypass consumers treat unresolved op:// refs as not configured an
     CONSTRUCT_INTENT_VERIFY: undefined,
     XDG_CONFIG_HOME: path.join(fakeHome, '.config'),
   }, () => withPatchedCwd(projectDir, async () => {
+    // Clear secret cache to ensure op:// refs are not resolved from previous tests
+    const { __clearSecretCache } = await import('../../../lib/providers/secret-resolver.mjs');
+    __clearSecretCache();
+    
     const { embed } = await import(`../../../lib/storage/embeddings-openai.mjs?ts=${Date.now()}`);
     const { extractViaProvider } = await import(`../../../lib/ingest/provider-extract.mjs?ts=${Date.now()}`);
 

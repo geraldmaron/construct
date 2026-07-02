@@ -488,6 +488,10 @@ function resolveArgs(args) {
 function resolveTemplateStrings(value) {
   if (typeof value === "string") {
     return value.replace(/__([A-Z0-9_]+)__/g, (_, name) => {
+      // For secrets, always use env reference, never interpolate
+      if (/(?:TOKEN|SECRET|API_KEY|PUBLIC_KEY|PRIVATE_KEY)$/.test(name)) {
+        return `{env:${name}}`;
+      }
       if (process.env[name] !== undefined && process.env[name] !== "") return process.env[name];
       if (name === "CX_TOOLKIT_DIR") return root;
       if (name === "MEMORY_PORT") return process.env.MEMORY_PORT || "8765";
@@ -496,9 +500,6 @@ function resolveTemplateStrings(value) {
       }
       if (name === "GITHUB_TOKEN" && process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
         return process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
-      }
-      if (/(?:TOKEN|SECRET|API_KEY|PUBLIC_KEY|PRIVATE_KEY)$/.test(name)) {
-        return `{env:${name}}`;
       }
       return `__${name}__`;
     });
