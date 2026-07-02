@@ -25,8 +25,16 @@ import { statusViaService, orchestrationStatus, DEFAULT_REQUEST_TIMEOUT_MS } fro
 
 const REMOTE = { base: 'http://remote.invalid', token: 'test-token' };
 
+// Rejects only when the request's own AbortSignal fires, mirroring what a real fetch
+// does on timeout, so the abandoned request settles instead of leaving a never-settling
+// promise that trips node:test's "resolution still pending after the loop resolved".
+// The rejection is deferred a macrotask so the production timeout's synchronous listener
+// still wins the race and the surfaced error carries the numbered bound.
+
 function neverResolvingFetch() {
-  return () => new Promise(() => {});
+  return (_url, opts) => new Promise((_, reject) => {
+    opts?.signal?.addEventListener('abort', () => setTimeout(() => reject(new Error('aborted')), 0), { once: true });
+  });
 }
 
 test('[construct-o6t8.2] statusViaService against a never-resolving fetch settles within its bound and names it', async () => {
