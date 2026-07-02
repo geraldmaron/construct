@@ -25,15 +25,20 @@ import { statusViaService, orchestrationStatus, DEFAULT_REQUEST_TIMEOUT_MS } fro
 
 const REMOTE = { base: 'http://remote.invalid', token: 'test-token' };
 
-// Rejects only when the request's own AbortSignal fires, mirroring what a real fetch
-// does on timeout, so the abandoned request settles instead of leaving a never-settling
-// promise that trips node:test's "resolution still pending after the loop resolved".
-// The rejection is deferred a macrotask so the production timeout's synchronous listener
-// still wins the race and the surfaced error carries the numbered bound.
+// Mirrors a real fetch that never replies: pending until its AbortSignal fires, then
+// rejects with the signal's abort reason exactly as undici does. The production timeout
+// aborts with a RemoteFetchTimeoutError as the reason, so the rejection settles inside
+// the same abort dispatch — no deferred macrotask outlives the test to trip node:test's
+// "resolution still pending after the loop resolved".
 
 function neverResolvingFetch() {
   return (_url, opts) => new Promise((_, reject) => {
-    opts?.signal?.addEventListener('abort', () => setTimeout(() => reject(new Error('aborted')), 0), { once: true });
+    const signal = opts?.signal;
+    if (signal?.aborted) {
+      reject(signal.reason);
+      return;
+    }
+    signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
   });
 }
 

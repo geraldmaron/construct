@@ -48,6 +48,7 @@ test('validation failure propagates into runPublish().ok, headline message, and 
       outputPath: output,
       format: 'md',
       gate: false,
+      figures: false,
       cwd: dir,
       repoRoot: REPO,
     });
@@ -63,6 +64,7 @@ test('validation failure propagates into runPublish().ok, headline message, and 
       '--to=md',
       `--output=${output}`,
       '--no-gate',
+      '--no-figures',
     ], { cwd: dir, repoRoot: REPO }));
 
     assert.equal(cli.result.exitCode, 1, 'CLI must exit non-zero when output validation failed');
@@ -86,6 +88,7 @@ test('passing publishes remain successful and keep the Published headline', asyn
       outputPath: output,
       format: 'md',
       gate: false,
+      figures: false,
       cwd: dir,
       repoRoot: REPO,
     });
@@ -99,6 +102,7 @@ test('passing publishes remain successful and keep the Published headline', asyn
       '--to=md',
       `--output=${output}`,
       '--no-gate',
+      '--no-figures',
     ], { cwd: dir, repoRoot: REPO }));
 
     assert.equal(cli.result.exitCode, 0, 'passing publish should still exit 0');
@@ -121,6 +125,7 @@ test('preview semantics remain intact for a passing publish', async () => {
       outputPath: output,
       format: 'md',
       gate: false,
+      figures: false,
       preview: true,
       cwd: dir,
       repoRoot: REPO,
@@ -134,6 +139,7 @@ test('preview semantics remain intact for a passing publish', async () => {
       '--to=md',
       `--output=${output}`,
       '--no-gate',
+      '--no-figures',
       '--preview',
     ], { cwd: dir, repoRoot: REPO }));
 
