@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-02T14:07:14.272Z",
+  "generatedAt": "2026-07-02T14:24:38.967Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 611,
-    "topLevelTestFiles": 305,
+    "testFiles": 612,
+    "topLevelTestFiles": 306,
     "nestedTestFiles": 306,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 420,
+      "unit": 421,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 150
     },
     "byCategory": {
-      "unit": 377,
+      "unit": 378,
       "visual": 9,
       "structural-guard": 15,
       "contract-subsystem": 28,
@@ -4507,6 +4507,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/secret-resolver-audit.test.mjs"
+    },
+    {
+      "path": "tests/secret-resolver-service-account.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/secret-resolver-service-account.test.mjs — opt-in 1Password service-account path."
     },
     {
       "path": "tests/service-manager-ollama-keepalive.test.mjs",
