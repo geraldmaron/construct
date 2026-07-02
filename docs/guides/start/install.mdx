@@ -1,11 +1,11 @@
 ---
 title: Install Construct
-description: Add Construct to your project like any other dev dependency, then run setup once per machine. ~2 minutes with Docker running.
+description: Add Construct to your project like any other dev dependency, then run setup once per machine. ~2 minutes, no database to stand up.
 ---
 
 <FlowPipeline steps={[
   { label: 'npm install', badge: 'project', sub: '@geraldmaron/construct' },
-  { label: 'construct init', badge: 'machine', sub: 'config · Postgres · completions' },
+  { label: 'construct init', badge: 'machine', sub: 'config · LanceDB · completions' },
   { label: 'construct sync', badge: 'editors', sub: 'Claude · OpenCode · Codex · Copilot' },
 ]} />
 
@@ -13,7 +13,8 @@ description: Add Construct to your project like any other dev dependency, then r
 
 - Node.js 20+ (`node --version`)
 - A git repo to play in. Construct expects `.git/` so it can wire pre-commit hooks.
-- Docker Desktop (optional but recommended) — `construct init` can spin up local Postgres + pgvector via Docker. Without Docker, retrieval falls back to a local JSON vector index; traces still write to `.cx/traces/*.jsonl`.
+
+No database or Docker is required. Retrieval runs on an embedded LanceDB index and traces write to `.cx/traces/*.jsonl` — everything is local files.
 
 ## Install
 
@@ -55,12 +56,12 @@ construct install --scope=user
 What setup does, in order:
 
 1. Creates `~/.config/construct/config.env` and seeds default model tier assignments.
-2. Detects Docker. If present, prompts to install local Postgres — accept the default (Y) to start it automatically. Use `--yes` to skip prompts and accept detected defaults non-interactively. Use `--no-docker` to skip Docker-managed services entirely.
+2. Configures the embedded LanceDB vector path and pre-warms the embedding model. Use `--yes` to accept detected defaults non-interactively.
 3. Generates shell completions (bash + zsh) so `construct <tab>` works.
 4. Installs optional CLIs (`cm`, `cass`) if Homebrew or cargo is available and you consent.
 5. Installs the Pressure Guard background service (macOS LaunchAgent) so Construct can manage helper processes. Use `--no-launch-agent` to skip this.
 6. Wires `core.hooksPath` to `.beads/hooks/` if your repo has the beads hook directory — activates the local pre-commit policy gates.
-7. Prints a "Local services" summary block with local trace capture and the Postgres URL when Postgres is running.
+7. Prints a "Local services" summary block with local trace capture and the embedded LanceDB index path.
 
 Service consent is cached in `~/.config/construct/config.env` as `BOOTSTRAP_<NAME>=yes|no`. Re-running `construct install --scope=user` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
 
@@ -71,32 +72,27 @@ Service consent is cached in `~/.config/construct/config.env` as `BOOTSTRAP_<NAM
 | `--scope=project\|user\|both` | Define the installation scope (default: `project`). |
 | `--yes` | Accept all defaults without prompting. |
 | `--dry-run` | Preview the install plan (scopes, files, services) without writing anything. |
-| `--no-docker` | Skip local Postgres / Docker service setup. |
 | `--no-launch-agent` | Skip background macOS LaunchAgent registration. |
 | `--reconfigure` | Re-prompt for service consent, ignoring cached answers. |
+| `--with-docling` | Install the Docling runtime for local document extraction. |
 
 ## What you have when setup finishes
 
-Local services run on Construct's reserved 54329–54339 host port block when Docker is used (chosen to avoid Next.js :3000, Postgres :5432, Redis :6379, MinIO :9090, etc.).
+Everything is local files — setup opens no host ports and stands up no database.
 
 **Traces** — local-first observability
 
 - Local: `.cx/traces/*.jsonl`
 - Remote export: optional with `CONSTRUCT_TRACE_BACKEND=langfuse|http|otel`
 
-**Postgres + pgvector** — hybrid retrieval backend
+**Vector storage** — semantic search on embedded LanceDB
 
-- URL: `postgresql://construct:construct@127.0.0.1:54329/construct`
-- Saved as `DATABASE_URL` in `~/.config/construct/config.env`
-- pgvector extension enabled by the bundled schema migration
-
-**Vector storage** — semantic search
-
-- Default: rides on the Postgres + pgvector you just installed (384-dim embeddings, `Xenova/all-MiniLM-L6-v2`)
-- Fallback (no Docker / no Postgres): local JSON vector index at `~/.local/state/construct/vector/index.json` — same retrieval API, slower at scale
+- Embedded LanceDB index at `~/.local/state/construct/vector/lancedb` (override with `CONSTRUCT_LANCEDB_PATH`; a project can keep it under `.cx/lancedb`)
+- 384-dim embeddings via `Xenova/all-MiniLM-L6-v2`
 - The embedding model auto-downloads to `~/.cache/construct/embeddings/` on first use (~22 MB, one time)
+- No database, no Docker: retrieval is a local file-backed index
 
-All host ports bind to `127.0.0.1` only — nothing reachable from other machines on your network.
+Any services `construct dev` starts later (memory, the OpenCode bridge) bind to `127.0.0.1` only — nothing is reachable from other machines on your network.
 
 Cloud telemetry is opt-in: set `CONSTRUCT_TRACE_BACKEND` plus the matching endpoint/key variables before running `construct init` and Construct will respect them.
 
@@ -119,6 +115,6 @@ construct uninstall          # interactive — pick what to remove
 npm uninstall @geraldmaron/construct
 ```
 
-`construct uninstall` removes Construct-owned state (launcher, agents, hooks). Ask-risk items (Postgres data, API keys, the embedding model cache, `AGENTS.md`/`plan.md`) are skipped unless you opt in. It never touches Docker, Homebrew, the pgvector image, or anything you didn't put through Construct.
+`construct uninstall` removes Construct-owned state (launcher, agents, hooks). Ask-risk items (API keys, the embedding model cache, `AGENTS.md`/`plan.md`) are skipped unless you opt in. It never touches Homebrew or anything you didn't put through Construct.
 
 For full reference: `construct uninstall --help`.

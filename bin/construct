@@ -4939,9 +4939,10 @@ async function cmdSpecialist(args) {
 
 async function cmdBackup(args) {
   // Postgres-era backups were removed with the SQL backend (lib/storage/backup.mjs).
-  // State is now Git-backed (.cx/) plus the local LanceDB index under .cx/lancedb.
+  // Durable state is now the project git repo plus Beads issues in Dolt; `.cx/`
+  // (including the LanceDB index) is gitignored, machine-local, and rebuildable.
   void args;
-  errorln('construct backup is no longer supported: Postgres was removed. Commit .cx/ for Git-backed state; the LanceDB index lives under .cx/lancedb.');
+  errorln('construct backup is no longer supported: the Postgres backend was removed. Durable state is your git repo (push it) and Beads (bd dolt push); the local .cx/ index rebuilds. See docs/operations/backup-restore.md.');
   process.exit(1);
 }
 
