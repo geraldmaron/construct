@@ -23,13 +23,16 @@ Current model assignments:
 
 ## Change a tier
 
-Edit `~/.construct/config.env` (preferred env keys — `CONSTRUCT_MODEL_*` is deprecated but still honored):
+Poll the free catalog to see what's available, then set the model for a tier:
 
 ```bash
-CX_MODEL_REASONING=openrouter/anthropic/claude-opus-4
-CX_MODEL_STANDARD=openrouter/anthropic/claude-sonnet-4-5
-CX_MODEL_FAST=openrouter/google/gemini-flash-2-0
+construct models free
+construct models set --tier=reasoning --model=openrouter/anthropic/claude-opus-4
+construct models set --tier=standard --model=openrouter/anthropic/claude-sonnet-4-5
+construct models set --tier=fast --model=openrouter/google/gemini-flash-2-0
 ```
+
+`construct models set` rewrites the per-host model config files (Claude Code `settings.json`, OpenCode config, etc.) so every harness picks up the new assignment immediately.
 
 Control which models appear in pickers via `construct.config.json`:
 
@@ -39,13 +42,13 @@ construct models list
 construct models list --json
 ```
 
-Then apply:
+For a temporary swap (single session), set the env var instead — edit `~/.config/construct/config.env` (preferred env keys — `CONSTRUCT_MODEL_*` is deprecated but still honored):
 
 ```bash
-construct models --apply
+CX_MODEL_REASONING=openrouter/anthropic/claude-opus-4
+CX_MODEL_STANDARD=openrouter/anthropic/claude-sonnet-4-5
+CX_MODEL_FAST=openrouter/google/gemini-flash-2-0
 ```
-
-`--apply` rewrites the per-host model config files (Claude Code `settings.json`, OpenCode config, etc.) so every harness picks up the new assignment immediately.
 
 ## Subscription Bridges (Host-Native Models)
 
@@ -69,14 +72,14 @@ Construct connects to external systems via providers. Only configured repos/proj
 ### GitHub Repos
 
 ```bash
-# In ~/.construct/config.env
+# In ~/.config/construct/config.env
 GITHUB_REPOS=hashicorp/project-iverson,hashicorp/cloud-reliability,hashicorp/team-delivery-intelligence
 ```
 
 ### Jira Projects
 
 ```bash
-# In ~/.construct/config.env
+# In ~/.config/construct/config.env
 JIRA_BASE_URL=https://hashicorp.atlassian.net
 JIRA_USER_EMAIL=your@email.com
 JIRA_API_TOKEN=your-api-token
@@ -86,23 +89,27 @@ JIRA_FETCH_RECENCY_DAYS=30
 
 ### Verify Provider Connections
 
+`construct providers status` lists every configured provider with its enabled/health state and circuit-breaker status:
+
 ```bash
-construct providers test github
-construct providers test jira
+construct providers status
 ```
 
 ### Fetch from a Focal Source
 
-```bash
-construct provider_fetch "project iverson"
-construct provider_fetch "RLBLT"
+`provider_fetch` is an MCP tool, not a CLI command. The agent (or any MCP host connected to the Construct MCP server) calls it to pull a focal source into memory:
+
+```
+provider_fetch("project iverson")
+provider_fetch("RLBLT")
 ```
 
 ### Broad Search Across All Sources
 
-```bash
-# Uses Rovo AI search — returns excerpts, does NOT store in memory
-construct rovo_search "Iverson reliability"
+`rovo_search` is likewise an MCP tool. It runs Rovo AI search — returns excerpts, does NOT store in memory:
+
+```
+rovo_search("Iverson reliability")
 ```
 
 ## Embedding Models
@@ -121,7 +128,7 @@ Construct uses neural embeddings for semantic search. The model is configurable 
 ### Change Embedding Model
 
 ```bash
-# In ~/.construct/config.env
+# In ~/.config/construct/config.env
 CONSTRUCT_EMBEDDING_MODEL=openai
 OPENAI_API_KEY=sk-...
 ```

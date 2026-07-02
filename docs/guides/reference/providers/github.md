@@ -6,7 +6,7 @@ Connects Construct to GitHub repositories, issues, pull requests, and code searc
 
 ## Authentication
 
-Set `GITHUB_TOKEN` (or `GH_TOKEN`) in `~/.construct/config.env`:
+Set `GITHUB_TOKEN` (or `GH_TOKEN`) in `~/.config/construct/config.env`:
 
 ```
 GITHUB_TOKEN=ghp_your_token_here

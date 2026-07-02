@@ -78,10 +78,10 @@ Team mode plus tenant isolation, signed MCP allowlists, RBAC/ABAC-ready auth, is
 ```bash
 construct config              # show the active mode and resource topology
 construct config mode         # print just the active mode
-construct config mode team    # set the mode (writes ~/.construct/config.env)
+construct config mode team    # set the mode (writes ~/.config/construct/config.env)
 ```
 
-The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.construct/config.env`. `construct status` shows the active mode and resource topology at the top of its output.
+The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.config/construct/config.env`. `construct status` shows the active mode and resource topology at the top of its output.
 
 ## What runs in each mode (capability matrix)
 

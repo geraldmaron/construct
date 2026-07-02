@@ -12,7 +12,7 @@ Connects Construct to Slack channel history and message search.
 
 ## Authentication
 
-Set a bot token or user token in `~/.construct/config.env`:
+Set a bot token or user token in `~/.config/construct/config.env`:
 
 ```
 SLACK_BOT_TOKEN=xoxb-your-bot-token-here

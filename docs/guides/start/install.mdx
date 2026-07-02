@@ -54,7 +54,7 @@ construct install --scope=user
 
 What setup does, in order:
 
-1. Creates `~/.construct/config.env` and seeds default model tier assignments.
+1. Creates `~/.config/construct/config.env` and seeds default model tier assignments.
 2. Detects Docker. If present, prompts to install local Postgres — accept the default (Y) to start it automatically. Use `--yes` to skip prompts and accept detected defaults non-interactively. Use `--no-docker` to skip Docker-managed services entirely.
 3. Generates shell completions (bash + zsh) so `construct <tab>` works.
 4. Installs optional CLIs (`cm`, `cass`) if Homebrew or cargo is available and you consent.
@@ -62,7 +62,7 @@ What setup does, in order:
 6. Wires `core.hooksPath` to `.beads/hooks/` if your repo has the beads hook directory — activates the local pre-commit policy gates.
 7. Prints a "Local services" summary block with local trace capture and the Postgres URL when Postgres is running.
 
-Service consent is cached in `~/.construct/config.env` as `BOOTSTRAP_<NAME>=yes|no`. Re-running `construct install --scope=user` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
+Service consent is cached in `~/.config/construct/config.env` as `BOOTSTRAP_<NAME>=yes|no`. Re-running `construct install --scope=user` won't re-prompt for services you already answered about. Delete those keys to re-prompt.
 
 ### Flags
 
@@ -87,7 +87,7 @@ Local services run on Construct's reserved 54329–54339 host port block when Do
 **Postgres + pgvector** — hybrid retrieval backend
 
 - URL: `postgresql://construct:construct@127.0.0.1:54329/construct`
-- Saved as `DATABASE_URL` in `~/.construct/config.env`
+- Saved as `DATABASE_URL` in `~/.config/construct/config.env`
 - pgvector extension enabled by the bundled schema migration
 
 **Vector storage** — semantic search

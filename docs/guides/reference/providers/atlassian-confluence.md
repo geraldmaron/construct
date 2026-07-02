@@ -14,7 +14,7 @@ Connects Construct to Confluence pages and spaces via page ID reads and CQL sear
 
 Confluence on Atlassian Cloud uses the same credentials as the Jira provider. If you have already configured Jira, no additional setup is needed.
 
-Set these in `~/.construct/config.env`:
+Set these in `~/.config/construct/config.env`:
 
 ```
 JIRA_BASE_URL=https://yourorg.atlassian.net

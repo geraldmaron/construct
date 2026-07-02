@@ -193,7 +193,7 @@ determines observation category and implicitly the knowledge subdir:
 | `#tips:how-to` | `how-to` | `pattern` | `how-tos/` |
 | `#customer:external` | `external` | `insight` | `external/` |
 
-Configure channels in `~/.construct/config.env`:
+Configure channels in `~/.config/construct/config.env`:
 
 ```
 SLACK_CHANNELS=#eng-general,#incidents:risk,#decisions:decision,#customer-feedback:external

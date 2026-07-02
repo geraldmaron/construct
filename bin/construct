@@ -84,7 +84,7 @@ const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const HOME = os.homedir();
 enableSecretAuditTrail();
 ensureConstructCredentials({ env: process.env, cwd: ROOT_DIR, home: HOME });
-const ENV = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME, env: process.env });
+const ENV = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME, env: process.env, shadowWinner: 'shell' });
 for (const [key, value] of Object.entries(ENV)) {
   if (!(key in process.env)) process.env[key] = value;
 }

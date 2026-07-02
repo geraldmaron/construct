@@ -27,7 +27,7 @@ Generated from `specialists/org`; each entry shows the specialist's role, model 
 
 [Environment variables and config files →](/guides/reference/config)
 
-What every `CONSTRUCT_*` env var does, plus the structure of `~/.construct/config.env` and `.cx/context.json`.
+What every `CONSTRUCT_*` env var does, plus the structure of `~/.config/construct/config.env` and `.cx/context.json`.
 
 ## MCP tools
 

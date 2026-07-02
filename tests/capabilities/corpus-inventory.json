@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-02T14:07:14.272Z",
+  "generatedAt": "2026-07-02T14:33:53.839Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 611,
+    "testFiles": 612,
     "topLevelTestFiles": 305,
-    "nestedTestFiles": 306,
+    "nestedTestFiles": 307,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 420,
+      "unit": 421,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 150
     },
     "byCategory": {
-      "unit": 377,
+      "unit": 378,
       "visual": 9,
       "structural-guard": 15,
       "contract-subsystem": 28,
@@ -1757,6 +1757,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/env-config.test.mjs — Unit tests for lib/env-config.mjs."
+    },
+    {
+      "path": "tests/env-config/shadow-warning.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/env-config/shadow-warning.test.mjs — construct-xj96.12 proof."
     },
     {
       "path": "tests/evals-dataset.test.mjs",

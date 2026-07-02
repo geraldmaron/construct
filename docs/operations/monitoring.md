@@ -92,7 +92,7 @@ construct doctor
 Checks performed:
 
 - Node and npm versions meet minimums
-- `~/.construct/config.env` exists and is parseable
+- `~/.config/construct/config.env` exists and is parseable
 - Required API keys are present (non-empty)
 - Postgres reachable at `DATABASE_URL` (if configured)
 - Claude Code hook script paths resolve correctly
