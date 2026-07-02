@@ -50,7 +50,7 @@ provider auth failures, and dashboard unreachable.
 1. Confirm `ANTHROPIC_API_KEY` is set:
 
    ```bash
-   grep ANTHROPIC_API_KEY ~/.construct/config.env
+   grep ANTHROPIC_API_KEY ~/.config/construct/config.env
    ```
 
 2. Confirm the key is valid (non-expired, correct prefix `sk-ant-`):
@@ -87,10 +87,10 @@ provider auth failures, and dashboard unreachable.
 
    If the container is not listed, start the managed services: `construct dev`.
 
-2. Confirm `DATABASE_URL` is set in `~/.construct/config.env`:
+2. Confirm `DATABASE_URL` is set in `~/.config/construct/config.env`:
 
    ```bash
-   grep DATABASE_URL ~/.construct/config.env
+   grep DATABASE_URL ~/.config/construct/config.env
    ```
 
    If missing, run `construct init` to configure it.
@@ -142,7 +142,7 @@ After updating credentials:
 
 ```bash
 # Update config.env
-nano ~/.construct/config.env
+nano ~/.config/construct/config.env
 
 # Verify
 construct provider test <id>
@@ -201,7 +201,7 @@ This validates `specialists/org` and prints specific field constraint violations
 1. Confirm memory injection is not disabled:
 
    ```bash
-   grep CONSTRUCT_MEMORY ~/.construct/config.env
+   grep CONSTRUCT_MEMORY ~/.config/construct/config.env
    ```
 
    Remove or set to `on` if it was set to `off`.

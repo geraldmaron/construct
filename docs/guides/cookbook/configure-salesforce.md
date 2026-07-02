@@ -31,7 +31,7 @@ SALESFORCE_INSTANCE_URL=https://login.salesforce.com
 
 Get the security token from My Settings → Reset My Security Token in Salesforce. It's emailed to you and is required if your network IP isn't whitelisted.
 
-In both cases, put the values in `~/.construct/config.env`.
+In both cases, put the values in `~/.config/construct/config.env`.
 
 ## Verify
 

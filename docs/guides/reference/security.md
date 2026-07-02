@@ -11,13 +11,13 @@ To report a vulnerability, see [SECURITY.md](../SECURITY.md) (private reporting,
 
 ## Credential handling
 
-All secrets (API keys, database passwords, tokens) are stored in `~/.construct/config.env`. This file lives outside any project repository and is never committed to git.
+All secrets (API keys, database passwords, tokens) are stored in `~/.config/construct/config.env`. This file lives outside any project repository and is never committed to git.
 
 **Rules:**
 
 - Do not set secrets in shell profiles (`~/.bashrc`, `~/.zshrc`) that get sourced by all processes: they become visible to all programs on the machine.
 - Do not set secrets in project `.env` files that are tracked by git. Use `.gitignore` to exclude `.env` if you use one.
-- `config.env` is owned by your user with mode `600`. The setup wizard sets this automatically; verify with `ls -la ~/.construct/config.env`.
+- `config.env` is owned by your user with mode `600`. The setup wizard sets this automatically; verify with `ls -la ~/.config/construct/config.env`.
 
 ### Secret scanning
 
@@ -76,7 +76,7 @@ The dashboard requires a bearer token on all API requests. `construct install` a
 construct status --json
 ```
 
-The token is stored in `CONSTRUCT_DASHBOARD_TOKEN` in `~/.construct/config.env`. Rotate it by updating that value, restarting services with `construct stop` then `construct dev`, and updating any clients that use the old token.
+The token is stored in `CONSTRUCT_DASHBOARD_TOKEN` in `~/.config/construct/config.env`. Rotate it by updating that value, restarting services with `construct stop` then `construct dev`, and updating any clients that use the old token.
 
 ### CSRF protection
 

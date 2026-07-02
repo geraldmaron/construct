@@ -39,7 +39,7 @@ Under **Basic Information → App Credentials**, copy the **Signing Secret**.
 ## Step 6: Add to config.env
 
 ```sh
-# ~/.construct/config.env
+# ~/.config/construct/config.env
 SLACK_BOT_TOKEN=xoxb-your-token-here
 SLACK_SIGNING_SECRET=your-signing-secret-here
 SLACK_CHANNELS=#general,#incidents:risk,#decisions:decision

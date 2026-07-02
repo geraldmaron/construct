@@ -181,7 +181,7 @@ Transport-agnostic interface to external systems. Each provider implements a cap
 - A provider may support any subset of capabilities; unsupported capabilities return a typed error.
 - Provider implementations live in `lib/providers/` (data-source adapters) and `lib/providers/contract/adapters/` (contract harness). See [ADR-0044](/decisions/adr/0044-tool-repo-root-layout).
 
-**Provider scope framing.** Every provider config carries an allowlist (`repoAllowlist`/`repoAllowGlob` for GitHub, `projectAllowlist` for Jira, `spaceAllowlist` for Confluence, `channelAllowlist` for Slack). Requests targeting out-of-scope resources return a typed `OUT_OF_SCOPE` error. `construct creds set|rotate|list|revoke|test <provider>` manages credentials in `~/.construct/config.env` (0600 enforced), and `construct creds login copilot` runs the GitHub Copilot OAuth device flow (ADR-0042). Values may be plain keys or 1Password `op://` references, resolved at call time by `lib/providers/secret-resolver.mjs`. For hosted LLM providers (`openrouter`, `anthropic`, `openai`), `construct creds test` performs a lightweight authenticated probe through `lib/providers/connection-probe.mjs` and reports provider health without exposing credential values. `construct providers discover <name>` runs provider-specific discovery with TTL-cached results.
+**Provider scope framing.** Every provider config carries an allowlist (`repoAllowlist`/`repoAllowGlob` for GitHub, `projectAllowlist` for Jira, `spaceAllowlist` for Confluence, `channelAllowlist` for Slack). Requests targeting out-of-scope resources return a typed `OUT_OF_SCOPE` error. `construct creds set|rotate|list|revoke|test <provider>` manages credentials in `~/.config/construct/config.env` (0600 enforced), and `construct creds login copilot` runs the GitHub Copilot OAuth device flow (ADR-0042). Values may be plain keys or 1Password `op://` references, resolved at call time by `lib/providers/secret-resolver.mjs`. For hosted LLM providers (`openrouter`, `anthropic`, `openai`), `construct creds test` performs a lightweight authenticated probe through `lib/providers/connection-probe.mjs` and reports provider health without exposing credential values. `construct providers discover <name>` runs provider-specific discovery with TTL-cached results.
 
 **Shipped providers:**
 
@@ -242,7 +242,7 @@ Kill switches throughout: `CONSTRUCT_ROLES=off` (global L1), `CONSTRUCT_ROLE_<NA
 
 | Mode | Description | Trigger |
 |---|---|---|
-| **Point-at** | Accept a target URI, produce analysis or artifact (PRD, RFC, ADR) | `construct analyze <uri>` |
+| **Point-at** | Accept a target URI, produce analysis or artifact (PRD, RFC, ADR) | Conceptual trigger — point a session at a URI in chat; no dedicated CLI command |
 | **Init** | Bootstrap a project with .cx/, shared memory, cross-agent configs | `construct init` |
 | **Embed** | Continuous monitoring, snapshot production, work item management | `construct embed start` |
 | **Self-host** | Construct manages its own development (this repo) | Always active in the construct repo |
@@ -274,7 +274,7 @@ Machine scope writes are opt-in. The default `construct install` (no flag, or `-
 
 | Path | Purpose | Consent |
 |---|---|---|
-| `~/.construct/config.env` | Machine credentials (mode 0600) | `--scope=user` |
+| `~/.config/construct/config.env` | Machine credentials (mode 0600) | `--scope=user` |
 | `~/.construct/lib` (symlink) | Pointer to the active Construct checkout | `--scope=user` |
 | `~/.construct/services/` | Docker compose for local Postgres | `--scope=user` |
 | `~/.config/opencode/opencode.json` | MCP entries — Construct's section merged | `--scope=user` |

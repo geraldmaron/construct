@@ -27,7 +27,7 @@ Checks: install integrity, config env, service connectivity (memory, dashboard),
 status, and host adapter files. Exits non-zero on any failure.
 
 If `doctor` reports a failing check:
-- Missing config keys → edit `~/.construct/config.env`
+- Missing config keys → edit `~/.config/construct/config.env`
 - Services not running → `construct dev`
 - Host adapter stale → `construct sync`
 

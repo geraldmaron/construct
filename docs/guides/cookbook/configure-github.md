@@ -7,7 +7,7 @@ The GitHub provider gives Construct read access to repos, issues, pull requests,
 
 ## Set the token
 
-In `~/.construct/config.env`:
+In `~/.config/construct/config.env`:
 
 ```
 GITHUB_TOKEN=ghp_your_token_here

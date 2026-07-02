@@ -7,7 +7,7 @@ The Atlassian providers (Jira + Confluence) share one credential set and one API
 
 ## Set the credentials
 
-In `~/.construct/config.env`:
+In `~/.config/construct/config.env`:
 
 ```
 ATLASSIAN_SITE=your-org.atlassian.net
