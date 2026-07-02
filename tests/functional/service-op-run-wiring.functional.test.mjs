@@ -111,6 +111,40 @@ test('opted in: cm / opencode / copilot spawns are wrapped in op run', async (t)
   assert.ok(opVersionCalls(sandbox.opCounter) >= 1, 'fake op --version was probed at least once');
 });
 
+test('parent already resolved: per-service spawns are not wrapped again (single op run)', async (t) => {
+  const sandbox = makeSandbox();
+  t.after(() => fs.rmSync(sandbox.dir, { recursive: true, force: true }));
+
+  const spawns = [];
+  await withEnv(
+    {
+      PATH: `${sandbox.binDir}${path.delimiter}${process.env.PATH}`,
+      CONSTRUCT_OP_ENV_FILE: sandbox.envFile,
+      CONSTRUCT_OP_RUN_ACTIVE: '1',
+      CONSTRUCT_DOCTOR: 'off',
+      CONSTRUCT_ORACLE: 'off',
+    },
+    () => startServices({
+      ...runOptions({
+        homeDir: sandbox.homeDir,
+        spawns,
+        env: { CONSTRUCT_OP_ENV_FILE: sandbox.envFile, CONSTRUCT_OP_RUN_ACTIVE: '1' },
+      }),
+      selected: new Set(['memory', 'opencode']),
+    }),
+  );
+
+  const cm = spawns.find((s) => s.command === 'cm');
+  assert.ok(cm, 'cm spawn captured');
+  assert.deepEqual(cm.args, ['serve', '--port', '7070'], 'cm launched directly, not under op run');
+
+  const opencode = spawns.find((s) => s.command === 'opencode');
+  assert.ok(opencode, 'opencode spawn captured');
+  assert.deepEqual(opencode.args, ['serve', '--port', '5173']);
+
+  assert.ok(!spawns.some((s) => s.command === 'op'), 'no nested op run under the resolved parent');
+});
+
 test('not opted in: spawns are unchanged when CONSTRUCT_OP_ENV_FILE is unset', async (t) => {
   const sandbox = makeSandbox();
   t.after(() => fs.rmSync(sandbox.dir, { recursive: true, force: true }));
