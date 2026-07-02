@@ -2,14 +2,16 @@
  * tests/functional/credentials-diagnostics-no-leak.functional.test.mjs
  *
  * Guards construct-trxz.2: the `construct doctor credentials` diagnostics are
- * presence-only. They must not print any byte of a secret value and must not
- * invoke `op` (no biometric prompt) just to render diagnostics.
+ * presence-only. They must not print any byte of a secret value and must never
+ * RESOLVE a secret — no `op read`/`op run`, which is what would trigger a biometric
+ * prompt. A non-prompting `op whoami` auth-mode check (construct-192h.6) is allowed
+ * because `whoami` reads no vault item and never prompts.
  *
  * Real-process boundary: spawns the actual binary with a known secret in the env
  * and an `op://`-bearing shell rc under an isolated HOME, plus a fake `op` on PATH
- * that tallies any invocation. Asserts presence is reported, the secret value never
- * appears in output, the op:// reference is named but not resolved, and `op` ran
- * zero times.
+ * that logs each invocation's subcommand. Asserts presence is reported, the secret
+ * value never appears in output, the op:// reference is named but not resolved, and
+ * no resolving `op read`/`op run` ran.
  */
 
 import assert from 'node:assert/strict';
@@ -32,7 +34,7 @@ function installFakeOp(binDir, logPath) {
   const script = [
     '#!/usr/bin/env node',
     'const fs = require("node:fs");',
-    'fs.appendFileSync(process.env.OP_CALL_LOG, "call\\n");',
+    'fs.appendFileSync(process.env.OP_CALL_LOG, process.argv.slice(2).join(" ") + "\\n");',
     'process.exit(0);',
   ].join('\n');
   fs.writeFileSync(opPath, script);
@@ -81,6 +83,7 @@ test('construct credentials reports presence without leaking values or invoking 
   assert.equal(out.includes(opRef), false, 'op:// reference path must not be echoed verbatim');
   assert.match(out, /op:\/\/ reference/);
 
-  const opCalls = fs.readFileSync(logPath, 'utf8').split('\n').filter(Boolean).length;
-  assert.equal(opCalls, 0, `op was invoked ${opCalls} times; diagnostics must not resolve secrets`);
+  const opCalls = fs.readFileSync(logPath, 'utf8').split('\n').filter(Boolean);
+  const resolvingCalls = opCalls.filter((line) => /^(read|run|item)\b/.test(line));
+  assert.equal(resolvingCalls.length, 0, `op resolved a secret ${resolvingCalls.length} time(s) (${resolvingCalls.join('; ')}); diagnostics must not read or run op`);
 });
