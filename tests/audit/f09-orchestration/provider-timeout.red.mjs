@@ -27,7 +27,12 @@ import test from 'node:test';
 import { runTaskViaProvider } from '../../../lib/orchestration/worker.mjs';
 
 const MODEL = 'openai/gpt-4o-mini';
-const ENV = { OPENROUTER_API_KEY: 'sk-test-not-a-real-key' };
+
+// Pin an explicit small timeout so this proof of boundedness is deterministic
+// regardless of the production default (construct-neq9.6): the test must not
+// depend on — nor silently re-manufacture — worker.mjs's default value.
+
+const ENV = { OPENROUTER_API_KEY: 'sk-test-not-a-real-key', CONSTRUCT_PROVIDER_TIMEOUT_MS: '100' };
 const TASK = { role: 'cx-architect', reason: null, handoffContract: null };
 const RUN = { request: { summary: 'bound the provider call' } };
 
