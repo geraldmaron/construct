@@ -12,6 +12,7 @@ import test from 'node:test';
 
 import {
   opServiceAccountToken,
+  describeOpAuthMode,
   resolveOpRef,
   resolveSecret,
   __clearSecretCache,
@@ -22,6 +23,34 @@ test('opServiceAccountToken returns the trimmed token when set, null otherwise',
   assert.equal(opServiceAccountToken({ OP_SERVICE_ACCOUNT_TOKEN: '' }), null);
   assert.equal(opServiceAccountToken({}), null);
   assert.equal(opServiceAccountToken({ OP_SERVICE_ACCOUNT_TOKEN: 42 }), null);
+});
+
+test('describeOpAuthMode reports service-account mode when the token is set (no whoami call)', () => {
+  let whoamiCalled = false;
+  const mode = describeOpAuthMode({ OP_SERVICE_ACCOUNT_TOKEN: 'ops_x' }, { whoami: () => { whoamiCalled = true; return { installed: true, signedIn: true }; } });
+  assert.equal(mode.mode, 'service-account');
+  assert.equal(mode.signedIn, true);
+  assert.equal(whoamiCalled, false, 'a set token is authoritative — no need to probe the desktop session');
+});
+
+test('describeOpAuthMode reports a live desktop session as signed in', () => {
+  const mode = describeOpAuthMode({}, { whoami: () => ({ installed: true, signedIn: true }) });
+  assert.equal(mode.mode, 'desktop-session');
+  assert.equal(mode.signedIn, true);
+});
+
+test('describeOpAuthMode flags a cold desktop session and names both fixes', () => {
+  const mode = describeOpAuthMode({}, { whoami: () => ({ installed: true, signedIn: false }) });
+  assert.equal(mode.mode, 'desktop-session');
+  assert.equal(mode.signedIn, false);
+  assert.match(mode.detail, /Integrate with 1Password CLI/);
+  assert.match(mode.detail, /OP_SERVICE_ACCOUNT_TOKEN/);
+});
+
+test('describeOpAuthMode reports op-absent when the CLI is not installed', () => {
+  const mode = describeOpAuthMode({}, { whoami: () => ({ installed: false, signedIn: false }) });
+  assert.equal(mode.mode, 'op-absent');
+  assert.equal(mode.signedIn, false);
 });
 
 test('resolveOpRef forwards the caller env (with the service-account token) to op read', () => {
