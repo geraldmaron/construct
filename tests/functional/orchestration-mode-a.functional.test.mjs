@@ -59,7 +59,7 @@ test('orchestrate status reads a run back across a separate process invocation',
   assert.equal(res.status, 0, res.stderr);
   const meta = JSON.parse(res.stdout);
   assert.equal(meta.runId, created.runId);
-  assert.equal(meta.status, 'completed');
+  assert.equal(meta.status, 'completed-prepare-only');
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 

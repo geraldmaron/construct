@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-02T04:07:24.335Z",
+  "generatedAt": "2026-07-02T06:03:32.812Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 606,
+    "testFiles": 609,
     "topLevelTestFiles": 305,
-    "nestedTestFiles": 301,
+    "nestedTestFiles": 304,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 416,
+      "unit": 418,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
-      "functional": 149
+      "functional": 150
     },
     "byCategory": {
-      "unit": 373,
+      "unit": 375,
       "visual": 9,
       "structural-guard": 15,
       "contract-subsystem": 28,
       "live-provider": 2,
       "integration": 21,
-      "functional": 149,
+      "functional": 150,
       "hook": 9
     }
   },
@@ -541,6 +541,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f09-orchestration/remote-status-timeout.test.mjs — construct-o6t8.2 proof."
+    },
+    {
+      "path": "tests/audit/f09-orchestration/status-path-truthfulness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f09-orchestration/status-path-truthfulness.test.mjs — Status path consistency."
     },
     {
       "path": "tests/audit/f10-registry-drift/catalog-semantic-drift.test.mjs",
@@ -1083,6 +1091,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/concierge-routing.test.mjs — Concierge routing regression harness."
+    },
+    {
+      "path": "tests/config/env-number-defaults.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/config/env-number-defaults.test.mjs — resolveMsSetting env number parsing."
     },
     {
       "path": "tests/context-router.test.mjs",
@@ -2253,6 +2269,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/functional/headhunt-profile-teams.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/honest-terminal-states.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/honest-terminal-states.functional.test.mjs — Honest terminal states for degraded zero-task runs"
     },
     {
       "path": "tests/functional/hook-telemetry.functional.test.mjs",

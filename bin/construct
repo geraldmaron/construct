@@ -3771,6 +3771,7 @@ async function cmdOrchestrate(args) {
 
   if (sub === 'run') {
     const { runOrchestration, planRun, hostAdapterMetadata } = await import('../lib/orchestration/runtime.mjs');
+    const { shapeRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
     const positional = rest.filter((a, i) => !a.startsWith('--') && !(i > 0 && rest[i - 1].startsWith('--') && !['--no-construct', '--no-execute', '--json'].includes(rest[i - 1])));
     const text = flag('--text') || positional.join(' ').trim();
     if (!text) { errorln('Usage: construct orchestrate run "<request>" [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]'); process.exit(1); }
@@ -3788,7 +3789,8 @@ async function cmdOrchestrate(args) {
     };
     const run = rest.includes('--no-execute') ? await planRun(request, {}) : await runOrchestration(request, {});
     if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
-    println(`Run ${run.runId} — ${run.status} · executionMode=${run.execution.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
+    const shaped = shapeRun(run);
+    println(`Run ${run.runId} — ${shaped.status} · executionMode=${run.execution.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
     if (run.execution.degraded) println(`  degraded: ${run.execution.degradationReason}`);
     if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
     else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
@@ -3800,12 +3802,14 @@ async function cmdOrchestrate(args) {
 
   if (sub === 'status') {
     const { getRun, getRuns, hostAdapterMetadata } = await import('../lib/orchestration/runtime.mjs');
+    const { shapeRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
     const runId = rest.find((a) => !a.startsWith('--'));
     if (runId) {
       const run = await getRun(process.cwd(), runId);
       if (!run) { errorln(`Run not found: ${runId}`); process.exit(1); }
-      if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
-      println(`Run ${run.runId} — ${run.status} · executionMode=${run.execution.executionMode}`);
+      const shaped = shapeRun(run);
+      if (wantsJson) { println(JSON.stringify(shaped, null, 2)); return; }
+      println(`Run ${run.runId} — ${shaped.status} · executionMode=${run.execution.executionMode}`);
       for (const t of run.tasks) {
         println(`  ${t.id} ${t.role} — ${t.status}`);
         if (t.reasoning) println(`    reasoning: ${t.reasoning.length > 300 ? `${t.reasoning.slice(0, 300)}…` : t.reasoning}`);
@@ -3813,9 +3817,12 @@ async function cmdOrchestrate(args) {
       return;
     }
     const runs = await getRuns(process.cwd());
-    if (wantsJson) { println(JSON.stringify(runs, null, 2)); return; }
+    if (wantsJson) { println(JSON.stringify(runs.map(shapeRun), null, 2)); return; }
     if (!runs.length) { println('No orchestration runs recorded.'); return; }
-    for (const r of runs) println(`  ${r.runId} — ${r.status} · ${r.executionMode || ''} · ${r.createdAt}`);
+    for (const r of runs) {
+      const shaped = shapeRun(r);
+      println(`  ${r.runId} — ${shaped.status} · ${r.executionMode || ''} · ${r.createdAt}`);
+    }
     return;
   }
 
