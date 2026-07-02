@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-02T14:33:53.839Z",
+  "generatedAt": "2026-07-02T15:11:18.603Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 612,
-    "topLevelTestFiles": 305,
+    "testFiles": 613,
+    "topLevelTestFiles": 306,
     "nestedTestFiles": 307,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 421,
+      "unit": 422,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
       "functional": 150
     },
     "byCategory": {
-      "unit": 378,
+      "unit": 379,
       "visual": 9,
       "structural-guard": 15,
       "contract-subsystem": 28,
@@ -1757,14 +1757,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/env-config.test.mjs — Unit tests for lib/env-config.mjs."
-    },
-    {
-      "path": "tests/env-config/shadow-warning.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/env-config/shadow-warning.test.mjs — construct-xj96.12 proof."
     },
     {
       "path": "tests/evals-dataset.test.mjs",
@@ -4517,12 +4509,28 @@
       "maintainerNotes": "tests/secret-resolver-audit.test.mjs"
     },
     {
+      "path": "tests/secret-resolver-service-account.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/secret-resolver-service-account.test.mjs — opt-in 1Password service-account path."
+    },
+    {
       "path": "tests/service-manager-ollama-keepalive.test.mjs",
       "layer": "unit",
       "category": "unit",
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "service-manager-ollama-keepalive.test.mjs — guards Ollama keep-alive resolution."
+    },
+    {
+      "path": "tests/service-manager/spawn-env.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/service-manager/spawn-env.test.mjs — construct-192h.8 proof."
     },
     {
       "path": "tests/session-start-hook.test.mjs",

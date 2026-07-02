@@ -113,7 +113,17 @@ If you keep provider keys in 1Password and run other LLM CLIs through `op run`, 
 CONSTRUCT_OP_ENV_FILE=~/.config/claude/.env.op
 ```
 
-The env-file holds `op://` references (`OPENROUTER_API_KEY=op://vault/item/credential`). When it is set and the `op` CLI is installed, Construct launches managed service processes under `op run`, so every reference resolves once at startup (one biometric unlock) into the service environment. OpenCode and other supported hosts can then connect through the synced Construct MCP server without a separate shell wrapper. This is strictly opt-in: unset the variable and Construct never invokes `op`, resolving plain keys from the environment or `config.env` as usual.
+The env-file holds `op://` references (`OPENROUTER_API_KEY=op://vault/item/credential`). When it is set and the `op` CLI is installed, `construct dev` re-execs itself once under a single `op run --env-file …`, so every reference resolves one time at startup (one biometric unlock) and every detached daemon inherits the resolved keys — you do not wrap the CLI by hand. OpenCode and other supported hosts then connect through the synced Construct MCP server. This is strictly opt-in: unset the variable and Construct never invokes `op`, resolving plain keys from the environment or `config.env` as usual.
+
+### Non-interactive auth (`OP_SERVICE_ACCOUNT_TOKEN`)
+
+The desktop-app integration prompts for biometric unlock and depends on a warm GUI session — fine for a laptop, but it breaks in headless, daemon, and CI contexts, and a cold session produces repeated prompts. For those, 1Password's own recommended path is a [service account](https://developer.1password.com/docs/service-accounts/): set `OP_SERVICE_ACCOUNT_TOKEN` and `op read`/`op run` authenticate with no desktop app, biometric, or `op signin`.
+
+```bash
+export OP_SERVICE_ACCOUNT_TOKEN=<token>   # from the OS keychain in practice, not plaintext
+```
+
+Construct forwards the token from its env into every `op` invocation, so an `op://` reference resolves non-interactively. `construct doctor credentials` reports the active auth mode (`service-account` vs `desktop-session`, and whether the desktop session is signed in). Caveats from 1Password: a service account **cannot** read your built-in Personal/Private vault (put the refs in a custom vault you grant it), the token is a bearer secret (store it in the OS keychain, never in `config.env`), and the Individual/Family tier is rate-limited to ~1,000 reads/day.
 
 ## Fallback chains
 
