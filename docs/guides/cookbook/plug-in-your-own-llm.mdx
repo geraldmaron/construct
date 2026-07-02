@@ -106,11 +106,11 @@ For smaller local checkpoints, set `CONSTRUCT_MODEL_PROFILE=small` in `~/.constr
 If you keep provider keys in 1Password and run other LLM CLIs through `op run`, point Construct at the same env-file:
 
 ```bash
-# ~/.construct/config.env
+# ~/.config/construct/config.env
 CONSTRUCT_OP_ENV_FILE=~/.config/claude/.env.op
 ```
 
-The env-file holds `op://` references (`OPENROUTER_API_KEY=op://vault/item/credential`). When it is set and the `op` CLI is installed, Construct launches managed service processes under `op run`, so every reference resolves once at startup (one biometric unlock) into the service environment. OpenCode and other supported hosts can then connect through the synced Construct MCP server without a separate shell wrapper. This is strictly opt-in: unset the variable and Construct never invokes `op`, resolving plain keys from the environment or `config.env` as usual.
+The env-file holds `op://` references (`OPENROUTER_API_KEY=op://vault/item/credential`). When it is set and the `op` CLI is installed, `construct dev` re-execs itself once under a single `op run --env-file …`, so every reference resolves one time at startup (one biometric unlock) and every detached daemon inherits the resolved keys — you do not wrap the CLI by hand. OpenCode and other supported hosts then connect through the synced Construct MCP server. This is strictly opt-in: unset the variable and Construct never invokes `op`, resolving plain keys from the environment or `config.env` as usual.
 
 ### Non-interactive auth (`OP_SERVICE_ACCOUNT_TOKEN`)
 

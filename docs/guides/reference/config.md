@@ -208,13 +208,18 @@ Env overrides: `CX_INBOX_DIRS` (colon-separated paths), `CX_INTAKE_MAX_DEPTH`.
 
 Store provider keys in `config.env` (the XDG config dir, default `~/.config/construct/config.env`) as `op://vault/item/field` references (or plain values). Construct resolves them lazily via `op read` when a model call needs the plaintext.
 
-**Recommended (one auth per invocation):** wrap the CLI with `op run` and a shared env file (same pattern as OpenCode on this machine):
+**Recommended (one auth for the whole dev tree):** point Construct at a shared `op run` env file and let it resolve once. Set `CONSTRUCT_OP_ENV_FILE` in `config.env`:
 
 ```bash
-op run --no-masking --env-file="$HOME/.config/claude/.env.op" -- opencode
+# ~/.config/construct/config.env
+CONSTRUCT_OP_ENV_FILE=~/.config/claude/.env.op
 ```
 
-When `op run` injects materialized keys into `process.env`, Construct keeps those values instead of overwriting them with stored `op://` refs from `config.env`. A local OpenCode wrapper is the usual setup; override with `CONSTRUCT_OP_ENV_FILE` and `CONSTRUCT_BIN`.
+With that set and `op` installed, `construct dev` re-execs itself once under a single `op run --env-file …`, so every `op://` reference resolves one time (one biometric unlock) and every detached daemon inherits the resolved keys. You do not need to wrap the CLI by hand.
+
+`op run` masks secrets in the wrapped process output by default. Because the daemons are detached and write their own log files, that masking covers the `construct dev` process output but not the daemon logs (local-only, under the state dir) — see [ADR-0049](https://github.com/geraldmaron/construct/blob/main/docs/decisions/adr/0049-cross-process-auth-once.md). For a standalone tool you can still wrap manually — `op run --env-file="$HOME/.config/claude/.env.op" -- opencode` — with masking on.
+
+When `op run` injects materialized keys into `process.env`, Construct keeps those values instead of overwriting them with stored `op://` refs from `config.env`. Override the env-file location with `CONSTRUCT_OP_ENV_FILE` and the wrapped binary with `CONSTRUCT_BIN`.
 | `GITHUB_REPOS` | Comma-separated `owner/repo` list surfaced as provider source hints at session start |
 | `JIRA_BASE_URL` | Atlassian Jira base URL (e.g. `https://yourorg.atlassian.net`) |
 | `JIRA_EMAIL` | Jira account email: used for Basic auth |

@@ -1323,6 +1323,15 @@ async function resolveServiceSelection(args, selectable) {
 }
 
 async function cmdDev(args = []) {
+  // Resolve every 1Password reference once for the whole dev tree: re-exec this command
+  // under a single `op run` so op:// refs unlock one time and the detached daemons
+  // inherit the resolved env, instead of each daemon launching its own op run and
+  // prompting again (trxz.11). ENV carries CONSTRUCT_OP_ENV_FILE from config.env and,
+  // in the re-exec'd child, the CONSTRUCT_OP_RUN_ACTIVE sentinel that stops recursion.
+  const { maybeReExecUnderOpRun } = await import('../lib/providers/op-run.mjs');
+  const reExec = maybeReExecUnderOpRun({ env: ENV, homeDir: HOME });
+  if (reExec.reExecuted) process.exit(reExec.code);
+
   const { SELECTABLE_SERVICES } = await import('../lib/service-manager.mjs');
 
   // --only=a,b,c picks services non-interactively; --select opens a checklist.
