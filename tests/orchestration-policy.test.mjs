@@ -8,6 +8,9 @@
  * Run via npm test.
  */
 import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 
 import {
@@ -24,6 +27,16 @@ import {
 import { validateHandoff } from '../lib/contracts/validate.mjs';
 import { resetCache as resetIntentCache } from '../lib/intent-classifier.mjs';
 import { orchestrationPolicy } from '../lib/mcp/tools/skills.mjs';
+
+function withRepoRoot(run) {
+  const repoRoot = mkdtempSync(join(tmpdir(), 'construct-orchestration-policy-'));
+  mkdirSync(join(repoRoot, '.cx'), { recursive: true });
+  try {
+    return run(repoRoot);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  }
+}
 
 test('routeRequest classifies simple explanation as immediate research', () => {
   const route = routeRequest({ request: 'explain how the caching layer works', fileCount: 1, moduleCount: 1 });
@@ -123,13 +136,14 @@ test('orchestrationPolicy includes draftTask for non-immediate requests', async 
   assert.ok(result.handoffPacket, 'handoffPacket should be present for focused/orchestrated requests');
   assert.equal(result.handoffPacket.goal, 'fix the login redirect bug');
   assert.equal(result.handoffPacket.intent, INTENT_CLASSES.fix);
-  const verdict = validateHandoff({
+  const verdict = withRepoRoot((repoRoot) => validateHandoff({
     producer: 'construct',
     consumer: 'cx-orchestrator',
     id: 'construct-to-orchestrator',
     artifact: result.handoffPacket,
     enforcement: 'block',
-  });
+    repoRoot,
+  }));
   assert.equal(verdict.ok, true, `handoffPacket must satisfy construct-to-orchestrator: ${verdict.errors?.join('; ')}`);
 });
 

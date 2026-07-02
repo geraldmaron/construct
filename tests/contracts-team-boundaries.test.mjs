@@ -10,8 +10,21 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { validateHandoff, validateContractsFile } from '../lib/contracts/validate.mjs';
 import { loadRegistry } from '../lib/registry/loader.mjs';
+
+function withRepoRoot(run) {
+  const repoRoot = mkdtempSync(join(tmpdir(), 'construct-team-boundary-'));
+  mkdirSync(join(repoRoot, '.cx'), { recursive: true });
+  try {
+    return run(repoRoot);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  }
+}
 
 test('validateContractsFile succeeds with valid team boundaries', () => {
   const result = validateContractsFile();
@@ -26,12 +39,13 @@ test('validateHandoff detects cross-team boundary', () => {
   const crossTeamContract = contracts.find(c => c.teamBoundary?.crosses);
 
   if (crossTeamContract) {
-    const result = validateHandoff({
+    const result = withRepoRoot((repoRoot) => validateHandoff({
       producer: crossTeamContract.producer,
       consumer: crossTeamContract.consumer,
       artifact: {},
       enforcement: 'block',
-    });
+      repoRoot,
+    }));
 
     // Handoff should either pass or have team-boundary related errors
     assert.ok(result.ok || result.errors.length > 0, 'should validate team boundaries');
@@ -120,12 +134,13 @@ test('validateHandoff enforces team boundary approvals', () => {
 
   if (approvalRequired) {
     // Validate without explicit approval context
-    const result = validateHandoff({
+    const result = withRepoRoot((repoRoot) => validateHandoff({
       producer: approvalRequired.producer,
       consumer: approvalRequired.consumer,
       artifact: {},
       enforcement: 'warn',
-    });
+      repoRoot,
+    }));
 
     // Should either pass or warn about team boundary
     assert.ok(result.ok || Array.isArray(result.warnings), 'should validate team approvals');

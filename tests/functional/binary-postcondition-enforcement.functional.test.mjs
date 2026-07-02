@@ -89,6 +89,7 @@ describe('binary postcondition enforcement', () => {
         consumer: c.consumer,
         artifact: {},
         packet: c.invalidPacket,
+        repoRoot: tmpRoot,
       });
       assert.equal(result.ok, false, `expected ok:false for invalid ${c.producer} packet`);
       assert.equal(result.status, 'BLOCKED_CONTRACT');
@@ -105,6 +106,7 @@ describe('binary postcondition enforcement', () => {
         producer: c.producer,
         consumer: c.consumer,
         artifact: {},
+        repoRoot: tmpRoot,
       });
       assert.equal(result.ok, false);
       assert.equal(result.status, 'BLOCKED_CONTRACT');
