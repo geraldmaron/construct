@@ -21,6 +21,7 @@ import test from 'node:test';
 import { orchestrationRun, orchestrationStatus } from '../../lib/mcp/tools/orchestration-run.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const MODEL = 'anthropic/claude-sonnet-4-6';
 
 function tmpProject() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-mcp-'));
@@ -32,7 +33,17 @@ function tmpProject() {
 // storage stays isolated in the tmp cwd; no remote service configured.
 
 function soloEnv() {
-  const env = { ...process.env, CX_TOOLKIT_DIR: REPO_ROOT };
+  const env = {
+    ...process.env,
+    CX_TOOLKIT_DIR: REPO_ROOT,
+    HOME: REPO_ROOT,
+    USERPROFILE: REPO_ROOT,
+    OPENROUTER_API_KEY: '',
+    ANTHROPIC_API_KEY: '',
+    CX_MODEL_REASONING: MODEL,
+    CX_MODEL_STANDARD: MODEL,
+    CX_MODEL_FAST: MODEL,
+  };
   delete env.CONSTRUCT_ORCHESTRATION_URL;
   return env;
 }
@@ -41,13 +52,17 @@ test('orchestration_run plans a multi-specialist run in-process (no daemon)', as
   const cwd = tmpProject();
   try {
     const result = await orchestrationRun(
-      { request: 'design and implement a new authentication architecture', file_count: 20, module_count: 6, wait: true, worker_backend: 'inline' },
+      { request: 'design and implement a new authentication architecture', file_count: 20, module_count: 6, host_model: MODEL, wait: true, worker_backend: 'inline' },
       { cwd, env: soloEnv() },
     );
     assert.ok(!result.error, `expected a run, got error: ${result.error}`);
     assert.ok(result.runId, 'run should have an id');
+    assert.equal(result.degraded, false, 'a healthy in-process run must not be degraded');
     assert.equal(result.track, 'orchestrated', 'a complex request routes to the orchestrated track');
     assert.ok(Array.isArray(result.specialists) && result.specialists.length > 1, 'an orchestrated run plans more than one specialist');
+    assert.ok(Array.isArray(result.tasks) && result.tasks.length > 1, 'an orchestrated run must return a non-empty executed task list');
+    assert.ok(result.tasks.every((task) => task.status === 'prepared'), 'inline orchestration tasks stay prepared on the happy path');
+    assert.ok(result.tasks.every((task) => task.executor === 'inline:prepared'), 'inline orchestration marks each task as prepared by the inline executor');
 
     const status = await orchestrationStatus({ run_id: result.runId }, { cwd, env: soloEnv() });
     assert.equal(status.runId, result.runId, 'the run is queryable in-process by id');

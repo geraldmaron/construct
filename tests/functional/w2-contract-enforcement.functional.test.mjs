@@ -20,6 +20,7 @@ import {
 
 function freshRepo() {
   const root = mkdtempSync(join(tmpdir(), 'construct-contracts-'));
+  mkdirSync(join(root, '.cx'), { recursive: true });
   mkdirSync(join(root, 'agents'), { recursive: true });
   mkdirSync(join(root, 'lib', 'schemas'), { recursive: true });
   return {
@@ -127,55 +128,71 @@ test('findContract resolves by producer/consumer pair', () => {
 });
 
 test('validateHandoff in block mode returns BLOCKED_CONTRACT when mustContain is missing', () => {
-  const result = validateHandoff({
-    producer: 'construct',
-    consumer: 'cx-orchestrator',
-    artifact: { goal: 'do the thing' },
-    enforcement: 'block',
-  });
-  assert.equal(result.ok, false);
-  assert.equal(result.status, 'BLOCKED_CONTRACT');
-  assert.ok(result.errors.length > 0, 'expected at least one error');
-  assert.ok(result.errors.some((e) => /intent|workCategory|riskFlags|acceptanceCriteria/.test(e)), `expected a mustContain error, got: ${result.errors.join('; ')}`);
+  const repo = freshRepo();
+  try {
+    const result = validateHandoff({
+      producer: 'construct',
+      consumer: 'cx-orchestrator',
+      artifact: { goal: 'do the thing' },
+      enforcement: 'block',
+      repoRoot: repo.root,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 'BLOCKED_CONTRACT');
+    assert.ok(result.errors.length > 0, 'expected at least one error');
+    assert.ok(result.errors.some((e) => /intent|workCategory|riskFlags|acceptanceCriteria/.test(e)), `expected a mustContain error, got: ${result.errors.join('; ')}`);
+  } finally { repo.cleanup(); }
 });
 
 test('validateHandoff in warn mode keeps ok:true but surfaces warnings on violation', () => {
-  const result = validateHandoff({
-    producer: 'construct',
-    consumer: 'cx-orchestrator',
-    artifact: { goal: 'do the thing' },
-    enforcement: 'warn',
-  });
-  assert.equal(result.ok, true);
-  assert.ok(Array.isArray(result.warnings) && result.warnings.length > 0, 'expected warnings');
+  const repo = freshRepo();
+  try {
+    const result = validateHandoff({
+      producer: 'construct',
+      consumer: 'cx-orchestrator',
+      artifact: { goal: 'do the thing' },
+      enforcement: 'warn',
+      repoRoot: repo.root,
+    });
+    assert.equal(result.ok, true);
+    assert.ok(Array.isArray(result.warnings) && result.warnings.length > 0, 'expected warnings');
+  } finally { repo.cleanup(); }
 });
 
 test('validateHandoff in block mode passes when the artifact satisfies the contract', () => {
-  const result = validateHandoff({
-    producer: 'construct',
-    consumer: 'cx-orchestrator',
-    artifact: {
-      goal: 'do the thing',
-      intent: 'orchestrated',
-      workCategory: 'feature',
-      riskFlags: [],
-      acceptanceCriteria: ['ships'],
-    },
-    enforcement: 'block',
-  });
-  assert.equal(result.ok, true);
-  assert.ok(result.contract);
+  const repo = freshRepo();
+  try {
+    const result = validateHandoff({
+      producer: 'construct',
+      consumer: 'cx-orchestrator',
+      artifact: {
+        goal: 'do the thing',
+        intent: 'orchestrated',
+        workCategory: 'feature',
+        riskFlags: [],
+        acceptanceCriteria: ['ships'],
+      },
+      enforcement: 'block',
+      repoRoot: repo.root,
+    });
+    assert.equal(result.ok, true);
+    assert.ok(result.contract);
+  } finally { repo.cleanup(); }
 });
 
 test('validateHandoff returns BLOCKED_CONTRACT in block mode when no contract is registered for the pair', () => {
-  const result = validateHandoff({
-    producer: 'cx-nobody',
-    consumer: 'cx-nowhere',
-    artifact: {},
-    enforcement: 'block',
-  });
-  assert.equal(result.ok, false);
-  assert.equal(result.status, 'BLOCKED_CONTRACT');
+  const repo = freshRepo();
+  try {
+    const result = validateHandoff({
+      producer: 'cx-nobody',
+      consumer: 'cx-nowhere',
+      artifact: {},
+      enforcement: 'block',
+      repoRoot: repo.root,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 'BLOCKED_CONTRACT');
+  } finally { repo.cleanup(); }
 });
 
 test('workflow_contract_validate MCP tool enriches bare goal before validateHandoff', async () => {

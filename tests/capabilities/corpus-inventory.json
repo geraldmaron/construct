@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-02T03:24:14.226Z",
+  "generatedAt": "2026-07-02T04:07:24.335Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 602,
-    "topLevelTestFiles": 304,
-    "nestedTestFiles": 298,
+    "testFiles": 606,
+    "topLevelTestFiles": 305,
+    "nestedTestFiles": 301,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 413,
+      "unit": 416,
       "visual": 9,
       "live-provider": 2,
       "integration": 30,
-      "functional": 148
+      "functional": 149
     },
     "byCategory": {
-      "unit": 370,
+      "unit": 373,
       "visual": 9,
       "structural-guard": 15,
       "contract-subsystem": 28,
       "live-provider": 2,
       "integration": 21,
-      "functional": 148,
+      "functional": 149,
       "hook": 9
     }
   },
@@ -309,6 +309,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f02-secrets/precedence-divergence.red.mjs — F02 [R14] credential-precedence"
+    },
+    {
+      "path": "tests/audit/f02-secrets/resolver-bypass-consumers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/audit/f02-secrets/resolver-bypass-consumers.test.mjs — secret-resolver bypass regression."
     },
     {
       "path": "tests/audit/f03-package/half-stage-recovery.test.mjs",
@@ -629,6 +637,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/audit/f13-artifact/missing-local-reference.red.mjs — F13 [R21] unvalidated-reference proof."
+    },
+    {
+      "path": "tests/audit/f13-artifact/publish-validation-propagation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "publish-validation-propagation.test.mjs — F13/AP5 publish validation honesty."
     },
     {
       "path": "tests/audit/f13-artifact/required-renderer-soft-pass.test.mjs",
@@ -2651,6 +2667,14 @@
       "maintainerNotes": "tests/functional/oracle-hygiene-policy.functional.test.mjs —"
     },
     {
+      "path": "tests/functional/oracle-noise-filter.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/oracle-noise-filter.functional.test.mjs — oracle contract-noise filtering."
+    },
+    {
       "path": "tests/functional/oracle-read-model.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3779,6 +3803,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/opencode-runtime-plugin.test.mjs — Tests for the OpenCode plugin."
+    },
+    {
+      "path": "tests/oracle-approval-dedupe.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-approval-dedupe.test.mjs — oracle pending-queue dedupe and retention."
     },
     {
       "path": "tests/oracle-artifact-gate.test.mjs",
