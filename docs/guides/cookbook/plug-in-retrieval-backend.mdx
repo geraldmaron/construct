@@ -89,7 +89,7 @@ export default {
 };
 ```
 
-Register it in `~/.construct/plugins.json` (user-level) or `.cx/plugins.json` (project-level):
+Register it in `~/.config/construct/plugins.json` (user-level) or `.cx/plugins.json` (project-level):
 
 ```json
 {
@@ -137,7 +137,7 @@ Common reasons to swap:
 
 ## Swap the indexer
 
-The indexer is what stores and retrieves vectors. Default uses Postgres + pgvector when available; falls back to a JSON file index in `~/.construct/vector/` when not.
+The indexer is what stores and retrieves vectors. Default uses Postgres + pgvector when available; falls back to a JSON file index in `~/.local/state/construct/vector/` when not.
 
 ```javascript
 // my-indexer.mjs

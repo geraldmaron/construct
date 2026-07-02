@@ -93,8 +93,8 @@ Local services run on Construct's reserved 54329–54339 host port block when Do
 **Vector storage** — semantic search
 
 - Default: rides on the Postgres + pgvector you just installed (384-dim embeddings, `Xenova/all-MiniLM-L6-v2`)
-- Fallback (no Docker / no Postgres): local JSON vector index at `~/.construct/vector/index.json` — same retrieval API, slower at scale
-- The embedding model auto-downloads to `~/.construct/cache/embeddings/` on first use (~22 MB, one time)
+- Fallback (no Docker / no Postgres): local JSON vector index at `~/.local/state/construct/vector/index.json` — same retrieval API, slower at scale
+- The embedding model auto-downloads to `~/.cache/construct/embeddings/` on first use (~22 MB, one time)
 
 All host ports bind to `127.0.0.1` only — nothing reachable from other machines on your network.
 

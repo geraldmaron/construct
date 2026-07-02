@@ -53,7 +53,7 @@ A provider is an npm package (or a local `.mjs` file) that exports a `create` fa
 
 ### Register a plugin
 
-Add the provider to `~/.construct/providers.json` for all projects, or to `.cx/providers.json` for a single project:
+Add the provider to `~/.config/construct/providers.json` for all projects, or to `.cx/providers.json` for a single project:
 
 ```json
 {
@@ -81,7 +81,7 @@ Alternatively, reference a local file:
 }
 ```
 
-Resolution order when multiple entries declare the same id: project `.cx/providers.json` wins over global `~/.construct/providers.json`, which wins over built-in.
+Resolution order when multiple entries declare the same id: project `.cx/providers.json` wins over global `~/.config/construct/providers.json`, which wins over built-in.
 
 ### Validate plugins
 

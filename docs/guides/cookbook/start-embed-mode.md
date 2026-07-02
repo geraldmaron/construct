@@ -19,14 +19,14 @@ If the output shows `stopped`, you are ready to start.
 
 ## Configure targets and roles (optional but recommended)
 
-Edit `~/.construct/embed.yaml` to tell embed which repos and workspaces to maintain:
+Edit `~/.config/construct/embed.yaml` to tell embed which repos and workspaces to maintain:
 
 ```yaml
 targets:
   - type: repo
     ref: github.com/your-org/your-repo
     path: /path/to/local/clone   # optional — enables direct filesystem writes
-  - type: workspace              # fallback always present at ~/.construct/workspace
+  - type: workspace              # fallback always present at ~/.local/state/construct/workspace
 
 roles:
   primary: architect             # sets the analysis lens
