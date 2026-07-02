@@ -3695,6 +3695,7 @@ async function cmdOrchestrate(args) {
     const timeoutMs = Number(eqFlag('--timeout-ms') || 8000);
     let observedTools = splitCsv(eqFlag('--observed-tools'));
     let reachableTools = splitCsv(eqFlag('--reachable-tools'));
+    const callerSuppliedObservations = Boolean(observedTools || reachableTools);
     let probeError = null;
 
     if (!rest.includes('--no-probe') && !observedTools && !reachableTools) {
@@ -3719,7 +3720,7 @@ async function cmdOrchestrate(args) {
       reachableTools,
       requiredTools: splitCsv(eqFlag('--required-tools')),
       clientContractVersion: eqFlag('--client-contract-version'),
-      observationScope: eqFlag('--observation-scope') || (observedTools || reachableTools ? 'host-session' : 'local-config'),
+      observationScope: eqFlag('--observation-scope') || (callerSuppliedObservations ? 'host-session' : (observedTools || reachableTools ? 'local-probe' : 'local-config')),
       probeError,
       authRequired: rest.includes('--auth-required'),
     }, { env: process.env, cwd: process.cwd() });
