@@ -47,6 +47,7 @@ import {
 import { findOpenCodeConfigPath, readOpenCodeConfig, writeOpenCodeConfig, ensureOpenRouterProviderAuth } from "../lib/opencode-config.mjs";
 import { HEAVY_EXTERNAL_MCP_IDS, LOCAL_SURFACE_MODES, decideTrim, isLocalModel } from "../lib/mcp/tool-budget.mjs";
 import { emitCursorRules } from "../lib/rules-delivery.mjs";
+import { memoryPort } from "../lib/home-namespace.mjs";
 import { resolvePromptContract, readPromptBody } from "../lib/prompt-composer.js";
 import { renderPersonaForTier } from "../lib/persona-sections.mjs";
 import { getModelVerdict } from "../lib/ollama/capability-store.mjs";
@@ -1519,6 +1520,25 @@ export function mcpEntryPointsOutsideToolkit(entry, root) {
 // unmanaged/user entry, and rewriting to a path under root makes it idempotent (a
 // second run finds nothing stale). Rewrite, never delete, never seed — opt-in sticks.
 
+// A memory entry can be stale without pointing outside the toolkit: pinned to the dead
+// legacy port, to a port other than the one currently allocated, or to a bridge script
+// path that does not exist (an old checkout). Any of these means the entry cannot reach
+// the running memory server — the split-brain — so it must be rewritten to the current
+// port and path.
+
+function memoryEntryIsStale(entry) {
+  if (!entry) return false;
+  const want = String(memoryPort(process.env));
+  const portOf = (s) => String(s || "").match(/:(\d+)\/?$/)?.[1];
+  const ports = [portOf(entry.url), portOf(entry.env?.CONSTRUCT_MEMORY_BRIDGE_URL)];
+  const portStale = ports.some((p) => p && p !== want);
+  const scriptArg = Array.isArray(entry.args)
+    ? entry.args.find((a) => typeof a === "string" && a.endsWith("memory-bridge.mjs"))
+    : null;
+  const pathMissing = scriptArg ? !fs.existsSync(scriptArg) : false;
+  return portStale || pathMissing;
+}
+
 export function reconcileStaleManagedEntries(configMap, { registryMcp, rebuildEntry }) {
   if (!configMap) return false;
   const managed = managedMcpDefs();
@@ -1527,7 +1547,8 @@ export function reconcileStaleManagedEntries(configMap, { registryMcp, rebuildEn
     if (id in registryMcp) continue;
     const mcpDef = managed[id];
     if (!mcpDef) continue;
-    if (!mcpEntryPointsOutsideToolkit(entry, root)) continue;
+    const stale = mcpEntryPointsOutsideToolkit(entry, root) || (id === "memory" && memoryEntryIsStale(entry));
+    if (!stale) continue;
     configMap[id] = rebuildEntry(id, mcpDef);
     changed = true;
   }
