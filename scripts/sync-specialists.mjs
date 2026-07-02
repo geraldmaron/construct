@@ -485,10 +485,17 @@ function resolveArgs(args) {
     : a));
 }
 
-function resolveTemplateStrings(value) {
+// A secret-suffixed placeholder (TOKEN/SECRET/API_KEY/PUBLIC_KEY/PRIVATE_KEY) always
+// resolves to OpenCode's `{env:NAME}` reference form, even when the named var is set
+// in process.env, so a live credential never lands in a generated config file. This
+// guard runs before the general env lookup below, mirroring the buildLocalEnvironment
+// value->ref flip in lib/mcp-platform-config.mjs. GITHUB_TOKEN is an intentional alias
+// that still materializes GITHUB_PERSONAL_ACCESS_TOKEN's value: that branch stays ahead
+// of the suffix guard since it targets a different source var, not GITHUB_TOKEN itself.
+
+export function resolveTemplateStrings(value) {
   if (typeof value === "string") {
     return value.replace(/__([A-Z0-9_]+)__/g, (_, name) => {
-      if (process.env[name] !== undefined && process.env[name] !== "") return process.env[name];
       if (name === "CX_TOOLKIT_DIR") return root;
       if (name === "MEMORY_PORT") return process.env.MEMORY_PORT || "8765";
       if (name === "CONSTRUCT_MEMORY_BRIDGE_URL") {
@@ -500,6 +507,7 @@ function resolveTemplateStrings(value) {
       if (/(?:TOKEN|SECRET|API_KEY|PUBLIC_KEY|PRIVATE_KEY)$/.test(name)) {
         return `{env:${name}}`;
       }
+      if (process.env[name] !== undefined && process.env[name] !== "") return process.env[name];
       return `__${name}__`;
     });
   }
