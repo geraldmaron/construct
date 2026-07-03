@@ -1,0 +1,12 @@
+{
+  "id": "atlassian-confluence",
+  "version": "1.0.0",
+  "kind": "data-source",
+  "capabilities": ["read", "search"],
+  "secretEnvKeys": ["CONFLUENCE_BASE_URL", "CONFLUENCE_EMAIL", "CONFLUENCE_API_TOKEN"],
+  "operations": ["read", "search"],
+  "securityClassification": "trusted",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin"
+}

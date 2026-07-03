@@ -1,0 +1,12 @@
+{
+  "id": "github",
+  "version": "1.0.0",
+  "kind": "data-source",
+  "capabilities": ["read", "search", "webhook"],
+  "secretEnvKeys": ["GITHUB_TOKEN", "GH_TOKEN"],
+  "operations": ["read", "search", "webhook"],
+  "securityClassification": "trusted",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin"
+}
