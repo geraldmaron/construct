@@ -353,6 +353,20 @@ async function cmdSync(args) {
     }
   }
 
+  // Advisory only: workflow-defs.mjs (LMCP-D2) can only drift from the
+  // manifests via a source regression, which release:check's --check run
+  // treats as a hard failure. Sync surfaces it early without blocking.
+
+  try {
+    const driftStatus = runNodeScript(path.join(ROOT_DIR, 'scripts', 'check-workflow-defs-drift.mjs'), ['--check'], {}, { exitOnError: false });
+    if (driftStatus !== 0) {
+      errorln('workflow-defs.mjs drift detected — run: npm run workflow-defs:check');
+    }
+    opLog.event('workflow-defs-check', { status: driftStatus });
+  } catch (err) {
+    opLog.event('workflow-defs-check-error', { message: err.message });
+  }
+
   if (args.includes('--no-docs')) {
     opLog.close('ok', { docs: 'skipped' });
     return;

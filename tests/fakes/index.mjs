@@ -34,3 +34,4 @@
 export { create as FakeGitHub } from './fake-github.mjs';
 export { create as FakeJira } from './fake-jira.mjs';
 export { create as FakeConfluence } from './fake-confluence.mjs';
+export { create as FakeSlack } from './fake-slack.mjs';

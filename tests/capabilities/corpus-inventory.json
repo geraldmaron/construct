@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-03T22:46:56.196Z",
+  "generatedAt": "2026-07-03T23:13:15.575Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 701,
+    "testFiles": 706,
     "topLevelTestFiles": 328,
-    "nestedTestFiles": 373,
+    "nestedTestFiles": 378,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 490,
-      "functional": 169,
+      "unit": 494,
+      "functional": 170,
       "visual": 9,
       "live-provider": 2,
       "integration": 31
     },
     "byCategory": {
-      "unit": 439,
-      "functional": 169,
+      "unit": 443,
+      "functional": 170,
       "visual": 9,
       "structural-guard": 16,
       "contract-subsystem": 35,
@@ -91,6 +91,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/acceptance/packed-install.test.mjs"
+    },
+    {
+      "path": "tests/acceptance/tpm-preset.acceptance.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/tpm-preset.acceptance.test.mjs — golden-fixture acceptance"
     },
     {
       "path": "tests/adr-stamp-integrity.test.mjs",
@@ -4201,6 +4209,22 @@
       "maintainerNotes": "tests/mcp/denial-audit.test.mjs — LMCP-I3."
     },
     {
+      "path": "tests/mcp/enforcement-proof.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/enforcement-proof.functional.test.mjs — LMCP-I4."
+    },
+    {
+      "path": "tests/mcp/provider-write-tool.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/provider-write-tool.test.mjs — LMCP-I7 provider_write MCP tool."
+    },
+    {
       "path": "tests/memory-stats.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4857,6 +4881,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/providers/creds.test.mjs — credential management utility tests."
+    },
+    {
+      "path": "tests/providers/directory-provider.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/directory-provider.test.mjs — directory provider tests."
     },
     {
       "path": "tests/providers/op-discovery.test.mjs",
@@ -5667,6 +5699,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/workflows/template-shape.test.mjs — Shape validation for workflow templates."
+    },
+    {
+      "path": "tests/workflows/workflow-defs-drift.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workflows/workflow-defs-drift.test.mjs — regression guard for LMCP-D2."
     },
     {
       "path": "tests/workflows/workflow-manifests.test.mjs",

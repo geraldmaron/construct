@@ -19,18 +19,18 @@ import { dirname, join } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MANIFESTS_DIR = join(__dirname, '../../lib/extensions/manifests');
 
-const EXPECTED_PROVIDERS = ['github', 'atlassian-jira', 'atlassian-confluence', 'slack', 'salesforce'];
+const EXPECTED_PROVIDERS = ['github', 'atlassian-jira', 'atlassian-confluence', 'slack', 'salesforce', 'directory'];
 const MANIFEST_ONLY_PROVIDERS = ['linear'];
 
 test('built-in provider manifests', async (t) => {
-  await t.test('loadManifestsFromDir loads all 6 manifests without errors', () => {
+  await t.test('loadManifestsFromDir loads all 7 manifests without errors', () => {
     const { manifests, errors } = loadManifestsFromDir(MANIFESTS_DIR);
     assert.deepEqual(errors, [], 'manifest loading should produce no errors');
     const dataSourceManifests = manifests.filter((m) => m.kind === 'data-source');
     assert.equal(
       dataSourceManifests.length,
-      EXPECTED_PROVIDERS.length + MANIFEST_ONLY_PROVIDERS.length,
-      `should have exactly ${EXPECTED_PROVIDERS.length + MANIFEST_ONLY_PROVIDERS.length} data-source manifests`,
+      7,
+      'should have exactly 7 data-source manifests (6 unified + 1 manifest-only)',
     );
   });
 
@@ -50,7 +50,7 @@ test('built-in provider manifests', async (t) => {
     }
   });
 
-  await t.test('resolveProviders returns entries for all 5 providers', async () => {
+  await t.test('resolveProviders returns entries for all 6 providers', async () => {
     const { providers, errors } = await resolveProviders();
     assert.deepEqual(errors, [], 'provider resolution should produce no errors');
     for (const id of EXPECTED_PROVIDERS) {
