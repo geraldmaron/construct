@@ -93,7 +93,8 @@
     "release:preflight": "node scripts/pre-release-check.mjs",
     "release:preflight:no-auth": "node scripts/pre-release-check.mjs --skip-auth",
     "npm:publish": "npm run release:check && npm publish --access public",
-    "postinstall": "node ./bin/construct-postinstall.mjs"
+    "postinstall": "node ./bin/construct-postinstall.mjs",
+    "deps:check": "node scripts/validate-dep-intent.mjs"
   },
   "dependencies": {
     "@lancedb/lancedb": "^0.30.0",
