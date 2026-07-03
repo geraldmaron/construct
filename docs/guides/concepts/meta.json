@@ -3,6 +3,7 @@
   "pages": [
     "index",
     "architecture",
+    "root-semantics",
     "agents-and-personas",
     "gates-and-enforcement",
     "integrity-and-trust",

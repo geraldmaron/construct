@@ -705,7 +705,7 @@ async function cmdDoctor() {
   }
 
   add('Node.js 20+ (recommended)', Number.parseInt(process.versions.node.split('.')[0], 10) >= 20);
-  add('npm available', true);
+  add('npm available', spawnSync(process.platform === 'win32' ? 'where' : 'zsh', process.platform === 'win32' ? ['npm'] : ['-lc', 'command -v npm'], { encoding: 'utf8', stdio: 'pipe' }).status === 0);
   const npmDevdir = process.env.npm_config_devdir ?? process.env.NPM_CONFIG_DEVDIR;
   if (npmDevdir) {
     add(
@@ -773,8 +773,9 @@ async function cmdDoctor() {
   add('rules/common/', fs.existsSync(path.join(ROOT_DIR, 'rules', 'common')));
   add('specialists/prompts/ directory', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'prompts')));
   add('Hybrid storage env keys documented', fs.existsSync(path.join(ROOT_DIR, '.env.example')));
-  fs.mkdirSync(path.join(doctorRoot(), 'performance-reviews'), { recursive: true });
-  add('performance-reviews/ ready', true);
+  const perfReviewsDir = path.join(doctorRoot(), 'performance-reviews');
+  fs.mkdirSync(perfReviewsDir, { recursive: true });
+  add('performance-reviews/ ready', fs.existsSync(perfReviewsDir));
 
   // construct.config.json — optional today (config is permitted to be absent;
   // env vars + defaults still work). The check enforces that when the file
@@ -949,6 +950,34 @@ async function cmdDoctor() {
           ? `Git hooks unwired (core.hooksPath = '${value}', expected '.beads/hooks') — pre-commit policy gates inactive`
           : 'Git hooks unwired (core.hooksPath unset) — pre-commit policy gates inactive. Fix: git config core.hooksPath .beads/hooks';
       add(label, wired);
+    }
+
+    // Half-initialized Beads: .claude/settings.json references bd but .beads/ is
+    // absent or has no database file. A project set up before D3 (fail-closed Beads)
+    // fired the hooks without a tracker, so bd exits non-zero with no database to read.
+
+    try {
+      const projectSettingsPath = path.join(process.cwd(), '.claude', 'settings.json');
+      let hasHooksRef = false;
+      if (fs.existsSync(projectSettingsPath)) {
+        hasHooksRef = /\bbd\b/.test(fs.readFileSync(projectSettingsPath, 'utf8'));
+      }
+      if (hasHooksRef) {
+        const beadsDir = path.join(process.cwd(), '.beads');
+        const beadsHasDb = fs.existsSync(beadsDir) && (
+          fs.existsSync(path.join(beadsDir, 'issues.jsonl')) ||
+          fs.existsSync(path.join(beadsDir, 'metadata.json'))
+        );
+        add(
+          beadsHasDb
+            ? 'Beads tracker initialized'
+            : 'Beads tracker not initialized (hooks reference bd but .beads/ missing — run: bd init)',
+          beadsHasDb,
+          false,
+        );
+      }
+    } catch (err) {
+      add(`Beads half-staged check failed: ${err.message}`, false, true);
     }
 
     const pluginRegistry = loadPluginRegistry({ cwd: process.cwd(), homeDir: HOME, rootDir: ROOT_DIR, env: process.env });
@@ -3719,6 +3748,7 @@ async function cmdOrchestrate(args) {
     const timeoutMs = Number(eqFlag('--timeout-ms') || 8000);
     let observedTools = splitCsv(eqFlag('--observed-tools'));
     let reachableTools = splitCsv(eqFlag('--reachable-tools'));
+    const callerSuppliedObservations = Boolean(observedTools || reachableTools);
     let probeError = null;
 
     if (!rest.includes('--no-probe') && !observedTools && !reachableTools) {
@@ -3743,7 +3773,7 @@ async function cmdOrchestrate(args) {
       reachableTools,
       requiredTools: splitCsv(eqFlag('--required-tools')),
       clientContractVersion: eqFlag('--client-contract-version'),
-      observationScope: eqFlag('--observation-scope') || (observedTools || reachableTools ? 'host-session' : 'local-config'),
+      observationScope: eqFlag('--observation-scope') || (callerSuppliedObservations ? 'host-session' : (observedTools || reachableTools ? 'local-probe' : 'local-config')),
       probeError,
       authRequired: rest.includes('--auth-required'),
     }, { env: process.env, cwd: process.cwd() });

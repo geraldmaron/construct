@@ -22,7 +22,9 @@ Construct generates text embeddings for intake clustering and semantic search. T
 
 ## Context
 
-The embedding layer already degrades gracefully: `lib/storage/embeddings-engine.mjs` routes between a local ONNX adapter, hosted-API adapters (OpenAI, Ollama), and a zero-dependency in-tree hashing embedder (`lib/storage/embeddings-legacy.mjs`). The model is lazy-loaded on first use, and any load failure falls back to the hashing embedder. Local ONNX embedding is therefore a quality enhancement over a working baseline, not a hard requirement — unlike the two ADR-0001 exceptions (`@modelcontextprotocol/sdk`, `postgres`), which provide protocol-level contracts with no built-in alternative.
+The embedding layer already degrades gracefully: `lib/storage/embeddings-engine.mjs` routes between a local ONNX adapter, hosted-API adapters (OpenAI, Ollama), and a zero-dependency in-tree hashing embedder (`lib/storage/embeddings-legacy.mjs`). The model is lazy-loaded on first use, and any load failure falls back to the hashing embedder. Local ONNX embedding is therefore a quality enhancement over a working baseline, not a hard requirement — unlike the ADR-0001 exceptions (`@modelcontextprotocol/sdk`, `@lancedb/lancedb`, `apache-arrow`), which provide protocol-level contracts or essential vector performance with no viable built-in alternative.
+
+**Status update (2026-07-02):** The original text cited `postgres` as one of the ADR-0001 exceptions. This was incorrect when written and is no longer accurate: the actual exceptions listed in ADR-0001 are `@modelcontextprotocol/sdk`, `@lancedb/lancedb`, and `apache-arrow`. The `postgres` package is not a core exception; `lib/storage/backend.mjs` confirms `createSqlClient()` is a stub returning null and local operations use embedded LanceDB.
 
 ## Decision
 
