@@ -10,6 +10,7 @@
  * server dependency so the dashboard deletion (web-deprecation.4) cannot break it.
  *
  * @enforces ADR-0022
+ * @capability orchestration.routing
  */
 
 import assert from 'node:assert/strict';

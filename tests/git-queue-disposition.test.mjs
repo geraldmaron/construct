@@ -1,9 +1,12 @@
 /**
  * tests/git-queue-disposition.test.mjs
  *
- * Tests for GitIntakeQueue disposition behaviour per ADR-0051 / A1
- * (construct-9oi4.7.7 / LMCP-G7):
+ * Tests for GitIntakeQueue disposition behaviour per the queue provider-kind
+ * reframe (construct-9oi4.7.11, supersedes the ADR-0051 / A1 framing):
  *   - claim() emits a warning when push fails, does NOT throw
+ *   - a failed push is reported as a typed NON-DURABLE disposition on the
+ *     returned claim — it is never ratified as a durable claim
+ *   - a successful push is reported as durable
  *   - markSkipped() moves the file locally without pushing
  *
  * Uses the _exec injection seam added to GitIntakeQueue so no
@@ -130,6 +133,12 @@ describe('GitIntakeQueue — disposition (LMCP-G7)', () => {
     assert.equal(result.status, 'claimed');
     assert.ok(result.claimedAt, 'claimedAt should be set');
 
+    // A failed push must be reported as a typed non-durable disposition, never
+    // ratified as a durable claim.
+    assert.equal(result.durable, false, 'a failed push must not be ratified as durable');
+    assert.equal(result.disposition, 'local-only');
+    assert.ok(result.dispositionReason, 'the non-durable reason should be carried');
+
     // File should be in the claimed directory, not pending.
     const claimedFile = path.join(
       rootDir, '.cx', 'team-inbox', 'claimed', 'agent-3', `${result.id}.json`
@@ -139,6 +148,24 @@ describe('GitIntakeQueue — disposition (LMCP-G7)', () => {
     // File must be absent from pending after a successful claim.
     const pendingFile = path.join(rootDir, '.cx', 'team-inbox', 'pending', `${result.id}.json`);
     assert.equal(fs.existsSync(pendingFile), false, 'file should have been moved from pending');
+  });
+
+  it('claim() reports a durable disposition when the push succeeds', async () => {
+    seedPendingItem(rootDir, 'task-durable-check');
+
+    // No throwOn — every exec (pull, add, commit, push) is a no-op success.
+    const q = new GitIntakeQueue({
+      project: 'test',
+      rootDir,
+      _exec: makeFakeExec({ throwOn: null }),
+    });
+
+    const result = await q.claim({ claimedBy: 'agent-4' });
+
+    assert.ok(result);
+    assert.equal(result.status, 'claimed');
+    assert.equal(result.durable, true, 'a successful push must be reported as durable');
+    assert.equal(result.disposition, 'pushed');
   });
 
   // -------------------------------------------------------------------------

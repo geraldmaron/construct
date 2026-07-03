@@ -9,6 +9,11 @@ import { PACK_REQUIRED_FIELDS, PACK_COMPAT_VERSION } from '../../lib/packs/manif
 
 const validManifest = { id: '@org/test-pack', version: '1.0.0', compatVersion: 1 };
 
+const KNOWN_PROVIDERS = {
+  'atlassian-jira': { id: 'atlassian-jira', kind: 'data-source', capabilities: ['read', 'search'] },
+  slack: { id: 'slack', kind: 'data-source', capabilities: ['read', 'search'] },
+};
+
 test('validatePackManifest', async (t) => {
   await t.test('valid manifest returns valid:true', () => {
     const result = validatePackManifest(validManifest);
@@ -85,5 +90,112 @@ test('validatePackManifest', async (t) => {
     const result = validatePackManifest({}, { filePath: '/test/pack.manifest.json' });
     assert.equal(result.valid, false);
     assert.ok(result.errors[0].includes('/test/pack.manifest.json'));
+  });
+});
+
+test('validatePackManifest embedBindings (LMCP-E4)', async (t) => {
+  await t.test('valid binding against a known provider+capability passes', () => {
+    const result = validatePackManifest({
+      ...validManifest,
+      embedBindings: {
+        'cx-operations': {
+          providers: [{ id: 'atlassian-jira', capabilities: ['read'] }],
+          proposals: ['atlassian-jira.createIssue'],
+        },
+      },
+    }, { knownProviders: KNOWN_PROVIDERS });
+    assert.equal(result.valid, true);
+  });
+
+  await t.test('unknown provider id fails with a path', () => {
+    const result = validatePackManifest({
+      ...validManifest,
+      embedBindings: {
+        'cx-operations': {
+          providers: [{ id: 'nonexistent-provider', capabilities: ['read'] }],
+        },
+      },
+    }, { knownProviders: KNOWN_PROVIDERS });
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some(e => e.includes('embedBindings.cx-operations.providers[0].id') && e.includes('nonexistent-provider')));
+  });
+
+  await t.test('undeclared capability fails with a path', () => {
+    const result = validatePackManifest({
+      ...validManifest,
+      embedBindings: {
+        'cx-operations': {
+          // slack manifest only declares read/search — "write" is not declared.
+          providers: [{ id: 'slack', capabilities: ['write'] }],
+        },
+      },
+    }, { knownProviders: KNOWN_PROVIDERS });
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some(e => e.includes('embedBindings.cx-operations.providers[0].capabilities[0]')));
+  });
+
+  await t.test('capability not in EMBED_BINDING_CAPABILITIES is rejected', () => {
+    const result = validatePackManifest({
+      ...validManifest,
+      embedBindings: {
+        'cx-operations': {
+          providers: [{ id: 'slack', capabilities: ['admin'] }],
+        },
+      },
+    }, { knownProviders: KNOWN_PROVIDERS });
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some(e => e.includes('not a recognized embed capability')));
+  });
+
+  await t.test('proposal token referencing unknown provider fails', () => {
+    const result = validatePackManifest({
+      ...validManifest,
+      embedBindings: {
+        'cx-operations': {
+          providers: [{ id: 'slack', capabilities: ['read'] }],
+          proposals: ['nonexistent-provider.createIssue'],
+        },
+      },
+    }, { knownProviders: KNOWN_PROVIDERS });
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some(e => e.includes('embedBindings.cx-operations.proposals[0]') && e.includes('unknown provider')));
+  });
+
+  await t.test('proposal token malformed (no dot) fails', () => {
+    const result = validatePackManifest({
+      ...validManifest,
+      embedBindings: { 'cx-operations': { proposals: ['createIssue'] } },
+    }, { knownProviders: KNOWN_PROVIDERS });
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some(e => e.includes('embedBindings.cx-operations.proposals[0]')));
+  });
+
+  await t.test('proposal referencing a provider outside providers[] grant fails', () => {
+    const result = validatePackManifest({
+      ...validManifest,
+      embedBindings: {
+        'cx-operations': {
+          providers: [{ id: 'slack', capabilities: ['read'] }],
+          proposals: ['atlassian-jira.createIssue'],
+        },
+      },
+    }, { knownProviders: KNOWN_PROVIDERS });
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some(e => e.includes('not in this specialist\'s providers[] grant')));
+  });
+
+  await t.test('unrecognized embedBindings field name fails with a path', () => {
+    const result = validatePackManifest({
+      ...validManifest,
+      embedBindings: { 'cx-operations': { unknownField: true } },
+    }, { knownProviders: KNOWN_PROVIDERS });
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some(e => e.includes('embedBindings.cx-operations.unknownField')));
+  });
+
+  await t.test('embedBindings must be an object', () => {
+    const result = validatePackManifest({ ...validManifest, embedBindings: ['not-an-object'] }, { knownProviders: KNOWN_PROVIDERS });
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some(e => e.includes('embedBindings must be an object')));
   });
 });

@@ -4,11 +4,14 @@
 
 import test from 'node:test';
 import assert from 'node:assert';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { loadPacksFromDir, mergePackTiers, resolvePackDirs, loadAllPacks } from '../../lib/packs/loader.mjs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const PACKAGE_ROOT = join(__dirname, '..', '..');
 
 test('loadPacksFromDir', async (t) => {
   await t.test('non-existent dir returns empty packs with no errors', () => {
@@ -73,5 +76,78 @@ test('loadAllPacks', async (t) => {
     const result = loadAllPacks();
     assert.ok(Array.isArray(result.packs));
     assert.ok(Array.isArray(result.errors));
+  });
+
+  await t.test('core pack embedBindings validate cleanly against real extension manifests (LMCP-E4)', () => {
+    const result = loadAllPacks();
+    const core = result.packs.find(p => p.id === '@construct/core');
+    assert.ok(core.embedBindings, 'core pack should carry embedBindings');
+    assert.ok(Object.keys(core.embedBindings).length > 0);
+    assert.ok(!result.errors.some(e => e.includes('embedBindings')), `expected no embedBindings errors, got: ${JSON.stringify(result.errors)}`);
+  });
+});
+
+test('loadPacksFromDir embedBindings validation (LMCP-E4)', async (t) => {
+  function makeTmpPacksDir(manifestBody) {
+    const base = mkdtempSync(join(tmpdir(), 'construct-pack-embed-'));
+    const packDir = join(base, 'test-pack');
+    mkdirSync(packDir, { recursive: true });
+    writeFileSync(join(packDir, 'pack.manifest.json'), JSON.stringify(manifestBody, null, 2));
+    return base;
+  }
+
+  await t.test('unknown provider id fails pack validation with a path', () => {
+    const dir = makeTmpPacksDir({
+      id: 'test-pack',
+      version: '1.0.0',
+      compatVersion: 1,
+      embedBindings: {
+        'cx-operations': { providers: [{ id: 'not-a-real-provider', capabilities: ['read'] }] },
+      },
+    });
+    try {
+      const result = loadPacksFromDir(dir, { packageRoot: PACKAGE_ROOT });
+      assert.equal(result.packs.length, 0);
+      assert.ok(result.errors.some(e => e.includes('embedBindings.cx-operations.providers[0].id') && e.includes('not-a-real-provider')));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  await t.test('undeclared capability fails pack validation with a path', () => {
+    const dir = makeTmpPacksDir({
+      id: 'test-pack',
+      version: '1.0.0',
+      compatVersion: 1,
+      embedBindings: {
+        // github manifest does not declare "write".
+        'cx-engineer': { providers: [{ id: 'github', capabilities: ['write'] }] },
+      },
+    });
+    try {
+      const result = loadPacksFromDir(dir, { packageRoot: PACKAGE_ROOT });
+      assert.equal(result.packs.length, 0);
+      assert.ok(result.errors.some(e => e.includes('embedBindings.cx-engineer.providers[0].capabilities[0]')));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  await t.test('valid embedBindings against a real provider passes', () => {
+    const dir = makeTmpPacksDir({
+      id: 'test-pack',
+      version: '1.0.0',
+      compatVersion: 1,
+      embedBindings: {
+        'cx-engineer': { providers: [{ id: 'github', capabilities: ['read', 'search'] }], proposals: ['github.createIssue'] },
+      },
+    });
+    try {
+      const result = loadPacksFromDir(dir, { packageRoot: PACKAGE_ROOT });
+      assert.equal(result.errors.length, 0);
+      assert.equal(result.packs.length, 1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

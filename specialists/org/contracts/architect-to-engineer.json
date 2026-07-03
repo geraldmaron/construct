@@ -14,7 +14,9 @@
       "goal",
       "approach",
       "tasks",
-      "acceptanceCriteria"
+      "acceptanceCriteria",
+      "constraintMap",
+      "optionScoring"
     ]
   },
   "output": {

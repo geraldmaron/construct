@@ -54,15 +54,15 @@ describe('deployment-mode', () => {
   });
 
   describe('resolveResourceMode', () => {
-    it('returns the solo topology with local/filesystem defaults', () => {
+    it('returns the solo topology declaring the git default queue provider', () => {
       const r = resolveResourceMode('solo');
-      assert.equal(r.queue, 'filesystem');
+      assert.equal(r.queue, 'git');
       assert.equal(r.memory, 'local');
       assert.equal(r.workers, 'local');
       assert.equal(r.mcp, 'direct');
     });
 
-    it('returns the team topology with git queue/docker/brokered MCP (ADR-0051)', () => {
+    it('returns the team topology with git queue/docker/brokered MCP', () => {
       const r = resolveResourceMode('team');
       assert.equal(r.queue, 'git');
       assert.equal(r.memory, 'shared');

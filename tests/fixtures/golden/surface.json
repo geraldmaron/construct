@@ -17,10 +17,6 @@
       "core": false
     },
     {
-      "name": "backup",
-      "core": false
-    },
-    {
       "name": "beads",
       "core": false
     },
@@ -390,6 +386,10 @@
     },
     {
       "name": "specialist:remove",
+      "core": false
+    },
+    {
+      "name": "start",
       "core": false
     },
     {

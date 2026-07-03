@@ -73,6 +73,23 @@ test('owned_by edges are created from providers and specialists', () => {
   assert.ok(ownedBy.length >= 1, `expected >=1 owned_by edges, got ${ownedBy.length}`);
 });
 
+test('reads edges are created from core pack embedBindings (LMCP-E4)', () => {
+  const reads = idx.edgesByRel('reads');
+  assert.ok(reads.length >= 1, `expected >=1 reads edges, got ${reads.length}`);
+  for (const e of reads) {
+    assert.ok(e.from.startsWith('specialist:'), `reads edge from ${e.from} must be a specialist`);
+    assert.ok(e.to.startsWith('provider:'), `reads edge to ${e.to} must be a provider`);
+    assert.equal(e.source, 'pack-embed-binding');
+  }
+  const froms = new Set(reads.map((e) => e.from));
+  assert.ok(froms.has('specialist:cx-product-manager'), 'expected cx-product-manager --reads--> provider edge');
+  assert.ok(froms.has('specialist:cx-operations'), 'expected cx-operations --reads--> provider edge');
+  assert.ok(froms.has('specialist:cx-engineer'), 'expected cx-engineer --reads--> provider edge');
+
+  const jiraReaders = reads.filter((e) => e.to === 'provider:atlassian-jira').map((e) => e.from);
+  assert.ok(jiraReaders.includes('specialist:cx-product-manager'));
+});
+
 test('documents edges are created from heuristic doc linking', () => {
   const documents = idx.edgesByRel('documents');
   assert.ok(documents.length >= 1, `expected >=1 documents edges, got ${documents.length}`);

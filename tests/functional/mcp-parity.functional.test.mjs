@@ -6,6 +6,8 @@
  * surfaces (scopes, outcomes, knowledge_add, learning_status) are reachable
  * over MCP — not just unit-callable. This is the loop that subagents take when
  * they talk to Construct.
+ *
+ * @capability mcp.broker.connection
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

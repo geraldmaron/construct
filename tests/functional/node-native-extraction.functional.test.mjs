@@ -7,6 +7,9 @@
  * PATH so pdftotext/textutil/unzip cannot satisfy the extraction, and asserts the
  * Node-native backend produced the text. Skips only if the optional deps are
  * genuinely absent from the install.
+ *
+ * @capability document-type.ingested-markdown
+ * @capability ingest.adapter
  */
 
 import { test } from 'node:test';
