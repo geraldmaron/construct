@@ -1,0 +1,12 @@
+{
+  "id": "linear",
+  "version": "1.0.0",
+  "kind": "data-source",
+  "capabilities": ["read"],
+  "secretEnvKeys": ["LINEAR_API_KEY"],
+  "operations": ["read"],
+  "securityClassification": "trusted",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin"
+}
