@@ -107,9 +107,9 @@ jobs:
             workflow:
               - '.github/workflows/**'
 
-  # Single-runner on PR, full matrix on main push. macOS + Node 20 only run
-  # when merging to main; Windows correctness is covered by the SEA binary
-  # build in release.yml. Cuts ~75% of test-runner minutes from PR runs.
+  # Full OS × Node matrix on both PR and main push. Running Node 20 and macOS
+  # on PRs catches regressions on the minimum supported version before merge.
+  # Windows correctness is covered by the SEA binary build in release.yml.
   test:
     name: test (${{ matrix.os }} / node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
@@ -118,8 +118,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest","macos-latest"]') }}
-        node: ${{ github.event_name == 'pull_request' && fromJSON('["22"]') || fromJSON('["20","22"]') }}
+        os: ["ubuntu-latest", "macos-latest"]
+        node: ["20", "22"]
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
