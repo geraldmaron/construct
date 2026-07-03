@@ -333,9 +333,9 @@ construct uninstall          # interactive; pick what to remove
 npm uninstall @geraldmaron/construct
 ```
 
-`construct uninstall` finds both project state (`.construct/`, the Construct-owned files under `.claude/agents/` and `.claude/commands/`, hooks and mcpServers Construct added to `.claude/settings.json`) and machine state (`~/.cx/`, `~/.construct/workspace/`, the embedding model cache, the local Postgres container). Auto-risk items go by default. Ask-risk items (Postgres data, API keys, files you may have edited) are skipped unless you opt in.
+`construct uninstall` finds both project state (`.construct/`, the Construct-owned files under `.claude/agents/` and `.claude/commands/`, hooks and mcpServers Construct added to `.claude/settings.json`) and machine state (`~/.cx/`, `~/.local/state/construct/`, the embedding model cache). Auto-risk items go by default. Ask-risk items (API keys, files you may have edited) are skipped unless you opt in.
 
-It will not touch Docker itself, Homebrew CLIs like `cm` and `cass`, the pgvector image, or anything you added to `.claude/settings.json` by hand. Those appear in the final summary as follow-ups.
+It will not touch Homebrew CLIs like `cm` and `cass`, or anything you added to `.claude/settings.json` by hand. Those appear in the final summary as follow-ups.
 
 Useful flags:
 
@@ -344,7 +344,7 @@ construct uninstall --dry-run            # show the plan, change nothing
 construct uninstall --yes                # non-interactive, auto-risk only
 construct uninstall --yes --all          # non-interactive, everything
 construct uninstall --scope=project      # only this project, leave ~/.construct alone
-construct uninstall --keep-state         # only .construct/ and .claude/, keep .cx/, ~/.construct, Postgres
+construct uninstall --keep-state         # only .construct/ and .claude/, keep .cx/ and ~/.local/state/construct/
 ```
 
 ## License

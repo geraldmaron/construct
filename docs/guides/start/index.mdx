@@ -1,6 +1,6 @@
 ---
 title: Get started
-description: Install Construct, do your first task, connect your editor. ~5 minutes if Docker is already running.
+description: Install Construct, do your first task, connect your editor. ~5 minutes.
 ---
 
 By the end of this section you will have:
@@ -31,7 +31,7 @@ If anything goes wrong, jump to [troubleshooting](/operations/troubleshooting).
 
 - A CLI (`construct`) that bootstraps and operates the system locally.
 - A set of host adapters that get written into your editor's config: full agent adapters for Claude Code, OpenCode, Codex, and Copilot prompt profiles; MCP registrations for VS Code/Copilot and Cursor when those configs already exist.
-- Optional local Postgres + pgvector for retrieval, managed via Docker if available. Trace capture writes local `.cx/traces/*.jsonl` by default; remote export is optional.
+- An embedded LanceDB vector index for semantic retrieval. No database or Docker required. Trace capture writes local `.cx/traces/*.jsonl` by default; remote export is optional.
 
 You install in `solo` mode by default — everything runs locally, the intake queue is the filesystem under `.cx/intake/`, and there's no Construct cloud account. Two other deployment modes (`team` and `enterprise`) promote the queue and memory to shared Postgres and route MCP through a broker — see [deployment model](/guides/concepts/deployment-model).
 
@@ -39,12 +39,12 @@ Run **`construct sync`** to install or refresh the OpenCode front-door agent plu
 
 ## Platform support
 
-| Platform | Install | Hooks | Local Postgres |
-|---|---|---|---|
-| macOS | Homebrew or npm | Full | Docker (recommended) or Homebrew postgres |
-| Linux | npm (global or project) | Full | Docker (recommended) or native postgres |
-| Windows | npm via WSL | WSL required for hooks | Docker Desktop with WSL backend |
+| Platform | Install | Hooks |
+|---|---|---|
+| macOS | Homebrew or npm | Full |
+| Linux | npm (global or project) | Full |
+| Windows | npm via WSL | WSL required for hooks |
 
-On Linux: `npm install -g @geraldmaron/construct` works without Homebrew. Run `construct init` after install — it detects Docker and sets up local Postgres automatically.
+On Linux: `npm install -g @geraldmaron/construct` works without Homebrew. Run `construct init` after install.
 
 On Windows: install WSL2, then install Construct inside WSL using the Linux path. Native Windows hook execution is not supported; hooks use bash-style path expansion.

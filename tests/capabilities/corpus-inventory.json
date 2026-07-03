@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-02T20:14:27.681Z",
+  "generatedAt": "2026-07-03T02:30:40.377Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 625,
-    "topLevelTestFiles": 308,
-    "nestedTestFiles": 317,
+    "testFiles": 637,
+    "topLevelTestFiles": 313,
+    "nestedTestFiles": 324,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 428,
+      "unit": 436,
       "visual": 9,
       "live-provider": 2,
       "integration": 31,
-      "functional": 155
+      "functional": 159
     },
     "byCategory": {
-      "unit": 385,
+      "unit": 391,
       "visual": 9,
       "structural-guard": 15,
-      "contract-subsystem": 28,
+      "contract-subsystem": 30,
       "live-provider": 2,
       "integration": 22,
-      "functional": 155,
+      "functional": 159,
       "hook": 9
     }
   },
@@ -1117,6 +1117,14 @@
       "maintainerNotes": "tests/config/env-number-defaults.test.mjs — resolveNonNegativeSetting env parsing."
     },
     {
+      "path": "tests/consumer/optional-deps-absent.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/consumer/optional-deps-absent.test.mjs — verifies CLI key commands work"
+    },
+    {
       "path": "tests/context-router.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -1355,6 +1363,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doctor/audit.test.mjs — doctor audit log behavior."
+    },
+    {
+      "path": "tests/doctor/beads-half-staged.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor/beads-half-staged.test.mjs — doctor detection for half-initialized Beads state."
+    },
+    {
+      "path": "tests/doctor/contract-validation.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "Tests for the doctor \"Agent contract schema intact\" predicate."
     },
     {
       "path": "tests/doctor/cost-ledger.test.mjs",
@@ -2391,6 +2415,14 @@
       "maintainerNotes": "tests/functional/ingest-tooling.functional.test.mjs — ingest pipeline detect contract."
     },
     {
+      "path": "tests/functional/init-beads-fail-closed.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/init-beads-fail-closed.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/init-gitignores-cx.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2537,6 +2569,14 @@
       "maintainerNotes": "tests/functional/mcp-add-no-plaintext.functional.test.mjs"
     },
     {
+      "path": "tests/functional/mcp-broker-enforcement.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mcp-broker-enforcement.functional.test.mjs — functional tests"
+    },
+    {
       "path": "tests/functional/mcp-core-tools.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2583,6 +2623,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/mcp-tool-rate-audit.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/mode-degraded-fallback.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mode-degraded-fallback.functional.test.mjs — B4 contract."
     },
     {
       "path": "tests/functional/model-catalog-visibility.functional.test.mjs",
@@ -2857,6 +2905,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "project-parity.functional.test.mjs — project-scoped adapter parity checks."
+    },
+    {
+      "path": "tests/functional/project-root-isolation.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/project-root-isolation.functional.test.mjs — regression"
     },
     {
       "path": "tests/functional/provider-poll.functional.test.mjs",
@@ -3219,6 +3275,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "headhunt.test.mjs — Unit tests for lib/headhunt.mjs domain overlay lifecycle."
+    },
+    {
+      "path": "tests/health-check-docker-solo.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/health-check-docker-solo.test.mjs"
     },
     {
       "path": "tests/health-check-resolve-credentials.test.mjs",
@@ -3693,6 +3757,22 @@
       "maintainerNotes": "tests/mcp-artifact-workflow.test.mjs — MCP workflow provenance envelope."
     },
     {
+      "path": "tests/mcp-broker-dispatch.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp-broker-dispatch.test.mjs — unit tests for broker-gated dispatch in"
+    },
+    {
+      "path": "tests/mcp-broker-status.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp-broker-status.test.mjs — construct://status mcpBrokerMode field."
+    },
+    {
       "path": "tests/mcp-broker.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3803,6 +3883,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/migration-round-trip.test.mjs — Verify unified registry migration preserves all data."
+    },
+    {
+      "path": "tests/mode-health-single-source.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mode-health-single-source.test.mjs — single-source invariant for mode capability health."
     },
     {
       "path": "tests/model-free-selector.test.mjs",
@@ -4763,6 +4851,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/storage-file-lock.test.mjs — file-lock primitive tests."
+    },
+    {
+      "path": "tests/storage-health-probe.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/storage-health-probe.test.mjs — unit tests for probeStorageHealth()."
     },
     {
       "path": "tests/storage-rrf.test.mjs",

@@ -84,6 +84,8 @@ Canonical format matrix: [Document I/O reference](/guides/reference/document-io)
   </Card>
 </Cards>
 
+**Runtime directory semantics.** Construct distinguishes `packageRoot` (the npm install directory — source of bundled personas, skills, schemas, hooks, and templates) from `projectRoot` (the user's repo, discovered by walking upward from cwd). Services that read or write durable state (`.cx/`, oracle, telemetry, beads) must use `projectRoot`; asset loaders must use `packageRoot`. `process.cwd()` is the raw fallback before `projectRoot` is resolved. See [Root semantics](/guides/concepts/root-semantics) for the full subsystem table and a worked example.
+
 ### Physical root map (tool repository)
 
 ```text
@@ -197,7 +199,7 @@ Transport-agnostic interface to external systems. Each provider implements a cap
 
 Docker service management, embed daemon, and scheduler.
 
-- **Service manager**. `lib/service-manager.mjs` (container lifecycle for Postgres, memory)
+- **Service manager**. `lib/service-manager.mjs` (memory server lifecycle; local Postgres is out of scope — solo mode uses embedded LanceDB and `createSqlClient` is a stub returning null)
 - **Embed daemon**. scheduled or long-running process that monitors sources through providers, produces snapshots, manages approval queue. `construct embed supervise` installs a platform-native supervisor (launchd/systemd/Task Scheduler) for auto-restart on crash.
 - **Scheduler abstraction**. `lib/scheduler/index.mjs` — `registerJob`, `runJobOnce`, `listJobs`. Three modes: solo (native triggers via launchctl/systemd/Task Scheduler), team/enterprise (Postgres advisory-lock leader election), one-shot CI. Three built-in jobs: `tag-candidate-mining`, `skill-usage-rollup`, `doc-hygiene-scan`. CLI: `construct scheduler run|list|runner`.
 - **Doc hygiene scanner**. `lib/hygiene/scan.mjs` selects stale lifecycle-tagged documents for review: `lifecycle/approved` older than 30 days, `lifecycle/draft` older than 7 days, any doc missing `last_verified_at`. `stampVerified` writes the field to frontmatter. Integrated into the `doc-hygiene-scan` scheduler job.
