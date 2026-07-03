@@ -48,9 +48,82 @@ test('writeGraph + loadGraph round-trips nodes, edges, and meta counts', () => {
   assert.equal(graph.nodes.size, 3);
   assert.equal(graph.edges.length, 2);
   assert.equal(graph.meta.sourceHash, 'abc');
+  assert.equal(graph.meta.schemaVersion, 1);
   assert.equal(graph.meta.nodesByType.capability, 1);
   assert.equal(graph.meta.edgesByRel.validates, 1);
   assert.deepEqual(graph.nodes.get(nodeId('capability', 'a')).attrs, { criticality: 'P0' });
+});
+
+test('new node types round-trip correctly', () => {
+  const root = freshRoot();
+  const nodeTypes = ['provider', 'tool', 'pack', 'doc', 'specialist', 'runtime-evidence'];
+  const nodes = nodeTypes.map((t, i) => ({ id: nodeId(t, `key${i}`), type: t, name: `${t}-name` }));
+  writeGraph(root, { nodes, edges: [] });
+  const graph = loadGraph(root);
+  assert.equal(graph.nodes.size, nodeTypes.length);
+  for (const n of nodes) {
+    const loaded = graph.nodes.get(n.id);
+    assert.ok(loaded, `node ${n.id} loaded`);
+    assert.equal(loaded.type, n.type);
+    assert.equal(loaded.name, n.name);
+  }
+  for (const t of nodeTypes) {
+    assert.equal(graph.meta.nodesByType[t], 1, `meta.counts.${t} === 1`);
+  }
+});
+
+test('new edge types round-trip correctly', () => {
+  const root = freshRoot();
+  const nodes = [
+    { id: nodeId('provider', 'p1'), type: 'provider', name: 'p1' },
+    { id: nodeId('tool', 't1'), type: 'tool', name: 't1' },
+    { id: nodeId('pack', 'pk1'), type: 'pack', name: 'pk1' },
+    { id: nodeId('doc', 'd1'), type: 'doc', name: 'd1' },
+    { id: nodeId('specialist', 's1'), type: 'specialist', name: 's1' },
+    { id: nodeId('runtime-evidence', 'e1'), type: 'runtime-evidence', name: 'e1' },
+  ];
+  const edges = [
+    { from: nodeId('provider', 'p1'), to: nodeId('tool', 't1'), rel: 'requires', source: 'registry' },
+    { from: nodeId('doc', 'd1'), to: nodeId('provider', 'p1'), rel: 'documents', source: 'registry' },
+    { from: nodeId('runtime-evidence', 'e1'), to: nodeId('provider', 'p1'), rel: 'evidenced_by', source: 'registry' },
+    { from: nodeId('tool', 't1'), to: nodeId('pack', 'pk1'), rel: 'owned_by', source: 'registry' },
+  ];
+  writeGraph(root, { nodes, edges });
+  const graph = loadGraph(root);
+  assert.equal(graph.edges.length, 4);
+  assert.equal(graph.meta.edgesByRel.requires, 1);
+  assert.equal(graph.meta.edgesByRel.documents, 1);
+  assert.equal(graph.meta.edgesByRel.evidenced_by, 1);
+  assert.equal(graph.meta.edgesByRel.owned_by, 1);
+  const key = `${nodeId('provider', 'p1')}|requires|${nodeId('tool', 't1')}`;
+  const found = graph.edges.find((e) => `${e.from}|${e.rel}|${e.to}` === key);
+  assert.ok(found, 'requires edge present');
+  assert.equal(found.weight, 1);
+});
+
+test('meta includes schemaVersion: 1 after writeGraph', () => {
+  const root = freshRoot();
+  writeGraph(root, { nodes: [{ id: 'file:a', type: 'file' }], edges: [] });
+  const graph = loadGraph(root);
+  assert.ok(graph.meta, 'meta exists');
+  assert.equal(graph.meta.schemaVersion, 1);
+});
+
+test('new node types are accepted by normalizeNodes', () => {
+  const root = freshRoot();
+  writeGraph(root, {
+    nodes: [
+      { id: nodeId('provider', 'aws'), type: 'provider', name: 'AWS' },
+      { id: nodeId('tool', 'terraform'), type: 'tool', name: 'Terraform' },
+      { id: nodeId('pack', 'compute'), type: 'pack', name: 'Compute Pack' },
+      { id: nodeId('doc', 'api-ref'), type: 'doc', name: 'API Reference' },
+      { id: nodeId('specialist', 'network'), type: 'specialist', name: 'Network Specialist' },
+      { id: nodeId('runtime-evidence', 'latency'), type: 'runtime-evidence', name: 'Latency Report' },
+    ],
+    edges: [],
+  });
+  const graph = loadGraph(root);
+  assert.equal(graph.nodes.size, 6);
 });
 
 test('nodes are written sorted by id for clean diffs', () => {
