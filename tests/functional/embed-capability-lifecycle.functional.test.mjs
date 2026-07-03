@@ -63,15 +63,19 @@ function runCli(args, cwd) {
   return spawnSync('node', [BIN, 'embed', ...args], { cwd, encoding: 'utf8', timeout: 30_000 });
 }
 
-test('embed list --json reports only the shipped builtin capability in a project with no project-tier manifests', () => {
+test('embed list --json reports both shipped builtin capabilities in a project with no project-tier manifests', () => {
   const cwd = freshCwd();
   const res = runCli(['list', '--json'], cwd);
   assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
   const out = JSON.parse(res.stdout);
-  // The core pack ships exactly one builtin embed capability (the operations
-  // TPM preset), available-but-not-enabled in a project that has enabled none.
-  assert.deepEqual(out.capabilities.map((c) => c.id), ['operations']);
-  assert.equal(out.capabilities[0].enabled, false);
+  // The core pack ships two builtin embed capabilities (the operations TPM
+  // preset and the operations-triage preset), each available-but-not-enabled
+  // in a project that has enabled none. Sort first — discovery order is not
+  // a contract.
+  assert.deepEqual(out.capabilities.map((c) => c.id).sort(), ['operations', 'operations-triage']);
+  for (const cap of out.capabilities) {
+    assert.equal(cap.enabled, false);
+  }
   assert.deepEqual(out.errors, []);
 });
 
@@ -105,9 +109,11 @@ test('enable/disable round-trips through .cx/embed/<id>.manifest.json', () => {
 
   const listRes = runCli(['list', '--json'], cwd);
   const listed = JSON.parse(listRes.stdout);
-  assert.equal(listed.capabilities.length, 1);
-  assert.equal(listed.capabilities[0].id, 'operations');
-  assert.equal(listed.capabilities[0].enabled, true);
+  // The operations-triage builtin is also discoverable here — look up the
+  // capability this test enabled by id rather than assuming array position.
+  const ops = listed.capabilities.find((c) => c.id === 'operations');
+  assert.ok(ops, 'operations capability is listed');
+  assert.equal(ops.enabled, true);
 
   const disableRes = runCli(['disable', 'operations'], cwd);
   assert.equal(disableRes.status, 0, `disable exit 0 — stderr: ${disableRes.stderr}`);
@@ -116,7 +122,8 @@ test('enable/disable round-trips through .cx/embed/<id>.manifest.json', () => {
   assert.equal(onDisk.embed.enabled, false);
 
   const listAfterDisable = JSON.parse(runCli(['list', '--json'], cwd).stdout);
-  assert.equal(listAfterDisable.capabilities[0].enabled, false);
+  const opsAfterDisable = listAfterDisable.capabilities.find((c) => c.id === 'operations');
+  assert.equal(opsAfterDisable.enabled, false);
 });
 
 test('embed status <id> --json surfaces bindings, filter, runtime, and last-tick', () => {
