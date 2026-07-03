@@ -6,6 +6,9 @@
     "03-docs:review-doc-reference:logs",
     "02-deadcode:module-test-only:lib/models/execution-policy.mjs",
     "02-deadcode:module-test-only:lib/models/provider-poll.mjs",
-    "02-deadcode:module-test-only:lib/host/readiness.mjs"
+    "02-deadcode:module-test-only:lib/host/readiness.mjs",
+    "02-deadcode:module-test-only:lib/security/ingest-boundary.mjs",
+    "02-deadcode:module-test-only:lib/security/recall-wrapper.mjs",
+    "02-deadcode:module-test-only:lib/writes/envelope.mjs"
   ]
 }

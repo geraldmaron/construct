@@ -178,12 +178,13 @@ Task graph management
 **Usage**
 
 ```bash
-construct graph <list|show|from-intake|recommend>
+construct graph <list|show|from-intake|recommend|build|stat|query|validate>
 ```
 
 **Subcommands**
 
 - `recommend --json [--text|--file|<stdin>]` — Return a role-aware plan for an artifact without enqueuing (embedded contract; alias of intake classify)
+- `build|stat|query|validate` — Living dependency graph — build/inspect/validate the typed file↔capability↔workflow↔test graph (replaces `construct matrix`)
 
 ## construct handoffs
 

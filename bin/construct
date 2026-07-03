@@ -249,6 +249,12 @@ async function cmdRulesUsage(args = []) {
   process.exit(1);
 }
 
+async function cmdApprovals(args = []) {
+  const { runApprovalsCli } = await import('../lib/cli/approvals.mjs');
+  const code = await runApprovalsCli(args, { rootDir: ROOT_DIR, homeDir: HOME, env: process.env, println, errorln });
+  if (code) process.exit(code);
+}
+
 async function cmdStatus() {
   const jsonOutput = restArgsCache.includes('--json');
   const status = await buildStatus({ rootDir: ROOT_DIR, cwd: process.cwd(), homeDir: HOME, env: process.env });
@@ -5676,13 +5682,13 @@ const handlers = new Map([
   ['status', cmdStatus],
   ['install', cmdInstall],
   ['config', cmdConfig],
+  ['approvals', cmdApprovals],
   ['sources', cmdSources],
   ['intake', cmdIntake],
   ['recommendations', cmdRecommendations],
   ['integrations', cmdIntegrations],
   ['customer', cmdCustomer],
   ['workspace', cmdWorkspace],
-  ['graph', cmdGraph],
   ['uninstall', cmdUninstall],
   ['update', cmdUpdate],
   ['upgrade', cmdUpgrade],
@@ -6421,9 +6427,26 @@ const handlers = new Map([
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
    ['matrix', async (args) => {
+     if (!globalThis._matrixDeprecated) {
+       process.stderr.write('[deprecation] `construct matrix` is deprecated; use `construct graph` instead\n');
+       globalThis._matrixDeprecated = true;
+     }
      const { runGraphCli } = await import('../lib/graph/cli.mjs');
      const code = runGraphCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
      if (typeof code === 'number' && code !== 0) process.exit(code);
+   }],
+   // `graph` carries two disjoint subcommand families: the living dependency
+   // graph (build/stat/query/validate → lib/graph/cli.mjs) and the intake task
+   // graph (list/show/from-intake/status/recommend → cmdGraph).
+   ['graph', async (args) => {
+     const DEPENDENCY_GRAPH_SUBCOMMANDS = new Set(['build', 'stat', 'query', 'validate']);
+     if (DEPENDENCY_GRAPH_SUBCOMMANDS.has(args[0])) {
+       const { runGraphCli } = await import('../lib/graph/cli.mjs');
+       const code = runGraphCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
+       if (typeof code === 'number' && code !== 0) process.exit(code);
+       return;
+     }
+     return cmdGraph(args);
    }],
    ['impact', async (args) => {
      const { runImpactCli } = await import('../lib/graph/impact-cli.mjs');

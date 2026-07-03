@@ -1,7 +1,7 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-07-01T01:09:33.824Z",
+    "generatedAt": "2026-07-03T19:44:21.266Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -11,6 +11,7 @@
       "certify:demos",
       "clean:artifacts",
       "coverage",
+      "deps:check",
       "docs:build",
       "docs:dev",
       "docs:init",
@@ -56,6 +57,12 @@
         "category": "Internal",
         "core": false,
         "internal": true
+      },
+      {
+        "name": "approvals",
+        "category": "Core",
+        "core": true,
+        "internal": false
       },
       {
         "name": "artifact",
@@ -816,14 +823,24 @@
     ],
     "workflows": [
       {
+        "type": "architecture-review",
+        "description": "Review an architecture or design for trade-offs, failure modes, and security exposure.",
+        "tier": "reasoning"
+      },
+      {
+        "type": "data-structure",
+        "description": "Parse, validate, and profile a raw dataset into a structured, described shape.",
+        "tier": "standard"
+      },
+      {
         "type": "evidence-ingest",
         "description": "Ingest and structure raw evidence (notes, documents, signals) into a normalized summary.",
         "tier": "fast"
       },
       {
-        "type": "proposal-review",
-        "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance.",
-        "tier": "standard"
+        "type": "memo-draft",
+        "description": "Draft a decision or status memo from a problem statement and context.",
+        "tier": "fast"
       },
       {
         "type": "prd-draft",
@@ -831,8 +848,13 @@
         "tier": "standard"
       },
       {
-        "type": "architecture-review",
-        "description": "Review an architecture or design for trade-offs, failure modes, and security exposure.",
+        "type": "proposal-review",
+        "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance.",
+        "tier": "standard"
+      },
+      {
+        "type": "research-synthesis",
+        "description": "Synthesize multiple sources into a cited, evidence-graded research summary.",
         "tier": "reasoning"
       },
       {
@@ -841,9 +863,9 @@
         "tier": "reasoning"
       },
       {
-        "type": "research-synthesis",
-        "description": "Synthesize multiple sources into a cited, evidence-graded research summary.",
-        "tier": "reasoning"
+        "type": "structure-notes",
+        "description": "Structure an unclassified brain-dump or rough notes into a normalized summary with extracted intents.",
+        "tier": "fast"
       },
       {
         "type": "transcript-process",
@@ -851,32 +873,23 @@
         "tier": "fast"
       },
       {
-        "type": "data-structure",
-        "description": "Parse, validate, and profile a raw dataset into a structured, described shape.",
-        "tier": "standard"
-      },
-      {
-        "type": "memo-draft",
-        "description": "Draft a decision or status memo from a problem statement and context.",
-        "tier": "fast"
-      },
-      {
-        "type": "structure-notes",
-        "description": "Structure an unclassified brain-dump or rough notes into a normalized summary with extracted intents.",
+        "type": "triage",
+        "description": "Classify and route unstructured input to the appropriate workflow.",
         "tier": "fast"
       }
     ],
     "workflowTypes": [
-      "evidence-ingest",
-      "proposal-review",
-      "prd-draft",
       "architecture-review",
-      "risk-review",
-      "research-synthesis",
-      "transcript-process",
       "data-structure",
+      "evidence-ingest",
       "memo-draft",
-      "structure-notes"
+      "prd-draft",
+      "proposal-review",
+      "research-synthesis",
+      "risk-review",
+      "structure-notes",
+      "transcript-process",
+      "triage"
     ]
   },
   "capabilities": [
@@ -1482,6 +1495,45 @@
         ]
       },
       "_semanticDigest": "{\"description\":\"Draft a decision or status memo from a problem statement and context.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
+    },
+    {
+      "id": "workflow.triage",
+      "kind": "workflow",
+      "name": "Triage Workflow",
+      "description": "Classify and route unstructured input to the appropriate workflow.",
+      "criticality": "P2",
+      "ownerSpecialists": [
+        "orchestrator",
+        "researcher"
+      ],
+      "embeddedWorkflow": "triage",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/embedded-contract-triage.functional.test.mjs"
+      },
+      "humanGate": "proposal-only",
+      "edges": {
+        "cliCommands": [
+          "workflow",
+          "workflow invoke"
+        ],
+        "npmScripts": [],
+        "workflows": [
+          "triage"
+        ]
+      },
+      "_semanticDigest": "{\"description\":\"Classify and route unstructured input to the appropriate workflow.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-triage.functional.test.mjs\"}}"
     },
     {
       "id": "document-type.research-brief",
