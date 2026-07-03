@@ -8,6 +8,8 @@
  * via the install marker so provisioning never runs and the network is never
  * touched. The tool must return a clean, bounded result — the node-native
  * fallback — never hang the server and never surface an undefined-property crash.
+ *
+ * @capability ingest.docling
  */
 import test from "node:test";
 import assert from "node:assert";

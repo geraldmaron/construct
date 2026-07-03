@@ -6,6 +6,8 @@
  * document.md_content). Pins the fail-loud rules: missing DOCLING_SERVE_URL,
  * HTTP error, and failure status all throw — the user chose remote, so silently
  * degrading to the sidecar would hide misconfiguration.
+ *
+ * @capability ingest.docling-remote
  */
 import test from 'node:test';
 import assert from 'node:assert';

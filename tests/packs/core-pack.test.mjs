@@ -43,4 +43,34 @@ test('loadCorePack', async (t) => {
     assert.equal(pack.prompts['cx-architect'], 'specialists/prompts/cx-architect.md');
     assert.equal(pack.prompts['cx-engineer'], 'specialists/prompts/cx-engineer.md');
   });
+
+  await t.test('embedBindings ships default grants for product-manager, operations, engineer (LMCP-E4)', () => {
+    const pack = loadCorePack(PACKAGE_ROOT);
+    assert.ok(typeof pack.embedBindings === 'object');
+    assert.ok(pack.embedBindings['cx-product-manager']);
+    assert.ok(pack.embedBindings['cx-operations']);
+    assert.ok(pack.embedBindings['cx-engineer']);
+  });
+
+  await t.test('every default binding only names capabilities from EMBED_BINDING_CAPABILITIES', () => {
+    const pack = loadCorePack(PACKAGE_ROOT);
+    for (const binding of Object.values(pack.embedBindings)) {
+      for (const p of binding.providers || []) {
+        for (const cap of p.capabilities) {
+          assert.ok(['read', 'search'].includes(cap));
+        }
+      }
+    }
+  });
+
+  await t.test("every default proposal token references a provider present in that specialist's providers[]", () => {
+    const pack = loadCorePack(PACKAGE_ROOT);
+    for (const binding of Object.values(pack.embedBindings)) {
+      const boundIds = new Set((binding.providers || []).map(p => p.id));
+      for (const token of binding.proposals || []) {
+        const [providerId] = token.split('.');
+        assert.ok(boundIds.has(providerId), `${token} should reference a bound provider`);
+      }
+    }
+  });
 });

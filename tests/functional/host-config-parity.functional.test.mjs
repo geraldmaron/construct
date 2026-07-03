@@ -9,6 +9,8 @@
  * (the OpenCode `.opencode/config.json` and VS Code `github.copilot.mcpServers`
  * bugs). Hosts are never executed.
  *
+ * @capability mcp.tool-budget.trim
+ *
  * Canonical project schema asserted:
  *   VS Code   .vscode/mcp.json         top-level `servers`
  *   Cursor    .cursor/mcp.json         top-level `mcpServers`

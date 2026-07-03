@@ -3,6 +3,8 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 -->
 # ADR-0051: Team backend is git-queue (not Postgres) — LMCP-A1
 
+> **Amendment (2026-07-03, construct-9oi4.7.11)** — the "git-queue vs Postgres backend" framing of this ADR is superseded by a provider-kind contract. Substrate owns the queue/run-store CONTRACT; git-queue is the zero-dependency DEFAULT `kind:'queue'` provider (not deprecated or deleted); Postgres is an OPTIONAL `kind:'queue'` provider selected explicitly through the extension registry (ADR-0052 manifest taxonomy). Selection resolves through the registry by kind in `lib/intake/queue.mjs`; the silent `postgres`→`git` alias is removed and a git-queue push failure returns a typed non-durable disposition rather than a swallowed success. `lib/orchestration/run-store-postgres.mjs` is tagged as an UNREGISTERED `kind:'queue'` provider scaffold. The decision body below is retained for history.
+
 - **Date**: 2026-07-03
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner), Construct maintainers (cx-architect)

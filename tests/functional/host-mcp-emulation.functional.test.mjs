@@ -15,6 +15,11 @@
  *
  * Isolation: own HOME + CX_HOME_OVERRIDE + project tmpdir; the server resolves
  * skills/templates from the repo (ROOT_DIR) and writes telemetry into the sandbox.
+ *
+ * @capability orchestration.routing
+ * @capability mcp.broker.connection
+ * @capability skill.roles-engineer
+ * @capability skill.roles-architect-ai-systems
  */
 
 import assert from 'node:assert/strict';

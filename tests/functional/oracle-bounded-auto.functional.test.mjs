@@ -3,6 +3,8 @@
  *
  * Bounded-auto policy, dry-run tick execution, and pending approval queue
  * for the Oracle meta-controller.
+ *
+ * @capability oracle.meta-review
  */
 
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';

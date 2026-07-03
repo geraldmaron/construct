@@ -6,6 +6,18 @@
  * end-to-end: proposal-only writes nothing, allow-durable-write lands an
  * observation, and requires-human-approval records an approval marker under
  * HOME/.cx without any durable project write.
+ *
+ * @capability workflow.evidence-ingest
+ * @capability workflow.research-synthesis
+ * @capability workflow.prd-draft
+ * @capability workflow.architecture-review
+ * @capability workflow.proposal-review
+ * @capability workflow.risk-review
+ * @capability workflow.structure-notes
+ * @capability workflow.transcript-process
+ * @capability workflow.data-structure
+ * @capability workflow.memo-draft
+ * @capability document-type.evidence-brief
  */
 
 import assert from 'node:assert/strict';

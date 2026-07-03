@@ -11,12 +11,12 @@ A snapshot of what the test suite covers, why each file exists, and where the ga
 
 ## At a glance
 
-- **673 test files** total: 322 at `tests/` top level + 351 in subdirectories.
-- **Layers:** unit 470, functional 161, visual 9, live-provider 2, integration 31.
-- **Functional layer:** 161 file(s) under `tests/functional/` or `*.functional.test.mjs`. End-to-end checks spawn the real binary or import real modules in an isolated tmpdir.
-- **Contract subsystems:** 32 file(s) under profile/outcomes/hooks/knowledge/intake/graph/evals and related subdirs.
+- **691 test files** total: 327 at `tests/` top level + 364 in subdirectories.
+- **Layers:** unit 484, functional 165, visual 9, live-provider 2, integration 31.
+- **Functional layer:** 165 file(s) under `tests/functional/` or `*.functional.test.mjs`. End-to-end checks spawn the real binary or import real modules in an isolated tmpdir.
+- **Contract subsystems:** 35 file(s) under profile/outcomes/hooks/knowledge/intake/graph/evals and related subdirs.
 - **Hook tests:** 9 file(s) (including `tests/hooks/`).
-- **Capability-marked:** 25 file(s) declare `@capability` markers.
+- **Capability-marked:** 37 file(s) declare `@capability` markers.
 - **Skipped markers:** 0 file(s) contain `test.skip` / `describe.skip` (see inventory for paths).
 - **Regenerate inventory:** `node scripts/generate-test-corpus-inventory.mjs`.
 
@@ -60,7 +60,7 @@ Verify Stop / SessionStart / PreToolUse hooks: `session-start-hook`, `session-re
 
 Keep. Hooks are protected files per `CLAUDE.md`; a regression here can block every tool call.
 
-### 5. Functional layer (161 tests, 161 files)
+### 5. Functional layer (165 tests, 165 files)
 
 New in this PR. Pattern documented at `tests/functional/README.md`:
 

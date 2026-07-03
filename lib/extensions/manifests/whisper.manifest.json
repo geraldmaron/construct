@@ -1,0 +1,36 @@
+{
+  "id": "whisper",
+  "version": "1.0.0",
+  "kind": "ingestion-provider",
+  "capabilities": ["audio-transcription"],
+  "docs": "Local audio/video transcription via whisper.cpp (Metal-accelerated on macOS). No npm dependency — the binary and model weights are provisioned outside npm and probed, not assumed.",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "system-binary",
+  "installDependencies": [],
+  "installProbe": {
+    "kind": "binary-on-path",
+    "candidates": ["whisper-cli", "whisper-cpp", "main"],
+    "runtimeDirEnv": "CONSTRUCT_WHISPER_RUNTIME_DIR",
+    "defaultRuntimeDir": ".cx/runtime/whisper",
+    "cachedBinary": "bin/whisper-cli",
+    "description": "which(1) lookup for whisper-cli/whisper-cpp/main on PATH, falling back to a cached binary at <runtimeDir>/bin/whisper-cli."
+  },
+  "healthCheck": {
+    "kind": "subprocess-version",
+    "command": "<resolvedBinary>",
+    "args": ["--help"],
+    "timeoutMs": 10000,
+    "description": "whisper.cpp CLI has no --version flag; health runs the binary with --help and treats a clean exit (or the expected usage banner) as healthy. A missing binary or non-zero exit is unhealthy."
+  },
+  "degradation": {
+    "chain": [
+      { "id": "whisper", "mode": "sidecar", "description": "Local ASR transcription via whisper.cpp." },
+      { "id": "refuse", "mode": "error", "description": "No transcription backend available; audio/video ingest fails loud (ASR_REQUIRED) with an install hint (brew install whisper-cpp)." }
+    ],
+    "terminal": "refuse",
+    "resultMarking": "degraded"
+  },
+  "removalStatus": "active",
+  "securityClassification": "trusted"
+}
