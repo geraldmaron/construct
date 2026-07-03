@@ -523,6 +523,17 @@ async function cmdDoctor() {
   add('specialists/org exists', fs.existsSync(path.join(ROOT_DIR, 'specialists', 'org')));
   add('sync-specialists.mjs exists', fs.existsSync(path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs')));
 
+  // Extension manifests check
+  try {
+    const extManifestsDir = path.join(ROOT_DIR, 'lib', 'extensions', 'manifests');
+    const extManifestFiles = fs.existsSync(extManifestsDir)
+      ? fs.readdirSync(extManifestsDir).filter((f) => f.endsWith('.manifest.json'))
+      : [];
+    add(`Extension manifests: ${extManifestFiles.length} loaded`, extManifestFiles.length > 0);
+  } catch {
+    add('Extension manifests: check failed', false);
+  }
+
   // Project .gitignore must cover .cx/. Auto-fix via --fix-gitignore.
   // Only checks when cwd looks like a Construct project (has .cx/ or
   // .construct/); non-project cwds get no warning.
