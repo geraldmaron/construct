@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-03T22:14:17.775Z",
+  "generatedAt": "2026-07-03T22:46:56.196Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 697,
+    "testFiles": 701,
     "topLevelTestFiles": 328,
-    "nestedTestFiles": 369,
+    "nestedTestFiles": 373,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 488,
-      "functional": 167,
+      "unit": 490,
+      "functional": 169,
       "visual": 9,
       "live-provider": 2,
       "integration": 31
     },
     "byCategory": {
-      "unit": 437,
-      "functional": 167,
+      "unit": 439,
+      "functional": 169,
       "visual": 9,
       "structural-guard": 16,
       "contract-subsystem": 35,
@@ -2433,6 +2433,14 @@
       "maintainerNotes": "tests/functional/embed-capability-lifecycle.functional.test.mjs"
     },
     {
+      "path": "tests/functional/embed-specialist-invocation.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/embed-specialist-invocation.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/embedded-contract-capability.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4185,6 +4193,14 @@
       "maintainerNotes": "tests/mcp/broker-durability.test.mjs — LMCP-I1."
     },
     {
+      "path": "tests/mcp/denial-audit.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/denial-audit.test.mjs — LMCP-I3."
+    },
+    {
       "path": "tests/memory-stats.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5123,6 +5139,14 @@
       "maintainerNotes": "tests/security/trust-labels.test.mjs — Trust/provenance labeling regression"
     },
     {
+      "path": "tests/security/vector-poisoning.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/vector-poisoning.test.mjs — Vector-store poisoning defenses"
+    },
+    {
       "path": "tests/service-manager-ollama-keepalive.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5651,6 +5675,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/workflows/workflow-manifests.test.mjs — integration tests for all built-in workflow manifests."
+    },
+    {
+      "path": "tests/writes/confluence.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/confluence.functional.test.mjs — Confluence writes routed"
     },
     {
       "path": "tests/writes/envelope.test.mjs",
