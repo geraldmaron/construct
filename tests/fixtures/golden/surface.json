@@ -5,6 +5,10 @@
       "core": false
     },
     {
+      "name": "approvals",
+      "core": true
+    },
+    {
       "name": "ask",
       "core": false
     },
@@ -403,10 +407,6 @@
     {
       "name": "sync",
       "core": true
-    },
-    {
-      "name": "tags",
-      "core": false
     },
     {
       "name": "team",

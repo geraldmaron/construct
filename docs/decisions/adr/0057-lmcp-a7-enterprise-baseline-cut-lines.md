@@ -11,7 +11,7 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 
 ## Problem
 
-Enterprise capabilities are selectable by mode (`CONSTRUCT_MODE=enterprise`) but every capability in the enterprise tier is marked `not-implemented` in the runtime. Without explicit cut lines, agents and operators face two bad outcomes: they either silently operate in a degraded state they believe is enterprise-grade, or they block indefinitely waiting for capabilities that do not exist.
+Enterprise capabilities are selectable by mode (`CONSTRUCT_MODE=enterprise`) but every capability in the enterprise tier is marked `not-implemented` in the runtime. Without explicit cut lines, agents and operators face two bad outcomes: they either silently operate in a degraded state they believe meets the enterprise baseline, or they block indefinitely waiting for capabilities that do not exist.
 
 The evidence:
 

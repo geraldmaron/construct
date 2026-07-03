@@ -1,33 +1,97 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-03T03:44:52.296Z",
+  "generatedAt": "2026-07-03T19:48:27.605Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 638,
-    "topLevelTestFiles": 314,
-    "nestedTestFiles": 324,
+    "testFiles": 673,
+    "topLevelTestFiles": 322,
+    "nestedTestFiles": 351,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 437,
+      "unit": 470,
+      "functional": 161,
       "visual": 9,
       "live-provider": 2,
-      "integration": 31,
-      "functional": 159
+      "integration": 31
     },
     "byCategory": {
-      "unit": 392,
+      "unit": 423,
+      "functional": 161,
       "visual": 9,
       "structural-guard": 15,
-      "contract-subsystem": 30,
+      "contract-subsystem": 32,
       "live-provider": 2,
       "integration": 22,
-      "functional": 159,
       "hook": 9
     }
   },
   "releaseCriticalGaps": [],
   "files": [
+    {
+      "path": "tests/acceptance/01-init-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/01-init-contract.test.mjs"
+    },
+    {
+      "path": "tests/acceptance/02-provider-health-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/02-provider-health-contract.test.mjs"
+    },
+    {
+      "path": "tests/acceptance/03-status-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/03-status-contract.test.mjs"
+    },
+    {
+      "path": "tests/acceptance/04-doctor-contract.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/04-doctor-contract.test.mjs"
+    },
+    {
+      "path": "tests/acceptance/05-optional-dep-degradation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/05-optional-dep-degradation.test.mjs — LMCP-L4 optional-dep degradation matrix."
+    },
+    {
+      "path": "tests/acceptance/global-install.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/global-install.test.mjs — global install + project init"
+    },
+    {
+      "path": "tests/acceptance/k5-ink-react-degradation.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/k5-ink-react-degradation.functional.test.mjs — LMCP-K5 Ink/React"
+    },
+    {
+      "path": "tests/acceptance/packed-install.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/packed-install.test.mjs"
+    },
     {
       "path": "tests/adr-stamp-integrity.test.mjs",
       "layer": "unit",
@@ -252,7 +316,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/audit/f01-mcp-safety/destructive-confirm.red.mjs — F01 [R11] self-authorizing-destruction proof."
+      "maintainerNotes": "tests/audit/f01-mcp-safety/destructive-confirm.test.mjs — F01 destructive-tool confirmation proofs."
     },
     {
       "path": "tests/audit/f01-mcp-safety/malicious-ref.test.mjs",
@@ -1285,6 +1349,14 @@
       "maintainerNotes": "tests/demo-tour.test.mjs — guided demo tour: linear renderer + accessible path."
     },
     {
+      "path": "tests/dep-intent-manifest.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/dep-intent-manifest.test.mjs — Dependency-intent manifest integrity gate."
+    },
+    {
       "path": "tests/deploy-contract.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -1355,6 +1427,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doctor-source-checkout.test.mjs — published-package vs source-checkout detection."
+    },
+    {
+      "path": "tests/doctor-stub-tier.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor-stub-tier.test.mjs — Unit tests for the stub/not-implemented tier"
     },
     {
       "path": "tests/doctor/audit.test.mjs",
@@ -1444,7 +1524,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/embed-approval-queue.test.mjs — approval queue tests."
+      "maintainerNotes": "tests/embed-approval-queue.test.mjs — ApprovalQueue unit tests."
     },
     {
       "path": "tests/embed-artifact.test.mjs",
@@ -1831,6 +1911,30 @@
       "maintainerNotes": "tests/export-branding.test.mjs — distribution branding policy coverage."
     },
     {
+      "path": "tests/extensions/manifest-providers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/extensions/manifest-providers.test.mjs — LMCP-B2 provider manifest tests."
+    },
+    {
+      "path": "tests/extensions/manifest-strict.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/extensions/manifest-strict.test.mjs — strict-mode manifest validation."
+    },
+    {
+      "path": "tests/extensions/manifest.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/extensions/manifest.test.mjs — extension manifest validator unit tests."
+    },
+    {
       "path": "tests/external-mcp-schema-cost.test.mjs",
       "layer": "visual",
       "category": "visual",
@@ -1861,6 +1965,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/extractors/transcript.test.mjs — VTT, SRT, LRC, and .transcript extraction tests."
+    },
+    {
+      "path": "tests/fakes/fake-providers.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/fakes/fake-providers.test.mjs — contract + behaviour tests for all fake providers."
     },
     {
       "path": "tests/first-invocation-probe.test.mjs",
@@ -2633,6 +2745,14 @@
       "maintainerNotes": "tests/functional/mode-degraded-fallback.functional.test.mjs — B4 contract."
     },
     {
+      "path": "tests/functional/mode-honesty.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/mode-honesty.functional.test.mjs — LMCP-G8."
+    },
+    {
       "path": "tests/functional/model-catalog-visibility.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3197,6 +3317,14 @@
       "maintainerNotes": "tests/gates-audit.test.mjs — gates-audit parsing + gap-detection coverage."
     },
     {
+      "path": "tests/git-queue-disposition.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/git-queue-disposition.test.mjs"
+    },
+    {
       "path": "tests/golden-surface.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3211,6 +3339,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/graph/build-co-change.test.mjs — co-change layer derives module nodes,"
+    },
+    {
+      "path": "tests/graph/build-from-registry-extended.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/build-from-registry-extended.test.mjs — extended seeding"
     },
     {
       "path": "tests/graph/build-from-registry.test.mjs",
@@ -3251,6 +3387,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/graph/store.test.mjs — unit coverage for the typed dependency-graph store."
+    },
+    {
+      "path": "tests/graph/validate.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/validate.test.mjs — living-graph validation unit tests."
     },
     {
       "path": "tests/handoff-cleanup.test.mjs",
@@ -3427,6 +3571,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "host-capabilities.test.mjs — Unit tests for lib/host-capabilities.mjs harness detection."
+    },
+    {
+      "path": "tests/identity.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/identity.test.mjs — actor/service identity resolution unit tests."
     },
     {
       "path": "tests/improvement-proposal.test.mjs",
@@ -3869,6 +4021,22 @@
       "maintainerNotes": "tests/mcp-tools-list-coverage.test.mjs"
     },
     {
+      "path": "tests/mcp/approval-flow.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/approval-flow.test.mjs — LMCP-I2 durable awaiting_approval state."
+    },
+    {
+      "path": "tests/mcp/broker-durability.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/broker-durability.test.mjs — LMCP-I1."
+    },
+    {
       "path": "tests/memory-stats.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4165,6 +4333,38 @@
       "maintainerNotes": "tests/packaging-published-files.test.mjs"
     },
     {
+      "path": "tests/packs/core-pack.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/packs/core-pack.test.mjs — core pack loader unit tests."
+    },
+    {
+      "path": "tests/packs/loader.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/packs/loader.test.mjs — pack loader unit tests."
+    },
+    {
+      "path": "tests/packs/manifest-schema.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/packs/manifest-schema.test.mjs — pack manifest schema constant tests."
+    },
+    {
+      "path": "tests/packs/validate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/packs/validate.test.mjs — pack manifest validator unit tests."
+    },
+    {
       "path": "tests/parity.test.mjs",
       "layer": "unit",
       "category": "structural-guard",
@@ -4219,6 +4419,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/plugin-registry.test.mjs — validates plugin manifest loading and starter creation."
+    },
+    {
+      "path": "tests/policy-deny-default.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/policy-deny-default.test.mjs"
     },
     {
       "path": "tests/policy-engine.test.mjs",
@@ -4701,6 +4909,22 @@
       "maintainerNotes": "tests/secret-resolver-service-account.test.mjs — opt-in 1Password service-account path."
     },
     {
+      "path": "tests/security/destructive-gate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/destructive-gate.test.mjs — destructive-tool gate unit tests."
+    },
+    {
+      "path": "tests/security/trust-labels.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/trust-labels.test.mjs — Trust/provenance labeling regression"
+    },
+    {
       "path": "tests/service-manager-ollama-keepalive.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4835,6 +5059,30 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/agents-schema.test.mjs — pin the registry validation contract."
+    },
+    {
+      "path": "tests/status-degradation-details.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/status-degradation-details.test.mjs — Unit tests for degradationDetails in buildStatus."
+    },
+    {
+      "path": "tests/status-enterprise.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/status-enterprise.test.mjs — Enterprise mode status honesty checks."
+    },
+    {
+      "path": "tests/status-storage-probe.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/status-storage-probe.test.mjs — LanceDB storage health probe tests."
     },
     {
       "path": "tests/status.test.mjs",
@@ -5151,6 +5399,22 @@
       "maintainerNotes": "workflow-runtime.test.mjs — Integration tests for workflow state read/write and phase transitions."
     },
     {
+      "path": "tests/workflows/manifest-loader.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workflows/manifest-loader.test.mjs — unit tests for workflow manifest loader."
+    },
+    {
+      "path": "tests/workflows/manifest-schema.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workflows/manifest-schema.test.mjs — unit tests for workflow manifest schema constants."
+    },
+    {
       "path": "tests/workflows/template-resolution.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5165,6 +5429,22 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/workflows/template-shape.test.mjs — Shape validation for workflow templates."
+    },
+    {
+      "path": "tests/workflows/workflow-manifests.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workflows/workflow-manifests.test.mjs — integration tests for all built-in workflow manifests."
+    },
+    {
+      "path": "tests/writes/envelope.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/envelope.test.mjs — governed write-envelope unit tests."
     },
     {
       "path": "tests/xdg-config.test.mjs",

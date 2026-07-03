@@ -62,9 +62,9 @@ describe('deployment-mode', () => {
       assert.equal(r.mcp, 'direct');
     });
 
-    it('returns the team topology with postgres/docker/brokered MCP', () => {
+    it('returns the team topology with git queue/docker/brokered MCP (ADR-0051)', () => {
       const r = resolveResourceMode('team');
-      assert.equal(r.queue, 'postgres');
+      assert.equal(r.queue, 'git');
       assert.equal(r.memory, 'shared');
       assert.equal(r.workers, 'docker');
       assert.equal(r.mcp, 'brokered');
@@ -85,7 +85,7 @@ describe('deployment-mode', () => {
       const a = resolveResourceMode('team');
       a.queue = 'mutated';
       const b = resolveResourceMode('team');
-      assert.equal(b.queue, 'postgres');
+      assert.equal(b.queue, 'git');
     });
   });
 
@@ -99,7 +99,7 @@ describe('deployment-mode', () => {
 
   it('produces a compact one-line topology summary for status displays', () => {
     const line = describeResourceLine('team');
-    assert.match(line, /queue:postgres/);
+    assert.match(line, /queue:git/);
     assert.match(line, /workers:docker/);
     assert.match(line, /telemetry:central/);
   });

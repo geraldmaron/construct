@@ -7,6 +7,7 @@ description: Core commands for Construct.
 
 | Command | What it does |
 |---|---|
+| `construct approvals` | Manage pending MCP tool approvals |
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
@@ -20,6 +21,23 @@ description: Core commands for Construct.
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
+
+## construct approvals
+
+Manage pending MCP tool approvals
+
+**Usage**
+
+```bash
+construct approvals list|approve|deny|status
+```
+
+**Subcommands**
+
+- `list` — List pending approvals with tool name, requestedAt, requestedBy
+- `approve <id>` — Approve a pending approval by id
+- `deny <id> [--reason=...]` — Deny a pending approval by id
+- `status <id>` — Show the full status of a specific approval
 
 ## construct dev
 

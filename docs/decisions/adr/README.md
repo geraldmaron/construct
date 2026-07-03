@@ -42,7 +42,7 @@ Architecture decision records for decisions that have already been made.
 | [0032](./0032-small-model-context-methodology.md) | Small-model context methodology | accepted | |
 | [0033](./0033-platform-capability-registry.md) | Platform capability registry | accepted | |
 | [0034](./0034-local-vs-cloud-methodology-split.md) | Local-vs-cloud methodology split | accepted | |
-| [0035](./0035-test-strategy-extend-not-rebuild.md) | Test strategy — extend, not rebuild | accepted | |
+| [0035](./0035-test-strategy-extend-not-rebuild.md) | Test strategy — extend, not rebuild | superseded | ADR-0058 |
 | [0036](./0036-document-ingestion-docling-mcp-evaluation.md) | Document ingestion — docling sidecar | accepted | |
 | [0037](./0037-specialist-prompt-format.md) | Specialist prompt format | proposed | |
 | [0038](./0038-adaptive-local-prompt-composition.md) | Adaptive local-model prompt composition | accepted | |
@@ -56,6 +56,15 @@ Architecture decision records for decisions that have already been made.
 | [0048](./0048-semantic-tool-discovery.md) | Semantic tool discovery | accepted | |
 | [0049](./0049-cross-process-auth-once.md) | Cross-process auth-once for 1Password resolution | accepted | |
 | [0050](./0050-worker-scoped-governed-web-capability.md) | Worker-scoped governed web capability (unified WebGrant) | accepted | |
+| [0051](./0051-lmcp-a1-team-backend-git-queue.md) | LMCP-A1: git-queue as the team backend | accepted | |
+| [0052](./0052-lmcp-a2-unified-provider-manifest.md) | LMCP-A2: unified extension/provider manifest architecture | accepted | |
+| [0053](./0053-lmcp-a3-living-graph-architecture.md) | LMCP-A3: living graph architecture | accepted | |
+| [0054](./0054-lmcp-a4-workflow-manifest-schema.md) | LMCP-A4: workflow manifest schema | accepted | |
+| [0055](./0055-lmcp-a5-pack-schema-versioning-prompt-failure.md) | LMCP-A5: pack schema, versioning, prompt-failure rules | accepted | |
+| [0056](./0056-lmcp-a6-policy-approval-identity-model.md) | LMCP-A6: policy/approval/identity model | accepted | |
+| [0057](./0057-lmcp-a7-enterprise-baseline-cut-lines.md) | LMCP-A7: enterprise baseline cut lines | accepted | |
+| [0058](./0058-lmcp-a8-test-suite-rebuild-strategy.md) | LMCP-A8: test-suite rebuild strategy (supersedes 0035) | accepted | |
+| [0059](./0059-lmcp-a9-dependency-intent-rubric.md) | LMCP-A9: dependency-intent rubric | accepted | |
 
 ## Starter templates
 

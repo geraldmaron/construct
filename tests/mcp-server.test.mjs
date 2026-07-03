@@ -242,7 +242,7 @@ test('ingestDocument writes a markdown artifact through the MCP helper', async (
   assert.equal(fs.existsSync(result.files[0].outputPath), true);
 });
 
-test('storage MCP helpers require confirmation and an out-of-band approval token for destructive actions', async (t) => {
+test('storage MCP helpers require confirmation for destructive actions; token enforcement is in the destructive gate', async (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'construct-mcp-storage-root-'));
   t.after(() => { try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {} });
   fs.mkdirSync(path.join(rootDir, '.cx', 'knowledge', 'internal'), { recursive: true });
@@ -261,6 +261,7 @@ test('storage MCP helpers require confirmation and an out-of-band approval token
     storageReset,
     deleteIngestedArtifactsTool,
   } = await import(`../lib/mcp/server.mjs?storage=${Date.now()}`);
+  const { checkDestructiveGate } = await import('../lib/mcp/destructive-gate.mjs');
   const { issueApprovalToken } = await import('../lib/mcp/destructive-approval.mjs');
 
   const status = await storageStatus({ cwd: rootDir });
@@ -272,11 +273,11 @@ test('storage MCP helpers require confirmation and an out-of-band approval token
   const deleteRejected = await deleteIngestedArtifactsTool({ cwd: rootDir });
   assert.equal(deleteRejected.error, 'delete_ingested_artifacts requires confirm=true');
 
-  const deleteConfirmOnly = await deleteIngestedArtifactsTool({ cwd: rootDir, confirm: true });
-  assert.match(deleteConfirmOnly.error, /out-of-band approval token/);
-  assert.ok(fs.existsSync(brief), 'confirm=true alone must not delete artifacts');
+  const gateRejected = checkDestructiveGate('delete_ingested_artifacts', { confirm: true });
+  assert.equal(gateRejected.gated, true);
+  assert.equal(gateRejected.allowed, false);
+  assert.match(gateRejected.reason, /approval token/);
 
-  const token = issueApprovalToken('delete_ingested_artifacts');
-  const deleteAccepted = await deleteIngestedArtifactsTool({ cwd: rootDir, confirm: true, approval_token: token });
-  assert.equal(deleteAccepted.deletedCount, 1);
+  const gateAccepted = checkDestructiveGate('storage_reset', { confirm: true, approval_token: issueApprovalToken('storage_reset') });
+  assert.equal(gateAccepted.allowed, true);
 });
