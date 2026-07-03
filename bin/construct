@@ -1133,9 +1133,9 @@ async function cmdDoctor() {
     const contracts = getAllContracts();
     add('Agent contracts loaded', contracts.length > 0);
     if (contracts.length > 0) {
+      // A contract is broken if it lacks any of the four required identity/routing fields.
       const missingTerminals = contracts.filter((c) =>
-        c.consumer && !c.consumer.startsWith('cx-') && c.consumer !== 'construct' && c.consumer !== '*'
-          ? false : false,
+        !c.id || !c.producer || !c.consumer || (!c.postconditions && !c.output),
       );
       add('Agent contract schema intact', missingTerminals.length === 0);
     }
