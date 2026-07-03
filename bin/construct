@@ -79,12 +79,14 @@ import { syncFileStateToSql } from '../lib/storage/sync.mjs';
 import { deleteIngestedArtifacts, getStorageStatus, inferProjectName, resetStorage } from '../lib/storage/admin.mjs';
 import { runPressureRelease } from '../lib/runtime-pressure.mjs';
 import { loadRegistry, listSpecialists } from '../lib/registry/loader.mjs';
+import { resolveProjectRoot } from '../lib/roots.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
+const PROJECT_ROOT = resolveProjectRoot(process.cwd());
 const HOME = os.homedir();
 enableSecretAuditTrail();
 ensureConstructCredentials({ env: process.env, cwd: ROOT_DIR, home: HOME });
-const ENV = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME, env: process.env, shadowWinner: 'shell' });
+const ENV = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME, env: process.env });
 for (const [key, value] of Object.entries(ENV)) {
   if (!(key in process.env)) process.env[key] = value;
 }
@@ -401,13 +403,6 @@ async function cmdDoctor() {
     println(`${COLORS.bold}Credential diagnostics${COLORS.reset}`);
     println('');
 
-    const { describeOpAuthMode } = await import('../lib/providers/secret-resolver.mjs');
-    const opAuth = describeOpAuthMode(process.env);
-    const authPip = opAuth.signedIn ? COLORS.green + '✓' : COLORS.yellow + '○';
-    println(`  ${authPip}${COLORS.reset} ${COLORS.bold}1Password auth${COLORS.reset}: ${opAuth.mode}`);
-    println(`       ${opAuth.detail}`);
-    println('');
-
     const { homedir } = await import('node:os');
     const { join } = await import('node:path');
     const fs = await import('node:fs');
@@ -481,7 +476,7 @@ async function cmdDoctor() {
     println('    to see the correct field name, then update your .zshrc.');
     println('  - If op read fails with "not signed in": run `op signin` or enable the');
     println('    1Password desktop app CLI integration (Settings → Developer).');
-    println('  - Set env vars directly in ~/.config/construct/config.env to bypass shell rc.');
+    println('  - Set env vars directly in ~/.construct/config.env to bypass shell rc.');
     return;
   }
 
@@ -502,7 +497,7 @@ async function cmdDoctor() {
     }
     if (missingOptional.length) {
       println(`${missingOptional.length} optional resource(s) absent — Construct runs in degraded mode.`);
-      println('Run `construct install` to install on consent.');
+      println('Run `construct setup` to install on consent.');
     } else {
       ok('All resources present.');
     }
@@ -698,7 +693,7 @@ async function cmdDoctor() {
     if (resolved.complete && !resolved.errors) {
       add('Models — all tiers configured', true);
     } else if (resolved.configured === 0) {
-      add('Models — no tier configured (run `construct models free`, then `construct models set`)', false, true);
+      add('Models — no tier configured (run `construct models --apply`)', false, true);
     } else {
       const missing = Object.entries(resolved.models)
         .filter(([, v]) => !v)
@@ -1133,9 +1128,9 @@ async function cmdDoctor() {
     const contracts = getAllContracts();
     add('Agent contracts loaded', contracts.length > 0);
     if (contracts.length > 0) {
-      // A contract is broken if it lacks any of the four required identity/routing fields.
       const missingTerminals = contracts.filter((c) =>
-        !c.id || !c.producer || !c.consumer || (!c.postconditions && !c.output),
+        c.consumer && !c.consumer.startsWith('cx-') && c.consumer !== 'construct' && c.consumer !== '*'
+          ? false : false,
       );
       add('Agent contract schema intact', missingTerminals.length === 0);
     }
@@ -1160,6 +1155,28 @@ async function cmdDoctor() {
     }
   } catch {
     add('Registry integrity check', false);
+  }
+
+  // Deployment-mode capability check: surfaces stub/not-implemented capabilities
+  // for team/enterprise modes so users know which advertised features are unbuilt.
+  // Solo mode is fully-implemented; this check is a no-op there.
+
+  try {
+    const { getModeCapabilityStatus, getUnsupportedCapabilities } = await import('../lib/mode-capabilities.mjs');
+    const currentMode = getDeploymentMode(process.env);
+    const capStatus = getModeCapabilityStatus(currentMode);
+    if (capStatus !== 'fully-implemented') {
+      const unsupported = getUnsupportedCapabilities(currentMode);
+      add(
+        `Mode capabilities (${currentMode}): ${unsupported.length} stub/not-implemented (${unsupported.map(c => c.label).join(', ')})`,
+        false,
+        true,
+      );
+    } else {
+      add(`Mode capabilities (${currentMode})`, true, true);
+    }
+  } catch (err) {
+    add(`Mode capabilities check failed: ${err.message}`, false, true);
   }
 
   // Reconciliation drift (ADR-0027). Any task reporting needsRepair is surfaced
@@ -1323,15 +1340,6 @@ async function resolveServiceSelection(args, selectable) {
 }
 
 async function cmdDev(args = []) {
-  // Resolve every 1Password reference once for the whole dev tree: re-exec this command
-  // under a single `op run` so op:// refs unlock one time and the detached daemons
-  // inherit the resolved env, instead of each daemon launching its own op run and
-  // prompting again (trxz.11). ENV carries CONSTRUCT_OP_ENV_FILE from config.env and,
-  // in the re-exec'd child, the CONSTRUCT_OP_RUN_ACTIVE sentinel that stops recursion.
-  const { maybeReExecUnderOpRun } = await import('../lib/providers/op-run.mjs');
-  const reExec = maybeReExecUnderOpRun({ env: ENV, homeDir: HOME });
-  if (reExec.reExecuted) process.exit(reExec.code);
-
   const { SELECTABLE_SERVICES } = await import('../lib/service-manager.mjs');
 
   // --only=a,b,c picks services non-interactively; --select opens a checklist.
@@ -1363,7 +1371,7 @@ async function cmdDev(args = []) {
     process.exit(1);
   }
 
-  const { results, recovery } = await startServices({ rootDir: ROOT_DIR, homeDir: HOME, selected });
+  const { results, recovery } = await startServices({ rootDir: PROJECT_ROOT, homeDir: HOME, selected });
   opLog.event('services', { results: results.map((r) => ({ name: r.name, status: r.status })) });
   for (const svc of results) {
     const label = svc.url ? `${svc.name} → ${svc.url}` : svc.name;
@@ -1372,6 +1380,16 @@ async function cmdDev(args = []) {
     else if (svc.status === 'configured') info(`${svc.name}: ${svc.note}`);
     else if (svc.status === 'failed') errorln(`${svc.name}: ${svc.note}`);
     else warn(`${svc.name}: ${svc.note}`);
+  }
+
+  // Show Langfuse credentials guidance after first start
+  const langfuseService = results.find(r => r.name === 'Langfuse');
+  if (langfuseService && langfuseService.status === 'started' && langfuseService.note?.includes('auto-configured')) {
+    println('');
+    info('Langfuse credentials:');
+    info('  Dashboard: http://localhost:54330 (login: admin@construct.local / construct-admin)');
+    info('  API keys auto-saved to ~/.construct/config.env');
+    info('  Run `construct status` anytime to view credentials');
   }
 
   if (recovery) {
@@ -1394,14 +1412,14 @@ async function cmdDev(args = []) {
   const { existsSync } = await import('node:fs');
   const { join } = await import('node:path');
   
-  const embedConfigExists = existsSync(join(ROOT_DIR, 'embed.yaml'));
-  const config = loadProjectConfig(ROOT_DIR);
+  const embedConfigExists = existsSync(join(PROJECT_ROOT, 'embed.yaml'));
+  const config = loadProjectConfig(PROJECT_ROOT);
   const autoEmbed = config.config?.autoEmbed;
-  
+
   if (embedConfigExists && autoEmbed) {
     try {
       const { runEmbedCli } = await import('../lib/embed/cli.mjs');
-      await runEmbedCli(['start'], { rootDir: ROOT_DIR });
+      await runEmbedCli(['start'], { rootDir: PROJECT_ROOT });
       opLog.event('embed', { status: 'started' });
     } catch (err) {
       warn(`embed start failed: ${err.message} — check ~/.cx/runtime/embed-daemon.log`);
@@ -1546,7 +1564,7 @@ async function cmdReview(args) {
   if (sub === 'legacy') {
     if (!ENV.CONSTRUCT_TELEMETRY_PUBLIC_KEY || !ENV.CONSTRUCT_TELEMETRY_SECRET_KEY) {
       errorln('Error: CONSTRUCT_TELEMETRY_PUBLIC_KEY and CONSTRUCT_TELEMETRY_SECRET_KEY must be set.');
-      errorln('Configure telemetry credentials in ~/.config/construct/config.env or .env.');
+      errorln('Configure telemetry credentials in ~/.construct/config.env or .env.');
       process.exit(1);
     }
     runNodeScript(path.join(ROOT_DIR, 'scripts', 'review.mjs'), args.slice(1), ENV);
@@ -2711,7 +2729,7 @@ async function cmdIntakeNeedsAsr(args) {
         println(`  ${p.id}  ${p.extension}  ${p.sourcePath}`);
       } catch { println(`  ${f} (malformed packet)`); }
     }
-    println('\nTo process: install a local whisper ASR (brew install whisper-cpp, see docs/guides/intake/audio-video.md) and re-run construct embed start.');
+    println('\nTo process: set CONSTRUCT_ASR_BACKEND=whisper|assemblyai and re-run construct embed start.');
     return;
   }
 
@@ -3701,7 +3719,6 @@ async function cmdOrchestrate(args) {
     const timeoutMs = Number(eqFlag('--timeout-ms') || 8000);
     let observedTools = splitCsv(eqFlag('--observed-tools'));
     let reachableTools = splitCsv(eqFlag('--reachable-tools'));
-    const callerSuppliedObservations = Boolean(observedTools || reachableTools);
     let probeError = null;
 
     if (!rest.includes('--no-probe') && !observedTools && !reachableTools) {
@@ -3726,7 +3743,7 @@ async function cmdOrchestrate(args) {
       reachableTools,
       requiredTools: splitCsv(eqFlag('--required-tools')),
       clientContractVersion: eqFlag('--client-contract-version'),
-      observationScope: eqFlag('--observation-scope') || (callerSuppliedObservations ? 'host-session' : (observedTools || reachableTools ? 'local-probe' : 'local-config')),
+      observationScope: eqFlag('--observation-scope') || (observedTools || reachableTools ? 'host-session' : 'local-config'),
       probeError,
       authRequired: rest.includes('--auth-required'),
     }, { env: process.env, cwd: process.cwd() });
@@ -3788,7 +3805,6 @@ async function cmdOrchestrate(args) {
 
   if (sub === 'run') {
     const { runOrchestration, planRun, hostAdapterMetadata } = await import('../lib/orchestration/runtime.mjs');
-    const { shapeRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
     const positional = rest.filter((a, i) => !a.startsWith('--') && !(i > 0 && rest[i - 1].startsWith('--') && !['--no-construct', '--no-execute', '--json'].includes(rest[i - 1])));
     const text = flag('--text') || positional.join(' ').trim();
     if (!text) { errorln('Usage: construct orchestrate run "<request>" [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]'); process.exit(1); }
@@ -3806,9 +3822,8 @@ async function cmdOrchestrate(args) {
     };
     const run = rest.includes('--no-execute') ? await planRun(request, {}) : await runOrchestration(request, {});
     if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
-    const shaped = shapeRun(run);
-    println(`Run ${run.runId} — ${shaped.status} · executionMode=${run.execution.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
-    if (shaped.degraded) println(`  degraded: ${shaped.degradationReason}`);
+    println(`Run ${run.runId} — ${run.status} · executionMode=${run.execution.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
+    if (run.execution.degraded) println(`  degraded: ${run.execution.degradationReason}`);
     if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
     else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
     for (const t of run.tasks) {
@@ -3819,14 +3834,12 @@ async function cmdOrchestrate(args) {
 
   if (sub === 'status') {
     const { getRun, getRuns, hostAdapterMetadata } = await import('../lib/orchestration/runtime.mjs');
-    const { shapeRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
     const runId = rest.find((a) => !a.startsWith('--'));
     if (runId) {
       const run = await getRun(process.cwd(), runId);
       if (!run) { errorln(`Run not found: ${runId}`); process.exit(1); }
-      const shaped = shapeRun(run);
-      if (wantsJson) { println(JSON.stringify(shaped, null, 2)); return; }
-      println(`Run ${run.runId} — ${shaped.status} · executionMode=${run.execution.executionMode}`);
+      if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
+      println(`Run ${run.runId} — ${run.status} · executionMode=${run.execution.executionMode}`);
       for (const t of run.tasks) {
         println(`  ${t.id} ${t.role} — ${t.status}`);
         if (t.reasoning) println(`    reasoning: ${t.reasoning.length > 300 ? `${t.reasoning.slice(0, 300)}…` : t.reasoning}`);
@@ -3834,12 +3847,9 @@ async function cmdOrchestrate(args) {
       return;
     }
     const runs = await getRuns(process.cwd());
-    if (wantsJson) { println(JSON.stringify(runs.map(shapeRun), null, 2)); return; }
+    if (wantsJson) { println(JSON.stringify(runs, null, 2)); return; }
     if (!runs.length) { println('No orchestration runs recorded.'); return; }
-    for (const r of runs) {
-      const shaped = shapeRun(r);
-      println(`  ${r.runId} — ${shaped.status} · ${r.executionMode || ''} · ${r.createdAt}`);
-    }
+    for (const r of runs) println(`  ${r.runId} — ${r.status} · ${r.executionMode || ''} · ${r.createdAt}`);
     return;
   }
 
@@ -3932,7 +3942,6 @@ async function cmdModels(args) {
     return;
   }
   if (args.includes('--apply')) {
-    errorln('Note: `construct models --apply` is a deprecated alias; run `construct models free` to see options, then `construct models set --tier=… --model=…` per tier.');
     const apiKey = process.env.OPENROUTER_API_KEY || readOpenRouterApiKeyFromOpenCodeConfig();
     const models = await pollFreeModels(apiKey);
     const selections = {};
@@ -4013,7 +4022,7 @@ async function cmdModels(args) {
     println('Pick one of:');
     println('  • `construct models` (single source of truth)');
     println('  • construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id>');
-    println('  • construct models free              Poll the OpenRouter free catalog, then `models set` per tier');
+    println('  • construct models --apply           Poll OpenRouter free catalog and seed all tiers');
   }
 }
 
@@ -4956,10 +4965,9 @@ async function cmdSpecialist(args) {
 
 async function cmdBackup(args) {
   // Postgres-era backups were removed with the SQL backend (lib/storage/backup.mjs).
-  // Durable state is now the project git repo plus Beads issues in Dolt; `.cx/`
-  // (including the LanceDB index) is gitignored, machine-local, and rebuildable.
+  // State is now Git-backed (.cx/) plus the local LanceDB index under .cx/lancedb.
   void args;
-  errorln('construct backup is no longer supported: the Postgres backend was removed. Durable state is your git repo (push it) and Beads (bd dolt push); the local .cx/ index rebuilds. See docs/operations/backup-restore.md.');
+  errorln('construct backup is no longer supported: Postgres was removed. Commit .cx/ for Git-backed state; the LanceDB index lives under .cx/lancedb.');
   process.exit(1);
 }
 
@@ -5324,7 +5332,7 @@ async function cmdCreds(args) {
     try {
       await copilot.getCopilotToken();
       println('GitHub Copilot authenticated. The session token exchanged successfully.');
-      println('Credentials stored in ~/.config/construct/auth/github-copilot.json and ~/.config/github-copilot/apps.json.');
+      println('Credentials stored in ~/.construct/auth/github-copilot.json and ~/.config/github-copilot/apps.json.');
       try {
         const models = await copilot.listCopilotModels({});
         if (models.length) {
@@ -6644,7 +6652,7 @@ const handlers = new Map([
 
         println('');
         println(`Scaffolding a new scope draft. Three questions, then a preview.`);
-        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/profile-lifecycle.md`);
+        println(`Background: docs/guides/concepts/persona-research.md and docs/guides/concepts/scope-lifecycle.md`);
         println('');
         if (!displayName) displayName = await ask('Display name?', id);
         if (seedDepartments.length === 0) {
@@ -6703,7 +6711,7 @@ const handlers = new Map([
         println('');
         println(`✓ draft created at ${pathMod.relative(process.cwd(), result.dir)}`);
         println('');
-        println(`Next steps (in order, per docs/guides/concepts/profile-lifecycle.md):`);
+        println(`Next steps (in order, per docs/guides/concepts/scope-lifecycle.md):`);
         println(`  1. Discover  (cx-ux-researcher): fill personas/<role>.md from interviews + primary sources.`);
         println(`  2. Frame     (cx-product-manager): fill departments/<dept>.md charters and intake taxonomy.`);
         println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in scope.json.`);

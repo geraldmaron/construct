@@ -10,7 +10,7 @@
 
 Construct sits on top of Claude Code, OpenCode, Codex, Cursor, and Copilot. You talk to one persona called `construct`. Behind it is a team of specialists shaped by your **org profile**: software R&D by default, with curated profiles for operations, creative, and research orgs, plus a schema-validated escape hatch for custom profiles. Each profile organizes its specialists by department (Product, Engineering, Operations, etc.) and carries its own intake taxonomy, doc templates, and role set. Sessions survive boundary changes via durable state in `.cx/`, beads, and a local vector index. Solo by default. Can deploy centrally for teams that want shared memory, telemetry, queues, and policy.
 
-`construct scope show|list|set <id>` to switch. See [Profile lifecycle](https://geraldmaron.github.io/construct/concepts/profile-lifecycle) for how new profiles are built (it's a research process, not a JSON exercise).
+`construct scope show|list|set <id>` to switch. See [Profile lifecycle](https://geraldmaron.github.io/construct/concepts/scope-lifecycle) for how new profiles are built (it's a research process, not a JSON exercise).
 
 The team and enterprise modes exist because I wanted to learn what shipping a real multi-tenant tool would look like. The project is still open source, the code is still public, and the bar is still "does this help me learn." Run it solo if that's all you need.
 
@@ -77,13 +77,38 @@ Works with Anthropic, OpenRouter, Ollama, and other OpenAI-compatible providers.
 
 ## Deployment modes
 
-Three modes. `solo` is the default and runs everything locally. Filesystem queue, local repo state, optional Postgres via Docker, local JSONL traces. If every cloud service goes down, you still work from `plan.md`, `.cx/context.md`, beads, git, and the local vector index.
+Three modes are defined. Only `solo` is fully implemented today.
 
-`team` promotes the intake queue to Postgres with row-locked worker claims. Shared memory, Docker worker pool, centralized telemetry, MCP through a broker.
+**`solo`** (default and fully supported) — runs entirely on the local machine. Filesystem task queue, local repo state, embedded LanceDB vector store, direct MCP dispatch, local JSONL traces. If every cloud service goes down, you still work from `plan.md`, `.cx/context.md`, beads, git, and the local vector index.
 
-`enterprise` adds tenant isolation, RBAC and ABAC scaffolding, isolated worker containers, signed MCP allowlists, and mandatory audit.
+**`team`** (planned — not yet implemented) — the architecture is defined: Postgres queue with row-locked worker claims, shared memory store, Docker worker pool, centralized telemetry, MCP through a broker. The code paths exist as stubs; `createSqlClient()` returns null and no team capability is wired at runtime. Do not run `team` mode expecting it to work.
+
+**`enterprise`** (planned — not yet implemented) — would add tenant isolation, RBAC/ABAC scaffolding, isolated worker containers, signed MCP allowlists, and mandatory audit. No implementation exists yet.
 
 Pick or change modes with `construct config mode [solo|team|enterprise]`. [Deployment model](https://geraldmaron.github.io/construct/concepts/deployment-model).
+
+### Deployment mode capability status
+
+Current implementation state, sourced from `lib/mode-capabilities.mjs`:
+
+| Capability | solo | team | enterprise |
+|---|---|---|---|
+| Filesystem task queue | implemented | — | — |
+| Local memory | implemented | — | — |
+| Embedded LanceDB vector store | implemented | — | — |
+| Direct MCP dispatch | implemented | — | — |
+| Postgres task queue | — | stub | stub |
+| Shared memory store | — | stub | stub |
+| Central telemetry | — | stub | — |
+| Brokered MCP dispatch | — | stub | — |
+| Docker worker pool | — | not implemented | not implemented |
+| Tenant isolation | — | — | not implemented |
+| RBAC/ABAC | — | — | not implemented |
+| Isolated worker containers | — | — | not implemented |
+| Signed MCP allowlists | — | — | not implemented |
+| Mandatory audit log | — | — | not implemented |
+
+**stub** = code path exists but returns null or falls back silently. **not implemented** = no code path exists.
 
 ## Intake
 
