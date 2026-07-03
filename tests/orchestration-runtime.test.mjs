@@ -22,6 +22,7 @@ import {
   planRun,
   executeRun,
   runOrchestration,
+  startRun,
   hostAdapterMetadata,
   getRun,
   getRuns,
@@ -45,7 +46,7 @@ test('orchestrated request plans a specialist chain and prepares every task', as
     { request: 'Refactor the auth module and add a migration; review for security', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4, moduleCount: 2 },
     { env: ENV, cwd },
   );
-  assert.equal(run.status, 'completed-prepare-only');
+  assert.equal(run.status, 'completed');
   assert.equal(run.execution.executionMode, 'construct-orchestrated');
   assert.equal(run.workerBackend, 'inline');
   assert.ok(run.tasks.length >= 2, 'multiple specialists sequenced');
@@ -62,8 +63,8 @@ test('a planned run persists durably and round-trips through the store', async (
   assert.equal(reloaded.runId, planned.runId);
   assert.equal(reloaded.status, 'planned');
   const completed = await executeRun(cwd, planned.runId, { env: ENV });
-  assert.equal(completed.status, 'completed-prepare-only');
-  assert.equal((await getRun(cwd, planned.runId)).status, 'completed-prepare-only', 'execution is persisted');
+  assert.equal(completed.status, 'completed');
+  assert.equal((await getRun(cwd, planned.runId)).status, 'completed', 'execution is persisted');
 });
 
 test('prompt-only request owns no specialist sequence', async () => {
@@ -112,7 +113,7 @@ test('inline backend stays the default and prepares, byte-for-byte', async () =>
   const cwd = project();
   const run = await runOrchestration({ request: 'refactor and review', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 }, { env: ENV, cwd });
   assert.equal(run.workerBackend, 'inline');
-  assert.equal(run.status, 'completed-prepare-only');
+  assert.equal(run.status, 'completed');
   assert.ok(run.tasks.every((t) => t.status === 'prepared' && t.executor === 'inline:prepared'));
   assert.ok(run.tasks.every((t) => t.output === null), 'inline records no model output');
 });
@@ -145,4 +146,15 @@ test('provider backend records a failed task and completes-with-failures, no cra
   assert.equal(run.status, 'completed-with-failures');
   assert.ok(run.tasks.every((t) => t.status === 'failed'));
   assert.ok(run.tasks.every((t) => t.error?.code === 'PROVIDER_EXECUTION_FAILED'));
+});
+
+test('startRun labels the run record as in-process before returning', async () => {
+  const cwd = project();
+  const started = await startRun(
+    { request: 'design a system', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 3 },
+    { env: ENV, cwd },
+  );
+  assert.equal(started.runMode, 'in-process', 'runMode must be in-process on the returned record');
+  const persisted = await getRun(cwd, started.runId, { env: ENV });
+  assert.equal(persisted.runMode, 'in-process', 'runMode must be persisted to the store');
 });
