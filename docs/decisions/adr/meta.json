@@ -48,6 +48,9 @@
     "0056-lmcp-a6-policy-approval-identity-model",
     "0057-lmcp-a7-enterprise-baseline-cut-lines",
     "0058-lmcp-a8-test-suite-rebuild-strategy",
-    "0059-lmcp-a9-dependency-intent-rubric"
+    "0059-lmcp-a9-dependency-intent-rubric",
+    "0060-lmcp-b10-provider-filter-dsl",
+    "0061-lmcp-p1-embed-capability-schema-runtime-placement",
+    "0062-lmcp-f6-persona-reasoning-framework-format"
   ]
 }

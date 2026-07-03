@@ -65,6 +65,9 @@ Architecture decision records for decisions that have already been made.
 | [0057](./0057-lmcp-a7-enterprise-baseline-cut-lines.md) | LMCP-A7: enterprise baseline cut lines | accepted | |
 | [0058](./0058-lmcp-a8-test-suite-rebuild-strategy.md) | LMCP-A8: test-suite rebuild strategy (supersedes 0035) | accepted | |
 | [0059](./0059-lmcp-a9-dependency-intent-rubric.md) | LMCP-A9: dependency-intent rubric | accepted | |
+| [0060](./0060-lmcp-b10-provider-filter-dsl.md) | LMCP-B10: provider filter DSL semantics + config placement | accepted | |
+| [0061](./0061-lmcp-p1-embed-capability-schema-runtime-placement.md) | LMCP-P1: embed-capability schema + runtime placement | accepted | |
+| [0062](./0062-lmcp-f6-persona-reasoning-framework-format.md) | LMCP-F6: persona reasoning framework format | accepted | |
 
 ## Starter templates
 
