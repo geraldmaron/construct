@@ -12,11 +12,13 @@ Providers connect Construct to external systems: GitHub, Jira, Confluence, Slack
 
 | Provider | read | search | watch | write | webhook |
 |---|:---:|:---:|:---:|:---:|:---:|
-| GitHub | yes | yes | (|) | yes |
-| Atlassian Jira | yes | yes | (|) |: |
-| Atlassian Confluence | yes | yes | (|) |: |
-| Slack | yes | yes | (|) |: |
-| Salesforce | yes | yes | (|) |: |
+| GitHub | yes | yes | — | — | yes |
+| Atlassian Jira | yes | yes | — | — | — |
+| Atlassian Confluence | yes | yes | — | — | — |
+| Slack | yes | yes | — | — | — |
+| Salesforce | yes | yes | — | — | — |
+
+> **Note:** `watch` and `write` are not yet implemented in any built-in provider. `webhook` is supported by GitHub only. These capabilities are available for plugin providers that implement the full contract.
 
 Capability definitions:
 
@@ -24,8 +26,8 @@ Capability definitions:
 |---|---|
 | `read` | Fetch a single named resource (issue, page, repo, record) |
 | `search` | Query by keyword or structured expression (JQL, CQL, SOQL) |
-| `watch` | Subscribe to a real-time event stream (not yet implemented in any built-in) |
-| `write` | Create or update a resource |
+| `watch` | Subscribe to a real-time event stream (planned; not yet implemented in any built-in) |
+| `write` | Create or update a resource (planned; not yet implemented in any built-in) |
 | `webhook` | Verify and acknowledge an inbound webhook payload |
 
 ## List active providers
