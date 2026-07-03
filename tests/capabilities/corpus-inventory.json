@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-03T02:30:40.377Z",
+  "generatedAt": "2026-07-03T03:44:52.296Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 637,
-    "topLevelTestFiles": 313,
+    "testFiles": 638,
+    "topLevelTestFiles": 314,
     "nestedTestFiles": 324,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 25,
     "byLayer": {
-      "unit": 436,
+      "unit": 437,
       "visual": 9,
       "live-provider": 2,
       "integration": 31,
       "functional": 159
     },
     "byCategory": {
-      "unit": 391,
+      "unit": 392,
       "visual": 9,
       "structural-guard": 15,
       "contract-subsystem": 30,
@@ -4843,6 +4843,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "status.test.mjs — Unit tests for lib/status.mjs project health summary."
+    },
+    {
+      "path": "tests/storage-admin-status-probe.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/storage-admin-status-probe.test.mjs — unit tests for getStorageStatus() health."
     },
     {
       "path": "tests/storage-file-lock.test.mjs",
