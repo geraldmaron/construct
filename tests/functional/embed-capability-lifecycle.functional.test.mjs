@@ -63,12 +63,15 @@ function runCli(args, cwd) {
   return spawnSync('node', [BIN, 'embed', ...args], { cwd, encoding: 'utf8', timeout: 30_000 });
 }
 
-test('embed list --json reports an empty set in a project with no capabilities', () => {
+test('embed list --json reports only the shipped builtin capability in a project with no project-tier manifests', () => {
   const cwd = freshCwd();
   const res = runCli(['list', '--json'], cwd);
   assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
   const out = JSON.parse(res.stdout);
-  assert.deepEqual(out.capabilities, []);
+  // The core pack ships exactly one builtin embed capability (the operations
+  // TPM preset), available-but-not-enabled in a project that has enabled none.
+  assert.deepEqual(out.capabilities.map((c) => c.id), ['operations']);
+  assert.equal(out.capabilities[0].enabled, false);
   assert.deepEqual(out.errors, []);
 });
 

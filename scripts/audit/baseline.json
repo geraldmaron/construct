@@ -13,6 +13,7 @@
     "02-deadcode:module-test-only:lib/frameworks/loader.mjs",
     "02-deadcode:module-test-only:lib/providers/contract/adapters/github/governed-write.mjs",
     "02-deadcode:module-test-only:lib/ingest/degraded-extract.mjs",
-    "02-deadcode:module-test-only:lib/doctor/sidecar-providers.mjs"
+    "02-deadcode:module-test-only:lib/doctor/sidecar-providers.mjs",
+    "02-deadcode:module-test-only:lib/embed/presets/tpm.mjs"
   ]
 }

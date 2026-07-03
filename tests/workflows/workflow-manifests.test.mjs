@@ -30,13 +30,13 @@ test('all builtin workflow manifests validate successfully', () => {
   assert.ok(manifests.length > 0, 'at least one manifest loaded');
 });
 
-test('all 11 builtin manifests are present', () => {
+test('all builtin manifests are present', () => {
   const dirs = resolveWorkflowManifestDirs();
   const { manifests } = loadWorkflowManifestsFromDir(dirs.builtin);
   const ids = manifests.map((m) => m.id).sort();
   assert.deepEqual(ids, [
     'architecture-review', 'data-structure', 'evidence-ingest', 'memo-draft',
-    'prd-draft', 'proposal-review', 'research-synthesis', 'risk-review',
+    'operations', 'prd-draft', 'proposal-review', 'research-synthesis', 'risk-review',
     'structure-notes', 'transcript-process', 'triage',
   ]);
 });
@@ -60,7 +60,10 @@ test('every manifest has a valid defaultApprovalMode', () => {
 test('every manifest has a valid tier', () => {
   const dirs = resolveWorkflowManifestDirs();
   const { manifests } = loadWorkflowManifestsFromDir(dirs.builtin);
-  for (const m of manifests) {
+  // Embed manifests are a workflow specialization carrying an embed block, not
+  // a model tier or role chain — those fields are specific to the executable
+  // workflow types.
+  for (const m of manifests.filter((x) => x.type !== 'embed')) {
     assert.ok(TIERS.includes(m.tier), `${m.id}: tier '${m.tier}' is valid`);
   }
 });
@@ -80,7 +83,9 @@ test('roleChain references real registry roles', () => {
   const known = new Set(listRoles().map((r) => r.id));
   const dirs = resolveWorkflowManifestDirs();
   const { manifests } = loadWorkflowManifestsFromDir(dirs.builtin);
-  for (const m of manifests) {
+  // Embed manifests bind a single specialist via embed.specialist, not a
+  // roleChain — the executable workflow types own the chain.
+  for (const m of manifests.filter((x) => x.type !== 'embed')) {
     assert.ok(Array.isArray(m.roleChain), `${m.id}: roleChain is an array`);
     assert.ok(m.roleChain.length > 0, `${m.id}: roleChain is non-empty`);
     for (const role of m.roleChain) {

@@ -220,7 +220,7 @@ describe('loadEmbedCapabilities', () => {
 
     const { capabilities, errors } = loadEmbedCapabilities({ rootDir: tmpDir, packRoots: [], knownSpecialists: [] });
     assert.equal(errors.length, 0);
-    assert.equal(capabilities.length, 0);
+    assert.ok(!capabilities.some((c) => c.id === 'linear-flow'), 'non-embed manifest is excluded');
   });
 
   it('collects a JSON-schema-path error for an invalid manifest instead of throwing', () => {
@@ -231,7 +231,7 @@ describe('loadEmbedCapabilities', () => {
     fs.writeFileSync(path.join(dir, 'broken.manifest.json'), JSON.stringify(bad));
 
     const { capabilities, errors } = loadEmbedCapabilities({ rootDir: tmpDir, packRoots: [], knownSpecialists: [] });
-    assert.equal(capabilities.length, 0);
+    assert.ok(!capabilities.some((c) => c.id === 'broken'), 'the invalid manifest is not accepted');
     assert.ok(errors.some((e) => e.includes('embed.runtime: must be one of')));
   });
 
