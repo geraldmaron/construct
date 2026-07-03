@@ -6450,10 +6450,14 @@ const handlers = new Map([
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
    // `graph` carries two disjoint subcommand families: the living dependency
-   // graph (build/stat/query/validate → lib/graph/cli.mjs) and the intake task
-   // graph (list/show/from-intake/status/recommend → cmdGraph).
+   // graph (build/stat/query/validate/impacted/missing-tests/missing-docs/
+   // stale/dependencies/providers/surfaces → lib/graph/cli.mjs) and the
+   // intake task graph (list/show/from-intake/status/recommend → cmdGraph).
    ['graph', async (args) => {
-     const DEPENDENCY_GRAPH_SUBCOMMANDS = new Set(['build', 'stat', 'query', 'validate']);
+     const DEPENDENCY_GRAPH_SUBCOMMANDS = new Set([
+       'build', 'stat', 'query', 'validate', 'impacted',
+       'missing-tests', 'missing-docs', 'stale', 'dependencies', 'providers', 'surfaces',
+     ]);
      if (DEPENDENCY_GRAPH_SUBCOMMANDS.has(args[0])) {
        const { runGraphCli } = await import('../lib/graph/cli.mjs');
        const code = runGraphCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });

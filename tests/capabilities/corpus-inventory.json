@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-03T23:13:15.575Z",
+  "generatedAt": "2026-07-03T23:30:32.218Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 706,
+    "testFiles": 710,
     "topLevelTestFiles": 328,
-    "nestedTestFiles": 378,
+    "nestedTestFiles": 382,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 494,
+      "unit": 498,
       "functional": 170,
       "visual": 9,
       "live-provider": 2,
       "integration": 31
     },
     "byCategory": {
-      "unit": 443,
+      "unit": 445,
       "functional": 170,
       "visual": 9,
       "structural-guard": 16,
-      "contract-subsystem": 35,
+      "contract-subsystem": 37,
       "live-provider": 2,
       "integration": 22,
       "hook": 9
@@ -83,6 +83,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/acceptance/k5-ink-react-degradation.functional.test.mjs — LMCP-K5 Ink/React"
+    },
+    {
+      "path": "tests/acceptance/ops-triage-preset.acceptance.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/ops-triage-preset.acceptance.test.mjs — golden-fixture"
     },
     {
       "path": "tests/acceptance/packed-install.test.mjs",
@@ -3513,6 +3521,14 @@
       "maintainerNotes": "tests/graph/cli.test.mjs — `construct graph query --missing-tests` CLI wiring."
     },
     {
+      "path": "tests/graph/gap-queries.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/gap-queries.test.mjs — the six LMCP-C5 read-only gap queries."
+    },
+    {
       "path": "tests/graph/gaps.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -3529,12 +3545,20 @@
       "maintainerNotes": "tests/graph/impact.test.mjs — change-impact selection over a synthetic graph."
     },
     {
+      "path": "tests/graph/impacted.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/impacted.test.mjs — change-impact traversal over a synthetic graph."
+    },
+    {
       "path": "tests/graph/staleness.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/graph/staleness.test.mjs — graph seed-hash staleness helper."
+      "maintainerNotes": "tests/graph/staleness.test.mjs — per-source graph seed-hash staleness (LMCP-C6)."
     },
     {
       "path": "tests/graph/store.test.mjs",
@@ -4665,6 +4689,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/policy-engine.test.mjs — policy decision contract."
+    },
+    {
+      "path": "tests/policy/role-authority.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/policy/role-authority.test.mjs — identity-anchored role claim authority."
     },
     {
       "path": "tests/postcondition-checks.test.mjs",

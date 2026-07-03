@@ -207,8 +207,10 @@ describe('loadEmbedCapabilities', () => {
 
     const { capabilities, errors } = loadEmbedCapabilities({ rootDir: tmpDir, packRoots: [], knownSpecialists: [] });
     assert.equal(errors.length, 0);
-    assert.equal(capabilities.length, 1);
-    assert.equal(capabilities[0].id, 'operations');
+    // Real builtins (operations, operations-triage) resolve alongside the
+    // project-tier override — this test only asserts the project tier lands.
+    const ops = capabilities.find((c) => c.id === 'operations');
+    assert.ok(ops, 'project-tier operations manifest is discovered');
   });
 
   it('excludes non-embed workflow manifests found in the same directory', () => {
@@ -249,8 +251,11 @@ describe('loadEmbedCapabilities', () => {
     fs.writeFileSync(path.join(dir, 'operations.manifest.json'), JSON.stringify(projectManifest));
 
     const { capabilities } = loadEmbedCapabilities({ rootDir: tmpDir, packRoots: [packDir], knownSpecialists: [] });
-    assert.equal(capabilities.length, 1);
-    assert.equal(capabilities[0].embed.runtime, 'in-process');
+    // Real builtins (operations, operations-triage) resolve alongside the
+    // pack/project overrides — find by id rather than asserting total count.
+    const ops = capabilities.find((c) => c.id === 'operations');
+    assert.ok(ops, 'operations capability is discovered');
+    assert.equal(ops.embed.runtime, 'in-process');
 
     fs.rmSync(packDir, { recursive: true, force: true });
   });
