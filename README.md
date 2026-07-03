@@ -306,6 +306,7 @@ construct/
 ├── commands         Command prompt assets
 ├── config           Repo-wide controlled vocabulary (tag-vocabulary.json)
 ├── deploy           Terraform and deployment configs
+├── deps
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples         Example projects and persona fixtures
 ├── lib              Core runtime: CLI, hooks, MCP, providers, oracle, sync
