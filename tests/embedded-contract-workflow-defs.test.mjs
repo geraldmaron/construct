@@ -18,10 +18,10 @@ import { listRoles } from '../lib/roles/catalog.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCHEMA_DIR = join(__dirname, '..', 'lib', 'schemas');
 
-test('exposes the six documented workflow types', () => {
+test('exposes the documented workflow types', () => {
   assert.deepEqual(
     [...WORKFLOW_TYPES].sort(),
-    ['architecture-review', 'data-structure', 'evidence-ingest', 'memo-draft', 'prd-draft', 'proposal-review', 'research-synthesis', 'risk-review', 'structure-notes', 'transcript-process'],
+    ['architecture-review', 'data-structure', 'evidence-ingest', 'memo-draft', 'prd-draft', 'proposal-review', 'research-synthesis', 'risk-review', 'structure-notes', 'transcript-process', 'triage'],
   );
 });
 
