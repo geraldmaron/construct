@@ -1,0 +1,14 @@
+{
+  "id": "structure-notes",
+  "version": "1.0.0",
+  "type": "linear",
+  "modes": ["solo", "team"],
+  "surfaces": ["mcp", "cli"],
+  "roleChain": ["orchestrator", "researcher"],
+  "defaultApprovalMode": "proposal-only",
+  "durableStateModel": "none",
+  "tier": "fast",
+  "description": "Structure an unclassified brain-dump or rough notes into a normalized summary with extracted intents.",
+  "owner": "construct-core",
+  "compatVersion": 1
+}

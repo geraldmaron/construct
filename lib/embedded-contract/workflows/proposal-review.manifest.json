@@ -1,0 +1,15 @@
+{
+  "id": "proposal-review",
+  "version": "1.0.0",
+  "type": "linear",
+  "modes": ["solo", "team"],
+  "surfaces": ["mcp", "cli"],
+  "roleChain": ["reviewer", "devil-advocate"],
+  "defaultApprovalMode": "requires-human-approval",
+  "outputSchema": { "artifact": "review-report" },
+  "durableStateModel": "none",
+  "tier": "standard",
+  "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance.",
+  "owner": "construct-core",
+  "compatVersion": 1
+}
