@@ -69,6 +69,9 @@ lib/server/static/
 # Local scratch files that occasionally leak into the working tree
 .tmp/
 token-baseline.txt
+# Bun scratch dir (bun/@t@/*.pile) dropped into the repo root by a test runner;
+# root-cause fix tracked in beads — until then this keeps it out of git status.
+bun/
 # Literal `~/` directory created when a script writes to "~/foo" without
 # expanding the tilde — never committed.
 /~/
