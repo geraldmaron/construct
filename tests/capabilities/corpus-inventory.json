@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-03T21:27:29.894Z",
+  "generatedAt": "2026-07-03T22:14:17.775Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 691,
-    "topLevelTestFiles": 327,
-    "nestedTestFiles": 364,
+    "testFiles": 697,
+    "topLevelTestFiles": 328,
+    "nestedTestFiles": 369,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 484,
-      "functional": 165,
+      "unit": 488,
+      "functional": 167,
       "visual": 9,
       "live-provider": 2,
       "integration": 31
     },
     "byCategory": {
-      "unit": 434,
-      "functional": 165,
+      "unit": 437,
+      "functional": 167,
       "visual": 9,
-      "structural-guard": 15,
+      "structural-guard": 16,
       "contract-subsystem": 35,
       "live-provider": 2,
       "integration": 22,
@@ -1255,6 +1255,14 @@
       "maintainerNotes": "tests/contracts-violation-log.test.mjs — unit tests for the ported"
     },
     {
+      "path": "tests/contracts-worker-boundary.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/contracts-worker-boundary.test.mjs — LMCP-F2: worker-boundary contract"
+    },
+    {
       "path": "tests/core-dependency-policy.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -1681,6 +1689,14 @@
       "maintainerNotes": "customer-profiles.test.mjs — Tests for the embed customer-profiles module."
     },
     {
+      "path": "tests/embed/provider-registry-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/embed/provider-registry-parity.test.mjs — LMCP-B3."
+    },
+    {
       "path": "tests/embed/providers.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -1871,6 +1887,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/engine-tokens.test.mjs — token counter wrapper tests."
+    },
+    {
+      "path": "tests/enterprise/tenant.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/enterprise/tenant.test.mjs — tenant context resolution (LMCP-H1)."
     },
     {
       "path": "tests/entity-store.test.mjs",
@@ -3053,6 +3077,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/orchestrator-dispatch-grant.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/perspective-differentiation.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/perspective-differentiation.functional.test.mjs — regression"
     },
     {
       "path": "tests/functional/post-merge-tracking.functional.test.mjs",
@@ -5517,6 +5549,14 @@
       "maintainerNotes": "tests/vector-client.test.mjs — tests for lib/storage/vector-client.mjs"
     },
     {
+      "path": "tests/visual/rendered-artifact.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/visual/rendered-artifact.test.mjs — real rendered-artifact visual gate (LMCP-L5)."
+    },
+    {
       "path": "tests/vscode-mcp-toolkit-path.test.mjs",
       "layer": "visual",
       "category": "visual",
@@ -5627,6 +5667,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/writes/github.functional.test.mjs — GitHub writes routed through the"
+    },
+    {
+      "path": "tests/writes/jira.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/jira.functional.test.mjs — Jira writes routed through the"
     },
     {
       "path": "tests/xdg-config.test.mjs",
