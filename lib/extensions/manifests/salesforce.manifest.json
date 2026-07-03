@@ -1,0 +1,12 @@
+{
+  "id": "salesforce",
+  "version": "1.0.0",
+  "kind": "data-source",
+  "capabilities": ["read", "search"],
+  "secretEnvKeys": ["SALESFORCE_INSTANCE_URL", "SALESFORCE_ACCESS_TOKEN"],
+  "operations": ["read", "search"],
+  "securityClassification": "trusted",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin"
+}

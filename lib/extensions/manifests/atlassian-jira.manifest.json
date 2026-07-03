@@ -1,0 +1,12 @@
+{
+  "id": "atlassian-jira",
+  "version": "1.0.0",
+  "kind": "data-source",
+  "capabilities": ["read", "search"],
+  "secretEnvKeys": ["JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN"],
+  "operations": ["read", "search"],
+  "securityClassification": "trusted",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin"
+}
