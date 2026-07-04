@@ -5043,6 +5043,14 @@ async function cmdBackup(args) {
   process.exit(1);
 }
 
+// `provider add|configure` persist to `.cx/providers/<id>.json`; every
+// success message names the path relative to cwd so output is copy-pasteable
+// and consistent whether the command ran from the project root or a subdir.
+
+function instanceConfigRelPath(id) {
+  return path.join('.cx', 'providers', `${id}.json`);
+}
+
 async function cmdProvider(args) {
   const sub = args[0];
 
@@ -5071,6 +5079,7 @@ async function cmdProvider(args) {
     const jsonOutput = args.includes('--json');
     const { getState } = await import('../lib/providers/circuit-breaker.mjs');
     const { describeProviders } = await import('../lib/providers/registry.mjs');
+    const { readInstanceConfig } = await import('../lib/providers/instance-config.mjs');
     const desc = await describeProviders({ rootDir: process.cwd(), env: process.env });
 
     // Breaker state is registered under `provider:<id>` (see registry.mjs
@@ -5080,6 +5089,8 @@ async function cmdProvider(args) {
       const breaker = getState(`provider:${entry.id}`);
       const breakerState = breaker ? breaker.state : 'CLOSED';
       const degraded = !entry.health.ok || breakerState !== 'CLOSED';
+      const instance = readInstanceConfig(process.cwd(), entry.id);
+      const filter = instance?.config?.filter ?? null;
       return {
         id: entry.id,
         enabled: entry.health.ok,
@@ -5087,6 +5098,7 @@ async function cmdProvider(args) {
         failures: breaker ? breaker.failures : 0,
         degraded,
         source: entry.source,
+        filter,
       };
     });
 
@@ -5102,6 +5114,7 @@ async function cmdProvider(args) {
     for (const row of rows) {
       const breakerCol = row.failures > 0 ? `${row.breaker} (${row.failures})` : row.breaker;
       println(`  ${row.id.padEnd(24)} ${(row.enabled ? 'yes' : 'no').padEnd(9)} ${breakerCol.padEnd(18)} ${row.degraded ? 'yes' : 'no'}`);
+      if (row.filter) println(`     filter: ${JSON.stringify(row.filter)}`);
     }
     if (desc.errors.length) {
       println('');
@@ -5301,7 +5314,105 @@ async function cmdProvider(args) {
     return;
   }
 
-  errorln(`Unknown provider subcommand: ${sub}. Available: list, status, health, validate, info, test, plugins, new`);
+  if (sub === 'add') {
+    const id = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
+    const jsonOutput = args.includes('--json');
+    if (!id) { errorln('Usage: construct provider add <id>'); process.exit(1); }
+
+    const { resolveProviders } = await import('../lib/providers/registry.mjs');
+    const { providers, errors } = await resolveProviders({ rootDir: process.cwd(), env: process.env });
+    if (!providers[id]) {
+      const loadError = errors.find((e) => e.id === id);
+      const result = { ok: false, error: loadError ? loadError.error : `unknown provider: ${id}` };
+      if (jsonOutput) { println(JSON.stringify(result, null, 2)); } else { errorln(`Unknown provider: ${id}`); if (loadError) errorln(loadError.error); }
+      process.exit(1);
+    }
+
+    const { readInstanceConfig, writeInstanceConfig, defaultsFromSchema } = await import('../lib/providers/instance-config.mjs');
+    const existing = readInstanceConfig(process.cwd(), id);
+    if (existing) {
+      const result = { ok: false, error: `instance config already exists for '${id}'; use 'provider configure ${id}' to change it` };
+      if (jsonOutput) { println(JSON.stringify(result, null, 2)); } else { errorln(result.error); }
+      process.exit(1);
+    }
+
+    const configSchema = providers[id].configSchema || {};
+    const defaults = defaultsFromSchema(configSchema);
+    const record = writeInstanceConfig(process.cwd(), id, defaults);
+
+    if (jsonOutput) {
+      println(JSON.stringify({ ok: true, providerId: id, config: record.config, path: instanceConfigRelPath(id) }, null, 2));
+      return;
+    }
+    println(`Added ${id} (${instanceConfigRelPath(id)})`);
+    println(JSON.stringify(record.config, null, 2));
+    return;
+  }
+
+  if (sub === 'configure') {
+    const id = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
+    const jsonOutput = args.includes('--json');
+    if (!id) { errorln('Usage: construct provider configure <id> [--key value ...]'); process.exit(1); }
+
+    const { resolveProviders } = await import('../lib/providers/registry.mjs');
+    const { providers, errors } = await resolveProviders({ rootDir: process.cwd(), env: process.env });
+    if (!providers[id]) {
+      const loadError = errors.find((e) => e.id === id);
+      const result = { ok: false, error: loadError ? loadError.error : `unknown provider: ${id}` };
+      if (jsonOutput) { println(JSON.stringify(result, null, 2)); } else { errorln(`Unknown provider: ${id}`); if (loadError) errorln(loadError.error); }
+      process.exit(1);
+    }
+
+    const {
+      readInstanceConfig, writeInstanceConfig, defaultsFromSchema, applyOverrides, validateInstanceConfig,
+    } = await import('../lib/providers/instance-config.mjs');
+
+    // `--json` is the one bare boolean flag this subcommand accepts; every
+    // other `--foo` is a key.path expecting a value, so it is excluded from
+    // the key/value scan below rather than mis-parsed as a dangling key.
+    const BARE_FLAGS = new Set(['--json']);
+
+    const overrides = [];
+    for (let i = 2; i < args.length; i++) {
+      const a = args[i];
+      if (!a.startsWith('--') || BARE_FLAGS.has(a)) continue;
+      const keyPath = a.slice(2);
+      const value = args[i + 1];
+      if (value === undefined || value.startsWith('--')) {
+        errorln(`Usage: construct provider configure <id> --<key.path> <value> (missing value for --${keyPath})`);
+        process.exit(1);
+      }
+      overrides.push({ keyPath, value });
+      i++;
+    }
+
+    const configSchema = providers[id].configSchema || {};
+    const existing = readInstanceConfig(process.cwd(), id);
+    const base = existing ? existing.config : defaultsFromSchema(configSchema);
+    const merged = applyOverrides(base, overrides);
+
+    const result = validateInstanceConfig(id, configSchema, merged);
+    if (!result.valid) {
+      if (jsonOutput) {
+        println(JSON.stringify({ ok: false, providerId: id, errors: result.errors }, null, 2));
+      } else {
+        errorln(`✗ configure ${id} failed validation:`);
+        for (const e of result.errors) errorln(`  ${e}`);
+      }
+      process.exit(1);
+    }
+
+    const record = writeInstanceConfig(process.cwd(), id, merged);
+    if (jsonOutput) {
+      println(JSON.stringify({ ok: true, providerId: id, config: record.config, path: instanceConfigRelPath(id) }, null, 2));
+      return;
+    }
+    println(`✓ Configured ${id} (${instanceConfigRelPath(id)})`);
+    println(JSON.stringify(record.config, null, 2));
+    return;
+  }
+
+  errorln(`Unknown provider subcommand: ${sub}. Available: list, status, health, validate, info, test, add, configure, plugins, new`);
   process.exit(1);
 }
 
