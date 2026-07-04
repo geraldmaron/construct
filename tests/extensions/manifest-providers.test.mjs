@@ -2,11 +2,12 @@
  * tests/extensions/manifest-providers.test.mjs — LMCP-B2 provider manifest tests.
  *
  * Validates that the built-in provider manifests (github, atlassian-jira,
- * atlassian-confluence, slack, salesforce, linear) load correctly, have the
- * correct kind, and that resolveProviders() discovers the ones with a
- * unified lib/providers/<id> adapter. Linear (added in LMCP-B3) has a
- * manifest but no unified adapter yet — it is asserted separately from
- * resolveProviders() coverage rather than folded into EXPECTED_PROVIDERS.
+ * atlassian-confluence, slack, salesforce, directory, feedback) load
+ * correctly, have the correct kind, and that resolveProviders() discovers
+ * the ones with a unified lib/providers/<id> adapter. Linear (added in
+ * LMCP-B3) has a manifest but no unified adapter yet — it is asserted
+ * separately from resolveProviders() coverage rather than folded into
+ * EXPECTED_PROVIDERS.
  */
 
 import test from 'node:test';
@@ -19,18 +20,18 @@ import { dirname, join } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MANIFESTS_DIR = join(__dirname, '../../lib/extensions/manifests');
 
-const EXPECTED_PROVIDERS = ['github', 'atlassian-jira', 'atlassian-confluence', 'slack', 'salesforce', 'directory'];
+const EXPECTED_PROVIDERS = ['github', 'atlassian-jira', 'atlassian-confluence', 'slack', 'salesforce', 'directory', 'feedback'];
 const MANIFEST_ONLY_PROVIDERS = ['linear'];
 
 test('built-in provider manifests', async (t) => {
-  await t.test('loadManifestsFromDir loads all 7 manifests without errors', () => {
+  await t.test('loadManifestsFromDir loads all 8 manifests without errors', () => {
     const { manifests, errors } = loadManifestsFromDir(MANIFESTS_DIR);
     assert.deepEqual(errors, [], 'manifest loading should produce no errors');
     const dataSourceManifests = manifests.filter((m) => m.kind === 'data-source');
     assert.equal(
       dataSourceManifests.length,
-      7,
-      'should have exactly 7 data-source manifests (6 unified + 1 manifest-only)',
+      8,
+      'should have exactly 8 data-source manifests (7 unified + 1 manifest-only)',
     );
   });
 
@@ -50,7 +51,7 @@ test('built-in provider manifests', async (t) => {
     }
   });
 
-  await t.test('resolveProviders returns entries for all 6 providers', async () => {
+  await t.test('resolveProviders returns entries for all 7 providers', async () => {
     const { providers, errors } = await resolveProviders();
     assert.deepEqual(errors, [], 'provider resolution should produce no errors');
     for (const id of EXPECTED_PROVIDERS) {

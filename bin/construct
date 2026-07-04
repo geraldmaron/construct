@@ -6451,12 +6451,12 @@ const handlers = new Map([
    }],
    // `graph` carries two disjoint subcommand families: the living dependency
    // graph (build/stat/query/validate/impacted/missing-tests/missing-docs/
-   // stale/dependencies/providers/surfaces → lib/graph/cli.mjs) and the
+   // stale/dependencies/providers/surfaces/explain → lib/graph/cli.mjs) and the
    // intake task graph (list/show/from-intake/status/recommend → cmdGraph).
    ['graph', async (args) => {
      const DEPENDENCY_GRAPH_SUBCOMMANDS = new Set([
        'build', 'stat', 'query', 'validate', 'impacted',
-       'missing-tests', 'missing-docs', 'stale', 'dependencies', 'providers', 'surfaces',
+       'missing-tests', 'missing-docs', 'stale', 'dependencies', 'providers', 'surfaces', 'explain',
      ]);
      if (DEPENDENCY_GRAPH_SUBCOMMANDS.has(args[0])) {
        const { runGraphCli } = await import('../lib/graph/cli.mjs');
