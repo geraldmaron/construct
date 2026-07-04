@@ -102,15 +102,22 @@ test('requireTeamCapabilityOrDegrade handles comma-separated CONSTRUCT_DEGRADED_
   assert.doesNotThrow(() => requireTeamCapabilityOrDegrade('shared-memory', false, env));
 });
 
-// ─── 3. createIntakeQueue: git queue is the designated team backend ──────────
-// ADR-0051: the git queue IS the team/enterprise backend, not a degradation —
-// no CONSTRUCT_DEGRADED_OK opt-in may be required to obtain it.
+// ─── 3. createIntakeQueue: team mode requires postgres unless degraded ───────
 
-test('createIntakeQueue returns GitIntakeQueue in team mode without any degraded-ok opt-in', () => {
+test('createIntakeQueue throws in team mode without DATABASE_URL or degraded override', () => {
   const rootDir = makeTmp();
   const env = { CONSTRUCT_DEPLOYMENT_MODE: 'team' };
+  assert.throws(() => createIntakeQueue(rootDir, env), DeploymentModeError);
+});
+
+test('createIntakeQueue returns visibly degraded GitIntakeQueue in team mode with degraded override', () => {
+  const rootDir = makeTmp();
+  const env = { CONSTRUCT_DEPLOYMENT_MODE: 'team', CONSTRUCT_DEGRADED_OK: 'postgres-queue' };
   const queue = createIntakeQueue(rootDir, env);
   assert.ok(queue instanceof GitIntakeQueue, `Expected GitIntakeQueue, got ${queue?.constructor?.name}`);
+  assert.equal(queue.degraded, true);
+  assert.equal(queue.degradedReason, 'postgres-unavailable');
+  assert.equal(queue.requestedBackend, 'postgres');
 });
 
 // ─── 5. Solo mode is always a no-op ──────────────────────────────────────────

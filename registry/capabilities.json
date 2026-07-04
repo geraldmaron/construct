@@ -1,7 +1,7 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-07-04T15:03:23.514Z",
+    "generatedAt": "2026-07-04T22:56:53.113Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -814,6 +814,12 @@
         "name": "wireframe",
         "category": "Work",
         "core": false,
+        "internal": false
+      },
+      {
+        "name": "workers",
+        "category": "Core",
+        "core": true,
         "internal": false
       },
       {

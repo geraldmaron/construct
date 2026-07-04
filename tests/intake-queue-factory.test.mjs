@@ -33,9 +33,21 @@ describe('createIntakeQueue backend selection', () => {
     assert.ok(q instanceof FilesystemIntakeQueue);
   });
 
-  it('returns a GitIntakeQueue in team mode', () => {
-    const q = createIntakeQueue(projectRoot, { [DEPLOYMENT_MODE_ENV_KEY]: 'team' });
+  it('team mode fails loud without Postgres unless degraded override is explicit', () => {
+    assert.throws(
+      () => createIntakeQueue(projectRoot, { [DEPLOYMENT_MODE_ENV_KEY]: 'team' }),
+      /team mode requires postgres-queue/,
+    );
+  });
+
+  it('team mode can explicitly degrade to GitIntakeQueue when Postgres is unavailable', () => {
+    const q = createIntakeQueue(projectRoot, {
+      [DEPLOYMENT_MODE_ENV_KEY]: 'team',
+      CONSTRUCT_DEGRADED_OK: 'postgres-queue',
+    });
     assert.ok(q instanceof GitIntakeQueue);
+    assert.equal(q.degraded, true);
+    assert.equal(q.degradedReason, 'postgres-unavailable');
   });
 
   it('honors CONSTRUCT_INTAKE_QUEUE_BACKEND override (filesystem in team mode)', () => {

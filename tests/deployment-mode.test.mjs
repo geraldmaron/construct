@@ -54,17 +54,17 @@ describe('deployment-mode', () => {
   });
 
   describe('resolveResourceMode', () => {
-    it('returns the solo topology declaring the git default queue provider', () => {
+    it('returns the solo topology declaring the filesystem queue provider', () => {
       const r = resolveResourceMode('solo');
-      assert.equal(r.queue, 'git');
+      assert.equal(r.queue, 'filesystem');
       assert.equal(r.memory, 'local');
       assert.equal(r.workers, 'local');
       assert.equal(r.mcp, 'direct');
     });
 
-    it('returns the team topology with git queue/docker/brokered MCP', () => {
+    it('returns the team topology with postgres queue/docker/brokered MCP', () => {
       const r = resolveResourceMode('team');
-      assert.equal(r.queue, 'git');
+      assert.equal(r.queue, 'postgres');
       assert.equal(r.memory, 'shared');
       assert.equal(r.workers, 'docker');
       assert.equal(r.mcp, 'brokered');
@@ -85,7 +85,7 @@ describe('deployment-mode', () => {
       const a = resolveResourceMode('team');
       a.queue = 'mutated';
       const b = resolveResourceMode('team');
-      assert.equal(b.queue, 'git');
+      assert.equal(b.queue, 'postgres');
     });
   });
 
@@ -99,7 +99,7 @@ describe('deployment-mode', () => {
 
   it('produces a compact one-line topology summary for status displays', () => {
     const line = describeResourceLine('team');
-    assert.match(line, /queue:git/);
+    assert.match(line, /queue:postgres/);
     assert.match(line, /workers:docker/);
     assert.match(line, /telemetry:central/);
   });
