@@ -15,6 +15,7 @@ import {
   INTAKE_QUEUE_BACKEND_ENV_KEY,
 } from '../lib/intake/queue.mjs';
 import { DEPLOYMENT_MODE_ENV_KEY } from '../lib/deployment-mode.mjs';
+import { PostgresIntakeQueue } from '../lib/queue/pg-queue.mjs';
 
 let projectRoot;
 
@@ -50,5 +51,22 @@ describe('createIntakeQueue backend selection', () => {
     for (const method of ['enqueue', 'listPending', 'count', 'read', 'markProcessed', 'markSkipped']) {
       assert.equal(typeof q[method], 'function', `IntakeQueue must implement ${method}`);
     }
+  });
+
+  it('explicit postgres backend instantiates the registered Postgres queue provider', () => {
+    const sql = () => Promise.resolve([]);
+    sql.json = (value) => value;
+    const q = createIntakeQueue(projectRoot, { [INTAKE_QUEUE_BACKEND_ENV_KEY]: 'postgres' }, { sql });
+    assert.ok(q instanceof PostgresIntakeQueue);
+    assert.equal(q.tenantId, 'local');
+    assert.equal(typeof q.claim, 'function');
+    assert.equal(typeof q.heartbeat, 'function');
+  });
+
+  it('explicit postgres backend fails loud when no SQL client is configured', () => {
+    assert.throws(
+      () => createIntakeQueue(projectRoot, { [INTAKE_QUEUE_BACKEND_ENV_KEY]: 'postgres' }),
+      /requires DATABASE_URL or CONSTRUCT_DATABASE_URL/,
+    );
   });
 });

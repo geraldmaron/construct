@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-04T15:08:33.505Z",
+  "generatedAt": "2026-07-04T22:24:26.172Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 739,
-    "topLevelTestFiles": 333,
-    "nestedTestFiles": 406,
+    "testFiles": 741,
+    "topLevelTestFiles": 334,
+    "nestedTestFiles": 407,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 518,
-      "functional": 177,
+      "unit": 519,
+      "functional": 178,
       "visual": 9,
       "live-provider": 2,
       "integration": 33
     },
     "byCategory": {
-      "unit": 461,
-      "functional": 177,
+      "unit": 462,
+      "functional": 178,
       "visual": 9,
       "structural-guard": 17,
       "contract-subsystem": 40,
@@ -3183,6 +3183,14 @@
       "maintainerNotes": "tests/functional/perspective-differentiation.functional.test.mjs — regression"
     },
     {
+      "path": "tests/functional/pg-queue.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/pg-queue.functional.test.mjs — live Postgres queue semantics."
+    },
+    {
       "path": "tests/functional/post-merge-tracking.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -4793,6 +4801,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "persona-sections.test.mjs — Unit tests for lib/persona-sections.mjs."
+    },
+    {
+      "path": "tests/pg-queue.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/pg-queue.test.mjs — Postgres queue provider contract checks."
     },
     {
       "path": "tests/platforms-claude-md-parity.test.mjs",
