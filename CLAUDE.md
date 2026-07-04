@@ -69,7 +69,7 @@ This applies to every file construct touches and to all agents working in this p
 3. Run `construct sync` to regenerate platform files
 4. Verify with `construct list`
 5. Update documentation (see above)
-6. Run the full gate before commit: see `CONTRIBUTING.md` § "Before opening a PR" for the eight-check list. The release pipeline (`docs/operations/maintenance/release-and-deploy.md`) runs the same checks.
+6. Run the full gate before commit: see `CONTRIBUTING.md` § "Before opening a PR" for the nine-check list. The release pipeline (`docs/operations/maintenance/release-and-deploy.md`) runs the same checks.
 
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
