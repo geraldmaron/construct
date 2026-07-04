@@ -735,6 +735,36 @@ async function cmdDoctor() {
     add(`Models — check failed: ${err.message}`, false, true);
   }
 
+  // Opt-in deep credential check (construct-1yhp.5). Default doctor stays
+  // presence-first (construct-trxz: a default-on op:// probe would fight the
+  // prompt-storm mitigation) — `--probe-providers` performs the real network
+  // auth probe only for providers already presence-configured.
+  if (args.includes('--probe-providers')) {
+    try {
+      const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
+      const { probeProviderConnection } = await import('../lib/providers/connection-probe.mjs');
+      const { providers } = getProviderModelCatalog({ env: process.env });
+      const probeable = providers.filter((p) => p.configured && ['openrouter', 'anthropic', 'openai'].includes(p.id));
+      if (probeable.length === 0) {
+        add('Provider auth probe — no presence-configured openrouter/anthropic/openai provider to probe', true, true);
+      }
+      for (const p of probeable) {
+        const result = await probeProviderConnection(p.id, { env: process.env, cwd: process.cwd() });
+        if (result.ok) {
+          add(`Provider auth probe — ${p.id}: auth-verified (SERVING)`, true, true);
+        } else if (result.code === 'auth_error') {
+          add(`Provider auth probe — ${p.id}: ${result.status || '401/403'} (NOT_SERVING) — rotate or re-authenticate the key`, false, true);
+        } else if (result.code === 'missing_key') {
+          add(`Provider auth probe — ${p.id}: credential did not materialize (op:// ref unresolved) — check the ref or run \`op signin\``, false, true);
+        } else {
+          add(`Provider auth probe — ${p.id}: ${result.code}${result.status ? ` (${result.status})` : ''} (unverified)`, false, true);
+        }
+      }
+    } catch (err) {
+      add(`Provider auth probe failed: ${err.message}`, false, true);
+    }
+  }
+
   add('Node.js 20+ (recommended)', Number.parseInt(process.versions.node.split('.')[0], 10) >= 20);
   add('npm available', spawnSync(process.platform === 'win32' ? 'where' : 'zsh', process.platform === 'win32' ? ['npm'] : ['-lc', 'command -v npm'], { encoding: 'utf8', stdio: 'pipe' }).status === 0);
   const npmDevdir = process.env.npm_config_devdir ?? process.env.NPM_CONFIG_DEVDIR;
@@ -825,7 +855,9 @@ async function cmdDoctor() {
   try {
     const projectCfg = loadProjectConfig(process.cwd(), process.env);
     if (projectCfg.source === 'invalid') {
-      add(`construct.config.json valid (${projectCfg.errors.length} error${projectCfg.errors.length === 1 ? '' : 's'} — run \`construct config validate\`)`, false, false);
+      const detail = projectCfg.errors[0] || 'unknown error';
+      const more = projectCfg.errors.length > 1 ? ` (+${projectCfg.errors.length - 1} more)` : '';
+      add(`construct.config.json invalid: ${detail}${more} — defaults applied; run \`construct config validate\``, false, false);
     } else if (projectCfg.source === 'file') {
       add(`construct.config.json valid`, true, true);
     } else {
@@ -3822,14 +3854,45 @@ async function cmdOrchestrate(args) {
     let eventResult = null;
     try { eventResult = recordOrchestrationReadinessEvent(readiness, { homeDir: HOME }); } catch { /* telemetry must not break preflight */ }
 
+    // Opt-in deep credential check (construct-1yhp.5). Default preflight stays
+    // presence-first — `--deep` performs the real network auth probe, only for
+    // providers the presence-based catalog already marks configured.
+    let deepProbes = null;
+    if (rest.includes('--deep')) {
+      try {
+        const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
+        const { probeProviderConnection } = await import('../lib/providers/connection-probe.mjs');
+        const { providers } = getProviderModelCatalog({ env: process.env });
+        const probeable = providers.filter((p) => p.configured && ['openrouter', 'anthropic', 'openai'].includes(p.id));
+        deepProbes = [];
+        for (const p of probeable) {
+          const result = await probeProviderConnection(p.id, { env: process.env, cwd: process.cwd() });
+          deepProbes.push({ provider: p.id, ...result });
+        }
+      } catch (err) {
+        deepProbes = { error: err.message };
+      }
+    }
+
     if (wantsJson) {
-      println(JSON.stringify({ ...readiness, eventPath: eventResult?.path ?? null }, null, 2));
+      println(JSON.stringify({ ...readiness, eventPath: eventResult?.path ?? null, deepProbes }, null, 2));
       process.exit(readiness.attached ? 0 : 1);
     }
 
     println(summarizeOrchestrationReadiness(readiness));
     println(`Reason: ${readiness.reasonCode}`);
     println(`Next: ${readiness.nextStep}`);
+    const modelLine = ['reasoning', 'standard', 'fast']
+      .map((tier) => `${tier}=${readiness.modelResolved?.[tier] ? 'resolved' : 'unresolved'}`)
+      .join(' ');
+    println(`Execution: workerBackend=${readiness.workerBackend} webMode=${readiness.webMode} credentialMaterializable=${readiness.credentialMaterializable} (${modelLine})`);
+    if (Array.isArray(deepProbes)) {
+      if (deepProbes.length === 0) println('Deep provider probe: no presence-configured openrouter/anthropic/openai provider to probe.');
+      for (const probe of deepProbes) {
+        if (probe.ok) println(`Deep provider probe — ${probe.provider}: auth-verified (SERVING)`);
+        else println(`Deep provider probe — ${probe.provider}: ${probe.code}${probe.status ? ` (${probe.status})` : ''} (unverified/failing)`);
+      }
+    }
     println(`Diagnostic id: ${readiness.diagnosticBundle?.diagnosticId}`);
     process.exit(readiness.attached ? 0 : 1);
   }
@@ -5571,9 +5634,9 @@ async function cmdCreds(args) {
     try {
       const { getProviderModelCatalog } = await import('../lib/model-router.mjs');
       const { providers } = getProviderModelCatalog({ env: process.env });
-      println('\nLLM provider readiness (op:// references resolve at call time)\n');
+      println('\nLLM provider readiness (presence-only — op:// references resolve at call time; run `construct creds test <provider>` to verify auth)\n');
       for (const p of providers) {
-        println(`  ${p.configured ? '✓' : '·'} ${p.id}`);
+        println(`  ${p.configured ? '✓ configured (unverified ref)' : '· not configured'} ${p.id}`);
       }
       println(`\n  Set keys as values or op:// refs in ${getUserEnvPath(HOME)}; run \`construct creds login copilot\` for GitHub Copilot.`);
     } catch { /* readiness view is informational */ }

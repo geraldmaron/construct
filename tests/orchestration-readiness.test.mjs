@@ -19,6 +19,15 @@ import {
 } from '../lib/orchestration/readiness.mjs';
 import { doctorRoot } from '../lib/config/xdg.mjs';
 
+// A resolvable model on the env is required for a PASS verdict: attachment
+// alone does not imply orchestration_run would actually serve on this env.
+const RESOLVABLE_ENV = {
+  CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+  CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+  CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+  ANTHROPIC_API_KEY: 'sk-test-canary',
+};
+
 test('readiness passes when required orchestration tools are observed or gateway-reachable', () => {
   const readiness = buildOrchestrationReadiness({
     host: 'OpenCode',
@@ -26,7 +35,7 @@ test('readiness passes when required orchestration tools are observed or gateway
     observedTools: ['orchestration_policy', 'call', 'orchestration_readiness'],
     reachableTools: ['orchestration_run'],
     observationScope: 'host-session',
-  }, { env: {}, cwd: '/tmp/project' });
+  }, { env: RESOLVABLE_ENV, cwd: '/tmp/project' });
 
   assert.equal(readiness.verdict, 'pass');
   assert.equal(readiness.reasonCode, 'attached');
@@ -93,7 +102,7 @@ test('readiness telemetry writes a redacted local event', () => {
       sessionId: 'thread-1',
       observedTools: ['orchestration_policy'],
       reachableTools: ['orchestration_run'],
-    }, { env: {}, cwd: '/tmp/project' });
+    }, { env: RESOLVABLE_ENV, cwd: '/tmp/project' });
     const { path: eventPath, event } = recordOrchestrationReadinessEvent(readiness, { homeDir: home });
     assert.equal(event.reasonCode, 'attached');
     assert.ok(eventPath.startsWith(doctorRoot(home)));

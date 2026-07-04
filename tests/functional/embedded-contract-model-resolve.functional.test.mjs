@@ -47,6 +47,38 @@ function resolveModel(args, env = {}) {
   return JSON.parse(res.stdout);
 }
 
+// A machine-ambient CLI session (`gh auth status`, a running `ollama` daemon)
+// is a real credential source isProviderConfigured consults outside `env` —
+// so a case asserting no-credential config-error must also strip PATH access
+// to those binaries, or an authenticated developer machine falsely resolves
+// the credential-family-fallback this suite does not exercise.
+function resolveModelNoAmbientProviders(args, env = {}) {
+  const cwd = freshCwd();
+  const res = spawnSync(process.execPath, [BIN, 'models', 'resolve', '--json', ...args], {
+    cwd,
+    encoding: 'utf8',
+    timeout: 30_000,
+    env: {
+      ...process.env,
+      HOME: cwd,
+      USERPROFILE: cwd,
+      PATH: '',
+      ANTHROPIC_API_KEY: '',
+      OPENROUTER_API_KEY: '',
+      OPEN_ROUTER_API_KEY: '',
+      OPENAI_API_KEY: '',
+      GITHUB_TOKEN: '',
+      GH_TOKEN: '',
+      OLLAMA_BASE_URL: '',
+      OLLAMA_HOST: '',
+      LOCAL_LLM_BASE_URL: '',
+      ...env
+    },
+  });
+  assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
+  return JSON.parse(res.stdout);
+}
+
 test('models resolve --json returns a versioned envelope on the cli surface', () => {
   const env = resolveModel(['--host-model', 'anthropic/claude-sonnet-4-6']);
   assert.match(env.contractVersion, /^\d+\.\d+\.\d+$/);
@@ -71,23 +103,24 @@ test('models resolve --json honors the precedence chain', () => {
   );
 
   // Construct ships no implicit defaults (ADR-0027). An unconfigured tier
-  // returns a structured config-error rather than silently substituting an
-  // Anthropic default.
+  // with no credential anywhere returns a structured config-error rather
+  // than silently substituting an Anthropic default or a credential-derived
+  // family fallback (construct-uccl.2).
   assert.equal(
-    resolveModel(['--tier', 'fast']).data.resolutionSource,
+    resolveModelNoAmbientProviders(['--tier', 'fast']).data.resolutionSource,
     'config-error',
   );
 
   // Unrecognized host model without cross-provider permission → config-error.
   assert.equal(
-    resolveModel(['--host-model', 'mystery/x']).data.resolutionSource,
+    resolveModelNoAmbientProviders(['--host-model', 'mystery/x']).data.resolutionSource,
     'config-error',
   );
 
   // Cross-provider permission lets the resolver cascade to the tier default;
-  // without a configured tier that still ends in config-error.
+  // without a configured tier or credential that still ends in config-error.
   assert.equal(
-    resolveModel(['--host-model', 'mystery/x', '--allow-cross-provider']).data.resolutionSource,
+    resolveModelNoAmbientProviders(['--host-model', 'mystery/x', '--allow-cross-provider']).data.resolutionSource,
     'config-error',
   );
 });
