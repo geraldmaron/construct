@@ -3994,6 +3994,85 @@ async function cmdOrchestrate(args) {
   println('  preflight [--host H] [--json] [--no-probe] [--observed-tools=a,b] [--reachable-tools=a,b]');
 }
 
+async function cmdDb(args) {
+  const sub = args[0] || 'status';
+  const wantsJson = args.includes('--json');
+  const sql = createSqlClient(process.env);
+
+  async function finish(code = 0) {
+    await closeSqlClient(sql);
+    if (code) process.exit(code);
+  }
+
+  if (!sql) {
+    const result = {
+      status: 'unavailable',
+      reason: 'sql-client-unavailable',
+      message: 'Set DATABASE_URL or CONSTRUCT_DATABASE_URL and install optional dependency "postgres".',
+      migrations: [],
+    };
+    if (wantsJson) println(JSON.stringify(result, null, 2));
+    else {
+      println('Database unavailable.');
+      println(`Reason: ${result.message}`);
+    }
+    return finish(1);
+  }
+
+  try {
+    const { probeSqlClient } = await import('../lib/storage/backend.mjs');
+    const { getMigrationStatus, applyMigrations } = await import('../lib/db/migrate.mjs');
+    const probe = await probeSqlClient(sql);
+    if (probe.status !== 'available') {
+      const result = { status: probe.status, reason: 'postgres-unavailable', message: probe.message, migrations: [] };
+      if (wantsJson) println(JSON.stringify(result, null, 2));
+      else {
+        println('Database unavailable.');
+        println(`Reason: ${probe.message}`);
+      }
+      return finish(1);
+    }
+
+    if (sub === 'status') {
+      const migrations = await getMigrationStatus(sql);
+      const result = {
+        status: 'available',
+        pending: migrations.filter((m) => !m.applied).map((m) => m.id),
+        migrations: migrations.map((m) => ({ id: m.id, applied: m.applied })),
+      };
+      if (wantsJson) println(JSON.stringify(result, null, 2));
+      else {
+        println(`Database available. ${result.pending.length} pending migration${result.pending.length === 1 ? '' : 's'}.`);
+        for (const migration of result.migrations) println(`  ${migration.applied ? 'applied' : 'pending'} ${migration.id}`);
+      }
+      return finish(0);
+    }
+
+    if (sub === 'migrate') {
+      const result = await applyMigrations(sql);
+      const output = {
+        status: 'available',
+        applied: result.applied,
+        pending: result.status.filter((m) => !m.applied).map((m) => m.id),
+        migrations: result.status.map((m) => ({ id: m.id, applied: m.applied })),
+      };
+      if (wantsJson) println(JSON.stringify(output, null, 2));
+      else {
+        println(`Applied ${output.applied.length} migration${output.applied.length === 1 ? '' : 's'}.`);
+        for (const id of output.applied) println(`  ${id}`);
+      }
+      return finish(0);
+    }
+
+    errorln('Usage: construct db <status|migrate> [--json]');
+    return finish(1);
+  } catch (err) {
+    await closeSqlClient(sql);
+    errorln(err?.message || String(err));
+    process.exit(1);
+  }
+}
+
 async function cmdModels(args) {
   const envPath = getUserEnvPath(HOME);
   const sub = args[0] && !args[0].startsWith('-') ? args[0] : null;
@@ -6550,6 +6629,9 @@ const handlers = new Map([
   }],
   ['telemetry', async (args) => {
     return cmdTelemetryQuery(args);
+  }],
+  ['db', async (args) => {
+    return cmdDb(args);
   }],
   ['beads', async (args) => {
     const sub = args[0];

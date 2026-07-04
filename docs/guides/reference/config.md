@@ -93,7 +93,7 @@ Keys under `orchestration` in `construct.config.json`. Read at runtime by `lib/o
 | Key | Default | Description |
 |---|---|---|
 | `orchestration.workerBackend` | `inline` | `inline` (plan and prepare specialist tasks, no model call) \| `provider` (execute each task against the configured model). |
-| `orchestration.store` | `filesystem` | `filesystem` \| `sqlite` \| `postgres`: where run and task-graph state is persisted. |
+| `orchestration.store` | `filesystem` | `filesystem` \| `sqlite` \| `postgres`, or a registered `kind:"storage"` extension manifest whose `operations.runStore` maps to one of those implementations. Explicit missing backends degrade visibly to filesystem with `requestedBackend`/`degradedReason`; they are not silently ignored. |
 | `orchestration.chainOfThought` | `hidden` | Disclosure of a provider-executed specialist's reasoning. `hidden`: reasoning is not requested or shown. `surface`: reasoning is requested (Anthropic extended thinking / OpenRouter `reasoning`) and attached to each task, so `construct orchestrate run`/`status`, the `orchestration_run` MCP tool, and the dashboard event stream display it. `telemetry_only`: reasoning is requested and written to the run trace (`.cx/traces/*.jsonl` `worker.completed` metadata) but never displayed. Inline runs never produce reasoning. See ADR-0030. |
 
 ## Models (catalog visibility)
@@ -207,8 +207,14 @@ Env overrides: `CX_INBOX_DIRS` (colon-separated paths), `CX_INTAKE_MAX_DEPTH`.
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection string (e.g. `postgresql://user:pass@localhost:5432/construct`) |
-| `CONSTRUCT_DATABASE_URL` | Alias for `DATABASE_URL` |
+| `DATABASE_URL` | PostgreSQL connection string (e.g. `postgresql://user:pass@localhost:5432/construct`). When set with the optional `postgres` package installed, `construct db status` probes the connection and Postgres run-store selection can use it. |
+| `CONSTRUCT_DATABASE_URL` | Alias for `DATABASE_URL` used by Construct-specific launch environments. |
+| `CONSTRUCT_DB_MAX_CONNECTIONS` | Optional Postgres.js pool size override for Construct SQL clients; default `5`. |
+| `CONSTRUCT_DB_IDLE_TIMEOUT_SECONDS` | Optional Postgres.js idle timeout; default `20`. |
+| `CONSTRUCT_DB_CONNECT_TIMEOUT_SECONDS` | Optional Postgres.js connect timeout; default `10`. |
+| `CONSTRUCT_DB_SSL` | Optional Postgres.js SSL mode (`false`, `true`, `require`, `prefer`, `verify-full`). |
+
+Run `construct db migrate` to apply Construct-owned Postgres migrations idempotently; `construct db status --json` reports connection and migration state without printing credentials.
 
 ## Providers
 

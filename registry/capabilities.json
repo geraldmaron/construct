@@ -1,7 +1,7 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-07-03T19:44:21.266Z",
+    "generatedAt": "2026-07-04T15:03:23.514Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -25,6 +25,7 @@
       "examples:deck",
       "examples:distribution",
       "gates:audit",
+      "graph:gate",
       "learning:status",
       "lint:agents",
       "lint:comments",
@@ -43,7 +44,8 @@
       "test:functional",
       "test:unit",
       "test:visual",
-      "version"
+      "version",
+      "workflow-defs:check"
     ],
     "cliCommands": [
       {
@@ -163,6 +165,12 @@
       {
         "name": "customer",
         "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "db",
+        "category": "Models & Integrations",
         "core": false,
         "internal": false
       },
@@ -1086,7 +1094,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "evidence-ingest"
         ]
@@ -1206,7 +1217,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "prd-draft"
         ]
@@ -1247,7 +1261,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "architecture-review"
         ]
@@ -1287,7 +1304,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "proposal-review"
         ]
@@ -1328,7 +1348,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "risk-review"
         ]
@@ -1409,7 +1432,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "transcript-process"
         ]
@@ -1449,7 +1475,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "data-structure"
         ]
@@ -1489,7 +1518,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "memo-draft"
         ]
@@ -1528,7 +1560,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "triage"
         ]

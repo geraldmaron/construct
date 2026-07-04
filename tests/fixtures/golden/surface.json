@@ -393,6 +393,10 @@
       "core": true
     },
     {
+      "name": "status [--json]",
+      "core": false
+    },
+    {
       "name": "stop",
       "core": true
     },

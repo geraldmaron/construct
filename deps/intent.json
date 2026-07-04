@@ -180,6 +180,18 @@
     "disposition": "optional"
   },
   {
+    "id": "postgres",
+    "kind": "npm-optional",
+    "purpose": "Postgres.js tagged-template SQL client for optional shared run-store and migration-backed team-mode storage",
+    "owningWorkflow": "orchestration-run-store, db-migrations, team-mode-storage",
+    "modeRequirement": "team",
+    "healthCheck": "require('postgres') plus SELECT 1 when DATABASE_URL or CONSTRUCT_DATABASE_URL is configured",
+    "degradationBehavior": "graceful-skip",
+    "securityConcerns": "Connects to operator-configured database endpoints; database URLs may contain credentials and must be redacted from logs",
+    "removalCriteria": "Postgres-backed shared storage is removed or replaced by a different SQL client/adapter",
+    "disposition": "optional"
+  },
+  {
     "id": "zod",
     "kind": "npm-optional",
     "purpose": "Schema validation and type-safe parsing for MCP tool inputs, config files, and artifact manifests",
