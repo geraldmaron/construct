@@ -1,6 +1,8 @@
 /**
  * tests/security/audit-redaction.test.mjs — construct-9oi4.14.3 (LMCP-N3).
  *
+ * @owasp LLM02
+ *
  * Proves the redact-then-sign contract in lib/audit-trail.mjs: every seeded
  * secret shape (bearer token, ghp_, xoxb, sk-, op://, a known-resolved value,
  * and a custom pattern) is stripped from the record BEFORE it is written to

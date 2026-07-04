@@ -1,6 +1,8 @@
 /**
  * tests/security/ssrf.test.mjs — LMCP-N7 SSRF / DNS-rebinding egress guard.
  *
+ * @owasp LLM06
+ *
  * Covers the bead's acceptance criteria against lib/net-guard.mjs:
  *   1. egress to 169.254.x / 10.x / 127.x (and peers) is blocked by default
  *      with a named reason;

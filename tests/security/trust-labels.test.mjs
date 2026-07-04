@@ -2,6 +2,9 @@
  * tests/security/trust-labels.test.mjs — Trust/provenance labeling regression
  * suite for lib/security/*.
  *
+ * @owasp LLM01
+ * @secures research-synthesis, evidence-ingest
+ *
  * Promoted from the F08 red fixture (tests/audit/f08-prompt-injection/
  * untrusted-ingest-labeling.red.mjs) which proved the labeling primitives did
  * not exist. This GREEN suite proves they now do, verifying every contract
