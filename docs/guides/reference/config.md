@@ -176,10 +176,12 @@ Env overrides: `CX_INBOX_DIRS` (colon-separated paths), `CX_INTAKE_MAX_DEPTH`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `CONSTRUCT_INTAKE_QUEUE_BACKEND` |: | `filesystem` \| `postgres` override. Wins over `CONSTRUCT_DEPLOYMENT_MODE`. Useful for testing the Postgres adapter from solo mode (requires `DATABASE_URL`). |
+| `CONSTRUCT_INTAKE_QUEUE_BACKEND` | mode default | `filesystem` \| `git` \| `postgres` override. Wins over `CONSTRUCT_DEPLOYMENT_MODE`. `postgres` is explicit opt-in and requires `DATABASE_URL`/`CONSTRUCT_DATABASE_URL`; it does not silently downgrade. |
 | `CONSTRUCT_PROJECT_NAME` | basename of CWD | Project scope for Postgres-backed intake queue rows. |
-| `CONSTRUCT_TENANT_ID` |: | Tenant scope for enterprise mode. Filters `construct_intake_items` queries. |
-| `CONSTRUCT_DEBUG_INTAKE` |: | `1` to log daemon-side intake preparation failures to stderr (non-fatal otherwise). |
+| `CONSTRUCT_INTAKE_QUEUE_NAME` | `intake` | Logical queue name for the Postgres queue provider. |
+| `CONSTRUCT_QUEUE_LEASE_SECONDS` | `120` | Claim lease duration for the Postgres queue provider before an unhearted claim is reclaimable. |
+| `CONSTRUCT_TENANT_ID` | `local` outside enterprise | Tenant scope for enterprise mode and Postgres queue rows. |
+| `CONSTRUCT_DEBUG_INTAKE` | unset | `1` to log daemon-side intake preparation failures to stderr (non-fatal otherwise). |
 
 ## MCP broker
 
@@ -207,14 +209,14 @@ Env overrides: `CX_INBOX_DIRS` (colon-separated paths), `CX_INTAKE_MAX_DEPTH`.
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection string (e.g. `postgresql://user:pass@localhost:5432/construct`). When set with the optional `postgres` package installed, `construct db status` probes the connection and Postgres run-store selection can use it. |
+| `DATABASE_URL` | PostgreSQL connection string (e.g. `postgresql://user:pass@localhost:5432/construct`). When set with the optional `postgres` package installed, `construct db status` probes the connection and Postgres run-store/queue selection can use it. |
 | `CONSTRUCT_DATABASE_URL` | Alias for `DATABASE_URL` used by Construct-specific launch environments. |
 | `CONSTRUCT_DB_MAX_CONNECTIONS` | Optional Postgres.js pool size override for Construct SQL clients; default `5`. |
 | `CONSTRUCT_DB_IDLE_TIMEOUT_SECONDS` | Optional Postgres.js idle timeout; default `20`. |
 | `CONSTRUCT_DB_CONNECT_TIMEOUT_SECONDS` | Optional Postgres.js connect timeout; default `10`. |
 | `CONSTRUCT_DB_SSL` | Optional Postgres.js SSL mode (`false`, `true`, `require`, `prefer`, `verify-full`). |
 
-Run `construct db migrate` to apply Construct-owned Postgres migrations idempotently; `construct db status --json` reports connection and migration state without printing credentials.
+Run `construct db migrate` to apply Construct-owned Postgres migrations idempotently; `construct db status --json` reports connection and migration state without printing credentials. Queue tables are namespaced by `project`, `tenant_id`, and `queue_name`; claims use `FOR UPDATE SKIP LOCKED` plus lease expiry so a crashed worker's item becomes reclaimable.
 
 ## Providers
 
