@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-04T05:00:59.307Z",
+  "generatedAt": "2026-07-04T05:11:20.368Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 725,
+    "testFiles": 726,
     "topLevelTestFiles": 329,
-    "nestedTestFiles": 396,
+    "nestedTestFiles": 397,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 512,
+      "unit": 513,
       "functional": 171,
       "visual": 9,
       "live-provider": 2,
       "integration": 31
     },
     "byCategory": {
-      "unit": 455,
+      "unit": 456,
       "functional": 171,
       "visual": 9,
       "structural-guard": 17,
@@ -5289,6 +5289,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/security/destructive-gate.test.mjs — destructive-tool gate unit tests."
+    },
+    {
+      "path": "tests/security/ssrf.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/ssrf.test.mjs — LMCP-N7 SSRF / DNS-rebinding egress guard."
     },
     {
       "path": "tests/security/trust-labels.test.mjs",
