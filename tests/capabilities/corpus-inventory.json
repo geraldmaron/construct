@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-04T04:22:05.224Z",
+  "generatedAt": "2026-07-04T04:45:55.942Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 723,
+    "testFiles": 724,
     "topLevelTestFiles": 329,
-    "nestedTestFiles": 394,
+    "nestedTestFiles": 395,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 510,
+      "unit": 511,
       "functional": 171,
       "visual": 9,
       "live-provider": 2,
       "integration": 31
     },
     "byCategory": {
-      "unit": 454,
+      "unit": 455,
       "functional": 171,
       "visual": 9,
       "structural-guard": 17,
@@ -5233,6 +5233,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/schema-validation.test.mjs — Validate unified registry schema and test with fixtures."
+    },
+    {
+      "path": "tests/scripts/graph-gate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/scripts/graph-gate.test.mjs — LMCP-C8 self-test for the living-graph"
     },
     {
       "path": "tests/secret-audit-wiring.test.mjs",
