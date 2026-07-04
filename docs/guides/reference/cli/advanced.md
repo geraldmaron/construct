@@ -234,8 +234,19 @@ Provider management
 **Usage**
 
 ```bash
-construct provider list|test
+construct provider list|status|health|validate|test
 ```
+
+**Subcommands**
+
+- `list` — List all resolved providers with capabilities and health
+- `status [--json]` — Alias of list with breaker state and degradation columns
+- `health [id] [--json]` — Run health probes; exits non-zero if any probe fails
+- `validate <path|id> [--strict] [--json]` — Validate a manifest file or provider id against the B1 schema
+- `info <id>` — Show a single provider's metadata and config schema
+- `test <id>` — Run one provider's health probe; exits non-zero on failure
+- `plugins <add|remove> <id> [<package>] [--global]` — Register or remove a plugin provider override
+- `new <name> [--capabilities=...]` — Scaffold a new provider module
 
 ## construct role
 

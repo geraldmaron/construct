@@ -88,7 +88,7 @@ test('all contracts are ingested and referenced contracts are governed_by edges'
   // so assert on unique ids rather than the raw array length.
 
   const contractIds = new Set(byType('contract').map((n) => n.id));
-  assert.equal(contractIds.size, 42);
+  assert.equal(contractIds.size, 43);
   for (const e of edgesByRel('governed_by')) {
     assert.ok(e.from.startsWith('capability:'));
     assert.ok(contractIds.has(e.to), `governed_by points at a known contract: ${e.to}`);

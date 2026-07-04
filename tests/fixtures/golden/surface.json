@@ -13,10 +13,6 @@
       "core": false
     },
     {
-      "name": "auth:status",
-      "core": false
-    },
-    {
       "name": "beads",
       "core": false
     },

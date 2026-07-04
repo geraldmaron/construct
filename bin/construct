@@ -808,6 +808,17 @@ async function cmdDoctor() {
   fs.mkdirSync(perfReviewsDir, { recursive: true });
   add('performance-reviews/ ready', fs.existsSync(perfReviewsDir));
 
+  // Living-graph truth: doctor runs `graph validate` so workflow/manifest drift
+  // surfaces as a health check, not only via the standalone command (LMCP-C7).
+
+  try {
+    const { checkGraphValidateForDoctor } = await import('../lib/doctor/graph-validate.mjs');
+    const graphCheck = checkGraphValidateForDoctor({ rootDir: process.cwd() });
+    add(graphCheck.label, graphCheck.ok, graphCheck.warning);
+  } catch (err) {
+    add(`Graph validate check failed: ${err.message}`, false, true);
+  }
+
   // construct.config.json — optional today (config is permitted to be absent;
   // env vars + defaults still work). The check enforces that when the file
   // *is* present it parses and validates against the v1 schema.
@@ -5056,6 +5067,159 @@ async function cmdProvider(args) {
     return;
   }
 
+  if (sub === 'status') {
+    const jsonOutput = args.includes('--json');
+    const { getState } = await import('../lib/providers/circuit-breaker.mjs');
+    const { describeProviders } = await import('../lib/providers/registry.mjs');
+    const desc = await describeProviders({ rootDir: process.cwd(), env: process.env });
+
+    // Breaker state is registered under `provider:<id>` (see registry.mjs
+    // wrapWithBreaker); look up with that prefix or the row reads CLOSED for
+    // every provider regardless of actual state.
+    const rows = desc.summary.map((entry) => {
+      const breaker = getState(`provider:${entry.id}`);
+      const breakerState = breaker ? breaker.state : 'CLOSED';
+      const degraded = !entry.health.ok || breakerState !== 'CLOSED';
+      return {
+        id: entry.id,
+        enabled: entry.health.ok,
+        breaker: breakerState,
+        failures: breaker ? breaker.failures : 0,
+        degraded,
+        source: entry.source,
+      };
+    });
+
+    if (jsonOutput) {
+      println(JSON.stringify({ providers: rows, errors: desc.errors }, null, 2));
+      if (desc.errors.length) process.exit(1);
+      return;
+    }
+
+    println('Provider status');
+    println('════════════════');
+    println(`  ${'ID'.padEnd(24)} ${'ENABLED'.padEnd(9)} ${'BREAKER'.padEnd(18)} DEGRADED`);
+    for (const row of rows) {
+      const breakerCol = row.failures > 0 ? `${row.breaker} (${row.failures})` : row.breaker;
+      println(`  ${row.id.padEnd(24)} ${(row.enabled ? 'yes' : 'no').padEnd(9)} ${breakerCol.padEnd(18)} ${row.degraded ? 'yes' : 'no'}`);
+    }
+    if (desc.errors.length) {
+      println('');
+      errorln('Errors loading providers:');
+      for (const e of desc.errors) errorln(`  ✗ [${e.id}] ${e.error}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (sub === 'health') {
+    const jsonOutput = args.includes('--json');
+    const id = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
+    const { resolveProviders } = await import('../lib/providers/registry.mjs');
+    const { providers, errors } = await resolveProviders({ rootDir: process.cwd(), env: process.env });
+
+    if (id && !providers[id]) {
+      const loadError = errors.find((e) => e.id === id);
+      if (jsonOutput) {
+        println(JSON.stringify({ id, ok: false, error: loadError ? loadError.error : `unknown provider: ${id}` }, null, 2));
+      } else {
+        errorln(`Unknown provider: ${id}`);
+        if (loadError) errorln(loadError.error);
+      }
+      process.exit(1);
+    }
+
+    const targetIds = id ? [id] : Object.keys(providers);
+    const results = await Promise.all(
+      targetIds.map(async (pid) => {
+        try {
+          const health = await providers[pid].health({});
+          return { id: pid, ok: !!health.ok, detail: health.detail || null };
+        } catch (err) {
+          return { id: pid, ok: false, detail: err.message };
+        }
+      })
+    );
+
+    const anyFailed = results.some((r) => !r.ok) || errors.length > 0;
+
+    if (jsonOutput) {
+      println(JSON.stringify({ results, loadErrors: errors }, null, 2));
+      process.exit(anyFailed ? 1 : 0);
+    }
+
+    println('Provider health');
+    println('════════════════');
+    for (const r of results) {
+      println(`  ${r.ok ? '✓' : '✗'}  ${r.id.padEnd(24)} ${r.ok ? 'ok' : 'unhealthy'}`);
+      if (r.detail) println(`     ${r.detail}`);
+    }
+    if (errors.length) {
+      println('');
+      errorln('Errors loading providers:');
+      for (const e of errors) errorln(`  ✗ [${e.id}] ${e.error}`);
+    }
+    process.exit(anyFailed ? 1 : 0);
+  }
+
+  if (sub === 'validate') {
+    const jsonOutput = args.includes('--json');
+    const target = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
+    if (!target) { errorln('Usage: construct provider validate <path|id>'); process.exit(1); }
+
+    const { validateManifest } = await import('../lib/extensions/validate.mjs');
+    const { loadManifestsFromDir, mergeManifests, resolveManifestDirs } = await import('../lib/extensions/loader.mjs');
+
+    let manifest;
+    let filePath;
+    const looksLikePath = target.endsWith('.json') || target.includes('/') || target.startsWith('.');
+
+    if (looksLikePath) {
+      filePath = path.isAbsolute(target) ? target : path.resolve(process.cwd(), target);
+      if (!fs.existsSync(filePath)) {
+        const result = { valid: false, errors: [`${filePath}: file not found`] };
+        if (jsonOutput) { println(JSON.stringify(result, null, 2)); } else { errorln(result.errors[0]); }
+        process.exit(1);
+      }
+      try {
+        manifest = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      } catch (err) {
+        const result = { valid: false, errors: [`${filePath}: failed to parse JSON (${err.message})`] };
+        if (jsonOutput) { println(JSON.stringify(result, null, 2)); } else { errorln(result.errors[0]); }
+        process.exit(1);
+      }
+    } else {
+      const dirs = resolveManifestDirs({ rootDir: process.cwd(), homeDir: HOME });
+      const builtin = loadManifestsFromDir(dirs.builtin).manifests;
+      const user = loadManifestsFromDir(dirs.user).manifests;
+      const project = loadManifestsFromDir(dirs.project).manifests;
+      const merged = mergeManifests(builtin, user, project);
+      manifest = merged.find((m) => m.id === target);
+      if (!manifest) {
+        const result = { valid: false, errors: [`no manifest found for provider id '${target}'`] };
+        if (jsonOutput) { println(JSON.stringify(result, null, 2)); } else { errorln(result.errors[0]); }
+        process.exit(1);
+      }
+      filePath = manifest._filePath;
+    }
+
+    const strict = args.includes('--strict');
+    const result = validateManifest(manifest, { filePath, strict });
+
+    if (jsonOutput) {
+      println(JSON.stringify(result, null, 2));
+      process.exit(result.valid ? 0 : 1);
+    }
+
+    if (result.valid) {
+      println(`✓ ${filePath || target} is a valid manifest`);
+      process.exit(0);
+    }
+    errorln(`✗ ${filePath || target} failed validation:`);
+    for (const e of result.errors) errorln(`  ${e}`);
+    process.exit(1);
+  }
+
   if (sub === 'info') {
     const id = args[1];
     if (!id) { errorln('Usage: construct provider info <id>'); process.exit(1); }
@@ -5137,7 +5301,7 @@ async function cmdProvider(args) {
     return;
   }
 
-  errorln(`Unknown provider subcommand: ${sub}. Available: list, info, test, plugins, new`);
+  errorln(`Unknown provider subcommand: ${sub}. Available: list, status, health, validate, info, test, plugins, new`);
   process.exit(1);
 }
 
