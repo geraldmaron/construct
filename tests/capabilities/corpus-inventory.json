@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-04T05:26:43.599Z",
+  "generatedAt": "2026-07-04T06:26:58.398Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 727,
-    "topLevelTestFiles": 329,
-    "nestedTestFiles": 398,
+    "testFiles": 736,
+    "topLevelTestFiles": 331,
+    "nestedTestFiles": 405,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 514,
-      "functional": 171,
+      "unit": 516,
+      "functional": 176,
       "visual": 9,
       "live-provider": 2,
-      "integration": 31
+      "integration": 33
     },
     "byCategory": {
-      "unit": 457,
-      "functional": 171,
+      "unit": 459,
+      "functional": 176,
       "visual": 9,
       "structural-guard": 17,
       "contract-subsystem": 40,
       "live-provider": 2,
-      "integration": 22,
+      "integration": 24,
       "hook": 9
     }
   },
@@ -2269,6 +2269,14 @@
       "maintainerNotes": "cli-help-safety.functional.test.mjs — every command must respect --help."
     },
     {
+      "path": "tests/functional/config-invalid-surfaces-warning.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/config-invalid-surfaces-warning.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/construct-not-invoked-is-inert.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2437,6 +2445,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/doctor-no-repo-mutation.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/doctor-probe-providers.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/doctor-probe-providers.functional.test.mjs"
     },
     {
       "path": "tests/functional/doctor-warning-paths.functional.test.mjs",
@@ -2894,6 +2910,22 @@
       "maintainerNotes": "tests/functional/model-catalog-visibility.functional.test.mjs — project config"
     },
     {
+      "path": "tests/functional/model-registry-wiring.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/model-registry-wiring.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/model-resolver-credential-fallback.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/model-resolver-credential-fallback.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/model-resolver-no-defaults-chain.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3101,6 +3133,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/orchestration-mode-a.functional.test.mjs — end-to-end Mode-A runtime."
+    },
+    {
+      "path": "tests/functional/orchestration-readiness-executability.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/orchestration-readiness-executability.functional.test.mjs"
     },
     {
       "path": "tests/functional/orchestration-readiness.functional.test.mjs",
@@ -3737,6 +3777,22 @@
       "maintainerNotes": "tests/hooks/graph-impact-advisory.test.mjs — advisory PostToolUse hook behavior."
     },
     {
+      "path": "tests/hooks/mcp-health-check-warn-only.test.mjs",
+      "layer": "integration",
+      "category": "integration",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/hooks/mcp-health-check-warn-only.test.mjs — PreToolUse mcp-health-check hook"
+    },
+    {
+      "path": "tests/hooks/model-fallback-registry.test.mjs",
+      "layer": "integration",
+      "category": "integration",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/hooks/model-fallback-registry.test.mjs"
+    },
+    {
       "path": "tests/hooks/no-skip-vars.test.mjs",
       "layer": "integration",
       "category": "integration",
@@ -4363,6 +4419,14 @@
       "maintainerNotes": "tests/model-router-no-defaults.test.mjs — verify Construct ships with no"
     },
     {
+      "path": "tests/model-router-validated-wiring.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/model-router-validated-wiring.test.mjs"
+    },
+    {
       "path": "tests/model-router.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4457,6 +4521,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/oracle-artifact-gate.test.mjs — Oracle read-model artifact gate signals."
+    },
+    {
+      "path": "tests/oracle-capability-freshness.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/oracle-capability-freshness.test.mjs — capability-freshness gate"
     },
     {
       "path": "tests/oracle-gaps-detection.test.mjs",
