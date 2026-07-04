@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-04T06:26:58.398Z",
+  "generatedAt": "2026-07-04T15:08:33.505Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 736,
-    "topLevelTestFiles": 331,
-    "nestedTestFiles": 405,
+    "testFiles": 739,
+    "topLevelTestFiles": 333,
+    "nestedTestFiles": 406,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 516,
-      "functional": 176,
+      "unit": 518,
+      "functional": 177,
       "visual": 9,
       "live-provider": 2,
       "integration": 33
     },
     "byCategory": {
-      "unit": 459,
-      "functional": 176,
+      "unit": 461,
+      "functional": 177,
       "visual": 9,
       "structural-guard": 17,
       "contract-subsystem": 40,
@@ -1325,6 +1325,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/credential-precedence-parity.test.mjs"
+    },
+    {
+      "path": "tests/db-migrations.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/db-migrations.test.mjs — Postgres migration runner."
     },
     {
       "path": "tests/decisions-bindings.test.mjs",
@@ -3399,6 +3407,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/specialist-loop.functional.test.mjs — the governed specialist"
+    },
+    {
+      "path": "tests/functional/sql-client.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/sql-client.functional.test.mjs — G1 SQL client contract."
     },
     {
       "path": "tests/functional/sync-no-double-frontmatter.functional.test.mjs",
@@ -5569,6 +5585,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/storage-admin-status-probe.test.mjs — unit tests for getStorageStatus() health."
+    },
+    {
+      "path": "tests/storage-backend.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/storage-backend.test.mjs — optional Postgres SQL client resolver."
     },
     {
       "path": "tests/storage-file-lock.test.mjs",
