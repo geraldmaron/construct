@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- construct-tbiv: `.construct/run.mjs` now robustly resolves the project root via `CLAUDE_PROJECT_DIR` environment variable (when set by Claude Code) or `git rev-parse --show-toplevel` (fallback), eliminating MODULE_NOT_FOUND errors when hooks fire with CWD != project root. The fix preserves the relative command string in hooks (`node "${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs" hook <name>`) for cross-install portability while making the launcher resolution stable even when `CLAUDE_PROJECT_DIR` is unset and CWD drifts (e.g., during Bash commands, scratchpad I/O, or slash-command contexts).
+
 ### Decisions
 
 - LMCP Track B/P/F decisions (ADR-0060..0062, 2026-07-03): three Opus-authored decision beads closed with ADRs. ADR-0060 (LMCP-B10, `construct-9oi4.2.10`): provider filter DSL — a normalized portable core (`scope` container + closed predicate set `assignee`/`statusCategory`/`priority`/`label`/`updatedSince`) plus optional provider-native `nativeQuery` passthrough (conjunction, least-privilege), filter values in `.cx` validated against the manifest `configSchema`, provider-side pushdown + mandatory plane-side predicate (a filtered-out item never becomes an observation), per-poll `filterApplied` audit. ADR-0061 (LMCP-P1, `construct-9oi4.16.1`): embed capability as a `type:"embed"` workflow-manifest specialization reusing the D1 loader, pack-default/`.cx`-override config home, and a `runtime` selector (`in-process` zero-dependency default via the existing model path, optional `external` host, honest `skipped-with-reason` when absent). ADR-0062 (LMCP-F6, `construct-9oi4.6.5`): persona reasoning framework format — an ordered list of named reasoning moves (`{id, move, question, emits, cites}`) resolved through pack E1 precedence, whose ordered `emits` fingerprint makes specialist framing framework-attributable and testable. ADRs indexed in `docs/decisions/adr/README.md` and `meta.json`.
