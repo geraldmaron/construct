@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-03T23:30:32.218Z",
+  "generatedAt": "2026-07-04T00:11:52.338Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 710,
+    "testFiles": 714,
     "topLevelTestFiles": 328,
-    "nestedTestFiles": 382,
+    "nestedTestFiles": 386,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 498,
+      "unit": 502,
       "functional": 170,
       "visual": 9,
       "live-provider": 2,
       "integration": 31
     },
     "byCategory": {
-      "unit": 445,
+      "unit": 448,
       "functional": 170,
       "visual": 9,
       "structural-guard": 16,
-      "contract-subsystem": 37,
+      "contract-subsystem": 38,
       "live-provider": 2,
       "integration": 22,
       "hook": 9
@@ -1905,6 +1905,14 @@
       "maintainerNotes": "tests/engine-tokens.test.mjs — token counter wrapper tests."
     },
     {
+      "path": "tests/enterprise/audit-isolation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/enterprise/audit-isolation.test.mjs — LMCP-H5."
+    },
+    {
       "path": "tests/enterprise/tenant.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -3521,6 +3529,14 @@
       "maintainerNotes": "tests/graph/cli.test.mjs — `construct graph query --missing-tests` CLI wiring."
     },
     {
+      "path": "tests/graph/evidence.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/evidence.test.mjs — runtime-evidence edges: traces linked to workflow nodes (LMCP-C9)."
+    },
+    {
       "path": "tests/graph/gap-queries.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -4539,6 +4555,14 @@
       "maintainerNotes": "tests/orchestration-worker.test.mjs — provider worker backend."
     },
     {
+      "path": "tests/orchestration/execution-state.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration/execution-state.test.mjs — run-level executionState"
+    },
+    {
       "path": "tests/orchestration/persona-degraded.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4921,6 +4945,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/providers/directory-provider.test.mjs — directory provider tests."
+    },
+    {
+      "path": "tests/providers/feedback-provider.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/feedback-provider.test.mjs — feedback provider tests."
     },
     {
       "path": "tests/providers/op-discovery.test.mjs",

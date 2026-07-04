@@ -653,3 +653,108 @@ test('buildStatus detects MCP from Claude marketplace plugins', async () => {
   assert.equal(linear.status, 'configured');
   assert.match(linear.message, /Claude Code/);
 });
+
+// ── recentRunExecutionStates: prepared vs executed recent runs (LMCP-F4) ────
+
+function writeOrchestrationRun(rootDir, run) {
+  const dir = path.join(rootDir, '.cx', 'runtime', 'orchestration', 'runs');
+  writeJson(path.join(dir, `${run.runId}.json`), run);
+}
+
+test('construct status distinguishes prepared vs executed recent runs', async () => {
+  const { rootDir, homeDir } = await createFixture();
+
+  writeOrchestrationRun(rootDir, {
+    runId: 'run-prepared-1',
+    status: 'completed-prepare-only',
+    executionState: 'prepared',
+    createdAt: '2026-07-01T00:00:00.000Z',
+    tasks: [{ id: 't1', role: 'cx-engineer', status: 'prepared', executionState: 'prepared' }],
+  });
+  writeOrchestrationRun(rootDir, {
+    runId: 'run-executed-1',
+    status: 'completed',
+    executionState: 'executed',
+    createdAt: '2026-07-02T00:00:00.000Z',
+    tasks: [{ id: 't1', role: 'cx-engineer', status: 'done', executionState: 'executed' }],
+  });
+  writeOrchestrationRun(rootDir, {
+    runId: 'run-failed-1',
+    status: 'completed-with-failures',
+    executionState: 'failed',
+    createdAt: '2026-07-03T00:00:00.000Z',
+    tasks: [{ id: 't1', role: 'cx-engineer', status: 'failed', executionState: 'failed' }],
+  });
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.recentRunExecutionStates.total, 3);
+  assert.equal(status.recentRunExecutionStates.byState.prepared, 1);
+  assert.equal(status.recentRunExecutionStates.byState.executed, 1);
+  assert.equal(status.recentRunExecutionStates.byState.failed, 1);
+  assert.equal(status.recentRunExecutionStates.byState['degraded-executed'], 0);
+
+  // Newest-first ordering by createdAt.
+  assert.deepEqual(
+    status.recentRunExecutionStates.recent.map((r) => r.runId),
+    ['run-failed-1', 'run-executed-1', 'run-prepared-1'],
+  );
+  const preparedEntry = status.recentRunExecutionStates.recent.find((r) => r.runId === 'run-prepared-1');
+  const executedEntry = status.recentRunExecutionStates.recent.find((r) => r.runId === 'run-executed-1');
+  assert.equal(preparedEntry.executionState, 'prepared');
+  assert.equal(executedEntry.executionState, 'executed');
+
+  const report = formatStatusReport(status);
+  assert.match(report, /Recent runs: 3 total/);
+  assert.match(report, /prepared 1/);
+  assert.match(report, /executed 1/);
+  assert.match(report, /failed 1/);
+  assert.match(report, /run-prepared-1: executionState=prepared/);
+  assert.match(report, /run-executed-1: executionState=executed/);
+});
+
+test('recentRunExecutionStates buckets a pre-F4 legacy run (no executionState field) as unknown', async () => {
+  const { rootDir, homeDir } = await createFixture();
+
+  writeOrchestrationRun(rootDir, {
+    runId: 'run-legacy-1',
+    status: 'completed',
+    createdAt: '2026-07-01T00:00:00.000Z',
+    tasks: [{ id: 't1', role: 'cx-engineer', status: 'done' }],
+  });
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.recentRunExecutionStates.total, 1);
+  assert.equal(status.recentRunExecutionStates.byState.unknown, 1);
+  assert.equal(status.recentRunExecutionStates.recent[0].executionState, 'unknown');
+});
+
+test('recentRunExecutionStates reports zero when no orchestration runs exist', async () => {
+  const { rootDir, homeDir } = await createFixture();
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.recentRunExecutionStates.total, 0);
+  assert.deepEqual(status.recentRunExecutionStates.recent, []);
+  const report = formatStatusReport(status);
+  assert.doesNotMatch(report, /Recent runs:/);
+});
