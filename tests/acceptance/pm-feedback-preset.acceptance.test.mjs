@@ -2,6 +2,8 @@
  * tests/acceptance/pm-feedback-preset.acceptance.test.mjs — golden-fixture
  * acceptance for the `pm-feedback` embed preset (LMCP-P5).
  *
+ * @embed pm-feedback
+ *
  * Drives the real embed capability tick (runCapabilityTick) with an injected
  * deterministic pm-feedback reasoningExecutor over a seeded snapshot: real
  * B14 feedback-provider items read from a tmpdir drop-directory (so every

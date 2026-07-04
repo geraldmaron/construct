@@ -2,6 +2,8 @@
  * tests/acceptance/tpm-preset.acceptance.test.mjs — golden-fixture acceptance
  * for the `operations` embed preset (the flagship TPM scenario, LMCP-P3).
  *
+ * @embed operations
+ *
  * Drives the real embed capability tick (runCapabilityTick) with an injected
  * deterministic TPM reasoningExecutor over a seeded snapshot built from the J1
  * fake providers (Jira + Confluence + Slack). Asserts the four acceptance

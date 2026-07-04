@@ -38,6 +38,7 @@ Existing node types are preserved. The following are added:
 | `doc` | A documentation file (`docs/**`) tracked for link integrity |
 | `specialist` | A specialist persona definition |
 | `runtime-evidence` | A telemetry or run-log artifact that evidences system behavior |
+| `embed` | An embed-capability preset (a `type:"embed"` manifest, ADR-0061); keyed by manifest `id`. Seeded from embed manifests (LMCP-P6) with `uses`→provider, `owned_by`→specialist, `governed_by`→contract edges, and an inbound `validates` edge from its `@embed`-tagged acceptance test |
 
 ### Extended edge taxonomy
 
@@ -72,6 +73,8 @@ The graph is rebuilt automatically in three situations:
 | Missing `requires` edge for a workflow's declared providers | warning | error |
 | Provider node present but no matching manifest on disk | warning | error |
 | `doc` node references a file that does not exist | warning | error |
+| `embed` binding target (`uses`/`owned_by`/`governed_by`) has no node (LMCP-P6) | warning | error |
+| `embed` preset has zero validating tests (LMCP-P6) | warning | error |
 | `degraded_by` edge target is absent | info | warning |
 | `evidenced_by` edge with no corresponding run log | info | info |
 
