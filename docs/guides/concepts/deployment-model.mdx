@@ -67,7 +67,7 @@ For individual work. State lives in the user's repo and `~/.construct/`. Queue i
 
 For shared usage by a development team. The intake queue is Postgres-backed (with row-locked worker claims). Memory is shared across the team. Workers run in a Docker pool, isolated from the host. Telemetry is centralized via a Langfuse-compatible backend, a generic HTTP ingestion endpoint, or an OpenTelemetry collector. MCP calls go through a broker that applies role-based policy — brokered MCP dispatch is staged/experimental and not yet active in built-in deployments (tracked: construct-9oi4.10).
 
-A reference compose topology ships at [`docker-compose.team.yml`](https://github.com/geraldmaron/construct/blob/main/docker-compose.team.yml): Postgres + a worker pool sized via `CONSTRUCT_WORKER_REPLICAS`, with the worker image built from [`Dockerfile.worker`](https://github.com/geraldmaron/construct/blob/main/Dockerfile.worker). The worker entrypoint (`lib/worker/entrypoint.mjs`) claims pending intake items via `PostgresIntakeQueue.claim()` (`FOR UPDATE SKIP LOCKED`), runs each through `runJob` with `allowedPaths: [/work]` so the bind-mounted workspace is the only writable surface, attaches evidence to the originating task graph node when named in the packet, and exits when the queue stays empty for `--idle-timeout-seconds` (default 300s) so a scheduler can scale workers to zero.
+A reference compose topology ships at [`docker-compose.team.yml`](https://github.com/geraldmaron/construct/blob/main/docker-compose.team.yml): Postgres + a worker pool sized via `CONSTRUCT_WORKER_REPLICAS`, with the worker image built from [`Dockerfile.worker`](https://github.com/geraldmaron/construct/blob/main/Dockerfile.worker). The worker entrypoint (`lib/worker/entrypoint.mjs`) claims pending intake items via `PostgresIntakeQueue.claim()` (`FOR UPDATE SKIP LOCKED`), runs each through `runJob` with `allowedPaths: [/work]` so the bind-mounted workspace is the only writable surface, attaches evidence to the originating task graph node when named in the packet, and exits when the queue stays empty for `--idle-timeout-seconds` (default 300s) so a scheduler can scale workers to zero. Local verification lives at [`dev/team-harness/verify.sh`](https://github.com/geraldmaron/construct/blob/main/dev/team-harness/verify.sh); it expects `DATABASE_URL`/`CONSTRUCT_DATABASE_URL`, applies migrations, reads worker/queue health, and runs the focused team-mode tests.
 
 ### Enterprise
 
@@ -136,7 +136,7 @@ construct status
 construct doctor
 ```
 
-`construct config` prints the resolved deployment mode and resource topology. `construct status` shows them inline at the top of the health report. `construct doctor` reports degraded vs healthy across every cloud/local boundary; anything red is a real problem, anything yellow is degraded-but-working with a one-line explanation.
+`construct config` prints the resolved deployment mode and resource topology. `construct status` shows them inline at the top of the health report and, in team/enterprise mode, includes queue depth, dead-letter depth, active workers, and stale workers. `construct doctor` reports degraded vs healthy across every cloud/local boundary; missing Postgres in team/enterprise mode is red, while DLQ/stale-worker findings are yellow degraded states with a one-line explanation.
 
 ```bash
 CONSTRUCT_EMBEDDING_MODEL=hashing construct evals retrieval
