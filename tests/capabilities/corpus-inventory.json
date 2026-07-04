@@ -1,26 +1,26 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-04T03:45:30.374Z",
+  "generatedAt": "2026-07-04T04:22:05.224Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 718,
+    "testFiles": 723,
     "topLevelTestFiles": 329,
-    "nestedTestFiles": 389,
+    "nestedTestFiles": 394,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 506,
-      "functional": 170,
+      "unit": 510,
+      "functional": 171,
       "visual": 9,
       "live-provider": 2,
       "integration": 31
     },
     "byCategory": {
-      "unit": 451,
-      "functional": 170,
+      "unit": 454,
+      "functional": 171,
       "visual": 9,
       "structural-guard": 17,
-      "contract-subsystem": 38,
+      "contract-subsystem": 39,
       "live-provider": 2,
       "integration": 22,
       "hook": 9
@@ -3553,6 +3553,14 @@
       "maintainerNotes": "tests/graph/evidence.test.mjs — runtime-evidence edges: traces linked to workflow nodes (LMCP-C9)."
     },
     {
+      "path": "tests/graph/explain.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/explain.test.mjs — `construct graph explain <workflow>` (LMCP-C3)."
+    },
+    {
       "path": "tests/graph/gap-queries.test.mjs",
       "layer": "unit",
       "category": "contract-subsystem",
@@ -4281,6 +4289,14 @@
       "maintainerNotes": "tests/mcp/provider-write-tool.test.mjs — LMCP-I7 provider_write MCP tool."
     },
     {
+      "path": "tests/mcp/transport-separation.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/transport-separation.test.mjs — LMCP-I5 transport separation."
+    },
+    {
       "path": "tests/memory-stats.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -4977,6 +4993,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/providers/op-discovery.test.mjs — op CLI discovery tiers."
+    },
+    {
+      "path": "tests/providers/provider-add-configure.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/provider-add-configure.test.mjs — LMCP-B12 CLI tests."
     },
     {
       "path": "tests/providers/provider-commands.test.mjs",
@@ -5821,6 +5845,14 @@
       "maintainerNotes": "tests/writes/confluence.functional.test.mjs — Confluence writes routed"
     },
     {
+      "path": "tests/writes/control-plane-execution.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/control-plane-execution.functional.test.mjs — LMCP-J6"
+    },
+    {
       "path": "tests/writes/envelope.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5835,6 +5867,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/writes/github.functional.test.mjs — GitHub writes routed through the"
+    },
+    {
+      "path": "tests/writes/import-guard.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/writes/import-guard.test.mjs — LMCP-J6 guard: no orchestration or"
     },
     {
       "path": "tests/writes/jira.functional.test.mjs",

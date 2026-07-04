@@ -234,17 +234,19 @@ Provider management
 **Usage**
 
 ```bash
-construct provider list|status|health|validate|test
+construct provider list|status|health|validate|test|add|configure
 ```
 
 **Subcommands**
 
 - `list` — List all resolved providers with capabilities and health
-- `status [--json]` — Alias of list with breaker state and degradation columns
+- `status [--json]` — Alias of list with breaker state, degradation, and active filter columns
 - `health [id] [--json]` — Run health probes; exits non-zero if any probe fails
 - `validate <path|id> [--strict] [--json]` — Validate a manifest file or provider id against the B1 schema
 - `info <id>` — Show a single provider's metadata and config schema
 - `test <id>` — Run one provider's health probe; exits non-zero on failure
+- `add <id> [--json]` — Scaffold instance config from the provider's configSchema defaults, persisted to .cx/providers/<id>.json
+- `configure <id> [--key.path value ...] [--json]` — Merge + validate instance config (incl. ADR-0060 filter block) against configSchema; rejects with the schema path on failure
 - `plugins <add|remove> <id> [<package>] [--global]` — Register or remove a plugin provider override
 - `new <name> [--capabilities=...]` — Scaffold a new provider module
 
