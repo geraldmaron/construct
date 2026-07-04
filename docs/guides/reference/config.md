@@ -118,6 +118,19 @@ construct models list
 construct models list --json
 ```
 
+### Tier-default registry (`specialists/org/models.json`)
+
+Operators may bind tier defaults in an optional `specialists/org/models.json` under the toolkit dir (`CX_TOOLKIT_DIR`, else the installed package root). Each of `reasoning`/`standard`/`fast` is a bare model-id string or `{ "primary": id, "fallback": [ids] }` (resolution uses the primary). The embedded resolver (`resolveEmbeddedModel`) reads it automatically — no config flag.
+
+Resolution precedence for a tier, most-specific first:
+
+1. `CX_MODEL_<TIER>` / `CONSTRUCT_MODEL_<TIER>` env pin — **always wins**.
+2. `specialists/org/models.json` registry tier — fills only tiers no env pin sets (`resolutionSource: tier-default`, `tierSource: registry`).
+3. Credential-derived provider-family default — see AP3 credential fallback.
+4. `config-error` — no implicit defaults (ADR-0027): an unconfigured machine degrades honestly rather than resolving a model whose credentials may be absent.
+
+Construct ships **no active** `models.json`; copy the shipped `specialists/org/models.json.example` to activate it.
+
 Deprecated: `CONSTRUCT_MODEL_*` env vars — use `CX_MODEL_*` (alias still honored for one release cycle).
 
 Typed integration selectors under `sources.targets`. Consumed by embed auto-discovery (when `embed.yaml` is absent), `provider_fetch`, and session-start source hints. Legacy env lists merge additively; an explicit `embed.yaml` in the XDG config dir remains a complete override.
