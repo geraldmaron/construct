@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-04T22:55:58.660Z",
+  "generatedAt": "2026-07-04T23:14:53.995Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 742,
-    "topLevelTestFiles": 335,
+    "testFiles": 744,
+    "topLevelTestFiles": 337,
     "nestedTestFiles": 407,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 520,
+      "unit": 522,
       "functional": 178,
       "visual": 9,
       "live-provider": 2,
       "integration": 33
     },
     "byCategory": {
-      "unit": 463,
+      "unit": 465,
       "functional": 178,
       "visual": 9,
       "structural-guard": 17,
@@ -4803,6 +4803,14 @@
       "maintainerNotes": "persona-sections.test.mjs — Unit tests for lib/persona-sections.mjs."
     },
     {
+      "path": "tests/pg-queue-reliability.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/pg-queue-reliability.test.mjs — retry, DLQ, cancellation, idempotency contracts."
+    },
+    {
       "path": "tests/pg-queue.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5689,6 +5697,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/task-graph.test.mjs — task graph schema + generation + persistence."
+    },
+    {
+      "path": "tests/team-health.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/team-health.test.mjs — team queue/worker health read model."
     },
     {
       "path": "tests/teams.test.mjs",

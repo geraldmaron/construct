@@ -1321,6 +1321,21 @@ async function cmdDoctor() {
     add(`Mode capabilities check failed: ${err.message}`, false, true);
   }
 
+  try {
+    const currentMode = getDeploymentMode(process.env);
+    if (currentMode === 'team' || currentMode === 'enterprise') {
+      const { summarizeTeamHealth } = await import('../lib/team/health.mjs');
+      const teamHealth = await summarizeTeamHealth({ rootDir: process.cwd(), env: process.env });
+      add(`Team queue/worker health: ${teamHealth.summary}`, teamHealth.status !== 'unavailable');
+      if (teamHealth.status !== 'unavailable') {
+        add(`Team queue DLQ depth: ${teamHealth.deadLetter}`, teamHealth.deadLetter === 0, teamHealth.deadLetter > 0);
+        add(`Team stale workers: ${teamHealth.staleWorkers}`, teamHealth.staleWorkers === 0, teamHealth.staleWorkers > 0);
+      }
+    }
+  } catch (err) {
+    add(`Team health check failed: ${err.message}`, false);
+  }
+
   // Reconciliation drift (ADR-0027). Any task reporting needsRepair is surfaced
   // with its summary and the exact `construct sync --reconcile=<id>` command.
   // Auto tasks that still show drift (e.g. a run with --no-reconcile) and all
