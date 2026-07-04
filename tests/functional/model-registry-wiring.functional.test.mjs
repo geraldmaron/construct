@@ -47,9 +47,15 @@ function toolkitWith(models) {
   return dir;
 }
 
+// A machine-ambient credential (a provider API key in the environment, an
+// authenticated `gh` CLI, a running `ollama` daemon) is a real source the
+// resolver consults, so the no-registry/no-pin case would otherwise resolve
+// the uccl.2 credential-family-fallback instead of config-error. Every case
+// runs against a scrubbed baseline (empty PATH via process.execPath, all
+// provider + CX_MODEL_* keys blanked) so the assertions isolate the registry.
 function resolveModel(args, env = {}) {
   const cwd = freshDir('cx-registry-cwd-');
-  const res = spawnSync('node', [BIN, 'models', 'resolve', '--json', ...args], {
+  const res = spawnSync(process.execPath, [BIN, 'models', 'resolve', '--json', ...args], {
     cwd,
     encoding: 'utf8',
     timeout: 30_000,
@@ -57,6 +63,16 @@ function resolveModel(args, env = {}) {
       ...process.env,
       HOME: cwd,
       USERPROFILE: cwd,
+      PATH: '',
+      ANTHROPIC_API_KEY: '',
+      OPENROUTER_API_KEY: '',
+      OPEN_ROUTER_API_KEY: '',
+      OPENAI_API_KEY: '',
+      GITHUB_TOKEN: '',
+      GH_TOKEN: '',
+      OLLAMA_BASE_URL: '',
+      OLLAMA_HOST: '',
+      LOCAL_LLM_BASE_URL: '',
       CX_MODEL_REASONING: '',
       CX_MODEL_STANDARD: '',
       CX_MODEL_FAST: '',
