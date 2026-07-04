@@ -6731,7 +6731,7 @@ const handlers = new Map([
    ['graph', async (args) => {
      const DEPENDENCY_GRAPH_SUBCOMMANDS = new Set([
        'build', 'stat', 'query', 'validate', 'impacted',
-       'missing-tests', 'missing-docs', 'stale', 'dependencies', 'providers', 'surfaces', 'explain',
+       'missing-tests', 'missing-docs', 'stale', 'dependencies', 'providers', 'surfaces', 'explain', 'owasp',
      ]);
      if (DEPENDENCY_GRAPH_SUBCOMMANDS.has(args[0])) {
        const { runGraphCli } = await import('../lib/graph/cli.mjs');

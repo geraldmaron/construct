@@ -2,6 +2,9 @@
  * tests/security/vector-poisoning.test.mjs — Vector-store poisoning defenses
  * for the retrieval/recall path (construct-9oi4.14.4, LMCP-N4).
  *
+ * @owasp LLM04, LLM08
+ * @secures research-synthesis
+ *
  * N1 (construct-9oi4.14.1, lib/security/trust.mjs) stamps ingested content
  * with a trust label but the retrieval path itself had no defense against a
  * poisoned embedding dominating recall by cosine similarity alone. This

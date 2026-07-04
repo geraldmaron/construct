@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-04T05:11:20.368Z",
+  "generatedAt": "2026-07-04T05:26:43.599Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 726,
+    "testFiles": 727,
     "topLevelTestFiles": 329,
-    "nestedTestFiles": 397,
+    "nestedTestFiles": 398,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 513,
+      "unit": 514,
       "functional": 171,
       "visual": 9,
       "live-provider": 2,
       "integration": 31
     },
     "byCategory": {
-      "unit": 456,
+      "unit": 457,
       "functional": 171,
       "visual": 9,
       "structural-guard": 17,
@@ -5289,6 +5289,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/security/destructive-gate.test.mjs — destructive-tool gate unit tests."
+    },
+    {
+      "path": "tests/security/owasp-coverage.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/owasp-coverage.test.mjs — LMCP-N8 security corpus wired into"
     },
     {
       "path": "tests/security/ssrf.test.mjs",

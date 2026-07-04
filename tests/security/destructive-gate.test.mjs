@@ -1,5 +1,7 @@
 /**
  * tests/security/destructive-gate.test.mjs — destructive-tool gate unit tests.
+ *
+ * @owasp LLM06
  */
 
 import assert from 'node:assert/strict';

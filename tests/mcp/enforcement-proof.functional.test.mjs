@@ -1,6 +1,9 @@
 /**
  * tests/mcp/enforcement-proof.functional.test.mjs — LMCP-I4.
  *
+ * @owasp LLM06
+ * @secures operations, operations-triage
+ *
  * Proof tests for the two core enforcement properties: (1) denied calls never
  * execute their side effects, and (2) approval-required calls pause execution
  * until approved, then execute exactly once.

@@ -2,6 +2,9 @@
  * tests/audit/f08-prompt-injection/adversarial-corpus.red.mjs —
  * F08 reusable injection corpus + web-search boundary trust-label proof.
  *
+ * @owasp LLM01
+ * @secures operations, pm-feedback
+ *
  * RED fixture (must FAIL against current code). Exports INJECTION_CORPUS, a small
  * reusable set of direct- and indirect-injection strings, and drives each one
  * through the real governed web-search boundary (lib/mcp/tools/web-search.mjs) as
