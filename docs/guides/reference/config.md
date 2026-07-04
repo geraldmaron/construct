@@ -176,12 +176,19 @@ Env overrides: `CX_INBOX_DIRS` (colon-separated paths), `CX_INTAKE_MAX_DEPTH`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `CONSTRUCT_INTAKE_QUEUE_BACKEND` | mode default | `filesystem` \| `git` \| `postgres` override. Wins over `CONSTRUCT_DEPLOYMENT_MODE`. `postgres` is explicit opt-in and requires `DATABASE_URL`/`CONSTRUCT_DATABASE_URL`; it does not silently downgrade. |
+| `CONSTRUCT_INTAKE_QUEUE_BACKEND` | mode default | `filesystem` \| `git` \| `postgres` override. Wins over `CONSTRUCT_DEPLOYMENT_MODE`. Mode defaults are `filesystem` for solo and `postgres` for team/enterprise. `postgres` requires `DATABASE_URL`/`CONSTRUCT_DATABASE_URL`; team/enterprise only fall back to git when `CONSTRUCT_DEGRADED_OK=postgres-queue` is explicitly set. |
 | `CONSTRUCT_PROJECT_NAME` | basename of CWD | Project scope for Postgres-backed intake queue rows. |
 | `CONSTRUCT_INTAKE_QUEUE_NAME` | `intake` | Logical queue name for the Postgres queue provider. |
 | `CONSTRUCT_QUEUE_LEASE_SECONDS` | `120` | Claim lease duration for the Postgres queue provider before an unhearted claim is reclaimable. |
 | `CONSTRUCT_TENANT_ID` | `local` outside enterprise | Tenant scope for enterprise mode and Postgres queue rows. |
 | `CONSTRUCT_DEBUG_INTAKE` | unset | `1` to log daemon-side intake preparation failures to stderr (non-fatal otherwise). |
+
+## Worker runtime
+
+| Variable | Default | Description |
+|---|---|---|
+| `CONSTRUCT_WORKER_ID` | `<hostname>:<pid>` | Stable worker identity stored in the Postgres worker registry. |
+| `CONSTRUCT_WORKER_TTL_SECONDS` | `120` | Worker heartbeat TTL before `construct workers list` reports the worker as stale. |
 
 ## MCP broker
 

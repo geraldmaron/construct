@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-04T22:24:26.172Z",
+  "generatedAt": "2026-07-04T22:55:58.660Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 741,
-    "topLevelTestFiles": 334,
+    "testFiles": 742,
+    "topLevelTestFiles": 335,
     "nestedTestFiles": 407,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 519,
+      "unit": 520,
       "functional": 178,
       "visual": 9,
       "live-provider": 2,
       "integration": 33
     },
     "byCategory": {
-      "unit": 462,
+      "unit": 463,
       "functional": 178,
       "visual": 9,
       "structural-guard": 17,
@@ -5899,6 +5899,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/worker-run-mcp.test.mjs"
+    },
+    {
+      "path": "tests/worker-runtime.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/worker-runtime.test.mjs — worker identity and heartbeat registry."
     },
     {
       "path": "tests/worker.test.mjs",

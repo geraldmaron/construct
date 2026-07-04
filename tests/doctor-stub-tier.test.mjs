@@ -144,9 +144,9 @@ test('classifyCapability (async): solo mode filesystem-queue → implemented', a
   assert.equal(result, 'implemented');
 });
 
-test('classifyCapability (async): team mode postgres-queue → stub', async () => {
+test('classifyCapability (async): team mode postgres-queue → implemented', async () => {
   const result = await classifyCapability('postgres-queue', 'team');
-  assert.equal(result, 'stub');
+  assert.equal(result, 'implemented');
 });
 
 test('classifyCapability (async): team mode docker-workers → not-implemented', async () => {

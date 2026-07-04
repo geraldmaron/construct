@@ -81,7 +81,7 @@ Three modes are defined. Only `solo` is fully implemented today.
 
 **`solo`** (default and fully supported) — runs entirely on the local machine. Filesystem task queue, local repo state, embedded LanceDB vector store, direct MCP dispatch, local JSONL traces. If every cloud service goes down, you still work from `plan.md`, `.cx/context.md`, beads, git, and the local vector index.
 
-**`team`** (planned — partially implemented) — the architecture is defined: shared run storage, optional Postgres queue with row-locked worker claims, shared memory store, Docker worker pool, centralized telemetry, MCP through a broker. The SQL client, migrations, Postgres run store, and explicit Postgres queue provider now exist, but team mode still defaults to the git queue until the remaining worker/runtime beads land. Do not run `team` mode expecting full distributed execution yet.
+**`team`** (planned — partially implemented) — the architecture is defined: shared run storage, Postgres queue with row-locked worker claims, shared memory store, Docker worker pool, centralized telemetry, MCP through a broker. The SQL client, migrations, Postgres run store, Postgres queue provider, team-mode queue default, and worker registry heartbeat now exist. A missing database is a configuration error unless `CONSTRUCT_DEGRADED_OK=postgres-queue` is set, which visibly falls back to the git queue. Do not run `team` mode expecting full distributed execution yet.
 
 **`enterprise`** (planned — not yet implemented) — would add tenant isolation, RBAC/ABAC scaffolding, isolated worker containers, signed MCP allowlists, and mandatory audit. No implementation exists yet.
 
@@ -97,7 +97,8 @@ Current implementation state, sourced from `lib/mode-capabilities.mjs`:
 | Local memory | implemented | — | — |
 | Embedded LanceDB vector store | implemented | — | — |
 | Direct MCP dispatch | implemented | — | — |
-| Postgres task queue | — | optional provider | optional provider |
+| Postgres task queue | — | implemented | implemented |
+| Worker heartbeat registry | — | implemented | implemented |
 | Shared memory store | — | stub | stub |
 | Central telemetry | — | stub | — |
 | Brokered MCP dispatch | — | stub | — |
@@ -169,6 +170,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
+| `construct workers` | List registered team workers and heartbeat freshness |
 
 ### Work
 

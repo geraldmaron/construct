@@ -303,6 +303,45 @@ async function cmdStatus() {
   } catch { /* best-effort surface; never block status */ }
 }
 
+async function cmdWorkers(args = []) {
+  const sub = args.find((a) => !a.startsWith('--')) || 'list';
+  const wantsJson = args.includes('--json');
+  if (sub !== 'list') {
+    errorln('Usage: construct workers <list> [--json]');
+    process.exit(1);
+  }
+
+  const { createSqlClient, closeSqlClient } = await import('../lib/storage/backend.mjs');
+  const { WorkerRegistry } = await import('../lib/orchestration/worker-runtime.mjs');
+  const { resolveIntakeTenantId, INTAKE_PROJECT_ENV_KEY } = await import('../lib/intake/queue.mjs');
+  const sql = createSqlClient(process.env);
+  const project = process.env[INTAKE_PROJECT_ENV_KEY] || path.basename(path.resolve(process.cwd())) || 'construct';
+  const tenantId = resolveIntakeTenantId(process.env);
+
+  if (!sql) {
+    const payload = { status: 'unavailable', reason: 'postgres-unavailable', workers: [] };
+    if (wantsJson) { println(JSON.stringify(payload, null, 2)); return; }
+    println('Workers unavailable: DATABASE_URL or CONSTRUCT_DATABASE_URL is not configured.');
+    return;
+  }
+
+  try {
+    const registry = new WorkerRegistry({ sql, project, tenantId });
+    const workers = await registry.list();
+    const payload = { status: 'available', project, tenantId, workers };
+    if (wantsJson) { println(JSON.stringify(payload, null, 2)); return; }
+    if (!workers.length) {
+      println(`No workers registered for ${project}/${tenantId}.`);
+      return;
+    }
+    for (const worker of workers) {
+      println(`${worker.workerId}  ${worker.status}  heartbeat=${worker.heartbeatAt || 'never'}  ttl=${worker.ttlSeconds}s`);
+    }
+  } finally {
+    await closeSqlClient(sql);
+  }
+}
+
 async function cmdSync(args) {
   const { startOpLog } = await import('../lib/op-log.mjs');
   const opLog = startOpLog('sync', { homeDir: HOME });
@@ -2350,7 +2389,7 @@ async function cmdIntake(args) {
   const queue = createIntakeQueue(cwd, process.env);
 
   if (sub === 'list') {
-    const pending = queue.listPending();
+    const pending = await queue.listPending();
     const rows = pending.map((p) => {
       const t = p.triage || {};
       return [p.id, t.intakeType || 'unknown', t.rdStage || 'unknown', t.primaryOwner || '—', t.recommendedAction || '—'];
@@ -2362,7 +2401,7 @@ async function cmdIntake(args) {
   const id = args[1];
   if (sub === 'show') {
     if (!id) { errorln('Usage: construct intake show <id>'); process.exit(1); }
-    const entry = queue.read(id);
+    const entry = await queue.read(id);
     if (!entry) { errorln(`No ${rebrand.signalNoun} with id: ${id}`); process.exit(1); }
     const t = entry.triage || {};
     println(`${rebrand.signalNoun.charAt(0).toUpperCase() + rebrand.signalNoun.slice(1)} ${entry.id}`);
@@ -2476,7 +2515,7 @@ async function cmdIntake(args) {
 
     let stamped = null;
     if (outputPath) {
-      const packet = queue.read(id);
+      const packet = await queue.read(id);
       if (!packet) {
         errorln(`No intake packet found: ${id}`);
         process.exit(1);
@@ -2502,7 +2541,7 @@ async function cmdIntake(args) {
       || (outputPath ? `output: ${outputPath}` : '');
 
     try {
-      const r = queue.markProcessed(id, { processedBy: 'construct-intake-cli', notes });
+      const r = await queue.markProcessed(id, { processedBy: 'construct-intake-cli', notes });
       if (stamped) {
         info(`Marked ${r.id} processed. Stamped ${outputPath} with intake_id=${id} (confidence=${stamped.intake_confidence ?? 'n/a'}).`);
       } else if (noOutputOutcome) {
@@ -2521,7 +2560,7 @@ async function cmdIntake(args) {
     if (!id) { errorln('Usage: construct intake skip <id> [--reason=…]'); process.exit(1); }
     const flags = parseKvFlags(args.slice(2), ['reason']);
     try {
-      const r = queue.markSkipped(id, { skippedBy: 'construct-intake-cli', reason: flags.reason || '' });
+      const r = await queue.markSkipped(id, { skippedBy: 'construct-intake-cli', reason: flags.reason || '' });
       info(`Marked ${r.id} skipped.`);
     } catch (err) {
       errorln(err.message || 'mark skipped failed');
@@ -2533,7 +2572,7 @@ async function cmdIntake(args) {
   if (sub === 'reopen') {
     if (!id) { errorln('Usage: construct intake reopen <id>'); process.exit(1); }
     try {
-      const r = queue.reopen(id);
+      const r = await queue.reopen(id);
       info(`Reopened ${r.id} (from ${r.from}).`);
     } catch (err) {
       errorln(err.message || 'reopen failed');
@@ -3222,7 +3261,7 @@ async function cmdIntakeIntegrate(id, args, cwd) {
 
   const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
   const queue = createIntakeQueue(cwd, process.env);
-  const entry = queue.read(id);
+  const entry = await queue.read(id);
   if (!entry) { errorln(`No intake packet with id: ${id}`); process.exit(1); }
 
   let result;
@@ -3598,7 +3637,7 @@ async function cmdGraph(args) {
     if (!intakeId) { errorln('Usage: construct graph from-intake <intake-id>'); process.exit(1); }
     const { createIntakeQueue } = await import('../lib/intake/queue.mjs');
     const queue = createIntakeQueue(cwd, process.env);
-    const entry = queue.read(intakeId);
+    const entry = await queue.read(intakeId);
     if (!entry) { errorln(`No intake packet: ${intakeId}`); process.exit(1); }
     const graph = generateTaskGraphFromTriage({
       triage: entry.triage,
@@ -6111,6 +6150,7 @@ const handlers = new Map([
   ['dev', cmdDev],
   ['stop', cmdStop],
   ['status', cmdStatus],
+  ['workers', cmdWorkers],
   ['install', cmdInstall],
   ['config', cmdConfig],
   ['approvals', cmdApprovals],

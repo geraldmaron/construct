@@ -457,6 +457,10 @@
       "core": false
     },
     {
+      "name": "workers",
+      "core": true
+    },
+    {
       "name": "workflow",
       "core": false
     }
