@@ -59,21 +59,6 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-function resolveProjectRoot() {
-  if (process.env.CLAUDE_PROJECT_DIR) return process.env.CLAUDE_PROJECT_DIR;
-  try {
-    const result = spawnSync('git', ['rev-parse', '--show-toplevel'], {
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'ignore'],
-      timeout: 2000,
-    });
-    if (result.status === 0) return result.stdout.trim();
-  } catch {
-    // fall through
-  }
-  return resolve(HERE, '..');
-}
-
 // npm 11.2+ warns on unknown npm_config_* keys. Cursor injects devdir for
 // node-gyp cache routing; strip before npm spawns (inline — no repo imports).
 
@@ -86,7 +71,7 @@ function sanitizeNpmSpawnEnv(env = process.env) {
   }
   return next;
 }
-const PROJECT_ROOT = resolveProjectRoot();
+const PROJECT_ROOT = resolve(HERE, '..');
 const VERSION_FILE = join(HERE, 'version');
 const CACHE_BIN_DIR = join(HERE, 'cache', 'bin');
 
