@@ -155,3 +155,29 @@ test('deploymentMode option overrides detection', () => {
   assert.equal(strictResult.valid, false);
   assert.ok(strictResult.errors.some(e => e.includes('ghost')));
 });
+
+// Workflow surface parity (LMCP-D4): validateGraph loads the real builtin
+// manifests (loadAllWorkflows has no rootDir-scoped override for the
+// embedded-contract workflows), so these assertions run against the
+// committed lib/embedded-contract/workflows/*.manifest.json fixtures rather
+// than a synthetic graph — a real declared/actual mismatch there would be a
+// genuine authoring bug, so this doubles as the real-manifest regression
+// guard for the rule.
+
+test('graph validate surfaces zero surface-parity errors for the committed builtin manifests', () => {
+  const root = freshRoot();
+  writeGraph(root, { nodes: [], edges: [] });
+  const result = validateGraph(root, { deploymentMode: 'solo' });
+  const surfaceErrors = result.errors.filter((e) => e.includes('surface'));
+  assert.deepEqual(surfaceErrors, []);
+});
+
+test('graph validate reports surface-parity errors regardless of deployment mode (never mode-gated)', () => {
+  const root = freshRoot();
+  writeGraph(root, { nodes: [], edges: [] });
+  const soloResult = validateGraph(root, { deploymentMode: 'solo' });
+  const strictResult = validateGraph(root, { deploymentMode: 'enterprise' });
+  const soloSurfaceErrors = soloResult.errors.filter((e) => e.includes('surface'));
+  const strictSurfaceErrors = strictResult.errors.filter((e) => e.includes('surface'));
+  assert.deepEqual(soloSurfaceErrors, strictSurfaceErrors);
+});

@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-04T00:11:52.338Z",
+  "generatedAt": "2026-07-04T03:45:30.374Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 714,
-    "topLevelTestFiles": 328,
-    "nestedTestFiles": 386,
+    "testFiles": 718,
+    "topLevelTestFiles": 329,
+    "nestedTestFiles": 389,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 502,
+      "unit": 506,
       "functional": 170,
       "visual": 9,
       "live-provider": 2,
       "integration": 31
     },
     "byCategory": {
-      "unit": 448,
+      "unit": 451,
       "functional": 170,
       "visual": 9,
-      "structural-guard": 16,
+      "structural-guard": 17,
       "contract-subsystem": 38,
       "live-provider": 2,
       "integration": 22,
@@ -99,6 +99,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/acceptance/packed-install.test.mjs"
+    },
+    {
+      "path": "tests/acceptance/pm-feedback-preset.acceptance.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/pm-feedback-preset.acceptance.test.mjs — golden-fixture"
     },
     {
       "path": "tests/acceptance/tpm-preset.acceptance.test.mjs",
@@ -1445,6 +1453,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/doc-stamp.test.mjs — tests for lib/doc-stamp.mjs UUIDv7 identity, SHA-256 body hash, and frontmatter stamp verification."
+    },
+    {
+      "path": "tests/doctor-graph-validate.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/doctor-graph-validate.test.mjs — `construct doctor` graph-validate check (LMCP-C7)."
     },
     {
       "path": "tests/doctor-source-checkout.test.mjs",
@@ -4963,6 +4979,14 @@
       "maintainerNotes": "tests/providers/op-discovery.test.mjs — op CLI discovery tiers."
     },
     {
+      "path": "tests/providers/provider-commands.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/providers/provider-commands.test.mjs — LMCP-B8 CLI parity tests."
+    },
+    {
       "path": "tests/providers/scope-validators.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5747,6 +5771,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/workflows/manifest-schema.test.mjs — unit tests for workflow manifest schema constants."
+    },
+    {
+      "path": "tests/workflows/surface-parity.test.mjs",
+      "layer": "unit",
+      "category": "structural-guard",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/workflows/surface-parity.test.mjs — unit and fixture tests for"
     },
     {
       "path": "tests/workflows/template-resolution.test.mjs",

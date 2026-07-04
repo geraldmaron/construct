@@ -13,6 +13,8 @@ import test from 'node:test';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { writeEnvValues } from '../lib/env-config.mjs';
 import { configDir, doctorRoot } from '../lib/config/xdg.mjs';
+import { writeGraph, nodeId } from '../lib/graph/store.mjs';
+import { listWorkflowDefs } from '../lib/embedded-contract/workflow-defs.mjs';
 
 import { tempDir } from './helpers.mjs';
 
@@ -757,4 +759,111 @@ test('recentRunExecutionStates reports zero when no orchestration runs exist', a
   assert.deepEqual(status.recentRunExecutionStates.recent, []);
   const report = formatStatusReport(status);
   assert.doesNotMatch(report, /Recent runs:/);
+});
+
+// LMCP-C7: workflows section sourced from the living graph (graph validate),
+// so status can never report a workflow healthy when the graph disagrees.
+
+test('workflows section reports graph-not-built when .cx/graph is absent', async () => {
+  const { rootDir, homeDir } = await createFixture();
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.workflows.graphBuilt, false);
+  assert.deepEqual(status.workflows.available, []);
+  assert.deepEqual(status.workflows.degraded, []);
+  assert.deepEqual(status.workflows.missing, []);
+  const report = formatStatusReport(status);
+  assert.match(report, /Workflows: living graph not built yet/);
+});
+
+test('workflows section classifies a clean workflow node as available', async () => {
+  const { rootDir, homeDir } = await createFixture();
+  const [realType] = listWorkflowDefs().map((w) => w.type);
+
+  writeGraph(rootDir, {
+    nodes: [
+      { id: nodeId('workflow', realType), type: 'workflow', name: realType },
+    ],
+    edges: [],
+  });
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.workflows.graphBuilt, true);
+  assert.ok(status.workflows.available.some((w) => w.type === realType));
+  assert.ok(!status.workflows.degraded.some((w) => w.type === realType));
+  const report = formatStatusReport(status);
+  assert.match(report, /Workflows: \d+ available · \d+ degraded · \d+ missing \(source: graph validate\)/);
+});
+
+test('workflows section classifies a workflow with no graph node as missing', async () => {
+  const { rootDir, homeDir } = await createFixture();
+
+  // A graph that exists (so graphBuilt is true) but declares no workflow
+  // nodes at all — every known workflow type falls into 'missing'.
+  writeGraph(rootDir, { nodes: [], edges: [] });
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.workflows.graphBuilt, true);
+  assert.ok(status.workflows.missing.length > 0);
+  const report = formatStatusReport(status);
+  assert.match(report, /✗ .+ — no workflow node in living graph/);
+});
+
+test('workflows section classifies a workflow named in a validation error as degraded', async () => {
+  const { rootDir, homeDir } = await createFixture();
+  const [realType] = listWorkflowDefs().map((w) => w.type);
+  const workflowNodeId = nodeId('workflow', realType);
+  const capId = nodeId('capability', 'c1');
+  const providerId = nodeId('provider', 'missing-provider');
+
+  // A capability embedded by the workflow that uses a provider but never
+  // declares the 'requires' edge to that provider's tools — validateGraph
+  // (lib/graph/validate.mjs) raises a warning naming this exact workflow.
+  writeGraph(rootDir, {
+    nodes: [
+      { id: workflowNodeId, type: 'workflow', name: realType },
+      { id: capId, type: 'capability', name: 'c1' },
+      { id: providerId, type: 'provider', name: 'missing-provider', attrs: { id: 'missing-provider' } },
+    ],
+    edges: [
+      { from: capId, to: workflowNodeId, rel: 'embeds', source: 'registry' },
+      { from: capId, to: providerId, rel: 'uses', source: 'registry' },
+    ],
+  });
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.workflows.graphBuilt, true);
+  const degradedEntry = status.workflows.degraded.find((w) => w.type === realType);
+  assert.ok(degradedEntry, 'expected the workflow to be classified degraded');
+  assert.ok(degradedEntry.warnings.length > 0 || degradedEntry.errors.length > 0);
+  const report = formatStatusReport(status);
+  assert.match(report, new RegExp(`⚠ ${realType} — `));
 });

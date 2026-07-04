@@ -63,16 +63,16 @@ function runCli(args, cwd) {
   return spawnSync('node', [BIN, 'embed', ...args], { cwd, encoding: 'utf8', timeout: 30_000 });
 }
 
-test('embed list --json reports both shipped builtin capabilities in a project with no project-tier manifests', () => {
+test('embed list --json reports all shipped builtin capabilities in a project with no project-tier manifests', () => {
   const cwd = freshCwd();
   const res = runCli(['list', '--json'], cwd);
   assert.equal(res.status, 0, `exit 0 — stderr: ${res.stderr}`);
   const out = JSON.parse(res.stdout);
-  // The core pack ships two builtin embed capabilities (the operations TPM
-  // preset and the operations-triage preset), each available-but-not-enabled
-  // in a project that has enabled none. Sort first — discovery order is not
-  // a contract.
-  assert.deepEqual(out.capabilities.map((c) => c.id).sort(), ['operations', 'operations-triage']);
+  // The core pack ships three builtin embed capabilities (the operations TPM
+  // preset, the operations-triage preset, and the pm-feedback preset), each
+  // available-but-not-enabled in a project that has enabled none. Sort first
+  // — discovery order is not a contract.
+  assert.deepEqual(out.capabilities.map((c) => c.id).sort(), ['operations', 'operations-triage', 'pm-feedback']);
   for (const cap of out.capabilities) {
     assert.equal(cap.enabled, false);
   }
