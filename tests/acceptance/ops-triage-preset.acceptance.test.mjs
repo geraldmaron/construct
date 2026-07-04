@@ -2,6 +2,8 @@
  * tests/acceptance/ops-triage-preset.acceptance.test.mjs — golden-fixture
  * acceptance for the `operations` embed preset (triage mode).
  *
+ * @embed operations-triage
+ *
  * Drives real embed capability tick with injected deterministic triage
  * reasoningExecutor over seeded snapshot built from fake providers (Jira +
  * Confluence). Asserts acceptance: duplicate detection produces proposals;

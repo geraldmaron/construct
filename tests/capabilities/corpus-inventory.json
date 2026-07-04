@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-04T04:45:55.942Z",
+  "generatedAt": "2026-07-04T05:00:59.307Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 724,
+    "testFiles": 725,
     "topLevelTestFiles": 329,
-    "nestedTestFiles": 395,
+    "nestedTestFiles": 396,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 511,
+      "unit": 512,
       "functional": 171,
       "visual": 9,
       "live-provider": 2,
@@ -20,7 +20,7 @@
       "functional": 171,
       "visual": 9,
       "structural-guard": 17,
-      "contract-subsystem": 39,
+      "contract-subsystem": 40,
       "live-provider": 2,
       "integration": 22,
       "hook": 9
@@ -3543,6 +3543,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/graph/cli.test.mjs — `construct graph query --missing-tests` CLI wiring."
+    },
+    {
+      "path": "tests/graph/embed-nodes.test.mjs",
+      "layer": "unit",
+      "category": "contract-subsystem",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/graph/embed-nodes.test.mjs — LMCP-P6 embed nodes in the living graph."
     },
     {
       "path": "tests/graph/evidence.test.mjs",
