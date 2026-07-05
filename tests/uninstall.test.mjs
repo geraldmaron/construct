@@ -11,6 +11,9 @@
  *     are skipped unless --all is also passed.
  *   - --scope=project leaves machine state alone, and vice versa.
  *   - --keep-state limits to .construct/ + .claude/ adapters + settings.json.
+ *   - .mcp.json (construct-ranh's project-scope MCP write path) has
+ *     Construct-managed servers stripped alongside settings.json, preserving
+ *     user-added servers and deleting the file once it is Construct-only-empty.
  */
 
 import assert from 'node:assert/strict';
@@ -318,5 +321,70 @@ describe('settings.json un-merge edge cases', () => {
       runUninstall(['--yes', `--cwd=${projectDir}`, `--home=${homeDir}`])
     );
     assert.equal(fs.readFileSync(settingsPath, 'utf8'), '{not valid json');
+  });
+});
+
+describe('.mcp.json un-merge (construct-ranh project scope)', () => {
+  it('strips Construct-managed servers from .mcp.json, preserves user entries', async () => {
+    const mcpJsonPath = path.join(projectDir, '.mcp.json');
+    fs.writeFileSync(
+      mcpJsonPath,
+      JSON.stringify(
+        {
+          mcpServers: {
+            context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp'] },
+            'construct-mcp': { command: 'node', args: ['run.mjs', 'mcp'] },
+            'user-private-server': { command: 'node', args: ['private.mjs'] },
+          },
+        },
+        null,
+        2
+      )
+    );
+
+    const { result } = await silently(() =>
+      runUninstall(['--yes', `--cwd=${projectDir}`, `--home=${homeDir}`])
+    );
+    assert.ok(result.removed.some((r) => r.id === 'project-settings'), 'project-settings category must run');
+
+    const mcpJson = JSON.parse(fs.readFileSync(mcpJsonPath, 'utf8'));
+    assert.equal('context7' in mcpJson.mcpServers, false, 'context7 stripped');
+    assert.equal('construct-mcp' in mcpJson.mcpServers, false, 'construct-mcp stripped');
+    assert.ok(mcpJson.mcpServers['user-private-server'], 'user mcp preserved');
+  });
+
+  it('deletes .mcp.json when it becomes empty after stripping', async () => {
+    const mcpJsonPath = path.join(projectDir, '.mcp.json');
+    fs.writeFileSync(
+      mcpJsonPath,
+      JSON.stringify({ mcpServers: { 'construct-mcp': { command: 'node' } } }, null, 2)
+    );
+
+    await silently(() =>
+      runUninstall(['--yes', `--cwd=${projectDir}`, `--home=${homeDir}`])
+    );
+    assert.equal(fs.existsSync(mcpJsonPath), false, '.mcp.json removed once Construct-only');
+  });
+
+  it('leaves a malformed .mcp.json untouched', async () => {
+    const mcpJsonPath = path.join(projectDir, '.mcp.json');
+    fs.writeFileSync(mcpJsonPath, '{not valid json');
+    await silently(() =>
+      runUninstall(['--yes', `--cwd=${projectDir}`, `--home=${homeDir}`])
+    );
+    assert.equal(fs.readFileSync(mcpJsonPath, 'utf8'), '{not valid json');
+  });
+
+  it('leaves .mcp.json alone when it has no Construct-managed entries', async () => {
+    const mcpJsonPath = path.join(projectDir, '.mcp.json');
+    fs.writeFileSync(
+      mcpJsonPath,
+      JSON.stringify({ mcpServers: { 'user-private-server': { command: 'node' } } }, null, 2)
+    );
+    await silently(() =>
+      runUninstall(['--yes', `--cwd=${projectDir}`, `--home=${homeDir}`])
+    );
+    const mcpJson = JSON.parse(fs.readFileSync(mcpJsonPath, 'utf8'));
+    assert.ok(mcpJson.mcpServers['user-private-server'], 'user mcp preserved');
   });
 });

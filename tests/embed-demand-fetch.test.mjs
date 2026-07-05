@@ -141,9 +141,11 @@ describe('demandFetch — universal fallback', () => {
     assert.equal(result.reason, 'no_providers');
   });
 
-  it('returns no_match reason label when called with no_providers path', async () => {
+  it('returns a descriptive message alongside the no_providers reason', async () => {
     const { demandFetch } = await import('../lib/embed/demand-fetch.mjs');
     const result = await demandFetch({ query: 'unknown topic', env: {} });
-    assert.ok(result.message.length > 0);
+    assert.equal(result.ok, false);
+    assert.equal(result.reason, 'no_providers');
+    assert.equal(result.message, 'No provider credentials configured in config.env');
   });
 });

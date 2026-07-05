@@ -1,6 +1,8 @@
 /**
  * tests/hooks/guard-bash-role-fence.test.mjs — role-fence actor-identity gate
- * in isolation (construct-7164).
+ * in isolation (construct-7164), plus a cross-hook check that guard-bash's
+ * CONSTRUCT_AGENT_ID lookup agrees with agent-tracker's real per-agent
+ * filename convention (construct-diq1).
  *
  * Drives lib/hooks/guard-bash.mjs directly (spawned as a subprocess against
  * synthetic stdin/env, not via live PreToolUse dispatch) with crafted
@@ -18,6 +20,7 @@ import { describe, it, before, after, beforeEach } from 'node:test';
 const HERE = path.dirname(new URL(import.meta.url).pathname);
 const ROOT = path.resolve(HERE, '..', '..');
 const HOOK = path.join(ROOT, 'lib', 'hooks', 'guard-bash.mjs');
+const TRACKER = path.join(ROOT, 'lib', 'hooks', 'agent-tracker.mjs');
 
 let cxDir;
 
@@ -112,5 +115,36 @@ describe('guard-bash role-fence actor identity (construct-7164)', () => {
       timeout: 10_000,
     });
     assert.equal(r.status, 0);
+  });
+
+  it('reads the actual per-agent file agent-tracker writes for CONSTRUCT_AGENT_ID (construct-diq1)', () => {
+    // Spawn the tracker against an isolated project dir (not ROOT) so this
+    // test cannot write into the real repo's .cx/ state.
+    const projectCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-tracker-project-'));
+    try {
+      const trackerResult = spawnSync(process.execPath, [TRACKER], {
+        encoding: 'utf8',
+        input: JSON.stringify({
+          tool_name: 'Task',
+          tool_input: { subagent_type: 'cx-engineer', description: 'fix the widget' },
+          tool_result: { result: 'Task completed successfully.' },
+          cwd: projectCwd,
+        }),
+        env: { ...process.env, CONSTRUCT_DOCTOR_ROOT: cxDir },
+        cwd: projectCwd,
+        timeout: 10_000,
+      });
+      assert.equal(trackerResult.status, 0, `agent-tracker exited non-zero: ${trackerResult.stderr}`);
+      assert.ok(
+        fs.existsSync(path.join(cxDir, 'last-agent-engineer.json')),
+        'agent-tracker should key the per-agent file by persona id with the cx- prefix stripped'
+      );
+
+      const r = run({ command: 'ls', env: { CONSTRUCT_AGENT_ID: 'cx-engineer' } });
+      assert.equal(r.status, 2, `expected block via the real tracker-written file; got ${r.status}. stderr:\n${r.stderr}`);
+      assert.match(r.stderr, /cx-engineer cannot run this command/);
+    } finally {
+      fs.rmSync(projectCwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
   });
 });

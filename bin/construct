@@ -914,8 +914,33 @@ async function cmdDoctor() {
     // Absence is not a doctor finding — VS Code adapter support hasn't landed
     // yet, so "create one or wait for support" isn't actionable. The line is
     // suppressed entirely when missing; doctor surfaces facts, not roadmap.
-    const vscodeSettingsOk = vscodeSettingsPaths.some((candidate) => fs.existsSync(candidate));
+    const vscodeSettingsPath = vscodeSettingsPaths.find((candidate) => fs.existsSync(candidate)) ?? null;
+    const vscodeSettingsOk = Boolean(vscodeSettingsPath);
     if (vscodeSettingsOk) add('VS Code settings file', true, true);
+
+    // classifyHostReadiness distinguishes the discrete host-config states
+    // (missing_config/stale_path/jsonc_unpatched/wrong_key/disabled/healthy)
+    // instead of collapsing readiness to settings.json presence above — only
+    // meaningful once VS Code has a settings file or a project mcp.json to read.
+    const vscodeProjectMcpPath = path.join(process.cwd(), '.vscode', 'mcp.json');
+    const vscodeMcpPath = fs.existsSync(vscodeProjectMcpPath) ? vscodeProjectMcpPath : null;
+    if (vscodeSettingsPath || vscodeMcpPath) {
+      const { classifyHostReadiness, HOST_READINESS_NEXT_STEPS } = await import('../lib/host/readiness.mjs');
+      const reasonCode = classifyHostReadiness({
+        host: 'vscode',
+        settingsPath: vscodeSettingsPath,
+        mcpPath: vscodeMcpPath,
+        root: ROOT_DIR,
+      });
+      const nextStep = HOST_READINESS_NEXT_STEPS[reasonCode];
+      add(
+        reasonCode === 'healthy'
+          ? 'VS Code MCP host readiness: healthy'
+          : `VS Code MCP host readiness: ${reasonCode} — ${nextStep}`,
+        reasonCode === 'healthy',
+        true,
+      );
+    }
   }
   add('User config ready', fs.existsSync(getUserEnvPath(HOME)) || fs.existsSync(configDir(HOME)), true);
   add('skills/ directory', fs.existsSync(path.join(ROOT_DIR, 'skills')));
@@ -4021,6 +4046,7 @@ async function cmdOrchestrate(args) {
         return;
       }
       if (sub === 'status') {
+        const { shapeRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
         const runId = positional[0];
         const path = runId ? `/api/orchestration/runs/${encodeURIComponent(runId)}` : '/api/orchestration/runs';
         const res = await fetch(`${base}${path}`, { headers });
@@ -4028,10 +4054,16 @@ async function cmdOrchestrate(args) {
         if (!res.ok) { errorln(`Daemon error (${res.status}): ${env.error || 'unknown'}`); process.exit(1); }
         if (wantsJson) { println(JSON.stringify(env.data, null, 2)); return; }
         if (runId) {
-          println(`Run ${env.data.runId} — ${env.data.status} · executionMode=${env.data.execution?.executionMode}`);
+          // AP5.4: a remote run payload is just as subject to the honest
+          // terminal-state taxonomy as a local one — never echo its raw status.
+          const shaped = shapeRun(env.data);
+          println(`Run ${env.data.runId} — ${shaped.status} · executionMode=${shaped.executionMode}${shaped.degraded ? ` · degraded: ${shaped.degradationReason}` : ''}`);
           for (const t of env.data.tasks || []) println(`  ${t.id} ${t.role} — ${t.status}${t.output ? ` (${t.output.length} chars)` : ''}`);
         } else {
-          for (const r of env.data.runs || []) println(`  ${r.runId} — ${r.status} · ${r.executionMode || ''} · ${r.createdAt}`);
+          for (const r of env.data.runs || []) {
+            const shaped = shapeRun(r);
+            println(`  ${r.runId} — ${shaped.status}${shaped.degraded ? ' (degraded)' : ''} · ${shaped.executionMode || r.executionMode || ''} · ${r.createdAt}`);
+          }
         }
         return;
       }
@@ -4043,6 +4075,7 @@ async function cmdOrchestrate(args) {
 
   if (sub === 'run') {
     const { runOrchestration, planRun, hostAdapterMetadata } = await import('../lib/orchestration/runtime.mjs');
+    const { shapeRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
     const positional = rest.filter((a, i) => !a.startsWith('--') && !(i > 0 && rest[i - 1].startsWith('--') && !['--no-construct', '--no-execute', '--json'].includes(rest[i - 1])));
     const text = flag('--text') || positional.join(' ').trim();
     if (!text) { errorln('Usage: construct orchestrate run "<request>" [--workflow-type T] [--strategy orchestrated|prompt-only|auto] [--host H] [--host-model M] [--no-construct] [--no-execute] [--json]'); process.exit(1); }
@@ -4060,8 +4093,14 @@ async function cmdOrchestrate(args) {
     };
     const run = rest.includes('--no-execute') ? await planRun(request, {}) : await runOrchestration(request, {});
     if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
-    println(`Run ${run.runId} — ${run.status} · executionMode=${run.execution.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
-    if (run.execution.degraded) println(`  degraded: ${run.execution.degradationReason}`);
+
+    // AP5.1/AP5.4: the CLI must never print the raw persisted status — a
+    // pre-taxonomy run record can still carry a bare 'completed' despite being
+    // degraded or prepare-only, so route through the same honest read-model
+    // (shapeRun) the MCP orchestration_status tool uses.
+    const shaped = shapeRun(run);
+    println(`Run ${run.runId} — ${shaped.status} · executionMode=${shaped.executionMode} · backend=${run.workerBackend} · hostRole=${run.hostRole}`);
+    if (shaped.degraded) println(`  degraded: ${shaped.degradationReason}`);
     if (run.tasks.length) println(`  tasks: ${run.tasks.map((t) => `${t.role}(${t.status})`).join(' → ')}`);
     else println('  tasks: none (no Construct-owned specialist sequence for this execution mode)');
     for (const t of run.tasks) {
@@ -4072,12 +4111,14 @@ async function cmdOrchestrate(args) {
 
   if (sub === 'status') {
     const { getRun, getRuns, hostAdapterMetadata } = await import('../lib/orchestration/runtime.mjs');
+    const { shapeRun } = await import('../lib/mcp/tools/orchestration-run.mjs');
     const runId = rest.find((a) => !a.startsWith('--'));
     if (runId) {
       const run = await getRun(process.cwd(), runId);
       if (!run) { errorln(`Run not found: ${runId}`); process.exit(1); }
       if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
-      println(`Run ${run.runId} — ${run.status} · executionMode=${run.execution.executionMode}`);
+      const shaped = shapeRun(run);
+      println(`Run ${run.runId} — ${shaped.status} · executionMode=${shaped.executionMode}${shaped.degraded ? ` · degraded: ${shaped.degradationReason}` : ''}`);
       for (const t of run.tasks) {
         println(`  ${t.id} ${t.role} — ${t.status}`);
         if (t.reasoning) println(`    reasoning: ${t.reasoning.length > 300 ? `${t.reasoning.slice(0, 300)}…` : t.reasoning}`);
@@ -4087,7 +4128,10 @@ async function cmdOrchestrate(args) {
     const runs = await getRuns(process.cwd());
     if (wantsJson) { println(JSON.stringify(runs, null, 2)); return; }
     if (!runs.length) { println('No orchestration runs recorded.'); return; }
-    for (const r of runs) println(`  ${r.runId} — ${r.status} · ${r.executionMode || ''} · ${r.createdAt}`);
+    for (const r of runs) {
+      const shaped = shapeRun(r);
+      println(`  ${r.runId} — ${shaped.status}${shaped.degraded ? ' (degraded)' : ''} · ${shaped.executionMode || r.executionMode || ''} · ${r.createdAt}`);
+    }
     return;
   }
 
