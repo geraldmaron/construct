@@ -42,12 +42,19 @@ function project() {
 }
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
+// worker_backend pinned explicitly: these fixtures pin inline prepare-only
+// truthfulness specifically. An MCP-originated run with no explicit backend
+// defaults to 'host' (see orchestration-mcp-host-default tests), a default
+// that would fail the "every task prepared" preconditions below for the
+// wrong reason.
+
 const ORCH_REQUEST = {
   request: 'Refactor the auth module and add a migration; review for security',
   requested_strategy: 'orchestrated',
   host_model: MODEL,
   file_count: 4,
   module_count: 2,
+  worker_backend: 'inline',
 };
 
 // A field that, present and truthy, would let a host know the run only PREPARED work.

@@ -113,7 +113,10 @@ test('remote orchestration is opt-in: no URL means in-process, the service is ne
   const cwd = project();
   let fetchCalls = 0;
   const spyFetch = async () => { fetchCalls += 1; throw new Error('in-process path must not reach the network'); };
-  const res = await orchestrationRun({ request: REQUEST, requested_strategy: 'orchestrated', host_model: MODEL, file_count: 4 }, { env: ENV, cwd, fetchImpl: spyFetch });
+  // worker_backend pinned explicitly: this test's subject is the remote-vs-local
+  // branch, not backend defaulting — an MCP-originated run with no explicit
+  // backend now defaults to 'host' (see orchestration-mcp-host-default tests).
+  const res = await orchestrationRun({ request: REQUEST, requested_strategy: 'orchestrated', host_model: MODEL, file_count: 4, worker_backend: 'inline' }, { env: ENV, cwd, fetchImpl: spyFetch });
   assert.equal(fetchCalls, 0, 'no CONSTRUCT_ORCHESTRATION_URL means no remote call');
   assert.equal(res.service, undefined, 'an in-process run carries no service label');
   assert.ok(res.tasks.every((t) => t.executor === 'inline:prepared'), 'in-process default stays inline-prepared');
