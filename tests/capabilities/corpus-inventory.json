@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-05T15:51:21.244Z",
+  "generatedAt": "2026-07-05T16:31:04.804Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 790,
+    "testFiles": 789,
     "topLevelTestFiles": 341,
-    "nestedTestFiles": 449,
+    "nestedTestFiles": 448,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 545,
+      "unit": 544,
       "functional": 198,
       "visual": 11,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 482,
+      "unit": 481,
       "functional": 198,
       "visual": 11,
       "structural-guard": 19,
@@ -5561,14 +5561,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/registry/surface-map-manifest.test.mjs — LMCP-B7: COMMAND_SURFACE/"
-    },
-    {
-      "path": "tests/registry/surface-map.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/registry/surface-map.test.mjs — ADR-0039 surface tier assignments."
     },
     {
       "path": "tests/release-workflow.test.mjs",

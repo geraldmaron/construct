@@ -7,8 +7,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { tempDir } from '../helpers.mjs';
 import { checkDestructiveGate } from '../../lib/mcp/destructive-gate.mjs';
 import { issueApprovalToken } from '../../lib/mcp/destructive-approval.mjs';
+
+// issueApprovalToken/consumeApprovalToken resolve doctorRoot() from
+// process.env at call time, so redirecting CONSTRUCT_DOCTOR_ROOT here keeps
+// every token this file issues off the real machine's XDG state dir.
+
+test.before(() => {
+  process.env.CONSTRUCT_DOCTOR_ROOT = tempDir('cx-destructive-gate-');
+});
 
 test('non-destructive tool passes through', () => {
   const result = checkDestructiveGate('agent_health', {});

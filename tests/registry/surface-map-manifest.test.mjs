@@ -103,5 +103,14 @@ test('validateSurfaceMap passes once an override adds the missing entry', () => 
 test('colon-namespaced commands still default to internal at the surfaceForCommand runtime fallback (unaffected by validateSurfaceMap strictness)', () => {
   withFixtureProject(null, (root) => {
     assert.equal(surfaceForCommand('team:add', { cwd: root }), 'internal');
+    assert.equal(surfaceForCommand('registry:validate', { cwd: root }), 'internal');
+  });
+});
+
+test('surfaceForCommand resolves the observability groups to thin-cli, not just the COMMAND_SURFACE dict lookup', () => {
+  withFixtureProject(null, (root) => {
+    for (const name of ['review', 'telemetry', 'evals', 'improvement']) {
+      assert.equal(surfaceForCommand(name, { cwd: root }), 'thin-cli', `${name} should be thin-cli`);
+    }
   });
 });
