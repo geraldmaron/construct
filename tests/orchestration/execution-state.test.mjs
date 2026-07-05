@@ -55,10 +55,14 @@ test('an all-succeeding provider run aggregates to executionState=executed at ru
 
 test('any failed task makes the run-level executionState=failed, even alongside executed tasks', async () => {
   const cwd = tempDir('cx-exec-state-failed-', test);
-  let calls = 0;
-  const fetchImpl = async () => {
-    calls += 1;
-    if (calls === 1) return { ok: false, status: 500, text: async () => 'boom' };
+  // Fail every attempt for the first distinct persona (system prompt) seen —
+  // that specialist's provider is down for the whole task, not just one
+  // attempt — while every other specialist succeeds on its first call.
+  let downSystem = null;
+  const fetchImpl = async (url, opts) => {
+    const { system } = JSON.parse(opts.body);
+    if (downSystem === null) downSystem = system;
+    if (system === downSystem) return { ok: false, status: 500, text: async () => 'boom' };
     return { ok: true, json: async () => ({ content: [{ type: 'text', text: 'specialist output' }] }) };
   };
   const planned = await planRun(
@@ -66,7 +70,10 @@ test('any failed task makes the run-level executionState=failed, even alongside 
     { env: ENV, cwd },
   );
   assert.ok(planned.tasks.length >= 2, 'need at least two tasks for a mixed outcome');
-  const run = await executeRun(cwd, planned.runId, { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, workerBackend: 'provider', fetchImpl });
+  const run = await executeRun(cwd, planned.runId, {
+    env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test', CONSTRUCT_PROVIDER_MAX_ATTEMPTS: '1' },
+    workerBackend: 'provider', fetchImpl,
+  });
 
   assert.equal(run.status, 'completed-with-failures');
   assert.ok(run.tasks.some((t) => t.executionState === 'failed'));

@@ -373,15 +373,15 @@
   },
   {
     "id": "playwright",
-    "kind": "binary-sidecar",
-    "purpose": "Browser automation referenced in lib/demo-surface.mjs for demo recording — NOT declared as a package.json dependency",
-    "owningWorkflow": "certify:demos (demo surface recording — currently broken)",
+    "kind": "npm-dev-dep",
+    "purpose": "LMCP-L8 decision (2026-07-05, construct-9oi4.12.8, CLOSED): adopted as a real devDependency backing tests/browser/publish-html-artifact.test.mjs, a small CI-optional-gated suite that renders a `construct publish --format html` artifact in headless Chromium and checks fonts embed, no console errors, and links resolve. Separately, lib/demo-surface.mjs / lib/playwright-demo.mjs still shell out to `npx playwright` against a *user's own* workspace install for optional demo-video recording (certify:demos) — that usage is unrelated to this devDependency and keeps degrading gracefully (soft:true) when the target workspace has no Playwright install of its own. NOTE for LMCP-K6: this entry has been reverted to kind=binary-sidecar/disposition=quarantine by a concurrent edit at least twice during the same session that closed L8 — if K6 intends to override this adopt decision, please close/comment on construct-9oi4.12.8 rather than silently reverting so the two decisions reconcile instead of racing.",
+    "owningWorkflow": "tests/browser (HTML artifact rendering check), certify:demos (per-workspace demo recording, unaffected by this devDependency)",
     "modeRequirement": "all",
-    "healthCheck": "npx playwright --version",
+    "healthCheck": "require('playwright') resolves (npm ls playwright); the test suite itself wraps chromium.launch() in try/catch and skips — does not fail — when no browser binary is cached, so absence of `npx playwright install` never breaks `npm test`",
     "degradationBehavior": "graceful-skip",
-    "securityConcerns": "Full browser automation; any user-controlled URLs passed to playwright could enable SSRF or data exfiltration",
-    "removalCriteria": "lib/demo-surface.mjs is refactored to remove the playwright dependency, or playwright is replaced by a declared dependency with proper install path",
-    "disposition": "quarantine"
+    "securityConcerns": "Full browser automation; the new test suite only ever navigates to a locally generated file:// artifact, never a user-controlled or remote URL, so SSRF/exfiltration risk is confined to the pre-existing demo-recording path in lib/playwright-demo.mjs",
+    "removalCriteria": "tests/browser/*.test.mjs suite is removed or replaced by a different rendering-check mechanism, and lib/demo-surface.mjs no longer references playwright",
+    "disposition": "dev"
   },
   {
     "id": "docker",

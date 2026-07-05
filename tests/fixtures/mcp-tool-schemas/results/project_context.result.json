@@ -1,0 +1,160 @@
+{
+  "capturedAt": "2026-07-05T00:43:07.029Z",
+  "tool": "project_context",
+  "args": {},
+  "result": {
+    "cwd": "/Users/geralddagher/Developer/Projects/construct",
+    "has_context_file": true,
+    "context": null,
+    "context_state": {
+      "format": "json",
+      "savedAt": "2026-07-05T00:20:49.359Z",
+      "source": "pre-compact",
+      "projectName": "construct",
+      "lastSummary": "",
+      "filesChanged": [
+        "bin/construct",
+        "lib/intake/prepare.mjs",
+        "lib/providers/connection-probe.mjs",
+        "lib/scopes/research-profile.mjs",
+        "lib/term-format.mjs",
+        "registry/capabilities.json",
+        "tests/providers/connection-probe.test.mjs",
+        "tests/intake-prepare.test.mjs",
+        "tests/certification/specialists/*.role-card.json",
+        "tests/fixtures/artifacts/prd/golden.md",
+        "docs/guides/concepts/intake-and-triage.mdx",
+        "docs/guides/concepts/architecture.mdx",
+        "CHANGELOG.md",
+        "tests/term-format.test.mjs",
+        "package-lock.json",
+        "plan.md",
+        "scripts/sync-specialists.mjs",
+        "tests/functional/host-config-parity.functional.test.mjs",
+        "tests/functional/opencode-adaptive-prompt.functional.test.mjs",
+        "tests/functional/opencode-fewshot-prompt.functional.test.mjs",
+        ".cx/context.md",
+        ".cx/context.json",
+        "templates/distribution/construct-brand.typ",
+        "templates/distribution/construct-prd.typ",
+        "templates/distribution/construct-decision.typ",
+        "templates/distribution/construct-pdf.typ",
+        "templates/distribution/construct-research.typ",
+        "tests/functional/publish-template.functional.test.mjs",
+        "tests/functional/publish.functional.test.mjs",
+        "lib/orchestration/readiness.mjs",
+        "lib/mcp/server.mjs",
+        "tests/orchestration-readiness.test.mjs",
+        "tests/functional/orchestration-readiness.functional.test.mjs",
+        "docs/guides/reference/mcp-tools.md"
+      ],
+      "decisions": [
+        "specialists/org remains the SSOT; retired specialists/registry.json and specialists/unified-registry.json references are treated as scanner failures outside migration history.",
+        "construct creds test uses a live lightweight connection probe for hosted LLM providers while keeping credential values redacted.",
+        "prepareIntake owns adding scope researchProfile to triage packets after deterministic classification.",
+        "Duplicate eslint security incident beads can close when current diff and doctor show no active eslint.config.mjs violation.",
+        "display-width stays in-tree rather than adding a new core runtime dependency; the width primitive now owns ANSI/OSC-8 transparent clipping and padding.",
+        "OpenCode session naming now routes helper agents through a stronger auxiliary model while the primary `model` is no longer pinned by Construct.",
+        "The front-door host prompt must treat `workflow_invoke` as a planning contract and `orchestration_run` as the execution path for substantive research.",
+        "OpenCode prompt examples must use host-visible MCP tool ids (`construct-mcp_*`) because bare tool names fail host-side validation before Construct can recover them.",
+        "The shared Typst theme must not wrap `enum.item` in a block because that breaks ordered-list numbering in PDF output; list spacing belongs on the container, not the item wrapper.",
+        "Artifact polish belongs in the shared distribution theme so PRD, decision, research, and generic PDF exports improve together and can be regression-tested through the normal publish path.",
+        "Orchestration readiness is an observed attachment contract, separate from descriptive execution planning; `orchestration_readiness`/`construct orchestrate preflight` verify tool reachability and return typed recovery reasons."
+      ],
+      "pendingTodos": [
+        "Commit and push the G3/G5 two-phase batch after explicit approval.",
+        "Commit and push the G6/G9 two-phase batch after explicit approval."
+      ],
+      "efficiencySummary": "6 reads · 4 unique files · 2 repeated reads · 1 large reads · 388 KB read",
+      "warnFlags": "None",
+      "contextSummary": "",
+      "lastRefreshAt": "2026-07-05T00:21:14.353Z",
+      "activeWork": [
+        {
+          "id": "construct-bcbo.3",
+          "title": "F03 Package install postinstall contract",
+          "status": "in_progress"
+        },
+        {
+          "id": "construct-bcbo.2",
+          "title": "F02 Secrets and credential lifecycle",
+          "status": "in_progress"
+        }
+      ],
+      "recentDecisions": [],
+      "architectureNotes": []
+    },
+    "recent_commits": [
+      "c6509037 fix(construct-tbiv): bake absolute project root as hook launcher fallback",
+      "e5b2e75b feat(lmcp): add queue reliability and team health",
+      "655f68db feat(lmcp): default team queue to postgres and add worker registry",
+      "0f9a659c feat(lmcp): add postgres queue provider and run-store parity",
+      "7b6f4615 feat(lmcp): wire storage manifests and postgres db scaffold",
+      "83771867 chore(lmcp): regenerate test corpus inventory for 8 new phase-1 test files",
+      "aad63ad2 test(lmcp): make model-registry-wiring config-error case hermetic vs uccl.2 credential fallback",
+      "de8f77f1 Revert \"fix(construct-tbiv): .construct/run.mjs robustly resolves project root on CWD drift\"",
+      "c140dfce fix(model-resolution): 6 beads — validated-model wiring, credential fallback, hook fix, config warnings, readiness executability, opt-in probes",
+      "ceb93a07 fix(construct-tbiv): .construct/run.mjs robustly resolves project root on CWD drift"
+    ],
+    "working_tree_status": "dirty",
+    "changed_files": [
+      "M CLAUDE.md",
+      "M docs/guides/reference/config.md",
+      "M lib/env-config.mjs",
+      "M lib/intake/daemon.mjs",
+      "M lib/mcp-catalog.json",
+      "M lib/mcp-platform-config.mjs",
+      "M lib/mcp/server.mjs",
+      "M lib/models/catalog.mjs",
+      "M lib/orchestration/readiness.mjs",
+      "M lib/orchestration/runtime.mjs",
+      "M lib/providers/registry.mjs",
+      "M lib/providers/secret-audit-wiring.mjs",
+      "M lib/providers/secret-resolver.mjs",
+      "M lib/workflow-state.mjs",
+      "M lib/workflows/loader.mjs",
+      "M lib/workflows/manifest-schema.mjs",
+      "M scripts/sync-specialists.mjs",
+      "M tests/functional/host-mcp-emulation.functional.test.mjs",
+      "M tests/functional/mcp-parity.functional.test.mjs",
+      "M tests/functional/orchestration-mcp.functional.test.mjs",
+      "M tests/helpers/sterile-env.mjs",
+      "M tests/sync-contract.test.mjs",
+      "?? lib/extensions/manifests/anthropic.manifest.json",
+      "?? lib/extensions/manifests/github-copilot.manifest.json",
+      "?? lib/extensions/manifests/local-llm.manifest.json",
+      "?? lib/extensions/manifests/ollama.manifest.json",
+      "?? lib/extensions/manifests/openai.manifest.json",
+      "?? lib/extensions/manifests/openrouter-anthropic.manifest.json",
+      "?? lib/extensions/manifests/openrouter-deepseek.manifest.json",
+      "?? lib/extensions/manifests/openrouter-google.manifest.json",
+      "?? lib/extensions/manifests/openrouter-llama.manifest.json",
+      "?? lib/extensions/manifests/openrouter-qwen.manifest.json",
+      "?? lib/extensions/manifests/openrouter.manifest.json",
+      "?? tests/config/key-consumer-parity.test.mjs",
+      "?? tests/fixtures/mcp-tool-schemas/results/",
+      "?? tests/functional/intake-pending-ttl.functional.test.mjs",
+      "?? tests/functional/readiness-honesty.functional.test.mjs",
+      "?? tests/functional/run-events-semantics.functional.test.mjs",
+      "?? tests/models/",
+      "?? tests/providers/dotenv-parity.test.mjs"
+    ],
+    "publicHealth": {
+      "context": {
+        "hasFile": true,
+        "source": "json",
+        "savedAt": "2026-07-05T00:20:49.359Z",
+        "summary": null
+      },
+      "coordination": {
+        "authority": "external-tracker-plus-plan",
+        "fileOwnershipRule": "single-writer",
+        "memoryRole": "cross-session-recall"
+      },
+      "metadataPresence": {
+        "executionContractModel": true,
+        "contextState": true
+      }
+    }
+  }
+}

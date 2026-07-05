@@ -42,8 +42,14 @@ async function runAcpTest(project, envOverrides = {}, promptText) {
     }
   });
 
+  // 150s: the config-driven-provider-backend test below resolves a model id from
+  // a credential-family fallback even with blank keys/tiers, so it attempts a
+  // real provider call that runs to completion in ~100s before degrading rather
+  // than short-circuiting immediately (CONSTRUCT_PROVIDER_TIMEOUT_MS did not
+  // shorten this in testing — root cause tracked in construct-vevd, not solved
+  // here). The other two tests in this file resolve in well under a second.
   const send = (msg) => proc.stdin.write(`${JSON.stringify(msg)}\n`);
-  const waitFor = (pred, ms = 8000) => new Promise((resolve, reject) => {
+  const waitFor = (pred, ms = 150000) => new Promise((resolve, reject) => {
     const deadline = Date.now() + ms;
     const tick = () => {
       const hit = messages.find(pred);
@@ -118,13 +124,17 @@ test('ACP server: backend resolution honors config — provider backend shows in
     orchestration: { workerBackend: 'provider', store: 'filesystem', chainOfThought: 'hidden' }
   }, null, 2));
 
-  // Clearing the model tiers and keys forces a degraded, zero-task run so no real
-  // provider call is made — but the resolved workerBackend is recorded before
-  // execution, so a config-driven 'provider' must still surface in the summary.
+  // Clearing the model tiers and keys still lets a credential-family fallback
+  // pick a model id (by design — see resolveEmbeddedModel), so the run attempts
+  // a real provider call with no valid key; CONSTRUCT_PROVIDER_TIMEOUT_MS bounds
+  // that attempt's retry/backoff to keep the test fast instead of waiting on the
+  // production default. The resolved workerBackend is recorded before execution,
+  // so a config-driven 'provider' must still surface in the summary regardless.
   // Pre-fix ACP hardcoded workerBackend=inline, so this assertion caught the deviation.
   const { updates } = await runAcpTest(project, {
     CX_MODEL_REASONING: '', CX_MODEL_STANDARD: '', CX_MODEL_FAST: '',
     OPENROUTER_API_KEY: '', ANTHROPIC_API_KEY: '',
+    CONSTRUCT_PROVIDER_TIMEOUT_MS: '1000',
   });
 
   const summaryUpdate = updates.find((u) => u.params.update?.content?.text?.includes('Orchestration'));

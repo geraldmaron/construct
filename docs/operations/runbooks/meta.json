@@ -2,6 +2,7 @@
   "title": "Runbooks",
   "pages": [
     "day-2-operations",
-    "m1-self-host-sre"
+    "m1-self-host-sre",
+    "surface-smoke-matrix"
   ]
 }

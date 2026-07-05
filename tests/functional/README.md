@@ -45,6 +45,32 @@ shares one process environment).
 - `tests/test-isolation.test.mjs` flags files that assign `HOME` without an in-file
   restore signal.
 
+### Inbound-env determinism
+
+The isolation contract above is write-scoped; a test's *inbound* env must be
+equally deterministic. A spawn/process env built as `{ ...process.env, ...overrides }`
+inherits whatever the developer's shell happens to export — `CX_MODEL_*`,
+provider keys, `WEB_SEARCH_URL`, `CX_USER_ENV_PATH` — and can even reach a real
+`op` binary through `lib/providers/secret-resolver.mjs`'s file/rc discovery,
+triggering a live 1Password biometric prompt mid-test.
+
+- Any suite that spawns a child process (`child_process.spawn`/`spawnSync`,
+  `StdioClientTransport`) or hands an isolated `env` object to an in-process
+  call must build that env with `sterileSpawnEnv()` from
+  `tests/helpers/sterile-env.mjs`, not a `{ ...process.env }` spread. The
+  helper allowlists only `PATH`/`TMPDIR`/`LANG` and pins `HOME`/`CX_HOME_OVERRIDE`/
+  XDG dirs to a fresh `mkdtempSync` root; nothing else is inherited unless named
+  in `overrides`.
+- A hermetic `resolveSecret`/`resolveSecretAsync` call must pass
+  `allowAmbient: false` explicitly — the public default is `true` — so file/rc
+  discovery (and any real `op` read) is suppressed.
+- Verify the guard with `createOpStub()` (same module): put its `binDir` first
+  on `PATH` and assert its log stays empty after the suite runs. See
+  `tests/functional/spawn-env-hermeticity.functional.test.mjs` for the
+  reference pattern, including the poisoned-parent-env regression check
+  (`CX_MODEL_STANDARD=poison OPENROUTER_API_KEY=sk-poison ... npm run test:functional`
+  must produce the same result as a clean env).
+
 ## Run
 
 ```bash

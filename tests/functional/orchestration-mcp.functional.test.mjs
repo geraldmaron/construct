@@ -20,6 +20,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { orchestrationRun, orchestrationStatus } from '../../lib/mcp/tools/orchestration-run.mjs';
+import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const MODEL = 'anthropic/claude-sonnet-4-6';
@@ -31,22 +32,21 @@ function tmpProject() {
 }
 
 // Solo default: the registry resolves from the repo via CX_TOOLKIT_DIR; run
-// storage stays isolated in the tmp cwd; no remote service configured.
+// storage stays isolated in a fresh mkdtemp HOME (sterileSpawnEnv), not the
+// developer's real HOME, so a real ~/.env or ~/.construct/config.env can never
+// be read even though this call is in-process rather than a spawned child.
+// No remote service is configured (CONSTRUCT_ORCHESTRATION_URL is omitted by
+// the allowlist by construction).
 
 function soloEnv() {
-  const env = {
-    ...process.env,
+  return sterileSpawnEnv({
     CX_TOOLKIT_DIR: REPO_ROOT,
-    HOME: REPO_ROOT,
-    USERPROFILE: REPO_ROOT,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
     CX_MODEL_REASONING: MODEL,
     CX_MODEL_STANDARD: MODEL,
     CX_MODEL_FAST: MODEL,
-  };
-  delete env.CONSTRUCT_ORCHESTRATION_URL;
-  return env;
+  });
 }
 
 test('orchestration_run plans a multi-specialist run in-process (no daemon)', async () => {

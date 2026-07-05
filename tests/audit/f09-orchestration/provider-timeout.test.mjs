@@ -30,9 +30,16 @@ const MODEL = 'openai/gpt-4o-mini';
 
 // Pin an explicit small timeout so this proof of boundedness is deterministic
 // regardless of the production default (construct-neq9.6): the test must not
-// depend on — nor silently re-manufacture — worker.mjs's default value.
+// depend on — nor silently re-manufacture — worker.mjs's default value. A
+// timeout is retryable (construct-5wkl AC#4), so a hung provider is pinned to
+// a single attempt here — this proof is about the per-call bound, not the
+// separately-tested retry/backoff policy (tests/orchestration-worker.test.mjs).
 
-const ENV = { OPENROUTER_API_KEY: 'sk-test-not-a-real-key', CONSTRUCT_PROVIDER_TIMEOUT_MS: '100' };
+const ENV = {
+  OPENROUTER_API_KEY: 'sk-test-not-a-real-key',
+  CONSTRUCT_PROVIDER_TIMEOUT_MS: '100',
+  CONSTRUCT_PROVIDER_MAX_ATTEMPTS: '1',
+};
 const TASK = { role: 'cx-architect', reason: null, handoffContract: null };
 const RUN = { request: { summary: 'bound the provider call' } };
 

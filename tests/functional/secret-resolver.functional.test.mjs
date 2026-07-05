@@ -63,8 +63,14 @@ test('resolves an op:// ref from config.env and caches the plaintext', () => {
 });
 
 test('plain env value passes through without invoking op', () => {
-  const opRead = () => { throw new Error('op should not be called for a plain value'); };
-  assert.equal(resolveSecret('OPENROUTER_API_KEY', { env: { OPENROUTER_API_KEY: 'plain-key' }, opRead }), 'plain-key');
+  // Read-hermeticity: cwd must be pinned to an isolated tmpdir, not the
+  // default process.cwd(). Without it this resolves the real repo/.env's
+  // OPENROUTER_API_KEY (project-env tier) instead of the plain value under
+  // test — the exact class of leak construct-neq9.4 guards against.
+  withTmpHome((home) => {
+    const opRead = () => { throw new Error('op should not be called for a plain value'); };
+    assert.equal(resolveSecret('OPENROUTER_API_KEY', { env: { OPENROUTER_API_KEY: 'plain-key' }, cwd: home, opRead }), 'plain-key');
+  });
 });
 
 test('allowAmbient:false suppresses file discovery for hermetic callers', () => {

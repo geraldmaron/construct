@@ -37,9 +37,13 @@ import { exposedTools } from '../../../lib/mcp/server.mjs';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SERVER_PATH = join(HERE, '..', '..', '..', 'lib', 'mcp', 'server.mjs');
 
+// server.mjs composes ALL_TOOL_DEFS as [...HARDCODED_TOOL_DEFS, ...SCANNED_TOOL_DEFS]
+// (LMCP-B5 self-registered tools) — the literal, eval-able array now lives under
+// the HARDCODED_TOOL_DEFS name.
+
 function readCatalogNames() {
   const src = readFileSync(SERVER_PATH, 'utf8');
-  const arrStart = src.indexOf('ALL_TOOL_DEFS = [');
+  const arrStart = src.indexOf('HARDCODED_TOOL_DEFS = [');
   let i = src.indexOf('[', arrStart);
   let depth = 0;
   let end = -1;

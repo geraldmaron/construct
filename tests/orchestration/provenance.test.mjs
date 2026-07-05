@@ -135,7 +135,9 @@ test('executeRun (provider backend, failure) still records executionState:failed
     { env: ENV, cwd },
   );
   const fetchFail = async () => ({ ok: false, status: 500, text: async () => 'boom' });
-  const executed = await executeRun(cwd, planned.runId, { env: ENV, workerBackend: 'provider', fetchImpl: fetchFail });
+  const executed = await executeRun(cwd, planned.runId, {
+    env: { ...ENV, CONSTRUCT_PROVIDER_MAX_ATTEMPTS: '1' }, workerBackend: 'provider', fetchImpl: fetchFail,
+  });
 
   assert.equal(executed.status, 'completed-with-failures');
   for (const task of executed.tasks) {

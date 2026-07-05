@@ -1,0 +1,10 @@
+{
+  "capturedAt": "2026-07-05T00:43:08.534Z",
+  "tool": "workflow_validate",
+  "args": {},
+  "result": {
+    "cwd": "/Users/geralddagher/Developer/Projects/construct",
+    "valid": true,
+    "errors": []
+  }
+}

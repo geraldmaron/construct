@@ -1,0 +1,31 @@
+{
+  "capturedAt": "2026-07-05T00:43:07.112Z",
+  "tool": "model_resolve",
+  "args": {},
+  "result": {
+    "contractVersion": "1.1.0",
+    "minClientContractVersion": "1.0.0",
+    "constructVersion": "1.4.2",
+    "deploymentMode": "solo",
+    "surface": "mcp",
+    "generatedAt": "2026-07-05T00:43:07.112Z",
+    "warnings": [
+      "Pinned anthropic/claude-sonnet-5 — not available on your account.",
+      "Active model: anthropic/claude-haiku-4-5-20251001"
+    ],
+    "data": {
+      "selectedModel": "anthropic/claude-sonnet-5",
+      "selectedProvider": "anthropic",
+      "providerFamily": "anthropic",
+      "resolutionSource": "tier-default",
+      "requestedTier": "standard",
+      "fallbackReason": "No host context supplied; used the Construct tier default.",
+      "tierSource": "env override",
+      "capabilitiesMatched": [],
+      "healthStatus": "unknown",
+      "estimatedLimits": null,
+      "requiresCredential": false,
+      "error": null
+    }
+  }
+}

@@ -141,11 +141,16 @@ test('provider backend records a failed task and completes-with-failures, no cra
   const fetchImpl = async () => ({ ok: false, status: 500, text: async () => 'boom' });
   const run = await runOrchestration(
     { request: 'refactor and review', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 },
-    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
+    {
+      env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test', CONSTRUCT_PROVIDER_MAX_ATTEMPTS: '1' },
+      cwd, workerBackend: 'provider', fetchImpl,
+    },
   );
   assert.equal(run.status, 'completed-with-failures');
   assert.ok(run.tasks.every((t) => t.status === 'failed'));
-  assert.ok(run.tasks.every((t) => t.error?.code === 'PROVIDER_EXECUTION_FAILED'));
+  // A 500 classifies as PROVIDER_SERVER_ERROR (construct-5wkl AC#1), not the
+  // prior generic PROVIDER_EXECUTION_FAILED — distinct from a 4xx/auth failure.
+  assert.ok(run.tasks.every((t) => t.error?.code === 'PROVIDER_SERVER_ERROR'));
 });
 
 test('startRun labels the run record as in-process before returning', async () => {

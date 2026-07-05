@@ -24,14 +24,14 @@ The deployment posture is explicit. One config field (`CONSTRUCT_DEPLOYMENT_MODE
   {
     name: 'Team',
     tag: 'shared',
-    description: 'For a development team. Postgres-backed queue with row-locked workers. Centralized telemetry and brokered MCP (staged/experimental).',
+    description: 'For a development team. Postgres-backed queue with row-locked workers. Centralized telemetry and brokered MCP (staged/experimental, tracked: construct-9oi4.10).',
     rows: [
       { label: 'Queue', value: 'Postgres FOR UPDATE SKIP LOCKED' },
       { label: 'Memory', value: 'shared per-user scope' },
       { label: 'Database', value: 'shared Postgres + pgvector' },
       { label: 'Telemetry', value: 'Langfuse / HTTP / OTel' },
       { label: 'Workers', value: 'Docker worker pool' },
-      { label: 'MCP', value: 'brokered, role policy (staged/experimental)' },
+      { label: 'MCP', value: 'brokered, role policy (staged/experimental, tracked: construct-9oi4.10)' },
     ],
   },
   {
@@ -44,7 +44,7 @@ The deployment posture is explicit. One config field (`CONSTRUCT_DEPLOYMENT_MODE
       { label: 'Database', value: 'shared Postgres + pgvector' },
       { label: 'Telemetry', value: 'mandatory audit events' },
       { label: 'Workers', value: 'isolated containers' },
-      { label: 'MCP', value: 'signed allowlist + brokered (staged/experimental)' },
+      { label: 'MCP', value: 'signed allowlist + brokered (staged/experimental, tracked: construct-9oi4.10, construct-9oi4.1.7)' },
     ],
   },
 ]} />

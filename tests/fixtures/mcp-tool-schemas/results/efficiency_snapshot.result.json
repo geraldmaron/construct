@@ -1,0 +1,33 @@
+{
+  "capturedAt": "2026-07-05T00:43:08.534Z",
+  "tool": "efficiency_snapshot",
+  "args": {},
+  "result": {
+    "status": "healthy",
+    "summary": "6 reads · 4 files · 2 repeated · 1 large · 388 KB",
+    "recommendation": "Continue. Read pattern is compact enough for the current session.",
+    "readCount": 6,
+    "uniqueFileCount": 4,
+    "repeatedReadCount": 2,
+    "largeReadCount": 1,
+    "totalBytesRead": 397465,
+    "repeatedReadRatio": 0.333,
+    "topRepeatedFiles": [
+      {
+        "path": "/Users/geralddagher/Developer/Projects/construct/scripts/sync-specialists.mjs",
+        "count": 2,
+        "size": 107424,
+        "lastReadAt": "2026-07-04T23:47:18.846Z"
+      },
+      {
+        "path": "/Users/geralddagher/Developer/Projects/construct/tests/distribution-bootstrap.test.mjs",
+        "count": 2,
+        "size": 9204,
+        "lastReadAt": "2026-07-04T23:59:10.858Z"
+      }
+    ],
+    "lastUpdatedAt": "2026-07-05T00:00:37.265Z",
+    "repeated": "2x /Users/geralddagher/Developer/Projects/construct/scripts/sync-specialists.mjs · 2x /Users/geralddagher/Developer/Projects/construct/tests/distribution-bootstrap.test.mjs",
+    "compact": "6 reads · 4 files · 2 repeated · 1 large · 388 KB · Continue. Read pattern is compact enough for the current session. · Hot spots: 2x /Users/geralddagher/Developer/Projects/construct/scripts/sync-specialists.mjs · 2x /Users/geralddagher/Developer/Projects/construct/tests/distribution-bootstrap.test.mjs"
+  }
+}
