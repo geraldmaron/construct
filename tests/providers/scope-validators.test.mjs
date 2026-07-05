@@ -5,9 +5,12 @@
  *   - validateAllowlist returns allowed=true when no allowlist is configured.
  *   - validateAllowlist returns allowed=false when the target is not in repoAllowlist.
  *   - validateAllowlist returns allowed=true when the target matches repoAllowGlob.
- *   - A provider's read() throws with code OUT_OF_SCOPE for a blocked resource.
  *   - Unknown providers pass through (no schema defined).
  *   - Glob patterns are single-segment (no slash crossing).
+ *   - The real github provider's read()/search() (lib/providers/github/index.mjs)
+ *     enforce repoAllowlist/repoAllowGlob end-to-end: a blocked target throws
+ *     OUT_OF_SCOPE before any network call, an allowed target proceeds, and an
+ *     unconfigured allowlist never blocks (construct-hb9k).
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -103,25 +106,99 @@ describe('validateAllowlist — other providers', () => {
 });
 
 describe('OUT_OF_SCOPE error code from provider read()', () => {
-  it('throws an OUT_OF_SCOPE error when read() is called with a blocked resource', async (t) => {
+  it('throws an OUT_OF_SCOPE error when read() is called with a blocked resource, before any network request', async () => {
     const { create } = await import('../../lib/providers/github/index.mjs');
     const provider = create({ env: { GITHUB_TOKEN: 'fake' } });
 
-    let thrown = null;
+    const originalFetch = globalThis.fetch;
+    let fetchCalled = false;
+    globalThis.fetch = async (...args) => {
+      fetchCalled = true;
+      return originalFetch(...args);
+    };
+
     try {
-      await provider.read({ repo: 'blocked-repo', repoAllowlist: ['allowed-repo'] });
-    } catch (err) {
-      thrown = err;
+      await assert.rejects(
+        () => provider.read({ repo: 'blocked-repo', repoAllowlist: ['allowed-repo'] }),
+        (err) => err.code === 'OUT_OF_SCOPE',
+      );
+      assert.equal(fetchCalled, false, 'read() must reject before making any network request');
+    } finally {
+      globalThis.fetch = originalFetch;
     }
+  });
 
-    if (thrown && thrown.code === 'OUT_OF_SCOPE') {
-      assert.equal(thrown.code, 'OUT_OF_SCOPE');
-      return;
+  it('allows read() through when the target matches repoAllowlist (network call proceeds)', async () => {
+    const { create } = await import('../../lib/providers/github/index.mjs');
+    const provider = create({ env: { GITHUB_TOKEN: 'fake' } });
+
+    const originalFetch = globalThis.fetch;
+    let fetchCalled = false;
+    globalThis.fetch = async () => {
+      fetchCalled = true;
+      return { ok: true, json: async () => ({ name: 'allowed-repo' }) };
+    };
+
+    try {
+      await provider.read({ repo: 'allowed-repo', repoAllowlist: ['allowed-repo'] });
+      assert.equal(fetchCalled, true);
+    } finally {
+      globalThis.fetch = originalFetch;
     }
+  });
 
-    // github provider read() does not call validateAllowlist internally yet (construct-hb9k).
+  it('does not block read() when no allowlist is configured (network call proceeds)', async () => {
+    const { create } = await import('../../lib/providers/github/index.mjs');
+    const provider = create({ env: { GITHUB_TOKEN: 'fake' } });
 
-    t.skip('github provider does not enforce allowlist internally yet — tracked in construct-hb9k');
+    const originalFetch = globalThis.fetch;
+    let fetchCalled = false;
+    globalThis.fetch = async () => {
+      fetchCalled = true;
+      return { ok: true, json: async () => ({ name: 'any-repo' }) };
+    };
+
+    try {
+      await provider.read({ repo: 'any-repo' });
+      assert.equal(fetchCalled, true);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('throws OUT_OF_SCOPE for search() when repoAllowlist is configured but the query has no repo: qualifier', async () => {
+    const { create } = await import('../../lib/providers/github/index.mjs');
+    const provider = create({ env: { GITHUB_TOKEN: 'fake' } });
+
+    await assert.rejects(
+      () => provider.search({ kind: 'issues', query: 'is:open label:bug', repoAllowlist: ['allowed-repo'] }),
+      (err) => err.code === 'OUT_OF_SCOPE',
+    );
+  });
+
+  it('throws OUT_OF_SCOPE for search() when the query repo: qualifier is not in repoAllowlist', async () => {
+    const { create } = await import('../../lib/providers/github/index.mjs');
+    const provider = create({ env: { GITHUB_TOKEN: 'fake' } });
+
+    await assert.rejects(
+      () => provider.search({ kind: 'issues', query: 'is:open repo:acme/blocked-repo', repoAllowlist: ['allowed-repo'] }),
+      (err) => err.code === 'OUT_OF_SCOPE',
+    );
+  });
+
+  it('allows search() through when the query repo: qualifier matches repoAllowlist', async () => {
+    const { create } = await import('../../lib/providers/github/index.mjs');
+    const provider = create({ env: { GITHUB_TOKEN: 'fake' } });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => ({ ok: true, json: async () => ({ items: [] }) });
+
+    try {
+      const items = await provider.search({ kind: 'issues', query: 'is:open repo:acme/allowed-repo', repoAllowlist: ['allowed-repo'] });
+      assert.deepEqual(items, []);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it('validateAllowlist result can be used to throw OUT_OF_SCOPE', () => {
