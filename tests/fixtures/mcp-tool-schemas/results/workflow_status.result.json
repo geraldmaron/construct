@@ -1,0 +1,85 @@
+{
+  "capturedAt": "2026-07-05T00:43:06.774Z",
+  "tool": "workflow_status",
+  "args": {},
+  "result": {
+    "cwd": "/Users/geralddagher/Developer/Projects/construct",
+    "exists": true,
+    "summary": "Construct meta-system (2026-06-22-construct-meta-system)\nStatus: in-progress | Phase: plan | Tasks: 0/0 complete",
+    "workflow": {
+      "version": 1,
+      "project": "geraldmaron/construct",
+      "id": "2026-06-22-construct-meta-system",
+      "title": "Construct meta-system",
+      "specRef": null,
+      "status": "in-progress",
+      "phase": "plan",
+      "currentTaskKey": null,
+      "updatedAt": "2026-06-22T05:31:31.127Z",
+      "phases": {
+        "research": {
+          "owner": "research",
+          "status": "todo",
+          "summary": "Explore the problem and gather evidence."
+        },
+        "plan": {
+          "owner": "plan",
+          "status": "in-progress",
+          "summary": "Define and challenge the approach."
+        },
+        "implement": {
+          "owner": "implement",
+          "status": "todo",
+          "summary": "Build the approved solution."
+        },
+        "validate": {
+          "owner": "validate",
+          "status": "todo",
+          "summary": "Verify correctness, security, accessibility, and tests."
+        },
+        "operate": {
+          "owner": "operate",
+          "status": "todo",
+          "summary": "Run, release, deploy, or operationalize when needed."
+        }
+      },
+      "tasks": [],
+      "decisions": [],
+      "handoffs": [],
+      "alignment": {
+        "acceptanceCriteriaRequired": true,
+        "ownerRequired": true,
+        "readFirstRequired": true,
+        "doNotChangeRequired": true,
+        "verificationRequiredBeforeDone": true
+      }
+    },
+    "alignment": {
+      "status": "warn",
+      "findings": [
+        {
+          "severity": "MEDIUM",
+          "issue": "Workflow has no tasks",
+          "fix": "Add scoped tasks with owners, read-first files, protected files, and acceptance criteria."
+        }
+      ]
+    },
+    "publicHealth": {
+      "context": {
+        "hasFile": true,
+        "source": "json",
+        "savedAt": "2026-07-05T00:20:49.359Z",
+        "summary": null
+      },
+      "coordination": {
+        "authority": "external-tracker-plus-plan",
+        "fileOwnershipRule": "single-writer",
+        "memoryRole": "cross-session-recall"
+      },
+      "metadataPresence": {
+        "executionContractModel": true,
+        "contextState": true
+      }
+    }
+  }
+}

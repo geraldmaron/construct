@@ -1,0 +1,12 @@
+{
+  "id": "feedback",
+  "version": "1.0.0",
+  "kind": "data-source",
+  "capabilities": ["read", "search"],
+  "secretEnvKeys": [],
+  "operations": ["read", "search"],
+  "securityClassification": "external-unauthenticated",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin"
+}

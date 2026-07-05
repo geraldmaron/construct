@@ -14,6 +14,16 @@
  * into real host state — the failure mode that polluted live configs during the
  * local-model investigation — fails the whole run. Tests that touch host state
  * must isolate via tests/helpers/sterile-host-env.mjs.
+ *
+ * Read-hermeticity: beyond XDG, clearHermeticEnvVars() blanks the provider-key
+ * and model-tier families (CX_MODEL_ and CONSTRUCT_MODEL_ tiers, ANTHROPIC/OPENAI/
+ * OPENROUTER_API_KEY, WEB_SEARCH_URL, CX_USER_ENV_PATH,
+ * CONSTRUCT_PROVIDER_TIMEOUT_MS, CONSTRUCT_TELEMETRY_URL) before spawning
+ * `node --test`, so a developer's ambient shell can't leak into a suite that
+ * spreads `...process.env`. Opt-in live-LLM suites (tests/certification,
+ * tests/functional/real-llm-scenarios.functional.test.mjs) gate on the
+ * CONSTRUCT_CERTIFY_LIVE=1 / CONSTRUCT_E2E_REAL_LLM=1 flags, not on ambient key
+ * presence, so this scrub does not disable them.
  */
 import { spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
@@ -26,6 +36,28 @@ const testsDir = path.join(cwd, "tests");
 
 // Clear XDG vars to ensure test isolation. See lib/test-env-setup.mjs for details.
 clearXdgVars();
+
+const HERMETIC_ENV_VARS = [
+  "ANTHROPIC_API_KEY",
+  "OPENAI_API_KEY",
+  "OPENROUTER_API_KEY",
+  "CX_MODEL_REASONING",
+  "CX_MODEL_STANDARD",
+  "CX_MODEL_FAST",
+  "CONSTRUCT_MODEL_REASONING",
+  "CONSTRUCT_MODEL_STANDARD",
+  "CONSTRUCT_MODEL_FAST",
+  "CONSTRUCT_PROVIDER_TIMEOUT_MS",
+  "WEB_SEARCH_URL",
+  "CX_USER_ENV_PATH",
+  "CONSTRUCT_TELEMETRY_URL",
+];
+
+function clearHermeticEnvVars(env = process.env) {
+  for (const key of HERMETIC_ENV_VARS) delete env[key];
+}
+
+clearHermeticEnvVars();
 
 const args = process.argv.slice(2);
 const coverageIdx = args.findIndex((a) => a === "--coverage" || a === "-c");

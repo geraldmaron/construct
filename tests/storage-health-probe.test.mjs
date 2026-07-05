@@ -1,9 +1,10 @@
 /**
  * tests/storage-health-probe.test.mjs — unit tests for probeStorageHealth().
  *
- * Verifies that storage health is derived from real filesystem state rather
- * than hardcoded values. Uses an injected fsExistsSync stub to avoid touching
- * the real filesystem.
+ * Verifies that storage health is derived from real filesystem state plus a
+ * live LanceDB open probe rather than hardcoded values. Uses injected
+ * fsExistsSync and lancedbOpener stubs to avoid touching the real filesystem
+ * or opening a real store.
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -19,10 +20,14 @@ function makeExistsStub({ cx, lancedb }) {
   };
 }
 
+const openableStore = async () => ({ tableNames: async () => ['observations'] });
+const brokenStore = async () => { throw new Error('corrupt manifest'); };
+
 describe('probeStorageHealth', () => {
-  it('returns healthy when both .cx/ and .cx/lancedb exist', () => {
-    const { sqlHealth, vectorStore } = probeStorageHealth(CWD, {
+  it('returns healthy when .cx/lancedb exists and the store opens', async () => {
+    const { sqlHealth, vectorStore } = await probeStorageHealth(CWD, {
       fsExistsSync: makeExistsStub({ cx: true, lancedb: true }),
+      lancedbOpener: openableStore,
     });
     assert.equal(sqlHealth.status, 'healthy');
     assert.equal(sqlHealth.message, 'Local embedded');
@@ -30,8 +35,19 @@ describe('probeStorageHealth', () => {
     assert.equal(vectorStore.backend, 'lancedb');
   });
 
-  it('returns degraded when .cx/ exists but .cx/lancedb is absent', () => {
-    const { sqlHealth, vectorStore } = probeStorageHealth(CWD, {
+  it('returns unhealthy when the store exists but fails to open', async () => {
+    const { sqlHealth, vectorStore } = await probeStorageHealth(CWD, {
+      fsExistsSync: makeExistsStub({ cx: true, lancedb: true }),
+      lancedbOpener: brokenStore,
+      now: () => Number.MAX_SAFE_INTEGER,
+    });
+    assert.equal(sqlHealth.status, 'unhealthy');
+    assert.match(sqlHealth.message, /corrupt manifest/);
+    assert.equal(vectorStore.enabled, false);
+  });
+
+  it('returns degraded when .cx/ exists but .cx/lancedb is absent', async () => {
+    const { sqlHealth, vectorStore } = await probeStorageHealth(CWD, {
       fsExistsSync: makeExistsStub({ cx: true, lancedb: false }),
     });
     assert.equal(sqlHealth.status, 'degraded');
@@ -39,8 +55,8 @@ describe('probeStorageHealth', () => {
     assert.equal(vectorStore.enabled, false);
   });
 
-  it('returns unavailable when .cx/ is absent', () => {
-    const { sqlHealth, vectorStore } = probeStorageHealth(CWD, {
+  it('returns unavailable when .cx/ is absent', async () => {
+    const { sqlHealth, vectorStore } = await probeStorageHealth(CWD, {
       fsExistsSync: makeExistsStub({ cx: false, lancedb: false }),
     });
     assert.equal(sqlHealth.status, 'unavailable');
@@ -48,8 +64,8 @@ describe('probeStorageHealth', () => {
     assert.equal(vectorStore.enabled, false);
   });
 
-  it('always returns the lancedb sqlStore shape regardless of fs state', () => {
-    const { sqlStore } = probeStorageHealth(CWD, {
+  it('always returns the lancedb sqlStore shape regardless of fs state', async () => {
+    const { sqlStore } = await probeStorageHealth(CWD, {
       fsExistsSync: makeExistsStub({ cx: false, lancedb: false }),
     });
     assert.equal(sqlStore.mode, 'lancedb');

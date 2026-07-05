@@ -6,6 +6,7 @@
     "backup-restore",
     "dr",
     "troubleshooting",
+    "parallel-worktree-collection",
     "deploy",
     "maintenance",
     "runbooks",

@@ -1,0 +1,12 @@
+{
+  "id": "ollama",
+  "version": "1.0.0",
+  "kind": "model",
+  "capabilities": ["chat"],
+  "secretEnvKeys": [],
+  "docs": "Ollama (local)",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin",
+  "securityClassification": "trusted"
+}

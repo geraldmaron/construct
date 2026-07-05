@@ -5,15 +5,11 @@
       "core": false
     },
     {
+      "name": "approvals",
+      "core": true
+    },
+    {
       "name": "ask",
-      "core": false
-    },
-    {
-      "name": "auth:status",
-      "core": false
-    },
-    {
-      "name": "backup",
       "core": false
     },
     {
@@ -389,8 +385,16 @@
       "core": false
     },
     {
+      "name": "start",
+      "core": false
+    },
+    {
       "name": "status",
       "core": true
+    },
+    {
+      "name": "status [--json]",
+      "core": false
     },
     {
       "name": "stop",
@@ -403,10 +407,6 @@
     {
       "name": "sync",
       "core": true
-    },
-    {
-      "name": "tags",
-      "core": false
     },
     {
       "name": "team",
@@ -455,6 +455,10 @@
     {
       "name": "wireframe",
       "core": false
+    },
+    {
+      "name": "workers",
+      "core": true
     },
     {
       "name": "workflow",

@@ -9,9 +9,10 @@
  *   - run.mjs respects CONSTRUCT_DEV_PATH and forwards to the local checkout.
  *   - run.mjs exits 127 with a useful error when no runtime is reachable.
  *   - The materialised `.claude/settings.json` references hook commands as
- *     `node "${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs" hook <name>` — cwd-anchored
- *     on the project root so they resolve when Claude Code runs a hook from any
- *     directory (no `$HOME/.construct` paths).
+ *     `node "${CLAUDE_PROJECT_DIR:-<absRoot>}/.construct/run.mjs" hook <name>` — the
+ *     fallback is the absolute project root (not cwd-relative `.`) so hooks resolve
+ *     from any directory and under hosts that do not export CLAUDE_PROJECT_DIR
+ *     (no `$HOME/.construct` paths).
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -98,13 +99,17 @@ describe('project-local launcher staging', () => {
 });
 
 describe('settings.json hook command shape', () => {
-  it('hook commands anchor on ${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs', () => {
+  it('hook commands anchor on ${CLAUDE_PROJECT_DIR:-<absRoot>}/.construct/run.mjs', () => {
     const settingsPath = path.join(projectDir, '.claude', 'settings.json');
     assert.ok(fs.existsSync(settingsPath));
     const text = fs.readFileSync(settingsPath, 'utf8');
     assert.ok(!/\$HOME\/\.construct/.test(text), 'must not reference $HOME paths');
-    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\.\}\/\.construct\/run\.mjs.{0,4}hook session-start/);
-    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\.\}\/\.construct\/run\.mjs.{0,4}hook pre-push-gate/);
+    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/run\.mjs.{0,4}hook session-start/);
+    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/run\.mjs.{0,4}hook pre-push-gate/);
+    assert.ok(
+      !/\$\{CLAUDE_PROJECT_DIR:-\.\}/.test(text),
+      'cwd-relative :-. fallback breaks under cwd drift; fallback must be the absolute project root',
+    );
     assert.ok(
       !/node \.construct\/run\.mjs hook/.test(text),
       'bare relative .construct/run.mjs breaks when the hook cwd is not the project root',

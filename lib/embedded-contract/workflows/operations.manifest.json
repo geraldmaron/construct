@@ -1,0 +1,18 @@
+{
+  "id": "operations",
+  "version": "1.0.0",
+  "type": "embed",
+  "defaultApprovalMode": "proposal-only",
+  "compatVersion": 1,
+  "owner": "construct-core",
+  "description": "TPM preset: the operations specialist reads Jira, product docs (Confluence), and Slack, then produces a recurring briefing — work missing versus the PRDs, timeline-risk findings with evidence, and proposed Jira tickets held for approval. Never auto-creates issues.",
+  "embed": {
+    "specialist": "cx-operations",
+    "providerBindings": ["atlassian-jira", "atlassian-confluence", "slack"],
+    "framework": "cx-ops-dependency-sequencing",
+    "outputContract": "operations-tpm-briefing",
+    "proposalAuthority": "propose-only",
+    "runtime": "auto",
+    "cadence": { "every": "PT4H" }
+  }
+}

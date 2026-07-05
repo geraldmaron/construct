@@ -1,0 +1,12 @@
+{
+  "id": "openrouter-anthropic",
+  "version": "1.0.0",
+  "kind": "model",
+  "capabilities": ["chat"],
+  "secretEnvKeys": ["OPENROUTER_API_KEY"],
+  "docs": "Anthropic via OpenRouter",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin",
+  "securityClassification": "trusted"
+}

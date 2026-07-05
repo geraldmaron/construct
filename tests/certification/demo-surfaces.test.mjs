@@ -24,8 +24,14 @@ test('canonical demo catalog cites construct cockpit tapes and themes', () => {
 
 test('demo functional harness references canonical tapes', () => {
   const demo = fs.readFileSync(path.join(REPO, 'tests/functional/demo.functional.test.mjs'), 'utf8');
-  assert.match(demo, /construct demo/);
+
+  // Only path.join('templates', 'demos', 'tapes', '<name>.tape') literals name a
+  // canonical tape; a bare /construct demo/ mention or a scaffolded project tape
+  // (e.g. my-demo.tape) doesn't count, so isolate the former before cross-checking.
+  const tapeRefs = [...demo.matchAll(/templates',\s*'demos',\s*'tapes',\s*'([^']+\.tape)'/g)].map((m) => m[1]);
+  assert.ok(tapeRefs.length >= 1, 'expected the functional harness to name at least one canonical tape by path');
   const tapesDir = path.join(REPO, 'templates/demos/tapes');
-  assert.ok(fs.existsSync(tapesDir));
-  assert.ok(fs.readdirSync(tapesDir).some((f) => f.endsWith('.tape')));
+  for (const tape of tapeRefs) {
+    assert.ok(fs.existsSync(path.join(tapesDir, tape)), `harness references ${tape} but it is missing from ${tapesDir}`);
+  }
 });

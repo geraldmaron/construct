@@ -30,7 +30,6 @@ This repo IS Construct. Changes here affect every session, every platform, every
 - `skills/**` — domain knowledge files (includes `skills/roles/` — role anti-patterns, inlined at sync time)
 - `templates/docs/**` — shipped doc templates; users override via `.cx/templates/docs/` (see [templates/docs/README.md](templates/docs/README.md))
 - `rules/**` — coding standards
-- `lib/server/**` — dashboard only
 
 ## Documentation is mandatory
 
@@ -69,7 +68,7 @@ This applies to every file construct touches and to all agents working in this p
 3. Run `construct sync` to regenerate platform files
 4. Verify with `construct list`
 5. Update documentation (see above)
-6. Run the full gate before commit: see `CONTRIBUTING.md` § "Before opening a PR" for the eight-check list. The release pipeline (`docs/operations/maintenance/release-and-deploy.md`) runs the same checks.
+6. Run the full gate before commit: see `CONTRIBUTING.md` § "Before opening a PR" for the nine-check list. The release pipeline (`docs/operations/maintenance/release-and-deploy.md`) runs the same checks.
 
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->

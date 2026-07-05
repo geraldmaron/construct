@@ -2,7 +2,7 @@
 docs/operations/troubleshooting.md: Common errors and resolutions for Construct.
 
 Covers hook not firing, embedding model missing, Postgres not found,
-provider auth failures, and dashboard unreachable.
+provider auth failures, dashboard unreachable, and bd list hangs.
 -->
 
 # Troubleshooting
@@ -219,3 +219,23 @@ This validates `specialists/org` and prints specific field constraint violations
    ```bash
    construct storage sync
    ```
+
+## `bd list` hangs or never terminates
+
+**Symptoms:** bare `bd list` (the default tree view) never returns; CPU and memory climb without bound; killing the runaway process can leave the next `bd` command stuck on `waiting for lock on .../.beads/embeddeddolt`.
+
+**Cause:** this is a bug in the `bd` binary itself (`~/.local/bin/bd`, built from the external open-source project [steveyegge/beads](https://github.com/steveyegge/beads) — not part of this repo, cannot be patched here). The default tree renderer walks `relates-to` edges (created via `bd dep relate`) as if they were parent-child hierarchy edges, with no visited-set. Any *bidirectional* `relates-to` link between two issues (e.g. `relate A B` and `relate B A`) makes the renderer recurse forever. Confirmed by direct reproduction: bare `bd list` against this repo's issue graph produced tens of gigabytes of output within ~10 seconds before being killed. `bd dep cycles` correctly reports no cycle in this situation — relates-to is not a blocking dependency edge, and the cycle checker only walks `blocks`/`conditional-blocks` edges, so it never sees the problem.
+
+**Safe alternatives (all confirmed to terminate normally):**
+
+```bash
+bd list --flat     # flat listing, no recursive tree walk
+bd list --json      # JSON output, same non-recursive path
+bd ready             # ready-work view, unaffected
+```
+
+Default to one of these instead of bare `bd list` until an upstream `bd` release adds a visited-set to the tree walker. Construct's own internal automation (`lib/beads-automation.mjs`, `lib/doctor/watchers/bd-watch.mjs`, `lib/hooks/policy-engine.mjs`) already calls `bd list` only with `--json` and is not affected — the exposure is limited to interactive terminal use of the bare command.
+
+**Prevention:** avoid adding a *bidirectional* `bd dep relate` link between two issues. A one-directional related link, or a plain-text cross-reference in a comment, carries the same context without triggering the recursion.
+
+**Remediation status:** no fix lives in this repo — `bd` is a separately compiled, externally sourced binary. The correct fix belongs upstream at [github.com/steveyegge/beads](https://github.com/steveyegge/beads) (file an issue against the tree-walker in the `list` command). See bead `construct-qqv9` for reproduction evidence and status.

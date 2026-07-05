@@ -1,0 +1,23 @@
+{
+  "capturedAt": "2026-07-05T00:43:07.113Z",
+  "tool": "learning_status",
+  "args": {},
+  "result": {
+    "scope": {
+      "id": "rnd",
+      "displayName": "Software R&D",
+      "custom": false
+    },
+    "observations": {
+      "total": 70,
+      "last24h": 51
+    },
+    "research": {
+      "count": 0
+    },
+    "outcomes": {
+      "generatedAt": "2026-06-22T19:43:10.540Z",
+      "roles": {}
+    }
+  }
+}

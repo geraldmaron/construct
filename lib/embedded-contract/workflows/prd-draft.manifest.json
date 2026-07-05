@@ -1,0 +1,15 @@
+{
+  "id": "prd-draft",
+  "version": "1.0.0",
+  "type": "linear",
+  "modes": ["solo", "team"],
+  "surfaces": ["mcp", "cli"],
+  "roleChain": ["product-manager", "architect"],
+  "defaultApprovalMode": "proposal-only",
+  "outputSchema": { "artifact": "decision" },
+  "durableStateModel": "none",
+  "tier": "standard",
+  "description": "Draft a product requirements document from a problem statement and supporting evidence.",
+  "owner": "construct-core",
+  "compatVersion": 1
+}

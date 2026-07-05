@@ -1,0 +1,110 @@
+{
+  "capturedAt": "2026-07-05T00:43:07.053Z",
+  "tool": "summarize_diff",
+  "args": {},
+  "result": {
+    "base_ref": "HEAD~1",
+    "files_changed": 24,
+    "insertions": 549,
+    "deletions": 142,
+    "changes": [
+      {
+        "status": "M",
+        "file": "CHANGELOG.md"
+      },
+      {
+        "status": "M",
+        "file": "CLAUDE.md"
+      },
+      {
+        "status": "M",
+        "file": "docs/guides/reference/config.md"
+      },
+      {
+        "status": "M",
+        "file": "lib/env-config.mjs"
+      },
+      {
+        "status": "M",
+        "file": "lib/intake/daemon.mjs"
+      },
+      {
+        "status": "M",
+        "file": "lib/mcp-catalog.json"
+      },
+      {
+        "status": "M",
+        "file": "lib/mcp-platform-config.mjs"
+      },
+      {
+        "status": "M",
+        "file": "lib/mcp/server.mjs"
+      },
+      {
+        "status": "M",
+        "file": "lib/models/catalog.mjs"
+      },
+      {
+        "status": "M",
+        "file": "lib/orchestration/readiness.mjs"
+      },
+      {
+        "status": "M",
+        "file": "lib/orchestration/runtime.mjs"
+      },
+      {
+        "status": "M",
+        "file": "lib/providers/registry.mjs"
+      },
+      {
+        "status": "M",
+        "file": "lib/providers/secret-audit-wiring.mjs"
+      },
+      {
+        "status": "M",
+        "file": "lib/providers/secret-resolver.mjs"
+      },
+      {
+        "status": "M",
+        "file": "lib/workflow-state.mjs"
+      },
+      {
+        "status": "M",
+        "file": "lib/workflows/loader.mjs"
+      },
+      {
+        "status": "M",
+        "file": "lib/workflows/manifest-schema.mjs"
+      },
+      {
+        "status": "M",
+        "file": "scripts/sync-specialists.mjs"
+      },
+      {
+        "status": "M",
+        "file": "tests/distribution-bootstrap.test.mjs"
+      },
+      {
+        "status": "M",
+        "file": "tests/functional/host-mcp-emulation.functional.test.mjs"
+      },
+      {
+        "status": "M",
+        "file": "tests/functional/mcp-parity.functional.test.mjs"
+      },
+      {
+        "status": "M",
+        "file": "tests/functional/orchestration-mcp.functional.test.mjs"
+      },
+      {
+        "status": "M",
+        "file": "tests/helpers/sterile-env.mjs"
+      },
+      {
+        "status": "M",
+        "file": "tests/sync-contract.test.mjs"
+      }
+    ],
+    "summary": "24 files modified (+549/-142 lines) vs HEAD~1."
+  }
+}

@@ -2,19 +2,16 @@
  * tests/audit/f02-secrets/generated-file-leak-scan.red.mjs — F02 [R12] synthetic-secret
  * leak scan over all generated MCP host-config outputs.
  *
- * RED fixture (must FAIL against current code). buildLocalEnvironment
- * (lib/mcp-platform-config.mjs:72-74) materializes the RESOLVED value of a stdio MCP
- * env var into the host entry it returns. When a synthetic secret value is supplied as
- * the resolved value, that literal lands verbatim in the Claude entry's `env` block and
- * the OpenCode entry's `environment` block. The remote-URL path already emits host
- * env-references (mcp-secret-ref.test.mjs proves that), so this fixture pins the
- * local/stdio gap the audit calls out: a live credential is forwarded into generated
- * config on disk.
- *
- * Turns GREEN once local/stdio env emits the host env-reference form (or launch-time
- * injection) instead of the materialized value, per CX-AUDIT-SECRETS-002 / plan Epic 4
+ * Claude and OpenCode local/stdio env emit the host env-reference form instead of the
+ * materialized value, per CX-AUDIT-SECRETS-002 / plan Epic 4
  * (docs/notes/research/2026-06-construct-audit/90-credential-handling-remediation-plan.md
- * §Epic 4): no SENTINEL value appears in any generated host entry.
+ * §Epic 4): no SENTINEL value appears in either generated host entry. VS Code is
+ * exempted (construct-trxz.12): its own mcp.json reference documents no `${env:VAR}`
+ * substitution for a stdio `env` block, only `${workspaceFolder}`-style predefined
+ * variables and `${input:id}` prompts, so writing a reference there would hand the
+ * child process an unexpanded string instead of the credential. VS Code's local/stdio
+ * env keeps the Codex-style materialize-or-strip treatment (mcp-secret-ref.test.mjs)
+ * until VS Code ships an env-block substitution mechanism this builder can target.
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -35,16 +32,14 @@ const STDIO_DEF = {
   env: { EXAMPLE_API_KEY: '__EXAMPLE_API_KEY__' },
 };
 
-test('[R12] no resolved stdio MCP secret value lands in any generated host config', () => {
+test('[R12] no resolved stdio MCP secret value lands in Claude or OpenCode generated host config', () => {
   const resolved = { EXAMPLE_API_KEY: SENTINEL_SECRET };
 
   const claude = buildClaudeMcpEntry('example', STDIO_DEF, resolved);
-  const vscode = buildClaudeMcpEntry('example', STDIO_DEF, resolved, { host: 'vscode' });
   const { entry: opencode } = buildOpenCodeMcpEntry('example', STDIO_DEF, resolved);
 
   const generated = {
     'claude/claude_desktop_config.json': { mcpServers: { example: claude } },
-    'vscode/mcp.json': { servers: { example: vscode } },
     'opencode/opencode.json': { mcp: { example: opencode } },
   };
 
@@ -54,4 +49,19 @@ test('[R12] no resolved stdio MCP secret value lands in any generated host confi
       `resolved secret value leaked into generated ${file}`,
     );
   }
+});
+
+test('[R12] VS Code generated host config keeps the resolved value (no env-block substitution to reference)', () => {
+  const resolved = { EXAMPLE_API_KEY: SENTINEL_SECRET };
+  const vscode = buildClaudeMcpEntry('example', STDIO_DEF, resolved, { host: 'vscode' });
+  const payload = { servers: { example: vscode } };
+
+  assert.ok(
+    JSON.stringify(payload).includes(SENTINEL_SECRET),
+    'VS Code entry should materialize the resolved value since mcp.json does not expand ${env:VAR}',
+  );
+  assert.ok(
+    !JSON.stringify(payload).includes('${env:'),
+    'a ${env:VAR} form must not be written — VS Code would pass it through unexpanded',
+  );
 });

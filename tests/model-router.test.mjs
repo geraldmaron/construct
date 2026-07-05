@@ -129,7 +129,7 @@ test('setModelWithTierInference supports prefer-free-same-family mode', (t) => {
 
   assert.equal(resolved.standard, 'openrouter/qwen/qwen3-coder:free');
   assert.equal(resolved.reasoning, 'openrouter/qwen/qwen3-coder');
-  assert.equal(resolved.fast, 'openrouter/qwen/qwen2.5-coder-32b-instruct');
+  assert.equal(resolved.fast, 'openrouter/qwen/qwen-2.5-coder-32b-instruct');
 });
 
 test('selectModelTierForWorkCategory maps work categories to canonical model tiers', () => {

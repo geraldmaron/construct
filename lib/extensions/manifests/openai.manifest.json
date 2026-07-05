@@ -1,0 +1,12 @@
+{
+  "id": "openai",
+  "version": "1.0.0",
+  "kind": "model",
+  "capabilities": ["chat"],
+  "secretEnvKeys": ["OPENAI_API_KEY"],
+  "docs": "OpenAI",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin",
+  "securityClassification": "trusted"
+}

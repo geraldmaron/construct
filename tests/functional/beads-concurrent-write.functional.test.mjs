@@ -10,9 +10,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { runBd, runBdJson } from '../../lib/beads-client.mjs';
-
-const REPO = process.cwd();
+import { runBd } from '../../lib/beads-client.mjs';
 
 function bdAvailable() {
   try {
@@ -22,23 +20,52 @@ function bdAvailable() {
   }
 }
 
+// A fresh dolt-backed bd store, isolated from the real repo tracker. Every
+// caller in this file must run concurrent writes against this fixture, never
+// against process.cwd()'s real .beads store (tests/functional/README.md).
+
+function makeBeadsFixture() {
+  const dir = mkdtempSync(join(tmpdir(), 'beads-concurrent-'));
+  const env = { ...process.env, CI: 'true', BD_NON_INTERACTIVE: '1' };
+  spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: dir });
+  spawnSync('git', ['config', 'user.email', 'beads-test@example.com'], { cwd: dir });
+  spawnSync('git', ['config', 'user.name', 'Beads Test'], { cwd: dir });
+  const init = spawnSync('bd', ['init', '--non-interactive', '--prefix', 'bdfx'], {
+    cwd: dir, encoding: 'utf8', env, timeout: 60_000,
+  });
+  if (init.status !== 0) {
+    rmSync(dir, { recursive: true, force: true });
+    throw new Error(`bd init failed in fixture: ${init.stderr || init.stdout}`);
+  }
+  const created = spawnSync('bd', ['create', 'fixture task', '--json'], {
+    cwd: dir, encoding: 'utf8', env, timeout: 30_000,
+  });
+  if (created.status !== 0) {
+    rmSync(dir, { recursive: true, force: true });
+    throw new Error(`bd create failed in fixture: ${created.stderr || created.stdout}`);
+  }
+  const beadId = JSON.parse(created.stdout).id;
+  return {
+    dir,
+    beadId,
+    cleanup: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }),
+  };
+}
+
 test('parallel construct beads notes succeed without legacy lock fallback', async (t) => {
   if (!bdAvailable()) {
     t.skip('bd not installed — skip live beads concurrency test on CI');
     return;
   }
-  const ready = await runBdJson(['ready', '-n', '1'], { cwd: REPO, silent: true });
-  const targetId = ready?.[0]?.id || ready?.[0]?.issue_id || null;
-  if (!targetId) {
-    t.skip('no open bead available for concurrent note test');
-    return;
-  }
+  const fixture = makeBeadsFixture();
+  t.after(fixture.cleanup);
 
+  const targetId = fixture.beadId;
   const stamp = `concurrent-${Date.now()}`;
   const results = await Promise.all(
     Array.from({ length: 4 }, (_, i) => runBd(
       ['note', targetId, `${stamp}-${i}`],
-      { cwd: REPO, actor: `test-${i}`, silent: true, fallbackToLegacy: false },
+      { cwd: fixture.dir, actor: `test-${i}`, silent: true, fallbackToLegacy: false },
     )),
   );
 

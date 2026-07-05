@@ -27,28 +27,24 @@
  * runtime parity check rejects a core name that is not a real catalog tool.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { exposedTools } from '../../../lib/mcp/server.mjs';
+import { exposedTools, ALL_TOOL_DEFS } from '../../../lib/mcp/server.mjs';
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const SERVER_PATH = join(HERE, '..', '..', '..', 'lib', 'mcp', 'server.mjs');
+// ALL_TOOL_DEFS is the real composed catalog — [...HARDCODED_TOOL_DEFS,
+// ...SCANNED_TOOL_DEFS] (LMCP-B5 self-registered `*.tool.mjs` tools). A prior
+// version of this file string-eval-parsed only the HARDCODED_TOOL_DEFS object
+// literal out of server.mjs source, which silently excluded every
+// self-registered tool from "the catalog" the moment the first one shipped
+// (orchestration_task_result) — a real scanned tool then read as a "phantom"
+// name surfaced but absent from the catalog. Importing the real export is the
+// ground truth: this test still exercises the meaningful invariant (the
+// core/long-tail SPLIT `exposedTools()` performs over that catalog has no gap
+// or overlap), just not a from-scratch re-derivation of the catalog's own
+// assembly, which is a plain array spread with no split logic to regress.
 
 function readCatalogNames() {
-  const src = readFileSync(SERVER_PATH, 'utf8');
-  const arrStart = src.indexOf('ALL_TOOL_DEFS = [');
-  let i = src.indexOf('[', arrStart);
-  let depth = 0;
-  let end = -1;
-  for (let j = i; j < src.length; j++) {
-    if (src[j] === '[') depth++;
-    else if (src[j] === ']') { depth--; if (depth === 0) { end = j; break; } }
-  }
-  // The tools array is pure data (no function calls), safe to evaluate.
-  return eval(`(${src.slice(i, end + 1)})`).map((t) => t.name); // eslint-disable-line no-eval
+  return ALL_TOOL_DEFS.map((t) => t.name);
 }
 
 // The runtime exposed surface is the only authority on what tools/list actually

@@ -11,8 +11,8 @@ description: Construct syncs host adapters to Claude Code, OpenCode, Codex, Copi
 `construct sync` auto-detects a Construct project (presence of `.cx/` or `.construct/`) and runs project mode when inside one; global mode otherwise. Pass `--global` or `--project` to force a tier.
 
 <SyncGrid targets={[
-  { name: 'Claude Code (global)', path: 'hooks in ~/.claude/settings.json + ~/.claude/CLAUDE.md (no agent — project-scoped)', type: 'mcp' },
-  { name: 'Claude Code (project)', path: '<project>/.claude/agents/construct.md + settings + commands + skills', type: 'full' },
+  { name: 'Claude Code (global)', path: 'hooks in ~/.claude/settings.json + MCP servers in ~/.claude.json + ~/.claude/CLAUDE.md (no agent — project-scoped)', type: 'mcp' },
+  { name: 'Claude Code (project)', path: '<project>/.claude/agents/construct.md + settings + commands + skills + .mcp.json', type: 'full' },
   { name: 'OpenCode (global)', path: '~/.config/opencode/opencode.json — construct entry only', type: 'full' },
   { name: 'OpenCode (project)', path: '<project>/.opencode/opencode.json — construct (+ optional construct-local)', type: 'full' },
   { name: 'Codex (global)', path: '~/.codex/agents/construct.toml + [agents.construct] in config.toml', type: 'full' },
@@ -39,14 +39,16 @@ Construct classifies every host honestly — no surface is cosmetic. `construct 
 
 **Global tier** writes safety hooks and global instructions — but **no agent file** (the orchestrator is project-scoped, so it isn't duplicated in editors that read both scopes):
 
-- `~/.claude/settings.json` — machine-wide safety hooks plus the low-risk `context7` documentation MCP. Workflow, memory, browser automation, GitHub, orchestration, and learning-loop hooks/MCPs are project-scoped.
+- `~/.claude/settings.json` — machine-wide safety hooks only. Claude Code does not read MCP server definitions from settings.json at any scope (confirmed against code.claude.com/docs/en/mcp and code.claude.com/docs/en/managed-mcp).
+- `~/.claude.json` — the low-risk `context7` documentation MCP, in its top-level `mcpServers` (Claude Code's documented user scope). Workflow, memory, browser automation, GitHub, orchestration, and learning-loop hooks/MCPs are project-scoped.
 - `~/.claude/CLAUDE.md` — a Construct-managed block appended to your global Claude instructions
 - `~/.claude/agents/` — intentionally left without a `construct.md` (run `construct init` in a project to get `@construct` there)
 
 **Project tier** writes the front door + project-local Claude config:
 
 - `<project>/.claude/agents/construct.md` — orchestrator only (Single Front Door)
-- `<project>/.claude/settings.json` — full project-portable hook suite (relative paths via `.construct/run.mjs`)
+- `<project>/.claude/settings.json` — full project-portable hook suite (relative paths via `.construct/run.mjs`); hooks and permissions only, never MCP server definitions
+- `<project>/.mcp.json` — project-scope MCP servers (Claude Code's documented project scope, meant to be checked into version control)
 - `<project>/.claude/commands/*.md` — slash commands
 - `<project>/.claude/skills/<name>/SKILL.md` — Anthropic Agent Skills
 

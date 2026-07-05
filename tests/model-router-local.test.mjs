@@ -1,6 +1,8 @@
 /**
  * tests/model-router-local.test.mjs — ollama + local provider families
  * are recognised and surfaced in the dashboard catalog.
+ *
+ * @capability local.model.tier
  */
 
 import assert from 'node:assert/strict';

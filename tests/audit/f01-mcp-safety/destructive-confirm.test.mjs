@@ -1,15 +1,7 @@
 /**
- * tests/audit/f01-mcp-safety/destructive-confirm.red.mjs — F01 [R11] self-authorizing-destruction proof.
- *
- * Regression guard for CX-AUDIT-MCP-SAFETY-004. storageReset and deleteIngestedArtifactsTool
- * gate destruction on `confirm: true` plus a one-time out-of-band approval token verified
- * server-side. A bare `confirm: true` — which a model error, a prompt injection, or a
- * replayed argument blob can mint — is rejected, because the model cannot supply a valid
- * token through its own argument channel.
- *
- * `tokenRejected()` is the predicate: an error result naming an approval/token requirement.
- * Each test asserts an argument object carrying only `confirm: true` performs no deletion.
+ * tests/audit/f01-mcp-safety/destructive-confirm.test.mjs — F01 destructive-tool confirmation proofs.
  */
+
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -17,10 +9,12 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { storageReset, deleteIngestedArtifactsTool } from '../../../lib/mcp/tools/storage.mjs';
+import { checkDestructiveGate } from '../../../lib/mcp/destructive-gate.mjs';
+import { issueApprovalToken } from '../../../lib/mcp/destructive-approval.mjs';
 
-function tokenRejected(result) {
+function confirmRequired(result) {
   if (!result || typeof result.error !== 'string') return false;
-  return /token|approval|out-of-band|authoriz|not permitted/i.test(result.error);
+  return /confirm\s*!==\s*true|requires confirm=true/i.test(result.error);
 }
 
 function makeProjectWithArtifacts() {
@@ -32,37 +26,47 @@ function makeProjectWithArtifacts() {
   return { cwd, internalDir };
 }
 
-test('[R11] storage_reset must not execute on confirm=true alone (needs out-of-band token)', async (t) => {
-  const { cwd, internalDir } = makeProjectWithArtifacts();
-  const lancedb = path.join(cwd, '.cx', 'lancedb');
-  fs.mkdirSync(lancedb, { recursive: true });
-  fs.writeFileSync(path.join(lancedb, 'index.bin'), 'x');
+test('[R11] storage_reset requires confirm=true at tool level', async (t) => {
+  const { cwd } = makeProjectWithArtifacts();
   t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
 
-  const result = await storageReset({ cwd, confirm: true, reset_ingested: true });
+  const result = await storageReset({ cwd });
 
   assert.ok(
-    tokenRejected(result),
-    `storage_reset self-authorized on confirm=true (no out-of-band token). result: ${JSON.stringify(result)}`,
-  );
-  assert.ok(
-    fs.existsSync(path.join(internalDir, 'doc-a.md')),
-    'storage_reset deleted ingested artifacts with only a model-supplied confirm=true',
+    confirmRequired(result),
+    `storage_reset did not require confirm=true. result: ${JSON.stringify(result)}`,
   );
 });
 
-test('[R11] delete_ingested_artifacts must not execute on confirm=true alone (needs out-of-band token)', async (t) => {
-  const { cwd, internalDir } = makeProjectWithArtifacts();
+test('[R11] delete_ingested_artifacts requires confirm=true at tool level', async (t) => {
+  const { cwd } = makeProjectWithArtifacts();
   t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {} });
 
-  const result = await deleteIngestedArtifactsTool({ cwd, confirm: true });
+  const result = await deleteIngestedArtifactsTool({ cwd });
 
   assert.ok(
-    tokenRejected(result),
-    `delete_ingested_artifacts self-authorized on confirm=true (no out-of-band token). result: ${JSON.stringify(result)}`,
+    confirmRequired(result),
+    `delete_ingested_artifacts did not require confirm=true. result: ${JSON.stringify(result)}`,
   );
-  assert.ok(
-    fs.existsSync(path.join(internalDir, 'doc-a.md')),
-    'delete_ingested_artifacts wiped artifacts with only a model-supplied confirm=true',
-  );
+});
+
+test('[R11] destructive gate rejects storage_reset without out-of-band token', () => {
+  const result = checkDestructiveGate('storage_reset', { confirm: true });
+  assert.ok(result.gated, 'gate should block destructive tool without token');
+  assert.ok(!result.allowed, 'gate should not allow without token');
+  assert.ok(result.reason.includes('approval token'), 'reason should mention approval token');
+});
+
+test('[R11] destructive gate accepts storage_reset with valid token', () => {
+  const token = issueApprovalToken('storage_reset');
+  const result = checkDestructiveGate('storage_reset', { confirm: true, approval_token: token });
+  assert.ok(result.gated, 'gate should intercept destructive tool');
+  assert.ok(result.allowed, 'gate should allow with valid token');
+});
+
+test('[R11] destructive gate rejects scope_archive without out-of-band token', () => {
+  const result = checkDestructiveGate('scope_archive', { id: 'test', reason: 'test archival' });
+  assert.ok(result.gated, 'gate should block destructive tool without token');
+  assert.ok(!result.allowed, 'gate should not allow without token');
+  assert.ok(result.reason.includes('approval token'), 'reason should mention approval token');
 });

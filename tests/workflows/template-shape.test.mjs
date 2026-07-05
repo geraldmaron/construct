@@ -1,9 +1,14 @@
 /**
- * tests/workflows/template-shape.test.mjs — Shape validation for workflow templates.
+ * tests/workflows/template-shape.test.mjs — Static drift guard, not a code-behavior test.
  *
- * Verifies that every file in templates/workflows/*.yml contains the three
- * required top-level fields: id, title, and artifacts. Uses a pattern-based
- * approach instead of a full YAML parser to keep the test dependency-free.
+ * Never imports any lib/*.mjs module or CLI code — only regex-checks templates/workflows/*.yml
+ * for the required top-level fields (id, title, artifacts), the id slug pattern, an optional
+ * positive-integer version, and a 1:1 template/path count in the artifacts block. A pattern
+ * match instead of a full YAML parser keeps the test dependency-free, at the cost of never
+ * confirming any lib/*.mjs consumer actually parses these fields the same way. A failure here
+ * flags shape drift in the static template files themselves, never a regression in workflow
+ * instantiation code; removal requires confirming this shape coverage moves elsewhere first
+ * (construct-spoz).
  *
  * Coverage: every .yml file present at test-run time is checked automatically,
  * so new templates are validated without editing this file.

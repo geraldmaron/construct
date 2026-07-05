@@ -159,3 +159,38 @@ test('[round cap] governed loop terminates at the cap with a tools-less final an
   assert.equal(res.output, 'Capped answer.');
   assert.equal(res.webCalls, 2, 'exactly the capped number of tool executions');
 });
+
+// construct-5wkl AC#5/AC#7: a citation the specialist writes into its final
+// answer that never appeared in its own governed webEvidence is unverified —
+// fabricated, or drawn from ungoverned model memory rather than the retrieval
+// Construct actually observed and trust-labeled.
+
+test('[evidence grounding] a citation absent from governed webEvidence is downgraded, not silently trusted', async () => {
+  const fetchImpl = mockFetch([
+    { match: 'openrouter.ai', queue: [
+      { choices: [{ finish_reason: 'tool_calls', message: { role: 'assistant', content: null, tool_calls: [{ id: 'call_1', type: 'function', function: { name: 'web_search', arguments: '{"query":"battery 2026"}' } }] } }] },
+      { choices: [{ finish_reason: 'stop', message: { content: 'Per https://ex.com/b this holds, and also see https://fabricated-source.example/nope for more.' } }] },
+    ] },
+    { match: 'search.example', reply: () => ({ results: [{ url: 'https://ex.com/b', title: 'B' }] }) },
+  ]);
+  const env = { ...BASE_ENV, OPENROUTER_API_KEY: 'k', WEB_SEARCH_URL: 'https://search.example/api' };
+  const res = await runTaskViaProvider({ task: { role: 'researcher' }, run: RUN, model: 'openrouter/qwen/qwen3-coder:free', provider: 'openrouter', env, fetchImpl });
+
+  assert.equal(res.evidenceStatus, 'unverified-citations');
+  assert.deepEqual(res.unverifiedCitations, ['https://fabricated-source.example/nope']);
+});
+
+test('[evidence grounding] every citation tracing to governed webEvidence carries no warning', async () => {
+  const fetchImpl = mockFetch([
+    { match: 'openrouter.ai', queue: [
+      { choices: [{ finish_reason: 'tool_calls', message: { role: 'assistant', content: null, tool_calls: [{ id: 'call_1', type: 'function', function: { name: 'web_search', arguments: '{"query":"battery 2026"}' } }] } }] },
+      { choices: [{ finish_reason: 'stop', message: { content: 'Per https://ex.com/b, the claim holds.' } }] },
+    ] },
+    { match: 'search.example', reply: () => ({ results: [{ url: 'https://ex.com/b', title: 'B' }] }) },
+  ]);
+  const env = { ...BASE_ENV, OPENROUTER_API_KEY: 'k', WEB_SEARCH_URL: 'https://search.example/api' };
+  const res = await runTaskViaProvider({ task: { role: 'researcher' }, run: RUN, model: 'openrouter/qwen/qwen3-coder:free', provider: 'openrouter', env, fetchImpl });
+
+  assert.equal(res.evidenceStatus, undefined);
+  assert.equal(res.unverifiedCitations, undefined);
+});

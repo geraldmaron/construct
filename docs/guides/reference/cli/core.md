@@ -7,6 +7,7 @@ description: Core commands for Construct.
 
 | Command | What it does |
 |---|---|
+| `construct approvals` | Manage pending MCP tool approvals |
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
@@ -20,6 +21,24 @@ description: Core commands for Construct.
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
+| `construct workers` | List registered team workers and heartbeat freshness |
+
+## construct approvals
+
+Manage pending MCP tool approvals
+
+**Usage**
+
+```bash
+construct approvals list|approve|deny|status
+```
+
+**Subcommands**
+
+- `list` — List pending approvals with tool name, requestedAt, requestedBy
+- `approve <id>` — Approve a pending approval by id
+- `deny <id> [--reason=...]` — Deny a pending approval by id
+- `status <id>` — Show the full status of a specific approval
 
 ## construct dev
 
@@ -253,3 +272,19 @@ construct sync [--project] [--dry-run] [--no-docs] [--compress-personas]
 | `--dry-run` | Preview adapter changes without writing files |
 | `--no-docs` | Skip AUTO docs regeneration after syncing adapters |
 | `--compress-personas` | Write compressed runtime persona prompts without changing the source prompts |
+
+## construct workers
+
+List registered team workers and heartbeat freshness
+
+**Usage**
+
+```bash
+construct workers <list> [--json]
+```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--json` | Output worker list as JSON |

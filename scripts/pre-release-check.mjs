@@ -168,7 +168,21 @@ if (targetTag) {
   }
 }
 
-// ── 11. npm auth ─────────────────────────────────────────────────────────────
+// ── 11. release evidence gate (LMCP-M5) ─────────────────────────────────────
+// Packaging-only mode (--skip-tests): the full suite (including every
+// capability's acceptance test) already ran in check 8/npm test above;
+// remaining scope here is every mode-capabilities 'implemented' capability's
+// backing file landing in the packed artifact.
+{
+  const r = run('node scripts/release-evidence-gate.mjs --skip-tests 2>&1');
+  if (r.ok) {
+    ok('release evidence gate — every implemented capability is packaged');
+  } else {
+    fail('release evidence gate', r.stdout.split('\n').slice(-10).join('\n     '));
+  }
+}
+
+// ── 12. npm auth ─────────────────────────────────────────────────────────────
 // In CI, npm uses OIDC Trusted Publishers (no stored secret). Locally, you
 // need to be logged in via `npm login` or have NODE_AUTH_TOKEN set.
 // Use --skip-auth if running without npm credentials.
