@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-05T16:31:04.804Z",
+  "generatedAt": "2026-07-05T20:58:24.071Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 789,
+    "testFiles": 791,
     "topLevelTestFiles": 341,
-    "nestedTestFiles": 448,
+    "nestedTestFiles": 450,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 37,
+    "capabilityMarkedFiles": 39,
     "byLayer": {
       "unit": 544,
-      "functional": 198,
+      "functional": 200,
       "visual": 11,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 481,
-      "functional": 198,
+      "functional": 200,
       "visual": 11,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -1572,7 +1572,7 @@
       "category": "contract-subsystem",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "Tests for the doctor \"Agent contract schema intact\" predicate."
+      "maintainerNotes": "Tests for a locally defined contract-shape predicate, exercised in isolation"
     },
     {
       "path": "tests/doctor/cost-ledger.test.mjs",
@@ -2753,6 +2753,28 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/functional/host-config-parity.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/host-execution-pickup.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "orchestration.routing",
+        "mcp.broker.connection"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/host-execution-pickup.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/host-execution-sampling.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "orchestration.routing",
+        "mcp.broker.connection"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/host-execution-sampling.functional.test.mjs"
     },
     {
       "path": "tests/functional/host-mcp-emulation.functional.test.mjs",
@@ -6338,7 +6360,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/workflows/template-resolution.test.mjs — Reference integrity for workflow templates."
+      "maintainerNotes": "tests/workflows/template-resolution.test.mjs — Static drift guard, not a code-behavior test."
     },
     {
       "path": "tests/workflows/template-shape.test.mjs",
@@ -6346,7 +6368,7 @@
       "category": "unit",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "tests/workflows/template-shape.test.mjs — Shape validation for workflow templates."
+      "maintainerNotes": "tests/workflows/template-shape.test.mjs — Static drift guard, not a code-behavior test."
     },
     {
       "path": "tests/workflows/workflow-defs-drift.test.mjs",

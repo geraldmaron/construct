@@ -19,7 +19,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { runTaskViaProvider, INLINE, PROVIDER, WORKER_BACKEND_SET } from '../lib/orchestration/worker.mjs';
+import { runTaskViaProvider, materializeTaskPrompt, _resetPackRegistryCache, INLINE, PROVIDER, HOST, WORKER_BACKEND_SET } from '../lib/orchestration/worker.mjs';
 import { runOrchestration } from '../lib/orchestration/runtime.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
@@ -33,8 +33,67 @@ function project() {
 }
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
-test('backend constants expose inline and provider', () => {
-  assert.deepEqual(WORKER_BACKEND_SET, [INLINE, PROVIDER]);
+test('backend constants expose inline, provider, and host', () => {
+  assert.deepEqual(WORKER_BACKEND_SET, [INLINE, PROVIDER, HOST]);
+});
+
+// ── materializeTaskPrompt (LMCP host-execution): the shared prompt+provenance
+// resolution the provider executor and the host worker backend both call —
+// pinned independently of any provider/model call so a host-backend task's
+// materialized prompt is provably the same shape a provider task resolves.
+
+test.beforeEach(() => _resetPackRegistryCache());
+
+test('materializeTaskPrompt resolves persona content and provenance for a role every pack declares', () => {
+  const task = { role: 'cx-engineer', reason: 'implement the change', handoffContract: null };
+  const run = { request: { summary: 'refactor the auth module' }, execution: { deploymentMode: 'solo' } };
+  const prompt = materializeTaskPrompt({ task, run });
+  assert.match(prompt.system, /engineer/i);
+  assert.match(prompt.user, /refactor the auth module/);
+  assert.match(prompt.user, /implement the change/);
+  assert.equal(prompt.specialistId, 'cx-engineer');
+  assert.equal(prompt.personaAvailable, true);
+  assert.equal('degraded' in prompt, false, 'no degraded flag on a healthy persona resolution');
+  assert.equal(typeof prompt.promptVersion, 'string');
+  assert.ok(Array.isArray(prompt.toolGrants));
+});
+
+test('materializeTaskPrompt degrades visibly in solo mode for an unknown role (personaAvailable:false)', () => {
+  const task = { role: 'cx-totally-unknown-specialist' };
+  const run = { request: { summary: 'x' }, execution: { deploymentMode: 'solo' } };
+  const prompt = materializeTaskPrompt({ task, run });
+  assert.equal(prompt.personaAvailable, false);
+  assert.equal(prompt.degraded, 'persona-fallback');
+  assert.equal(prompt.packId, null);
+  assert.match(prompt.system, /totally-unknown-specialist/);
+});
+
+test('materializeTaskPrompt refuses outright (PERSONA_UNAVAILABLE) for an unknown role in team/enterprise mode', () => {
+  const task = { role: 'cx-totally-unknown-specialist' };
+  for (const deploymentMode of ['team', 'enterprise']) {
+    const run = { request: { summary: 'x' }, execution: { deploymentMode } };
+    assert.throws(
+      () => materializeTaskPrompt({ task, run }),
+      (err) => err.code === 'PERSONA_UNAVAILABLE',
+      `expected PERSONA_UNAVAILABLE under ${deploymentMode} mode`,
+    );
+  }
+});
+
+test('materializeTaskPrompt and the provider executor resolve byte-identical system/user prompts for the same task', async () => {
+  const task = { role: 'cx-engineer', reason: 'implement the change', handoffContract: null };
+  const run = { request: { summary: 'refactor the auth module' } };
+  const prompt = materializeTaskPrompt({ task, run, env: { ANTHROPIC_API_KEY: 'sk-test' } });
+
+  let captured = null;
+  const fetchImpl = async (_url, opts) => {
+    captured = JSON.parse(opts.body);
+    return { ok: true, json: async () => ({ content: [{ type: 'text', text: 'ok' }] }) };
+  };
+  await runTaskViaProvider({ task, run, model: MODEL, provider: 'anthropic', env: { ANTHROPIC_API_KEY: 'sk-test' }, fetchImpl });
+
+  assert.equal(captured.system, prompt.system, 'the provider path must send exactly the materialized system prompt');
+  assert.equal(captured.messages[0].content[0].text, prompt.user, 'the provider path must send exactly the materialized user prompt');
 });
 
 test('provider worker returns specialist output via a mock fetch', async () => {
