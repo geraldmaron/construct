@@ -94,7 +94,13 @@ enableSecretAuditTrail();
 // locating the toolkit's own assets (registry, skills, hooks) below.
 
 ensureConstructCredentials({ env: process.env, cwd: PROJECT_ROOT, home: HOME });
-const ENV = loadConstructEnv({ rootDir: PROJECT_ROOT, homeDir: HOME, env: process.env });
+
+// The CLI only fills keys missing from process.env, so a conflicting shell
+// export wins here — the opposite of the MCP server's file-wins merge.
+// shadowWinner: 'shell' keeps the warning honest about which value the CLI
+// actually applies (construct-6y6w.3 / construct-xj96.12).
+
+const ENV = loadConstructEnv({ rootDir: PROJECT_ROOT, homeDir: HOME, env: process.env, shadowWinner: 'shell' });
 for (const [key, value] of Object.entries(ENV)) {
   if (!(key in process.env)) process.env[key] = value;
 }
@@ -1376,12 +1382,36 @@ async function cmdDoctor() {
   // Deployment-mode capability check: surfaces stub/not-implemented capabilities
   // for team/enterprise modes so users know which advertised features are unbuilt.
   // Solo mode is fully-implemented; this check is a no-op there.
+  //
+  // Enterprise mode additionally applies ADR-0057's status contract: a
+  // FAIL-CLOSED capability (tenant-isolation, isolated-workers) is architecturally
+  // non-trivial and "must not be a warning; it must be a hard error" surfaced
+  // "at startup (during construct doctor)". A LATER capability (rbac,
+  // signed-mcp-allowlists) has no runtime effect and must not read as a doctor
+  // failure at all — it is reported informationally only.
 
   try {
-    const { getModeCapabilityStatus, getUnsupportedCapabilities } = await import('../lib/mode-capabilities.mjs');
+    const { getModeCapabilityStatus, getUnsupportedCapabilities, getCapabilities, categorizeEnterpriseCapability } =
+      await import('../lib/mode-capabilities.mjs');
     const currentMode = getDeploymentMode(process.env);
     const capStatus = getModeCapabilityStatus(currentMode);
-    if (capStatus !== 'fully-implemented') {
+    if (currentMode === 'enterprise') {
+      const allCaps = getCapabilities('enterprise');
+      const failClosed = allCaps.filter((cap) => categorizeEnterpriseCapability(cap) === 'fail-closed');
+      const later = allCaps.filter((cap) => categorizeEnterpriseCapability(cap) === 'later');
+      if (failClosed.length > 0) {
+        add(
+          `Mode capabilities (enterprise): ${failClosed.length} fail-closed, not yet implemented (${failClosed.map((c) => c.label).join(', ')}) — ADR-0057 refuses these hard, not just a warning`,
+          false,
+          false,
+        );
+      } else {
+        add('Mode capabilities (enterprise): no fail-closed gaps', true, true);
+      }
+      if (later.length > 0) {
+        add(`Mode capabilities (enterprise): ${later.length} deferred to a later wave, no runtime effect (${later.map((c) => c.label).join(', ')})`, true, true);
+      }
+    } else if (capStatus !== 'fully-implemented') {
       const unsupported = getUnsupportedCapabilities(currentMode);
       add(
         `Mode capabilities (${currentMode}): ${unsupported.length} stub/not-implemented (${unsupported.map(c => c.label).join(', ')})`,

@@ -45,7 +45,7 @@ import { WorkerRegistry } from '../../../lib/orchestration/worker-runtime.mjs';
 import { resolveTenantContext, TenantResolutionError } from '../../../lib/tenant/context.mjs';
 import { enforceMandatoryAudit, AUDIT_GATE_SOURCE } from '../../../lib/policy/audit-gate.mjs';
 import { checkAuditSinkAvailable } from '../../../lib/audit-trail.mjs';
-import { buildStatus, formatStatusReport } from '../../../lib/status.mjs';
+import { buildStatus, formatStatusReport, categorizeEnterpriseCapability } from '../../../lib/status.mjs';
 import { CAPABILITY_REGISTRY } from '../../../lib/mode-capabilities.mjs';
 import { tempDir } from '../../helpers.mjs';
 
@@ -151,11 +151,16 @@ test('[LMCP-L6] enterprise mode: status/doctor renders real capability truth and
     const entry = table.find((c) => c.id === regCap.id);
     assert.ok(entry, `capability ${regCap.id} must be in the rendered table`);
     assert.equal(entry.status, regCap.status, `rendered status for ${regCap.id} must match the registry, not a stale copy`);
+    // ADR-0057 status contract: the table must also carry the four-way category
+    // (active/fail-closed/later/absent) so callers can't conflate a fail-closed
+    // capability with a later one just because both show 'not-implemented'.
+    assert.equal(entry.category, categorizeEnterpriseCapability(regCap), `rendered category for ${regCap.id} must follow ADR-0057's partition`);
   }
 
   const report = formatStatusReport(status);
   assert.match(report, /Enterprise verdict: unsupported/);
   assert.match(report, /Enterprise capability table:/);
+  assert.doesNotMatch(report, /\(not-implemented\)/, 'report must render ADR-0057 categories, never the bare not-implemented status');
 });
 
 async function checkMandatoryAudit() {

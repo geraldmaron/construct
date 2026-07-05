@@ -15,7 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
-import { buildStatus, formatStatusReport } from '../lib/status.mjs';
+import { buildStatus, formatStatusReport, categorizeEnterpriseCapability } from '../lib/status.mjs';
 import { CAPABILITY_REGISTRY } from '../lib/mode-capabilities.mjs';
 import { tempDir } from './helpers.mjs';
 
@@ -181,20 +181,41 @@ test('formatStatusReport enterprise mode: emits standing warning and capability 
     'report should include capability table header',
   );
 
-  // Each registered enterprise capability should appear in the report.
+  // Each registered enterprise capability should appear in the report, tagged
+  // with its ADR-0057 category (active/fail-closed/later) — never the bare
+  // 'not-implemented' status, which conflates fail-closed and later capabilities.
   for (const cap of CAPABILITY_REGISTRY.enterprise) {
+    const category = categorizeEnterpriseCapability(cap);
     assert.match(
       report,
       new RegExp(cap.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
       `report should include capability label: ${cap.label}`,
     );
-    // Status should appear in the line for this capability.
     assert.match(
       report,
-      new RegExp(`${cap.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*\\(${cap.status}\\)`),
-      `report should show the real status (${cap.status}) for ${cap.label}`,
+      new RegExp(`${cap.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*\\(${category}\\)`),
+      `report should show the ADR-0057 category (${category}) for ${cap.label}`,
+    );
+    assert.doesNotMatch(
+      report,
+      new RegExp(`${cap.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*\\(not-implemented\\)`),
+      `report must never render the bare 'not-implemented' status for ${cap.label} — it must be categorized`,
     );
   }
+});
+
+test('categorizeEnterpriseCapability: distinguishes fail-closed from later per ADR-0057', () => {
+  assert.equal(categorizeEnterpriseCapability({ id: 'tenant-isolation', status: 'not-implemented' }), 'fail-closed');
+  assert.equal(categorizeEnterpriseCapability({ id: 'isolated-workers', status: 'not-implemented' }), 'fail-closed');
+  assert.equal(categorizeEnterpriseCapability({ id: 'rbac', status: 'not-implemented' }), 'later');
+  assert.equal(categorizeEnterpriseCapability({ id: 'signed-mcp-allowlists', status: 'not-implemented' }), 'later');
+  assert.equal(categorizeEnterpriseCapability({ id: 'mandatory-audit', status: 'implemented' }), 'active');
+  // An implemented capability is always 'active', even a fail-closed or later id,
+  // per the ADR: "must never show a not-implemented capability as active" implies
+  // the inverse is also true — an implemented one is never anything but active.
+  assert.equal(categorizeEnterpriseCapability({ id: 'tenant-isolation', status: 'implemented' }), 'active');
+  // An id with no ADR-0057 category (and not implemented) defaults to absent.
+  assert.equal(categorizeEnterpriseCapability({ id: 'some-future-capability', status: 'not-implemented' }), 'absent');
 });
 
 test('buildStatus solo mode: no enterpriseCapabilityTable', async () => {
