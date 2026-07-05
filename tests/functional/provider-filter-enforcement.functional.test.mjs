@@ -25,7 +25,8 @@ import test from 'node:test';
 import { EmbedDaemon, enforceSectionFilters, distillSnapshotItems } from '../../lib/embed/daemon.mjs';
 import { ProviderRegistry } from '../../lib/embed/providers/registry.mjs';
 import { normalize } from '../../lib/embed/config.mjs';
-import { listObservations } from '../../lib/observation-store.mjs';
+import { demandFetch } from '../../lib/embed/demand-fetch.mjs';
+import { listObservations, getObservation } from '../../lib/observation-store.mjs';
 import { filterAuditPath, readFilterAudit } from '../../lib/providers/filter-audit.mjs';
 import { matchesFilter } from '../../lib/providers/contract.mjs';
 import { buildJqlFromFilter } from '../../lib/embed/providers/jira.mjs';
@@ -218,4 +219,114 @@ test('end-to-end: real EmbedDaemon snapshot cycle with a fake provider enforces 
   assert.ok(existsSync(filterAuditPath(rootDir)), 'daemon poll loop wrote the filter audit line');
   const auditLines = readFilterAudit(rootDir);
   assert.ok(auditLines.some((l) => l.provider === 'fake-jira' && l.matched === 1 && l.dropped === 3));
+});
+
+test('construct-737t: demandFetch (team-scoped) drops out-of-scope items via the same embed.yaml filter enforceSectionFilters uses on the poll path', async (t) => {
+  const rootDir = makeRootDir(t, 'demand-fetch-filter');
+  const xdgConfigHome = join(rootDir, 'xdg-config');
+  const embedConfigDir = join(xdgConfigHome, 'construct');
+  mkdirSync(embedConfigDir, { recursive: true });
+
+  // Source declares a broader repo list ([org/a, org/b]) than its
+  // filter.scope narrows to ([org/a]) — the exact gap construct-737t
+  // describes. enforceSectionFilters already drops org/b on the poll path via
+  // an identical embed.yaml block; demandFetchTeam's read path is under test.
+  writeFileSync(join(embedConfigDir, 'embed.yaml'), [
+    'sources:',
+    '  - provider: github',
+    '    repos: [org/a, org/b]',
+    '    refs: [issues]',
+    '    filter:',
+    '      scope:',
+    '        repos: [org/a]',
+    'outputs: []',
+    '',
+  ].join('\n'));
+
+  const env = { XDG_CONFIG_HOME: xdgConfigHome };
+
+  const mockProvider = {
+    read: async (ref, opts) => {
+      const repo = opts?.repos?.[0];
+      if (ref !== 'issues' || !repo) return [];
+      return [{ type: 'issue', id: `${repo}-1`, key: `${repo}-1`, title: `Item in ${repo}`, summary: `Item in ${repo}`, repo }];
+    },
+  };
+  const providerRegistry = { get: (name) => (name === 'github' ? mockProvider : null) };
+  const registry = {
+    teams: {
+      'eng-team': {
+        sources: [
+          { id: 'repo-a', provider: 'github', selector: { repo: 'org/a' }, filters: { refs: ['issues'] } },
+          { id: 'repo-b', provider: 'github', selector: { repo: 'org/b' }, filters: { refs: ['issues'] } },
+        ],
+      },
+    },
+  };
+
+  const result = await demandFetch({ teamId: 'eng-team', rootDir, env, registry, providerRegistry });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.reason, 'team_fetched');
+  // Before construct-737t: both org/a and org/b items would reach
+  // addObservation() — demandFetchTeam called provider.read() directly and
+  // never applied filter.scope. After: only the item inside filter.scope
+  // (org/a) survives, matching what enforceSectionFilters already guarantees
+  // on the daemon poll path for the identical filter block.
+  assert.deepEqual(result.items.map((i) => i.repo), ['org/a']);
+  assert.equal(result.written, 1);
+
+  const stored = listObservations(rootDir, { limit: 50 }).map((e) => getObservation(rootDir, e.id)).filter(Boolean);
+  const summaries = stored.map((o) => o.summary).filter(Boolean);
+  assert.ok(summaries.some((s) => s.includes('org/a')), 'in-scope repo item reached the observation store');
+  assert.ok(!summaries.some((s) => s.includes('org/b')), 'out-of-scope repo item never became an observation, matching the poll path');
+});
+
+test('construct-737t: a governing filter never swallows a provider error sentinel in demandFetchTeam', async (t) => {
+  const rootDir = makeRootDir(t, 'demand-fetch-filter-errors');
+  const xdgConfigHome = join(rootDir, 'xdg-config');
+  const embedConfigDir = join(xdgConfigHome, 'construct');
+  mkdirSync(embedConfigDir, { recursive: true });
+
+  writeFileSync(join(embedConfigDir, 'embed.yaml'), [
+    'sources:',
+    '  - provider: github',
+    '    repos: [org/a]',
+    '    refs: [issues]',
+    '    filter:',
+    '      scope:',
+    '        repos: [org/a]',
+    'outputs: []',
+    '',
+  ].join('\n'));
+
+  const env = { XDG_CONFIG_HOME: xdgConfigHome };
+
+  const mockProvider = {
+    read: async (ref, opts) => {
+      const repo = opts?.repos?.[0];
+      return [
+        { type: 'error', message: `rate limited fetching ${repo}` },
+        { type: 'issue', id: `${repo}-1`, key: `${repo}-1`, title: `Item in ${repo}`, summary: `Item in ${repo}`, repo },
+      ];
+    },
+  };
+  const providerRegistry = { get: (name) => (name === 'github' ? mockProvider : null) };
+  const registry = {
+    teams: {
+      'eng-team': {
+        sources: [
+          { id: 'repo-a', provider: 'github', selector: { repo: 'org/a' }, filters: { refs: ['issues'] } },
+        ],
+      },
+    },
+  };
+
+  const result = await demandFetch({ teamId: 'eng-team', rootDir, env, registry, providerRegistry });
+
+  // matchesFilter has no scope field to check on an error sentinel; it must
+  // never be judged by filter.scope in the first place, or a real provider
+  // error would vanish behind an unrelated filter block.
+  assert.ok(result.errors?.some((e) => e.message?.includes('rate limited')), 'error sentinel surfaced despite a governing filter being configured');
+  assert.deepEqual(result.items.map((i) => i.repo), ['org/a'], 'the in-scope data item still passed through the filter');
 });
