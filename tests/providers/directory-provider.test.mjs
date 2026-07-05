@@ -236,6 +236,12 @@ describe('directory provider — path traversal security', () => {
 
   const provider = create();
 
+  // The provider may either silently filter an escape attempt (normal case,
+  // asserted above) or throw. When it throws, the message must name a real
+  // path-escape/symlink rejection — not just any error — so a regression
+  // elsewhere can't be caught here and misread as "security is working".
+  const SECURITY_REJECTION_PATTERN = /symlink not allowed|path escape detected|traversal/i;
+
   it('rejects ../.. traversal attempt in read', async () => {
     try {
       await provider.read({
@@ -249,7 +255,8 @@ describe('directory provider — path traversal security', () => {
       const hasEscaped = files.some((f) => f.path.includes('outside'));
       assert.equal(hasEscaped, false, 'traversal attempt should not escape root');
     } catch (err) {
-      assert.ok(err.message || true, 'traversal rejection accepted as error');
+      if (err instanceof assert.AssertionError) throw err;
+      assert.match(err.message, SECURITY_REJECTION_PATTERN, `expected a path-escape/traversal rejection, got: ${err.message}`);
     }
   });
 
@@ -264,7 +271,8 @@ describe('directory provider — path traversal security', () => {
       );
       assert.equal(hasSecretData, false, 'symlink escape should be blocked');
     } catch (err) {
-      assert.ok(err.message || true, 'symlink escape rejection accepted as error');
+      if (err instanceof assert.AssertionError) throw err;
+      assert.match(err.message, SECURITY_REJECTION_PATTERN, `expected a symlink-escape rejection, got: ${err.message}`);
     }
   });
 
@@ -277,7 +285,8 @@ describe('directory provider — path traversal security', () => {
       const foundSecret = results.some((r) => r.path.includes('secret.txt'));
       assert.equal(foundSecret, false, 'symlink escape should be blocked in search');
     } catch (err) {
-      assert.ok(err.message || true, 'symlink escape rejection accepted as error');
+      if (err instanceof assert.AssertionError) throw err;
+      assert.match(err.message, SECURITY_REJECTION_PATTERN, `expected a symlink-escape rejection, got: ${err.message}`);
     }
   });
 });
@@ -300,8 +309,7 @@ describe('directory provider — relative and absolute paths', () => {
       const relPath = `.${TEST_ROOT.slice(tmpdir().length)}`;
       const files = await provider.read({ root: relPath });
       assert.ok(Array.isArray(files));
-    } catch (err) {
-      assert.ok(true, 'relative paths attempted');
+      assert.ok(files.length > 0, 'relative path should resolve into the populated fixture root');
     } finally {
       process.chdir(originalCwd);
     }

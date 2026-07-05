@@ -103,7 +103,7 @@ describe('validateAllowlist — other providers', () => {
 });
 
 describe('OUT_OF_SCOPE error code from provider read()', () => {
-  it('throws an OUT_OF_SCOPE error when read() is called with a blocked resource', async () => {
+  it('throws an OUT_OF_SCOPE error when read() is called with a blocked resource', async (t) => {
     const { create } = await import('../../lib/providers/github/index.mjs');
     const provider = create({ env: { GITHUB_TOKEN: 'fake' } });
 
@@ -114,15 +114,14 @@ describe('OUT_OF_SCOPE error code from provider read()', () => {
       thrown = err;
     }
 
-    // The github provider does not yet thread config through validateAllowlist internally,
-    // so this test validates that if OUT_OF_SCOPE is thrown, the code is set correctly.
-    // The scaffold template demonstrates the correct integration pattern.
     if (thrown && thrown.code === 'OUT_OF_SCOPE') {
       assert.equal(thrown.code, 'OUT_OF_SCOPE');
-    } else {
-      // The github v1 provider does not have allowlist wiring; skip assertion.
-      assert.ok(true, 'github provider does not enforce allowlist internally (scaffold shows correct pattern)');
+      return;
     }
+
+    // github provider read() does not call validateAllowlist internally yet (construct-hb9k).
+
+    t.skip('github provider does not enforce allowlist internally yet — tracked in construct-hb9k');
   });
 
   it('validateAllowlist result can be used to throw OUT_OF_SCOPE', () => {

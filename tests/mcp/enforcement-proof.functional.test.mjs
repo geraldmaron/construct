@@ -13,10 +13,11 @@
  * based on test setup. Assertions verify the side-effect counter and the durable
  * decision records (denied-store, approval-queue).
  *
- * Broker-bypass resistance: the fixture tries to invoke the tool directly
- * (bypass the broker) and asserts that direct dispatch raises or that the
- * side-effect counter is still absent (proving the direct call was blocked or
- * never reached the enforce boundary).
+ * Broker boundary, not bypass-resistance: ADR-0056 documents that calling a
+ * tool directly (outside broker.invoke()) is an untrusted path with no audit
+ * record — the enforcement guarantee covers callers that go through
+ * broker.invoke(), not arbitrary direct function calls. The direct-dispatch
+ * sub-test below demonstrates that boundary rather than a bypass guarantee.
  */
 import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -189,12 +190,12 @@ describe('Enforcement proof — Property 1: Denied calls never execute', () => {
     assert.equal(counter.getCount(), 0, 'fixture side effect must remain absent after multiple denials');
   });
 
-  it('direct dispatch attempt on denied tool raises PolicyDenied (no bypass)', async () => {
+  it('direct dispatch outside broker.invoke() is an untrusted path (ADR-0056), not a broker bypass', async () => {
     const rootDir = fakeRoot();
     const counter = new SideEffectCounter(rootDir);
     const broker = makeBroker({ rootDir, policy: denyingPolicy() });
 
-    // Attempt a brokered call.
+    // Brokered call: policy denies, side effect absent.
     await assert.rejects(
       () => broker.invoke({
         role: 'engineer',
@@ -204,33 +205,14 @@ describe('Enforcement proof — Property 1: Denied calls never execute', () => {
       }),
       (err) => err instanceof PolicyDenied,
     );
+    assert.equal(counter.getCount(), 0, 'broker.invoke denial path must not execute the tool');
 
-    // Attempt direct dispatch (bypass broker).
-    // Direct call should NOT have the fixture side effect recorded.
-    let directExecuteFired = false;
-    try {
-      await makeFixtureTool(counter)();
-      directExecuteFired = true;
-    } catch {
-      // Direct dispatch attempted but was blocked or failed.
-    }
-
-    // Even if direct execute fired (which proves no dispatch-level block exists),
-    // the fact that the brokered call raised PolicyDenied proves the
-    // broker-enforcement path is not bypassable. Only the direct call would
-    // have a side effect, and that's outside the broker boundary.
-    //
-    // The proof here is: broker.invoke() raises PolicyDenied and never calls
-    // execute. A caller that bypasses broker.invoke() entirely is outside
-    // the enforcement contract. The test demonstrates the broker blocks it.
-    assert.ok(directExecuteFired === true, 'direct execute always works (outside broker)');
-
-    // The critical assertion: broker-path side effect is still absent.
-    assert.equal(
-      counter.getCount(),
-      1, // Direct call incremented it once
-      'broker.invoke denied path must not execute; only direct call would run',
-    );
+    // Calling the tool function directly skips broker.invoke() and its policy
+    // check entirely. ADR-0056 names this an untrusted path outside the
+    // enforcement boundary, not a guarantee the broker provides: policy only
+    // gates callers that go through broker.invoke().
+    await makeFixtureTool(counter)();
+    assert.equal(counter.getCount(), 1, 'direct dispatch executes unconditionally outside broker.invoke()');
   });
 });
 
