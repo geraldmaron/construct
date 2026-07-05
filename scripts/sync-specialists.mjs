@@ -1025,7 +1025,7 @@ ${buildPrompt(entry, allEntries, "claude")}
  * Rewrite the home-mode hook command pattern
  *   node "$HOME/.config/construct/lib/hooks/<name>.mjs"
  * into the project-portable form
- *   node "${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs" hook <name>
+ *   node "${CLAUDE_PROJECT_DIR:-<absRoot>}/.construct/run.mjs" hook <name>
  * so the resulting settings.json works on any clone where the project ships
  * the .construct/ launcher (committed by `npm install`'s postinstall or by
  * `construct init`). The launcher resolves Construct via node_modules → npx
@@ -1033,21 +1033,29 @@ ${buildPrompt(entry, allEntries, "claude")}
  * works for non-Node ecosystems too. Other commands (inline node -e
  * snippets, npx block-no-verify@…) are left untouched.
  *
- * The `${CLAUDE_PROJECT_DIR:-.}` anchor matters: Claude Code invokes hooks with
+ * The `${CLAUDE_PROJECT_DIR:-<absRoot>}` anchor matters: hosts invoke hooks with
  * a working directory that is not guaranteed to be the project root (observed:
- * $HOME), and a bare relative `.construct/run.mjs` then fails with MODULE_NOT_FOUND
- * at node:internal/modules/cjs/loader. CLAUDE_PROJECT_DIR is the project root Claude
- * Code exports to every hook (same var lib/hooks/*.mjs already read); the `:-.`
- * fallback preserves the prior relative behavior wherever the var is unset.
+ * $HOME, a `cd`-ed scratch dir), and a bare relative `.construct/run.mjs` then
+ * fails with MODULE_NOT_FOUND at node:internal/modules/cjs/loader — before any
+ * code in run.mjs can execute, so the shim cannot self-correct. CLAUDE_PROJECT_DIR
+ * is the project root Claude Code exports to every hook (same var lib/hooks/*.mjs
+ * already read) and stays correct if the checkout moves; the fallback is the
+ * absolute project root baked at sync time, so tools that do not export
+ * CLAUDE_PROJECT_DIR (or any host with a drifted cwd) still resolve the launcher.
+ * `.claude/settings.json` is gitignored and regenerated per machine by
+ * `construct sync`, so an absolute fallback is machine-correct without leaking a
+ * shared path. The prior `:-.` fallback was cwd-relative and broke on any drift.
  */
-function makeHooksPortable(hooksJson) {
+function makeHooksPortable(hooksJson, projectRoot) {
+  const anchor = `\${CLAUDE_PROJECT_DIR:-${path.resolve(projectRoot)}}`;
+
   // Operate on the in-memory object so we don't fight JSON string escaping.
   const replaceCommand = (cmd) => {
     if (typeof cmd !== 'string') return cmd;
     const m = cmd.match(/^node\s+"?\$HOME\/\.config\/construct\/lib\/hooks\/([a-z0-9-]+)\.mjs"?\s*(.*)$/);
     if (!m) return cmd;
     const [, name, rest] = m;
-    return `node "\${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs" hook ${name}${rest ? ' ' + rest.trim() : ''}`;
+    return `node "${anchor}/.construct/run.mjs" hook ${name}${rest ? ' ' + rest.trim() : ''}`;
   };
 
   const walk = (node) => {
@@ -1129,7 +1137,7 @@ function writeProjectClaudeSettings(targetDir) {
     : {};
 
   if (template.hooks) {
-    existing.hooks = JSON.parse(makeHooksPortable(template.hooks));
+    existing.hooks = JSON.parse(makeHooksPortable(template.hooks, targetDir));
   }
   if (template.permissions) {
     existing.permissions ??= template.permissions;
