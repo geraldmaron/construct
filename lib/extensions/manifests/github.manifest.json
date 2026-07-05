@@ -8,5 +8,45 @@
   "securityClassification": "trusted",
   "owner": "construct-core",
   "compatVersion": 1,
-  "installSource": "builtin"
+  "installSource": "builtin",
+  "sourceTarget": {
+    "provider": "github",
+    "selector": {
+      "field": "repo",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+      "patternTransform": "trim",
+      "hint": "required owner/repo slug",
+      "normalize": "trim"
+    },
+    "signature": { "template": "github:repo:{value}", "valueMode": "optionalLower" },
+    "legacyEnv": { "vars": ["GITHUB_REPOS", "GITHUB_REPO"], "parse": "csv" },
+    "aliases": { "strategy": "repoWords", "displayPrefix": null, "catchAll": false },
+    "embed": {
+      "mode": "aggregate",
+      "valueField": "repos",
+      "valueKind": "array",
+      "groups": [
+        { "refs": ["prs", "issues", "commits"], "limit": 25 },
+        { "refs": ["meta", "readme", "docs"], "limit": 25 }
+      ]
+    },
+    "embedFilters": {
+      "valueField": "repos",
+      "valueKind": "array",
+      "defaultRefs": ["prs", "issues", "commits"],
+      "refsFilterKey": "refs",
+      "defaultLimit": 25
+    },
+    "demandFetch": {
+      "targetRefs": ["meta", "readme", "docs", "prs", "issues", "commits"],
+      "targetRefsFilterKey": "refs",
+      "targetOptsField": "repos",
+      "targetOptsKind": "array",
+      "targetDefaultLimit": 25,
+      "queryRefs": ["meta", "readme", "docs", "prs", "issues", "commits"],
+      "queryOptsField": "repos",
+      "queryOptsKind": "array",
+      "queryDefaultLimit": 25
+    }
+  }
 }

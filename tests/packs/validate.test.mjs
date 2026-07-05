@@ -1,5 +1,14 @@
 /**
  * tests/packs/validate.test.mjs — pack manifest validator unit tests.
+ *
+ * Packs are third-party distributable bundles (id/version/compatVersion per
+ * ADR-0055) that can contribute specialists, prompts, tools, and provider
+ * capability grants; validating a pack's manifest before it is trusted —
+ * rejecting unknown fields, incompatible compatVersion, and embedBindings
+ * naming providers/capabilities outside the known-provider allowlist — is
+ * supply-chain integrity checking for that ingestion path.
+ *
+ * @owasp LLM03
  */
 
 import test from 'node:test';
