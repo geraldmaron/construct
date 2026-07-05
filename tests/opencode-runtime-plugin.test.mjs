@@ -18,9 +18,12 @@ import {
   trackReadEfficiencyFromMessage,
   emitSessionPrelude,
   _resetPreludeForTests,
+  detectUnavailableToolRejections,
+  recordUnavailableToolRejections,
 } from "../lib/opencode-runtime-plugin.mjs";
 import { resetPricingCatalog } from "../lib/telemetry/model-pricing-catalog.mjs";
 import { doctorRoot } from "../lib/config/xdg.mjs";
+import { summarizeToolFailures } from "../lib/mcp/tool-recovery.mjs";
 
 test("buildRuntimeTracePayload creates deterministic OpenCode runtime trace metadata", () => {
   const payload = buildRuntimeTracePayload(
@@ -820,4 +823,116 @@ test("buildRuntimeTracePayload produces runtime_event kind for session.created",
   assert.equal(payload.output.eventType, "session.created");
   assert.equal(payload.output.status, "created");
   assert.equal(payload.output.traceQualityFlags.hasError, false);
+});
+
+// construct-2q2m — host-side tool-miss capture for OpenCode "unavailable tool" rejections.
+// Fixtures below match the session.error / message.updated shapes established earlier for
+// buildRuntimeTracePayload; a live OpenCode session has not confirmed the exact rejection
+// shape (see detectUnavailableToolRejections doc comment in lib/opencode-runtime-plugin.mjs).
+
+test("detectUnavailableToolRejections matches a NoSuchToolError-style session.error", () => {
+  const hits = detectUnavailableToolRejections({
+    type: "session.error",
+    error: { name: "AI_NoSuchToolError", message: "Model tried to call unavailable tool 'construct_ingest_v2'.", toolName: "construct_ingest_v2" },
+  });
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].source, "session.error");
+  assert.equal(hits[0].tool, "construct_ingest_v2");
+  assert.match(hits[0].text, /unavailable tool/i);
+});
+
+test("detectUnavailableToolRejections ignores an unrelated session.error", () => {
+  const hits = detectUnavailableToolRejections({
+    type: "session.error",
+    error: { message: "Provider usage limit reached" },
+  });
+  assert.deepEqual(hits, []);
+});
+
+test("detectUnavailableToolRejections matches an error-state tool part in message.updated", () => {
+  const hits = detectUnavailableToolRejections({
+    type: "message.updated",
+    properties: {
+      info: {
+        role: "assistant",
+        parts: [
+          { type: "text", text: "Let me check that file." },
+          { type: "tool", tool: "playwright_navigate", state: { status: "error", error: "Tool 'playwright_navigate' is not available in this session." }, callID: "c1" },
+          { type: "tool", tool: "read", state: { status: "completed", input: { filePath: "/a.txt" } }, callID: "c2" },
+        ],
+      },
+    },
+  });
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].source, "message.part");
+  assert.equal(hits[0].tool, "playwright_navigate");
+  assert.match(hits[0].text, /not available/i);
+});
+
+test("detectUnavailableToolRejections matches the tool-invocation part shape", () => {
+  const hits = detectUnavailableToolRejections({
+    type: "message.updated",
+    properties: {
+      info: {
+        role: "assistant",
+        parts: [
+          { type: "tool-invocation", toolInvocation: { toolName: "context7_search", state: "error", error: "no such tool: context7_search" } },
+        ],
+      },
+    },
+  });
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].tool, "context7_search");
+});
+
+test("detectUnavailableToolRejections does not flag an unrelated tool execution error", () => {
+  const hits = detectUnavailableToolRejections({
+    type: "message.updated",
+    properties: {
+      info: {
+        role: "assistant",
+        parts: [
+          { type: "tool", tool: "bash", state: { status: "error", error: "command exited with code 1" }, callID: "c1" },
+        ],
+      },
+    },
+  });
+  assert.deepEqual(hits, []);
+});
+
+test("detectUnavailableToolRejections returns [] for event types it does not inspect", () => {
+  assert.deepEqual(detectUnavailableToolRejections({ type: "session.idle" }), []);
+  assert.deepEqual(detectUnavailableToolRejections(null), []);
+});
+
+test("recordUnavailableToolRejections appends a hit to the shared tool-failures observation log", (t) => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-opencode-toolmiss-"));
+  t.after(() => { try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {} });
+
+  const hits = recordUnavailableToolRejections(
+    {
+      type: "session.error",
+      error: { name: "AI_NoSuchToolError", message: "no such tool: memory_search", toolName: "memory_search" },
+    },
+    { toolkitDir: rootDir, env: {} },
+  );
+
+  assert.equal(hits.length, 1);
+  const summary = summarizeToolFailures(rootDir);
+  assert.equal(summary.total, 1);
+  assert.equal(summary.top[0].name, "memory_search");
+});
+
+test("recordUnavailableToolRejections is a no-op when no rejection is detected", (t) => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "construct-opencode-toolmiss-noop-"));
+  t.after(() => { try { fs.rmSync(rootDir, { recursive: true, force: true }); } catch {} });
+
+  const hits = recordUnavailableToolRejections(
+    { type: "session.error", error: { message: "Provider usage limit reached" } },
+    { toolkitDir: rootDir, env: {} },
+  );
+
+  assert.deepEqual(hits, []);
+  const summary = summarizeToolFailures(rootDir);
+  assert.equal(summary.total, 0);
 });

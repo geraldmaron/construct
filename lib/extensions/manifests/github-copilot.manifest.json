@@ -1,0 +1,12 @@
+{
+  "id": "github-copilot",
+  "version": "1.0.0",
+  "kind": "model",
+  "capabilities": ["chat"],
+  "secretEnvKeys": ["GITHUB_TOKEN", "GH_TOKEN"],
+  "docs": "GitHub Copilot",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin",
+  "securityClassification": "trusted"
+}

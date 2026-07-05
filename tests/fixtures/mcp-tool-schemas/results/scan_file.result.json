@@ -1,0 +1,13 @@
+{
+  "capturedAt": "2026-07-05T00:43:07.054Z",
+  "tool": "scan_file",
+  "args": {
+    "file_path": "package.json"
+  },
+  "result": {
+    "file_path": "/Users/geralddagher/Developer/Projects/construct/package.json",
+    "secrets": [],
+    "quality_issues": [],
+    "clean": true
+  }
+}

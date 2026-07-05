@@ -193,6 +193,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
+| `construct pack` | Specialist/team/profile pack enable/disable lifecycle (LMCP-E3) |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
@@ -311,6 +312,7 @@ construct/
 ├── config           Repo-wide controlled vocabulary (tag-vocabulary.json)
 ├── deploy           Terraform and deployment configs
 ├── deps
+├── dev
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples         Example projects and persona fixtures
 ├── lib              Core runtime: CLI, hooks, MCP, providers, oracle, sync

@@ -7,11 +7,16 @@
  * must instead emit each host's env-reference syntax so the token stays in one place
  * and the host resolves it at launch.
  *
- * For local/stdio MCPs on Claude, VS Code, and OpenCode the value-to-reference flip is
- * applied: a whole-value secret template (`__NAME__`) is emitted as the host's
- * env-reference form, so a live value, an op:// reference, and an unresolved template
- * all resolve to a reference rather than landing on disk. Codex has no env-block
- * interpolation, so its builder keeps the deferred materialize/strip behavior.
+ * For local/stdio MCPs on Claude and OpenCode the value-to-reference flip is applied: a
+ * whole-value secret template (`__NAME__`) is emitted as the host's env-reference form,
+ * so a live value, an op:// reference, and an unresolved template all resolve to a
+ * reference rather than landing on disk. Codex has no env-block interpolation, so its
+ * builder keeps the deferred materialize/strip behavior; VS Code's mcp.json reference
+ * documents no `${env:VAR}` substitution either (construct-trxz.12), so its local/stdio
+ * env gets the same materialize-or-strip treatment as Codex. The remote-header PAT
+ * fallback tests below still assert the pre-existing `${env:VAR}` output for VS Code —
+ * that surface was not re-verified against the same finding and is flagged separately,
+ * not asserted safe here.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -103,4 +108,25 @@ test('Codex stdio env keeps a resolved literal value (flip deferred, no env inte
   const canaryNotAKey = 'CANARY-zz9-not-a-key';
   const entry = buildCodexMcpEntry('example', LOCAL_DEF, { EXAMPLE_API_KEY: canaryNotAKey });
   assert.equal(entry.env.EXAMPLE_API_KEY, canaryNotAKey, 'Codex needs the literal at sync time');
+});
+
+// VS Code's mcp.json reference documents only ${workspaceFolder}-style predefined
+// variables and ${input:id} prompts — no ${env:VAR} substitution — so a stdio env
+// block gets the same materialize-or-strip treatment as Codex, not the Claude/
+// OpenCode reference flip (construct-trxz.12).
+
+test('local/stdio env (VS Code): a resolved value materializes, never a ${env:NAME} reference', () => {
+  const canaryNotAKey = 'CANARY-zz9-not-a-key';
+  const entry = buildClaudeMcpEntry('example', LOCAL_DEF, { EXAMPLE_API_KEY: canaryNotAKey }, { host: 'vscode' });
+  assert.equal(entry.env.EXAMPLE_API_KEY, canaryNotAKey, 'VS Code needs the literal since it does not expand ${env:VAR} in mcp.json');
+  assert.ok(!JSON.stringify(entry).includes('{env:'), 'no OpenCode-style reference may appear in the VS Code entry');
+  assert.ok(!JSON.stringify(entry).includes('${env:'), 'no VS Code env-reference form may appear — it would not expand');
+});
+
+test('local/stdio env (VS Code): op:// and unresolved templates are stripped, never written literally', () => {
+  const fromRef = buildClaudeMcpEntry('example', LOCAL_DEF, { EXAMPLE_API_KEY: OP_REF }, { host: 'vscode' });
+  const fromTemplate = buildClaudeMcpEntry('example', LOCAL_DEF, {}, { host: 'vscode' });
+  assert.equal(fromRef.env, undefined, 'op:// must be stripped from the VS Code env block');
+  assert.equal(fromTemplate.env, undefined, 'an unresolved template must be stripped from the VS Code env block');
+  assert.ok(!JSON.stringify(fromRef).includes('op://'), 'no op:// reference may appear in the VS Code entry');
 });

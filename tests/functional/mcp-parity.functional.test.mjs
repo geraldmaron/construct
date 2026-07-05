@@ -15,6 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { spawn } from 'node:child_process';
+import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const SERVER = path.join(REPO, 'lib', 'mcp', 'server.mjs');
@@ -22,7 +23,7 @@ const SERVER = path.join(REPO, 'lib', 'mcp', 'server.mjs');
 function startServer() {
   const proc = spawn(process.execPath, [SERVER], {
     stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env, CX_TOOLKIT_DIR: REPO },
+    env: sterileSpawnEnv({ CX_TOOLKIT_DIR: REPO }),
   });
 
   let buffered = '';

@@ -11,7 +11,7 @@ Inheritance is one level deep. A child cannot extend another child. Circular ext
 
 ## Resolution order
 
-When Construct loads a profile with `extends`, it merges the two JSON objects with child fields winning over parent fields. For array fields (`roles`, `intake.types`, `intake.stages`, `docTemplates`, `defaultSkills`) the child's array is **appended** to the parent's array, not replaced. To remove a parent entry, list it explicitly in a `remove` key on the child (planned; not yet shipped).
+When Construct loads a profile with `extends`, it merges the two JSON objects with child fields winning over parent fields. For array fields (`roles`, `intake.types`, `intake.stages`, `docTemplates`, `defaultSkills`) the child's array is **appended** to the parent's array, not replaced. There is no `remove` key or other mechanism to drop a parent entry from a child — see [Constraints](#constraints).
 
 The effective resolved profile is what every other subsystem sees. The raw `extends` field is only visible to the loader.
 
@@ -119,4 +119,4 @@ The loader lives in `lib/scopes/`. Curated profiles (e.g. `profiles/research.jso
 - Maximum inheritance depth: 1. A child profile cannot itself be a parent.
 - The parent must be a curated profile (exists in `profiles/<id>.json`). Custom profiles cannot extend other custom profiles.
 - Array deduplication is string-equality based. Two entries that are logically the same but spelled differently are kept as two entries.
-- Removing a parent entry requires editing the parent directly or creating a new curated profile without that entry. Selective removal via a `remove` key is not yet implemented.
+- Removing a parent entry requires editing the parent directly or creating a new curated profile without that entry. There is no `remove` key or other selective-removal mechanism.

@@ -77,3 +77,20 @@ test('parity holds on a fully resolvable env too (non-degraded control)', async 
   assert.equal(run.execution.degraded, false);
   assert.equal(readiness.reasonCode !== 'attached', run.execution.degraded);
 });
+
+// construct-neq9.2/.3: the third fixture cell — a provider key present, no
+// CX_MODEL_REASONING/STANDARD/FAST pin — is the exact incident machine state
+// (run-02158a157d53). resolveEmbeddedModel resolves it via
+// credential-family-fallback, so it must land in the same non-degraded bucket
+// as the fully-pinned env, not the no-keys-no-tiers bucket above.
+
+test('parity holds on a keys-present-no-tiers env: credential-family-fallback resolves, readiness stays PASS', async () => {
+  const cwd = freshCwd();
+  const env = { ANTHROPIC_API_KEY: 'sk-test-canary' };
+  const readiness = buildOrchestrationReadiness(ATTACHED_INPUT, { env, cwd });
+  const run = await planRun({ request: 'x', requestedStrategy: 'orchestrated' }, { env, cwd });
+
+  assert.equal(readiness.verdict, 'pass', 'a present provider key with no tier pin must not read as unready');
+  assert.equal(run.execution.degraded, false, 'the same env must not degrade the run either');
+  assert.equal(readiness.reasonCode !== 'attached', run.execution.degraded, 'readiness-green must equal run-executability on the same env');
+});

@@ -219,3 +219,21 @@ This validates `specialists/org` and prints specific field constraint violations
    ```bash
    construct storage sync
    ```
+
+## `bd list` hangs or never terminates
+
+**Symptoms:** `bd list` (the default tree view) appears to hang; killing the piled-up processes can cascade into dolt lock contention on the next `bd` command.
+
+**Cause:** this is a bug in the `bd` binary's tree renderer, not a defect in your issue graph. The default tree walker follows `bd dep relate` (relates-to) edges as if they were hierarchy children, with no visited-set — any bidirectional `bd dep relate` link between two issues makes the renderer recurse forever. `bd dep cycles` correctly reports no cycle in this situation, because relates-to is not a blocking dependency edge and the cycle checker only walks `blocks`/`conditional-blocks` edges.
+
+**Workarounds (all terminate normally):**
+
+```bash
+bd list --flat     # flat listing, no recursive tree walk
+bd list --json      # JSON output, same non-recursive path
+bd ready             # ready-work view, unaffected
+```
+
+Default to one of these instead of bare `bd list` until an upstream `bd` release dedupes visited nodes in the tree walker.
+
+**Prevention:** avoid adding a *bidirectional* `bd dep relate` link between two epics (i.e. `relate A B` and `relate B A`). A one-directional related link, or a plain-text cross-reference in a comment, carries the same context without triggering the recursion. If you do need to break an existing bidirectional link, remove one direction with `bd dep remove` and note the relationship in a comment instead of re-adding it the other way.

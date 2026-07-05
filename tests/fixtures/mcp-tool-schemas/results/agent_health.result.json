@@ -1,0 +1,14 @@
+{
+  "capturedAt": "2026-07-05T00:43:07.029Z",
+  "tool": "agent_health",
+  "args": {},
+  "result": {
+    "reviewDate": "review-2026-07-04T03-37-24-681Z",
+    "period": {
+      "from": "2026-06-27T03:37:24.681Z",
+      "to": "2026-07-04T03:37:24.681Z",
+      "days": 7
+    },
+    "agents": []
+  }
+}

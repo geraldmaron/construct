@@ -126,9 +126,18 @@ npm run release:preflight              # all checks, requires npm login
 npm run release:preflight:no-auth      # skip the auth check
 ```
 
-Validates: clean git tree, on `main`, `.construct/version` pin matches `package.json`, CHANGELOG entry for the version, all tests pass, comment policy, docs verify, npm audit, `npm pack --dry-run`, and (when not `--no-auth`) `npm whoami` against the OIDC environment.
+Validates: clean git tree, on `main`, `.construct/version` pin matches `package.json`, CHANGELOG entry for the version, all tests pass, comment policy, docs verify, npm audit, `npm pack --dry-run`, the release evidence gate (below), and (when not `--no-auth`) `npm whoami` against the OIDC environment.
 
 Exit 0 means safe to tag. Anything else: fix locally, do not push the tag and hope.
+
+## Release evidence gate (LMCP-M5)
+
+```bash
+node scripts/release-evidence-gate.mjs             # packaging + acceptance tests
+node scripts/release-evidence-gate.mjs --skip-tests # packaging only (fast; step 11 of release:preflight)
+```
+
+Blocking step, run by both `npm run release:preflight` and `npm run release:check`: for every capability `lib/mode-capabilities.mjs`'s `CAPABILITY_REGISTRY` marks `'implemented'`, verifies the file(s) that implement it actually landed in the packed artifact (`npm pack --json --dry-run`, no tarball written) and that its registered acceptance test (`tests/acceptance/modes/*.acceptance.test.mjs`, `tests/enterprise/audit-isolation.test.mjs`) passes. A release cannot ship claiming a capability the packed artifact does not actually contain or that has stopped passing its acceptance test. Self-test: `node --test tests/scripts/release-evidence-gate.test.mjs`.
 
 ## Release gate (in CI)
 
@@ -140,6 +149,7 @@ Exit 0 means safe to tag. Anything else: fix locally, do not push the tag and ho
 - `node ./bin/construct lint:comments`
 - `npm run lint:scopes -- --quiet`
 - `npm run test:functional`
+- `node scripts/release-evidence-gate.mjs --skip-tests` — release evidence gate (above); packaging-only here since `npm test` already ran every capability's acceptance test
 - `npm audit --audit-level=high`
 - `npm run audit:published` — packs the artifact and audits a clean downstream install with no `overrides` in scope, catching transitive advisories a repo-local override would mask
 

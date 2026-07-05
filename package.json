@@ -57,7 +57,7 @@
     "mcp": "node lib/mcp/server.mjs",
     "doctor": "node ./bin/construct doctor",
     "test": "node scripts/run-tests.mjs",
-    "test:functional": "XDG_CONFIG_HOME= XDG_STATE_HOME= XDG_CACHE_HOME= node --test --test-timeout=120000 --test-concurrency=1 tests/functional/*.functional.test.mjs",
+    "test:functional": "XDG_CONFIG_HOME= XDG_STATE_HOME= XDG_CACHE_HOME= ANTHROPIC_API_KEY= OPENAI_API_KEY= OPENROUTER_API_KEY= CX_MODEL_REASONING= CX_MODEL_STANDARD= CX_MODEL_FAST= CONSTRUCT_MODEL_REASONING= CONSTRUCT_MODEL_STANDARD= CONSTRUCT_MODEL_FAST= CONSTRUCT_PROVIDER_TIMEOUT_MS= WEB_SEARCH_URL= CX_USER_ENV_PATH= CONSTRUCT_TELEMETRY_URL= node --test --test-timeout=120000 --test-concurrency=1 tests/functional/*.functional.test.mjs",
     "test:visual": "node --test --test-timeout=120000 tests/visual/*.test.mjs",
     "test:unit": "node scripts/run-tests.mjs --exclude=tests/functional",
     "lint:js": "eslint bin/construct \"lib/**/*.mjs\" \"scripts/**/*.mjs\" \"tests/**/*.mjs\"",
@@ -88,7 +88,7 @@
     "lint:templates": "node scripts/lint-commits-pr.mjs",
     "eval:routing": "node scripts/eval/score-intent-classifier.mjs",
     "adapters": "node lib/adapters-sync.mjs",
-    "release:check": "npm run doctor && node ./bin/construct registry:validate --unified && npm run catalog:validate -- --check && npm run workflow-defs:check && npm test && npm run docs:update -- --check && npm run docs:site -- --check && npm run docs:sync -- --check && node ./bin/construct registry:generate-docs --check && npm run docs:verify -- --strict && node scripts/alignment/census.mjs --ratchet && npm run lint:comments && node ./bin/construct certify gate && npm run graph:gate && npm run lint:templates",
+    "release:check": "npm run doctor && node ./bin/construct registry:validate --unified && npm run catalog:validate -- --check && npm run workflow-defs:check && npm test && node scripts/release-evidence-gate.mjs --skip-tests && npm run docs:update -- --check && npm run docs:site -- --check && npm run docs:sync -- --check && node ./bin/construct registry:generate-docs --check && npm run docs:verify -- --strict && node scripts/alignment/census.mjs --ratchet && npm run lint:comments && node ./bin/construct certify gate && npm run graph:gate && npm run lint:templates",
     "release:gate": "node --test tests/functional/release-gate.functional.test.mjs",
     "audit:published": "node scripts/audit-published-artifact.mjs",
     "version": "node scripts/sync-construct-version.mjs && git add -f .construct/version",
@@ -131,6 +131,7 @@
     "eslint": "^10.4.1",
     "globals": "^17.6.0",
     "ink-testing-library": "^4.0.0",
+    "playwright": "^1.61.1",
     "postject": "1.0.0-alpha.6"
   }
 }

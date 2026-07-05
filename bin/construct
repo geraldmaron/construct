@@ -760,7 +760,7 @@ async function cmdDoctor() {
   try {
     const { resolveModelTiers } = await import('../lib/model-registry.mjs');
     const resolved = resolveModelTiers({ env: process.env });
-    if (resolved.complete && !resolved.errors) {
+    if (resolved.complete) {
       add('Models — all tiers configured', true);
     } else if (resolved.configured === 0) {
       add('Models — no tier configured (run `construct models --apply`)', false, true);
@@ -772,6 +772,44 @@ async function cmdDoctor() {
     }
   } catch (err) {
     add(`Models — check failed: ${err.message}`, false, true);
+  }
+
+  // Worker-backend and web-capability visibility (construct-1yhp.2,
+  // construct-1yhp.8): reuse buildOrchestrationReadiness — the same
+  // resolution orchestration_run itself calls — so doctor can never
+  // advertise a backend/web mode that diverges from what a run would
+  // actually get. Both lines are advisory only; the resolved values never
+  // fail the gate.
+  try {
+    const { buildOrchestrationReadiness } = await import('../lib/orchestration/readiness.mjs');
+    const orchReadiness = buildOrchestrationReadiness({}, { env: process.env, cwd });
+    const backendNote = orchReadiness.workerBackend === 'inline'
+      ? 'inline (prepare-only — no specialist LLM reasoning runs; set orchestration.workerBackend=provider for real execution)'
+      : orchReadiness.workerBackend;
+    add(`Worker backend: ${backendNote}`, true, true);
+
+    const webNote = orchReadiness.webMode === 'unavailable'
+      ? 'unavailable (set WEB_SEARCH_URL for governed mode, or CONSTRUCT_ORCHESTRATION_WEB_DELEGATE=1 to delegate to a tool-capable host)'
+      : orchReadiness.webMode;
+    add(`Web capability: ${webNote}`, true, true);
+  } catch (err) {
+    add(`Worker backend / web capability check failed: ${err.message}`, false, true);
+  }
+
+  // Provider worker reliability settings (construct-5wkl): the effective
+  // per-call timeout and retry policy are resolved the same way the worker
+  // itself resolves them (resolveNonNegativeSetting over CONSTRUCT_PROVIDER_*),
+  // so this can never drift from what a real provider-backed run applies, and
+  // a test-scale or otherwise unintended override is never invisible. Advisory only.
+  try {
+    const { resolveNonNegativeSetting } = await import('../lib/env-config.mjs');
+    const { PROVIDER_TIMEOUT_DEFAULT_MS } = await import('../lib/orchestration/worker.mjs');
+    const timeoutMs = resolveNonNegativeSetting(process.env, 'CONSTRUCT_PROVIDER_TIMEOUT_MS', PROVIDER_TIMEOUT_DEFAULT_MS);
+    const maxAttempts = resolveNonNegativeSetting(process.env, 'CONSTRUCT_PROVIDER_MAX_ATTEMPTS', 3);
+    const retryBaseMs = resolveNonNegativeSetting(process.env, 'CONSTRUCT_PROVIDER_RETRY_BASE_MS', 250);
+    add(`Provider timeout: ${timeoutMs}ms · retry attempts: ${maxAttempts} (base backoff ${retryBaseMs}ms)`, true, true);
+  } catch (err) {
+    add(`Provider reliability settings check failed: ${err.message}`, false, true);
   }
 
   // Opt-in deep credential check (construct-1yhp.5). Default doctor stays
@@ -804,8 +842,10 @@ async function cmdDoctor() {
     }
   }
 
+  const { resolveCommandOnPath } = await import('../lib/doctor/command-on-path.mjs');
+
   add('Node.js 20+ (recommended)', Number.parseInt(process.versions.node.split('.')[0], 10) >= 20);
-  add('npm available', spawnSync(process.platform === 'win32' ? 'where' : 'zsh', process.platform === 'win32' ? ['npm'] : ['-lc', 'command -v npm'], { encoding: 'utf8', stdio: 'pipe' }).status === 0);
+  add('npm available', resolveCommandOnPath('npm').status === 0);
   const npmDevdir = process.env.npm_config_devdir ?? process.env.NPM_CONFIG_DEVDIR;
   if (npmDevdir) {
     add(
@@ -814,7 +854,7 @@ async function cmdDoctor() {
       true,
     );
   }
-  const constructOnPath = spawnSync('zsh', ['-lc', 'command -v construct'], { encoding: 'utf8', env: process.env });
+  const constructOnPath = resolveCommandOnPath('construct');
   const constructPath = constructOnPath.status === 0 ? constructOnPath.stdout.trim() : '';
   const constructVersion = constructPath
     ? spawnSync(constructPath, ['version'], { encoding: 'utf8', env: process.env })
@@ -6944,6 +6984,11 @@ const handlers = new Map([
    ['impact', async (args) => {
      const { runImpactCli } = await import('../lib/graph/impact-cli.mjs');
      const code = await runImpactCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });
+     if (typeof code === 'number' && code !== 0) process.exit(code);
+   }],
+   ['pack', async (args) => {
+     const { runPackCli } = await import('../lib/packs/cli.mjs');
+     const code = runPackCli(args, { rootDir: process.cwd(), packageRoot: ROOT_DIR });
      if (typeof code === 'number' && code !== 0) process.exit(code);
    }],
    ['reflect', async (args) => {

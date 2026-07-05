@@ -24,6 +24,7 @@ description: Work commands for Construct.
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
+| `construct pack` | Specialist/team/profile pack enable/disable lifecycle (LMCP-E3) |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
@@ -266,6 +267,23 @@ Inspect memory layer
 ```bash
 construct memory <status|search>
 ```
+
+## construct pack
+
+Specialist/team/profile pack enable/disable lifecycle (LMCP-E3)
+
+**Usage**
+
+```bash
+construct pack <list|enable|disable|info> [--json]
+```
+
+**Subcommands**
+
+- `list` — Every pack discovered across builtin/user/project tiers with its durable enabled state
+- `enable <pack-id>[@version]` — Validate the pack manifest and record it enabled in .cx/packs.json; refuses on an incompatible compatVersion or other validation failure
+- `disable <pack-id>` — Remove the pack's enabled entry (idempotent; the core pack cannot be disabled)
+- `info <pack-id>` — Full manifest plus enabled state for one pack
 
 ## construct publish
 

@@ -109,10 +109,146 @@ test('executeRun with provider backend records a failing task without crashing',
   const fetchImpl = async () => ({ ok: false, status: 429, text: async () => 'rate limited' });
   const run = await runOrchestration(
     { request: 'refactor and review', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 },
-    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test' }, cwd, workerBackend: 'provider', fetchImpl },
+    {
+      env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test', CONSTRUCT_PROVIDER_MAX_ATTEMPTS: '1' },
+      cwd, workerBackend: 'provider', fetchImpl,
+    },
   );
   assert.equal(run.status, 'completed-with-failures');
   assert.ok(run.tasks.every((t) => t.status === 'failed'));
-  assert.ok(run.tasks.every((t) => t.error?.code === 'PROVIDER_EXECUTION_FAILED'));
+  // A 429 classifies as PROVIDER_RATE_LIMITED (construct-5wkl AC#1), a stable
+  // code distinct from a 5xx or an auth failure.
+  assert.ok(run.tasks.every((t) => t.error?.code === 'PROVIDER_RATE_LIMITED'));
   assert.ok(run.tasks.every((t) => t.executor === 'provider:error'));
+});
+
+// construct-5wkl: a 2xx transport response is not task success. These pin that
+// worker.mjs classifies each unusable-content shape into its own stable code
+// (AC#1/#7) so runtime.mjs's existing catch path records the task 'failed'
+// with that code rather than 'done' with hollow output (AC#2).
+
+test('empty content on a 2xx response raises PROVIDER_EMPTY_CONTENT, task never marked done', async () => {
+  const task = { role: 'cx-engineer' };
+  const run = { request: { summary: 'x' } };
+  await assert.rejects(
+    () => runTaskViaProvider({
+      task, run, model: MODEL, provider: 'anthropic', env: { ANTHROPIC_API_KEY: 'k' },
+      fetchImpl: async () => ({ ok: true, json: async () => ({ stop_reason: 'stop_sequence', content: [] }) }),
+    }),
+    (err) => err.code === 'PROVIDER_EMPTY_CONTENT',
+  );
+});
+
+test('a content_filter finish reason raises PROVIDER_CONTENT_FILTERED (non-retryable)', async () => {
+  const task = { role: 'cx-engineer' };
+  const run = { request: { summary: 'x' } };
+  const calls = { n: 0 };
+  await assert.rejects(
+    () => runTaskViaProvider({
+      task, run, model: 'openai/gpt-4o-mini', provider: 'openrouter', env: { OPENROUTER_API_KEY: 'k' },
+      fetchImpl: async () => { calls.n += 1; return { ok: true, json: async () => ({ choices: [{ finish_reason: 'content_filter', message: { content: '' } }] }) }; },
+    }),
+    (err) => err.code === 'PROVIDER_CONTENT_FILTERED',
+  );
+  assert.equal(calls.n, 1, 'a content-policy refusal must never be retried');
+});
+
+test('a reasoning-only response (empty visible content, non-empty reasoning) raises PROVIDER_REASONING_ONLY', async () => {
+  const task = { role: 'cx-engineer' };
+  const run = { request: { summary: 'x' } };
+  await assert.rejects(
+    () => runTaskViaProvider({
+      task, run, model: MODEL, provider: 'anthropic', env: { ANTHROPIC_API_KEY: 'k' }, chainOfThought: 'surface',
+      fetchImpl: async () => ({ ok: true, json: async () => ({ stop_reason: 'max_tokens', content: [{ type: 'thinking', thinking: 'a long chain of reasoning that consumed the whole budget' }] }) }),
+    }),
+    (err) => err.code === 'PROVIDER_REASONING_ONLY',
+  );
+});
+
+test('OpenRouter reasoning mode reserves extra output budget so a real answer still fits (construct-5wkl AC#6)', async () => {
+  const task = { role: 'cx-engineer' };
+  const run = { request: { summary: 'x' } };
+  let sentMaxTokens = null;
+  const result = await runTaskViaProvider({
+    task, run, model: 'openrouter/qwen/qwen3-coder', provider: 'openrouter', env: { OPENROUTER_API_KEY: 'k' }, chainOfThought: 'surface',
+    fetchImpl: async (url, opts) => {
+      sentMaxTokens = JSON.parse(opts.body).max_tokens;
+      return { ok: true, json: async () => ({ choices: [{ finish_reason: 'stop', message: { content: 'the answer', reasoning: 'brief reasoning' } }] }) };
+    },
+  });
+  assert.equal(result.output, 'the answer');
+  assert.ok(sentMaxTokens > 2048, 'reasoning mode must request more than the base output budget');
+});
+
+test('a malformed OpenRouter response (no choices) raises PROVIDER_MALFORMED_RESPONSE', async () => {
+  const task = { role: 'cx-engineer' };
+  const run = { request: { summary: 'x' } };
+  await assert.rejects(
+    () => runTaskViaProvider({
+      task, run, model: 'openai/gpt-4o-mini', provider: 'openrouter', env: { OPENROUTER_API_KEY: 'k' },
+      fetchImpl: async () => ({ ok: true, json: async () => ({ id: 'weird-shape', choices: undefined }) }),
+    }),
+    (err) => err.code === 'PROVIDER_MALFORMED_RESPONSE',
+  );
+});
+
+test('a timeout raises PROVIDER_TIMEOUT (retryable) and retries until it succeeds', async () => {
+  const task = { role: 'cx-engineer' };
+  const run = { request: { summary: 'x' } };
+  let calls = 0;
+  const result = await runTaskViaProvider({
+    task, run, model: MODEL, provider: 'anthropic',
+    env: { ANTHROPIC_API_KEY: 'k', CONSTRUCT_PROVIDER_RETRY_BASE_MS: '1' },
+    fetchImpl: async () => {
+      calls += 1;
+      if (calls < 2) { const err = new Error('provider timed out after 1ms'); err.name = 'TimeoutError'; throw err; }
+      return { ok: true, json: async () => ({ content: [{ type: 'text', text: 'recovered after retry' }] }) };
+    },
+  });
+  assert.equal(calls, 2);
+  assert.equal(result.output, 'recovered after retry');
+  assert.equal(result.providerMeta.retryCount, 1);
+});
+
+test('a 500 recovers on the second attempt (successful retry) and the run completes clean', async () => {
+  const cwd = project();
+  // Multiple specialist tasks share one fetchImpl; key the "fail once" behavior
+  // per distinct system prompt (persona) rather than a global call count, so
+  // every task independently sees one failure then a recovery.
+  const failedOnce = new Set();
+  const fetchImpl = async (url, opts) => {
+    const system = JSON.parse(opts.body).system;
+    if (!failedOnce.has(system)) {
+      failedOnce.add(system);
+      return { ok: false, status: 500, text: async () => 'boom' };
+    }
+    return { ok: true, json: async () => ({ content: [{ type: 'text', text: 'recovered' }] }) };
+  };
+  const run = await runOrchestration(
+    { request: 'refactor and review', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 4 },
+    { env: { ...ENV, ANTHROPIC_API_KEY: 'sk-test', CONSTRUCT_PROVIDER_RETRY_BASE_MS: '1' }, cwd, workerBackend: 'provider', fetchImpl },
+  );
+  assert.equal(run.status, 'completed');
+  assert.ok(run.tasks.every((t) => t.status === 'done'));
+  assert.ok(run.tasks.every((t) => t.output === 'recovered'));
+  assert.ok(run.tasks.every((t) => t.providerMeta?.retryCount >= 1), 'the recorded metadata shows a retry happened');
+});
+
+test('provider metadata (provider/model/finishReason/usage/elapsedMs) rides a successful task', async () => {
+  const task = { role: 'cx-engineer' };
+  const run = { request: { summary: 'x' } };
+  const result = await runTaskViaProvider({
+    task, run, model: 'openai/gpt-4o-mini', provider: 'openrouter', env: { OPENROUTER_API_KEY: 'k' },
+    fetchImpl: async () => ({ ok: true, json: async () => ({
+      choices: [{ finish_reason: 'stop', native_finish_reason: 'STOP', message: { content: 'ok' } }],
+      usage: { prompt_tokens: 12, completion_tokens: 3, total_tokens: 15 },
+    }) }),
+  });
+  assert.equal(result.providerMeta.provider, 'openrouter');
+  assert.equal(result.providerMeta.model, 'openai/gpt-4o-mini');
+  assert.equal(result.providerMeta.finishReason, 'stop');
+  assert.equal(result.providerMeta.nativeFinishReason, 'STOP');
+  assert.deepEqual(result.providerMeta.usage, { promptTokens: 12, completionTokens: 3, totalTokens: 15 });
+  assert.equal(typeof result.providerMeta.elapsedMs, 'number');
+  assert.equal(result.providerMeta.retryCount, 0);
 });
