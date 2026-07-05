@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Fixed
+
+- `construct-0wmj`: real-vault manual QA confirmed `construct dev`'s single-parent `op run` re-exec (`maybeReExecUnderOpRun`) produces exactly one biometric prompt with the vault locked, as designed. Resolved the bead's open narrowing question: doctor, oracle, and cm consume no provider API key (confirmed via repo-wide grep — the only reference is a doctor *watcher* checking presence for parity, not consuming one), so the per-service `op run` fallback wrap (`wrapWithOpRun`, used only when a service restarts standalone outside the `construct dev` parent) is now narrowed to opencode and the copilot bridge only — a standalone doctor/oracle/cm restart no longer triggers a needless biometric prompt for services that never needed the resolved keys. Tests: `tests/functional/service-op-run-wiring.functional.test.mjs` (31/31 pass across the full op-run suite).
+
 ### Added
 
 - LMCP-N (epic close, `construct-9oi4.14`): closed the two remaining OWASP GenAI gaps the epic's own tracking note left open (`graph owasp`: LLM03/LLM09 at 0 tests). LLM03 (Supply Chain): tagged the existing `tests/packs/validate.test.mjs` with `@owasp LLM03` — it already validates third-party pack manifests (id/version/`compatVersion`, `embedBindings` against a known-provider allowlist per ADR-0055) before they're trusted, a genuine supply-chain-integrity check, not a new test. LLM09 (Misinformation): added `tests/security/misinformation-evidence-grounding.test.mjs`, unit-testing `extractCitedUrls`/`findUnverifiedCitations` (`lib/orchestration/provider-outcome.mjs`, `construct-5wkl` AC#5) directly — the mechanism that flags a model citation absent from governed `webEvidence` as `evidenceStatus:'unverified-citations'` rather than presenting it as verified. `graph owasp` now shows all 10 categories covered (was 8/10).

@@ -5,11 +5,12 @@
  * Drives startServices() with an injected spawn function that captures the
  * (command, args) each long-lived service would spawn, and a fake `op` binary on
  * PATH so opCliAvailable() reports present without touching a real 1Password. When
- * CONSTRUCT_OP_ENV_FILE points at a real env-file the cm / OpenCode / copilot-bridge
- * spawns are wrapped as `op run --env-file=… -- <cmd>`; with the var unset the same
- * spawns are byte-for-byte unchanged. A fake-op invocation counter records how many
- * times `op --version` is probed across the wrapped spawns — the cross-process signal
- * observable here without a real vault.
+ * CONSTRUCT_OP_ENV_FILE points at a real env-file the OpenCode / copilot-bridge
+ * spawns are wrapped as `op run --env-file=… -- <cmd>`; cm consumes no provider
+ * API key so it is deliberately excluded from the wrap (construct-0wmj); with the
+ * var unset the same spawns are byte-for-byte unchanged. A fake-op invocation
+ * counter records how many times `op --version` is probed across the wrapped
+ * spawns — the cross-process signal observable here without a real vault.
  */
 
 import { test } from 'node:test';
@@ -80,7 +81,7 @@ async function withEnv(overrides, fn) {
   }
 }
 
-test('opted in: cm / opencode / copilot spawns are wrapped in op run', async (t) => {
+test('opted in: opencode / copilot spawns are wrapped in op run; cm is not (construct-0wmj)', async (t) => {
   const sandbox = makeSandbox();
   t.after(() => fs.rmSync(sandbox.dir, { recursive: true, force: true }));
 
@@ -98,10 +99,12 @@ test('opted in: cm / opencode / copilot spawns are wrapped in op run', async (t)
     }),
   );
 
-  const cm = spawns.find((s) => s.args.includes('cm'));
+  // cm never consumes a provider API key, so the per-service op-run fallback
+  // is narrowed to skip it (construct-0wmj) — it launches unwrapped even
+  // when opted in.
+  const cm = spawns.find((s) => s.command === 'cm');
   assert.ok(cm, 'cm spawn captured');
-  assert.equal(cm.command, 'op');
-  assert.deepEqual(cm.args, ['run', `--env-file=${sandbox.envFile}`, '--', 'cm', 'serve', '--port', '7070']);
+  assert.deepEqual(cm.args, ['serve', '--port', '7070'], 'cm launched directly, not under op run');
 
   const opencode = spawns.find((s) => s.args.includes('opencode'));
   assert.ok(opencode, 'opencode spawn captured');
