@@ -129,7 +129,13 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci --ignore-scripts
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: 'stable'
       - name: install bd (beads CLI)
+        # The installer's GitHub-releases fetch can 403 under CI's shared-IP rate
+        # limiting; Go is installed above so its own documented build-from-source
+        # fallback always succeeds regardless of that.
         run: |
           curl -sSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"

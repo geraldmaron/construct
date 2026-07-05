@@ -158,8 +158,14 @@ test('EXPORT_FORMATS pins the supported export set (contract surface)', () => {
 });
 
 test('detect doc format requires pandoc and libreoffice when absent', () => {
+  // An empty PATH alone cannot simulate "libreoffice absent" on a machine where it's
+  // really installed: resolveLibreOfficeBin also checks a hardcoded well-known install
+  // path (e.g. /Applications/LibreOffice.app/...) that bypasses PATH/env entirely by
+  // design (so real brew-cask installs are found without extra config). Injecting
+  // libreOfficeExistsSyncFn lets this test simulate genuine absence regardless of
+  // what's really installed on the machine running the suite.
   const emptyPathEnv = { ...process.env, PATH: tmpDir('cx-empty-path-doc-'), CONSTRUCT_LIBREOFFICE_BIN: '', SOFFICE_BIN: '' };
-  const result = detect('doc', emptyPathEnv);
+  const result = detect('doc', emptyPathEnv, { libreOfficeExistsSyncFn: () => false });
   assert.equal(result.ok, true);
   assert.equal(result.present, false);
   assert.ok(result.missing.includes('pandoc'));
