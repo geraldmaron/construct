@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-05T05:35:04.076Z",
+  "generatedAt": "2026-07-05T06:17:59.184Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 788,
-    "topLevelTestFiles": 343,
-    "nestedTestFiles": 445,
+    "testFiles": 787,
+    "topLevelTestFiles": 341,
+    "nestedTestFiles": 446,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 546,
-      "functional": 195,
+      "unit": 544,
+      "functional": 196,
       "visual": 11,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 483,
-      "functional": 195,
+      "unit": 481,
+      "functional": 196,
       "visual": 11,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2557,6 +2557,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/doctor-run-store-visibility.functional.test.mjs — the"
+    },
+    {
+      "path": "tests/functional/doctor-vscode-host-readiness.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/doctor-vscode-host-readiness.functional.test.mjs"
     },
     {
       "path": "tests/functional/doctor-warning-paths.functional.test.mjs",
@@ -5323,14 +5331,6 @@
       "maintainerNotes": "tests/provider-framework.test.mjs — tests for provider interface, registry, and errors."
     },
     {
-      "path": "tests/provider-git.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/provider-git.test.mjs — git provider tests."
-    },
-    {
       "path": "tests/provider-github.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -5345,14 +5345,6 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/provider-jira.test.mjs — Jira provider contract + unit tests."
-    },
-    {
-      "path": "tests/provider-slack.test.mjs",
-      "layer": "unit",
-      "category": "unit",
-      "capabilities": [],
-      "skipped": false,
-      "maintainerNotes": "tests/provider-slack.test.mjs — Slack provider contract + unit tests."
     },
     {
       "path": "tests/providers-circuit-breaker.test.mjs",

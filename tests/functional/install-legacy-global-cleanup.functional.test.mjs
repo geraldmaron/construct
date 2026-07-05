@@ -3,7 +3,9 @@
  *
  * Legacy global cleanup must be explicit. It removes ambient Construct
  * adapters/MCP/history from user-global tool config, but preserves vanilla
- * host config and does not uninstall a global construct CLI package.
+ * host config and does not uninstall a global construct CLI package. Covers
+ * both Claude Code MCP locations: the legacy ~/.claude/settings.json path
+ * and ~/.claude.json, where construct-ranh moved the write path.
  */
 
 import assert from 'node:assert/strict';
@@ -51,6 +53,14 @@ function seedLegacyHome(home) {
     hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: '~/.construct/lib/hooks/pretool.mjs' }] }] },
     mcpServers: {
       memory: { command: 'node', args: ['memory-bridge.mjs'] },
+      context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp'] },
+    },
+  });
+
+  writeJson(path.join(home, '.claude.json'), {
+    oauthAccount: { emailAddress: 'user@example.com' },
+    mcpServers: {
+      'construct-mcp': { command: 'node', args: ['run.mjs', 'mcp'] },
       context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp'] },
     },
   });
@@ -116,6 +126,11 @@ test('--cleanup-legacy-global with project scope removes only legacy global Cons
   assert.deepEqual(claude.permissions, { allow: ['Bash(git status:*)'] });
   assert.equal(claude.hooks, undefined);
   assert.deepEqual(Object.keys(claude.mcpServers), ['context7']);
+
+  const claudeUserConfig = readJson(path.join(home, '.claude.json'));
+  assert.deepEqual(claudeUserConfig.oauthAccount, { emailAddress: 'user@example.com' }, 'unrelated ~/.claude.json state untouched');
+  assert.equal(claudeUserConfig.mcpServers['construct-mcp'], undefined, 'construct-mcp stripped from ~/.claude.json');
+  assert.ok(claudeUserConfig.mcpServers.context7, 'context7 preserved in ~/.claude.json');
 
   const opencode = readJson(path.join(home, '.config', 'opencode', 'opencode.json'));
   assert.equal(opencode.agent.construct, undefined);

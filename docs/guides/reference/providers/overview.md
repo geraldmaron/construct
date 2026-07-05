@@ -18,7 +18,7 @@ Providers connect Construct to external systems: GitHub, Jira, Confluence, Slack
 | Slack | yes | yes | — | — | — |
 | Salesforce | yes | yes | — | — | — |
 
-> **Note:** This matrix covers the read/search data-source providers under `lib/providers/<name>/`. `write` and, for Slack, `watch` are implemented separately by the governed-write contract adapters under `lib/providers/contract/adapters/` (GitHub, Jira, Confluence, Slack — construct-9oi4.10), reached through the `provider_write` MCP tool, not through the providers in this matrix. `watch` is not implemented for GitHub, Jira, Confluence, or Salesforce in either layer. `webhook` (this matrix) is supported by GitHub only.
+> **Note:** This matrix covers the read/search data-source providers under `lib/providers/<name>/`. `write` is implemented separately by the governed-write contract adapters under `lib/providers/contract/adapters/` (GitHub, Jira, Confluence only — construct-9oi4.10), reached through the `provider_write` MCP tool, not through the providers in this matrix. `watch` is not implemented for any provider in either layer — a prior version of this note claimed a Slack contract adapter under `lib/providers/contract/adapters/slack/` implemented `write`/`watch`, but that adapter (and a sibling `git` adapter) had zero production importers and no governed-write wiring; both were removed as dead code (construct-u5lv). `webhook` (this matrix) is supported by GitHub only.
 
 Capability definitions:
 
@@ -26,8 +26,8 @@ Capability definitions:
 |---|---|
 | `read` | Fetch a single named resource (issue, page, repo, record) |
 | `search` | Query by keyword or structured expression (JQL, CQL, SOQL) |
-| `watch` | Subscribe to a real-time event stream (not implemented in this matrix's providers; the Slack governed-write adapter polls for new messages — construct-9oi4.10) |
-| `write` | Create or update a resource (not implemented in this matrix's providers; implemented for GitHub/Jira/Confluence/Slack through the governed-write contract adapters — construct-9oi4.10) |
+| `watch` | Subscribe to a real-time event stream (not implemented in this matrix's providers or the governed-write contract adapters) |
+| `write` | Create or update a resource (not implemented in this matrix's providers; implemented for GitHub/Jira/Confluence only through the governed-write contract adapters — construct-9oi4.10) |
 | `webhook` | Verify and acknowledge an inbound webhook payload |
 
 ## List active providers
