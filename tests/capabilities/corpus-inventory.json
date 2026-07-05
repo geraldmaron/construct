@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-05T06:17:59.184Z",
+  "generatedAt": "2026-07-05T15:36:21.182Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 787,
+    "testFiles": 789,
     "topLevelTestFiles": 341,
-    "nestedTestFiles": 446,
+    "nestedTestFiles": 448,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
       "unit": 544,
-      "functional": 196,
+      "functional": 198,
       "visual": 11,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 481,
-      "functional": 196,
+      "functional": 198,
       "visual": 11,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2653,6 +2653,22 @@
       ],
       "skipped": false,
       "maintainerNotes": "tests/functional/embedded-contract-workflow-invoke.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/enterprise-doctor-fail-closed.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/enterprise-doctor-fail-closed.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/env-shadow-warning-cli.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/env-shadow-warning-cli.functional.test.mjs — construct-6y6w.3."
     },
     {
       "path": "tests/functional/eval-gates.functional.test.mjs",
