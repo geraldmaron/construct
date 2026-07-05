@@ -192,9 +192,12 @@ Env overrides: `CX_INBOX_DIRS` (colon-separated paths), `CX_INTAKE_MAX_DEPTH`.
 
 ## MCP broker
 
-| Variable | Default | Description |
+Broker engagement resolves with the same **env ▷ project config ▷ default** precedence as deployment mode (`isBrokered()` in `lib/mcp/broker.mjs`).
+
+| Key | Default | Description |
 |---|---|---|
-| `CONSTRUCT_MCP_BROKER` | (| `on` \| `off`) override default broker engagement. Otherwise the broker is on in team / enterprise and off in solo. |
+| `CONSTRUCT_MCP_BROKER` (env) | _(unset)_ | `on` \| `off`: overrides broker engagement regardless of config or deployment mode. |
+| `deployment.mcpBroker` (`construct.config.json`) | `auto` | `on` \| `off` \| `auto`: `auto` defers to deployment mode (broker on in team/enterprise, off in solo). |
 
 ## Authentication
 
@@ -322,7 +325,7 @@ When `op run` injects materialized keys into `process.env`, Construct keeps thos
 |---|---|
 | `CONSTRUCT_DEPRECATIONS` | `error` to throw instead of warn on deprecated API usage (useful in CI) |
 | `CONSTRUCT_DEV_PATH` | Absolute path to a Construct checkout; `.construct/run.mjs` resolves this first |
-| `CX_AUTO_EMBED` | `1` to auto-start the embed daemon when provider credentials are present |
+| `CX_AUTO_EMBED` | `1` to auto-start the embed daemon when provider credentials are present. `construct.config.json` `autoEmbed: true` is an equivalent project-committed fallback (env wins); read at runtime by `autoStartEmbedIfNeeded()` in `lib/embed/cli.mjs`. |
 | `CX_WORKSPACE` | Override working directory for embed mode |
 | `CX_TOOLKIT_DIR` | Override the path where Construct looks for its own toolkit (skills, agents, templates) |
 

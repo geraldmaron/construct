@@ -1,0 +1,116 @@
+/**
+ * tests/hooks/guard-bash-role-fence.test.mjs — role-fence actor-identity gate
+ * in isolation (construct-7164).
+ *
+ * Drives lib/hooks/guard-bash.mjs directly (spawned as a subprocess against
+ * synthetic stdin/env, not via live PreToolUse dispatch) with crafted
+ * last-agent.json state, proving the fence only ever applies to the actor it
+ * was recorded for — not to whoever happens to run a bash command while the
+ * dispatch timestamp is still fresh.
+ */
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { describe, it, before, after, beforeEach } from 'node:test';
+
+const HERE = path.dirname(new URL(import.meta.url).pathname);
+const ROOT = path.resolve(HERE, '..', '..');
+const HOOK = path.join(ROOT, 'lib', 'hooks', 'guard-bash.mjs');
+
+let cxDir;
+
+before(() => {
+  cxDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-guard-bash-fence-'));
+});
+
+after(() => {
+  fs.rmSync(cxDir, { recursive: true, force: true });
+});
+
+beforeEach(() => {
+  fs.rmSync(cxDir, { recursive: true, force: true });
+  fs.mkdirSync(cxDir, { recursive: true });
+});
+
+function run({ command, agentId, env = {} }) {
+  return spawnSync(process.execPath, [HOOK], {
+    encoding: 'utf8',
+    input: JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command },
+      ...(agentId ? { agent_id: agentId } : {}),
+    }),
+    env: { ...process.env, CONSTRUCT_DOCTOR_ROOT: cxDir, ...env },
+    cwd: ROOT,
+    timeout: 10_000,
+  });
+}
+
+function writeShared(entry) {
+  fs.writeFileSync(path.join(cxDir, 'last-agent.json'), JSON.stringify(entry));
+}
+
+function writePerAgent(id, entry) {
+  fs.writeFileSync(path.join(cxDir, `last-agent-${id}.json`), JSON.stringify(entry));
+}
+
+describe('guard-bash role-fence actor identity (construct-7164)', () => {
+  it('does NOT fence a different actor riding a fresh shared dispatch record (the reported bug)', () => {
+    writeShared({ agent: 'cx-engineer', agentId: 'sub-aaa', ts: new Date().toISOString() });
+    const r = run({ command: 'ls' });
+    assert.equal(r.status, 0, `expected pass (no actor match); got ${r.status}. stderr:\n${r.stderr}`);
+  });
+
+  it('does NOT fence a different, concurrently-running subagent (mismatched agent_id)', () => {
+    writeShared({ agent: 'cx-engineer', agentId: 'sub-aaa', ts: new Date().toISOString() });
+    const r = run({ command: 'ls', agentId: 'sub-bbb' });
+    assert.equal(r.status, 0, `expected pass (mismatched agent_id); got ${r.status}. stderr:\n${r.stderr}`);
+  });
+
+  it('fences the SAME subagent call proven by a matching agent_id', () => {
+    writeShared({ agent: 'cx-engineer', agentId: 'sub-aaa', ts: new Date().toISOString() });
+    const r = run({ command: 'ls', agentId: 'sub-aaa' });
+    assert.equal(r.status, 2, `expected block (same actor, matching agent_id); got ${r.status}. stderr:\n${r.stderr}`);
+    assert.match(r.stderr, /cx-engineer cannot run this command/);
+  });
+
+  it('fences an explicit self-declared identity (CONSTRUCT_AGENT_ID) via the per-agent file', () => {
+    writePerAgent('engineer', { agent: 'cx-engineer', ts: new Date().toISOString() });
+    const r = run({ command: 'ls', env: { CONSTRUCT_AGENT_ID: 'cx-engineer' } });
+    assert.equal(r.status, 2, `expected block; got ${r.status}. stderr:\n${r.stderr}`);
+  });
+
+  it("allows a command that IS inside the fenced persona's allowed commands", () => {
+    writeShared({ agent: 'cx-engineer', agentId: 'sub-aaa', ts: new Date().toISOString() });
+    const r = run({ command: 'git status', agentId: 'sub-aaa' });
+    assert.equal(r.status, 0, `allowed command must pass; got ${r.status}. stderr:\n${r.stderr}`);
+  });
+
+  it('does not fence on a stale timestamp even with a matching agent_id (existing behavior preserved)', () => {
+    const stale = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    writeShared({ agent: 'cx-engineer', agentId: 'sub-aaa', ts: stale });
+    const r = run({ command: 'ls', agentId: 'sub-aaa' });
+    assert.equal(r.status, 0, `stale dispatch must not block; got ${r.status}. stderr:\n${r.stderr}`);
+  });
+
+  it('does not fence a stale self-declared identity either', () => {
+    const stale = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    writePerAgent('engineer', { agent: 'cx-engineer', ts: stale });
+    const r = run({ command: 'ls', env: { CONSTRUCT_AGENT_ID: 'cx-engineer' } });
+    assert.equal(r.status, 0, `stale self-declared identity must not block; got ${r.status}. stderr:\n${r.stderr}`);
+  });
+
+  it('fails open on malformed stdin', () => {
+    const r = spawnSync(process.execPath, [HOOK], {
+      encoding: 'utf8',
+      input: 'not json{',
+      env: { ...process.env, CONSTRUCT_DOCTOR_ROOT: cxDir },
+      cwd: ROOT,
+      timeout: 10_000,
+    });
+    assert.equal(r.status, 0);
+  });
+});

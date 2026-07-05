@@ -15,7 +15,15 @@
  *
  * ALLOWLIST is a deliberate, tracked exception list — not a silent pass.
  * Each entry cites the bead that owns fixing it so this test cannot be used
- * to launder a newly-discovered dead key without a paper trail.
+ * to launder a newly-discovered dead key without a paper trail. Empty as of
+ * construct-9oi4.15.9: roleSelection.* and hosts.<surface>.enabled were
+ * removed from the schema (each was already superseded by a separate live
+ * mechanism — CONSTRUCT_ROLE_PRIMARY/SECONDARY via `roles:set`, and
+ * --hosts=/CONSTRUCT_SYNC_HOSTS via ADR-0027 §1 — so the config-file keys
+ * were never going to be read); deployment.mcpBroker and autoEmbed were
+ * wired into isBrokered() (lib/mcp/broker.mjs) and
+ * autoStartEmbedIfNeeded() (lib/embed/cli.mjs) respectively, following the
+ * same env > project-config > default precedence as deployment.mode.
  */
 
 import { test } from 'node:test';
@@ -24,31 +32,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { FIELD_RULES, SURFACES } from '../../lib/config/schema.mjs';
+import { FIELD_RULES } from '../../lib/config/schema.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 
-// Keys already known to lack a real consumer, discovered while building this
-// test. Out of scope for construct-9oi4.15.2 (only DATABASE_URL,
-// CONSTRUCT_TENANT_ID and the postgres->git alias were in that bead's
-// evidence) and out of this agent's file allowlist (fixing them touches
-// whatever module would own role selection / host filtering). Tracked by
-// construct-9oi4.15.9.
-
-const ALLOWLIST = new Set([
-  'roleSelection.primary',
-  'roleSelection.secondary',
-  'roleSelection.perConversationOverride',
-  ...SURFACES.map((s) => `hosts.${s}.enabled`),
-  // deployment.mcpBroker: isBrokered() (lib/mcp/broker.mjs) reads only
-  // CONSTRUCT_MCP_BROKER + deployment mode, never this config field.
-  'deployment.mcpBroker',
-  // autoEmbed: the real gate is the unrelated env var CX_AUTO_EMBED
-  // (lib/embed/cli.mjs, lib/hooks/session-start.mjs); this config field
-  // is never read.
-  'autoEmbed',
-]);
+const ALLOWLIST = new Set([]);
 
 function collectLeafPaths(fields, prefix = []) {
   const paths = [];

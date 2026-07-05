@@ -261,7 +261,7 @@ Project scope writes are confined to the project root and the project's `.git/` 
 |---|---|---|
 | `.construct/` | Project-local Construct runtime state | construct init |
 | `.cx/` | Observations, sessions, traces, intake, task graphs (gitignored) | construct init |
-| `.claude/agents/` · `.claude/commands/` · `.claude/settings.json` | Claude Code adapter tree (agents + hooks + slash commands) | construct sync |
+| `.claude/agents/` · `.claude/commands/` · `.claude/settings.json` · `.mcp.json` | Claude Code adapter tree (agents + hooks/permissions + slash commands + MCP servers) | construct sync |
 | `.codex/`, `.vscode/`, `.opencode/`, `.cursor/` | Per-host adapters when the host is detected (gitignored — run `npm run adapters` or `construct sync`) | construct sync |
 | `construct.config.json` | Project config + active profile | construct init |
 | `plan.md` | Local-only current plan (gitignored) | construct init |
@@ -281,7 +281,8 @@ Machine scope writes are opt-in. The default `construct install` (no flag, or `-
 | `~/.config/opencode/opencode.json` | MCP entries — Construct's section merged | `--scope=user` |
 | `~/.codex/config.toml` | MCP entries — Construct's section merged | `--scope=user` |
 | `~/.claude/CLAUDE.md` | Marker block — Construct's section only | `--scope=user` + interactive consent |
-| `~/.claude/settings.json` | Global safety-hook injection + `context7` MCP — Construct's section only | `--scope=user` + interactive consent |
+| `~/.claude/settings.json` | Global safety-hook injection — Construct's section only | `--scope=user` + interactive consent |
+| `~/.claude.json` | `context7` MCP in the top-level `mcpServers` (Claude Code's user scope; settings.json does not carry MCP server definitions) — Construct's entries only | `--scope=user` + interactive consent |
 
 ### Never touched
 

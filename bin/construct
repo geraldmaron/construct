@@ -3,7 +3,10 @@
  * bin/construct — construct CLI entrypoint.
  *
  * Parses the command string, dispatches to the appropriate handler, and
- * loads environment config from ~/.construct/.env. This is the only
+ * loads environment config from the resolved project root's .env (nearest
+ * .cx/ or package.json ancestor of cwd, per lib/roots.mjs) and the user
+ * config.env ($XDG_CONFIG_HOME/construct/config.env), with project .env
+ * winning per lib/env-config.mjs's tier order. This is the only
  * public-facing binary; all commands are exported from lib/.
  */
 
@@ -85,8 +88,13 @@ const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const PROJECT_ROOT = resolveProjectRoot(process.cwd());
 const HOME = os.homedir();
 enableSecretAuditTrail();
-ensureConstructCredentials({ env: process.env, cwd: ROOT_DIR, home: HOME });
-const ENV = loadConstructEnv({ rootDir: ROOT_DIR, homeDir: HOME, env: process.env });
+
+// The project .env tier binds to PROJECT_ROOT (the user's repo), not
+// ROOT_DIR (the toolkit install checkout) — ROOT_DIR stays reserved for
+// locating the toolkit's own assets (registry, skills, hooks) below.
+
+ensureConstructCredentials({ env: process.env, cwd: PROJECT_ROOT, home: HOME });
+const ENV = loadConstructEnv({ rootDir: PROJECT_ROOT, homeDir: HOME, env: process.env });
 for (const [key, value] of Object.entries(ENV)) {
   if (!(key in process.env)) process.env[key] = value;
 }

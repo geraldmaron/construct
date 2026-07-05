@@ -10,11 +10,16 @@
  *       `orchestrator` entry). Specialists, slash commands, and skills do NOT
  *       land at global scope — they are project content.
  *     - Plus the hook installer in `~/.claude/settings.json`, which has to be
- *       global so hooks fire in every Claude Code session.
+ *       global so hooks fire in every Claude Code session. MCP server
+ *       definitions are a separate file: Claude Code reads user-scope MCP
+ *       servers from the top-level `mcpServers` object in `~/.claude.json`,
+ *       not from settings.json (construct-ranh).
  *
  *   Project scope (`<project>/.claude/`, `<project>/.codex/`, `<project>/.github/`, …)
  *     - `construct` front door only (Single Front Door), slash commands, skills, MCP
  *       wiring. Specialists dispatch internally via orchestration MCP tools.
+ *       MCP server definitions land in `<project>/.mcp.json` (Claude Code's
+ *       documented project scope), not `.claude/settings.json`.
  *
  * Flags:
  *   --dry-run             Print a diff of what would change without writing anything.
@@ -1119,6 +1124,12 @@ function syncGlobalClaudeMcpServers(settings, registryMcp) {
  * with hook commands rewritten to be path-relative to whatever Construct
  * install the project carries. Merges into an existing settings.json
  * if one is already in the project; otherwise creates a fresh one.
+ *
+ * Carries hooks and permissions only — Claude Code does not read MCP server
+ * definitions from settings.json at any scope (confirmed against
+ * code.claude.com/docs/en/mcp's installation-scopes table and live `claude
+ * mcp list` repro, construct-ranh). Project-scope MCP wiring is
+ * writeProjectMcpJson's job, targeting `.mcp.json`.
  */
 function writeProjectClaudeSettings(targetDir) {
   const settingsPath = path.join(targetDir, ".claude", "settings.json");
@@ -1137,12 +1148,37 @@ function writeProjectClaudeSettings(targetDir) {
   if (template.permissions) {
     existing.permissions ??= template.permissions;
   }
-  if (template.mcpServers) {
-    existing.mcpServers ??= {};
-    for (const [id, mcpDef] of Object.entries(template.mcpServers)) {
-      if (existing.mcpServers[id]) continue;
-      if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
-      existing.mcpServers[id] = mcpDef;
+
+  if (DRY_RUN) return;
+  mkdirp(path.dirname(settingsPath));
+  writeFile(settingsPath, JSON.stringify(existing, null, 2) + "\n");
+}
+
+/**
+ * Materialise project-scope MCP wiring at `.mcp.json` in the project root —
+ * the scope Claude Code documents for team-shared, version-controlled MCP
+ * server definitions (settings.json only carries policy keys and hooks).
+ * Merges into an existing `.mcp.json` if the project already has one;
+ * existing entries win so manual edits or a prior `claude mcp add --scope
+ * project` stick.
+ */
+function writeProjectMcpJson(targetDir) {
+  const mcpJsonPath = path.join(targetDir, ".mcp.json");
+  const templatePath = path.join(root, "platforms", "claude", "settings.template.json");
+
+  const existing = fs.existsSync(mcpJsonPath)
+    ? JSON.parse(fs.readFileSync(mcpJsonPath, "utf8"))
+    : {};
+  existing.mcpServers ??= {};
+
+  if (fs.existsSync(templatePath)) {
+    const template = JSON.parse(fs.readFileSync(templatePath, "utf8"));
+    if (template.mcpServers) {
+      for (const [id, mcpDef] of Object.entries(template.mcpServers)) {
+        if (existing.mcpServers[id]) continue;
+        if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
+        existing.mcpServers[id] = mcpDef;
+      }
     }
   }
 
@@ -1156,7 +1192,6 @@ function writeProjectClaudeSettings(targetDir) {
   // transport, toolkit path), so a manual opt-in sticks but drift — a missing
   // registry env key, a stale pinned version — gets corrected.
   const registryMcp = scopedManagedMcpDefs({ projectScope: true });
-  existing.mcpServers ??= {};
   for (const [id, mcpDef] of Object.entries(registryMcp)) {
     if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
     const existingEntry = existing.mcpServers[id];
@@ -1167,8 +1202,8 @@ function writeProjectClaudeSettings(targetDir) {
   reconcileStaleManagedEntries(existing.mcpServers, { registryMcp, rebuildEntry: (id, def) => buildClaudeMcpEntry(id, def, process.env) });
 
   if (DRY_RUN) return;
-  mkdirp(path.dirname(settingsPath));
-  writeFile(settingsPath, JSON.stringify(existing, null, 2) + "\n");
+  mkdirp(path.dirname(mcpJsonPath));
+  writeFile(mcpJsonPath, JSON.stringify(existing, null, 2) + "\n");
 }
 
 function syncClaude(entries, targetDir = null, wants = true) {
@@ -1199,6 +1234,7 @@ function syncClaude(entries, targetDir = null, wants = true) {
 
   if (targetDir) {
     writeProjectClaudeSettings(targetDir);
+    writeProjectMcpJson(targetDir);
     return;
   }
 
@@ -1216,7 +1252,7 @@ ${personaList}
     // User-managed file with our managed-block carved out — never doc-stamp.
     writeFile(claudeMdPath, replaceManagedBlock(existing, note, mdManagedStart, mdManagedEnd), { stamp: false });
 
-    // Sync MCP servers into ~/.claude/settings.json if it exists
+    // Sync hooks into ~/.claude/settings.json if it exists
     const claudeSettingsPath = path.join(home, ".claude", "settings.json");
     if (fs.existsSync(claudeSettingsPath)) {
       const settings = JSON.parse(fs.readFileSync(claudeSettingsPath, "utf8"));
@@ -1236,9 +1272,21 @@ ${personaList}
           settings.hooks = JSON.parse(hookStr);
         }
       }
-      const registryMcp = scopedManagedMcpDefs({ projectScope: false });
-      syncGlobalClaudeMcpServers(settings, registryMcp);
       if (!DRY_RUN) fs.writeFileSync(claudeSettingsPath, JSON.stringify(settings, null, 2) + "\n");
+    }
+
+    // Sync user-scope MCP servers into ~/.claude.json's top-level `mcpServers`
+    // — Claude Code does not read MCP server definitions from settings.json at
+    // any scope (confirmed against code.claude.com/docs/en/mcp and live `claude
+    // mcp list` repro, construct-ranh). Gated on the file already existing, same
+    // as the hooks sync above: only write into Claude Code's own state file for
+    // a user who has actually run the CLI at least once.
+    const claudeUserConfigPath = path.join(home, ".claude.json");
+    if (fs.existsSync(claudeUserConfigPath)) {
+      const claudeUserConfig = JSON.parse(fs.readFileSync(claudeUserConfigPath, "utf8"));
+      const registryMcp = scopedManagedMcpDefs({ projectScope: false });
+      syncGlobalClaudeMcpServers(claudeUserConfig, registryMcp);
+      if (!DRY_RUN) fs.writeFileSync(claudeUserConfigPath, JSON.stringify(claudeUserConfig, null, 2) + "\n");
     }
   }
 }
@@ -1588,8 +1636,13 @@ function withVscodeWorkspaceCwd(entry) {
 // exist. Treat a construct toolkit path outside the current root as stale so the
 // sync refreshes it; user-owned servers carry no lib/mcp toolkit path and stay.
 
+// Claude/VS Code/Cursor entries carry the script path in `args`; OpenCode's local
+// entry shape (buildOpenCodeMcpEntry) instead carries `command: [bin, ...args]`.
+// Falling back to `command` when `args` is absent lets this one predicate serve
+// both shapes without OpenCode's caller having to reshape the entry first.
+
 export function mcpEntryPointsOutsideToolkit(entry, root) {
-  const args = Array.isArray(entry?.args) ? entry.args : [];
+  const args = Array.isArray(entry?.args) ? entry.args : (Array.isArray(entry?.command) ? entry.command : []);
   return args.some((arg) => {
     if (typeof arg !== "string") return false;
     const normalArg = arg.replace(/\\/g, "/");
@@ -1617,26 +1670,34 @@ function memoryEntryIsStale(entry) {
   if (!entry) return false;
   const want = String(memoryPort(process.env));
   const portOf = (s) => String(s || "").match(/:(\d+)\/?$/)?.[1];
-  const ports = [portOf(entry.url), portOf(entry.env?.CONSTRUCT_MEMORY_BRIDGE_URL)];
+  const bridgeUrlEnv = entry.env?.CONSTRUCT_MEMORY_BRIDGE_URL ?? entry.environment?.CONSTRUCT_MEMORY_BRIDGE_URL;
+  const ports = [portOf(entry.url), portOf(bridgeUrlEnv)];
   const portStale = ports.some((p) => p && p !== want);
-  const scriptArg = Array.isArray(entry.args)
-    ? entry.args.find((a) => typeof a === "string" && a.endsWith("memory-bridge.mjs"))
-    : null;
+  const commandArgs = Array.isArray(entry.args) ? entry.args : (Array.isArray(entry.command) ? entry.command : []);
+  const scriptArg = commandArgs.find((a) => typeof a === "string" && a.endsWith("memory-bridge.mjs"));
   const pathMissing = scriptArg ? !fs.existsSync(scriptArg) : false;
   return portStale || pathMissing;
 }
 
-export function reconcileStaleManagedEntries(configMap, { registryMcp, rebuildEntry }) {
+// OpenCode keys config.mcp by getOpenCodeMcpId(id), not the catalog id (identity
+// today, but the indirection exists for a future per-host rename) — so the host
+// config key this loop sees is not always the id `registryMcp`/`managedMcpDefs()`
+// know. `mapId` translates the host key back to the catalog id for the ownership
+// and sync-set checks; the write-back stays keyed on the original host key so no
+// entry is renamed, only rewritten in place.
+
+export function reconcileStaleManagedEntries(configMap, { registryMcp, rebuildEntry, mapId = (key) => key }) {
   if (!configMap) return false;
   const managed = managedMcpDefs();
   let changed = false;
-  for (const [id, entry] of Object.entries(configMap)) {
-    if (id in registryMcp) continue;
-    const mcpDef = managed[id];
+  for (const [key, entry] of Object.entries(configMap)) {
+    const catalogId = mapId(key);
+    if (catalogId in registryMcp) continue;
+    const mcpDef = managed[catalogId];
     if (!mcpDef) continue;
-    const stale = mcpEntryPointsOutsideToolkit(entry, root) || (id === "memory" && memoryEntryIsStale(entry));
+    const stale = mcpEntryPointsOutsideToolkit(entry, root) || (catalogId === "memory" && memoryEntryIsStale(entry));
     if (!stale) continue;
-    configMap[id] = rebuildEntry(id, mcpDef);
+    configMap[key] = rebuildEntry(catalogId, mcpDef);
     changed = true;
   }
   return changed;
@@ -2110,6 +2171,20 @@ function syncOpencode(entries, targetDir = null, wants = true) {
         config.mcp[openCodeId] = desiredEntry;
       }
     }
+
+    // The sync-set loop above only visits `registryMcp` ids, so a managed-but-optional
+    // entry (e.g. `memory` in project scope) with a stale toolkit path is never
+    // revisited here either — the same immortal-entry gap fixed for VS Code/Cursor/
+    // Claude project (construct-6y6w.1). `getOpenCodeMcpId` keys config.mcp by the
+    // host id rather than the catalog id, so map it back before checking ownership.
+    const catalogIdForOpenCodeKey = new Map(
+      Object.keys(managedMcpDefs()).map((catalogId) => [getOpenCodeMcpId(catalogId), catalogId]),
+    );
+    reconcileStaleManagedEntries(config.mcp, {
+      registryMcp,
+      mapId: (key) => catalogIdForOpenCodeKey.get(key) ?? key,
+      rebuildEntry: (catalogId, def) => buildOpenCodeMcpEntry(catalogId, def, process.env).entry,
+    });
 
     // Heavy external MCP servers serialize a measured ~37k tokens of tool schema
     // into EVERY agent's request — github ~30k alone (fixtures 2026-06-22) —

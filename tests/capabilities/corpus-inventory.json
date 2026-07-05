@@ -1,28 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-05T02:38:55.840Z",
+  "generatedAt": "2026-07-05T05:35:04.076Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 782,
+    "testFiles": 788,
     "topLevelTestFiles": 343,
-    "nestedTestFiles": 439,
+    "nestedTestFiles": 445,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 544,
-      "functional": 192,
+      "unit": 546,
+      "functional": 195,
       "visual": 11,
       "live-provider": 2,
-      "integration": 33
+      "integration": 34
     },
     "byCategory": {
-      "unit": 481,
-      "functional": 192,
+      "unit": 483,
+      "functional": 195,
       "visual": 11,
       "structural-guard": 19,
       "contract-subsystem": 44,
       "live-provider": 2,
-      "integration": 24,
+      "integration": 25,
       "hook": 9
     }
   },
@@ -83,6 +83,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/acceptance/k5-ink-react-degradation.functional.test.mjs — LMCP-K5 Ink/React"
+    },
+    {
+      "path": "tests/acceptance/modes/enterprise.acceptance.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/acceptance/modes/enterprise.acceptance.test.mjs — LMCP-L6 enterprise-mode"
     },
     {
       "path": "tests/acceptance/modes/solo.acceptance.test.mjs",
@@ -3155,6 +3163,14 @@
       "maintainerNotes": "tests/functional/opencode-primary-surface.functional.test.mjs — OpenCode-first surface."
     },
     {
+      "path": "tests/functional/opencode-stale-managed-reconcile.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/opencode-stale-managed-reconcile.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/opencode-tool-gateway.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3359,6 +3375,14 @@
       "maintainerNotes": "tests/functional/profile-ux-preview.functional.test.mjs. Mutating scope"
     },
     {
+      "path": "tests/functional/project-dotenv-tier.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/project-dotenv-tier.functional.test.mjs — construct-6y6w.8."
+    },
+    {
       "path": "tests/functional/project-parity.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3447,6 +3471,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/functional/reconcile-tasks.functional.test.mjs"
+    },
+    {
+      "path": "tests/functional/regression-run-02158a157d53.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/regression-run-02158a157d53.functional.test.mjs"
     },
     {
       "path": "tests/functional/release-gate.functional.test.mjs",
@@ -3991,6 +4023,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/hooks/graph-impact-advisory.test.mjs — advisory PostToolUse hook behavior."
+    },
+    {
+      "path": "tests/hooks/guard-bash-role-fence.test.mjs",
+      "layer": "integration",
+      "category": "integration",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/hooks/guard-bash-role-fence.test.mjs — role-fence actor-identity gate"
     },
     {
       "path": "tests/hooks/mcp-health-check-warn-only.test.mjs",
@@ -4583,6 +4623,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/mcp/enforcement-proof.functional.test.mjs — LMCP-I4."
+    },
+    {
+      "path": "tests/mcp/host-role-clientinfo.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/mcp/host-role-clientinfo.test.mjs — orchestration_run host provenance"
     },
     {
       "path": "tests/mcp/provider-write-tool.test.mjs",

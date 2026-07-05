@@ -558,14 +558,16 @@ test('buildStatus marks telemetry richness credentials-invalid when telemetry au
   }
 });
 
-test('buildStatus detects MCP configured via alias in settings.json', async () => {
+test('buildStatus detects MCP configured via alias in ~/.claude.json', async () => {
   const { rootDir, homeDir } = await createFixture();
-  // Configure atlassian under its common alias 'atlassian-mcp-server'
-  writeJson(path.join(homeDir, '.claude', 'settings.json'), {
+  // Configure atlassian under its common alias 'atlassian-mcp-server'. MCP server
+  // definitions live in ~/.claude.json's top-level `mcpServers`, not settings.json
+  // (settings.json carries hooks/permissions only — construct-ranh).
+  writeJson(path.join(homeDir, '.claude', 'settings.json'), { mcpServers: {}, hooks: {} });
+  writeJson(path.join(homeDir, '.claude.json'), {
     mcpServers: {
       'atlassian-mcp-server': { type: 'http', url: 'https://mcp.atlassian.com/v1/mcp' },
     },
-    hooks: {},
   });
   // Remove features.json so all features are implicitly enabled
   fs.rmSync(path.join(configDir(homeDir), 'features.json'), { force: true });

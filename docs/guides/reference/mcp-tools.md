@@ -25,7 +25,7 @@ Invoke any non-core Construct tool by name. Pass the tool name in `tool` (constr
 
 ## Host wiring policy
 
-The Construct MCP server (`construct-mcp`) is defined once in `specialists/org` (`mcpServers`) and wired into every selected host by `scripts/sync-specialists.mjs` — Claude Code (`.claude/settings.json` → `mcpServers`), OpenCode (`.opencode/opencode.json`), VS Code (`.vscode/mcp.json` → `servers`), Cursor (`.cursor/mcp.json` → `mcpServers`), and Codex (`.codex/config.toml` → `mcp_servers`). The `host-config-parity` functional test fails if any selected host drops it.
+The Construct MCP server (`construct-mcp`) is defined once in `specialists/org` (`mcpServers`) and wired into every selected host by `scripts/sync-specialists.mjs` — Claude Code (project scope: `.mcp.json` → `mcpServers`; global scope: `~/.claude.json` → top-level `mcpServers` — settings.json carries hooks/permissions only, never MCP server definitions), OpenCode (`.opencode/opencode.json`), VS Code (`.vscode/mcp.json` → `servers`), Cursor (`.cursor/mcp.json` → `mcpServers`), and Codex (`.codex/config.toml` → `mcp_servers`). The `host-config-parity` functional test fails if any selected host drops it.
 
 Credential handling diverges because hosts resolve env references at different times:
 

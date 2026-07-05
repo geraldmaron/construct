@@ -114,18 +114,6 @@
         }
       }
     },
-    "hosts": {
-      "type": "object",
-      "description": "Granular control over editor and platform adapter sets.",
-      "properties": {
-        "claude": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
-        "opencode": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
-        "codex": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
-        "copilot": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
-        "vscode": { "type": "object", "properties": { "enabled": { "type": "boolean" } } },
-        "cursor": { "type": "object", "properties": { "enabled": { "type": "boolean" } } }
-      }
-    },
     "providers": {
       "type": "object",
       "description": "Provider-specific settings (e.g., Anthropic, OpenAI, GitHub). Values starting with '$' are interpolated from environment variables.",
