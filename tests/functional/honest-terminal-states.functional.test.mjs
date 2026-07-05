@@ -17,7 +17,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { runOrchestration, getRun } from '../../lib/orchestration/runtime.mjs';
+import { runOrchestration, getRun, submitHostTaskResult } from '../../lib/orchestration/runtime.mjs';
 import { shapeRun } from '../../lib/mcp/tools/orchestration-run.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -133,6 +133,78 @@ test('orchestrationRun MCP tool returns shaped status for degraded zero-task run
     assert.equal(result.status, 'degraded', `MCP orchestrationRun must return shaped status 'degraded', got '${result.status}'`);
     assert.equal(result.degraded, true, 'MCP result.degraded must be true');
     assert.equal(result.tasks.length, 0, 'MCP result.tasks.length must be 0');
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+// ── awaiting-host: the host worker backend's non-terminal standing state
+// (LMCP host-execution) must never render as completed, degraded, or any
+// other terminal taxonomy value — it is its own real, honest status.
+
+test('a host-backend run materializing tasks reports shaped status "awaiting-host", never "completed"', async () => {
+  const cwd = tmpProject();
+  try {
+    const env = {
+      ...process.env,
+      CX_TOOLKIT_DIR: REPO_ROOT,
+      HOME: REPO_ROOT,
+      USERPROFILE: REPO_ROOT,
+      OPENROUTER_API_KEY: '',
+      ANTHROPIC_API_KEY: '',
+      CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+      CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+      CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+    };
+    const run = await runOrchestration(
+      { request: 'design and implement a new authentication architecture', fileCount: 20, moduleCount: 6 },
+      { cwd, env, workerBackend: 'host' },
+    );
+
+    assert.equal(run.status, 'awaiting-host', `stored run.status must be 'awaiting-host', got '${run.status}'`);
+    assert.notEqual(run.status, 'completed');
+    assert.notEqual(run.status, 'degraded');
+
+    const shaped = shapeRun(run);
+    assert.equal(shaped.status, 'awaiting-host', `shaped.status must be 'awaiting-host', got '${shaped.status}'`);
+    assert.notEqual(shaped.status, 'completed', 'awaiting-host must never render as completed');
+    assert.notEqual(shaped.status, 'degraded', 'awaiting-host must never render as degraded');
+    assert.equal(shaped.prepareOnly, false, 'awaiting-host tasks are not the inline prepare-only state either');
+
+    const reloaded = await getRun(cwd, run.runId);
+    assert.equal(reloaded.status, 'awaiting-host', 'the persisted record round-trips the same standing state');
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('submitting every task result flips shaped status from awaiting-host to a real completed terminal state', async () => {
+  const cwd = tmpProject();
+  try {
+    const env = {
+      ...process.env,
+      CX_TOOLKIT_DIR: REPO_ROOT,
+      HOME: REPO_ROOT,
+      USERPROFILE: REPO_ROOT,
+      OPENROUTER_API_KEY: '',
+      ANTHROPIC_API_KEY: '',
+      CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+      CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+      CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+    };
+    const run = await runOrchestration(
+      { request: 'design and implement a new authentication architecture', fileCount: 20, moduleCount: 6 },
+      { cwd, env, workerBackend: 'host' },
+    );
+    assert.equal(shapeRun(run).status, 'awaiting-host');
+
+    let last;
+    for (const task of run.tasks) {
+      last = await submitHostTaskResult(cwd, run.runId, task.id, { output: 'result' }, { env });
+    }
+    const shapedFinal = shapeRun(last.run);
+    assert.equal(shapedFinal.status, 'completed');
+    assert.notEqual(shapedFinal.status, 'awaiting-host');
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
   }

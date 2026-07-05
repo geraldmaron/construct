@@ -51,6 +51,7 @@
     "0059-lmcp-a9-dependency-intent-rubric",
     "0060-lmcp-b10-provider-filter-dsl",
     "0061-lmcp-p1-embed-capability-schema-runtime-placement",
-    "0062-lmcp-f6-persona-reasoning-framework-format"
+    "0062-lmcp-f6-persona-reasoning-framework-format",
+    "0063-host-subscription-execution-pickup-and-sampling"
   ]
 }

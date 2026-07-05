@@ -802,14 +802,18 @@ Search the public web and return CITED results — the only search surface that 
 | `recency` | string | Optional freshness window hint (e.g. `30d`). |
 
 ### `orchestration_run`
-Execute a real multi-specialist orchestration run and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Solo runs execute in-process — no daemon, no port, no token; a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`. Real specialist output requires the `provider` worker backend (a provider key configured); the default `inline` backend prepares tasks only.
+Execute a real multi-specialist orchestration run and return per-specialist output — the executing counterpart to `workflow_invoke` (which only plans). For MCP hosts with no subagent primitive (VS Code/Copilot, Cursor), this is how a specialist chain actually runs: the engine owns orchestration, the tool is the thin client (ADR-0022). Solo runs execute in-process — no daemon, no port, no token; a remote/team orchestration service is opt-in via `CONSTRUCT_ORCHESTRATION_URL`.
+
+Three worker backends. `host` (the default for MCP-originated runs when neither `worker_backend` nor `construct.config.json`'s `orchestration.workerBackend` is set) materializes each specialist's prompt without spending any provider API credits — the calling host executes it in its own model session (the subscription it is already running under) and submits the result via `orchestration_task_result`; when the connected client declares the MCP `sampling` capability, construct-mcp instead drives that same loop itself (ADR-0063) and the run can complete in this same call. `provider` executes specialists against a configured provider key (real API spend). `inline` only prepares tasks — no execution at all (this stays the CLI's own default; the CLI has no attached host session to execute a `host`-backend run against).
+
+A `host`-backend run whose materialization completes returns `status: 'awaiting-host'` — a real, non-terminal standing state (never rendered as `completed` or `degraded`) — plus every task's materialized `system`/`user` prompt and a `hostInstructions` string describing exactly what to do next.
 
 | Parameter | Type | Description |
 |---|---|---|
 | `request` | string | **required** — Natural-language description of the work to orchestrate. |
 | `workflow_type` | string | Optional workflow type to shape the plan (e.g. architecture-review). |
 | `requested_strategy` | string | `orchestrated` \| `prompt-only` \| `auto` (default auto). |
-| `worker_backend` | string | `provider` executes specialists (needs a key); `inline` prepares only. Default: daemon config. |
+| `worker_backend` | string | `host` materializes prompts for the calling MCP host to execute (default for MCP-originated runs); `provider` executes against a configured provider key; `inline` prepares only. |
 | `host` | string | Host/IDE identifier (advisory). |
 | `host_model` | string | Model the host uses, for model resolution. |
 | `host_provider` | string | Provider family the host uses, for model resolution. |
@@ -817,6 +821,18 @@ Execute a real multi-specialist orchestration run and return per-specialist outp
 | `module_count` | number | Optional planning hint: number of modules in scope. |
 | `wait` | boolean | Wait for a terminal state and return task output (default true); `false` returns the runId to poll. |
 | `timeout_ms` | number | Max wait when `wait=true` (default 120000); on timeout the runId is returned to poll. |
+
+### `orchestration_task_result`
+Submit one host-executed specialist task result for a run planned with `worker_backend=host` (Phase 1 of the host worker backend, ADR-0063). `orchestration_run` returns each task's materialized prompt without executing it; execute that prompt as the named specialist role, then call this tool with the output. The response carries `next_task` (the next awaiting prompt) or `null` once the run is terminal — loop until `null`. Reachable via the `call` gateway (self-registered, non-core tool). Recorded fields are host-reported (`provenanceSource: 'host-reported'`) — self-reported, never independently verified, and never rendered identically to a `provider`-executed task's shape.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `run_id` | string | **required** — The run id from `orchestration_run`. |
+| `task_id` | string | **required** — The task id this result answers (e.g. `t1`). |
+| `output` | string | **required** — The specialist output produced. Must be non-empty. |
+| `model` | string | Optional: the model used to execute this task (self-reported). |
+| `provider` | string | Optional: the provider/vendor family used (self-reported). |
+| `reasoning` | string | Optional: reasoning/thinking for this task, if disclosed. |
 
 ### `orchestration_readiness`
 Report whether this MCP session has Construct orchestration tools attached and reachable now. Returns a pass/fail verdict, typed `reasonCode`, one deterministic `nextStep`, required/observed/missing tools, and a redacted diagnostic bundle. This is an observed attachment check, unlike `construct_execution_resolve`, which remains a descriptive planning/model-resolution contract.
