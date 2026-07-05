@@ -118,21 +118,75 @@ test('ACP server: backend resolution honors config — provider backend shows in
     orchestration: { workerBackend: 'provider', store: 'filesystem', chainOfThought: 'hidden' }
   }, null, 2));
 
-  // Clearing the model tiers and keys forces a degraded, zero-task run so no real
-  // provider call is made — but the resolved workerBackend is recorded before
-  // execution, so a config-driven 'provider' must still surface in the summary.
-  // Pre-fix ACP hardcoded workerBackend=inline, so this assertion caught the deviation.
-  const { updates } = await runAcpTest(project, {
-    CX_MODEL_REASONING: '', CX_MODEL_STANDARD: '', CX_MODEL_FAST: '',
-    OPENROUTER_API_KEY: '', ANTHROPIC_API_KEY: '',
+  // Clearing the model tiers and keys still lets a credential-family fallback
+  // pick a model id (by design — see resolveEmbeddedModel), so the run attempts
+  // a real provider call. Driving runAcpServer in-process (not via the spawned
+  // CLI) makes fetchImpl injectable, so the attempt fails immediately instead of
+  // depending on real (if bounded) network timing (construct-vevd). The resolved
+  // workerBackend is recorded before execution, so a config-driven 'provider'
+  // must still surface in the summary regardless. Pre-fix ACP hardcoded
+  // workerBackend=inline, so this assertion caught the deviation.
+  const { PassThrough } = await import('node:stream');
+  const { runAcpServer } = await import('../../lib/acp/server.mjs');
+
+  const input = new PassThrough();
+  const output = new PassThrough();
+  const messages = [];
+  let buffer = '';
+  output.on('data', (chunk) => {
+    buffer += chunk.toString();
+    let nl;
+    while ((nl = buffer.indexOf('\n')) !== -1) {
+      const line = buffer.slice(0, nl).trim();
+      buffer = buffer.slice(nl + 1);
+      if (line) { try { messages.push(JSON.parse(line)); } catch { /* skip */ } }
+    }
   });
 
-  const summaryUpdate = updates.find((u) => u.params.update?.content?.text?.includes('Orchestration'));
-  assert.ok(summaryUpdate, 'summary update should be present');
+  const fetchImpl = async () => { throw new Error('network disabled in test'); };
+  const server = runAcpServer({
+    input, output, defaultCwd: project, fetchImpl,
+    env: {
+      ...process.env,
+      CX_MODEL_REASONING: '', CX_MODEL_STANDARD: '', CX_MODEL_FAST: '',
+      OPENROUTER_API_KEY: '', ANTHROPIC_API_KEY: '',
+    },
+  });
 
-  const summaryText = summaryUpdate.params.update.content.text;
-  assert.ok(
-    summaryText.includes('workerBackend=provider'),
-    `config workerBackend=provider must drive the resolved backend, not the old hardcoded inline: ${summaryText}`,
-  );
+  const send = (msg) => input.write(`${JSON.stringify(msg)}\n`);
+  const waitFor = (pred, ms = 8000) => new Promise((resolve, reject) => {
+    const deadline = Date.now() + ms;
+    const tick = () => {
+      const hit = messages.find(pred);
+      if (hit) return resolve(hit);
+      if (Date.now() > deadline) return reject(new Error('timeout waiting for message'));
+      setTimeout(tick, 25);
+    };
+    tick();
+  });
+
+  try {
+    send({ jsonrpc: '2.0', id: 1, method: 'session/new', params: { cwd: project, mcpServers: [] } });
+    const newSession = await waitFor((m) => m.id === 1);
+    const sessionId = newSession.result.sessionId;
+    assert.ok(sessionId, 'sessionId returned');
+
+    send({ jsonrpc: '2.0', id: 2, method: 'session/prompt', params: { sessionId, prompt: [{ type: 'text', text: 'refactor the auth module and review it for security' }] } });
+    await waitFor((m) => m.id === 2);
+
+    const updates = messages.filter((m) => m.method === 'session/update' && m.params?.sessionId === sessionId);
+    const summaryUpdate = updates.find((u) => u.params.update?.content?.text?.includes('Orchestration'));
+    assert.ok(summaryUpdate, 'summary update should be present');
+
+    const summaryText = summaryUpdate.params.update.content.text;
+    assert.ok(
+      summaryText.includes('workerBackend=provider'),
+      `config workerBackend=provider must drive the resolved backend, not the old hardcoded inline: ${summaryText}`,
+    );
+  } finally {
+    server.close();
+    input.destroy();
+    output.destroy();
+    fs.rmSync(project, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  }
 });

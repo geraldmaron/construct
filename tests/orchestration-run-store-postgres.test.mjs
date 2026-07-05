@@ -38,15 +38,18 @@ if (!sql) {
 } else {
   test.after(async () => { await closeSqlClient(sql); });
 
-  test('saveRun/loadRun/listRuns round-trip through Postgres', async () => {
-    const store = new PostgresRunStore({ sql, project: 'cx-test-orchestration' });
-    await store.ensureSchema();
+  test('saveRun/loadRun/listRuns round-trip through Postgres across store instances', async () => {
+    const writer = new PostgresRunStore({ sql, project: 'cx-test-orchestration' });
+    const reader = new PostgresRunStore({ sql, project: 'cx-test-orchestration' });
+    await writer.ensureSchema();
     const id = `run-pg-${Date.now()}`;
-    await store.saveRun(sampleRun(id));
-    const loaded = await store.loadRun(id);
+    const run = sampleRun(id);
+    await writer.saveRun(run);
+    const loaded = await reader.loadRun(id);
     assert.equal(loaded.runId, id);
     assert.equal(loaded.status, 'completed');
-    const runs = await store.listRuns({ limit: 5 });
+    assert.deepEqual(loaded.tasks, run.tasks);
+    const runs = await reader.listRuns({ limit: 5 });
     assert.ok(runs.some((r) => r.runId === id));
     await sql`DELETE FROM construct_orchestration_runs WHERE run_id = ${id} AND project = 'cx-test-orchestration'`;
   });

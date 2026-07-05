@@ -81,7 +81,7 @@ Three modes are defined. Only `solo` is fully implemented today.
 
 **`solo`** (default and fully supported) — runs entirely on the local machine. Filesystem task queue, local repo state, embedded LanceDB vector store, direct MCP dispatch, local JSONL traces. If every cloud service goes down, you still work from `plan.md`, `.cx/context.md`, beads, git, and the local vector index.
 
-**`team`** (planned — not yet implemented) — the architecture is defined: Postgres queue with row-locked worker claims, shared memory store, Docker worker pool, centralized telemetry, MCP through a broker. The code paths exist as stubs; `createSqlClient()` returns null and no team capability is wired at runtime. Do not run `team` mode expecting it to work.
+**`team`** (planned — partially implemented) — the architecture is defined: shared run storage, Postgres queue with row-locked worker claims, shared memory store, Docker worker pool, centralized telemetry, MCP through a broker. The SQL client, migrations, Postgres run store, Postgres queue provider, team-mode queue default, and worker registry heartbeat now exist. A missing database is a configuration error unless `CONSTRUCT_DEGRADED_OK=postgres-queue` is set, which visibly falls back to the git queue. Do not run `team` mode expecting full distributed execution yet.
 
 **`enterprise`** (planned — not yet implemented) — would add tenant isolation, RBAC/ABAC scaffolding, isolated worker containers, signed MCP allowlists, and mandatory audit. No implementation exists yet.
 
@@ -97,7 +97,8 @@ Current implementation state, sourced from `lib/mode-capabilities.mjs`:
 | Local memory | implemented | — | — |
 | Embedded LanceDB vector store | implemented | — | — |
 | Direct MCP dispatch | implemented | — | — |
-| Postgres task queue | — | stub | stub |
+| Postgres task queue | — | implemented | implemented |
+| Worker heartbeat registry | — | implemented | implemented |
 | Shared memory store | — | stub | stub |
 | Central telemetry | — | stub | — |
 | Brokered MCP dispatch | — | stub | — |
@@ -155,6 +156,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 
 | Command | What it does |
 |---|---|
+| `construct approvals` | Manage pending MCP tool approvals |
 | `construct dev` | Start services for development |
 | `construct docs` | Documentation commands |
 | `construct doctor` | Check installation health |
@@ -168,6 +170,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct status` | Show system health and credentials |
 | `construct stop` | Stop all running services |
 | `construct sync` | Sync agent adapters to AI tools |
+| `construct workers` | List registered team workers and heartbeat freshness |
 
 ### Work
 
@@ -190,6 +193,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct integrations` | Check and manage external system connections |
 | `construct knowledge` | Query, index, or add to the project knowledge base |
 | `construct memory` | Inspect memory layer |
+| `construct pack` | Specialist/team/profile pack enable/disable lifecycle (LMCP-E3) |
 | `construct publish` | Publish typed artifacts: release gate + export PDF with figures + optional demos |
 | `construct reflect` | Capture improvement feedback and update Construct core |
 | `construct search` | Hybrid search across project state |
@@ -208,6 +212,7 @@ The embed daemon writes its supervisor stdout log to `~/.cx/runtime/embed-daemon
 | `construct acp` | Run Construct as an Agent Client Protocol (ACP) server over stdio for Zed/JetBrains/VS Code ACP clients |
 | `construct capability` | Describe what this Construct install can do (embedded contract; read-only, secret-free) |
 | `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
+| `construct db` | Inspect and migrate the optional Postgres backend |
 | `construct execution` | Resolve the execution-capability contract for an embedded workflow (orchestrated vs prompt-only; descriptive, not enforced) |
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
@@ -306,6 +311,8 @@ construct/
 ├── commands         Command prompt assets
 ├── config           Repo-wide controlled vocabulary (tag-vocabulary.json)
 ├── deploy           Terraform and deployment configs
+├── deps
+├── dev
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples         Example projects and persona fixtures
 ├── lib              Core runtime: CLI, hooks, MCP, providers, oracle, sync

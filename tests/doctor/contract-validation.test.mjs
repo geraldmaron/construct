@@ -1,13 +1,18 @@
 /**
- * Tests for the doctor "Agent contract schema intact" predicate.
- * Verifies that the filter correctly identifies broken contracts (missing required
- * fields) and passes valid ones, so the check is never vacuously true.
+ * Tests for a locally defined contract-shape predicate, exercised in isolation
+ * against lib/specialist-contracts.mjs. This does not call or mirror bin/construct's
+ * "Agent contract schema intact" doctor check — that check uses a different
+ * predicate (a consumer-naming filter, tracked as broken/vacuous in construct-ik8g)
+ * and is not imported here. A regression in the doctor check would not be caught
+ * by this suite.
  */
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-// The predicate extracted from bin/construct — mirrors the filter exactly.
+// Local predicate: flags contracts missing required shape fields (id, producer,
+// consumer, and either postconditions or output). Not sourced from bin/construct.
+
 const isBroken = (c) =>
   !c.id || !c.producer || !c.consumer || (!c.postconditions && !c.output);
 

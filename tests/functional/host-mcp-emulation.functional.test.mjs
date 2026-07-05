@@ -15,6 +15,11 @@
  *
  * Isolation: own HOME + CX_HOME_OVERRIDE + project tmpdir; the server resolves
  * skills/templates from the repo (ROOT_DIR) and writes telemetry into the sandbox.
+ *
+ * @capability orchestration.routing
+ * @capability mcp.broker.connection
+ * @capability skill.roles-engineer
+ * @capability skill.roles-architect-ai-systems
  */
 
 import assert from 'node:assert/strict';
@@ -27,6 +32,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 import { doctorRoot } from '../../lib/config/xdg.mjs';
+import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SERVER = join(REPO_ROOT, 'lib', 'mcp', 'server.mjs');
@@ -49,11 +55,13 @@ async function connect(env) {
     command: process.execPath,
     args: [SERVER],
     cwd: env.project,
-    env: {
-      ...process.env,
+    env: sterileSpawnEnv({
       HOME: env.HOME,
       USERPROFILE: env.HOME,
       CX_HOME_OVERRIDE: env.HOME,
+      XDG_CONFIG_HOME: join(env.HOME, '.config'),
+      XDG_DATA_HOME: join(env.HOME, '.local', 'share'),
+      XDG_RUNTIME_DIR: join(env.HOME, 'run'),
       CONSTRUCT_DEV_PATH: REPO_ROOT,
       CONSTRUCT_ORCHESTRATION_URL: '',
       OPENROUTER_API_KEY: '',
@@ -61,7 +69,7 @@ async function connect(env) {
       CX_MODEL_REASONING: MODEL,
       CX_MODEL_STANDARD: MODEL,
       CX_MODEL_FAST: MODEL,
-    },
+    }),
   });
   const client = new Client({ name: 'host-emulation-test', version: '1.0.0' }, { capabilities: {} });
   await client.connect(transport);

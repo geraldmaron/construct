@@ -15,7 +15,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { packageRoot, resolveProjectRoot } from '../../lib/roots.mjs';
-import { buildRuntimeRecoverySummary } from '../../lib/service-manager.mjs';
+import { buildRuntimeRecoverySummary, startServices } from '../../lib/service-manager.mjs';
 
 test('resolveProjectRoot returns the supplied cwd unchanged (resolved)', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-root-isolation-'));
@@ -109,22 +109,42 @@ test('buildRuntimeRecoverySummary with rootDir=packageRoot does NOT pick up tmpD
   }
 });
 
-test('telemetry url from startServices uses rootDir, not packageRoot', () => {
-  // startServices builds telemetry URL as path.join(rootDir, '.cx', 'traces').
-  // Verify the path builder honours an external rootDir by importing the
-  // relevant sub-function via a direct path computation — no live service spawn.
+test('telemetry url from startServices uses rootDir, not packageRoot', async () => {
+  // Calls the real startServices with an isolated rootDir/homeDir and injected
+  // probes/spawners (its designed test seams) so no real process is spawned.
+  // startDoctor/startOracle have no injection seam, so CONSTRUCT_DOCTOR and
+  // CONSTRUCT_ORACLE are forced 'off' for the call to keep it hermetic.
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-root-isolation-'));
+  const prevDoctor = process.env.CONSTRUCT_DOCTOR;
+  const prevOracle = process.env.CONSTRUCT_ORACLE;
+  process.env.CONSTRUCT_DOCTOR = 'off';
+  process.env.CONSTRUCT_ORACLE = 'off';
   try {
-    const expectedTracesPath = path.join(tmpDir, '.cx', 'traces');
+    const { results } = await startServices({
+      rootDir: tmpDir,
+      homeDir: tmpDir,
+      selected: new Set(['telemetry']),
+      describeRuntimeSupportFn: async () => ({ tmux: false, cm: false, opencode: false, gh: false }),
+      getRuntimePortsFn: async () => ({ memory: 0, bridge: 0, copilotBridge: 0 }),
+      loadConstructEnvFn: () => ({}),
+      spawnDetachedFn: () => ({ child: null }),
+      memoryProbeFn: async () => false,
+      openCodeProbeFn: async () => false,
+      runPressureReleaseFn: () => ({ killed: [] }),
+    });
+
+    const telemetry = results.find((r) => r.name === 'Telemetry');
+    assert.ok(telemetry, 'startServices must report a Telemetry result');
+    assert.equal(telemetry.url, path.join(tmpDir, '.cx', 'traces'));
     assert.ok(
-      expectedTracesPath.startsWith(tmpDir),
-      'traces path must start with rootDir (tmpDir)',
-    );
-    assert.ok(
-      !expectedTracesPath.startsWith(packageRoot),
-      'traces path must not start with packageRoot',
+      !telemetry.url.startsWith(packageRoot),
+      `telemetry url (${telemetry.url}) must not point into packageRoot (${packageRoot})`,
     );
   } finally {
+    if (prevDoctor === undefined) delete process.env.CONSTRUCT_DOCTOR;
+    else process.env.CONSTRUCT_DOCTOR = prevDoctor;
+    if (prevOracle === undefined) delete process.env.CONSTRUCT_ORACLE;
+    else process.env.CONSTRUCT_ORACLE = prevOracle;
     fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });

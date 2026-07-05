@@ -13,7 +13,8 @@ OpenCode config, Claude settings, or the Ollama model store.
 
 Tests that exercise `construct sync`, OpenCode config writes, or Ollama
 provisioning mutate **real user state** — `~/.config/opencode/opencode.json`,
-`~/.claude/settings.json`, the Ollama model store. The local-model investigation
+`~/.claude/settings.json`, `~/.claude.json` (Claude Code's user-scope MCP
+servers), the Ollama model store. The local-model investigation
 (bead `construct-k6fu`) polluted the live `opencode.json` and created real Ollama
 variants because its harness ran against the real machine. This helper exists so
 that can never happen again.

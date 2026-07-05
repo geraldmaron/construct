@@ -5,6 +5,8 @@
  * Covers: cloud models get the full persona, local size maps to floor/mid, a COLLAPSED
  * probe verdict forces floor, unknown local size is conservative (floor), and the
  * size-marker regex now matches 24b/30b (the prior fixed list missed them).
+ *
+ * @capability local.model.tier
  */
 import assert from "node:assert/strict";
 import test from "node:test";

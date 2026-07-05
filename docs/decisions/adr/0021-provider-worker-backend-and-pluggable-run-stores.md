@@ -8,6 +8,7 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 - **Deciders**: Gerald Dagher (owner)
 - **Supersedes**: none (this ADR partially refines the prior runtime decision for the provider backend only — see Decision; the prepare-only boundary stays in force for the inline backend)
 - **Status note (2026-06-29, self-audit construct-rr63.1.2)**: shipped and test-covered — implemented by `lib/orchestration/worker.mjs` (`runTaskViaProvider`) and `lib/orchestration/store.mjs` (`resolveRunStore`) with `tests/orchestration-run-store-sqlite.test.mjs` and `tests/orchestration-run-store-postgres.test.mjs`. Status corrected from `proposed` to reflect ground truth.
+- **Status note (2026-07, construct-5wkl)**: hardened the provider backend's failure handling within this ADR's existing boundary (a provider failure is recorded `status: 'failed'`, never crashes the run) — a 2xx transport response with unusable content (empty, content-filtered, reasoning-only, malformed) now classifies into the same typed-error path as a transport failure, with a bounded retry/backoff policy for genuinely transient outcomes and redacted per-task provider telemetry. See `docs/guides/reference/provider-worker-reliability.md` for the full failure-mode/remediation table; no boundary or contract in this ADR changed.
 
 <!-- Owning specialist: cx-architect. Part of the host-independent local orchestration runtime (epic construct-d6pf). -->
 

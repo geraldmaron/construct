@@ -10,6 +10,7 @@ description: Models & Integrations commands for Construct.
 | `construct acp` | Run Construct as an Agent Client Protocol (ACP) server over stdio for Zed/JetBrains/VS Code ACP clients |
 | `construct capability` | Describe what this Construct install can do (embedded contract; read-only, secret-free) |
 | `construct claude:allow` | Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks the agent from editing it) |
+| `construct db` | Inspect and migrate the optional Postgres backend |
 | `construct execution` | Resolve the execution-capability contract for an embedded workflow (orchestrated vs prompt-only; descriptive, not enforced) |
 | `construct hosts` | Show host support for Construct orchestration |
 | `construct mcp` | Manage MCP integrations |
@@ -50,6 +51,21 @@ Manage Claude Code `permissions.allow` from the outside (auto-classifier blocks 
 ```bash
 construct claude:allow <check|apply|add|remove>
 ```
+
+## construct db
+
+Inspect and migrate the optional Postgres backend
+
+**Usage**
+
+```bash
+construct db <status|migrate> [--json]
+```
+
+**Subcommands**
+
+- `status [--json]` — Check Postgres reachability and migration state
+- `migrate [--json]` — Apply pending Postgres migrations idempotently
 
 ## construct execution
 

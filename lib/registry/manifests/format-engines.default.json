@@ -1,0 +1,15 @@
+{
+  "pdf": { "engine": "pandoc", "writer": null, "pdfEngine": "typst", "extraBinaries": ["typst"] },
+  "docx": { "engine": "pandoc", "writer": null, "pdfEngine": null, "extraBinaries": [] },
+  "doc": { "engine": "pandoc", "writer": null, "pdfEngine": null, "extraBinaries": [], "via": "libreoffice", "intermediate": "docx" },
+  "deck": { "engine": "pandoc", "writer": null, "pdfEngine": null, "extraBinaries": [] },
+  "pptx": { "engine": "pptxgenjs", "writer": null, "pdfEngine": null, "extraBinaries": [] },
+  "html": { "engine": "pandoc", "writer": null, "pdfEngine": null, "extraBinaries": [] },
+  "rtf": { "engine": "pandoc", "writer": "rtf", "pdfEngine": null, "extraBinaries": [] },
+  "odt": { "engine": "pandoc", "writer": "odt", "pdfEngine": null, "extraBinaries": [] },
+  "epub": { "engine": "pandoc", "writer": "epub", "pdfEngine": null, "extraBinaries": [] },
+  "tex": { "engine": "pandoc", "writer": "latex", "pdfEngine": null, "extraBinaries": [] },
+  "txt": { "engine": "pandoc", "writer": "plain", "pdfEngine": null, "extraBinaries": [] },
+  "md": { "engine": "copy", "writer": null, "pdfEngine": null, "extraBinaries": [] },
+  "mdx": { "engine": "copy", "writer": null, "pdfEngine": null, "extraBinaries": [] }
+}

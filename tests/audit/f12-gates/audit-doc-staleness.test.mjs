@@ -89,8 +89,14 @@ describe('R22 — tests/AUDIT.md corpus counts track disk', () => {
     assert.ok(m, 'AUDIT.md "At a glance" should state a functional file count');
     const claimedFunctional = Number(m[1]);
 
+    // Mirror the inventory's definition (lib/test-corpus-inventory.mjs): a file
+    // is functional-layer when it lives under tests/functional/ OR carries the
+    // .functional.test.mjs suffix anywhere in tests/.
     const functionalDir = path.join(REPO_ROOT, 'tests', 'functional');
-    const actualFunctional = listTestFiles(functionalDir).length;
+    const inDir = new Set(listTestFiles(functionalDir));
+    const bySuffix = listTestFiles(path.join(REPO_ROOT, 'tests'))
+      .filter((f) => f.endsWith('.functional.test.mjs'));
+    const actualFunctional = new Set([...inDir, ...bySuffix]).size;
 
     assert.equal(
       claimedFunctional,

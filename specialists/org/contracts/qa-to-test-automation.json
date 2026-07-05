@@ -12,7 +12,9 @@
     "schema": "lib/contract-schemas/test-report.json",
     "mustContain": [
       "testStrategy",
-      "verdict"
+      "verdict",
+      "riskBasedSelection",
+      "gaps"
     ]
   },
   "output": {

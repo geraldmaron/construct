@@ -23,7 +23,8 @@
       "sequencedTasks",
       "dependencyGraph",
       "ownershipMatrix",
-      "verificationGates"
+      "verificationGates",
+      "slippageRisk"
     ]
   },
   "preconditions": [

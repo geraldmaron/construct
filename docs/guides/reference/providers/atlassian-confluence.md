@@ -89,5 +89,5 @@ config.limit = 50
 ## Notes
 
 - Page IDs are integers. They appear in the URL as `/wiki/spaces/SPACE/pages/123456789/Page+Title`.
-- The Confluence REST API v1 (`/wiki/rest/api/`) is used. The newer v2 API is not yet supported.
+- This provider calls the Confluence REST API v1 (`/wiki/rest/api/`) for read/search. The governed-write Confluence adapter (`lib/providers/contract/adapters/confluence/`, construct-9oi4.10.4) calls the v2 API separately.
 - `body.storage` is Confluence's XML-based storage format. If you need plain text, use `construct ingest` to convert the page to markdown after fetching.

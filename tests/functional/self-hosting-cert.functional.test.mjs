@@ -1,11 +1,14 @@
 /**
  * tests/functional/self-hosting-cert.functional.test.mjs
  *
- * Self-hosting certification check (construct-rr63.11): asserts that a Construct-on-Construct run
- * leaves its durable, navigable evidence — the baseline, the four-plus synthesis documents, the ten
- * subagent evidence reports, and the meta.json navigation that keeps them reachable. Closes the
- * "self-hosting: 0 tests" gap Agent J flagged; the standing proof of the run's correctness is the
- * green release gate itself, which this complements rather than replaces.
+ * Intentional anti-deletion tripwire, not a code-behavior test: this file never imports a
+ * lib/*.mjs module and never spawns a binary. It only checks fs.existsSync/readFileSync
+ * against fixed paths under docs/notes/research/construct-self-audit (baseline.md, the six
+ * synthesis/*.md docs, the ten subagents/*.md reports, and meta.json at each level), so that
+ * those one-time audit deliverables (construct-rr63.11) cannot be silently deleted or moved.
+ * No code in lib/, bin/, or scripts/ reads or regenerates this content — do not treat a
+ * failure here as a regression in production behavior, and do not remove this file without
+ * maintainer sign-off (construct-73n5).
  */
 
 import test from 'node:test';

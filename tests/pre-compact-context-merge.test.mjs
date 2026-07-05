@@ -1,72 +1,45 @@
 /**
  * tests/pre-compact-context-merge.test.mjs — unit tests for the manual-section
- * preservation logic added to lib/hooks/pre-compact.mjs.
+ * preservation logic in lib/hooks/pre-compact.mjs.
  *
- * Tests the two exported-by-convention helpers (parseSections,
- * extractManualSections, mergeExistingJson) directly so the hook itself does
- * not need to be spawned as a subprocess.
+ * Imports the real exported helpers (AUTO_SECTION_NAMES, parseSections,
+ * extractManualSections, mergeExistingJson) rather than re-pasted copies, so
+ * the test cannot silently drift from the hook it covers. The hook's
+ * top-level entrypoint body is guarded by an import.meta.url check, so this
+ * import only pulls in the exports and never touches stdin or process.exit.
  *
- * The helpers are not formally exported from the hook (it is a standalone
- * script) so we test the behaviour through the resulting context.md content
- * by running the hook's logic inline.
+ * extractManualSections and mergeExistingJson take file paths (the hook reads
+ * context.md/context.json from disk); the adapters below write scratch files
+ * so tests can keep expressing fixtures as strings/objects.
  */
 
-import { describe, it, after } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { AUTO_SECTION_NAMES, parseSections, extractManualSections, mergeExistingJson } from '../lib/hooks/pre-compact.mjs';
 
 // ---------------------------------------------------------------------------
-// Helpers inlined from the hook to keep the test self-contained.
+// Path-based adapters: the real helpers read from disk, tests want to pass
+// fixture content directly.
 
-const AUTO_SECTION_NAMES = new Set([
-  'what was in progress',
-  'files changed this session',
-  'decisions captured',
-  'pending todos',
-  'session efficiency snapshot',
-  'open issues',
-  'session context',
-]);
+let scratchDir;
+before(() => { scratchDir = mkdtempSync(join(tmpdir(), 'cx-precompact-test-')); });
+after(() => { if (scratchDir) rmSync(scratchDir, { recursive: true, force: true }); });
+let scratchCounter = 0;
 
-function parseSections(md) {
-  if (!md) return [];
-  const lines = md.split('\n');
-  const sections = [];
-  let current = null;
-  for (const line of lines) {
-    const hm = line.match(/^(#{1,6})\s+(.+)$/);
-    if (hm) {
-      if (current) sections.push(current);
-      current = { heading: line, level: hm[1].length, title: hm[2].trim(), body: [] };
-    } else if (current) {
-      current.body.push(line);
-    }
-  }
-  if (current) sections.push(current);
-  return sections;
+function extractManualSectionsFromString(md) {
+  const path = join(scratchDir, `md-${scratchCounter++}.md`);
+  writeFileSync(path, md ?? '');
+  return extractManualSections(path);
 }
 
-function extractManualSections(md) {
-  if (!md) return '';
-  const sections = parseSections(md);
-  const manual = sections.filter((s) => !AUTO_SECTION_NAMES.has(s.title.toLowerCase()));
-  if (!manual.length) return '';
-  return manual
-    .map((s) => [s.heading, ...s.body].join('\n').trimEnd())
-    .join('\n\n') + '\n';
-}
-
-function mergeExistingJson(existing, newState) {
-  if (!existing) return newState;
-  const merged = { ...newState };
-  for (const key of ['decisions', 'filesChanged', 'pendingTodos']) {
-    if ((!merged[key] || !merged[key].length) && Array.isArray(existing[key]) && existing[key].length) {
-      merged[key] = existing[key];
-    }
-  }
-  return merged;
+function mergeExistingJsonFromObject(existing, newState) {
+  if (existing === null) return mergeExistingJson(join(scratchDir, `missing-${scratchCounter++}.json`), newState);
+  const path = join(scratchDir, `json-${scratchCounter++}.json`);
+  writeFileSync(path, JSON.stringify(existing));
+  return mergeExistingJson(path, newState);
 }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +60,14 @@ describe('parseSections', () => {
   });
 });
 
+describe('AUTO_SECTION_NAMES', () => {
+  it('lists the headings the hook auto-generates', () => {
+    assert.ok(AUTO_SECTION_NAMES.has('what was in progress'));
+    assert.ok(AUTO_SECTION_NAMES.has('open issues'));
+    assert.ok(!AUTO_SECTION_NAMES.has('active work'));
+  });
+});
+
 describe('extractManualSections', () => {
   it('returns empty string when all sections are auto-generated', () => {
     const md = [
@@ -102,7 +83,7 @@ describe('extractManualSections', () => {
       '## Open issues',
       'None',
     ].join('\n');
-    assert.equal(extractManualSections(md), '');
+    assert.equal(extractManualSectionsFromString(md), '');
   });
 
   it('preserves manual sections and omits auto sections', () => {
@@ -124,7 +105,7 @@ describe('extractManualSections', () => {
       'None',
     ].join('\n');
 
-    const result = extractManualSections(md);
+    const result = extractManualSectionsFromString(md);
     assert.ok(result.includes('## Active work'), 'preserves Active work section');
     assert.ok(result.includes('Releasing v1.0.8'), 'preserves section body');
     assert.ok(result.includes('## Architecture decisions (this session)'), 'preserves decisions section');
@@ -134,7 +115,7 @@ describe('extractManualSections', () => {
 
   it('handles context.md with only manual sections', () => {
     const md = '## Active work\nDoing stuff\n\n## Custom notes\nSome notes\n';
-    const result = extractManualSections(md);
+    const result = extractManualSectionsFromString(md);
     assert.ok(result.includes('## Active work'));
     assert.ok(result.includes('## Custom notes'));
   });
@@ -148,7 +129,7 @@ describe('mergeExistingJson', () => {
       pendingTodos: [{ content: 'do thing', status: 'pending' }],
     };
     const newState = { decisions: [], filesChanged: [], pendingTodos: [] };
-    const merged = mergeExistingJson(existing, newState);
+    const merged = mergeExistingJsonFromObject(existing, newState);
     assert.deepEqual(merged.decisions, existing.decisions);
     assert.deepEqual(merged.filesChanged, existing.filesChanged);
     assert.deepEqual(merged.pendingTodos, existing.pendingTodos);
@@ -157,19 +138,19 @@ describe('mergeExistingJson', () => {
   it('does NOT overwrite non-empty arrays in new state with existing', () => {
     const existing = { decisions: ['old decision'], filesChanged: [] };
     const newState = { decisions: ['fresh decision'], filesChanged: [] };
-    const merged = mergeExistingJson(existing, newState);
+    const merged = mergeExistingJsonFromObject(existing, newState);
     assert.deepEqual(merged.decisions, ['fresh decision'], 'new decisions take precedence');
   });
 
   it('returns newState when existing is null', () => {
     const newState = { decisions: [], filesChanged: [] };
-    assert.deepEqual(mergeExistingJson(null, newState), newState);
+    assert.deepEqual(mergeExistingJsonFromObject(null, newState), newState);
   });
 
   it('does not add unexpected keys from existing', () => {
     const existing = { decisions: ['d'], extraField: 'should not appear' };
     const newState = { decisions: [] };
-    const merged = mergeExistingJson(existing, newState);
+    const merged = mergeExistingJsonFromObject(existing, newState);
     assert.ok(!('extraField' in merged), 'does not carry forward non-list keys');
   });
 });
@@ -198,8 +179,7 @@ describe('integration: manual sections survive a simulated compaction', () => {
       'None',
     ].join('\n') + '\n');
 
-    const existing = readFileSync(mdPath, 'utf8');
-    const manual = extractManualSections(existing);
+    const manual = extractManualSections(mdPath);
 
     // Simulate what the hook produces as auto content.
     const autoContent = [

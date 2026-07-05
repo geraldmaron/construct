@@ -1,0 +1,41 @@
+{
+  "capturedAt": "2026-07-05T00:43:07.089Z",
+  "tool": "scope_list",
+  "args": {},
+  "result": {
+    "scopes": [
+      {
+        "id": "creative",
+        "displayName": "Creative",
+        "tagline": "Brief, research, draft, review, publish, measure. Make and ship content.",
+        "roleCount": 29,
+        "teamCount": 16,
+        "experimental": true
+      },
+      {
+        "id": "operations",
+        "displayName": "Operations",
+        "tagline": "Request, triage, resolve, document, improve. Keep things running.",
+        "roleCount": 29,
+        "teamCount": 16,
+        "experimental": false
+      },
+      {
+        "id": "research",
+        "displayName": "Research",
+        "tagline": "Question, gather, analyze, synthesize, recommend. Investigate and report.",
+        "roleCount": 29,
+        "teamCount": 16,
+        "experimental": false
+      },
+      {
+        "id": "rnd",
+        "displayName": "Software R&D",
+        "tagline": "The default. Product, engineering, governance, operations under one persona.",
+        "roleCount": 29,
+        "teamCount": 16,
+        "experimental": false
+      }
+    ]
+  }
+}

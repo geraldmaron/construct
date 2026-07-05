@@ -1,0 +1,1473 @@
+{
+  "capturedAt": "2026-07-05T00:43:07.067Z",
+  "tool": "list_templates",
+  "args": {},
+  "result": {
+    "shipped": [
+      "README",
+      "accessibility-audit",
+      "adr",
+      "architecture-review",
+      "backlog-proposal",
+      "changelog-entry",
+      "code-review-report",
+      "construct_guide",
+      "customer-profile",
+      "debug-investigation",
+      "evidence-brief",
+      "incident-report",
+      "memo",
+      "meta-prd",
+      "onboarding",
+      "one-pager",
+      "persona-artifact",
+      "postmortem",
+      "prd",
+      "prd-business",
+      "prd-platform",
+      "prfaq",
+      "product-intelligence-report",
+      "qa-report",
+      "qa-strategy",
+      "research-brief",
+      "research-finding",
+      "rfc",
+      "rfc-platform",
+      "runbook",
+      "security-audit-report",
+      "signal-brief",
+      "skill-artifact",
+      "strategy",
+      "task-packet",
+      "test-plan",
+      "verdict"
+    ],
+    "overridden": [],
+    "metadata": {
+      "README": null,
+      "accessibility-audit": null,
+      "adr": {
+        "type": "adr",
+        "documentClass": "adr",
+        "tone": "decision-forcing-direct",
+        "toneAllowed": [
+          "decision-forcing-direct"
+        ],
+        "structureRequirements": [
+          "Problem",
+          "Decision",
+          "Rejected alternatives",
+          "Consequences",
+          "Reversibility"
+        ],
+        "visualRequirements": [
+          {
+            "id": "adr-context-diagram",
+            "check": "artifact-has-mermaid",
+            "diagram": "flowchart"
+          }
+        ],
+        "primaryOwners": [
+          "cx-architect",
+          "cx-rd-lead"
+        ],
+        "workflowSkill": "docs/adr-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 2,
+          "requiredReviewers": [
+            "cx-devil-advocate",
+            "cx-reviewer"
+          ],
+          "optionalReviewers": [
+            "cx-architect"
+          ]
+        },
+        "authorChain": [
+          "cx-architect",
+          "cx-rd-lead"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate",
+          "cx-reviewer",
+          "cx-architect"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "architecture-review": null,
+      "backlog-proposal": {
+        "type": "backlog-proposal",
+        "documentClass": "backlog-proposal",
+        "tone": "direct",
+        "toneAllowed": [
+          "direct"
+        ],
+        "structureRequirements": [
+          "Source evidence",
+          "Proposed changes",
+          "Duplicate and conflict check",
+          "Approval request"
+        ],
+        "visualRequirements": [],
+        "primaryOwners": [
+          "cx-product-manager"
+        ],
+        "workflowSkill": "docs/backlog-proposal-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 1,
+          "requiredReviewers": [],
+          "optionalReviewers": []
+        },
+        "authorChain": [
+          "cx-product-manager"
+        ],
+        "reviewerChain": [],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "changelog-entry": null,
+      "code-review-report": null,
+      "construct_guide": null,
+      "customer-profile": {
+        "type": "customer-profile",
+        "documentClass": "customer-profile",
+        "tone": "direct",
+        "toneAllowed": [
+          "direct",
+          "friendly"
+        ],
+        "structureRequirements": [
+          "Snapshot",
+          "Active pain points",
+          "Open asks",
+          "Evidence links"
+        ],
+        "visualRequirements": [
+          {
+            "id": "customer-profile-open-asks",
+            "check": "artifact-table-has-columns",
+            "columns": [
+              "Ask",
+              "First raised",
+              "Status"
+            ]
+          }
+        ],
+        "primaryOwners": [
+          "cx-product-manager",
+          "cx-docs-keeper"
+        ],
+        "workflowSkill": "docs/customer-profile-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 1,
+          "requiredReviewers": [],
+          "optionalReviewers": []
+        },
+        "authorChain": [
+          "cx-product-manager",
+          "cx-docs-keeper"
+        ],
+        "reviewerChain": [],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "debug-investigation": null,
+      "evidence-brief": {
+        "type": "evidence-brief",
+        "documentClass": "evidence-brief",
+        "tone": "direct",
+        "toneAllowed": [
+          "direct",
+          "executive-concise"
+        ],
+        "structureRequirements": [
+          "Sources",
+          "What we observed",
+          "Confidence",
+          "Recommendation"
+        ],
+        "visualRequirements": [],
+        "primaryOwners": [
+          "cx-product-manager",
+          "cx-researcher",
+          "cx-ux-researcher"
+        ],
+        "workflowSkill": "docs/evidence-ingest-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 2,
+          "requiredReviewers": [],
+          "optionalReviewers": [
+            "cx-devil-advocate"
+          ]
+        },
+        "authorChain": [
+          "cx-product-manager",
+          "cx-researcher",
+          "cx-ux-researcher"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "incident-report": {
+        "type": "incident-report",
+        "documentClass": "incident-report",
+        "tone": "blameless",
+        "toneAllowed": [
+          "blameless"
+        ],
+        "structureRequirements": [
+          "Summary",
+          "Severity rationale",
+          "Impact",
+          "Timeline",
+          "Trigger",
+          "Root cause",
+          "Contributing factors",
+          "Action items"
+        ],
+        "visualRequirements": [
+          {
+            "id": "incident-timeline-table",
+            "check": "artifact-table-has-columns",
+            "columns": [
+              "Time (UTC)",
+              "Event"
+            ]
+          }
+        ],
+        "primaryOwners": [
+          "cx-sre",
+          "cx-operations"
+        ],
+        "workflowSkill": "docs/runbook-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": false,
+          "proseMinimum": 2,
+          "requiredReviewers": [],
+          "optionalReviewers": [
+            "cx-devil-advocate"
+          ]
+        },
+        "authorChain": [
+          "cx-sre",
+          "cx-operations"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "memo": {
+        "type": "memo",
+        "documentClass": "memo",
+        "tone": "executive-concise",
+        "toneAllowed": [
+          "executive-concise",
+          "friendly",
+          "decision-forcing-direct"
+        ],
+        "structureRequirements": [
+          "TL;DR",
+          "Context",
+          "Argument",
+          "Recommendation",
+          "Risks and tradeoffs",
+          "Decision requested"
+        ],
+        "visualRequirements": [],
+        "primaryOwners": [
+          "cx-docs-keeper",
+          "cx-business-strategist"
+        ],
+        "workflowSkill": "docs/memo-and-decision-capture",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 2,
+          "requiredReviewers": [],
+          "optionalReviewers": []
+        },
+        "authorChain": [
+          "cx-docs-keeper",
+          "cx-business-strategist"
+        ],
+        "reviewerChain": [],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "meta-prd": {
+        "type": "meta-prd",
+        "documentClass": "meta-prd",
+        "tone": "decision-forcing-direct",
+        "toneAllowed": [
+          "decision-forcing-direct"
+        ],
+        "structureRequirements": [
+          "Problem",
+          "Goals",
+          "Principles",
+          "Failure modes and mitigations",
+          "Rollout"
+        ],
+        "visualRequirements": [],
+        "primaryOwners": [
+          "cx-product-manager",
+          "cx-docs-keeper"
+        ],
+        "workflowSkill": "docs/prd-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 3,
+          "requiredReviewers": [
+            "cx-devil-advocate",
+            "cx-reviewer"
+          ],
+          "optionalReviewers": []
+        },
+        "authorChain": [
+          "cx-product-manager",
+          "cx-docs-keeper"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate",
+          "cx-reviewer"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "onboarding": null,
+      "one-pager": {
+        "type": "one-pager",
+        "documentClass": "one-pager",
+        "tone": "executive-concise",
+        "toneAllowed": [
+          "executive-concise"
+        ],
+        "structureRequirements": [
+          "Problem",
+          "Proposal",
+          "Why now",
+          "Success measure",
+          "Cost",
+          "Asks"
+        ],
+        "visualRequirements": [
+          {
+            "id": "one-pager-success-table",
+            "check": "artifact-table-has-columns",
+            "columns": [
+              "Measure",
+              "Baseline",
+              "Target",
+              "By when"
+            ]
+          }
+        ],
+        "primaryOwners": [
+          "cx-product-manager",
+          "cx-business-strategist"
+        ],
+        "workflowSkill": "docs/prd-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 2,
+          "requiredReviewers": [
+            "cx-devil-advocate"
+          ],
+          "optionalReviewers": []
+        },
+        "authorChain": [
+          "cx-product-manager",
+          "cx-business-strategist"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "persona-artifact": null,
+      "postmortem": {
+        "type": "postmortem",
+        "documentClass": "postmortem",
+        "tone": "blameless",
+        "toneAllowed": [
+          "blameless"
+        ],
+        "structureRequirements": [
+          "Summary",
+          "Severity rationale",
+          "Impact",
+          "Timeline",
+          "Trigger",
+          "Root cause",
+          "Contributing factors",
+          "Action items"
+        ],
+        "visualRequirements": [
+          {
+            "id": "postmortem-timeline-table",
+            "check": "artifact-table-has-columns",
+            "columns": [
+              "Time (UTC)",
+              "Event"
+            ]
+          }
+        ],
+        "primaryOwners": [
+          "cx-sre"
+        ],
+        "workflowSkill": "docs/runbook-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": false,
+          "proseMinimum": 2,
+          "requiredReviewers": [],
+          "optionalReviewers": []
+        },
+        "authorChain": [
+          "cx-sre"
+        ],
+        "reviewerChain": [],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "prd": {
+        "type": "prd",
+        "documentClass": "prd",
+        "tone": "decision-forcing-direct",
+        "toneAllowed": [
+          "decision-forcing-direct",
+          "executive-concise"
+        ],
+        "structureRequirements": [
+          "Problem",
+          "Goals",
+          "Success metrics",
+          "Phases",
+          "Risks and mitigations"
+        ],
+        "visualRequirements": [
+          {
+            "id": "prd-user-flow",
+            "check": "artifact-has-mermaid",
+            "diagram": "flowchart"
+          },
+          {
+            "id": "prd-metrics-table",
+            "check": "artifact-table-has-columns",
+            "columns": [
+              "Metric",
+              "Baseline",
+              "Target"
+            ]
+          }
+        ],
+        "primaryOwners": [
+          "cx-product-manager"
+        ],
+        "workflowSkill": "docs/prd-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 3,
+          "requiredReviewers": [
+            "cx-devil-advocate"
+          ],
+          "optionalReviewers": [
+            "cx-ux-researcher"
+          ]
+        },
+        "authorChain": [
+          "cx-product-manager"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate",
+          "cx-ux-researcher"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "prd-business": {
+        "type": "prd-business",
+        "documentClass": "prd-business",
+        "tone": "executive-concise",
+        "toneAllowed": [
+          "executive-concise",
+          "decision-forcing-direct"
+        ],
+        "structureRequirements": [
+          "The bet",
+          "Market thesis",
+          "Problem and opportunity",
+          "Strategic goals",
+          "Alternatives rejected"
+        ],
+        "visualRequirements": [],
+        "primaryOwners": [
+          "cx-product-manager",
+          "cx-business-strategist"
+        ],
+        "workflowSkill": "docs/prd-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 3,
+          "requiredReviewers": [
+            "cx-devil-advocate"
+          ],
+          "optionalReviewers": [
+            "cx-business-strategist"
+          ]
+        },
+        "authorChain": [
+          "cx-product-manager",
+          "cx-business-strategist"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate",
+          "cx-business-strategist"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "prd-platform": {
+        "type": "prd-platform",
+        "documentClass": "prd-platform",
+        "tone": "decision-forcing-direct",
+        "toneAllowed": [
+          "decision-forcing-direct",
+          "executive-concise"
+        ],
+        "structureRequirements": [
+          "Problem",
+          "Goals and non-goals",
+          "Success metrics",
+          "Risks and mitigations"
+        ],
+        "visualRequirements": [
+          {
+            "id": "prd-platform-flow",
+            "check": "artifact-has-mermaid",
+            "diagram": "flowchart"
+          },
+          {
+            "id": "prd-platform-metrics",
+            "check": "artifact-table-has-columns",
+            "columns": [
+              "Metric",
+              "Baseline",
+              "Target"
+            ]
+          }
+        ],
+        "primaryOwners": [
+          "cx-product-manager"
+        ],
+        "workflowSkill": "docs/prd-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 3,
+          "requiredReviewers": [
+            "cx-devil-advocate",
+            "cx-architect"
+          ],
+          "optionalReviewers": []
+        },
+        "authorChain": [
+          "cx-product-manager"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate",
+          "cx-architect"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "prfaq": {
+        "type": "prfaq",
+        "documentClass": "prfaq",
+        "tone": "friendly",
+        "toneAllowed": [
+          "friendly",
+          "executive-concise"
+        ],
+        "structureRequirements": [
+          "Problem statement",
+          "Press release",
+          "External FAQ",
+          "Internal FAQ",
+          "Evidence appendix"
+        ],
+        "visualRequirements": [
+          {
+            "id": "prfaq-customer-flow",
+            "check": "artifact-has-mermaid",
+            "diagram": "flowchart"
+          }
+        ],
+        "primaryOwners": [
+          "cx-product-manager",
+          "cx-business-strategist"
+        ],
+        "workflowSkill": "docs/prfaq-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 3,
+          "requiredReviewers": [
+            "cx-devil-advocate"
+          ],
+          "optionalReviewers": [
+            "cx-ux-researcher"
+          ]
+        },
+        "authorChain": [
+          "cx-product-manager",
+          "cx-business-strategist"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate",
+          "cx-ux-researcher"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "product-intelligence-report": {
+        "type": "product-intelligence-report",
+        "documentClass": "product-intelligence-report",
+        "tone": "executive-concise",
+        "toneAllowed": [
+          "executive-concise",
+          "direct"
+        ],
+        "structureRequirements": [
+          "Executive readout",
+          "Evidence base",
+          "Themes",
+          "Customer asks",
+          "Product implications",
+          "Recommended actions",
+          "Gaps and risks"
+        ],
+        "visualRequirements": [],
+        "primaryOwners": [
+          "cx-product-manager",
+          "cx-business-strategist"
+        ],
+        "workflowSkill": "docs/product-intelligence-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 3,
+          "requiredReviewers": [],
+          "optionalReviewers": [
+            "cx-devil-advocate"
+          ]
+        },
+        "authorChain": [
+          "cx-product-manager",
+          "cx-business-strategist"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "qa-report": null,
+      "qa-strategy": {
+        "type": "qa-strategy",
+        "documentClass": "qa-strategy",
+        "tone": "direct",
+        "toneAllowed": [
+          "direct"
+        ],
+        "structureRequirements": [
+          "Scope",
+          "Test strategy",
+          "Coverage",
+          "Key scenarios",
+          "Entry and exit criteria"
+        ],
+        "visualRequirements": [],
+        "primaryOwners": [
+          "cx-qa"
+        ],
+        "workflowSkill": "devops/testing",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": false,
+          "proseMinimum": 2,
+          "requiredReviewers": [],
+          "optionalReviewers": []
+        },
+        "authorChain": [
+          "cx-qa"
+        ],
+        "reviewerChain": [],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "research-brief": {
+        "type": "research-brief",
+        "documentClass": "research-brief",
+        "tone": "direct",
+        "toneAllowed": [
+          "direct",
+          "pedagogical"
+        ],
+        "structureRequirements": [
+          "Sources",
+          "Findings",
+          "Confidence summary",
+          "Recommendation"
+        ],
+        "visualRequirements": [],
+        "primaryOwners": [
+          "cx-researcher",
+          "cx-ux-researcher",
+          "cx-explorer"
+        ],
+        "workflowSkill": "docs/research-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 2,
+          "requiredReviewers": [],
+          "optionalReviewers": [
+            "cx-reviewer"
+          ]
+        },
+        "authorChain": [
+          "cx-researcher",
+          "cx-ux-researcher",
+          "cx-explorer"
+        ],
+        "reviewerChain": [
+          "cx-reviewer"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "research-finding": null,
+      "rfc": {
+        "type": "rfc",
+        "documentClass": "rfc",
+        "tone": "decision-forcing-direct",
+        "toneAllowed": [
+          "decision-forcing-direct"
+        ],
+        "structureRequirements": [
+          "Summary",
+          "Motivation",
+          "Proposed design",
+          "Risks",
+          "Verification"
+        ],
+        "visualRequirements": [
+          {
+            "id": "rfc-sequence-diagram",
+            "check": "artifact-has-mermaid",
+            "diagram": "sequenceDiagram"
+          }
+        ],
+        "primaryOwners": [
+          "cx-architect"
+        ],
+        "workflowSkill": "docs/prd-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 3,
+          "requiredReviewers": [
+            "cx-devil-advocate",
+            "cx-reviewer"
+          ],
+          "optionalReviewers": []
+        },
+        "authorChain": [
+          "cx-architect"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate",
+          "cx-reviewer"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "rfc-platform": {
+        "type": "rfc-platform",
+        "documentClass": "rfc-platform",
+        "tone": "decision-forcing-direct",
+        "toneAllowed": [
+          "decision-forcing-direct"
+        ],
+        "structureRequirements": [
+          "Summary",
+          "Motivation",
+          "Proposed contract",
+          "Risks",
+          "Verification"
+        ],
+        "visualRequirements": [
+          {
+            "id": "rfc-platform-sequence",
+            "check": "artifact-has-mermaid",
+            "diagram": "sequenceDiagram"
+          }
+        ],
+        "primaryOwners": [
+          "cx-architect"
+        ],
+        "workflowSkill": "docs/prd-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 3,
+          "requiredReviewers": [
+            "cx-devil-advocate",
+            "cx-reviewer"
+          ],
+          "optionalReviewers": []
+        },
+        "authorChain": [
+          "cx-architect"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate",
+          "cx-reviewer"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "runbook": {
+        "type": "runbook",
+        "documentClass": "runbook",
+        "tone": "blameless",
+        "toneAllowed": [
+          "blameless",
+          "direct"
+        ],
+        "structureRequirements": [
+          "Alert trigger",
+          "Symptoms",
+          "Impact",
+          "Severity and response",
+          "Diagnostic steps",
+          "Remediation",
+          "Rollback",
+          "Escalation"
+        ],
+        "visualRequirements": [
+          {
+            "id": "runbook-diagnostic-flowchart",
+            "check": "artifact-has-mermaid",
+            "diagram": "flowchart"
+          }
+        ],
+        "primaryOwners": [
+          "cx-sre",
+          "cx-operations"
+        ],
+        "workflowSkill": "docs/runbook-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": false,
+          "proseMinimum": 2,
+          "requiredReviewers": [],
+          "optionalReviewers": [
+            "cx-sre"
+          ]
+        },
+        "authorChain": [
+          "cx-sre",
+          "cx-operations"
+        ],
+        "reviewerChain": [
+          "cx-sre"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "security-audit-report": null,
+      "signal-brief": {
+        "type": "signal-brief",
+        "documentClass": "signal-brief",
+        "tone": "direct",
+        "toneAllowed": [
+          "direct"
+        ],
+        "structureRequirements": [
+          "Signal",
+          "Evidence",
+          "Counter-signal",
+          "What would make this actionable"
+        ],
+        "visualRequirements": [],
+        "primaryOwners": [
+          "cx-researcher",
+          "cx-product-manager"
+        ],
+        "workflowSkill": "docs/evidence-ingest-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 1,
+          "requiredReviewers": [],
+          "optionalReviewers": []
+        },
+        "authorChain": [
+          "cx-researcher",
+          "cx-product-manager"
+        ],
+        "reviewerChain": [],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "skill-artifact": null,
+      "strategy": {
+        "type": "strategy",
+        "documentClass": "strategy",
+        "tone": "executive-concise",
+        "toneAllowed": [
+          "executive-concise",
+          "decision-forcing-direct"
+        ],
+        "structureRequirements": [
+          "Vision",
+          "Bets",
+          "Non-bets",
+          "North Star Metric",
+          "Metrics",
+          "Milestones",
+          "Risks"
+        ],
+        "visualRequirements": [
+          {
+            "id": "strategy-bet-matrix",
+            "check": "artifact-table-has-columns",
+            "columns": [
+              "Metric",
+              "Type (leading/lagging)",
+              "Baseline",
+              "Target",
+              "Owner"
+            ]
+          }
+        ],
+        "primaryOwners": [
+          "cx-business-strategist",
+          "cx-product-manager"
+        ],
+        "workflowSkill": "docs/strategy-workflow",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": true,
+          "proseMinimum": 2,
+          "requiredReviewers": [
+            "cx-devil-advocate"
+          ],
+          "optionalReviewers": [
+            "cx-business-strategist"
+          ]
+        },
+        "authorChain": [
+          "cx-business-strategist",
+          "cx-product-manager"
+        ],
+        "reviewerChain": [
+          "cx-devil-advocate",
+          "cx-business-strategist"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "task-packet": null,
+      "test-plan": {
+        "type": "test-plan",
+        "documentClass": "test-plan",
+        "tone": "direct",
+        "toneAllowed": [
+          "direct"
+        ],
+        "structureRequirements": [
+          "Scope",
+          "Test strategy",
+          "Coverage",
+          "Key scenarios",
+          "Entry and exit criteria"
+        ],
+        "visualRequirements": [
+          {
+            "id": "test-plan-coverage-table",
+            "check": "artifact-table-has-columns",
+            "columns": [
+              "Scenario",
+              "Type",
+              "Priority"
+            ]
+          }
+        ],
+        "primaryOwners": [
+          "cx-qa",
+          "cx-test-automation"
+        ],
+        "workflowSkill": "devops/testing",
+        "releaseGate": {
+          "structuralLint": true,
+          "citationLint": false,
+          "proseMinimum": 2,
+          "requiredReviewers": [],
+          "optionalReviewers": [
+            "cx-qa"
+          ]
+        },
+        "authorChain": [
+          "cx-qa",
+          "cx-test-automation"
+        ],
+        "reviewerChain": [
+          "cx-qa"
+        ],
+        "validation": {
+          "releaseGate": true
+        },
+        "outputs": {
+          "formats": [
+            "pdf",
+            "docx",
+            "doc",
+            "deck",
+            "pptx",
+            "html",
+            "rtf",
+            "odt",
+            "epub",
+            "tex",
+            "txt",
+            "md",
+            "mdx"
+          ],
+          "branding": "construct"
+        }
+      },
+      "verdict": null
+    }
+  }
+}

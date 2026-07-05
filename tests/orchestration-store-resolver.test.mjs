@@ -49,16 +49,61 @@ test('config orchestration.store selects sqlite when available, else falls back'
 
 test('postgres without DATABASE_URL falls back to filesystem with a warning', () => {
   const env = { CONSTRUCT_ORCHESTRATION_STORE: 'postgres', DATABASE_URL: '', CONSTRUCT_DATABASE_URL: '' };
-  const { backend, warnings } = resolveRunStore({ config: {}, env, cwd: project() });
+  const { backend, requestedBackend, degraded, degradedReason, warnings } = resolveRunStore({ config: {}, env, cwd: project() });
   assert.equal(backend, 'filesystem');
+  assert.equal(requestedBackend, 'postgres');
+  assert.equal(degraded, true);
+  assert.equal(degradedReason, 'postgres-unavailable');
   assert.ok(warnings.some((w) => /postgres/i.test(w)));
 });
 
 test('team deployment without DATABASE_URL falls back to filesystem', () => {
   const env = { CONSTRUCT_DEPLOYMENT_MODE: 'team', DATABASE_URL: '', CONSTRUCT_DATABASE_URL: '' };
-  const { backend, warnings } = resolveRunStore({ config: {}, env, cwd: project() });
+  const { backend, requestedBackend, degraded, degradedReason, warnings } = resolveRunStore({ config: {}, env, cwd: project() });
   assert.equal(backend, 'filesystem');
+  assert.equal(requestedBackend, 'postgres');
+  assert.equal(degraded, true);
+  assert.equal(degradedReason, 'postgres-unavailable');
   assert.ok(warnings.some((w) => /postgres/i.test(w)));
+});
+
+test('project storage manifest can select a fixture run-store backend', () => {
+  const cwd = project();
+  fs.mkdirSync(path.join(cwd, '.cx', 'providers'), { recursive: true });
+  fs.writeFileSync(path.join(cwd, '.cx', 'providers', 'fixture-store.manifest.json'), `${JSON.stringify({
+    id: 'fixture-store',
+    version: '1.0.0',
+    kind: 'storage',
+    capabilities: ['orchestration-run-store'],
+    operations: { runStore: 'filesystem' },
+    healthCheck: { kind: 'in-process', description: 'Filesystem-backed fixture store for resolver tests.' },
+    owner: 'construct-core',
+    compatVersion: 1,
+  }, null, 2)}\n`);
+
+  const { backend, provider, warnings } = resolveRunStore({
+    config: { orchestration: { store: 'fixture-store' } },
+    env: {},
+    cwd,
+  });
+
+  assert.equal(backend, 'fixture-store');
+  assert.equal(provider.id, 'fixture-store');
+  assert.deepEqual(warnings, []);
+});
+
+test('unregistered explicit storage backend degrades visibly instead of falling through', () => {
+  const { backend, requestedBackend, degraded, degradedReason, warnings } = resolveRunStore({
+    config: { orchestration: { store: 'missing-store' } },
+    env: {},
+    cwd: project(),
+  });
+
+  assert.equal(backend, 'filesystem');
+  assert.equal(requestedBackend, 'missing-store');
+  assert.equal(degraded, true);
+  assert.equal(degradedReason, 'storage-backend-unregistered');
+  assert.ok(warnings.some((w) => /missing-store/.test(w)));
 });
 
 test('the resolved filesystem store round-trips a run', async () => {

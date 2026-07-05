@@ -5,7 +5,7 @@ description: Generated from registry/capabilities.json. Do not edit by hand.
 
 > Generated from `registry/capabilities.json`. Re-run `construct registry:generate-docs` to refresh.
 
-# Capability Registry (26 entries)
+# Capability Registry (27 entries)
 
 ## capability
 
@@ -57,4 +57,5 @@ description: Generated from registry/capabilities.json. Do not edit by hand.
 | `workflow.risk-review` | Risk Review Workflow | P1 | mcp:primary:workflow_invoke, cli:construct workflow invoke | requires-human-approval | 2026-06-26 |
 | `workflow.structure-notes` | Structure Notes Workflow | P2 | mcp:primary:workflow_invoke, cli:construct intake classify | proposal-only | 2026-06-26 |
 | `workflow.transcript-process` | Transcript Process Workflow | P2 | mcp:primary:workflow_invoke, cli:construct workflow invoke | proposal-only | 2026-06-26 |
+| `workflow.triage` | Triage Workflow | P2 | mcp:primary:workflow_invoke, cli:construct workflow invoke | proposal-only | never |
 

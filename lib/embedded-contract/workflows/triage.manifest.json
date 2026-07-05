@@ -1,0 +1,14 @@
+{
+  "id": "triage",
+  "version": "1.0.0",
+  "type": "linear",
+  "modes": ["solo"],
+  "surfaces": ["mcp", "cli"],
+  "roleChain": ["orchestrator", "researcher"],
+  "defaultApprovalMode": "proposal-only",
+  "durableStateModel": "none",
+  "tier": "fast",
+  "description": "Classify and route unstructured input to the appropriate workflow.",
+  "owner": "construct-core",
+  "compatVersion": 1
+}

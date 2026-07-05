@@ -1,0 +1,12 @@
+{
+  "id": "anthropic",
+  "version": "1.0.0",
+  "kind": "model",
+  "capabilities": ["chat"],
+  "secretEnvKeys": ["ANTHROPIC_API_KEY"],
+  "docs": "Anthropic (direct)",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin",
+  "securityClassification": "trusted"
+}

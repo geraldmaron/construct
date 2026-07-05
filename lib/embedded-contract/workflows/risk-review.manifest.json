@@ -1,0 +1,15 @@
+{
+  "id": "risk-review",
+  "version": "1.0.0",
+  "type": "linear",
+  "modes": ["solo", "team"],
+  "surfaces": ["mcp", "cli"],
+  "roleChain": ["devil-advocate", "security", "legal-compliance"],
+  "defaultApprovalMode": "requires-human-approval",
+  "outputSchema": { "artifact": "review-report" },
+  "durableStateModel": "none",
+  "tier": "reasoning",
+  "description": "Stress-test a plan for risk: failure modes, security, and compliance exposure.",
+  "owner": "construct-core",
+  "compatVersion": 1
+}

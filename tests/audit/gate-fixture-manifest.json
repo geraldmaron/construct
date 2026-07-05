@@ -95,8 +95,8 @@
     {
       "id": "tool-output-schema",
       "criticality": "P1",
-      "description": "Every machine-consumed MCP tool declares an output schema in the catalog literal.",
-      "redFixture": "tests/audit/f14-tools/output-schema-coverage.test.mjs"
+      "description": "Every TOOL_SAFETY-classified MCP tool declares an output schema, and recorded fixture results validate against it with the same validator the MCP SDK client uses (LMCP-L10, supersedes the narrower per-catalog-literal check).",
+      "redFixture": "tests/mcp-tool-output-schema-guard.test.mjs"
     },
     {
       "id": "tool-token-budget",

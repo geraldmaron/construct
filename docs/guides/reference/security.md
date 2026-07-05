@@ -100,6 +100,30 @@ The dashboard server enforces a per-IP request rate limit. The default is 100 re
 DASHBOARD_RATE_LIMIT=200
 ```
 
+## Network egress guard (SSRF / DNS-rebinding)
+
+Every outbound HTTP call Construct makes on behalf of a manifest, provider, or url-type MCP entry runs through the shared egress guard in `lib/net-guard.mjs` (LMCP-N7). The destination of these calls is attacker-influenceable — a malicious manifest URL or a rebinding DNS record can aim an otherwise-trusted request at a loopback or private-range service and pivot into the host.
+
+The guard enforces two properties together:
+
+- **Address policy** — the destination hostname is resolved and *every* returned address is classified. Loopback (`127.0.0.0/8`, `::1`), private (`10/8`, `172.16/12`, `192.168/16`, `fc00::/7`), link-local (`169.254.0.0/16` — including the `169.254.169.254` cloud-metadata address), CGNAT (`100.64/10`), and unspecified/reserved ranges are **denied by default** with a named reason. Non-`http(s)` schemes are rejected.
+- **Rebinding pinning** — the address validated at check time is the exact address the socket connects to. The hostname resolves once; the connection dials the pinned IP with the original hostname preserved as TLS servername + `Host` header, so a DNS record that flips to a private address between check and connect cannot move the connection.
+
+Private-range egress is an explicit, audited opt-in for self-hosted instances, never the default: set `CONSTRUCT_NET_ALLOW_PRIVATE_EGRESS=1` (or a provider config's `allowPrivateEgress: true`). The governed-write provider transports (Jira, Confluence) route through `guardedFetch`; the inbound HTTP MCP transport applies the complementary Host/Origin allowlist and RFC 8707 bearer-audience checks (see the transport separation in `lib/mcp/transport/`).
+
+## OWASP GenAI coverage in the living graph
+
+Security tests are wired into the living workflow/capability graph rather than kept as a disconnected side list (LMCP-N8). A test annotated `@owasp LLM01` (one or more of the OWASP GenAI Top-10 category ids) becomes a graph test node carrying its categories; a `@secures <workflow-or-preset-id>` tag adds a `test --secures--> workflow|embed` edge to the unit it protects.
+
+Two queries read that structure back out of the graph:
+
+```bash
+construct graph owasp                     # OWASP GenAI Top-10 matrix: every category with its test count
+construct graph missing-tests --security  # workflows / embed presets with zero linked security tests
+```
+
+The matrix lists all ten categories — uncovered ones show a `0` count rather than being silently absent — so coverage gaps are enumerable. The `secures` edges are drift-checked by `graph validate` (a `@secures` naming a nonexistent node is a strict-mode error) and therefore by the C8 CI gate. Uncovered workflows are tracked as explicit gap beads rather than assumed safe.
+
 ## Deprecation enforcement
 
 Construct exposes a `CONSTRUCT_DEPRECATIONS` mode for catching uses of deprecated APIs before they break:

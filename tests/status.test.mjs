@@ -13,6 +13,8 @@ import test from 'node:test';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { writeEnvValues } from '../lib/env-config.mjs';
 import { configDir, doctorRoot } from '../lib/config/xdg.mjs';
+import { writeGraph, nodeId } from '../lib/graph/store.mjs';
+import { listWorkflowDefs } from '../lib/embedded-contract/workflow-defs.mjs';
 
 import { tempDir } from './helpers.mjs';
 
@@ -556,14 +558,16 @@ test('buildStatus marks telemetry richness credentials-invalid when telemetry au
   }
 });
 
-test('buildStatus detects MCP configured via alias in settings.json', async () => {
+test('buildStatus detects MCP configured via alias in ~/.claude.json', async () => {
   const { rootDir, homeDir } = await createFixture();
-  // Configure atlassian under its common alias 'atlassian-mcp-server'
-  writeJson(path.join(homeDir, '.claude', 'settings.json'), {
+  // Configure atlassian under its common alias 'atlassian-mcp-server'. MCP server
+  // definitions live in ~/.claude.json's top-level `mcpServers`, not settings.json
+  // (settings.json carries hooks/permissions only — construct-ranh).
+  writeJson(path.join(homeDir, '.claude', 'settings.json'), { mcpServers: {}, hooks: {} });
+  writeJson(path.join(homeDir, '.claude.json'), {
     mcpServers: {
       'atlassian-mcp-server': { type: 'http', url: 'https://mcp.atlassian.com/v1/mcp' },
     },
-    hooks: {},
   });
   // Remove features.json so all features are implicitly enabled
   fs.rmSync(path.join(configDir(homeDir), 'features.json'), { force: true });
@@ -652,4 +656,216 @@ test('buildStatus detects MCP from Claude marketplace plugins', async () => {
   const linear = status.features.find((feature) => feature.id === 'linear');
   assert.equal(linear.status, 'configured');
   assert.match(linear.message, /Claude Code/);
+});
+
+// ── recentRunExecutionStates: prepared vs executed recent runs (LMCP-F4) ────
+
+function writeOrchestrationRun(rootDir, run) {
+  const dir = path.join(rootDir, '.cx', 'runtime', 'orchestration', 'runs');
+  writeJson(path.join(dir, `${run.runId}.json`), run);
+}
+
+test('construct status distinguishes prepared vs executed recent runs', async () => {
+  const { rootDir, homeDir } = await createFixture();
+
+  writeOrchestrationRun(rootDir, {
+    runId: 'run-prepared-1',
+    status: 'completed-prepare-only',
+    executionState: 'prepared',
+    createdAt: '2026-07-01T00:00:00.000Z',
+    tasks: [{ id: 't1', role: 'cx-engineer', status: 'prepared', executionState: 'prepared' }],
+  });
+  writeOrchestrationRun(rootDir, {
+    runId: 'run-executed-1',
+    status: 'completed',
+    executionState: 'executed',
+    createdAt: '2026-07-02T00:00:00.000Z',
+    tasks: [{ id: 't1', role: 'cx-engineer', status: 'done', executionState: 'executed' }],
+  });
+  writeOrchestrationRun(rootDir, {
+    runId: 'run-failed-1',
+    status: 'completed-with-failures',
+    executionState: 'failed',
+    createdAt: '2026-07-03T00:00:00.000Z',
+    tasks: [{ id: 't1', role: 'cx-engineer', status: 'failed', executionState: 'failed' }],
+  });
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.recentRunExecutionStates.total, 3);
+  assert.equal(status.recentRunExecutionStates.byState.prepared, 1);
+  assert.equal(status.recentRunExecutionStates.byState.executed, 1);
+  assert.equal(status.recentRunExecutionStates.byState.failed, 1);
+  assert.equal(status.recentRunExecutionStates.byState['degraded-executed'], 0);
+
+  // Newest-first ordering by createdAt.
+  assert.deepEqual(
+    status.recentRunExecutionStates.recent.map((r) => r.runId),
+    ['run-failed-1', 'run-executed-1', 'run-prepared-1'],
+  );
+  const preparedEntry = status.recentRunExecutionStates.recent.find((r) => r.runId === 'run-prepared-1');
+  const executedEntry = status.recentRunExecutionStates.recent.find((r) => r.runId === 'run-executed-1');
+  assert.equal(preparedEntry.executionState, 'prepared');
+  assert.equal(executedEntry.executionState, 'executed');
+
+  const report = formatStatusReport(status);
+  assert.match(report, /Recent runs: 3 total/);
+  assert.match(report, /prepared 1/);
+  assert.match(report, /executed 1/);
+  assert.match(report, /failed 1/);
+  assert.match(report, /run-prepared-1: executionState=prepared/);
+  assert.match(report, /run-executed-1: executionState=executed/);
+});
+
+test('recentRunExecutionStates buckets a pre-F4 legacy run (no executionState field) as unknown', async () => {
+  const { rootDir, homeDir } = await createFixture();
+
+  writeOrchestrationRun(rootDir, {
+    runId: 'run-legacy-1',
+    status: 'completed',
+    createdAt: '2026-07-01T00:00:00.000Z',
+    tasks: [{ id: 't1', role: 'cx-engineer', status: 'done' }],
+  });
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.recentRunExecutionStates.total, 1);
+  assert.equal(status.recentRunExecutionStates.byState.unknown, 1);
+  assert.equal(status.recentRunExecutionStates.recent[0].executionState, 'unknown');
+});
+
+test('recentRunExecutionStates reports zero when no orchestration runs exist', async () => {
+  const { rootDir, homeDir } = await createFixture();
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.recentRunExecutionStates.total, 0);
+  assert.deepEqual(status.recentRunExecutionStates.recent, []);
+  const report = formatStatusReport(status);
+  assert.doesNotMatch(report, /Recent runs:/);
+});
+
+// LMCP-C7: workflows section sourced from the living graph (graph validate),
+// so status can never report a workflow healthy when the graph disagrees.
+
+test('workflows section reports graph-not-built when .cx/graph is absent', async () => {
+  const { rootDir, homeDir } = await createFixture();
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.workflows.graphBuilt, false);
+  assert.deepEqual(status.workflows.available, []);
+  assert.deepEqual(status.workflows.degraded, []);
+  assert.deepEqual(status.workflows.missing, []);
+  const report = formatStatusReport(status);
+  assert.match(report, /Workflows: living graph not built yet/);
+});
+
+test('workflows section classifies a clean workflow node as available', async () => {
+  const { rootDir, homeDir } = await createFixture();
+  const [realType] = listWorkflowDefs().map((w) => w.type);
+
+  writeGraph(rootDir, {
+    nodes: [
+      { id: nodeId('workflow', realType), type: 'workflow', name: realType },
+    ],
+    edges: [],
+  });
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.workflows.graphBuilt, true);
+  assert.ok(status.workflows.available.some((w) => w.type === realType));
+  assert.ok(!status.workflows.degraded.some((w) => w.type === realType));
+  const report = formatStatusReport(status);
+  assert.match(report, /Workflows: \d+ available · \d+ degraded · \d+ missing \(source: graph validate\)/);
+});
+
+test('workflows section classifies a workflow with no graph node as missing', async () => {
+  const { rootDir, homeDir } = await createFixture();
+
+  // A graph that exists (so graphBuilt is true) but declares no workflow
+  // nodes at all — every known workflow type falls into 'missing'.
+  writeGraph(rootDir, { nodes: [], edges: [] });
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.workflows.graphBuilt, true);
+  assert.ok(status.workflows.missing.length > 0);
+  const report = formatStatusReport(status);
+  assert.match(report, /✗ .+ — no workflow node in living graph/);
+});
+
+test('workflows section classifies a workflow named in a validation error as degraded', async () => {
+  const { rootDir, homeDir } = await createFixture();
+  const [realType] = listWorkflowDefs().map((w) => w.type);
+  const workflowNodeId = nodeId('workflow', realType);
+  const capId = nodeId('capability', 'c1');
+  const providerId = nodeId('provider', 'missing-provider');
+
+  // A capability embedded by the workflow that uses a provider but never
+  // declares the 'requires' edge to that provider's tools — validateGraph
+  // (lib/graph/validate.mjs) raises a warning naming this exact workflow.
+  writeGraph(rootDir, {
+    nodes: [
+      { id: workflowNodeId, type: 'workflow', name: realType },
+      { id: capId, type: 'capability', name: 'c1' },
+      { id: providerId, type: 'provider', name: 'missing-provider', attrs: { id: 'missing-provider' } },
+    ],
+    edges: [
+      { from: capId, to: workflowNodeId, rel: 'embeds', source: 'registry' },
+      { from: capId, to: providerId, rel: 'uses', source: 'registry' },
+    ],
+  });
+
+  const status = await buildStatus({
+    rootDir,
+    homeDir,
+    cwd: rootDir,
+    probeService: async () => ({ status: 'healthy', message: 'ok' }),
+    env: {},
+  });
+
+  assert.equal(status.workflows.graphBuilt, true);
+  const degradedEntry = status.workflows.degraded.find((w) => w.type === realType);
+  assert.ok(degradedEntry, 'expected the workflow to be classified degraded');
+  assert.ok(degradedEntry.warnings.length > 0 || degradedEntry.errors.length > 0);
+  const report = formatStatusReport(status);
+  assert.match(report, new RegExp(`⚠ ${realType} — `));
 });

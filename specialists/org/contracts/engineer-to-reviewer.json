@@ -9,7 +9,11 @@
     "schema": "lib/contract-schemas/implementation.json",
     "mustContain": [
       "filesChanged",
-      "verificationChecklist"
+      "verificationChecklist",
+      "feasibilityAssessment",
+      "effortClass",
+      "debtNote",
+      "blastRadius"
     ]
   },
   "output": {
