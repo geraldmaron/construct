@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-05T15:36:21.182Z",
+  "generatedAt": "2026-07-05T15:51:21.244Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 789,
+    "testFiles": 790,
     "topLevelTestFiles": 341,
-    "nestedTestFiles": 448,
+    "nestedTestFiles": 449,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 37,
     "byLayer": {
-      "unit": 544,
+      "unit": 545,
       "functional": 198,
       "visual": 11,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 481,
+      "unit": 482,
       "functional": 198,
       "visual": 11,
       "structural-guard": 19,
@@ -5753,6 +5753,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/security/destructive-gate.test.mjs — destructive-tool gate unit tests."
+    },
+    {
+      "path": "tests/security/misinformation-evidence-grounding.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/security/misinformation-evidence-grounding.test.mjs — citation"
     },
     {
       "path": "tests/security/output-and-prompt-handling.test.mjs",

@@ -8,5 +8,51 @@
   "securityClassification": "trusted",
   "owner": "construct-core",
   "compatVersion": 1,
-  "installSource": "builtin"
+  "installSource": "builtin",
+  "sourceTarget": {
+    "provider": "slack",
+    "selector": {
+      "field": "channel",
+      "pattern": null,
+      "patternTransform": "trim",
+      "hint": "required Slack channel name or ID",
+      "normalize": "trimHash"
+    },
+    "secondaryField": {
+      "field": "intent",
+      "enum": ["internal", "risk", "decision", "external", "how-to"],
+      "hint": "must be one of",
+      "default": "internal"
+    },
+    "signature": { "template": "slack:channel:{value}:intent:{intent}", "valueMode": "lowerOrEmpty" },
+    "legacyEnv": { "vars": ["SLACK_CHANNELS", "SLACK_CHANNEL"], "parse": "slackChannelColon" },
+    "aliases": { "strategy": "simple", "displayPrefix": "Slack", "catchAll": false },
+    "embed": {
+      "mode": "groupBy",
+      "groupField": "intent",
+      "groupDefault": "internal",
+      "valueField": "channels",
+      "valueKind": "array",
+      "refs": ["messages"],
+      "oldest": 86400,
+      "limit": 50
+    },
+    "embedFilters": {
+      "valueField": "channels",
+      "valueKind": "array",
+      "defaultRefs": ["messages"],
+      "extraFilterKeys": ["oldest"],
+      "defaultLimit": 50,
+      "includeSecondaryField": true
+    },
+    "demandFetch": {
+      "targetRefs": ["messages"],
+      "targetOptsField": "channels",
+      "targetOptsKind": "array",
+      "targetExtraFilterKeys": ["oldest"],
+      "targetOldestDefault": 86400,
+      "targetDefaultLimit": 50,
+      "querySupported": false
+    }
+  }
 }
