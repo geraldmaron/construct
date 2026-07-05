@@ -129,6 +129,20 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci --ignore-scripts
+      - name: install bd (beads CLI)
+        run: |
+          curl -sSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: install document-export toolchain (pandoc, poppler, libreoffice)
+        run: |
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            sudo apt-get update && sudo apt-get install -y pandoc poppler-utils libreoffice
+          else
+            brew install pandoc poppler
+            brew install --cask libreoffice
+          fi
+      - name: install typst (cargo install, official cross-platform method)
+        run: cargo install --locked typst-cli
       - run: npm test
       - run: npm run doctor
       - run: npm run docs:verify
