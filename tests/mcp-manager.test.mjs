@@ -146,7 +146,7 @@ function readJson(file) {
 test("memory MCP wires the stdio bridge into Claude and OpenCode with the configured port", (t) => {
   const home = tempDir("construct-mcp-home-", t);
   const cwd = tempDir("construct-mcp-cwd-", t);
-  const claudePath = path.join(home, ".claude", "settings.json");
+  const claudePath = path.join(home, ".claude.json");
 
   runMcpAdd("memory", {
     home,
@@ -199,7 +199,7 @@ test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP
   });
 
   const opencodePath = path.join(home, ".config", "opencode", "opencode.json");
-  const claudePath = path.join(home, ".claude", "settings.json");
+  const claudePath = path.join(home, ".claude.json");
   const codexPath = path.join(home, ".codex", "config.toml");
   const opencode = readJson(opencodePath);
   const claude = readJson(claudePath);
@@ -308,7 +308,7 @@ test("external plugin manifest entries are available to mcp add without editing 
   runMcpAdd("acme-search", { home, cwd });
 
   const opencode = readJson(path.join(home, ".config", "opencode", "opencode.json"));
-  const claude = readJson(path.join(home, ".claude", "settings.json"));
+  const claude = readJson(path.join(home, ".claude.json"));
   const codex = fs.readFileSync(path.join(home, ".codex", "config.toml"), "utf8");
 
   assert.deepEqual(opencode.mcp["acme-search"], {
@@ -329,7 +329,7 @@ test("atlassian MCP uses official remote OAuth server across managed configs", (
   runMcpAdd("atlassian", { home, cwd });
 
   const opencode = readJson(path.join(home, ".config", "opencode", "opencode.json"));
-  const claude = readJson(path.join(home, ".claude", "settings.json"));
+  const claude = readJson(path.join(home, ".claude.json"));
   const codex = fs.readFileSync(path.join(home, ".codex", "config.toml"), "utf8");
 
   assert.deepEqual(opencode.mcp.atlassian, {
@@ -498,10 +498,8 @@ test("memory MCP recovers from malformed OpenCode config", (t) => {
 test("removing a Claude-only MCP does not create a new OpenCode config", (t) => {
   const home = tempDir("construct-remove-home-", t);
   const cwd = tempDir("construct-remove-cwd-", t);
-  const claudeDir = path.join(home, ".claude");
-  const claudePath = path.join(claudeDir, "settings.json");
+  const claudePath = path.join(home, ".claude.json");
   const opencodePath = path.join(home, ".config", "opencode", "opencode.json");
-  fs.mkdirSync(claudeDir, { recursive: true });
   fs.writeFileSync(
     claudePath,
     `${JSON.stringify({

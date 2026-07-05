@@ -42,14 +42,8 @@ async function runAcpTest(project, envOverrides = {}, promptText) {
     }
   });
 
-  // 150s: the config-driven-provider-backend test below resolves a model id from
-  // a credential-family fallback even with blank keys/tiers, so it attempts a
-  // real provider call that runs to completion in ~100s before degrading rather
-  // than short-circuiting immediately (CONSTRUCT_PROVIDER_TIMEOUT_MS did not
-  // shorten this in testing — root cause tracked in construct-vevd, not solved
-  // here). The other two tests in this file resolve in well under a second.
   const send = (msg) => proc.stdin.write(`${JSON.stringify(msg)}\n`);
-  const waitFor = (pred, ms = 150000) => new Promise((resolve, reject) => {
+  const waitFor = (pred, ms = 8000) => new Promise((resolve, reject) => {
     const deadline = Date.now() + ms;
     const tick = () => {
       const hit = messages.find(pred);
@@ -126,23 +120,73 @@ test('ACP server: backend resolution honors config — provider backend shows in
 
   // Clearing the model tiers and keys still lets a credential-family fallback
   // pick a model id (by design — see resolveEmbeddedModel), so the run attempts
-  // a real provider call with no valid key; CONSTRUCT_PROVIDER_TIMEOUT_MS bounds
-  // that attempt's retry/backoff to keep the test fast instead of waiting on the
-  // production default. The resolved workerBackend is recorded before execution,
-  // so a config-driven 'provider' must still surface in the summary regardless.
-  // Pre-fix ACP hardcoded workerBackend=inline, so this assertion caught the deviation.
-  const { updates } = await runAcpTest(project, {
-    CX_MODEL_REASONING: '', CX_MODEL_STANDARD: '', CX_MODEL_FAST: '',
-    OPENROUTER_API_KEY: '', ANTHROPIC_API_KEY: '',
-    CONSTRUCT_PROVIDER_TIMEOUT_MS: '1000',
+  // a real provider call. Driving runAcpServer in-process (not via the spawned
+  // CLI) makes fetchImpl injectable, so the attempt fails immediately instead of
+  // depending on real (if bounded) network timing (construct-vevd). The resolved
+  // workerBackend is recorded before execution, so a config-driven 'provider'
+  // must still surface in the summary regardless. Pre-fix ACP hardcoded
+  // workerBackend=inline, so this assertion caught the deviation.
+  const { PassThrough } = await import('node:stream');
+  const { runAcpServer } = await import('../../lib/acp/server.mjs');
+
+  const input = new PassThrough();
+  const output = new PassThrough();
+  const messages = [];
+  let buffer = '';
+  output.on('data', (chunk) => {
+    buffer += chunk.toString();
+    let nl;
+    while ((nl = buffer.indexOf('\n')) !== -1) {
+      const line = buffer.slice(0, nl).trim();
+      buffer = buffer.slice(nl + 1);
+      if (line) { try { messages.push(JSON.parse(line)); } catch { /* skip */ } }
+    }
   });
 
-  const summaryUpdate = updates.find((u) => u.params.update?.content?.text?.includes('Orchestration'));
-  assert.ok(summaryUpdate, 'summary update should be present');
+  const fetchImpl = async () => { throw new Error('network disabled in test'); };
+  const server = runAcpServer({
+    input, output, defaultCwd: project, fetchImpl,
+    env: {
+      ...process.env,
+      CX_MODEL_REASONING: '', CX_MODEL_STANDARD: '', CX_MODEL_FAST: '',
+      OPENROUTER_API_KEY: '', ANTHROPIC_API_KEY: '',
+    },
+  });
 
-  const summaryText = summaryUpdate.params.update.content.text;
-  assert.ok(
-    summaryText.includes('workerBackend=provider'),
-    `config workerBackend=provider must drive the resolved backend, not the old hardcoded inline: ${summaryText}`,
-  );
+  const send = (msg) => input.write(`${JSON.stringify(msg)}\n`);
+  const waitFor = (pred, ms = 8000) => new Promise((resolve, reject) => {
+    const deadline = Date.now() + ms;
+    const tick = () => {
+      const hit = messages.find(pred);
+      if (hit) return resolve(hit);
+      if (Date.now() > deadline) return reject(new Error('timeout waiting for message'));
+      setTimeout(tick, 25);
+    };
+    tick();
+  });
+
+  try {
+    send({ jsonrpc: '2.0', id: 1, method: 'session/new', params: { cwd: project, mcpServers: [] } });
+    const newSession = await waitFor((m) => m.id === 1);
+    const sessionId = newSession.result.sessionId;
+    assert.ok(sessionId, 'sessionId returned');
+
+    send({ jsonrpc: '2.0', id: 2, method: 'session/prompt', params: { sessionId, prompt: [{ type: 'text', text: 'refactor the auth module and review it for security' }] } });
+    await waitFor((m) => m.id === 2);
+
+    const updates = messages.filter((m) => m.method === 'session/update' && m.params?.sessionId === sessionId);
+    const summaryUpdate = updates.find((u) => u.params.update?.content?.text?.includes('Orchestration'));
+    assert.ok(summaryUpdate, 'summary update should be present');
+
+    const summaryText = summaryUpdate.params.update.content.text;
+    assert.ok(
+      summaryText.includes('workerBackend=provider'),
+      `config workerBackend=provider must drive the resolved backend, not the old hardcoded inline: ${summaryText}`,
+    );
+  } finally {
+    server.close();
+    input.destroy();
+    output.destroy();
+    fs.rmSync(project, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  }
 });

@@ -50,9 +50,15 @@ function makeTempDir(prefix) {
 before(() => {
   tmpHome = makeTempDir('sync-contract-home-');
   tmpProject = makeTempDir('sync-contract-project-');
-  // Create a minimal .claude dir so Claude Code sync has a target
+  // Create a minimal .claude dir so Claude Code sync has a target. Hooks live in
+  // ~/.claude/settings.json; MCP server definitions live in ~/.claude.json's
+  // top-level `mcpServers` (settings.json is not a file Claude Code reads MCP
+  // server definitions from — construct-ranh).
   fs.mkdirSync(path.join(tmpHome, '.claude', 'agents'), { recursive: true });
   fs.writeFileSync(path.join(tmpHome, '.claude', 'settings.json'), JSON.stringify({
+    hooks: {},
+  }, null, 2) + '\n');
+  fs.writeFileSync(path.join(tmpHome, '.claude.json'), JSON.stringify({
     mcpServers: {
       context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp@latest'] },
       'construct-mcp': { command: 'node', args: ['/tmp/construct/lib/mcp/server.mjs'] },
@@ -61,7 +67,6 @@ before(() => {
       playwright: { command: 'npx', args: ['-y', '@playwright/mcp@latest'] },
       'sequential-thinking': { command: 'npx', args: ['-y', '@modelcontextprotocol/server-sequential-thinking'] },
     },
-    hooks: {},
   }, null, 2) + '\n');
 });
 
@@ -200,14 +205,14 @@ describe('sync-specialists contract tests', () => {
       ]);
     });
 
-    it('preserves global ~/.claude/settings.json MCP entries while syncing safety hooks', () => {
-      const settingsPath = path.join(tmpHome, '.claude', 'settings.json');
-      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    it('preserves global ~/.claude.json MCP entries while syncing safety hooks', () => {
+      const userConfigPath = path.join(tmpHome, '.claude.json');
+      const userConfig = JSON.parse(fs.readFileSync(userConfigPath, 'utf8'));
 
       // The modular org declares no global MCP servers in the specialist
       // registry. Sync should not delete user/global MCP entries while installing
       // Construct safety hooks.
-      assert.deepEqual(Object.keys(settings.mcpServers ?? {}).sort(), [
+      assert.deepEqual(Object.keys(userConfig.mcpServers ?? {}).sort(), [
         'construct-mcp',
         'context7',
         'github',
@@ -221,8 +226,8 @@ describe('sync-specialists contract tests', () => {
       // version instead of surviving untouched.
       const catalog = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'lib', 'mcp-catalog.json'), 'utf8'));
       const context7Pin = catalog.mcps.find((m) => m.id === 'context7').args;
-      assert.deepEqual(settings.mcpServers.context7.args, context7Pin);
-      assert.ok(!settings.mcpServers.context7.args.some((a) => a.endsWith('@latest')), 'catalog pin must not be @latest');
+      assert.deepEqual(userConfig.mcpServers.context7.args, context7Pin);
+      assert.ok(!userConfig.mcpServers.context7.args.some((a) => a.endsWith('@latest')), 'catalog pin must not be @latest');
     });
   });
 
@@ -314,13 +319,20 @@ describe('sync-specialists contract tests', () => {
       );
     });
 
-    it('does not write the opt-in playwright MCP into project settings', () => {
+    it('does not write the opt-in playwright MCP into project .mcp.json', () => {
+      const mcpJson = JSON.parse(
+        fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8'),
+      );
+      const ids = Object.keys(mcpJson.mcpServers ?? {});
+      assert.ok(ids.includes('context7'), 'project .mcp.json keeps the core context7 MCP');
+      assert.ok(!ids.includes('playwright'), 'playwright is opt-in (construct mcp add), not synced by default');
+    });
+
+    it('writes project-scope MCP servers to .mcp.json, not .claude/settings.json', () => {
       const settings = JSON.parse(
         fs.readFileSync(path.join(projectDir, '.claude', 'settings.json'), 'utf8'),
       );
-      const ids = Object.keys(settings.mcpServers ?? {});
-      assert.ok(ids.includes('context7'), 'project settings keep the core context7 MCP');
-      assert.ok(!ids.includes('playwright'), 'playwright is opt-in (construct mcp add), not synced by default');
+      assert.equal(settings.mcpServers, undefined, 'settings.json must not carry MCP server definitions (construct-ranh)');
     });
 
     it('writes agent adapters into the project, not into HOME', () => {
@@ -339,9 +351,11 @@ describe('sync-specialists contract tests', () => {
 
     before(() => {
       projectDir = makeTempDir('sync-contract-refresh-');
-      fs.mkdirSync(path.join(projectDir, '.claude'), { recursive: true });
+      // Project-scope MCP server definitions live in .mcp.json, not
+      // .claude/settings.json (construct-ranh) — Claude Code does not read
+      // MCP server definitions from settings.json at any scope.
       fs.writeFileSync(
-        path.join(projectDir, '.claude', 'settings.json'),
+        path.join(projectDir, '.mcp.json'),
         JSON.stringify({
           mcpServers: {
             'construct-mcp': { command: 'node', args: ['/old/toolkit/lib/mcp/server.mjs'] },
@@ -367,10 +381,10 @@ describe('sync-specialists contract tests', () => {
     });
 
     it('refreshes an existing construct-mcp entry missing the registry env block', () => {
-      const settings = JSON.parse(
-        fs.readFileSync(path.join(projectDir, '.claude', 'settings.json'), 'utf8'),
+      const mcpJson = JSON.parse(
+        fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8'),
       );
-      const envKeys = Object.keys(settings.mcpServers['construct-mcp'].env ?? {}).sort();
+      const envKeys = Object.keys(mcpJson.mcpServers['construct-mcp'].env ?? {}).sort();
       assert.deepEqual(envKeys, [
         'CONSTRUCT_TELEMETRY_PUBLIC_KEY',
         'CONSTRUCT_TELEMETRY_SECRET_KEY',
@@ -380,16 +394,16 @@ describe('sync-specialists contract tests', () => {
     });
 
     it('refreshes an existing context7 entry pinned to a stale version to the catalog pin', () => {
-      const settings = JSON.parse(
-        fs.readFileSync(path.join(projectDir, '.claude', 'settings.json'), 'utf8'),
+      const mcpJson = JSON.parse(
+        fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8'),
       );
       const catalog = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'lib', 'mcp-catalog.json'), 'utf8'));
       const context7Pin = catalog.mcps.find((m) => m.id === 'context7').args;
-      assert.deepEqual(settings.mcpServers.context7.args, context7Pin);
+      assert.deepEqual(mcpJson.mcpServers.context7.args, context7Pin);
     });
 
     it('is idempotent: a second sync makes no further change', () => {
-      const before = fs.readFileSync(path.join(projectDir, '.claude', 'settings.json'), 'utf8');
+      const before = fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8');
       const result = spawnSync(
         process.execPath,
         [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), '--project'],
@@ -401,8 +415,8 @@ describe('sync-specialists contract tests', () => {
         },
       );
       assert.equal(result.status, 0, `second project sync failed:\n${result.stderr}`);
-      const after = fs.readFileSync(path.join(projectDir, '.claude', 'settings.json'), 'utf8');
-      assert.equal(after, before, 'a second sync must not change an already-converged settings.json');
+      const after = fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8');
+      assert.equal(after, before, 'a second sync must not change an already-converged .mcp.json');
     });
 
     // construct-6y6w.9: the same orchestration tool call can read/write a

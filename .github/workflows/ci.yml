@@ -197,6 +197,44 @@ jobs:
       - run: node ./bin/construct db migrate
       - run: node --test tests/acceptance/modes/team.acceptance.test.mjs
 
+  # LMCP-L6: enterprise-mode acceptance leg. Most of this suite (H1 fail-closed
+  # tenant resolution, H5 fail-closed mandatory-audit gate, H6 status/doctor
+  # capability-truth honesty) needs no database and also runs in the main `test`
+  # job's default npm-test sweep. Only the tenant-scoped worker-heartbeat capability
+  # check needs a real Postgres, so this job exists solely to exercise that leg
+  # instead of letting it self-skip; same optional/non-blocking posture as
+  # team-mode-acceptance above until proven green across a few real runs.
+  enterprise-mode-acceptance:
+    name: enterprise mode acceptance (postgres)
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflow == 'true'
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: construct_enterprise_harness
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/construct_enterprise_harness
+      CONSTRUCT_DEPLOYMENT_MODE: enterprise
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node ./bin/construct db migrate
+      - run: node --test tests/acceptance/modes/enterprise.acceptance.test.mjs
 
   # One job that runs every quick lint/check under a single npm ci. Replaces
   # the prior nine independent jobs (lint-comments, lint-prose, lint-profiles,

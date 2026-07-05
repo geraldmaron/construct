@@ -26,6 +26,10 @@ export function realProtectedPaths(home = homedir()) {
   return [
     join(home, ".config", "opencode", "opencode.json"),
     join(home, ".claude", "settings.json"),
+    // Claude Code's user-scope MCP servers live here, not in settings.json
+    // (construct-ranh) — guard it too so a sandbox leak into the real ~/.claude.json
+    // (which also carries unrelated Claude Code runtime state) is caught.
+    join(home, ".claude.json"),
     join(home, ".codex", "config.toml"),
   ];
 }
