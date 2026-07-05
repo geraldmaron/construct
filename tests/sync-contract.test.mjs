@@ -215,7 +215,14 @@ describe('sync-specialists contract tests', () => {
         'playwright',
         'sequential-thinking',
       ]);
-      assert.deepEqual(settings.mcpServers.context7.args, ['-y', '@upstash/context7-mcp@latest']);
+
+      // context7 is on the global Claude managed allowlist (globalMcpAllowlist),
+      // so a floating `@latest` fixture entry converges to the catalog's pinned
+      // version instead of surviving untouched.
+      const catalog = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'lib', 'mcp-catalog.json'), 'utf8'));
+      const context7Pin = catalog.mcps.find((m) => m.id === 'context7').args;
+      assert.deepEqual(settings.mcpServers.context7.args, context7Pin);
+      assert.ok(!settings.mcpServers.context7.args.some((a) => a.endsWith('@latest')), 'catalog pin must not be @latest');
     });
   });
 
@@ -321,6 +328,101 @@ describe('sync-specialists contract tests', () => {
       assert.ok(fs.existsSync(projectAgents), 'project mode must create .claude/agents/');
       const files = fs.readdirSync(projectAgents).filter((f) => f.endsWith('.md'));
       assert.ok(files.length > 0, 'project mode must produce at least one agent .md file');
+    });
+  });
+
+  // needsRefresh() is the one comparator every host dialect calls (construct-6y6w.4):
+  // an existing MCP entry missing the registry's env block, or carrying a stale
+  // pinned version, must reconcile to the registry on the next sync.
+  describe('MCP entry refresh parity (needsRefresh)', () => {
+    let projectDir;
+
+    before(() => {
+      projectDir = makeTempDir('sync-contract-refresh-');
+      fs.mkdirSync(path.join(projectDir, '.claude'), { recursive: true });
+      fs.writeFileSync(
+        path.join(projectDir, '.claude', 'settings.json'),
+        JSON.stringify({
+          mcpServers: {
+            'construct-mcp': { command: 'node', args: ['/old/toolkit/lib/mcp/server.mjs'] },
+            context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp@1.0.0'] },
+          },
+        }, null, 2) + '\n',
+      );
+      const result = spawnSync(
+        process.execPath,
+        [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), '--project'],
+        {
+          encoding: 'utf8',
+          cwd: projectDir,
+          env: { ...process.env, HOME: tmpHome, CONSTRUCT_SYNC_FORCE: '1', CONSTRUCT_SYNC_HOSTS: ALL_HOSTS },
+          timeout: 60_000,
+        },
+      );
+      if (result.status !== 0) throw new Error(`project sync failed:\n${result.stderr}`);
+    });
+
+    after(() => {
+      fs.rmSync(projectDir, { recursive: true, force: true });
+    });
+
+    it('refreshes an existing construct-mcp entry missing the registry env block', () => {
+      const settings = JSON.parse(
+        fs.readFileSync(path.join(projectDir, '.claude', 'settings.json'), 'utf8'),
+      );
+      const envKeys = Object.keys(settings.mcpServers['construct-mcp'].env ?? {}).sort();
+      assert.deepEqual(envKeys, [
+        'CONSTRUCT_TELEMETRY_PUBLIC_KEY',
+        'CONSTRUCT_TELEMETRY_SECRET_KEY',
+        'CONSTRUCT_TELEMETRY_URL',
+        'CONSTRUCT_TRACE_BACKEND',
+      ]);
+    });
+
+    it('refreshes an existing context7 entry pinned to a stale version to the catalog pin', () => {
+      const settings = JSON.parse(
+        fs.readFileSync(path.join(projectDir, '.claude', 'settings.json'), 'utf8'),
+      );
+      const catalog = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'lib', 'mcp-catalog.json'), 'utf8'));
+      const context7Pin = catalog.mcps.find((m) => m.id === 'context7').args;
+      assert.deepEqual(settings.mcpServers.context7.args, context7Pin);
+    });
+
+    it('is idempotent: a second sync makes no further change', () => {
+      const before = fs.readFileSync(path.join(projectDir, '.claude', 'settings.json'), 'utf8');
+      const result = spawnSync(
+        process.execPath,
+        [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), '--project'],
+        {
+          encoding: 'utf8',
+          cwd: projectDir,
+          env: { ...process.env, HOME: tmpHome, CONSTRUCT_SYNC_FORCE: '1', CONSTRUCT_SYNC_HOSTS: ALL_HOSTS },
+          timeout: 60_000,
+        },
+      );
+      assert.equal(result.status, 0, `second project sync failed:\n${result.stderr}`);
+      const after = fs.readFileSync(path.join(projectDir, '.claude', 'settings.json'), 'utf8');
+      assert.equal(after, before, 'a second sync must not change an already-converged settings.json');
+    });
+
+    // construct-6y6w.9: the same orchestration tool call can read/write a
+    // different project depending on which host launched the server and from
+    // where. VS Code pins cwd to the workspace that owns the config file.
+    it('pins cwd to ${workspaceFolder} on generated VS Code mcp.json stdio entries', () => {
+      const vscodeConfig = JSON.parse(
+        fs.readFileSync(path.join(projectDir, '.vscode', 'mcp.json'), 'utf8'),
+      );
+      assert.equal(vscodeConfig.servers['construct-mcp'].cwd, '${workspaceFolder}');
+      assert.equal(vscodeConfig.servers.context7.cwd, '${workspaceFolder}');
+    });
+
+    it('does not pin cwd on the Cursor mcp.json entries (only VS Code is pinned)', () => {
+      const cursorPath = path.join(projectDir, '.cursor', 'mcp.json');
+      if (!fs.existsSync(cursorPath)) return;
+      const cursorConfig = JSON.parse(fs.readFileSync(cursorPath, 'utf8'));
+      for (const entry of Object.values(cursorConfig.mcpServers ?? {})) {
+        assert.equal(entry.cwd, undefined);
+      }
     });
   });
 });

@@ -17,7 +17,6 @@
     "02-deadcode:module-test-only:lib/embed/presets/tpm.mjs",
     "02-deadcode:module-test-only:lib/embed/presets/ops-triage.mjs",
     "02-deadcode:module-test-only:lib/embed/presets/pm-feedback.mjs",
-    "02-deadcode:module-test-only:lib/render-visual-check.mjs",
-    "02-deadcode:module-test-only:lib/storage/shared-memory.mjs"
+    "02-deadcode:module-test-only:lib/render-visual-check.mjs"
   ]
 }
