@@ -30,7 +30,6 @@ This repo IS Construct. Changes here affect every session, every platform, every
 - `skills/**` — domain knowledge files (includes `skills/roles/` — role anti-patterns, inlined at sync time)
 - `templates/docs/**` — shipped doc templates; users override via `.cx/templates/docs/` (see [templates/docs/README.md](templates/docs/README.md))
 - `rules/**` — coding standards
-- `lib/server/**` — dashboard only
 
 ## Documentation is mandatory
 

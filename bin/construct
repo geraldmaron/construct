@@ -812,6 +812,7 @@ async function cmdDoctor() {
     add(`Provider reliability settings check failed: ${err.message}`, false, true);
   }
 
+
   // Opt-in deep credential check (construct-1yhp.5). Default doctor stays
   // presence-first (construct-trxz: a default-on op:// probe would fight the
   // prompt-storm mitigation) — `--probe-providers` performs the real network

@@ -1108,14 +1108,9 @@ function syncGlobalClaudeMcpServers(settings, registryMcp) {
   for (const [id, mcpDef] of Object.entries(registryMcp)) {
     if (!GLOBAL_CLAUDE_MCP_IDS.has(id)) continue;
     const existingEntry = settings.mcpServers[id];
-    const existing = JSON.stringify(existingEntry ?? "");
-    const hasPlaceholder = existing.includes("__");
-    const hasFloatingVersion = existing.includes("@latest");
-    const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
-    const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
-    const transportMismatch = registryWantsCommand && existingIsRemote;
-    if (existingEntry && !hasPlaceholder && !hasFloatingVersion && !transportMismatch) continue;
-    settings.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
+    const desiredEntry = buildClaudeMcpEntry(id, mcpDef, process.env);
+    if (!needsRefresh(existingEntry, desiredEntry, { root })) continue;
+    settings.mcpServers[id] = desiredEntry;
   }
 }
 
@@ -1156,14 +1151,18 @@ function writeProjectClaudeSettings(targetDir) {
   // the server exposing project_context/get_skill/get_template/orchestration_policy
   // that the specialist loop depends on. The curated template omits it, which left
   // Claude Code as the only selected tool without the construct config. Merge the
-  // registry on top of the template seed; existing entries win so user edits stick,
-  // and buildClaudeMcpEntry resolves each server's path/env.
+  // registry on top of the template seed via needsRefresh(): an existing entry
+  // wins as long as it still matches the registry (env keys, pinned version,
+  // transport, toolkit path), so a manual opt-in sticks but drift — a missing
+  // registry env key, a stale pinned version — gets corrected.
   const registryMcp = scopedManagedMcpDefs({ projectScope: true });
   existing.mcpServers ??= {};
   for (const [id, mcpDef] of Object.entries(registryMcp)) {
-    if (existing.mcpServers[id]) continue;
     if (!PROJECT_DEFAULT_MCP_IDS.has(id)) continue;
-    existing.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env);
+    const existingEntry = existing.mcpServers[id];
+    const desiredEntry = buildClaudeMcpEntry(id, mcpDef, process.env);
+    if (!needsRefresh(existingEntry, desiredEntry, { root })) continue;
+    existing.mcpServers[id] = desiredEntry;
   }
   reconcileStaleManagedEntries(existing.mcpServers, { registryMcp, rebuildEntry: (id, def) => buildClaudeMcpEntry(id, def, process.env) });
 
@@ -1502,6 +1501,86 @@ function getVSCodeUserMcpPaths() {
     .filter((file) => fs.existsSync(file));
 }
 
+// One comparator every host dialect (global Claude, project Claude, VS Code,
+// Cursor, OpenCode) calls instead of a bespoke preserve/refresh predicate per
+// surface — so the construct-mcp telemetry env passthrough and a pinned package
+// version converge identically everywhere rather than drifting per host.
+// needsRefresh() is the one question every dialect asks: does this host's
+// existing entry still match what the registry wants, across placeholder
+// resolution, transport, registry-declared env keys, pinned package versions,
+// and toolkit path. Callers
+// build the desired entry with their own host-specific builder (buildClaudeMcpEntry
+// / buildOpenCodeMcpEntry) first — both a Claude-shape entry (`args`/`env`) and an
+// OpenCode-shape entry (`command` array with the binary as element 0 / `environment`)
+// are normalized here so one comparator serves both shapes.
+
+function entryArgs(entry) {
+  if (Array.isArray(entry?.args)) return entry.args;
+  if (Array.isArray(entry?.command)) return entry.command;
+  return [];
+}
+
+function entryEnv(entry) {
+  return entry?.env ?? entry?.environment ?? {};
+}
+
+function entryIsRemote(entry) {
+  return entry?.type === "http" || entry?.type === "remote";
+}
+
+// A registry env block that declares a key (e.g. the construct-mcp telemetry
+// passthrough) must be present on the host entry by name; the host-resolved
+// value differs per host (a literal, a `${VAR}`, a `{env:VAR}`) so only key
+// presence is compared. Absence — including "no env block at all" — means stale.
+
+function envKeysMissing(existingEnv, desiredEnv) {
+  const desiredKeys = Object.keys(desiredEnv ?? {});
+  if (desiredKeys.length === 0) return false;
+  const existingKeys = new Set(Object.keys(existingEnv ?? {}));
+  return desiredKeys.some((key) => !existingKeys.has(key));
+}
+
+// A version-pinned package arg (`@scope/name@version`, including the `@latest`
+// anti-pin) is compared as an exact string: if the registry's desired pin string
+// is not present verbatim anywhere in the existing args/command, the host is
+// carrying a different (or floating) version and must be refreshed. Unversioned
+// packages are not compared — pinning is opt-in per package via the catalog.
+
+function argsVersionDiffers(existingArgs, desiredArgs) {
+  const isPinned = (arg) => typeof arg === "string" && /^@[^/]+\/[^@]+@[\w.-]+$/.test(arg);
+  const desiredPins = (desiredArgs ?? []).filter(isPinned);
+  if (desiredPins.length === 0) return false;
+  const existingPins = new Set((existingArgs ?? []).filter(isPinned));
+  return desiredPins.some((pin) => !existingPins.has(pin));
+}
+
+export function needsRefresh(existingEntry, desiredEntry, { root } = {}) {
+  if (!existingEntry) return true;
+  if (JSON.stringify(existingEntry).includes("__")) return true;
+  if (!entryIsRemote(desiredEntry) && entryIsRemote(existingEntry)) return true;
+  if (envKeysMissing(entryEnv(existingEntry), entryEnv(desiredEntry))) return true;
+  if (argsVersionDiffers(entryArgs(existingEntry), entryArgs(desiredEntry))) return true;
+  if (root && mcpEntryPointsOutsideToolkit({ args: entryArgs(existingEntry) }, root)) return true;
+  if (desiredEntry?.cwd !== undefined && existingEntry.cwd !== desiredEntry.cwd) return true;
+  return false;
+}
+
+// VS Code's orchestration tools default their working directory to the SERVER
+// process's cwd, which is host-launch-dependent (construct-6y6w.9) — the same
+// tool call can read/write a different project depending on which host
+// launched the server and from where. VS Code resolves `${workspaceFolder}`
+// against the workspace that owns the `.vscode/mcp.json` the entry lives in,
+// so pinning it there removes the ambiguity for exactly the host that has a
+// single fixed workspace folder per config file. A remote/http entry has no
+// process cwd to pin and is left untouched.
+
+const VSCODE_WORKSPACE_CWD = "${workspaceFolder}";
+
+function withVscodeWorkspaceCwd(entry) {
+  if (!entry || entry.type === "http" || entry.type === "remote") return entry;
+  return { ...entry, cwd: VSCODE_WORKSPACE_CWD };
+}
+
 // A merged mcp.json preserves existing entries so user customizations survive a
 // re-sync. A construct-owned server path is a fully-resolved, non-placeholder
 // path, so the preserve rule keeps it even when it points at a different toolkit
@@ -1656,16 +1735,11 @@ function syncVSCode(targetDir = null, wants = true) {
     if (!config.servers) config.servers = {};
     for (const [id, mcpDef] of Object.entries(registryMcp)) {
       const existingEntry = config.servers[id];
-      const existing = JSON.stringify(existingEntry ?? "");
-      const hasPlaceholder = existing.includes("__");
-      const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
-      const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
-      const transportMismatch = registryWantsCommand && existingIsRemote;
-      const staleToolkitPath = mcpEntryPointsOutsideToolkit(existingEntry, root);
-      if (existingEntry && !hasPlaceholder && !transportMismatch && !staleToolkitPath) continue;
-      config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
+      const desiredEntry = withVscodeWorkspaceCwd(buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" }));
+      if (!needsRefresh(existingEntry, desiredEntry, { root })) continue;
+      config.servers[id] = desiredEntry;
     }
-    reconcileStaleManagedEntries(config.servers, { registryMcp, rebuildEntry: (id, def) => buildClaudeMcpEntry(id, def, process.env, { host: "vscode" }) });
+    reconcileStaleManagedEntries(config.servers, { registryMcp, rebuildEntry: (id, def) => withVscodeWorkspaceCwd(buildClaudeMcpEntry(id, def, process.env, { host: "vscode" })) });
     if (!DRY_RUN) {
       mkdirp(path.dirname(mcpPath));
       fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
@@ -1683,14 +1757,9 @@ function syncVSCode(targetDir = null, wants = true) {
       if (!config.servers) config.servers = {};
       for (const [id, mcpDef] of Object.entries(registryMcp)) {
         const existingEntry = config.servers[id];
-        const existing = JSON.stringify(existingEntry ?? "");
-        const hasPlaceholder = existing.includes("__");
-        const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
-        const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
-        const transportMismatch = registryWantsCommand && existingIsRemote;
-        const staleToolkitPath = mcpEntryPointsOutsideToolkit(existingEntry, root);
-        if (existingEntry && !hasPlaceholder && !transportMismatch && !staleToolkitPath) continue;
-        config.servers[id] = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
+        const desiredEntry = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
+        if (!needsRefresh(existingEntry, desiredEntry, { root })) continue;
+        config.servers[id] = desiredEntry;
       }
       if (!DRY_RUN) fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2) + "\n");
       synced = true;
@@ -1754,13 +1823,9 @@ function syncCursor(targetDir = null, wants = true) {
   if (!config.mcpServers) config.mcpServers = {};
   for (const [id, mcpDef] of Object.entries(registryMcp)) {
     const existingEntry = config.mcpServers[id];
-    const existing = JSON.stringify(existingEntry ?? "");
-    const hasPlaceholder = existing.includes("__");
-    const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
-    const existingIsRemote = existingEntry && (existingEntry.type === 'http' || existingEntry.type === 'remote');
-    const transportMismatch = registryWantsCommand && existingIsRemote;
-    if (existingEntry && !hasPlaceholder && !transportMismatch) continue;
-    config.mcpServers[id] = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
+    const desiredEntry = buildClaudeMcpEntry(id, mcpDef, process.env, { host: "vscode" });
+    if (!needsRefresh(existingEntry, desiredEntry, { root })) continue;
+    config.mcpServers[id] = desiredEntry;
   }
   reconcileStaleManagedEntries(config.mcpServers, { registryMcp, rebuildEntry: (id, def) => buildClaudeMcpEntry(id, def, process.env, { host: "vscode" }) });
   if (!DRY_RUN) {
@@ -2034,15 +2099,15 @@ function syncOpencode(entries, targetDir = null, wants = true) {
       // any remote/http memory entry must be rewritten when the registry
       // defines a command-based bridge.
       const existingEntry = config.mcp[openCodeId];
-      const registryWantsCommand = !mcpDef.type && Array.isArray(mcpDef.args);
-      const existingIsRemote = existingEntry && (existingEntry.type === 'remote' || existingEntry.type === 'http');
-      const transportMismatch = registryWantsCommand && existingIsRemote;
+      const desiredEntry = buildOpenCodeMcpEntry(id, mcpDef, process.env).entry;
 
-      const existing = JSON.stringify(existingEntry ?? "");
-      const hasPlaceholder = existing.includes("__");
+      // The registry's own args can carry an unresolved `__NAME__` template (a
+      // secret var not yet set in this environment); needsRefresh only inspects
+      // built entries, so a still-templated registry def is checked separately
+      // and always wins a refresh once the var resolves.
       const argsHaveTemplates = (mcpDef.args ?? []).some((a) => typeof a === 'string' && a.includes('__'));
-      if (!existingEntry || hasPlaceholder || argsHaveTemplates || transportMismatch) {
-        config.mcp[openCodeId] = buildOpenCodeMcpEntry(id, mcpDef, process.env).entry;
+      if (argsHaveTemplates || needsRefresh(existingEntry, desiredEntry, { root })) {
+        config.mcp[openCodeId] = desiredEntry;
       }
     }
 

@@ -11,7 +11,7 @@ profile/outcomes/learning, embedded-contract).
 
 # MCP Tools Reference
 
-Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code, OpenCode, and any other MCP-compatible host. Tools are registered in `lib/mcp/server.mjs` and implemented across `lib/mcp/tools/`.
+Construct exposes a Model Context Protocol (MCP) server consumed by Claude Code, OpenCode, and any other MCP-compatible host. Tools are registered in `lib/mcp/server.mjs` and implemented across `lib/mcp/tools/`. Most tools are hand-maintained in `HARDCODED_TOOL_DEFS`; a new tool may instead self-register by exporting `TOOL_DEFS`/`TOOL_HANDLERS` from a `<name>.tool.mjs` file under `lib/mcp/tools/` — `lib/mcp/tool-registry.mjs` scans and merges these into the same catalog with no edit to `server.mjs`, and requires an inline `safety` classification on every def.
 
 ## Tool surface (gateway)
 
