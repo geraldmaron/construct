@@ -12,6 +12,10 @@
  * Entries excluded from the dead set (reached by mechanism, not by import edge):
  *   - bin/construct and the package `exports` map;
  *   - lib/hooks/** (the dispatcher loads these by constructed path);
+ *   - lib/mcp/tools/*.tool.mjs (LMCP-B5: lib/mcp/tool-registry.mjs's scanToolModules
+ *     discovers every file matching this suffix by directory scan, never by a literal
+ *     import path or filename reference — that is the entire point of the convention,
+ *     so a self-registered tool can never show a static/dynamic import edge to itself);
  *   - index.mjs / mod entry files.
  *
  * Read-only. Run: node scripts/audit/02-deadcode.mjs
@@ -131,7 +135,8 @@ export function runDeadCode() {
   const launchReferenced = (f) => launchCorpus.includes(path.relative(REPO_ROOT, f));
 
   const isEntry = (f) => /\/lib\/hooks\//.test(f) || /\/index\.mjs$/.test(f) ||
-    f === path.join(REPO_ROOT, 'lib', 'embedded-contract', 'index.mjs');
+    f === path.join(REPO_ROOT, 'lib', 'embedded-contract', 'index.mjs') ||
+    /\/lib\/mcp\/tools\/[^/]+\.tool\.mjs$/.test(f);
 
   const dead = libFiles
     .filter((f) => !referenced.has(f) && !isEntry(f) && !referencedByName(f) && !launchReferenced(f))

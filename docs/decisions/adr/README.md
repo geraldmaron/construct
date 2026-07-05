@@ -68,6 +68,7 @@ Architecture decision records for decisions that have already been made.
 | [0060](./0060-lmcp-b10-provider-filter-dsl.md) | LMCP-B10: provider filter DSL semantics + config placement | accepted | |
 | [0061](./0061-lmcp-p1-embed-capability-schema-runtime-placement.md) | LMCP-P1: embed-capability schema + runtime placement | accepted | |
 | [0062](./0062-lmcp-f6-persona-reasoning-framework-format.md) | LMCP-F6: persona reasoning framework format | accepted | |
+| [0063](./0063-host-subscription-execution-pickup-and-sampling.md) | Execution seats: host-subscription execution (pickup + sampling) | accepted | |
 
 ## Starter templates
 

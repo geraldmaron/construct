@@ -109,9 +109,14 @@ test('a def naming a tool with no matching handler fails registration', async ()
   });
 });
 
-test('the real lib/mcp/tools directory scans cleanly with no self-registered tools yet', async () => {
+test('the real lib/mcp/tools directory scans cleanly, registering every real self-registered tool', async () => {
   const { defs, handlers, errors } = await scanToolModules();
   assert.equal(errors.length, 0);
-  assert.equal(defs.length, 0);
-  assert.equal(handlers.size, 0);
+  // orchestration_task_result (LMCP host-execution) is the first tool to use
+  // the LMCP-B5 self-registration convention this suite exercises — every
+  // real def must scan without error and register a matching handler.
+  assert.ok(defs.length >= 1, 'at least one real self-registered tool exists');
+  const names = defs.map((d) => d.name);
+  assert.ok(names.includes('orchestration_task_result'));
+  for (const def of defs) assert.ok(handlers.has(def.name), `${def.name} has a matching handler`);
 });
