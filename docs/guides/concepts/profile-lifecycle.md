@@ -1,10 +1,10 @@
 # Profile lifecycle
 
-Profiles describe how Construct shapes itself for a given org. The default is `rnd`. The other curated profiles are `operations`, `creative`, `research`. Anything else is a custom profile, which lives in `.cx/scope.json` with `custom: true`.
+Profiles describe how Construct shapes itself for a given org. The default is `rnd`. The other curated profiles are `operations`, `creative`, `research`. Anything else is a custom profile.
 
-Curated scopes live in `specialists/org/scopes/`. They declare intake taxonomy, templates, and tone — not teams or roles. The shared org in `specialists/org/` is the only org chart. `construct.config.json` `profile` selects which scope is active (default `rnd`). Headhunt and orchestration use enriched scopes via `lib/scopes/teams.mjs`.
+Curated scopes live in `specialists/org/scopes/`. They declare intake taxonomy, doc templates, tone, and skill emphasis — not teams or roles. The shared org in `specialists/org/specialists/` (12 core roles, construct-rf26.11) is the only org chart; every scope routes through it as-is. `construct.config.json`'s `scope` field selects which one is active (default `rnd`). Headhunt and orchestration use enriched scopes via `lib/scopes/teams.mjs`.
 
-This page describes how a new profile gets made, how it ships, how it stays honest after it ships, and how it gets retired. The shape mirrors how mature scaffolding systems (Backstage software templates, Cookiecutter, Yeoman) handle template lifecycles, plus the standard user-research loop. Profiles are not a JSON exercise; they are a research artifact.
+This page describes how a new profile gets made, how it ships, how it stays honest after it ships, and how it gets retired. The shape mirrors how mature scaffolding systems (Backstage software templates, Cookiecutter, Yeoman) handle template lifecycles, plus the standard user-research loop. Profiles are not a JSON exercise; they are a research artifact — but with a 12-role fixed roster, that research is about *which flows and skills this org's work loop emphasizes*, not about inventing new roles or departments.
 
 ## Stages
 
@@ -16,25 +16,25 @@ draft → active (curated or custom) → archived
 
 A scope that never had a draft phase, or that skipped validation, is not legitimate. Drop-in JSON is allowed for experimentation, but a scope that lands in `specialists/org/scopes/` should have followed the discipline below.
 
-## Stage 1: discovery (cx-ux-researcher)
+## Stage 1: discovery (cx-researcher)
 
-Characterize the people, the work, and the outputs of the target org.
+Characterize the people, the work, and the outputs of the target org. `cx-researcher` absorbed `cx-ux-researcher`'s user-research duties in the rf26.11 roster consolidation.
 
 Required answers:
 
-- 4 to 8 typical roles with one-line responsibilities
+- Which of the 12 core roles (architect, reviewer, engineer, debugger, qa, security, operations, product-manager, data-analyst, designer, researcher, orchestrator) are primary for this org, and which are rarely if ever needed
 - Dominant work loop in 5 to 8 stages
 - Recurring signals that enter the loop
 - Canonical output artifacts
 - At least 2 primary sources (interviews, internal docs, job specs)
 
-Evidence belongs in the requirements brief at `.cx/profiles/draft-<id>/requirements.md`. Without evidence, this is opinion, not research.
+Evidence belongs in the requirements brief at `.cx/scopes/draft-<id>/requirements.md`. Without evidence, this is opinion, not research.
 
 ## Stage 2: framing (cx-product-manager)
 
 Turn the discovery into an intake taxonomy and a stage sequence.
 
-- Propose up to 24 intake types. Each must be distinct, observable, and routable to a primary owner.
+- Propose up to 24 intake types. Each must be distinct, observable, and routable to a primary owner among the 12 core roles.
 - Propose up to 12 stages. Order matters. Each stage answers "what changed?".
 - For each intake type: primary owner role and recommended chain (max 3 hops).
 - For each stage: dominant artifact.
@@ -43,20 +43,20 @@ Cap rationale lives in `docs/guides/concepts/persona-research.md`.
 
 Acceptance: a real signal classifies into a single intake type with confidence above 0.6 against the draft table.
 
-## Stage 3: architecture (cx-architect)
+## Stage 3: skill emphasis (cx-architect)
 
-Define the role set and how it connects to the existing cx-* registry.
+Pick the flows and skill bundles this profile emphasizes from the shared registry — not a new role set. There is no department or role invention here: the 12-role roster is fixed system-wide (`lib/scopes/enrich.mjs` derives `roles`/`teams` for every scope from `specialists/org` at load time, not from the scope file).
 
-- Up to 80 role ids, grouped into up to 12 departments with up to 20 roles per department. For each role: `reuse-existing` (name the cx-* agent), `create-new` (specify scope), or `compose-overlay` (which base + which flavor).
-- Each department gets a one-paragraph charter (>= 20 chars). What it owns. What it does not own. Who it hands off to.
-- Identify ambiguous handoffs. Name the orchestrator role.
-- Validate against the per-role flavor cap of 6.
+- For each doc template the profile ships, confirm it names an owning role among the 12.
+- Set `defaultSkills` (skill ids under `skills/`) to the handful this org's work loop leans on most. These become the profile's baseline skill entitlement (`lib/skills/router.mjs`), layered on top of whatever an individual specialist already carries.
+- Set `researchProfiles` per intake type (`external`, `user`, `codebase`, `market`, `compliance`) and `toneDefaults` per doc template.
+- If — rarely — this org genuinely needs a role absent from the 12, that is a new custom specialist authored through the construct-rf26.13 config layer (`construct specialist create <id> --custom`, see `docs/guides/cookbook/custom-specialists-and-teams.md`), not a role invented inline in the scope file.
 
-Acceptance: every declared role either exists in `specialists/org` or has a written scope statement.
+Acceptance: every `defaultSkills` entry resolves to a real file under `skills/`; every doc template maps to an owning role among the 12.
 
-## Stage 4: validation (cx-evaluator)
+## Stage 4: validation (cx-reviewer)
 
-Prove the draft works on real signals before promotion.
+Prove the draft works on real signals before promotion. `cx-reviewer` absorbed `cx-evaluator`'s scoring-rigor duties in the rf26.11 roster consolidation.
 
 - Run the classifier against at least 5 representative signals.
 - Score precision, recall, and median routing confidence.
@@ -65,7 +65,7 @@ Acceptance: precision and recall both >= 0.7, no `unknown` for the canonical sig
 
 ## Stage 5: promotion (operator decision)
 
-Move the draft into the active catalog.
+Move the draft into the active catalog, or leave it as a durable custom profile.
 
 Curated path:
 
@@ -73,14 +73,18 @@ Curated path:
 2. Open a PR. Run `npm run lint:scopes`.
 3. Validation acceptance must already be met. The PR description cites it.
 
-Custom path:
+Custom path (named, reusable) — reuses the construct-rf26.13 config layer instead of a scope-specific mechanism:
 
-1. Copy `profile.json` to `<project>/.cx/scope.json` with `"custom": true`.
-2. Use `construct scope set <id>` only for switching among curated; custom is picked up automatically by the loader.
+1. Copy the draft `scope.json` to `<project>/.cx/org/scopes/<id>.json` (project tier, git-tracked, highest precedence) or `~/.construct/org/scopes/<id>.json` (user tier, shared across every project on the machine) — the same builtin -> user -> project precedence `lib/registry/assemble.mjs` gives custom specialists and teams.
+2. `construct scope set <id>` switches to it exactly like a curated scope; a project-tier file with the same id as a curated one overrides it field-by-field.
 
-## Stage 6: health monitoring (cx-evaluator + cx-trace-reviewer)
+Custom path (anonymous, one-off) — the pre-rf26.13 escape hatch, still supported:
 
-Keep the profile honest after it ships.
+1. Copy the draft `scope.json` to `<project>/.cx/scope.json` with `"custom": true`. Picked up automatically by the loader; there is no id to set.
+
+## Stage 6: health monitoring (cx-reviewer)
+
+Keep the profile honest after it ships. `cx-reviewer` also absorbed `cx-trace-reviewer`'s fleet-level trace-anomaly duties.
 
 ```bash
 construct scope health <id> [--days=30]
@@ -88,15 +92,15 @@ construct scope health <id> [--days=30]
 
 Reports per-profile observation counts and per-role outcome rates. Any role with success-rate < 0.5 across 10 or more runs is a signal to revisit. Health data is the input for the next profile revision; do not edit a profile without a health report first.
 
-## Stage 7: archive (cx-docs-keeper + operator)
+## Stage 7: archive (cx-operations + operator)
 
-Retire a profile cleanly without losing the learning.
+Retire a profile cleanly without losing the learning. `cx-operations` absorbed `cx-docs-keeper`'s record-keeping duties in the rf26.11 roster consolidation.
 
 ```bash
 construct scope archive <id> --reason="..."
 ```
 
-Moves `profiles/<id>.json` and its intake table into `archive/profiles/<id>/`, alongside an `archive-note.md` that records why. Observations and outcomes recorded under the archived profile remain in `.cx/observations/` and `.cx/outcomes/`. They are durable evidence.
+Moves `specialists/org/scopes/<id>.json` and its intake table into `archive/scopes/<id>/`, alongside an `archive-note.md` that records why. Observations and outcomes recorded under the archived profile remain in `.cx/observations/` and `.cx/outcomes/`. They are durable evidence.
 
 Restore: move the files back to their original paths and run `npm run lint:scopes`.
 
@@ -105,7 +109,7 @@ Restore: move the files back to their original paths and run `npm run lint:scope
 ```bash
 construct scope show                        # active profile
 construct scope list                        # curated catalog
-construct scope set <id>                    # switch curated
+construct scope set <id>                    # switch curated or named custom
 construct scope create <id> --display="..." # scaffold a draft + requirements brief
 construct scope drafts                      # in-progress drafts
 construct scope health <id> [--days=N]      # observation + outcome rollup
@@ -114,12 +118,14 @@ construct scope archive <id> --reason="..." # retire a curated profile
 
 ## Files involved
 
-- `specialists/org/scopes/<id>.json` — curated scope, source of truth
-- `schemas/scope.schema.json`. shape validator
-- `lib/intake/tables/<id>.mjs`. per-profile classification table
-- `.cx/scope.json`. user-defined custom profile (escape hatch)
-- `.cx/profiles/draft-<id>/`. draft + requirements brief
-- `archive/profiles/<id>/`. archived profile + archive-note
+- `specialists/org/scopes/<id>.json` — curated scope, source of truth (builtin tier)
+- `~/.construct/org/scopes/<id>.json` — named custom scope, user tier (construct-rf26.13 config layer)
+- `<project>/.cx/org/scopes/<id>.json` — named custom scope, project tier, highest precedence (construct-rf26.13 config layer)
+- `<project>/.cx/scope.json` — anonymous custom scope (pre-rf26.13 escape hatch, still supported)
+- `schemas/scope.schema.json` — shape validator
+- `lib/intake/tables/<id>.mjs` — per-profile classification table
+- `.cx/scopes/draft-<id>/` — draft + requirements brief
+- `archive/scopes/<id>/` — archived profile + archive-note
 
 ## Why this discipline
 
