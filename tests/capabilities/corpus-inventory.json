@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-06T15:44:55.437Z",
+  "generatedAt": "2026-07-06T20:22:25.987Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 807,
+    "testFiles": 808,
     "topLevelTestFiles": 350,
-    "nestedTestFiles": 457,
+    "nestedTestFiles": 458,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 40,
     "byLayer": {
-      "unit": 553,
+      "unit": 554,
       "functional": 207,
       "visual": 11,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 490,
+      "unit": 491,
       "functional": 207,
       "visual": 11,
       "structural-guard": 19,
@@ -4103,6 +4103,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/health-check-resolve-credentials.test.mjs"
+    },
+    {
+      "path": "tests/helpers/cleanup.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/helpers/cleanup.test.mjs — Contract test for the rmTmpDir teardown helper."
     },
     {
       "path": "tests/helpers/sterile-host-env.test.mjs",
