@@ -101,7 +101,7 @@
     "deps:check": "node scripts/validate-dep-intent.mjs"
   },
   "dependencies": {
-    "@lancedb/lancedb": "^0.30.0",
+    "@lancedb/lancedb": "^0.31.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
     "apache-arrow": "^18.1.0",
     "js-yaml": "^4.2.0"
