@@ -459,7 +459,7 @@ const standardConstructTools = [
 // agent's tools list or the call is blocked, leaving the orchestrator unable to route.
 // Single source of truth so every host's orchestrator grant stays in parity.
 
-const ORCHESTRATOR_DISPATCH_TOOLS = ["orchestration_policy", "orchestration_run"];
+const ORCHESTRATOR_DISPATCH_TOOLS = ["orchestration_policy", "orchestration_run", "orchestration_delegation_next"];
 const managedStart = `# BEGIN ${systemName.toUpperCase()} AGENTS`;
 const managedEnd = `# END ${systemName.toUpperCase()} AGENTS`;
 const mdManagedStart = `<!-- BEGIN ${systemName.toUpperCase()} AGENTS -->`;
