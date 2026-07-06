@@ -81,7 +81,13 @@ describe('planContractViolationSupersede SLA window (24h)', () => {
     const logFile = path.join(projectDir, '.cx', 'contract-violations.jsonl');
     fs.mkdirSync(path.dirname(logFile), { recursive: true });
 
-    const ts = new Date(Date.now() - boundaryMs).toISOString();
+    // Pin one clock for both the fixture and the check: the boundary
+    // comparison is exact (ts === now - windowMs), so letting the code under
+    // test take its own Date.now() makes this assertion a race against
+    // elapsed wall time rather than a test of the boundary rule.
+
+    const now = Date.now();
+    const ts = new Date(now - boundaryMs).toISOString();
     const record = {
       ts,
       sequence: 1,
@@ -93,7 +99,7 @@ describe('planContractViolationSupersede SLA window (24h)', () => {
       prev_line_hash: null,
     };
     fs.writeFileSync(logFile, JSON.stringify(record) + '\n');
-    const plan = planContractViolationSupersede(projectDir);
+    const plan = planContractViolationSupersede(projectDir, { now });
     assert.equal(plan.recentCount, 1, 'should count violations exactly at boundary');
   });
 
