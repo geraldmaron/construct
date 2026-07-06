@@ -30,6 +30,7 @@
     "template-prompt-audit",
     "skill-effectiveness",
     "specialist-skill-audit",
-    "teams"
+    "teams",
+    "flow-authoring"
   ]
 }
