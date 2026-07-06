@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   smoke:
-    name: build + doctor smoke (${{ matrix.os }})
+    name: build + doctor + demo smoke (${{ matrix.os }})
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -60,3 +60,21 @@ jobs:
           set -o pipefail
           ./dist/construct-${{ matrix.os }} doctor | tee doctor-output.txt || true
           grep -E '^Results: [0-9]+ passed, [0-9]+ warnings?, [0-9]+ failed' doctor-output.txt
+
+      - name: Smoke test — demo flow (sandbox lifecycle) against the compiled binary
+        # `sandbox create/list/delete` is purpose-built for isolated
+        # non-interactive dry runs and exercises the same profile/specialist
+        # registry read path doctor covers, from a distinct entry point. Each
+        # step asserts on the CLI's actual stdout text (bin/construct's
+        # sandbox handler), not just exit code, so a silent Bun-compile no-op
+        # regression would fail here even if the process still exited 0.
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin="./dist/construct-${{ matrix.os }}"
+          create_output="$("$bin" sandbox create --profile=default)"
+          echo "$create_output"
+          sandbox_id="$(echo "$create_output" | head -1 | sed -E 's/^✓ created sandbox //')"
+          [ -n "$sandbox_id" ] || { echo "sandbox create did not report an id"; exit 1; }
+          "$bin" sandbox list | grep -q "$sandbox_id"
+          "$bin" sandbox delete "$sandbox_id" | grep -q "^✓ removed $sandbox_id"
