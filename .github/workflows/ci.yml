@@ -149,6 +149,26 @@ jobs:
           fi
       - name: install typst (cargo install, official cross-platform method)
         run: cargo install --locked typst-cli
+      # The living graph (.cx/graph) is derived, gitignored state — the lint
+      # job's own graph-drift-gate step rebuilds it independently, but this
+      # job never did, so tests/graph/embed-nodes.test.mjs, tests/graph/
+      # explain.test.mjs, and tests/security/owasp-coverage.test.mjs (all of
+      # which read the real repo's built graph, not a fixture) had nothing to
+      # read on a fresh checkout. Build it once before the suite runs.
+      - name: build the living graph (test fixture for graph/embed/OWASP suites)
+        run: node ./bin/construct graph build
+      # tests/acceptance/modes/solo.acceptance.test.mjs's embedded-lancedb check
+      # calls storage_status against this checkout's real (machine-scoped,
+      # ADR-0066) LanceDB store, expecting 'healthy'. construct-rf26.17 made
+      # index provisioning lazy/opt-in (no more free eager seeding from
+      # `construct init`), so a fresh checkout's store is genuinely empty —
+      # call the same seeding function `construct init --seed-index` uses
+      # directly, rather than running full `construct init` in this shared
+      # job: init also scaffolds/rewrites tracked files (AGENTS.md, CLAUDE.md,
+      # construct.config.json), which would pollute the checkout other steps
+      # in this job (and npm run doctor/docs:verify right after) also read.
+      - name: seed the embedded vector index (test fixture for the lancedb acceptance leg)
+        run: node -e "import('./lib/storage/sync.mjs').then((m) => m.syncFileStateToSql(process.cwd(), { env: process.env, project: 'construct' }))"
       - run: npm test
       - run: npm run doctor
       - run: npm run docs:verify
