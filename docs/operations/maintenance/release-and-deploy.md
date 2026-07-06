@@ -10,7 +10,7 @@ The intent: stop re-deriving the release flow on every cycle. If a step is not a
 
 | Workflow | File | Trigger | Output |
 |---|---|---|---|
-| `ci` | `.github/workflows/ci.yml` | push, PR | Tests on Ubuntu/macOS × Node 20/22, comment + prose + profile lints, docs drift, retrieval evals, dependency CVE audit |
+| `ci` | `.github/workflows/ci.yml` | push, PR | Tests on Ubuntu × Node 20/22 (PRs) or Ubuntu/macOS × Node 20/22 (main push/schedule/dispatch), comment + prose + profile lints, docs drift, retrieval evals, dependency CVE audit |
 | `release` | `.github/workflows/release.yml` | tag `v*` | npm publish (OIDC), Docker image (GHCR), SEA binaries (linux/darwin/windows × x64/arm64), Homebrew tap bump, GitHub Release |
 | `pages` | `.github/workflows/pages.yml` | push to main, manual | GitHub Pages docs site |
 | `docs` | `.github/workflows/docs.yml` | push to main affecting docs | Auto-regenerates AUTO doc regions |
