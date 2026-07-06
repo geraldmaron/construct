@@ -65,6 +65,12 @@ dashboard-*.png
 # Build artifacts
 dashboard/dist/
 lib/server/static/
+/dist/
+
+# npm's package-lock.json is the committed source of truth; `bun install`
+# (used only to exercise scripts/build-binary.mjs) migrates it into a local
+# bun.lock that must not drift into a second tracked lockfile.
+/bun.lock
 
 # Local scratch files that occasionally leak into the working tree
 .tmp/

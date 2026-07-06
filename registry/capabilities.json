@@ -1,10 +1,12 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-07-04T22:56:53.113Z",
+    "generatedAt": "2026-07-06T01:18:59.781Z",
     "npmScripts": [
       "adapters",
       "audit:published",
+      "build:binary",
+      "build:binary:fallback",
       "build:sea",
       "catalog:regen",
       "catalog:validate",
@@ -533,6 +535,12 @@
         "category": "Internal",
         "core": false,
         "internal": true
+      },
+      {
+        "name": "pack",
+        "category": "Work",
+        "core": false,
+        "internal": false
       },
       {
         "name": "plugin",

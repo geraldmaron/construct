@@ -217,6 +217,7 @@ Infrastructure as code and container packaging.
 - **Dockerfile**. multi-stage hardened image: builder stage (npm ci + global tools), runtime stage (no bash, no build tooling). Supports `--read-only` rootfs with `/data` volume. Target < 500 MB.
 - **Terraform modules**. `deploy/terraform/` (VPC, ECS/Fargate, RDS+pgvector, Secrets Manager, ALB, IAM). ECS runs ≥ 2 tasks behind an ALB with sticky sessions and CPU/request-count auto-scaling. RDS parameter group loads `shared_preload_libraries = 'vector'`.
 - **Release pipeline**. `.github/workflows/release.yml`: quality gate → parallel Node SEA binary builds (linux/darwin/windows × x64/arm64) → Docker push to GHCR + Trivy scan → GitHub Release with binaries → `npm publish --provenance`.
+- **Bun-compiled binary (exploratory)**. `scripts/build-binary.mjs` / `scripts/build-sea.mjs` / `scripts/install.sh` / `Formula/construct.rb` / `.github/workflows/bun-binary-smoke.yml` — a candidate Bun `--compile` distribution path, not yet wired into `release.yml`. LanceDB's N-API binding and the MCP SDK both verified working under a Bun-compiled binary; `bin/construct` itself does not yet run standalone because it resolves its data directories (`skills/`, `specialists/`, `templates/`, etc.) via `import.meta.dirname`, which resolves to Bun's virtual bundle root rather than a real path. See the Unreleased section of `CHANGELOG.md` for the full verification record.
 - Webhook ingestion endpoint for provider events
 
 ## Operating model: gates + contracts + specialists
