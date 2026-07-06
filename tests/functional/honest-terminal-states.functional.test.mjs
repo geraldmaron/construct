@@ -15,12 +15,25 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { runOrchestration, getRun, submitHostTaskResult } from '../../lib/orchestration/runtime.mjs';
 import { shapeRun } from '../../lib/mcp/tools/orchestration-run.mjs';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+// runOrchestration/getRun/orchestrationRun resolve the run store through the
+// machine-scoped state root (ADR-0066), which reads CX_HOME_OVERRIDE from
+// real process.env directly — the CX_TOOLKIT_DIR/HOME/USERPROFILE keys below
+// only reach the in-process `env` option bag runOrchestration threads to
+// model resolution, never process.env, so they never isolated state-root
+// writes. Pin the real var for the whole file instead.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-honest-term-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 function tmpProject() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-honest-term-'));
@@ -32,9 +45,6 @@ function degradedEnv() {
   // No model keys configured; orchestration should resolve no model and degrade
   return {
     ...process.env,
-    CX_TOOLKIT_DIR: REPO_ROOT,
-    HOME: REPO_ROOT,
-    USERPROFILE: REPO_ROOT,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
     CX_MODEL_REASONING: '',
@@ -92,9 +102,6 @@ test('normal in-process run with tasks gets "completed-prepare-only"', async () 
   const cwd = tmpProject();
   const env = {
     ...process.env,
-    CX_TOOLKIT_DIR: REPO_ROOT,
-    HOME: REPO_ROOT,
-    USERPROFILE: REPO_ROOT,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
     CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
@@ -147,9 +154,6 @@ test('a host-backend run materializing tasks reports shaped status "awaiting-hos
   try {
     const env = {
       ...process.env,
-      CX_TOOLKIT_DIR: REPO_ROOT,
-      HOME: REPO_ROOT,
-      USERPROFILE: REPO_ROOT,
       OPENROUTER_API_KEY: '',
       ANTHROPIC_API_KEY: '',
       CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
@@ -183,9 +187,6 @@ test('submitting every task result flips shaped status from awaiting-host to a r
   try {
     const env = {
       ...process.env,
-      CX_TOOLKIT_DIR: REPO_ROOT,
-      HOME: REPO_ROOT,
-      USERPROFILE: REPO_ROOT,
       OPENROUTER_API_KEY: '',
       ANTHROPIC_API_KEY: '',
       CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',

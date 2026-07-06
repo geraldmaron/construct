@@ -31,6 +31,23 @@ import { filterAuditPath, readFilterAudit } from '../../lib/providers/filter-aud
 import { matchesFilter } from '../../lib/providers/contract.mjs';
 import { buildJqlFromFilter } from '../../lib/embed/providers/jira.mjs';
 
+// EmbedDaemon's constructor eagerly resolves its heartbeat/state path via
+// resolveDaemonStatePath(env) -> resolveRootDir(env) (lib/embed/daemon.mjs),
+// which walks up from real process.cwd() rather than honoring the
+// constructor's own `rootDir` — and either way, resolveStatePath's
+// machine-scoped state root (ADR-0066) reads CX_HOME_OVERRIDE from real
+// process.env directly. Pin it for the whole file so building an EmbedDaemon
+// never writes into the real developer machine's ~/.construct/projects/.
+
+const homeOverride = mkdtempSync(join(tmpdir(), 'pfe-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
+
 function makeRootDir(t, label) {
   const rootDir = mkdtempSync(join(tmpdir(), `pfe-${label}-`));
   mkdirSync(join(rootDir, '.cx'), { recursive: true });

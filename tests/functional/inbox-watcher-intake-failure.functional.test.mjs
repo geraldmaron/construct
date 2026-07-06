@@ -25,6 +25,21 @@ after(() => {
   for (const dir of tmpDirs) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
+// InboxWatcher.poll() resolves its state file through the machine-scoped
+// state root (ADR-0066), which reads CX_HOME_OVERRIDE from real process.env
+// directly, not any constructor `env` options bag. Pin it for the whole file
+// so polling never writes into the real developer machine's
+// ~/.construct/projects/.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-k4bg-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
+
 function makeProject() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-k4bg-'));
   tmpDirs.push(dir);
