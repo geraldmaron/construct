@@ -24,7 +24,21 @@ import { runTaskViaProvider, _resetPackRegistryCache } from '../../lib/orchestra
 import { planRun, executeRun } from '../../lib/orchestration/runtime.mjs';
 import { saveRun } from '../../lib/orchestration/run-store.mjs';
 import { buildStatus, formatStatusReport } from '../../lib/status.mjs';
+import { traceDir as resolveTraceDir } from '../../lib/worker/trace.mjs';
 import { tempDir } from '../helpers.mjs';
+
+// Trace reads resolve through the machine-scoped state root (ADR-0066), so
+// CX_HOME_OVERRIDE is pinned for the whole file to keep them off the real
+// developer machine's $HOME.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-persona-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
@@ -123,9 +137,9 @@ test('executeRun (solo, provider backend) carries personaAvailable:false and deg
   assert.ok(executed.tasks.every((t) => t.degraded === 'persona-fallback'));
 
   // The trace carries the same signal independent of chainOfThought mode.
-  const traceDir = path.join(cwd, '.cx', 'traces');
-  const shard = fs.readdirSync(traceDir).find((f) => f.endsWith('.jsonl'));
-  const lines = fs.readFileSync(path.join(traceDir, shard), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  const traceDirPath = resolveTraceDir(cwd);
+  const shard = fs.readdirSync(traceDirPath).find((f) => f.endsWith('.jsonl'));
+  const lines = fs.readFileSync(path.join(traceDirPath, shard), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
   const completedEvents = lines.filter((e) => e.eventType === 'worker.completed' && e.metadata?.runId === planned.runId);
   assert.ok(completedEvents.length > 0);
   assert.ok(completedEvents.every((e) => e.metadata.personaAvailable === false && e.metadata.degraded === 'persona-fallback'));

@@ -70,7 +70,7 @@ Architecture decision records for decisions that have already been made.
 | [0062](./0062-lmcp-f6-persona-reasoning-framework-format.md) | LMCP-F6: persona reasoning framework format | accepted | |
 | [0063](./0063-host-subscription-execution-pickup-and-sampling.md) | Execution seats: host-subscription execution (pickup + sampling) | accepted | |
 | [0064](./0064-language-runtime-strategy.md) | Language & runtime strategy — Node core, Bun-compiled distribution, Python sidecar | accepted | Supersedes implicit npm-only distribution |
-| [0065](./0065-orchestrator-worker-consolidation.md) | Orchestrator-worker consolidation | accepted | Supersedes org-shape portions of ADR-0015 |
+| [0065](./0065-orchestrator-worker-consolidation.md) | Orchestrator-worker consolidation | accepted | Supersedes org-shape portions of ADR-0015; [roster-mapping appendix](./appendix-0065-roster-mapping.md) is a proposal pending review, not itself a decision |
 | [0066](./0066-config-layer-project-footprint.md) | Config-layer project footprint — machine-scoped heavy state | accepted | Supersedes in-project heavy-state disposition of ADR-0027 |
 | [0067](./0067-deterministic-flow-engine.md) | Deterministic flow engine | accepted | Supersedes chain-resolution role of orchestration-policy.mjs |
 

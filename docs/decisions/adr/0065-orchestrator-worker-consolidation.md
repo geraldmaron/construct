@@ -6,8 +6,8 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 - **Date**: 2026-07-05
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
-- **Supersedes**: the org-shape portions of ADR-0015 (the 29-persona/43-contract org chart it audits); its hybrid soft/hard architecture verdict is affirmed, not reopened
-- **Relates to**: ADR-0015 (hybrid markdown + enforcement, core affirmed), ADR-0043 (oracle meta-controller), ADR-0063 (host-subscription execution, one flow-step execution backend)
+- **Supersedes**: none
+- **Relates to**: ADR-0015 (hybrid markdown + enforcement — its core soft/hard split is affirmed and not reopened here; only the org-shape portions it audits, the 29-persona/43-contract org chart, are superseded by this decision), ADR-0043 (oracle meta-controller), ADR-0063 (host-subscription execution, one flow-step execution backend)
 
 <!-- Owning specialist: cx-architect. -->
 
