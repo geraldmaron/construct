@@ -8,6 +8,18 @@
  *
  * Pass --coverage (or -c) to enable experimental coverage reporting.
  *
+ * Sharding: --shard <i>/<n> (or --shard=i/n) selects a deterministic stripe of
+ * the sorted file list — file idx runs on shard i when idx % n === i - 1.
+ * Striping, not contiguous chunking, because the sorted list clusters heavy
+ * suites (tests/functional, tests/visual) into directory blocks that a chunked
+ * split would hand to a single shard; striping spreads each block evenly.
+ * --exclude composes with --shard: exclusions apply first, then the stripe, so
+ * every shard agrees on the list being partitioned. Across shards 1..n the
+ * union is the full post-exclude set and sizes differ by at most one, both by
+ * construction (see scripts/test-shard.mjs). --list prints the selected files
+ * and exits without running them — the shard-partition self-test and local
+ * debugging both use it.
+ *
  * Sterility guard: the suite is fingerprinted against the real user tool
  * configs (~/.config/opencode/opencode.json, ~/.claude/settings.json, the
  * Ollama model store) before and after the run. Any test that leaks a write
@@ -30,6 +42,7 @@ import { readdirSync } from "node:fs";
 import path from "node:path";
 import { snapshotRealConfigs, diffRealConfigs } from "../tests/helpers/sterile-host-env.mjs";
 import { clearXdgVars } from "../lib/test-env-setup.mjs";
+import { parseShardArgs, stripeFiles } from "./test-shard.mjs";
 
 const cwd = process.cwd();
 const testsDir = path.join(cwd, "tests");
@@ -77,6 +90,21 @@ for (let i = args.length - 1; i >= 0; i--) {
   }
 }
 
+// --shard and --list are consumed here for the same reason --exclude is: any
+// unrecognized token left in `args` gets forwarded to `node --test` verbatim.
+
+let shard = null;
+try {
+  shard = parseShardArgs(args);
+} catch (err) {
+  console.error(err.message);
+  process.exit(1);
+}
+
+const listIdx = args.findIndex((a) => a === "--list");
+const listOnly = listIdx !== -1;
+if (listOnly) args.splice(listIdx, 1);
+
 function isExcluded(filePath) {
   if (excludePrefixes.length === 0) return false;
   const normalized = filePath.split(path.sep).join("/");
@@ -107,11 +135,26 @@ const subdirs = entries
   .filter((entry) => entry.isDirectory() && entry.name !== "node_modules" && entry.name !== "fixtures")
   .flatMap((entry) => walkRecursive(path.join(testsDir, entry.name), path.join("tests", entry.name)));
 
-const files = [...topLevel, ...subdirs].sort().filter((f) => !isExcluded(f));
+// Sort + exclude first, stripe after, so every shard partitions the same
+// post-exclude list. The empty-list hard-fail stays after striping and names
+// which stage produced the empty set.
+
+let files = [...topLevel, ...subdirs].sort().filter((f) => !isExcluded(f));
+const preShardCount = files.length;
+if (shard) files = stripeFiles(files, shard.index, shard.total);
 
 if (files.length === 0) {
-  console.error(`No test files found in ${testsDir}`);
+  if (shard && preShardCount > 0) {
+    console.error(`Shard ${shard.index}/${shard.total} selected 0 of ${preShardCount} test files — lower the shard total.`);
+  } else {
+    console.error(`No test files found in ${testsDir}`);
+  }
   process.exit(1);
+}
+
+if (listOnly) {
+  for (const f of files) console.log(f.split(path.sep).join("/"));
+  process.exit(0);
 }
 
 // Default 30s per-test; raise to 180s when sweeping the dashboard-build or
