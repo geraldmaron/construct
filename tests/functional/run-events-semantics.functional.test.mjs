@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import { runOrchestration } from '../../lib/orchestration/runtime.mjs';
 import { onRunEvent } from '../../lib/orchestration/events.mjs';
 import { traceDir as resolveTraceDir } from '../../lib/worker/trace.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -35,7 +36,7 @@ const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-run-events-home-'
 const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
 process.env.CX_HOME_OVERRIDE = homeOverride;
 test.after(() => {
-  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });
@@ -104,7 +105,7 @@ test('prepare-only run: lifecycle.completed trace and SSE completed event carry 
     assert.equal(traceEvents[0].metadata.executionState, 'prepared', 'trace metadata carries the run-level executionState');
     assert.equal(traceEvents[0].metadata.degraded, false, 'trace metadata carries an explicit degraded boolean');
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 
@@ -124,7 +125,7 @@ test('degraded zero-task run: lifecycle.completed trace event carries degraded:t
     assert.equal(traceEvents[0].metadata.status, 'degraded');
     assert.equal(traceEvents[0].metadata.degraded, true, 'trace metadata carries the degraded boolean explicitly, not just via the status string');
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 
@@ -149,6 +150,6 @@ test('SSE completed event carries executionState and degraded fields, subscribed
     assert.equal(completedEvent.executionState, 'prepared', 'SSE completed event carries the run-level executionState');
     assert.equal(completedEvent.degraded, false, 'SSE completed event carries an explicit degraded boolean');
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });

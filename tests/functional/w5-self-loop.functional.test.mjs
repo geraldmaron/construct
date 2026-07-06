@@ -5,7 +5,7 @@
  * end-to-end (drop a file into inbox/, daemon emits packet within one
  * tick), rule-verifier intent-based approval classification.
  */
-import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, readdirSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, readdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
@@ -14,6 +14,7 @@ import test from 'node:test';
 import { createDaemon, classifyPacket, readHeartbeat } from '../../lib/daemons/contract.mjs';
 import { buildIntakeDaemon, processInboxFile } from '../../lib/intake/daemon.mjs';
 import { verifyTranscript, classifyApproval, findConsequentialActions } from '../../lib/hooks/rule-verifier.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 // buildIntakeDaemon() computes its heartbeat path eagerly at construction
 // time via resolveStatePath(cwd,'runtime','intake-daemon.heartbeat') —
@@ -26,14 +27,14 @@ const homeOverride = mkdtempSync(join(tmpdir(), 'construct-w5-home-'));
 const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
 process.env.CX_HOME_OVERRIDE = homeOverride;
 test.after(() => {
-  try { rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function freshCwd() {
   const cwd = mkdtempSync(join(tmpdir(), 'construct-w5-'));
-  return { cwd, cleanup() { try { rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } } };
+  return { cwd, cleanup() { try { rmTmpDir(cwd); } catch { /* ignore */ } } };
 }
 
 // ── Daemon safeguard contract ───────────────────────────────────────────────

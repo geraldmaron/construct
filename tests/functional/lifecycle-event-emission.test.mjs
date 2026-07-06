@@ -13,9 +13,10 @@
 
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, existsSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 let savedEnv;
 let busRoot;
@@ -33,8 +34,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  rmSync(busRoot, { recursive: true, force: true });
-  rmSync(homeRoot, { recursive: true, force: true });
+  rmTmpDir(busRoot);
+  rmTmpDir(homeRoot);
   for (const [k, v] of Object.entries(savedEnv)) {
     if (v === undefined) delete process.env[k];
     else process.env[k] = v;
@@ -100,7 +101,7 @@ test('scope lifecycle emits scope.updated on draft creation', async () => {
     assert.equal(evt.context.id, 'acme-research');
     assert.equal(evt.context.stage, 'draft');
   } finally {
-    rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 

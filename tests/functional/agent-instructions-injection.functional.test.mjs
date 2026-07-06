@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 import {
   injectConstructBlock,
@@ -26,7 +27,7 @@ import {
 const tmpDirs = [];
 
 after(() => {
-  for (const dir of tmpDirs) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  for (const dir of tmpDirs) rmTmpDir(dir);
 });
 
 function tmpDir(prefix) {

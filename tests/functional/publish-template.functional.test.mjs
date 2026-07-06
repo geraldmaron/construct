@@ -25,6 +25,7 @@ import {
   resolvePuppeteerExecutable,
 } from '../../lib/diagram-export.mjs';
 import { pdfEngineFontOpts } from '../../lib/document-export.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const GOLDEN = path.join(REPO, 'tests', 'fixtures', 'publish', 'golden-prd-platform.md');
@@ -56,7 +57,7 @@ test('resolvePdfTemplatePath prefers project override', () => {
     const resolved = resolvePdfTemplatePath({ artifactType: 'prd-platform', cwd: dir, repoRoot: REPO });
     assert.equal(resolved, override);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 

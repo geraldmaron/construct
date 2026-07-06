@@ -25,6 +25,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const MCP_MANAGER = path.join(REPO_ROOT, 'lib', 'mcp-manager.mjs');
@@ -77,7 +78,7 @@ function freshDirs(t) {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-add-cwd-'));
   t.after(() => {
     for (const d of [home, cwd]) {
-      try { fs.rmSync(d, { recursive: true, force: true }); } catch {}
+      try { rmTmpDir(d); } catch {}
     }
   });
   return { home, cwd };

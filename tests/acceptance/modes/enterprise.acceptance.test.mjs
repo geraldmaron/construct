@@ -48,6 +48,7 @@ import { checkAuditSinkAvailable } from '../../../lib/audit-trail.mjs';
 import { buildStatus, formatStatusReport, categorizeEnterpriseCapability } from '../../../lib/status.mjs';
 import { CAPABILITY_REGISTRY } from '../../../lib/mode-capabilities.mjs';
 import { tempDir } from '../../helpers.mjs';
+import { rmTmpDir } from '../../helpers/cleanup.mjs';
 
 const PROJECT = `lmcp-l6-enterprise-acceptance-${process.pid}`;
 
@@ -104,7 +105,7 @@ test('[LMCP-L6] enterprise mode: mandatory-audit gate fails closed on a genuinel
       assert.equal(bypassed, null, `${mode} mode must not be gated by the mandatory-audit check even when the sink is down`);
     }
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 

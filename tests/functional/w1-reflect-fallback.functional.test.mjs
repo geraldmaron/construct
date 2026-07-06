@@ -6,7 +6,7 @@
  * session-summary observation. Tests run in a tmpdir cwd so they don't touch
  * project state.
  */
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
@@ -14,12 +14,13 @@ import test from 'node:test';
 
 import { writeContextState } from '../../lib/context-state.mjs';
 import { deriveSummaryFromContext } from '../../lib/reflect.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function freshCwd() {
   const cwd = mkdtempSync(join(tmpdir(), 'construct-reflect-'));
   return {
     cwd,
-    cleanup() { try { rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } },
+    cleanup() { try { rmTmpDir(cwd); } catch { /* ignore */ } },
   };
 }
 

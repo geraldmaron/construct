@@ -4,7 +4,7 @@
  * Verdict-only hygiene gaps stay in the read model but never auto-raise beads.
  */
 
-import { mkdtempSync, mkdirSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
@@ -15,6 +15,7 @@ import { raiseIssuesForGaps } from '../../lib/oracle/issues.mjs';
 import { runOracleTick } from '../../lib/oracle/actions.mjs';
 import { isVerdictOnlyGap, autoRaiseEnabledForGap } from '../../lib/oracle/policy.mjs';
 import { planHygieneReconcile, planContractViolationSupersede } from '../../lib/oracle/reconcile.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function freshProject() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-hygiene-'));
@@ -27,7 +28,7 @@ function freshProject() {
     rootDir: process.cwd(),
     cleanup() {
       for (const d of [projectDir, homeDir]) {
-        try { rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
+        try { rmTmpDir(d); } catch { /* ignore */ }
       }
     },
   };

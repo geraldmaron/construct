@@ -26,7 +26,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -36,6 +36,7 @@ import { runCapabilityTick } from '../../lib/embed/capability-jobs.mjs';
 import { createTpmReasoningExecutor, analyzeTpm } from '../../lib/embed/presets/tpm.mjs';
 import { writeWithEnvelope } from '../../lib/writes/envelope.mjs';
 import { validatePacket } from '../../lib/specialist-contracts.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const realFetch = globalThis.fetch;
 
@@ -158,7 +159,7 @@ test('seeded PRD/Jira mismatch → missing-work finding + queued draft intent, z
     assert.equal(providers.jira.getCreatedIssues().length, 0, 'no Jira issue created without approval');
   } finally {
     globalThis.fetch = realFetch;
-    rmSync(rootDir, { recursive: true, force: true });
+    rmTmpDir(rootDir);
   }
 });
 
@@ -235,6 +236,6 @@ test('enable → briefing → approval → (fake) ticket creation runs end to en
     assert.equal(providers.writeCalls.filter((c) => c.provider === 'atlassian-jira').length, 1, 'exactly one Jira adapter write, and only after approval');
   } finally {
     globalThis.fetch = realFetch;
-    rmSync(rootDir, { recursive: true, force: true });
+    rmTmpDir(rootDir);
   }
 });

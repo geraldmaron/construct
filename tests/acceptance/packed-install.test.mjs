@@ -17,6 +17,7 @@ import { mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '../../');
@@ -202,13 +203,12 @@ test('packed consumer install (npm pack → clean install → smoke)', { timeout
   // ── Step 8: cleanup ───────────────────────────────────────────────────
   await t.test('cleanup temp directory', () => {
     if (tmpDir && existsSync(tmpDir)) {
-      rmSync(tmpDir, { recursive: true, force: true });
-      assert.ok(!existsSync(tmpDir), 'Temp directory should be removed');
+      rmTmpDir(tmpDir);
     }
 
     if (tarballPath && existsSync(tarballPath)) {
       rmSync(tarballPath, { force: true });
     }
-    rmSync(sandboxHome, { recursive: true, force: true });
+    rmTmpDir(sandboxHome);
   });
 });

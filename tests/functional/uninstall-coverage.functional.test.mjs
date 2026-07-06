@@ -20,11 +20,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 
 import { runUninstall, parseArgs } from '../../lib/uninstall/uninstall.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function makeSandbox() {
   const sandbox = mkdtempSync(join(tmpdir(), 'cx-uninstall-cov-'));
@@ -32,7 +33,7 @@ function makeSandbox() {
   const project = join(sandbox, 'project');
   mkdirSync(home, { recursive: true });
   mkdirSync(project, { recursive: true });
-  return { sandbox, home, project, cleanup: () => rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) };
+  return { sandbox, home, project, cleanup: () => rmTmpDir(sandbox) };
 }
 
 function gitInit(cwd) {

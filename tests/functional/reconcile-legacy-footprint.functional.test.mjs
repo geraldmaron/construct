@@ -14,13 +14,13 @@
  */
 
 import {
-  mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync,
-} from 'node:fs';
+  mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -47,8 +47,8 @@ function withCwd(fn) {
       if (prev[k] === undefined) delete process.env[k];
       else process.env[k] = prev[k];
     }
-    rmSync(project, { recursive: true, force: true });
-    rmSync(home, { recursive: true, force: true });
+    rmTmpDir(project);
+    rmTmpDir(home);
   });
 }
 

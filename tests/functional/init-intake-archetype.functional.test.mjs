@@ -20,10 +20,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, existsSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -38,8 +39,8 @@ function makeProject() {
     dir,
     home,
     cleanup: () => {
-      rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-      rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      rmTmpDir(dir);
+      rmTmpDir(home);
     },
   };
 }

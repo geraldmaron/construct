@@ -19,11 +19,12 @@ import path from 'node:path';
 import { buildOraclePrelude, readOracleDockState } from '../../lib/intake/session-prelude.mjs';
 import { writeLastTick } from '../../lib/oracle/index.mjs';
 import { heartbeatFreshness, readHeartbeatStatus, HEARTBEAT_STALE_MS } from '../../lib/oracle/heartbeat.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const dirs = [];
 after(() => {
   for (const d of dirs) {
-    try { fs.rmSync(d, { recursive: true, force: true }); } catch { /* best effort */ }
+    try { rmTmpDir(d); } catch { /* best effort */ }
   }
 });
 

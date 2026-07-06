@@ -18,6 +18,7 @@ import test from 'node:test';
 
 import { buildOrchestrationReadiness } from '../../lib/orchestration/readiness.mjs';
 import { planRun } from '../../lib/orchestration/runtime.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const dirs = [];
 function freshCwd() {
@@ -25,7 +26,7 @@ function freshCwd() {
   dirs.push(dir);
   return dir;
 }
-test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {} } });
+test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 
 // planRun resolves the run store through the machine-scoped state root
 // (ADR-0066), which reads CX_HOME_OVERRIDE from real process.env directly.
@@ -36,7 +37,7 @@ const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-readiness-exec-ho
 const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
 process.env.CX_HOME_OVERRIDE = homeOverride;
 test.after(() => {
-  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });

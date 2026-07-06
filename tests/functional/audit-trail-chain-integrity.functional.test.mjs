@@ -21,12 +21,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
 import { tmpdir, homedir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
@@ -137,7 +138,7 @@ test('audit-trail chain replays without breakage across a forced rotation', () =
     const firstRecordAfterRotation = JSON.parse(records[records.length - readdirSync(join(projectRoot, '.cx')).filter((f) => f === 'audit-trail.jsonl').length]);
     assert.ok(firstRecordAfterRotation.prev_line_hash, 'first record on a fresh segment must carry a non-null prev_line_hash sourced from the rotated tail');
   } finally {
-    rmSync(projectRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(projectRoot);
+    rmTmpDir(fakeHome);
   }
 });

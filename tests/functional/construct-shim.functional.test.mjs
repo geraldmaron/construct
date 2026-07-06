@@ -14,10 +14,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, chmodSync, rmSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, chmodSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 import {
   detectPlatform,
@@ -72,7 +73,7 @@ test('parseChecksumFile reads the leading hex column, matching sha256sum output 
 
 test('ensureBinary: cache hit returns the cached path without calling fetchImpl', async (t) => {
   const cacheRoot = freshCacheRoot();
-  t.after(() => rmSync(cacheRoot, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(cacheRoot));
 
   const cachedPath = resolveCachePath({ cacheRoot, version: '1.4.2', platformId: 'darwin-arm64' });
   mkdirSync(dirname(cachedPath), { recursive: true });
@@ -97,7 +98,7 @@ test('ensureBinary: cache hit returns the cached path without calling fetchImpl'
 
 test('ensureBinary: cache miss downloads, verifies checksum, writes an executable file', async (t) => {
   const cacheRoot = freshCacheRoot();
-  t.after(() => rmSync(cacheRoot, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(cacheRoot));
 
   const binaryContent = Buffer.from('fake-downloaded-binary-content');
   const goodChecksum = sha256Of(binaryContent);
@@ -125,7 +126,7 @@ test('ensureBinary: cache miss downloads, verifies checksum, writes an executabl
 
 test('ensureBinary: checksum mismatch is reported, and no file is written to cache', async (t) => {
   const cacheRoot = freshCacheRoot();
-  t.after(() => rmSync(cacheRoot, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(cacheRoot));
 
   const binaryContent = Buffer.from('fake-binary');
   const fetchImpl = async (url) => {
@@ -149,7 +150,7 @@ test('ensureBinary: checksum mismatch is reported, and no file is written to cac
 
 test('ensureBinary: a network error is reported, not thrown', async (t) => {
   const cacheRoot = freshCacheRoot();
-  t.after(() => rmSync(cacheRoot, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(cacheRoot));
 
   const fetchImpl = async () => { throw new Error('getaddrinfo ENOTFOUND'); };
 
@@ -218,7 +219,7 @@ test('decideCommand: a successful ensureBinary resolves to exec with its binaryP
 
 test('run(): CONSTRUCT_BIN_OVERRIDE execs the override binary with argv passthrough and the child\'s exit code propagated', (t) => {
   const stubDir = mkdtempSync(join(tmpdir(), 'construct-shim-stub-'));
-  t.after(() => rmSync(stubDir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(stubDir));
   const stubPath = join(stubDir, 'stub-cli.mjs');
   writeFileSync(
     stubPath,
@@ -245,7 +246,7 @@ test('run(): an unsupported host platform falls back to running the real bin/con
   // proving the fallback runs genuinely working CLI code, not a stub,
   // without needing an actually-unsupported host to run the test on.
   const wrapperDir = mkdtempSync(join(tmpdir(), 'construct-shim-wrapper-'));
-  t.after(() => rmSync(wrapperDir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(wrapperDir));
   const wrapperPath = join(wrapperDir, 'force-unsupported-platform.mjs');
   writeFileSync(
     wrapperPath,

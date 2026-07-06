@@ -19,13 +19,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, statSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { isolationEnv, assertPathUnderRoot } from '../helpers/isolation-contract.mjs';
 import { deriveProjectKey } from '../../lib/state-root.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -42,8 +43,8 @@ function makeFixture() {
     project,
     home,
     cleanup: () => {
-      rmSync(project, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-      rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      rmTmpDir(project);
+      rmTmpDir(home);
     },
   };
 }

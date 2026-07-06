@@ -12,6 +12,7 @@ import test from 'node:test';
 
 import { loadDemoRecordingValidated } from '../../lib/demo-recording.mjs';
 import { detectPlaywrightDemo } from '../../lib/playwright-demo.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 test('project recording manifest validates and resolves spec path', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-rec-fn-'));
@@ -42,6 +43,6 @@ test('project recording manifest validates and resolves spec path', () => {
     assert.equal(detection.present, false);
     assert.ok(detection.missing.some((m) => m.includes('playwright.config')));
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });

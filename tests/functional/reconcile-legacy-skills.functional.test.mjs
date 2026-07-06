@@ -18,12 +18,13 @@
  *      idempotently (second detect() returns no-op).
  */
 
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync, utimesSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, utimesSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const RECONCILE_MOD = join(REPO_ROOT, 'lib', 'reconcile', 'index.mjs');
@@ -98,7 +99,7 @@ function withIsolatedHome(fn) {
     process.env.HOME = prev.HOME;
     if (prev.CX_HOME_OVERRIDE === undefined) delete process.env.CX_HOME_OVERRIDE;
     else process.env.CX_HOME_OVERRIDE = prev.CX_HOME_OVERRIDE;
-    rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(home);
   });
 }
 

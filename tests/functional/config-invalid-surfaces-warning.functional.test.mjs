@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { planRun } from '../../lib/orchestration/runtime.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.resolve(__dirname, '..', '..', 'bin', 'construct');
@@ -31,7 +32,7 @@ function project(configObj) {
   fs.writeFileSync(path.join(cwd, 'construct.config.json'), JSON.stringify(configObj));
   return cwd;
 }
-test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {} } });
+test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 
 // planRun (called in-process below) resolves the run store through the
 // machine-scoped state root (ADR-0066), which reads CX_HOME_OVERRIDE from
@@ -45,7 +46,7 @@ const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-config-invalid-ho
 const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
 process.env.CX_HOME_OVERRIDE = homeOverride;
 test.after(() => {
-  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });

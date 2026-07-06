@@ -20,6 +20,7 @@ import { spawnSync } from 'node:child_process';
 
 import { loadDemoScript } from '../../lib/demo-script.mjs';
 import { loadProjectDemoManifest, PROJECT_DEMO_SCHEMA } from '../../lib/demo-project.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
@@ -31,7 +32,7 @@ const SCHEMA_PATH = path.join(REPO, 'schemas', 'project-demo.schema.json');
 // ~/.construct/projects/.
 
 const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-plugin-home-'));
-process.on('exit', () => fs.rmSync(SANDBOX_HOME, { recursive: true, force: true }));
+process.on('exit', () => rmTmpDir(SANDBOX_HOME));
 
 // A dependency-free conformance check driven by the real schema file: Construct
 // keeps no ajv at startup (lib/demo-project.mjs validates by hand), and ajv is
@@ -104,7 +105,7 @@ test('construct demo init --from-project scaffolds .cx/demos plug-in seeded from
     assert.equal(manifest.project, 'acme-widgets', 'project name must come from the real package.json signal');
     assert.equal(manifest.script, '.cx/demos/scripts/walkthrough.json');
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -119,7 +120,7 @@ test('scaffolded manifest validates against schemas/project-demo.schema.json', (
     const schemaErrors = validateAgainstSchema(schema, manifest);
     assert.deepEqual(schemaErrors, [], `schema errors: ${schemaErrors.join('; ')}`);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -139,7 +140,7 @@ test('scaffolded script loads through the demo-script loader and runs read-only 
     assert.equal(loaded.ok, true, `manifest load failed: ${loaded.errors?.join('; ')}`);
     assert.equal(loaded.manifest.project, 'gamma-labs');
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -151,7 +152,7 @@ test('construct demo init --from-project refuses to clobber an existing plug-in'
     assert.equal(second.status, 1, 'a second scaffold of the same name must fail');
     assert.match(second.stderr, /already exists/);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -162,6 +163,6 @@ test('construct demo init --from-project requires a name', () => {
     assert.equal(result.status, 1);
     assert.match(result.stderr, /Usage: construct demo init <name> --from-project/);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });

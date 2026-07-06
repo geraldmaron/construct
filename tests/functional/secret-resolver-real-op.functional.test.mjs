@@ -20,6 +20,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OP_REF = 'op://Vault/Item/credential';
@@ -74,7 +75,7 @@ function opReadCount(sandbox) {
 
 test('real op subprocess: one read per process despite a repeated reference', (t) => {
   const sandbox = makeSandbox();
-  t.after(() => fs.rmSync(sandbox.dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(sandbox.dir));
 
   runResolver(sandbox);
   assert.equal(opReadCount(sandbox), 1, 'two resolves in one process spawn op exactly once (in-process cache)');
@@ -82,7 +83,7 @@ test('real op subprocess: one read per process despite a repeated reference', (t
 
 test('real op subprocess: a fresh process re-resolves from a cold cache', (t) => {
   const sandbox = makeSandbox();
-  t.after(() => fs.rmSync(sandbox.dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(sandbox.dir));
 
   runResolver(sandbox);
   runResolver(sandbox);

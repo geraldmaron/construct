@@ -6,11 +6,12 @@
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { runBd } from '../../lib/beads-client.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function bdAvailable() {
   try {
@@ -34,21 +35,21 @@ function makeBeadsFixture() {
     cwd: dir, encoding: 'utf8', env, timeout: 60_000,
   });
   if (init.status !== 0) {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
     throw new Error(`bd init failed in fixture: ${init.stderr || init.stdout}`);
   }
   const created = spawnSync('bd', ['create', 'fixture task', '--json'], {
     cwd: dir, encoding: 'utf8', env, timeout: 30_000,
   });
   if (created.status !== 0) {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
     throw new Error(`bd create failed in fixture: ${created.stderr || created.stdout}`);
   }
   const beadId = JSON.parse(created.stdout).id;
   return {
     dir,
     beadId,
-    cleanup: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }),
+    cleanup: () => rmTmpDir(dir),
   };
 }
 
@@ -89,6 +90,6 @@ test('fallbackToLegacy:false surfaces optimistic failure without queueing', asyn
     assert.equal(result.success, false);
     assert.notEqual(result.method, 'legacy-lock');
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });

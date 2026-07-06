@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
@@ -16,8 +17,8 @@ test('construct certify run executes a hermetic scenario in an isolated project'
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'certify-functional-'));
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'certify-functional-home-'));
   t.after(() => {
-    fs.rmSync(rootDir, { recursive: true, force: true });
-    fs.rmSync(home, { recursive: true, force: true });
+    rmTmpDir(rootDir);
+    rmTmpDir(home);
   });
   fs.mkdirSync(path.join(rootDir, '.cx'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'package.json'), '{}\n');

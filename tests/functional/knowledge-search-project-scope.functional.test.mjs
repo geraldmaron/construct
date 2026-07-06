@@ -23,12 +23,13 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { knowledgeSearch } from '../../lib/knowledge/search.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const tmpDirs = [];
 
 after(() => {
-  for (const dir of tmpDirs) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  for (const dir of tmpDirs) rmTmpDir(dir);
 });
 
 function makeProject() {

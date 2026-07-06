@@ -18,6 +18,7 @@ import path from 'node:path';
 
 import { tempDir } from '../helpers.mjs';
 import { runOrchestration } from '../../lib/orchestration/runtime.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 // runOrchestration resolves its run store through the machine-scoped state
 // root (ADR-0066), which reads CX_HOME_OVERRIDE/CX_TOOLKIT_DIR from real
@@ -30,7 +31,7 @@ const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-doctor-runstore-h
 const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
 process.env.CX_HOME_OVERRIDE = homeOverride;
 test.after(() => {
-  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });

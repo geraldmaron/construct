@@ -16,6 +16,7 @@ import { mkdtempSync, rmSync, existsSync, readFileSync, readdirSync, statSync } 
 import { tmpdir } from 'node:os';
 import { join, resolve, delimiter } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '../../');
@@ -296,8 +297,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
   await t.test('cleanup temp directories and tarball', () => {
     for (const dir of createdDirs) {
       if (dir && existsSync(dir)) {
-        rmSync(dir, { recursive: true, force: true });
-        assert.ok(!existsSync(dir), `Directory should be removed: ${dir}`);
+        rmTmpDir(dir);
       }
     }
 

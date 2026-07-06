@@ -22,6 +22,7 @@ import test from 'node:test';
 import { resolveRunStore } from '../../lib/orchestration/store.mjs';
 import { getModeCapabilityStatus, getUnsupportedCapabilities } from '../../lib/mode-capabilities.mjs';
 import { buildStatus } from '../../lib/status.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -41,7 +42,7 @@ test('resolveRunStore falls back with degraded markers when postgres is unavaila
     assert.equal(result.degradedReason, 'postgres-unavailable', 'degradedReason must be postgres-unavailable');
     assert.ok(result.warnings.length > 0, 'at least one warning must be emitted');
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(cwd);
   }
 });
 

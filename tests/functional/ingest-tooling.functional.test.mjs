@@ -23,6 +23,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { detectIngestPipeline, detectNodeNativeDeps, doclingVenvPath } from '../../lib/ingest-tooling.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function withFreshHome(fn) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-ingest-tooling-home-'));
@@ -33,7 +34,7 @@ function withFreshHome(fn) {
   } finally {
     if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
     else process.env.CX_HOME_OVERRIDE = prev;
-    fs.rmSync(home, { recursive: true, force: true });
+    rmTmpDir(home);
   }
 }
 
@@ -60,7 +61,7 @@ test('detectNodeNativeDeps reports both deps present from fixture markers', () =
     assert.equal(result.mammoth, true);
     assert.equal(result.message, 'Node-native extraction ready (unpdf + mammoth)');
   } finally {
-    fs.rmSync(root, { recursive: true, force: true });
+    rmTmpDir(root);
   }
 });
 
@@ -73,7 +74,7 @@ test('detectNodeNativeDeps reports the specific missing dep from a partial fixtu
     assert.equal(result.mammoth, false);
     assert.equal(result.message, 'Missing optional deps: mammoth');
   } finally {
-    fs.rmSync(root, { recursive: true, force: true });
+    rmTmpDir(root);
   }
 });
 
@@ -86,7 +87,7 @@ test('detectNodeNativeDeps reports both deps missing on an empty fixture', () =>
     assert.equal(result.mammoth, false);
     assert.equal(result.message, 'Missing optional deps: unpdf, mammoth');
   } finally {
-    fs.rmSync(root, { recursive: true, force: true });
+    rmTmpDir(root);
   }
 });
 
@@ -102,7 +103,7 @@ test('detectIngestPipeline reports high-fidelity ready when the shared venv is p
       assert.equal(result.present, true);
       assert.equal(result.message, 'Ingest: high-fidelity docling ready');
     } finally {
-      fs.rmSync(root, { recursive: true, force: true });
+      rmTmpDir(root);
     }
   });
 });
@@ -117,7 +118,7 @@ test('detectIngestPipeline reports fast tier ready when only node-native deps ar
       assert.equal(result.present, true);
       assert.equal(result.message, 'Ingest: fast tier ready (unpdf/mammoth); high-fidelity provisions on first use');
     } finally {
-      fs.rmSync(root, { recursive: true, force: true });
+      rmTmpDir(root);
     }
   });
 });
@@ -133,7 +134,7 @@ test('detectIngestPipeline reports degraded when the fixture has neither docling
       assert.equal(result.message, 'Ingest degraded — install optional deps or run construct install --with-docling');
       assert.equal(typeof result.steps.whisper.present, 'boolean');
     } finally {
-      fs.rmSync(root, { recursive: true, force: true });
+      rmTmpDir(root);
     }
   });
 });
@@ -146,7 +147,7 @@ test('detectIngestPipeline reflects docling-remote config from the fixture env',
       assert.equal(result.steps.doclingRemote.present, true);
       assert.equal(result.steps.doclingRemote.url, 'https://docling.example.test');
     } finally {
-      fs.rmSync(root, { recursive: true, force: true });
+      rmTmpDir(root);
     }
   });
 });

@@ -21,6 +21,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = path.join(REPO_ROOT, 'bin', 'construct');
@@ -47,7 +48,7 @@ test('construct credentials reports presence without leaking values or invoking 
   const binDir = makeTmpDir('cx-cred-diag-bin-');
   t.after(() => {
     for (const d of [home, cwd, binDir]) {
-      try { fs.rmSync(d, { recursive: true, force: true }); } catch {}
+      try { rmTmpDir(d); } catch {}
     }
   });
 

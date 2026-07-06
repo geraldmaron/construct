@@ -18,6 +18,7 @@ import { spawnSync } from 'node:child_process';
 import { sterileSpawnEnv, createOpStub } from '../helpers/sterile-env.mjs';
 import { resolveSecret, __clearSecretCache } from '../../lib/providers/secret-resolver.mjs';
 import { __resetOpLocateCache } from '../../lib/providers/op-locate.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const POISON = {
   CX_MODEL_STANDARD: 'poison',
@@ -50,7 +51,7 @@ test('sterileSpawnEnv builds a spawn env from an allowlist: a poisoned parent sh
   const dump = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-hermeticity-'));
   const script = path.join(dump, 'dump-env.mjs');
   fs.writeFileSync(script, 'process.stdout.write(JSON.stringify(process.env));');
-  t.after(() => fs.rmSync(dump, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(dump));
 
   const env = sterileSpawnEnv();
   const result = spawnSync(process.execPath, [script], { env, encoding: 'utf8', timeout: 30_000 });
@@ -75,7 +76,7 @@ test('sterileSpawnEnv overrides win over the allowlist defaults without reopenin
 
 test('a hermetic secret-resolver call never shells out to a real op, even with a logging op stub first on PATH', async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-hermeticity-op-'));
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(root));
 
   const { binDir, logPath } = createOpStub(root);
   const savedPath = process.env.PATH;

@@ -9,7 +9,7 @@
  * tree.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, cpSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, cpSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,11 +17,12 @@ import assert from 'node:assert/strict';
 import test, { after } from 'node:test';
 
 import { runAllChecks } from '../../lib/doctor/watchers/consistency.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const CLI_SANDBOX_HOME = mkdtempSync(join(tmpdir(), 'w3-consistency-cli-home-'));
-after(() => rmSync(CLI_SANDBOX_HOME, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
+after(() => rmTmpDir(CLI_SANDBOX_HOME));
 
 function freshRepoSlice() {
   const root = mkdtempSync(join(tmpdir(), 'construct-consistency-'));
@@ -40,7 +41,7 @@ function freshRepoSlice() {
   cpSync(join(REPO_ROOT, 'lib', 'contract-schemas'), join(root, 'lib', 'contract-schemas'), { recursive: true });
   return {
     root,
-    cleanup() { try { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } },
+    cleanup() { try { rmTmpDir(root); } catch { /* ignore */ } },
     writeJson(rel, obj) { writeFileSync(join(root, rel), JSON.stringify(obj, null, 2)); },
     write(rel, body) { writeFileSync(join(root, rel), body); },
   };

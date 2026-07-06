@@ -18,12 +18,13 @@
  */
 import test from "node:test";
 import assert from "node:assert";
-import { mkdtempSync, mkdirSync, writeFileSync, chmodSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const DOCLING_PIN = "2.45.0";
@@ -84,7 +85,7 @@ test("ingest_document with a broken docling extractor returns the node-native fa
     assert.ok(file, "a file result is present");
     assert.ok(file.droppedInfo.some((d) => d.kind === "docling-fallback"), "fallback to the node-native extractor is recorded");
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    rmTmpDir(root);
   }
 });
 
@@ -99,6 +100,6 @@ test("server stays responsive after the failing ingest (tools/list still answers
       assert.ok(tools.tools.some((t) => t.name === "call"), "server answers tools/list after the failing call");
     });
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    rmTmpDir(root);
   }
 });

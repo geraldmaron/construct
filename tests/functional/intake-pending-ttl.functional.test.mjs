@@ -17,11 +17,12 @@ import path from 'node:path';
 
 import { sweepPendingPackets, processInboxFile, buildIntakeDaemon } from '../../lib/intake/daemon.mjs';
 import { buildIntakePrelude } from '../../lib/intake/session-prelude.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const tmpDirs = [];
 
 after(() => {
-  for (const dir of tmpDirs) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  for (const dir of tmpDirs) rmTmpDir(dir);
 });
 
 // buildIntakeDaemon() computes its heartbeat path eagerly at construction
@@ -35,7 +36,7 @@ const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-r8wr7-home-'));
 const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
 process.env.CX_HOME_OVERRIDE = homeOverride;
 after(() => {
-  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });

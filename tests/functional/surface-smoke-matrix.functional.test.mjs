@@ -37,6 +37,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
 import { resolveStatePath } from '../../lib/state-root.mjs';
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = path.join(REPO_ROOT, 'bin', 'construct');
@@ -149,7 +150,7 @@ const SURFACES = [
 for (const surface of SURFACES) {
   test(`[smoke-matrix] ${surface.id}: a real research request executes, non-degraded, with a persisted non-empty task list`, async (t) => {
     const cwd = project();
-    t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {} });
+    t.after(() => { try { rmTmpDir(cwd); } catch {} });
 
     const env = tierEnv();
     const { envelope, runRecord } = await surface.drive(cwd, env);
@@ -159,7 +160,7 @@ for (const surface of SURFACES) {
 
 test('[smoke-matrix] a poisoned parent env cannot mask a degraded cell (neq9.4 allowlist is actually applied here)', async (t) => {
   const cwd = project();
-  t.after(() => { try { fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {} });
+  t.after(() => { try { rmTmpDir(cwd); } catch {} });
 
   const savedTiers = {
     CX_MODEL_REASONING: process.env.CX_MODEL_REASONING,
