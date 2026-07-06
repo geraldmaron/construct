@@ -28,10 +28,26 @@
     "Provider bindings and filters have been enforced at read time before the slice reaches triage"
   ],
   "postconditions": [
-    "Every duplicate finding cites the issue keys being compared",
-    "Every under-specified finding cites the issue key and the reasons",
-    "Every proposal carries a typed writeIntent (duplicate-link or needs-info comment) and traces to its source issue",
-    "No provider write executes without approval; no load-bearing claim is present without a source id"
+    {
+      "id": "operations-triage-pc-0-every-duplicate-finding-cites-the-issue",
+      "description": "Every duplicate finding cites the issue keys being compared",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "operations-triage-pc-1-every-under-specified-finding-cites-the",
+      "description": "Every under-specified finding cites the issue key and the reasons",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "operations-triage-pc-2-every-proposal-carries-a-typed-writeintent",
+      "description": "Every proposal carries a typed writeIntent (duplicate-link or needs-info comment) and traces to its source issue",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "operations-triage-pc-3-no-provider-write-executes-without-approval",
+      "description": "No provider write executes without approval; no load-bearing claim is present without a source id",
+      "postconditionType": "advisory"
+    }
   ],
   "description": "Triage briefing produced by the operations specialist over its bound Jira + Confluence snapshot: inventoried tickets, detected duplicates, under-specified issues, and approval-gated triage proposals."
 }
