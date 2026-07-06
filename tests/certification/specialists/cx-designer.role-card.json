@@ -10,7 +10,8 @@
     "frontend-design/component-patterns",
     "frontend-design/state-management",
     "frontend-design/engineering",
-    "frontend-design/accessibility"
+    "frontend-design/accessibility",
+    "frontend-design/screen-reader-testing"
   ],
   "tone": "Designs with no error or empty states, templates passed as design decisions, no hover/focus/active states",
   "openingQuestion": "What is the user doing, what are they feeling, and what should the interface show them?",

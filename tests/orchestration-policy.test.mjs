@@ -79,7 +79,7 @@ test('routeRequest routes typed artifact drafting through the matching workflow 
   assert.equal(route.track, EXECUTION_TRACKS.focused);
   assert.equal(route.suggestedWorkflowType, 'prd-draft');
   assert.ok(route.specialists.includes('cx-product-manager'));
-  assert.ok(route.specialists.includes('cx-devil-advocate'));
+  assert.ok(route.specialists.includes('cx-reviewer'));
 });
 
 test('routeRequest classifies feature build as orchestrated implementation', () => {
@@ -111,7 +111,7 @@ test('routeRequest sends a loosely-scoped Terraform agent strategy to orchestrat
   assert.equal(route.track, EXECUTION_TRACKS.orchestrated);
   assert.ok(route.specialists.includes('cx-architect'), 'architect owns the structure');
   assert.ok(route.specialists.includes('cx-security'), 'security challenges the credential/state model');
-  assert.ok(route.specialists.includes('cx-devil-advocate'), 'devil-advocate pressure-tests the approach');
+  assert.ok(route.specialists.includes('cx-reviewer'), 'reviewer pressure-tests the approach (devil-advocate overlay)');
 });
 
 test('routeRequest classifies fix requests through debugger path', () => {
@@ -199,27 +199,28 @@ test('orchestrationPolicy includes approvalRequired and terminalStates', async (
 test('orchestrationPolicy returns a lazy specialistCatalog (construct-ymp5)', async () => {
   const result = await orchestrationPolicy({ request: 'explain caching', fileCount: 1, moduleCount: 1 });
   assert.ok(Array.isArray(result.specialistCatalog));
-  assert.ok(result.specialistCatalog.length >= 20);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.ok(result.specialistCatalog.length >= 10);
   assert.ok(result.specialistCatalog.every((row) => row.id.startsWith('cx-') && row.whenToUse));
 });
 
-test('routeRequest dispatches cx-legal-compliance on compliance keyword (focused track)', () => {
+test('routeRequest dispatches cx-security on compliance keyword (focused track)', () => {
   const route = routeRequest({ request: 'review GDPR compliance of our consent flow', fileCount: 1, moduleCount: 1 });
   assert.equal(route.track, EXECUTION_TRACKS.focused);
-  assert.deepEqual(route.specialists, ['cx-legal-compliance']);
+  assert.deepEqual(route.specialists, ['cx-security']);
 });
 
-test('routeRequest prepends cx-legal-compliance pre-architect on orchestrated track', () => {
+test('routeRequest prepends cx-security pre-architect on orchestrated track (legal-compliance keyword)', () => {
   const route = routeRequest({ request: 'build the SOC 2 attestation evidence pipeline end to end', fileCount: 4, moduleCount: 2 });
   assert.equal(route.track, EXECUTION_TRACKS.orchestrated);
-  assert.ok(route.specialists.includes('cx-legal-compliance'));
-  assert.ok(route.specialists.indexOf('cx-legal-compliance') < route.specialists.indexOf('cx-architect'));
+  assert.ok(route.specialists.includes('cx-security'));
+  assert.ok(route.specialists.indexOf('cx-security') < route.specialists.indexOf('cx-architect'));
 });
 
-test('routeRequest dispatches cx-business-strategist on GTM keyword (focused track)', () => {
+test('routeRequest dispatches cx-product-manager on GTM keyword (focused track)', () => {
   const route = routeRequest({ request: 'sketch the go-to-market positioning for the new tier', fileCount: 1, moduleCount: 1 });
   assert.equal(route.track, EXECUTION_TRACKS.focused);
-  assert.deepEqual(route.specialists, ['cx-business-strategist']);
+  assert.deepEqual(route.specialists, ['cx-product-manager']);
 });
 
 test('routeRequest dispatches cx-operations on dependency-sequencing keyword', () => {
@@ -228,21 +229,20 @@ test('routeRequest dispatches cx-operations on dependency-sequencing keyword', (
   assert.deepEqual(route.specialists, ['cx-operations']);
 });
 
-test('routeRequest dispatches cx-rd-lead on hypothesis keyword and prepends on orchestrated', () => {
+test('routeRequest dispatches cx-architect on hypothesis keyword (rd-lead framing gate folded into architect)', () => {
   const focused = routeRequest({ request: 'frame the hypothesis we should be testing', fileCount: 2, moduleCount: 1 });
   assert.equal(focused.track, EXECUTION_TRACKS.focused);
-  assert.deepEqual(focused.specialists, ['cx-rd-lead']);
+  assert.deepEqual(focused.specialists, ['cx-architect']);
 
   const orchestrated = routeRequest({ request: 'build a falsifiable proof of concept system end to end', fileCount: 4, moduleCount: 2 });
   assert.equal(orchestrated.track, EXECUTION_TRACKS.orchestrated);
-  assert.ok(orchestrated.specialists.includes('cx-rd-lead'));
-  assert.ok(orchestrated.specialists.indexOf('cx-rd-lead') < orchestrated.specialists.indexOf('cx-architect'));
+  assert.ok(orchestrated.specialists.includes('cx-architect'));
 });
 
-test('routeRequest dispatches cx-explorer on recon keyword (focused track)', () => {
+test('routeRequest dispatches cx-researcher on recon keyword (focused track; explorer overlay)', () => {
   const route = routeRequest({ request: 'do a scoping pass on the auth module — orient me', fileCount: 1, moduleCount: 1 });
   assert.equal(route.track, EXECUTION_TRACKS.focused);
-  assert.deepEqual(route.specialists, ['cx-explorer']);
+  assert.deepEqual(route.specialists, ['cx-researcher']);
 });
 
 test('routeRequestVerified returns the keyword route synchronously without waiting on the LLM', () => {

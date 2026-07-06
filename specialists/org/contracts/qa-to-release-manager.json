@@ -1,7 +1,7 @@
 {
   "id": "qa-to-release-manager",
   "producer": "cx-qa",
-  "consumer": "cx-release-manager",
+  "consumer": "cx-operations",
   "trigger": {
     "intent": [
       "implementation"

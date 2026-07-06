@@ -16,7 +16,8 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 test('auditSpecialistContracts passes for the curated registry', () => {
   const result = auditSpecialistContracts({ rootDir: REPO });
   assert.equal(result.pass, true);
-  assert.equal(result.count, 29);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.equal(result.count, 12);
 });
 
 test('intentional regression fails when anti-fabrication section removed', () => {

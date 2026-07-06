@@ -21,7 +21,7 @@ Use when: an architectural decision is made that affects the system structure, d
 2. **Write to `docs/decisions/adr/ADR-{NNN}-{slug}.md`** using the template from `get_template("adr")`: resolves `.cx/templates/docs/adr.md` (override) then `templates/docs/adr.md` (shipped)
    - NNN = next sequential number (check existing files)
 3. **Also write a shorter entry to `.cx/decisions/`** for session context
-4. **cx-docs-keeper** updates `.cx/context.md` Architecture Notes with a one-line summary and link
+4. **cx-operations** updates `.cx/context.md` Architecture Notes with a one-line summary and link
 
 ## File naming
 - `docs/decisions/adr/ADR-001-use-postgres-over-mysql.md`

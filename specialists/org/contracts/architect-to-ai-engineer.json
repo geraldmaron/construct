@@ -1,7 +1,7 @@
 {
   "id": "architect-to-ai-engineer",
   "producer": "cx-architect",
-  "consumer": "cx-ai-engineer",
+  "consumer": "cx-engineer",
   "trigger": {
     "riskFlags": [
       "ai"
@@ -28,7 +28,7 @@
   "postconditions": [
     {
       "id": "architect-to-ai-engineer-pc-0-eval-verdict-from-cx-evaluator-before",
-      "description": "Eval verdict from cx-evaluator before DONE",
+      "description": "Eval verdict from cx-reviewer before DONE",
       "postconditionType": "advisory"
     }
   ],

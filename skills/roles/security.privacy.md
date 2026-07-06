@@ -6,7 +6,6 @@ artifactType: guidance
 role: security.privacy
 applies_to:
   - cx-security
-  - cx-legal-compliance
 inherits: security
 version: 2
 scopes:

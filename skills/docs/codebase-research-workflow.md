@@ -1,6 +1,6 @@
 ---
 name: docs-codebase-research-workflow
-description: "Use when: cx-explorer maps the repo — entry points, dependencies, hot paths, or unfamiliar subsystems."
+description: "Use when: cx-researcher maps the repo — entry points, dependencies, hot paths, or unfamiliar subsystems."
 inputs: [repository-path]
 artifactType: research-brief
 toneDefault: pedagogical
@@ -9,7 +9,7 @@ verificationBar: "Every load-bearing claim cites a verifiable primary source; la
 ---
 # Codebase Research Workflow
 
-Use when: cx-explorer investigates **this repository** — structure, dependencies, behavior. Not for external vendor research or user interviews.
+Use when: cx-researcher investigates **this repository** — structure, dependencies, behavior. Not for external vendor research or user interviews.
 
 Call `get_skill("roles/researcher")` and `get_skill("exploration/repo-map")` before deep dives.
 
@@ -37,7 +37,7 @@ Call `get_skill("roles/researcher")` and `get_skill("exploration/repo-map")` bef
 
 - Every architectural claim traceable to file:line.
 - Unknown paths marked `[unverified]` until read.
-- cx-explorer must **not** answer product prioritization or user preference questions.
+- cx-researcher must **not** answer product prioritization or user preference questions.
 ## Release gate
 
 Run `construct artifact validate <path> --type=<type>` before marking the artifact approved.

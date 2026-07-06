@@ -1,7 +1,7 @@
 {
   "id": "product-manager-to-ux-researcher",
   "producer": "cx-product-manager",
-  "consumer": "cx-ux-researcher",
+  "consumer": "cx-researcher",
   "trigger": {
     "docAuthoring.docType": [
       "prd",

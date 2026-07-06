@@ -5,8 +5,7 @@ inputs: [retrieval-design, embeddings]
 artifactType: role-guidance
 role: data-engineer.vector-retrieval
 applies_to:
-  - cx-data-engineer
-  - cx-ai-engineer
+  - cx-engineer
 inherits: data-engineer
 version: 2
 scopes:

@@ -3,21 +3,14 @@
   "kind": "squad",
   "groupId": "strategy-group",
   "name": "Strategy",
-  "owner": "rd-lead",
+  "owner": "orchestrator",
   "roles": [
-    "rd-lead",
-    "business-strategist",
-    "data-analyst",
-    "explorer",
-    "orchestrator"
+    "orchestrator",
+    "data-analyst"
   ],
   "specialists": [
     "cx-orchestrator",
-    "cx-oracle",
-    "cx-rd-lead",
-    "cx-business-strategist",
-    "cx-data-analyst",
-    "cx-explorer"
+    "cx-data-analyst"
   ],
   "collaborators": [],
   "decisionRights": [
@@ -33,14 +26,14 @@
     "ops-procedures"
   ],
   "escalationPath": [
-    "rd-lead",
+    "architect",
     "orchestrator"
   ],
-  "charter": "Hold the long view: what to build next, what to measure, what to retire. Owns R&D direction, strategic prioritization, measurement design, cross-team orchestration, and exploration. Does not own implementation or day-to-day operations. Arbitrates escalations from other groups.",
+  "charter": "Hold the long view on measurement and cross-team dispatch. Owns metrics/measurement design (cx-data-analyst) and cross-team orchestration (cx-orchestrator). R&D framing-gate duties folded into cx-architect and exploration folded into cx-researcher (rd-lead and explorer retired/folded; construct-rf26.11) — this team no longer owns R&D direction or exploration directly. Does not own implementation or day-to-day operations.",
   "contact": {
     "slack": "#strategy",
     "email": "strategy@example.com",
-    "owner": "rd-lead"
+    "owner": "orchestrator"
   },
   "evidence": [
     "AGENTS.md (rnd profile departments section)"

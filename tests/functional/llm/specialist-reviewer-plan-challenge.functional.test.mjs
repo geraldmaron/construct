@@ -1,9 +1,9 @@
 /**
- * Live LLM test for cx-devil-advocate.
+ * Live LLM test for cx-reviewer's plan-challenge mode (the devil-advocate
+ * overlay folded into cx-reviewer at construct-rf26.11).
  *
- * Loads the actual specialist prompt from `specialists/prompts/cx-devil-
- * advocate.md`, runs it against a deliberately-flawed proposal via
- * OpenRouter, and asserts:
+ * Loads the actual specialist prompt from `specialists/prompts/cx-reviewer.md`,
+ * runs it against a deliberately-flawed proposal via OpenRouter, and asserts:
  *   1. Response is non-empty + bounded length.
  *   2. Response challenges at least one specific element of the proposal
  *      (cites it back by name or quoted phrase).
@@ -23,7 +23,7 @@ import { createLlmHarness } from '../_lib/openrouter-llm.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..', '..');
-const PROMPT = readFileSync(resolve(REPO_ROOT, 'specialists', 'prompts', 'cx-devil-advocate.md'), 'utf8');
+const PROMPT = readFileSync(resolve(REPO_ROOT, 'specialists', 'prompts', 'cx-reviewer.md'), 'utf8');
 
 const FLAWED_PROPOSAL = `
 Proposal: rewrite the auth layer to use JWT tokens stored in localStorage.
@@ -41,13 +41,13 @@ Acceptance:
 - Tests pass.
 `.trim();
 
-test('cx-devil-advocate produces critical pushback against an obviously-flawed proposal', { timeout: 120_000 }, async (t) => {
+test('cx-reviewer produces critical pushback against an obviously-flawed proposal (plan-challenge mode)', { timeout: 120_000 }, async (t) => {
   const llm = createLlmHarness({ capUsdCents: 20 });
   if (!llm.available) { t.skip(llm.skipReason); return; }
 
   // Pinned to the harness default (openai/gpt-4o-mini). Retry once on
-  // timeout before giving up — devil-advocate uses a longer prompt + 700
-  // max tokens, so 45s per attempt is realistic.
+  // timeout before giving up — the merged reviewer prompt is longer than the
+  // standalone devil-advocate prompt was, so 45s per attempt is realistic.
 
   let result;
   let lastErr;
@@ -55,7 +55,7 @@ test('cx-devil-advocate produces critical pushback against an obviously-flawed p
     try {
       result = await llm.complete({
         system: PROMPT,
-        user: `Challenge this proposal. Be specific about which assumptions you attack and why.\n\n${FLAWED_PROPOSAL}`,
+        user: `Switch to plan-challenge mode. Challenge this proposal. Be specific about which assumptions you attack and why.\n\n${FLAWED_PROPOSAL}`,
         maxTokens: 700,
         temperature: 0.3,
         timeoutMs: 45_000,
@@ -87,5 +87,5 @@ test('cx-devil-advocate produces critical pushback against an obviously-flawed p
   const citedSpecifics = specifics.filter((s) => lower.includes(s));
   assert.ok(citedSpecifics.length >= 2, `expected ≥2 cited specifics from proposal; found: ${citedSpecifics.join(', ')}`);
 
-  console.log(`[devil-advocate] spent ${llm.totalCents()}¢ over ${llm.callsMade()} call(s) — hit signals: ${hit.join(', ')}`);
+  console.log(`[reviewer plan-challenge] spent ${llm.totalCents()}¢ over ${llm.callsMade()} call(s) — hit signals: ${hit.join(', ')}`);
 });

@@ -18,7 +18,8 @@ const registry = loadRegistry({ rootDir: new URL('..', import.meta.url).pathname
 test('listRoles returns one descriptor per registry specialist', () => {
   const roles = listRoles();
   assert.equal(roles.length, Object.values(registry.specialists).length);
-  assert.ok(roles.length >= 28, `expected at least 28 roles, got ${roles.length}`);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.ok(roles.length >= 12, `expected at least 12 roles, got ${roles.length}`);
 });
 
 test('listRoles descriptors carry the prefixed name and required fields', () => {

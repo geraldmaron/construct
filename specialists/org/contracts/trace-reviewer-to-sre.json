@@ -1,7 +1,7 @@
 {
   "id": "trace-reviewer-to-sre",
-  "producer": "cx-trace-reviewer",
-  "consumer": "cx-sre",
+  "producer": "cx-reviewer",
+  "consumer": "cx-operations",
   "trigger": {
     "trace.anomaly": true,
     "riskFlags": [

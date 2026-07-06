@@ -1,7 +1,7 @@
 {
   "id": "any-to-business-strategist",
   "producer": "*",
-  "consumer": "cx-business-strategist",
+  "consumer": "cx-product-manager",
   "trigger": {
     "strategy.required": true
   },

@@ -5,7 +5,7 @@ inputs: [code-diff, data-pipeline]
 artifactType: role-guidance
 role: data-engineer
 applies_to:
-  - cx-data-engineer
+  - cx-engineer
 inherits: engineer
 version: 2
 scopes:

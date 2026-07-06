@@ -36,7 +36,8 @@ test('capability describe --json returns a complete versioned contract', () => {
   const env = JSON.parse(res.stdout);
   assert.equal(env.surface, 'cli');
   assert.match(env.contractVersion, /^\d+\.\d+\.\d+$/);
-  assert.ok(env.data.roles.length >= 28);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.ok(env.data.roles.length >= 12);
   assert.ok(env.data.workflows.length >= 6, `expected at least the base workflow set, got ${env.data.workflows.length}`);
   assert.ok(env.data.skills.length > 0);
   assert.ok(env.data.policies.length > 0);

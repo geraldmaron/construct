@@ -1,7 +1,7 @@
 {
   "id": "any-to-trace-reviewer",
   "producer": "*",
-  "consumer": "cx-trace-reviewer",
+  "consumer": "cx-reviewer",
   "trigger": {
     "trace.anomaly": true
   },

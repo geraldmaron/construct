@@ -8,7 +8,15 @@
   "skills": [
     "docs/research-workflow",
     "devops/dependency-management",
-    "docs/transcript-synthesis"
+    "docs/transcript-synthesis",
+    "docs/codebase-research-workflow",
+    "exploration/repo-map",
+    "exploration/unknown-codebase-onboarding",
+    "exploration/tracer-bullet-method",
+    "exploration/dependency-graph-reading",
+    "docs/user-research-workflow",
+    "docs/evidence-ingest-workflow",
+    "strategy/jobs-to-be-done"
   ],
   "events": [
     "research.requested",
@@ -20,12 +28,20 @@
       "docs/research/**",
       ".cx/research/**",
       "docs/evidence-briefs/**",
-      "docs/signal-briefs/**"
+      "docs/signal-briefs/**",
+      "docs/explorations/**",
+      ".cx/explorations/**",
+      "docs/ux-research/**",
+      ".cx/ux-research/**"
     ],
     "allowedBdLabels": [
       "research",
       "evidence",
-      "investigation"
+      "investigation",
+      "exploration",
+      "spike",
+      "ux-research",
+      "user-research"
     ],
     "allowedCommands": [
       "bd create",
@@ -54,13 +70,29 @@
       "source freshness",
       "citation coverage",
       "dependency versions",
-      "conflicting evidence"
+      "conflicting evidence",
+      "codebase understanding",
+      "pattern discovery",
+      "dependency mapping",
+      "drift detection",
+      "user evidence freshness",
+      "friction points",
+      "persona coverage",
+      "research gaps"
     ],
     "riskSignals": [
       "undated sources",
       "unverified claims",
       "outdated dependencies",
-      "single-source conclusions"
+      "single-source conclusions",
+      "assumptions without verification",
+      "incomplete investigation",
+      "outdated mental models",
+      "undiscovered code paths",
+      "stale user data",
+      "untested assumptions about users",
+      "missing friction analysis",
+      "internal-only validation"
     ],
     "artifactBias": [
       "notes",
@@ -68,14 +100,15 @@
     ]
   },
   "canEdit": false,
-  "claudeTools": "Read,Grep,Glob,LS,WebSearch,WebFetch,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
+  "claudeTools": "Read,Grep,Glob,LS,Bash,WebSearch,WebFetch,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
   "liveWebAccess": true,
   "internal": true,
   "killSwitchEnv": "CONSTRUCT_ROLE_RESEARCHER",
   "handoffCandidates": [
     "product-manager",
     "architect",
-    "engineer"
+    "engineer",
+    "designer"
   ],
   "team": "research-team",
   "teamId": "research-team",

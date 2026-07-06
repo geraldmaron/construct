@@ -1,7 +1,7 @@
 {
   "id": "architect-to-legal-compliance",
   "producer": "cx-architect",
-  "consumer": "cx-legal-compliance",
+  "consumer": "cx-security",
   "trigger": {
     "riskFlags": [
       "compliance",

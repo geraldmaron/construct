@@ -29,12 +29,12 @@ test.beforeEach(() => {
   if (fs.existsSync(ep)) fs.unlinkSync(ep);
   if (fs.existsSync(pp)) fs.unlinkSync(pp);
   delete process.env.CONSTRUCT_ROLES;
-  delete process.env.CONSTRUCT_ROLE_SRE;
+  delete process.env.CONSTRUCT_ROLE_OPERATIONS;
   delete process.env.CONSTRUCT_ROLE_SECURITY;
 });
 
 test('severity-immediate escalates on first hit', () => {
-  const m = loadManifest('sre');
+  const m = loadManifest('operations');
   const e = bus.emit('service.down', { project: 'p', summary: 'postgres down' });
   const d = gw.shouldEscalate(e, m);
   assert.equal(d.escalate, true);
@@ -42,7 +42,7 @@ test('severity-immediate escalates on first hit', () => {
 });
 
 test('threshold requires N hits within window', () => {
-  const m = loadManifest('sre');
+  const m = loadManifest('operations');
   const e1 = bus.emit('push_gate.fail', { project: 'p', summary: 'fail' });
   let d = gw.shouldEscalate(e1, m);
   assert.equal(d.escalate, false);
@@ -55,11 +55,11 @@ test('threshold requires N hits within window', () => {
 });
 
 test('cooldown suppresses re-escalation of the same fingerprint', () => {
-  const m = loadManifest('sre');
+  const m = loadManifest('operations');
   const e = bus.emit('service.down', { project: 'p', summary: 'down' });
   fs.appendFileSync(
     gw._gatewayPaths.pendingPath(),
-    JSON.stringify({ ts: Date.now(), fingerprint: e.fingerprint, killSwitchEnv: 'CONSTRUCT_ROLE_SRE' }) + '\n'
+    JSON.stringify({ ts: Date.now(), fingerprint: e.fingerprint, killSwitchEnv: 'CONSTRUCT_ROLE_OPERATIONS' }) + '\n'
   );
   const d = gw.shouldEscalate(e, m);
   assert.equal(d.escalate, false);
@@ -67,12 +67,12 @@ test('cooldown suppresses re-escalation of the same fingerprint', () => {
 });
 
 test('rate ceiling prevents more than 3 escalations per persona per hour', () => {
-  const m = loadManifest('sre');
+  const m = loadManifest('operations');
   const now = Date.now();
   for (let i = 0; i < 3; i++) {
     fs.appendFileSync(
       gw._gatewayPaths.pendingPath(),
-      JSON.stringify({ ts: now - 1000 * i, fingerprint: `other-${i}`, killSwitchEnv: 'CONSTRUCT_ROLE_SRE' }) + '\n'
+      JSON.stringify({ ts: now - 1000 * i, fingerprint: `other-${i}`, killSwitchEnv: 'CONSTRUCT_ROLE_OPERATIONS' }) + '\n'
     );
   }
   const e = bus.emit('service.down', { project: 'p', summary: 'new failure' });
@@ -89,7 +89,7 @@ test('global kill switch bails before emission', async () => {
 });
 
 test('per-persona kill switch bails after emission, before bd', async () => {
-  process.env.CONSTRUCT_ROLE_SRE = 'off';
+  process.env.CONSTRUCT_ROLE_OPERATIONS = 'off';
   const r = await gw.recordAndMaybeInvoke('service.down', { project: 'p', summary: 'down' });
   assert.equal(r.recorded, true);
   assert.equal(r.escalated, false);
@@ -135,7 +135,7 @@ function writePending(entries) {
 
 test('listPending filters out unresolved entries older than the TTL', () => {
   const now = Date.now();
-  const fresh = { ts: now - 1000, personaId: 'sre', cxId: 'cx-sre', fingerprint: 'fresh', eventType: 'service.down', summary: 'recent' };
+  const fresh = { ts: now - 1000, personaId: 'operations', cxId: 'cx-operations', fingerprint: 'fresh', eventType: 'service.down', summary: 'recent' };
   const stale = { ts: now - 15 * 24 * 60 * 60 * 1000, personaId: 'security', cxId: 'cx-security', fingerprint: 'stale', eventType: 'secrets.detected', summary: 'old fixture' };
   writePending([fresh, stale]);
 

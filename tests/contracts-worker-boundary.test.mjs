@@ -43,9 +43,13 @@ test('invalid input packet blocks execution with CONTRACT_VIOLATION_INPUT and ne
   let providerCalled = false;
   const task = {
     role: 'cx-reviewer',
-    // engineer-to-reviewer input requires filesChanged, verificationChecklist,
-    // feasibilityAssessment, effortClass, debtNote, blastRadius — this packet
-    // is missing all but filesChanged.
+    // cx-reviewer has multiple incoming contracts since construct-rf26.11
+    // folded devil-advocate/evaluator/trace-reviewer into it, so an explicit
+    // inputContractId is required to disambiguate (see the ambiguous-role
+    // test below). engineer-to-reviewer input requires filesChanged,
+    // verificationChecklist, feasibilityAssessment, effortClass, debtNote,
+    // blastRadius — this packet is missing all but filesChanged.
+    inputContractId: 'engineer-to-reviewer',
     packet: { filesChanged: ['lib/foo.mjs'] },
   };
   const run = { request: { summary: 'review the change' } };
@@ -72,6 +76,9 @@ test('a conforming input packet passes validation and reaches the provider', asy
   const cwd = tempDir('cx-worker-boundary-input-ok-', test);
   const task = {
     role: 'cx-reviewer',
+    // See the note in the invalid-packet test above: cx-reviewer now has
+    // multiple incoming contracts post-construct-rf26.11, so this must be explicit.
+    inputContractId: 'engineer-to-reviewer',
     packet: {
       filesChanged: ['lib/foo.mjs'],
       verificationChecklist: ['ran tests'],

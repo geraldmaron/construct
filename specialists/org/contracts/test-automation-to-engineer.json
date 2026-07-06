@@ -1,6 +1,6 @@
 {
   "id": "test-automation-to-engineer",
-  "producer": "cx-test-automation",
+  "producer": "cx-qa",
   "consumer": "cx-engineer",
   "trigger": {
     "automation.required": true

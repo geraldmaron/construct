@@ -6,8 +6,6 @@ artifactType: guidance
 role: researcher
 applies_to:
   - cx-researcher
-  - cx-ux-researcher
-  - cx-explorer
 inherits: null
 version: 2
 scopes:

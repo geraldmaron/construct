@@ -1,7 +1,7 @@
 {
   "id": "architect-to-platform-engineer",
   "producer": "cx-architect",
-  "consumer": "cx-platform-engineer",
+  "consumer": "cx-engineer",
   "trigger": {
     "riskFlags": [
       "platform",

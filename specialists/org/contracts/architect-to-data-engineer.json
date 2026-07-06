@@ -1,7 +1,7 @@
 {
   "id": "architect-to-data-engineer",
   "producer": "cx-architect",
-  "consumer": "cx-data-engineer",
+  "consumer": "cx-engineer",
   "trigger": {
     "riskFlags": [
       "data",
