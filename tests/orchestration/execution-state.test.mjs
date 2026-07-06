@@ -14,10 +14,28 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 import { planRun, executeRun, runOrchestration, hostAdapterMetadata } from '../../lib/orchestration/runtime.mjs';
 import { saveRun } from '../../lib/orchestration/run-store.mjs';
 import { tempDir } from '../helpers.mjs';
+
+// Every runOrchestration/planRun/executeRun/saveRun call resolves its run
+// store through the machine-scoped state root (ADR-0066), which reads
+// CX_HOME_OVERRIDE/os.homedir() directly rather than the `env` option bag
+// passed to these calls. Pin it for the whole file so these runs never write
+// into the real developer machine's ~/.construct/projects/.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-exec-state-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };

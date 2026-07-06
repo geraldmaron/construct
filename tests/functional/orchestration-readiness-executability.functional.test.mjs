@@ -27,6 +27,20 @@ function freshCwd() {
 }
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {} } });
 
+// planRun resolves the run store through the machine-scoped state root
+// (ADR-0066), which reads CX_HOME_OVERRIDE from real process.env directly.
+// Pin it for the whole file so these runs never write into the real
+// developer machine's ~/.construct/projects/.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-readiness-exec-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
+
 const ATTACHED_INPUT = { observedTools: ['orchestration_policy', 'orchestration_run'] };
 
 test('no model resolvable on this env: readiness is non-PASS with a model reason code and an actionable next step', () => {

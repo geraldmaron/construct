@@ -24,6 +24,22 @@ after(() => {
   for (const dir of tmpDirs) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
+// buildIntakeDaemon() computes its heartbeat path eagerly at construction
+// time via resolveStatePath(cwd,'runtime','intake-daemon.heartbeat') —
+// machine-scoped state root (ADR-0066), reading CX_HOME_OVERRIDE from real
+// process.env directly. Pin it for the whole file so merely building a
+// daemon never writes into the real developer machine's
+// ~/.construct/projects/.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-r8wr7-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
+
 function makeProject() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-r8wr7-'));
   tmpDirs.push(dir);
