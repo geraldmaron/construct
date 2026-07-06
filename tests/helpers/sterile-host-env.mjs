@@ -86,6 +86,33 @@ export function fingerprintRealConfigs(home = homedir()) {
   return fp;
 }
 
+// Snapshot + diff variants for the whole-suite guard in scripts/run-tests.mjs:
+// beyond the pass/fail hash, they carry the raw project-key entry list so a
+// drift report can name exactly which keys appeared or vanished — the
+// attribution signal the per-test isolation work (construct-mtgs) needs to
+// find the leaking test, instead of an opaque "something changed".
+
+export function snapshotRealConfigs(home = homedir()) {
+  return {
+    fingerprint: fingerprintRealConfigs(home),
+    projectKeys: realConstructProjectKeys(home).split(",").filter(Boolean),
+  };
+}
+
+export function diffRealConfigs(beforeSnapshot, home = homedir()) {
+  const after = snapshotRealConfigs(home);
+  const drifted = Object.keys(beforeSnapshot.fingerprint).filter(
+    (k) => beforeSnapshot.fingerprint[k] !== after.fingerprint[k],
+  );
+  const beforeKeys = new Set(beforeSnapshot.projectKeys);
+  const afterKeys = new Set(after.projectKeys);
+  return {
+    drifted,
+    addedProjectKeys: [...afterKeys].filter((k) => !beforeKeys.has(k)),
+    removedProjectKeys: [...beforeKeys].filter((k) => !afterKeys.has(k)),
+  };
+}
+
 // A node-based `ollama` stub that emits the exact text shapes provision-context
 // parses (list table, `show` Model/Capabilities/Parameters blocks) and records
 // `create` into a sandbox state file — so provisioning logic runs end to end
