@@ -27,7 +27,11 @@
     "Blast radius assessed before remediation"
   ],
   "postconditions": [
-    "Blameless postmortem; no tickets in Problem statement"
+    {
+      "id": "any-to-sre-incident-pc-0-blameless-postmortem-no-tickets-in-problem",
+      "description": "Blameless postmortem; no tickets in Problem statement",
+      "postconditionType": "advisory"
+    }
   ],
   "description": ""
 }

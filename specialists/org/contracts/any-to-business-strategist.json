@@ -27,30 +27,42 @@
     "Strategy documents in `.cx/knowledge/decisions/strategy/` reviewed for declared Bets and Non-bets"
   ],
   "postconditions": [
-    "Options section contains 2-4 genuinely distinct strategic paths, not implementation variants",
-    "Any recommendation that contradicts a declared Non-bet is surfaced explicitly with a user-decision marker",
+    {
+      "id": "any-to-business-strategist-pc-0-options-section-contains-2-4-genuinely",
+      "description": "Options section contains 2-4 genuinely distinct strategic paths, not implementation variants",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "any-to-business-strategist-pc-1-any-recommendation-that-contradicts-a-declared",
+      "description": "Any recommendation that contradicts a declared Non-bet is surfaced explicitly with a user-decision marker",
+      "postconditionType": "advisory"
+    },
     {
       "id": "strategic-memo-has-market-context",
       "description": "Strategic memo must contain a Market Context section",
       "check": "artifact-has-section",
-      "section": "Market Context"
+      "section": "Market Context",
+      "postconditionType": "executable"
     },
     {
       "id": "strategic-memo-options-nonempty",
       "description": "Strategic memo Options section is present and non-empty",
       "check": "artifact-section-nonempty",
-      "section": "Options"
+      "section": "Options",
+      "postconditionType": "executable"
     },
     {
       "id": "strategic-memo-has-strategic-risks",
       "description": "Strategic memo must contain a Strategic Risks section",
       "check": "artifact-has-section",
-      "section": "Strategic Risks"
+      "section": "Strategic Risks",
+      "postconditionType": "executable"
     },
     {
       "id": "strategic-memo-claims-cited",
       "description": "Every market/competitive numeric claim cites a primary source with a date",
-      "check": "artifact-claims-cited"
+      "check": "artifact-claims-cited",
+      "postconditionType": "executable"
     }
   ],
   "description": ""

@@ -31,12 +31,22 @@
     "Success definition stated in writing before metric design begins"
   ],
   "postconditions": [
-    "Every percentage, multiplier, or magnitude cites the query, dashboard, or run that produced it",
-    "Baseline is a measured value or names the plan to establish one",
+    {
+      "id": "product-manager-to-data-analyst-pc-0-every-percentage-multiplier-or-magnitude-cites",
+      "description": "Every percentage, multiplier, or magnitude cites the query, dashboard, or run that produced it",
+      "postconditionType": "executable",
+      "check": "artifact-claims-cited"
+    },
+    {
+      "id": "product-manager-to-data-analyst-pc-1-baseline-is-a-measured-value-or",
+      "description": "Baseline is a measured value or names the plan to establish one",
+      "postconditionType": "advisory"
+    },
     {
       "id": "metrics-analysis-claims-cited",
       "description": "Every numeric claim in the analysis cites the query or dashboard",
-      "check": "artifact-claims-cited"
+      "check": "artifact-claims-cited",
+      "postconditionType": "executable"
     }
   ],
   "description": "",

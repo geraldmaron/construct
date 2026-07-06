@@ -25,8 +25,16 @@
     "Hypothesis cleared of unverified assumptions"
   ],
   "postconditions": [
-    "ADR cites the framing brief as the upstream source for its Problem statement",
-    "Architect does not productionize components listed under 'WHAT NOT TO PRODUCTIONIZE YET'"
+    {
+      "id": "rd-lead-to-architect-pc-0-adr-cites-the-framing-brief-as",
+      "description": "ADR cites the framing brief as the upstream source for its Problem statement",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "rd-lead-to-architect-pc-1-architect-does-not-productionize-components-listed",
+      "description": "Architect does not productionize components listed under 'WHAT NOT TO PRODUCTIONIZE YET'",
+      "postconditionType": "advisory"
+    }
   ],
   "description": "",
   "teamBoundary": {

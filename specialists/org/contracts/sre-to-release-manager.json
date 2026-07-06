@@ -30,7 +30,11 @@
     "Runbook exists for the new code path; rollback procedure verified"
   ],
   "postconditions": [
-    "On-call briefed; alert thresholds set"
+    {
+      "id": "sre-to-release-manager-pc-0-on-call-briefed-alert-thresholds-set",
+      "description": "On-call briefed; alert thresholds set",
+      "postconditionType": "advisory"
+    }
   ],
   "description": ""
 }

@@ -27,8 +27,16 @@
     "Source classes tagged (internal/primary/secondary/tertiary)"
   ],
   "postconditions": [
-    "Architect's ADR cites the primary sources provided",
-    "Any conflicting evidence surfaced, not suppressed"
+    {
+      "id": "researcher-to-architect-pc-0-architect-s-adr-cites-the-primary",
+      "description": "Architect's ADR cites the primary sources provided",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "researcher-to-architect-pc-1-any-conflicting-evidence-surfaced-not-suppressed",
+      "description": "Any conflicting evidence surfaced, not suppressed",
+      "postconditionType": "advisory"
+    }
   ],
   "description": "",
   "teamBoundary": {

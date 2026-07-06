@@ -26,8 +26,16 @@
     "Strategic memo signed off; recommended option carried into PRD framing"
   ],
   "postconditions": [
-    "PRD Problem statement traces to the strategic memo's market context, not to internal roadmap items",
-    "PRD acknowledges the competitive dynamic named in the strategic memo"
+    {
+      "id": "business-strategist-to-product-manager-pc-0-prd-problem-statement-traces-to-the",
+      "description": "PRD Problem statement traces to the strategic memo's market context, not to internal roadmap items",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "business-strategist-to-product-manager-pc-1-prd-acknowledges-the-competitive-dynamic-named",
+      "description": "PRD acknowledges the competitive dynamic named in the strategic memo",
+      "postconditionType": "advisory"
+    }
   ],
   "description": "",
   "teamBoundary": {

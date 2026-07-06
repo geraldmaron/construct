@@ -34,19 +34,29 @@
     "Baseline run identified or scheduled before proposed change runs"
   ],
   "postconditions": [
-    "Failing case is defined before results are seen",
-    "Regression checks enumerated; not just success-path test cases",
+    {
+      "id": "architect-to-evaluator-pc-0-failing-case-is-defined-before-results",
+      "description": "Failing case is defined before results are seen",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "architect-to-evaluator-pc-1-regression-checks-enumerated-not-just-success",
+      "description": "Regression checks enumerated; not just success-path test cases",
+      "postconditionType": "advisory"
+    },
     {
       "id": "eval-spec-has-success-criteria",
       "description": "Eval spec must contain a Success Criteria section",
       "check": "artifact-has-section",
-      "section": "Success Criteria"
+      "section": "Success Criteria",
+      "postconditionType": "executable"
     },
     {
       "id": "eval-spec-has-baseline",
       "description": "Eval spec must contain a Baseline section",
       "check": "artifact-has-section",
-      "section": "Baseline"
+      "section": "Baseline",
+      "postconditionType": "executable"
     }
   ],
   "description": "",

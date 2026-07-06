@@ -26,9 +26,23 @@
     "Implementation or decision is marked DONE"
   ],
   "postconditions": [
-    "Cross-doc coherence preserved (PRD ↔ ADR ↔ code)",
-    "AUTO-managed regions regenerated via construct sync",
-    "crossDocCoherenceCheckRan=true with a named coherenceDiff — prevents stale-doc PRs that claim 'docs updated' without a real diff"
+    {
+      "id": "any-to-docs-keeper-pc-0-cross-doc-coherence-preserved-prd-adr",
+      "description": "Cross-doc coherence preserved (PRD ↔ ADR ↔ code)",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "any-to-docs-keeper-pc-1-auto-managed-regions-regenerated-via-construct",
+      "description": "AUTO-managed regions regenerated via construct sync",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "any-to-docs-keeper-pc-2-crossdoccoherencecheckran-true-with-a-named-coherencediff",
+      "description": "crossDocCoherenceCheckRan=true with a named coherenceDiff — prevents stale-doc PRs that claim 'docs updated' without a real diff",
+      "postconditionType": "executable",
+      "enforcedVia": "binary-postcondition",
+      "enforcedBy": "docs-keeper.cross-doc-coherence-check-ran"
+    }
   ],
   "description": ""
 }

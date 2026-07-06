@@ -23,8 +23,16 @@
     "Session bootstrap completed: project_context and memory_search called, plus relevant repo docs read as needed"
   ],
   "postconditions": [
-    "Intent classified; work category tagged",
-    "Route decision surfaced as a single-sentence plan"
+    {
+      "id": "user-to-construct-pc-0-intent-classified-work-category-tagged",
+      "description": "Intent classified; work category tagged",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "user-to-construct-pc-1-route-decision-surfaced-as-a-single",
+      "description": "Route decision surfaced as a single-sentence plan",
+      "postconditionType": "advisory"
+    }
   ],
   "description": ""
 }

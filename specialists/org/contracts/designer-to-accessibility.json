@@ -29,8 +29,16 @@
     "Flow exercised with a keyboard and a screen reader; not just spec-read"
   ],
   "postconditions": [
-    "Every finding cites a WCAG criterion and a concrete repro step",
-    "Findings that weren't exercised with the assistive technology are labeled 'unverified'"
+    {
+      "id": "designer-to-accessibility-pc-0-every-finding-cites-a-wcag-criterion",
+      "description": "Every finding cites a WCAG criterion and a concrete repro step",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "designer-to-accessibility-pc-1-findings-that-weren-t-exercised-with",
+      "description": "Findings that weren't exercised with the assistive technology are labeled 'unverified'",
+      "postconditionType": "advisory"
+    }
   ],
   "description": ""
 }
