@@ -3,6 +3,11 @@
  *
  * shouldEscalate is pure (reads events + pending files but no network). Tests
  * isolate via CONSTRUCT_ROLES_ROOT and reset state between tests.
+ *
+ * Any test that can reach createBdIncident() MUST inject fakeRunBd() (construct-y4iv)
+ * -- CONSTRUCT_ROLES_ROOT only isolates the dedup-fingerprint files, not the bd
+ * client, so an uninjected escalation path still hits the real shared bd/dolt
+ * database.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -15,6 +20,13 @@ import { tempDir } from '../helpers.mjs';
 let bus;
 let gw;
 let loadManifest;
+
+function fakeRunBd(calls) {
+  return async (args) => {
+    calls.push(args);
+    return { success: true, output: 'Created issue: fake-0001' };
+  };
+}
 
 test.before(async () => {
   process.env.CONSTRUCT_ROLES_ROOT = tempDir('construct-roles-gw-');
@@ -83,24 +95,50 @@ test('rate ceiling prevents more than 3 escalations per persona per hour', () =>
 
 test('global kill switch bails before emission', async () => {
   process.env.CONSTRUCT_ROLES = 'off';
-  const r = await gw.recordAndMaybeInvoke('service.down', { project: 'p', summary: 'down' });
+  const calls = [];
+  const r = await gw.recordAndMaybeInvoke('service.down', { project: 'p', summary: 'down' }, { runBd: fakeRunBd(calls) });
   assert.equal(r.recorded, false);
   assert.equal(r.reason, 'global-off');
+  assert.equal(calls.length, 0, 'bd client must not be called');
 });
 
 test('per-persona kill switch bails after emission, before bd', async () => {
   process.env.CONSTRUCT_ROLE_OPERATIONS = 'off';
-  const r = await gw.recordAndMaybeInvoke('service.down', { project: 'p', summary: 'down' });
+  const calls = [];
+  const r = await gw.recordAndMaybeInvoke('service.down', { project: 'p', summary: 'down' }, { runBd: fakeRunBd(calls) });
   assert.equal(r.recorded, true);
   assert.equal(r.escalated, false);
   assert.equal(r.reason, 'persona-off');
+  assert.equal(calls.length, 0, 'bd client must not be called');
 });
 
 test('unrouted events are recorded but not escalated', async () => {
-  const r = await gw.recordAndMaybeInvoke('unknown.event', { project: 'p', summary: 'huh' });
+  const calls = [];
+  const r = await gw.recordAndMaybeInvoke('unknown.event', { project: 'p', summary: 'huh' }, { runBd: fakeRunBd(calls) });
   assert.equal(r.recorded, true);
   assert.equal(r.escalated, false);
   assert.equal(r.reason, 'no-owner');
+  assert.equal(calls.length, 0, 'bd client must not be called');
+});
+
+// construct-y4iv: any escalation path that reaches createBdIncident() must
+// go through the injected bd client, not the real one, or every run of this
+// suite files a duplicate bead in the shared bd/dolt store. fakeRunBd proves
+// the path executes end to end (calls.length === 1) while the real
+// lib/beads-client.mjs runBd is never invoked.
+
+test('severity-immediate escalation reaches bd via the injected client only, never the real one', async () => {
+  const calls = [];
+  const r = await gw.recordAndMaybeInvoke(
+    'service.down',
+    { project: 'p', summary: 'postgres down' },
+    { runBd: fakeRunBd(calls) }
+  );
+  assert.equal(r.recorded, true);
+  assert.equal(r.escalated, true);
+  assert.equal(r.bdIssueId, 'fake-0001');
+  assert.equal(calls.length, 1, 'the injected fake bd client must be called exactly once');
+  assert.equal(calls[0][0], 'create');
 });
 
 test('events from OS tmpdir paths are not escalated (test-fixture filter)', () => {
