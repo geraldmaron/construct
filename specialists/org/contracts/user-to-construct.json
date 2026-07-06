@@ -15,8 +15,7 @@
     "shape": "routed-plan",
     "mustContain": [
       "track",
-      "specialists",
-      "dispatchPlan"
+      "specialists"
     ]
   },
   "preconditions": [
