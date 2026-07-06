@@ -11,11 +11,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import { spawnSync } from 'node:child_process';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
+
+const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-ux-home-'));
+after(() => fs.rmSync(SANDBOX_HOME, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
 
 function freshProject(scopeId = 'rnd') {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-ux-'));
@@ -26,7 +29,7 @@ function freshProject(scopeId = 'rnd') {
 function run(args, { cwd, env = {} } = {}) {
   return spawnSync('node', [BIN, ...args], {
     cwd,
-    env: { ...process.env, CX_TOOLKIT_DIR: REPO, ...env },
+    env: { ...process.env, CX_TOOLKIT_DIR: REPO, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME, ...env },
     encoding: 'utf8',
   });
 }

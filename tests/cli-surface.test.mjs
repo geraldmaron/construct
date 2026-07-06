@@ -45,9 +45,11 @@ test('construct search uses the current working directory as project scope', () 
 });
 
 test('construct evals exposes evaluator catalog', () => {
+  const homeDir = tempDir('construct-evals-home-');
   const out = execFileSync(process.execPath, [BIN, 'evals', '--json'], {
     cwd: ROOT,
     encoding: 'utf8',
+    env: { ...process.env, HOME: homeDir, CX_HOME_OVERRIDE: homeDir },
   });
 
   const json = JSON.parse(out);
@@ -56,9 +58,11 @@ test('construct evals exposes evaluator catalog', () => {
 });
 
 test('construct help includes core commands by default', () => {
+  const homeDir = tempDir('construct-help-home-');
   const out = execFileSync(process.execPath, [BIN, '--help'], {
     cwd: ROOT,
     encoding: 'utf8',
+    env: { ...process.env, HOME: homeDir, CX_HOME_OVERRIDE: homeDir },
   });
 
   // Core commands should be visible
@@ -68,9 +72,11 @@ test('construct help includes core commands by default', () => {
 });
 
 test('construct help --all includes advanced commands', () => {
+  const homeDir = tempDir('construct-help-all-home-');
   const out = execFileSync(process.execPath, [BIN, '--help', '--all'], {
     cwd: ROOT,
     encoding: 'utf8',
+    env: { ...process.env, HOME: homeDir, CX_HOME_OVERRIDE: homeDir },
   });
 
   // Advanced commands should only be visible with --all
@@ -79,9 +85,11 @@ test('construct help --all includes advanced commands', () => {
 });
 
 test('construct completions bash prints a bash completion script', () => {
+  const homeDir = tempDir('construct-completions-bash-home-');
   const out = execFileSync(process.execPath, [BIN, 'completions', 'bash'], {
     cwd: ROOT,
     encoding: 'utf8',
+    env: { ...process.env, HOME: homeDir, CX_HOME_OVERRIDE: homeDir },
   });
 
   assert.match(out, /bash completion for construct/);
@@ -93,6 +101,7 @@ test('construct completions bash prints a bash completion script', () => {
 // _describe block (zsh); a leak there breaks the cli-commands.mjs visibility
 // contract, which is how all 15 internals once surfaced in completions.
 test('completions hide internal commands and keep public ones', async () => {
+  const homeDir = tempDir('construct-completions-hide-home-');
   const { CLI_COMMANDS } = await import('../lib/cli-commands.mjs');
   const internal = CLI_COMMANDS.filter((c) => c.internal);
   const pub = CLI_COMMANDS.filter((c) => !c.internal);
@@ -100,7 +109,7 @@ test('completions hide internal commands and keep public ones', async () => {
 
   // bash: candidates are the space-separated tokens in `commands="…"` — exact
   // membership, colon-names like `claude:allow` are intact tokens.
-  const bash = execFileSync(process.execPath, [BIN, 'completions', 'bash'], { cwd: ROOT, encoding: 'utf8' });
+  const bash = execFileSync(process.execPath, [BIN, 'completions', 'bash'], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, HOME: homeDir, CX_HOME_OVERRIDE: homeDir } });
   const bashCandidates = new Set((bash.match(/commands="([^"]*)"/)?.[1] ?? '').split(/\s+/).filter(Boolean));
   for (const cmd of internal) {
     assert.ok(!bashCandidates.has(cmd.name), `bash: internal command "${cmd.name}" must not be a completion candidate`);
@@ -113,7 +122,7 @@ test('completions hide internal commands and keep public ones', async () => {
   // _describe block; subcommand entries sit at deeper indent. Command names can
   // contain colons, so test for the literal top-level entry rather than parsing
   // the name back out of an ambiguous `name:desc` string.
-  const zsh = execFileSync(process.execPath, [BIN, 'completions', 'zsh'], { cwd: ROOT, encoding: 'utf8' });
+  const zsh = execFileSync(process.execPath, [BIN, 'completions', 'zsh'], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, HOME: homeDir, CX_HOME_OVERRIDE: homeDir } });
   const zshTopLevel = (name) => zsh.includes(`\n    '${name}:`);
   for (const cmd of internal) {
     assert.ok(!zshTopLevel(cmd.name), `zsh: internal command "${cmd.name}" must not be a completion candidate`);
@@ -145,11 +154,13 @@ test('sync --quiet suppresses the summary line but still does the work', () => {
 
 test('construct beads status reports lock state for a local beads directory', () => {
   const projectDir = tempDir('construct-cli-beads-');
+  const homeDir = tempDir('construct-cli-beads-home-');
   fs.mkdirSync(path.join(projectDir, '.beads', 'embeddeddolt'), { recursive: true });
 
   const out = execFileSync(process.execPath, [BIN, 'beads', 'status'], {
     cwd: projectDir,
     encoding: 'utf8',
+    env: { ...process.env, HOME: homeDir, CX_HOME_OVERRIDE: homeDir },
   });
 
   assert.match(out, /No lock held|Lock held by/);

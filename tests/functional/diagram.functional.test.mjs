@@ -22,12 +22,27 @@ import { locateRenderer } from '../../lib/diagram.mjs';
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
 
+// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// process.env directly, so every spawned `construct` needs its own sandboxed
+// HOME to avoid leaking test projects into the real developer machine's
+// ~/.construct/projects/.
+
+const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'diagram-home-'));
+process.on('exit', () => fs.rmSync(SANDBOX_HOME, { recursive: true, force: true }));
+
 function run(args, cwd) {
   return spawnSync(BIN, args, {
     cwd,
     encoding: 'utf8',
     timeout: 90_000,
-    env: { ...process.env, CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1', CONSTRUCT_DISABLE_AUTO_CLEANUP: '1' },
+    env: {
+      ...process.env,
+      CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
+      BOOTSTRAP_CHECKED: '1',
+      CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
+      HOME: SANDBOX_HOME,
+      CX_HOME_OVERRIDE: SANDBOX_HOME,
+    },
   });
 }
 

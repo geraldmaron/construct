@@ -35,6 +35,14 @@ function freshRoot() {
   tmpDirs.push(dir);
   return dir;
 }
+
+// The spawned `construct pack` binary resolves the machine-scoped state root
+// (ADR-0066) from process.env.CX_HOME_OVERRIDE / HOME in its own process, so
+// every spawn below must be pinned to a throwaway home or it leaks a project-key
+// directory into the real developer machine's ~/.construct/projects/.
+const HOME_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-pack-lifecycle-home-'));
+tmpDirs.push(HOME_DIR);
+
 after(() => {
   for (const dir of tmpDirs) {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
@@ -136,7 +144,12 @@ test('loadEnabledPacks filters loadAllPacks to core + explicitly enabled packs',
 });
 
 function run(args, { cwd }) {
-  return spawnSync('node', [BIN, 'pack', ...args], { cwd, encoding: 'utf8', timeout: 30_000 });
+  return spawnSync('node', [BIN, 'pack', ...args], {
+    cwd,
+    encoding: 'utf8',
+    timeout: 30_000,
+    env: { ...process.env, HOME: HOME_DIR, CX_HOME_OVERRIDE: HOME_DIR },
+  });
 }
 
 test('construct pack list|enable|disable|info work end-to-end against the real binary', () => {

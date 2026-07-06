@@ -7,6 +7,7 @@
  */
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { join, dirname, resolve } from 'node:path';
@@ -18,6 +19,14 @@ import test from 'node:test';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
 const DOCS_ROOT = join(REPO_ROOT, 'docs');
+
+// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// process.env directly, so the spawned `construct` needs its own sandboxed
+// HOME to avoid registering this repo under the real developer machine's
+// ~/.construct/projects/.
+
+const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'docs-site-check-home-'));
+process.on('exit', () => fs.rmSync(SANDBOX_HOME, { recursive: true, force: true }));
 
 const MDX_COMPONENT_NAMES = [
   'FlowPipeline', 'RequestFlow', 'SyncGrid', 'AgentGrid', 'DeployModes',
@@ -86,6 +95,7 @@ test('release gate: construct docs:site --check reports no drift', () => {
     cwd: REPO_ROOT,
     encoding: 'utf8',
     timeout: 120_000,
+    env: { ...process.env, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME },
   });
   assert.equal(result.status, 0, `docs:site --check exited ${result.status}; stdout: ${result.stdout}`);
 });

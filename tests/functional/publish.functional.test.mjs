@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import { spawnSync } from 'node:child_process';
 import { detectPublishPipeline } from '../../lib/publish-tooling.mjs';
 import { runPublish, formatGateFailureMessage } from '../../lib/publish.mjs';
@@ -17,6 +17,9 @@ const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..',
 const BIN = path.join(REPO, 'bin', 'construct');
 const STUB = path.join(REPO, 'tests', 'fixtures', 'publish', 'agentic-platforms-stub.md');
 const GOLDEN = path.join(REPO, 'tests', 'fixtures', 'publish', 'golden-prd-platform.md');
+
+const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'publish-home-'));
+after(() => fs.rmSync(SANDBOX_HOME, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
 
 function run(args, cwd, env = {}) {
   return spawnSync(BIN, args, {
@@ -28,6 +31,8 @@ function run(args, cwd, env = {}) {
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
+      HOME: SANDBOX_HOME,
+      CX_HOME_OVERRIDE: SANDBOX_HOME,
       ...env,
     },
   });

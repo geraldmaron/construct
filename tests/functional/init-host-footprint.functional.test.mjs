@@ -24,6 +24,7 @@ const BIN = join(REPO_ROOT, 'bin', 'construct');
 
 function initProject() {
   const dir = mkdtempSync(join(tmpdir(), 'init-host-footprint-'));
+  const home = mkdtempSync(join(tmpdir(), 'init-host-footprint-home-'));
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: dir });
   spawnSync('git', ['config', 'user.email', 'footprint@example.com'], { cwd: dir });
   spawnSync('git', ['config', 'user.name', 'Footprint Test'], { cwd: dir });
@@ -34,15 +35,24 @@ function initProject() {
       cwd: dir,
       encoding: 'utf8',
       timeout: 120_000,
-      env: { ...process.env, CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' },
+      env: {
+        ...process.env,
+        CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
+        BOOTSTRAP_CHECKED: '1',
+        HOME: home,
+        CX_HOME_OVERRIDE: home,
+      },
     },
   );
-  return { dir, result };
+  return { dir, home, result };
 }
 
 test('construct init produces a host footprint that does not conflate Construct with the project', (t) => {
-  const { dir, result } = initProject();
-  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const { dir, home, result } = initProject();
+  t.after(() => {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  });
   assert.equal(result.status, 0, `init exited ${result.status}: ${result.stderr}`);
 
   // construct_guide.md: dot-scoped, never at the repo root.

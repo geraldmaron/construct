@@ -25,6 +25,14 @@ const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..',
 const BIN = path.join(REPO, 'bin', 'construct');
 const SCHEMA_PATH = path.join(REPO, 'schemas', 'project-demo.schema.json');
 
+// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// process.env directly, so every spawned `construct` needs its own sandboxed
+// HOME to avoid leaking test projects into the real developer machine's
+// ~/.construct/projects/.
+
+const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-plugin-home-'));
+process.on('exit', () => fs.rmSync(SANDBOX_HOME, { recursive: true, force: true }));
+
 // A dependency-free conformance check driven by the real schema file: Construct
 // keeps no ajv at startup (lib/demo-project.mjs validates by hand), and ajv is
 // only a transitive dependency here, so the test enforces the schema's own
@@ -60,7 +68,14 @@ function run(args, cwd) {
     cwd,
     encoding: 'utf8',
     timeout: 60_000,
-    env: { ...process.env, CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1', CONSTRUCT_DISABLE_AUTO_CLEANUP: '1' },
+    env: {
+      ...process.env,
+      CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
+      BOOTSTRAP_CHECKED: '1',
+      CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
+      HOME: SANDBOX_HOME,
+      CX_HOME_OVERRIDE: SANDBOX_HOME,
+    },
   });
 }
 
