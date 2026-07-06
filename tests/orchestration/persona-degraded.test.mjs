@@ -22,7 +22,7 @@ import path from 'node:path';
 
 import { runTaskViaProvider, _resetPackRegistryCache } from '../../lib/orchestration/worker.mjs';
 import { planRun, executeRun } from '../../lib/orchestration/runtime.mjs';
-import { saveRun } from '../../lib/orchestration/run-store.mjs';
+import { saveRun, runtimeDir } from '../../lib/orchestration/run-store.mjs';
 import { buildStatus, formatStatusReport } from '../../lib/status.mjs';
 import { traceDir as resolveTraceDir } from '../../lib/worker/trace.mjs';
 import { tempDir } from '../helpers.mjs';
@@ -206,10 +206,13 @@ async function silentProbeService() {
   return { status: 'unavailable', message: 'test stub' };
 }
 
+// Writes through saveRun (lib/orchestration/run-store.mjs) so the fixture
+// lands wherever the real writer resolves it — the machine-scoped state root
+// (ADR-0066), not a hardcoded project-relative path — keeping this fixture
+// from drifting out of sync with the production write path it stands in for.
+
 function writeOrchestrationRun(cwd, run) {
-  const dir = path.join(cwd, '.cx', 'runtime', 'orchestration', 'runs');
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, `${run.runId}.json`), JSON.stringify(run, null, 2));
+  saveRun(cwd, run);
 }
 
 test('buildStatus: personaDegradedRuns is zero when no run carries a persona fallback', async () => {
@@ -253,7 +256,7 @@ test('buildStatus: personaDegradedRuns counts multiple degraded runs independent
 
 test('buildStatus: a corrupt run file is skipped, not fatal to the count', async () => {
   const { rootDir, homeDir, cwd } = await statusFixture();
-  const dir = path.join(cwd, '.cx', 'runtime', 'orchestration', 'runs');
+  const dir = path.join(runtimeDir(cwd), 'runs');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'run-broken.json'), 'not-json{{{');
   writeOrchestrationRun(cwd, {

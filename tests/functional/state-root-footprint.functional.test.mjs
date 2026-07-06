@@ -5,7 +5,10 @@
  * `construct init` produces a project tree with no heavy state directories
  * under `.cx/`, and an operation that would normally write traces or
  * orchestration runs instead lands under the machine-scoped state root at
- * `~/.construct/projects/<key>/`. Also covers `construct doctor` flagging
+ * `~/.construct/projects/<key>/`. Also covers `construct status` reading a
+ * persisted orchestration run back from that same state root (pinning the
+ * split-brain regression where a reader duplicated the writer's
+ * project-relative path independently of it) and `construct doctor` flagging
  * legacy in-project heavy state left over from a pre-refit install.
  *
  * HOME and CX_HOME_OVERRIDE are both pinned to a disposable tmp dir for every
@@ -134,6 +137,67 @@ test('a trace write after init lands under the machine-scoped state root, not .c
   assert.equal(shardFiles.length, 1, `expected exactly one trace shard; got ${shardFiles.join(', ')}`);
   const [line] = readFileSync(join(stateTracesDir, shardFiles[0]), 'utf8').trim().split('\n');
   assert.match(line, /"probe":true/);
+});
+
+test('construct status reads a persisted orchestration run back from the state root, not .cx/runtime', (t) => {
+  const { project, home, cleanup } = makeFixture();
+  t.after(cleanup);
+
+  const initEnv = isolationEnv(home, { CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' });
+  const initResult = spawnSync(process.execPath, [BIN, 'init', '--yes', '--no-start'], {
+    cwd: project,
+    encoding: 'utf8',
+    timeout: 120_000,
+    env: initEnv,
+  });
+  assert.equal(initResult.status, 0, `init exited ${initResult.status}: ${initResult.stderr}`);
+
+  const runStoreModuleUrl = pathToFileURL(join(REPO_ROOT, 'lib', 'orchestration', 'run-store.mjs')).href;
+  const script = join(project, '_save-run.mjs');
+  writeFileSync(
+    script,
+    `import { saveRun } from ${JSON.stringify(runStoreModuleUrl)};\n`
+    + `saveRun(process.cwd(), {\n`
+    + `  runId: 'run-fixture-degraded-1',\n`
+    + `  createdAt: new Date().toISOString(),\n`
+    + `  status: 'degraded',\n`
+    + `  executionState: 'degraded-executed',\n`
+    + `  tasks: [{ id: 't1', personaAvailable: false, degraded: 'persona-fallback' }],\n`
+    + `});\n`
+    + `process.stdout.write('ok');\n`,
+  );
+  const saveEnv = isolationEnv(home);
+  const saveResult = spawnSync(process.execPath, [script], { cwd: project, encoding: 'utf8', env: saveEnv });
+  assert.equal(saveResult.status, 0, `saveRun failed: ${saveResult.stderr}`);
+
+  // The run file never touches the project tree.
+
+  assert.equal(existsSync(join(project, '.cx', 'runtime')), false, '.cx/runtime/ must not be created by the write');
+
+  const key = deriveProjectKey(project);
+  const stateRunsDir = join(home, '.construct', 'projects', key, 'runtime', 'orchestration', 'runs');
+  assert.ok(existsSync(join(stateRunsDir, 'run-fixture-degraded-1.json')), `expected run file under ${stateRunsDir}`);
+  assertPathUnderRoot(stateRunsDir, home, 'orchestration run store directory');
+
+  // `construct status` reads the same directory back — it must surface the
+  // persona-fallback run and its executionState, not report zero runs (the
+  // split-brain regression this test pins: a reader duplicating the writer's
+  // path outside lib/orchestration/run-store.mjs's runtimeDir()).
+
+  const statusEnv = isolationEnv(home, { CONSTRUCT_SKIP_POSTINSTALL: '1' });
+  const statusResult = spawnSync(process.execPath, [BIN, 'status', '--json'], {
+    cwd: project,
+    encoding: 'utf8',
+    timeout: 90_000,
+    env: statusEnv,
+  });
+  assert.equal(statusResult.status, 0, `status exited ${statusResult.status}: ${statusResult.stderr}`);
+  const status = JSON.parse(statusResult.stdout);
+
+  assert.equal(status.personaDegradedRuns.total, 1, `expected one persona-degraded run; got ${JSON.stringify(status.personaDegradedRuns)}`);
+  assert.ok(status.personaDegradedRuns.runs.includes('run-fixture-degraded-1'));
+  assert.equal(status.recentRunExecutionStates.total, 1, `expected one recent run; got ${JSON.stringify(status.recentRunExecutionStates)}`);
+  assert.equal(status.recentRunExecutionStates.byState['degraded-executed'], 1);
 });
 
 test('construct doctor flags legacy in-project heavy state left over from a pre-refit install', (t) => {
