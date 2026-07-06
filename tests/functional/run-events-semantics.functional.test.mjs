@@ -22,8 +22,23 @@ import { fileURLToPath } from 'node:url';
 
 import { runOrchestration } from '../../lib/orchestration/runtime.mjs';
 import { onRunEvent } from '../../lib/orchestration/events.mjs';
+import { traceDir as resolveTraceDir } from '../../lib/worker/trace.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+// Trace reads resolve through the machine-scoped state root (ADR-0066) via
+// process.env.CX_HOME_OVERRIDE directly, not through the `env` option passed
+// to runOrchestration below, so CX_HOME_OVERRIDE is pinned for the whole file
+// to keep trace writes off the real developer machine's $HOME.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-run-events-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 function tmpProject() {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-run-events-'));
@@ -32,7 +47,7 @@ function tmpProject() {
 }
 
 function readTraceCompletedEvents(cwd) {
-  const dir = path.join(cwd, '.cx', 'traces');
+  const dir = resolveTraceDir(cwd);
   if (!fs.existsSync(dir)) return [];
   const events = [];
   for (const f of fs.readdirSync(dir)) {

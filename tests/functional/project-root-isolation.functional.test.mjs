@@ -16,6 +16,7 @@ import test from 'node:test';
 
 import { packageRoot, resolveProjectRoot } from '../../lib/roots.mjs';
 import { buildRuntimeRecoverySummary, startServices } from '../../lib/service-manager.mjs';
+import { resolveStateDir } from '../../lib/state-root.mjs';
 
 test('resolveProjectRoot returns the supplied cwd unchanged (resolved)', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-root-isolation-'));
@@ -109,16 +110,24 @@ test('buildRuntimeRecoverySummary with rootDir=packageRoot does NOT pick up tmpD
   }
 });
 
-test('telemetry url from startServices uses rootDir, not packageRoot', async () => {
+test('telemetry url from startServices uses the machine-scoped state root, not packageRoot', async () => {
   // Calls the real startServices with an isolated rootDir/homeDir and injected
   // probes/spawners (its designed test seams) so no real process is spawned.
   // startDoctor/startOracle have no injection seam, so CONSTRUCT_DOCTOR and
   // CONSTRUCT_ORACLE are forced 'off' for the call to keep it hermetic.
+  // Telemetry's url resolves through resolveStateDir (ADR-0066), which reads
+  // CX_HOME_OVERRIDE off process.env directly rather than from the homeDir
+  // option threaded through startServices — that override is pinned here to
+  // an isolated home so the assertion neither depends on nor writes into the
+  // real developer machine's state root.
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-root-isolation-'));
+  const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-root-isolation-home-'));
   const prevDoctor = process.env.CONSTRUCT_DOCTOR;
   const prevOracle = process.env.CONSTRUCT_ORACLE;
+  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
   process.env.CONSTRUCT_DOCTOR = 'off';
   process.env.CONSTRUCT_ORACLE = 'off';
+  process.env.CX_HOME_OVERRIDE = homeOverride;
   try {
     const { results } = await startServices({
       rootDir: tmpDir,
@@ -135,7 +144,8 @@ test('telemetry url from startServices uses rootDir, not packageRoot', async () 
 
     const telemetry = results.find((r) => r.name === 'Telemetry');
     assert.ok(telemetry, 'startServices must report a Telemetry result');
-    assert.equal(telemetry.url, path.join(tmpDir, '.cx', 'traces'));
+    const expectedUrl = resolveStateDir(tmpDir, 'traces', { ensureDir: false });
+    assert.equal(telemetry.url, expectedUrl);
     assert.ok(
       !telemetry.url.startsWith(packageRoot),
       `telemetry url (${telemetry.url}) must not point into packageRoot (${packageRoot})`,
@@ -145,6 +155,9 @@ test('telemetry url from startServices uses rootDir, not packageRoot', async () 
     else process.env.CONSTRUCT_DOCTOR = prevDoctor;
     if (prevOracle === undefined) delete process.env.CONSTRUCT_ORACLE;
     else process.env.CONSTRUCT_ORACLE = prevOracle;
+    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
     fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    fs.rmSync(homeOverride, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });

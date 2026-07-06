@@ -4,6 +4,11 @@
  * Exercises detectNodeNativeDeps/detectIngestPipeline against isolated mkdtempSync
  * fixture trees, not the live checked-out repo, so results are pinned to fixture
  * markers instead of whatever happens to be installed in this working copy.
+ *
+ * The docling venv detection resolves through the machine-scoped state root
+ * (ADR-0066: lib/state-root.mjs, `doclingVenvPath` in lib/ingest-tooling.mjs), not
+ * a project-relative `.cx/runtime/docling`, so CX_HOME_OVERRIDE is pinned for the
+ * whole file to keep the fixture venv off the real developer machine's $HOME.
  */
 
 import { test } from 'node:test';
@@ -12,14 +17,23 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { detectIngestPipeline, detectNodeNativeDeps } from '../../lib/ingest-tooling.mjs';
+import { detectIngestPipeline, detectNodeNativeDeps, doclingVenvPath } from '../../lib/ingest-tooling.mjs';
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-ingest-tooling-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 function makeFixtureRepo({ unpdf = false, mammoth = false, doclingVenv = false } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ingest-tooling-'));
   if (unpdf) fs.mkdirSync(path.join(root, 'node_modules', 'unpdf'), { recursive: true });
   if (mammoth) fs.mkdirSync(path.join(root, 'node_modules', 'mammoth'), { recursive: true });
   if (doclingVenv) {
-    const venvBin = path.join(root, '.cx', 'runtime', 'docling', '.venv', process.platform === 'win32' ? 'Scripts' : 'bin');
+    const venvBin = path.join(doclingVenvPath(root), process.platform === 'win32' ? 'Scripts' : 'bin');
     fs.mkdirSync(venvBin, { recursive: true });
     fs.writeFileSync(path.join(venvBin, process.platform === 'win32' ? 'python.exe' : 'python'), '');
   }
