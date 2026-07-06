@@ -71,7 +71,7 @@ npm run lint:scopes
 npm run graph:gate
 ```
 
-All nine must exit 0. The release pipeline in `docs/operations/maintenance/release-and-deploy.md` runs the same checks before any artifact ships. `graph:gate` (LMCP-C8) rebuilds the living workflow/capability graph and fails on strict-mode validate drift — a workflow with zero tests, a capability with a missing doc, a provider without a manifest, or a declared-but-unregistered surface.
+All nine must exit 0. To reproduce CI's `test` job bit-for-bit when a failure only shows up on the runner, `npm run ci:local` builds a Docker replica (`scripts/ci-repro/`) of the ubuntu leg — same `scripts/ci/setup-toolchain.sh` tool pins, same fixture build, same command sequence against a fresh clone of committed HEAD; `-- --node 20` and `-- --shard i/n` narrow it to one matrix cell. The release pipeline in `docs/operations/maintenance/release-and-deploy.md` runs the same checks before any artifact ships. `graph:gate` (LMCP-C8) rebuilds the living workflow/capability graph and fails on strict-mode validate drift — a workflow with zero tests, a capability with a missing doc, a provider without a manifest, or a declared-but-unregistered surface.
 
 ### npm scripts wrap the gates; CI calls the scripts
 
