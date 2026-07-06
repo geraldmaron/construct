@@ -35,6 +35,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 import { getRun } from '../../lib/orchestration/runtime.mjs';
+import { resolveStatePath } from '../../lib/state-root.mjs';
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -86,6 +87,34 @@ async function submitTaskResult(client, args) {
   return payload(await client.callTool({ name: 'call', arguments: { tool: 'orchestration_task_result', args } }));
 }
 
+// getRun resolves the machine-scoped state root (ADR-0066) via CX_HOME_OVERRIDE
+// on process.env directly — the { env } option threaded through getRun's own
+// signature is not consulted by that resolution. The subprocess sees the
+// sandboxed HOME via sterileSpawnEnv; this process must pin the same override
+// around the call, or it reads the real developer machine's state root instead.
+
+async function getRunInSandbox(env, runId) {
+  const prev = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = env.HOME;
+  try {
+    return await getRun(env.project, runId, { env: {} });
+  } finally {
+    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prev;
+  }
+}
+
+function runFilePathInSandbox(env, runId) {
+  const prev = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = env.HOME;
+  try {
+    return resolveStatePath(env.project, 'runtime', 'orchestration', 'runs', `${runId}.json`, { ensureDir: false });
+  } finally {
+    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prev;
+  }
+}
+
 // The hard invariant this session's construct-neq9.7 regression test
 // established (tests/functional/regression-run-02158a157d53.functional.test.mjs):
 // a persisted run file must never show degraded:true with an empty task list
@@ -127,7 +156,7 @@ test('an MCP-originated orchestration_run with no explicit backend defaults to h
     assert.equal(t2.output, null, 'a materialized-only task carries no output yet');
   }
 
-  const persisted = await getRun(env.project, run.runId, { env: {} });
+  const persisted = await getRunInSandbox(env, run.runId);
   assert.equal(persisted.status, 'awaiting-host', 'the durable run file shows the standing awaiting-host state');
   assert.equal(persisted.workerBackend, 'host');
   assert.ok(persisted.tasks.every((task) => task.executor === 'host:awaiting'));
@@ -155,7 +184,7 @@ test('submitting a result for every task via orchestration_task_result (the call
   assert.equal(last.next_task, null, 'the final submission reports no further task');
   assert.equal(last.run_status, 'completed');
 
-  const persisted = await getRun(env.project, run.runId, { env: {} });
+  const persisted = await getRunInSandbox(env, run.runId);
   assert.equal(persisted.status, 'completed', 'the durable run record must reach a real, honest terminal status');
   assert.ok(persisted.tasks.every((task) => task.status === 'done'));
   assert.ok(persisted.tasks.every((task) => task.executor.startsWith('host:')), 'every task executor must record the host: prefix, never provider:');
@@ -186,7 +215,7 @@ test('a run left awaiting-host (results never submitted) is reported as its real
   assert.equal(typeof status.hostInstructions, 'string', 'a polled awaiting-host run still carries the host instructions to resume it');
   assert.ok(status.tasks.every((t2) => t2.status === 'awaiting-host'));
 
-  const persisted = await getRun(env.project, run.runId, { env: {} });
+  const persisted = await getRunInSandbox(env, run.runId);
   assert.equal(persisted.status, 'awaiting-host');
   assertNeverSilentDegradedCompleted(persisted);
 });
@@ -206,7 +235,7 @@ test('the durable run file for a completed host-backend run round-trips readable
     await submitTaskResult(client, { run_id: run.runId, task_id: task.id, output: 'the answer' });
   }
 
-  const persisted = await getRun(env.project, run.runId, { env: {} });
+  const persisted = await getRunInSandbox(env, run.runId);
   assert.equal(persisted.status, 'completed');
-  assert.ok(existsSync(join(env.project, '.cx', 'runtime', 'orchestration', 'runs', `${run.runId}.json`)), 'the run persists as a durable JSON artifact on disk');
+  assert.ok(existsSync(runFilePathInSandbox(env, run.runId)), 'the run persists as a durable JSON artifact on disk under the machine-scoped state root');
 });

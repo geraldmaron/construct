@@ -33,9 +33,20 @@ import test from 'node:test';
 
 import { planRun, executeRun, startRun, getRun, getRuns } from '../../../lib/orchestration/runtime.mjs';
 import { onRunEvent } from '../../../lib/orchestration/events.mjs';
+import { resolveStateDir } from '../../../lib/state-root.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
+
+// Runs now persist under the machine-scoped state root (ADR-0066), not
+// project-local `.cx/`. This suite imports lib/orchestration/runtime.mjs
+// in-process rather than spawning the CLI, so CX_HOME_OVERRIDE is the only
+// isolation lever available — without it the state root would resolve
+// against the real developer machine's $HOME.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-f09-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
 
 const dirs = [];
 const chmodded = [];
@@ -47,10 +58,13 @@ function project() {
 test.after(() => {
   for (const d of chmodded) { try { fs.chmodSync(d, 0o755); } catch {} }
   for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} }
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function runsDirOf(cwd) {
-  return path.join(cwd, '.cx', 'runtime', 'orchestration', 'runs');
+  return resolveStateDir(cwd, 'runtime', 'orchestration', 'runs');
 }
 
 const REQUEST = { request: 'a run whose execution will fail to persist', requestedStrategy: 'orchestrated', hostModel: MODEL, fileCount: 2 };

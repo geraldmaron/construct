@@ -315,6 +315,7 @@ construct/
 ├── dev
 ├── docs             Architecture notes, runbooks, and documentation contract
 ├── examples         Example projects and persona fixtures
+├── Formula
 ├── lib              Core runtime: CLI, hooks, MCP, providers, oracle, sync
 ├── packages         Shared workspace packages (e.g. cx-ui)
 ├── personas         Persona prompt definitions
