@@ -15,13 +15,18 @@ import os from 'node:os';
 import path from 'node:path';
 import { scanToolModules } from '../../lib/mcp/tool-registry.mjs';
 
-function withFixtureDir(files, fn) {
+// fn is async (it drives scanToolModules()'s internal `await import()` per
+// fixture file); this must await fn(dir) itself, or `finally` deletes the
+// fixture directory while the dynamic import is still reading from it — an
+// ENOENT race, not a deterministic result.
+
+async function withFixtureDir(files, fn) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-mcp-tool-scan-'));
   try {
     for (const [name, contents] of Object.entries(files)) {
       fs.writeFileSync(path.join(dir, name), contents, 'utf8');
     }
-    return fn(dir);
+    return await fn(dir);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
