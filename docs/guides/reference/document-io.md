@@ -44,7 +44,7 @@ Export does not accept PDF or DOCX as input — those are **ingest** sources. On
 
 `--legacy-extractor` is a deprecated alias for `--fidelity=fast`.
 
-Docling provisions on first use into `.cx/runtime/docling/.venv` (~1.5 GB). Eager provision: `construct install --with-docling`.
+Docling provisions on first use into a machine-shared `~/.construct/runtime/docling/.venv` (~1.5 GB) — one venv per machine, shared by every project, not one per project. Eager provision: `construct install --with-docling`.
 
 On docling timeout or failure, Construct falls back to **node-native** extraction (unpdf/mammoth) for PDF/DOCX. Office formats without a Node backend require docling.
 

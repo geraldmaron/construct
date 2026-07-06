@@ -57,6 +57,7 @@
     "0065-orchestrator-worker-consolidation",
     "appendix-0065-roster-mapping",
     "0066-config-layer-project-footprint",
-    "0067-deterministic-flow-engine"
+    "0067-deterministic-flow-engine",
+    "0068-ingestion-sidecar-process-contract"
   ]
 }
