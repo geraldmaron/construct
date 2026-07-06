@@ -240,6 +240,10 @@ test('validateHandoff passes engineer-to-reviewer when verdict is valid and find
         noHardcodedSecrets: true,
         noFileOver800Lines: true,
       },
+      feasibilityAssessment: 'feasible',
+      effortClass: 'S',
+      debtNote: 'none',
+      blastRadius: 'low',
     },
     enforcement: 'block',
   });
