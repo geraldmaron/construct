@@ -107,9 +107,14 @@ jobs:
             workflow:
               - '.github/workflows/**'
 
-  # Full OS × Node matrix on both PR and main push. Running Node 20 and macOS
-  # on PRs catches regressions on the minimum supported version before merge.
-  # Windows correctness is covered by the SEA binary build in release.yml.
+  # PR gate: ubuntu × Node 20/22 (min + max supported). The macOS legs run on
+  # main push / schedule / dispatch only — macOS runners are an order of
+  # magnitude more expensive, slower to schedule, and the per-PR macOS signal
+  # is largely redundant with bun-binary-smoke's darwin-arm64 build+doctor+demo
+  # job, which does run on every PR. A macOS-only regression still gates the
+  # release path (main push runs the full matrix; release.yml builds darwin
+  # SEA binaries). Windows correctness is covered by the SEA binary build in
+  # release.yml.
   test:
     name: test (${{ matrix.os }} / node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
@@ -118,7 +123,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest"]
+        os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest", "macos-latest"]') }}
         node: ["20", "22"]
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
