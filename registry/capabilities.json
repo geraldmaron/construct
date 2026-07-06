@@ -1,7 +1,7 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-07-06T01:18:59.781Z",
+    "generatedAt": "2026-07-06T22:40:56.862Z",
     "npmScripts": [
       "adapters",
       "audit:published",
@@ -323,6 +323,12 @@
       {
         "name": "feedback:record",
         "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "flow",
+        "category": "Models & Integrations",
         "core": false,
         "internal": false
       },
