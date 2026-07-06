@@ -24,6 +24,14 @@ import { fileURLToPath } from 'node:url';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
 
+// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// process.env directly, so every spawned `construct` needs its own sandboxed
+// HOME to avoid leaking test projects into the real developer machine's
+// ~/.construct/projects/.
+
+const SANDBOX_HOME = mkdtempSync(join(tmpdir(), 'init-cxignore-home-'));
+process.on('exit', () => rmSync(SANDBOX_HOME, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
+
 function makeProject(seedGitignore = null) {
   const dir = mkdtempSync(join(tmpdir(), 'init-cxignore-'));
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: dir });
@@ -42,6 +50,8 @@ function runInit(cwd) {
       ...process.env,
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
       BOOTSTRAP_CHECKED: '1',
+      HOME: SANDBOX_HOME,
+      CX_HOME_OVERRIDE: SANDBOX_HOME,
     },
   });
 }

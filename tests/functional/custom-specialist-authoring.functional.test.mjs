@@ -46,14 +46,19 @@ function run(args, env) {
 
 test('custom specialist/team authoring: scaffold, validate, resolve (project scope)', async (t) => {
   const projectDir = makeProject();
-  t.after(() => fs.rmSync(projectDir, { recursive: true, force: true }));
+  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-custom-org-project-home-'));
+  t.after(() => {
+    fs.rmSync(projectDir, { recursive: true, force: true });
+    fs.rmSync(homeDir, { recursive: true, force: true });
+  });
+  const env = { HOME: homeDir, CX_HOME_OVERRIDE: homeDir };
 
   const teamResult = run([
     'team', 'create', 'widget-team',
     '--owner=widget-specialist',
     '--charter=Owns the Widget product surface end to end, from intake to release.',
     `--root=${projectDir}`,
-  ]);
+  ], env);
   assert.equal(teamResult.status, 0, teamResult.stderr || teamResult.stdout);
 
   const teamFile = path.join(projectDir, '.cx', 'org', 'teams', 'widget-team.json');
@@ -70,7 +75,7 @@ test('custom specialist/team authoring: scaffold, validate, resolve (project sco
     '--skills=frontend-design/accessibility',
     '--fence-paths=docs/widgets/**',
     `--root=${projectDir}`,
-  ]);
+  ], env);
   assert.equal(specResult.status, 0, specResult.stderr || specResult.stdout);
 
   const specFile = path.join(projectDir, '.cx', 'org', 'specialists', 'cx-widget-specialist.json');
@@ -180,19 +185,22 @@ test('custom specialist/team authoring: user (home) scope, isolated from real HO
 
 test('custom specialist authoring rejects missing required fields with actionable errors', () => {
   const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-custom-org-reject-'));
+  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-custom-org-reject-home-'));
   try {
-    const result = run(['specialist', 'create', 'incomplete-one', '--custom', `--root=${projectDir}`]);
+    const result = run(['specialist', 'create', 'incomplete-one', '--custom', `--root=${projectDir}`], { HOME: homeDir, CX_HOME_OVERRIDE: homeDir });
     assert.equal(result.status, 1);
     assert.match(result.stderr, /Missing required/);
     assert.match(result.stderr, /--role/);
     assert.match(result.stderr, /--team/);
   } finally {
     fs.rmSync(projectDir, { recursive: true, force: true });
+    fs.rmSync(homeDir, { recursive: true, force: true });
   }
 });
 
 test('custom specialist authoring rejects an unknown team with an actionable, listing error', () => {
   const projectDir = makeProject();
+  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-custom-org-orphan-home-'));
   try {
     const result = run([
       'specialist', 'create', 'orphan-specialist', '--custom',
@@ -202,11 +210,12 @@ test('custom specialist authoring rejects an unknown team with an actionable, li
       '--skills=frontend-design/accessibility',
       '--fence-paths=docs/orphan/**',
       `--root=${projectDir}`,
-    ]);
+    ], { HOME: homeDir, CX_HOME_OVERRIDE: homeDir });
     assert.equal(result.status, 1);
     assert.match(result.stderr, /does-not-exist-team/);
     assert.match(result.stderr, /construct team create/);
   } finally {
     fs.rmSync(projectDir, { recursive: true, force: true });
+    fs.rmSync(homeDir, { recursive: true, force: true });
   }
 });

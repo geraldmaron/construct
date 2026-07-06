@@ -108,14 +108,19 @@ test('runMigrations is idempotent — running twice does not double-stamp', asyn
 });
 
 test('construct --version matches package.json', () => {
-  const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), '--version'], {
-    cwd: REPO_ROOT,
-    encoding: 'utf8',
-    env: { ...process.env },
-  });
-  assert.equal(result.status, 0);
-  const { version } = getInstalledVersion();
-  assert.match(result.stdout, new RegExp(version.replace(/\./g, '\\.')));
+  const tmpHome = mkdtempSync(join(tmpdir(), 'construct-version-home-'));
+  try {
+    const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), '--version'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: tmpHome, CX_HOME_OVERRIDE: tmpHome },
+    });
+    assert.equal(result.status, 0);
+    const { version } = getInstalledVersion();
+    assert.match(result.stdout, new RegExp(version.replace(/\./g, '\\.')));
+  } finally {
+    rmSync(tmpHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  }
 });
 
 test('construct migrate --dry-run runs end-to-end against a fixture cwd', () => {

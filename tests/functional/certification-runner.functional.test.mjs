@@ -14,13 +14,18 @@ const BIN = path.join(REPO, 'bin', 'construct');
 
 test('construct certify run executes a hermetic scenario in an isolated project', (t) => {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'certify-functional-'));
-  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'certify-functional-home-'));
+  t.after(() => {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+    fs.rmSync(home, { recursive: true, force: true });
+  });
   fs.mkdirSync(path.join(rootDir, '.cx'), { recursive: true });
   fs.writeFileSync(path.join(rootDir, 'package.json'), '{}\n');
 
   const result = spawnSync(BIN, ['certify', 'run', 'artifact.release-gate.prd'], {
     cwd: rootDir,
     encoding: 'utf8',
+    env: { ...process.env, HOME: home, CX_HOME_OVERRIDE: home },
   });
 
   assert.equal(result.status, 0, result.stderr || result.stdout);

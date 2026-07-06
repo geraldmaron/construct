@@ -36,8 +36,20 @@ function tmpProject() {
   return dir;
 }
 
+// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// process.env directly, so the spawned `construct` needs its own sandboxed
+// HOME to avoid leaking test projects into the real developer machine's
+// ~/.construct/projects/.
+
+const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'dep-matrix-fn-home-'));
+after(() => { try { fs.rmSync(SANDBOX_HOME, { recursive: true, force: true }); } catch {} });
+
 function runConstruct(args, cwd) {
-  return spawnSync(process.execPath, [BIN, ...args], { cwd, encoding: 'utf8' });
+  return spawnSync(process.execPath, [BIN, ...args], {
+    cwd,
+    encoding: 'utf8',
+    env: { ...process.env, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME },
+  });
 }
 
 test('construct matrix build writes a durable graph with capability nodes', () => {

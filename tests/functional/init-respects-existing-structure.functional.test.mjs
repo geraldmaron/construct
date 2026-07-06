@@ -30,6 +30,7 @@ const BIN = join(REPO_ROOT, 'bin', 'construct');
 
 function makeFixture(extraSetup) {
   const dir = mkdtempSync(join(tmpdir(), 'init-existing-'));
+  const home = mkdtempSync(join(tmpdir(), 'init-existing-home-'));
   // `construct init` requires the target to be a git repository — the
   // tracker hooks wire into .git/hooks. Initialize one quietly.
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: dir });
@@ -38,16 +39,20 @@ function makeFixture(extraSetup) {
   if (extraSetup) extraSetup(dir);
   return {
     dir,
+    home,
     write(rel, content) {
       const abs = join(dir, rel);
       mkdirSync(dirname(abs), { recursive: true });
       writeFileSync(abs, content);
     },
-    cleanup() { rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); },
+    cleanup() {
+      rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    },
   };
 }
 
-function runInit(cwd, extraArgs = []) {
+function runInit(cwd, home, extraArgs = []) {
   // `--quiet` is intentionally NOT passed so the end-of-init "Deferred to
   // existing project structure" block surfaces in stdout for the per-test
   // assertions below.
@@ -62,6 +67,8 @@ function runInit(cwd, extraArgs = []) {
         ...process.env,
         CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
         BOOTSTRAP_CHECKED: '1',
+        HOME: home,
+        CX_HOME_OVERRIDE: home,
       },
     },
   );
@@ -86,7 +93,7 @@ function seedPreexistingProject(dir) {
 test('issue #97: init defers to existing internal/meetings/, internal/memos/, custom intake, root templates', () => {
   const f = makeFixture(seedPreexistingProject);
   try {
-    const result = runInit(f.dir, ['--with-all-docs']);
+    const result = runInit(f.dir, f.home, ['--with-all-docs']);
     assert.equal(result.status, 0, `init exited ${result.status}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
 
     assert.equal(
@@ -141,7 +148,7 @@ test('issue #97: init defers to existing internal/meetings/, internal/memos/, cu
 test('issue #97: --force scaffolds the full default tree even when project layout already exists', () => {
   const f = makeFixture(seedPreexistingProject);
   try {
-    const result = runInit(f.dir, ['--with-all-docs', '--force']);
+    const result = runInit(f.dir, f.home, ['--with-all-docs', '--force']);
     assert.equal(result.status, 0, `init --force exited ${result.status}\nstderr:\n${result.stderr}`);
 
     assert.equal(
@@ -174,7 +181,7 @@ test('issue #97: --force scaffolds the full default tree even when project layou
 test('issue #97 regression guard: clean project still gets the full default scaffold', () => {
   const f = makeFixture();
   try {
-    const result = runInit(f.dir, ['--with-all-docs']);
+    const result = runInit(f.dir, f.home, ['--with-all-docs']);
     assert.equal(result.status, 0, `init on clean project exited ${result.status}\nstderr:\n${result.stderr}`);
 
     // The lean preset includes meetings, memos, prds; verify at least one

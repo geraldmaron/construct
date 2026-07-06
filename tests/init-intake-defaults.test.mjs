@@ -27,13 +27,16 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const binPath = path.join(root, 'bin', 'construct');
 
 let tmpDir;
+let homeDir;
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-init-defaults-'));
+  homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-init-defaults-home-'));
 });
 
 afterEach(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true });
+  fs.rmSync(homeDir, { recursive: true, force: true });
 });
 
 function seedProjectDirs(...names) {
@@ -47,7 +50,14 @@ function seedProjectDirs(...names) {
 function runInit(extraEnv = {}) {
   return spawnSync(process.execPath, [binPath, 'init', '--yes'], {
     cwd: tmpDir,
-    env: { ...process.env, ...extraEnv, CX_AUTO_EMBED: '0', CX_DATA_DIR: tmpDir },
+    env: {
+      ...process.env,
+      HOME: homeDir,
+      CX_HOME_OVERRIDE: homeDir,
+      ...extraEnv,
+      CX_AUTO_EMBED: '0',
+      CX_DATA_DIR: tmpDir,
+    },
     encoding: 'utf8',
     timeout: 60_000,
   });

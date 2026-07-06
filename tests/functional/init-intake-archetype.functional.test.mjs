@@ -30,13 +30,21 @@ const BIN = join(REPO_ROOT, 'bin', 'construct');
 
 function makeProject() {
   const dir = mkdtempSync(join(tmpdir(), 'init-intake-archetype-'));
+  const home = mkdtempSync(join(tmpdir(), 'init-intake-archetype-home-'));
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: dir });
   spawnSync('git', ['config', 'user.email', 'archetype-test@example.com'], { cwd: dir });
   spawnSync('git', ['config', 'user.name', 'Archetype Test'], { cwd: dir });
-  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) };
+  return {
+    dir,
+    home,
+    cleanup: () => {
+      rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    },
+  };
 }
 
-function runInit(cwd, { scope = 'rnd', extraEnv = {} } = {}) {
+function runInit(cwd, home, { scope = 'rnd', extraEnv = {} } = {}) {
   return spawnSync(process.execPath, [BIN, 'init', '--yes', `--scope=${scope}`], {
     cwd,
     encoding: 'utf8',
@@ -46,6 +54,8 @@ function runInit(cwd, { scope = 'rnd', extraEnv = {} } = {}) {
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_AGENT_ID: 'test-agent',
+      HOME: home,
+      CX_HOME_OVERRIDE: home,
       ...extraEnv,
     },
   });
@@ -54,7 +64,7 @@ function runInit(cwd, { scope = 'rnd', extraEnv = {} } = {}) {
 test('init with rnd scope scaffolds inbox/, .gitignore, and the dedup manifest', () => {
   const p = makeProject();
   try {
-    const result = runInit(p.dir);
+    const result = runInit(p.dir, p.home);
     assert.equal(result.status, 0, `init exited ${result.status}: ${result.stderr}`);
 
     const inboxDir = join(p.dir, 'inbox');
@@ -77,7 +87,7 @@ test('init with rnd scope scaffolds inbox/, .gitignore, and the dedup manifest',
 test('init stamps createdBy / createdByAgent on Construct-owned plan.md when attribution is on', () => {
   const p = makeProject();
   try {
-    const result = runInit(p.dir);
+    const result = runInit(p.dir, p.home);
     assert.equal(result.status, 0, `init exited ${result.status}: ${result.stderr}`);
 
     const plan = readFileSync(join(p.dir, 'plan.md'), 'utf8');
@@ -91,7 +101,7 @@ test('init stamps createdBy / createdByAgent on Construct-owned plan.md when att
 test('CONSTRUCT_ATTRIBUTION_DISABLE suppresses createdBy fields', () => {
   const p = makeProject();
   try {
-    const result = runInit(p.dir, { extraEnv: { CONSTRUCT_ATTRIBUTION_DISABLE: '1' } });
+    const result = runInit(p.dir, p.home, { extraEnv: { CONSTRUCT_ATTRIBUTION_DISABLE: '1' } });
     assert.equal(result.status, 0, `init exited ${result.status}: ${result.stderr}`);
 
     const plan = readFileSync(join(p.dir, 'plan.md'), 'utf8');
@@ -105,12 +115,12 @@ test('CONSTRUCT_ATTRIBUTION_DISABLE suppresses createdBy fields', () => {
 test('init re-run preserves user content dropped under inbox/', () => {
   const p = makeProject();
   try {
-    runInit(p.dir);
+    runInit(p.dir, p.home);
     const dropped = join(p.dir, 'inbox', 'note.md');
     const customContent = '# raw drop\n\nuser research note\n';
     writeFileSync(dropped, customContent, 'utf8');
 
-    const result = runInit(p.dir);
+    const result = runInit(p.dir, p.home);
     assert.equal(result.status, 0);
     assert.equal(readFileSync(dropped, 'utf8'), customContent, 'user content under inbox/ must survive re-init');
   } finally {
@@ -121,7 +131,7 @@ test('init re-run preserves user content dropped under inbox/', () => {
 test('init.cx/context.json carries createdBy attribution when capability is on', () => {
   const p = makeProject();
   try {
-    const result = runInit(p.dir);
+    const result = runInit(p.dir, p.home);
     assert.equal(result.status, 0);
     const ctx = JSON.parse(readFileSync(join(p.dir, '.cx', 'context.json'), 'utf8'));
     assert.equal(ctx.createdBy, 'Archetype Test <archetype-test@example.com>');

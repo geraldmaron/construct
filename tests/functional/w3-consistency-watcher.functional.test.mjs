@@ -14,11 +14,14 @@ import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import test, { after } from 'node:test';
 
 import { runAllChecks } from '../../lib/doctor/watchers/consistency.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+const CLI_SANDBOX_HOME = mkdtempSync(join(tmpdir(), 'w3-consistency-cli-home-'));
+after(() => rmSync(CLI_SANDBOX_HOME, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
 
 function freshRepoSlice() {
   const root = mkdtempSync(join(tmpdir(), 'construct-consistency-'));
@@ -245,7 +248,7 @@ test('construct doctor consistency CLI exits 0 and is clean by default', () => {
   const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), 'doctor', 'consistency'], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
-    env: { ...process.env, CONSTRUCT_SKIP_PROMPT_LOOKUP: '1' },
+    env: { ...process.env, CONSTRUCT_SKIP_PROMPT_LOOKUP: '1', HOME: CLI_SANDBOX_HOME, CX_HOME_OVERRIDE: CLI_SANDBOX_HOME },
   });
   assert.equal(result.status, 0, `expected exit 0, got ${result.status}\nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
   assert.match(result.stdout, /clean/);
@@ -256,7 +259,7 @@ test('construct doctor consistency --strict surfaces the internal tier', () => {
   const result = spawnSync(process.execPath, [join(REPO_ROOT, 'bin', 'construct'), 'doctor', 'consistency', '--strict'], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
-    env: { ...process.env, CONSTRUCT_SKIP_PROMPT_LOOKUP: '1' },
+    env: { ...process.env, CONSTRUCT_SKIP_PROMPT_LOOKUP: '1', HOME: CLI_SANDBOX_HOME, CX_HOME_OVERRIDE: CLI_SANDBOX_HOME },
   });
   assert.equal(result.status, 0, `expected exit 0, got ${result.status}\nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
   assert.match(result.stdout, /mcp-drift/);

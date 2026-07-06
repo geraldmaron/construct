@@ -13,13 +13,22 @@
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { resolve, dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import test from 'node:test';
+import test, { before, after } from 'node:test';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = resolve(ROOT, 'bin', 'construct');
+
+// Both subprocess-spawning tests below share this project's own sandboxed HOME
+// so `construct version`/`construct evals` never touch the real developer
+// machine's ~/.construct/projects/ (ADR-0066 machine-scoped state root).
+
+let HOME;
+before(() => { HOME = mkdtempSync(join(tmpdir(), 'optional-deps-absent-home-')); });
+after(() => { rmSync(HOME, { recursive: true, force: true }); });
 
 // Static top-level import patterns that would throw when ink/react are absent.
 
@@ -30,6 +39,7 @@ test('construct version exits 0 and prints version string', () => {
   const stdout = execFileSync(process.execPath, [BIN, 'version'], {
     cwd: ROOT,
     encoding: 'utf8',
+    env: { ...process.env, HOME, CX_HOME_OVERRIDE: HOME },
   });
 
   assert.match(stdout.trim(), /^construct v\d+\.\d+\.\d+$/,
@@ -40,6 +50,7 @@ test('construct evals --json exits 0 and returns valid JSON', () => {
   const stdout = execFileSync(process.execPath, [BIN, 'evals', '--json'], {
     cwd: ROOT,
     encoding: 'utf8',
+    env: { ...process.env, HOME, CX_HOME_OVERRIDE: HOME },
   });
 
   let parsed;

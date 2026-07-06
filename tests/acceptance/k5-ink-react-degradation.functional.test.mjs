@@ -142,7 +142,19 @@ test('LMCP-K5: ink/react degradation', { timeout: 180_000 }, async (t) => {
 
   const nmRoot = join(tmpDir, 'node_modules');
   const binPath = join(nmRoot, '.bin', 'construct');
-  const soloEnv = { ...process.env, CONSTRUCT_DEPLOYMENT_MODE: 'solo' };
+
+  // lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
+  // CX_HOME_OVERRIDE in the CHILD's own env, not this test process's env —
+  // every spawned `construct` call below must be pinned to a throwaway
+  // sandbox home or it leaks project-key directories into the real
+  // developer machine's ~/.construct/projects/.
+  const sandboxHome = mkdtempSync(join(tmpdir(), 'construct-k5-home-'));
+  const soloEnv = {
+    ...process.env,
+    CONSTRUCT_DEPLOYMENT_MODE: 'solo',
+    HOME: sandboxHome,
+    CX_HOME_OVERRIDE: sandboxHome,
+  };
 
   // ── Step 4: Verify ink and react are absent ──────────────────────────
   await t.test('ink and react are absent from node_modules (--no-optional)', () => {
@@ -283,5 +295,6 @@ test('LMCP-K5: ink/react degradation', { timeout: 180_000 }, async (t) => {
     if (tarballPath && existsSync(tarballPath)) {
       rmSync(tarballPath, { force: true });
     }
+    rmSync(sandboxHome, { recursive: true, force: true });
   });
 });
