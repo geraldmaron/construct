@@ -1,8 +1,8 @@
 /**
  * tests/graph/evidence.test.mjs — runtime-evidence edges: traces linked to workflow nodes (LMCP-C9).
  *
- * Pins: a fixture orchestration run persisted at
- * .cx/runtime/orchestration/runs/<runId>.json produces a
+ * Pins: a fixture orchestration run persisted at the machine-scoped state
+ * root's `runtime/orchestration/runs/<runId>.json` (ADR-0066) produces a
  * `runtime-evidence:<runId> --evidenced_by--> workflow:<type>` edge via
  * buildRuntimeEvidence; a run still `planned`/`running` (no terminal outcome
  * yet) or with no resolvable workflow type is skipped rather than fabricated
@@ -12,6 +12,10 @@
  * data over both --json and human output; and a workflow with zero runtime
  * evidence is flagged `neverExecuted: true` distinctly from a workflow whose
  * evidence has merely aged past its staleness threshold (`stale: true`).
+ *
+ * CX_HOME_OVERRIDE is pinned for the whole file since runtime-evidence reads
+ * resolve through the machine-scoped state root, keeping them off the real
+ * developer machine's $HOME.
  */
 
 import test, { after } from 'node:test';
@@ -30,6 +34,16 @@ import {
 import { checkExecutionStaleness, EXECUTION_STALENESS_DEFAULT_THRESHOLD_DAYS } from '../../lib/graph/staleness.mjs';
 import { runGraphCli } from '../../lib/graph/cli.mjs';
 import { listWorkflowDefs } from '../../lib/embedded-contract/workflow-defs.mjs';
+import { runtimeDir } from '../../lib/orchestration/run-store.mjs';
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-graph-evidence-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 const tmpDirs = [];
 after(() => {
@@ -45,7 +59,7 @@ function freshRoot() {
 }
 
 function runsDir(root) {
-  const dir = path.join(root, '.cx', 'runtime', 'orchestration', 'runs');
+  const dir = path.join(runtimeDir(root), 'runs');
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
