@@ -17,6 +17,16 @@ import test from 'node:test';
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
 
+// A deterministic, fake-but-materialized model/credential config so preflight
+// can reach reasonCode 'attached' on any host — a bare `...process.env`
+// spread only reaches 'attached' on a machine that happens to carry real
+// provider credentials or ambient fallbacks (a local Ollama daemon, a
+// signed-in `gh`/`op` session); a fresh CI runner has none of those, so the
+// first test below (which asserts reasonCode === 'attached') would otherwise
+// always see model_unresolved instead. The second test's tool_unlisted
+// assertion fires from an earlier check in the reasonCode priority chain and
+// is unaffected by model resolution either way.
+
 function env() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-ready-'));
   return {
@@ -27,6 +37,10 @@ function env() {
       CX_HOME_OVERRIDE: home,
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
       BOOTSTRAP_CHECKED: '1',
+      CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',
+      CX_MODEL_STANDARD: 'anthropic/claude-sonnet-4-6',
+      CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
+      ANTHROPIC_API_KEY: 'sk-test-canary',
     },
     cleanup() { fs.rmSync(home, { recursive: true, force: true }); },
   };
