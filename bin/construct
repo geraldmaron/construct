@@ -5359,6 +5359,10 @@ async function cmdSpecialist(args) {
   const sub = args[0];
   if (sub === 'lint') return cmdLintPrompts();
 
+  if (sub === 'create' && args.includes('--custom')) {
+    return cmdSpecialistCreateCustom(args.slice(1));
+  }
+
   if (sub === 'create') {
     const role = args[1];
     if (!role) { errorln('Usage: construct specialist create <role>'); process.exit(1); }
@@ -5393,6 +5397,91 @@ async function cmdSpecialist(args) {
 
   errorln(`Unknown specialist subcommand: ${sub || '(none)'}. Available: create, edit, lint`);
   process.exit(1);
+}
+
+// `construct specialist create <id> --custom` scaffolds a user-authored specialist
+// (construct-rf26.13) — distinct from the maintainer-facing `specialist create <role>`
+// above, which only stubs a prompt file for the built-in roster. `--custom` writes a
+// full registry-shaped JSON record (role, skills, fence, modelTier, delegation) into
+// the project's `.cx/org/` layer by default, or `~/.construct/org/` with `--user`.
+
+async function cmdSpecialistCreateCustom(args) {
+  const id = args.find((a) => !a.startsWith('--'));
+  const flag = (name) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+  const list = (name) => (flag(name) || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const usage = 'Usage: construct specialist create <id> --custom --role=<role> --team=<team-id> --description="…" --skills=<bundle/skill,…> --fence-paths=<glob,…> [--model-tier=fast|standard|reasoning] [--handoff=role,…] [--tools=Read,Grep,…] [--user] [--force] [--root=<dir>]';
+
+  const role = flag('role');
+  const team = flag('team');
+  const description = flag('description');
+  const skills = list('skills');
+  const fencePaths = list('fence-paths');
+  const missing = [
+    !id && 'id (positional)', !role && '--role', !team && '--team',
+    !description && '--description', !skills.length && '--skills', !fencePaths.length && '--fence-paths',
+  ].filter(Boolean);
+  if (missing.length) {
+    errorln(usage);
+    errorln(`Missing required: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+
+  const rootDir = flag('root') ? path.resolve(flag('root')) : ROOT_DIR;
+  const scope = args.includes('--user') ? 'user' : 'project';
+  const { createCustomSpecialist } = await import('../lib/registry/custom-scaffold.mjs');
+  try {
+    const { relPath, promptPath, scope: writtenScope } = createCustomSpecialist({
+      rootDir, scope, id, role, description,
+      modelTier: flag('model-tier') || 'standard',
+      skills, fence: { allowedPaths: fencePaths },
+      team, handoffCandidates: list('handoff'),
+      claudeTools: flag('tools') || undefined,
+      force: args.includes('--force'),
+    });
+    ok(`Created ${relPath} (${writtenScope} scope) and ${path.relative(rootDir, promptPath)}.`);
+    println('Run `construct sync` to pick it up — it then resolves through orchestration the same way a built-in specialist does.');
+  } catch (e) {
+    errorln(e.message);
+    process.exit(1);
+  }
+}
+
+async function cmdTeamCreateCustom(args) {
+  const id = args.find((a) => !a.startsWith('--'));
+  const flag = (name) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+  const list = (name) => (flag(name) || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const usage = 'Usage: construct team create <id> --owner=<role> --charter="…" [--roles=role,…] [--specialists=cx-a,…] [--decision-rights=a,…] [--forbidden=a,…] [--escalation=role,orchestrator] [--group=<group-id>] [--user] [--force] [--root=<dir>]';
+
+  const owner = flag('owner');
+  const charter = flag('charter');
+  const missing = [!id && 'id (positional)', !owner && '--owner', !charter && '--charter'].filter(Boolean);
+  if (missing.length) {
+    errorln(usage);
+    errorln(`Missing required: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+
+  const rootDir = flag('root') ? path.resolve(flag('root')) : ROOT_DIR;
+  const scope = args.includes('--user') ? 'user' : 'project';
+  const { createCustomTeam } = await import('../lib/registry/custom-scaffold.mjs');
+  try {
+    const { relPath, scope: writtenScope } = createCustomTeam({
+      rootDir, scope, id, owner, charter,
+      name: flag('name'),
+      roles: list('roles'),
+      specialists: list('specialists'),
+      decisionRights: list('decision-rights'),
+      forbiddenDecisions: list('forbidden'),
+      escalationPath: list('escalation'),
+      groupId: flag('group'),
+      force: args.includes('--force'),
+    });
+    ok(`Created ${relPath} (${writtenScope} scope).`);
+    println(`Run \`construct specialist create <id> --custom --role=${owner} --team=${id} …\` to give it an owner specialist, then \`construct sync\`.`);
+  } catch (e) {
+    errorln(e.message);
+    process.exit(1);
+  }
 }
 
 async function cmdBackup(args) {
@@ -6613,12 +6702,13 @@ const handlers = new Map([
     const sub = args[0];
     if (sub === 'review') return runTeamReviewCli(args.slice(1));
     if (sub === 'templates') { listTeamTemplates(); return; }
+    if (sub === 'create') return cmdTeamCreateCustom(args.slice(1));
     if (sub === 'list' || sub === 'show') {
       const { runTeamList, runTeamShow } = await import('../lib/registry/cli.mjs');
       if (sub === 'list') return runTeamList(args.slice(1), { rootDir: ROOT_DIR, println, errorln });
       return runTeamShow(args.slice(1), { rootDir: ROOT_DIR, println, errorln });
     }
-    errorln(`Unknown team subcommand: ${sub}. Available: list, show, review, templates`);
+    errorln(`Unknown team subcommand: ${sub}. Available: list, show, create, review, templates`);
     process.exit(1);
   }],
   ['role', async (args) => {
