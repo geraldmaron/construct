@@ -195,6 +195,95 @@ test('validateHandoff returns BLOCKED_CONTRACT in block mode when no contract is
   } finally { repo.cleanup(); }
 });
 
+// construct-rf26.12: output.mustContain / mustContainOneOf / mustMatchEnum were
+// declared on many shipped contracts but never actually checked at handoff —
+// these pin the new enforcement so a regression is a test failure, not a
+// silent no-op.
+
+test('validateHandoff blocks on an output.mustMatchEnum violation (engineer-to-reviewer verdict)', () => {
+  const result = validateHandoff({
+    producer: 'cx-engineer',
+    consumer: 'cx-reviewer',
+    artifact: { type: 'review-report', target: 'lib/foo.mjs', verdict: 'LGTM', findings: [] },
+    enforcement: 'block',
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((e) => /verdict/.test(e) && /LGTM/.test(e)), `expected a verdict enum error, got: ${result.errors.join('; ')}`);
+});
+
+test('validateHandoff blocks on an empty findings array with no noIssuesFoundAt (mustContainOneOf, rubber-stamp guard)', () => {
+  const result = validateHandoff({
+    producer: 'cx-engineer',
+    consumer: 'cx-reviewer',
+    artifact: { type: 'review-report', target: 'lib/foo.mjs', verdict: 'APPROVED', findings: [] },
+    enforcement: 'block',
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((e) => /findings\|noIssuesFoundAt/.test(e)), `expected a mustContainOneOf error, got: ${result.errors.join('; ')}`);
+});
+
+test('validateHandoff passes engineer-to-reviewer when verdict is valid and findings or noIssuesFoundAt is present', () => {
+  const result = validateHandoff({
+    producer: 'cx-engineer',
+    consumer: 'cx-reviewer',
+    artifact: {
+      type: 'review-report',
+      target: 'lib/foo.mjs',
+      verdict: 'APPROVED',
+      findings: [],
+      noIssuesFoundAt: ['lib/foo.mjs'],
+      filesChanged: [{ path: 'lib/foo.mjs', action: 'modified' }],
+      verificationChecklist: {
+        compilesWithoutErrors: true,
+        existingTestsPass: true,
+        newBehaviorHasCoverage: true,
+        noHardcodedSecrets: true,
+        noFileOver800Lines: true,
+      },
+    },
+    enforcement: 'block',
+  });
+  assert.equal(result.ok, true, result.errors?.join('; '));
+});
+
+test('validateHandoff blocks on a missing output.mustContain field (architect-to-platform-engineer rollback)', () => {
+  const result = validateHandoff({
+    producer: 'cx-architect',
+    consumer: 'cx-platform-engineer',
+    artifact: { problem: 'p', solution: 's', impact: 'i', migration: 'm' },
+    enforcement: 'block',
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((e) => /rollback/.test(e)), `expected a missing-output-field error, got: ${result.errors.join('; ')}`);
+});
+
+test('validateHandoff blocks on an output.mustMatchEnum violation for a wildcard-producer contract (any-to-debugger)', () => {
+  const result = validateHandoff({
+    producer: '*',
+    consumer: 'cx-debugger',
+    artifact: { rootCause: 'race condition', rootCauseConfirmedVia: 'guess', fix: 'add a lock' },
+    enforcement: 'block',
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((e) => /rootCauseConfirmedVia/.test(e)), `expected a rootCauseConfirmedVia enum error, got: ${result.errors.join('; ')}`);
+});
+
+test('validateHandoff recurses into nested schema required fields (implementation.json verificationChecklist)', () => {
+  const result = validateHandoff({
+    producer: 'cx-architect',
+    consumer: 'cx-engineer',
+    artifact: {
+      type: 'implementation',
+      status: 'DONE',
+      filesChanged: [{ path: 'lib/foo.mjs', action: 'modified' }],
+      verificationChecklist: { compilesWithoutErrors: true },
+    },
+    enforcement: 'block',
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((e) => /verificationChecklist.*existingTestsPass/.test(e)), `expected a nested schema-required error, got: ${result.errors.join('; ')}`);
+});
+
 test('workflow_contract_validate MCP tool enriches bare goal before validateHandoff', async () => {
   const { workflowContractValidate } = await import('../../lib/mcp/tools/workflow.mjs');
   const block = await workflowContractValidate({

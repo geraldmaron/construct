@@ -29,8 +29,16 @@
     "Pipeline operational requirements (alerts, retries, backfills) stated in pipeline spec"
   ],
   "postconditions": [
-    "Operational burden (who maintains, how to debug) accepted by platform owner",
-    "Pipeline observability surfaces appear on a named dashboard, not just in logs"
+    {
+      "id": "data-engineer-to-platform-engineer-pc-0-operational-burden-who-maintains-how-to",
+      "description": "Operational burden (who maintains, how to debug) accepted by platform owner",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "data-engineer-to-platform-engineer-pc-1-pipeline-observability-surfaces-appear-on-a",
+      "description": "Pipeline observability surfaces appear on a named dashboard, not just in logs",
+      "postconditionType": "advisory"
+    }
   ],
   "description": ""
 }

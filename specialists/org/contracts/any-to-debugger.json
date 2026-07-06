@@ -32,7 +32,13 @@
     "Bug reproduced or trace captured before proposing a fix"
   ],
   "postconditions": [
-    "rootCauseConfirmedVia in {reproduction, trace, test} — prevents symptom-only fixes that don't address the actual cause"
+    {
+      "id": "any-to-debugger-pc-0-rootcauseconfirmedvia-in-reproduction-trace-test-prevents",
+      "description": "rootCauseConfirmedVia in {reproduction, trace, test} — prevents symptom-only fixes that don't address the actual cause",
+      "postconditionType": "executable",
+      "enforcedVia": "output-shape",
+      "enforcedBy": "rootCauseConfirmedVia"
+    }
   ],
   "description": ""
 }

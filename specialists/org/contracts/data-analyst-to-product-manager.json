@@ -30,8 +30,17 @@
     "Metric definition reviewed for vanity-metric risk and for hit-without-solving-the-problem risk"
   ],
   "postconditions": [
-    "PRD success metrics carry the cited baseline and threshold from the analysis",
-    "Metrics that can be hit without solving the problem are flagged and replaced"
+    {
+      "id": "data-analyst-to-product-manager-pc-0-prd-success-metrics-carry-the-cited",
+      "description": "PRD success metrics carry the cited baseline and threshold from the analysis",
+      "postconditionType": "executable",
+      "check": "artifact-claims-cited"
+    },
+    {
+      "id": "data-analyst-to-product-manager-pc-1-metrics-that-can-be-hit-without",
+      "description": "Metrics that can be hit without solving the problem are flagged and replaced",
+      "postconditionType": "advisory"
+    }
   ],
   "description": "",
   "teamBoundary": {

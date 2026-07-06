@@ -31,13 +31,22 @@
     "Flaky-test signal collected over N runs before calling a test flaky"
   ],
   "postconditions": [
-    "Tests use deterministic waits and stable selectors; not arbitrary sleeps",
-    "Coverage targets aim at behaviors that matter, not at line counts that pad the number",
+    {
+      "id": "qa-to-test-automation-pc-0-tests-use-deterministic-waits-and-stable",
+      "description": "Tests use deterministic waits and stable selectors; not arbitrary sleeps",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "qa-to-test-automation-pc-1-coverage-targets-aim-at-behaviors-that",
+      "description": "Coverage targets aim at behaviors that matter, not at line counts that pad the number",
+      "postconditionType": "advisory"
+    },
     {
       "id": "automation-plan-has-flake-budget",
       "description": "Automation plan must contain a Flake Budget section",
       "check": "artifact-has-section",
-      "section": "Flake Budget"
+      "section": "Flake Budget",
+      "postconditionType": "executable"
     }
   ],
   "description": ""
