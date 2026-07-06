@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-05T20:58:24.071Z",
+  "generatedAt": "2026-07-06T01:01:28.951Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 791,
-    "topLevelTestFiles": 341,
+    "testFiles": 796,
+    "topLevelTestFiles": 346,
     "nestedTestFiles": 450,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 39,
     "byLayer": {
-      "unit": 544,
+      "unit": 549,
       "functional": 200,
       "visual": 11,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 481,
+      "unit": 486,
       "functional": 200,
       "visual": 11,
       "structural-guard": 19,
@@ -2187,6 +2187,46 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/flavors/schema.test.mjs — Every flavor overlay conforms to the schema."
+    },
+    {
+      "path": "tests/flows-define.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-define.test.mjs — flow-load validation."
+    },
+    {
+      "path": "tests/flows-demo.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-demo.test.mjs — end-to-end demo flow: fetch -> process -> done."
+    },
+    {
+      "path": "tests/flows-engine.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-engine.test.mjs — router dispatch, join combinators, budget exhaustion."
+    },
+    {
+      "path": "tests/flows-schema.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-schema.test.mjs — hand-rolled JSON-Schema subset validator."
+    },
+    {
+      "path": "tests/flows-state.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-state.test.mjs — typed state transitions."
     },
     {
       "path": "tests/frameworks-schema.test.mjs",
