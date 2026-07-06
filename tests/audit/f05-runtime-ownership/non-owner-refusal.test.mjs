@@ -47,7 +47,13 @@ function makeHome(envLines) {
 // process.kill is the real termination call inside killPortOwners. Intercepting it lets
 // the fixture observe what stop WOULD signal without ending any process on the host.
 
-function withKillRecorder(fn) {
+// fn's returned promise (stopServices is async) must resolve before the real
+// process.kill is restored. An unawaited `fn()` would restore the real
+// process.kill before fn's first internal await resolves, letting any later
+// process.kill call inside stopServices hit the real function instead of the
+// recorder below — the one behavior the ownership-refusal proof depends on.
+
+async function withKillRecorder(fn) {
   const realKill = process.kill;
   const signalled = [];
   process.kill = (pid, signal) => {
@@ -55,7 +61,8 @@ function withKillRecorder(fn) {
     return true;
   };
   try {
-    return { signalled, value: fn() };
+    const value = await fn();
+    return { signalled, value };
   } finally {
     process.kill = realKill;
   }
@@ -72,11 +79,10 @@ test('[R16] stop must NOT kill a configured-port owner that lacks Construct owne
   const home = makeHome(['MEMORY_PORT=7070', 'BRIDGE_PORT=5173', 'COPILOT_BRIDGE_PORT=5174']);
   t.after(() => { try { fs.rmSync(home, { recursive: true, force: true }); } catch {} });
 
-  const { signalled, value } = withKillRecorder(() => stopServices({
+  const { signalled, value: result } = await withKillRecorder(() => stopServices({
     homeDir: home,
     spawnSyncFn: lsofReturning(FOREIGN_PID),
   }));
-  const result = await value;
 
   assert.ok(
     !signalled.some((s) => s.pid === FOREIGN_PID),
@@ -89,11 +95,10 @@ test('[R16] an unverified port owner is REPORTED, not counted as stopped', async
   const home = makeHome(['MEMORY_PORT=7070']);
   t.after(() => { try { fs.rmSync(home, { recursive: true, force: true }); } catch {} });
 
-  const { value } = withKillRecorder(() => stopServices({
+  const { value: result } = await withKillRecorder(() => stopServices({
     homeDir: home,
     spawnSyncFn: lsofReturning(FOREIGN_PID),
   }));
-  const result = await value;
 
   const memory = result.results.find((r) => r.name === 'Memory (cm)');
   assert.ok(memory, 'memory service result present');
