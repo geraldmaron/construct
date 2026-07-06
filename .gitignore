@@ -77,6 +77,12 @@ lib/server/static/
 # bun.lock that must not drift into a second tracked lockfile.
 /bun.lock
 
+# scripts/build-binary.mjs's temporary .mjs-suffixed copy of bin/construct
+# (Bun's --compile bundler needs a recognized JS extension on the entry file
+# to traverse its imports at all); removed after every build, ignored as a
+# guard against a failed build leaving it behind.
+/bin/.construct-build-entry.mjs
+
 # Local scratch files that occasionally leak into the working tree
 .tmp/
 token-baseline.txt

@@ -82,9 +82,13 @@ import { syncFileStateToSql } from '../lib/storage/sync.mjs';
 import { deleteIngestedArtifacts, getStorageStatus, inferProjectName, resetStorage } from '../lib/storage/admin.mjs';
 import { runPressureRelease } from '../lib/runtime-pressure.mjs';
 import { loadRegistry, listSpecialists } from '../lib/registry/loader.mjs';
-import { resolveProjectRoot } from '../lib/roots.mjs';
+import { resolveProjectRoot, resolveInstallRoot } from '../lib/roots.mjs';
 
-const ROOT_DIR = path.resolve(import.meta.dirname, '..');
+// See lib/roots.mjs's resolveInstallRoot for why: under a Bun-compiled
+// binary, import.meta.dirname resolves to the virtual /$bunfs/root rather
+// than a real path, so every sibling data-dir read below would throw ENOENT.
+
+const ROOT_DIR = resolveInstallRoot(path.resolve(import.meta.dirname, '..'));
 const PROJECT_ROOT = resolveProjectRoot(process.cwd());
 const HOME = os.homedir();
 enableSecretAuditTrail();
