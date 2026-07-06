@@ -3863,6 +3863,76 @@ async function cmdGraph(args) {
   process.exit(1);
 }
 
+function printFlowHelp() {
+  println('Construct flow — resume a checkpointed flow-engine run (ADR-0067).');
+  println('');
+  println('Usage:');
+  println('  construct flow resume <run-id> --flow=<path> [--state=<json>]');
+  println('                                                  Resume <run-id> from its last checkpoint (or start it if none');
+  println('                                                  exists yet) and drive it to completion. <path> loads a JS');
+  println('                                                  flow module (default export from defineFlow). --state supplies');
+  println('                                                  the initial state as a JSON string, used only when starting fresh.');
+  println('  construct flow status <run-id>                  Print a checkpoint\'s persisted status without driving it.');
+}
+
+async function cmdFlow(args) {
+  const sub = args[0];
+  if (!sub || sub === '--help' || sub === '-h') { printFlowHelp(); return; }
+
+  const { loadCheckpoint, runCheckpointed } = await import('../lib/flows/checkpoint.mjs');
+  const cwd = process.cwd();
+
+  if (sub === 'status') {
+    const runId = args[1];
+    if (!runId) { errorln('Usage: construct flow status <run-id>'); process.exit(1); }
+    const checkpoint = loadCheckpoint(cwd, runId);
+    if (!checkpoint) { errorln(`No checkpoint for run "${runId}".`); process.exit(1); }
+    println(`Run: ${checkpoint.runId}`);
+    println(`Flow: ${checkpoint.flowId ?? '(unnamed)'}`);
+    println(`Updated: ${checkpoint.updatedAt}`);
+    println(`Status: ${checkpoint.run.status}`);
+    println(`Completed steps: ${checkpoint.run.completed.join(', ') || '(none)'}`);
+    println(`Frontier: ${checkpoint.run.frontier.join(', ') || '(empty)'}`);
+    return;
+  }
+
+  if (sub === 'resume') {
+    const runId = args[1];
+    const flags = parseKvFlags(args.slice(2), ['flow', 'state']);
+    if (!runId || !flags.flow) { errorln('Usage: construct flow resume <run-id> --flow=<path> [--state=<json>]'); process.exit(1); }
+    const { loadFlow } = await import('../lib/flows/define.mjs');
+    let flow;
+    try {
+      flow = await loadFlow(path.resolve(cwd, flags.flow));
+    } catch (err) {
+      errorln(`construct flow resume: failed to load flow "${flags.flow}": ${err.message}`);
+      process.exit(1);
+    }
+    let initialState = {};
+    if (flags.state) {
+      try {
+        initialState = JSON.parse(flags.state);
+      } catch (err) {
+        errorln(`construct flow resume: --state is not valid JSON: ${err.message}`);
+        process.exit(1);
+      }
+    }
+    const existed = Boolean(loadCheckpoint(cwd, runId));
+    const run = await runCheckpointed(cwd, runId, flow, initialState);
+    info(`${existed ? 'Resumed' : 'Started'} run ${runId} (flow "${flow.id ?? '(unnamed)'}")`);
+    println(`Status: ${run.status}`);
+    println(`Steps completed (cumulative): ${run.history.length}`);
+    if (run.status === 'error' || run.status === 'budget-exhausted') {
+      println(`Error: ${JSON.stringify(run.error)}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  errorln(`Unknown flow subcommand: ${sub}. Available: resume, status`);
+  process.exit(1);
+}
+
 async function cmdConfig(args) {
   const sub = args[0];
 
@@ -7238,6 +7308,7 @@ const handlers = new Map([
      }
      return cmdGraph(args);
    }],
+   ['flow', async (args) => cmdFlow(args)],
    ['impact', async (args) => {
      const { runImpactCli } = await import('../lib/graph/impact-cli.mjs');
      const code = await runImpactCli(args, { rootDir: ROOT_DIR, projectDir: process.cwd() });

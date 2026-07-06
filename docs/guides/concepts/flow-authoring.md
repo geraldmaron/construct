@@ -89,6 +89,22 @@ const result = await runFlow(flow, { topic: 'flow engines' });
 
 `createRun`/`advanceRun` expose the same machinery one tick at a time, for a caller that wants to drive the run itself (e.g. to checkpoint between steps).
 
+## Checkpoint and resume
+
+`lib/flows/checkpoint.mjs` persists a run after every completed step to the project's machine-scoped state root (ADR-0066), so a long-horizon run survives an editor restart or a crash:
+
+```js
+import { runCheckpointed } from '../../lib/flows/index.mjs';
+
+const run = await runCheckpointed(process.cwd(), 'run-42', flow, { topic: 'flow engines' });
+```
+
+`runCheckpointed` resumes from the last checkpoint for `run-42` when one exists, otherwise starts fresh from the given initial state, and writes a checkpoint after every tick. The CLI wraps the same machinery: `construct flow resume <run-id> --flow=<path> [--state=<json>]` resumes (or starts) a run and drives it to completion; `construct flow status <run-id>` prints a checkpoint's persisted status without driving it.
+
+A checkpoint records the flow's `id` alongside the run; resuming against a differently-`id`'d flow throws `FlowCheckpointError` rather than silently reinterpreting history against the wrong step graph — always resume with the same flow definition (by id) a run was started under.
+
+**Idempotent re-entry.** A step already reflected in a checkpoint's `completed` set is never back in that checkpoint's `frontier`, so resuming never re-runs a step the engine itself already finished — that's a property of the `Run` shape, not something the checkpoint layer adds. The one window this doesn't close is a crash between a step's `run()` executing and the *following* checkpoint write landing; closing that is an authoring convention, not an engine guarantee: a step's `run()` must be idempotent under at-least-once execution — pure computation, or a naturally idempotent side effect (an upsert, not an append) — the same constraint the engine already implies by having steps record delegation intent rather than perform it. A step that must run an exactly-once side effect belongs outside the engine, driven by its recorded delegation, not inside `run()`.
+
 ## What isn't here yet
 
-Checkpoint/resume (persisting a run's state and next-step pointer to the machine-scoped state root so it survives a restart) and artifact-passing-by-filesystem-reference are deliberately not implemented in the current engine — the `Run` shape (state, frontier, join progress, history) is a plain, clonable object specifically so a caller *could* persist it, but nothing does yet. Both are tracked as follow-on work, not silently deferred.
+Artifact-passing-by-filesystem-reference is deliberately not implemented in the current engine. It is tracked as follow-on work, not silently deferred.
