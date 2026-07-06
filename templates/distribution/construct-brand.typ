@@ -286,6 +286,15 @@
   ]
 }
 
+// Pandoc's typst writer has emitted two different calls for a markdown
+// blockquote across versions: older releases call a bare `blockquote(...)`
+// (relying on their own default template to define it, which ours does not),
+// newer releases call Typst's native `quote(block: true, ...)` (handled by the
+// `show quote:` rule below). Defining `blockquote` as a forward to `quote` keeps
+// both pandoc generations rendering through the same show rule.
+
+#let blockquote(body) = quote(block: true, body)
+
 // The theme function carries every body-level #set/#show rule. Module-scope set
 // rules do NOT propagate through `#import`, so each layout template applies this
 // with `#show: construct-theme` to wrap the Pandoc $body$ in the styled scope.
