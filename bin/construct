@@ -1134,10 +1134,33 @@ async function cmdDoctor() {
     const researchLintResults = lintResearchRepo({ rootDir: process.cwd() });
     add('Research artifacts meet minimum evidence structure', researchLintResults.every((entry) => entry.errors.length === 0), true);
 
-    const { VectorClient } = await import('../lib/storage/vector-client.mjs');
-    const vectorClient = new VectorClient({ env: process.env });
-    const vectorOk = await vectorClient.isHealthy();
-    add('Vector backend (LanceDB) reachable', vectorOk);
+    // isHealthy() connects to LanceDB, which creates the index directory on
+    // first touch — checking existence first keeps doctor from provisioning
+    // the vector store on a project that has never run semantic search
+    // (construct-rf26.17: lazy provisioning, not "on every project touch").
+    const { resolveStateDir } = await import('../lib/state-root.mjs');
+    const lancedbPath = process.env.CONSTRUCT_LANCEDB_PATH || resolveStateDir(process.cwd(), 'lancedb', { ensureDir: false });
+    if (fs.existsSync(lancedbPath)) {
+      const { VectorClient } = await import('../lib/storage/vector-client.mjs');
+      const vectorClient = new VectorClient({ env: process.env });
+      const vectorOk = await vectorClient.isHealthy();
+      add('Vector backend (LanceDB) reachable', vectorOk);
+
+      const { purgeExpiredData } = await import('../lib/storage/admin.mjs');
+      const purge = await purgeExpiredData(process.cwd(), { env: process.env });
+      if (purge.status === 'ok') {
+        const sizeMb = (purge.sizeBytes / 1024 / 1024).toFixed(1);
+        const oldest = purge.oldestRetainedAt ? new Date(purge.oldestRetainedAt).toISOString().slice(0, 10) : 'n/a';
+        add(
+          `Observations (vector index): ${sizeMb}MB, ${purge.remainingCount} row(s), oldest ${oldest}` +
+          (purge.evictedCount > 0 ? ` — evicted ${purge.evictedCount} past ${purge.maxAgeDays}d/${purge.maxRows} rows` : ''),
+          true,
+          true,
+        );
+      }
+    } else {
+      add('Vector backend (LanceDB): not yet provisioned (lazy — first semantic-search use creates it)', true, true);
+    }
 
     const { regenerateDocs } = await import('../lib/auto-docs.mjs');
     const { changed: stale } = await regenerateDocs({ rootDir: ROOT_DIR, check: true });
@@ -2059,18 +2082,38 @@ async function cmdPrune(args) {
   const dryRun = args.includes('--dry-run');
   const { planPrune, executePrune, measureUsage } = await import('../lib/resources/budget.mjs');
   const actions = planPrune(process.cwd(), process.env);
-  if (actions.length === 0) { info('Nothing to prune. .cx/ is within all configured budgets.'); return; }
-  const byCat = {};
-  let totalBytes = 0;
-  for (const a of actions) {
-    byCat[a.category] = (byCat[a.category] || 0) + 1;
-    totalBytes += a.bytes || 0;
+  let pruned = false;
+  if (actions.length > 0) {
+    pruned = true;
+    const byCat = {};
+    let totalBytes = 0;
+    for (const a of actions) {
+      byCat[a.category] = (byCat[a.category] || 0) + 1;
+      totalBytes += a.bytes || 0;
+    }
+    println(`Plan: prune ${actions.length} file(s), free ${Math.round(totalBytes / 1024)}KB`);
+    for (const [cat, count] of Object.entries(byCat)) println(`  ${cat}: ${count} file(s)`);
+    if (!dryRun) {
+      const result = executePrune(actions);
+      info(`Pruned ${result.removed.length} file(s), freed ${Math.round(result.bytesFreed / 1024)}KB.`);
+    }
   }
-  println(`Plan: prune ${actions.length} file(s), free ${Math.round(totalBytes / 1024)}KB`);
-  for (const [cat, count] of Object.entries(byCat)) println(`  ${cat}: ${count} file(s)`);
+
+  // Vector-indexed observations live in LanceDB, not flat files, so they
+  // fall outside planPrune/executePrune's file-list model — purgeExpiredData
+  // is a no-op when the index was never provisioned, matching the lazy
+  // vector-index contract (construct-rf26.17).
+  if (!dryRun) {
+    const { purgeExpiredData } = await import('../lib/storage/admin.mjs');
+    const purge = await purgeExpiredData(process.cwd(), { env: process.env });
+    if (purge.status === 'ok' && purge.evictedCount > 0) {
+      pruned = true;
+      info(`Evicted ${purge.evictedCount} observation(s) past ${purge.maxAgeDays}d/${purge.maxRows}-row cap (${purge.remainingCount} retained).`);
+    }
+  }
+
+  if (!pruned) { info('Nothing to prune. .cx/ is within all configured budgets.'); return; }
   if (dryRun) { info('--dry-run: no files removed.'); return; }
-  const result = executePrune(actions);
-  info(`Pruned ${result.removed.length} file(s), freed ${Math.round(result.bytesFreed / 1024)}KB.`);
   const after = measureUsage(process.cwd(), process.env);
   println(`.cx/ now at ${Math.round(after.totalCxBytes / 1024 / 1024)}MB / ${Math.round(after.totalCxCap / 1024 / 1024)}MB cap (${Math.round(after.totalCxUsageRatio * 100)}%).`);
 }
