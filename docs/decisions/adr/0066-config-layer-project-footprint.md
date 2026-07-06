@@ -6,8 +6,8 @@ cx_doc_id and body_hash are stamped by construct on commit; omitted in this draf
 - **Date**: 2026-07-05
 - **Status**: accepted
 - **Deciders**: Gerald Dagher (owner)
-- **Supersedes**: the in-project heavy-state disposition of ADR-0027 (its non-destructive marker-block discipline and disposition-table mechanism are affirmed and reused, not reopened)
-- **Relates to**: ADR-0027 (host/project footprint contract this decision extends), ADR-0013 (skills on-disk layout), ADR-0036 (docling sidecar, whose venv this decision relocates)
+- **Supersedes**: none
+- **Relates to**: ADR-0027 (host/project footprint contract this decision extends — its non-destructive marker-block discipline and disposition-table mechanism are affirmed and reused; only its in-project heavy-state disposition is superseded here), ADR-0013 (skills on-disk layout), ADR-0036 (docling sidecar, whose venv this decision relocates)
 
 <!-- Owning specialist: cx-architect. -->
 

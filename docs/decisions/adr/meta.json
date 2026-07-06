@@ -55,6 +55,7 @@
     "0063-host-subscription-execution-pickup-and-sampling",
     "0064-language-runtime-strategy",
     "0065-orchestrator-worker-consolidation",
+    "appendix-0065-roster-mapping",
     "0066-config-layer-project-footprint",
     "0067-deterministic-flow-engine"
   ]
