@@ -35,6 +35,7 @@ import test from 'node:test';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
+import { resolveStatePath } from '../../lib/state-root.mjs';
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -60,8 +61,24 @@ function project() {
   return cwd;
 }
 
-function readRunRecord(cwd, runId) {
-  const file = path.join(cwd, '.cx', 'runtime', 'orchestration', 'runs', `${runId}.json`);
+// The run store resolves the machine-scoped state root (ADR-0066) via
+// CX_HOME_OVERRIDE on process.env directly, not through any { env } option
+// threaded through resolveStatePath itself. Each surface's sterile spawn env
+// carries its own mkdtemp HOME/CX_HOME_OVERRIDE; pinning the identical value
+// around the read resolves the same sandboxed state root the subprocess
+// wrote to, rather than an unrelated ambient value (e.g. the real developer
+// machine's home) left over on the process from a prior test.
+
+function readRunRecord(cwd, runId, env) {
+  const prev = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = env.CX_HOME_OVERRIDE;
+  let file;
+  try {
+    file = resolveStatePath(cwd, 'runtime', 'orchestration', 'runs', `${runId}.json`, { ensureDir: false });
+  } finally {
+    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prev;
+  }
   assert.ok(fs.existsSync(file), `run record must be persisted to disk at ${file}`);
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
@@ -85,7 +102,7 @@ async function driveCliResearch(cwd, env) {
   });
   assert.equal(res.status, 0, `construct orchestrate run failed: ${res.stderr}`);
   const envelope = JSON.parse(res.stdout);
-  const runRecord = readRunRecord(cwd, envelope.runId);
+  const runRecord = readRunRecord(cwd, envelope.runId, env);
   return { envelope, runRecord };
 }
 
@@ -100,7 +117,7 @@ async function driveMcpStdioResearch(cwd, env) {
     });
     const text = res?.content?.find((c) => c.type === 'text')?.text;
     const envelope = JSON.parse(text);
-    const runRecord = readRunRecord(cwd, envelope.runId);
+    const runRecord = readRunRecord(cwd, envelope.runId, env);
     return { envelope, runRecord };
   } finally {
     await client.close();

@@ -126,6 +126,12 @@ function runSync({ home, cwd, env = {}, t }) {
   // into global mode explicitly. The repo copy carries a `.cx/` marker which
   // would otherwise trigger auto-detected project mode.
 
+  // repoRoot here is makeRepoCopy()'s disposable tmp copy, not the real repo —
+  // CX_TOOLKIT_DIR pins sync-specialists.mjs's self-derived root to that exact
+  // (symlink-unresolved) path string, matching this test's literal expected
+  // path rather than the macOS /tmp-to-/private/tmp symlink-resolved form
+  // import.meta.dirname would otherwise produce.
+
   execFileSync(process.execPath, ["scripts/sync-specialists.mjs", "--global"], {
     cwd: repoRoot,
     env: {
