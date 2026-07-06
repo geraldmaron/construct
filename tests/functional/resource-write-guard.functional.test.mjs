@@ -1,9 +1,13 @@
 /**
  * tests/functional/resource-write-guard.functional.test.mjs — disk budget
  * enforcement on the real trace writer in an isolated project tmpdir.
+ *
+ * Traces resolve through the machine-scoped state root (ADR-0066), so
+ * CX_HOME_OVERRIDE is pinned for the file to keep measureUsage/emitTraceEvent
+ * off the real developer machine's $HOME.
  */
 
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeEach, afterEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -11,6 +15,15 @@ import path from 'node:path';
 
 import { emitTraceEvent } from '../../lib/worker/trace.mjs';
 import { measureUsage } from '../../lib/resources/budget.mjs';
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-res-guard-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 let projectRoot;
 

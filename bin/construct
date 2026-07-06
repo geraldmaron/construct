@@ -659,6 +659,31 @@ async function cmdDoctor() {
     );
   }
 
+  // Legacy in-project heavy state (ADR-0066): runtime/traces/lancedb now
+  // resolve through the machine-scoped state root, so a project that still
+  // carries these directories is holding pre-refit state at the old
+  // project-local path. No auto-fix — the ADR calls for manual deletion, not
+  // a migration shim, since the durable copy already lives at the state root.
+
+  if (isProject) {
+    const legacyHeavyDirs = [
+      { rel: path.join('.cx', 'runtime'), label: '.cx/runtime' },
+      { rel: path.join('.cx', 'traces'), label: '.cx/traces' },
+      { rel: path.join('.cx', 'lancedb'), label: '.cx/lancedb' },
+    ]
+      .map((d) => ({ ...d, full: path.join(cwd, d.rel) }))
+      .filter((d) => fs.existsSync(d.full) && fs.readdirSync(d.full).length > 0);
+
+    add(
+      legacyHeavyDirs.length === 0
+        ? 'No legacy in-project heavy state (runtime/traces/lancedb)'
+        : `Legacy in-project heavy state found: ${legacyHeavyDirs.map((d) => d.label).join(', ')} — `
+          + 'durable state now lives at ~/.construct/projects/<key>/ (ADR-0066); delete the old directories manually to reclaim disk',
+      true,
+      legacyHeavyDirs.length !== 0,
+    );
+  }
+
   // Mirror model tier overrides stranded in the pre-XDG legacy config forward
   // before resolving tiers, so an install upgraded across the XDG move reports
   // configured without a manual copy. Applied to process.env too so the check
