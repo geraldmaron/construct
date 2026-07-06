@@ -1,7 +1,7 @@
 {
   "id": "architect-to-devil-advocate",
   "producer": "cx-architect",
-  "consumer": "cx-devil-advocate",
+  "consumer": "cx-reviewer",
   "trigger": {
     "framingChallenge.required": true
   },

@@ -9,7 +9,7 @@
   ],
   "collaborators": [
     "product-management-team",
-    "ux-research-team"
+    "design-team"
   ],
   "specialists": [
     "cx-researcher"
@@ -27,10 +27,10 @@
   ],
   "escalationPath": [
     "product-manager",
-    "rd-lead",
+    "architect",
     "orchestrator"
   ],
-  "charter": "Own exploratory research, codebase discovery, and knowledge synthesis that informs product framing. Does not own implementation or release timing.",
+  "charter": "Own exploratory research, codebase discovery, and user/UX research that inform product framing (explorer and ux-researcher folded in; construct-rf26.11; ux-research-team merged into this team). Does not own implementation or release timing.",
   "contact": {
     "slack": "#product",
     "email": "product@example.com",

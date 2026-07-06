@@ -13,22 +13,34 @@
     "security/vuln-research",
     "security/threat-intel",
     "quality-gates/verify-security",
-    "architecture/security-arch"
+    "architecture/security-arch",
+    "compliance/license-audit",
+    "compliance/data-privacy",
+    "compliance/ai-disclosure",
+    "compliance/regulatory-review"
   ],
   "events": [
     "dep.cve",
     "secrets.detected",
-    "config.protection.violation"
+    "config.protection.violation",
+    "dep.license",
+    "privacy-policy.review"
   ],
   "fence": {
     "allowedPaths": [
       "docs/security/**",
-      "docs/threat-models/**"
+      "docs/threat-models/**",
+      "docs/legal/**",
+      "docs/compliance/**",
+      ".cx/knowledge/**"
     ],
     "allowedBdLabels": [
       "security",
       "vulnerability",
-      "audit"
+      "audit",
+      "legal",
+      "compliance",
+      "privacy"
     ],
     "allowedCommands": [
       "bd create",
@@ -59,21 +71,29 @@
       "attack surface changes",
       "dependency vulnerabilities",
       "auth boundary integrity",
-      "secret exposure"
+      "secret exposure",
+      "license compliance",
+      "data privacy posture",
+      "AI disclosure obligations",
+      "regulatory changes"
     ],
     "riskSignals": [
       "new unauthed endpoints",
       "unaudited dependencies",
       "implicit trust boundaries",
-      "hardcoded credentials"
+      "hardcoded credentials",
+      "unreviewed dependency licenses",
+      "undisclosed AI processing",
+      "missing data basis documentation",
+      "new jurisdiction exposure"
     ],
     "artifactBias": [
       "adrs",
       "notes"
     ]
   },
-  "canEdit": true,
-  "claudeTools": "Read,Grep,Glob,LS,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
+  "canEdit": false,
+  "claudeTools": "Read,Grep,Glob,LS,Bash,WebSearch,WebFetch,list_skills,get_skill,search_skills,memory_search,memory_add_observations,cx_trace,cx_score,get_template,list_templates",
   "internal": true,
   "severityImmediate": [
     "dep.cve",
@@ -82,8 +102,8 @@
   "killSwitchEnv": "CONSTRUCT_ROLE_SECURITY",
   "handoffCandidates": [
     "engineer",
-    "platform-engineer",
-    "reviewer"
+    "reviewer",
+    "product-manager"
   ],
   "team": "governance-team",
   "teamId": "governance-team",

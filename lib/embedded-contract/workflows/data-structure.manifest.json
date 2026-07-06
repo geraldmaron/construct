@@ -4,7 +4,7 @@
   "type": "linear",
   "modes": ["solo", "team"],
   "surfaces": ["mcp", "cli"],
-  "roleChain": ["data-analyst", "data-engineer"],
+  "roleChain": ["data-analyst", "engineer"],
   "defaultApprovalMode": "proposal-only",
   "durableStateModel": "none",
   "tier": "standard",

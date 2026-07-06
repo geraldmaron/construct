@@ -6,7 +6,6 @@ artifactType: guidance
 role: qa.api-contract
 applies_to:
   - cx-qa
-  - cx-test-automation
 inherits: qa
 version: 2
 scopes:

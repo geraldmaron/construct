@@ -4,7 +4,7 @@
   "type": "linear",
   "modes": ["solo", "team"],
   "surfaces": ["mcp", "cli"],
-  "roleChain": ["researcher", "data-analyst", "evaluator"],
+  "roleChain": ["researcher", "data-analyst", "reviewer"],
   "defaultApprovalMode": "proposal-only",
   "durableStateModel": "none",
   "tier": "reasoning",

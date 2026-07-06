@@ -5,7 +5,7 @@ inputs: [code-diff, prompt]
 artifactType: role-guidance
 role: ai-engineer
 applies_to:
-  - cx-ai-engineer
+  - cx-engineer
 inherits: engineer
 version: 2
 scopes:

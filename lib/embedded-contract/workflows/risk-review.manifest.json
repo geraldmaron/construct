@@ -4,7 +4,7 @@
   "type": "linear",
   "modes": ["solo", "team"],
   "surfaces": ["mcp", "cli"],
-  "roleChain": ["devil-advocate", "security", "legal-compliance"],
+  "roleChain": ["reviewer", "security"],
   "defaultApprovalMode": "requires-human-approval",
   "outputSchema": { "artifact": "review-report" },
   "durableStateModel": "none",

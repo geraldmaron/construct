@@ -6,7 +6,6 @@ artifactType: guidance
 role: qa
 applies_to:
   - cx-qa
-  - cx-test-automation
 inherits: null
 version: 2
 scopes:

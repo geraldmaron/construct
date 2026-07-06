@@ -36,7 +36,7 @@ test('every manifest entry with template path resolves on disk', () => {
 test('templateMetadata exposes tone and release gate', () => {
   const meta = templateMetadata('prd', { rootDir: REPO });
   assert.equal(meta.tone, 'decision-forcing-direct');
-  assert.ok(meta.releaseGate?.requiredReviewers?.includes('cx-devil-advocate'));
+  assert.ok(meta.releaseGate?.requiredReviewers?.includes('cx-reviewer'));
 });
 
 test('artifact workflow contract resolves any registered class and explicit override precedence', () => {

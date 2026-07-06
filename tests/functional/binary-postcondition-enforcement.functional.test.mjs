@@ -68,7 +68,7 @@ const CASES = [
     expectFailureId: 'debugger.root-cause-confirmed-via',
   },
   {
-    producer: 'cx-docs-keeper',
+    producer: 'cx-operations',
     consumer: 'cx-engineer',
     invalidPacket: { crossDocCoherenceCheckRan: false },
     expectFailureId: 'docs-keeper.cross-doc-coherence-check-ran',

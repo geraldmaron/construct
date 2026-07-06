@@ -5,7 +5,7 @@ inputs: [ui-design, component]
 artifactType: role-guidance
 role: designer.accessibility
 applies_to:
-  - cx-accessibility
+  - cx-designer
 inherits: designer
 version: 2
 scopes:

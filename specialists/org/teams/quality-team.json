@@ -6,19 +6,11 @@
   "owner": "reviewer",
   "roles": [
     "reviewer",
-    "qa",
-    "test-automation",
-    "evaluator",
-    "trace-reviewer",
-    "devil-advocate"
+    "qa"
   ],
   "specialists": [
-    "cx-evaluator",
-    "cx-devil-advocate",
     "cx-reviewer",
-    "cx-qa",
-    "cx-trace-reviewer",
-    "cx-test-automation"
+    "cx-qa"
   ],
   "collaborators": [],
   "decisionRights": [
@@ -35,9 +27,9 @@
   "escalationPath": [
     "reviewer",
     "architect",
-    "rd-lead"
+    "orchestrator"
   ],
-  "charter": "Verify the system does what it claims and surface what is broken. Owns review, testing, evaluation, trace analysis, and devil's-advocate framing. Does not own implementation or product decisions. Escalates quality vs. schedule conflicts to architecture/R&D.",
+  "charter": "Verify the system does what it claims and surface what is broken. Owns code review, plan-challenge framing, AI/eval rigor, and fleet-level trace analysis (devil-advocate, evaluator, trace-reviewer folded into cx-reviewer; test-automation folded into cx-qa; construct-rf26.11), plus test strategy and automation. Does not own implementation or product decisions. Escalates quality vs. schedule conflicts to architecture.",
   "contact": {
     "slack": "#quality",
     "email": "quality@example.com",

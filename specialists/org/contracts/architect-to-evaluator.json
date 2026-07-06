@@ -1,7 +1,7 @@
 {
   "id": "architect-to-evaluator",
   "producer": "cx-architect",
-  "consumer": "cx-evaluator",
+  "consumer": "cx-reviewer",
   "trigger": {
     "riskFlags": [
       "ai",

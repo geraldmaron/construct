@@ -1,7 +1,7 @@
 {
   "id": "any-to-docs-keeper",
   "producer": "*",
-  "consumer": "cx-docs-keeper",
+  "consumer": "cx-operations",
   "trigger": {
     "postConsumer": true,
     "changedCoreDocs": true

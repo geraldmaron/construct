@@ -28,7 +28,7 @@
     "type": "decision"
   },
   "preconditions": [
-    "cx-devil-advocate framing challenge logged if riskFlags.architecture"
+    "cx-reviewer framing challenge logged if riskFlags.architecture"
   ],
   "postconditions": [
     {

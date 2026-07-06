@@ -1,7 +1,7 @@
 {
   "id": "legal-compliance-to-release-manager",
-  "producer": "cx-legal-compliance",
-  "consumer": "cx-release-manager",
+  "producer": "cx-security",
+  "consumer": "cx-operations",
   "trigger": {
     "riskFlags": [
       "compliance"

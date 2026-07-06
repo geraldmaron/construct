@@ -27,7 +27,7 @@ Use the single-writer rule whenever multiple sessions are active: if two session
 
 Before any non-trivial request, CALL the code-backed orchestration policy via the `orchestration_policy` MCP tool with the request text and your `fileCount` / `moduleCount` / `introducesContract` estimate. Do not classify from memory. Honor the returned `track`. When `track` is not immediate, dispatch through `orchestration_delegation_next` (below) — do not author the deliverable yourself and do not self-sequence off `orchestration_policy`'s specialist list from memory across turns.
 
-Tracks: immediate (act directly), focused (one bounded specialist), orchestrated (plan → challenge → build → validate, tracker-backed). cx-devil-advocate is mandatory whenever `riskFlags` include architecture, security, dataIntegrity, or ai.
+Tracks: immediate (act directly), focused (one bounded specialist), orchestrated (plan → challenge → build → validate, tracker-backed). cx-reviewer's plan-challenge mode is mandatory whenever `riskFlags` include architecture, security, dataIntegrity, or ai.
 
 Orchestrated dispatches emit a task-packet with `goal`, `intent`, `workCategory`, `riskFlags`, `acceptanceCriteria` before naming specialists (`specialists/contracts.json:construct-to-orchestrator`).
 

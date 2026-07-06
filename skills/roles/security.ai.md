@@ -6,7 +6,7 @@ artifactType: guidance
 role: security.ai
 applies_to:
   - cx-security
-  - cx-ai-engineer
+  - cx-engineer
 inherits: security
 version: 2
 scopes:

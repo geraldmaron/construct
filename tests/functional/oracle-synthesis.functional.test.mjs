@@ -216,7 +216,7 @@ test('synthesizeVerdict surfaces cross-team-handoff-blocked when an approver tea
   const blocked = gaps.find((g) => g.id === 'cross-team-handoff-blocked');
   assert.ok(blocked, 'cross-team-handoff-blocked gap should be present');
   assert.equal(blocked.severity, 'high');
-  assert.equal(blocked.remediationRoute.primary, 'cx-rd-lead', 'cross-team handoff blocks route to rd-lead');
+  assert.equal(blocked.remediationRoute.primary, 'cx-operations', 'cross-team handoff blocks route to operations (rd-lead retired, construct-rf26.11)');
   assert.ok(blocked.detail.includes('engineer-to-reviewer'));
   assert.equal(verdict, 'degraded');
   assert.ok(recommendedActions.some((a) => a.kind === 'specialist-review' && a.summary.includes('approver team')));
@@ -240,14 +240,16 @@ test('resolveRemediationDispatch uses static mode for single-team gaps', () => {
 });
 
 test('resolveRemediationDispatch uses swarm mode when multiple teams are involved', () => {
+  // cx-engineer (engineering-team) and cx-operations (operations-team): a
+  // genuinely cross-team pair, needed to exercise real swarm dispatch.
   const dispatch = resolveRemediationDispatch({
     id: 'parity-drift',
     detail: 'Project adapter parity check failed',
-    remediationRoute: { primary: 'cx-platform-engineer', secondary: 'cx-docs-keeper' },
+    remediationRoute: { primary: 'cx-engineer', secondary: 'cx-operations' },
   }, { cwd: process.cwd() });
   assert.equal(dispatch.mode, 'swarm');
-  assert.ok(dispatch.specialists.includes('cx-platform-engineer'));
-  assert.ok(dispatch.specialists.includes('cx-docs-keeper'));
+  assert.ok(dispatch.specialists.includes('cx-engineer'));
+  assert.ok(dispatch.specialists.includes('cx-operations'));
   assert.ok((dispatch.teamRouting?.involvedTeams ?? []).length > 1);
 });
 

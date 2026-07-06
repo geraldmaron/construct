@@ -1104,7 +1104,7 @@ async function cmdDoctor() {
       return !fs.existsSync(path.join(ROOT_DIR, s.promptFile));
     });
     add('All specialist promptFiles resolve', brokenPromptFiles.length === 0);
-    const headhuntClassifierAgents = ['cx-docs-keeper', 'cx-researcher', 'cx-architect', 'cx-security', 'cx-engineer'];
+    const headhuntClassifierAgents = ['cx-operations', 'cx-researcher', 'cx-architect', 'cx-security', 'cx-engineer'];
     const registryNames = new Set(Object.values(registry.specialists ?? {}).map((s) => `cx-${s.name}`));
     const classifierOrphans = headhuntClassifierAgents.filter((n) => !registryNames.has(n));
     add('Headhunt classifier agents exist in registry', classifierOrphans.length === 0);
@@ -7651,10 +7651,10 @@ const handlers = new Map([
         println(`✓ draft created at ${pathMod.relative(process.cwd(), result.dir)}`);
         println('');
         println(`Next steps (in order, per docs/guides/concepts/scope-lifecycle.md):`);
-        println(`  1. Discover  (cx-ux-researcher): fill personas/<role>.md from interviews + primary sources.`);
+        println(`  1. Discover  (cx-researcher): fill personas/<role>.md from interviews + primary sources.`);
         println(`  2. Frame     (cx-product-manager): fill departments/<dept>.md charters and intake taxonomy.`);
         println(`  3. Architect (cx-architect): reconcile role reuse vs new; populate departments[] in scope.json.`);
-        println(`  4. Validate  (cx-evaluator): run persona-eval and classifier-eval against representative signals.`);
+        println(`  4. Validate  (cx-reviewer): run persona-eval and classifier-eval against representative signals.`);
         println('');
         println(`Inspect the brief:  open ${pathMod.relative(process.cwd(), result.briefPath)}`);
         return;

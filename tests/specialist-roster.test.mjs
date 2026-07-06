@@ -8,7 +8,8 @@ import { buildSpecialistCatalog, formatSpecialistRosterText } from '../lib/speci
 
 test('buildSpecialistCatalog lists public specialists with routing hints', () => {
   const catalog = buildSpecialistCatalog();
-  assert.ok(catalog.length >= 20);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.ok(catalog.length >= 10);
   assert.ok(catalog.every((row) => row.id.startsWith('cx-') && row.whenToUse.length > 0));
   assert.equal(catalog.some((row) => row.id === 'cx-engineer'), true);
   assert.equal(catalog.some((row) => row.id === 'cx-orchestrator'), true, 'internal specialists are routable via orchestration_policy');

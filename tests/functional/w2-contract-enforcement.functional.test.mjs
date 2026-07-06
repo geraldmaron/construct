@@ -253,7 +253,13 @@ test('validateHandoff passes engineer-to-reviewer when verdict is valid and find
 test('validateHandoff blocks on a missing output.mustContain field (architect-to-platform-engineer rollback)', () => {
   const result = validateHandoff({
     producer: 'cx-architect',
-    consumer: 'cx-platform-engineer',
+    consumer: 'cx-engineer',
+    // cx-architect->cx-engineer now matches 4 contracts (architect-to-engineer,
+    // -ai-engineer, -data-engineer, -platform-engineer all resolved their
+    // consumer to cx-engineer, construct-rf26.11), so an explicit id is
+    // required to avoid findContract's no-id fallback silently picking
+    // whichever contract sorts first.
+    id: 'architect-to-platform-engineer',
     artifact: { problem: 'p', solution: 's', impact: 'i', migration: 'm' },
     enforcement: 'block',
   });

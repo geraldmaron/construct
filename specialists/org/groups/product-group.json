@@ -4,10 +4,8 @@
   "owner": "product-manager",
   "roles": [
     "product-manager",
-    "ux-researcher",
     "designer",
-    "researcher",
-    "accessibility"
+    "researcher"
   ],
   "decisionRights": [
     "intake-triage",
@@ -22,10 +20,10 @@
   ],
   "escalationPath": [
     "product-manager",
-    "rd-lead",
+    "architect",
     "orchestrator"
   ],
-  "charter": "Translate user reality into shippable change. Owns problem framing, requirements, evidence gathering, design decisions, and acceptance criteria. Does not own implementation choices, deployment decisions, or security policy. Escalates scope conflicts to R&D leadership.",
+  "charter": "Translate user reality into shippable change. Owns problem framing, requirements, evidence gathering, design decisions, and acceptance criteria — including strategic/market framing (business-strategist), accessibility (designer), and user/UX + codebase research (researcher), all folded in at construct-rf26.11. Does not own implementation choices, deployment decisions, or security policy.",
   "contact": {
     "slack": "#product",
     "email": "product@example.com",
@@ -38,9 +36,7 @@
   "kind": "group",
   "squads": [
     "product-management-team",
-    "ux-research-team",
     "design-team",
-    "research-team",
-    "accessibility-team"
+    "research-team"
   ]
 }

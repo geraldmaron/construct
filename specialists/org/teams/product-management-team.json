@@ -13,7 +13,6 @@
     "product-manager.growth"
   ],
   "collaborators": [
-    "ux-research-team",
     "design-team",
     "research-team"
   ],
@@ -33,10 +32,10 @@
   ],
   "escalationPath": [
     "product-manager",
-    "rd-lead",
+    "architect",
     "orchestrator"
   ],
-  "charter": "Own requirements, evidence-backed prioritization, and PRD-family artifacts. PM flavors (platform, growth, enterprise, AI product) are overlays — pick one per task. Escalates scope conflicts to Product Group leadership.",
+  "charter": "Own requirements, evidence-backed prioritization, and PRD-family artifacts, including strategic/market framing (business-strategist folded in; construct-rf26.11). PM flavors (platform, growth, enterprise, AI product) are overlays — pick one per task. Escalates scope conflicts to Product Group leadership.",
   "contact": {
     "slack": "#product",
     "email": "product@example.com",

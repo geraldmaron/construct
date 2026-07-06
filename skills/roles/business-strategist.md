@@ -5,7 +5,7 @@ inputs: [strategy-doc, competitive-analysis]
 artifactType: guidance
 role: business-strategist
 applies_to:
-  - cx-business-strategist
+  - cx-product-manager
 inherits: null
 version: 2
 scopes:

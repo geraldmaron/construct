@@ -1,6 +1,6 @@
 {
   "id": "accessibility-to-qa",
-  "producer": "cx-accessibility",
+  "producer": "cx-designer",
   "consumer": "cx-qa",
   "trigger": {
     "riskFlags": [

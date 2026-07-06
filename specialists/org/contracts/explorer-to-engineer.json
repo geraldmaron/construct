@@ -1,6 +1,6 @@
 {
   "id": "explorer-to-engineer",
-  "producer": "cx-explorer",
+  "producer": "cx-researcher",
   "consumer": "cx-engineer",
   "trigger": {
     "intent": [

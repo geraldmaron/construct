@@ -8,7 +8,8 @@ import { auditSpecialists } from '../lib/audit-specialists.mjs';
 
 test('auditSpecialists covers all registry specialists', () => {
   const r = auditSpecialists({ silent: true });
-  assert.equal(r.specialistCount, 29);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.equal(r.specialistCount, 12);
   assert.ok(r.specialists.every((s) => s.humanEquivalent && s.grade));
 });
 
@@ -25,5 +26,6 @@ test('construct audit specialists CLI emits JSON', async () => {
     encoding: 'utf8',
   });
   const parsed = JSON.parse(out);
-  assert.ok(parsed.specialists.length >= 29);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.ok(parsed.specialists.length >= 12);
 });
