@@ -75,6 +75,8 @@
     "evals": "node ./bin/construct evals",
     "certify:demos": "node ./bin/construct certify demos",
     "build:sea": "esbuild bin/construct --bundle --platform=node --target=node20 --packages=external --outfile=dist/construct-bundle.cjs 2>&1 || (echo 'esbuild not found — install with: npm install -g esbuild' && exit 1)",
+    "build:binary": "node scripts/build-binary.mjs",
+    "build:binary:fallback": "node scripts/build-sea.mjs",
     "examples:deck": "node scripts/generate-deck-examples.mjs",
     "examples:distribution": "node scripts/generate-distribution-examples.mjs",
     "clean:artifacts": "node scripts/clean-artifacts.mjs",
