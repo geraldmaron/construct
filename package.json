@@ -60,6 +60,7 @@
     "test:functional": "XDG_CONFIG_HOME= XDG_STATE_HOME= XDG_CACHE_HOME= ANTHROPIC_API_KEY= OPENAI_API_KEY= OPENROUTER_API_KEY= CX_MODEL_REASONING= CX_MODEL_STANDARD= CX_MODEL_FAST= CONSTRUCT_MODEL_REASONING= CONSTRUCT_MODEL_STANDARD= CONSTRUCT_MODEL_FAST= CONSTRUCT_PROVIDER_TIMEOUT_MS= WEB_SEARCH_URL= CX_USER_ENV_PATH= CONSTRUCT_TELEMETRY_URL= node --test --test-timeout=120000 --test-concurrency=1 tests/functional/*.functional.test.mjs",
     "test:visual": "node --test --test-timeout=120000 tests/visual/*.test.mjs",
     "test:unit": "node scripts/run-tests.mjs --exclude=tests/functional",
+    "ci:local": "bash scripts/ci-repro/run.sh",
     "lint:js": "eslint bin/construct \"lib/**/*.mjs\" \"scripts/**/*.mjs\" \"tests/**/*.mjs\"",
     "coverage": "c8 --reporter=text-summary --reporter=lcov --src=lib --src=bin node scripts/run-tests.mjs --exclude=tests/functional",
     "docs:init": "node -e \"console.error('docs:init is deprecated — use: construct init --docs-preset=lean|product|full'); process.exit(1)\"",
