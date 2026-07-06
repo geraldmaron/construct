@@ -4275,7 +4275,12 @@ async function cmdOrchestrate(args) {
       fileCount: Number(flag('--file-count') || 0),
       moduleCount: Number(flag('--module-count') || 0),
     };
-    const run = rest.includes('--no-execute') ? await planRun(request, {}) : await runOrchestration(request, {});
+    // runOrchestration/executeRun resolve the worker backend from opts.workerBackend,
+    // not from request — the flag must reach opts explicitly or an override is silently
+    // dropped (construct-1xlz).
+
+    const runOpts = cliWorkerBackend ? { workerBackend: cliWorkerBackend } : {};
+    const run = rest.includes('--no-execute') ? await planRun(request, runOpts) : await runOrchestration(request, runOpts);
     if (wantsJson) { println(JSON.stringify(hostAdapterMetadata(run), null, 2)); return; }
 
     // AP5.1/AP5.4: the CLI must never print the raw persisted status — a

@@ -56,6 +56,21 @@ test('orchestrate run --json plans a specialist chain and persists a durable run
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
+test('orchestrate run --worker-backend provider reaches the execution engine, not just the request label', () => {
+  const cwd = makeProject();
+  const res = run(cwd, ['run', 'Refactor the auth module and add a migration; review for security', '--strategy', 'orchestrated', '--host-model', MODEL, '--file-count', '4', '--module-count', '2', '--worker-backend', 'provider', '--json']);
+  assert.equal(res.status, 0, res.stderr);
+  const meta = JSON.parse(res.stdout);
+  assert.equal(meta.workerBackend, 'provider');
+  assert.ok(meta.tasks.length >= 2, 'multiple specialists sequenced');
+  // A task executor of `inline:prepared` would mean the CLI flag only ever labeled the
+  // run, never actually selected the execution backend (construct-1xlz). Provider
+  // execution (attempted here, and failing without a key) proves the opposite.
+
+  assert.ok(meta.tasks.every((t) => t.executor === 'provider:error'), 'provider backend was actually invoked, not inline');
+  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+});
+
 test('orchestrate status reads a run back across a separate process invocation', () => {
   const cwd = makeProject();
   const created = JSON.parse(run(cwd, ['run', 'design a system end to end', '--strategy', 'orchestrated', '--host-model', MODEL, '--file-count', '3', '--json']).stdout);
