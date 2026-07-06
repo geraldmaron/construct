@@ -28,7 +28,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -38,6 +38,7 @@ import { ApprovalQueue } from '../../lib/embed/approval-queue.mjs';
 import { runCapabilityTick } from '../../lib/embed/capability-jobs.mjs';
 import { createPmFeedbackReasoningExecutor, analyzePmFeedback } from '../../lib/embed/presets/pm-feedback.mjs';
 import { validatePacket } from '../../lib/specialist-contracts.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const realFetch = globalThis.fetch;
 
@@ -178,7 +179,7 @@ test('seeded feedback theme matching a PRD requirement produces a supports candi
     assert.deepEqual(approvalQueue.list('awaiting_approval'), [], 'no proposal is ever queued for this preset');
   } finally {
     globalThis.fetch = realFetch;
-    rmSync(rootDir, { recursive: true, force: true });
+    rmTmpDir(rootDir);
   }
 });
 
@@ -206,7 +207,7 @@ test('every requirements-candidate carries provenance to its source feedback row
 
     assert.ok(analysis.requirements.length === 2, 'both PRD requirements were parsed');
   } finally {
-    rmSync(rootDir, { recursive: true, force: true });
+    rmTmpDir(rootDir);
   }
 });
 
@@ -245,7 +246,7 @@ test('untrusted feedback text is quoted evidence, never instruction: trust label
     const result = validatePacket('pm-requirements-candidates', outputPacket, 'output');
     assert.ok(result.ok, `packet must validate; missing: ${result.missing?.join(', ')}`);
   } finally {
-    rmSync(rootDir, { recursive: true, force: true });
+    rmTmpDir(rootDir);
   }
 });
 
@@ -280,6 +281,6 @@ test('output packet validates against pm-requirements-candidates contract; artif
     assert.equal(providers.writeCalls.length, 0, 'zero adapter writes for an artifact-only preset');
   } finally {
     globalThis.fetch = realFetch;
-    rmSync(rootDir, { recursive: true, force: true });
+    rmTmpDir(rootDir);
   }
 });

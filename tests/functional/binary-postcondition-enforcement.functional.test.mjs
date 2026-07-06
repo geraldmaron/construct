@@ -16,9 +16,10 @@
 
 import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 let tmpRoot;
 let priorCwd;
@@ -39,7 +40,7 @@ beforeEach(async () => {
 afterEach(() => {
   process.chdir(priorCwd);
   process.env.HOME = priorHome;
-  rmSync(tmpRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(tmpRoot);
 });
 
 function readLog() {

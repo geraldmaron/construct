@@ -10,12 +10,13 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -41,7 +42,7 @@ function makeHome(settingsContent) {
   mkdirSync(dirname(settingsPath), { recursive: true });
   if (settingsContent !== null) writeFileSync(settingsPath, settingsContent);
   mkdirSync(project, { recursive: true });
-  return { sandbox, home, project, cleanup() { rmSync(sandbox, { recursive: true, force: true }); } };
+  return { sandbox, home, project, cleanup() { rmTmpDir(sandbox); } };
 }
 
 // cwd must be an isolated project dir, not REPO_ROOT — this repo's own
@@ -106,6 +107,6 @@ test('doctor omits the host readiness line when VS Code is not installed', () =>
     const line = r.stdout.split('\n').find((l) => l.includes('VS Code MCP host readiness'));
     assert.equal(line, undefined, 'no VS Code install signal → no host-readiness finding, not a false negative');
   } finally {
-    rmSync(sandbox, { recursive: true, force: true });
+    rmTmpDir(sandbox);
   }
 });

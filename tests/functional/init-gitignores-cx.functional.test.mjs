@@ -16,10 +16,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -30,7 +31,7 @@ const BIN = join(REPO_ROOT, 'bin', 'construct');
 // ~/.construct/projects/.
 
 const SANDBOX_HOME = mkdtempSync(join(tmpdir(), 'init-cxignore-home-'));
-process.on('exit', () => rmSync(SANDBOX_HOME, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
+process.on('exit', () => rmTmpDir(SANDBOX_HOME));
 
 function makeProject(seedGitignore = null) {
   const dir = mkdtempSync(join(tmpdir(), 'init-cxignore-'));
@@ -38,7 +39,7 @@ function makeProject(seedGitignore = null) {
   spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir });
   spawnSync('git', ['config', 'user.name', 'Test'], { cwd: dir });
   if (seedGitignore != null) writeFileSync(join(dir, '.gitignore'), seedGitignore);
-  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) };
+  return { dir, cleanup: () => rmTmpDir(dir) };
 }
 
 function runInit(cwd) {

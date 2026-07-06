@@ -19,6 +19,7 @@ import { spawnSync } from 'node:child_process';
 
 import { synthesizeVerdict } from '../../lib/oracle/synthesize.mjs';
 import { routeGap } from '../../lib/oracle/routing.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = path.join(REPO_ROOT, 'bin', 'construct');
@@ -26,7 +27,7 @@ const BIN = path.join(REPO_ROOT, 'bin', 'construct');
 const tmpDirs = [];
 after(() => {
   for (const dir of tmpDirs) {
-    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    try { rmTmpDir(dir); } catch {}
   }
 });
 
@@ -42,7 +43,7 @@ function tmpProject() {
 // ~/.construct/projects/.
 
 const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'dep-matrix-fn-home-'));
-after(() => { try { fs.rmSync(SANDBOX_HOME, { recursive: true, force: true }); } catch {} });
+after(() => { try { rmTmpDir(SANDBOX_HOME); } catch {} });
 
 function runConstruct(args, cwd) {
   return spawnSync(process.execPath, [BIN, ...args], {

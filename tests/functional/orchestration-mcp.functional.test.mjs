@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { orchestrationRun, orchestrationStatus } from '../../lib/mcp/tools/orchestration-run.mjs';
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const MODEL = 'anthropic/claude-sonnet-4-6';
@@ -46,7 +47,7 @@ const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-mcp-home-'))
 const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
 process.env.CX_HOME_OVERRIDE = homeOverride;
 test.after(() => {
-  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });
@@ -82,7 +83,7 @@ test('orchestration_run plans a multi-specialist run in-process (no daemon)', as
     const status = await orchestrationStatus({ run_id: result.runId }, { cwd, env: soloEnv() });
     assert.equal(status.runId, result.runId, 'the run is queryable in-process by id');
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 
@@ -101,7 +102,7 @@ test('orchestration_run preserves the research workflow hint for evidence-backed
     assert.equal(result.researchExecutionPolicy?.mode, 'evidence-first');
     assert.ok(Array.isArray(result.researchExecutionPolicy?.toolRouting));
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 
@@ -116,7 +117,7 @@ test('orchestration_run fails fast when a configured remote service is unreachab
     assert.ok(result.failFast, 'an unreachable remote service must fail fast');
     assert.match(result.error, /not reachable/i);
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 

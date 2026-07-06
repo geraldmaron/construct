@@ -8,6 +8,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const OPENROUTER_PAYLOAD = {
   data: [
@@ -103,7 +104,7 @@ test('pollConfiguredProviders resolves a plain API key with no 1Password involve
   const fs = await import('node:fs');
   const path = await import('node:path');
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-plain-home-'));
-  t.after(() => fs.rmSync(homeDir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(homeDir));
 
   const { pollConfiguredProviders } = await import('../../lib/models/provider-poll.mjs');
   const groups = await pollConfiguredProviders({
@@ -127,7 +128,7 @@ test('pollConfiguredProviders serves a fresh cache without polling (no secret re
   const fs = await import('node:fs');
   const path = await import('node:path');
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-poll-fresh-'));
-  t.after(() => fs.rmSync(homeDir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(homeDir));
 
   const env = { OPENAI_API_KEY: 'sk-plain-test' };
   const { getProviderModelCatalog } = await import('../../lib/model-router.mjs');
@@ -165,7 +166,7 @@ test('pollConfiguredProviders never fabricates: unreachable provider yields a di
   const fs = await import('node:fs');
   const path = await import('node:path');
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-poll-home-'));
-  t.after(() => fs.rmSync(homeDir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(homeDir));
 
   const { pollConfiguredProviders } = await import('../../lib/models/provider-poll.mjs');
   const groups = await pollConfiguredProviders({

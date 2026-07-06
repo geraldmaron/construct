@@ -20,6 +20,7 @@ import { spawnSync } from 'node:child_process';
 import { locateRecorder, renderWithVhs } from '../../lib/demo.mjs';
 import { loadDemoScript } from '../../lib/demo-script.mjs';
 import { buildDemoAttemptChain } from '../../lib/demo-surface.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
@@ -30,7 +31,7 @@ const BIN = path.join(REPO, 'bin', 'construct');
 // ~/.construct/projects/.
 
 const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-home-'));
-process.on('exit', () => fs.rmSync(SANDBOX_HOME, { recursive: true, force: true }));
+process.on('exit', () => rmTmpDir(SANDBOX_HOME));
 
 function run(args, cwd) {
   return spawnSync(BIN, args, {
@@ -61,7 +62,7 @@ test('construct demo init scaffolds project tape', () => {
     assert.equal(result.status, 0, result.stderr);
     assert.ok(fs.existsSync(path.join(dir, '.cx', 'demos', 'tapes', 'my-demo.tape')));
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -86,7 +87,7 @@ test('construct demo: tape always produced; recording when recorder present; exi
       assert.ok(artifacts.length >= 1, `recorder present but no recording produced; got: ${files.join(', ')}`);
     }
   } finally {
-    if (tryCleanup) fs.rmSync(cwd, { recursive: true, force: true });
+    if (tryCleanup) rmTmpDir(cwd);
   }
 });
 
@@ -172,6 +173,6 @@ test('construct demo --surface=tape --source-only writes direct tape output', ()
     assert.ok(files.some((f) => f.endsWith('.tape')), `expected .tape source; got: ${files.join(', ')}`);
     assert.ok(!files.some((f) => /\.(gif|mp4|webm|cast)$/.test(f)), `--source-only should not record; got: ${files.join(', ')}`);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });

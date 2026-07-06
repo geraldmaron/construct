@@ -12,10 +12,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -26,7 +27,7 @@ const BIN = join(REPO_ROOT, 'bin', 'construct');
 // ~/.construct/projects/.
 
 const SANDBOX_HOME = mkdtempSync(join(tmpdir(), 'init-beads-fail-home-'));
-process.on('exit', () => rmSync(SANDBOX_HOME, { recursive: true, force: true }));
+process.on('exit', () => rmTmpDir(SANDBOX_HOME));
 
 function makeGitRepo(prefix) {
   const dir = mkdtempSync(join(tmpdir(), prefix));
@@ -47,8 +48,8 @@ test('construct init fails with non-zero exit when beads initialization throws',
   const dir = makeGitRepo('init-beads-fail-');
   const fakeBin = restrictedPath();
   t.after(() => {
-    rmSync(dir, { recursive: true, force: true });
-    rmSync(fakeBin, { recursive: true, force: true });
+    rmTmpDir(dir);
+    rmTmpDir(fakeBin);
   });
 
   // Run init with a PATH that has no `bd` binary. initializeBeadsTracker will
@@ -76,7 +77,7 @@ test('construct init fails with non-zero exit when beads initialization throws',
 
 test('construct init --no-beads skips beads and exits successfully', (t) => {
   const dir = makeGitRepo('init-no-beads-');
-  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(dir));
 
   const result = spawnSync(
     process.execPath,

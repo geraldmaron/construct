@@ -29,6 +29,7 @@ import path from 'node:path';
 import { planRun, runOrchestration, hostAdapterMetadata } from '../../lib/orchestration/runtime.mjs';
 import { orchestrationRun } from '../../lib/mcp/tools/orchestration-run.mjs';
 import { traceDir } from '../../lib/worker/trace.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
@@ -51,8 +52,8 @@ function traceMentions(cwd, needle) {
   return fs.readdirSync(td).some((f) => fs.readFileSync(path.join(td, f), 'utf8').includes(needle));
 }
 test.after(() => {
-  for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} }
-  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  for (const d of dirs) { try { rmTmpDir(d); } catch {} }
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });

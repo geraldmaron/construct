@@ -14,12 +14,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, statSync, rmSync, openSync, ftruncateSync, closeSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, statSync, openSync, ftruncateSync, closeSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { doctorRoot } from '../../lib/config/xdg.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -41,7 +42,7 @@ function makeEnv(args, extraEnv = {}) {
       timeout: 90_000,
       env: { ...process.env, HOME: home, CONSTRUCT_SKIP_POSTINSTALL: '1', ...extraEnv },
     }),
-    cleanup: () => rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }),
+    cleanup: () => rmTmpDir(sandbox),
   };
 }
 

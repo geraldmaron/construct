@@ -18,6 +18,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { createDraftScope, listDrafts, scopeHealth } from '../../lib/scopes/lifecycle.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 test('lifecycle: createDraftScope scaffolds requirements brief + draft scope', () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'profile-create-'));
@@ -40,7 +41,7 @@ test('lifecycle: createDraftScope scaffolds requirements brief + draft scope', (
   assert.equal(draft.id, 'media-agency');
   assert.equal(draft.custom, true);
 
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('lifecycle: createDraftScope rejects id collisions with the curated catalog', () => {
@@ -49,7 +50,7 @@ test('lifecycle: createDraftScope rejects id collisions with the curated catalog
     () => createDraftScope({ cwd, id: 'rnd' }),
     /already exists in the curated catalog/,
   );
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('lifecycle: createDraftScope refuses to overwrite an existing draft', () => {
@@ -59,7 +60,7 @@ test('lifecycle: createDraftScope refuses to overwrite an existing draft', () =>
     () => createDraftScope({ cwd, id: 'studio-x' }),
     /already exists/,
   );
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('lifecycle: listDrafts surfaces in-progress drafts under .cx/scopes/', () => {
@@ -73,7 +74,7 @@ test('lifecycle: listDrafts surfaces in-progress drafts under .cx/scopes/', () =
     assert.equal(d.hasBrief, true);
     assert.equal(d.hasScope, true);
   }
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('lifecycle: scopeHealth returns a zero-shaped report when no data exists', () => {
@@ -83,7 +84,7 @@ test('lifecycle: scopeHealth returns a zero-shaped report when no data exists', 
   assert.equal(report.scopeExists, true);
   assert.equal(report.observationCount, 0);
   assert.deepEqual(report.roles, {});
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('lifecycle: scopeHealth counts per-role outcomes filtered by scope', () => {
@@ -105,7 +106,7 @@ test('lifecycle: scopeHealth counts per-role outcomes filtered by scope', () => 
   assert.equal(creative.roles.engineer.runs, 1);
   assert.equal(creative.roles.engineer.successRate, 1);
 
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('lifecycle: archiveScope refuses an empty or trivial reason', async () => {
@@ -155,5 +156,5 @@ test('lifecycle: createDraftScope seeds persona + department artifacts when supp
   assert.equal(draft.departments.length, 2);
   assert.equal(draft.departments[0].id, 'design');
 
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });

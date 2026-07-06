@@ -13,12 +13,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, existsSync, rmSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, existsSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -29,7 +30,7 @@ function sandbox() {
   const project = join(root, 'project');
   mkdirSync(HOME, { recursive: true });
   mkdirSync(project, { recursive: true });
-  return { root, HOME, project, cleanup() { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
+  return { root, HOME, project, cleanup() { rmTmpDir(root); } };
 }
 
 function runInit(env) {

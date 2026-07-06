@@ -17,7 +17,7 @@
  *      optimization, plane-side is the enforcement.
  */
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, existsSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -30,6 +30,7 @@ import { listObservations, getObservation } from '../../lib/observation-store.mj
 import { filterAuditPath, readFilterAudit } from '../../lib/providers/filter-audit.mjs';
 import { matchesFilter } from '../../lib/providers/contract.mjs';
 import { buildJqlFromFilter } from '../../lib/embed/providers/jira.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 // EmbedDaemon's constructor eagerly resolves its heartbeat/state path via
 // resolveDaemonStatePath(env) -> resolveRootDir(env) (lib/embed/daemon.mjs),
@@ -43,7 +44,7 @@ const homeOverride = mkdtempSync(join(tmpdir(), 'pfe-home-'));
 const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
 process.env.CX_HOME_OVERRIDE = homeOverride;
 test.after(() => {
-  try { rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });
@@ -52,7 +53,7 @@ function makeRootDir(t, label) {
   const rootDir = mkdtempSync(join(tmpdir(), `pfe-${label}-`));
   mkdirSync(join(rootDir, '.cx'), { recursive: true });
   writeFileSync(join(rootDir, '.cx', 'context.md'), '# ctx\n');
-  t.after(() => { try { rmSync(rootDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {} });
+  t.after(() => { try { rmTmpDir(rootDir); } catch {} });
   return rootDir;
 }
 

@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { assertPathUnderRoot } from '../helpers/isolation-contract.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
@@ -48,8 +49,8 @@ test('custom specialist/team authoring: scaffold, validate, resolve (project sco
   const projectDir = makeProject();
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-custom-org-project-home-'));
   t.after(() => {
-    fs.rmSync(projectDir, { recursive: true, force: true });
-    fs.rmSync(homeDir, { recursive: true, force: true });
+    rmTmpDir(projectDir);
+    rmTmpDir(homeDir);
   });
   const env = { HOME: homeDir, CX_HOME_OVERRIDE: homeDir };
 
@@ -127,8 +128,8 @@ test('custom specialist/team authoring: user (home) scope, isolated from real HO
   const projectDir = makeProject();
   const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-custom-org-home-'));
   t.after(() => {
-    fs.rmSync(projectDir, { recursive: true, force: true });
-    fs.rmSync(homeDir, { recursive: true, force: true });
+    rmTmpDir(projectDir);
+    rmTmpDir(homeDir);
   });
 
   const env = { HOME: homeDir, CX_HOME_OVERRIDE: homeDir };
@@ -193,8 +194,8 @@ test('custom specialist authoring rejects missing required fields with actionabl
     assert.match(result.stderr, /--role/);
     assert.match(result.stderr, /--team/);
   } finally {
-    fs.rmSync(projectDir, { recursive: true, force: true });
-    fs.rmSync(homeDir, { recursive: true, force: true });
+    rmTmpDir(projectDir);
+    rmTmpDir(homeDir);
   }
 });
 
@@ -215,7 +216,7 @@ test('custom specialist authoring rejects an unknown team with an actionable, li
     assert.match(result.stderr, /does-not-exist-team/);
     assert.match(result.stderr, /construct team create/);
   } finally {
-    fs.rmSync(projectDir, { recursive: true, force: true });
-    fs.rmSync(homeDir, { recursive: true, force: true });
+    rmTmpDir(projectDir);
+    rmTmpDir(homeDir);
   }
 });

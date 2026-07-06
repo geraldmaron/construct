@@ -12,18 +12,19 @@
 import test from 'node:test';
 import assert from 'node:assert';
 import http from 'node:http';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { extractViaDoclingRemote, resolveDoclingServeUrl } from '../../lib/ingest/docling-remote.mjs';
 import { INGEST_STRATEGIES } from '../../lib/ingest/strategy.mjs';
 import { INGEST_STRATEGIES as SCHEMA_STRATEGIES } from '../../lib/config/schema.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function tmpDoc() {
   const dir = mkdtempSync(join(tmpdir(), 'cx-docling-remote-'));
   const file = join(dir, 'doc.pdf');
   writeFileSync(file, 'fake pdf bytes');
-  return { file, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+  return { file, cleanup: () => rmTmpDir(dir) };
 }
 
 function serve(handler) {

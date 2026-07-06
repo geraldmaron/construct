@@ -6,11 +6,12 @@
  * and runtime handoff (artifacts validated against the referenced schema,
  * with warn vs block enforcement modes).
  */
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 import {
   validateContractsFile,
@@ -25,7 +26,7 @@ function freshRepo() {
   mkdirSync(join(root, 'lib', 'schemas'), { recursive: true });
   return {
     root,
-    cleanup() { try { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } },
+    cleanup() { try { rmTmpDir(root); } catch { /* ignore */ } },
     writeContracts(obj) {
       writeFileSync(join(root, 'agents', 'contracts.json'), JSON.stringify(obj, null, 2));
     },

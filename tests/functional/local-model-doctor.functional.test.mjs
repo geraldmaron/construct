@@ -9,11 +9,12 @@
 import test from "node:test";
 import assert from "node:assert";
 import { createServer } from "node:http";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { probeAgenticCoherence } from "../../lib/ollama/provision-context.mjs";
 import { describeDoclingRuntime } from "../../lib/runtime/uv-bootstrap.mjs";
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function stubV1(message) {
   const server = createServer((req, res) => {
@@ -75,6 +76,6 @@ test("describeDoclingRuntime reports a fresh runtime dir as not provisioned", ()
     assert.equal(d.available, false, "no venv => not available");
     assert.equal(d.marker, null, "no install marker yet");
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });

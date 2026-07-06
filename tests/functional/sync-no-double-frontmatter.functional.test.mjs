@@ -20,12 +20,13 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readdirSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readdirSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import test, { before, after } from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SYNC_SCRIPT = join(REPO_ROOT, 'scripts', 'sync-specialists.mjs');
@@ -61,8 +62,8 @@ before(() => {
 });
 
 after(() => {
-  if (SHARED_HOME) rmSync(SHARED_HOME, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-  if (SHARED_PROJECT) rmSync(SHARED_PROJECT, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  if (SHARED_HOME) rmTmpDir(SHARED_HOME);
+  if (SHARED_PROJECT) rmTmpDir(SHARED_PROJECT);
 });
 
 function walk(dir, predicate) {

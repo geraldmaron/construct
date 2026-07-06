@@ -18,6 +18,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.join(HERE, '..', '..', 'bin', 'construct');
@@ -86,8 +87,8 @@ async function runAcpTest(project, envOverrides = {}, promptText) {
     return { messages, updates, sessionId, promptResp };
   } finally {
     try { proc.kill(); } catch { /* ignore */ }
-    try { fs.rmSync(project, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
-    try { fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
+    try { rmTmpDir(project); } catch { /* ignore */ }
+    try { rmTmpDir(home); } catch { /* ignore */ }
   }
 }
 
@@ -210,8 +211,8 @@ test('ACP server: backend resolution honors config — provider backend shows in
     server.close();
     input.destroy();
     output.destroy();
-    fs.rmSync(project, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(project);
+    rmTmpDir(home);
     if (prevHome === undefined) delete process.env.HOME; else process.env.HOME = prevHome;
     if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE; else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
   }

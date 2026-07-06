@@ -10,10 +10,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(ROOT, 'bin', 'construct');
@@ -25,7 +26,7 @@ const OSC8_OPEN = '\x1b]8;;';
 // ~/.construct/projects/.
 
 const SANDBOX_HOME = mkdtempSync(join(tmpdir(), 'cli-clickable-links-home-'));
-process.on('exit', () => rmSync(SANDBOX_HOME, { recursive: true, force: true }));
+process.on('exit', () => rmTmpDir(SANDBOX_HOME));
 
 function run(args, env) {
   const res = spawnSync(process.execPath, [BIN, ...args], {

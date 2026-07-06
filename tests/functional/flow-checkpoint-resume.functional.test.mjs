@@ -15,7 +15,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,6 +26,7 @@ import { startRun, checkpointRun, loadCheckpoint } from '../../lib/flows/checkpo
 import { advanceRun } from '../../lib/flows/engine.mjs';
 import { defineFlow } from '../../lib/flows/define.mjs';
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CLI = join(REPO_ROOT, 'bin', 'construct');
@@ -36,7 +37,7 @@ function sandbox() {
   const project = join(root, 'project');
   mkdirSync(HOME, { recursive: true });
   mkdirSync(project, { recursive: true });
-  return { root, HOME, project, cleanup() { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
+  return { root, HOME, project, cleanup() { rmTmpDir(root); } };
 }
 
 // A three-step flow whose each step appends its own name to a JSON-lines

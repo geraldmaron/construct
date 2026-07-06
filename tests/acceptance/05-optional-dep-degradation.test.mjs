@@ -22,6 +22,7 @@ import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '../../');
@@ -326,12 +327,11 @@ test('LMCP-L4: optional-dep degradation matrix', { timeout: 180_000 }, async (t)
   // ── Cleanup ─────────────────────────────────────────────────────────
   await t.test('cleanup', () => {
     if (tmpDir && existsSync(tmpDir)) {
-      rmSync(tmpDir, { recursive: true, force: true });
-      assert.ok(!existsSync(tmpDir), 'Temp directory should be removed');
+      rmTmpDir(tmpDir);
     }
     if (tarballPath && existsSync(tarballPath)) {
       rmSync(tarballPath, { force: true });
     }
-    rmSync(sandboxHome, { recursive: true, force: true });
+    rmTmpDir(sandboxHome);
   });
 });

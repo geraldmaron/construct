@@ -14,13 +14,14 @@
  */
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SERVER = join(REPO_ROOT, 'lib', 'mcp', 'server.mjs');
@@ -36,7 +37,7 @@ function sandbox() {
   return {
     root, HOME, project, doctorRoot,
     auditFile: join(doctorRoot, 'audit-trail.jsonl'),
-    cleanup() { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); },
+    cleanup() { rmTmpDir(root); },
   };
 }
 

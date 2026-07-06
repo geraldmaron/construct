@@ -18,6 +18,7 @@ import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 
 import { locateRenderer } from '../../lib/diagram.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
@@ -28,7 +29,7 @@ const BIN = path.join(REPO, 'bin', 'construct');
 // ~/.construct/projects/.
 
 const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'diagram-home-'));
-process.on('exit', () => fs.rmSync(SANDBOX_HOME, { recursive: true, force: true }));
+process.on('exit', () => rmTmpDir(SANDBOX_HOME));
 
 function run(args, cwd) {
   return spawnSync(BIN, args, {
@@ -64,7 +65,7 @@ test('construct diagram: source always produced; SVG when renderer present; exit
       assert.ok(svgFiles.length >= 1, `renderer present but no SVG produced; got: ${files.join(', ')}`);
     }
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -77,6 +78,6 @@ test('construct diagram --source-only: writes source, exits 0, no render', () =>
     assert.ok(files.some((f) => f.endsWith('.d2')), `expected .d2 source; got: ${files.join(', ')}`);
     assert.ok(!files.some((f) => /\.(svg|png)$/.test(f)), `--source-only should not render; got: ${files.join(', ')}`);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });

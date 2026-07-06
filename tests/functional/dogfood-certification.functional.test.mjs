@@ -17,6 +17,7 @@ import test from 'node:test';
 
 import { runPublish } from '../../lib/publish.mjs';
 import { detectPublishPipeline } from '../../lib/publish-tooling.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const EXAMPLES_DIR = path.join(REPO, 'examples', 'distribution');
@@ -67,7 +68,7 @@ for (const item of MANIFEST.items) {
       assert.ok(validation.a11y?.coverage, 'report states a11y coverage');
       assert.ok(Array.isArray(validation.a11y.coverage.checked), 'a11y coverage lists checked items');
     } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
+      rmTmpDir(dir);
     }
   });
 }

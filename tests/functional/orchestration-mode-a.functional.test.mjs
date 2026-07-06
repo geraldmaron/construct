@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { deriveProjectKey } from '../../lib/state-root.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.join(HERE, '..', '..', 'bin', 'construct');
@@ -53,7 +54,7 @@ test('orchestrate run --json plans a specialist chain and persists a durable run
   const runFile = path.join(cwd, '.construct', 'projects', deriveProjectKey(cwd), 'runtime', 'orchestration', 'runs', `${meta.runId}.json`);
   assert.ok(fs.existsSync(runFile), 'run persisted to the filesystem store');
 
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('orchestrate run --worker-backend provider reaches the execution engine, not just the request label', () => {
@@ -68,7 +69,7 @@ test('orchestrate run --worker-backend provider reaches the execution engine, no
   // execution (attempted here, and failing without a key) proves the opposite.
 
   assert.ok(meta.tasks.every((t) => t.executor === 'provider:error'), 'provider backend was actually invoked, not inline');
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('orchestrate status reads a run back across a separate process invocation', () => {
@@ -79,7 +80,7 @@ test('orchestrate status reads a run back across a separate process invocation',
   const meta = JSON.parse(res.stdout);
   assert.equal(meta.runId, created.runId);
   assert.equal(meta.status, 'completed-prepare-only');
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('prompt-only run honestly owns no specialist sequence', () => {
@@ -88,7 +89,7 @@ test('prompt-only run honestly owns no specialist sequence', () => {
   assert.equal(meta.executionMode, 'construct-prompt-only');
   assert.deepEqual(meta.tasks, []);
   assert.deepEqual(meta.constructCapabilitiesActive, ['prompt-envelope']);
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('status with no run id lists recent runs', () => {
@@ -99,5 +100,5 @@ test('status with no run id lists recent runs', () => {
   const list = JSON.parse(res.stdout);
   assert.ok(Array.isArray(list) && list.length >= 1);
   assert.ok(list[0].runId && list[0].status);
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });

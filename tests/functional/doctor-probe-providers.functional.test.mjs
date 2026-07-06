@@ -24,6 +24,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.resolve(__dirname, '..', '..', 'bin', 'construct');
@@ -34,7 +35,7 @@ function freshCwd() {
   dirs.push(dir);
   return dir;
 }
-test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {} } });
+test.after(() => { for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 
 const PRELOAD = path.join(os.tmpdir(), `cx-fetch-spy-preload-${process.pid}.mjs`);
 fs.writeFileSync(PRELOAD, `

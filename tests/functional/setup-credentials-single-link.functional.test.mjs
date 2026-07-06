@@ -19,6 +19,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
@@ -54,7 +55,7 @@ test('setup-credentials runs op item list exactly once per invocation', (t) => {
   const binDir = makeTmpDir('cx-setup-cred-bin-');
   t.after(() => {
     for (const d of [home, cwd, binDir]) {
-      try { fs.rmSync(d, { recursive: true, force: true }); } catch {}
+      try { rmTmpDir(d); } catch {}
     }
   });
   const logPath = path.join(binDir, 'op-calls.log');

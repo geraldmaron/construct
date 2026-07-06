@@ -23,7 +23,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -34,6 +34,7 @@ import { CreateMessageRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
 import { getRun } from '../../lib/orchestration/runtime.mjs';
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SERVER = join(REPO_ROOT, 'lib', 'mcp', 'server.mjs');
@@ -45,7 +46,7 @@ function sandbox() {
   const project = join(root, 'project');
   mkdirSync(join(HOME, '.cx'), { recursive: true });
   mkdirSync(join(project, '.cx'), { recursive: true });
-  return { root, HOME, project, cleanup() { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
+  return { root, HOME, project, cleanup() { rmTmpDir(root); } };
 }
 
 function baseSpawnEnv(env) {

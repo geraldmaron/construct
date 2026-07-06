@@ -20,6 +20,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { startServices } from '../../lib/service-manager.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function makeSandbox() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-svc-oprun-'));
@@ -83,7 +84,7 @@ async function withEnv(overrides, fn) {
 
 test('opted in: opencode / copilot spawns are wrapped in op run; cm is not (construct-0wmj)', async (t) => {
   const sandbox = makeSandbox();
-  t.after(() => fs.rmSync(sandbox.dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(sandbox.dir));
 
   const spawns = [];
   await withEnv(
@@ -116,7 +117,7 @@ test('opted in: opencode / copilot spawns are wrapped in op run; cm is not (cons
 
 test('parent already resolved: per-service spawns are not wrapped again (single op run)', async (t) => {
   const sandbox = makeSandbox();
-  t.after(() => fs.rmSync(sandbox.dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(sandbox.dir));
 
   const spawns = [];
   await withEnv(
@@ -150,7 +151,7 @@ test('parent already resolved: per-service spawns are not wrapped again (single 
 
 test('not opted in: spawns are unchanged when CONSTRUCT_OP_ENV_FILE is unset', async (t) => {
   const sandbox = makeSandbox();
-  t.after(() => fs.rmSync(sandbox.dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(sandbox.dir));
 
   const spawns = [];
   await withEnv(
@@ -181,7 +182,7 @@ test('not opted in: spawns are unchanged when CONSTRUCT_OP_ENV_FILE is unset', a
 test('opted in but op absent: spawns are unchanged (never forces 1Password)', async (t) => {
   const sandbox = makeSandbox();
   fs.rmSync(path.join(sandbox.binDir, 'op'), { force: true });
-  t.after(() => fs.rmSync(sandbox.dir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(sandbox.dir));
 
   const spawns = [];
   await withEnv(

@@ -15,6 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
@@ -42,7 +43,7 @@ function env() {
       CX_MODEL_FAST: 'anthropic/claude-sonnet-4-6',
       ANTHROPIC_API_KEY: 'sk-test-canary',
     },
-    cleanup() { fs.rmSync(home, { recursive: true, force: true }); },
+    cleanup() { rmTmpDir(home); },
   };
 }
 

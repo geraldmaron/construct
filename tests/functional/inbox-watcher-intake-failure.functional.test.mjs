@@ -18,11 +18,12 @@ import path from 'node:path';
 
 import { InboxWatcher } from '../../lib/embed/inbox.mjs';
 import { loadManifest } from '../../lib/intake/manifest.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const tmpDirs = [];
 
 after(() => {
-  for (const dir of tmpDirs) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  for (const dir of tmpDirs) rmTmpDir(dir);
 });
 
 // InboxWatcher.poll() resolves its state file through the machine-scoped
@@ -35,7 +36,7 @@ const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-k4bg-home-'));
 const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
 process.env.CX_HOME_OVERRIDE = homeOverride;
 after(() => {
-  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });

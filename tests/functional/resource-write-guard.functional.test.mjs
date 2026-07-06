@@ -15,12 +15,13 @@ import path from 'node:path';
 
 import { emitTraceEvent } from '../../lib/worker/trace.mjs';
 import { measureUsage } from '../../lib/resources/budget.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-res-guard-home-'));
 const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
 process.env.CX_HOME_OVERRIDE = homeOverride;
 after(() => {
-  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });
@@ -42,7 +43,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  fs.rmSync(projectRoot, { recursive: true, force: true });
+  rmTmpDir(projectRoot);
 });
 
 describe('resource write guard (functional)', () => {

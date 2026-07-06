@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -26,7 +27,7 @@ const DOCS_ROOT = join(REPO_ROOT, 'docs');
 // ~/.construct/projects/.
 
 const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'docs-site-check-home-'));
-process.on('exit', () => fs.rmSync(SANDBOX_HOME, { recursive: true, force: true }));
+process.on('exit', () => rmTmpDir(SANDBOX_HOME));
 
 const MDX_COMPONENT_NAMES = [
   'FlowPipeline', 'RequestFlow', 'SyncGrid', 'AgentGrid', 'DeployModes',

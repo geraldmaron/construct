@@ -15,9 +15,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const CONSTRUCT_BIN = new URL('../../bin/construct', import.meta.url).pathname;
 
@@ -125,9 +126,8 @@ test('02-provider-health-contract: construct providers status', { timeout: 60_00
 
   await t.test('cleanup temp directory', () => {
     if (tmpDir && existsSync(tmpDir)) {
-      rmSync(tmpDir, { recursive: true, force: true });
-      assert.ok(!existsSync(tmpDir), 'Temp directory should be removed');
+      rmTmpDir(tmpDir);
     }
-    rmSync(SANDBOX_HOME, { recursive: true, force: true });
+    rmTmpDir(SANDBOX_HOME);
   });
 });

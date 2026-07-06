@@ -13,12 +13,13 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import test from "node:test";
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-specialists.mjs");
@@ -45,7 +46,7 @@ function seededHome(seedConfig = SEED) {
   const cfgPath = join(sandbox, ".config", "opencode", "opencode.json");
   mkdirSync(dirname(cfgPath), { recursive: true });
   writeFileSync(cfgPath, JSON.stringify(seedConfig, null, 2) + "\n");
-  return { sandbox, cfgPath, cleanup() { rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
+  return { sandbox, cfgPath, cleanup() { rmTmpDir(sandbox); } };
 }
 
 function runGlobalSync(home) {

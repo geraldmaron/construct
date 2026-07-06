@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { scanToolModules } from '../../lib/mcp/tool-registry.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 // fn is async (it drives scanToolModules()'s internal `await import()` per
 // fixture file); this must await fn(dir) itself, or `finally` deletes the
@@ -28,7 +29,7 @@ async function withFixtureDir(files, fn) {
     }
     return await fn(dir);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 }
 

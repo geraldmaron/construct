@@ -15,12 +15,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, appendFileSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, appendFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { appendAuditRecord, writeChainReset, verifyChain } from '../../lib/audit-trail.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
@@ -63,8 +64,8 @@ test('audit-trail chain survives concurrent hook processes', async () => {
     assert.equal(chain.verified, N, `expected all ${N} concurrent records, got ${chain.verified}`);
     assert.equal(chain.ok, true, `chain broke under concurrency: ${chain.broken.length} break(s), first at line ${chain.broken[0]?.line}`);
   } finally {
-    rmSync(projectRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(projectRoot);
+    rmTmpDir(fakeHome);
   }
 });
 
@@ -93,6 +94,6 @@ test('reset boundary seals legacy corruption and re-bases the live chain', () =>
     appendFileSync(trail, JSON.stringify({ ts: 't', tool: 'Edit', prev_line_hash: 'TAMPERED' }) + '\n');
     assert.equal(verifyChain(trail).ok, false, 'post-boundary tampering must still break the chain');
   } finally {
-    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(dir);
   }
 });

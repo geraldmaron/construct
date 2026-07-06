@@ -13,7 +13,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -23,6 +23,7 @@ import { runCapabilityTick } from '../../lib/embed/capability-jobs.mjs';
 import { createOpsTriageReasoningExecutor, analyzeOpsTriage } from '../../lib/embed/presets/ops-triage.mjs';
 import { writeWithEnvelope } from '../../lib/writes/envelope.mjs';
 import { validatePacket } from '../../lib/specialist-contracts.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const realFetch = globalThis.fetch;
 
@@ -156,7 +157,7 @@ test('seeded duplicate pair detected → duplicate-link proposal queued, zero ad
     assert.equal(providers.writeCalls.length, 0, 'NOTHING executes: zero provider writes during tick');
   } finally {
     globalThis.fetch = realFetch;
-    rmSync(rootDir, { recursive: true, force: true });
+    rmTmpDir(rootDir);
   }
 });
 
@@ -189,7 +190,7 @@ test('under-specified ticket → needs-info comment proposal queued', async () =
     assert.match(commentIntent.toolCall.args.text, /detail|criteria/, 'comment asks for more detail/criteria');
   } finally {
     globalThis.fetch = realFetch;
-    rmSync(rootDir, { recursive: true, force: true });
+    rmTmpDir(rootDir);
   }
 });
 
@@ -244,6 +245,6 @@ test('no adapter call without approval: proposals remain queued until approved',
       'intents reference expected Jira tool names');
   } finally {
     globalThis.fetch = realFetch;
-    rmSync(rootDir, { recursive: true, force: true });
+    rmTmpDir(rootDir);
   }
 });

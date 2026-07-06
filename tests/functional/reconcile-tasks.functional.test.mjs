@@ -2,11 +2,12 @@
  * tests/functional/reconcile-tasks.functional.test.mjs
  */
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, existsSync, chmodSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, existsSync, chmodSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LIB = join(REPO_ROOT, 'lib');
@@ -23,8 +24,8 @@ async function withSandbox(fn) {
   } finally {
     process.env.HOME = originalHome;
     process.chdir(originalCwd);
-    rmSync(home, { recursive: true, force: true });
-    rmSync(project, { recursive: true, force: true });
+    rmTmpDir(home);
+    rmTmpDir(project);
   }
 }
 

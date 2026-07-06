@@ -12,6 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { spawn } from 'node:child_process';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const SERVER = path.join(REPO, 'lib', 'mcp', 'server.mjs');
@@ -121,7 +122,7 @@ test('knowledge_graph_ask routes an auth-cluster query to the auth community ove
     const overlap = ['oauth', 'session', 'jwt'].filter((n) => top.topMembers.includes(n));
     assert.ok(overlap.length >= 1, `top community ${top.topMembers.join(',')} should overlap with auth cluster`);
   });
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('knowledge_graph_ask returns empty result gracefully for a project with no entities', async () => {
@@ -135,5 +136,5 @@ test('knowledge_graph_ask returns empty result gracefully for a project with no 
     assert.equal(body.totalEntities, 0);
     assert.deepEqual(body.communities, []);
   });
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });

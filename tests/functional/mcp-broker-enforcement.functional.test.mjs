@@ -12,12 +12,13 @@
 
 import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, readdirSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { Broker, isBrokered } from '../../lib/mcp/broker.mjs';
 import { traceDir as resolveTraceDir } from '../../lib/worker/trace.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 // Broker trace writes resolve through the machine-scoped state root
 // (ADR-0066) via lib/worker/trace.mjs#traceDir, keyed off process.env.CX_HOME_OVERRIDE
@@ -28,7 +29,7 @@ const homeOverride = mkdtempSync(join(tmpdir(), 'cx-broker-enforcement-home-'));
 const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
 process.env.CX_HOME_OVERRIDE = homeOverride;
 after(() => {
-  try { rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });
@@ -123,7 +124,7 @@ describe('broker enforcement — deny', () => {
         `trace reason should mention "denied", got: ${toolCalled[0].metadata.reason}`,
       );
     } finally {
-      rmSync(localRoot, { recursive: true, force: true });
+      rmTmpDir(localRoot);
     }
   });
 });
@@ -149,7 +150,7 @@ describe('broker enforcement — approve', () => {
       assert.ok(toolCalled.length >= 1, 'broker must emit a tool.called trace event on approval');
       assert.equal(toolCalled[0].metadata.allowed, true, 'trace event must record allowed=true');
     } finally {
-      rmSync(localRoot, { recursive: true, force: true });
+      rmTmpDir(localRoot);
     }
   });
 });
@@ -196,7 +197,7 @@ describe('broker enforcement — solo bypass', () => {
       const toolCalled = traces.filter((e) => e.eventType === 'tool.called');
       assert.equal(toolCalled.length, 0, 'solo mode must not emit broker tool.called trace events');
     } finally {
-      rmSync(localRoot, { recursive: true, force: true });
+      rmTmpDir(localRoot);
     }
   });
 });

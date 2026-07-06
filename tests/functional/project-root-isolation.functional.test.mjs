@@ -17,6 +17,7 @@ import test from 'node:test';
 import { packageRoot, resolveProjectRoot } from '../../lib/roots.mjs';
 import { buildRuntimeRecoverySummary, startServices } from '../../lib/service-manager.mjs';
 import { resolveStateDir } from '../../lib/state-root.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 test('resolveProjectRoot returns the supplied cwd unchanged (resolved)', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-root-isolation-'));
@@ -24,7 +25,7 @@ test('resolveProjectRoot returns the supplied cwd unchanged (resolved)', () => {
     const result = resolveProjectRoot(tmpDir);
     assert.equal(result, path.resolve(tmpDir));
   } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(tmpDir);
   }
 });
 
@@ -38,7 +39,7 @@ test('resolveProjectRoot of an external project differs from packageRoot', () =>
       `resolveProjectRoot must differ from packageRoot when called from outside the construct package; got ${projectRoot} === ${packageRoot}`,
     );
   } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(tmpDir);
   }
 });
 
@@ -62,7 +63,7 @@ test('resolveProjectRoot does not resolve to packageRoot for a temp fixture proj
       `project root (${projectRoot}) must not be inside packageRoot (${packageRoot})`,
     );
   } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(tmpDir);
   }
 });
 
@@ -79,7 +80,7 @@ test('buildRuntimeRecoverySummary with rootDir=tmpDir reads durable paths under 
     assert.equal(summary.durable.plan, 'plan.md', 'plan.md should be found under tmpDir');
     assert.ok(summary.canResumeFromFiles, 'canResumeFromFiles must be true when durable files exist');
   } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(tmpDir);
   }
 });
 
@@ -106,7 +107,7 @@ test('buildRuntimeRecoverySummary with rootDir=packageRoot does NOT pick up tmpD
       );
     }
   } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(tmpDir);
   }
 });
 
@@ -157,7 +158,7 @@ test('telemetry url from startServices uses the machine-scoped state root, not p
     else process.env.CONSTRUCT_ORACLE = prevOracle;
     if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
     else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
-    fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    fs.rmSync(homeOverride, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(tmpDir);
+    rmTmpDir(homeOverride);
   }
 });

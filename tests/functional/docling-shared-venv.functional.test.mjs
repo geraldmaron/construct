@@ -27,6 +27,7 @@ import { execFileSync } from 'node:child_process';
 import { doclingVenvPath } from '../../lib/ingest-tooling.mjs';
 import { resolveStateRoot } from '../../lib/state-root.mjs';
 import { ensureDoclingVenv, defaultRuntimeDir } from '../../lib/runtime/uv-bootstrap.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const DOCLING_PIN = '2.45.0';
 
@@ -75,9 +76,9 @@ test('two isolated projects on one machine resolve to the identical docling venv
     assert.equal(venvPathFromA, venvPathFromB, 'docling venv path must not vary by project cwd');
     assert.ok(!venvPathFromA.includes('projects'), 'shared venv path must not nest under a per-project key');
   } finally {
-    fs.rmSync(projectA, { recursive: true, force: true });
-    fs.rmSync(projectB, { recursive: true, force: true });
-    fs.rmSync(home, { recursive: true, force: true });
+    rmTmpDir(projectA);
+    rmTmpDir(projectB);
+    rmTmpDir(home);
     if (prevHome === undefined) delete process.env.CX_HOME_OVERRIDE;
     else process.env.CX_HOME_OVERRIDE = prevHome;
   }
@@ -102,9 +103,9 @@ test('provisioning from one project is reused, unprovisioned, by a second projec
     assert.equal(fromB.pythonBin, fromA.pythonBin);
     assert.equal(fromB.venvDir, fromA.venvDir);
   } finally {
-    fs.rmSync(projectA, { recursive: true, force: true });
-    fs.rmSync(projectB, { recursive: true, force: true });
-    fs.rmSync(home, { recursive: true, force: true });
+    rmTmpDir(projectA);
+    rmTmpDir(projectB);
+    rmTmpDir(home);
     if (prevHome === undefined) delete process.env.CX_HOME_OVERRIDE;
     else process.env.CX_HOME_OVERRIDE = prevHome;
   }

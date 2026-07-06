@@ -4,7 +4,7 @@
  * Exercises the schema migration runtime: planning, dry-run, applied writes,
  * compatibility checks (older / newer), and the CLI `construct migrate` path.
  */
-import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +19,7 @@ import {
   checkCompatibility,
 } from '../../lib/migrations/index.mjs';
 import { compareSemver, parseSemver, getInstalledVersion } from '../../lib/version.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -26,7 +27,7 @@ function freshTmp() {
   const root = mkdtempSync(join(tmpdir(), 'construct-migrate-'));
   return {
     root,
-    cleanup() { try { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } },
+    cleanup() { try { rmTmpDir(root); } catch { /* ignore */ } },
   };
 }
 
@@ -119,7 +120,7 @@ test('construct --version matches package.json', () => {
     const { version } = getInstalledVersion();
     assert.match(result.stdout, new RegExp(version.replace(/\./g, '\\.')));
   } finally {
-    rmSync(tmpHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(tmpHome);
   }
 });
 

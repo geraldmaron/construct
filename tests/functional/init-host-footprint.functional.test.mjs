@@ -14,10 +14,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -50,8 +51,8 @@ function initProject() {
 test('construct init produces a host footprint that does not conflate Construct with the project', (t) => {
   const { dir, home, result } = initProject();
   t.after(() => {
-    rmSync(dir, { recursive: true, force: true });
-    rmSync(home, { recursive: true, force: true });
+    rmTmpDir(dir);
+    rmTmpDir(home);
   });
   assert.equal(result.status, 0, `init exited ${result.status}: ${result.stderr}`);
 

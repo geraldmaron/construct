@@ -18,6 +18,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { runOrchestration, getRun, submitHostTaskResult } from '../../lib/orchestration/runtime.mjs';
 import { shapeRun } from '../../lib/mcp/tools/orchestration-run.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 // runOrchestration/getRun/orchestrationRun resolve the run store through the
 // machine-scoped state root (ADR-0066), which reads CX_HOME_OVERRIDE from
@@ -30,7 +31,7 @@ const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-honest-term-home-
 const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
 process.env.CX_HOME_OVERRIDE = homeOverride;
 test.after(() => {
-  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  try { rmTmpDir(homeOverride); } catch {}
   if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
   else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });
@@ -74,7 +75,7 @@ test('degraded zero-task run stores honest terminal status "degraded" (not "comp
     assert.equal(reloaded.degraded, true, 'reloaded run.degraded must be true');
     assert.equal(reloaded.tasks.length, 0, 'reloaded run.tasks.length must be 0');
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 
@@ -94,7 +95,7 @@ test('degraded zero-task run shaped status is "degraded" (never bare "completed"
     assert.equal(shaped.degraded, true, 'shaped.degraded must be true');
     assert.equal(shaped.tasks.length, 0, 'shaped.tasks.length must be 0');
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 
@@ -123,7 +124,7 @@ test('normal in-process run with tasks gets "completed-prepare-only"', async () 
     assert.equal(shaped.status, 'completed-prepare-only', `shaped.status must be 'completed-prepare-only', got '${shaped.status}'`);
     assert.equal(shaped.prepareOnly, true, 'shaped.prepareOnly must be true');
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 
@@ -141,7 +142,7 @@ test('orchestrationRun MCP tool returns shaped status for degraded zero-task run
     assert.equal(result.degraded, true, 'MCP result.degraded must be true');
     assert.equal(result.tasks.length, 0, 'MCP result.tasks.length must be 0');
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 
@@ -178,7 +179,7 @@ test('a host-backend run materializing tasks reports shaped status "awaiting-hos
     const reloaded = await getRun(cwd, run.runId);
     assert.equal(reloaded.status, 'awaiting-host', 'the persisted record round-trips the same standing state');
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 
@@ -207,6 +208,6 @@ test('submitting every task result flips shaped status from awaiting-host to a r
     assert.equal(shapedFinal.status, 'completed');
     assert.notEqual(shapedFinal.status, 'awaiting-host');
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });

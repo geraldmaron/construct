@@ -21,12 +21,13 @@
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { FilesystemIntakeQueue } from '../../../lib/intake/filesystem-queue.mjs';
 import { dispatchToolByName } from '../../../lib/mcp/server.mjs';
 import { CAPABILITY_REGISTRY } from '../../../lib/mode-capabilities.mjs';
+import { rmTmpDir } from '../../helpers/cleanup.mjs';
 
 async function checkFilesystemQueue() {
   const dir = mkdtempSync(join(tmpdir(), 'cx-solo-fs-queue-'));
@@ -45,7 +46,7 @@ async function checkFilesystemQueue() {
     const record = queue.read(id);
     assert.equal(record?.status, 'processed');
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 }
 
