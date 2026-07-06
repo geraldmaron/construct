@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-06T03:35:43.499Z",
+  "generatedAt": "2026-07-06T15:44:55.437Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 798,
-    "topLevelTestFiles": 346,
-    "nestedTestFiles": 452,
+    "testFiles": 807,
+    "topLevelTestFiles": 350,
+    "nestedTestFiles": 457,
     "skippedFiles": 0,
-    "capabilityMarkedFiles": 39,
+    "capabilityMarkedFiles": 40,
     "byLayer": {
-      "unit": 549,
-      "functional": 202,
+      "unit": 553,
+      "functional": 207,
       "visual": 11,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
-      "unit": 486,
-      "functional": 202,
+      "unit": 490,
+      "functional": 207,
       "visual": 11,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2189,6 +2189,14 @@
       "maintainerNotes": "tests/flavors/schema.test.mjs — Every flavor overlay conforms to the schema."
     },
     {
+      "path": "tests/flows-checkpoint.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/flows-checkpoint.test.mjs — flow run checkpoint/resume."
+    },
+    {
       "path": "tests/flows-define.test.mjs",
       "layer": "unit",
       "category": "unit",
@@ -2365,6 +2373,14 @@
       "maintainerNotes": "tests/functional/binary-postcondition-enforcement.functional.test.mjs"
     },
     {
+      "path": "tests/functional/bun-compiled-binary.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/bun-compiled-binary.functional.test.mjs — construct-qvou regression."
+    },
+    {
       "path": "tests/functional/certification-runner.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2421,6 +2437,14 @@
       "maintainerNotes": "tests/functional/construct-not-invoked-is-inert.functional.test.mjs"
     },
     {
+      "path": "tests/functional/construct-shim.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/construct-shim.functional.test.mjs — construct-rf26.19."
+    },
+    {
       "path": "tests/functional/copilot-auth.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2459,6 +2483,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "cursor-rules-delivery.functional.test.mjs — project-evidence rule delivery (construct-bwis)."
+    },
+    {
+      "path": "tests/functional/custom-specialist-authoring.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/custom-specialist-authoring.functional.test.mjs"
     },
     {
       "path": "tests/functional/deck-export.functional.test.mjs",
@@ -2743,6 +2775,16 @@
       "maintainerNotes": "tests/functional/find-tool.functional.test.mjs"
     },
     {
+      "path": "tests/functional/flow-checkpoint-resume.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [
+        "flows.checkpoint"
+      ],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/flow-checkpoint-resume.functional.test.mjs — flow-engine"
+    },
+    {
       "path": "tests/functional/gate-worker-backend-visibility.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -2910,6 +2952,14 @@
       "maintainerNotes": "tests/functional/init-intake-archetype.functional.test.mjs"
     },
     {
+      "path": "tests/functional/init-lazy-embedding.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/init-lazy-embedding.functional.test.mjs"
+    },
+    {
       "path": "tests/functional/init-no-project-secrets.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
@@ -3000,12 +3050,12 @@
       "maintainerNotes": "Live LLM test for the three-tier model router (reasoning / standard /"
     },
     {
-      "path": "tests/functional/llm/specialist-devil-advocate.functional.test.mjs",
+      "path": "tests/functional/llm/specialist-reviewer-plan-challenge.functional.test.mjs",
       "layer": "functional",
       "category": "functional",
       "capabilities": [],
       "skipped": false,
-      "maintainerNotes": "Live LLM test for cx-devil-advocate."
+      "maintainerNotes": "Live LLM test for cx-reviewer's plan-challenge mode (the devil-advocate"
     },
     {
       "path": "tests/functional/llm/specialist-roster.functional.test.mjs",
@@ -4857,6 +4907,14 @@
       "maintainerNotes": "tests/npm-spawn-env.test.mjs — npm spawn env sanitization."
     },
     {
+      "path": "tests/observation-retention.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/observation-retention.test.mjs — TTL/size eviction for the"
+    },
+    {
       "path": "tests/observation-store.test.mjs",
       "layer": "integration",
       "category": "integration",
@@ -4967,6 +5025,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/orchestration-chain-of-thought.test.mjs — chain-of-thought disclosure."
+    },
+    {
+      "path": "tests/orchestration-delegation-flow.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/orchestration-delegation-flow.test.mjs — flow-engine delegation chain"
     },
     {
       "path": "tests/orchestration-events.test.mjs",
@@ -5727,6 +5793,14 @@
       "capabilities": [],
       "skipped": false,
       "maintainerNotes": "tests/roles/router.test.mjs — event → persona resolver."
+    },
+    {
+      "path": "tests/roots.test.mjs",
+      "layer": "unit",
+      "category": "unit",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/roots.test.mjs — Bun-compiled-binary path resolution (construct-qvou)."
     },
     {
       "path": "tests/runtime-pressure.test.mjs",
