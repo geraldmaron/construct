@@ -1,12 +1,10 @@
 name: bun-binary-smoke
 
 # Standalone smoke test for the Bun-compiled binary path. Kept separate from
-# ci.yml and release.yml rather than folded into either: it is not required
-# for merges (Bun compatibility for this CLI is still being verified — see
-# scripts/build-binary.mjs's file header for the known ROOT_DIR/asset-embedding
-# gap found during that verification), and it must never gate the existing
-# Node-SEA release pipeline in release.yml. Runs on demand or when the Bun
-# build scripts themselves change, so a regression in the build step is caught
+# ci.yml and release.yml rather than folded into either: this track is not
+# yet wired into release.yml (the Node-SEA pipeline there remains primary),
+# and this job must never gate it. Runs on demand or when the Bun build
+# scripts themselves change, so a regression in the build step is caught
 # without adding latency or a new required check to every PR.
 on:
   workflow_dispatch:
@@ -14,6 +12,8 @@ on:
     paths:
       - 'scripts/build-binary.mjs'
       - 'scripts/build-sea.mjs'
+      - 'bin/construct'
+      - 'lib/roots.mjs'
       - '.github/workflows/bun-binary-smoke.yml'
 
 permissions:
@@ -23,7 +23,6 @@ jobs:
   smoke:
     name: build + doctor smoke (${{ matrix.os }})
     runs-on: ${{ matrix.runner }}
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -51,8 +50,13 @@ jobs:
         run: node scripts/build-binary.mjs ${{ matrix.os }}
 
       - name: Smoke test — construct doctor against the compiled binary
-        # Expected to fail until the ROOT_DIR/asset-embedding gap is fixed
-        # (see scripts/build-binary.mjs). continue-on-error at the job level
-        # keeps this red without blocking anything; the point of this job is
-        # to surface the failure with a real error, not to hide it.
-        run: ./dist/construct-${{ matrix.os }} doctor
+        # scripts/build-binary.mjs's own smoke check already gates the build
+        # step above on a real "Results:" line (not doctor's exit code, which
+        # legitimately reflects repo health unrelated to whether the binary
+        # itself works). This step re-runs doctor standalone so the report is
+        # visible directly in the workflow log, gated the same honest way.
+        shell: bash
+        run: |
+          set -o pipefail
+          ./dist/construct-${{ matrix.os }} doctor | tee doctor-output.txt || true
+          grep -E '^Results: [0-9]+ passed, [0-9]+ warnings?, [0-9]+ failed' doctor-output.txt
