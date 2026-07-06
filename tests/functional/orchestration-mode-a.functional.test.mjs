@@ -3,10 +3,12 @@
  *
  * Spawns the real `bin/construct orchestrate` binary in an isolated tmpdir and
  * asserts the durable, host-adapter-facing behavior: an orchestrated run plans a
- * specialist chain and writes a run under `.cx/runtime/orchestration/`, `status`
- * reads it back across process boundaries (resumability without a daemon), and a
- * prompt-only run honestly owns no specialist sequence. HOME is pinned to the
- * tmpdir and provider keys are blanked so the run is hermetic.
+ * specialist chain and writes a run under the machine-scoped state root's
+ * `runtime/orchestration/` (ADR-0066), `status` reads it back across process
+ * boundaries (resumability without a daemon), and a prompt-only run honestly
+ * owns no specialist sequence. HOME is pinned to the tmpdir and provider keys
+ * are blanked so the run is hermetic — since HOME == cwd here, the
+ * machine-scoped state root also resolves inside the disposable tmpdir.
  */
 
 import assert from 'node:assert/strict';
@@ -16,6 +18,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+
+import { deriveProjectKey } from '../../lib/state-root.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.join(HERE, '..', '..', 'bin', 'construct');
@@ -46,7 +50,7 @@ test('orchestrate run --json plans a specialist chain and persists a durable run
   assert.ok(meta.tasks.length >= 2, 'multiple specialists sequenced');
   assert.ok(meta.tasks.every((t) => t.status === 'prepared'));
 
-  const runFile = path.join(cwd, '.cx', 'runtime', 'orchestration', 'runs', `${meta.runId}.json`);
+  const runFile = path.join(cwd, '.construct', 'projects', deriveProjectKey(cwd), 'runtime', 'orchestration', 'runs', `${meta.runId}.json`);
   assert.ok(fs.existsSync(runFile), 'run persisted to the filesystem store');
 
   fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });

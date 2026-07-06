@@ -1,5 +1,9 @@
 /**
  * tests/telemetry-client.test.mjs — shared telemetry adapter selection and export contracts.
+ *
+ * Local trace writes resolve through the machine-scoped state root
+ * (ADR-0066), so CX_HOME_OVERRIDE is pinned for the whole file to keep them
+ * off the real developer machine's $HOME.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -8,6 +12,16 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { createTelemetryClient, resolveTraceBackend } from '../lib/telemetry/client.mjs';
+import { resolveStateDir } from '../lib/state-root.mjs';
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-telemetry-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 test('resolveTraceBackend defaults to local and preserves legacy remote alias', () => {
   assert.equal(resolveTraceBackend({}), 'local');
@@ -38,9 +52,10 @@ test('local backend writes JSONL without remote fetch', async (t) => {
   client.trace({ id: 'trace-local', name: 'local.trace', metadata: { agent: 'cx-test' } });
   await client.flush();
 
-  const files = fs.readdirSync(path.join(rootDir, '.cx', 'traces'));
+  const tracesDir = resolveStateDir(rootDir, 'traces');
+  const files = fs.readdirSync(tracesDir);
   assert.equal(files.length, 1);
-  const [line] = fs.readFileSync(path.join(rootDir, '.cx', 'traces', files[0]), 'utf8').trim().split('\n');
+  const [line] = fs.readFileSync(path.join(tracesDir, files[0]), 'utf8').trim().split('\n');
   const event = JSON.parse(line);
   assert.equal(event.traceId, 'trace-local');
   assert.equal(event.telemetryType, 'trace');
@@ -71,7 +86,7 @@ test('langfuse backend posts ingestion batch and keeps local JSONL', async (t) =
   assert.equal(calls[0].url, 'https://lf.example.com/api/public/ingestion');
   assert.ok(calls[0].init.headers.Authorization.startsWith('Basic '));
   assert.equal(calls[0].body.batch[0].type, 'event-create');
-  assert.equal(fs.existsSync(path.join(rootDir, '.cx', 'traces')), true);
+  assert.equal(fs.existsSync(resolveStateDir(rootDir, 'traces')), true);
 });
 
 test('generic http backend posts construct ingestion payload without credentials', async () => {

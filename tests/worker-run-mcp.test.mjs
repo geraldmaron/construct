@@ -5,8 +5,12 @@
  * optionally records evidence on a named task graph node, and emits the
  * worker.started / worker.completed / evidence.recorded trace events
  * correlated by traceId.
+ *
+ * Trace + worker-artifact writes resolve through the machine-scoped state
+ * root (ADR-0066), so CX_HOME_OVERRIDE is pinned for the whole file to keep
+ * them off the real developer machine's $HOME.
  */
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeEach, afterEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -17,6 +21,15 @@ import { traceDir } from '../lib/worker/trace.mjs';
 import { FilesystemTaskGraphStore } from '../lib/task-graph/store.mjs';
 import { generateTaskGraphFromTriage } from '../lib/task-graph/generate.mjs';
 import { classifyRdIntake } from '../lib/intake/classify.mjs';
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-worker-mcp-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 let projectRoot;
 let originalCwd;
