@@ -72,6 +72,23 @@ function payload(result) {
   try { return JSON.parse(text); } catch { return text; }
 }
 
+// getRun resolves the machine-scoped state root (ADR-0066) via CX_HOME_OVERRIDE
+// on process.env directly — the { env } option threaded through getRun's own
+// signature is not consulted by that resolution. The subprocess sees the
+// sandboxed HOME via sterileSpawnEnv; this process must pin the same override
+// around the call, or it reads the real developer machine's state root instead.
+
+async function getRunInSandbox(env, runId) {
+  const prev = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = env.HOME;
+  try {
+    return await getRun(env.project, runId, { env: {} });
+  } finally {
+    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prev;
+  }
+}
+
 test('a client declaring the sampling capability drives the awaiting-host loop itself; the run completes in one call', async (t) => {
   const env = sandbox();
   t.after(() => env.cleanup());
@@ -116,7 +133,7 @@ test('a client declaring the sampling capability drives the awaiting-host loop i
     assert.equal(req.messages[0].role, 'user');
   }
 
-  const persisted = await getRun(env.project, run.runId, { env: {} });
+  const persisted = await getRunInSandbox(env, run.runId);
   assert.equal(persisted.status, 'completed');
   assert.ok(persisted.tasks.every((t2) => t2.status === 'done'));
   assert.ok(persisted.tasks.every((t2) => t2.executor.startsWith('host:')));

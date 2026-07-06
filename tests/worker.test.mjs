@@ -4,13 +4,17 @@
  * Pins runJob's command execution + timeout + path policy, trace event
  * emission, evidence recording onto task graph nodes, and the typed
  * BLOCKED / NEEDS_MAIN_INPUT packets that gate node completion.
+ *
+ * Trace + worker-artifact writes resolve through the machine-scoped state
+ * root (ADR-0066), so CX_HOME_OVERRIDE is pinned for the whole file to keep
+ * them off the real developer machine's $HOME.
  */
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeEach, afterEach, after } from 'node:test';
 
 import { runJob } from '../lib/worker/run.mjs';
 import { emitTraceEvent, traceDir, newTraceId, TRACE_EVENT_TYPES, _resetTelemetryClient } from '../lib/worker/trace.mjs';
@@ -18,6 +22,15 @@ import { evidenceFromJobResult, recordEvidence, blockedPacket, needsInputPacket,
 import { FilesystemTaskGraphStore } from '../lib/task-graph/store.mjs';
 import { generateTaskGraphFromTriage } from '../lib/task-graph/generate.mjs';
 import { classifyRdIntake } from '../lib/intake/classify.mjs';
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-worker-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 let projectRoot;
 
@@ -112,7 +125,7 @@ describe('runJob', () => {
 });
 
 describe('trace event log', () => {
-  it('appends one JSON line per event under .cx/traces/<date>.jsonl', () => {
+  it('appends one JSON line per event under the state root\'s traces/<date>.jsonl', () => {
     const traceId = newTraceId();
     emitTraceEvent({
       rootDir: projectRoot,
@@ -168,7 +181,7 @@ describe('trace event log', () => {
       env: { ...process.env, CONSTRUCT_BUDGET_WARN_IN_TEST: '1' },
     });
     assert.equal(event.budgetSkipped, true);
-    const tracesDir = path.join(projectRoot, '.cx', 'traces');
+    const tracesDir = traceDir(projectRoot);
     if (fs.existsSync(tracesDir)) {
       const files = fs.readdirSync(tracesDir);
       for (const name of files) {

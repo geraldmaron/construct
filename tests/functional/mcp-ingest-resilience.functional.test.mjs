@@ -10,6 +10,11 @@
  * fallback — never hang the server and never surface an undefined-property crash.
  *
  * @capability ingest.docling
+ *
+ * The docling venv resolves through the machine-scoped state root (ADR-0066),
+ * keyed off cwd; the sandbox's HOME == root, so the stub lands at
+ * root/.construct/projects/<key-of-root>/runtime/docling/ — the same place
+ * the running server resolves it to.
  */
 import test from "node:test";
 import assert from "node:assert";
@@ -19,6 +24,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { deriveProjectKey } from "../../lib/state-root.mjs";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const DOCLING_PIN = "2.45.0";
@@ -27,13 +33,14 @@ function makeSandbox() {
   const root = mkdtempSync(join(tmpdir(), "mcp-ingest-"));
   // Stub docling venv: a python that exits non-zero, recorded in the marker so
   // ensureDoclingVenv returns it without provisioning (no uv, no network).
-  const venvBin = join(root, ".cx", "runtime", "docling", ".venv", "bin");
+  const stateRoot = join(root, ".construct", "projects", deriveProjectKey(root));
+  const venvBin = join(stateRoot, "runtime", "docling", ".venv", "bin");
   mkdirSync(venvBin, { recursive: true });
   const py = join(venvBin, "python");
   writeFileSync(py, "#!/bin/sh\nexit 1\n");
   chmodSync(py, 0o755);
   writeFileSync(
-    join(root, ".cx", "runtime", "docling", ".install-marker.json"),
+    join(stateRoot, "runtime", "docling", ".install-marker.json"),
     JSON.stringify({ doclingVersion: DOCLING_PIN, pythonBin: py }),
   );
   // A docling-format input (.rtf is routed to docling, and the legacy extractor
