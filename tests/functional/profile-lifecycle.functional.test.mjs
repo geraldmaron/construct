@@ -27,11 +27,13 @@ test('lifecycle: createDraftScope scaffolds requirements brief + draft scope', (
   assert.ok(fs.existsSync(draftPath));
 
   const brief = fs.readFileSync(briefPath, 'utf8');
-  // Discipline anchors are present, not just empty section headers.
-  assert.match(brief, /cx-ux-researcher/);
+  // Discipline anchors are present, not just empty section headers. These
+  // are the core-12-roster ids (construct-rf26.11); cx-researcher absorbed
+  // ux-researcher and cx-reviewer absorbed evaluator/trace-reviewer.
+  assert.match(brief, /cx-researcher/);
   assert.match(brief, /cx-product-manager/);
   assert.match(brief, /cx-architect/);
-  assert.match(brief, /cx-evaluator/);
+  assert.match(brief, /cx-reviewer/);
   assert.match(brief, /Acceptance:/);
 
   const draft = JSON.parse(fs.readFileSync(draftPath, 'utf8'));
