@@ -127,6 +127,18 @@ jobs:
         node: ["20", "22"]
     env:
       CONSTRUCT_EMBEDDING_MODEL: hashing
+      # Hermetic construct state root for the whole job: lib/paths.mjs's
+      # homeDir() resolves CX_HOME_OVERRIDE before os.homedir(), so every
+      # construct-side write (graph build, index seed, and any test that
+      # reaches the machine-scoped state root in-process) lands under the
+      # runner's temp dir instead of the runner's real HOME. This makes the
+      # sterile-host fingerprint guard (scripts/run-tests.mjs) structurally
+      # unable to trip on construct:projects drift — the entire leak class is
+      # redirected, not chased test-by-test (construct-mtgs, construct-nl9f).
+      # Per-test sandboxes that pin their own CX_HOME_OVERRIDE still win
+      # inside their own process/spawn env, so isolation-hardened tests are
+      # unaffected.
+      CX_HOME_OVERRIDE: ${{ runner.temp }}/construct-home
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
