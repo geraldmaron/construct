@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-06T01:56:25.504Z",
+  "generatedAt": "2026-07-06T03:35:43.499Z",
   "generator": "node scripts/generate-test-corpus-inventory.mjs",
   "summary": {
-    "testFiles": 797,
+    "testFiles": 798,
     "topLevelTestFiles": 346,
-    "nestedTestFiles": 451,
+    "nestedTestFiles": 452,
     "skippedFiles": 0,
     "capabilityMarkedFiles": 39,
     "byLayer": {
       "unit": 549,
-      "functional": 201,
+      "functional": 202,
       "visual": 11,
       "live-provider": 2,
       "integration": 34
     },
     "byCategory": {
       "unit": 486,
-      "functional": 201,
+      "functional": 202,
       "visual": 11,
       "structural-guard": 19,
       "contract-subsystem": 44,
@@ -2549,6 +2549,14 @@
       ],
       "skipped": false,
       "maintainerNotes": "docling-remote-ingest.functional.test.mjs — opt-in remote conversion (ADR-0036, construct-n1f8)."
+    },
+    {
+      "path": "tests/functional/docling-shared-venv.functional.test.mjs",
+      "layer": "functional",
+      "category": "functional",
+      "capabilities": [],
+      "skipped": false,
+      "maintainerNotes": "tests/functional/docling-shared-venv.functional.test.mjs — one machine, one docling venv."
     },
     {
       "path": "tests/functional/docs-redirect-stubs.functional.test.mjs",
