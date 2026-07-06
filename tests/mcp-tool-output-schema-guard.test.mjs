@@ -33,6 +33,7 @@ import { fileURLToPath } from 'node:url';
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
 import { TOOL_SAFETY, DEFAULT_OUTPUT_SCHEMA } from '../lib/mcp/tool-safety.mjs';
 import { scanToolModules } from '../lib/mcp/tool-registry.mjs';
+import { RAW_HARDCODED_TOOL_DEFS } from '../lib/mcp/tool-definitions.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
@@ -48,27 +49,24 @@ function extractBalanced(src, openIndex) {
   throw new Error(`unbalanced literal starting at index ${openIndex}`);
 }
 
-// HARDCODED_TOOL_DEFS is a pure data array (no function calls) — safe to eval,
-// the same technique tests/audit/f14-tools/*.test.mjs use for the (now stale,
-// pre-LMCP-B5) ALL_TOOL_DEFS name. Reading the hardcoded literal instead of the
-// ALL_TOOL_DEFS spread expression means a locally deleted outputSchema field
-// still fails this guard on the 77 hand-maintained tools; self-registered
-// tools (currently none) are covered separately via the real scanToolModules().
+// RAW_HARDCODED_TOOL_DEFS (lib/mcp/tool-definitions.mjs, split further into
+// tool-definitions-{project,skills,memory,workflow}.mjs — construct-rf26.10)
+// is a pure data array with no function calls, so it is imported directly
+// rather than eval'd out of server.mjs source text: reading the hardcoded
+// literal instead of the ALL_TOOL_DEFS spread expression means a locally
+// deleted outputSchema field still fails this guard on the 76 hand-maintained
+// tools; self-registered tools (currently none) are covered separately via
+// the real scanToolModules().
 //
-// CONSTRUCT_CALL_TOOL's inputSchema.properties.tool.enum references the
-// LONG_TAIL_DEFS variable, so its literal cannot be eval'd standalone; a bounded
-// text scan for the outputSchema key is enough to prove (non-)declaration.
+// CONSTRUCT_CALL_TOOL still lives inline in server.mjs (its
+// inputSchema.properties.tool.enum references the runtime-only LONG_TAIL_DEFS
+// variable, so its literal cannot be eval'd standalone); a bounded text scan
+// for the outputSchema key is enough to prove (non-)declaration.
 
 async function readToolCatalog() {
   const src = readFileSync(SERVER_PATH, 'utf8');
 
-  const arrStart = src.indexOf('HARDCODED_TOOL_DEFS = [');
-  assert.ok(arrStart !== -1, 'could not locate HARDCODED_TOOL_DEFS in lib/mcp/server.mjs');
-  const arrOpen = src.indexOf('[', arrStart);
-  const arrClose = extractBalanced(src, arrOpen);
-  const defs = eval(`(${src.slice(arrOpen, arrClose + 1)})`); // eslint-disable-line no-eval
-
-  const declared = new Map(defs.map((d) => [d.name, d.outputSchema ?? d.output_schema]));
+  const declared = new Map(RAW_HARDCODED_TOOL_DEFS.map((d) => [d.name, d.outputSchema ?? d.output_schema]));
 
   const callMarker = 'const CONSTRUCT_CALL_TOOL = withSafetyEnvelope(';
   const callStart = src.indexOf(callMarker);
