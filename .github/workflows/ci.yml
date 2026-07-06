@@ -168,7 +168,8 @@ jobs:
       # construct.config.json), which would pollute the checkout other steps
       # in this job (and npm run doctor/docs:verify right after) also read.
       - name: seed the embedded vector index (test fixture for the lancedb acceptance leg)
-        run: node -e "import('./lib/storage/sync.mjs').then((m) => m.syncFileStateToSql(process.cwd(), { env: process.env, project: 'construct' }))"
+        run: |
+          node -e "import('./lib/storage/sync.mjs').then((m) => m.syncFileStateToSql(process.cwd(), { env: process.env, project: 'construct' }))"
       - run: npm test
       - run: npm run doctor
       - run: npm run docs:verify
