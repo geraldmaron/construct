@@ -15,8 +15,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 import { parseShardArgs, parseShardSpec, stripeFiles } from '../../scripts/test-shard.mjs';
 
@@ -102,14 +106,26 @@ test('run-tests.mjs exits 1 when a shard selects zero files', () => {
 });
 
 test('spawned --list stripes across shards 1..3 reassemble the full unsharded list', () => {
+  // Hermetic fixture tree, NOT the live repo: striping is index-modulo over
+  // the sorted discovery list, so a concurrently-running repo test that
+  // creates or removes files under tests/ between the four spawns shifts
+  // every index and breaks the union (observed as a deterministic shard-3 CI
+  // failure — this test shares a shard with tests that churn the tree). A
+  // private cwd gives all four spawns one immutable list.
+  const fixture = mkdtempSync(path.join(tmpdir(), 'shard-list-'));
+  test.after(() => rmTmpDir(fixture));
+  mkdirSync(path.join(fixture, 'tests'), { recursive: true });
+  for (let i = 0; i < 10; i += 1) {
+    writeFileSync(path.join(fixture, 'tests', `${String(i).padStart(2, '0')}.test.mjs`), 'export {};\n');
+  }
   const list = (extraArgs) => {
-    const result = spawnSync(process.execPath, [RUNNER, ...extraArgs, '--list'], { cwd: REPO_ROOT, encoding: 'utf8' });
+    const result = spawnSync(process.execPath, [path.join(REPO_ROOT, RUNNER), ...extraArgs, '--list'], { cwd: fixture, encoding: 'utf8' });
     assert.equal(result.status, 0, `--list run failed: ${result.stderr}`);
     return result.stdout.split('\n').filter(Boolean);
   };
 
   const full = list([]);
-  assert.ok(full.length > 0, 'the repo must enumerate at least one test file');
+  assert.equal(full.length, 10, 'the fixture must enumerate exactly its ten synthetic test files');
 
   const stripes = [1, 2, 3].map((i) => list([`--shard=${i}/3`]));
   assert.deepEqual(stripes.flat().sort(), [...full].sort(), 'union of shards 1..3 must equal the full list');
