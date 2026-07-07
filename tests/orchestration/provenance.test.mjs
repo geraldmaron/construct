@@ -17,13 +17,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
 import { runTaskViaProvider, _resetPackRegistryCache } from '../../lib/orchestration/worker.mjs';
 import { planRun, executeRun, hostAdapterMetadata } from '../../lib/orchestration/runtime.mjs';
 import { saveRun } from '../../lib/orchestration/run-store.mjs';
+import { traceDir as resolveTraceDir } from '../../lib/worker/trace.mjs';
 import { tempDir } from '../helpers.mjs';
+
+// Trace reads resolve through the machine-scoped state root (ADR-0066), so
+// CX_HOME_OVERRIDE is pinned for the whole file to keep them off the real
+// developer machine's $HOME.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-provenance-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
@@ -173,7 +188,7 @@ test('the .cx/traces worker.completed event carries every new provenance field',
   );
   await executeRun(cwd, planned.runId, { env: ENV, workerBackend: 'provider', fetchImpl: fetchOk });
 
-  const traceDirPath = path.join(cwd, '.cx', 'traces');
+  const traceDirPath = resolveTraceDir(cwd);
   const shard = fs.readdirSync(traceDirPath).find((f) => f.endsWith('.jsonl'));
   const lines = fs.readFileSync(path.join(traceDirPath, shard), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
   const completedEvents = lines.filter((e) => e.eventType === 'worker.completed' && e.metadata?.runId === planned.runId);

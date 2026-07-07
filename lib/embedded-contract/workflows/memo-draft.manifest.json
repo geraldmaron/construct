@@ -4,7 +4,7 @@
   "type": "linear",
   "modes": ["solo", "team"],
   "surfaces": ["mcp", "cli"],
-  "roleChain": ["docs-keeper", "reviewer"],
+  "roleChain": ["operations", "reviewer"],
   "defaultApprovalMode": "proposal-only",
   "durableStateModel": "none",
   "tier": "fast",

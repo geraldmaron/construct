@@ -2,7 +2,7 @@
 
 > This is the strategy doc for the Construct project itself. The org-in-a-box, dogfooding on its own repo. Other projects that use Construct have their own strategy at `.cx/strategy.md` (see [`templates/docs/strategy.md`](./templates/docs/strategy.md)).
 
-Last updated: 2026-06-19
+Last updated: 2026-07-06
 Horizon: 6 to 12 months
 Status: living document, revised when a bet changes
 
@@ -46,6 +46,9 @@ What is there:
 - **Oracle** L0.5 meta-controller collects signals, auto-executes safe maintenance, queues consequential fixes (`construct oracle`).
 - Doc auditability stamps land on every generated `.md` file.
 - A docs site is published at `geraldmaron.github.io/construct/`.
+- A deterministic flow engine (`lib/flows/`, ADR-0067) sequences work as typed state instead of prose an agent is trusted to follow — checkpoint/resume, effort budgets, and fan-out restricted to read-only work all land. See [Flow engine](./docs/guides/concepts/architecture.md#flow-engine).
+- Heavy per-project state (traces, runs, vector index, docling venv) moved to a machine-scoped root at `~/.construct/projects/<key>/` (ADR-0066); the docling venv is now one shared machine-wide install instead of one per project (ADR-0068).
+- Users can author their own specialists and teams (`construct specialist create` / `construct team create`) without editing `specialists/org/`, merging builtin → user → project tiers at load time (`construct-rf26.13`).
 
 What is partial:
 
@@ -54,6 +57,9 @@ What is partial:
 - Team and enterprise modes have the scaffolding but few real users yet.
 - Provider coverage is uneven. GitHub, Slack, Jira, Confluence, Salesforce exist; depth varies.
 - Visual coverage in the docs site is thin (most concepts have no diagrams).
+- The 29-specialist roster consolidation to ~8–12 core roles is a drafted proposal (ADR-0065 roster-mapping appendix), not yet applied — the built-in roster is unchanged pending sign-off on specific groupings.
+- Contract-chain dispatch is ported onto the flow engine additively (`orchestration_delegation_next`), not as a full replacement — the older prompt-injected `dispatchPlan`/`dispatchSummary` path still runs alongside it because other contracts and callers still depend on it.
+- Bun-compiled binary distribution builds and runs in isolation (all 4 platform targets, LanceDB + MCP SDK verified under Bun) but `bin/construct` itself doesn't yet run standalone under the compiled binary (a data-root resolution gap); npm remains the only working distribution channel.
 
 What is missing:
 
@@ -61,19 +67,30 @@ What is missing:
 - A clean "first hour" experience for someone who has never seen the project.
 - Real adoption signal. The project is open source and public, but I do not yet have meaningful usage data outside my own machine.
 
+## 2026-07 architecture refit
+
+A full challenge of the standing architecture, recorded in `plan.md` (epic `construct-rf26`), asked whether Construct should stay as it was and whether Python or the better parts of CrewAI should get blended in. Four decisions came out of it, each landing as its own ADR:
+
+- **D1 — Node core stays; Python narrows to one sidecar; distribution moves to a compiled binary** ([ADR-0064](./docs/decisions/adr/0064-language-runtime-strategy.md)). Every peer product in this category (Claude Code, OpenCode, Codex CLI) ships a Bun- or Rust-compiled binary, not Python; `npm install -g` friction is the real first-hour gap, not the language. `uv` stays the formal, pinned contract for the docling sidecar.
+- **D2 — Orchestrator-worker with a small core roster supersedes the 29-specialist role-crew org** ([ADR-0065](./docs/decisions/adr/0065-orchestrator-worker-consolidation.md)). The evidence base (Anthropic's multi-agent research writeup, Cognition's "Don't Build Multi-Agents," the Berkeley MAST failure taxonomy) argues against fixed persona crews for most work; a deterministic flow engine replaces prompt-injected sequencing, and parallel fan-out is restricted to read-only, breadth-first work.
+- **D3 — Config-layer project footprint** ([ADR-0066](./docs/decisions/adr/0066-config-layer-project-footprint.md)). A project keeps only committed text (`construct.config.json`, `.cx/context.md`, custom specialists/teams); all heavy state (traces, vector index, runs, docling venv) moves to a machine-scoped root, shrinking a ~2.5–3 GB per-project footprint toward KB scale.
+- **D4 — Standalone-project comment hygiene.** Code comments may not name another software project by way of comparison; decision documents keep their citations (the no-fabrication rule requires them there).
+
+No backwards compatibility: these are clean breaks, not migration shims. Execution runs in six phases (decide → flow engine → roster → footprint → distribution → docs/verification); as of this writing 12 of the epic's 22 beads are closed. The flow engine, checkpoint/resume, machine-scoped state, shared docling venv, and lazy vector index are shipped; the core-roster consolidation and Bun-binary distribution are drafted/in-flight but not yet applied. See the current state notes above, [Flow engine](./docs/guides/concepts/architecture.md#flow-engine) in the architecture doc, and the ADR index for the full supersession record.
+
 ## Bets
 
 Each bet is a choice. Each one carries a "why," because in 6 months I want to know what I believed when I made it.
 
 ### Bet 1: The product is the loop, not the agents
 
-The differentiator is not "more specialists." It is the gated, contracted, evidence-required loop the specialists run inside. Other tools dispatch to agents. Construct dispatches, gates, verifies, and re-runs.
+The differentiator is not "more specialists." It is the gated, contracted, evidence-required loop the specialists run inside. Other tools dispatch to agents. Construct dispatches, gates, verifies, and re-runs. The 2026-07 refit's flow engine (ADR-0067) is this bet's next increment: the loop's sequencing becomes a typed state machine instead of prose injected into an agent's context, without changing what the loop guarantees.
 
 Why: agreement at every step is a smell. The loop is what keeps the system honest when nobody is watching.
 
 ### Bet 2: Local-first, with a real path to multi-user
 
-Solo mode must work without any cloud service. The same primitives promote to Postgres, brokered MCP, and Docker workers in team mode without changing the agent loop. Mode is a backend choice, not a different product.
+Solo mode must work without any cloud service. The same primitives promote to Postgres, brokered MCP, and Docker workers in team mode without changing the agent loop. Mode is a backend choice, not a different product. The config-layer footprint decision (ADR-0066) is this bet applied to disk: a project stays local and lightweight (committed text only), while the heavy state a solo machine accumulates moves to a machine-scoped root instead of bloating every git checkout.
 
 Why: lock-in kills open source projects. If everything works locally, the team mode is opt-in and the solo user is never abandoned.
 
@@ -94,6 +111,12 @@ Why: soft hooks decay. Hard gates either pass or they get fixed. The decay rate 
 The construct repo is customer zero. If Construct cannot run its own intake, planning, docs, and reviews, it does not deserve to run anyone else's. The construct_guide.md, dashboard usage, snapshot history, and intake queue on this repo are public evidence.
 
 Why: dogfood is the only honest demo. A tool that does not run its own project is selling.
+
+### Bet 6: Orchestrator-worker over a fixed role-crew org
+
+A small orchestrator plus a thin core roster, with skills (`skills/**`) as the actual unit of specialization, replaces a large fixed cast of 29 named personas. Customizability goes up, not down: fewer built-ins, but users author their own specialists and teams declaratively instead of forking the org. This is ADR-0065's bet, and it is deliberately one-way — the no-backwards-compat mandate governing the 2026-07 refit means retired specialist prompts get deleted, not archived behind a flag, once the roster mapping is approved.
+
+Why: the evidence (Anthropic's own multi-agent research, Cognition's "Don't Build Multi-Agents," the Berkeley MAST taxonomy) says role-play crews earn their cost only for read-only, parallelizable, breadth-first work — not most of what Construct's specialists do. Keeping 29 fixed personas past the point the evidence stopped supporting them would be inertia, not a bet.
 
 ## Non-bets (the things I am explicitly not doing)
 
@@ -165,3 +188,5 @@ Work: harden the multi-tenant scaffold, exercise RBAC, validate the MCP broker u
 - [`docs/guides/concepts/scope-lifecycle.md`](./docs/guides/concepts/scope-lifecycle.md). How profiles are built.
 - [`templates/docs/strategy.md`](./templates/docs/strategy.md). The template projects use for their own strategies.
 - [`rules/common/review-before-change.md`](./rules/common/review-before-change.md). The audit that ran before this doc was written.
+- [`plan.md`](./plan.md). The 2026-07 architecture refit's decision record (D1–D4) and ADR challenge register.
+- [`docs/guides/concepts/flow-authoring.md`](./docs/guides/concepts/flow-authoring.md). How to define a flow for the deterministic flow engine (ADR-0067).

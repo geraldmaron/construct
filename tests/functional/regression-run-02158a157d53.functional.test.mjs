@@ -29,7 +29,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, existsSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,7 +37,9 @@ import test from 'node:test';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
+import { resolveStatePath } from '../../lib/state-root.mjs';
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SERVER = join(REPO_ROOT, 'lib', 'mcp', 'server.mjs');
@@ -49,7 +51,7 @@ function sandbox() {
   const project = join(root, 'project');
   mkdirSync(join(HOME, '.cx'), { recursive: true });
   mkdirSync(join(project, '.cx'), { recursive: true });
-  return { root, HOME, project, cleanup() { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
+  return { root, HOME, project, cleanup() { rmTmpDir(root); } };
 }
 
 // Incident machine state: keys present (fake-but-present), tiers absent.
@@ -87,6 +89,22 @@ function payload(result) {
   return text ? JSON.parse(text) : null;
 }
 
+// The run store resolves the machine-scoped state root (ADR-0066) via
+// CX_HOME_OVERRIDE on process.env directly — the sandboxed HOME the
+// subprocess sees via sterileSpawnEnv is invisible to this process unless
+// the same override is pinned here around the read.
+
+function runFilePathInSandbox(box, runId) {
+  const prev = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = box.HOME;
+  try {
+    return resolveStatePath(box.project, 'runtime', 'orchestration', 'runs', `${runId}.json`, { ensureDir: false });
+  } finally {
+    if (prev === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prev;
+  }
+}
+
 test('incident run-02158a157d53: keys-present/tiers-absent never persists a silent degraded "completed" run', async (t) => {
   const box = sandbox();
   t.after(() => box.cleanup());
@@ -111,7 +129,7 @@ test('incident run-02158a157d53: keys-present/tiers-absent never persists a sile
   // envelope shapeRun() returns (shapeRun already re-derives a legacy
   // degraded+completed combo as 'degraded' — read past that guard to prove
   // the persisted artifact itself was never written dishonestly).
-  const runFilePath = join(box.project, '.cx', 'runtime', 'orchestration', 'runs', `${run.runId}.json`);
+  const runFilePath = runFilePathInSandbox(box, run.runId);
   assert.ok(existsSync(runFilePath), `persisted run file must exist at ${runFilePath}`);
   const persisted = JSON.parse(readFileSync(runFilePath, 'utf8'));
 

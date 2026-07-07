@@ -38,7 +38,7 @@ test('missingRequiredReviewers uses manifest for prd type', () => {
     const file = join(dir, 'docs', 'prd', '001.md');
     writeFileSync(file, '# PRD\n');
     const missing = missingRequiredReviewers({ filePath: file, cwd: dir });
-    assert.ok(missing.includes('cx-devil-advocate'));
+    assert.ok(missing.includes('cx-reviewer'));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -80,7 +80,7 @@ test('artifact-reviewers-seen postcondition blocks missing reviewers', () => {
       artifactPath: file,
       cwd: dir,
     });
-    assert.ok(errors.some((e) => /cx-devil-advocate/.test(e)));
+    assert.ok(errors.some((e) => /cx-reviewer/.test(e)));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

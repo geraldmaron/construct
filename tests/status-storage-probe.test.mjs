@@ -8,7 +8,10 @@
  *   4. Caches the result so repeated calls skip the opener.
  *   5. Completes the healthy path in under 100ms overhead.
  *
- * The opener is injected so no real LanceDB files are required.
+ * The opener is injected so no real LanceDB files are required. The lancedb
+ * fixture lands at the machine-scoped state root (ADR-0066), matching where
+ * probeStorageHealth actually resolves it, so CX_HOME_OVERRIDE is pinned for
+ * the whole file to keep that write off the real developer machine's $HOME.
  *
  * Bead: construct-9oi4.13.1 — LMCP-M1
  */
@@ -20,12 +23,25 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { probeStorageHealth } from '../lib/status.mjs';
+import { resolveStateDir } from '../lib/state-root.mjs';
 import { tempDir } from './helpers.mjs';
 
-// Create a minimal fake directory structure with .cx/lancedb present.
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-storage-probe-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
+
+// Create a minimal fake directory structure with the lancedb store present at
+// its machine-scoped state root (ADR-0066), plus the project-local `.cx/`
+// marker probeStorageHealth checks first.
 function makeLancedbFixture() {
   const cwd = tempDir('construct-storage-probe-');
-  const lancedbPath = path.join(cwd, '.cx', 'lancedb');
+  fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
+  const lancedbPath = resolveStateDir(cwd, 'lancedb', { ensureDir: false });
   fs.mkdirSync(lancedbPath, { recursive: true });
   return { cwd, lancedbPath };
 }

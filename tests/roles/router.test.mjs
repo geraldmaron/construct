@@ -6,11 +6,11 @@ import test from 'node:test';
 
 import { route, ownerOf } from '../../lib/roles/router.mjs';
 
-test('route resolves push_gate.fail to cx-sre with manifest', () => {
+test('route resolves push_gate.fail to cx-operations with manifest', () => {
   const r = route({ type: 'push_gate.fail' });
   assert.ok(r);
-  assert.equal(r.personaId, 'sre');
-  assert.equal(r.cxId, 'cx-sre');
+  assert.equal(r.personaId, 'operations');
+  assert.equal(r.cxId, 'cx-operations');
   assert.ok(r.manifest.events.includes('push_gate.fail'));
 });
 
@@ -27,6 +27,6 @@ test('route resolves bug.assigned to cx-engineer', () => {
 test('ownerOf reflects EVENT_OWNERSHIP regardless of onboarding state', () => {
   assert.equal(ownerOf('test.fail'), 'cx-qa');
   assert.equal(ownerOf('dep.cve'), 'cx-security');
-  assert.equal(ownerOf('pr.merged.no-docs'), 'cx-docs-keeper');
+  assert.equal(ownerOf('pr.merged.no-docs'), 'cx-operations');
   assert.equal(ownerOf('made.up'), null);
 });

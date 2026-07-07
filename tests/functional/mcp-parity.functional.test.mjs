@@ -16,6 +16,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { spawn } from 'node:child_process';
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const SERVER = path.join(REPO, 'lib', 'mcp', 'server.mjs');
@@ -117,7 +118,7 @@ test('scope_show + scope_list reach Construct state over MCP', async () => {
     assert.ok(Array.isArray(catalog.scopes));
     assert.ok(catalog.scopes.some((p) => p.id === 'rnd'));
   });
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('outcomes_record refuses without confirm but writes JSONL when confirmed (via MCP)', async () => {
@@ -145,7 +146,7 @@ test('outcomes_record refuses without confirm but writes JSONL when confirmed (v
   const entry = JSON.parse(fs.readFileSync(file, 'utf8').trim());
   assert.equal(entry.success, true);
   assert.equal(entry.source, 'mcp');
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });
 
 test('learning_status delivers a structured dashboard over MCP', async () => {
@@ -159,5 +160,5 @@ test('learning_status delivers a structured dashboard over MCP', async () => {
     assert.equal(body.research.count, 0);
     assert.equal(typeof body.observations.total, 'number');
   });
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });

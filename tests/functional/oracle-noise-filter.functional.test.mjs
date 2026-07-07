@@ -5,7 +5,7 @@
  * escalating genuine violations, and that explicit repoRoot routing keeps fixture failures
  * out of the live project log.
  */
-import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
@@ -15,6 +15,7 @@ import { validateHandoff } from '../../lib/contracts/validate.mjs';
 import { collectReadModel } from '../../lib/oracle/read-model.mjs';
 import { synthesizeVerdict } from '../../lib/oracle/synthesize.mjs';
 import { doctorRoot } from '../../lib/config/xdg.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function freshEnv() {
   const projectDir = mkdtempSync(join(tmpdir(), 'construct-oracle-noise-proj-'));
@@ -32,7 +33,7 @@ function freshEnv() {
     rootDir,
     cleanup() {
       for (const dir of [projectDir, homeDir, rootDir]) {
-        try { rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
+        try { rmTmpDir(dir); } catch { /* ignore */ }
       }
     },
   };

@@ -18,16 +18,32 @@ import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 
 import { locateRenderer } from '../../lib/diagram.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
+
+// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// process.env directly, so every spawned `construct` needs its own sandboxed
+// HOME to avoid leaking test projects into the real developer machine's
+// ~/.construct/projects/.
+
+const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'diagram-home-'));
+process.on('exit', () => rmTmpDir(SANDBOX_HOME));
 
 function run(args, cwd) {
   return spawnSync(BIN, args, {
     cwd,
     encoding: 'utf8',
     timeout: 90_000,
-    env: { ...process.env, CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1', CONSTRUCT_DISABLE_AUTO_CLEANUP: '1' },
+    env: {
+      ...process.env,
+      CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
+      BOOTSTRAP_CHECKED: '1',
+      CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
+      HOME: SANDBOX_HOME,
+      CX_HOME_OVERRIDE: SANDBOX_HOME,
+    },
   });
 }
 
@@ -49,7 +65,7 @@ test('construct diagram: source always produced; SVG when renderer present; exit
       assert.ok(svgFiles.length >= 1, `renderer present but no SVG produced; got: ${files.join(', ')}`);
     }
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -62,6 +78,6 @@ test('construct diagram --source-only: writes source, exits 0, no render', () =>
     assert.ok(files.some((f) => f.endsWith('.d2')), `expected .d2 source; got: ${files.join(', ')}`);
     assert.ok(!files.some((f) => /\.(svg|png)$/.test(f)), `--source-only should not render; got: ${files.join(', ')}`);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });

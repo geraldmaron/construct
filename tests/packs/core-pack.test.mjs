@@ -23,7 +23,8 @@ test('loadCorePack', async (t) => {
   await t.test('specialists array contains expected specialists', () => {
     const pack = loadCorePack(PACKAGE_ROOT);
     assert.ok(Array.isArray(pack.specialists));
-    assert.ok(pack.specialists.length >= 20);
+    // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+    assert.ok(pack.specialists.length >= 12);
     assert.ok(pack.specialists.includes('cx-architect'));
     assert.ok(pack.specialists.includes('cx-engineer'));
     assert.ok(pack.specialists.includes('cx-orchestrator'));

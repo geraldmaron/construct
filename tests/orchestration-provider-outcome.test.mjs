@@ -36,6 +36,7 @@ test('classifyHttpFailure distinguishes rate limit, server error, auth, and gene
   assert.deepEqual(classifyHttpFailure(503), { code: PROVIDER_ERROR_CODES.SERVER_ERROR, retryable: true });
   assert.deepEqual(classifyHttpFailure(401), { code: PROVIDER_ERROR_CODES.AUTH_ERROR, retryable: false });
   assert.deepEqual(classifyHttpFailure(403), { code: PROVIDER_ERROR_CODES.AUTH_ERROR, retryable: false });
+  assert.deepEqual(classifyHttpFailure(402), { code: PROVIDER_ERROR_CODES.NO_CREDITS, retryable: false });
   assert.deepEqual(classifyHttpFailure(404), { code: PROVIDER_ERROR_CODES.EXECUTION_FAILED, retryable: false });
 });
 

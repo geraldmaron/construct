@@ -25,6 +25,21 @@ function project() {
 }
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
+// resolveRunStore's sqlite branch resolves its db directory through the
+// machine-scoped state root (ADR-0066), which reads CX_HOME_OVERRIDE from
+// real process.env directly. Pin it for the whole file so a sqlite-backend
+// resolution never writes into the real developer machine's
+// ~/.construct/projects/.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-resolver-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
+
 test('defaults to filesystem for a solo deployment', () => {
   const { backend, warnings } = resolveRunStore({ config: {}, env: { CONSTRUCT_DEPLOYMENT_MODE: 'solo' }, cwd: project() });
   assert.equal(backend, 'filesystem');

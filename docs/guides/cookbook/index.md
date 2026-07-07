@@ -8,6 +8,7 @@ Cookbook pages start from your goal, not the tool. Pick the one that matches wha
 ## Customize the team
 
 - [Add a custom agent](/guides/cookbook/add-a-custom-agent) — define a new specialist (registry, prompt, sync, smoke test).
+- [Custom specialists and teams](/guides/cookbook/custom-specialists-and-teams) — author your own specialist or team into `.cx/org/` or `~/.construct/org/`, without touching the built-in roster.
 - [Inspect running agents](/guides/cookbook/inspect-running-agents) — see what specialists ran for a task and why.
 
 ## Fix something

@@ -12,6 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = path.join(REPO_ROOT, 'bin', 'construct');
@@ -60,12 +61,12 @@ function initProject(home) {
 test('construct init does not write credential material into the project tree', (t) => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'init-secrets-home-'));
   t.after(() => {
-    try { fs.rmSync(home, { recursive: true, force: true }); } catch {}
+    try { rmTmpDir(home); } catch {}
   });
 
   const { dir, result } = initProject(home);
   t.after(() => {
-    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    try { rmTmpDir(dir); } catch {}
   });
 
   assert.equal(result.status, 0, `init failed: ${result.stderr}`);

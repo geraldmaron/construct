@@ -28,6 +28,7 @@ const POSTINSTALL = path.join(ROOT, 'bin', 'construct-postinstall.mjs');
 const PKG_VERSION = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
 
 let projectDir;
+let projectHome;
 
 function writableTmpRoot() {
   const candidates = [
@@ -51,6 +52,7 @@ function writableTmpRoot() {
 
 before(() => {
   projectDir = fs.mkdtempSync(path.join(writableTmpRoot(), 'cx-dist-bootstrap-'));
+  projectHome = fs.mkdtempSync(path.join(writableTmpRoot(), 'cx-dist-bootstrap-home-'));
   fs.writeFileSync(
     path.join(projectDir, 'package.json'),
     JSON.stringify({ name: 'fixture-consumer', version: '0.0.0' })
@@ -62,6 +64,8 @@ before(() => {
       ...process.env,
       INIT_CWD: projectDir,
       CONSTRUCT_SKIP_POSTINSTALL: '',
+      HOME: projectHome,
+      CX_HOME_OVERRIDE: projectHome,
     },
     timeout: 60_000,
   });
@@ -72,6 +76,7 @@ before(() => {
 
 after(() => {
   fs.rmSync(projectDir, { recursive: true, force: true });
+  fs.rmSync(projectHome, { recursive: true, force: true });
 });
 
 describe('project-local launcher staging', () => {
@@ -125,7 +130,7 @@ describe('run.mjs resolution', () => {
       {
         encoding: 'utf8',
         cwd: projectDir,
-        env: { ...process.env, CONSTRUCT_DEV_PATH: ROOT },
+        env: { ...process.env, CONSTRUCT_DEV_PATH: ROOT, HOME: projectHome, CX_HOME_OVERRIDE: projectHome },
         timeout: 30_000,
       }
     );
@@ -143,7 +148,8 @@ describe('run.mjs resolution', () => {
         cwd: projectDir,
         env: {
           PATH: '/nonexistent',
-          HOME: process.env.HOME,
+          HOME: projectHome,
+          CX_HOME_OVERRIDE: projectHome,
           CONSTRUCT_DEV_PATH: '',
           CONSTRUCT_DISABLE_DOCKER: '1',
         },
@@ -164,7 +170,8 @@ describe('run.mjs resolution', () => {
         cwd: projectDir,
         env: {
           PATH: '/nonexistent',
-          HOME: process.env.HOME,
+          HOME: projectHome,
+          CX_HOME_OVERRIDE: projectHome,
           CONSTRUCT_DEV_PATH: '',
           CONSTRUCT_DISABLE_DOCKER: '1',
         },
@@ -226,7 +233,8 @@ describe('run.mjs self-repo resolution', () => {
         cwd: ROOT,
         env: {
           PATH: cleanPath,
-          HOME: process.env.HOME,
+          HOME: projectHome,
+          CX_HOME_OVERRIDE: projectHome,
           CONSTRUCT_DEV_PATH: '',
           CONSTRUCT_DISABLE_DOCKER: '1',
         },

@@ -383,3 +383,71 @@ test('future-state marker: .mdx guide docs are checked (architecture.mdx / deplo
     delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
   }
 });
+
+// --- external project name in a code comment ---
+//
+// Comparisons against other software projects belong in decision documents
+// with citations, not in code narration describing what this codebase does.
+
+test('external project name: flags a banned project name in a code comment', () => {
+  const body = [
+    '/**',
+    ' * lib/fixture.mjs — test.',
+    ' */',
+    '// per the LangGraph thread-vs-store split, this module keeps a boundary',
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('lib/fixture.mjs', body);
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      result.errors.some((e) => e.label.includes('external project name in a code comment')),
+      `expected an external-project-name error; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});
+
+test('external project name: a comment describing behavior on its own terms passes', () => {
+  const body = [
+    '/**',
+    ' * lib/fixture.mjs — test.',
+    ' */',
+    '// a record only reaches the shared store when it opts in explicitly',
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('lib/fixture.mjs', body);
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      !result.errors.some((e) => e.label.includes('external project name in a code comment')),
+      `plain behavior description should not trigger; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});
+
+test('external project name: docs/decisions/** is exempt (citations are required there)', () => {
+  const body = [
+    '/**',
+    ' * docs/decisions/adr/fixture.mjs — test.',
+    ' */',
+    '// per the LangGraph thread-vs-store split, see ADR-0064 for the comparison',
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('docs/decisions/adr/fixture.mjs', body);
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      !result.errors.some((e) => e.label.includes('external project name in a code comment')),
+      `docs/decisions/** should be exempt; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});

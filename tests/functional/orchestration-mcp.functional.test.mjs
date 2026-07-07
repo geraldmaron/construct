@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { orchestrationRun, orchestrationStatus } from '../../lib/mcp/tools/orchestration-run.mjs';
 import { sterileSpawnEnv } from '../helpers/sterile-env.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const MODEL = 'anthropic/claude-sonnet-4-6';
@@ -31,15 +32,29 @@ function tmpProject() {
   return cwd;
 }
 
-// Solo default: the registry resolves from the repo via CX_TOOLKIT_DIR; run
-// storage stays isolated in a fresh mkdtemp HOME (sterileSpawnEnv), not the
-// developer's real HOME, so a real ~/.env or ~/.construct/config.env can never
-// be read even though this call is in-process rather than a spawned child.
-// No remote service is configured (CONSTRUCT_ORCHESTRATION_URL is omitted by
-// the allowlist by construction).
+// Solo default: the registry resolves from the repo via CX_TOOLKIT_DIR.
+// orchestrationRun/orchestrationStatus resolve the run store through the
+// machine-scoped state root (ADR-0066), which reads CX_HOME_OVERRIDE from
+// real process.env directly — the CX_HOME_OVERRIDE sterileSpawnEnv sets below
+// only reaches the in-process `env` option bag these calls thread to model
+// resolution, never process.env, so it alone would not isolate a state-root
+// write. The module-level pin below (sharing the same homeOverride dir) is
+// what actually keeps run storage off the real developer machine's
+// ~/.construct/projects/. No remote service is configured
+// (CONSTRUCT_ORCHESTRATION_URL is omitted by the allowlist by construction).
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-mcp-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { rmTmpDir(homeOverride); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 function soloEnv() {
   return sterileSpawnEnv({
+    HOME: homeOverride,
     CX_TOOLKIT_DIR: REPO_ROOT,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
@@ -68,7 +83,7 @@ test('orchestration_run plans a multi-specialist run in-process (no daemon)', as
     const status = await orchestrationStatus({ run_id: result.runId }, { cwd, env: soloEnv() });
     assert.equal(status.runId, result.runId, 'the run is queryable in-process by id');
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 
@@ -87,7 +102,7 @@ test('orchestration_run preserves the research workflow hint for evidence-backed
     assert.equal(result.researchExecutionPolicy?.mode, 'evidence-first');
     assert.ok(Array.isArray(result.researchExecutionPolicy?.toolRouting));
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 
@@ -102,7 +117,7 @@ test('orchestration_run fails fast when a configured remote service is unreachab
     assert.ok(result.failFast, 'an unreachable remote service must fail fast');
     assert.match(result.error, /not reachable/i);
   } finally {
-    fs.rmSync(cwd, { recursive: true, force: true });
+    rmTmpDir(cwd);
   }
 });
 

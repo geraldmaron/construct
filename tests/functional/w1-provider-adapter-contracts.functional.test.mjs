@@ -10,7 +10,7 @@
  * No vendor APIs are touched — adapters are injected via the registration
  * entry points so the tests prove the contract is honored.
  */
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir, homedir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
@@ -26,6 +26,7 @@ import {
   withValidToken,
 } from '../../lib/providers/auth-manager.mjs';
 import { configDir } from '../../lib/config/xdg.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 test('Gemini cache strategy returns no annotation when no resolver is registered', async () => {
   setCachedContentResolver(null);
@@ -111,7 +112,7 @@ test('auth-manager refresh dispatches to a registered adapter and persists the r
   } finally {
     if (realHOMEenv) process.env.HOME = realHOMEenv;
     else delete process.env.HOME;
-    try { rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
+    try { rmTmpDir(fakeHome); } catch { /* ignore */ }
     void realHome;
   }
 });
@@ -139,7 +140,7 @@ test('auth-manager without a registered adapter returns the agnostic reauthentic
   } finally {
     if (realHOMEenv) process.env.HOME = realHOMEenv;
     else delete process.env.HOME;
-    try { rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
+    try { rmTmpDir(fakeHome); } catch { /* ignore */ }
   }
 });
 

@@ -5,7 +5,7 @@ inputs: [trace, task-context]
 artifactType: guidance
 role: trace-reviewer
 applies_to:
-  - cx-trace-reviewer
+  - cx-reviewer
 inherits: reviewer
 version: 2
 scopes:

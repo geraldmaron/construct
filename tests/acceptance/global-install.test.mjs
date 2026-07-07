@@ -16,6 +16,7 @@ import { mkdtempSync, rmSync, existsSync, readFileSync, readdirSync, statSync } 
 import { tmpdir } from 'node:os';
 import { join, resolve, delimiter } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '../../');
@@ -115,10 +116,20 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
     assert.ok(existsSync(binPath), `Binary should exist at ${binPath}`);
   });
 
+  // lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
+  // CX_HOME_OVERRIDE in the CHILD's own env, not this test process's env —
+  // every spawned `construct` call below (for either project) must be
+  // pinned to a throwaway sandbox home or it leaks project-key directories
+  // into the real developer machine's ~/.construct/projects/.
+  const sandboxHome = mkdtempSync(join(tmpdir(), 'construct-global-home-'));
+  createdDirs.push(sandboxHome);
+
   const globalEnv = {
     ...process.env,
     CONSTRUCT_DEPLOYMENT_MODE: 'solo',
     PATH: join(globalPrefix, 'bin') + delimiter + (process.env.PATH || ''),
+    HOME: sandboxHome,
+    CX_HOME_OVERRIDE: sandboxHome,
   };
 
   // ── Step 4: create two independent project dirs ──────────────────────
@@ -286,8 +297,7 @@ test('global install + project init (npm pack -> global install -> 2 projects)',
   await t.test('cleanup temp directories and tarball', () => {
     for (const dir of createdDirs) {
       if (dir && existsSync(dir)) {
-        rmSync(dir, { recursive: true, force: true });
-        assert.ok(!existsSync(dir), `Directory should be removed: ${dir}`);
+        rmTmpDir(dir);
       }
     }
 

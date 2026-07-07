@@ -7,8 +7,12 @@
  * tokens consulting an inactive gate. Team / enterprise mode reads
  * specialists/org. Every call emits a `tool.called` trace
  * event for audit-trail parity.
+ *
+ * Trace writes resolve through the machine-scoped state root (ADR-0066), so
+ * CX_HOME_OVERRIDE is pinned for the whole file to keep them off the real
+ * developer machine's $HOME.
  */
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeEach, afterEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { brokerCheck } from '../lib/mcp/tools/skills.mjs';
@@ -16,6 +20,15 @@ import { traceDir } from '../lib/worker/trace.mjs';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-broker-check-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 let originalCwd;
 let originalEnv;

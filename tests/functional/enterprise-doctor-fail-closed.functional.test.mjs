@@ -22,6 +22,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
@@ -41,7 +42,7 @@ function env(extra = {}) {
       CONSTRUCT_TENANT_ID: 'cx-enterprise-doctor-tenant',
       ...extra,
     },
-    cleanup() { fs.rmSync(home, { recursive: true, force: true }); },
+    cleanup() { rmTmpDir(home); },
   };
 }
 

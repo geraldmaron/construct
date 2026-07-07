@@ -5,7 +5,7 @@ inputs: [release-plan, changelog]
 artifactType: role-guidance
 role: release-manager
 applies_to:
-  - cx-release-manager
+  - cx-operations
 inherits: operations
 version: 2
 scopes:

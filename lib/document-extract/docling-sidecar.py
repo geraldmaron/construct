@@ -2,6 +2,11 @@
 """
 lib/document-extract/docling-sidecar.py — long-lived JSON-RPC wrapper around docling.
 
+Governed by the ingestion sidecar process contract (ADR-0068): one JSON-RPC
+surface, no business logic beyond the extraction call itself — routing,
+fallback selection, and degradation-chain decisions all live on the Node
+side (lib/document-extract/docling-client.mjs, lib/document-ingest.mjs).
+
 Protocol: newline-delimited JSON over stdin/stdout. Each request is
 {"id": <int>, "method": <str>, "params": <obj>}. Each response is
 {"id": <int>, "result": <obj>} or {"id": <int>, "error": {"code": <str>, "message": <str>}}.
@@ -10,6 +15,15 @@ Methods:
   - ping            → {"ok": true, "doclingVersion": "<x.y.z>"}
   - extract {path}  → {"markdown": "...", "metadata": {...}, "droppedInfo": [...]}
   - shutdown        → {"ok": true}; process exits after acknowledgement
+
+Parent-PID watch (ADR-0068): spawned as a direct child of the Node process
+via child_process.spawn, so os.getppid() at start is that Node process's PID.
+A background thread polls it every PARENT_POLL_INTERVAL_S; a `kill -9` (or
+any other death Node's own `process.on('exit')` handler cannot run for) still
+leaves this sidecar exiting on its own rather than orphaned. POSIX reparents
+an orphan to init (or the platform's subreaper), so a ppid change is a
+reliable signal; on Windows, ppid does not get reparented the same way, so
+this is best-effort there rather than a guarantee.
 
 Best-practice notes (2026-06):
   - One sidecar per Node session, kept warm to avoid uv/venv startup (~2s).
@@ -20,9 +34,22 @@ Best-practice notes (2026-06):
     loss is observable to the CLI, not silent.
 """
 import json
+import os
 import sys
+import threading
+import time
 import traceback
 from pathlib import Path
+
+PARENT_POLL_INTERVAL_S = 2.0
+
+
+def watch_parent(initial_ppid):
+    while True:
+        time.sleep(PARENT_POLL_INTERVAL_S)
+        if os.getppid() != initial_ppid:
+            os._exit(3)
+
 
 try:
     from docling.document_converter import DocumentConverter
@@ -125,6 +152,9 @@ def handle(request):
 
 
 def main():
+    watcher = threading.Thread(target=watch_parent, args=(os.getppid(),), daemon=True)
+    watcher.start()
+
     for line in sys.stdin:
         line = line.strip()
         if not line:

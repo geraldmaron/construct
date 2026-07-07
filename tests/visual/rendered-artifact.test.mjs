@@ -182,7 +182,18 @@ test('a produced PDF referencing a missing local image fails the reference-integ
     fs.writeFileSync(fixture, src, 'utf8');
     const result = checkRenderedArtifact({ fixturePath: fixture, format: 'pdf', workDir: dir });
     assert.equal(result.ok, false, 'expected the missing local reference to fail the gate');
-    assert.ok(result.failures.some((f) => /references/.test(f)), JSON.stringify(result.failures));
+    // Two valid failure paths reach the same correct outcome, depending on the
+    // installed typst/pandoc version: an older combo lets export succeed with a
+    // dangling reference, caught by a post-hoc reference-integrity scan
+    // (message mentions "references"); a newer typst hard-fails at PDF-compile
+    // time because it can't find the image file at all (message names the
+    // missing filename directly, e.g. "file not found ... does-not-exist.png").
+    // Either is the gate correctly rejecting the broken doc — assert on the
+    // one thing invariant across both: the missing filename itself.
+    assert.ok(
+      result.failures.some((f) => /references/.test(f) || f.includes('does-not-exist.png')),
+      JSON.stringify(result.failures),
+    );
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

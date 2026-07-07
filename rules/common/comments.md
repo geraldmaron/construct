@@ -42,6 +42,7 @@ The blank line between the comment and the code is required. It signals "this co
 - **Narrative voice** (`// We weight BM25`, `// Now test the keys`, `// This correctly scores`) delete them
 - **Point-in-time notes** (`// X removed`, `// previously`, `// no longer`) belongs in git log
 - **Noise sentinels** (`// ok`, `// best effort`, `// skip`) delete them; use `/* non-critical */` inline only when the catch clause would otherwise look like a bug
+- **Other-project comparisons** (`// per the LangGraph thread-vs-store split`) delete them; describe the behavior on its own terms. A prior-art comparison belongs in a decision document (`docs/decisions/**`, `docs/notes/**`) where it can carry a citation
 
 ## SLA annotations (hooks only)
 

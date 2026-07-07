@@ -9,12 +9,17 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { probeStorageHealth } from '../lib/status.mjs';
+import { resolveStateDir } from '../lib/state-root.mjs';
 
 const CWD = '/fake/project';
 
+// Matches the machine-scoped state root (ADR-0066) probeStorageHealth actually
+// resolves the lancedb store against, not a hardcoded `${CWD}/.cx/lancedb`.
+const LANCEDB_STATE_PATH = resolveStateDir(CWD, 'lancedb', { ensureDir: false });
+
 function makeExistsStub({ cx, lancedb }) {
   return (p) => {
-    if (p === `${CWD}/.cx/lancedb`) return lancedb;
+    if (p === LANCEDB_STATE_PATH) return lancedb;
     if (p === `${CWD}/.cx`) return cx;
     return false;
   };

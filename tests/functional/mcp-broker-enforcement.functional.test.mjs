@@ -10,26 +10,43 @@
  * the audit trail (trace events) emitted per invocation.
  */
 
-import { describe, it, before, after } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, readdirSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { Broker, isBrokered } from '../../lib/mcp/broker.mjs';
+import { traceDir as resolveTraceDir } from '../../lib/worker/trace.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
+
+// Broker trace writes resolve through the machine-scoped state root
+// (ADR-0066) via lib/worker/trace.mjs#traceDir, keyed off process.env.CX_HOME_OVERRIDE
+// directly rather than any per-call env option, so CX_HOME_OVERRIDE is pinned
+// for the whole file to keep them off the real developer machine's $HOME.
+
+const homeOverride = mkdtempSync(join(tmpdir(), 'cx-broker-enforcement-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { rmTmpDir(homeOverride); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-// Collect all trace lines written to an isolated rootDir's .cx/traces/ dir.
+// Collect all trace lines written for an isolated rootDir, resolved through
+// the same machine-scoped state root the broker itself writes to.
 function readTraceLines(root) {
-  const traceDir = join(root, '.cx', 'traces');
-  if (!existsSync(traceDir)) return [];
-  const shards = readdirSync(traceDir).filter((f) => f.endsWith('.jsonl'));
+  const dir = resolveTraceDir(root);
+  if (!existsSync(dir)) return [];
+  const shards = readdirSync(dir).filter((f) => f.endsWith('.jsonl'));
   const lines = [];
   for (const shard of shards) {
-    const text = readFileSync(join(traceDir, shard), 'utf8');
+    const text = readFileSync(join(dir, shard), 'utf8');
     for (const line of text.split('\n')) {
       if (line.trim()) lines.push(JSON.parse(line));
     }
@@ -107,7 +124,7 @@ describe('broker enforcement — deny', () => {
         `trace reason should mention "denied", got: ${toolCalled[0].metadata.reason}`,
       );
     } finally {
-      rmSync(localRoot, { recursive: true, force: true });
+      rmTmpDir(localRoot);
     }
   });
 });
@@ -133,7 +150,7 @@ describe('broker enforcement — approve', () => {
       assert.ok(toolCalled.length >= 1, 'broker must emit a tool.called trace event on approval');
       assert.equal(toolCalled[0].metadata.allowed, true, 'trace event must record allowed=true');
     } finally {
-      rmSync(localRoot, { recursive: true, force: true });
+      rmTmpDir(localRoot);
     }
   });
 });
@@ -180,7 +197,7 @@ describe('broker enforcement — solo bypass', () => {
       const toolCalled = traces.filter((e) => e.eventType === 'tool.called');
       assert.equal(toolCalled.length, 0, 'solo mode must not emit broker tool.called trace events');
     } finally {
-      rmSync(localRoot, { recursive: true, force: true });
+      rmTmpDir(localRoot);
     }
   });
 });

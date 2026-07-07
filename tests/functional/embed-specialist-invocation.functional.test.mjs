@@ -28,6 +28,7 @@ import test, { after } from 'node:test';
 import { runCapabilityTick, SKIP_REASON_NO_EXECUTOR } from '../../lib/embed/capability-jobs.mjs';
 import { ApprovalQueue } from '../../lib/embed/approval-queue.mjs';
 import { readCapabilityTick } from '../../lib/embed/capability-lifecycle.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const tmpDirs = [];
 function freshRoot() {
@@ -37,7 +38,7 @@ function freshRoot() {
 }
 after(() => {
   for (const dir of tmpDirs) {
-    try { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* best-effort cleanup */ }
+    try { rmTmpDir(dir); } catch { /* best-effort cleanup */ }
   }
 });
 

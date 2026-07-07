@@ -8,10 +8,11 @@
 import test from 'node:test';
 import assert from 'node:assert';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 
@@ -34,6 +35,6 @@ test('construct hook <name> records a fire row in the isolated home', () => {
     assert.equal(row.outcome, 'ok');
     assert.ok(typeof row.latencyMs === 'number', 'latency is recorded');
   } finally {
-    rmSync(home, { recursive: true, force: true });
+    rmTmpDir(home);
   }
 });

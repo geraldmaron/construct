@@ -26,7 +26,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 // returned counts and the listScenarios prefix totals are independent of any
 // pre-existing catalog content, so the assertions are unchanged.
 
-test('writeSpecialistScenarioFixtures authors 58 scenarios (2 per specialist)', () => {
+test('writeSpecialistScenarioFixtures authors 24 scenarios (2 per specialist)', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'specialist-scenarios-'));
   try {
     fs.mkdirSync(path.join(tmp, 'specialists'), { recursive: true });
@@ -46,13 +46,14 @@ test('writeSpecialistScenarioFixtures authors 58 scenarios (2 per specialist)', 
     writeRoleCards({ rootDir: tmp });
 
     const result = writeSpecialistScenarioFixtures({ rootDir: tmp });
-    assert.equal(result.specialistCount, 29);
-    assert.equal(result.catalogEntries, 58);
+    // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+    assert.equal(result.specialistCount, 12);
+    assert.equal(result.catalogEntries, 24);
     const scenarios = listScenarios({ repoRoot: tmp });
     const normal = scenarios.filter((s) => s.id.startsWith('specialist.normal.'));
     const adversarial = scenarios.filter((s) => s.id.startsWith('specialist.adversarial.'));
-    assert.equal(normal.length, 29);
-    assert.equal(adversarial.length, 29);
+    assert.equal(normal.length, 12);
+    assert.equal(adversarial.length, 12);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
@@ -62,7 +63,8 @@ test('every specialist scenario fixture validates', () => {
   writeSpecialistScenarioFixtures({ rootDir: REPO });
   const dir = path.join(REPO, 'tests', 'certification', 'scenarios', 'specialists');
   const specialists = fs.readdirSync(dir).filter((name) => name.startsWith('cx-'));
-  assert.equal(specialists.length, 29);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.equal(specialists.length, 12);
   for (const specialistDir of specialists) {
     for (const file of ['normal.json', 'adversarial.json']) {
       const fixture = JSON.parse(fs.readFileSync(path.join(dir, specialistDir, file), 'utf8'));

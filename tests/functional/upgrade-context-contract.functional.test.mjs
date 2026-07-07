@@ -25,6 +25,7 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 
 import { refreshContextMd, reconvergeContextMd } from '../../lib/tracking-surfaces.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const USER_SECTION = `## Hand-curated section
 
@@ -59,7 +60,7 @@ function makeProject() {
   seed(rootDir);
   return rootDir;
 }
-test.after(() => { if (savedPath) process.env.PATH = savedPath; for (const d of dirs) { try { rmSync(d, { recursive: true, force: true }); } catch {} } });
+test.after(() => { if (savedPath) process.env.PATH = savedPath; for (const d of dirs) { try { rmTmpDir(d); } catch {} } });
 
 test('a single upgrade refresh preserves user-authored content byte-for-byte', async () => {
   const rootDir = makeProject();

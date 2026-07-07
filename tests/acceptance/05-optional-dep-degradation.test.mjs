@@ -22,6 +22,7 @@ import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '../../');
@@ -184,7 +185,19 @@ test('LMCP-L4: optional-dep degradation matrix', { timeout: 180_000 }, async (t)
   });
 
   const binPath = join(tmpDir, 'node_modules', '.bin', 'construct');
-  const soloEnv = { ...process.env, CONSTRUCT_DEPLOYMENT_MODE: 'solo' };
+
+  // lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
+  // CX_HOME_OVERRIDE in the CHILD's own env, not this test process's env —
+  // every spawned `construct` call below must be pinned to a throwaway
+  // sandbox home or it leaks project-key directories into the real
+  // developer machine's ~/.construct/projects/.
+  const sandboxHome = mkdtempSync(join(tmpdir(), 'construct-degradation-home-'));
+  const soloEnv = {
+    ...process.env,
+    CONSTRUCT_DEPLOYMENT_MODE: 'solo',
+    HOME: sandboxHome,
+    CX_HOME_OVERRIDE: sandboxHome,
+  };
 
   await t.test('construct version exits 0 with no optional deps', () => {
     assert.ok(existsSync(binPath), `Binary should exist at ${binPath}`);
@@ -314,11 +327,11 @@ test('LMCP-L4: optional-dep degradation matrix', { timeout: 180_000 }, async (t)
   // ── Cleanup ─────────────────────────────────────────────────────────
   await t.test('cleanup', () => {
     if (tmpDir && existsSync(tmpDir)) {
-      rmSync(tmpDir, { recursive: true, force: true });
-      assert.ok(!existsSync(tmpDir), 'Temp directory should be removed');
+      rmTmpDir(tmpDir);
     }
     if (tarballPath && existsSync(tarballPath)) {
       rmSync(tarballPath, { force: true });
     }
+    rmTmpDir(sandboxHome);
   });
 });

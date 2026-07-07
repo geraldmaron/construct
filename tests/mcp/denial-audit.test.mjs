@@ -17,16 +17,30 @@ import path from 'node:path';
 
 import { Broker, PolicyDenied, ApprovalRequired } from '../../lib/mcp/broker.mjs';
 import { DeniedStore, deniedStorePath } from '../../lib/mcp/denied-store.mjs';
+import { traceDir as resolveTraceDir } from '../../lib/worker/trace.mjs';
 
 const REQUIRED_FIELDS = [
   'decisionId', 'actor', 'tenant', 'project', 'tool', 'target', 'risk', 'outcome', 'correlationId', 'ts',
 ];
+
+// The broker's default emit is the real emitTraceEvent, which resolves trace
+// writes through the machine-scoped state root (ADR-0066) via
+// process.env.CX_HOME_OVERRIDE directly, not through any per-call option, so
+// CX_HOME_OVERRIDE is pinned for the whole file to keep those writes off the
+// real developer machine's $HOME.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-denial-audit-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
 
 const tmpDirs = [];
 after(() => {
   for (const dir of tmpDirs) {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
   }
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function fakeRoot() {
@@ -310,7 +324,7 @@ describe('correlation id traceability', () => {
     const [deniedRecord] = store.readAll();
 
     const today = new Date().toISOString().slice(0, 10);
-    const shardPath = path.join(rootDir, '.cx', 'traces', `${today}.jsonl`);
+    const shardPath = path.join(resolveTraceDir(rootDir), `${today}.jsonl`);
     assert.ok(fs.existsSync(shardPath), 'trace shard must exist after a brokered call');
 
     const lines = fs.readFileSync(shardPath, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));

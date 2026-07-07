@@ -15,11 +15,12 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..', '..');
@@ -36,8 +37,8 @@ function setupShimEnv() {
     shimDir,
     bdLog: join(cwd, 'bd-calls.log'),
     cleanup: () => {
-      rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-      rmSync(shimDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      rmTmpDir(cwd);
+      rmTmpDir(shimDir);
     },
   };
 }

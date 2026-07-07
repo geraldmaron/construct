@@ -14,6 +14,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test, { after } from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.resolve(__dirname, '..', '..', 'bin', 'construct');
@@ -26,7 +27,7 @@ function freshCwd() {
 }
 after(() => {
   for (const dir of tmpDirs) {
-    try { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {}
+    try { rmTmpDir(dir); } catch {}
   }
 });
 
@@ -36,7 +37,8 @@ test('capability describe --json returns a complete versioned contract', () => {
   const env = JSON.parse(res.stdout);
   assert.equal(env.surface, 'cli');
   assert.match(env.contractVersion, /^\d+\.\d+\.\d+$/);
-  assert.ok(env.data.roles.length >= 28);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.ok(env.data.roles.length >= 12);
   assert.ok(env.data.workflows.length >= 6, `expected at least the base workflow set, got ${env.data.workflows.length}`);
   assert.ok(env.data.skills.length > 0);
   assert.ok(env.data.policies.length > 0);

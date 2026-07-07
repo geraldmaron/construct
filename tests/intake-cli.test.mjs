@@ -24,20 +24,23 @@ const ROOT = path.resolve(__dirname, '..');
 const CONSTRUCT_BIN = path.join(ROOT, 'bin', 'construct');
 
 let projectRoot;
+let homeDir;
 
 beforeEach(() => {
   projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-intake-cli-'));
+  homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-intake-cli-home-'));
 });
 
 afterEach(() => {
   fs.rmSync(projectRoot, { recursive: true, force: true });
+  fs.rmSync(homeDir, { recursive: true, force: true });
 });
 
 function runCli(args, env = {}) {
   return spawnSync('node', [CONSTRUCT_BIN, 'intake', ...args], {
     cwd: projectRoot,
     encoding: 'utf8',
-    env: { ...process.env, ...env, HOME: process.env.HOME },
+    env: { ...process.env, HOME: homeDir, CX_HOME_OVERRIDE: homeDir, ...env },
   });
 }
 
@@ -188,7 +191,7 @@ describe('construct intake (no args)', () => {
 describe('construct intake classify (embedded contract)', () => {
   it('returns a typed error envelope (not bare exit) on empty input', () => {
     const r = spawnSync('node', [CONSTRUCT_BIN, 'intake', 'classify', '--json'], {
-      cwd: projectRoot, encoding: 'utf8', input: '', env: { ...process.env, HOME: process.env.HOME },
+      cwd: projectRoot, encoding: 'utf8', input: '', env: { ...process.env, HOME: homeDir, CX_HOME_OVERRIDE: homeDir },
     });
     assert.notEqual(r.status, 0, 'empty input is still a failure exit');
     let envelope;
@@ -200,7 +203,7 @@ describe('construct intake classify (embedded contract)', () => {
 
   it('classifies real piped input into a contract envelope', () => {
     const r = spawnSync('node', [CONSTRUCT_BIN, 'intake', 'classify', '--json'], {
-      cwd: projectRoot, encoding: 'utf8', input: '# Bug: login fails on expired token\nStack trace on refresh.', env: { ...process.env, HOME: process.env.HOME },
+      cwd: projectRoot, encoding: 'utf8', input: '# Bug: login fails on expired token\nStack trace on refresh.', env: { ...process.env, HOME: homeDir, CX_HOME_OVERRIDE: homeDir },
     });
     assert.equal(r.status, 0, r.stderr);
     const envelope = JSON.parse(r.stdout);

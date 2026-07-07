@@ -1,10 +1,12 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-07-04T22:56:53.113Z",
+    "generatedAt": "2026-07-06T22:40:56.862Z",
     "npmScripts": [
       "adapters",
       "audit:published",
+      "build:binary",
+      "build:binary:fallback",
       "build:sea",
       "catalog:regen",
       "catalog:validate",
@@ -325,6 +327,12 @@
         "internal": false
       },
       {
+        "name": "flow",
+        "category": "Models & Integrations",
+        "core": false,
+        "internal": false
+      },
+      {
         "name": "gates:audit",
         "category": "Advanced",
         "core": false,
@@ -533,6 +541,12 @@
         "category": "Internal",
         "core": false,
         "internal": true
+      },
+      {
+        "name": "pack",
+        "category": "Work",
+        "core": false,
+        "internal": false
       },
       {
         "name": "plugin",

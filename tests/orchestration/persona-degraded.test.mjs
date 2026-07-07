@@ -22,9 +22,23 @@ import path from 'node:path';
 
 import { runTaskViaProvider, _resetPackRegistryCache } from '../../lib/orchestration/worker.mjs';
 import { planRun, executeRun } from '../../lib/orchestration/runtime.mjs';
-import { saveRun } from '../../lib/orchestration/run-store.mjs';
+import { saveRun, runtimeDir } from '../../lib/orchestration/run-store.mjs';
 import { buildStatus, formatStatusReport } from '../../lib/status.mjs';
+import { traceDir as resolveTraceDir } from '../../lib/worker/trace.mjs';
 import { tempDir } from '../helpers.mjs';
+
+// Trace reads resolve through the machine-scoped state root (ADR-0066), so
+// CX_HOME_OVERRIDE is pinned for the whole file to keep them off the real
+// developer machine's $HOME.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-persona-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ANTHROPIC_API_KEY: 'sk-test' };
@@ -123,9 +137,9 @@ test('executeRun (solo, provider backend) carries personaAvailable:false and deg
   assert.ok(executed.tasks.every((t) => t.degraded === 'persona-fallback'));
 
   // The trace carries the same signal independent of chainOfThought mode.
-  const traceDir = path.join(cwd, '.cx', 'traces');
-  const shard = fs.readdirSync(traceDir).find((f) => f.endsWith('.jsonl'));
-  const lines = fs.readFileSync(path.join(traceDir, shard), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  const traceDirPath = resolveTraceDir(cwd);
+  const shard = fs.readdirSync(traceDirPath).find((f) => f.endsWith('.jsonl'));
+  const lines = fs.readFileSync(path.join(traceDirPath, shard), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
   const completedEvents = lines.filter((e) => e.eventType === 'worker.completed' && e.metadata?.runId === planned.runId);
   assert.ok(completedEvents.length > 0);
   assert.ok(completedEvents.every((e) => e.metadata.personaAvailable === false && e.metadata.degraded === 'persona-fallback'));
@@ -192,10 +206,13 @@ async function silentProbeService() {
   return { status: 'unavailable', message: 'test stub' };
 }
 
+// Writes through saveRun (lib/orchestration/run-store.mjs) so the fixture
+// lands wherever the real writer resolves it — the machine-scoped state root
+// (ADR-0066), not a hardcoded project-relative path — keeping this fixture
+// from drifting out of sync with the production write path it stands in for.
+
 function writeOrchestrationRun(cwd, run) {
-  const dir = path.join(cwd, '.cx', 'runtime', 'orchestration', 'runs');
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, `${run.runId}.json`), JSON.stringify(run, null, 2));
+  saveRun(cwd, run);
 }
 
 test('buildStatus: personaDegradedRuns is zero when no run carries a persona fallback', async () => {
@@ -239,7 +256,7 @@ test('buildStatus: personaDegradedRuns counts multiple degraded runs independent
 
 test('buildStatus: a corrupt run file is skipped, not fatal to the count', async () => {
   const { rootDir, homeDir, cwd } = await statusFixture();
-  const dir = path.join(cwd, '.cx', 'runtime', 'orchestration', 'runs');
+  const dir = path.join(runtimeDir(cwd), 'runs');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'run-broken.json'), 'not-json{{{');
   writeOrchestrationRun(cwd, {

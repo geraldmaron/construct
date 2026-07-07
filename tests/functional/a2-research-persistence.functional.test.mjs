@@ -11,6 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
@@ -73,8 +74,8 @@ test('A2 end-to-end: construct knowledge add writes a frontmatter-stamped resear
   assert.match(content, /profile: rnd/);
   assert.match(content, /expiresAt: \d{4}-\d{2}-\d{2}/);
 
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-  fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
+  rmTmpDir(home);
 });
 
 test('A2 end-to-end: confidence=confirmed without --source-url is rejected', { timeout: 90_000 }, () => {
@@ -92,6 +93,6 @@ test('A2 end-to-end: confidence=confirmed without --source-url is rejected', { t
   assert.notEqual(result.status, 0, 'expected non-zero exit for missing sources');
   assert.match(result.stderr + result.stdout, /confirmed requires at least one source/);
 
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-  fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
+  rmTmpDir(home);
 });

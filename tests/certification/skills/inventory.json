@@ -1,14 +1,14 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-26T23:47:41.091Z",
+  "generatedAt": "2026-07-06T14:48:55.443Z",
   "generator": "lib/certification/skill-inventory.mjs",
-  "skillCount": 152,
+  "skillCount": 153,
   "skills": [
     {
       "id": "ai/agent-dev",
       "owners": [
-        "cx-ai-engineer",
-        "cx-rd-lead"
+        "cx-architect",
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Use this skill when building AI agents, tool-use systems, or multi-agent workflows."
@@ -26,7 +26,7 @@
     {
       "id": "ai/llm-security",
       "owners": [
-        "cx-ai-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Use this skill when securing LLM-powered applications against prompt injection, data leakage, and misuse."
@@ -44,7 +44,7 @@
     {
       "id": "ai/ml-ops",
       "owners": [
-        "cx-ai-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Patterns, anti-patterns, and reference guidance for ML Operations (MLOps). Use when the task involves ml operations (mlops)."
@@ -62,7 +62,6 @@
     {
       "id": "ai/orchestration-workflow",
       "owners": [
-        "cx-oracle",
         "cx-orchestrator"
       ],
       "activationTriggers": [
@@ -81,9 +80,9 @@
     {
       "id": "ai/prompt-and-eval",
       "owners": [
-        "cx-ai-engineer",
-        "cx-evaluator",
-        "cx-rd-lead"
+        "cx-architect",
+        "cx-engineer",
+        "cx-reviewer"
       ],
       "activationTriggers": [
         "Use this skill when designing prompts, evaluating model performance, or optimizing LLM behavior."
@@ -101,8 +100,8 @@
     {
       "id": "ai/prompt-optimizer",
       "owners": [
-        "cx-ai-engineer",
-        "cx-trace-reviewer"
+        "cx-engineer",
+        "cx-reviewer"
       ],
       "activationTriggers": [
         "Closed-loop prompt auto-optimization guide. Use when the task matches the trigger conditions described in the body."
@@ -120,7 +119,7 @@
     {
       "id": "ai/rag-system",
       "owners": [
-        "cx-ai-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Use this skill when building retrieval-augmented generation pipelines, vector search, or knowledge-grounded AI systems."
@@ -138,7 +137,7 @@
     {
       "id": "ai/trace-triage",
       "owners": [
-        "cx-trace-reviewer"
+        "cx-reviewer"
       ],
       "activationTriggers": [
         "Use when: agent telemetry traces need triage to find where a run went wrong — the failing step, the cause category, and whether it is a regression or a one-off."
@@ -247,7 +246,7 @@
     {
       "id": "brand/output-vibe",
       "owners": [
-        "cx-docs-keeper"
+        "cx-operations"
       ],
       "activationTriggers": [
         "Use when drafting or exporting customer-facing artifacts (PRD, deck, brief, runbook). Sets typography, prose rhythm, sketch diagrams, and export consistency."
@@ -265,7 +264,7 @@
     {
       "id": "compliance/ai-disclosure",
       "owners": [
-        "cx-legal-compliance"
+        "cx-security"
       ],
       "activationTriggers": [
         "Use this skill when reviewing AI features for disclosure requirements, transparency obligations, or emerging AI regulation compliance."
@@ -283,7 +282,7 @@
     {
       "id": "compliance/data-privacy",
       "owners": [
-        "cx-legal-compliance"
+        "cx-security"
       ],
       "activationTriggers": [
         "Use this skill when reviewing data collection, storage, processing, or retention for privacy regulation compliance."
@@ -301,7 +300,7 @@
     {
       "id": "compliance/license-audit",
       "owners": [
-        "cx-legal-compliance"
+        "cx-security"
       ],
       "activationTriggers": [
         "Use this skill when auditing dependency licenses, evaluating OSS compliance risk, or preparing license inventories for legal review."
@@ -319,7 +318,7 @@
     {
       "id": "compliance/regulatory-review",
       "owners": [
-        "cx-legal-compliance"
+        "cx-security"
       ],
       "activationTriggers": [
         "Use this skill when conducting a compliance review before shipping features that handle user data, financial transactions, AI decisions, or regulated content."
@@ -517,8 +516,8 @@
     {
       "id": "devops/ci-cd",
       "owners": [
-        "cx-platform-engineer",
-        "cx-sre"
+        "cx-engineer",
+        "cx-operations"
       ],
       "activationTriggers": [
         "Use this skill when designing, debugging, or optimizing CI/CD pipelines."
@@ -536,7 +535,7 @@
     {
       "id": "devops/containerization",
       "owners": [
-        "cx-platform-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Use this skill when writing Dockerfiles, optimizing image size, or securing container builds."
@@ -554,7 +553,7 @@
     {
       "id": "devops/cost-optimization",
       "owners": [
-        "cx-platform-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Use this skill when reducing cloud spend, right-sizing resources, or implementing FinOps practices."
@@ -572,7 +571,7 @@
     {
       "id": "devops/data-engineering",
       "owners": [
-        "cx-data-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "1. **Idempotency**: pipelines can run multiple times without duplicating data 2. **Observability**: every pipeline run logs row counts, latency, and anomalies 3. **Data contracts**: producers and consumers agree on schema and SLAs 4. **Lineage**: know where every column came from and what it feeds. Use when the task matches the trigger conditions described in the body."
@@ -591,7 +590,7 @@
       "id": "devops/database",
       "owners": [
         "cx-data-analyst",
-        "cx-data-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Use this skill when designing schemas, writing migrations, optimizing queries, or selecting databases."
@@ -609,7 +608,7 @@
     {
       "id": "devops/dependency-management",
       "owners": [
-        "cx-platform-engineer",
+        "cx-engineer",
         "cx-researcher"
       ],
       "activationTriggers": [
@@ -628,7 +627,7 @@
     {
       "id": "devops/devsecops",
       "owners": [
-        "cx-platform-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Use this skill when integrating security into CI/CD pipelines, managing supply chain risk, or automating security scanning."
@@ -646,7 +645,7 @@
     {
       "id": "devops/git-workflow",
       "owners": [
-        "cx-release-manager"
+        "cx-operations"
       ],
       "activationTriggers": [
         "Use this skill when establishing branching strategies, commit conventions, or code integration practices."
@@ -664,7 +663,7 @@
     {
       "id": "devops/incident-response",
       "owners": [
-        "cx-sre"
+        "cx-operations"
       ],
       "activationTriggers": [
         "Define severity in your runbook and assign it early: it determines escalation and comms cadence. Use when the task matches the trigger conditions described in the body."
@@ -682,7 +681,7 @@
     {
       "id": "devops/monorepo",
       "owners": [
-        "cx-platform-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Use this skill when selecting monorepo tooling, structuring packages, or optimizing affected-only builds."
@@ -701,9 +700,9 @@
       "id": "devops/observability",
       "owners": [
         "cx-data-analyst",
-        "cx-data-engineer",
         "cx-debugger",
-        "cx-sre"
+        "cx-engineer",
+        "cx-operations"
       ],
       "activationTriggers": [
         "Use this skill when designing logging, tracing, metrics, or alerting systems."
@@ -722,7 +721,7 @@
       "id": "devops/performance",
       "owners": [
         "cx-debugger",
-        "cx-sre"
+        "cx-operations"
       ],
       "activationTriggers": [
         "Use this skill when profiling, load testing, or optimizing application and infrastructure performance."
@@ -740,8 +739,7 @@
     {
       "id": "devops/testing",
       "owners": [
-        "cx-qa",
-        "cx-test-automation"
+        "cx-qa"
       ],
       "activationTriggers": [
         "Use this skill when planning test coverage, selecting test types, or establishing testing practices."
@@ -759,7 +757,7 @@
     {
       "id": "docs/adr-workflow",
       "owners": [
-        "cx-docs-keeper"
+        "cx-operations"
       ],
       "activationTriggers": [
         "Use when: an architectural decision is made that affects the system structure, data model, API contracts, or technology choices.",
@@ -823,11 +821,11 @@
     {
       "id": "docs/codebase-research-workflow",
       "owners": [
-        "cx-explorer"
+        "cx-researcher"
       ],
       "activationTriggers": [
-        "Use when: cx-explorer maps the repo — entry points, dependencies, hot paths, or unfamiliar subsystems.",
-        "cx-explorer investigates **this repository** — structure, dependencies, behavior. Not for external vendor research or user interviews."
+        "Use when: cx-researcher maps the repo — entry points, dependencies, hot paths, or unfamiliar subsystems.",
+        "cx-researcher investigates **this repository** — structure, dependencies, behavior. Not for external vendor research or user interviews."
       ],
       "inputs": [
         "[repository-path]"
@@ -887,7 +885,7 @@
     {
       "id": "docs/document-ingest-workflow",
       "owners": [
-        "cx-docs-keeper"
+        "cx-operations"
       ],
       "activationTriggers": [
         "Use when: the user points at a PDF, Word doc, spreadsheet, slide deck, export, or mixed document folder and wants a markdown version that Construct can search efficiently later.",
@@ -916,7 +914,7 @@
       "id": "docs/evidence-ingest-workflow",
       "owners": [
         "cx-product-manager",
-        "cx-ux-researcher"
+        "cx-researcher"
       ],
       "activationTriggers": [
         "Use when: the user pastes customer notes, Slack threads, support tickets, sales notes, research snippets, RFCs, analytics summaries, or competitor signals.",
@@ -948,7 +946,7 @@
     {
       "id": "docs/init-docs",
       "owners": [
-        "cx-docs-keeper"
+        "cx-operations"
       ],
       "activationTriggers": [
         "`init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`. Use when the task matches the trigger conditions described in the body."
@@ -985,8 +983,7 @@
     {
       "id": "docs/memo-and-decision-capture",
       "owners": [
-        "cx-docs-keeper",
-        "cx-release-manager"
+        "cx-operations"
       ],
       "activationTriggers": [
         "Use when: a decision, status update, or announcement needs to be captured as a short, durable memo that states the decision, its rationale, and what changes."
@@ -1143,7 +1140,7 @@
     {
       "id": "docs/research-workflow",
       "owners": [
-        "cx-rd-lead",
+        "cx-architect",
         "cx-researcher"
       ],
       "activationTriggers": [
@@ -1176,7 +1173,7 @@
     {
       "id": "docs/runbook-workflow",
       "owners": [
-        "cx-docs-keeper"
+        "cx-operations"
       ],
       "activationTriggers": [
         "Use when: creating operational procedures for services, alerts, or recurring operations.",
@@ -1254,11 +1251,11 @@
     {
       "id": "docs/user-research-workflow",
       "owners": [
-        "cx-ux-researcher"
+        "cx-researcher"
       ],
       "activationTriggers": [
-        "Use when: cx-ux-researcher synthesizes user evidence — interviews, support tickets, session replay, surveys, or field notes.",
-        "cx-ux-researcher gathers or synthesizes **user** evidence. Do not use for CVE lookups, API version facts, or repo structure — use `docs/research-workflow` (cx-researcher) or `docs/codebase-research-workflow` (cx-explorer) instead."
+        "Use when: cx-researcher synthesizes user evidence — interviews, support tickets, session replay, surveys, or field notes.",
+        "cx-researcher gathers or synthesizes **user** evidence. Do not use for CVE lookups, API version facts, or repo structure — use `docs/research-workflow` or `docs/codebase-research-workflow` (both also cx-researcher, under a different skill overlay) instead."
       ],
       "inputs": [
         "[user-research, interview-data]"
@@ -1287,8 +1284,8 @@
       "id": "exploration/dependency-graph-reading",
       "owners": [
         "cx-engineer",
-        "cx-explorer",
-        "cx-oracle"
+        "cx-orchestrator",
+        "cx-researcher"
       ],
       "activationTriggers": [
         "Use when assessing the risk surface of a project's dependencies, planning upgrades, or evaluating a new codebase's supply chain posture."
@@ -1306,7 +1303,7 @@
     {
       "id": "exploration/repo-map",
       "owners": [
-        "cx-explorer"
+        "cx-researcher"
       ],
       "activationTriggers": [
         "Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.cx/codebase-map.md` artifact for future sessions."
@@ -1325,7 +1322,7 @@
       "id": "exploration/tracer-bullet-method",
       "owners": [
         "cx-engineer",
-        "cx-explorer"
+        "cx-researcher"
       ],
       "activationTriggers": [
         "Use when beginning implementation in a new system, new integration, or new architectural layer. A tracer bullet is not a prototype; it is the thinnest possible complete path through the real system."
@@ -1344,7 +1341,7 @@
       "id": "exploration/unknown-codebase-onboarding",
       "owners": [
         "cx-engineer",
-        "cx-explorer"
+        "cx-researcher"
       ],
       "activationTriggers": [
         "Use when entering an unfamiliar codebase for the first time, or when the task requires understanding a system you haven't touched before."
@@ -1434,7 +1431,6 @@
     {
       "id": "frontend-design/accessibility",
       "owners": [
-        "cx-accessibility",
         "cx-designer"
       ],
       "activationTriggers": [
@@ -1489,7 +1485,7 @@
     {
       "id": "frontend-design/screen-reader-testing",
       "owners": [
-        "cx-accessibility"
+        "cx-designer"
       ],
       "activationTriggers": [
         "Use when: a UI needs to be tested with a screen reader and keyboard to verify it is actually operable non-visually, not just compliant on paper."
@@ -1578,6 +1574,24 @@
       "workflowSkill": false
     },
     {
+      "id": "operating/fleet-health-routing",
+      "owners": [
+        "cx-orchestrator"
+      ],
+      "activationTriggers": [
+        "fleet-level gap routing and bounded-auto policy for cx-orchestrator's absorbed fleet-health synthesis duty (formerly cx-oracle). Use when handling an Oracle synthesis packet or any systemic-gap remediation routing."
+      ],
+      "inputs": [
+        "[oracle-synthesis-packet]"
+      ],
+      "outputs": {
+        "artifactType": "guidance",
+        "name": "operating-fleet-health-routing"
+      },
+      "verificationHooks": [],
+      "workflowSkill": false
+    },
+    {
       "id": "operating/incident-response",
       "owners": [
         "cx-operations"
@@ -1635,7 +1649,7 @@
       "id": "operating/raw-data-structuring",
       "owners": [
         "cx-data-analyst",
-        "cx-data-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Use when: a raw dataset (CSV, TSV, JSON export, log dump) needs to be parsed, validated, and profiled into a described, trustworthy shape before analysis."
@@ -1671,7 +1685,7 @@
     {
       "id": "quality-gates/premortem",
       "owners": [
-        "cx-devil-advocate"
+        "cx-reviewer"
       ],
       "activationTriggers": [
         "Use when: a plan or design needs a premortem — imagining it has already failed and working backward to the failure modes — before committing to it."
@@ -1689,7 +1703,6 @@
     {
       "id": "quality-gates/review-work",
       "owners": [
-        "cx-devil-advocate",
         "cx-reviewer"
       ],
       "activationTriggers": [
@@ -1710,9 +1723,8 @@
       "owners": [
         "cx-debugger",
         "cx-engineer",
-        "cx-qa",
-        "cx-release-manager",
-        "cx-test-automation"
+        "cx-operations",
+        "cx-qa"
       ],
       "activationTriggers": [
         "Use this skill to analyze the impact of code changes and verify documentation and tests are in sync."
@@ -1731,8 +1743,7 @@
       "id": "quality-gates/verify-module",
       "owners": [
         "cx-qa",
-        "cx-reviewer",
-        "cx-test-automation"
+        "cx-reviewer"
       ],
       "activationTriggers": [
         "Use this skill to check that a module or package is structurally complete and ready for use."
@@ -1750,7 +1761,6 @@
     {
       "id": "quality-gates/verify-quality",
       "owners": [
-        "cx-evaluator",
         "cx-reviewer"
       ],
       "activationTriggers": [
@@ -1787,7 +1797,7 @@
     {
       "id": "roles/ai-engineer",
       "owners": [
-        "cx-ai-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — AI role. Use when reviewing or generating work by cx-ai-engineer, or when an agent is acting in the Engineer — AI role."
@@ -1913,7 +1923,7 @@
     {
       "id": "roles/business-strategist",
       "owners": [
-        "cx-business-strategist"
+        "cx-product-manager"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Business Strategy role. Use when reviewing or generating work by cx-business-strategist, or when an agent is acting in the Product Manager — Business Strategy role."
@@ -2021,7 +2031,7 @@
     {
       "id": "roles/data-engineer",
       "owners": [
-        "cx-data-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Data role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Engineer — Data role."
@@ -2039,7 +2049,7 @@
     {
       "id": "roles/data-engineer.pipeline",
       "owners": [
-        "cx-data-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Pipeline role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Pipeline role."
@@ -2057,7 +2067,7 @@
     {
       "id": "roles/data-engineer.vector-retrieval",
       "owners": [
-        "cx-data-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Vector Retrieval role. Use when reviewing or generating work by cx-data-engineer, cx-ai-engineer, or when an agent is acting in the Data Engineer — Vector Retrieval role."
@@ -2075,7 +2085,7 @@
     {
       "id": "roles/data-engineer.warehouse",
       "owners": [
-        "cx-data-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Warehouse role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Warehouse role."
@@ -2147,7 +2157,7 @@
     {
       "id": "roles/devil-advocate",
       "owners": [
-        "cx-devil-advocate"
+        "cx-reviewer"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Devil Advocate role. Use when reviewing or generating work by cx-devil-advocate, or when an agent is acting in the Reviewer — Devil Advocate role."
@@ -2165,7 +2175,7 @@
     {
       "id": "roles/docs-keeper",
       "owners": [
-        "cx-docs-keeper"
+        "cx-operations"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Docs role. Use when reviewing or generating work by cx-docs-keeper, or when an agent is acting in the Operator — Docs role."
@@ -2206,7 +2216,7 @@
     {
       "id": "roles/evaluator",
       "owners": [
-        "cx-evaluator"
+        "cx-reviewer"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Evaluator role. Use when reviewing or generating work by cx-evaluator, or when an agent is acting in the Reviewer — Evaluator role."
@@ -2224,7 +2234,7 @@
     {
       "id": "roles/explorer",
       "owners": [
-        "cx-explorer"
+        "cx-researcher"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — Explorer role. Use when reviewing or generating work by cx-explorer, or when an agent is acting in the Researcher — Explorer role."
@@ -2278,7 +2288,7 @@
     {
       "id": "roles/platform-engineer",
       "owners": [
-        "cx-platform-engineer"
+        "cx-engineer"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Platform role. Use when reviewing or generating work by cx-platform-engineer, or when an agent is acting in the Engineer — Platform role."
@@ -2494,7 +2504,7 @@
     {
       "id": "roles/release-manager",
       "owners": [
-        "cx-release-manager"
+        "cx-operations"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Release role. Use when reviewing or generating work by cx-release-manager, or when an agent is acting in the Operator — Release role."
@@ -2674,7 +2684,7 @@
     {
       "id": "roles/sre",
       "owners": [
-        "cx-sre"
+        "cx-operations"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — SRE role. Use when reviewing or generating work by cx-sre, or when an agent is acting in the Operator — SRE role."
@@ -2692,7 +2702,7 @@
     {
       "id": "roles/test-automation",
       "owners": [
-        "cx-test-automation"
+        "cx-qa"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Test Automation role. Use when reviewing or generating work by cx-test-automation, or when an agent is acting in the QA — Test Automation role."
@@ -2710,8 +2720,7 @@
     {
       "id": "roles/trace-reviewer",
       "owners": [
-        "cx-oracle",
-        "cx-trace-reviewer"
+        "cx-orchestrator"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Trace role. Use when reviewing or generating work by cx-trace-reviewer, or when an agent is acting in the Reviewer — Trace role."
@@ -2729,7 +2738,7 @@
     {
       "id": "roles/ux-researcher",
       "owners": [
-        "cx-ux-researcher"
+        "cx-researcher"
       ],
       "activationTriggers": [
         "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — UX role. Use when reviewing or generating work by cx-ux-researcher, or when an agent is acting in the Researcher — UX role."
@@ -2855,7 +2864,7 @@
     {
       "id": "strategy/competitive-landscape",
       "owners": [
-        "cx-business-strategist"
+        "cx-product-manager"
       ],
       "activationTriggers": [
         "Use when the team needs a structured read on market positioning before committing direction."
@@ -2873,7 +2882,7 @@
     {
       "id": "strategy/jobs-to-be-done",
       "owners": [
-        "cx-ux-researcher"
+        "cx-researcher"
       ],
       "activationTriggers": [
         "Use when: user research needs to uncover the job a user is hiring a product to do — the underlying progress they seek — rather than feature requests or stated preferences."
@@ -2891,7 +2900,7 @@
     {
       "id": "strategy/market-research-methods",
       "owners": [
-        "cx-business-strategist"
+        "cx-product-manager"
       ],
       "activationTriggers": [
         "Use when the team needs to validate assumptions before committing resources, or when a decision is being made on vibes rather than signal."
@@ -2909,7 +2918,7 @@
     {
       "id": "strategy/narrative-arc",
       "owners": [
-        "cx-business-strategist"
+        "cx-product-manager"
       ],
       "activationTriggers": [
         "Use when the argument must move people, not just inform them. Strategic narrative is the difference between a document that gets read and one that changes what people do."
@@ -2927,7 +2936,7 @@
     {
       "id": "strategy/pricing-positioning",
       "owners": [
-        "cx-business-strategist"
+        "cx-product-manager"
       ],
       "activationTriggers": [
         "Use when the team needs to set price, adjust positioning, or defend either to stakeholders."
@@ -2963,5 +2972,5 @@
   ],
   "blockingFindings": [],
   "effectivenessFindings": [],
-  "digest": "c01c558bd7c6dd42e758ff5f75fc9c0cf94834d97015c61056dab23c46a874a9"
+  "digest": "04f93d2a7cc82aeb4d3eddd53feb40611ef4f26777c9261b5d3a352a32ce96c8"
 }

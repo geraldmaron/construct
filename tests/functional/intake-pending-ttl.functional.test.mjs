@@ -17,11 +17,28 @@ import path from 'node:path';
 
 import { sweepPendingPackets, processInboxFile, buildIntakeDaemon } from '../../lib/intake/daemon.mjs';
 import { buildIntakePrelude } from '../../lib/intake/session-prelude.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const tmpDirs = [];
 
 after(() => {
-  for (const dir of tmpDirs) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  for (const dir of tmpDirs) rmTmpDir(dir);
+});
+
+// buildIntakeDaemon() computes its heartbeat path eagerly at construction
+// time via resolveStatePath(cwd,'runtime','intake-daemon.heartbeat') —
+// machine-scoped state root (ADR-0066), reading CX_HOME_OVERRIDE from real
+// process.env directly. Pin it for the whole file so merely building a
+// daemon never writes into the real developer machine's
+// ~/.construct/projects/.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-r8wr7-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { rmTmpDir(homeOverride); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
 });
 
 function makeProject() {

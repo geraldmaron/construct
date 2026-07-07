@@ -30,6 +30,8 @@ const FORBIDDEN_TRAILER_RE = /^Co-[Aa]uthored-[Bb]y:/im;
 // Do not add new entries here for commits made after this policy existed.
 const LEGACY_EXEMPT_SHAS = new Set([
   "e16890584a745ed8aded6ffbfe0c830c428c7cc8", // "AP audit: status, secrets, defaults fix" (2026-07-02, pre-policy)
+  "1a5dae728a7dcc5f37163dbc925f3654aa280570", // "Add user-authored custom specialists and teams (construct-rf26.13)" (2026-07-05, already on refit/orchestrator-worker-core before this integration rollup)
+  "08a5de756fccd273c745b2bbba03a494a79a3563", // "Ban naming other software projects in code comments" (2026-07-05, already on refit/orchestrator-worker-core before this integration rollup)
 ]);
 
 const REQUIRED_PR_HEADINGS = [

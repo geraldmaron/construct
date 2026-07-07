@@ -41,6 +41,22 @@ function project() {
 }
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
+// planRun/executeRun/runOrchestration/startRun/getRun/getRuns/
+// submitHostTaskResult all resolve the run store through the machine-scoped
+// state root (ADR-0066), which reads CX_HOME_OVERRIDE from real process.env
+// directly — the ENV bag above only feeds model-tier lookups. Pin it for the
+// whole file so these runs never write into the real developer machine's
+// ~/.construct/projects/.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
+
 test('orchestrated request plans a specialist chain and prepares every task', async () => {
   const cwd = project();
   const run = await runOrchestration(

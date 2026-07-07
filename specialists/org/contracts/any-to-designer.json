@@ -27,7 +27,13 @@
     "Affected surface scoped"
   ],
   "postconditions": [
-    "accessibilityCheckRan=true — prevents post-hoc a11y fixes by forcing a pre-ship check on every design deliverable"
+    {
+      "id": "any-to-designer-pc-0-accessibilitycheckran-true-prevents-post-hoc-a11y",
+      "description": "accessibilityCheckRan=true — prevents post-hoc a11y fixes by forcing a pre-ship check on every design deliverable",
+      "postconditionType": "executable",
+      "enforcedVia": "binary-postcondition",
+      "enforcedBy": "designer.accessibility-check-ran"
+    }
   ],
   "description": ""
 }

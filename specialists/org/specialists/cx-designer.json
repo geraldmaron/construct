@@ -11,22 +11,28 @@
     "frontend-design/component-patterns",
     "frontend-design/state-management",
     "frontend-design/engineering",
-    "frontend-design/accessibility"
+    "frontend-design/accessibility",
+    "frontend-design/screen-reader-testing"
   ],
   "events": [
-    "design.requested"
+    "design.requested",
+    "a11y.violation"
   ],
   "fence": {
     "allowedPaths": [
       "docs/design/**",
       "docs/wireframes/**",
-      "design/**"
+      "design/**",
+      "docs/accessibility/**",
+      "docs/a11y/**"
     ],
     "allowedBdLabels": [
       "design",
       "ux",
       "ui",
-      "wireframe"
+      "wireframe",
+      "accessibility",
+      "a11y"
     ],
     "allowedCommands": [
       "bd create",
@@ -57,13 +63,21 @@
       "interaction completeness",
       "state coverage",
       "design consistency",
-      "accessibility compliance"
+      "accessibility compliance",
+      "keyboard navigability",
+      "screen reader compatibility",
+      "contrast compliance",
+      "ARIA correctness"
     ],
     "riskSignals": [
       "missing error states",
       "no empty states",
       "inconsistent patterns",
-      "untested responsive breakpoints"
+      "untested responsive breakpoints",
+      "ARIA added without testing",
+      "keyboard traps",
+      "contrast failures",
+      "missing focus indicators"
     ],
     "artifactBias": [
       "notes",
@@ -71,13 +85,13 @@
     ]
   },
   "canEdit": true,
-  "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,memory_search,memory_add_observations",
+  "claudeTools": "Read,Grep,Glob,LS,Edit,Write,Bash,list_skills,get_skill,search_skills,get_template,list_templates,memory_search,memory_add_observations",
   "internal": true,
   "killSwitchEnv": "CONSTRUCT_ROLE_DESIGNER",
   "handoffCandidates": [
     "product-manager",
     "engineer",
-    "accessibility"
+    "qa"
   ],
   "team": "design-team",
   "teamId": "design-team",

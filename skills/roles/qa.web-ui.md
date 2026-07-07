@@ -6,7 +6,6 @@ artifactType: guidance
 role: qa.web-ui
 applies_to:
   - cx-qa
-  - cx-test-automation
 inherits: qa
 version: 2
 scopes:

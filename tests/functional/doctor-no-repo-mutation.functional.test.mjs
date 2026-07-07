@@ -19,11 +19,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -79,6 +80,6 @@ test('construct doctor does not delete or modify committed repo source (construc
     const introduced = sourceDeletions().filter((line) => !deletionsBefore.has(line));
     assert.deepEqual(introduced, [], `doctor must not delete tracked source; introduced deletions:\n${introduced.join('\n')}`);
   } finally {
-    rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(home);
   }
 });

@@ -20,16 +20,32 @@ import { spawnSync } from 'node:child_process';
 import { locateRecorder, renderWithVhs } from '../../lib/demo.mjs';
 import { loadDemoScript } from '../../lib/demo-script.mjs';
 import { buildDemoAttemptChain } from '../../lib/demo-surface.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
+
+// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// process.env directly, so every spawned `construct` needs its own sandboxed
+// HOME to avoid leaking test projects into the real developer machine's
+// ~/.construct/projects/.
+
+const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'demo-home-'));
+process.on('exit', () => rmTmpDir(SANDBOX_HOME));
 
 function run(args, cwd) {
   return spawnSync(BIN, args, {
     cwd,
     encoding: 'utf8',
     timeout: 200_000,
-    env: { ...process.env, CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1', CONSTRUCT_DISABLE_AUTO_CLEANUP: '1' },
+    env: {
+      ...process.env,
+      CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
+      BOOTSTRAP_CHECKED: '1',
+      CONSTRUCT_DISABLE_AUTO_CLEANUP: '1',
+      HOME: SANDBOX_HOME,
+      CX_HOME_OVERRIDE: SANDBOX_HOME,
+    },
   });
 }
 
@@ -46,7 +62,7 @@ test('construct demo init scaffolds project tape', () => {
     assert.equal(result.status, 0, result.stderr);
     assert.ok(fs.existsSync(path.join(dir, '.cx', 'demos', 'tapes', 'my-demo.tape')));
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -71,7 +87,7 @@ test('construct demo: tape always produced; recording when recorder present; exi
       assert.ok(artifacts.length >= 1, `recorder present but no recording produced; got: ${files.join(', ')}`);
     }
   } finally {
-    if (tryCleanup) fs.rmSync(cwd, { recursive: true, force: true });
+    if (tryCleanup) rmTmpDir(cwd);
   }
 });
 
@@ -157,6 +173,6 @@ test('construct demo --surface=tape --source-only writes direct tape output', ()
     assert.ok(files.some((f) => f.endsWith('.tape')), `expected .tape source; got: ${files.join(', ')}`);
     assert.ok(!files.some((f) => /\.(gif|mp4|webm|cast)$/.test(f)), `--source-only should not record; got: ${files.join(', ')}`);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });

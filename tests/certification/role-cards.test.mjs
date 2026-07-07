@@ -14,7 +14,8 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 test('validateRoleCards passes for all registry specialists', () => {
   const result = validateRoleCards({ rootDir: REPO });
   assert.equal(result.pass, true, result.errors.join('\n'));
-  assert.equal(result.count, 29);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.equal(result.count, 12);
 });
 
 test('writeRoleCards is idempotent', () => {

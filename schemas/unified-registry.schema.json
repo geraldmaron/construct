@@ -367,10 +367,8 @@
         },
         "postconditions": {
           "type": "array",
-          "description": "Conditions that must be true after this contract completes.",
-          "items": {
-            "type": "string"
-          }
+          "description": "Conditions that must be true after this contract completes. Each entry is a structured object with a required `postconditionType` of 'executable' (carries a `check` — or an `enforcedVia` pointer to lib/specialists/postconditions.mjs / contract.output — that lib/contracts/validate.mjs actually runs) or 'advisory' (documented, not mechanically checked). Bare prose strings are a legacy, deprecated shape.",
+          "items": {}
         },
         "teamBoundary": {
           "type": "object",

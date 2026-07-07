@@ -24,6 +24,7 @@ import test from 'node:test';
 
 import { requireTeamCapabilityOrDegrade, DeploymentModeError } from '../../lib/deployment-mode.mjs';
 import { createIntakeQueue, GitIntakeQueue } from '../../lib/intake/queue.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const tmpDirs = [];
 function makeTmp() {
@@ -34,7 +35,7 @@ function makeTmp() {
 
 test.after(() => {
   for (const dir of tmpDirs) {
-    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    try { rmTmpDir(dir); } catch {}
   }
 });
 

@@ -15,19 +15,30 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { tempDir } from '../helpers.mjs';
 import { runOrchestration } from '../../lib/orchestration/runtime.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+// runOrchestration resolves its run store through the machine-scoped state
+// root (ADR-0066), which reads CX_HOME_OVERRIDE/CX_TOOLKIT_DIR from real
+// process.env directly — the HOME/CX_TOOLKIT_DIR keys below only reach the
+// `env` option bag runOrchestration threads to model resolution, never
+// process.env, so they never isolated state-root writes. Pin the real vars
+// for the whole file instead.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-doctor-runstore-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { rmTmpDir(homeOverride); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 function degradedEnv() {
   return {
     ...process.env,
-    CX_TOOLKIT_DIR: REPO_ROOT,
-    HOME: REPO_ROOT,
-    USERPROFILE: REPO_ROOT,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
     CX_MODEL_REASONING: '',
@@ -39,9 +50,6 @@ function degradedEnv() {
 function preparedEnv() {
   return {
     ...process.env,
-    CX_TOOLKIT_DIR: REPO_ROOT,
-    HOME: REPO_ROOT,
-    USERPROFILE: REPO_ROOT,
     OPENROUTER_API_KEY: '',
     ANTHROPIC_API_KEY: '',
     CX_MODEL_REASONING: 'anthropic/claude-sonnet-4-6',

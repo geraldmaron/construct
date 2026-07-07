@@ -17,6 +17,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { checkParity } from '../../lib/parity.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const CAPABILITY_FIELDS = ['callable', 'reachable', 'discoverable', 'degradationReason', 'installed'];
 
@@ -26,7 +27,7 @@ function emptyHome() {
   homes.push(dir);
   return dir;
 }
-test.after(() => { for (const d of homes) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
+test.after(() => { for (const d of homes) { try { rmTmpDir(d); } catch {} } });
 
 test('a fleet of entirely absent hosts still passes parity (not-installed reads as healthy)', () => {
   const r = checkParity({ homeDir: emptyHome() });

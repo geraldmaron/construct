@@ -5,7 +5,7 @@ inputs: [warehouse-model, metrics]
 artifactType: role-guidance
 role: data-engineer.warehouse
 applies_to:
-  - cx-data-engineer
+  - cx-engineer
 inherits: data-engineer
 version: 2
 scopes:

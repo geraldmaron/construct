@@ -22,6 +22,7 @@ import {
   __clearSecretCache,
 } from '../../lib/providers/secret-resolver.mjs';
 import { configDir } from '../../lib/config/xdg.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function withTmpHome(fn) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-secret-'));
@@ -33,7 +34,7 @@ function withTmpHome(fn) {
   } finally {
     process.env.HOME = original;
     __clearSecretCache();
-    fs.rmSync(home, { recursive: true, force: true });
+    rmTmpDir(home);
   }
 }
 

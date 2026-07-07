@@ -22,6 +22,7 @@ import { validate } from '../../lib/registry/validator.mjs';
 import { loadRegistry } from '../../lib/registry/loader.mjs';
 import { demandFetch } from '../../lib/embed/demand-fetch.mjs';
 import { listObservations, getObservation } from '../../lib/observation-store.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REGISTRY = {
   teams: {
@@ -100,6 +101,6 @@ test('demandFetch drives reads from the team\'s sources and tags observations te
     assert.ok(tagged, 'an observation is tagged team:engineering-group');
     assert.ok((tagged.tags || []).includes('target:main-repo'), 'and tagged target:main-repo');
   } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
+    rmTmpDir(tmp);
   }
 });

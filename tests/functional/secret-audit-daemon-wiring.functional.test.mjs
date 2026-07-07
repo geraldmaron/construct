@@ -27,6 +27,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const WIRING_MODULE = path.join(REPO_ROOT, 'lib', 'providers', 'secret-audit-wiring.mjs');
@@ -49,7 +50,7 @@ const WIRED_PROCESS_ENTRYPOINTS = [
 
 function sandbox(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-trxz13-'));
-  t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} });
+  t.after(() => { try { rmTmpDir(dir); } catch {} });
   return dir;
 }
 

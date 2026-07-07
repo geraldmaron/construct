@@ -48,6 +48,7 @@ const CLEANUP_PATTERNS = [
   /\bfs\.rmSync\s*\(/,
   /[^.]\brmSync\s*\(/,
   /\.rm\s*\(\s*[^)]*recursive/,
+  /\brmTmpDir\s*\(/,
 ];
 
 test('every tests/**/*.mjs file with mkdtempSync also has a cleanup signal', () => {

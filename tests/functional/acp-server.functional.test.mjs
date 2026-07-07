@@ -18,15 +18,25 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.join(HERE, '..', '..', 'bin', 'construct');
 const MODEL = 'anthropic/claude-sonnet-4-6';
 
 async function runAcpTest(project, envOverrides = {}, promptText) {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-acp-home-'));
   const proc = spawn('node', [BIN, 'acp'], {
     cwd: project,
-    env: { ...process.env, CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL, ...envOverrides },
+    env: {
+      ...process.env,
+      CX_MODEL_REASONING: MODEL,
+      CX_MODEL_STANDARD: MODEL,
+      CX_MODEL_FAST: MODEL,
+      HOME: home,
+      CX_HOME_OVERRIDE: home,
+      ...envOverrides,
+    },
     stdio: ['pipe', 'pipe', 'ignore'],
   });
 
@@ -77,7 +87,8 @@ async function runAcpTest(project, envOverrides = {}, promptText) {
     return { messages, updates, sessionId, promptResp };
   } finally {
     try { proc.kill(); } catch { /* ignore */ }
-    try { fs.rmSync(project, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ }
+    try { rmTmpDir(project); } catch { /* ignore */ }
+    try { rmTmpDir(home); } catch { /* ignore */ }
   }
 }
 
@@ -143,6 +154,17 @@ test('ACP server: backend resolution honors config — provider backend shows in
     }
   });
 
+  // runAcpServer executes in-process, so lib/paths.mjs's homeDir() resolves the
+  // machine-scoped state root (ADR-0066) from THIS test process's own
+  // process.env, not from the `env` option object below — pin
+  // CX_HOME_OVERRIDE on process.env itself for the duration of the call so the
+  // real developer machine's ~/.construct/projects/ is never touched.
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-acp-provider-home-'));
+  const prevHome = process.env.HOME;
+  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.HOME = home;
+  process.env.CX_HOME_OVERRIDE = home;
+
   const fetchImpl = async () => { throw new Error('network disabled in test'); };
   const server = runAcpServer({
     input, output, defaultCwd: project, fetchImpl,
@@ -150,6 +172,8 @@ test('ACP server: backend resolution honors config — provider backend shows in
       ...process.env,
       CX_MODEL_REASONING: '', CX_MODEL_STANDARD: '', CX_MODEL_FAST: '',
       OPENROUTER_API_KEY: '', ANTHROPIC_API_KEY: '',
+      HOME: home,
+      CX_HOME_OVERRIDE: home,
     },
   });
 
@@ -187,6 +211,9 @@ test('ACP server: backend resolution honors config — provider backend shows in
     server.close();
     input.destroy();
     output.destroy();
-    fs.rmSync(project, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(project);
+    rmTmpDir(home);
+    if (prevHome === undefined) delete process.env.HOME; else process.env.HOME = prevHome;
+    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE; else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
   }
 });

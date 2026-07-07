@@ -25,7 +25,8 @@
       "backlog-proposal",
       "prd-platform",
       "prd-business",
-      "customer-profile"
+      "customer-profile",
+      "strategy"
     ]
   },
   "liveScoring": {

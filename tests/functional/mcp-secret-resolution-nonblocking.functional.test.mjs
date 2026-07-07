@@ -17,6 +17,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { resolveSecret, resolveSecretAsync, __clearSecretCache } from '../../lib/providers/secret-resolver.mjs';
 import { __resetOpLocateCache } from '../../lib/providers/op-locate.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function makeSlowOp(delayMs) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-op-nonblock-'));
@@ -37,7 +38,7 @@ function withFakeOp(t, delayMs) {
     process.env.PATH = savedPath;
     __resetOpLocateCache();
     __clearSecretCache();
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   });
 }
 

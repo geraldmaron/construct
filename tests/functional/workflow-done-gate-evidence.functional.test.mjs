@@ -23,6 +23,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { initWorkflow, addTask, updateTask, loadWorkflow, alignmentFindings } from '../../lib/workflow-state.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function tmpProject() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'cx-done-gate-'));
@@ -43,7 +44,7 @@ function addImplementTask(root, phase = 'implement') {
 
 test('rejects a bare non-empty string with no command/path/URL/test/attestation shape', (t) => {
   const root = tmpProject();
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(root));
   const key = addImplementTask(root);
   assert.throws(
     () => updateTask(root, key, { status: 'done', verification: ['did stuff'] }),
@@ -53,7 +54,7 @@ test('rejects a bare non-empty string with no command/path/URL/test/attestation 
 
 test('accepts evidence containing a runnable command', (t) => {
   const root = tmpProject();
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(root));
   const key = addImplementTask(root);
   assert.doesNotThrow(() =>
     updateTask(root, key, { status: 'done', verification: ['ran `node --test tests/foo.test.mjs` -> 5 passed'] }),
@@ -62,7 +63,7 @@ test('accepts evidence containing a runnable command', (t) => {
 
 test('accepts evidence containing a file path', (t) => {
   const root = tmpProject();
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(root));
   const key = addImplementTask(root);
   assert.doesNotThrow(() =>
     updateTask(root, key, { status: 'done', verification: ['reviewed lib/workflow-state.mjs line 462 fix'] }),
@@ -71,7 +72,7 @@ test('accepts evidence containing a file path', (t) => {
 
 test('accepts evidence containing a URL', (t) => {
   const root = tmpProject();
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(root));
   const key = addImplementTask(root);
   assert.doesNotThrow(() =>
     updateTask(root, key, { status: 'done', verification: ['see https://ci.example.com/runs/42'] }),
@@ -80,7 +81,7 @@ test('accepts evidence containing a URL', (t) => {
 
 test('accepts the existing cx-reviewer/cx-qa attestation shape', (t) => {
   const root = tmpProject();
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(root));
   const key = addImplementTask(root);
   assert.doesNotThrow(() =>
     updateTask(root, key, {
@@ -103,13 +104,13 @@ test('validate-phase and operate-phase tasks get the same content gate', (t) => 
       () => updateTask(root, key, { status: 'done', verification: ['node --test tests/foo.test.mjs'] }),
       `${phase}-phase task should accept a runnable command`,
     );
-    fs.rmSync(root, { recursive: true, force: true });
+    rmTmpDir(root);
   }
 });
 
 test('research and plan phase tasks are not gated on evidence content', (t) => {
   const root = tmpProject();
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(root));
   initWorkflow(root, 'Ungated phases');
   const workflow = addTask(root, {
     title: 'Explore the problem',
@@ -123,7 +124,7 @@ test('research and plan phase tasks are not gated on evidence content', (t) => {
 
 test('alignmentFindings flags non-reverifiable evidence on a done task loaded from disk as HIGH', (t) => {
   const root = tmpProject();
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(root));
   const key = addImplementTask(root);
   // Bypass the live gate the way an older workflow.json (pre-fix) would: write
   // task.verification directly rather than through updateTask.

@@ -75,13 +75,15 @@ test('the live registry validates with zero errors (all specialist prompts conve
   const r = validatePromptFiles({ rootDir: ROOT });
   assert.deepEqual(r.errors, [], r.errors.join('\n'));
   assert.equal(r.converted, r.total, `expected all ${r.total} prompts converted, got ${r.converted}`);
-  assert.ok(r.total >= 29, `expected >= 29 prompts, got ${r.total}`);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.ok(r.total >= 12, `expected >= 12 prompts, got ${r.total}`);
 });
 
 test('emit-neutral: stripping frontmatter yields the golden body byte-for-byte', () => {
   const goldenDir = path.join(ROOT, 'tests/fixtures/specialist-prompt-emit');
   const names = fs.readdirSync(goldenDir).filter((f) => f.endsWith('.body.txt')).map((f) => f.replace(/\.body\.txt$/, ''));
-  assert.ok(names.length >= 29, `expected >= 29 golden bodies, got ${names.length}`);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.ok(names.length >= 12, `expected >= 12 golden bodies, got ${names.length}`);
   for (const name of names) {
     const golden = fs.readFileSync(path.join(goldenDir, `${name}.body.txt`), 'utf8');
     const body = readPromptBody(`specialists/prompts/${name}.md`, ROOT);

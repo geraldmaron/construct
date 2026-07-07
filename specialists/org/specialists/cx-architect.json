@@ -10,11 +10,15 @@
     "architecture/caching",
     "architecture/cloud-native",
     "architecture/message-queue",
-    "architecture/security-arch"
+    "architecture/security-arch",
+    "ai/agent-dev",
+    "ai/prompt-and-eval",
+    "docs/research-workflow"
   ],
   "events": [
     "adr.requested",
-    "arch.boundary.violated"
+    "arch.boundary.violated",
+    "research.gate.required"
   ],
   "fence": {
     "allowedPaths": [
@@ -24,13 +28,20 @@
       "docs/rfc/**",
       "docs/guides/concepts/architecture.md",
       "docs/concepts/architecture.md",
-      "docs/system-design/**"
+      "docs/system-design/**",
+      "docs/notes/research/**",
+      "docs/research/**",
+      "docs/experiments/**",
+      ".cx/experiments/**"
     ],
     "allowedBdLabels": [
       "architecture",
       "adr",
       "rfc",
-      "design"
+      "design",
+      "rd",
+      "research",
+      "experiment"
     ],
     "allowedCommands": [
       "bd create",
@@ -61,13 +72,21 @@
       "coupling and cohesion",
       "unvalidated assumptions",
       "interface contracts",
-      "tech debt accumulation"
+      "tech debt accumulation",
+      "hypothesis validation",
+      "experiment progress",
+      "assumption tracking",
+      "learning velocity"
     ],
     "riskSignals": [
       "missing ADRs",
       "implicit contracts",
       "data model drift",
-      "undocumented invariants"
+      "undocumented invariants",
+      "untested assumptions",
+      "premature hardening",
+      "stalled experiments",
+      "unfalsifiable claims"
     ],
     "artifactBias": [
       "adrs",
@@ -80,8 +99,8 @@
   "killSwitchEnv": "CONSTRUCT_ROLE_ARCHITECT",
   "handoffCandidates": [
     "engineer",
-    "platform-engineer",
-    "reviewer"
+    "reviewer",
+    "researcher"
   ],
   "team": "engineering-team",
   "teamId": "engineering-team",

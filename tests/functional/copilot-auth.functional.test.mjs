@@ -18,6 +18,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { configDir } from '../../lib/config/xdg.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function withTmpHome(fn) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-copilot-'));
@@ -25,7 +26,7 @@ function withTmpHome(fn) {
   process.env.HOME = home;
   return Promise.resolve(fn(home)).finally(() => {
     process.env.HOME = original;
-    fs.rmSync(home, { recursive: true, force: true });
+    rmTmpDir(home);
   });
 }
 

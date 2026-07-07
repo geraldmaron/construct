@@ -15,11 +15,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const CONSTRUCT_BIN = new URL('../../bin/construct', import.meta.url).pathname;
+
+// lib/paths.mjs resolves the ADR-0066 state root from process.env.HOME /
+// CX_HOME_OVERRIDE in the CHILD's own env, not the test process's env — so
+// every spawned `construct` call must be pinned to a throwaway sandbox home
+// or it leaks project-key directories into the real developer machine's
+// ~/.construct/projects/.
+
+const SANDBOX_HOME = mkdtempSync(join(tmpdir(), 'cx-providers-test-home-'));
 
 function runConstruct(args, cwd) {
   return spawnSync(process.execPath, [CONSTRUCT_BIN, ...args], {
@@ -27,7 +36,12 @@ function runConstruct(args, cwd) {
     encoding: 'utf8',
     stdio: 'pipe',
     timeout: 30_000,
-    env: { ...process.env, CONSTRUCT_DEPLOYMENT_MODE: 'solo' },
+    env: {
+      ...process.env,
+      CONSTRUCT_DEPLOYMENT_MODE: 'solo',
+      HOME: SANDBOX_HOME,
+      CX_HOME_OVERRIDE: SANDBOX_HOME,
+    },
   });
 }
 
@@ -112,8 +126,8 @@ test('02-provider-health-contract: construct providers status', { timeout: 60_00
 
   await t.test('cleanup temp directory', () => {
     if (tmpDir && existsSync(tmpDir)) {
-      rmSync(tmpDir, { recursive: true, force: true });
-      assert.ok(!existsSync(tmpDir), 'Temp directory should be removed');
+      rmTmpDir(tmpDir);
     }
+    rmTmpDir(SANDBOX_HOME);
   });
 });

@@ -25,11 +25,12 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 import { detect, exportMarkdown, EXPORT_FORMATS, docxRenderedDiagrams, htmlRenderedDiagrams } from '../../lib/document-export.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const tmpDirs = [];
 
 after(() => {
-  for (const dir of tmpDirs) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  for (const dir of tmpDirs) rmTmpDir(dir);
 });
 
 function tmpDir(prefix) {

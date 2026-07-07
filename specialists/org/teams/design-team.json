@@ -9,8 +9,7 @@
   ],
   "collaborators": [
     "product-management-team",
-    "ux-research-team",
-    "accessibility-team"
+    "research-team"
   ],
   "specialists": [
     "cx-designer"
@@ -28,10 +27,10 @@
   ],
   "escalationPath": [
     "product-manager",
-    "rd-lead",
+    "architect",
     "orchestrator"
   ],
-  "charter": "Own interaction and visual design decisions within product scope. Partners with Accessibility on inclusive patterns and with Product Management on acceptance criteria.",
+  "charter": "Own interaction, visual, and accessibility design decisions within product scope (accessibility-team merged in: cx-accessibility folds into cx-designer, construct-rf26.11). Partners with Product Management on acceptance criteria.",
   "contact": {
     "slack": "#product",
     "email": "product@example.com",

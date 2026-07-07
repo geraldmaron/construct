@@ -3,12 +3,13 @@
  */
 import test from 'node:test';
 import assert from 'node:assert';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { resolveAdapterHosts, syncProjectAdapters } from '../../lib/adapters-sync.mjs';
 import { isConstructPackageRepo } from '../../lib/host-disposition.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 test('resolveAdapterHosts forceAll returns all project hosts', () => {
   const hosts = resolveAdapterHosts({ forceAll: true });
@@ -35,6 +36,6 @@ test('syncProjectAdapters stages launcher in tmp project', () => {
     assert.equal(result.staged, true);
     assert.ok(existsSync(join(dir, '.construct', 'run.mjs')));
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });

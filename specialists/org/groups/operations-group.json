@@ -1,12 +1,9 @@
 {
   "id": "operations-group",
   "name": "Operations Group",
-  "owner": "sre",
+  "owner": "operations",
   "roles": [
-    "release-manager",
-    "sre",
-    "operations",
-    "docs-keeper"
+    "operations"
   ],
   "decisionRights": [
     "deployment",
@@ -21,15 +18,15 @@
     "security-policy"
   ],
   "escalationPath": [
-    "sre",
+    "operations",
     "architect",
     "orchestrator"
   ],
-  "charter": "Keep the system running and shipping. Owns release management, SRE response, ops runbooks, documentation upkeep, and deployment execution. Does not own architecture or product decisions. Escalates reliability vs. change-rate conflicts to architecture/leadership.",
+  "charter": "Keep the system running and shipping. Owns release management, SRE response, ops runbooks, documentation upkeep, and deployment execution (release-manager, sre, docs-keeper folded in; construct-rf26.11). Does not own architecture or product decisions. Escalates reliability vs. change-rate conflicts to architecture/leadership.",
   "contact": {
     "slack": "#operations",
     "email": "operations@example.com",
-    "owner": "sre"
+    "owner": "operations"
   },
   "evidence": [
     "AGENTS.md (rnd profile departments section)"

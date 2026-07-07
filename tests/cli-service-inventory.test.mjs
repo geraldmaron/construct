@@ -6,8 +6,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { readdirSync, readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { dirname, resolve, join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { buildCliServiceInventory } from '../lib/cli-service-inventory.mjs';
@@ -30,11 +31,13 @@ test('generated CLI reference contains rendered subcommands, not object coercion
   }
 });
 
-test('artifact workflow is both documented and available at runtime', () => {
+test('artifact workflow is both documented and available at runtime', (t) => {
+  const home = mkdtempSync(join(tmpdir(), 'cli-service-inventory-home-'));
+  t.after(() => rmSync(home, { recursive: true, force: true }));
   const result = spawnSync(process.execPath, [resolve(REPO, 'bin/construct'), 'artifact', 'workflow', 'Create a runbook HTML.'], {
     cwd: REPO,
     encoding: 'utf8',
-    env: { ...process.env, CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1' },
+    env: { ...process.env, CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1', BOOTSTRAP_CHECKED: '1', HOME: home, CX_HOME_OVERRIDE: home },
   });
   assert.equal(result.status, 0, result.stderr);
   const report = JSON.parse(result.stdout);
