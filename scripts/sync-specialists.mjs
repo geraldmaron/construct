@@ -72,6 +72,7 @@ import { stampFrontmatter } from "../lib/doc-stamp.mjs";
 import { buildSkillFrontmatter, stripLeadingFrontmatter } from "../lib/sync/skill-frontmatter.mjs";
 import { loadRegistry, clearCache } from "../lib/registry/loader.mjs";
 import { loadPluginRegistry } from "../lib/plugin-registry.mjs";
+import { PROJECT_MARKERS } from "../lib/config-dir.mjs";
 
 const home = os.homedir();
 const root = path.resolve(import.meta.dirname, "..");
@@ -305,7 +306,7 @@ const wantsHost = (key) => HOST_SELECTION.has(key);
  * `--global` overrides this for the front-door refresh path.
  */
 function detectConstructProject(cwd) {
-  if (fs.existsSync(path.join(cwd, ".construct")) || fs.existsSync(path.join(cwd, ".cx"))) {
+  if (PROJECT_MARKERS.some((m) => fs.existsSync(path.join(cwd, m)))) {
     return cwd;
   }
   return null;

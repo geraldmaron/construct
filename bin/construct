@@ -16,7 +16,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 import { CLI_COMMANDS, CATEGORY_ORDER, formatCommandHelp } from '../lib/cli-commands.mjs';
-import { CONFIG_DIR_NAME } from '../lib/config-dir.mjs';
+import { CONFIG_DIR_NAME, PROJECT_MARKERS, configPath } from '../lib/config-dir.mjs';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { validateRegistry } from '../lib/validator.mjs';
 import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setModelWithTierInference, listAvailableModels } from '../lib/model-router.mjs';
@@ -292,10 +292,9 @@ async function cmdStatus() {
     const { resolveActiveScope } = await import('../lib/scopes/loader.mjs');
     const { readSummary } = await import('../lib/outcomes/aggregate.mjs');
     const fs = await import('node:fs');
-    const path = await import('node:path');
     const cwd = process.cwd();
     const active = resolveActiveScope(cwd);
-    const obsIdxPath = path.join(cwd, '.cx', 'observations', 'index.json');
+    const obsIdxPath = configPath(cwd, 'observations', 'index.json');
     let obsTotal = 0;
     let obs24h = 0;
     if (fs.existsSync(obsIdxPath)) {
@@ -304,7 +303,7 @@ async function cmdStatus() {
       const since = Date.now() - 24 * 60 * 60 * 1000;
       obs24h = idx.filter((e) => Date.parse(e.createdAt) >= since).length;
     }
-    const researchDir = path.join(cwd, '.cx', 'knowledge', 'external', 'research');
+    const researchDir = configPath(cwd, 'knowledge', 'external', 'research');
     const researchCount = fs.existsSync(researchDir)
       ? fs.readdirSync(researchDir).filter((f) => f.endsWith('.md')).length
       : 0;
@@ -617,7 +616,7 @@ async function cmdDoctor() {
   // .construct/); non-project cwds get no warning.
 
   const cwd = process.cwd();
-  const isProject = fs.existsSync(path.join(cwd, '.cx')) || fs.existsSync(path.join(cwd, '.construct'));
+  const isProject = PROJECT_MARKERS.some((m) => fs.existsSync(path.join(cwd, m)));
   if (isProject) {
     const giPath = path.join(cwd, '.gitignore');
     const giContent = fs.existsSync(giPath) ? fs.readFileSync(giPath, 'utf8') : '';
@@ -1319,7 +1318,7 @@ async function cmdDoctor() {
     }
 
     try {
-      const capWarnPath = path.join(process.cwd(), '.cx', 'observation-cap-warnings.jsonl');
+      const capWarnPath = configPath(process.cwd(), 'observation-cap-warnings.jsonl');
       if (fs.existsSync(capWarnPath)) {
         const lines = fs.readFileSync(capWarnPath, 'utf8').trim().split('\n').filter(Boolean);
         const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -1412,7 +1411,7 @@ async function cmdDoctor() {
     }
 
     // Skills profile — if present, check staleness against current tags
-    const profilePath = path.join(process.cwd(), '.cx', 'skills-profile.json');
+    const profilePath = configPath(process.cwd(), 'skills-profile.json');
     if (fs.existsSync(profilePath)) {
       try {
         const { detectProjectProfile } = await import('../lib/project-profile.mjs');
@@ -1823,7 +1822,7 @@ async function cmdMigrate(args) {
     ? [pathArg]
     : [
         path.join(ROOT_DIR, 'specialists', 'unified-registry.json'),
-        path.join(process.cwd(), '.cx', 'config.json'),
+        configPath(process.cwd(), 'config.json'),
       ];
 
   let anyFailed = false;
@@ -2644,7 +2643,7 @@ async function cmdIntake(args) {
     }
     // Show similar items if there are multiple pending packets
     try {
-      const pendingDir = path.join(cwd || process.cwd(), '.cx', 'intake', 'pending');
+      const pendingDir = configPath(cwd || process.cwd(), 'intake', 'pending');
       if (fs.existsSync(pendingDir)) {
         const allPackets = [];
         for (const f of fs.readdirSync(pendingDir)) {
@@ -4672,7 +4671,7 @@ async function cmdPluginEngine(args) {
   const isGlobal = rest.includes('--global');
   const targetPath = isGlobal
     ? path.join(configDir(HOME), 'plugins.json')
-    : path.join(process.cwd(), '.cx', 'plugins.json');
+    : configPath(process.cwd(), 'plugins.json');
 
   function readPluginsJson() {
     if (!fs.existsSync(targetPath)) return { plugins: [] };
@@ -4939,7 +4938,7 @@ async function cmdDocsReconcile(args) {
 
   const cwd = process.cwd();
   const now = new Date().toISOString().slice(0, 10);
-  const driftDir = join(cwd, '.cx', 'doc-drift', now);
+  const driftDir = configPath(cwd, 'doc-drift', now);
   mkdirSync(driftDir, { recursive: true });
 
   const candidates = [];
@@ -5849,7 +5848,7 @@ async function cmdProvider(args) {
       const isGlobal = args.includes('--global');
       const targetPath = isGlobal
         ? path.join(configDir(HOME), 'providers.json')
-        : path.join(process.cwd(), '.cx', 'providers.json');
+        : configPath(process.cwd(), 'providers.json');
       let data = { providers: [] };
       try { data = JSON.parse(fs.readFileSync(targetPath, 'utf8')); } catch { /* fresh */ }
       data.providers ??= [];
@@ -7115,7 +7114,7 @@ const handlers = new Map([
       // weekly drift report mechanism the bd hygiene rule promises.
       const { detectBeadsDrift, formatDriftReport } = await import('../lib/beads/drift.mjs');
       const report = detectBeadsDrift();
-      const handoffsDir = path.join(process.cwd(), '.cx', 'handoffs');
+      const handoffsDir = configPath(process.cwd(), 'handoffs');
       fs.mkdirSync(handoffsDir, { recursive: true });
       const date = new Date().toISOString().slice(0, 10);
       const file = path.join(handoffsDir, `beads-drift-${date}.md`);
@@ -7611,7 +7610,7 @@ const handlers = new Map([
       if (!displayName) displayName = id;
 
       const pathMod = await import('node:path');
-      const draftRoot = pathMod.join(process.cwd(), '.cx', 'scopes', `draft-${id}`);
+      const draftRoot = configPath(process.cwd(), 'scopes', `draft-${id}`);
 
       println('');
       println(`About to scaffold a draft scope:`);
