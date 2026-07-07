@@ -4,7 +4,7 @@
  *
  * Parses the command string, dispatches to the appropriate handler, and
  * loads environment config from the resolved project root's .env (nearest
- * .cx/ or package.json ancestor of cwd, per lib/roots.mjs) and the user
+ * .construct/ or package.json ancestor of cwd, per lib/roots.mjs) and the user
  * config.env ($XDG_CONFIG_HOME/construct/config.env), with project .env
  * winning per lib/env-config.mjs's tier order. This is the only
  * public-facing binary; all commands are exported from lib/.
@@ -287,7 +287,7 @@ async function cmdStatus() {
 
   // Append the learning-loops summary so the operator gets a single answer
   // to "is this thing actually learning?" without remembering a second
-  // command. Cheap: just reads .cx/observations + .cx/outcomes summaries.
+  // command. Cheap: just reads .construct/observations + .construct/outcomes summaries.
   try {
     const { resolveActiveScope } = await import('../lib/scopes/loader.mjs');
     const { readSummary } = await import('../lib/outcomes/aggregate.mjs');
@@ -611,9 +611,9 @@ async function cmdDoctor() {
     add('Extension manifests: check failed', false);
   }
 
-  // Project .gitignore must cover .cx/. Auto-fix via --fix-gitignore.
-  // Only checks when cwd looks like a Construct project (has .cx/ or
-  // .construct/); non-project cwds get no warning.
+  // Project .gitignore must cover .construct/. Auto-fix via --fix-gitignore.
+  // Only checks when cwd looks like a Construct project (has .construct/);
+  // non-project cwds get no warning.
 
   const cwd = process.cwd();
   const isProject = PROJECT_MARKERS.some((m) => fs.existsSync(path.join(cwd, m)));
@@ -1051,9 +1051,9 @@ async function cmdDoctor() {
     add(`Claude Stop hooks check failed: ${err.message}`, false, true);
   }
 
-  // Handoff hygiene. Files in .cx/handoffs/ accumulate per session; this
+  // Handoff hygiene. Files in .construct/handoffs/ accumulate per session; this
   // probe surfaces stale files past retention and files whose bead refs
-  // have all closed (safe to prune). Advisory — graceful when no .cx/
+  // have all closed (safe to prune). Advisory — graceful when no .construct/
   // handoffs/ directory exists.
   try {
     const { summarizeHandoffs } = await import('../lib/handoffs/inventory.mjs');
@@ -1071,7 +1071,7 @@ async function cmdDoctor() {
     add(`Handoff check failed: ${err.message}`, false, true);
   }
 
-  // Disk resource budgets. Construct writes .cx/traces/, .cx/intake/,
+  // Disk resource budgets. Construct writes .construct/traces/, .construct/intake/,
   // task graphs, backups, worker logs continuously. Without ceilings a
   // long-lived install can fill the user's disk. Doctor surfaces usage
   // vs cap as advisory at <=80%, warn at 80-100%, fail at >100%.
@@ -1082,11 +1082,11 @@ async function cmdDoctor() {
     const capMb = u.totalCxCap / 1024 / 1024;
     const pct = (u.totalCxUsageRatio * 100).toFixed(0);
     if (u.totalCxUsageRatio > 1) {
-      add(`.cx/ ${usedMb.toFixed(0)}MB / ${capMb.toFixed(0)}MB cap (${pct}% — over) — run \`construct prune\``, false, false);
+      add(`.construct/ ${usedMb.toFixed(0)}MB / ${capMb.toFixed(0)}MB cap (${pct}% — over) — run \`construct prune\``, false, false);
     } else if (u.totalCxUsageRatio > 0.8) {
-      add(`.cx/ ${usedMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB cap (${pct}% — warning) — \`construct prune\` recommended`, false, true);
+      add(`.construct/ ${usedMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB cap (${pct}% — warning) — \`construct prune\` recommended`, false, true);
     } else {
-      add(`.cx/ ${usedMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB cap (${pct}%)`, true, true);
+      add(`.construct/ ${usedMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB cap (${pct}%)`, true, true);
     }
   } catch (err) {
     add(`Resource budget check failed: ${err.message}`, false, true);
@@ -1305,7 +1305,7 @@ async function cmdDoctor() {
     try {
       const { recentViolations, violationLogPath } = await import('../lib/contracts/violation-log.mjs');
       const violations = recentViolations({ windowMs: 24 * 60 * 60 * 1000 });
-      // Path is project-scoped (.cx/contract-violations.jsonl in cwd when
+      // Path is project-scoped (.construct/contract-violations.jsonl in cwd when
       // inside a project, ~/.cx/ otherwise). Print the resolved one so
       // users find the real file, not a stale ~/.cx/ reference.
       const violationPath = violationLogPath();
@@ -2116,10 +2116,10 @@ async function cmdPrune(args) {
     }
   }
 
-  if (!pruned) { info('Nothing to prune. .cx/ is within all configured budgets.'); return; }
+  if (!pruned) { info('Nothing to prune. .construct/ is within all configured budgets.'); return; }
   if (dryRun) { info('--dry-run: no files removed.'); return; }
   const after = measureUsage(process.cwd(), process.env);
-  println(`.cx/ now at ${Math.round(after.totalCxBytes / 1024 / 1024)}MB / ${Math.round(after.totalCxCap / 1024 / 1024)}MB cap (${Math.round(after.totalCxUsageRatio * 100)}%).`);
+  println(`.construct/ now at ${Math.round(after.totalCxBytes / 1024 / 1024)}MB / ${Math.round(after.totalCxCap / 1024 / 1024)}MB cap (${Math.round(after.totalCxUsageRatio * 100)}%).`);
 }
 
 async function _cmdCosts(args) {
@@ -2173,7 +2173,7 @@ async function cmdHandoffs(args) {
   const { summarizeHandoffs } = await import('../lib/handoffs/inventory.mjs');
   const summary = summarizeHandoffs(process.cwd(), process.env);
   if (sub === 'status') {
-    if (summary.state === 'empty') { info('No handoffs in .cx/handoffs/.'); return; }
+    if (summary.state === 'empty') { info('No handoffs in .construct/handoffs/.'); return; }
     println(`Handoffs: ${summary.total} files · ${Math.round(summary.bytes / 1024)}KB · oldest ${summary.oldestAgeDays?.toFixed(1)}d`);
     println(`Retention: ${summary.maxDays}d / ${summary.maxItems} items`);
     println('');
@@ -2266,7 +2266,7 @@ async function cmdResources(args) {
     const u = measureUsage(process.cwd(), process.env);
     const totalMb = u.totalCxBytes / 1024 / 1024;
     const capMb = u.totalCxCap / 1024 / 1024;
-    println(`.cx/ total: ${totalMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB (${(u.totalCxUsageRatio * 100).toFixed(0)}%)`);
+    println(`.construct/ total: ${totalMb.toFixed(1)}MB / ${capMb.toFixed(0)}MB (${(u.totalCxUsageRatio * 100).toFixed(0)}%)`);
     println('');
     println('Category                  Files     Size  Enforcement');
     for (const [name, c] of Object.entries(u.categories)) {
@@ -3447,7 +3447,7 @@ async function cmdIntakeIntegrate(id, args, cwd) {
     process.exit(1);
   }
   // --publish-issues unlocks the demo-source gate (CONSTRUCT_DEMO env or
-  // packet sourcePath under tests/fixtures/ or .cx/intake/demo/). Required
+  // packet sourcePath under tests/fixtures/ or .construct/intake/demo/). Required
   // before any demo/fixture intake can publish a real external ticket.
   const publishDemo = args.includes('--publish-issues');
 
@@ -5033,8 +5033,8 @@ async function cmdDocsReconcile(args) {
   println(`  current:    ${current.length}`);
   println(`  stale:      ${stale.length}`);
   println(`  unverified: ${unverified.length}`);
-  println(`\nDrift reports written to: .cx/doc-drift/${now}/`);
-  println(`Summary: .cx/doc-drift/${now}/summary.md`);
+  println(`\nDrift reports written to: .construct/doc-drift/${now}/`);
+  println(`Summary: .construct/doc-drift/${now}/summary.md`);
 }
 
 async function cmdDocsUpdate(args) {
@@ -5525,7 +5525,7 @@ async function cmdSpecialist(args) {
 // (construct-rf26.13) — distinct from the maintainer-facing `specialist create <role>`
 // above, which only stubs a prompt file for the built-in roster. `--custom` writes a
 // full registry-shaped JSON record (role, skills, fence, modelTier, delegation) into
-// the project's `.cx/org/` layer by default, or `~/.construct/org/` with `--user`.
+// the project's `.construct/org/` layer by default, or `~/.construct/org/` with `--user`.
 
 async function cmdSpecialistCreateCustom(args) {
   const id = args.find((a) => !a.startsWith('--'));
@@ -5608,13 +5608,13 @@ async function cmdTeamCreateCustom(args) {
 
 async function cmdBackup(args) {
   // Postgres-era backups were removed with the SQL backend (lib/storage/backup.mjs).
-  // State is now Git-backed (.cx/) plus the local LanceDB index under .cx/lancedb.
+  // State is now Git-backed (.construct/) plus the local LanceDB index under .construct/lancedb.
   void args;
-  errorln('construct backup is no longer supported: Postgres was removed. Commit .cx/ for Git-backed state; the LanceDB index lives under .cx/lancedb.');
+  errorln('construct backup is no longer supported: Postgres was removed. Commit .construct/ for Git-backed state; the LanceDB index lives under .construct/lancedb.');
   process.exit(1);
 }
 
-// `provider add|configure` persist to `.cx/providers/<id>.json`; every
+// `provider add|configure` persist to `.construct/providers/<id>.json`; every
 // success message names the path relative to cwd so output is copy-pasteable
 // and consistent whether the command ran from the project root or a subdir.
 
@@ -6022,7 +6022,7 @@ async function cmdTags(args) {
     const labelArg = args.find((a) => a.startsWith('--label='))?.replace('--label=', '');
     if (!id || !facetArg) { errorln('Usage: construct tags propose <id> --facet=<f> [--label="..."]'); process.exit(1); }
     proposeTag({ id, facet: facetArg, label: labelArg || id });
-    println(`Proposed tag ${id} written to .cx/tags/proposed.jsonl`);
+    println(`Proposed tag ${id} written to .construct/tags/proposed.jsonl`);
     return;
   }
 
@@ -6033,7 +6033,7 @@ async function cmdTags(args) {
     const scope = args.includes('--scope=project') ? 'project' : 'repo';
     if (!id || !facetArg) { errorln('Usage: construct tags add <id> --facet=<f> [--label="..."] [--scope=project]'); process.exit(1); }
     addTag({ id, facet: facetArg, label: labelArg || id, scope, cwd: process.cwd(), rootDir: ROOT_DIR });
-    println(`Tag ${id} added to ${scope === 'project' ? '.cx/tags/vocabulary-overrides.json' : 'config/tag-vocabulary.json'}`);
+    println(`Tag ${id} added to ${scope === 'project' ? '.construct/tags/vocabulary-overrides.json' : 'config/tag-vocabulary.json'}`);
     return;
   }
 
@@ -6075,7 +6075,7 @@ async function cmdTags(args) {
   }
 
   if (sub === 'backfill') {
-    println('Tag backfill reads .cx/knowledge/**/*.md frontmatter and writes tags to construct_documents.');
+    println('Tag backfill reads .construct/knowledge/**/*.md frontmatter and writes tags to construct_documents.');
     println('Requires DATABASE_URL. Use: node scripts/tag-candidate-mining.mjs for standalone mode.');
     return;
   }
@@ -7110,7 +7110,7 @@ const handlers = new Map([
     }
 
     if (sub === 'drift-report') {
-      // Writes a snapshot to .cx/handoffs/beads-drift-<date>.md for the
+      // Writes a snapshot to .construct/handoffs/beads-drift-<date>.md for the
       // weekly drift report mechanism the bd hygiene rule promises.
       const { detectBeadsDrift, formatDriftReport } = await import('../lib/beads/drift.mjs');
       const report = detectBeadsDrift();
@@ -7730,8 +7730,8 @@ const handlers = new Map([
       println(`  ${pathMod.relative(process.cwd(), pathMod.join(dstDir, 'archive-note.md'))}  (new)`);
       println('');
       println(`What stays:`);
-      println(`  Observations under .cx/observations/ are not touched.`);
-      println(`  Outcomes under .cx/outcomes/ are not touched.`);
+      println(`  Observations under .construct/observations/ are not touched.`);
+      println(`  Outcomes under .construct/outcomes/ are not touched.`);
       println(`  Any project still configured with scope=${id} will fall back to rnd on next load.`);
       println('');
 

@@ -40,4 +40,4 @@ You have Construct installed, a project initialized, agents synced, and you've d
 
 - Run `construct doctor` first. Almost everything points at a specific fix.
 - Check the [troubleshooting guide](/operations/troubleshooting) for known patterns.
-- In `solo` mode (the default), Construct runs entirely locally. If a cloud API is down, you can still work from `plan.md`, `.cx/context.md`, the latest handoff, beads, git, and the local vector index. See [deployment model](/guides/concepts/deployment-model) for team/enterprise options.
+- In `solo` mode (the default), Construct runs entirely locally. If a cloud API is down, you can still work from `plan.md`, `.construct/context.md`, the latest handoff, beads, git, and the local vector index. See [deployment model](/guides/concepts/deployment-model) for team/enterprise options.

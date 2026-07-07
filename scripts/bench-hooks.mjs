@@ -6,7 +6,7 @@
  * For each `lib/hooks/*.mjs` carrying an `@lifecycle <event>` header and a
  * `@p95ms <N>` budget, the harness spawns the hook N times with a synthetic
  * stdin matching its event shape and records wall time per run. Output is a
- * JSON report at `.cx/bench/hooks-<ISO date>.json` with one entry per hook:
+ * JSON report at `.construct/bench/hooks-<ISO date>.json` with one entry per hook:
  * declared budget, median, p95, max, count, exits, lifecycle, status.
  *
  * The `@p95ms` budget is the hook's OWN marginal cost, not the Node interpreter

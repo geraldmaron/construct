@@ -17,7 +17,7 @@ description: Work commands for Construct.
 | `construct drop` | Ingest file from Downloads/Desktop |
 | `construct export` | Export markdown to PDF, DOCX, HTML, and other Pandoc formats via Pandoc + Typst (optional system binaries; ADR-0024) |
 | `construct graph` | Task graph management |
-| `construct handoffs` | List and inspect session handoff files in .cx/handoffs/ |
+| `construct handoffs` | List and inspect session handoff files in .construct/handoffs/ |
 | `construct headhunt` | Create domain expertise overlays |
 | `construct infer` | Infer schema from documents |
 | `construct ingest` | Convert documents to indexed markdown |
@@ -108,7 +108,7 @@ construct demo <list|init|record|tour|name> [--surface=tape|playwright] [--forma
 | `--format=<f>` | gif (default) | mp4 | webm (tape surface only) |
 | `--out=<path>` | Output path (tape recording) |
 | `--from=<t>` | Template for init: quickstart | diagram |
-| `--from-project` | init: scaffold a project demo plug-in under .cx/demos/ |
+| `--from-project` | init: scaffold a project demo plug-in under .construct/demos/ |
 | `--source-only` | Tape: write .tape only; skip recording |
 
 ## construct diagram
@@ -128,7 +128,7 @@ construct diagram <description> [--type=architecture|flow|sequence|state|er|clas
 | `--type=<t>` | architecture (default) | flow | sequence | state | er | class |
 | `--format=<f>` | svg (default) | png |
 | `--theme=<name>` | D2 theme name (e.g. neutral, sketch, cool-classics) |
-| `--out=<path>` | Output path (default: .cx/diagrams/<slug>-<ts>.<ext>) |
+| `--out=<path>` | Output path (default: .construct/diagrams/<slug>-<ts>.<ext>) |
 | `--source-only` | Always write the source file; skip rendering |
 
 ## construct distill
@@ -190,7 +190,7 @@ construct graph <list|show|from-intake|recommend|build|stat|query|validate|expla
 
 ## construct handoffs
 
-List and inspect session handoff files in .cx/handoffs/
+List and inspect session handoff files in .construct/handoffs/
 
 **Usage**
 
@@ -255,8 +255,8 @@ construct knowledge trends|index|add
 **Subcommands**
 
 - `trends` — Show trend report across observations and artifacts
-- `index` — Rebuild the local RAG corpus over .cx/ artifacts
-- `add --source=research --slug=<id> --topic="..." [--source-url=<url>]` — Persist a research finding into .cx/knowledge/external/research/
+- `index` — Rebuild the local RAG corpus over .construct/ artifacts
+- `add --source=research --slug=<id> --topic="..." [--source-url=<url>]` — Persist a research finding into .construct/knowledge/external/research/
 
 ## construct memory
 
@@ -281,7 +281,7 @@ construct pack <list|enable|disable|info> [--json]
 **Subcommands**
 
 - `list` — Every pack discovered across builtin/user/project tiers with its durable enabled state
-- `enable <pack-id>[@version]` — Validate the pack manifest and record it enabled in .cx/packs.json; refuses on an incompatible compatVersion or other validation failure
+- `enable <pack-id>[@version]` — Validate the pack manifest and record it enabled in .construct/packs.json; refuses on an incompatible compatVersion or other validation failure
 - `disable <pack-id>` — Remove the pack's enabled entry (idempotent; the core pack cannot be disabled)
 - `info <pack-id>` — Full manifest plus enabled state for one pack
 
@@ -300,7 +300,7 @@ construct publish <markdown> [--to=pdf] [--type=DOC] [--demo=NAME] [--strict]
 | Flag | Description |
 |---|---|
 | `--to=<format>` | pdf (default), docx, deck, pptx, html, rtf, odt, epub, tex, txt, md, mdx |
-| `--output=<path>` | Output path (default: .cx/publish/<name>.<format>) |
+| `--output=<path>` | Output path (default: .construct/publish/<name>.<format>) |
 | `--type=<doc-type>` | Manifest doc type for release gate (inferred when omitted) |
 | `--demo=<name>` | Terminal VHS tape to record (repeatable) |
 | `--recording=<name>` | Playwright recording manifest (repeatable) |
@@ -367,7 +367,7 @@ construct team <list|show|create|review|templates>
 
 - `list` — List macro groups and squads (--kind group|squad)
 - `show` — Show one group or squad by id
-- `create` — Scaffold a custom team into .cx/org/ (or ~/.construct/org/ with --user) — see docs/guides/cookbook/custom-specialists-and-teams.md
+- `create` — Scaffold a custom team into .construct/org/ (or ~/.construct/org/ with --user) — see docs/guides/cookbook/custom-specialists-and-teams.md
 - `review` — Team review workflow
 - `templates` — List team doc templates
 

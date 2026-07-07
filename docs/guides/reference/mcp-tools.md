@@ -61,7 +61,7 @@ Scans a file for secrets and code quality issues.
 Returns: `{ secrets, quality_issues, clean }`. Quality checks: file too long (>800 lines), functions too long (>50 lines), TODO/FIXME markers.
 
 ### `project_context`
-Returns project context: `.cx/context.md` content, recent commits, and working tree status.
+Returns project context: `.construct/context.md` content, recent commits, and working tree status.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -141,7 +141,7 @@ Infers a structured field schema from a document (or reconciles across multiple 
 | `file_path` | string | Single document path |
 | `file_paths` | string[] | Multiple documents for unified schema inference |
 | `max_chars` | number | Max chars to send to the model (default: 40,000) |
-| `save` | boolean | Write schema as `.schema.json` under `.cx/knowledge/reference/schemas/` |
+| `save` | boolean | Write schema as `.schema.json` under `.construct/knowledge/reference/schemas/` |
 | `cwd` | string | Project root |
 | `sample_size` | number | Max docs to sample for unified inference (default: 10) |
 | `threshold` | number | Min fraction of docs a field must appear in (default: 0.5) |
@@ -191,7 +191,7 @@ Deletes ingested markdown artifacts. Requires explicit `confirm: true`.
 | Parameter | Type | Description |
 |---|---|---|
 | `cwd` | string (optional) | Project directory |
-| `files` | string[] (optional) | Relative file paths under `.cx/knowledge/`. Omit to delete all. |
+| `files` | string[] (optional) | Relative file paths under `.construct/knowledge/`. Omit to delete all. |
 | `confirm` | boolean | **Required**: must be `true` |
 
 ---
@@ -216,7 +216,7 @@ Searches for a pattern within the Construct knowledge base skills.
 | `pattern` | string | Yes | Regex pattern to search for |
 
 ### `get_template`
-Reads a doc template by name. Resolves `.cx/templates/docs/{name}.md` first, then `templates/docs/{name}.md`.
+Reads a doc template by name. Resolves `.construct/templates/docs/{name}.md` first, then `templates/docs/{name}.md`.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -252,7 +252,7 @@ Runs a bounded shell command via the worker plane and optionally records evidenc
 | `evidenceSummary` | string | | Optional override for the evidence summary string |
 | `traceId` | string | | Optional traceId to correlate with the rest of the agent's trace |
 
-Returns the job result (`{status, exitCode, stdoutPath, stderrPath, durationMs, artifacts, traceId}`) plus an `evidence` field when a graph node was named. Stdout/stderr land under `.cx/runtime/worker/<jobId>.{stdout,stderr}.log`. Emits `worker.started` / `worker.completed` trace events from inside `runJob` and an `evidence.recorded` event when evidence is appended.
+Returns the job result (`{status, exitCode, stdoutPath, stderrPath, durationMs, artifacts, traceId}`) plus an `evidence` field when a graph node was named. Stdout/stderr land under `.construct/runtime/worker/<jobId>.{stdout,stderr}.log`. Emits `worker.started` / `worker.completed` trace events from inside `runJob` and an `evidence.recorded` event when evidence is appended.
 
 ### `broker_check`
 Queries the MCP broker's policy gate for a pending action without executing it. Use BEFORE attempting a high-risk action so the response (`allowed` / `approvalRequired` / `reason` / `source`) can be surfaced in the agent's voice rather than triggering a denial after the fact.
@@ -291,12 +291,12 @@ The intake, task-graph, and worker plane are surfaced through the `construct int
 | `lib/intake/classify.mjs` | `classifyRdIntake({sourcePath, extractedText, related})` returns the triage block. Deterministic, no LLM. |
 | `lib/intake/queue.mjs` | `createIntakeQueue(rootDir, env)` returns a queue implementing `{enqueue, listPending, count, read, markProcessed, markSkipped, reopen}`: Postgres-backed in team / enterprise mode, filesystem-backed in solo. |
 | `lib/task-graph/generate.mjs` | `generateTaskGraphFromTriage({triage, project, request, intake})` derives the plan-of-work from a triage packet. |
-| `lib/task-graph/store.mjs` | `FilesystemTaskGraphStore`: `.save / .read / .list / .updateNodeStatus` against `.cx/task-graphs/`. |
+| `lib/task-graph/store.mjs` | `FilesystemTaskGraphStore`: `.save / .read / .list / .updateNodeStatus` against `.construct/task-graphs/`. |
 | `lib/context-router.mjs` | `buildContextPacket({request, triage, role, candidates, budget})`: per-role artifact bundle with explicit omitted reasons. |
 | `lib/mcp/broker.mjs` | `Broker.invoke({role, tool, action, risk, execute})`: policy-gated MCP wrapper for team / enterprise. Throws typed `PolicyDenied`, `ApprovalRequired`, `RateLimited`. |
 | `lib/worker/run.mjs` | `runJob({rootDir, job})`: bounded command execution with path-policy denial, timeout, restricted env, and trace event emission. |
 | `lib/worker/evidence.mjs` | `evidenceFromJobResult`, `recordEvidence`, `blockedPacket`, `needsInputPacket`: typed verification packets gating node transitions. |
-| `lib/worker/trace.mjs` | `emitTraceEvent({rootDir, eventType, traceId, …})`: writes `.cx/traces/<date>.jsonl` and exports remotely when configured. |
+| `lib/worker/trace.mjs` | `emitTraceEvent({rootDir, eventType, traceId, …})`: writes `.construct/traces/<date>.jsonl` and exports remotely when configured. |
 
 ### `list_teams`
 Lists all available team templates with members, focus, and promotion gates.
@@ -592,7 +592,7 @@ List the curated org profile catalog (rnd, operations, creative, research) with 
 _No parameters._
 
 ### `scope_drafts`
-List in-progress draft profiles under `.cx/profiles/draft-*` and any user-defined custom profile at `.cx/scope.json`. Use to see what profile work is pending before scaffolding another draft.
+List in-progress draft profiles under `.construct/profiles/draft-*` and any user-defined custom profile at `.construct/scope.json`. Use to see what profile work is pending before scaffolding another draft.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -608,7 +608,7 @@ Per-profile health rollup over a window: observation count, per-role outcome run
 | `window_days` | number | Window in days (default 30). |
 
 ### `scope_create`
-Scaffold a draft org profile under `.cx/profiles/draft-<id>/` (requirements.md + profile.json + persona stubs + department charters). Writes durable state — requires `confirm=true`. For curated catalog work, follow `docs/guides/concepts/profile-lifecycle.md` after creation.
+Scaffold a draft org profile under `.construct/profiles/draft-<id>/` (requirements.md + profile.json + persona stubs + department charters). Writes durable state — requires `confirm=true`. For curated catalog work, follow `docs/guides/concepts/profile-lifecycle.md` after creation.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -629,7 +629,7 @@ Archive a curated profile: moves `profiles/<id>.json` and its intake table into 
 | `reason` | string | **required** — Substantive reason (>= 8 chars). |
 
 ### `outcomes_summary`
-Read `.cx/outcomes/_summary.json` (per-role success rate, 30-day trend). Pass `aggregate=true` to rebuild the summary from JSONL outcome files first. Use to ground tiebreakers and improvement suggestions in real specialist performance.
+Read `.construct/outcomes/_summary.json` (per-role success rate, 30-day trend). Pass `aggregate=true` to rebuild the summary from JSONL outcome files first. Use to ground tiebreakers and improvement suggestions in real specialist performance.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -637,7 +637,7 @@ Read `.cx/outcomes/_summary.json` (per-role success rate, 30-day trend). Pass `a
 | `aggregate` | boolean | Rebuild `_summary.json` before reading (default false). |
 
 ### `outcomes_record`
-Append a specialist outcome line to `.cx/outcomes/<role>.jsonl` (writes durable state — requires `confirm=true`). Use when a specialist wants to self-report success/failure outside the automatic agent-tracker path.
+Append a specialist outcome line to `.construct/outcomes/<role>.jsonl` (writes durable state — requires `confirm=true`). Use when a specialist wants to self-report success/failure outside the automatic agent-tracker path.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -653,7 +653,7 @@ Append a specialist outcome line to `.cx/outcomes/<role>.jsonl` (writes durable 
 | `source` | string | Origin tag (default: "mcp"). |
 
 ### `knowledge_add`
-Persist a research finding as `.cx/knowledge/external/research/<slug>.md` with research-specific frontmatter (topic, confidence, sources, expiresAt, profile). Writes durable state — requires `confirm=true`. `confidence=confirmed` requires at least one source.
+Persist a research finding as `.construct/knowledge/external/research/<slug>.md` with research-specific frontmatter (topic, confidence, sources, expiresAt, profile). Writes durable state — requires `confirm=true`. `confidence=confirmed` requires at least one source.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -667,7 +667,7 @@ Persist a research finding as `.cx/knowledge/external/research/<slug>.md` with r
 | `ttl_days` | number | Default 90. |
 
 ### `knowledge_graph_ask`
-GraphRAG-style global query over the entity graph in `.cx/observations/`. Detects communities via label propagation, ranks them by BM25 against the query, and returns each top community with its central members and extractive summary. Use for "tell me about how X relates across the project" questions that pure semantic retrieval handles poorly.
+GraphRAG-style global query over the entity graph in `.construct/observations/`. Detects communities via label propagation, ranks them by BM25 against the query, and returns each top community with its central members and extractive summary. Use for "tell me about how X relates across the project" questions that pure semantic retrieval handles poorly.
 
 | Parameter | Type | Description |
 |---|---|---|

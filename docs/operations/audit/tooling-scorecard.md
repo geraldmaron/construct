@@ -40,7 +40,7 @@ Current: zero `chalk`/`picocolors`/`inquirer`/`ora`/`commander`/`yargs`; hand-ro
 Current: external `bd` binary, Dolt-backed, mandated for all task tracking (CLAUDE.md, `rules/common/beads-hygiene.md`). Field: beads, GitHub Issues, Linear/Jira, plain markdown. Fit: local-first, git-synced, agent-oriented — fits an offline, multi-agent tool. **Verdict: keep** (it is the project's chosen standard, in active use this session).
 
 ### Telemetry — **OpenTelemetry + local JSONL** · **KEEP**
-Current: OTel optional deps + local `.cx/traces` JSONL, remote export optional. Field: OTel (the de-facto open standard), vendor SDKs. Fit: standards-based, offline default, optional remote. **Verdict: keep.**
+Current: OTel optional deps + local `.construct/traces` JSONL, remote export optional. Field: OTel (the de-facto open standard), vendor SDKs. Fit: standards-based, offline default, optional remote. **Verdict: keep.**
 
 ### Diagramming — **none today** · **ADD** (capability gap)
 No diagram-as-code generation exists; `lib/wireframe.mjs` is text-only. Field: D2 (sketch + themes), Excalidraw / mermaid-to-excalidraw, Mermaid+ELK, Graphviz, PlantUML, nomnoml, Rough.js. **Verdict: add `construct diagram`** — primary candidate D2 (Go binary, headless SVG/PNG, distinctive sketch themes), fallback Excalidraw hand-drawn; pick finalised in capability bead `construct-ij31.16` `[verify-before-replace]`.

@@ -25,7 +25,7 @@ This command:
 - Exports the markdown to the requested format (PDF by default).
 - Renders the export to a series of PNG screenshots.
 - Reports what was checked and any warnings or failures.
-- Saves screenshots to `.cx/publish/preview/` for inspection.
+- Saves screenshots to `.construct/publish/preview/` for inspection.
 
 Wait for the command to complete. If render fails, consult the error message before proceeding.
 

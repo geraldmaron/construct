@@ -35,7 +35,7 @@ construct install --yes
 2. ✅ Checks `cm` (Memory MCP server) → installs if missing
 3. ✅ Checks Node.js ≥ 20 → shows download link if needed
 4. ✅ Creates `~/.config/construct/config.env`
-5. ✅ Enables local JSONL traces in `.cx/traces`
+5. ✅ Enables local JSONL traces in `.construct/traces`
 6. ✅ Runs `construct doctor` health check
 
 **Output:**
@@ -49,7 +49,7 @@ construct install --yes
 ✅ All prerequisites met!
 
 Local services:
-  ✓  Traces → .cx/traces/*.jsonl (local by default)
+  ✓  Traces → .construct/traces/*.jsonl (local by default)
   ✓  Postgres → postgresql://127.0.0.1:54329/construct
 ```
 
@@ -71,7 +71,7 @@ construct init --interactive
 ```
 
 **What this does:**
-1. ✅ Creates `.cx/` directory structure
+1. ✅ Creates `.construct/` directory structure
 2. ✅ Creates `construct.config.json`
 3. ✅ Creates `embed.yaml` (if not exists)
 4. ✅ **Starts local services** (Dashboard, Postgres when configured, Memory, Embed)
@@ -101,7 +101,7 @@ construct stop
 ║                    Construct Runtime Started                              ║
 ╠══════════════════════════════════════════════════════════════════════════╣
 ║  ✓  Dashboard → http://127.0.0.1:4242                                    ║
-║  ✓  Traces → .cx/traces/*.jsonl                                           ║
+║  ✓  Traces → .construct/traces/*.jsonl                                           ║
 ║  ✓  Memory (cm) → http://127.0.0.1:8765                                  ║
 ║  ✓  Embed daemon started (monitoring git, inbox, CI)                    ║
 ╚══════════════════════════════════════════════════════════════════════════╝
@@ -125,13 +125,13 @@ Construct Services
 ══════════════════
 
   ✓  Dashboard                    http://127.0.0.1:4242 (Dashboard API)
-  ✓  Telemetry                    local://.cx/traces (Local JSONL traces)
+  ✓  Telemetry                    local://.construct/traces (Local JSONL traces)
   ✓  Memory (cm)                  http://127.0.0.1:8765 (MCP-managed)
   ✓  Embed daemon                 Running (watching git, inbox)
 
 Telemetry
 ═════════
-  Local traces: .cx/traces/*.jsonl
+  Local traces: .construct/traces/*.jsonl
   Remote export: optional (`CONSTRUCT_TRACE_BACKEND=langfuse|http|otel`)
 ```
 
@@ -157,7 +157,7 @@ construct install --yes
 
 ```bash
 # Local traces still work without remote export
-ls .cx/traces
+ls .construct/traces
 
 # Check configured remote export
 construct status --json
