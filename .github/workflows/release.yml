@@ -13,6 +13,8 @@ jobs:
   gate:
     name: release:check
     runs-on: ubuntu-latest
+    env:
+      CONSTRUCT_EMBEDDING_MODEL: hashing
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
@@ -20,6 +22,20 @@ jobs:
           node-version-file: .tool-versions
           cache: npm
       - run: npm ci
+      # Same test prerequisites as ci.yml's test job — the suite spawns bd and
+      # typst and reads the living graph + seeded vector index; without these
+      # the gate dies on `spawnSync bd ENOENT` (v1.5.0's first run) while the
+      # per-PR matrix stays green. scripts/ci/setup-toolchain.sh is the single
+      # source of truth shared with the local Docker replica.
+      - name: cache pinned tool binaries (typst, bd)
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.local/bin
+          key: toolbin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/setup-toolchain.sh') }}
+      - name: install test toolchain (typst, bd, pandoc, poppler, libreoffice)
+        run: bash scripts/ci/setup-toolchain.sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: build derived test fixtures (living graph + seeded vector index)
+        run: bash scripts/ci/build-test-fixtures.sh
       - name: Full test suite
         run: npm test
       - name: System health check
