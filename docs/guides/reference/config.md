@@ -94,7 +94,7 @@ Keys under `orchestration` in `construct.config.json`. Read at runtime by `lib/o
 |---|---|---|
 | `orchestration.workerBackend` | `inline` (CLI) / `host` (MCP, when unset) | `inline` (plan and prepare specialist tasks, no model call) \| `provider` (execute each task against a configured provider model — real API spend) \| `host` (materialize each task's prompt for the calling MCP host to execute in its own model session — no API spend; the host submits results via `orchestration_task_result`). An MCP-originated `orchestration_run` call defaults to `host` when neither the tool's `worker_backend` arg nor this key is set; the CLI's own default stays `inline` regardless. `host` over the bare CLI (no attached MCP session) fails loud rather than producing an abandoned run — see ADR-0063. |
 | `orchestration.store` | `filesystem` | `filesystem` \| `sqlite` \| `postgres`, or a registered `kind:"storage"` extension manifest whose `operations.runStore` maps to one of those implementations. Explicit missing backends degrade visibly to filesystem with `requestedBackend`/`degradedReason`; they are not silently ignored. |
-| `orchestration.chainOfThought` | `hidden` | Disclosure of a provider-executed specialist's reasoning. `hidden`: reasoning is not requested or shown. `surface`: reasoning is requested (Anthropic extended thinking / OpenRouter `reasoning`) and attached to each task, so `construct orchestrate run`/`status`, the `orchestration_run` MCP tool, and the dashboard event stream display it. `telemetry_only`: reasoning is requested and written to the run trace (`.cx/traces/*.jsonl` `worker.completed` metadata) but never displayed. Inline runs never produce reasoning. See ADR-0030. |
+| `orchestration.chainOfThought` | `hidden` | Disclosure of a provider-executed specialist's reasoning. `hidden`: reasoning is not requested or shown. `surface`: reasoning is requested (Anthropic extended thinking / OpenRouter `reasoning`) and attached to each task, so `construct orchestrate run`/`status`, the `orchestration_run` MCP tool, and the dashboard event stream display it. `telemetry_only`: reasoning is requested and written to the run trace (`.construct/traces/*.jsonl` `worker.completed` metadata) but never displayed. Inline runs never produce reasoning. See ADR-0030. |
 | `orchestration.hostExecution` | `auto` | Only meaningful when `workerBackend` resolves to `host`. `auto`: construct-mcp drives the awaiting-host loop itself via MCP sampling (`sampling/createMessage`) when the connected client declared the `sampling` capability at initialize time, otherwise the calling host executes each prompt manually and submits it back (`pickup`). `pickup`: always leave every task for manual pickup, even if the client supports sampling. `sampling`: prefer sampling, falling back to `pickup` if the client never declared the capability. See ADR-0063. |
 
 ## Models (catalog visibility)
@@ -162,14 +162,14 @@ CLI: `construct sources list`, `construct sources add <provider> <id> '<selector
 
 Filesystem inbox watcher depth and extra directories under `intakePolicy`. A legacy `.cx/intake-config.json` is read as a warned fallback for `maxDepth` and `additionalDirs` only.
 
-The single canonical drop zone is `inbox/` at the project root (ADR-0045 §C) — always watched. There are no other zones: `.cx/inbox/` and `docs/intake/` are not watched and not scaffolded. Machine/runtime intake state (pending, processed, skipped, quarantine, dead-letter) stays under the gitignored `.cx/intake/`.
+The single canonical drop zone is `inbox/` at the project root (ADR-0045 §C) — always watched. There are no other zones: `.construct/inbox/` and `docs/intake/` are not watched and not scaffolded. Machine/runtime intake state (pending, processed, skipped, quarantine, dead-letter) stays under the gitignored `.construct/intake/`.
 
 | Key | Default | Description |
 |---|---|---|
 | `intakePolicy.maxDepth` | `4` | Subdirectory scan depth per watched directory |
 | `intakePolicy.additionalDirs` | `[]` | Extra directories to watch beyond `inbox/` (opt-in only) |
 
-**Drop convention (atomic handoff).** Writers assemble a file under `inbox/.staging/` (gitignored) and then atomically `rename` it into `inbox/`. The watcher enqueues only complete top-level files: it ignores dotfiles and `inbox/.staging/`, and skips any file whose size is still changing between two stats, so a partially-written drop is never consumed. Processed items move to `.cx/intake/processed/`.
+**Drop convention (atomic handoff).** Writers assemble a file under `inbox/.staging/` (gitignored) and then atomically `rename` it into `inbox/`. The watcher enqueues only complete top-level files: it ignores dotfiles and `inbox/.staging/`, and skips any file whose size is still changing between two stats, so a partially-written drop is never consumed. Processed items move to `.construct/intake/processed/`.
 
 Env overrides: `CX_INBOX_DIRS` (colon-separated paths), `CX_INTAKE_MAX_DEPTH`.
 
@@ -325,7 +325,7 @@ When `op run` injects materialized keys into `process.env`, Construct keeps thos
 | Variable | Description |
 |---|---|
 | `CONSTRUCT_DEPRECATIONS` | `error` to throw instead of warn on deprecated API usage (useful in CI) |
-| `CONSTRUCT_DEV_PATH` | Absolute path to a Construct checkout; `.construct/run.mjs` resolves this first |
+| `CONSTRUCT_DEV_PATH` | Absolute path to a Construct checkout; `.construct/launcher/run.mjs` resolves this first |
 | `CX_AUTO_EMBED` | `1` to auto-start the embed daemon when provider credentials are present. `construct.config.json` `autoEmbed: true` is an equivalent project-committed fallback (env wins); read at runtime by `autoStartEmbedIfNeeded()` in `lib/embed/cli.mjs`. |
 | `CX_WORKSPACE` | Override working directory for embed mode |
 | `CX_TOOLKIT_DIR` | Override the path where Construct looks for its own toolkit (skills, agents, templates) |

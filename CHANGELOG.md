@@ -4,6 +4,10 @@ All notable changes to Construct are documented here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Docs
+
+- `construct-1mjj` (ADR-0069, phase 4): swept ~638 user-facing `.cx` mentions to `.construct` across ~224 files — code comments, JSDoc/file headers, and log/error/help/template strings in `lib/**`, `bin/construct`, `scripts/**`, `docs/guides/**`, `docs/operations/**`, `docs/README.md`, and `templates/docs/**` — plus launcher prose repointed into `.construct/launcher/`. Home-scope `~/.cx`/`~/.construct`, dual-marker detection prose, legacy/migration wording, `cx-*` identifiers, ADRs under `docs/decisions/**`, and executable path/regex/comparison logic were deliberately left untouched. Also relaxed `lib/research-lint.mjs`'s source-cue heuristic to recognize both `.cx/` and `.construct/` document paths. `construct lint:comments` clean; CLI/doctor/status output tests green.
+
 ### Added
 
 - `construct-1mjj` (ADR-0069, phase 3): `legacy-layout-migration` reconciler (`lib/reconcile/legacy-layout-migration.mjs`) folds a pre-consolidation two-directory footprint into the single `.construct/` layout — it detects a legacy `.cx/` config directory and/or launcher files (`run.mjs`, `version`, `bootstrap.*`, `cache/`) sitting at `.construct/` top level, then `apply()` folds `.cx/` into `.construct/` (never clobbering newer `.construct/` state) and relocates the launcher into `.construct/launcher/`, leaving hook-command regeneration to `construct sync`. Registered in the ADR-0027 reconcile framework as `safety: 'ask'` so it never runs from the silent auto-sync path — `construct doctor` surfaces it and only `construct sync --reconcile=legacy-layout-migration` applies it (and only from a session not served by the launcher being moved). Idempotent; covered by `tests/functional/legacy-layout-migration.functional.test.mjs` (clean-layout detection, legacy detection, fold+relocate+idempotency, no-clobber). Still deferred: the physical relocation on the self-hosting Construct repo itself and the `construct sync` hook-command repoint, both of which must run outside a live session, plus the comprehensive prose/comment sweep.

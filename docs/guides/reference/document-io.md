@@ -12,7 +12,7 @@ Construct treats document I/O as an **optional capability** with two independent
 │ IN (many formats)          AUTHORING (canonical)         OUT (many)     │
 │ PDF, DOCX, PPTX, XLSX,  →  typed markdown artifacts  →  PDF, DOCX,    │
 │ email, AV, plain text,       under templates/docs/        DOC, HTML,    │
-│ transcripts, calendar…       + .cx/knowledge/ ingest       deck, PPTX,  │
+│ transcripts, calendar…       + .construct/knowledge/ ingest       deck, PPTX,  │
 │                                                            RTF, EPUB…   │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -129,7 +129,7 @@ Typed artifacts map to PDF layouts (export only affects PDF/deck/HTML branding d
 | `construct-decision.typ` | adr, rfc, rfc-platform |
 | `construct-pdf.typ` | Fallback for all other manifest types |
 
-Project override: `.cx/publish-theme.typ`.
+Project override: `.construct/publish-theme.typ`.
 
 ### Diagrams at export
 

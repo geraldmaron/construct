@@ -12,7 +12,7 @@ Shipped templates live in [`templates/docs/`](../../templates/docs/):
 |---|---|---|
 | Specialist source | `templates/docs/{name}.md` | Canonical shape for `get_template()` MCP |
 | Init lane starters | `docs/{lane}/templates/` | Copied into downstream projects by `construct init --docs-preset=*` |
-| Project override | `.cx/templates/docs/{name}.md` | Per-project template override at fetch time |
+| Project override | `.construct/templates/docs/{name}.md` | Per-project template override at fetch time |
 
 Do not duplicate starters at `docs/{lane}/_template.md` — lane READMEs link only to `./templates/`.
 
@@ -43,21 +43,21 @@ Each specialist prompt points to the template via an MCP call:
 
 The `get_template(name)` MCP tool (see [`lib/mcp/server.mjs`](../../lib/mcp/server.mjs)) resolves:
 
-1. `.cx/templates/docs/{name}.md`: **project override** (preferred if present)
+1. `.construct/templates/docs/{name}.md`: **project override** (preferred if present)
 2. `templates/docs/{name}.md`: **shipped default** (fallback)
 
 Use `list_templates` to see both shipped and overridden names.
 
 ### Overriding a template
 
-Drop a file at `.cx/templates/docs/{name}.md` inside your project. That's it: next time a specialist drafts that doc type, they'll pick up your version. No sync, no restart.
+Drop a file at `.construct/templates/docs/{name}.md` inside your project. That's it: next time a specialist drafts that doc type, they'll pick up your version. No sync, no restart.
 
 Example: reshape the PRD to lead with success metrics:
 
 ```bash
-mkdir -p .cx/templates/docs
-cp templates/docs/prd.md .cx/templates/docs/prd.md
-# edit .cx/templates/docs/prd.md to your shape
+mkdir -p .construct/templates/docs
+cp templates/docs/prd.md .construct/templates/docs/prd.md
+# edit .construct/templates/docs/prd.md to your shape
 ```
 
 Ask Construct for a PRD; it'll follow the new shape.

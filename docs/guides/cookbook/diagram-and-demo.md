@@ -25,7 +25,7 @@ node bin/construct publish docs/prd-platform/brief.md --strict --figures
 
 - Runs **artifact release gate** before export (structure, visuals, citations, prose minimum)
 - Renders fenced `d2` / `mermaid` via vendored `pandoc-ext/diagram` with **hand-drawn distribution styling** (D2 `--sketch`, Mermaid `handDrawn` look + bundled Caveat handwriting, monochrome ink accent)
-- PDF routes by `artifactType`: `construct-prd.typ` (product editorial), `construct-research.typ` (analytics), `construct-decision.typ` (ADR/RFC); override: `.cx/publish-theme.typ`
+- PDF routes by `artifactType`: `construct-prd.typ` (product editorial), `construct-research.typ` (analytics), `construct-decision.typ` (ADR/RFC); override: `.construct/publish-theme.typ`
 - Typography ships bundled in `templates/distribution/fonts/` (Space Grotesk body + headings, JetBrains Mono code; Caveat handwriting for hand-drawn diagram labels). Success metrics tables in blockquotes render as **Key metrics** callouts.
 - Optional VHS terminal demo + Playwright app demo via frontmatter or flags
 
@@ -75,18 +75,18 @@ publish:
   recording: agentic-platforms-prd
 ```
 
-`recording` references a Playwright manifest in `.cx/demos/recordings/` (project) or `templates/demos/recordings/` (shipped). Legacy `dashboardDemo` still works via the script bridge.
+`recording` references a Playwright manifest in `.construct/demos/recordings/` (project) or `templates/demos/recordings/` (shipped). Legacy `dashboardDemo` still works via the script bridge.
 
 ## Demo any application (Playwright recordings)
 
-Project-scoped manifests live under `.cx/demos/recordings/<name>.json`:
+Project-scoped manifests live under `.construct/demos/recordings/<name>.json`:
 
 ```json
 {
   "name": "marketing-site",
   "engine": "playwright",
   "workspace": ".",
-  "spec": ".cx/demos/specs/marketing-site.spec.ts",
+  "spec": ".construct/demos/specs/marketing-site.spec.ts",
   "baseUrl": "http://127.0.0.1:3456",
   "webServer": {
     "command": "npx serve out -l 3456",
@@ -98,7 +98,7 @@ Project-scoped manifests live under `.cx/demos/recordings/<name>.json`:
     "file": "pricing.html",
     "scroll": true
   },
-  "output": { "format": "mp4", "path": ".cx/demos/marketing-site.mp4" }
+  "output": { "format": "mp4", "path": ".construct/demos/marketing-site.mp4" }
 }
 ```
 
@@ -116,7 +116,7 @@ construct demo init my-prd --from=construct-cockpit
 npm run build && construct demo record marketing --format mp4
 ```
 
-Shared scroll helpers ship in `templates/demos/specs/_helpers/scroll-artifact.ts` (copied into `.cx/demos/specs/_helpers/` on init). Schema: `schemas/demo-recording.schema.json`.
+Shared scroll helpers ship in `templates/demos/specs/_helpers/scroll-artifact.ts` (copied into `.construct/demos/specs/_helpers/` on init). Schema: `schemas/demo-recording.schema.json`.
 
 ## Render a diagram
 
@@ -126,7 +126,7 @@ construct diagram "web app: client -> api -> db"
 
 Default D2 theme is **neutral** (clean geometry). Use `--theme sketch` for hand-drawn output (`construct diagram` and publish `--figures` both honor sketch on the distribution path).
 
-Output: `.cx/diagrams/*.svg` (or `.d2` source when no renderer).
+Output: `.construct/diagrams/*.svg` (or `.d2` source when no renderer).
 
 ## Terminal demos
 
@@ -155,7 +155,7 @@ Each step prints `Step N of M` with its prompt and command; the tour ends with `
 
 ## Terminal demos (VHS recording)
 
-Project tapes live in `templates/demos/tapes/` (shipped) with optional overrides in `.cx/demos/tapes/` — **commit shipped tapes; regenerate MP4/GIF in CI or with `construct demo record`**.
+Project tapes live in `templates/demos/tapes/` (shipped) with optional overrides in `.construct/demos/tapes/` — **commit shipped tapes; regenerate MP4/GIF in CI or with `construct demo record`**.
 
 Theme: `templates/demos/vhs/construct-cockpit.json` (monochrome — `#0a0c10` background, white cursor, grey accents).
 

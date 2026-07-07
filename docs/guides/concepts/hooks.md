@@ -107,7 +107,7 @@ Hooks that own audit-shaped data (audit-trail, audit-reads, mcp-audit) write via
 | `stop-notify.mjs` | Stop | * | Session summary: files changed, TS results, cost |
 | `session-reflect.mjs` | Stop | * | Auto-extracts session summary to observations |
 | `session-optimize.mjs` | Stop | * | Triggers agent optimization for low performers |
-| `session-tracking-refresh.mjs` | Stop | * | Archives `plan.md` when landed; syncs the bead-status table; refreshes `.cx/context.{md,json}` Active Work / Recent Decisions / Architecture Notes |
+| `session-tracking-refresh.mjs` | Stop | * | Archives `plan.md` when landed; syncs the bead-status table; refreshes `.construct/context.{md,json}` Active Work / Recent Decisions / Architecture Notes |
 | `post-merge-tracking.mjs` | PostToolUse | Bash | After `gh pr merge` succeeds, parses the PR body's `Refs:` / `Closes:` / `Fixes:` lines and closes every referenced `construct-XXX` bead |
 
 Two hooks present on disk are marked `@unwired` (no `settings.template.json` entry, awaiting wiring): `proactive-activation.mjs`, `rule-verifier.mjs`.
@@ -116,8 +116,8 @@ Two hooks present on disk are marked `@unwired` (no `settings.template.json` ent
 
 Three project-tracking surfaces are kept current automatically:
 
-- **`.cx/context.md` + `.cx/context.json`** — `session-tracking-refresh.mjs` (Stop) rewrites the managed sections (`## Active Work`, `## Recent Decisions`, `## Architecture Notes`) from recent observations, commits, and bead state. The `## Open Questions` section and any user-authored sections are preserved.
-- **`plan.md`** — `session-tracking-refresh.mjs` also syncs the bead-status table against current `bd show` truth. When every referenced bead is `closed` AND the plan has been idle ≥1 h, the plan is archived into `.cx/handoffs/<date>-plan-landed.md` and reset to the template.
+- **`.construct/context.md` + `.construct/context.json`** — `session-tracking-refresh.mjs` (Stop) rewrites the managed sections (`## Active Work`, `## Recent Decisions`, `## Architecture Notes`) from recent observations, commits, and bead state. The `## Open Questions` section and any user-authored sections are preserved.
+- **`plan.md`** — `session-tracking-refresh.mjs` also syncs the bead-status table against current `bd show` truth. When every referenced bead is `closed` AND the plan has been idle ≥1 h, the plan is archived into `.construct/handoffs/<date>-plan-landed.md` and reset to the template.
 - **Beads** — `post-merge-tracking.mjs` (PostToolUse / Bash) closes the beads named in a just-merged PR's body. The drift detector in `lib/beads/drift.mjs` surfaces residual drift in `construct doctor`; remediation happens at the merge event.
 
 The four pure utilities live in `lib/tracking-surfaces.mjs` (`refreshContextMd`, `syncPlanFile`, `archivePlanIfLanded`, `closeBeadsFromPrRefs`) and can be called from the CLI for ad-hoc curation. Hooks own *when*; utilities own *what*.

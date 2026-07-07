@@ -6,14 +6,14 @@
  * Or directly: node scripts/tag-candidate-mining.mjs
  *
  * Algorithm:
- *   1. Walk .cx/knowledge/**\/*.md and extract YAML frontmatter tags.
+ *   1. Walk .construct/knowledge/**\/*.md and extract YAML frontmatter tags.
  *   2. Cross-reference against the controlled vocabulary.
  *   3. Count occurrences of unknown tags within the last 30 days (based on
  *      frontmatter created_at or file mtime as fallback).
  *   4. For any unknown tag with 3+ uses, append a proposal record to
- *      .cx/tags/proposed.jsonl (skipping ids already proposed).
+ *      .construct/tags/proposed.jsonl (skipping ids already proposed).
  *   5. Write a one-line JSON summary to
- *      .cx/scheduler/logs/tag-candidate-mining.jsonl.
+ *      .construct/scheduler/logs/tag-candidate-mining.jsonl.
  *
  * No external dependencies. No LLM calls. No database calls.
  */

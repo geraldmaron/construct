@@ -19,8 +19,8 @@ It needs to be a git repo (Construct uses `.git/` to wire pre-commit hooks). Bra
 
 Scaffolds the project:
 
-- `.cx/context.md` and `.cx/context.json` — durable per-project state Construct reads at session start.
-- `.cx/handoffs/` — gitignored directory where session handoffs land.
+- `.construct/context.md` and `.construct/context.json` — durable per-project state Construct reads at session start.
+- `.construct/handoffs/` — gitignored directory where session handoffs land.
 - `docs/` documentation lanes if your project doesn't have them yet.
 - A `.beads/` directory if your project doesn't already track issues.
 
@@ -45,7 +45,7 @@ Starts the local runtime:
 
 - Local dashboard at `http://localhost:<port>` (port auto-selected)
 - Memory MCP server at `127.0.0.1:8765`
-- Local trace capture in `.cx/traces/*.jsonl`
+- Local trace capture in `.construct/traces/*.jsonl`
 </Step>
 </Steps>
 
@@ -85,7 +85,7 @@ echo "Stack trace on login redirect — reproduce at /auth. authMiddleware crash
 <FlowPipeline steps={[
   { label: 'inbox/', sub: 'drop any file' },
   { label: 'embed daemon', sub: 'classifies in ~1s\nno LLM call' },
-  { label: '.cx/intake/pending/', sub: 'triage packet\ntype · owner · chain' },
+  { label: '.construct/intake/pending/', sub: 'triage packet\ntype · owner · chain' },
   { label: 'your editor', sub: 'read packet · dispatch', highlight: true },
 ]} />
 
@@ -99,7 +99,7 @@ construct intake show <id>      # full packet — triage, related artifacts, exc
 For non-trivial signals, generate the work plan as a task graph:
 
 ```bash
-construct graph from-intake <id>   # writes .cx/task-graphs/<graph-id>.json
+construct graph from-intake <id>   # writes .construct/task-graphs/<graph-id>.json
 construct graph show <graph-id>    # nodes, edges, owners, evidence
 ```
 
@@ -113,6 +113,6 @@ See [intake and triage](/guides/concepts/intake-and-triage) for the full taxonom
 
 ## What just happened
 
-Construct's persona [held the conversation](/guides/concepts/agents-and-personas), but behind the scenes it [routed work through specialists](/guides/concepts/architecture) and [enforced policy gates](/guides/concepts/gates-and-enforcement) on any mutations. Session state was persisted to `.cx/context.md` so the next session resumes mid-flight.
+Construct's persona [held the conversation](/guides/concepts/agents-and-personas), but behind the scenes it [routed work through specialists](/guides/concepts/architecture) and [enforced policy gates](/guides/concepts/gates-and-enforcement) on any mutations. Session state was persisted to `.construct/context.md` so the next session resumes mid-flight.
 
 Next: [connect your editor →](/guides/start/connect-your-editor)

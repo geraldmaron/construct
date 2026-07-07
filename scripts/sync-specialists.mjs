@@ -299,8 +299,9 @@ const HOST_SELECTION = parseHostSelection();
 const wantsHost = (key) => HOST_SELECTION.has(key);
 
 /**
- * A Construct project carries `.construct/` (the launcher staged by
- * `stage-project.mjs`) or `.cx/` (state). When `construct sync` runs inside
+ * A Construct project carries `.construct/` — the launcher staged by
+ * `stage-project.mjs` under `.construct/launcher/`, plus project state.
+ * When `construct sync` runs inside
  * one without an explicit scope flag, default to project mode so specialists
  * land with the repo rather than leaking into the user's home directory.
  * `--global` overrides this for the front-door refresh path.

@@ -229,7 +229,7 @@ $ construct publish --preview article.md --format pdf
 
 [render-smoke]
   ✓ screenshot: 1_cover.png, 2_intro.png, 3_body.png, …, 12_appendix.png
-    Saved to: .cx/publish/preview/article/
+    Saved to: .construct/publish/preview/article/
 
 [summary]
   gate: render-smoke
