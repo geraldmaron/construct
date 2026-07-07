@@ -50,7 +50,7 @@ test('validatePacket enforces required non-empty fields', () => {
   });
 
   assert.equal(result.ok, false);
-  assert.deepEqual(result.missing, ['approach', 'acceptanceCriteria']);
+  assert.deepEqual(result.missing, ['approach', 'acceptanceCriteria', 'constraintMap', 'optionScoring']);
 });
 
 test('reviewer postcondition requires findings OR explicit no-issues enumeration', () => {

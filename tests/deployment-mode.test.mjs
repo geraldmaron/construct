@@ -54,7 +54,7 @@ describe('deployment-mode', () => {
   });
 
   describe('resolveResourceMode', () => {
-    it('returns the solo topology with local/filesystem defaults', () => {
+    it('returns the solo topology declaring the filesystem queue provider', () => {
       const r = resolveResourceMode('solo');
       assert.equal(r.queue, 'filesystem');
       assert.equal(r.memory, 'local');
@@ -62,7 +62,7 @@ describe('deployment-mode', () => {
       assert.equal(r.mcp, 'direct');
     });
 
-    it('returns the team topology with postgres/docker/brokered MCP', () => {
+    it('returns the team topology with postgres queue/docker/brokered MCP', () => {
       const r = resolveResourceMode('team');
       assert.equal(r.queue, 'postgres');
       assert.equal(r.memory, 'shared');

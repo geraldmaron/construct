@@ -1,16 +1,19 @@
 {
   "version": 1,
   "catalog": {
-    "generatedAt": "2026-07-01T01:09:33.824Z",
+    "generatedAt": "2026-07-06T22:40:56.862Z",
     "npmScripts": [
       "adapters",
       "audit:published",
+      "build:binary",
+      "build:binary:fallback",
       "build:sea",
       "catalog:regen",
       "catalog:validate",
       "certify:demos",
       "clean:artifacts",
       "coverage",
+      "deps:check",
       "docs:build",
       "docs:dev",
       "docs:init",
@@ -24,6 +27,7 @@
       "examples:deck",
       "examples:distribution",
       "gates:audit",
+      "graph:gate",
       "learning:status",
       "lint:agents",
       "lint:comments",
@@ -42,7 +46,8 @@
       "test:functional",
       "test:unit",
       "test:visual",
-      "version"
+      "version",
+      "workflow-defs:check"
     ],
     "cliCommands": [
       {
@@ -56,6 +61,12 @@
         "category": "Internal",
         "core": false,
         "internal": true
+      },
+      {
+        "name": "approvals",
+        "category": "Core",
+        "core": true,
+        "internal": false
       },
       {
         "name": "artifact",
@@ -156,6 +167,12 @@
       {
         "name": "customer",
         "category": "Work",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "db",
+        "category": "Models & Integrations",
         "core": false,
         "internal": false
       },
@@ -306,6 +323,12 @@
       {
         "name": "feedback:record",
         "category": "Observability",
+        "core": false,
+        "internal": false
+      },
+      {
+        "name": "flow",
+        "category": "Models & Integrations",
         "core": false,
         "internal": false
       },
@@ -518,6 +541,12 @@
         "category": "Internal",
         "core": false,
         "internal": true
+      },
+      {
+        "name": "pack",
+        "category": "Work",
+        "core": false,
+        "internal": false
       },
       {
         "name": "plugin",
@@ -802,6 +831,12 @@
         "internal": false
       },
       {
+        "name": "workers",
+        "category": "Core",
+        "core": true,
+        "internal": false
+      },
+      {
         "name": "workflow",
         "category": "Work",
         "core": false,
@@ -816,14 +851,24 @@
     ],
     "workflows": [
       {
+        "type": "architecture-review",
+        "description": "Review an architecture or design for trade-offs, failure modes, and security exposure.",
+        "tier": "reasoning"
+      },
+      {
+        "type": "data-structure",
+        "description": "Parse, validate, and profile a raw dataset into a structured, described shape.",
+        "tier": "standard"
+      },
+      {
         "type": "evidence-ingest",
         "description": "Ingest and structure raw evidence (notes, documents, signals) into a normalized summary.",
         "tier": "fast"
       },
       {
-        "type": "proposal-review",
-        "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance.",
-        "tier": "standard"
+        "type": "memo-draft",
+        "description": "Draft a decision or status memo from a problem statement and context.",
+        "tier": "fast"
       },
       {
         "type": "prd-draft",
@@ -831,8 +876,13 @@
         "tier": "standard"
       },
       {
-        "type": "architecture-review",
-        "description": "Review an architecture or design for trade-offs, failure modes, and security exposure.",
+        "type": "proposal-review",
+        "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance.",
+        "tier": "standard"
+      },
+      {
+        "type": "research-synthesis",
+        "description": "Synthesize multiple sources into a cited, evidence-graded research summary.",
         "tier": "reasoning"
       },
       {
@@ -841,9 +891,9 @@
         "tier": "reasoning"
       },
       {
-        "type": "research-synthesis",
-        "description": "Synthesize multiple sources into a cited, evidence-graded research summary.",
-        "tier": "reasoning"
+        "type": "structure-notes",
+        "description": "Structure an unclassified brain-dump or rough notes into a normalized summary with extracted intents.",
+        "tier": "fast"
       },
       {
         "type": "transcript-process",
@@ -851,32 +901,23 @@
         "tier": "fast"
       },
       {
-        "type": "data-structure",
-        "description": "Parse, validate, and profile a raw dataset into a structured, described shape.",
-        "tier": "standard"
-      },
-      {
-        "type": "memo-draft",
-        "description": "Draft a decision or status memo from a problem statement and context.",
-        "tier": "fast"
-      },
-      {
-        "type": "structure-notes",
-        "description": "Structure an unclassified brain-dump or rough notes into a normalized summary with extracted intents.",
+        "type": "triage",
+        "description": "Classify and route unstructured input to the appropriate workflow.",
         "tier": "fast"
       }
     ],
     "workflowTypes": [
-      "evidence-ingest",
-      "proposal-review",
-      "prd-draft",
       "architecture-review",
-      "risk-review",
-      "research-synthesis",
-      "transcript-process",
       "data-structure",
+      "evidence-ingest",
       "memo-draft",
-      "structure-notes"
+      "prd-draft",
+      "proposal-review",
+      "research-synthesis",
+      "risk-review",
+      "structure-notes",
+      "transcript-process",
+      "triage"
     ]
   },
   "capabilities": [
@@ -1073,7 +1114,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "evidence-ingest"
         ]
@@ -1193,7 +1237,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "prd-draft"
         ]
@@ -1234,7 +1281,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "architecture-review"
         ]
@@ -1274,7 +1324,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "proposal-review"
         ]
@@ -1315,7 +1368,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "risk-review"
         ]
@@ -1396,7 +1452,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "transcript-process"
         ]
@@ -1436,7 +1495,10 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "data-structure"
         ]
@@ -1476,12 +1538,57 @@
           "workflow",
           "workflow invoke"
         ],
-        "npmScripts": [],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
         "workflows": [
           "memo-draft"
         ]
       },
       "_semanticDigest": "{\"description\":\"Draft a decision or status memo from a problem statement and context.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-workflow-invoke.functional.test.mjs\"}}"
+    },
+    {
+      "id": "workflow.triage",
+      "kind": "workflow",
+      "name": "Triage Workflow",
+      "description": "Classify and route unstructured input to the appropriate workflow.",
+      "criticality": "P2",
+      "ownerSpecialists": [
+        "orchestrator",
+        "researcher"
+      ],
+      "embeddedWorkflow": "triage",
+      "surfaces": {
+        "mcp": {
+          "supported": true,
+          "primary": true,
+          "tool": "workflow_invoke"
+        },
+        "cli": {
+          "supported": true,
+          "command": "construct workflow invoke",
+          "jsonTwin": true
+        }
+      },
+      "verification": {
+        "functional": "tests/functional/embedded-contract-triage.functional.test.mjs"
+      },
+      "humanGate": "proposal-only",
+      "edges": {
+        "cliCommands": [
+          "workflow",
+          "workflow invoke"
+        ],
+        "npmScripts": [
+          "release:check",
+          "workflow-defs:check"
+        ],
+        "workflows": [
+          "triage"
+        ]
+      },
+      "_semanticDigest": "{\"description\":\"Classify and route unstructured input to the appropriate workflow.\",\"criticality\":\"P2\",\"verification\":{\"functional\":\"tests/functional/embedded-contract-triage.functional.test.mjs\"}}"
     },
     {
       "id": "document-type.research-brief",

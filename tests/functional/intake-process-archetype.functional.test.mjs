@@ -23,24 +23,45 @@ import {
   readFileSync,
   readdirSync,
   existsSync,
-  rmSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
 
+// Both the spawned CLI and the in-process InboxWatcher below resolve through
+// the machine-scoped state root (ADR-0066), which reads CX_HOME_OVERRIDE
+// from process.env — the child's own env for a spawn, or this test process's
+// env for an in-process call. cwdHomes maps each project's cwd to its own
+// sandboxed HOME so a spawned `construct` invocation and the in-process
+// watcher exercising the same project agree on where state lives, without
+// ever touching the real developer machine's ~/.construct/projects/.
+
+const cwdHomes = new Map();
+
 function makeProject() {
   const dir = mkdtempSync(join(tmpdir(), 'intake-process-archetype-'));
+  const home = mkdtempSync(join(tmpdir(), 'intake-process-archetype-home-'));
+  cwdHomes.set(dir, home);
   spawnSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: dir });
   spawnSync('git', ['config', 'user.email', 'process-test@example.com'], { cwd: dir });
   spawnSync('git', ['config', 'user.name', 'Process Test'], { cwd: dir });
-  return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) };
+  return {
+    dir,
+    home,
+    cleanup: () => {
+      rmTmpDir(dir);
+      rmTmpDir(home);
+      cwdHomes.delete(dir);
+    },
+  };
 }
 
 function runConstruct(cwd, args, extraEnv = {}) {
+  const home = cwdHomes.get(cwd);
   return spawnSync(process.execPath, [BIN, ...args], {
     cwd,
     encoding: 'utf8',
@@ -50,6 +71,7 @@ function runConstruct(cwd, args, extraEnv = {}) {
       CONSTRUCT_SKIP_BOOTSTRAP_PROBE: '1',
       BOOTSTRAP_CHECKED: '1',
       CONSTRUCT_AGENT_ID: 'test-agent',
+      ...(home ? { HOME: home, CX_HOME_OVERRIDE: home } : {}),
       ...extraEnv,
     },
   });
@@ -192,6 +214,8 @@ test('intake process --dry-run is unaffected by the poll lock', () => {
 
 async function withArchetypeProject(fn) {
   const p = makeProject();
+  const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+  process.env.CX_HOME_OVERRIDE = p.home;
   try {
     mkdirSync(join(p.dir, 'inbox'), { recursive: true });
     writeFileSync(join(p.dir, 'inbox', '.gitignore'), '*\n!.gitignore\n', 'utf8');
@@ -206,6 +230,8 @@ async function withArchetypeProject(fn) {
   } finally {
     p.cleanup();
     delete process.env.CONSTRUCT_AGENT_ID;
+    if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+    else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
   }
 }
 

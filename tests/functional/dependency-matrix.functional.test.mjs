@@ -19,6 +19,7 @@ import { spawnSync } from 'node:child_process';
 
 import { synthesizeVerdict } from '../../lib/oracle/synthesize.mjs';
 import { routeGap } from '../../lib/oracle/routing.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = path.join(REPO_ROOT, 'bin', 'construct');
@@ -26,7 +27,7 @@ const BIN = path.join(REPO_ROOT, 'bin', 'construct');
 const tmpDirs = [];
 after(() => {
   for (const dir of tmpDirs) {
-    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+    try { rmTmpDir(dir); } catch {}
   }
 });
 
@@ -36,8 +37,20 @@ function tmpProject() {
   return dir;
 }
 
+// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// process.env directly, so the spawned `construct` needs its own sandboxed
+// HOME to avoid leaking test projects into the real developer machine's
+// ~/.construct/projects/.
+
+const SANDBOX_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'dep-matrix-fn-home-'));
+after(() => { try { rmTmpDir(SANDBOX_HOME); } catch {} });
+
 function runConstruct(args, cwd) {
-  return spawnSync(process.execPath, [BIN, ...args], { cwd, encoding: 'utf8' });
+  return spawnSync(process.execPath, [BIN, ...args], {
+    cwd,
+    encoding: 'utf8',
+    env: { ...process.env, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME },
+  });
 }
 
 test('construct matrix build writes a durable graph with capability nodes', () => {
@@ -91,7 +104,7 @@ test('Oracle synthesis emits and routes the dependency-matrix gaps', () => {
 
   assert.equal(routeGap({ id: 'matrix-coverage-gap' }).primary, 'cx-architect');
   assert.equal(routeGap({ id: 'impact-untested' }).primary, 'cx-qa');
-  assert.equal(routeGap({ id: 'dependency-graph-stale' }).primary, 'cx-platform-engineer');
+  assert.equal(routeGap({ id: 'dependency-graph-stale' }).primary, 'cx-engineer');
 
   for (const g of gaps) assert.ok(g.remediationRoute, `gap ${g.id} carries a remediation route`);
 });

@@ -53,7 +53,13 @@
     "sessionReflect": "on",
     "sessionOptimize": "on"
   },
-  "defaultSkills": [],
+  "defaultSkills": [
+    "docs/prd-workflow",
+    "docs/adr-workflow",
+    "docs/research-workflow",
+    "quality-gates/verify-change",
+    "operating/incident-response"
+  ],
   "toneDefaults": {
     "prd": "decision-forcing-direct",
     "prfaq": "friendly",

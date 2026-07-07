@@ -28,26 +28,18 @@
  * collapsed below the threshold).
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { RAW_HARDCODED_TOOL_DEFS } from '../../../lib/mcp/tool-definitions.mjs';
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const SERVER_PATH = join(HERE, '..', '..', '..', 'lib', 'mcp', 'server.mjs');
+// server.mjs composes ALL_TOOL_DEFS as [...HARDCODED_TOOL_DEFS, ...SCANNED_TOOL_DEFS]
+// (LMCP-B5 self-registered tools). HARDCODED_TOOL_DEFS = RAW_HARDCODED_TOOL_DEFS.map(
+// withSafetyEnvelope) and the underlying pure-data literal lives in
+// lib/mcp/tool-definitions.mjs (further split across tool-definitions-{project,
+// skills,memory,workflow}.mjs — construct-rf26.10), so it is imported directly
+// rather than eval'd out of server.mjs source text.
 
 function readCatalog() {
-  const src = readFileSync(SERVER_PATH, 'utf8');
-  const arrStart = src.indexOf('ALL_TOOL_DEFS = [');
-  let i = src.indexOf('[', arrStart);
-  let depth = 0;
-  let end = -1;
-  for (let j = i; j < src.length; j++) {
-    if (src[j] === '[') depth++;
-    else if (src[j] === ']') { depth--; if (depth === 0) { end = j; break; } }
-  }
-  // The tools array is pure data (no function calls), safe to evaluate.
-  return eval(`(${src.slice(i, end + 1)})`); // eslint-disable-line no-eval
+  return RAW_HARDCODED_TOOL_DEFS;
 }
 
 // The retrieval intent the agent must disambiguate: each of these takes a query

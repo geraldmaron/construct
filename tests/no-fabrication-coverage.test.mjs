@@ -52,7 +52,8 @@ describe('no-fabrication coverage', () => {
 
   it('every cx-* specialist prompt declares an Anti-fabrication contract', () => {
     const prompts = listSpecialistPrompts();
-    assert.ok(prompts.length >= 28, `expected at least 28 specialist prompts, found ${prompts.length}`);
+    // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+    assert.ok(prompts.length >= 12, `expected at least 12 specialist prompts, found ${prompts.length}`);
 
     const missing = [];
     for (const file of prompts) {

@@ -1,0 +1,2481 @@
+{
+  "capturedAt": "2026-07-05T00:43:07.112Z",
+  "tool": "capability_describe",
+  "args": {},
+  "result": {
+    "contractVersion": "1.1.0",
+    "minClientContractVersion": "1.0.0",
+    "constructVersion": "1.4.2",
+    "deploymentMode": "solo",
+    "surface": "mcp",
+    "generatedAt": "2026-07-05T00:43:07.111Z",
+    "warnings": [],
+    "data": {
+      "product": "@geraldmaron/construct",
+      "constructVersion": "1.4.2",
+      "contractVersion": "1.1.0",
+      "minClientContractVersion": "1.0.0",
+      "approvalModes": [
+        "proposal-only",
+        "requires-human-approval",
+        "allow-durable-write"
+      ],
+      "interfaces": [
+        {
+          "surface": "cli",
+          "contractVersion": "1.1.0",
+          "entrypoints": [
+            "construct capability describe --json",
+            "construct models resolve --json",
+            "construct execution resolve --json",
+            "construct intake classify --json",
+            "construct graph recommend --json",
+            "construct workflow invoke --json"
+          ]
+        },
+        {
+          "surface": "mcp",
+          "contractVersion": "1.1.0",
+          "tools": [
+            "capability_describe",
+            "model_resolve",
+            "construct_execution_resolve",
+            "triage_recommend",
+            "workflow_invoke"
+          ]
+        },
+        {
+          "surface": "sdk",
+          "contractVersion": "1.1.0",
+          "module": "construct/embedded-contract",
+          "exports": [
+            "describeCapabilities",
+            "resolveEmbeddedModel",
+            "resolveExecution",
+            "recommendPlan",
+            "invokeWorkflow"
+          ]
+        }
+      ],
+      "roles": [
+        {
+          "id": "accessibility",
+          "name": "cx-accessibility",
+          "description": "Tests with a screen reader and keyboard — accessibility is measured by using the product, not reading the spec.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "frontend-design/accessibility",
+            "frontend-design/screen-reader-testing"
+          ]
+        },
+        {
+          "id": "ai-engineer",
+          "name": "cx-ai-engineer",
+          "description": "Designs for failure before designing for success — 'it works in the demo' is the most dangerous phrase in AI development.",
+          "modelTier": "reasoning",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "ai/agent-dev",
+            "ai/rag-system",
+            "ai/llm-security",
+            "ai/prompt-and-eval",
+            "ai/prompt-optimizer",
+            "ai/ml-ops"
+          ]
+        },
+        {
+          "id": "architect",
+          "name": "cx-architect",
+          "description": "Makes trade-offs explicit before implementation locks them in — permanently suspicious of clever solutions and unwritten interface contracts.",
+          "modelTier": "reasoning",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "architecture/api-design",
+            "architecture/caching",
+            "architecture/cloud-native",
+            "architecture/message-queue",
+            "architecture/security-arch"
+          ]
+        },
+        {
+          "id": "business-strategist",
+          "name": "cx-business-strategist",
+          "description": "Asks whether we're building the right thing for the right market at the right time — before momentum makes the question uncomfortable.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "strategy/competitive-landscape",
+            "strategy/market-research-methods",
+            "strategy/pricing-positioning",
+            "strategy/narrative-arc"
+          ]
+        },
+        {
+          "id": "data-analyst",
+          "name": "cx-data-analyst",
+          "description": "Measures carefully because measurement shapes behavior — suspicious of metrics that can be hit without solving the problem.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "devops/observability",
+            "devops/database",
+            "operating/raw-data-structuring"
+          ]
+        },
+        {
+          "id": "data-engineer",
+          "name": "cx-data-engineer",
+          "description": "Builds pipelines that can be trusted — trust requires idempotency, observability, and a contract.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "devops/data-engineering",
+            "devops/database",
+            "devops/observability",
+            "operating/raw-data-structuring"
+          ]
+        },
+        {
+          "id": "debugger",
+          "name": "cx-debugger",
+          "description": "Traces to root cause before proposing a fix — the real bug is always one layer deeper than where it presents.",
+          "modelTier": "reasoning",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "quality-gates/verify-change",
+            "devops/observability",
+            "devops/performance"
+          ]
+        },
+        {
+          "id": "designer",
+          "name": "cx-designer",
+          "description": "Treats visual decisions as interaction decisions — a design that only exists in the happy state is incomplete.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "frontend-design/ui-aesthetics",
+            "frontend-design/ux-principles",
+            "frontend-design/component-patterns",
+            "frontend-design/state-management",
+            "frontend-design/engineering",
+            "frontend-design/accessibility"
+          ]
+        },
+        {
+          "id": "devil-advocate",
+          "name": "cx-devil-advocate",
+          "description": "Makes the plan survive contact with reality — the person who was right about the thing nobody wanted to hear.",
+          "modelTier": "reasoning",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "quality-gates/review-work",
+            "quality-gates/premortem"
+          ]
+        },
+        {
+          "id": "docs-keeper",
+          "name": "cx-docs-keeper",
+          "description": "Owns the record of why, not just what — undocumented decisions become tribal knowledge and then disappear.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "docs/adr-workflow",
+            "docs/runbook-workflow",
+            "docs/init-docs",
+            "docs/memo-and-decision-capture",
+            "docs/document-ingest-workflow"
+          ]
+        },
+        {
+          "id": "engineer",
+          "name": "cx-engineer",
+          "description": "Reads before writing — understanding the existing pattern matters more than having the better one.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "development/typescript",
+            "development/python",
+            "development/go",
+            "development/rust",
+            "development/java",
+            "development/cpp",
+            "development/shell",
+            "development/swift",
+            "development/kotlin",
+            "development/mobile-crossplatform",
+            "quality-gates/verify-change",
+            "utility/clean-code",
+            "frameworks/react",
+            "frameworks/nextjs",
+            "frameworks/django",
+            "frameworks/spring-boot",
+            "exploration/unknown-codebase-onboarding",
+            "exploration/tracer-bullet-method",
+            "exploration/dependency-graph-reading"
+          ]
+        },
+        {
+          "id": "evaluator",
+          "name": "cx-evaluator",
+          "description": "Defines what 'better' means before the work is done — evaluations designed after implementation are confirmation, not measurement.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "ai/prompt-and-eval",
+            "quality-gates/verify-quality"
+          ]
+        },
+        {
+          "id": "explorer",
+          "name": "cx-explorer",
+          "description": "Reads before concluding — assumptions about code are wrong more often than assumptions about code are right.",
+          "modelTier": "fast",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "docs/codebase-research-workflow",
+            "exploration/repo-map",
+            "exploration/unknown-codebase-onboarding",
+            "exploration/tracer-bullet-method",
+            "exploration/dependency-graph-reading"
+          ]
+        },
+        {
+          "id": "legal-compliance",
+          "name": "cx-legal-compliance",
+          "description": "Catches compliance risk before the architecture locks — legal remediation after shipping is always more expensive.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "compliance/license-audit",
+            "compliance/data-privacy",
+            "compliance/ai-disclosure",
+            "compliance/regulatory-review"
+          ]
+        },
+        {
+          "id": "operations",
+          "name": "cx-operations",
+          "description": "The logistics mind who maps dependencies, sequences, and ownership — because hidden dependencies surface as blocked work.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "roles/operations",
+            "docs/init-project",
+            "operating/incident-response",
+            "operating/oncall-rotation",
+            "operating/change-management"
+          ]
+        },
+        {
+          "id": "oracle",
+          "name": "cx-oracle",
+          "description": "Meta-controller — synthesizes fleet health gaps from the Oracle read model and routes remediation to owning specialists.",
+          "modelTier": "reasoning",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "ai/orchestration-workflow",
+            "exploration/dependency-graph-reading",
+            "roles/trace-reviewer"
+          ]
+        },
+        {
+          "id": "orchestrator",
+          "name": "cx-orchestrator",
+          "description": "Sees the whole board — orchestrates by assembling the right perspectives in the right sequence, routing each request to the minds that will see what others miss.",
+          "modelTier": "standard",
+          "internal": false,
+          "canEdit": false,
+          "skills": [
+            "ai/orchestration-workflow",
+            "operating/orchestration-reference",
+            "operating/change-management",
+            "operating/unstructured-triage"
+          ]
+        },
+        {
+          "id": "platform-engineer",
+          "name": "cx-platform-engineer",
+          "description": "Reduces the tax on the people doing the work — friction compounds, and platform debt is the kind nobody notices until it's critical.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "devops/ci-cd",
+            "devops/monorepo",
+            "devops/containerization",
+            "devops/dependency-management",
+            "devops/devsecops",
+            "devops/cost-optimization"
+          ]
+        },
+        {
+          "id": "product-manager",
+          "name": "cx-product-manager",
+          "description": "Translates user reality into technical deliverables — skeptical of any requirement that can't be traced to observed user behavior.",
+          "modelTier": "reasoning",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "docs/product-intelligence-workflow",
+            "docs/evidence-ingest-workflow",
+            "docs/product-signal-workflow",
+            "docs/customer-profile-workflow",
+            "docs/prd-workflow",
+            "docs/prfaq-workflow",
+            "docs/backlog-proposal-workflow",
+            "docs/product-intelligence-review",
+            "docs/strategy-workflow"
+          ]
+        },
+        {
+          "id": "qa",
+          "name": "cx-qa",
+          "description": "Asks whether the tests test what matters — coverage numbers are hypotheses about quality, not proof of it.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "devops/testing",
+            "quality-gates/verify-change",
+            "quality-gates/verify-module"
+          ]
+        },
+        {
+          "id": "rd-lead",
+          "name": "cx-rd-lead",
+          "description": "Slows the team down at the right moment — before architecture locks in assumptions that were never validated.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "ai/agent-dev",
+            "ai/prompt-and-eval",
+            "docs/research-workflow"
+          ]
+        },
+        {
+          "id": "release-manager",
+          "name": "cx-release-manager",
+          "description": "Guards the gap between 'verified' and 'safe to ship' — rollback procedures that were never tested don't exist.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "devops/git-workflow",
+            "quality-gates/verify-change",
+            "docs/memo-and-decision-capture"
+          ]
+        },
+        {
+          "id": "researcher",
+          "name": "cx-researcher",
+          "description": "Never trusts recall alone — sources every claim with a primary reference and a date.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "docs/research-workflow",
+            "devops/dependency-management",
+            "docs/transcript-synthesis"
+          ]
+        },
+        {
+          "id": "reviewer",
+          "name": "cx-reviewer",
+          "description": "Finds bugs by looking at the conditions the author didn't test for — happy path review is not review.",
+          "modelTier": "reasoning",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "quality-gates/verify-quality",
+            "quality-gates/review-work",
+            "quality-gates/verify-module"
+          ]
+        },
+        {
+          "id": "security",
+          "name": "cx-security",
+          "description": "Thinks like an attacker — sees the attack surface the developer didn't know existed.",
+          "modelTier": "reasoning",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "security/red-team",
+            "security/blue-team",
+            "security/pentest",
+            "security/code-audit",
+            "security/vuln-research",
+            "security/threat-intel",
+            "quality-gates/verify-security",
+            "architecture/security-arch"
+          ]
+        },
+        {
+          "id": "sre",
+          "name": "cx-sre",
+          "description": "Plans for failure before it happens — reliability problems are designed in, not out.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "devops/observability",
+            "devops/ci-cd",
+            "devops/performance",
+            "devops/incident-response"
+          ]
+        },
+        {
+          "id": "test-automation",
+          "name": "cx-test-automation",
+          "description": "Knows that bad automation is worse than no automation — flaky tests teach teams to ignore red builds.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "devops/testing",
+            "quality-gates/verify-change",
+            "quality-gates/verify-module"
+          ]
+        },
+        {
+          "id": "trace-reviewer",
+          "name": "cx-trace-reviewer",
+          "description": "Tracks fleet-level performance patterns — stable median scores can hide high-variance agents that are failing silently.",
+          "modelTier": "reasoning",
+          "internal": true,
+          "canEdit": true,
+          "skills": [
+            "ai/prompt-optimizer",
+            "ai/trace-triage"
+          ]
+        },
+        {
+          "id": "ux-researcher",
+          "name": "cx-ux-researcher",
+          "description": "Brings user reality into the room — guards against assumptions built on internal intuition rather than observed behavior.",
+          "modelTier": "standard",
+          "internal": true,
+          "canEdit": false,
+          "skills": [
+            "docs/user-research-workflow",
+            "docs/evidence-ingest-workflow",
+            "strategy/jobs-to-be-done"
+          ]
+        }
+      ],
+      "skills": [
+        {
+          "id": "ai/agent-dev",
+          "description": "Use this skill when building AI agents, tool-use systems, or multi-agent workflows.",
+          "inputs": [
+            "agent-spec",
+            "task-context"
+          ],
+          "artifactType": "agent-implementation"
+        },
+        {
+          "id": "ai/llm-security",
+          "description": "Use this skill when securing LLM-powered applications against prompt injection, data leakage, and misuse.",
+          "inputs": [
+            "prompt",
+            "model-output",
+            "agent-spec"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "ai/ml-ops",
+          "description": "Patterns, anti-patterns, and reference guidance for ML Operations (MLOps). Use when the task involves ml operations (mlops).",
+          "inputs": [
+            "eval-dataset",
+            "model-output"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "ai/orchestration-workflow",
+          "description": "Use this skill when the request involves agent orchestration, phase transitions, task keys, handoff quality, workflow state, or project alignment.",
+          "inputs": [
+            "agent-spec",
+            "workflow-state"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "ai/prompt-and-eval",
+          "description": "Use this skill when designing prompts, evaluating model performance, or optimizing LLM behavior.",
+          "inputs": [
+            "prompt",
+            "eval-dataset",
+            "model-output"
+          ],
+          "artifactType": "eval-report"
+        },
+        {
+          "id": "ai/prompt-optimizer",
+          "description": "Closed-loop prompt auto-optimization guide. Use when the task matches the trigger conditions described in the body.",
+          "inputs": [
+            "prompt",
+            "model-output",
+            "eval-dataset"
+          ],
+          "artifactType": "prompt"
+        },
+        {
+          "id": "ai/rag-system",
+          "description": "Use this skill when building retrieval-augmented generation pipelines, vector search, or knowledge-grounded AI systems.",
+          "inputs": [
+            "eval-dataset",
+            "prompt"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "ai/trace-triage",
+          "description": "Use when: agent telemetry traces need triage to find where a run went wrong — the failing step, the cause category, and whether it is a regression or a one-off.",
+          "inputs": [
+            "telemetry-traces"
+          ],
+          "artifactType": "trace-findings"
+        },
+        {
+          "id": "architecture/api-design",
+          "description": "Use this skill when designing REST, GraphQL, or gRPC APIs.",
+          "inputs": [
+            "system-design",
+            "requirements"
+          ],
+          "artifactType": "api-design"
+        },
+        {
+          "id": "architecture/caching",
+          "description": "Use this skill when designing caching strategies for applications, APIs, or infrastructure.",
+          "inputs": [
+            "system-design",
+            "requirements"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "architecture/cloud-native",
+          "description": "Use this skill when designing containerized, orchestrated, or microservice-based systems.",
+          "inputs": [
+            "system-design",
+            "requirements"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "architecture/message-queue",
+          "description": "Use this skill when designing asynchronous communication, event-driven systems, or message-based integrations.",
+          "inputs": [
+            "system-design",
+            "requirements"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "architecture/security-arch",
+          "description": "Use this skill when designing authentication, authorization, network security, or zero-trust architectures.",
+          "inputs": [
+            "system-design",
+            "requirements"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "brand/output-vibe",
+          "description": "Use when drafting or exporting customer-facing artifacts (PRD, deck, brief, runbook). Sets typography, prose rhythm, sketch diagrams, and export consistency.",
+          "inputs": [
+            "artifact-draft",
+            "export-target"
+          ],
+          "artifactType": "style-guide"
+        },
+        {
+          "id": "compliance/ai-disclosure",
+          "description": "Use this skill when reviewing AI features for disclosure requirements, transparency obligations, or emerging AI regulation compliance.",
+          "inputs": [
+            "artifact",
+            "data-flow"
+          ],
+          "artifactType": "privacy-assessment"
+        },
+        {
+          "id": "compliance/data-privacy",
+          "description": "Use this skill when reviewing data collection, storage, processing, or retention for privacy regulation compliance.",
+          "inputs": [
+            "data-flow",
+            "artifact"
+          ],
+          "artifactType": "privacy-assessment"
+        },
+        {
+          "id": "compliance/license-audit",
+          "description": "Use this skill when auditing dependency licenses, evaluating OSS compliance risk, or preparing license inventories for legal review.",
+          "inputs": [
+            "dependency-manifest"
+          ],
+          "artifactType": "license-report"
+        },
+        {
+          "id": "compliance/regulatory-review",
+          "description": "Use this skill when conducting a compliance review before shipping features that handle user data, financial transactions, AI decisions, or regulated content.",
+          "inputs": [
+            "artifact",
+            "data-flow",
+            "dependency-manifest"
+          ],
+          "artifactType": "compliance-review"
+        },
+        {
+          "id": "development/cpp",
+          "description": "Use this skill when writing, reviewing, or debugging C or C++ code.",
+          "inputs": [
+            "code",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "development/go",
+          "description": "Use this skill when writing, reviewing, or debugging Go code.",
+          "inputs": [
+            "code",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "development/java",
+          "description": "Use this skill when writing, reviewing, or debugging Java or Kotlin code on the JVM.",
+          "inputs": [
+            "code",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "development/kotlin",
+          "description": "Patterns, anti-patterns, and reference guidance for Kotlin / Android Development. Use when the task involves kotlin / android development.",
+          "inputs": [
+            "code",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "development/mobile-crossplatform",
+          "description": "Before choosing a framework, answer:. Use when the task matches the trigger conditions described in the body.",
+          "inputs": [
+            "requirements",
+            "code"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "development/python",
+          "description": "Use this skill when writing, reviewing, or debugging Python code.",
+          "inputs": [
+            "code",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "development/rust",
+          "description": "Use this skill when writing, reviewing, or debugging Rust code.",
+          "inputs": [
+            "code",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "development/shell",
+          "description": "Use this skill when writing, reviewing, or debugging Bash, Zsh, or POSIX shell scripts.",
+          "inputs": [
+            "code",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "development/swift",
+          "description": "Swift 6 enforces data-race safety at compile time. Annotate isolation boundary explicitly:. Use when the task matches the trigger conditions described in the body.",
+          "inputs": [
+            "code",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "development/typescript",
+          "description": "Use this skill when writing, reviewing, or debugging TypeScript or JavaScript code.",
+          "inputs": [
+            "code",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "devops/ci-cd",
+          "description": "Use this skill when designing, debugging, or optimizing CI/CD pipelines.",
+          "inputs": [
+            "pipeline-config",
+            "repo"
+          ],
+          "artifactType": "ci-pipeline"
+        },
+        {
+          "id": "devops/containerization",
+          "description": "Use this skill when writing Dockerfiles, optimizing image size, or securing container builds.",
+          "inputs": [
+            "service",
+            "repo"
+          ],
+          "artifactType": "dockerfile"
+        },
+        {
+          "id": "devops/cost-optimization",
+          "description": "Use this skill when reducing cloud spend, right-sizing resources, or implementing FinOps practices.",
+          "inputs": [
+            "service",
+            "cost-data"
+          ],
+          "artifactType": "cost-optimization-plan"
+        },
+        {
+          "id": "devops/data-engineering",
+          "description": "1. **Idempotency**: pipelines can run multiple times without duplicating data 2. **Observability**: every pipeline run logs row counts, latency, and anomalies 3. **Data contracts**: producers and consumers agree on schema and SLAs 4. **Lineage**: know where every column came from and what it feeds. Use when the task matches the trigger conditions described in the body.",
+          "inputs": [
+            "pipeline-config",
+            "data-contract"
+          ],
+          "artifactType": "data-pipeline"
+        },
+        {
+          "id": "devops/database",
+          "description": "Use this skill when designing schemas, writing migrations, optimizing queries, or selecting databases.",
+          "inputs": [
+            "schema",
+            "query"
+          ],
+          "artifactType": "schema-design"
+        },
+        {
+          "id": "devops/dependency-management",
+          "description": "Use this skill when managing package upgrades, resolving CVEs, or establishing lock file and versioning policy.",
+          "inputs": [
+            "dependency-manifest",
+            "repo"
+          ],
+          "artifactType": "dependency-report"
+        },
+        {
+          "id": "devops/devsecops",
+          "description": "Use this skill when integrating security into CI/CD pipelines, managing supply chain risk, or automating security scanning.",
+          "inputs": [
+            "pipeline-config",
+            "service"
+          ],
+          "artifactType": "security-plan"
+        },
+        {
+          "id": "devops/git-workflow",
+          "description": "Use this skill when establishing branching strategies, commit conventions, or code integration practices.",
+          "inputs": [
+            "repo",
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "devops/incident-response",
+          "description": "Define severity in your runbook and assign it early: it determines escalation and comms cadence. Use when the task matches the trigger conditions described in the body.",
+          "inputs": [
+            "incident",
+            "alert"
+          ],
+          "artifactType": "incident-runbook"
+        },
+        {
+          "id": "devops/monorepo",
+          "description": "Use this skill when selecting monorepo tooling, structuring packages, or optimizing affected-only builds.",
+          "inputs": [
+            "repo",
+            "pipeline-config"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "devops/observability",
+          "description": "Use this skill when designing logging, tracing, metrics, or alerting systems.",
+          "inputs": [
+            "service",
+            "metrics"
+          ],
+          "artifactType": "observability-plan"
+        },
+        {
+          "id": "devops/performance",
+          "description": "Use this skill when profiling, load testing, or optimizing application and infrastructure performance.",
+          "inputs": [
+            "service",
+            "metrics"
+          ],
+          "artifactType": "performance-plan"
+        },
+        {
+          "id": "devops/testing",
+          "description": "Use this skill when planning test coverage, selecting test types, or establishing testing practices.",
+          "inputs": [
+            "repo",
+            "task-context"
+          ],
+          "artifactType": "test-plan"
+        },
+        {
+          "id": "docs/adr-workflow",
+          "description": "Use when: an architectural decision is made that affects the system structure, data model, API contracts, or technology choices.",
+          "inputs": [
+            "decision-context"
+          ],
+          "artifactType": "adr"
+        },
+        {
+          "id": "docs/backlog-proposal-workflow",
+          "description": "Use when: product evidence should create or update Jira, Linear, GitHub Issues, or another tracker.",
+          "inputs": [
+            "evidence-brief",
+            "prd",
+            "signal"
+          ],
+          "artifactType": "backlog-proposal"
+        },
+        {
+          "id": "docs/codebase-research-workflow",
+          "description": "Use when: cx-explorer maps the repo — entry points, dependencies, hot paths, or unfamiliar subsystems.",
+          "inputs": [
+            "repository-path"
+          ],
+          "artifactType": "research-brief"
+        },
+        {
+          "id": "docs/customer-profile-workflow",
+          "description": "Use when: customer evidence should update durable product memory.",
+          "inputs": [
+            "signal",
+            "customer-profile"
+          ],
+          "artifactType": "customer-profile"
+        },
+        {
+          "id": "docs/document-ingest-workflow",
+          "description": "Use when: the user points at a PDF, Word doc, spreadsheet, slide deck, export, or mixed document folder and wants a markdown version that Construct can search efficiently later.",
+          "inputs": [
+            "document"
+          ],
+          "artifactType": "ingested-markdown"
+        },
+        {
+          "id": "docs/evidence-ingest-workflow",
+          "description": "Use when: the user pastes customer notes, Slack threads, support tickets, sales notes, research snippets, RFCs, analytics summaries, or competitor signals.",
+          "inputs": [
+            "signal",
+            "document"
+          ],
+          "artifactType": "evidence-brief"
+        },
+        {
+          "id": "docs/init-docs",
+          "description": "`init docs`, `create docs structure`, `set up documentation`, `docs scaffold`, `documentation init`. Use when the task matches the trigger conditions described in the body.",
+          "inputs": [
+            "task-context"
+          ],
+          "artifactType": "docs-scaffold"
+        },
+        {
+          "id": "docs/init-project",
+          "description": "Use when: starting work on a new project or joining an existing one without doc structure.",
+          "inputs": [
+            "repo"
+          ],
+          "artifactType": "docs-scaffold"
+        },
+        {
+          "id": "docs/memo-and-decision-capture",
+          "description": "Use when: a decision, status update, or announcement needs to be captured as a short, durable memo that states the decision, its rationale, and what changes.",
+          "inputs": [
+            "decision-context"
+          ],
+          "artifactType": "memo"
+        },
+        {
+          "id": "docs/prd-workflow",
+          "description": "Use when: the user asks to create a PRD, platform spec, business case, RFC, or requirements document.",
+          "inputs": [
+            "research-question",
+            "evidence-brief"
+          ],
+          "artifactType": "prd"
+        },
+        {
+          "id": "docs/prfaq-workflow",
+          "description": "Use when: the user asks for a PRFAQ, working-backwards doc, launch narrative, or FAQ grounded in product evidence.",
+          "inputs": [
+            "prd",
+            "evidence-brief"
+          ],
+          "artifactType": "prfaq"
+        },
+        {
+          "id": "docs/product-intelligence-review",
+          "description": "Use when: reviewing PRDs, Meta PRDs, PRFAQs, evidence briefs, signal briefs, customer profiles, or backlog proposals.",
+          "inputs": [
+            "prd",
+            "evidence-brief"
+          ],
+          "artifactType": "review"
+        },
+        {
+          "id": "docs/product-intelligence-workflow",
+          "description": "Use when: the request involves customer evidence, PM synthesis, product requirements, PRDs, PRFAQs, customer profiles, product signals, or backlog proposals.",
+          "inputs": [
+            "signal",
+            "evidence-brief"
+          ],
+          "artifactType": "product-intelligence"
+        },
+        {
+          "id": "docs/product-signal-workflow",
+          "description": "Use when: the user asks what customers are asking for, what themes are emerging, whether evidence is strong enough, or what should become a PRD.",
+          "inputs": [
+            "signal",
+            "evidence-brief"
+          ],
+          "artifactType": "signal-brief"
+        },
+        {
+          "id": "docs/research-workflow",
+          "description": "Use when: cx-researcher must investigate external facts — CVEs, APIs, market data, regulations, or vendor behavior.",
+          "inputs": [
+            "research-question"
+          ],
+          "artifactType": "research-brief"
+        },
+        {
+          "id": "docs/runbook-workflow",
+          "description": "Use when: creating operational procedures for services, alerts, or recurring operations.",
+          "inputs": [
+            "service",
+            "incident"
+          ],
+          "artifactType": "runbook"
+        },
+        {
+          "id": "docs/strategy-workflow",
+          "description": "Use when: the user asks about product direction, strategic bets, what to prioritize, whether a signal aligns with strategy, or wants to update the strategy.",
+          "inputs": [
+            "signal",
+            "decision-context"
+          ],
+          "artifactType": "strategy"
+        },
+        {
+          "id": "docs/transcript-synthesis",
+          "description": "Use when: a meeting, call, or interview transcript needs to be turned into a summary, the decisions made, and concrete action items with owners.",
+          "inputs": [
+            "transcript-text"
+          ],
+          "artifactType": "meeting-summary"
+        },
+        {
+          "id": "docs/user-research-workflow",
+          "description": "Use when: cx-ux-researcher synthesizes user evidence — interviews, support tickets, session replay, surveys, or field notes.",
+          "inputs": [
+            "user-research",
+            "interview-data"
+          ],
+          "artifactType": "evidence-brief"
+        },
+        {
+          "id": "exploration/dependency-graph-reading",
+          "description": "Use when assessing the risk surface of a project's dependencies, planning upgrades, or evaluating a new codebase's supply chain posture.",
+          "inputs": [
+            "dependency-manifest",
+            "repo"
+          ],
+          "artifactType": "dependency-graph"
+        },
+        {
+          "id": "exploration/repo-map",
+          "description": "Use this skill when entering an unfamiliar codebase, doing deep investigation work, or producing a `.cx/codebase-map.md` artifact for future sessions.",
+          "inputs": [
+            "repo",
+            "codebase"
+          ],
+          "artifactType": "repo-map"
+        },
+        {
+          "id": "exploration/tracer-bullet-method",
+          "description": "Use when beginning implementation in a new system, new integration, or new architectural layer. A tracer bullet is not a prototype; it is the thinnest possible complete path through the real system.",
+          "inputs": [
+            "codebase",
+            "system-design"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "exploration/unknown-codebase-onboarding",
+          "description": "Use when entering an unfamiliar codebase for the first time, or when the task requires understanding a system you haven't touched before.",
+          "inputs": [
+            "codebase",
+            "repo"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "frameworks/django",
+          "description": "Patterns, anti-patterns, and reference guidance for Django. Use when the task involves django.",
+          "inputs": [
+            "code",
+            "feature-spec",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "frameworks/nextjs",
+          "description": "Patterns, anti-patterns, and reference guidance for Next.js (App Router). Use when the task involves next.js (app router).",
+          "inputs": [
+            "code",
+            "feature-spec",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "frameworks/react",
+          "description": "By default, components are **Server Components**: they run on the server, have no state, and can fetch data directly. Add `'use client'` only when you need interactivity, browser APIs, or hooks. Use when the task matches the trigger conditions described in the body.",
+          "inputs": [
+            "code",
+            "feature-spec",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "frameworks/spring-boot",
+          "description": "Patterns, anti-patterns, and reference guidance for Spring Boot. Use when the task involves spring boot.",
+          "inputs": [
+            "code",
+            "feature-spec",
+            "repo"
+          ],
+          "artifactType": "code"
+        },
+        {
+          "id": "frontend-design/accessibility",
+          "description": "Target **WCAG 2.1 AA** as the minimum for any public-facing product. WCAG 2.2 AA is the current standard (published October 2023) and required by many regulatory frameworks (EU Web Accessibility Directive, ADA, Section 508). Use when the task matches the trigger conditions described in the body.",
+          "inputs": [
+            "ui-or-component"
+          ],
+          "artifactType": "accessibility-findings"
+        },
+        {
+          "id": "frontend-design/component-patterns",
+          "description": "Use this skill when designing component architecture, building design systems, or structuring reusable UI.",
+          "inputs": [
+            "ui-or-component",
+            "design-spec"
+          ],
+          "artifactType": "ui-implementation"
+        },
+        {
+          "id": "frontend-design/engineering",
+          "description": "Use this skill when working on build tooling, bundling, rendering strategies, or frontend infrastructure.",
+          "inputs": [
+            "code",
+            "repo"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "frontend-design/screen-reader-testing",
+          "description": "Use when: a UI needs to be tested with a screen reader and keyboard to verify it is actually operable non-visually, not just compliant on paper.",
+          "inputs": [
+            "ui-or-component"
+          ],
+          "artifactType": "accessibility-findings"
+        },
+        {
+          "id": "frontend-design/state-management",
+          "description": "Use this skill when choosing state management tools, structuring application state, or debugging state issues.",
+          "inputs": [
+            "ui-or-component",
+            "code"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "frontend-design/ui-aesthetics",
+          "description": "Use this skill when making visual design decisions: color, typography, layout, spacing, and visual hierarchy.",
+          "inputs": [
+            "ui-or-component",
+            "design-spec"
+          ],
+          "artifactType": "ui-implementation"
+        },
+        {
+          "id": "frontend-design/ux-principles",
+          "description": "Use this skill when designing user flows, evaluating usability, or planning information architecture.",
+          "inputs": [
+            "ui-or-component",
+            "design-spec"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "operating/change-management",
+          "description": "Use when a change needs to be categorized by reversibility, when designing rollout gates, or when the team is uncertain how much approval process a change warrants.",
+          "inputs": [
+            "change-or-diff"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "operating/incident-response",
+          "description": "Use when an issue is active in production, when building incident process from scratch, or when reviewing postmortems for quality.",
+          "inputs": [
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "operating/oncall-rotation",
+          "description": "Use when setting up on-call, reviewing its health, or handling an escalation during a rotation.",
+          "inputs": [
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "operating/orchestration-reference",
+          "description": "detailed orchestration reference loaded on demand. Use when the task matches the trigger conditions described in the body.",
+          "inputs": [
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "operating/raw-data-structuring",
+          "description": "Use when: a raw dataset (CSV, TSV, JSON export, log dump) needs to be parsed, validated, and profiled into a described, trustworthy shape before analysis.",
+          "inputs": [
+            "raw-dataset"
+          ],
+          "artifactType": "data-profile"
+        },
+        {
+          "id": "operating/unstructured-triage",
+          "description": "Use when: a brain-dump, rough notes, or free-form input has no clear type and needs to be structured into intents, candidate work items, and open questions before routing.",
+          "inputs": [
+            "unstructured-text"
+          ],
+          "artifactType": "triage-summary"
+        },
+        {
+          "id": "quality-gates/premortem",
+          "description": "Use when: a plan or design needs a premortem — imagining it has already failed and working backward to the failure modes — before committing to it.",
+          "inputs": [
+            "plan-or-design"
+          ],
+          "artifactType": "risk-list"
+        },
+        {
+          "id": "quality-gates/review-work",
+          "description": "Use this methodology when a change needs rigorous pre-merge validation. Five independent review roles run concurrently. All must pass.",
+          "inputs": [
+            "change-or-diff",
+            "acceptance-criteria"
+          ],
+          "artifactType": "review-report"
+        },
+        {
+          "id": "quality-gates/verify-change",
+          "description": "Use this skill to analyze the impact of code changes and verify documentation and tests are in sync.",
+          "inputs": [
+            "change-or-diff"
+          ],
+          "artifactType": "review-report"
+        },
+        {
+          "id": "quality-gates/verify-module",
+          "description": "Use this skill to check that a module or package is structurally complete and ready for use.",
+          "inputs": [
+            "change-or-diff"
+          ],
+          "artifactType": "review-report"
+        },
+        {
+          "id": "quality-gates/verify-quality",
+          "description": "Use this skill to check code quality, complexity, and maintainability after changes.",
+          "inputs": [
+            "change-or-diff"
+          ],
+          "artifactType": "review-report"
+        },
+        {
+          "id": "quality-gates/verify-security",
+          "description": "Use this skill to scan code for security vulnerabilities before commits or releases.",
+          "inputs": [
+            "change-or-diff"
+          ],
+          "artifactType": "vulnerability-report"
+        },
+        {
+          "id": "roles/ai-engineer",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — AI role. Use when reviewing or generating work by cx-ai-engineer, or when an agent is acting in the Engineer — AI role.",
+          "inputs": [
+            "code-diff",
+            "prompt"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/architect",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect role. Use when reviewing or generating work by cx-architect, cx-rd-lead, or when an agent is acting in the Architect role.",
+          "inputs": [
+            "architecture-design",
+            "requirements"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/architect.ai-systems",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — AI Systems role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — AI Systems role.",
+          "inputs": [
+            "architecture-design",
+            "adr"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/architect.data",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Data role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Data role.",
+          "inputs": [
+            "data-model",
+            "architecture-design"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/architect.enterprise",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Enterprise role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Enterprise role.",
+          "inputs": [
+            "architecture-design",
+            "compliance-requirements"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/architect.integration",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Integration role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Integration role.",
+          "inputs": [
+            "integration-design",
+            "sequence-diagram"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/architect.platform",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Architect — Platform role. Use when reviewing or generating work by cx-architect, or when an agent is acting in the Architect — Platform role.",
+          "inputs": [
+            "platform-design",
+            "adr"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/business-strategist",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Business Strategy role. Use when reviewing or generating work by cx-business-strategist, or when an agent is acting in the Product Manager — Business Strategy role.",
+          "inputs": [
+            "strategy-doc",
+            "competitive-analysis"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/data-analyst",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst role.",
+          "inputs": [
+            "dataset",
+            "metrics-analysis"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/data-analyst.experiment",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Experiment role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst — Experiment role.",
+          "inputs": [
+            "experiment-plan",
+            "metrics"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/data-analyst.product",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product role. Use when reviewing or generating work by cx-data-analyst, or when an agent is acting in the Data Analyst — Product role.",
+          "inputs": [
+            "product-metrics",
+            "funnel-data"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/data-analyst.product-intelligence",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Product Intelligence role. Use when reviewing or generating work by cx-data-analyst, cx-product-manager, or when an agent is acting in the Data Analyst — Product Intelligence role.",
+          "inputs": [
+            "customer-signals",
+            "telemetry"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/data-analyst.telemetry",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Analyst — Telemetry role. Use when reviewing or generating work by cx-data-analyst, cx-sre, or when an agent is acting in the Data Analyst — Telemetry role.",
+          "inputs": [
+            "telemetry",
+            "metrics"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/data-engineer",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Data role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Engineer — Data role.",
+          "inputs": [
+            "code-diff",
+            "data-pipeline"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/data-engineer.pipeline",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Pipeline role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Pipeline role.",
+          "inputs": [
+            "pipeline-design",
+            "data-contract"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/data-engineer.vector-retrieval",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Vector Retrieval role. Use when reviewing or generating work by cx-data-engineer, cx-ai-engineer, or when an agent is acting in the Data Engineer — Vector Retrieval role.",
+          "inputs": [
+            "retrieval-design",
+            "embeddings"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/data-engineer.warehouse",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Data Engineer — Warehouse role. Use when reviewing or generating work by cx-data-engineer, or when an agent is acting in the Data Engineer — Warehouse role.",
+          "inputs": [
+            "warehouse-model",
+            "metrics"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/debugger",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Debugger role. Use when reviewing or generating work by cx-debugger, or when an agent is acting in the Debugger role.",
+          "inputs": [
+            "bug-report",
+            "failure-signal"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/designer",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Designer role. Use when reviewing or generating work by cx-designer, cx-accessibility, or when an agent is acting in the Designer role.",
+          "inputs": [
+            "ui-design"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/designer.accessibility",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Designer — Accessibility role. Use when reviewing or generating work by cx-accessibility, or when an agent is acting in the Designer — Accessibility role.",
+          "inputs": [
+            "ui-design",
+            "component"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/devil-advocate",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Devil Advocate role. Use when reviewing or generating work by cx-devil-advocate, or when an agent is acting in the Reviewer — Devil Advocate role.",
+          "inputs": [
+            "plan",
+            "proposal"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/docs-keeper",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Docs role. Use when reviewing or generating work by cx-docs-keeper, or when an agent is acting in the Operator — Docs role.",
+          "inputs": [
+            "docs",
+            "runbook"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/engineer",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer role. Use when reviewing or generating work by cx-engineer, or when an agent is acting in the Engineer role.",
+          "inputs": [
+            "code-diff",
+            "task-context"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/evaluator",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Evaluator role. Use when reviewing or generating work by cx-evaluator, or when an agent is acting in the Reviewer — Evaluator role.",
+          "inputs": [
+            "model-output",
+            "eval-set"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/explorer",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — Explorer role. Use when reviewing or generating work by cx-explorer, or when an agent is acting in the Researcher — Explorer role.",
+          "inputs": [
+            "repo",
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/operations",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator role. Use when reviewing or generating work by cx-sre, cx-operations, cx-release-manager, cx-docs-keeper, or when an agent is acting in the Operator role.",
+          "inputs": [
+            "runbook",
+            "deployment-plan"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/orchestrator",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Orchestrator role. Use when reviewing or generating work by cx-orchestrator, or when an agent is acting in the Orchestrator role.",
+          "inputs": [
+            "task-context",
+            "request"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/platform-engineer",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Engineer — Platform role. Use when reviewing or generating work by cx-platform-engineer, or when an agent is acting in the Engineer — Platform role.",
+          "inputs": [
+            "code-diff",
+            "internal-tooling"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/product-manager",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager role. Use when reviewing or generating work by cx-product-manager, cx-business-strategist, or when an agent is acting in the Product Manager role.",
+          "inputs": [
+            "prd",
+            "user-evidence"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/product-manager.ai-product",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — AI Product role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — AI Product role.",
+          "inputs": [
+            "prd",
+            "eval-criteria"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/product-manager.enterprise",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Enterprise role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Enterprise role.",
+          "inputs": [
+            "prd",
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/product-manager.growth",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Growth role. Use when reviewing or generating work by cx-product-manager, cx-business-strategist, or when an agent is acting in the Product Manager — Growth role.",
+          "inputs": [
+            "prd",
+            "growth-metrics"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/product-manager.platform",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Platform role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Platform role.",
+          "inputs": [
+            "prd",
+            "api-spec"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/product-manager.product",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Product Manager — Product role. Use when reviewing or generating work by cx-product-manager, or when an agent is acting in the Product Manager — Product role.",
+          "inputs": [
+            "prd",
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/qa",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA role.",
+          "inputs": [
+            "test-suite",
+            "code-diff"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/qa.ai-eval",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — AI Eval role. Use when reviewing or generating work by cx-qa, cx-test-automation, cx-evaluator, or when an agent is acting in the QA — AI Eval role.",
+          "inputs": [
+            "eval-set",
+            "model-output"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/qa.api-contract",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — API Contract role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — API Contract role.",
+          "inputs": [
+            "api-spec",
+            "test-suite"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/qa.data-pipeline",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Data Pipeline role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — Data Pipeline role.",
+          "inputs": [
+            "pipeline",
+            "test-suite"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/qa.web-ui",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Web UI role. Use when reviewing or generating work by cx-qa, cx-test-automation, or when an agent is acting in the QA — Web UI role.",
+          "inputs": [
+            "test-suite",
+            "ui"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/release-manager",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — Release role. Use when reviewing or generating work by cx-release-manager, or when an agent is acting in the Operator — Release role.",
+          "inputs": [
+            "release-plan",
+            "changelog"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/researcher",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher role. Use when reviewing or generating work by cx-researcher, cx-ux-researcher, cx-explorer, or when an agent is acting in the Researcher role.",
+          "inputs": [
+            "research-question",
+            "sources"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/reviewer",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer role. Use when reviewing or generating work by cx-reviewer, cx-devil-advocate, cx-evaluator, cx-trace-reviewer, or when an agent is acting in the Reviewer role.",
+          "inputs": [
+            "code-diff",
+            "pull-request"
+          ],
+          "artifactType": "review-report"
+        },
+        {
+          "id": "roles/security",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security role. Use when reviewing or generating work by cx-security, cx-legal-compliance, or when an agent is acting in the Security role.",
+          "inputs": [
+            "code-diff",
+            "threat-model"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/security.ai",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — AI role. Use when reviewing or generating work by cx-security, cx-ai-engineer, or when an agent is acting in the Security — AI role.",
+          "inputs": [
+            "ai-system",
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/security.appsec",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Appsec role. Use when reviewing or generating work by cx-security, or when an agent is acting in the Security — Appsec role.",
+          "inputs": [
+            "code-diff",
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/security.cloud",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Cloud role. Use when reviewing or generating work by cx-security, or when an agent is acting in the Security — Cloud role.",
+          "inputs": [
+            "cloud-config",
+            "iam-policy"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/security.legal-compliance",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Legal Compliance role. Use when reviewing or generating work by cx-legal-compliance, or when an agent is acting in the Security — Legal Compliance role.",
+          "inputs": [
+            "policy",
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/security.privacy",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Privacy role. Use when reviewing or generating work by cx-security, cx-legal-compliance, or when an agent is acting in the Security — Privacy role.",
+          "inputs": [
+            "data-flow",
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/security.supply-chain",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Security — Supply Chain role. Use when reviewing or generating work by cx-security, cx-platform-engineer, or when an agent is acting in the Security — Supply Chain role.",
+          "inputs": [
+            "dependencies",
+            "ci-config"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/sre",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Operator — SRE role. Use when reviewing or generating work by cx-sre, or when an agent is acting in the Operator — SRE role.",
+          "inputs": [
+            "alert-config",
+            "slo"
+          ],
+          "artifactType": "role-guidance"
+        },
+        {
+          "id": "roles/test-automation",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the QA — Test Automation role. Use when reviewing or generating work by cx-test-automation, or when an agent is acting in the QA — Test Automation role.",
+          "inputs": [
+            "test-suite",
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/trace-reviewer",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Reviewer — Trace role. Use when reviewing or generating work by cx-trace-reviewer, or when an agent is acting in the Reviewer — Trace role.",
+          "inputs": [
+            "trace",
+            "task-context"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "roles/ux-researcher",
+          "description": "Surfaces anti-patterns, failure modes, and counter-moves specific to the Researcher — UX role. Use when reviewing or generating work by cx-ux-researcher, or when an agent is acting in the Researcher — UX role.",
+          "inputs": [
+            "user-research",
+            "interview-data"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "security/blue-team",
+          "description": "Use this skill when defending systems, responding to incidents, or building detection and monitoring capabilities.",
+          "inputs": [
+            "system-design"
+          ],
+          "artifactType": "guidance"
+        },
+        {
+          "id": "security/code-audit",
+          "description": "Use this skill when reviewing source code for security vulnerabilities through static analysis.",
+          "inputs": [
+            "code"
+          ],
+          "artifactType": "vulnerability-report"
+        },
+        {
+          "id": "security/pentest",
+          "description": "Use this skill when testing web applications or APIs for security vulnerabilities.",
+          "inputs": [
+            "system-design",
+            "binary"
+          ],
+          "artifactType": "pentest-report"
+        },
+        {
+          "id": "security/red-team",
+          "description": "Use this skill when planning or executing offensive security assessments, adversary emulation, or attack simulations.",
+          "inputs": [
+            "system-design",
+            "binary"
+          ],
+          "artifactType": "pentest-report"
+        },
+        {
+          "id": "security/threat-intel",
+          "description": "Use this skill when performing OSINT, threat modeling, or building threat intelligence programs.",
+          "inputs": [
+            "system-design"
+          ],
+          "artifactType": "threat-model"
+        },
+        {
+          "id": "security/vuln-research",
+          "description": "Use this skill when analyzing binaries, fuzzing software, or developing exploits for security research.",
+          "inputs": [
+            "target-binary-or-software"
+          ],
+          "artifactType": "vulnerability-report"
+        },
+        {
+          "id": "strategy/competitive-landscape",
+          "description": "Use when the team needs a structured read on market positioning before committing direction.",
+          "inputs": [
+            "competitor-data",
+            "market-signals"
+          ],
+          "artifactType": "competitive-analysis"
+        },
+        {
+          "id": "strategy/jobs-to-be-done",
+          "description": "Use when: user research needs to uncover the job a user is hiring a product to do — the underlying progress they seek — rather than feature requests or stated preferences.",
+          "inputs": [
+            "user-signals-or-interviews"
+          ],
+          "artifactType": "jtbd-summary"
+        },
+        {
+          "id": "strategy/market-research-methods",
+          "description": "Use when the team needs to validate assumptions before committing resources, or when a decision is being made on vibes rather than signal.",
+          "inputs": [
+            "market-signals",
+            "user-signals"
+          ],
+          "artifactType": "market-brief"
+        },
+        {
+          "id": "strategy/narrative-arc",
+          "description": "Use when the argument must move people, not just inform them. Strategic narrative is the difference between a document that gets read and one that changes what people do.",
+          "inputs": [
+            "market-signals",
+            "user-signals"
+          ],
+          "artifactType": "positioning"
+        },
+        {
+          "id": "strategy/pricing-positioning",
+          "description": "Use when the team needs to set price, adjust positioning, or defend either to stakeholders.",
+          "inputs": [
+            "market-signals",
+            "competitor-data"
+          ],
+          "artifactType": "positioning"
+        },
+        {
+          "id": "utility/clean-code",
+          "description": "Patterns and heuristics for identifying and removing AI-generated code smells. Use when cleaning up output from AI coding tools.",
+          "inputs": [
+            "code"
+          ],
+          "artifactType": "refactor"
+        }
+      ],
+      "workflows": [
+        {
+          "type": "architecture-review",
+          "tier": "reasoning",
+          "defaultApprovalMode": "requires-human-approval",
+          "chain": [
+            "architect",
+            "security",
+            "devil-advocate"
+          ],
+          "outputSchema": "review-report",
+          "description": "Review an architecture or design for trade-offs, failure modes, and security exposure."
+        },
+        {
+          "type": "data-structure",
+          "tier": "standard",
+          "defaultApprovalMode": "proposal-only",
+          "chain": [
+            "data-analyst",
+            "data-engineer"
+          ],
+          "outputSchema": null,
+          "description": "Parse, validate, and profile a raw dataset into a structured, described shape."
+        },
+        {
+          "type": "evidence-ingest",
+          "tier": "fast",
+          "defaultApprovalMode": "proposal-only",
+          "chain": [
+            "researcher",
+            "data-analyst"
+          ],
+          "outputSchema": null,
+          "description": "Ingest and structure raw evidence (notes, documents, signals) into a normalized summary."
+        },
+        {
+          "type": "memo-draft",
+          "tier": "fast",
+          "defaultApprovalMode": "proposal-only",
+          "chain": [
+            "docs-keeper",
+            "reviewer"
+          ],
+          "outputSchema": null,
+          "description": "Draft a decision or status memo from a problem statement and context."
+        },
+        {
+          "type": "prd-draft",
+          "tier": "standard",
+          "defaultApprovalMode": "proposal-only",
+          "chain": [
+            "product-manager",
+            "architect"
+          ],
+          "outputSchema": "decision",
+          "description": "Draft a product requirements document from a problem statement and supporting evidence."
+        },
+        {
+          "type": "proposal-review",
+          "tier": "standard",
+          "defaultApprovalMode": "requires-human-approval",
+          "chain": [
+            "reviewer",
+            "devil-advocate"
+          ],
+          "outputSchema": "review-report",
+          "description": "Review a proposal for correctness, risk, and hidden assumptions before acceptance."
+        },
+        {
+          "type": "research-synthesis",
+          "tier": "reasoning",
+          "defaultApprovalMode": "proposal-only",
+          "chain": [
+            "researcher",
+            "data-analyst",
+            "evaluator"
+          ],
+          "outputSchema": null,
+          "description": "Synthesize multiple sources into a cited, evidence-graded research summary."
+        },
+        {
+          "type": "risk-review",
+          "tier": "reasoning",
+          "defaultApprovalMode": "requires-human-approval",
+          "chain": [
+            "devil-advocate",
+            "security",
+            "legal-compliance"
+          ],
+          "outputSchema": "review-report",
+          "description": "Stress-test a plan for risk: failure modes, security, and compliance exposure."
+        },
+        {
+          "type": "structure-notes",
+          "tier": "fast",
+          "defaultApprovalMode": "proposal-only",
+          "chain": [
+            "orchestrator",
+            "researcher"
+          ],
+          "outputSchema": null,
+          "description": "Structure an unclassified brain-dump or rough notes into a normalized summary with extracted intents."
+        },
+        {
+          "type": "transcript-process",
+          "tier": "fast",
+          "defaultApprovalMode": "proposal-only",
+          "chain": [
+            "researcher",
+            "data-analyst"
+          ],
+          "outputSchema": null,
+          "description": "Process a meeting/call transcript into a summary, decisions, and action items."
+        },
+        {
+          "type": "triage",
+          "tier": "fast",
+          "defaultApprovalMode": "proposal-only",
+          "chain": [
+            "orchestrator",
+            "researcher"
+          ],
+          "outputSchema": null,
+          "description": "Classify and route unstructured input to the appropriate workflow."
+        }
+      ],
+      "schemas": [
+        {
+          "id": "decision",
+          "version": null,
+          "location": "lib/schemas/decision.json"
+        },
+        {
+          "id": "implementation",
+          "version": null,
+          "location": "lib/schemas/implementation.json"
+        },
+        {
+          "id": "review-report",
+          "version": null,
+          "location": "lib/schemas/review-report.json"
+        },
+        {
+          "id": "test-report",
+          "version": null,
+          "location": "lib/schemas/test-report.json"
+        },
+        {
+          "id": "brand-voice.schema",
+          "version": "https://geraldmaron.github.io/construct/schemas/brand-voice.schema.json",
+          "location": "schemas/brand-voice.schema.json"
+        },
+        {
+          "id": "capability-registry.schema",
+          "version": "https://construct.dev/schemas/capability-registry.schema.json",
+          "location": "schemas/capability-registry.schema.json"
+        },
+        {
+          "id": "certification-run.schema",
+          "version": "https://construct.dev/schemas/certification-run.schema.json",
+          "location": "schemas/certification-run.schema.json"
+        },
+        {
+          "id": "demo-recording.schema",
+          "version": "https://construct.dev/schemas/demo-recording.schema.json",
+          "location": "schemas/demo-recording.schema.json"
+        },
+        {
+          "id": "eval-dataset.schema",
+          "version": "https://construct.dev/schemas/eval-dataset.schema.json",
+          "location": "schemas/eval-dataset.schema.json"
+        },
+        {
+          "id": "execution-capability-profile.schema",
+          "version": "https://construct.dev/schemas/execution-capability-profile.schema.json",
+          "location": "schemas/execution-capability-profile.schema.json"
+        },
+        {
+          "id": "execution-policy.schema",
+          "version": "https://construct.dev/schemas/execution-policy.schema.json",
+          "location": "schemas/execution-policy.schema.json"
+        },
+        {
+          "id": "improvement-proposal.schema",
+          "version": "https://construct.dev/schemas/improvement-proposal.schema.json",
+          "location": "schemas/improvement-proposal.schema.json"
+        },
+        {
+          "id": "mcp-tool-output.schema",
+          "version": "https://construct.dev/schemas/mcp-tool-output.schema.json",
+          "location": "schemas/mcp-tool-output.schema.json"
+        },
+        {
+          "id": "platform-capabilities.schema",
+          "version": "https://construct.dev/schemas/platform-capabilities.schema.json",
+          "location": "schemas/platform-capabilities.schema.json"
+        },
+        {
+          "id": "project-config.schema",
+          "version": "https://geraldmaron.github.io/construct/schemas/project-config.schema.json",
+          "location": "schemas/project-config.schema.json"
+        },
+        {
+          "id": "project-demo.schema",
+          "version": "https://construct.dev/schemas/project-demo.schema.json",
+          "location": "schemas/project-demo.schema.json"
+        },
+        {
+          "id": "provider-behavior-matrix.schema",
+          "version": "https://construct.dev/schemas/provider-behavior-matrix.schema.json",
+          "location": "schemas/provider-behavior-matrix.schema.json"
+        },
+        {
+          "id": "scope.schema",
+          "version": "https://geraldmaron.github.io/construct/schemas/scope.schema.json",
+          "location": "schemas/scope.schema.json"
+        },
+        {
+          "id": "specialist-trace.schema",
+          "version": "https://construct.dev/schemas/specialist-trace.schema.json",
+          "location": "schemas/specialist-trace.schema.json"
+        },
+        {
+          "id": "team.schema",
+          "version": "https://geraldmaron.github.io/construct/schemas/team.schema.json",
+          "location": "schemas/team.schema.json"
+        },
+        {
+          "id": "unified-registry.schema",
+          "version": "https://geraldmaron.github.io/construct/schemas/unified-registry.schema.json",
+          "location": "schemas/unified-registry.schema.json"
+        }
+      ],
+      "models": {
+        "tiers": {
+          "reasoning": "anthropic/claude-opus-4-8",
+          "standard": "anthropic/claude-sonnet-5",
+          "fast": "anthropic/claude-haiku-4-5-20251001"
+        },
+        "tierSources": {
+          "reasoning": "env override",
+          "standard": "env override",
+          "fast": "env override"
+        },
+        "providers": [
+          {
+            "id": "anthropic",
+            "label": "Anthropic (direct)",
+            "local": false,
+            "requiresEnv": [
+              "ANTHROPIC_API_KEY"
+            ],
+            "configured": true,
+            "configuredBasis": "presence",
+            "healthStatus": "unknown"
+          },
+          {
+            "id": "openrouter-anthropic",
+            "label": "Anthropic via OpenRouter",
+            "local": false,
+            "requiresEnv": [
+              "OPENROUTER_API_KEY",
+              "OPEN_ROUTER_API_KEY"
+            ],
+            "configured": true,
+            "configuredBasis": "presence",
+            "healthStatus": "unknown"
+          },
+          {
+            "id": "openrouter-google",
+            "label": "Google via OpenRouter",
+            "local": false,
+            "requiresEnv": [
+              "OPENROUTER_API_KEY",
+              "OPEN_ROUTER_API_KEY"
+            ],
+            "configured": true,
+            "configuredBasis": "presence",
+            "healthStatus": "unknown"
+          },
+          {
+            "id": "openrouter-deepseek",
+            "label": "DeepSeek via OpenRouter",
+            "local": false,
+            "requiresEnv": [
+              "OPENROUTER_API_KEY",
+              "OPEN_ROUTER_API_KEY"
+            ],
+            "configured": true,
+            "configuredBasis": "presence",
+            "healthStatus": "unknown"
+          },
+          {
+            "id": "openrouter-qwen",
+            "label": "Qwen via OpenRouter",
+            "local": false,
+            "requiresEnv": [
+              "OPENROUTER_API_KEY",
+              "OPEN_ROUTER_API_KEY"
+            ],
+            "configured": true,
+            "configuredBasis": "presence",
+            "healthStatus": "unknown"
+          },
+          {
+            "id": "github-copilot",
+            "label": "GitHub Copilot",
+            "local": false,
+            "requiresEnv": [
+              "GITHUB_TOKEN",
+              "GH_TOKEN"
+            ],
+            "configured": true,
+            "configuredBasis": "presence",
+            "healthStatus": "unknown"
+          },
+          {
+            "id": "openai",
+            "label": "OpenAI",
+            "local": false,
+            "requiresEnv": [
+              "OPENAI_API_KEY"
+            ],
+            "configured": true,
+            "configuredBasis": "presence",
+            "healthStatus": "unknown"
+          },
+          {
+            "id": "openrouter-llama",
+            "label": "Meta Llama via OpenRouter",
+            "local": false,
+            "requiresEnv": [
+              "OPENROUTER_API_KEY",
+              "OPEN_ROUTER_API_KEY"
+            ],
+            "configured": true,
+            "configuredBasis": "presence",
+            "healthStatus": "unknown"
+          },
+          {
+            "id": "openrouter",
+            "label": "OpenRouter (general)",
+            "local": false,
+            "requiresEnv": [
+              "OPENROUTER_API_KEY",
+              "OPEN_ROUTER_API_KEY"
+            ],
+            "configured": true,
+            "configuredBasis": "presence",
+            "healthStatus": "unknown"
+          },
+          {
+            "id": "ollama",
+            "label": "Ollama (local)",
+            "local": true,
+            "requiresEnv": [
+              "OLLAMA_BASE_URL",
+              "OLLAMA_HOST"
+            ],
+            "configured": true,
+            "configuredBasis": "presence",
+            "healthStatus": "unknown"
+          },
+          {
+            "id": "local",
+            "label": "Local OpenAI-compatible server",
+            "local": true,
+            "requiresEnv": [
+              "LOCAL_LLM_BASE_URL"
+            ],
+            "configured": false,
+            "configuredBasis": "presence",
+            "healthStatus": "unknown"
+          }
+        ]
+      },
+      "policies": [
+        {
+          "id": "action-approval",
+          "enforcement": "lib/roles/fence.mjs#checkAction",
+          "mode": "deterministic",
+          "description": "Blocks specialists from taking actions not listed in their approved action set."
+        },
+        {
+          "id": "agents-routing",
+          "enforcement": "(persona prompt)",
+          "mode": "honor-system",
+          "description": "Routing discipline: construct routes to specialists, specialists do not self-route except to adjacent roles."
+        },
+        {
+          "id": "architecture",
+          "enforcement": "hard",
+          "mode": "approval",
+          "description": "Engineering group owns architecture decisions. Security group can veto on compliance grounds."
+        },
+        {
+          "id": "bash-safety",
+          "enforcement": "lib/hooks/guard-bash.mjs",
+          "mode": "deterministic",
+          "description": "Blocks destructive bash commands (rm -rf /, git reset --hard HEAD, etc.) from running."
+        },
+        {
+          "id": "beads-hygiene",
+          "enforcement": "lib/contracts/validate.mjs#validateBeadsCloseReason",
+          "mode": "deterministic",
+          "description": "Validates beads close-reason quality: requires PR reference or file:line evidence."
+        },
+        {
+          "id": "bootstrap-state",
+          "enforcement": "lib/hooks/policy-engine.mjs",
+          "mode": "deterministic",
+          "description": "State machine enforces valid session bootstrap sequence before any agent work begins."
+        },
+        {
+          "id": "code-review",
+          "enforcement": "(persona prompt)",
+          "mode": "honor-system",
+          "description": "Review standards applied by cx-reviewer and cx-qa before any change is marked done."
+        },
+        {
+          "id": "coding-style",
+          "enforcement": "(persona prompt)",
+          "mode": "honor-system",
+          "description": "Style standards applied at authoring time; not mechanically enforced beyond lint:comments."
+        },
+        {
+          "id": "comments",
+          "enforcement": "lib/comment-lint.mjs",
+          "mode": "deterministic",
+          "description": "Enforces the two-form comment policy (file header + section context block). Blocks inline narration."
+        },
+        {
+          "id": "commit-approval",
+          "enforcement": "(persona prompt)",
+          "mode": "honor-system",
+          "description": "Requires explicit user confirmation before any git commit or push. Enforced at the conversation level."
+        },
+        {
+          "id": "contract-preconditions",
+          "enforcement": "lib/contracts/validate.mjs#validateHandoff",
+          "mode": "deterministic",
+          "description": "Validates that specialist handoffs conform to declared pre/postconditions in contracts.json."
+        },
+        {
+          "id": "deployment",
+          "enforcement": "hard",
+          "mode": "approval",
+          "description": "Operations group executes deployments. Requires security and quality approval."
+        },
+        {
+          "id": "description",
+          "enforcement": "hard",
+          "mode": "approval",
+          "description": "Decision: description"
+        },
+        {
+          "id": "design-approval",
+          "enforcement": "hard",
+          "mode": "approval",
+          "description": "Product group approves design before implementation begins."
+        },
+        {
+          "id": "doc-ownership",
+          "enforcement": "(persona prompt)",
+          "mode": "honor-system",
+          "description": "Routes artifacts to the correct specialist owner before writing (PRD to PM, ADR to Architect)."
+        },
+        {
+          "id": "file-path-fence",
+          "enforcement": "lib/roles/fence.mjs#checkAction",
+          "mode": "deterministic",
+          "description": "Prevents specialists from touching files outside their declared path scope."
+        },
+        {
+          "id": "framing",
+          "enforcement": "(persona prompt)",
+          "mode": "honor-system",
+          "description": "Requires that execution artifacts cite their source; prevents specialists from treating their own output as ground truth."
+        },
+        {
+          "id": "git-workflow",
+          "enforcement": "lib/hooks/pre-push-gate.mjs",
+          "mode": "deterministic",
+          "description": "Enforces branch naming, commit message style, and push guard (no direct-to-main pushes)."
+        },
+        {
+          "id": "incident-response",
+          "enforcement": "hard",
+          "mode": "approval",
+          "description": "Operations group leads incident response."
+        },
+        {
+          "id": "intake-triage",
+          "enforcement": "hard",
+          "mode": "approval",
+          "description": "Product group triages incoming signals and routes them to the appropriate team."
+        },
+        {
+          "id": "neurodivergent-output",
+          "enforcement": "(persona prompt) + tests/term-format.test.mjs",
+          "mode": "honor-system",
+          "description": "Human-facing output (terminal, agent prose, dashboard) is formatted for neurodivergent readers; presentation never reshapes machine-readable output."
+        },
+        {
+          "id": "no-fabrication",
+          "enforcement": "lib/comment-lint.mjs",
+          "mode": "deterministic-85",
+          "description": "Detects fabrication-risk patterns (manufactured confidence, uncited claims, hand-wave percentages) in artifact prose."
+        },
+        {
+          "id": "patterns",
+          "enforcement": "(persona prompt)",
+          "mode": "honor-system",
+          "description": "Architectural pattern guidance (module boundaries, error handling, async contracts) applied at authoring time."
+        },
+        {
+          "id": "quality-gate-approval",
+          "enforcement": "hard",
+          "mode": "approval",
+          "description": "Quality group approves readiness for release."
+        },
+        {
+          "id": "release-gates",
+          "enforcement": "lib/hooks/pre-push-gate.mjs",
+          "mode": "deterministic",
+          "description": "Enforces test + build + lint gates before any push reaches the remote."
+        },
+        {
+          "id": "research-evidence",
+          "enforcement": "(persona prompt)",
+          "mode": "honor-system",
+          "description": "Enforces evidence hierarchy and citation discipline in research and analysis artifacts."
+        },
+        {
+          "id": "review-before-change",
+          "enforcement": "(persona prompt)",
+          "mode": "honor-system",
+          "description": "Requires an existing-artifact audit before authoring or rewriting any durable doc, rule, template, or PRD/ADR/RFC. Extend or supersede; do not duplicate."
+        },
+        {
+          "id": "rollback",
+          "enforcement": "hard",
+          "mode": "approval",
+          "description": "Operations group executes rollbacks during incidents."
+        },
+        {
+          "id": "scope-change",
+          "enforcement": "hard",
+          "mode": "approval",
+          "description": "Product group authorizes scope changes. Conflicts escalate to strategy."
+        },
+        {
+          "id": "secret-scan",
+          "enforcement": "lib/hooks/scan-secrets.mjs",
+          "mode": "deterministic",
+          "description": "Scans added lines for credential patterns before any file is written."
+        },
+        {
+          "id": "security-approval",
+          "enforcement": "hard",
+          "mode": "approval",
+          "description": "Governance group approves security posture. Can block deployments."
+        },
+        {
+          "id": "security",
+          "enforcement": "(persona prompt)",
+          "mode": "honor-system",
+          "description": "Security review checklist applied by cx-security and cx-reviewer on any change touching auth, credentials, or external I/O."
+        },
+        {
+          "id": "session-efficiency",
+          "enforcement": "lib/read-tracker-store.mjs + session-start digest",
+          "mode": "deterministic",
+          "description": "Read discipline, probe-before-bulk-read, and tool parallelism rules. Read counts tracked per-file; the session-start efficiency digest surfaces files crossing the re-read threshold."
+        },
+        {
+          "id": "skill-routing",
+          "enforcement": "(persona prompt + lib/mcp/tools/skills.mjs)",
+          "mode": "honor-system",
+          "description": "Specialists load skills explicitly via get_skill rather than relying on ambient knowledge."
+        },
+        {
+          "id": "strategic-prioritization",
+          "enforcement": "hard",
+          "mode": "approval",
+          "description": "Strategy group sets R&D direction and priorities."
+        },
+        {
+          "id": "testing",
+          "enforcement": "lib/hooks/pre-push-gate.mjs",
+          "mode": "deterministic",
+          "description": "Tests must pass before push; multi-component features require a functional test in tests/functional/."
+        },
+        {
+          "id": "tool-invisibility",
+          "enforcement": "(persona prompt + shared guidance) + lib/comment-lint.mjs",
+          "mode": "deterministic-85",
+          "description": "Deliverable artifacts are about the user's project; the comment linter flags internal cx-* role-id leaks in a consuming project's deliverables (skipped on the Construct repo itself)."
+        }
+      ],
+      "telemetry": {
+        "tracingEnabled": false,
+        "redaction": "enabled",
+        "note": "Every contract response passes the no-secrets guard before serialization."
+      },
+      "plugins": [
+        {
+          "id": "construct-builtins",
+          "capabilities": [
+            "mcp"
+          ],
+          "builtIn": true,
+          "mcps": [
+            {
+              "id": "context7"
+            },
+            {
+              "id": "sequential-thinking"
+            },
+            {
+              "id": "memory"
+            },
+            {
+              "id": "playwright"
+            },
+            {
+              "id": "github"
+            },
+            {
+              "id": "atlassian"
+            },
+            {
+              "id": "linear"
+            },
+            {
+              "id": "slack"
+            },
+            {
+              "id": "notion"
+            },
+            {
+              "id": "filesystem"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

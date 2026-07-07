@@ -15,6 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const BIN = path.join(REPO, 'bin', 'construct');
@@ -71,8 +72,8 @@ Got: ${violationsLine}`,
 Got: ${violationsLine}`,
     );
   } finally {
-    fs.rmSync(fakeRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(fakeRoot);
+    rmTmpDir(fakeHome);
   }
 });
 
@@ -114,7 +115,7 @@ test('doctor no longer surfaces deleted pre-push bypass infrastructure', () => {
       `doctor must not surface the green pre-push bypass line either — the whole check is gone.\nstdout: ${result.stdout}`,
     );
   } finally {
-    fs.rmSync(fakeRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    fs.rmSync(fakeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(fakeRoot);
+    rmTmpDir(fakeHome);
   }
 });

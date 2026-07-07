@@ -1,0 +1,17 @@
+{
+  "id": "jira-write",
+  "version": "1.0.0",
+  "kind": "data-source",
+  "capabilities": ["write", "search"],
+  "secretEnvKeys": ["JIRA_URL", "JIRA_EMAIL", "JIRA_TOKEN"],
+  "operations": ["write:issue", "write:comment", "search"],
+  "securityClassification": "trusted",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin",
+  "exposure": "envelope-only",
+  "envelopeModule": "lib/writes/envelope.mjs",
+  "adapterModule": "lib/providers/contract/adapters/jira/governed-write.mjs",
+  "transportModule": "lib/providers/contract/adapters/jira/transport.mjs",
+  "notes": "Colocated write-capability manifest for LMCP-J3. Follows the lib/extensions/manifests/*.manifest.json schema (see atlassian-jira.manifest.json, which declares read/search only). Wiring this into the shared lib/extensions/manifests/ discovery directory is out of scope for this bead; capabilities here are reachable only via writeWithEnvelope(), never a direct provider-registry lookup."
+}

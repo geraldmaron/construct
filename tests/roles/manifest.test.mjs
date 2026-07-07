@@ -6,30 +6,35 @@ import test from 'node:test';
 
 import { loadManifest, isOnboarded, listOnboardedPersonas, listAllPersonas } from '../../lib/roles/manifest.mjs';
 
-test('loadManifest returns a manifest for sre', () => {
-  const m = loadManifest('sre');
+test('loadManifest returns a manifest for operations', () => {
+  const m = loadManifest('operations');
   assert.ok(m);
   assert.ok(m.events.length > 0);
-  assert.ok(m.fence.allowedPaths.includes('docs/operations/runbooks/**'));
+  // cx-operations's fence is the wide docs/** glob, which subsumes narrower
+  // per-domain doc paths (runbooks, releases, etc.) rather than enumerating
+  // each one — see the ADR-0065 appendix addendum.
+  assert.ok(m.fence.allowedPaths.includes('docs/**'));
 });
 
 test('loadManifest accepts cx- prefix', () => {
-  const a = loadManifest('cx-sre');
-  const b = loadManifest('sre');
+  const a = loadManifest('cx-operations');
+  const b = loadManifest('operations');
   assert.deepEqual(a, b);
 });
 
 test('isOnboarded is true only when events is non-empty', () => {
-  assert.equal(isOnboarded('sre'), true);
+  assert.equal(isOnboarded('operations'), true);
   assert.equal(isOnboarded('qa'), true);
   assert.equal(isOnboarded('engineer'), true);
   assert.equal(isOnboarded('architect'), true);
   assert.equal(isOnboarded('nonexistent'), false);
 });
 
-test('listOnboardedPersonas includes the v1 four plus Phase C wave', () => {
+test('listOnboardedPersonas includes the core consolidated roster', () => {
   const list = listOnboardedPersonas();
-  const required = ['sre', 'qa', 'security', 'docs-keeper', 'engineer', 'architect', 'debugger', 'release-manager', 'product-manager', 'reviewer', 'platform-engineer'];
+  // construct-rf26.11 consolidated sre/release-manager/docs-keeper into
+  // operations and platform-engineer into engineer.
+  const required = ['operations', 'qa', 'security', 'engineer', 'architect', 'debugger', 'product-manager', 'reviewer'];
   for (const id of required) {
     assert.ok(list.includes(id), `expected ${id} onboarded, got: ${list.join(', ')}`);
   }
@@ -40,5 +45,6 @@ test('listAllPersonas covers all registry roles', () => {
   const all = listAllPersonas();
   assert.ok(all.includes('engineer'));
   assert.ok(all.includes('architect'));
-  assert.ok(all.length >= 27);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.ok(all.length >= 12);
 });

@@ -6,7 +6,7 @@ artifactType: guidance
 role: security.supply-chain
 applies_to:
   - cx-security
-  - cx-platform-engineer
+  - cx-engineer
 inherits: security
 version: 2
 scopes:

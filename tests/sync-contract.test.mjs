@@ -50,9 +50,15 @@ function makeTempDir(prefix) {
 before(() => {
   tmpHome = makeTempDir('sync-contract-home-');
   tmpProject = makeTempDir('sync-contract-project-');
-  // Create a minimal .claude dir so Claude Code sync has a target
+  // Create a minimal .claude dir so Claude Code sync has a target. Hooks live in
+  // ~/.claude/settings.json; MCP server definitions live in ~/.claude.json's
+  // top-level `mcpServers` (settings.json is not a file Claude Code reads MCP
+  // server definitions from — construct-ranh).
   fs.mkdirSync(path.join(tmpHome, '.claude', 'agents'), { recursive: true });
   fs.writeFileSync(path.join(tmpHome, '.claude', 'settings.json'), JSON.stringify({
+    hooks: {},
+  }, null, 2) + '\n');
+  fs.writeFileSync(path.join(tmpHome, '.claude.json'), JSON.stringify({
     mcpServers: {
       context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp@latest'] },
       'construct-mcp': { command: 'node', args: ['/tmp/construct/lib/mcp/server.mjs'] },
@@ -61,7 +67,6 @@ before(() => {
       playwright: { command: 'npx', args: ['-y', '@playwright/mcp@latest'] },
       'sequential-thinking': { command: 'npx', args: ['-y', '@modelcontextprotocol/server-sequential-thinking'] },
     },
-    hooks: {},
   }, null, 2) + '\n');
 });
 
@@ -200,14 +205,14 @@ describe('sync-specialists contract tests', () => {
       ]);
     });
 
-    it('preserves global ~/.claude/settings.json MCP entries while syncing safety hooks', () => {
-      const settingsPath = path.join(tmpHome, '.claude', 'settings.json');
-      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    it('preserves global ~/.claude.json MCP entries while syncing safety hooks', () => {
+      const userConfigPath = path.join(tmpHome, '.claude.json');
+      const userConfig = JSON.parse(fs.readFileSync(userConfigPath, 'utf8'));
 
       // The modular org declares no global MCP servers in the specialist
       // registry. Sync should not delete user/global MCP entries while installing
       // Construct safety hooks.
-      assert.deepEqual(Object.keys(settings.mcpServers ?? {}).sort(), [
+      assert.deepEqual(Object.keys(userConfig.mcpServers ?? {}).sort(), [
         'construct-mcp',
         'context7',
         'github',
@@ -215,7 +220,14 @@ describe('sync-specialists contract tests', () => {
         'playwright',
         'sequential-thinking',
       ]);
-      assert.deepEqual(settings.mcpServers.context7.args, ['-y', '@upstash/context7-mcp@latest']);
+
+      // context7 is on the global Claude managed allowlist (globalMcpAllowlist),
+      // so a floating `@latest` fixture entry converges to the catalog's pinned
+      // version instead of surviving untouched.
+      const catalog = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'lib', 'mcp-catalog.json'), 'utf8'));
+      const context7Pin = catalog.mcps.find((m) => m.id === 'context7').args;
+      assert.deepEqual(userConfig.mcpServers.context7.args, context7Pin);
+      assert.ok(!userConfig.mcpServers.context7.args.some((a) => a.endsWith('@latest')), 'catalog pin must not be @latest');
     });
   });
 
@@ -295,21 +307,32 @@ describe('sync-specialists contract tests', () => {
         !/\$HOME\/\.construct/.test(allCommands),
         'project-mode settings must not reference $HOME/.construct paths'
       );
-      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\.\}\/\.construct\/run\.mjs.{0,4}hook session-start/);
-      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\.\}\/\.construct\/run\.mjs.{0,4}hook pre-push-gate/);
+      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/run\.mjs.{0,4}hook session-start/);
+      assert.match(allCommands, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/run\.mjs.{0,4}hook pre-push-gate/);
+      assert.ok(
+        !/\$\{CLAUDE_PROJECT_DIR:-\.\}/.test(allCommands),
+        'cwd-relative :-. fallback breaks under cwd drift; fallback must be the absolute project root'
+      );
       assert.ok(
         !/node \.construct\/run\.mjs hook/.test(allCommands),
-        'hook commands must anchor on ${CLAUDE_PROJECT_DIR:-.} so they resolve from any cwd'
+        'hook commands must anchor on ${CLAUDE_PROJECT_DIR:-<absRoot>} so they resolve from any cwd'
       );
     });
 
-    it('does not write the opt-in playwright MCP into project settings', () => {
+    it('does not write the opt-in playwright MCP into project .mcp.json', () => {
+      const mcpJson = JSON.parse(
+        fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8'),
+      );
+      const ids = Object.keys(mcpJson.mcpServers ?? {});
+      assert.ok(ids.includes('context7'), 'project .mcp.json keeps the core context7 MCP');
+      assert.ok(!ids.includes('playwright'), 'playwright is opt-in (construct mcp add), not synced by default');
+    });
+
+    it('writes project-scope MCP servers to .mcp.json, not .claude/settings.json', () => {
       const settings = JSON.parse(
         fs.readFileSync(path.join(projectDir, '.claude', 'settings.json'), 'utf8'),
       );
-      const ids = Object.keys(settings.mcpServers ?? {});
-      assert.ok(ids.includes('context7'), 'project settings keep the core context7 MCP');
-      assert.ok(!ids.includes('playwright'), 'playwright is opt-in (construct mcp add), not synced by default');
+      assert.equal(settings.mcpServers, undefined, 'settings.json must not carry MCP server definitions (construct-ranh)');
     });
 
     it('writes agent adapters into the project, not into HOME', () => {
@@ -317,6 +340,103 @@ describe('sync-specialists contract tests', () => {
       assert.ok(fs.existsSync(projectAgents), 'project mode must create .claude/agents/');
       const files = fs.readdirSync(projectAgents).filter((f) => f.endsWith('.md'));
       assert.ok(files.length > 0, 'project mode must produce at least one agent .md file');
+    });
+  });
+
+  // needsRefresh() is the one comparator every host dialect calls (construct-6y6w.4):
+  // an existing MCP entry missing the registry's env block, or carrying a stale
+  // pinned version, must reconcile to the registry on the next sync.
+  describe('MCP entry refresh parity (needsRefresh)', () => {
+    let projectDir;
+
+    before(() => {
+      projectDir = makeTempDir('sync-contract-refresh-');
+      // Project-scope MCP server definitions live in .mcp.json, not
+      // .claude/settings.json (construct-ranh) — Claude Code does not read
+      // MCP server definitions from settings.json at any scope.
+      fs.writeFileSync(
+        path.join(projectDir, '.mcp.json'),
+        JSON.stringify({
+          mcpServers: {
+            'construct-mcp': { command: 'node', args: ['/old/toolkit/lib/mcp/server.mjs'] },
+            context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp@1.0.0'] },
+          },
+        }, null, 2) + '\n',
+      );
+      const result = spawnSync(
+        process.execPath,
+        [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), '--project'],
+        {
+          encoding: 'utf8',
+          cwd: projectDir,
+          env: { ...process.env, HOME: tmpHome, CONSTRUCT_SYNC_FORCE: '1', CONSTRUCT_SYNC_HOSTS: ALL_HOSTS },
+          timeout: 60_000,
+        },
+      );
+      if (result.status !== 0) throw new Error(`project sync failed:\n${result.stderr}`);
+    });
+
+    after(() => {
+      fs.rmSync(projectDir, { recursive: true, force: true });
+    });
+
+    it('refreshes an existing construct-mcp entry missing the registry env block', () => {
+      const mcpJson = JSON.parse(
+        fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8'),
+      );
+      const envKeys = Object.keys(mcpJson.mcpServers['construct-mcp'].env ?? {}).sort();
+      assert.deepEqual(envKeys, [
+        'CONSTRUCT_TELEMETRY_PUBLIC_KEY',
+        'CONSTRUCT_TELEMETRY_SECRET_KEY',
+        'CONSTRUCT_TELEMETRY_URL',
+        'CONSTRUCT_TRACE_BACKEND',
+      ]);
+    });
+
+    it('refreshes an existing context7 entry pinned to a stale version to the catalog pin', () => {
+      const mcpJson = JSON.parse(
+        fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8'),
+      );
+      const catalog = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'lib', 'mcp-catalog.json'), 'utf8'));
+      const context7Pin = catalog.mcps.find((m) => m.id === 'context7').args;
+      assert.deepEqual(mcpJson.mcpServers.context7.args, context7Pin);
+    });
+
+    it('is idempotent: a second sync makes no further change', () => {
+      const before = fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8');
+      const result = spawnSync(
+        process.execPath,
+        [path.join(ROOT_DIR, 'scripts', 'sync-specialists.mjs'), '--project'],
+        {
+          encoding: 'utf8',
+          cwd: projectDir,
+          env: { ...process.env, HOME: tmpHome, CONSTRUCT_SYNC_FORCE: '1', CONSTRUCT_SYNC_HOSTS: ALL_HOSTS },
+          timeout: 60_000,
+        },
+      );
+      assert.equal(result.status, 0, `second project sync failed:\n${result.stderr}`);
+      const after = fs.readFileSync(path.join(projectDir, '.mcp.json'), 'utf8');
+      assert.equal(after, before, 'a second sync must not change an already-converged .mcp.json');
+    });
+
+    // construct-6y6w.9: the same orchestration tool call can read/write a
+    // different project depending on which host launched the server and from
+    // where. VS Code pins cwd to the workspace that owns the config file.
+    it('pins cwd to ${workspaceFolder} on generated VS Code mcp.json stdio entries', () => {
+      const vscodeConfig = JSON.parse(
+        fs.readFileSync(path.join(projectDir, '.vscode', 'mcp.json'), 'utf8'),
+      );
+      assert.equal(vscodeConfig.servers['construct-mcp'].cwd, '${workspaceFolder}');
+      assert.equal(vscodeConfig.servers.context7.cwd, '${workspaceFolder}');
+    });
+
+    it('does not pin cwd on the Cursor mcp.json entries (only VS Code is pinned)', () => {
+      const cursorPath = path.join(projectDir, '.cursor', 'mcp.json');
+      if (!fs.existsSync(cursorPath)) return;
+      const cursorConfig = JSON.parse(fs.readFileSync(cursorPath, 'utf8'));
+      for (const entry of Object.values(cursorConfig.mcpServers ?? {})) {
+        assert.equal(entry.cwd, undefined);
+      }
     });
   });
 });

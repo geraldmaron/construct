@@ -16,9 +16,10 @@
 
 import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 let tmpRoot;
 let priorCwd;
@@ -39,7 +40,7 @@ beforeEach(async () => {
 afterEach(() => {
   process.chdir(priorCwd);
   process.env.HOME = priorHome;
-  rmSync(tmpRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(tmpRoot);
 });
 
 function readLog() {
@@ -68,7 +69,7 @@ const CASES = [
     expectFailureId: 'debugger.root-cause-confirmed-via',
   },
   {
-    producer: 'cx-docs-keeper',
+    producer: 'cx-operations',
     consumer: 'cx-engineer',
     invalidPacket: { crossDocCoherenceCheckRan: false },
     expectFailureId: 'docs-keeper.cross-doc-coherence-check-ran',
@@ -89,6 +90,7 @@ describe('binary postcondition enforcement', () => {
         consumer: c.consumer,
         artifact: {},
         packet: c.invalidPacket,
+        repoRoot: tmpRoot,
       });
       assert.equal(result.ok, false, `expected ok:false for invalid ${c.producer} packet`);
       assert.equal(result.status, 'BLOCKED_CONTRACT');
@@ -105,6 +107,7 @@ describe('binary postcondition enforcement', () => {
         producer: c.producer,
         consumer: c.consumer,
         artifact: {},
+        repoRoot: tmpRoot,
       });
       assert.equal(result.ok, false);
       assert.equal(result.status, 'BLOCKED_CONTRACT');

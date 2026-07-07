@@ -6,11 +6,12 @@
  */
 import test from 'node:test';
 import assert from 'node:assert';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { checkProjectParity } from '../../lib/parity.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const ROOT = process.cwd();
 
@@ -21,7 +22,7 @@ test('skips non-Construct projects', () => {
     assert.equal(r.skipped, true);
     assert.equal(r.ok, true);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -34,7 +35,7 @@ test('reports absent project adapters when .cx exists', () => {
     const absent = r.surfaces.filter((s) => s.status === 'absent');
     assert.ok(absent.length >= 1, 'expected at least one absent adapter surface');
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -55,6 +56,6 @@ test('ok when construct agent and cursor rule present', () => {
     assert.equal(claude?.status, 'ok');
     assert.equal(rules?.status, 'ok');
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });

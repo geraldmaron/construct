@@ -17,10 +17,16 @@ import test from 'node:test';
 
 import { runPublish } from '../../lib/publish.mjs';
 import { detectPublishPipeline } from '../../lib/publish-tooling.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const EXAMPLES_DIR = path.join(REPO, 'examples', 'distribution');
 const MANIFEST = JSON.parse(fs.readFileSync(path.join(EXAMPLES_DIR, 'manifest.json'), 'utf8'));
+
+function isMermaidBrowserRuntimeFailure(result) {
+  const message = String(result?.message || '');
+  return /Failed to launch the browser process|mmdc needs Chrome|PUPPETEER_EXECUTABLE_PATH|install Google Chrome/i.test(message);
+}
 
 for (const item of MANIFEST.items) {
   const format = item.formats[0];
@@ -46,6 +52,10 @@ for (const item of MANIFEST.items) {
         cwd: dir,
         repoRoot: REPO,
       });
+      if (!result.ok && isMermaidBrowserRuntimeFailure(result)) {
+        t.skip(`render runtime unavailable: ${result.message}`);
+        return;
+      }
       assert.equal(result.ok, true, result.message);
       assert.ok(fs.existsSync(out), 'export produced no file');
 
@@ -58,7 +68,7 @@ for (const item of MANIFEST.items) {
       assert.ok(validation.a11y?.coverage, 'report states a11y coverage');
       assert.ok(Array.isArray(validation.a11y.coverage.checked), 'a11y coverage lists checked items');
     } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
+      rmTmpDir(dir);
     }
   });
 }

@@ -8,12 +8,13 @@
  * workstream PRs merge and progressively activate as each lands.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(REPO_ROOT, 'bin', 'construct');
@@ -47,45 +48,75 @@ test('release gate: construct doctor exits 0 (warnings allowed, no failures)', (
     const failedMatch = result.stdout.match(/(\d+)\s+failed/);
     assert.ok(!failedMatch || failedMatch[1] === '0', `expected 0 failed checks, got: ${failedMatch?.[0]}`);
   } finally {
-    rmSync(tmpHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmTmpDir(tmpHome);
   }
 });
 
 test('release gate: construct docs:verify is clean', () => {
-  const result = run(['docs:verify']);
-  assert.equal(
-    result.status,
-    0,
-    `docs:verify exited ${result.status}\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
-  );
+  const tmpHome = mkdtempSync(join(tmpdir(), 'release-gate-docs-verify-'));
+  try {
+    const result = run(['docs:verify'], { env: { HOME: tmpHome, CX_HOME_OVERRIDE: tmpHome } });
+    assert.equal(
+      result.status,
+      0,
+      `docs:verify exited ${result.status}\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
+    );
+  } finally {
+    rmTmpDir(tmpHome);
+  }
 });
 
 test('release gate: construct docs:update --check reports no drift', () => {
-  const result = run(['docs:update', '--check']);
-  assert.equal(result.status, 0, `docs:update --check exited ${result.status}; stdout: ${result.stdout}`);
+  const tmpHome = mkdtempSync(join(tmpdir(), 'release-gate-docs-update-'));
+  try {
+    const result = run(['docs:update', '--check'], { env: { HOME: tmpHome, CX_HOME_OVERRIDE: tmpHome } });
+    assert.equal(result.status, 0, `docs:update --check exited ${result.status}; stdout: ${result.stdout}`);
+  } finally {
+    rmTmpDir(tmpHome);
+  }
 });
 
 test('release gate: construct docs:site --check reports no drift', () => {
-  const result = run(['docs:site', '--check']);
-  assert.equal(result.status, 0, `docs:site --check exited ${result.status}; stdout: ${result.stdout}`);
+  const tmpHome = mkdtempSync(join(tmpdir(), 'release-gate-docs-site-'));
+  try {
+    const result = run(['docs:site', '--check'], { env: { HOME: tmpHome, CX_HOME_OVERRIDE: tmpHome } });
+    assert.equal(result.status, 0, `docs:site --check exited ${result.status}; stdout: ${result.stdout}`);
+  } finally {
+    rmTmpDir(tmpHome);
+  }
 });
 
 test('release gate: construct lint:comments is clean', () => {
-  const result = run(['lint:comments']);
-  assert.equal(result.status, 0, `lint:comments exited ${result.status}; stdout: ${result.stdout}`);
+  const tmpHome = mkdtempSync(join(tmpdir(), 'release-gate-lint-comments-'));
+  try {
+    const result = run(['lint:comments'], { env: { HOME: tmpHome, CX_HOME_OVERRIDE: tmpHome } });
+    assert.equal(result.status, 0, `lint:comments exited ${result.status}; stdout: ${result.stdout}`);
+  } finally {
+    rmTmpDir(tmpHome);
+  }
 });
 
 test('release gate: construct lint:agents is clean', () => {
-  const result = run(['lint:agents']);
-  assert.equal(result.status, 0, `lint:agents exited ${result.status}; stdout: ${result.stdout}`);
+  const tmpHome = mkdtempSync(join(tmpdir(), 'release-gate-lint-agents-'));
+  try {
+    const result = run(['lint:agents'], { env: { HOME: tmpHome, CX_HOME_OVERRIDE: tmpHome } });
+    assert.equal(result.status, 0, `lint:agents exited ${result.status}; stdout: ${result.stdout}`);
+  } finally {
+    rmTmpDir(tmpHome);
+  }
 });
 
 test('release gate (W2): construct lint:contracts is clean', (t) => {
   if (!existsSync(join(REPO_ROOT, 'lib', 'contracts', 'validate.mjs'))) {
     return t.skip('W2 not merged: lib/contracts/validate.mjs missing');
   }
-  const result = run(['lint:contracts']);
-  assert.equal(result.status, 0, `lint:contracts exited ${result.status}; stdout: ${result.stdout}`);
+  const tmpHome = mkdtempSync(join(tmpdir(), 'release-gate-lint-contracts-'));
+  try {
+    const result = run(['lint:contracts'], { env: { HOME: tmpHome, CX_HOME_OVERRIDE: tmpHome } });
+    assert.equal(result.status, 0, `lint:contracts exited ${result.status}; stdout: ${result.stdout}`);
+  } finally {
+    rmTmpDir(tmpHome);
+  }
 });
 
 test('release gate (W3): construct doctor consistency is clean', (t) => {
@@ -146,9 +177,14 @@ test('release gate: no misleading "future implementation" wording in source', ()
 });
 
 test('release gate: construct certify gate passes on HEAD', () => {
-  const result = run(['certify', 'gate']);
-  assert.equal(result.status, 0, `certify gate exited ${result.status}; stdout: ${result.stdout}\nstderr: ${result.stderr}`);
-  assert.match(result.stdout, /PASS/);
+  const tmpHome = mkdtempSync(join(tmpdir(), 'release-gate-certify-'));
+  try {
+    const result = run(['certify', 'gate'], { env: { HOME: tmpHome, CX_HOME_OVERRIDE: tmpHome } });
+    assert.equal(result.status, 0, `certify gate exited ${result.status}; stdout: ${result.stdout}\nstderr: ${result.stderr}`);
+    assert.match(result.stdout, /PASS/);
+  } finally {
+    rmTmpDir(tmpHome);
+  }
 });
 
 test('release gate: CHANGELOG.md Unreleased section exists', () => {

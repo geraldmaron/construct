@@ -1,7 +1,7 @@
 {
   "id": "qa-to-release-manager",
   "producer": "cx-qa",
-  "consumer": "cx-release-manager",
+  "consumer": "cx-operations",
   "trigger": {
     "intent": [
       "implementation"
@@ -29,8 +29,16 @@
     "All upstream verdicts APPROVED; QA verdict PASS"
   ],
   "postconditions": [
-    "Rollback plan tested, not just described",
-    "Rollout plan has concrete checkpoint signals"
+    {
+      "id": "qa-to-release-manager-pc-0-rollback-plan-tested-not-just-described",
+      "description": "Rollback plan tested, not just described",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "qa-to-release-manager-pc-1-rollout-plan-has-concrete-checkpoint-signals",
+      "description": "Rollout plan has concrete checkpoint signals",
+      "postconditionType": "advisory"
+    }
   ],
   "description": "",
   "teamBoundary": {

@@ -1,0 +1,12 @@
+{
+  "id": "local",
+  "version": "1.0.0",
+  "kind": "model",
+  "capabilities": ["chat"],
+  "secretEnvKeys": [],
+  "docs": "Local OpenAI-compatible server",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin",
+  "securityClassification": "trusted"
+}

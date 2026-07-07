@@ -8,15 +8,23 @@
  * via the install marker so provisioning never runs and the network is never
  * touched. The tool must return a clean, bounded result — the node-native
  * fallback — never hang the server and never surface an undefined-property crash.
+ *
+ * @capability ingest.docling
+ *
+ * The docling venv resolves through the machine-shared runtime root
+ * (ADR-0066/construct-rf26.16), never keyed by project: the sandbox's
+ * HOME == root, so the stub lands at root/.construct/runtime/docling/ — the
+ * same place the running server resolves it to, regardless of its cwd.
  */
 import test from "node:test";
 import assert from "node:assert";
-import { mkdtempSync, mkdirSync, writeFileSync, chmodSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const DOCLING_PIN = "2.45.0";
@@ -25,13 +33,14 @@ function makeSandbox() {
   const root = mkdtempSync(join(tmpdir(), "mcp-ingest-"));
   // Stub docling venv: a python that exits non-zero, recorded in the marker so
   // ensureDoclingVenv returns it without provisioning (no uv, no network).
-  const venvBin = join(root, ".cx", "runtime", "docling", ".venv", "bin");
+  const runtimeDir = join(root, ".construct", "runtime", "docling");
+  const venvBin = join(runtimeDir, ".venv", "bin");
   mkdirSync(venvBin, { recursive: true });
   const py = join(venvBin, "python");
   writeFileSync(py, "#!/bin/sh\nexit 1\n");
   chmodSync(py, 0o755);
   writeFileSync(
-    join(root, ".cx", "runtime", "docling", ".install-marker.json"),
+    join(runtimeDir, ".install-marker.json"),
     JSON.stringify({ doclingVersion: DOCLING_PIN, pythonBin: py }),
   );
   // A docling-format input (.rtf is routed to docling, and the legacy extractor
@@ -76,7 +85,7 @@ test("ingest_document with a broken docling extractor returns the node-native fa
     assert.ok(file, "a file result is present");
     assert.ok(file.droppedInfo.some((d) => d.kind === "docling-fallback"), "fallback to the node-native extractor is recorded");
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    rmTmpDir(root);
   }
 });
 
@@ -91,6 +100,6 @@ test("server stays responsive after the failing ingest (tools/list still answers
       assert.ok(tools.tools.some((t) => t.name === "call"), "server answers tools/list after the failing call");
     });
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    rmTmpDir(root);
   }
 });

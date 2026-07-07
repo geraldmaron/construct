@@ -6,11 +6,12 @@
  * and runtime handoff (artifacts validated against the referenced schema,
  * with warn vs block enforcement modes).
  */
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 import {
   validateContractsFile,
@@ -20,11 +21,12 @@ import {
 
 function freshRepo() {
   const root = mkdtempSync(join(tmpdir(), 'construct-contracts-'));
+  mkdirSync(join(root, '.cx'), { recursive: true });
   mkdirSync(join(root, 'agents'), { recursive: true });
   mkdirSync(join(root, 'lib', 'schemas'), { recursive: true });
   return {
     root,
-    cleanup() { try { rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* ignore */ } },
+    cleanup() { try { rmTmpDir(root); } catch { /* ignore */ } },
     writeContracts(obj) {
       writeFileSync(join(root, 'agents', 'contracts.json'), JSON.stringify(obj, null, 2));
     },
@@ -127,55 +129,170 @@ test('findContract resolves by producer/consumer pair', () => {
 });
 
 test('validateHandoff in block mode returns BLOCKED_CONTRACT when mustContain is missing', () => {
-  const result = validateHandoff({
-    producer: 'construct',
-    consumer: 'cx-orchestrator',
-    artifact: { goal: 'do the thing' },
-    enforcement: 'block',
-  });
-  assert.equal(result.ok, false);
-  assert.equal(result.status, 'BLOCKED_CONTRACT');
-  assert.ok(result.errors.length > 0, 'expected at least one error');
-  assert.ok(result.errors.some((e) => /intent|workCategory|riskFlags|acceptanceCriteria/.test(e)), `expected a mustContain error, got: ${result.errors.join('; ')}`);
+  const repo = freshRepo();
+  try {
+    const result = validateHandoff({
+      producer: 'construct',
+      consumer: 'cx-orchestrator',
+      artifact: { goal: 'do the thing' },
+      enforcement: 'block',
+      repoRoot: repo.root,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 'BLOCKED_CONTRACT');
+    assert.ok(result.errors.length > 0, 'expected at least one error');
+    assert.ok(result.errors.some((e) => /intent|workCategory|riskFlags|acceptanceCriteria/.test(e)), `expected a mustContain error, got: ${result.errors.join('; ')}`);
+  } finally { repo.cleanup(); }
 });
 
 test('validateHandoff in warn mode keeps ok:true but surfaces warnings on violation', () => {
-  const result = validateHandoff({
-    producer: 'construct',
-    consumer: 'cx-orchestrator',
-    artifact: { goal: 'do the thing' },
-    enforcement: 'warn',
-  });
-  assert.equal(result.ok, true);
-  assert.ok(Array.isArray(result.warnings) && result.warnings.length > 0, 'expected warnings');
+  const repo = freshRepo();
+  try {
+    const result = validateHandoff({
+      producer: 'construct',
+      consumer: 'cx-orchestrator',
+      artifact: { goal: 'do the thing' },
+      enforcement: 'warn',
+      repoRoot: repo.root,
+    });
+    assert.equal(result.ok, true);
+    assert.ok(Array.isArray(result.warnings) && result.warnings.length > 0, 'expected warnings');
+  } finally { repo.cleanup(); }
 });
 
 test('validateHandoff in block mode passes when the artifact satisfies the contract', () => {
-  const result = validateHandoff({
-    producer: 'construct',
-    consumer: 'cx-orchestrator',
-    artifact: {
-      goal: 'do the thing',
-      intent: 'orchestrated',
-      workCategory: 'feature',
-      riskFlags: [],
-      acceptanceCriteria: ['ships'],
-    },
-    enforcement: 'block',
-  });
-  assert.equal(result.ok, true);
-  assert.ok(result.contract);
+  const repo = freshRepo();
+  try {
+    const result = validateHandoff({
+      producer: 'construct',
+      consumer: 'cx-orchestrator',
+      artifact: {
+        goal: 'do the thing',
+        intent: 'orchestrated',
+        workCategory: 'feature',
+        riskFlags: [],
+        acceptanceCriteria: ['ships'],
+      },
+      enforcement: 'block',
+      repoRoot: repo.root,
+    });
+    assert.equal(result.ok, true);
+    assert.ok(result.contract);
+  } finally { repo.cleanup(); }
 });
 
 test('validateHandoff returns BLOCKED_CONTRACT in block mode when no contract is registered for the pair', () => {
+  const repo = freshRepo();
+  try {
+    const result = validateHandoff({
+      producer: 'cx-nobody',
+      consumer: 'cx-nowhere',
+      artifact: {},
+      enforcement: 'block',
+      repoRoot: repo.root,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 'BLOCKED_CONTRACT');
+  } finally { repo.cleanup(); }
+});
+
+// construct-rf26.12: output.mustContain / mustContainOneOf / mustMatchEnum were
+// declared on many shipped contracts but never actually checked at handoff —
+// these pin the new enforcement so a regression is a test failure, not a
+// silent no-op.
+
+test('validateHandoff blocks on an output.mustMatchEnum violation (engineer-to-reviewer verdict)', () => {
   const result = validateHandoff({
-    producer: 'cx-nobody',
-    consumer: 'cx-nowhere',
-    artifact: {},
+    producer: 'cx-engineer',
+    consumer: 'cx-reviewer',
+    artifact: { type: 'review-report', target: 'lib/foo.mjs', verdict: 'LGTM', findings: [] },
     enforcement: 'block',
   });
   assert.equal(result.ok, false);
-  assert.equal(result.status, 'BLOCKED_CONTRACT');
+  assert.ok(result.errors.some((e) => /verdict/.test(e) && /LGTM/.test(e)), `expected a verdict enum error, got: ${result.errors.join('; ')}`);
+});
+
+test('validateHandoff blocks on an empty findings array with no noIssuesFoundAt (mustContainOneOf, rubber-stamp guard)', () => {
+  const result = validateHandoff({
+    producer: 'cx-engineer',
+    consumer: 'cx-reviewer',
+    artifact: { type: 'review-report', target: 'lib/foo.mjs', verdict: 'APPROVED', findings: [] },
+    enforcement: 'block',
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((e) => /findings\|noIssuesFoundAt/.test(e)), `expected a mustContainOneOf error, got: ${result.errors.join('; ')}`);
+});
+
+test('validateHandoff passes engineer-to-reviewer when verdict is valid and findings or noIssuesFoundAt is present', () => {
+  const result = validateHandoff({
+    producer: 'cx-engineer',
+    consumer: 'cx-reviewer',
+    artifact: {
+      type: 'review-report',
+      target: 'lib/foo.mjs',
+      verdict: 'APPROVED',
+      findings: [],
+      noIssuesFoundAt: ['lib/foo.mjs'],
+      filesChanged: [{ path: 'lib/foo.mjs', action: 'modified' }],
+      verificationChecklist: {
+        compilesWithoutErrors: true,
+        existingTestsPass: true,
+        newBehaviorHasCoverage: true,
+        noHardcodedSecrets: true,
+        noFileOver800Lines: true,
+      },
+      feasibilityAssessment: 'feasible',
+      effortClass: 'S',
+      debtNote: 'none',
+      blastRadius: 'low',
+    },
+    enforcement: 'block',
+  });
+  assert.equal(result.ok, true, result.errors?.join('; '));
+});
+
+test('validateHandoff blocks on a missing output.mustContain field (architect-to-platform-engineer rollback)', () => {
+  const result = validateHandoff({
+    producer: 'cx-architect',
+    consumer: 'cx-engineer',
+    // cx-architect->cx-engineer now matches 4 contracts (architect-to-engineer,
+    // -ai-engineer, -data-engineer, -platform-engineer all resolved their
+    // consumer to cx-engineer, construct-rf26.11), so an explicit id is
+    // required to avoid findContract's no-id fallback silently picking
+    // whichever contract sorts first.
+    id: 'architect-to-platform-engineer',
+    artifact: { problem: 'p', solution: 's', impact: 'i', migration: 'm' },
+    enforcement: 'block',
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((e) => /rollback/.test(e)), `expected a missing-output-field error, got: ${result.errors.join('; ')}`);
+});
+
+test('validateHandoff blocks on an output.mustMatchEnum violation for a wildcard-producer contract (any-to-debugger)', () => {
+  const result = validateHandoff({
+    producer: '*',
+    consumer: 'cx-debugger',
+    artifact: { rootCause: 'race condition', rootCauseConfirmedVia: 'guess', fix: 'add a lock' },
+    enforcement: 'block',
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((e) => /rootCauseConfirmedVia/.test(e)), `expected a rootCauseConfirmedVia enum error, got: ${result.errors.join('; ')}`);
+});
+
+test('validateHandoff recurses into nested schema required fields (implementation.json verificationChecklist)', () => {
+  const result = validateHandoff({
+    producer: 'cx-architect',
+    consumer: 'cx-engineer',
+    artifact: {
+      type: 'implementation',
+      status: 'DONE',
+      filesChanged: [{ path: 'lib/foo.mjs', action: 'modified' }],
+      verificationChecklist: { compilesWithoutErrors: true },
+    },
+    enforcement: 'block',
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((e) => /verificationChecklist.*existingTestsPass/.test(e)), `expected a nested schema-required error, got: ${result.errors.join('; ')}`);
 });
 
 test('workflow_contract_validate MCP tool enriches bare goal before validateHandoff', async () => {

@@ -6,9 +6,6 @@ artifactType: review-report
 role: reviewer
 applies_to:
   - cx-reviewer
-  - cx-devil-advocate
-  - cx-evaluator
-  - cx-trace-reviewer
 inherits: null
 version: 2
 scopes:

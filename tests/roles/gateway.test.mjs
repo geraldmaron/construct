@@ -3,6 +3,11 @@
  *
  * shouldEscalate is pure (reads events + pending files but no network). Tests
  * isolate via CONSTRUCT_ROLES_ROOT and reset state between tests.
+ *
+ * Any test that can reach createBdIncident() MUST inject fakeRunBd() (construct-y4iv)
+ * -- CONSTRUCT_ROLES_ROOT only isolates the dedup-fingerprint files, not the bd
+ * client, so an uninjected escalation path still hits the real shared bd/dolt
+ * database.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -15,6 +20,13 @@ import { tempDir } from '../helpers.mjs';
 let bus;
 let gw;
 let loadManifest;
+
+function fakeRunBd(calls) {
+  return async (args) => {
+    calls.push(args);
+    return { success: true, output: 'Created issue: fake-0001' };
+  };
+}
 
 test.before(async () => {
   process.env.CONSTRUCT_ROLES_ROOT = tempDir('construct-roles-gw-');
@@ -29,12 +41,12 @@ test.beforeEach(() => {
   if (fs.existsSync(ep)) fs.unlinkSync(ep);
   if (fs.existsSync(pp)) fs.unlinkSync(pp);
   delete process.env.CONSTRUCT_ROLES;
-  delete process.env.CONSTRUCT_ROLE_SRE;
+  delete process.env.CONSTRUCT_ROLE_OPERATIONS;
   delete process.env.CONSTRUCT_ROLE_SECURITY;
 });
 
 test('severity-immediate escalates on first hit', () => {
-  const m = loadManifest('sre');
+  const m = loadManifest('operations');
   const e = bus.emit('service.down', { project: 'p', summary: 'postgres down' });
   const d = gw.shouldEscalate(e, m);
   assert.equal(d.escalate, true);
@@ -42,7 +54,7 @@ test('severity-immediate escalates on first hit', () => {
 });
 
 test('threshold requires N hits within window', () => {
-  const m = loadManifest('sre');
+  const m = loadManifest('operations');
   const e1 = bus.emit('push_gate.fail', { project: 'p', summary: 'fail' });
   let d = gw.shouldEscalate(e1, m);
   assert.equal(d.escalate, false);
@@ -55,11 +67,11 @@ test('threshold requires N hits within window', () => {
 });
 
 test('cooldown suppresses re-escalation of the same fingerprint', () => {
-  const m = loadManifest('sre');
+  const m = loadManifest('operations');
   const e = bus.emit('service.down', { project: 'p', summary: 'down' });
   fs.appendFileSync(
     gw._gatewayPaths.pendingPath(),
-    JSON.stringify({ ts: Date.now(), fingerprint: e.fingerprint, killSwitchEnv: 'CONSTRUCT_ROLE_SRE' }) + '\n'
+    JSON.stringify({ ts: Date.now(), fingerprint: e.fingerprint, killSwitchEnv: 'CONSTRUCT_ROLE_OPERATIONS' }) + '\n'
   );
   const d = gw.shouldEscalate(e, m);
   assert.equal(d.escalate, false);
@@ -67,12 +79,12 @@ test('cooldown suppresses re-escalation of the same fingerprint', () => {
 });
 
 test('rate ceiling prevents more than 3 escalations per persona per hour', () => {
-  const m = loadManifest('sre');
+  const m = loadManifest('operations');
   const now = Date.now();
   for (let i = 0; i < 3; i++) {
     fs.appendFileSync(
       gw._gatewayPaths.pendingPath(),
-      JSON.stringify({ ts: now - 1000 * i, fingerprint: `other-${i}`, killSwitchEnv: 'CONSTRUCT_ROLE_SRE' }) + '\n'
+      JSON.stringify({ ts: now - 1000 * i, fingerprint: `other-${i}`, killSwitchEnv: 'CONSTRUCT_ROLE_OPERATIONS' }) + '\n'
     );
   }
   const e = bus.emit('service.down', { project: 'p', summary: 'new failure' });
@@ -83,24 +95,50 @@ test('rate ceiling prevents more than 3 escalations per persona per hour', () =>
 
 test('global kill switch bails before emission', async () => {
   process.env.CONSTRUCT_ROLES = 'off';
-  const r = await gw.recordAndMaybeInvoke('service.down', { project: 'p', summary: 'down' });
+  const calls = [];
+  const r = await gw.recordAndMaybeInvoke('service.down', { project: 'p', summary: 'down' }, { runBd: fakeRunBd(calls) });
   assert.equal(r.recorded, false);
   assert.equal(r.reason, 'global-off');
+  assert.equal(calls.length, 0, 'bd client must not be called');
 });
 
 test('per-persona kill switch bails after emission, before bd', async () => {
-  process.env.CONSTRUCT_ROLE_SRE = 'off';
-  const r = await gw.recordAndMaybeInvoke('service.down', { project: 'p', summary: 'down' });
+  process.env.CONSTRUCT_ROLE_OPERATIONS = 'off';
+  const calls = [];
+  const r = await gw.recordAndMaybeInvoke('service.down', { project: 'p', summary: 'down' }, { runBd: fakeRunBd(calls) });
   assert.equal(r.recorded, true);
   assert.equal(r.escalated, false);
   assert.equal(r.reason, 'persona-off');
+  assert.equal(calls.length, 0, 'bd client must not be called');
 });
 
 test('unrouted events are recorded but not escalated', async () => {
-  const r = await gw.recordAndMaybeInvoke('unknown.event', { project: 'p', summary: 'huh' });
+  const calls = [];
+  const r = await gw.recordAndMaybeInvoke('unknown.event', { project: 'p', summary: 'huh' }, { runBd: fakeRunBd(calls) });
   assert.equal(r.recorded, true);
   assert.equal(r.escalated, false);
   assert.equal(r.reason, 'no-owner');
+  assert.equal(calls.length, 0, 'bd client must not be called');
+});
+
+// construct-y4iv: any escalation path that reaches createBdIncident() must
+// go through the injected bd client, not the real one, or every run of this
+// suite files a duplicate bead in the shared bd/dolt store. fakeRunBd proves
+// the path executes end to end (calls.length === 1) while the real
+// lib/beads-client.mjs runBd is never invoked.
+
+test('severity-immediate escalation reaches bd via the injected client only, never the real one', async () => {
+  const calls = [];
+  const r = await gw.recordAndMaybeInvoke(
+    'service.down',
+    { project: 'p', summary: 'postgres down' },
+    { runBd: fakeRunBd(calls) }
+  );
+  assert.equal(r.recorded, true);
+  assert.equal(r.escalated, true);
+  assert.equal(r.bdIssueId, 'fake-0001');
+  assert.equal(calls.length, 1, 'the injected fake bd client must be called exactly once');
+  assert.equal(calls[0][0], 'create');
 });
 
 test('events from OS tmpdir paths are not escalated (test-fixture filter)', () => {
@@ -135,7 +173,7 @@ function writePending(entries) {
 
 test('listPending filters out unresolved entries older than the TTL', () => {
   const now = Date.now();
-  const fresh = { ts: now - 1000, personaId: 'sre', cxId: 'cx-sre', fingerprint: 'fresh', eventType: 'service.down', summary: 'recent' };
+  const fresh = { ts: now - 1000, personaId: 'operations', cxId: 'cx-operations', fingerprint: 'fresh', eventType: 'service.down', summary: 'recent' };
   const stale = { ts: now - 15 * 24 * 60 * 60 * 1000, personaId: 'security', cxId: 'cx-security', fingerprint: 'stale', eventType: 'secrets.detected', summary: 'old fixture' };
   writePending([fresh, stale]);
 

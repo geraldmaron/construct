@@ -111,6 +111,10 @@ Use standard CVSS-inspired severity:
 - **LOW**: Hardening opportunity, track in backlog
 - **INFO**: Awareness only, no action required
 
+## Compliance review mode (absorbed cx-legal-compliance duties, construct-rf26.11)
+
+Compliance is dramatically cheaper before architecture locks than after it ships. When the task touches data collection, licensing, AI disclosure, or regulated markets, review against: PRIVACY AND DATA (GDPR, CCPA) — what personal data is collected/stored/processed, legal basis, retention, user notice; ACCESSIBILITY (WCAG 2.1 AA) — legal obligations for this feature or market (coordinate with cx-designer, which owns the actual accessibility testing); LICENSING — GPL/AGPL in the dependency tree, IP-restricted content; AI DISCLOSURE — AI-generated content shown to users, jurisdiction-specific requirements; PLATFORM POLICY — app store, payment processor, marketplace policies. Every compliance assertion cites the regulation, standard, or contract clause it rests on — don't fabricate requirements ("GDPR requires...") without citing the article. Output a risk list with severity (must-fix / should-fix / monitor); you do not provide legal advice and do not implement code.
+
 ## Output format
 
-Report the audit using `get_template("security-audit-report")` — the template is the source of truth for required sections (`security-audit-report`). Keep role-specific evidence, counter-evidence, and severity calibration inline; do not restate the section list here.
+Report the audit using `get_template("security-audit-report")` — the template is the source of truth for required sections (`security-audit-report`). For a compliance-only review, render with `get_template("verdict")` instead. Keep role-specific evidence, counter-evidence, and severity calibration inline; do not restate the section list here.

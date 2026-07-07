@@ -9,7 +9,9 @@
     "schema": "lib/contract-schemas/implementation.json",
     "mustContain": [
       "filesChanged",
-      "tests"
+      "tests",
+      "effortClass",
+      "blastRadius"
     ]
   },
   "output": {
@@ -20,9 +22,23 @@
     "Test plan exists or is derivable from acceptance criteria"
   ],
   "postconditions": [
-    "Verdict in {PASS, FAIL}",
-    "Coverage meets project threshold",
-    "FAIL blocks DONE in workflow"
+    {
+      "id": "engineer-to-qa-pc-0-verdict-in-pass-fail",
+      "description": "Verdict in {PASS, FAIL}",
+      "postconditionType": "executable",
+      "enforcedVia": "output-shape",
+      "enforcedBy": "verdict (schema enum)"
+    },
+    {
+      "id": "engineer-to-qa-pc-1-coverage-meets-project-threshold",
+      "description": "Coverage meets project threshold",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "engineer-to-qa-pc-2-fail-blocks-done-in-workflow",
+      "description": "FAIL blocks DONE in workflow",
+      "postconditionType": "advisory"
+    }
   ],
   "description": "",
   "teamBoundary": {

@@ -31,6 +31,12 @@ after(() => {
   }
 });
 
+// The spawned `construct intake list` below resolves the machine-scoped state
+// root (ADR-0066) from process.env.CX_HOME_OVERRIDE / HOME in its own process,
+// so it must be pinned to a throwaway home or it leaks a project-key directory
+// into the real developer machine's ~/.construct/projects/.
+const HOME_DIR = mkTmp('cx-rebrand-home-');
+
 describe('getRebrand', () => {
   it('returns defaults when rootDir is missing or unreadable', () => {
     assert.deepEqual(getRebrand(null), { ...DEFAULT_REBRAND });
@@ -81,7 +87,7 @@ describe('construct intake list (rebrand integration)', () => {
 
     const result = spawnSync(process.execPath, [CLI_BIN, 'intake', 'list'], {
       cwd: root,
-      env: { ...process.env, CX_DATA_DIR: root },
+      env: { ...process.env, CX_DATA_DIR: root, HOME: HOME_DIR, CX_HOME_OVERRIDE: HOME_DIR },
       encoding: 'utf8',
       timeout: 15_000,
     });

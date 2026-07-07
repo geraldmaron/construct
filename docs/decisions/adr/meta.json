@@ -39,6 +39,25 @@
     "0047-specialist-vs-flavor-model",
     "0048-semantic-tool-discovery",
     "0049-cross-process-auth-once",
-    "0050-worker-scoped-governed-web-capability"
+    "0050-worker-scoped-governed-web-capability",
+    "0051-lmcp-a1-team-backend-git-queue",
+    "0052-lmcp-a2-unified-provider-manifest",
+    "0053-lmcp-a3-living-graph-architecture",
+    "0054-lmcp-a4-workflow-manifest-schema",
+    "0055-lmcp-a5-pack-schema-versioning-prompt-failure",
+    "0056-lmcp-a6-policy-approval-identity-model",
+    "0057-lmcp-a7-enterprise-baseline-cut-lines",
+    "0058-lmcp-a8-test-suite-rebuild-strategy",
+    "0059-lmcp-a9-dependency-intent-rubric",
+    "0060-lmcp-b10-provider-filter-dsl",
+    "0061-lmcp-p1-embed-capability-schema-runtime-placement",
+    "0062-lmcp-f6-persona-reasoning-framework-format",
+    "0063-host-subscription-execution-pickup-and-sampling",
+    "0064-language-runtime-strategy",
+    "0065-orchestrator-worker-consolidation",
+    "appendix-0065-roster-mapping",
+    "0066-config-layer-project-footprint",
+    "0067-deterministic-flow-engine",
+    "0068-ingestion-sidecar-process-contract"
   ]
 }

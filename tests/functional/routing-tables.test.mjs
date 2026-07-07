@@ -19,44 +19,47 @@ import {
   knownWatchers,
 } from '../../lib/orchestration/routing-tables.mjs';
 
+// construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator
+// + 11 workers); owners below reflect that roster (e.g. sre/release-manager/
+// docs-keeper folded into cx-operations — see the ADR-0065 appendix addendum).
 const EXPECTED_EVENTS = {
-  'push_gate.fail': 'cx-sre',
-  'service.down': 'cx-sre',
-  'mcp.unhealthy.persistent': 'cx-sre',
-  'edit_loop.stuck': 'cx-sre',
+  'push_gate.fail': 'cx-operations',
+  'service.down': 'cx-operations',
+  'mcp.unhealthy.persistent': 'cx-operations',
+  'edit_loop.stuck': 'cx-operations',
   'test.fail': 'cx-qa',
   'test.flake': 'cx-qa',
   'coverage.drop': 'cx-qa',
   'dep.cve': 'cx-security',
   'secrets.detected': 'cx-security',
   'config.protection.violation': 'cx-security',
-  'pr.merged.no-docs': 'cx-docs-keeper',
-  'changelog.missing': 'cx-docs-keeper',
-  'document.stale': 'cx-docs-keeper',
-  'readme.stale': 'cx-docs-keeper',
+  'pr.merged.no-docs': 'cx-operations',
+  'changelog.missing': 'cx-operations',
+  'document.stale': 'cx-operations',
+  'readme.stale': 'cx-operations',
   'adr.requested': 'cx-architect',
   'arch.boundary.violated': 'cx-architect',
   'regression.detected': 'cx-debugger',
   'hang.detected': 'cx-debugger',
-  'release.candidate': 'cx-release-manager',
-  'version.bump.needed': 'cx-release-manager',
+  'release.candidate': 'cx-operations',
+  'version.bump.needed': 'cx-operations',
   'backlog.stale': 'cx-product-manager',
   'prd.requested': 'cx-product-manager',
   'pr.opened': 'cx-reviewer',
   'pr.ready-for-review': 'cx-reviewer',
-  'infra.change.requested': 'cx-platform-engineer',
-  'service.scale.event': 'cx-platform-engineer',
+  'infra.change.requested': 'cx-engineer',
+  'service.scale.event': 'cx-engineer',
   'design.requested': 'cx-designer',
-  'a11y.violation': 'cx-accessibility',
+  'a11y.violation': 'cx-designer',
   'research.requested': 'cx-researcher',
   'evidence.requested': 'cx-researcher',
-  'eval.regression': 'cx-evaluator',
-  'trace.anomaly': 'cx-trace-reviewer',
-  'dep.license': 'cx-legal-compliance',
-  'privacy-policy.review': 'cx-legal-compliance',
-  'strategy.required': 'cx-business-strategist',
+  'eval.regression': 'cx-reviewer',
+  'trace.anomaly': 'cx-reviewer',
+  'dep.license': 'cx-security',
+  'privacy-policy.review': 'cx-security',
+  'strategy.required': 'cx-product-manager',
   'plan.requested': 'cx-operations',
-  'research.gate.required': 'cx-rd-lead',
+  'research.gate.required': 'cx-architect',
   'handoff.received': 'cx-orchestrator',
   'incident.handoff': 'cx-engineer',
   'bug.assigned': 'cx-engineer',
@@ -81,16 +84,16 @@ const EXPECTED_DOCS = {
   'evidence-brief': 'cx-researcher',
   'signal-brief': 'cx-researcher',
   'product-intelligence-report': 'cx-researcher',
-  runbook: 'cx-sre',
-  'incident-report': 'cx-sre',
-  postmortem: 'cx-sre',
+  runbook: 'cx-operations',
+  'incident-report': 'cx-operations',
+  postmortem: 'cx-operations',
   'test-plan': 'cx-qa',
   'qa-strategy': 'cx-qa',
   'security-review': 'cx-security',
   'threat-model': 'cx-security',
-  memo: 'cx-docs-keeper',
-  changelog: 'cx-docs-keeper',
-  strategy: 'cx-business-strategist',
+  memo: 'cx-operations',
+  changelog: 'cx-operations',
+  strategy: 'cx-product-manager',
 };
 
 test('every expected event resolves to its declared specialist owner', () => {
@@ -116,14 +119,14 @@ test('unknown doc types return null instead of throwing', () => {
   assert.equal(ownerForDoc(''), null);
 });
 
-test('wide blast radius triggers cx-sre via watch condition', () => {
+test('wide blast radius triggers cx-operations via watch condition', () => {
   const triggers = evaluateWatchConditions({
     blastRadius: 'wide',
     riskFlags: {},
   });
-  const sre = triggers.find((t) => t.specialist === 'cx-sre');
-  assert.ok(sre, 'expected cx-sre triggered by wide-blast-radius');
-  assert.equal(sre.watcher, 'wide-blast-radius');
+  const operations = triggers.find((t) => t.specialist === 'cx-operations');
+  assert.ok(operations, 'expected cx-operations triggered by wide-blast-radius');
+  assert.equal(operations.watcher, 'wide-blast-radius');
 });
 
 test('auth + non-narrow blast triggers cx-security via watch condition', () => {

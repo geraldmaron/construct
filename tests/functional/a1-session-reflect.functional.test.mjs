@@ -7,6 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const HOOK = path.join(REPO, 'lib', 'hooks', 'session-reflect.mjs');
@@ -95,5 +96,5 @@ test('A1 end-to-end: hook writes searchable observation, accumulation works', as
   assert.equal(index2.length, 2);
   assert.match(index2[0].summary, /git remote set-url|homebrew/i);
 
-  fs.rmSync(cwd, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  rmTmpDir(cwd);
 });

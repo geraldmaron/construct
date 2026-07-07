@@ -19,6 +19,7 @@ import path from 'node:path';
 
 import * as toolRecovery from '../../lib/mcp/tool-recovery.mjs';
 import { recordToolNameMiss } from '../../lib/mcp/tool-recovery.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const roots = [];
 function root() {
@@ -31,7 +32,7 @@ function readMisses(rootDir) {
   if (!fs.existsSync(file)) return [];
   return fs.readFileSync(file, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
 }
-test.after(() => { for (const d of roots) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
+test.after(() => { for (const d of roots) { try { rmTmpDir(d); } catch {} } });
 
 test('recordToolNameMiss writes a well-formed tool-name-miss entry', () => {
   const rootDir = root();

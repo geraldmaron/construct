@@ -4,11 +4,12 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateArtifactRelease } from '../../lib/artifact-release-gate.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -21,7 +22,7 @@ test('artifact gate blocks PRD missing required sections', () => {
     assert.equal(r.ok, false);
     assert.ok(r.errors.length > 0);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -37,7 +38,7 @@ test('artifact gate accepts bypass with documented reason', () => {
     assert.equal(r.ok, true);
     assert.equal(r.bypassed, true);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });
 
@@ -86,6 +87,6 @@ Reversible within one quarter if projection lag exceeds SLO.
     const r = validateArtifactRelease({ filePath: f, type: 'adr', rootDir: REPO, cwd: dir });
     assert.equal(r.ok, true, r.errors.join('; '));
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmTmpDir(dir);
   }
 });

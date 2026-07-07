@@ -24,12 +24,30 @@
     "frameworks/spring-boot",
     "exploration/unknown-codebase-onboarding",
     "exploration/tracer-bullet-method",
-    "exploration/dependency-graph-reading"
+    "exploration/dependency-graph-reading",
+    "ai/agent-dev",
+    "ai/rag-system",
+    "ai/llm-security",
+    "ai/prompt-and-eval",
+    "ai/prompt-optimizer",
+    "ai/ml-ops",
+    "devops/data-engineering",
+    "devops/database",
+    "devops/observability",
+    "operating/raw-data-structuring",
+    "devops/ci-cd",
+    "devops/monorepo",
+    "devops/containerization",
+    "devops/dependency-management",
+    "devops/devsecops",
+    "devops/cost-optimization"
   ],
   "events": [
     "incident.handoff",
     "bug.assigned",
-    "feature.assigned"
+    "feature.assigned",
+    "infra.change.requested",
+    "service.scale.event"
   ],
   "fence": {
     "allowedPaths": [
@@ -38,14 +56,34 @@
       "src/**",
       "app/**",
       "tests/**",
-      "docs/**"
+      "docs/**",
+      "docs/ai/**",
+      "docs/specialists/**",
+      "specialists/**",
+      "skills/ai/**",
+      "docs/data/**",
+      "docs/etl/**",
+      "docs/platform/**",
+      "docs/infra/**",
+      "infra/**",
+      "terraform/**",
+      "k8s/**"
     ],
     "allowedBdLabels": [
       "bug",
       "feature",
       "task",
       "engineering",
-      "fix"
+      "fix",
+      "ai",
+      "agent",
+      "model",
+      "data",
+      "etl",
+      "pipeline",
+      "platform",
+      "infrastructure",
+      "infra"
     ],
     "allowedCommands": [
       "bd create",
@@ -65,6 +103,8 @@
       "push",
       "edit:specialists/org",
       "edit:lib/setup.mjs",
+      "edit:bin/construct-postinstall.mjs",
+      "edit:lib/hooks/**",
       "edit:claude/settings.template.json"
     ]
   },
@@ -77,13 +117,35 @@
       "implementation progress",
       "test coverage gaps",
       "build health",
-      "PR velocity"
+      "PR velocity",
+      "model reliability",
+      "failure mode coverage",
+      "prompt stability",
+      "eval health",
+      "pipeline reliability",
+      "data quality",
+      "schema contract adherence",
+      "idempotency",
+      "developer friction",
+      "dependency freshness"
     ],
     "riskSignals": [
       "failing CI",
       "stale PRs",
       "untested paths",
-      "pattern drift"
+      "pattern drift",
+      "untested failure paths",
+      "hallucination risk dismissed",
+      "prompt drift",
+      "demo-only validation",
+      "non-idempotent pipelines",
+      "missing data quality tests",
+      "schema drift",
+      "uncontracted outputs",
+      "slow CI",
+      "stale dependencies",
+      "manual steps in pipelines",
+      "config only author understands"
     ],
     "artifactBias": [
       "notes",
@@ -98,7 +160,9 @@
     "qa",
     "reviewer",
     "security",
-    "sre"
+    "operations",
+    "architect",
+    "data-analyst"
   ],
   "team": "engineering-team",
   "teamId": "engineering-team",

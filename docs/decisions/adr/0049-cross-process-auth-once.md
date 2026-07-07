@@ -104,3 +104,33 @@ re-resolving in short-lived children — not by persisting plaintext anywhere.
 - ADR-0042's "auth-once contract" section is superseded by this ADR for the
   cross-process dimension; the single-resolver and presence-check decisions there
   remain in force.
+
+## Update (2026-07-02): single `op run` at the `construct dev` parent (construct-trxz.11)
+
+Design A first shipped as a **per-service** wrap: each of the ~5 long-lived services
+(cm, OpenCode, copilot bridge, doctor, oracle) launched under its own
+`op run --env-file`, relying on 1Password's session to deduplicate the prompt across
+the five launches — a dedup that was never proven and, under a service-account token,
+multiplies reads (≈5 services × the catalog's refs per startup).
+
+trxz.11 realizes the ADR's "resolve at a **stable parent**" intent literally:
+`construct dev` re-execs itself once under a single `op run --env-file`
+(`maybeReExecUnderOpRun`, `lib/providers/op-run.mjs`). Every `op://` reference resolves
+one time into that parent process env; the detached daemons it spawns inherit the
+resolved keys through the parent env, so the whole tree costs one biometric unlock and
+one catalog resolution. A `CONSTRUCT_OP_RUN_ACTIVE` sentinel marks the re-exec'd process
+so the per-service `wrapWithOpRun` no longer nests a second `op run` inside it.
+
+The per-service wrap is **retained as the fallback** for daemons started outside the
+re-exec'd parent — a doctor or oracle restart from a hook, where no parent resolution
+has run — so those still resolve (and are still masked) on their own.
+
+**Masking trade-off (reworks construct-trxz.3).** trxz.3 made `op run` masking the
+default so resolved secrets are not echoed to logs. `op run` masks the stdout/stderr of
+the process it directly wraps. Under the single parent, `op run` wraps the short-lived
+`construct dev` process — so its own stdout is masked — but the daemons are `detached`
+children writing to their **own** log files, which the parent's `op run` does not cover.
+A daemon that echoes a key therefore logs it unmasked (the logs are local-only, under the
+state dir). This masking loss for detached daemon logs is the accepted cost of collapsing
+N per-service wraps into one parent resolution; the per-service fallback still masks any
+daemon it wraps directly. Revisit only if a daemon is found to emit secrets to its log.

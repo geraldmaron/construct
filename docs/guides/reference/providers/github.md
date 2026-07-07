@@ -6,7 +6,7 @@ Connects Construct to GitHub repositories, issues, pull requests, and code searc
 
 ## Authentication
 
-Set `GITHUB_TOKEN` (or `GH_TOKEN`) in `~/.construct/config.env`:
+Set `GITHUB_TOKEN` (or `GH_TOKEN`) in `~/.config/construct/config.env`:
 
 ```
 GITHUB_TOKEN=ghp_your_token_here
@@ -102,7 +102,7 @@ config.repoAllowGlob = "frontend-*"
 
 ### How the validator blocks out-of-scope I/O
 
-When a `repoAllowlist` or `repoAllowGlob` is set, every call to `read(resource, config)` passes the resource name through `validateAllowlist`. If the resource does not match, an `OUT_OF_SCOPE` error is thrown and the call is aborted before any network request is made. This prevents agents from accidentally reading repositories outside the configured scope.
+When a `repoAllowlist` or `repoAllowGlob` is set, `read(config)` validates `config.repo` and `search(config)` validates every `repo:` qualifier in `config.query` through `validateAllowlist`. If a target does not match, an `OUT_OF_SCOPE` error is thrown and the call is aborted before any network request is made. A `search()` query with no `repo:` qualifier is rejected outright when an allowlist is configured, since an unscoped query could otherwise span repos outside it. This prevents agents from accidentally reading repositories outside the configured scope.
 
 When no allowlist fields are set, all repositories are accessible (default permissive behavior matches current single-repo usage).
 

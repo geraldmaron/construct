@@ -1,0 +1,14 @@
+{
+  "id": "research-synthesis",
+  "version": "1.0.0",
+  "type": "linear",
+  "modes": ["solo", "team"],
+  "surfaces": ["mcp", "cli"],
+  "roleChain": ["researcher", "data-analyst", "reviewer"],
+  "defaultApprovalMode": "proposal-only",
+  "durableStateModel": "none",
+  "tier": "reasoning",
+  "description": "Synthesize multiple sources into a cited, evidence-graded research summary.",
+  "owner": "construct-core",
+  "compatVersion": 1
+}

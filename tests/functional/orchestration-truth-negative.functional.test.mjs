@@ -14,6 +14,10 @@
  *     only, `telemetry_only` puts it in the trace only and never on the task;
  *   - the remote (team) HTTP path is opt-in via CONSTRUCT_ORCHESTRATION_URL and
  *     relays the service's run faithfully without fabricating local execution.
+ *
+ * Trace reads resolve through the machine-scoped state root (ADR-0066), so
+ * CX_HOME_OVERRIDE is pinned for the whole file to keep them off the real
+ * developer machine's $HOME.
  */
 
 import test from 'node:test';
@@ -24,10 +28,16 @@ import path from 'node:path';
 
 import { planRun, runOrchestration, hostAdapterMetadata } from '../../lib/orchestration/runtime.mjs';
 import { orchestrationRun } from '../../lib/mcp/tools/orchestration-run.mjs';
+import { traceDir } from '../../lib/worker/trace.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const ENV = { CX_MODEL_REASONING: MODEL, CX_MODEL_STANDARD: MODEL, CX_MODEL_FAST: MODEL };
 const REQUEST = 'refactor the auth module and review for security';
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-truth-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
 
 const dirs = [];
 function project(config = null) {
@@ -37,11 +47,16 @@ function project(config = null) {
   return cwd;
 }
 function traceMentions(cwd, needle) {
-  const td = path.join(cwd, '.cx', 'traces');
+  const td = traceDir(cwd);
   if (!fs.existsSync(td)) return false;
   return fs.readdirSync(td).some((f) => fs.readFileSync(path.join(td, f), 'utf8').includes(needle));
 }
-test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
+test.after(() => {
+  for (const d of dirs) { try { rmTmpDir(d); } catch {} }
+  try { rmTmpDir(homeOverride); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 // A thinking-block response yields both specialist output and a reasoning trace, so
 // the disclosure mode — not the model — decides where the reasoning is allowed to land.
@@ -113,7 +128,10 @@ test('remote orchestration is opt-in: no URL means in-process, the service is ne
   const cwd = project();
   let fetchCalls = 0;
   const spyFetch = async () => { fetchCalls += 1; throw new Error('in-process path must not reach the network'); };
-  const res = await orchestrationRun({ request: REQUEST, requested_strategy: 'orchestrated', host_model: MODEL, file_count: 4 }, { env: ENV, cwd, fetchImpl: spyFetch });
+  // worker_backend pinned explicitly: this test's subject is the remote-vs-local
+  // branch, not backend defaulting — an MCP-originated run with no explicit
+  // backend now defaults to 'host' (see orchestration-mcp-host-default tests).
+  const res = await orchestrationRun({ request: REQUEST, requested_strategy: 'orchestrated', host_model: MODEL, file_count: 4, worker_backend: 'inline' }, { env: ENV, cwd, fetchImpl: spyFetch });
   assert.equal(fetchCalls, 0, 'no CONSTRUCT_ORCHESTRATION_URL means no remote call');
   assert.equal(res.service, undefined, 'an in-process run carries no service label');
   assert.ok(res.tasks.every((t) => t.executor === 'inline:prepared'), 'in-process default stays inline-prepared');

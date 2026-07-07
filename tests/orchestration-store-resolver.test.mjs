@@ -25,6 +25,21 @@ function project() {
 }
 test.after(() => { for (const d of dirs) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 
+// resolveRunStore's sqlite branch resolves its db directory through the
+// machine-scoped state root (ADR-0066), which reads CX_HOME_OVERRIDE from
+// real process.env directly. Pin it for the whole file so a sqlite-backend
+// resolution never writes into the real developer machine's
+// ~/.construct/projects/.
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-orch-resolver-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+test.after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
+
 test('defaults to filesystem for a solo deployment', () => {
   const { backend, warnings } = resolveRunStore({ config: {}, env: { CONSTRUCT_DEPLOYMENT_MODE: 'solo' }, cwd: project() });
   assert.equal(backend, 'filesystem');
@@ -49,16 +64,61 @@ test('config orchestration.store selects sqlite when available, else falls back'
 
 test('postgres without DATABASE_URL falls back to filesystem with a warning', () => {
   const env = { CONSTRUCT_ORCHESTRATION_STORE: 'postgres', DATABASE_URL: '', CONSTRUCT_DATABASE_URL: '' };
-  const { backend, warnings } = resolveRunStore({ config: {}, env, cwd: project() });
+  const { backend, requestedBackend, degraded, degradedReason, warnings } = resolveRunStore({ config: {}, env, cwd: project() });
   assert.equal(backend, 'filesystem');
+  assert.equal(requestedBackend, 'postgres');
+  assert.equal(degraded, true);
+  assert.equal(degradedReason, 'postgres-unavailable');
   assert.ok(warnings.some((w) => /postgres/i.test(w)));
 });
 
 test('team deployment without DATABASE_URL falls back to filesystem', () => {
   const env = { CONSTRUCT_DEPLOYMENT_MODE: 'team', DATABASE_URL: '', CONSTRUCT_DATABASE_URL: '' };
-  const { backend, warnings } = resolveRunStore({ config: {}, env, cwd: project() });
+  const { backend, requestedBackend, degraded, degradedReason, warnings } = resolveRunStore({ config: {}, env, cwd: project() });
   assert.equal(backend, 'filesystem');
+  assert.equal(requestedBackend, 'postgres');
+  assert.equal(degraded, true);
+  assert.equal(degradedReason, 'postgres-unavailable');
   assert.ok(warnings.some((w) => /postgres/i.test(w)));
+});
+
+test('project storage manifest can select a fixture run-store backend', () => {
+  const cwd = project();
+  fs.mkdirSync(path.join(cwd, '.cx', 'providers'), { recursive: true });
+  fs.writeFileSync(path.join(cwd, '.cx', 'providers', 'fixture-store.manifest.json'), `${JSON.stringify({
+    id: 'fixture-store',
+    version: '1.0.0',
+    kind: 'storage',
+    capabilities: ['orchestration-run-store'],
+    operations: { runStore: 'filesystem' },
+    healthCheck: { kind: 'in-process', description: 'Filesystem-backed fixture store for resolver tests.' },
+    owner: 'construct-core',
+    compatVersion: 1,
+  }, null, 2)}\n`);
+
+  const { backend, provider, warnings } = resolveRunStore({
+    config: { orchestration: { store: 'fixture-store' } },
+    env: {},
+    cwd,
+  });
+
+  assert.equal(backend, 'fixture-store');
+  assert.equal(provider.id, 'fixture-store');
+  assert.deepEqual(warnings, []);
+});
+
+test('unregistered explicit storage backend degrades visibly instead of falling through', () => {
+  const { backend, requestedBackend, degraded, degradedReason, warnings } = resolveRunStore({
+    config: { orchestration: { store: 'missing-store' } },
+    env: {},
+    cwd: project(),
+  });
+
+  assert.equal(backend, 'filesystem');
+  assert.equal(requestedBackend, 'missing-store');
+  assert.equal(degraded, true);
+  assert.equal(degradedReason, 'storage-backend-unregistered');
+  assert.ok(warnings.some((w) => /missing-store/.test(w)));
 });
 
 test('the resolved filesystem store round-trips a run', async () => {

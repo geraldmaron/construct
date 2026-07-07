@@ -5,15 +5,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { exportMarkdown, detect } from '../../lib/document-export.mjs';
 import { pptxgenPresent, auditDeckMarkdownLayout } from '../../lib/deck-export-pptx.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FIXTURE = path.join(REPO, 'tests', 'fixtures', 'publish', 'golden-deck-platform.md');
-const OUT_DIR = path.join(REPO, '.tmp', 'deck-export-test');
+const OUT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-deck-export-'));
+
+test.after(() => { try { rmTmpDir(OUT_DIR); } catch {} });
 
 function exportFixture(format, filename) {
   fs.mkdirSync(OUT_DIR, { recursive: true });

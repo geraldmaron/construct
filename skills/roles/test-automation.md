@@ -5,7 +5,7 @@ inputs: [test-suite, task-context]
 artifactType: guidance
 role: test-automation
 applies_to:
-  - cx-test-automation
+  - cx-qa
 inherits: qa
 version: 2
 scopes:

@@ -43,7 +43,7 @@ Fallbacks (used on rate-limit or model-unavailable):
 ## Swap one tier
 
 ```bash
-construct models --apply --tier=reasoning --model=openrouter/anthropic/claude-opus-4-7
+construct models set --tier=reasoning --model=openrouter/anthropic/claude-opus-4-7
 ```
 
 This writes to `specialists/org` under the `models` block. The change takes effect on the next session-start. No `construct sync` needed.
@@ -61,7 +61,7 @@ Any OpenAI-compatible endpoint works. The model identifier is whatever the provi
 **OpenRouter:**
 
 ```bash
-construct models --apply --tier=standard --model=openrouter/openai/gpt-4o
+construct models set --tier=standard --model=openrouter/openai/gpt-4o
 ```
 
 OpenRouter exposes most major models through one API. Set `OPENROUTER_API_KEY` in your environment or `~/.config/construct/config.env` (see `construct creds list`).
@@ -69,7 +69,7 @@ OpenRouter exposes most major models through one API. Set `OPENROUTER_API_KEY` i
 **OpenAI direct:**
 
 ```bash
-construct models --apply --tier=standard --model=openai/gpt-4o
+construct models set --tier=standard --model=openai/gpt-4o
 ```
 
 Set `OPENAI_API_KEY`.
@@ -77,7 +77,7 @@ Set `OPENAI_API_KEY`.
 **Ollama (local):**
 
 ```bash
-construct models --apply --tier=fast --model=ollama/llama3.3:70b
+construct models set --tier=fast --model=ollama/llama3.3:70b
 ```
 
 Ollama needs to be running locally (`ollama serve`). No API key. Construct talks to `http://localhost:11434` by default; override with `OLLAMA_BASE_URL`. `OLLAMA_HOST` is accepted as a legacy alias where supported.
@@ -85,7 +85,7 @@ Ollama needs to be running locally (`ollama serve`). No API key. Construct talks
 **Any OpenAI-compatible endpoint:**
 
 ```bash
-construct models --apply --tier=standard --model=custom/my-model \
+construct models set --tier=standard --model=custom/my-model \
   --endpoint=https://my-host.example.com/v1
 ```
 
@@ -93,34 +93,49 @@ The `custom/<id>` prefix routes through the generic OpenAI-compatible client.
 
 ## Prefer free / local models
 
+First poll the free catalog, then set a tier with `--prefer-free` to auto-populate its fallback chain from the cheapest available models:
+
 ```bash
-construct models --apply --prefer-free
+construct models free
+construct models set --tier=<reasoning|standard|fast> --model=<provider/model-id> --prefer-free
 ```
 
-Walks the registry and remaps each tier to the cheapest available model. Useful for development, exploration, and when you don't want to burn cloud credits on routine work.
+`--prefer-free` biases the tier's inferred fallback chain toward the cheapest available models; `--prefer-free-same-family` keeps that chain within the primary model's provider family. Useful for development, exploration, and when you don't want to burn cloud credits on routine work.
 
-For smaller local checkpoints, set `CONSTRUCT_MODEL_PROFILE=small` in `~/.construct/config.env`. That keeps runtime prompts tighter, compresses role overlays, and biases prompt assembly toward retrieval-first context instead of broad prompt stuffing.
+For smaller local checkpoints, set `CONSTRUCT_MODEL_PROFILE=small` in `~/.config/construct/config.env`. That keeps runtime prompts tighter, compresses role overlays, and biases prompt assembly toward retrieval-first context instead of broad prompt stuffing.
 
 ## Resolve keys from 1Password
 
 If you keep provider keys in 1Password and run other LLM CLIs through `op run`, point Construct at the same env-file:
 
 ```bash
-# ~/.construct/config.env
+# ~/.config/construct/config.env
 CONSTRUCT_OP_ENV_FILE=~/.config/claude/.env.op
 ```
 
-The env-file holds `op://` references (`OPENROUTER_API_KEY=op://vault/item/credential`). When it is set and the `op` CLI is installed, Construct launches managed service processes under `op run`, so every reference resolves once at startup (one biometric unlock) into the service environment. OpenCode and other supported hosts can then connect through the synced Construct MCP server without a separate shell wrapper. This is strictly opt-in: unset the variable and Construct never invokes `op`, resolving plain keys from the environment or `config.env` as usual.
+The env-file holds `op://` references (`OPENROUTER_API_KEY=op://vault/item/credential`). When it is set and the `op` CLI is installed, `construct dev` re-execs itself once under a single `op run --env-file …`, so every reference resolves one time at startup (one biometric unlock) and every detached daemon inherits the resolved keys — you do not wrap the CLI by hand. OpenCode and other supported hosts then connect through the synced Construct MCP server. This is strictly opt-in: unset the variable and Construct never invokes `op`, resolving plain keys from the environment or `config.env` as usual.
 
-## Configure fallbacks
+### Non-interactive auth (`OP_SERVICE_ACCOUNT_TOKEN`)
 
-Each tier has a fallback chain. If the primary model returns rate-limit, model-unavailable, or a timeout, Construct walks the chain in order. Configure the chain:
+The desktop-app integration prompts for biometric unlock and depends on a warm GUI session — fine for a laptop, but it breaks in headless, daemon, and CI contexts, and a cold session produces repeated prompts. For those, 1Password's own recommended path is a [service account](https://developer.1password.com/docs/service-accounts/): set `OP_SERVICE_ACCOUNT_TOKEN` and `op read`/`op run` authenticate with no desktop app, biometric, or `op signin`.
 
 ```bash
-construct models --apply --tier=reasoning --fallback=openrouter/anthropic/claude-opus,openrouter/meta-llama/llama-3.3
+export OP_SERVICE_ACCOUNT_TOKEN=<token>   # from the OS keychain in practice, not plaintext
 ```
 
-Empty fallback (`--fallback=`) disables fallback for that tier: strict mode.
+Construct forwards the token from its env into every `op` invocation, so an `op://` reference resolves non-interactively. `construct doctor credentials` reports the active auth mode (`service-account` vs `desktop-session`, and whether the desktop session is signed in). Caveats from 1Password: a service account **cannot** read your built-in Personal/Private vault (put the refs in a custom vault you grant it), the token is a bearer secret (store it in the OS keychain, never in `config.env`), and the Individual/Family tier is rate-limited to ~1,000 reads/day.
+
+## Fallback chains
+
+Each tier has a fallback chain. If the primary model returns rate-limit, model-unavailable, or a timeout, Construct walks the chain in order — `primary` first, then each entry in the tier's fallback list.
+
+You don't configure the chain by hand. Construct populates it automatically when you set a tier: tier inference picks sensible alternates for the model you chose. Passing `--prefer-free-same-family` on `construct models set` biases that inferred chain toward cheaper models within the primary's provider family:
+
+```bash
+construct models set --tier=reasoning --model=openrouter/anthropic/claude-opus-4-7 --prefer-free-same-family
+```
+
+Run `construct models` to see the resulting chain per tier.
 
 ## Verify
 

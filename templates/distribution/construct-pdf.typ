@@ -1,5 +1,12 @@
 /**
- * templates/distribution/construct-pdf.typ — Construct distribution PDF.
+ * templates/distribution/construct-pdf.typ — fallback layout for any artifact
+ * type without a mapped class (see lib/publish-template.mjs ARTIFACT_TEMPLATE_MAP).
+ *
+ * Metadata contract (Pandoc -M vars, sourced from artifact YAML frontmatter by
+ * lib/publish-template.mjs parseArtifactMetadata): title, subtitle, date, status,
+ * owner, artifactType, version, docId, classification. All optional; the masthead
+ * and running chrome degrade gracefully when a field is absent. Page geometry and
+ * all type/spacing tokens come from construct-brand.typ — never hardcode them here.
  */
 
 #import "construct-brand.typ": *
@@ -7,8 +14,8 @@
 #show: construct-theme
 
 #set page(
-  paper: "a4",
-  margin: (x: 2.15cm, top: 1.95cm, bottom: 2.35cm),
+  paper: construct-page-paper,
+  margin: construct-page-margin,
   numbering: "1",
   header: construct-running-header(
     "$if(title)$$title$$endif$",
@@ -16,7 +23,7 @@
     version: "$if(version)$$version$$endif$",
   ),
   footer: construct-running-footer(
-    "Brief",
+    "Document",
     classification: "$if(classification)$$classification$$endif$",
   ),
 )

@@ -5,6 +5,8 @@
  * against the real binary in an isolated tmpdir. The load-bearing assertion is
  * that classification performs NO durable write — nothing lands under
  * .cx/intake/pending — so the planning surface is safe to call on any input.
+ *
+ * @capability workflow.triage
  */
 
 import assert from 'node:assert/strict';
@@ -14,6 +16,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test, { after } from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BIN = path.resolve(__dirname, '..', '..', 'bin', 'construct');
@@ -26,7 +29,7 @@ function freshCwd() {
 }
 after(() => {
   for (const dir of tmpDirs) {
-    try { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {}
+    try { rmTmpDir(dir); } catch {}
   }
 });
 

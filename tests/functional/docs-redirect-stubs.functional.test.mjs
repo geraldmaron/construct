@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const GENERATOR = path.join(REPO, 'apps', 'docs', 'scripts', 'gen-redirect-stubs.mjs');
@@ -48,7 +49,7 @@ test('redirect stubs: representative legacy paths meta-refresh to new URLs', asy
   delete process.env.DOCS_BASE_PATH;
   const { generateRedirectStubs } = await import(GENERATOR);
   const outDir = buildFixtureOut();
-  t.after(() => fs.rmSync(outDir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(outDir));
 
   const written = generateRedirectStubs(outDir);
   assert.ok(written >= 6, `expected at least 6 stubs, wrote ${written}`);
@@ -81,7 +82,7 @@ test('redirect stubs: nested lane paths keep their sub-segments', async (t) => {
   delete process.env.DOCS_BASE_PATH;
   const { generateRedirectStubs } = await import(GENERATOR);
   const outDir = buildFixtureOut();
-  t.after(() => fs.rmSync(outDir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(outDir));
 
   generateRedirectStubs(outDir);
   assert.match(
@@ -94,7 +95,7 @@ test('redirect stubs: non-moved operations pages get no stub', async (t) => {
   delete process.env.DOCS_BASE_PATH;
   const { generateRedirectStubs } = await import(GENERATOR);
   const outDir = buildFixtureOut();
-  t.after(() => fs.rmSync(outDir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(outDir));
 
   generateRedirectStubs(outDir);
   const stray = path.join(outDir, 'backup-restore', 'index.html');
@@ -105,7 +106,7 @@ test('redirect stubs: a real legacy page is never overwritten', async (t) => {
   delete process.env.DOCS_BASE_PATH;
   const { generateRedirectStubs } = await import(GENERATOR);
   const outDir = buildFixtureOut();
-  t.after(() => fs.rmSync(outDir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(outDir));
 
   const realLegacy = path.join(outDir, 'cookbook', 'add-a-custom-agent');
   fs.mkdirSync(realLegacy, { recursive: true });
@@ -121,7 +122,7 @@ test('redirect stubs: NEW_URL honors DOCS_BASE_PATH', async (t) => {
   t.after(() => { delete process.env.DOCS_BASE_PATH; });
   const { generateRedirectStubs } = await import(GENERATOR);
   const outDir = buildFixtureOut();
-  t.after(() => fs.rmSync(outDir, { recursive: true, force: true }));
+  t.after(() => rmTmpDir(outDir));
 
   generateRedirectStubs(outDir);
   assert.match(

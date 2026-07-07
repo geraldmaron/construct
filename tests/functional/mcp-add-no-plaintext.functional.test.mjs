@@ -25,6 +25,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const MCP_MANAGER = path.join(REPO_ROOT, 'lib', 'mcp-manager.mjs');
@@ -62,7 +63,7 @@ function readIfExists(file) {
 
 function hostConfigPaths(home) {
   return [
-    path.join(home, '.claude', 'settings.json'),
+    path.join(home, '.claude.json'),
     path.join(home, '.config', 'opencode', 'opencode.json'),
     path.join(home, '.codex', 'config.toml'),
   ];
@@ -77,7 +78,7 @@ function freshDirs(t) {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-add-cwd-'));
   t.after(() => {
     for (const d of [home, cwd]) {
-      try { fs.rmSync(d, { recursive: true, force: true }); } catch {}
+      try { rmTmpDir(d); } catch {}
     }
   });
   return { home, cwd };
@@ -114,7 +115,7 @@ test('resolved secret flips to a host env-reference in the Claude config, never 
   const result = runMcpAdd(home, cwd, canaryNotAKey);
   assert.equal(result.status, 0, `cmdMcpAdd should exit cleanly: ${result.stderr || result.stdout}`);
 
-  const claude = readIfExists(path.join(home, '.claude', 'settings.json'));
+  const claude = readIfExists(path.join(home, '.claude.json'));
   assert.ok(!claude.includes(canaryNotAKey), 'the literal secret must not land in the Claude config');
   assert.ok(claude.includes('${LINEAR_API_KEY}'), 'the Claude config must carry a ${LINEAR_API_KEY} env-reference');
   assertConfigEnvSecure(home, canaryNotAKey);

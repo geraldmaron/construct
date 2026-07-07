@@ -5,15 +5,11 @@
       "core": false
     },
     {
+      "name": "approvals",
+      "core": true
+    },
+    {
       "name": "ask",
-      "core": false
-    },
-    {
-      "name": "auth:status",
-      "core": false
-    },
-    {
-      "name": "backup",
       "core": false
     },
     {
@@ -325,6 +321,10 @@
       "core": false
     },
     {
+      "name": "resume <run-id> --flow=<path> [--state=<json>]",
+      "core": false
+    },
+    {
       "name": "review",
       "core": false
     },
@@ -389,8 +389,16 @@
       "core": false
     },
     {
+      "name": "start",
+      "core": false
+    },
+    {
       "name": "status",
       "core": true
+    },
+    {
+      "name": "status [--json]",
+      "core": false
     },
     {
       "name": "stop",
@@ -403,10 +411,6 @@
     {
       "name": "sync",
       "core": true
-    },
-    {
-      "name": "tags",
-      "core": false
     },
     {
       "name": "team",
@@ -457,40 +461,27 @@
       "core": false
     },
     {
+      "name": "workers",
+      "core": true
+    },
+    {
       "name": "workflow",
       "core": false
     }
   ],
   "agents": [
-    "accessibility",
-    "ai-engineer",
     "architect",
-    "business-strategist",
     "data-analyst",
-    "data-engineer",
     "debugger",
     "designer",
-    "devil-advocate",
-    "docs-keeper",
     "engineer",
-    "evaluator",
-    "explorer",
-    "legal-compliance",
     "operations",
-    "oracle",
     "orchestrator",
-    "platform-engineer",
     "product-manager",
     "qa",
-    "rd-lead",
-    "release-manager",
     "researcher",
     "reviewer",
-    "security",
-    "sre",
-    "test-automation",
-    "trace-reviewer",
-    "ux-researcher"
+    "security"
   ],
   "hooks": {
     "SessionStart": [

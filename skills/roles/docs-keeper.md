@@ -5,7 +5,7 @@ inputs: [docs, runbook]
 artifactType: role-guidance
 role: docs-keeper
 applies_to:
-  - cx-docs-keeper
+  - cx-operations
 inherits: operations
 version: 2
 scopes:

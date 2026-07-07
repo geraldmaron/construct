@@ -86,7 +86,7 @@ Supported formats:
 - **PDF** (via docling, layout-aware with built-in OCR): `.pdf`
 - **Audio / Video** (via [whisper.cpp](https://github.com/ggml-org/whisper.cpp), Metal-accelerated on macOS): `.mp3`, `.wav`, `.m4a`, `.mp4`, `.mov`, `.avi`, `.mkv`, `.flac`, `.ogg`, `.webm`, `.m4v`
 
-High-fidelity extraction runs through the docling Python sidecar (provisioned automatically via [uv](https://github.com/astral-sh/uv) on first use into `.cx/runtime/docling/.venv`). Pass `--legacy-extractor` to `construct ingest` to fall back to the pre-docling regex path. Audio/video transcription requires `whisper-cli` (`brew install whisper-cpp` on macOS); see [Audio and Video Intake](/intake/audio-video).
+High-fidelity extraction runs through the docling Python sidecar (provisioned automatically via [uv](https://github.com/astral-sh/uv) on first use into a machine-shared `~/.construct/runtime/docling/.venv` — one venv per machine, not one per project). Pass `--legacy-extractor` to `construct ingest` to fall back to the pre-docling regex path. Audio/video transcription requires `whisper-cli` (`brew install whisper-cpp` on macOS); see [Audio and Video Intake](/intake/audio-video).
 
 Ingested documents are also stored content-addressed at `.cx/ingest/<sha256>/{source,markdown,meta}.json` for idempotent re-ingest, and indexed into `knowledge_search` so dropped documents become retrievable from any agent session.
 
@@ -193,7 +193,7 @@ determines observation category and implicitly the knowledge subdir:
 | `#tips:how-to` | `how-to` | `pattern` | `how-tos/` |
 | `#customer:external` | `external` | `insight` | `external/` |
 
-Configure channels in `~/.construct/config.env`:
+Configure channels in `~/.config/construct/config.env`:
 
 ```
 SLACK_CHANNELS=#eng-general,#incidents:risk,#decisions:decision,#customer-feedback:external

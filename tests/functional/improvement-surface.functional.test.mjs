@@ -10,11 +10,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 
 import { runDeterministicGates, buildEvaluationReport } from '../../lib/evals/gates.mjs';
 import { runImprovementCli } from '../../lib/improvement/cli.mjs';
 import { loadRecord, proposalRecordPath } from '../../lib/improvement/store.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const ITEM = {
   schemaVersion: 1, id: 'eval-surface-1', taskFamily: 'engineering',
@@ -98,6 +99,6 @@ test('CLI improvement surface closes submit → approve → apply with durable r
     assert.equal(applied.proposal.state, 'applied');
     assert.ok(applied.proposal.rollout?.appliedAt);
   } finally {
-    rmSync(tmp, { recursive: true, force: true });
+    rmTmpDir(tmp);
   }
 });

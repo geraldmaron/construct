@@ -1,0 +1,50 @@
+{
+  "id": "linear",
+  "version": "1.0.0",
+  "kind": "data-source",
+  "capabilities": ["read"],
+  "secretEnvKeys": ["LINEAR_API_KEY"],
+  "operations": ["read"],
+  "securityClassification": "trusted",
+  "owner": "construct-core",
+  "compatVersion": 1,
+  "installSource": "builtin",
+  "sourceTarget": {
+    "provider": "linear",
+    "selector": {
+      "field": "team",
+      "pattern": null,
+      "patternTransform": "trim",
+      "hint": "required Linear team key or name",
+      "normalize": "trim"
+    },
+    "signature": { "template": "linear:team:{value}", "valueMode": "lowerOrEmpty" },
+    "legacyEnv": { "vars": ["LINEAR_TEAMS"], "parse": "csv" },
+    "aliases": { "strategy": "simple", "displayPrefix": "Linear", "catchAll": true },
+    "embed": {
+      "mode": "perTarget",
+      "valueField": "team",
+      "valueKind": "scalar",
+      "refs": ["issues"],
+      "limit": 50
+    },
+    "embedFilters": {
+      "valueField": "team",
+      "valueKind": "scalar",
+      "defaultRefs": ["issues"],
+      "extraFilterKeys": ["states"],
+      "defaultLimit": 50
+    },
+    "demandFetch": {
+      "targetRefs": ["issues"],
+      "targetOptsField": "team",
+      "targetOptsKind": "scalar",
+      "targetDefaultLimit": 50,
+      "queryRefs": ["issues"],
+      "queryOptsField": "team",
+      "queryOptsKind": "scalar",
+      "queryOptsNullable": true,
+      "queryDefaultLimit": 50
+    }
+  }
+}

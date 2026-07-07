@@ -33,8 +33,8 @@
         "structuralLint": true,
         "citationLint": true,
         "proseMinimum": 3,
-        "requiredReviewers": ["cx-devil-advocate"],
-        "optionalReviewers": ["cx-ux-researcher"]
+        "requiredReviewers": ["cx-reviewer"],
+        "optionalReviewers": ["cx-researcher"]
       },
       "qualityContract": {
         "gateLevel": "render-smoke",
@@ -60,13 +60,13 @@
         "structuralLint": true,
         "citationLint": true,
         "proseMinimum": 3,
-        "requiredReviewers": ["cx-devil-advocate", "cx-architect"],
+        "requiredReviewers": ["cx-reviewer", "cx-architect"],
         "optionalReviewers": []
       }
     },
     "prd-business": {
       "template": "templates/docs/prd-business.md",
-      "primaryOwners": ["cx-product-manager", "cx-business-strategist"],
+      "primaryOwners": ["cx-product-manager"],
       "workflowSkill": "docs/prd-workflow",
       "toneDefault": "executive-concise",
       "toneAllowed": ["executive-concise", "decision-forcing-direct"],
@@ -76,13 +76,13 @@
         "structuralLint": true,
         "citationLint": true,
         "proseMinimum": 3,
-        "requiredReviewers": ["cx-devil-advocate"],
-        "optionalReviewers": ["cx-business-strategist"]
+        "requiredReviewers": ["cx-reviewer"],
+        "optionalReviewers": ["cx-product-manager"]
       }
     },
     "meta-prd": {
       "template": "templates/docs/meta-prd.md",
-      "primaryOwners": ["cx-product-manager", "cx-docs-keeper"],
+      "primaryOwners": ["cx-product-manager", "cx-operations"],
       "workflowSkill": "docs/prd-workflow",
       "toneDefault": "decision-forcing-direct",
       "toneAllowed": ["decision-forcing-direct"],
@@ -92,13 +92,13 @@
         "structuralLint": true,
         "citationLint": true,
         "proseMinimum": 3,
-        "requiredReviewers": ["cx-devil-advocate", "cx-reviewer"],
+        "requiredReviewers": ["cx-reviewer"],
         "optionalReviewers": []
       }
     },
     "adr": {
       "template": "templates/docs/adr.md",
-      "primaryOwners": ["cx-architect", "cx-rd-lead"],
+      "primaryOwners": ["cx-architect"],
       "workflowSkill": "docs/adr-workflow",
       "toneDefault": "decision-forcing-direct",
       "toneAllowed": ["decision-forcing-direct"],
@@ -111,7 +111,7 @@
         "structuralLint": true,
         "citationLint": true,
         "proseMinimum": 2,
-        "requiredReviewers": ["cx-devil-advocate", "cx-reviewer"],
+        "requiredReviewers": ["cx-reviewer"],
         "optionalReviewers": ["cx-architect"]
       }
     },
@@ -130,7 +130,7 @@
         "structuralLint": true,
         "citationLint": true,
         "proseMinimum": 3,
-        "requiredReviewers": ["cx-devil-advocate", "cx-reviewer"],
+        "requiredReviewers": ["cx-reviewer"],
         "optionalReviewers": []
       }
     },
@@ -149,13 +149,13 @@
         "structuralLint": true,
         "citationLint": true,
         "proseMinimum": 3,
-        "requiredReviewers": ["cx-devil-advocate", "cx-reviewer"],
+        "requiredReviewers": ["cx-reviewer"],
         "optionalReviewers": []
       }
     },
     "research-brief": {
       "template": "templates/docs/research-brief.md",
-      "primaryOwners": ["cx-researcher", "cx-ux-researcher", "cx-explorer"],
+      "primaryOwners": ["cx-researcher"],
       "workflowSkill": "docs/research-workflow",
       "toneDefault": "direct",
       "toneAllowed": ["direct", "pedagogical"],
@@ -171,7 +171,7 @@
     },
     "evidence-brief": {
       "template": "templates/docs/evidence-brief.md",
-      "primaryOwners": ["cx-product-manager", "cx-researcher", "cx-ux-researcher"],
+      "primaryOwners": ["cx-product-manager", "cx-researcher"],
       "workflowSkill": "docs/evidence-ingest-workflow",
       "toneDefault": "direct",
       "toneAllowed": ["direct", "executive-concise"],
@@ -182,7 +182,7 @@
         "citationLint": true,
         "proseMinimum": 2,
         "requiredReviewers": [],
-        "optionalReviewers": ["cx-devil-advocate"]
+        "optionalReviewers": ["cx-reviewer"]
       }
     },
     "signal-brief": {
@@ -203,7 +203,7 @@
     },
     "runbook": {
       "template": "templates/docs/runbook.md",
-      "primaryOwners": ["cx-sre", "cx-operations"],
+      "primaryOwners": ["cx-operations"],
       "workflowSkill": "docs/runbook-workflow",
       "toneDefault": "blameless",
       "toneAllowed": ["blameless", "direct"],
@@ -217,12 +217,12 @@
         "citationLint": false,
         "proseMinimum": 2,
         "requiredReviewers": [],
-        "optionalReviewers": ["cx-sre"]
+        "optionalReviewers": ["cx-operations"]
       }
     },
     "incident-report": {
       "template": "templates/docs/incident-report.md",
-      "primaryOwners": ["cx-sre", "cx-operations"],
+      "primaryOwners": ["cx-operations"],
       "workflowSkill": "docs/runbook-workflow",
       "toneDefault": "blameless",
       "toneAllowed": ["blameless"],
@@ -236,12 +236,12 @@
         "citationLint": false,
         "proseMinimum": 2,
         "requiredReviewers": [],
-        "optionalReviewers": ["cx-devil-advocate"]
+        "optionalReviewers": ["cx-reviewer"]
       }
     },
     "postmortem": {
       "template": "templates/docs/postmortem.md",
-      "primaryOwners": ["cx-sre"],
+      "primaryOwners": ["cx-operations"],
       "workflowSkill": "docs/runbook-workflow",
       "toneDefault": "blameless",
       "toneAllowed": ["blameless"],
@@ -260,7 +260,7 @@
     },
     "strategy": {
       "template": "templates/docs/strategy.md",
-      "primaryOwners": ["cx-business-strategist", "cx-product-manager"],
+      "primaryOwners": ["cx-product-manager"],
       "workflowSkill": "docs/strategy-workflow",
       "toneDefault": "executive-concise",
       "toneAllowed": ["executive-concise", "decision-forcing-direct"],
@@ -273,13 +273,13 @@
         "structuralLint": true,
         "citationLint": true,
         "proseMinimum": 2,
-        "requiredReviewers": ["cx-devil-advocate"],
-        "optionalReviewers": ["cx-business-strategist"]
+        "requiredReviewers": ["cx-reviewer"],
+        "optionalReviewers": ["cx-product-manager"]
       }
     },
     "memo": {
       "template": "templates/docs/memo.md",
-      "primaryOwners": ["cx-docs-keeper", "cx-business-strategist"],
+      "primaryOwners": ["cx-operations", "cx-product-manager"],
       "workflowSkill": "docs/memo-and-decision-capture",
       "toneDefault": "executive-concise",
       "toneAllowed": ["executive-concise", "friendly", "decision-forcing-direct"],
@@ -295,7 +295,7 @@
     },
     "prfaq": {
       "template": "templates/docs/prfaq.md",
-      "primaryOwners": ["cx-product-manager", "cx-business-strategist"],
+      "primaryOwners": ["cx-product-manager"],
       "workflowSkill": "docs/prfaq-workflow",
       "toneDefault": "friendly",
       "toneAllowed": ["friendly", "executive-concise"],
@@ -308,13 +308,13 @@
         "structuralLint": true,
         "citationLint": true,
         "proseMinimum": 3,
-        "requiredReviewers": ["cx-devil-advocate"],
-        "optionalReviewers": ["cx-ux-researcher"]
+        "requiredReviewers": ["cx-reviewer"],
+        "optionalReviewers": ["cx-researcher"]
       }
     },
     "one-pager": {
       "template": "templates/docs/one-pager.md",
-      "primaryOwners": ["cx-product-manager", "cx-business-strategist"],
+      "primaryOwners": ["cx-product-manager"],
       "workflowSkill": "docs/prd-workflow",
       "toneDefault": "executive-concise",
       "toneAllowed": ["executive-concise"],
@@ -327,7 +327,7 @@
         "structuralLint": true,
         "citationLint": true,
         "proseMinimum": 2,
-        "requiredReviewers": ["cx-devil-advocate"],
+        "requiredReviewers": ["cx-reviewer"],
         "optionalReviewers": []
       },
       "qualityContract": {
@@ -340,7 +340,7 @@
     },
     "customer-profile": {
       "template": "templates/docs/customer-profile.md",
-      "primaryOwners": ["cx-product-manager", "cx-docs-keeper"],
+      "primaryOwners": ["cx-product-manager", "cx-operations"],
       "workflowSkill": "docs/customer-profile-workflow",
       "toneDefault": "direct",
       "toneAllowed": ["direct", "friendly"],
@@ -375,7 +375,7 @@
     },
     "test-plan": {
       "template": "templates/docs/test-plan.md",
-      "primaryOwners": ["cx-qa", "cx-test-automation"],
+      "primaryOwners": ["cx-qa"],
       "workflowSkill": "devops/testing",
       "toneDefault": "direct",
       "toneAllowed": ["direct"],
@@ -410,7 +410,7 @@
     },
     "changelog": {
       "template": "templates/docs/changelog-entry.md",
-      "primaryOwners": ["cx-docs-keeper", "cx-release-manager"],
+      "primaryOwners": ["cx-operations"],
       "workflowSkill": "docs/memo-and-decision-capture",
       "toneDefault": "direct",
       "toneAllowed": ["direct", "friendly"],
@@ -468,7 +468,7 @@
         "structuralLint": true,
         "citationLint": true,
         "proseMinimum": 2,
-        "requiredReviewers": ["cx-devil-advocate"],
+        "requiredReviewers": ["cx-reviewer"],
         "optionalReviewers": []
       }
     },
@@ -484,13 +484,13 @@
         "structuralLint": true,
         "citationLint": true,
         "proseMinimum": 2,
-        "requiredReviewers": ["cx-devil-advocate"],
+        "requiredReviewers": ["cx-reviewer"],
         "optionalReviewers": []
       }
     },
     "product-intelligence-report": {
       "template": "templates/docs/product-intelligence-report.md",
-      "primaryOwners": ["cx-product-manager", "cx-business-strategist"],
+      "primaryOwners": ["cx-product-manager"],
       "workflowSkill": "docs/product-intelligence-workflow",
       "toneDefault": "executive-concise",
       "toneAllowed": ["executive-concise", "direct"],
@@ -501,7 +501,7 @@
         "citationLint": true,
         "proseMinimum": 3,
         "requiredReviewers": [],
-        "optionalReviewers": ["cx-devil-advocate"]
+        "optionalReviewers": ["cx-reviewer"]
       }
     }
   }

@@ -3,8 +3,7 @@
   "name": "Governance Group",
   "owner": "security",
   "roles": [
-    "security",
-    "legal-compliance"
+    "security"
   ],
   "decisionRights": [
     "security-approval",
@@ -22,7 +21,7 @@
     "architect",
     "orchestrator"
   ],
-  "charter": "Keep the system safe to operate and inside its legal envelope. Owns security review, compliance verification, risk assessment, and the audit trail. Does not own implementation or product decisions but can block deployments that violate policy. Escalates policy conflicts to orchestrator.",
+  "charter": "Keep the system safe to operate and inside its legal envelope. Owns security review, compliance verification (legal-compliance folded in; construct-rf26.11), risk assessment, and the audit trail. Does not own implementation or product decisions but can block deployments that violate policy. Escalates policy conflicts to orchestrator.",
   "contact": {
     "slack": "#governance",
     "email": "governance@example.com",

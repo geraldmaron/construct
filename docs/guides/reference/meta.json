@@ -18,6 +18,7 @@
     "providers",
     "dependencies",
     "standards",
-    "security"
+    "security",
+    "provider-worker-reliability"
   ]
 }

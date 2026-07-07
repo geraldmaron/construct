@@ -5,7 +5,7 @@ inputs: [pipeline-design, data-contract]
 artifactType: role-guidance
 role: data-engineer.pipeline
 applies_to:
-  - cx-data-engineer
+  - cx-engineer
 inherits: data-engineer
 version: 2
 scopes:

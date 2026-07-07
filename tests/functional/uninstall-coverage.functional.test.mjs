@@ -4,7 +4,10 @@
  * Coverage for the four reversers ADR-0027 §Consequences requires `construct
  * uninstall` to perform: the dev.construct.pressure-release LaunchAgent, a
  * Construct-set git core.hooksPath, the memory MCP registration across Claude /
- * OpenCode / Codex configs, and the opt-in pgvector image removal.
+ * OpenCode / Codex configs, and the opt-in pgvector image removal. Also covers
+ * construct-ranh's MCP write-path migration: ~/.claude.json (machine scope)
+ * and <project>/.mcp.json (project scope) must be stripped of Construct-managed
+ * entries alongside the legacy ~/.claude/settings.json path.
  *
  * Each test seeds the install-created state in an isolated HOME + tmp git repo,
  * drives the real runUninstall with --home / --cwd overrides, and asserts the
@@ -17,11 +20,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 
 import { runUninstall, parseArgs } from '../../lib/uninstall/uninstall.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function makeSandbox() {
   const sandbox = mkdtempSync(join(tmpdir(), 'cx-uninstall-cov-'));
@@ -29,7 +33,7 @@ function makeSandbox() {
   const project = join(sandbox, 'project');
   mkdirSync(home, { recursive: true });
   mkdirSync(project, { recursive: true });
-  return { sandbox, home, project, cleanup: () => rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }) };
+  return { sandbox, home, project, cleanup: () => rmTmpDir(sandbox) };
 }
 
 function gitInit(cwd) {
@@ -123,6 +127,50 @@ test('uninstall strips the memory MCP from Claude, OpenCode, and Codex configs',
     const codex = readFileSync(codexPath, 'utf8');
     assert.equal(codex.includes('[mcp_servers.memory]'), false, 'memory table removed from Codex config');
     assert.equal(codex.includes('[mcp_servers.github]'), true, 'other Codex MCP tables preserved');
+  } finally { env.cleanup(); }
+});
+
+test('uninstall strips the memory MCP from ~/.claude.json (construct-ranh scope)', async () => {
+  const env = makeSandbox();
+  try {
+    const claudeUserConfigPath = join(env.home, '.claude.json');
+    writeFileSync(claudeUserConfigPath, JSON.stringify({
+      oauthAccount: { emailAddress: 'user@example.com' },
+      mcpServers: {
+        memory: { command: 'node', args: ['x/memory-bridge.mjs'] },
+        github: { command: 'gh-mcp' },
+      },
+    }, null, 2) + '\n');
+
+    const result = await uninstall(env.home, env.project);
+    assert.ok(result.removed.some((r) => r.id === 'machine-memory-mcp'), 'memory MCP category must run');
+
+    const claudeUserConfig = JSON.parse(readFileSync(claudeUserConfigPath, 'utf8'));
+    assert.equal('memory' in (claudeUserConfig.mcpServers ?? {}), false, 'memory removed from ~/.claude.json');
+    assert.equal('github' in claudeUserConfig.mcpServers, true, 'other Claude MCP servers preserved');
+    assert.deepEqual(claudeUserConfig.oauthAccount, { emailAddress: 'user@example.com' }, 'unrelated ~/.claude.json state untouched');
+  } finally { env.cleanup(); }
+});
+
+test('uninstall strips Construct-managed servers from project .mcp.json (construct-ranh scope)', async () => {
+  const env = makeSandbox();
+  try {
+    const mcpJsonPath = join(env.project, '.mcp.json');
+    writeFileSync(mcpJsonPath, JSON.stringify({
+      mcpServers: {
+        context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp'] },
+        'construct-mcp': { command: 'node', args: ['run.mjs', 'mcp'] },
+        'user-private-server': { command: 'node', args: ['private.mjs'] },
+      },
+    }, null, 2) + '\n');
+
+    const result = await uninstall(env.home, env.project);
+    assert.ok(result.removed.some((r) => r.id === 'project-settings'), 'project-settings category must run');
+
+    const mcpJson = JSON.parse(readFileSync(mcpJsonPath, 'utf8'));
+    assert.equal('context7' in mcpJson.mcpServers, false, 'context7 stripped from .mcp.json');
+    assert.equal('construct-mcp' in mcpJson.mcpServers, false, 'construct-mcp stripped from .mcp.json');
+    assert.ok(mcpJson.mcpServers['user-private-server'], 'user mcp server preserved in .mcp.json');
   } finally { env.cleanup(); }
 });
 

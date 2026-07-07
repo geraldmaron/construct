@@ -92,7 +92,9 @@ test('context command treats context.json as canonical', () => {
 // Trigger pattern: bulleted definition row — `- \`name\`:` or `- **name**:`
 //            — i.e. a row that *defines* the key, not a casual mention.
 
-const POLICY_SOURCE_PATH = path.join(root, 'lib/orchestration-policy.mjs');
+// INTENT_CLASSES/WORK_CATEGORIES live in policy-constants.mjs (construct-rf26.10
+// split the enums out of orchestration-policy.mjs, which now just re-exports).
+const POLICY_SOURCE_PATH = path.join(root, 'lib/orchestration/policy-constants.mjs');
 const ANTIRESTATEMENT_ALLOWLIST = new Set([
   // Routing IS the orchestrator's job and the policy file IS the authority —
   // both legitimately enumerate the keys.

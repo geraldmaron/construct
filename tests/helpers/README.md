@@ -13,7 +13,8 @@ OpenCode config, Claude settings, or the Ollama model store.
 
 Tests that exercise `construct sync`, OpenCode config writes, or Ollama
 provisioning mutate **real user state** — `~/.config/opencode/opencode.json`,
-`~/.claude/settings.json`, the Ollama model store. The local-model investigation
+`~/.claude/settings.json`, `~/.claude.json` (Claude Code's user-scope MCP
+servers), the Ollama model store. The local-model investigation
 (bead `construct-k6fu`) polluted the live `opencode.json` and created real Ollama
 variants because its harness ran against the real machine. This helper exists so
 that can never happen again.
@@ -68,6 +69,21 @@ that is the only path that boots `opencode run` reliably. The unit path that the
 suite *does* run (`tests/capabilities/orchestration.routing/opencode.test.mjs`)
 needs neither Ollama nor an LLM: it drives the real config writer and Modelfile
 builder over a temp file and pure functions.
+
+## `cleanup.mjs` — best-effort tmpdir teardown (supported helper)
+
+`rmTmpDir(dir)` is the required way to remove a tmpdir sandbox in test
+teardown. Under CI load, `fs.rmSync(dir, { recursive: true })` intermittently
+throws `ENOTEMPTY` — a spawned CLI child (or slow handle release after it
+exits) can still be materializing a file mid-walk, and `maxRetries` only
+retries the single rmdir that failed (bead construct-nl9f). By teardown time
+the assertions have already run, so `rmTmpDir` retries with a generous budget
+and then swallows a persistent failure with one `process.emitWarning` — a
+leftover dir in the OS tmpdir is harmless; failing a green test on cleanup is
+noise. It throws loudly if the target is not under `os.tmpdir()`, so a
+mis-routed repo or HOME path cannot vanish silently. Real host state is
+protected by the sterile-host-env fingerprint guard, which this helper does
+not touch.
 
 ## `sterile-env.mjs` — git-repo sandbox
 

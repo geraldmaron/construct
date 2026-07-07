@@ -5,9 +5,22 @@
  * routeRequest correctly classifies requests into immediate, focused, or orchestrated
  * dispatch modes and routes to the expected specialist agents. Also covers the
  * orchestrationPolicy MCP tool (auto-workflow-intake: draftTask generation).
+ *
+ * ADR-0067 / construct-rf26.9: sequencing a resolved route is the flow
+ * engine's job (lib/orchestration/delegation-flow.mjs), not prose the route
+ * object carries for a caller to read and self-sequence. The retired
+ * buildDispatchPlan/buildDispatchSummary functions and the
+ * route.dispatchPlan/route.dispatchSummary fields they populated are gone,
+ * replaced below by assertions that routeRequest's specialist selection
+ * drives buildDelegationFlow deterministically. dispatchReasons stays: the
+ * per-specialist reason data the flow engine attaches to each step's
+ * delegation (delegation-flow.mjs), not the retired prose.
  * Run via npm test.
  */
 import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 
 import {
@@ -15,15 +28,25 @@ import {
   INTENT_CLASSES,
   WORK_CATEGORIES,
   buildConstructToOrchestratorPacket,
-  buildDispatchPlan,
   detectRiskFlags,
   requiresExecutiveApproval,
   routeRequest,
   routeRequestVerified,
 } from '../lib/orchestration-policy.mjs';
+import { buildDelegationFlow } from '../lib/orchestration/delegation-flow.mjs';
 import { validateHandoff } from '../lib/contracts/validate.mjs';
 import { resetCache as resetIntentCache } from '../lib/intent-classifier.mjs';
 import { orchestrationPolicy } from '../lib/mcp/tools/skills.mjs';
+
+function withRepoRoot(run) {
+  const repoRoot = mkdtempSync(join(tmpdir(), 'construct-orchestration-policy-'));
+  mkdirSync(join(repoRoot, '.cx'), { recursive: true });
+  try {
+    return run(repoRoot);
+  } finally {
+    rmSync(repoRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  }
+}
 
 test('routeRequest classifies simple explanation as immediate research', () => {
   const route = routeRequest({ request: 'explain how the caching layer works', fileCount: 1, moduleCount: 1 });
@@ -39,7 +62,6 @@ test('routeRequest sends external research requests through a workflow-backed re
   assert.equal(route.track, EXECUTION_TRACKS.focused);
   assert.equal(route.suggestedWorkflowType, 'research-synthesis');
   assert.deepEqual(route.specialists, ['cx-researcher']);
-  assert.equal(route.dispatchPlan, 'Plan: cx-researcher.');
   assert.equal(route.researchExecutionPolicy?.mode, 'evidence-first');
   assert.equal(route.researchExecutionPolicy?.canResearchInsideOrOutsideProject, true);
 });
@@ -57,7 +79,7 @@ test('routeRequest routes typed artifact drafting through the matching workflow 
   assert.equal(route.track, EXECUTION_TRACKS.focused);
   assert.equal(route.suggestedWorkflowType, 'prd-draft');
   assert.ok(route.specialists.includes('cx-product-manager'));
-  assert.ok(route.specialists.includes('cx-devil-advocate'));
+  assert.ok(route.specialists.includes('cx-reviewer'));
 });
 
 test('routeRequest classifies feature build as orchestrated implementation', () => {
@@ -89,7 +111,7 @@ test('routeRequest sends a loosely-scoped Terraform agent strategy to orchestrat
   assert.equal(route.track, EXECUTION_TRACKS.orchestrated);
   assert.ok(route.specialists.includes('cx-architect'), 'architect owns the structure');
   assert.ok(route.specialists.includes('cx-security'), 'security challenges the credential/state model');
-  assert.ok(route.specialists.includes('cx-devil-advocate'), 'devil-advocate pressure-tests the approach');
+  assert.ok(route.specialists.includes('cx-reviewer'), 'reviewer pressure-tests the approach (devil-advocate overlay)');
 });
 
 test('routeRequest classifies fix requests through debugger path', () => {
@@ -105,10 +127,31 @@ test('requiresExecutiveApproval respects approval boundaries', () => {
   assert.equal(requiresExecutiveApproval({ productDecision: true }), true);
 });
 
-test('buildDispatchPlan returns concise policy-driven plan text', () => {
-  assert.equal(buildDispatchPlan({ track: EXECUTION_TRACKS.immediate, intent: INTENT_CLASSES.research }), 'Plan: respond directly.');
-  assert.equal(buildDispatchPlan({ track: EXECUTION_TRACKS.focused, intent: INTENT_CLASSES.fix, specialists: ['cx-debugger', 'cx-engineer'] }), 'Plan: cx-debugger → cx-engineer.');
-  assert.match(buildDispatchPlan({ track: EXECUTION_TRACKS.orchestrated, intent: INTENT_CLASSES.implementation, specialists: ['cx-architect', 'cx-engineer', 'cx-reviewer', 'cx-qa'] }), /cx-architect/);
+test('routeRequest no longer carries a prose dispatch plan or summary (ADR-0067)', () => {
+  const route = routeRequest({ request: 'build this feature end to end and ship it', fileCount: 4, moduleCount: 2 });
+  assert.equal('dispatchPlan' in route, false, 'sequencing prose is retired — the flow engine owns sequencing now');
+  assert.equal('dispatchSummary' in route, false, 'sequencing prose is retired — the flow engine owns sequencing now');
+});
+
+test('routeRequest specialist selection drives buildDelegationFlow one step per specialist, immediate track included', () => {
+  const immediate = routeRequest({ request: 'explain how the caching layer works', fileCount: 1, moduleCount: 1 });
+  assert.deepEqual(immediate.specialists, []);
+  const immediateFlow = buildDelegationFlow(immediate);
+  assert.equal(immediateFlow.startStep, 'none', 'no specialists still yields a load-valid single-step flow');
+
+  const focused = routeRequest({ request: 'fix the login redirect bug', fileCount: 2, moduleCount: 1 });
+  assert.deepEqual(focused.specialists, ['cx-debugger', 'cx-engineer']);
+  const focusedFlow = buildDelegationFlow(focused);
+  assert.deepEqual(Object.keys(focusedFlow.steps), ['step_0', 'step_1']);
+  assert.equal(focusedFlow.steps.step_0.workerBackend, 'host');
+
+  const orchestrated = routeRequest({ request: 'build this feature end to end and ship it', fileCount: 4, moduleCount: 2 });
+  const orchestratedFlow = buildDelegationFlow(orchestrated);
+  assert.deepEqual(
+    Object.keys(orchestratedFlow.steps),
+    orchestrated.specialists.map((_, i) => `step_${i}`),
+    'one flow step per specialist, in routeRequest\'s exact order — no whole-chain prose in between',
+  );
 });
 
 test('orchestrationPolicy includes draftTask for non-immediate requests', async () => {
@@ -123,13 +166,14 @@ test('orchestrationPolicy includes draftTask for non-immediate requests', async 
   assert.ok(result.handoffPacket, 'handoffPacket should be present for focused/orchestrated requests');
   assert.equal(result.handoffPacket.goal, 'fix the login redirect bug');
   assert.equal(result.handoffPacket.intent, INTENT_CLASSES.fix);
-  const verdict = validateHandoff({
+  const verdict = withRepoRoot((repoRoot) => validateHandoff({
     producer: 'construct',
     consumer: 'cx-orchestrator',
     id: 'construct-to-orchestrator',
     artifact: result.handoffPacket,
     enforcement: 'block',
-  });
+    repoRoot,
+  }));
   assert.equal(verdict.ok, true, `handoffPacket must satisfy construct-to-orchestrator: ${verdict.errors?.join('; ')}`);
 });
 
@@ -155,27 +199,28 @@ test('orchestrationPolicy includes approvalRequired and terminalStates', async (
 test('orchestrationPolicy returns a lazy specialistCatalog (construct-ymp5)', async () => {
   const result = await orchestrationPolicy({ request: 'explain caching', fileCount: 1, moduleCount: 1 });
   assert.ok(Array.isArray(result.specialistCatalog));
-  assert.ok(result.specialistCatalog.length >= 20);
+  // construct-rf26.11 consolidated the 29-specialist roster to 12 (orchestrator + 11 workers).
+  assert.ok(result.specialistCatalog.length >= 10);
   assert.ok(result.specialistCatalog.every((row) => row.id.startsWith('cx-') && row.whenToUse));
 });
 
-test('routeRequest dispatches cx-legal-compliance on compliance keyword (focused track)', () => {
+test('routeRequest dispatches cx-security on compliance keyword (focused track)', () => {
   const route = routeRequest({ request: 'review GDPR compliance of our consent flow', fileCount: 1, moduleCount: 1 });
   assert.equal(route.track, EXECUTION_TRACKS.focused);
-  assert.deepEqual(route.specialists, ['cx-legal-compliance']);
+  assert.deepEqual(route.specialists, ['cx-security']);
 });
 
-test('routeRequest prepends cx-legal-compliance pre-architect on orchestrated track', () => {
+test('routeRequest prepends cx-security pre-architect on orchestrated track (legal-compliance keyword)', () => {
   const route = routeRequest({ request: 'build the SOC 2 attestation evidence pipeline end to end', fileCount: 4, moduleCount: 2 });
   assert.equal(route.track, EXECUTION_TRACKS.orchestrated);
-  assert.ok(route.specialists.includes('cx-legal-compliance'));
-  assert.ok(route.specialists.indexOf('cx-legal-compliance') < route.specialists.indexOf('cx-architect'));
+  assert.ok(route.specialists.includes('cx-security'));
+  assert.ok(route.specialists.indexOf('cx-security') < route.specialists.indexOf('cx-architect'));
 });
 
-test('routeRequest dispatches cx-business-strategist on GTM keyword (focused track)', () => {
+test('routeRequest dispatches cx-product-manager on GTM keyword (focused track)', () => {
   const route = routeRequest({ request: 'sketch the go-to-market positioning for the new tier', fileCount: 1, moduleCount: 1 });
   assert.equal(route.track, EXECUTION_TRACKS.focused);
-  assert.deepEqual(route.specialists, ['cx-business-strategist']);
+  assert.deepEqual(route.specialists, ['cx-product-manager']);
 });
 
 test('routeRequest dispatches cx-operations on dependency-sequencing keyword', () => {
@@ -184,21 +229,20 @@ test('routeRequest dispatches cx-operations on dependency-sequencing keyword', (
   assert.deepEqual(route.specialists, ['cx-operations']);
 });
 
-test('routeRequest dispatches cx-rd-lead on hypothesis keyword and prepends on orchestrated', () => {
+test('routeRequest dispatches cx-architect on hypothesis keyword (rd-lead framing gate folded into architect)', () => {
   const focused = routeRequest({ request: 'frame the hypothesis we should be testing', fileCount: 2, moduleCount: 1 });
   assert.equal(focused.track, EXECUTION_TRACKS.focused);
-  assert.deepEqual(focused.specialists, ['cx-rd-lead']);
+  assert.deepEqual(focused.specialists, ['cx-architect']);
 
   const orchestrated = routeRequest({ request: 'build a falsifiable proof of concept system end to end', fileCount: 4, moduleCount: 2 });
   assert.equal(orchestrated.track, EXECUTION_TRACKS.orchestrated);
-  assert.ok(orchestrated.specialists.includes('cx-rd-lead'));
-  assert.ok(orchestrated.specialists.indexOf('cx-rd-lead') < orchestrated.specialists.indexOf('cx-architect'));
+  assert.ok(orchestrated.specialists.includes('cx-architect'));
 });
 
-test('routeRequest dispatches cx-explorer on recon keyword (focused track)', () => {
+test('routeRequest dispatches cx-researcher on recon keyword (focused track; explorer overlay)', () => {
   const route = routeRequest({ request: 'do a scoping pass on the auth module — orient me', fileCount: 1, moduleCount: 1 });
   assert.equal(route.track, EXECUTION_TRACKS.focused);
-  assert.deepEqual(route.specialists, ['cx-explorer']);
+  assert.deepEqual(route.specialists, ['cx-researcher']);
 });
 
 test('routeRequestVerified returns the keyword route synchronously without waiting on the LLM', () => {
@@ -267,52 +311,22 @@ test('proactiveTriggers fires cx-security pre-dispatch on auth + wide blast', as
   assert.match(security.reason, /auth|threat|payments/i);
 });
 
-test('routeRequest surfaces dispatchSummary with reasons for proactive triggers', async () => {
+test('routeRequest surfaces dispatchReasons for proactive triggers, consumed per-step by the flow engine', async () => {
   const { routeRequest } = await import('../lib/orchestration-policy.mjs');
   const route = routeRequest({
     request: 'migrate all users to the new auth flow with a destructive backfill end to end',
     fileCount: 4,
     moduleCount: 2,
   });
-  assert.ok(route.dispatchSummary.startsWith('Engaging:'));
   assert.ok(route.specialists.includes('cx-security'));
   assert.match(route.dispatchReasons['cx-security'] || '', /auth|payments|threat/i);
-});
 
-test('requestSignals returns structured signals for a vague feature ask', async () => {
-  const { requestSignals } = await import('../lib/orchestration-policy.mjs');
-  const signals = requestSignals('build me some kind of notifications feature, not sure exactly what');
-  assert.ok(signals.ambiguityScore > 0);
-  assert.equal(signals.hasSuccessMetric, false);
-  assert.equal(signals.blastRadius, 'narrow');
-});
-
-test('requestSignals flags wide blast radius and auth surface', async () => {
-  const { requestSignals } = await import('../lib/orchestration-policy.mjs');
-  const signals = requestSignals('migrate all users to the new auth flow — destructive backfill');
-  assert.equal(signals.blastRadius, 'wide');
-  assert.equal(signals.authOrPayments, true);
-});
-
-test('proactiveTriggers fires cx-security pre-dispatch on auth + wide blast', async () => {
-  const { proactiveTriggers, requestSignals } = await import('../lib/orchestration-policy.mjs');
-  const signals = requestSignals('migrate all users to the new auth flow — destructive backfill');
-  const triggers = proactiveTriggers(signals);
-  const security = triggers.find((t) => t.specialist === 'cx-security');
-  assert.ok(security, 'expected cx-security in triggers');
-  assert.match(security.reason, /auth|threat|payments/i);
-});
-
-test('routeRequest surfaces dispatchSummary with reasons for proactive triggers', async () => {
-  const { routeRequest } = await import('../lib/orchestration-policy.mjs');
-  const route = routeRequest({
-    request: 'migrate all users to the new auth flow with a destructive backfill end to end',
-    fileCount: 4,
-    moduleCount: 2,
-  });
-  assert.ok(route.dispatchSummary.startsWith('Engaging:'));
-  assert.ok(route.specialists.includes('cx-security'));
-  assert.match(route.dispatchReasons['cx-security'] || '', /auth|payments|threat/i);
+  const flow = buildDelegationFlow(route);
+  const securityStepName = Object.keys(flow.steps).find(
+    (name, i) => route.specialists[i] === 'cx-security',
+  );
+  const { state } = flow.steps[securityStepName].run();
+  assert.equal(state.currentDelegation.reason, route.dispatchReasons['cx-security']);
 });
 
 test('formatOverlaySelection emits one line per non-null flavor with the cx-<role>: loaded <role>.<flavor> overlay shape', async () => {
@@ -339,40 +353,4 @@ test('formatOverlaySelection returns an empty list when no flavors match or inpu
   assert.deepEqual(formatOverlaySelection({}), []);
   assert.deepEqual(formatOverlaySelection({ engineer: null, architect: null }), []);
   assert.deepEqual(formatOverlaySelection('not-an-object'), []);
-});
-
-test('requestSignals returns structured signals for a vague feature ask', async () => {
-  const { requestSignals } = await import('../lib/orchestration-policy.mjs');
-  const signals = requestSignals('build me some kind of notifications feature, not sure exactly what');
-  assert.ok(signals.ambiguityScore > 0);
-  assert.equal(signals.hasSuccessMetric, false);
-  assert.equal(signals.blastRadius, 'narrow');
-});
-
-test('requestSignals flags wide blast radius and auth surface', async () => {
-  const { requestSignals } = await import('../lib/orchestration-policy.mjs');
-  const signals = requestSignals('migrate all users to the new auth flow — destructive backfill');
-  assert.equal(signals.blastRadius, 'wide');
-  assert.equal(signals.authOrPayments, true);
-});
-
-test('proactiveTriggers fires cx-security pre-dispatch on auth + wide blast', async () => {
-  const { proactiveTriggers, requestSignals } = await import('../lib/orchestration-policy.mjs');
-  const signals = requestSignals('migrate all users to the new auth flow — destructive backfill');
-  const triggers = proactiveTriggers(signals);
-  const security = triggers.find((t) => t.specialist === 'cx-security');
-  assert.ok(security, 'expected cx-security in triggers');
-  assert.match(security.reason, /auth|threat|payments/i);
-});
-
-test('routeRequest surfaces dispatchSummary with reasons for proactive triggers', async () => {
-  const { routeRequest } = await import('../lib/orchestration-policy.mjs');
-  const route = routeRequest({
-    request: 'migrate all users to the new auth flow with a destructive backfill end to end',
-    fileCount: 4,
-    moduleCount: 2,
-  });
-  assert.ok(route.dispatchSummary.startsWith('Engaging:'));
-  assert.ok(route.specialists.includes('cx-security'));
-  assert.match(route.dispatchReasons['cx-security'] || '', /auth|payments|threat/i);
 });

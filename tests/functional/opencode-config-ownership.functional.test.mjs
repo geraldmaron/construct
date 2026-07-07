@@ -13,12 +13,13 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import test from "node:test";
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const SYNC_SCRIPT = join(REPO_ROOT, "scripts", "sync-specialists.mjs");
@@ -45,7 +46,7 @@ function seededHome(seedConfig = SEED) {
   const cfgPath = join(sandbox, ".config", "opencode", "opencode.json");
   mkdirSync(dirname(cfgPath), { recursive: true });
   writeFileSync(cfgPath, JSON.stringify(seedConfig, null, 2) + "\n");
-  return { sandbox, cfgPath, cleanup() { rmSync(sandbox, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } };
+  return { sandbox, cfgPath, cleanup() { rmTmpDir(sandbox); } };
 }
 
 function runGlobalSync(home) {
@@ -123,9 +124,12 @@ test("global sync clears the legacy pinned OpenCode model and refreshes helper a
     const out = readJson(env.cfgPath);
 
     assert.equal(out.model, undefined, "legacy primary model pin should be removed");
-    assert.notEqual(out.agent?.title?.model, "ollama/qwen2.5-coder:7b-cx32k", "title helper should move off the weak legacy model");
-    assert.notEqual(out.agent?.summary?.model, "ollama/qwen2.5-coder:7b-cx32k", "summary helper should move off the weak legacy model");
-    assert.notEqual(out.agent?.compaction?.model, "ollama/qwen2.5-coder:7b-cx32k", "compaction helper should move off the weak legacy model");
+    // Helper agents must carry NO absolute model pin at all: a pinned model made
+    // compaction fail hard when the pinned provider had no key/credits, ignoring
+    // the user's live model selection.
+    assert.equal(out.agent?.title?.model, undefined, "title helper must not pin a model");
+    assert.equal(out.agent?.summary?.model, undefined, "summary helper must not pin a model");
+    assert.equal(out.agent?.compaction?.model, undefined, "compaction helper must not pin a model");
     assert.ok(out.agent?.myhelper, "user agent preserved");
   } finally {
     env.cleanup();

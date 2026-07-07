@@ -282,3 +282,172 @@ test('artifact lint: construct-lint-ignore marker suppresses the hit on that lin
     `construct-lint-ignore should suppress hit; got ${JSON.stringify(result.warnings)}`,
   );
 });
+
+// --- future-state doc marker check (construct-9oi4.15.3 / LMCP-O3) ---
+//
+// A guide or operations doc claiming staged/not-yet-shipped behavior must
+// cite a construct-* bead id within two lines.
+
+test('future-state marker: flags "staged/experimental" in a guide doc with no bead id nearby', () => {
+  const body = '# Guide\n\nBrokered MCP dispatch is staged/experimental in this release.\n';
+  const { dir, full } = makeTempFile('docs/guides/concepts/fixture.md', body);
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      result.errors.some((e) => e.label.includes('future-state doc marker')),
+      `expected a future-state marker error; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});
+
+test('future-state marker: passes when a construct-* bead id is within two lines', () => {
+  const body = '# Guide\n\nBrokered MCP dispatch is staged/experimental (tracked: construct-9oi4.10).\n';
+  const { dir, full } = makeTempFile('docs/guides/concepts/fixture.md', body);
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      !result.errors.some((e) => e.label.includes('future-state doc marker')),
+      `bead id nearby should suppress the hit; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});
+
+test('future-state marker: "not yet implemented" inside a markdown table row is skipped (table cells, not prose)', () => {
+  const body = [
+    '# Guide',
+    '',
+    '| Capability | Status |',
+    '|---|---|',
+    '| watch | not yet implemented |',
+  ].join('\n');
+  const { dir, full } = makeTempFile('docs/guides/reference/fixture.md', body);
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      !result.errors.some((e) => e.label.includes('future-state doc marker')),
+      `table rows should be skipped; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});
+
+test('future-state marker: out-of-scope docs paths (research notes) are not checked', () => {
+  const body = '# Note\n\nThis feature is staged/experimental with no tracker id.\n';
+  const { dir, full } = makeTempFile('docs/notes/research/fixture.md', body);
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      !result.errors.some((e) => e.label.includes('future-state doc marker')),
+      `research notes are out of scope; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});
+
+test('future-state marker: hooks-deprecated.md ledger is excluded', () => {
+  const body = '# Deprecated hooks\n\nThe replacement is not yet implemented in policy-engine.\n';
+  const { dir, full } = makeTempFile('docs/guides/reference/hooks-deprecated.md', body);
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      !result.errors.some((e) => e.label.includes('future-state doc marker')),
+      `hooks-deprecated.md is its own ledger convention; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});
+
+test('future-state marker: .mdx guide docs are checked (architecture.mdx / deployment-model.mdx use .mdx)', () => {
+  const body = '# Guide\n\nMCP dispatch is staged/experimental with no citation.\n';
+  const { dir, full } = makeTempFile('docs/guides/concepts/fixture.mdx', body);
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      result.errors.some((e) => e.label.includes('future-state doc marker')),
+      `.mdx docs must be scanned; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});
+
+// --- external project name in a code comment ---
+//
+// Comparisons against other software projects belong in decision documents
+// with citations, not in code narration describing what this codebase does.
+
+test('external project name: flags a banned project name in a code comment', () => {
+  const body = [
+    '/**',
+    ' * lib/fixture.mjs — test.',
+    ' */',
+    '// per the LangGraph thread-vs-store split, this module keeps a boundary',
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('lib/fixture.mjs', body);
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      result.errors.some((e) => e.label.includes('external project name in a code comment')),
+      `expected an external-project-name error; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});
+
+test('external project name: a comment describing behavior on its own terms passes', () => {
+  const body = [
+    '/**',
+    ' * lib/fixture.mjs — test.',
+    ' */',
+    '// a record only reaches the shared store when it opts in explicitly',
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('lib/fixture.mjs', body);
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      !result.errors.some((e) => e.label.includes('external project name in a code comment')),
+      `plain behavior description should not trigger; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});
+
+test('external project name: docs/decisions/** is exempt (citations are required there)', () => {
+  const body = [
+    '/**',
+    ' * docs/decisions/adr/fixture.mjs — test.',
+    ' */',
+    '// per the LangGraph thread-vs-store split, see ADR-0064 for the comparison',
+    'export const x = 1;',
+  ].join('\n');
+  const { dir, full } = makeTempFile('docs/decisions/adr/fixture.mjs', body);
+  process.env.CONSTRUCT_ARTIFACT_LINT_MODE = 'block';
+  try {
+    const result = lintFile(full, { rootDir: dir });
+    assert.ok(
+      !result.errors.some((e) => e.label.includes('external project name in a code comment')),
+      `docs/decisions/** should be exempt; got ${JSON.stringify(result)}`,
+    );
+  } finally {
+    delete process.env.CONSTRUCT_ARTIFACT_LINT_MODE;
+  }
+});

@@ -15,6 +15,7 @@ import {
   writeLiveCatalogCache,
 } from '../../lib/models/catalog.mjs';
 import { doctorRoot } from '../../lib/config/xdg.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function withProject(fn) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-catalog-'));
@@ -33,7 +34,7 @@ function withProject(fn) {
   try {
     return fn(root);
   } finally {
-    fs.rmSync(root, { recursive: true, force: true });
+    rmTmpDir(root);
   }
 }
 
@@ -89,6 +90,6 @@ test('writeLiveCatalogCache persists models for sync read', () => {
     const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
     assert.equal(parsed.models[0].id, 'openrouter/openrouter/free');
   } finally {
-    fs.rmSync(home, { recursive: true, force: true });
+    rmTmpDir(home);
   }
 });

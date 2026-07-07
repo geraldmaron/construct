@@ -7,12 +7,28 @@
  * half-written drop stays invisible until it lands at a top-level name.
  */
 
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { InboxWatcher, resolveInboxDirs } from '../lib/embed/inbox.mjs';
+
+// InboxWatcher.poll() resolves its state file through the machine-scoped
+// state root (ADR-0066), which reads CX_HOME_OVERRIDE from real process.env
+// directly — the `env` constructor option above is a plain options bag, not
+// process.env, so it never isolates that write. Pin it for the whole file so
+// polling never writes into the real developer machine's ~/.construct/projects/.
+
+const homeOverride = join(tmpdir(), `construct-inbox-home-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+mkdirSync(homeOverride, { recursive: true });
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
+after(() => {
+  try { rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
 
 function makeTmpDir() {
   const dir = join(tmpdir(), `construct-inbox-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);

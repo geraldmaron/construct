@@ -15,6 +15,7 @@ import test from 'node:test';
 
 import { runHeadhunt } from '../../lib/headhunt.mjs';
 import { routeRequest } from '../../lib/orchestration-policy.mjs';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 function tempDir(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -23,7 +24,7 @@ function tempDir(prefix) {
 test('operations scope headhunt recommends reliability-team for incident objectives', async (t) => {
   const cwd = tempDir('headhunt-profile-ops-');
   t.after(() => {
-    try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {}
+    try { rmTmpDir(cwd); } catch {}
   });
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(
@@ -52,7 +53,7 @@ test('operations scope headhunt recommends reliability-team for incident objecti
 test('operations scope routes implementation intent to engineering-team', (t) => {
   const cwd = tempDir('headhunt-profile-delivery-');
   t.after(() => {
-    try { fs.rmSync(cwd, { recursive: true, force: true }); } catch {}
+    try { rmTmpDir(cwd); } catch {}
   });
   fs.mkdirSync(path.join(cwd, '.cx'), { recursive: true });
   fs.writeFileSync(

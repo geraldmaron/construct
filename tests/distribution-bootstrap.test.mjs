@@ -9,9 +9,10 @@
  *   - run.mjs respects CONSTRUCT_DEV_PATH and forwards to the local checkout.
  *   - run.mjs exits 127 with a useful error when no runtime is reachable.
  *   - The materialised `.claude/settings.json` references hook commands as
- *     `node "${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs" hook <name>` — cwd-anchored
- *     on the project root so they resolve when Claude Code runs a hook from any
- *     directory (no `$HOME/.construct` paths).
+ *     `node "${CLAUDE_PROJECT_DIR:-<absRoot>}/.construct/run.mjs" hook <name>` — the
+ *     fallback is the absolute project root (not cwd-relative `.`) so hooks resolve
+ *     from any directory and under hosts that do not export CLAUDE_PROJECT_DIR
+ *     (no `$HOME/.construct` paths).
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -27,6 +28,7 @@ const POSTINSTALL = path.join(ROOT, 'bin', 'construct-postinstall.mjs');
 const PKG_VERSION = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
 
 let projectDir;
+let projectHome;
 
 function writableTmpRoot() {
   const candidates = [
@@ -50,6 +52,7 @@ function writableTmpRoot() {
 
 before(() => {
   projectDir = fs.mkdtempSync(path.join(writableTmpRoot(), 'cx-dist-bootstrap-'));
+  projectHome = fs.mkdtempSync(path.join(writableTmpRoot(), 'cx-dist-bootstrap-home-'));
   fs.writeFileSync(
     path.join(projectDir, 'package.json'),
     JSON.stringify({ name: 'fixture-consumer', version: '0.0.0' })
@@ -61,6 +64,8 @@ before(() => {
       ...process.env,
       INIT_CWD: projectDir,
       CONSTRUCT_SKIP_POSTINSTALL: '',
+      HOME: projectHome,
+      CX_HOME_OVERRIDE: projectHome,
     },
     timeout: 60_000,
   });
@@ -71,6 +76,7 @@ before(() => {
 
 after(() => {
   fs.rmSync(projectDir, { recursive: true, force: true });
+  fs.rmSync(projectHome, { recursive: true, force: true });
 });
 
 describe('project-local launcher staging', () => {
@@ -98,13 +104,17 @@ describe('project-local launcher staging', () => {
 });
 
 describe('settings.json hook command shape', () => {
-  it('hook commands anchor on ${CLAUDE_PROJECT_DIR:-.}/.construct/run.mjs', () => {
+  it('hook commands anchor on ${CLAUDE_PROJECT_DIR:-<absRoot>}/.construct/run.mjs', () => {
     const settingsPath = path.join(projectDir, '.claude', 'settings.json');
     assert.ok(fs.existsSync(settingsPath));
     const text = fs.readFileSync(settingsPath, 'utf8');
     assert.ok(!/\$HOME\/\.construct/.test(text), 'must not reference $HOME paths');
-    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\.\}\/\.construct\/run\.mjs.{0,4}hook session-start/);
-    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\.\}\/\.construct\/run\.mjs.{0,4}hook pre-push-gate/);
+    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/run\.mjs.{0,4}hook session-start/);
+    assert.match(text, /\$\{CLAUDE_PROJECT_DIR:-\/[^}]+\}\/\.construct\/run\.mjs.{0,4}hook pre-push-gate/);
+    assert.ok(
+      !/\$\{CLAUDE_PROJECT_DIR:-\.\}/.test(text),
+      'cwd-relative :-. fallback breaks under cwd drift; fallback must be the absolute project root',
+    );
     assert.ok(
       !/node \.construct\/run\.mjs hook/.test(text),
       'bare relative .construct/run.mjs breaks when the hook cwd is not the project root',
@@ -120,7 +130,7 @@ describe('run.mjs resolution', () => {
       {
         encoding: 'utf8',
         cwd: projectDir,
-        env: { ...process.env, CONSTRUCT_DEV_PATH: ROOT },
+        env: { ...process.env, CONSTRUCT_DEV_PATH: ROOT, HOME: projectHome, CX_HOME_OVERRIDE: projectHome },
         timeout: 30_000,
       }
     );
@@ -138,7 +148,8 @@ describe('run.mjs resolution', () => {
         cwd: projectDir,
         env: {
           PATH: '/nonexistent',
-          HOME: process.env.HOME,
+          HOME: projectHome,
+          CX_HOME_OVERRIDE: projectHome,
           CONSTRUCT_DEV_PATH: '',
           CONSTRUCT_DISABLE_DOCKER: '1',
         },
@@ -159,7 +170,8 @@ describe('run.mjs resolution', () => {
         cwd: projectDir,
         env: {
           PATH: '/nonexistent',
-          HOME: process.env.HOME,
+          HOME: projectHome,
+          CX_HOME_OVERRIDE: projectHome,
           CONSTRUCT_DEV_PATH: '',
           CONSTRUCT_DISABLE_DOCKER: '1',
         },
@@ -221,7 +233,8 @@ describe('run.mjs self-repo resolution', () => {
         cwd: ROOT,
         env: {
           PATH: cleanPath,
-          HOME: process.env.HOME,
+          HOME: projectHome,
+          CX_HOME_OVERRIDE: projectHome,
           CONSTRUCT_DEV_PATH: '',
           CONSTRUCT_DISABLE_DOCKER: '1',
         },

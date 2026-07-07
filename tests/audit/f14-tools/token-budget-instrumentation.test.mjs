@@ -32,24 +32,23 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { RAW_HARDCODED_TOOL_DEFS } from '../../../lib/mcp/tool-definitions.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..', '..');
 const SERVER_PATH = join(ROOT, 'lib', 'mcp', 'server.mjs');
+const DISPATCH_ENVELOPE_PATH = join(ROOT, 'lib', 'mcp', 'dispatch-envelope.mjs');
 const DOC_PATH = join(ROOT, 'docs', 'guides', 'reference', 'mcp-tools.md');
 
+// server.mjs composes ALL_TOOL_DEFS as [...HARDCODED_TOOL_DEFS, ...SCANNED_TOOL_DEFS]
+// (LMCP-B5 self-registered tools). HARDCODED_TOOL_DEFS = RAW_HARDCODED_TOOL_DEFS.map(
+// withSafetyEnvelope), and the underlying pure-data literal now lives in
+// lib/mcp/tool-definitions.mjs (further split across tool-definitions-{project,
+// skills,memory,workflow}.mjs — construct-rf26.10), so it is imported directly
+// rather than eval'd out of server.mjs source text.
+
 function readCatalogNames() {
-  const src = readFileSync(SERVER_PATH, 'utf8');
-  const arrStart = src.indexOf('ALL_TOOL_DEFS = [');
-  let i = src.indexOf('[', arrStart);
-  let depth = 0;
-  let end = -1;
-  for (let j = i; j < src.length; j++) {
-    if (src[j] === '[') depth++;
-    else if (src[j] === ']') { depth--; if (depth === 0) { end = j; break; } }
-  }
-  // The tools array is pure data (no function calls), safe to evaluate.
-  return eval(`(${src.slice(i, end + 1)})`).map((t) => t.name); // eslint-disable-line no-eval
+  return RAW_HARDCODED_TOOL_DEFS.map((t) => t.name);
 }
 
 test('[S2][S15] the documented flat-surface tool count matches the live catalog', () => {
@@ -76,16 +75,21 @@ test('[S2][S15] the documented flat-surface tool count matches the live catalog'
 });
 
 test('[S2][S15] the CallTool dispatcher instruments calls via its imported span helper', () => {
-  const src = readFileSync(SERVER_PATH, 'utf8');
+  // The CallTool envelope (identity, rate limit, destructive gate, tracing,
+  // timeout, audit) was extracted from server.mjs into dispatch-envelope.mjs
+  // (construct-rf26.10); withGenAiSpan and the handler body now live there,
+  // wired into server.mjs via createToolCallHandler(). server.mjs itself no
+  // longer imports withGenAiSpan directly.
+  const src = readFileSync(DISPATCH_ENVELOPE_PATH, 'utf8');
 
   // The import line itself does not count as use; require the helper to actually
   // wrap the dispatch so calls/tokens/errors are recorded per tool.
   const importsSpan = /import\s*\{[^}]*withGenAiSpan[^}]*\}\s*from/.test(src);
-  assert.ok(importsSpan, 'precondition: server imports withGenAiSpan (the dead-import baseline this test targets)');
+  assert.ok(importsSpan, 'precondition: dispatch-envelope.mjs imports withGenAiSpan (the dead-import baseline this test targets)');
 
-  const handlerStart = src.indexOf('CallToolRequestSchema, async (request)');
-  assert.ok(handlerStart !== -1, 'could not locate the CallTool handler');
-  const handlerBody = src.slice(handlerStart, src.indexOf('\n});', handlerStart) + 4);
+  const handlerStart = src.indexOf('return async function handleToolCall(request)');
+  assert.ok(handlerStart !== -1, 'could not locate the CallTool handler in lib/mcp/dispatch-envelope.mjs');
+  const handlerBody = src.slice(handlerStart);
 
   assert.match(
     handlerBody,

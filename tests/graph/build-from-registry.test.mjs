@@ -80,7 +80,7 @@ test('oracle.meta-review is reverse-traceable to its functional test', () => {
   );
 });
 
-test('all 40 contracts are ingested and referenced contracts are governed_by edges', () => {
+test('all contracts are ingested and referenced contracts are governed_by edges', () => {
   const built = buildFromRegistry({ rootDir: REPO_ROOT });
   const { byType, edgesByRel } = index(built);
 
@@ -88,7 +88,10 @@ test('all 40 contracts are ingested and referenced contracts are governed_by edg
   // so assert on unique ids rather than the raw array length.
 
   const contractIds = new Set(byType('contract').map((n) => n.id));
-  assert.equal(contractIds.size, 40);
+  // construct-rf26.11 deleted 8 of the 43 contracts that collapsed to
+  // intra-role handoffs when their producer/consumer roles consolidated —
+  // see the ADR-0065 appendix addendum.
+  assert.equal(contractIds.size, 35);
   for (const e of edgesByRel('governed_by')) {
     assert.ok(e.from.startsWith('capability:'));
     assert.ok(contractIds.has(e.to), `governed_by points at a known contract: ${e.to}`);

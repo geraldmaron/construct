@@ -5,7 +5,7 @@ inputs: [plan, proposal]
 artifactType: guidance
 role: devil-advocate
 applies_to:
-  - cx-devil-advocate
+  - cx-reviewer
 inherits: reviewer
 version: 2
 scopes:

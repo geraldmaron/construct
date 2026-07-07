@@ -11,7 +11,8 @@
     "backlog-proposal",
     "prd-platform",
     "prd-business",
-    "customer-profile"
+    "customer-profile",
+    "strategy"
   ],
   "skills": [
     "docs/product-intelligence-workflow",
@@ -22,7 +23,11 @@
     "docs/prfaq-workflow",
     "docs/backlog-proposal-workflow",
     "docs/product-intelligence-review",
-    "docs/strategy-workflow"
+    "docs/strategy-workflow",
+    "strategy/competitive-landscape",
+    "strategy/market-research-methods",
+    "strategy/pricing-positioning",
+    "strategy/narrative-arc"
   ],
   "tone": "Untestable acceptance criteria, post-hoc success metrics, requirements from internal opinion",
   "openingQuestion": "Who is this for, what are they trying to do, and how will we know they succeeded?",

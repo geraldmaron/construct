@@ -1,11 +1,15 @@
 /**
- * tests/workflows/template-resolution.test.mjs — Reference integrity for workflow templates.
+ * tests/workflows/template-resolution.test.mjs — Static drift guard, not a code-behavior test.
  *
- * Every `- template: <name>` entry in templates/workflows/*.yml must resolve to
- * a real doc template at templates/docs/<name>. Workflow instantiation copies
- * the doc template when present and otherwise writes a "template not found" stub
- * (lib/workflows/instantiate.mjs), so a dangling reference ships a stub instead
- * of the intended artifact. This test fails loudly on that drift.
+ * Never imports lib/workflows/instantiate.mjs or any other lib/*.mjs module — only
+ * regex-parses templates/workflows/*.yml for `- template: <name>` entries and checks
+ * fs.existsSync against templates/docs/<name>. No runtime resolution path is exercised here:
+ * lib/workflows/instantiate.mjs copies the doc template when present and otherwise writes a
+ * "template not found" stub, so a dangling reference would ship a stub instead of the
+ * intended artifact at runtime — but a pass/fail here only reflects static drift (a
+ * reference added or renamed without the corresponding templates/docs/ file), never an
+ * instantiate.mjs regression. A failure is not proof that instantiate.mjs is broken; removal
+ * requires confirming templates/docs/ coverage moves elsewhere first (construct-spoz).
  *
  * Coverage: every .yml file present at test-run time is scanned automatically,
  * so new workflows and new template references are validated without edits here.

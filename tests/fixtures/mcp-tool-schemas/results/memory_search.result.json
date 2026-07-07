@@ -1,0 +1,54 @@
+{
+  "capturedAt": "2026-07-05T00:43:06.999Z",
+  "tool": "memory_search",
+  "args": {
+    "query": "lmcp"
+  },
+  "result": {
+    "observations": [
+      {
+        "id": "obs-mr71p5dl-ac849870",
+        "role": "construct",
+        "category": "session-summary",
+        "summary": "commits: e5b2e75b feat(lmcp): add queue reliability and team health; 655f68db feat(lmcp): default team queue to postgres and add worker registry; 0f9a659c feat(lmcp): add postgres queue provider and run-store parity — 4 warnings",
+        "project": "construct",
+        "createdAt": "2026-07-05T00:20:49.401Z"
+      },
+      {
+        "id": "obs-mr71p5d0-8033ff37",
+        "role": "construct",
+        "category": "session-summary",
+        "summary": "[session] Noted — model switched to Sonnet 5. Still waiting on your call on the two open questions: okay to commit+push the construct-tbiv fix now, and which track to tackle next?",
+        "project": "construct",
+        "createdAt": "2026-07-05T00:20:49.380Z"
+      },
+      {
+        "id": "obs-mr717dhy-3dab7fe2",
+        "role": "construct",
+        "category": "session-summary",
+        "summary": "commits: e5b2e75b feat(lmcp): add queue reliability and team health; 655f68db feat(lmcp): default team queue to postgres and add worker registry; 0f9a659c feat(lmcp): add postgres queue provider and run-store parity — 4 warnings",
+        "project": "construct",
+        "createdAt": "2026-07-05T00:07:00.118Z"
+      },
+      {
+        "id": "obs-mr717dh8-9a43b269",
+        "role": "construct",
+        "category": "session-summary",
+        "summary": "[session] Done — first bead closed and the thing that was actively hurting you is fixed. Here's the full picture.",
+        "project": "construct",
+        "createdAt": "2026-07-05T00:07:00.093Z"
+      },
+      {
+        "id": "obs-mr6zpfpm-81285140",
+        "role": "construct",
+        "category": "session-summary",
+        "summary": "commits: 655f68db feat(lmcp): default team queue to postgres and add worker registry; 0f9a659c feat(lmcp): add postgres queue provider and run-store parity; 7b6f4615 feat(lmcp): wire storage manifests and postgres db scaffold",
+        "project": "construct",
+        "createdAt": "2026-07-04T23:25:03.562Z"
+      }
+    ],
+    "documents": [],
+    "total": 5,
+    "note": "No semantic matches — showing recent observations."
+  }
+}

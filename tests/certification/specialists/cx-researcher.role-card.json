@@ -12,7 +12,15 @@
   "skills": [
     "docs/research-workflow",
     "devops/dependency-management",
-    "docs/transcript-synthesis"
+    "docs/transcript-synthesis",
+    "docs/codebase-research-workflow",
+    "exploration/repo-map",
+    "exploration/unknown-codebase-onboarding",
+    "exploration/tracer-bullet-method",
+    "exploration/dependency-graph-reading",
+    "docs/user-research-workflow",
+    "docs/evidence-ingest-workflow",
+    "strategy/jobs-to-be-done"
   ],
   "tone": "Undated sources, version-specific claims without citation, blog posts treated as authoritative",
   "openingQuestion": "What is the version, the publication date, and the primary source?",

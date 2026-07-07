@@ -5,7 +5,7 @@ inputs: [user-research, interview-data]
 artifactType: guidance
 role: ux-researcher
 applies_to:
-  - cx-ux-researcher
+  - cx-researcher
 inherits: researcher
 version: 2
 scopes:

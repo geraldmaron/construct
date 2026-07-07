@@ -10,17 +10,28 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { rmTmpDir } from '../helpers/cleanup.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BIN = join(ROOT, 'bin', 'construct');
 const OSC8_OPEN = '\x1b]8;;';
 
+// lib/paths.mjs resolves the machine-scoped state root (ADR-0066) from
+// process.env directly, so a spawned `construct` must get its own sandboxed
+// HOME to avoid registering this repo under the real developer machine's
+// ~/.construct/projects/.
+
+const SANDBOX_HOME = mkdtempSync(join(tmpdir(), 'cli-clickable-links-home-'));
+process.on('exit', () => rmTmpDir(SANDBOX_HOME));
+
 function run(args, env) {
   const res = spawnSync(process.execPath, [BIN, ...args], {
     cwd: ROOT,
-    env: { ...process.env, ...env },
+    env: { ...process.env, HOME: SANDBOX_HOME, CX_HOME_OVERRIDE: SANDBOX_HOME, ...env },
     encoding: 'utf8',
   });
   return res.stdout || '';

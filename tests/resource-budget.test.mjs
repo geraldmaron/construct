@@ -3,10 +3,15 @@
  *
  * Pins the soft-warn vs hard-reject split, the per-category prune
  * actions (age cap, item cap), and that the planner is pure — actions
- * surface, executePrune applies. Total .cx/ cap enforcement at 100%
- * (hard for traces / worker logs, soft for intake / task graphs).
+ * surface, executePrune applies. Total cap enforcement at 100% (hard for
+ * traces / worker logs, soft for intake / task graphs).
+ *
+ * traces and worker-logs resolve through the machine-scoped state root
+ * (ADR-0066), not project-local `.cx/`, so this suite pins CX_HOME_OVERRIDE
+ * to an isolated tmp dir for the whole file — otherwise state-root writes
+ * would land on the real developer machine's $HOME.
  */
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeEach, afterEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -22,6 +27,11 @@ import {
   HARD_REJECT_CATEGORIES,
   SOFT_WARN_CATEGORIES,
 } from '../lib/resources/budget.mjs';
+import { resolveStateDir } from '../lib/state-root.mjs';
+
+const homeOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'cx-budget-home-'));
+const prevHomeOverride = process.env.CX_HOME_OVERRIDE;
+process.env.CX_HOME_OVERRIDE = homeOverride;
 
 let projectRoot;
 
@@ -34,8 +44,30 @@ afterEach(() => {
   fs.rmSync(projectRoot, { recursive: true, force: true });
 });
 
+after(() => {
+  try { fs.rmSync(homeOverride, { recursive: true, force: true }); } catch {}
+  if (prevHomeOverride === undefined) delete process.env.CX_HOME_OVERRIDE;
+  else process.env.CX_HOME_OVERRIDE = prevHomeOverride;
+});
+
+// traces/.jsonl and runtime/worker/*.log now resolve through the state root;
+// every other `.cx/...` fixture is still project-local. Route each `rel`
+// through the same resolver production code uses, so a fixture path always
+// matches where the code under test actually looks.
+
+function resolveFixturePath(rel) {
+  const normalized = rel.replace(/\\/g, '/');
+  if (normalized.startsWith('.cx/traces/')) {
+    return path.join(resolveStateDir(projectRoot, 'traces'), normalized.slice('.cx/traces/'.length));
+  }
+  if (normalized.startsWith('.cx/runtime/worker/')) {
+    return path.join(resolveStateDir(projectRoot, 'runtime', 'worker'), normalized.slice('.cx/runtime/worker/'.length));
+  }
+  return path.join(projectRoot, rel);
+}
+
 function writeFile(rel, content, mtimeOffsetMs = 0) {
-  const full = path.join(projectRoot, rel);
+  const full = resolveFixturePath(rel);
   fs.mkdirSync(path.dirname(full), { recursive: true });
   fs.writeFileSync(full, content);
   if (mtimeOffsetMs) {

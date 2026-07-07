@@ -126,6 +126,12 @@ function runSync({ home, cwd, env = {}, t }) {
   // into global mode explicitly. The repo copy carries a `.cx/` marker which
   // would otherwise trigger auto-detected project mode.
 
+  // repoRoot here is makeRepoCopy()'s disposable tmp copy, not the real repo —
+  // CX_TOOLKIT_DIR pins sync-specialists.mjs's self-derived root to that exact
+  // (symlink-unresolved) path string, matching this test's literal expected
+  // path rather than the macOS /tmp-to-/private/tmp symlink-resolved form
+  // import.meta.dirname would otherwise produce.
+
   execFileSync(process.execPath, ["scripts/sync-specialists.mjs", "--global"], {
     cwd: repoRoot,
     env: {
@@ -146,7 +152,7 @@ function readJson(file) {
 test("memory MCP wires the stdio bridge into Claude and OpenCode with the configured port", (t) => {
   const home = tempDir("construct-mcp-home-", t);
   const cwd = tempDir("construct-mcp-cwd-", t);
-  const claudePath = path.join(home, ".claude", "settings.json");
+  const claudePath = path.join(home, ".claude.json");
 
   runMcpAdd("memory", {
     home,
@@ -199,7 +205,7 @@ test("github MCP wires Claude/OpenCode directly and skips a standalone Codex MCP
   });
 
   const opencodePath = path.join(home, ".config", "opencode", "opencode.json");
-  const claudePath = path.join(home, ".claude", "settings.json");
+  const claudePath = path.join(home, ".claude.json");
   const codexPath = path.join(home, ".codex", "config.toml");
   const opencode = readJson(opencodePath);
   const claude = readJson(claudePath);
@@ -308,7 +314,7 @@ test("external plugin manifest entries are available to mcp add without editing 
   runMcpAdd("acme-search", { home, cwd });
 
   const opencode = readJson(path.join(home, ".config", "opencode", "opencode.json"));
-  const claude = readJson(path.join(home, ".claude", "settings.json"));
+  const claude = readJson(path.join(home, ".claude.json"));
   const codex = fs.readFileSync(path.join(home, ".codex", "config.toml"), "utf8");
 
   assert.deepEqual(opencode.mcp["acme-search"], {
@@ -329,7 +335,7 @@ test("atlassian MCP uses official remote OAuth server across managed configs", (
   runMcpAdd("atlassian", { home, cwd });
 
   const opencode = readJson(path.join(home, ".config", "opencode", "opencode.json"));
-  const claude = readJson(path.join(home, ".claude", "settings.json"));
+  const claude = readJson(path.join(home, ".claude.json"));
   const codex = fs.readFileSync(path.join(home, ".codex", "config.toml"), "utf8");
 
   assert.deepEqual(opencode.mcp.atlassian, {
@@ -426,13 +432,13 @@ test("sync rewrites a stale OpenCode HTTP memory entry to the stdio bridge", (t)
     }, null, 2)}\n`,
   );
 
-  const repoCopy = runSync({ home, cwd, t });
+  const repoCopy = runSync({ home, cwd, env: { MEMORY_PORT: "9901" }, t });
 
   const config = readJson(opencodePath);
   assert.deepEqual(config.mcp.memory, {
     type: "local",
     command: ["node", path.join(repoCopy, "lib", "mcp", "memory-bridge.mjs")],
-    environment: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:8765/" },
+    environment: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:9901/" },
   });
 });
 
@@ -455,14 +461,14 @@ test("sync drops the legacy OpenCode cass entry and writes the stdio bridge", (t
     }, null, 2)}\n`,
   );
 
-  const repoCopy = runSync({ home, cwd, t });
+  const repoCopy = runSync({ home, cwd, env: { MEMORY_PORT: "9901" }, t });
 
   const config = readJson(opencodePath);
   assert.equal(config.mcp.cass, undefined);
   assert.deepEqual(config.mcp.memory, {
     type: "local",
     command: ["node", path.join(repoCopy, "lib", "mcp", "memory-bridge.mjs")],
-    environment: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:8765/" },
+    environment: { CONSTRUCT_MEMORY_BRIDGE_URL: "http://127.0.0.1:9901/" },
   });
 });
 
@@ -498,10 +504,8 @@ test("memory MCP recovers from malformed OpenCode config", (t) => {
 test("removing a Claude-only MCP does not create a new OpenCode config", (t) => {
   const home = tempDir("construct-remove-home-", t);
   const cwd = tempDir("construct-remove-cwd-", t);
-  const claudeDir = path.join(home, ".claude");
-  const claudePath = path.join(claudeDir, "settings.json");
+  const claudePath = path.join(home, ".claude.json");
   const opencodePath = path.join(home, ".config", "opencode", "opencode.json");
-  fs.mkdirSync(claudeDir, { recursive: true });
   fs.writeFileSync(
     claudePath,
     `${JSON.stringify({

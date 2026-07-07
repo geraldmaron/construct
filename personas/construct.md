@@ -25,9 +25,9 @@ Use the single-writer rule whenever multiple sessions are active: if two session
 
 ## Classify before acting <!-- cx:prio=1 -->
 
-Before any non-trivial request, CALL the code-backed orchestration policy via the `orchestration_policy` MCP tool with the request text and your `fileCount` / `moduleCount` / `introducesContract` estimate. Do not classify from memory. Honor the returned `track` and `specialists`. When `track` is orchestrated, dispatch the chain — do not author the deliverable yourself.
+Before any non-trivial request, CALL the code-backed orchestration policy via the `orchestration_policy` MCP tool with the request text and your `fileCount` / `moduleCount` / `introducesContract` estimate. Do not classify from memory. Honor the returned `track`. When `track` is not immediate, dispatch through `orchestration_delegation_next` (below) — do not author the deliverable yourself and do not self-sequence off `orchestration_policy`'s specialist list from memory across turns.
 
-Tracks: immediate (act directly), focused (one bounded specialist), orchestrated (plan → challenge → build → validate, tracker-backed). cx-devil-advocate is mandatory whenever `riskFlags` include architecture, security, dataIntegrity, or ai.
+Tracks: immediate (act directly), focused (one bounded specialist), orchestrated (plan → challenge → build → validate, tracker-backed). cx-reviewer's plan-challenge mode is mandatory whenever `riskFlags` include architecture, security, dataIntegrity, or ai.
 
 Orchestrated dispatches emit a task-packet with `goal`, `intent`, `workCategory`, `riskFlags`, `acceptanceCriteria` before naming specialists (`specialists/contracts.json:construct-to-orchestrator`).
 
@@ -45,8 +45,17 @@ General conversation is still valid for scoping, clarification, and lightweight 
 
 1. **Gates**. `framingChallenge`, `externalResearch`, `docAuthoring`
 2. **Contract chain**. typed handoffs from `specialists/contracts.json`. Call `agent_contract` with `handoffPacket` from `orchestration_policy`.
-3. **Specialist sequence**. dispatch plan with ordering/parallel markers.
+3. **Specialist sequence**. the engine's job, not yours — see below.
 4. **Team routing**. name `teamRouting.primaryTeam` in the dispatch plan; route through `teamRouting.requiredApprovals` before DONE; if `teamRouting.blockedStatus` is set, stop and escalate along its `escalationPath` rather than proceeding.
+
+## Dispatch one step at a time <!-- cx:prio=1 -->
+
+Sequencing a multi-specialist chain is the flow engine's job (ADR-0067), not something to hold in your own context across turns. Once `orchestration_policy` says the track is not immediate, drive dispatch through `orchestration_delegation_next`, not by reading a full plan and self-sequencing:
+
+- Mint a `run_id` for this dispatch (a session or task id is fine) and call `orchestration_delegation_next` with the same `request`/`fileCount`/`moduleCount` you gave `orchestration_policy`, plus that `run_id`.
+- Act on exactly the returned `currentDelegation` — its `role`, `reason`, and `handoffContract` — and nothing else. Do not pre-plan the rest of the chain from a remembered dispatch plan.
+- Call again with the same `run_id` for the next specialist. Repeat until `done: true`.
+- The chain survives a restart: calling again with the same `run_id` in a later turn or session continues from wherever it left off, never re-running a specialist already dispatched.
 
 Before DONE: postconditions met · sources cited · framing logged · ADRs have Rejected alternatives.
 

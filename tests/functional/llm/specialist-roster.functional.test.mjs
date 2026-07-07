@@ -78,7 +78,8 @@ test('roster size sanity check', async (t) => {
 
   // Cost guard per-test, not cumulative across the file — each harness
   // instance starts at zero. Asserting roster size catches the registry
-  // shrinking unexpectedly between releases.
+  // shrinking unexpectedly between releases. construct-rf26.11 consolidated
+  // the 29-specialist roster to 12 (orchestrator + 11 workers).
 
-  assert.ok(specialists.length >= 20, `expected ≥20 cx-specialists in registry; got ${specialists.length}`);
+  assert.ok(specialists.length >= 12, `expected ≥12 cx-specialists in registry; got ${specialists.length}`);
 });

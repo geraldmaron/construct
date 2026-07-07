@@ -1,7 +1,7 @@
 {
   "id": "product-manager-to-ux-researcher",
   "producer": "cx-product-manager",
-  "consumer": "cx-ux-researcher",
+  "consumer": "cx-researcher",
   "trigger": {
     "docAuthoring.docType": [
       "prd",
@@ -33,18 +33,28 @@
     "PRD has an open user-research question; PRD not finalized"
   ],
   "postconditions": [
-    "Every friction-map entry cites the observation or session it came from",
-    "Stated preferences are labeled distinctly from observed behaviors",
+    {
+      "id": "product-manager-to-ux-researcher-pc-0-every-friction-map-entry-cites-the",
+      "description": "Every friction-map entry cites the observation or session it came from",
+      "postconditionType": "advisory"
+    },
+    {
+      "id": "product-manager-to-ux-researcher-pc-1-stated-preferences-are-labeled-distinctly-from",
+      "description": "Stated preferences are labeled distinctly from observed behaviors",
+      "postconditionType": "advisory"
+    },
     {
       "id": "ux-research-has-sources-section",
       "description": "UX research artifact must contain a Sources section",
       "check": "artifact-has-section",
-      "section": "Sources"
+      "section": "Sources",
+      "postconditionType": "executable"
     },
     {
       "id": "ux-research-claims-cited",
       "description": "Every numeric or generalization claim in the UX brief cites the research source",
-      "check": "artifact-claims-cited"
+      "check": "artifact-claims-cited",
+      "postconditionType": "executable"
     }
   ],
   "description": ""

@@ -24,14 +24,14 @@ The deployment posture is explicit. One config field (`CONSTRUCT_DEPLOYMENT_MODE
   {
     name: 'Team',
     tag: 'shared',
-    description: 'For a development team. Postgres-backed queue with row-locked workers. Centralized telemetry and brokered MCP.',
+    description: 'For a development team. Postgres-backed queue with row-locked workers. Centralized telemetry and brokered MCP (staged/experimental, tracked: construct-9oi4.10).',
     rows: [
       { label: 'Queue', value: 'Postgres FOR UPDATE SKIP LOCKED' },
       { label: 'Memory', value: 'shared per-user scope' },
       { label: 'Database', value: 'shared Postgres + pgvector' },
       { label: 'Telemetry', value: 'Langfuse / HTTP / OTel' },
       { label: 'Workers', value: 'Docker worker pool' },
-      { label: 'MCP', value: 'brokered, role policy' },
+      { label: 'MCP', value: 'brokered, role policy (staged/experimental, tracked: construct-9oi4.10)' },
     ],
   },
   {
@@ -44,7 +44,7 @@ The deployment posture is explicit. One config field (`CONSTRUCT_DEPLOYMENT_MODE
       { label: 'Database', value: 'shared Postgres + pgvector' },
       { label: 'Telemetry', value: 'mandatory audit events' },
       { label: 'Workers', value: 'isolated containers' },
-      { label: 'MCP', value: 'signed allowlist + brokered' },
+      { label: 'MCP', value: 'signed allowlist + brokered (staged/experimental, tracked: construct-9oi4.10, construct-9oi4.1.7)' },
     ],
   },
 ]} />
@@ -56,8 +56,8 @@ The agent loop (persona, specialists, contracts, gates) is the same across all t
 | Mode | Intended use | Queue | Memory | Database | Telemetry | Workers | Policy | MCP |
 |---|---|---|---|---|---|---|---|---|
 | `solo` (default) | Individual usage | filesystem | local | optional | optional | local | lightweight | direct |
-| `team` | Shared usage | postgres | shared | postgres | central | docker | server-side | brokered |
-| `enterprise` | Hardened usage | postgres | shared | postgres | central | isolated containers | enforceable, audited | brokered + signed |
+| `team` | Shared usage | postgres | shared | postgres | central | docker | server-side | brokered (staged/experimental) |
+| `enterprise` | Hardened usage | postgres | shared | postgres | central | isolated containers | enforceable, audited | brokered + signed (staged/experimental) |
 
 ### Solo
 
@@ -65,23 +65,23 @@ For individual work. State lives in the user's repo and `~/.construct/`. Queue i
 
 ### Team
 
-For shared usage by a development team. The intake queue is Postgres-backed (with row-locked worker claims). Memory is shared across the team. Workers run in a Docker pool, isolated from the host. Telemetry is centralized via a Langfuse-compatible backend, a generic HTTP ingestion endpoint, or an OpenTelemetry collector. MCP calls go through a broker that applies role-based policy.
+For shared usage by a development team. The intake queue is Postgres-backed (with row-locked worker claims). Memory is shared across the team. Workers run in a Docker pool, isolated from the host. Telemetry is centralized via a Langfuse-compatible backend, a generic HTTP ingestion endpoint, or an OpenTelemetry collector. MCP calls go through a broker that applies role-based policy — brokered MCP dispatch is staged/experimental and not yet active in built-in deployments (tracked: construct-9oi4.10).
 
-A reference compose topology ships at [`docker-compose.team.yml`](https://github.com/geraldmaron/construct/blob/main/docker-compose.team.yml): Postgres + a worker pool sized via `CONSTRUCT_WORKER_REPLICAS`, with the worker image built from [`Dockerfile.worker`](https://github.com/geraldmaron/construct/blob/main/Dockerfile.worker). The worker entrypoint (`lib/worker/entrypoint.mjs`) claims pending intake items via `PostgresIntakeQueue.claim()` (`FOR UPDATE SKIP LOCKED`), runs each through `runJob` with `allowedPaths: [/work]` so the bind-mounted workspace is the only writable surface, attaches evidence to the originating task graph node when named in the packet, and exits when the queue stays empty for `--idle-timeout-seconds` (default 300s) so a scheduler can scale workers to zero.
+A reference compose topology ships at [`docker-compose.team.yml`](https://github.com/geraldmaron/construct/blob/main/docker-compose.team.yml): Postgres + a worker pool sized via `CONSTRUCT_WORKER_REPLICAS`, with the worker image built from [`Dockerfile.worker`](https://github.com/geraldmaron/construct/blob/main/Dockerfile.worker). The worker entrypoint (`lib/worker/entrypoint.mjs`) claims pending intake items via `PostgresIntakeQueue.claim()` (`FOR UPDATE SKIP LOCKED`), runs each through `runJob` with `allowedPaths: [/work]` so the bind-mounted workspace is the only writable surface, attaches evidence to the originating task graph node when named in the packet, and exits when the queue stays empty for `--idle-timeout-seconds` (default 300s) so a scheduler can scale workers to zero. Local verification lives at [`dev/team-harness/verify.sh`](https://github.com/geraldmaron/construct/blob/main/dev/team-harness/verify.sh); it expects `DATABASE_URL`/`CONSTRUCT_DATABASE_URL`, applies migrations, reads worker/queue health, and runs the focused team-mode tests.
 
 ### Enterprise
 
-Team mode plus tenant isolation, signed MCP allowlists, RBAC/ABAC-ready auth, isolated worker containers with policy-enforced workspace boundaries, retention controls, and mandatory audit events for every brokered call. Designed for environments where the orchestration surface and the data it touches both need explicit governance.
+Team mode plus tenant isolation, signed MCP allowlists, RBAC/ABAC-ready auth, isolated worker containers with policy-enforced workspace boundaries, retention controls, and mandatory audit events for every brokered call. Designed for environments where the orchestration surface and the data it touches both need explicit governance. Brokered MCP dispatch and signed allowlists are staged/experimental and not yet active in built-in deployments (tracked: construct-9oi4.10).
 
 ## Picking and changing modes
 
 ```bash
 construct config              # show the active mode and resource topology
 construct config mode         # print just the active mode
-construct config mode team    # set the mode (writes ~/.construct/config.env)
+construct config mode team    # set the mode (writes ~/.config/construct/config.env)
 ```
 
-The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.construct/config.env`. `construct status` shows the active mode and resource topology at the top of its output.
+The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.config/construct/config.env`. `construct status` shows the active mode and resource topology at the top of its output.
 
 ## What runs in each mode (capability matrix)
 
@@ -93,7 +93,7 @@ The mode is persisted as `CONSTRUCT_DEPLOYMENT_MODE` in `~/.construct/config.env
 | Trace observability | local `.cx/traces/*.jsonl`; optional Langfuse/HTTP/OTLP export | central Langfuse-compatible backend, HTTP ingestion endpoint, or OTel collector |
 | Issue tracking | `bd` (beads), Dolt-backed | `bd` against shared Dolt remote |
 | Dashboard | `construct dev` starts the local dashboard | dashboard server in the shared deployment |
-| MCP | local processes | brokered through `mcp-broker` |
+| MCP | local processes | brokered through `mcp-broker` (staged/experimental — not yet active in built-in deployments) |
 | Intake queue | `.cx/intake/` files | `construct_intake_items` table in Postgres |
 | Session state | `.cx/context.md`, `.cx/handoffs/`, beads | shared state with per-user scoping |
 
@@ -136,7 +136,7 @@ construct status
 construct doctor
 ```
 
-`construct config` prints the resolved deployment mode and resource topology. `construct status` shows them inline at the top of the health report. `construct doctor` reports degraded vs healthy across every cloud/local boundary; anything red is a real problem, anything yellow is degraded-but-working with a one-line explanation.
+`construct config` prints the resolved deployment mode and resource topology. `construct status` shows them inline at the top of the health report and, in team/enterprise mode, includes queue depth, dead-letter depth, active workers, and stale workers. `construct doctor` reports degraded vs healthy across every cloud/local boundary; missing Postgres in team/enterprise mode is red, while DLQ/stale-worker findings are yellow degraded states with a one-line explanation.
 
 ```bash
 CONSTRUCT_EMBEDDING_MODEL=hashing construct evals retrieval
