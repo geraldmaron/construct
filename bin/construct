@@ -16,6 +16,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 import { CLI_COMMANDS, CATEGORY_ORDER, formatCommandHelp } from '../lib/cli-commands.mjs';
+import { CONFIG_DIR_NAME } from '../lib/config-dir.mjs';
 import { buildStatus, formatStatusReport } from '../lib/status.mjs';
 import { validateRegistry } from '../lib/validator.mjs';
 import { readCurrentModels, readOpenRouterApiKeyFromOpenCodeConfig, applyToEnv, resetEnv, setModelWithTierInference, listAvailableModels } from '../lib/model-router.mjs';
@@ -621,10 +622,10 @@ async function cmdDoctor() {
     const giPath = path.join(cwd, '.gitignore');
     const giContent = fs.existsSync(giPath) ? fs.readFileSync(giPath, 'utf8') : '';
     const lines = giContent.split('\n').map((l) => l.trim());
-    const cxIgnored = lines.some((l) => l === '.cx' || l === '.cx/' || l === '.cx/**' || l === '*' || l === '**');
+    const cxIgnored = lines.some((l) => l === CONFIG_DIR_NAME || l === `${CONFIG_DIR_NAME}/` || l === `${CONFIG_DIR_NAME}/**` || l === '*' || l === '**');
     if (!cxIgnored && wantsFixGitignore) {
       const prefix = giContent.length === 0 || giContent.endsWith('\n') ? '' : '\n';
-      fs.writeFileSync(giPath, giContent + `${prefix}\n# Construct runtime state — local-only, never source\n.cx/\n`, 'utf8');
+      fs.writeFileSync(giPath, giContent + `${prefix}\n# Construct runtime state — local-only, never source\n${CONFIG_DIR_NAME}/\n`, 'utf8');
       println(`  fix: appended .cx/ to ${path.relative(cwd, giPath)}`);
       add('Project .gitignore covers .cx/', true);
     } else {
@@ -757,9 +758,9 @@ async function cmdDoctor() {
 
   if (isProject) {
     const legacyHeavyDirs = [
-      { rel: path.join('.cx', 'runtime'), label: '.cx/runtime' },
-      { rel: path.join('.cx', 'traces'), label: '.cx/traces' },
-      { rel: path.join('.cx', 'lancedb'), label: '.cx/lancedb' },
+      { rel: path.join(CONFIG_DIR_NAME, 'runtime'), label: '.cx/runtime' },
+      { rel: path.join(CONFIG_DIR_NAME, 'traces'), label: '.cx/traces' },
+      { rel: path.join(CONFIG_DIR_NAME, 'lancedb'), label: '.cx/lancedb' },
     ]
       .map((d) => ({ ...d, full: path.join(cwd, d.rel) }))
       .filter((d) => fs.existsSync(d.full) && fs.readdirSync(d.full).length > 0);
@@ -5619,7 +5620,7 @@ async function cmdBackup(args) {
 // and consistent whether the command ran from the project root or a subdir.
 
 function instanceConfigRelPath(id) {
-  return path.join('.cx', 'providers', `${id}.json`);
+  return path.join(CONFIG_DIR_NAME, 'providers', `${id}.json`);
 }
 
 async function cmdProvider(args) {
